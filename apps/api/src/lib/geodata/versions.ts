@@ -122,7 +122,8 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
   if (doublons.length) throw Object.assign(new Error("codes_en_double"), { code: "codes_en_double", doublons });
   const [src] = (await client.query<{ id: string }>(
     `INSERT INTO geodata_sources (id, cle, espace_id, titre, producteur, theme, couverture, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     ON CONFLICT (cle) DO UPDATE SET cle = EXCLUDED.cle RETURNING id`,
+     ON CONFLICT (cle) DO UPDATE SET titre = EXCLUDED.titre, producteur = EXCLUDED.producteur, theme = EXCLUDED.theme,
+       couverture = EXCLUDED.couverture, description = EXCLUDED.description RETURNING id`,
     [newId("gdsrc"), v.source.cle, v.espaceId, v.source.titre, v.source.producteur, v.source.theme, v.source.couverture, v.source.description],
   )).rows;
   const sourceId = src!.id;

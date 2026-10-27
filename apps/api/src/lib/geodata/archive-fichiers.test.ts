@@ -36,6 +36,8 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     expect(par.get("donnees/osm-extraits.json")).toMatchObject({ role: "extrait" });
     expect(par.get("donnees/osm-mar-communes.geojson")).toMatchObject({ role: "extrait", typeMedia: "application/geo+json" });
     expect(par.get("donnees/retraits-sources.json")).toMatchObject({ role: "declaration" });
+    // Fiches de référence des contours (D-GD-30) : archivées, jamais importées comme couches.
+    expect(par.get("references/geoboundaries-mar-adm1.json")).toMatchObject({ role: "reference", sourceCle: "geoboundaries-mar-adm1" });
   });
 
   it("bilan lisible par l'import automatique", () => {

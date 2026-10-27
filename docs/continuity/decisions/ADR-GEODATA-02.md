@@ -266,6 +266,21 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         relue en PR, empreinte contrôlée, CI verte. `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même chose au nom d'un
         compte ; `GEODATA_IMPORT_AUTO=non` coupe tout (recettes de la CI). Mesuré sur une base neuve sans aucun compte :
         53 versions publiées, 121 fichiers archivés, découpage MA (4 rangs) en 61 s ; second démarrage 1 s, rien refait.
+   - D-GD-30 (27 octobre 2026) — **une seule source par niveau administratif** (demande du maître d'ouvrage : « fusionne
+     les deux sources, HCP là où il y en a, sinon OpenStreetMap ; complète, sans doublon ») :
+     1. Par niveau, une seule couche au catalogue, rangée sous « Limites administratives » (thème
+        `limites-administratives`) : « Limites administratives — régions / provinces et préfectures / communes /
+        arrondissements (RGPH 2024) ». Chacune porte **tous** les contours d'origine (geoBoundaries ADM1 / ADM2 pour
+        régions et provinces, OpenStreetMap pour communes et arrondissements), enrichis des noms, codes et valeurs du HCP
+        là où le rattachement existe ; un contour sans rattachement garde ses seuls attributs d'origine, rien n'est
+        inventé (communes : 1 498 contours, 1 487 rattachés, 11 contours OSM sans nom ni unité HCP ; 16 unités HCP sans
+        contour connu restent dans la table de correspondance, sans géométrie).
+     2. Les fiches geoBoundaries ADM1 / ADM2 ne sont plus des fiches livrées : déplacées dans `sources/references/` (lues
+        par `preparer_hcp.py` pour les contours, archivées avec le rôle `reference`), leurs versions sont retirées du
+        catalogue par `retraits-sources.json` au profit des couches HCP, comme OSM communes et villes (D-GD-18).
+     3. Les métadonnées d'une source (titre, producteur, thème, couverture, description) suivent la fiche, même sans
+        nouvelle version (`assurerSource`, `ecrireVersion` ON CONFLICT) : une fiche corrigée range la source au bon
+        endroit au redéploiement.
 
 ## Conséquences
 

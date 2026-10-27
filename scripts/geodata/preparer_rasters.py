@@ -51,7 +51,7 @@ def sha256(b):
 
 
 def masque_territoire():
-    fiche = json.load(open(os.path.join(FICHES, "geoboundaries-mar-adm1.json"), encoding="utf-8"))
+    fiche = json.load(open(os.path.join(FICHES, "references", "geoboundaries-mar-adm1.json"), encoding="utf-8"))  # fiche de référence, non importée (D-GD-30)
     brut = telecharger(fiche["version"]["url"])
     if sha256(brut) != fiche["version"]["empreinte"]:
         sys.exit("Empreinte geoBoundaries ADM1 non conforme")

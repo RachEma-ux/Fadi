@@ -3238,7 +3238,7 @@ CREATE INDEX IF NOT EXISTS geodata_territoires_geom ON geodata_territoires USING
 -- chaîne d'import (contenu compressé par PostgreSQL, empreinte SHA-256). Un fichier qui n'est plus livré reste, retiré.
 CREATE TABLE IF NOT EXISTS geodata_fichiers (
   chemin text PRIMARY KEY CHECK (chemin ~ '^[A-Za-z0-9._/-]{1,200}$' AND position('..' in chemin) = 0),
-  role text NOT NULL CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration')),
+  role text NOT NULL,
   source_cle text,
   type_media text NOT NULL,
   taille bigint NOT NULL CHECK (taille >= 0),
@@ -3249,6 +3249,8 @@ CREATE TABLE IF NOT EXISTS geodata_fichiers (
   CONSTRAINT geodata_fichiers_taille CHECK (octet_length(contenu) = taille)
 );
 CREATE INDEX IF NOT EXISTS geodata_fichiers_source ON geodata_fichiers (source_cle);
+ALTER TABLE geodata_fichiers DROP CONSTRAINT IF EXISTS geodata_fichiers_role_check;
+ALTER TABLE geodata_fichiers ADD CONSTRAINT geodata_fichiers_role_check CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration', 'reference'));
 
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon

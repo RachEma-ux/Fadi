@@ -20,6 +20,7 @@
 - [x] GEO-HCP-G — Mini-carte de situation et impression directe (D-GD-27).
 - [x] GEO-HCP-H — Navigation territoriale permanente, découpage du pays en base (MA d'abord) (D-GD-28).
 - [x] GEO-UI-BD — Interface et base distinctes ; tous les fichiers de données archivés en base (`geodata_fichiers`) (D-GD-29).
+- [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

@@ -19,8 +19,9 @@ const DOSSIER = fileURLToPath(new URL("../../../../docs/geodata/sources/", impor
 const fiches = readdirSync(DOSSIER).filter((f) => f.endsWith(".json")).sort();
 
 describe("fiches de source GeoData livrées", () => {
-  it("au moins les limites geoBoundaries et une source ouverte à données livrées", () => {
-    expect(fiches).toContain("geoboundaries-mar-adm1.json");
+  it("au moins les limites administratives du HCP et une source ouverte à données livrées ; geoBoundaries n'est plus une fiche livrée (D-GD-30)", () => {
+    expect(fiches).toContain("hcp-rgph2024-population-regions.json");
+    expect(fiches).not.toContain("geoboundaries-mar-adm1.json");
     expect(fiches.some((f) => f.startsWith("osm-mar-"))).toBe(true);
   });
 
@@ -130,7 +131,7 @@ describe("fiches de source GeoData livrées", () => {
 
   it("retraits déclarés (D-GD-23) : sources sans fiche importable, remplaçante livrée, motif et décision", () => {
     const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string; motif: string; decision: string }[];
-    expect(retraits.map((r) => r.cle).sort()).toEqual(["osm-mar-communes", "osm-mar-villes"]);
+    expect(retraits.map((r) => r.cle).sort()).toEqual(["geoboundaries-mar-adm1", "geoboundaries-mar-adm2", "osm-mar-communes", "osm-mar-villes"]);
     for (const r of retraits) {
       expect(fiches).not.toContain(`${r.cle}.json`);
       expect(fiches).toContain(`${r.remplacePar}.json`);

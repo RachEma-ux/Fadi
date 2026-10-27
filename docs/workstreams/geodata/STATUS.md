@@ -72,6 +72,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Une seule source par niveau (D-GD-30) : 4 fiches HCP sous `limites-administratives` (titres « Limites administratives —
+  … (RGPH 2024) »), fiches geoBoundaries déplacées dans `sources/references/` (rôle `reference` à l'archive), retraits
+  déclarés de `geoboundaries-mar-adm1` / `adm2` au profit des couches HCP (test), métadonnées de source suivies par la
+  fiche (`assurerSource`, ON CONFLICT ; test base). Communes : 1 498 contours OSM, 1 487 rattachés, 11 contours OSM sans
+  nom (aucun nom OSM non plus), 16 unités HCP sans contour (table de correspondance seulement).
 - Interface ≠ base, fichiers archivés (D-GD-29) : `lib/geodata/archive-fichiers.ts` (inventaire et archive ; 4 tests sur
   le dossier réel), table `geodata_fichiers`, `--archiver` dans `geodata-reference.ts`, lancé à chaque démarrage
   (`import-auto.ts`, 5 tests), test base (ajout, inchangé, modifié, retiré). En local sur la base de développement :

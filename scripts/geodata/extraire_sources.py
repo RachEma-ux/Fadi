@@ -102,7 +102,7 @@ def sha256(octets):
 
 # --- Territoire : geoBoundaries MAR ADM1 (empreinte vérifiée) ---
 def territoire():
-    fiche = json.load(open(os.path.join(FICHES, "geoboundaries-mar-adm1.json"), encoding="utf-8"))
+    fiche = json.load(open(os.path.join(FICHES, "references", "geoboundaries-mar-adm1.json"), encoding="utf-8"))  # fiche de référence, non importée (D-GD-30)
     brut = telecharger(fiche["version"]["url"])
     if sha256(brut) != fiche["version"]["empreinte"]:
         sys.exit("Empreinte geoBoundaries ADM1 non conforme")

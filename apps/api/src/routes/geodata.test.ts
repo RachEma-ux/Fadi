@@ -555,6 +555,22 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
   });
 });
 
+describe("métadonnées de source (D-GD-30) : la fiche fait foi", () => {
+  it("une nouvelle version d'une source existante met à jour titre, thème et description de la source", async () => {
+    const base = { espaceId: null, couche: { titre: "c", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom"], styleDefaut: { mode: "simple" as const, couleur: "#123456" } }, objets: [], indicateurs: [], superficie: false, preparePar: null };
+    const version = (e: string) => ({ libelle: "v", empreinte: createHash("sha256").update(e).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "A", droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await ecrireVersion(client, { ...base, source: { cle: "meta-src", titre: "Ancien titre", producteur: "P", theme: "population", couverture: "C", description: "d1" }, version: version("a") });
+      await ecrireVersion(client, { ...base, source: { cle: "meta-src", titre: "Nouveau titre", producteur: "P", theme: "limites-administratives", couverture: "C", description: "d2" }, version: version("b") });
+      await client.query("COMMIT");
+    } finally { client.release(); }
+    const [s] = (await pool.query("SELECT titre, theme, description, (SELECT count(*)::int FROM geodata_versions v WHERE v.source_id = s.id) AS n FROM geodata_sources s WHERE cle = 'meta-src'")).rows;
+    expect(s).toEqual({ titre: "Nouveau titre", theme: "limites-administratives", description: "d2", n: 2 });
+  });
+});
+
 describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
   it("copie chaque fichier tel quel ; inchangé non réécrit ; modifié remplacé ; plus livré marqué retiré, jamais effacé", async () => {
     const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
