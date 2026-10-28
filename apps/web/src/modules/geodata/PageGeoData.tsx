@@ -12,7 +12,7 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { sansColorationThematique, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
@@ -273,9 +273,13 @@ export function PageGeoData() {
   interface SerieSelection { niveaux: RangAdministratif[]; unites: Map<number, { code: string; nom: string; coucheId: string; pays: string | null; enCouche: boolean }>; attendu: number; jeton: number }
   const serie = useRef<SerieSelection | null>(null);
   const jetons = useRef(0);
+  // Téléphone : la fiche recouvre la carte ; elle n'est ouverte qu'une fois la série de clics terminée, pour que les clics
+  // suivants atteignent encore la carte. La sélection (mise en évidence) reste immédiate.
+  const ficheDifferee = useRef<number | null>(null);
+  const annulerFicheDifferee = () => { if (ficheDifferee.current !== null) { window.clearTimeout(ficheDifferee.current); ficheDifferee.current = null; } };
   const contexteClic = useRef({ rangs, paysListe, paysCourant });
   contexteClic.current = { rangs, paysListe, paysCourant };
-  const effacerSelection = () => { serie.current = null; setSelection(null); setEntite(null); setEntiteContour(null); };
+  const effacerSelection = () => { annulerFicheDifferee(); serie.current = null; setSelection(null); setEntite(null); setEntiteContour(null); };
   const appliquerNiveau = (s: SerieSelection, rang: RangAdministratif) => {
     const u = s.unites.get(rang);
     if (!u) return;
@@ -286,7 +290,9 @@ export function PageGeoData() {
       setSelection(null);
       if (u.pays) api.uniteTerritoriale(u.pays, u.code, rang).then((r) => { if (serie.current === s && s.unites.get(rangPourClics(s.niveaux, s.attendu) ?? rang) === u) setEntiteContour(r.contour); }).catch(() => undefined);
     }
-    void ouvrirFiche(u.coucheId, u.code);
+    annulerFicheDifferee();
+    if (estTelephone()) ficheDifferee.current = window.setTimeout(() => { ficheDifferee.current = null; void ouvrirFiche(u.coucheId, u.code); }, DELAI_CLICS_MS + 50);
+    else void ouvrirFiche(u.coucheId, u.code);
   };
   const clicCarte = (objets: readonly ObjetDesigne[], p: { lon: number; lat: number }, nbClics: number) => {
     const { rangs: rangsConnus, paysListe: pays, paysCourant: paysClic } = contexteClic.current;

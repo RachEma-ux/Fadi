@@ -7,9 +7,9 @@
  */
 import type { RangAdministratif } from "./limites.js";
 
-/** Délai entre deux clics d'une même série (celui du navigateur, environ 300 ms) et déplacement toléré du pointeur. */
+/** Délai entre deux clics d'une même série (celui du navigateur, environ 300 ms) et déplacement toléré du pointeur (un doigt). */
 export const DELAI_CLICS_MS = 300;
-export const TOLERANCE_CLICS_PX = 8;
+export const TOLERANCE_CLICS_PX = 16;
 
 export interface ClicCarte { readonly t: number; readonly x: number; readonly y: number }
 /** Série de clics en cours : rang du dernier clic (1 = premier), instant et position du dernier. */

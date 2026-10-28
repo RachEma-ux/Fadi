@@ -354,6 +354,9 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      5. Précédences conservées : un objet d'une couche qui n'est pas une limite (point d'intérêt, ligne) garde la
         sélection simple ; sans couche de limites, une couche raster visible garde la lecture de sa valeur au point
         (D-GD-13). Logique pure `geodata-model/src/selection-clics.ts` (comptage, niveaux, rang du n-ième clic), testée.
+     6. Téléphone (correctif du 28 octobre 2026) : la fiche d'objet recouvre la carte (volet du bas) ; elle ne s'ouvre
+        qu'une fois la série de tapes terminée (≈350 ms après la dernière), la sélection restant immédiate, pour que la
+        2ᵉ et la 3ᵉ tape atteignent encore la carte ; tolérance du pointeur portée à 16 px (un doigt).
 
 ## Conséquences
 
