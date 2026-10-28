@@ -82,6 +82,7 @@
   .geodata-page .gd-panneau{left:0;right:0;top:auto;bottom:0;width:100%;max-width:none;height:62%;z-index:6;border-radius:12px 12px 0 0;box-shadow:0 -6px 20px rgba(23,59,67,.18)}
   .geodata-page .gd-barre-outils .gd-outil{width:40px;height:40px;min-height:40px}
   .geodata-page .gd-barre-outils .gd-poignee{min-height:28px;height:28px}
+  .geodata-page .gd-barre-recherche .gd-outil{width:40px;height:40px;min-height:40px}
   .geodata-page .gd-volet{position:absolute;inset:auto 0 0 0;max-width:none;max-height:62%;z-index:6;box-shadow:0 -6px 20px rgba(23,59,67,.18);border-left:0;border-top:1px solid var(--gd-ligne)}
   .geodata-page .gd-tiroir{max-height:50%}
   .geodata-page button{min-height:44px}
@@ -97,6 +98,10 @@
 .geodata-page .gd-barre-outils{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;max-height:calc(100% - 8px);overflow:auto;touch-action:none}
 .geodata-page .gd-poignee{width:40px;min-height:22px;height:22px;padding:0;display:flex;align-items:center;justify-content:center;cursor:grab;border-radius:6px;box-shadow:0 2px 10px rgba(23,59,67,.14)}
 .geodata-page .gd-poignee:active{cursor:grabbing}
+/* Mini-barre de recherche (loupe) sous la barre d'outils, même style ; barre de recherche flottante à sa gauche. */
+.geodata-page .gd-barre-recherche{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center}
+.geodata-page .gd-recherche.gd-recherche-flottante{position:absolute;z-index:7;flex:none;box-sizing:border-box;align-items:center;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px}
+.geodata-page .gd-recherche-flottante.gd-resultats-haut .gd-resultats{top:auto;bottom:calc(100% + 4px)}
 .geodata-page .gd-groupe-outils{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 2px 10px rgba(23,59,67,.14);overflow:hidden}
 .geodata-page .gd-outil{width:40px;height:40px;min-height:40px;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:0;border-bottom:1px solid #edf2f2}
 .geodata-page .gd-groupe-outils .gd-outil:last-child{border-bottom:0}

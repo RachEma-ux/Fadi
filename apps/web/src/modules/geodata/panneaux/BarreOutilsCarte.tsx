@@ -64,6 +64,8 @@ export interface ActionsBarreCarte {
   onEtiquettes(): void;
   onMiniCarte(): void;
   onImprimer(): void;
+  /** Placement de la barre dans la carte (position et taille), signalé à chaque changement : la mini-barre de recherche la suit. */
+  onPlacement?(r: { droite: number; haut: number; largeur: number; hauteur: number }): void;
 }
 
 export function BarreOutilsCarte(p: ActionsBarreCarte) {
@@ -83,6 +85,18 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
     return () => window.removeEventListener("resize", ajuster);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Placement signalé (position, taille) : au montage, après chaque déplacement et quand la taille change.
+  const placement = useRef(p.onPlacement);
+  placement.current = p.onPlacement;
+  useEffect(() => {
+    const nav = barre.current;
+    if (!nav) return;
+    const signaler = () => placement.current?.({ droite: position.droite, haut: position.haut, largeur: nav.offsetWidth, hauteur: nav.offsetHeight });
+    signaler();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(signaler) : null;
+    ro?.observe(nav);
+    return () => ro?.disconnect();
+  }, [position]);
   const deplacer = (q: PositionBarre) => { const r = borner(q); setPosition(r); return r; };
   const poignee = {
     onPointerDown: (e: PointerEvent<HTMLButtonElement>) => { e.currentTarget.setPointerCapture(e.pointerId); glisse.current = { x: e.clientX, y: e.clientY, depart: position }; },

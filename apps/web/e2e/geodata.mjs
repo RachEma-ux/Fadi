@@ -59,6 +59,8 @@ async function volet(p, v) {
 }
 /** Onglet du panneau Données (rouvert par le bouton « Données » s'il est fermé). */
 async function onglet(p, o) { if (!(await p.locator("[data-gd-panneau]").count())) await p.locator("[data-gd-donnees]").click(); await p.locator(`[data-gd-onglet='${o}']`).click(); }
+/** Barre de recherche flottante de la carte, ouverte par la loupe de sa mini-barre si elle est fermée. */
+async function ouvrirRecherche(p) { if (!(await p.locator("[data-gd-recherche]").count())) await p.locator("[data-gd-loupe]").click(); await p.locator("[data-gd-recherche]").waitFor(); }
 const npmApi = (script, args) => execFileSync("npm", ["run", "-s", script, "--workspace=@fadi/api", "--", ...args], { cwd: RACINE, env: process.env, encoding: "utf8" });
 
 const navigateur = await lancer(AVEC_WEBGL);
@@ -128,6 +130,69 @@ check("barre d'outils : déplaçable au clavier (flèches)", Math.abs((await bar
 await page.locator("[data-gd-poignee]").dblclick();
 const retour = await barreOutils.boundingBox();
 check("barre d'outils : double-clic sur la poignée → position par défaut à droite", Math.abs(retour.x - boiteBarre.x) < 2 && Math.abs(retour.y - boiteBarre.y) < 2);
+
+// --- Mini-barre de recherche (loupe) : indépendante, sous la barre d'outils, même style ; barre flottante à sa gauche ---
+check("recherche : la barre au-dessus de la carte n'a plus de champ de recherche ; Fond, Fournisseurs, Enregistrer et menu restent",
+  (await page.locator("header.gd-barre [data-gd-recherche], header.gd-barre input[type='search']").count()) === 0 && (await page.locator("header.gd-barre [data-gd-fond]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-fournisseurs]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-enregistrer]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-menu]").count()) === 1);
+const miniBarre = page.locator("[data-gd-barre-recherche]");
+await page.waitForTimeout(300);
+const loupe = page.locator("[data-gd-loupe]");
+const boiteLoupe = await miniBarre.boundingBox();
+const groupes = await barreOutils.locator(".gd-groupe-outils").evaluateAll((gs) => gs.map((g) => g.getBoundingClientRect()));
+const ecartGroupes = Math.round(groupes[1].top - groupes[0].bottom);
+const basBarre = groupes[groupes.length - 1].bottom;
+check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), sous elle, au même bord droit, à l'écart de ses groupes",
+  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").count()) === 1 && Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5,
+  `écart groupes ${ecartGroupes}, mini y=${boiteLoupe.y} bas barre=${basBarre}`);
+const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
+const tailles = await page.evaluate(() => [document.querySelector("[data-gd-barre-outil='zoom-plus']"), document.querySelector("[data-gd-loupe]")].map((b) => `${b.offsetWidth}x${b.offsetHeight}`));
+check("mini-barre : même style que la barre d'outils (fond, coins, ombre, taille des boutons), loupe « Rechercher »", styles[0] === styles[1] && tailles[0] === tailles[1] && (await loupe.getAttribute("aria-label")) === "Rechercher" && ((await loupe.getAttribute("title")) ?? "").startsWith("Rechercher"), `${styles.join(" ≠ ")} ; ${tailles.join(" / ")}`);
+const basDroite = await page.locator(".maplibregl-ctrl-bottom-right").boundingBox();
+check("mini-barre : ne chevauche ni l'échelle ni les sources (bas à droite)", !basDroite || boiteLoupe.y + boiteLoupe.height <= basDroite.y);
+check("recherche : fermée par défaut", (await page.locator("[data-gd-recherche]").count()) === 0 && (await loupe.getAttribute("aria-expanded")) === "false");
+await loupe.click();
+const flottante = page.locator("[data-gd-recherche-flottante]");
+await flottante.waitFor();
+const boiteFlottante = await flottante.boundingBox();
+check("recherche : la loupe ouvre la barre flottante à gauche de la mini-barre, alignée sur la loupe, curseur dans le champ",
+  boiteFlottante.x + boiteFlottante.width <= boiteLoupe.x && Math.abs(boiteFlottante.y - boiteLoupe.y) <= 1.5 && (await page.evaluate(() => document.activeElement?.hasAttribute("data-gd-recherche"))) === true
+  && (await page.locator("[data-gd-recherche]").getAttribute("placeholder")) === "Commune, région, code, ou lon … lat …" && (await flottante.getByRole("button", { name: "Rechercher" }).count()) === 1,
+  `flottante ${JSON.stringify(boiteFlottante)} mini ${JSON.stringify(boiteLoupe)} focus ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80))}`);
+await page.locator("[data-gd-recherche]").fill("Unité synthétique B");
+await page.keyboard.press("Escape");
+check("recherche : Échap referme la barre, le focus revient à la loupe", (await flottante.count()) === 0 && (await page.evaluate(() => document.activeElement?.hasAttribute("data-gd-loupe"))) === true);
+await loupe.click();
+check("recherche : le texte saisi est conservé jusqu'à la prochaine ouverture", (await page.locator("[data-gd-recherche]").inputValue()) === "Unité synthétique B");
+await loupe.click();
+check("recherche : un nouvel appui sur la loupe referme la barre", (await flottante.count()) === 0);
+await page.keyboard.press("Alt+r");
+await flottante.waitFor();
+check("recherche : Alt+R ouvre la barre (raccourci de la loupe)", (await flottante.count()) === 1);
+await page.keyboard.press("Alt+r");
+check("recherche : Alt+R depuis le champ la referme", (await flottante.count()) === 0);
+await loupe.click();
+await page.locator("[data-gd-recherche]").press("Enter");
+await page.locator("[data-gd-resultat='002']").waitFor();
+check("recherche : Entrée lance la même recherche (résultat par nom)", (await page.locator("[data-gd-resultat='002']").count()) === 1);
+const canevasRecherche = await page.locator(".maplibregl-canvas").boundingBox();
+await page.mouse.click(canevasRecherche.x + canevasRecherche.width * 0.5, canevasRecherche.y + canevasRecherche.height - 80);
+await page.waitForTimeout(200);
+check("recherche : un clic sur la carte referme la barre", (await flottante.count()) === 0, `${await flottante.count()} ; ${JSON.stringify(canevasRecherche)}`);
+await page.locator("[data-gd-barre-outil='distance']").click();
+await loupe.click();
+check("recherche : la loupe reste utilisable avec un outil de mesure actif, sans le désactiver", (await flottante.count()) === 1 && (await page.locator("[data-gd-barre-outil='distance']").getAttribute("aria-pressed")) === "true");
+await loupe.click();
+await page.locator("[data-gd-barre-outil='distance']").click();
+// La mini-barre suit la barre d'outils déplacée, puis revient avec elle.
+await page.locator("[data-gd-poignee]").focus();
+await page.keyboard.press("Shift+ArrowLeft");
+await page.waitForTimeout(300);
+const miniSuivie = await miniBarre.boundingBox();
+const barreSuivie = await barreOutils.boundingBox();
+const basSuivi = await barreOutils.locator(".gd-groupe-outils").last().evaluate((g) => g.getBoundingClientRect().bottom);
+check("mini-barre : suit la barre d'outils quand elle est déplacée (même bord droit, toujours dessous)", Math.abs(miniSuivie.x + miniSuivie.width - (barreSuivie.x + barreSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y - basSuivi - ecartGroupes) <= 1.5 && Math.abs(barreSuivie.x - retour.x) > 5, `barre ${retour.x} → ${barreSuivie.x} ; mini ${boiteLoupe.x} → ${miniSuivie.x}`);
+await page.locator("[data-gd-poignee]").dblclick();
+await page.waitForTimeout(100);
 check("carte : aucun contrôle de navigation MapLibre en double", (await page.locator(".maplibregl-ctrl-zoom-in").count()) === 0);
 const zoomAvant = Number(await page.locator("main.gd-carte").getAttribute("data-gd-zoom"));
 await page.locator("[data-gd-barre-outil='zoom-plus']").click();
@@ -271,6 +336,7 @@ check("indicateur actif : une couche retirée puis rechargée le reçoit à nouv
 await onglet(page, "legende");
 
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.
+await ouvrirRecherche(page);
 const recherche = page.locator("[data-gd-recherche]");
 await recherche.fill("33.5, -7.6");
 await recherche.press("Enter");
@@ -502,6 +568,7 @@ await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic); awai
 await page.waitForTimeout(600);
 check("clics, carte vierge : un 3e clic ne change rien (dernier niveau)", (await selectionCourante()) === "1:1", await selectionCourante());
 // Clic hors du découpage du pays courant (carte recentrée loin des unités synthétiques) : la sélection est effacée.
+await ouvrirRecherche(page);
 await page.locator("[data-gd-recherche]").fill("lon -7 lat 32.5");
 await page.locator("[data-gd-recherche]").press("Enter");
 await page.locator("[data-gd-resultat='coordonnees']").click();
@@ -520,6 +587,7 @@ if (!(await carteRegions.count())) await page.locator("[data-gd-entete-categorie
 await carteRegions.locator("[data-gd-ajouter]").click();
 await page.locator("[data-gd-couche-active]").filter({ hasText: "Régions synthétiques (test)" }).waitFor({ state: "attached", timeout: 20_000 }).catch(() => undefined);
 check("niveaux : au pays, Retour inactif", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+await ouvrirRecherche(page);
 await page.locator("[data-gd-recherche]").fill("Région synthétique Nord");
 await page.locator("[data-gd-recherche]").press("Enter");
 await page.locator("[data-gd-resultat='1']").click();
@@ -619,6 +687,7 @@ const violations = await page.evaluate(async () => (await window.axe.run(documen
 writeFileSync(join(OUT, "axe-geodata.json"), JSON.stringify(violations, null, 2));
 const graves = violations.filter((v) => v.impact === "critical" || v.impact === "serious");
 check("GEO 12 · axe-core : aucune violation critique ou sérieuse", graves.length === 0, graves.map((v) => `${v.id} ${JSON.stringify(v.cibles)}`).join(" ; "));
+await ouvrirRecherche(page);
 await page.locator("[data-gd-recherche]").focus();
 await page.keyboard.press("Tab");
 const focusApres = await page.evaluate(() => document.activeElement?.textContent?.trim());
@@ -723,6 +792,7 @@ await connecter(p2, alice);
 await p2.goto(`${BASE}/geodata`);
 await p2.locator("[data-gd-erreur-carte]").waitFor({ timeout: 20_000 });
 check("GEO 11 · sans WebGL : message explicite, pas d'animation de chargement sans fin", ((await p2.locator("[data-gd-erreur-carte]").textContent()) ?? "").includes("WebGL") && (await p2.getByText("Chargement de la carte…").count()) === 0);
+await ouvrirRecherche(p2);
 await p2.locator("[data-gd-recherche]").fill("Unité synthétique B");
 await p2.locator("[data-gd-recherche]").press("Enter");
 await p2.locator("[data-gd-resultat='002']").click();

@@ -84,6 +84,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   horodatage de l'événement d'entrée (`originalEvent.timeStamp`) plutôt que du traitement — mesure en émulation tactile :
   350 à 450 ms entre deux tapes humaines, remise du clic retardée par le rendu ; vérifié Pixel 7, cadence 280–460 ms,
   carte vierge et couches HCP chargées : 1 → commune, 2 → province, 3 → région.
+- Recherche en mini-barre (D-GD-35) : `panneaux/BarreRecherche.tsx` (placement pur, 3 tests), `onPlacement` de la barre
+  d'outils, Alt+R ; recette `geodata.mjs` 144 contrôles (15 nouveaux : place, style, ouverture / fermeture, texte gardé,
+  clic sur la carte, outil de mesure actif, suivi du déplacement, sources non chevauchées) ; vérifié Pixel 7, 360 × 560
+  et 1440 × 900, « Dir El Ksiba », code HCP 15710321, coordonnées.
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :
