@@ -16,7 +16,9 @@ Mis à jour : 2026-10-28 (UTC).
   union de bas en haut (0 chevauchement, frontières identiques à tous les niveaux) ; couche des préfectures
   d'arrondissements ; clics, catalogue, barre, fiche lus en base. Vérifié le 28 octobre 2026 sur une base PostGIS locale :
   import puis relance « déjà importé », 5 niveaux à Casablanca, 4 à Tanger, Fès, Marrakech, 3 ailleurs ; typecheck,
-  tests des paquets et du web. Suite API DB-3 et recette e2e : CI de la PR. Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
+  tests des paquets et du web (`npm test` : 17 fichiers BD seuls refusés sans cible attestée, attendu), `npm run build`, recette
+  e2e GeoData locale 131 ✓ / 0 ✗ (import du découpage synthétique et relance « déjà importé » compris). Suite API DB-3 : CI
+  de la PR. Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
 Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 
 - Base : `main@0ff0638` ; branche `ccr-e71fe633-hjxnjf`.
