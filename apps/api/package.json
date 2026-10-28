@@ -14,6 +14,7 @@
     "db:volumes-gc": "tsx src/db/volumes-gc.ts",
     "db:account-jobs": "tsx src/db/account-jobs.ts",
     "geodata:import-reference": "tsx src/db/geodata-reference.ts",
+    "geodata:import-decoupage": "tsx src/db/geodata-reference.ts --decoupage",
     "geodata:role": "tsx src/db/geodata-role.ts"
   },
   "dependencies": {

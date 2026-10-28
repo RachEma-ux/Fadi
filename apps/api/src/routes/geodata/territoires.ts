@@ -8,6 +8,8 @@
  *   GET /territoires/version/:versionId/unites/:code   la même, retrouvée par la version de sa couche (pays déduit)
  *   GET /territoires/:pays/point?lon=&lat=   unités du pays qui contiennent un point, de la plus élémentaire à la plus
  *                                            globale (sélection par nombre de clics sur une carte vierge, D-GD-34)
+ *   GET /territoires/:pays/decoupage         découpage administratif en base (D-GD-35) : niveaux (rang, noms, couche) et
+ *                                            liens parent → enfant de toutes les entités, pour l'interface
  * Seules les unités d'une version de référence **publiée** et consultable sont servies : une version retirée disparaît
  * de la navigation sans attendre un nouveau chargement.
  */
@@ -66,8 +68,8 @@ territoiresRouter.get("/territoires/:pays/unites", async (req, res) => {
     : await requete<{ code: string; nom: string; rang: number; emprise: number[] }>(
       `SELECT code, nom, rang, ${emprise} AS emprise FROM (
          SELECT t.code, t.nom, t.rang, ST_Envelope(t.geom) AS e FROM ${T} t
-          JOIN ${T} p ON p.pays = t.pays AND p.code = $2 AND p.rang = t.rang - 1
-          WHERE t.pays = $1 AND t.parent_code = $2) x ORDER BY nom`, [pays, parent]);
+          JOIN ${T} p ON p.pays = t.pays AND p.code = $2 AND p.rang < t.rang
+          WHERE t.pays = $1 AND t.parent_code = $2) x ORDER BY rang, nom`, [pays, parent]);
   res.json({ unites: lignes });
 });
 
@@ -83,17 +85,18 @@ async function unite(res: import("express").Response, filtre: { pays: string } |
               WHERE ${"pays" in filtre ? "pays = $1" : "version_id = $1"} AND code = $2 AND ($3::int IS NULL OR rang = $3) ORDER BY rang LIMIT 1) t
        JOIN geodata_versions v ON v.id = t.version_id JOIN geodata_couches c ON c.version_id = v.id`, ["pays" in filtre ? filtre.pays : filtre.versionId, code, rang]);
   if (!u) return erreur(res, 404, "not_found", "Unité absente du découpage territorial en base.");
-  // Ancêtres : remontée par parent_code, du plus haut au plus proche.
+  // Ancêtres : remontée par le lien parent → enfant (D-GD-35 : la profondeur varie selon l'endroit), du plus haut au plus
+  // proche ; un parent d'un rang qui n'est pas plus global arrête la remontée (jamais de boucle).
   const ancetres = await requete<{ code: string; nom: string; rang: number }>(
     `WITH RECURSIVE a AS (
-       SELECT code, nom, rang, parent_code FROM ${T} t0 WHERE pays = $1 AND rang = $2 - 1 AND code = $3
+       SELECT code, nom, rang, parent_code FROM ${T} t0 WHERE pays = $1 AND rang < $2 AND code = $3
        UNION ALL
-       SELECT t.code, t.nom, t.rang, t.parent_code FROM ${T} t JOIN a ON t.pays = $1 AND t.rang = a.rang - 1 AND t.code = a.parent_code
+       SELECT t.code, t.nom, t.rang, t.parent_code FROM ${T} t JOIN a ON t.pays = $1 AND t.rang < a.rang AND t.code = a.parent_code
      ) SELECT code, nom, rang FROM a ORDER BY rang`, [u.pays, u.rang, u.parent_code]);
-  const [enfants] = await requete<{ n: number }>(`SELECT count(*)::int AS n FROM ${T} t WHERE pays = $1 AND rang = $2 AND parent_code = $3`, [u.pays, u.rang + 1, u.code]);
+  const [enfants] = await requete<{ n: number }>(`SELECT count(*)::int AS n FROM ${T} t WHERE pays = $1 AND rang > $2 AND parent_code = $3`, [u.pays, u.rang, u.code]);
   res.json({ pays: u.pays, code: u.code, nom: u.nom, rang: u.rang, emprise: u.emprise, ancetres, enfants: enfants?.n ?? 0, contour: JSON.parse(u.contour), attribution: u.attribution, versionId: u.versionId, coucheId: u.coucheId });
 }
-const rangDemande = (q: unknown) => (typeof q === "string" && /^[1-4]$/.test(q) ? Number(q) : null);
+const rangDemande = (q: unknown) => (typeof q === "string" && /^[1-9]\d{0,2}$/.test(q) ? Number(q) : null);
 
 territoiresRouter.get("/territoires/version/:versionId/unites/:code", async (req, res) => {
   const { versionId, code } = req.params;
@@ -105,4 +108,23 @@ territoiresRouter.get("/territoires/:pays/unites/:code", async (req, res) => {
   const { pays, code } = req.params;
   if (!PAYS.test(pays) || !CODE.test(code)) return erreur(res, 400, "invalid_input", "Pays ou unité invalide.");
   await unite(res, { pays }, code, rangDemande(req.query["rang"]));
+});
+
+/**
+ * Découpage administratif en base (D-GD-35) : niveaux (du plus global au plus fin, avec la couche publiée de leur fiche)
+ * et liens parent → enfant des entités non retirées. L'interface en tire rangs, parents et niveaux réels d'un endroit,
+ * sans aucune règle écrite dans son code. Un pays sans découpage importé rend des listes vides.
+ */
+territoiresRouter.get("/territoires/:pays/decoupage", async (req, res) => {
+  const pays = req.params.pays;
+  if (!PAYS.test(pays)) return erreur(res, 400, "invalid_input", "Pays invalide.");
+  const niveaux = await requete<{ code: string; rang: number; singulier: string; pluriel: string; fiche: string | null; coucheId: string | null }>(
+    `SELECT n.code, n.rang, n.singulier, n.pluriel, n.fiche_cle AS fiche,
+            (SELECT c.id FROM geodata_sources s JOIN geodata_versions v ON v.source_id = s.id JOIN geodata_couches c ON c.version_id = v.id
+              WHERE s.cle = n.fiche_cle AND s.espace_id IS NULL AND v.espace_id IS NULL AND v.etat = 'publiee' AND v.droits->>'consultation' = 'autorise'
+              ORDER BY v.publiee_le DESC NULLS LAST LIMIT 1) AS "coucheId"
+       FROM geodata_niveaux_administratifs n WHERE n.pays = $1 ORDER BY n.rang`, [pays]);
+  const entites = await requete<{ code: string; parent: string | null; niveau: string }>(
+    "SELECT code, parent_code AS parent, niveau FROM geodata_entites_administratives WHERE pays = $1 AND retire_le IS NULL ORDER BY code", [pays]);
+  res.json({ pays, niveaux, entites });
 });

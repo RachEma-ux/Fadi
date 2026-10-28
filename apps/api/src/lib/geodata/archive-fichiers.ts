@@ -2,7 +2,8 @@
  * Archive en base des fichiers de données livrés (D-GD-29) : chaque fichier du dossier des sources qualifiées — fiches,
  * données (GeoJSON, CSV, TSV, GeoTIFF), tables de correspondance, extraits sans fiche importable, retraits déclarés —
  * est copié tel quel dans `geodata_fichiers` (contenu, taille, empreinte SHA-256, rôle, source). Rôle `reference` :
- * fiche de `references/`, lue par les scripts de préparation (contours d'origine), jamais importée comme couche (D-GD-30). L'interface et ses
+ * fiche de `references/`, lue par les scripts de préparation (contours d'origine), jamais importée comme couche (D-GD-30) ;
+ * rôle `decoupage` : fichiers du découpage administratif (`decoupage/`, dont le fichier source du HCP tel quel, D-GD-35). L'interface et ses
  * outils ne gardent aucune donnée : les données vivent en base. Un fichier inchangé (même empreinte) n'est pas réécrit ;
  * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool.
  */
@@ -13,7 +14,7 @@ import type { PoolClient } from "pg";
 
 export type Executeur = Pick<PoolClient, "query">;
 
-export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration", "reference"] as const;
+export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration", "reference", "decoupage"] as const;
 export type RoleFichier = (typeof ROLES_FICHIER)[number];
 
 export interface FichierLivre {
@@ -29,6 +30,7 @@ export interface BilanArchive { readonly ajoutes: number; readonly modifies: num
 const TYPES: Readonly<Record<string, string>> = {
   ".json": "application/json", ".geojson": "application/geo+json", ".csv": "text/csv", ".tsv": "text/tab-separated-values",
   ".tif": "image/tiff", ".tiff": "image/tiff", ".gpkg": "application/geopackage+sqlite3",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 const CHEMIN = /^[A-Za-z0-9._/-]{1,200}$/;
 
@@ -68,6 +70,7 @@ export function inventaireFichiers(dossier: string): FichierLivre[] {
     const role: RoleFichier = !chemin.includes("/") ? "fiche"
       : chemin.startsWith("references/") ? "reference"
       : chemin.startsWith("correspondances/") ? "correspondance"
+      : chemin.startsWith("decoupage/") ? "decoupage"
       : chemin === "donnees/retraits-sources.json" ? "declaration"
       : sourceDe.has(chemin) ? "donnees" : "extrait";
     return {

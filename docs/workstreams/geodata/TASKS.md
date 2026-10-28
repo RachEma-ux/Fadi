@@ -24,6 +24,8 @@
 - [x] GEO-INDICATEURS-2 — Étape 1 consolidée : l'indicateur est une valeur affichée en texte propre, jamais une coloration ; liste « Coloration » réduite aux modes de style ; nom et valeur indépendants (D-GD-32).
 - [x] GEO-CONTOURS-NIVEAUX — Régions et provinces construites par union des communes (codes HCP), topologie partagée simplifiée une seule fois, tuiles sans simplification propre ; rapport `CONTOURS-NIVEAUX.md` (D-GD-33).
 - [x] GEO-CLICS-NIVEAUX — Sélection par nombre de clics, du plus élémentaire au plus global ; carte vierge servie par le découpage en base ; double-clic sans zoom (D-GD-34).
+- [x] GEO-INFRA-COMMUNAL — Niveaux infra-communaux sur tout le territoire, découpage en base, import HCP unique sur le serveur, contours de bas en haut, clics selon les niveaux réels (D-GD-35) ; en revue.
+- [ ] GEO-INFRA-COMMUNAL-VPS — Lancer une fois `geodata-reference.js --decoupage MA` sur le VPS après déploiement ; arbitrer la place de la commune de Casablanca (5 niveaux selon le HCP).
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 

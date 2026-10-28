@@ -167,3 +167,5 @@
 /* Lot H (D-GD-28) : barre territoriale permanente — listes des niveaux dans la pastille de navigation. */
 .geodata-page .gd-territoires select{max-width:13rem;border:1px solid #c9d6d1;border-radius:6px;padding:2px 4px;background:#fff;font:inherit;color:inherit}
 @media (max-width:760px){.geodata-page .gd-territoires select{max-width:8rem}}
+.geodata-page .gd-niveau-admin{margin:0 0 2px;font-size:.78em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.geodata-page .gd-niveau-sans-couche{opacity:.7}

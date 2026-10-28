@@ -45,6 +45,16 @@ export interface CoucheRecue {
   styleDefaut: StyleCouche; nombreObjets: number; emprise: { type: "Polygon"; coordinates: number[][][] } | null; indicateurs: IndicateurRecu[]; version: VersionRecue;
   /** Couche raster (D-GD-13) : grandeur, unité et symbologie ; null pour une couche d'objets. */
   raster: DescriptionRaster | null;
+  /** Niveau administratif de la couche (D-GD-35), lu dans la table des niveaux en base ; null hors découpage. */
+  niveauAdministratif?: NiveauCoucheRecu | null;
+}
+/** Niveau d'une couche de limites : rang (1 = le plus global) et noms, lus en base. */
+export interface NiveauCoucheRecu { readonly pays: string; readonly code: string; readonly rang: number; readonly singulier: string; readonly pluriel: string }
+/** Découpage administratif d'un pays (D-GD-35) : niveaux et liens parent → enfant, lus en base. */
+export interface DecoupageRecu {
+  readonly pays: string;
+  readonly niveaux: readonly { code: string; rang: number; singulier: string; pluriel: string; fiche: string | null; coucheId: string | null }[];
+  readonly entites: readonly { code: string; parent: string | null; niveau: string }[];
 }
 export type ResultatRecherche =
   | { type: "coordonnees"; libelle: string; point: { lon: number; lat: number }; provenance: string }
@@ -80,7 +90,7 @@ export interface CategorieRecue { readonly id: string; readonly libelle: string;
 export interface RangementRecu { readonly categories: readonly CategorieRecue[]; readonly affectations: Readonly<Record<string, string>>; readonly modifiable: boolean }
 
 /** Unité du découpage contenant un point cliqué (D-GD-34). */
-export interface UniteAuPoint { readonly pays: string; readonly code: string; readonly nom: string; readonly rang: 1 | 2 | 3 | 4; readonly versionId: string; readonly coucheId: string }
+export interface UniteAuPoint { readonly pays: string; readonly code: string; readonly nom: string; readonly rang: number; readonly versionId: string; readonly coucheId: string }
 
 /** Unité du découpage territorial (lot H) : ancêtres, emprise, contour tel qu'en base, attribution. */
 export interface UniteTerritorialeRecue extends UniteTerritoriale {
@@ -88,7 +98,7 @@ export interface UniteTerritorialeRecue extends UniteTerritoriale {
   /** Version de référence et couche qui portent l'unité (fiche d'objet, D-GD-34). */
   readonly versionId: string;
   readonly coucheId: string;
-  readonly ancetres: readonly { code: string; nom: string; rang: 1 | 2 | 3 | 4 }[];
+  readonly ancetres: readonly { code: string; nom: string; rang: number }[];
   readonly enfants: number;
   readonly contour: unknown;
   readonly attribution: string;
@@ -97,6 +107,8 @@ export interface UniteTerritorialeRecue extends UniteTerritoriale {
 export const api = {
   /** Découpage territorial en base (lot H, D-GD-28) : pays chargés, unités d'un niveau, une unité. */
   territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
+  /** Niveaux et liens parent → enfant du découpage en base (D-GD-35) : aucune hiérarchie n'est écrite dans l'interface. */
+  decoupage: (pays: string) => appeler<DecoupageRecu>(`/territoires/${encodeURIComponent(pays)}/decoupage`),
   unitesTerritoriales: (pays: string, parent: string | null) => appeler<{ unites: UniteTerritoriale[] }>(`/territoires/${encodeURIComponent(pays)}/unites${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
   uniteTerritoriale: (pays: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/${encodeURIComponent(pays)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   /** Unité retrouvée par la version de la couche d'une entité : le pays est celui de cette version, jamais le pays affiché. */

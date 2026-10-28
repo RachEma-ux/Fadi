@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-27 (UTC).
+Mis à jour : 2026-10-28 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,7 +9,14 @@ Mis à jour : 2026-10-27 (UTC).
 
 ## Faits vérifiés
 
-- Niveaux infra-communaux (D-GD-35, **en préparation**, attend la CI verte de #356) : fichier HCP RGPH 2024 livré tel quel, table des niveaux en données, script `scripts/geodata/decoupage_hcp.py` (1 639 entités, 0 sans parent, sommes de population conformes, relance sans doublon) ; voir `DECOUPAGE-INFRA-COMMUNAL.md` et `INVENTAIRE-DECOUPAGE.md`.
+- Niveaux infra-communaux (D-GD-35, **implémenté**, branche `claude/maroc-infra-communal-levels-5abxes`, après #356) :
+  découpage en base (`geodata_niveaux_administratifs`, `geodata_entites_administratives`, journal des imports), lu dans
+  le fichier HCP RGPH 2024 livré tel quel (`decoupage_hcp.py` : 1 639 entités, 0 sans parent, sommes de population
+  conformes) ; import **unique** sur le serveur (`geodata-reference.js --decoupage`), jamais au démarrage ; contours par
+  union de bas en haut (0 chevauchement, frontières identiques à tous les niveaux) ; couche des préfectures
+  d'arrondissements ; clics, catalogue, barre, fiche lus en base. Vérifié le 28 octobre 2026 sur une base PostGIS locale :
+  import puis relance « déjà importé », 5 niveaux à Casablanca, 4 à Tanger, Fès, Marrakech, 3 ailleurs ; typecheck,
+  tests des paquets et du web. Suite API DB-3 et recette e2e : CI de la PR. Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
 Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 
 - Base : `main@0ff0638` ; branche `ccr-e71fe633-hjxnjf`.

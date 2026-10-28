@@ -1,7 +1,7 @@
 /**
- * Sélection par nombre de clics (D-GD-34) : des clics rapides au même endroit montrent les niveaux administratifs un par
- * un, **du plus élémentaire au plus global** (1 clic → commune, 2 → province, 3 → région). Si des couches de limites sont
- * chargées, seuls leurs niveaux comptent, du plus petit au plus grand ; sinon les niveaux du découpage en base. Le
+ * Sélection par nombre de clics (D-GD-34, D-GD-35) : des clics rapides au même endroit montrent les niveaux administratifs
+ * un par un, **du plus élémentaire au plus global**, en suivant les niveaux réels de l'endroit cliqué lus en base
+ * (la profondeur varie : une ville à arrondissements a plus de niveaux qu'une commune ordinaire). Si des couches de limites sont chargées, seuls leurs niveaux comptent ; sinon ceux du découpage en base. Le
  * premier clic sélectionne tout de suite le plus petit niveau, sans attente ; chaque clic suivant dans le délai remplace
  * la sélection par le niveau au-dessus ; au-delà du dernier niveau, rien ne change. Pur : aucun DOM, aucun moteur.
  */
@@ -21,16 +21,13 @@ export function compterClic(serie: SerieClics | null, clic: ClicCarte, delaiMs =
   return { n: proche ? serie.n + 1 : 1, t: clic.t, x: clic.x, y: clic.y };
 }
 
-/** Niveaux administratifs (1 région, 2 province, 3 commune) ; les subdivisions (4) ne font pas partie de la série. */
-const admis = (r: RangAdministratif) => r >= 1 && r <= 3;
-
 /**
  * Niveaux parcourus par les clics, du plus élémentaire au plus global : ceux des couches chargées s'il y en a, sinon ceux
  * du découpage en base. Sans aucun niveau, la liste est vide (aucune sélection possible).
  */
 export function niveauxDeSelection(rangsCharges: readonly RangAdministratif[], rangsBase: readonly RangAdministratif[]): RangAdministratif[] {
-  const charges = [...new Set(rangsCharges.filter(admis))];
-  const base = charges.length ? charges : [...new Set(rangsBase.filter(admis))];
+  const charges = [...new Set(rangsCharges)];
+  const base = charges.length ? charges : [...new Set(rangsBase)];
   return base.sort((a, b) => b - a);
 }
 
@@ -38,4 +35,14 @@ export function niveauxDeSelection(rangsCharges: readonly RangAdministratif[], r
 export function rangPourClics(niveaux: readonly RangAdministratif[], n: number): RangAdministratif | null {
   if (!niveaux.length || n < 1) return null;
   return niveaux[Math.min(n, niveaux.length) - 1] ?? null;
+}
+
+/**
+ * Niveaux réels de l'endroit cliqué (D-GD-35) : rangs de l'entité la plus fine qui contient le point et de ses ancêtres
+ * (liens parent → enfant en base), du plus élémentaire au plus global ; avec des couches de limites chargées, seuls les
+ * rangs de ces couches comptent. Aucun nombre de niveaux n'est supposé : la profondeur est celle du lieu.
+ */
+export function niveauxDuPoint(rangsDuPoint: readonly RangAdministratif[], rangsCharges: readonly RangAdministratif[]): RangAdministratif[] {
+  const charges = new Set(rangsCharges);
+  return niveauxDeSelection([], charges.size ? rangsDuPoint.filter((r) => charges.has(r)) : rangsDuPoint);
 }

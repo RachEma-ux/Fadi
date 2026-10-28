@@ -75,7 +75,12 @@ await inscrire(page, gestionnaire);
 for (const role of ["gestionnaire-donnees", "responsable-publication"]) npmApi("geodata:role", ["--email", gestionnaire, "--role", role]);
 const sortieImport = npmApi("geodata:import-reference", ["--fiche", "apps/api/test-corpus/geodata/synthetique-unites.fiche.json", "--fichier", "apps/api/test-corpus/geodata/synthetique-unites.geojson", "--preparateur", gestionnaire, "--publier-par", gestionnaire].map((a) => (a.startsWith("apps/") ? join(RACINE, a) : a)));
 check("chaîne administrative : jeu synthétique préparé puis publié (ou déjà présent, même empreinte)", /Version (\S+ )?publiée|Version déjà présente/.test(sortieImport), sortieImport.split("\n").filter((l) => /Version/.test(l)).join(" | "));
-// Navigation par niveaux (lot B) : deux régions et trois provinces synthétiques, codes au format du HCP.
+// Découpage synthétique en données (D-GD-35) : niveaux et liens parent → enfant importés en base par la commande d'import
+// unique ; relancée, elle ne fait rien (aucun doublon).
+const sortieDecoupage = npmApi("geodata:import-decoupage", ["--dossier", join(RACINE, "apps/api/test-corpus/geodata")]);
+check("découpage : import unique des niveaux et des entités synthétiques (ou déjà importé)", /Découpage ZZ (importé|déjà importé)/.test(sortieDecoupage), sortieDecoupage.split("\n").filter((l) => /Découpage/.test(l)).join(" | "));
+check("découpage : relancé sur le même fichier, rien n'est fait", /Découpage ZZ déjà importé/.test(npmApi("geodata:import-decoupage", ["--dossier", join(RACINE, "apps/api/test-corpus/geodata")])));
+// Navigation par niveaux (lot B) : deux régions et trois provinces synthétiques, parenté lue dans le découpage en base.
 for (const n of ["regions", "provinces"]) {
   const sortie = npmApi("geodata:import-reference", ["--fiche", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.fiche.json`), "--fichier", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.geojson`), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
   check(`chaîne administrative : ${n === "regions" ? "régions" : "provinces"} synthétiques publiées`, /Version (\S+ )?publiée|Version déjà présente/.test(sortie));

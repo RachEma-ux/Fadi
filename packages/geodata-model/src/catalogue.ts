@@ -56,12 +56,17 @@ export function validerLibelleCategorie(x: unknown, existants: readonly string[]
 /** Une couche raster relève de l'imagerie ; points, lignes et polygones des vecteurs. */
 export const typeCatalogue = (typeGeometrie: string): TypeCatalogue => (typeGeometrie === "raster" ? "imagerie" : "vecteurs");
 
-export interface CoucheRangeable { readonly id: string; readonly titre: string; readonly typeGeometrie: string; readonly version: { readonly source: { readonly id?: string; readonly theme: string } } }
+export interface CoucheRangeable {
+  readonly id: string; readonly titre: string; readonly typeGeometrie: string; readonly version: { readonly source: { readonly id?: string; readonly theme: string } };
+  /** Niveau administratif lu dans la table des niveaux en base (D-GD-35) : les couches de limites suivent l'ordre des niveaux. */
+  readonly niveauAdministratif?: { readonly rang: number } | null;
+}
 
 export interface GroupeCatalogue<T> { readonly categorie: CategorieCatalogue; readonly couches: readonly T[]; readonly actives: number }
 
 /**
- * Regroupe les couches d'un type (vecteurs ou imagerie) par catégorie, dans l'ordre des catégories, couches triées par
+ * Regroupe les couches d'un type (vecteurs ou imagerie) par catégorie, dans l'ordre des catégories ; les couches d'un
+ * niveau administratif d'abord, dans l'ordre de la table des niveaux (du plus global au plus fin), puis les autres par
  * titre ; `actives` compte celles déjà présentes sur la carte. Les catégories vides ne sont pas rendues.
  */
 export function regrouperCatalogue<T extends CoucheRangeable>(couches: readonly T[], type: TypeCatalogue, actives: ReadonlySet<string>, r: RangementCatalogue = RANGEMENT_PAR_DEFAUT): GroupeCatalogue<T>[] {
@@ -74,7 +79,8 @@ export function regrouperCatalogue<T extends CoucheRangeable>(couches: readonly 
   return [...r.categories, CATEGORIE_AUTRES]
     .filter((cat) => groupes.has(cat.cle))
     .map((cat) => {
-      const cs = groupes.get(cat.cle)!.sort((a, b) => a.titre.localeCompare(b.titre, "fr"));
+      const rang = (c: T) => c.niveauAdministratif?.rang ?? Number.POSITIVE_INFINITY;
+      const cs = groupes.get(cat.cle)!.sort((a, b) => rang(a) - rang(b) || a.titre.localeCompare(b.titre, "fr"));
       return { categorie: cat, couches: cs, actives: cs.filter((c) => actives.has(c.id)).length };
     });
 }

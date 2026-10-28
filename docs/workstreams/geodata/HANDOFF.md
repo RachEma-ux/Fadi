@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-27 (UTC).
+Mis à jour : 2026-10-28 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,7 +15,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
-- Niveaux infra-communaux (D-GD-35) : **préparation poussée** sur `claude/maroc-infra-communal-levels-5abxes` (base : #356) ; implémentation à reprendre quand la CI de #356 est verte — plan et point à arbitrer (Casablanca : 5 niveaux selon le fichier HCP) dans `DECOUPAGE-INFRA-COMMUNAL.md`. Règle : l'import du découpage HCP est **unique**, lancé une fois sur le VPS (jamais au démarrage de l'API).
+- Niveaux infra-communaux (D-GD-35) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
+  après #356). Après fusion et déploiement : lancer **une fois** sur le VPS
+  `node apps/api/dist/geodata-reference.js --decoupage MA` (jamais au démarrage ; relancé, il ne fait rien). À arbitrer :
+  Casablanca compte 5 niveaux selon le fichier HCP (la demande en comptait 4). Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
 - PR #307 fusionnée (outils d'exploitation dans l'image, dossier `RELEASE-V1.md`).
 - Préproduction : rôles et geoBoundaries ADM1/ADM2 importés le 25 octobre 2026 ; recette d'usage constatée par le maître
   d'ouvrage (carte, fiche, recherche, enregistrement, export).

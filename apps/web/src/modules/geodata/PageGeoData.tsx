@@ -12,8 +12,8 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
+import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { sansColorationThematique, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
@@ -113,6 +113,22 @@ export function PageGeoData() {
   const [paysListe, setPaysListe] = useState<PaysTerritorial[] | null>(null);
   const [erreurTerritoires, setErreurTerritoires] = useState<string | null>(null);
   const [paysCourant, setPaysCourant] = useState<string | null>(null);
+  // Découpage administratif du pays courant (D-GD-35) : niveaux et liens parent → enfant lus en base, jamais dans le code.
+  const [decoupageRecu, setDecoupageRecu] = useState<DecoupageRecu | null>(null);
+  useEffect(() => {
+    if (!paysCourant) return;
+    let vivant = true;
+    api.decoupage(paysCourant).then((d) => { if (vivant) setDecoupageRecu(d); }).catch(() => { if (vivant) setDecoupageRecu(null); });
+    return () => { vivant = false; };
+  }, [paysCourant]);
+  const decoupage = useMemo(() => {
+    const niveaux = decoupageRecu?.niveaux ?? [];
+    const rangDuNiveau = new Map(niveaux.map((n) => [n.code, n.rang]));
+    const entites = decoupageRecu?.entites ?? [];
+    const enfants = new Map<string, string[]>();
+    for (const e of entites) if (e.parent) (enfants.get(e.parent) ?? enfants.set(e.parent, []).get(e.parent)!).push(e.code);
+    return { niveaux, parents: new Map(entites.map((e) => [e.code, e.parent])) as Parents, rang: new Map(entites.map((e) => [e.code, rangDuNiveau.get(e.niveau) ?? 0])), enfants };
+  }, [decoupageRecu]);
   const [contourTerritoire, setContourTerritoire] = useState<{ contour: unknown; attribution: string } | null>(null);
   const [unitesNiveaux, setUnitesNiveaux] = useState<Map<string, { code: string; nom: string | null }[]>>(new Map());
   const [pleinEcran, setPleinEcran] = useState(false);
@@ -212,8 +228,8 @@ export function PageGeoData() {
   const attributions = useMemo(() => [...new Set([...compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution), contourTerritoire?.attribution].filter((x): x is string => !!x))], [compositionAffichee, couchesConnues, contourTerritoire]);
   // Couches raster (D-GD-13) connues ; référence lue par le moteur (créé une fois) au moment d'un clic.
   const rasters = useMemo(() => new Set([...couchesConnues.values()].filter((c) => c.typeGeometrie === "raster").map((c) => c.id)), [couchesConnues]);
-  // Rang administratif des couches de limites (D-GD-16), lu de leur niveau ou du niveau OpenStreetMap de leur titre.
-  const rangs = useMemo(() => new Map([...couchesConnues.values()].flatMap((c) => { const r = rangAdministratif(c); return r ? [[c.id, r] as const] : []; })), [couchesConnues]);
+  // Rang administratif des couches de limites (D-GD-16, D-GD-35) : celui de leur niveau dans la table des niveaux en base.
+  const rangs = useMemo(() => new Map([...couchesConnues.values()].flatMap((c) => (c.niveauAdministratif ? [[c.id, c.niveauAdministratif.rang] as const] : []))), [couchesConnues]);
   // Codes et noms des couches de limites de la composition (lus une fois par couche ; contenu d'une version figé).
   useEffect(() => {
     for (const k of composition.couches) {
@@ -259,14 +275,14 @@ export function PageGeoData() {
     const versions = new Set(paysListe?.find((x) => x.code === paysCourant)?.versions ?? []);
     return couchesNiveau.filter((c) => versions.has(couchesConnues.get(c.coucheId)?.version.id ?? ""));
   }, [chemin, couchesNiveau, paysListe, paysCourant, couchesConnues]);
-  const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin)), [filtres, chemin, couchesDuChemin]);
+  const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin, decoupage.parents)), [filtres, chemin, couchesDuChemin, decoupage]);
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
   rastersCourants.current = { rasters, couches: couchesConnues };
   /**
-   * Sélection par nombre de clics (D-GD-34) : 1 clic → le niveau le plus élémentaire, chaque clic rapide suivant → le
-   * niveau au-dessus. Couches de limites visibles : seuls leurs niveaux comptent, l'entité du premier clic est celle
-   * touchée dans la couche du plus petit niveau, ses parents viennent de la hiérarchie des codes HCP lue en base
-   * (`ancetres`), jamais d'un test géométrique. Carte vierge (aucune couche de limites) : les unités du découpage en base
+   * Sélection par nombre de clics (D-GD-34, D-GD-35) : 1 clic → le niveau le plus élémentaire de l'endroit, chaque clic
+   * rapide suivant → le niveau au-dessus, en suivant les niveaux réels du lieu (liens parent → enfant en base : leur
+   * nombre varie d'un endroit à l'autre). Couches de limites visibles : seuls leurs niveaux comptent, l'entité du premier
+   * clic est la plus fine touchée, ses parents viennent des liens en base (`ancetres`), jamais d'un test géométrique. Carte vierge (aucune couche de limites) : les unités du découpage en base
    * qui contiennent le point, affichées seules (contour et mise en évidence), sans ajouter de couche. Un clic hors de
    * toute entité efface la sélection. Les clics d'un outil actif ne passent jamais ici (moteur).
    */
@@ -293,7 +309,7 @@ export function PageGeoData() {
     const composition = compositionCourante.current;
     const { rasters: rs, couches } = rastersCourants.current;
     const visibles = composition.couches.filter((k) => k.visible);
-    const admin = visibles.flatMap((k) => { const r = rangsConnus.get(k.coucheId); return r && r <= 3 ? [{ k, rang: r }] : []; });
+    const admin = visibles.flatMap((k) => { const r = rangsConnus.get(k.coucheId); return r ? [{ k, rang: r }] : []; });
     if (nbClics > 1) {
       // Clic suivant d'une série : le niveau au-dessus, dès que ses parents sont connus (sinon à leur arrivée).
       const s = serie.current;
@@ -308,10 +324,13 @@ export function PageGeoData() {
     if (autre) { serie.current = null; setEntite(null); setEntiteContour(null); setSelection(autre); void ouvrirFiche(autre.coucheId, autre.code); return; }
     const jeton = ++jetons.current;
     if (admin.length) {
-      const niveaux = niveauxDeSelection(admin.map((a) => a.rang), []);
-      const rang0 = niveaux[0]!;
-      const o = objets.find((x) => admin.some((a) => a.rang === rang0 && a.k.coucheId === x.coucheId));
-      if (!o) { effacerSelection(); return; }
+      // Entité la plus fine touchée parmi les couches chargées (un arrondissement s'il y en a un à cet endroit, sinon la commune…).
+      const touches = objets.flatMap((x) => { const a = admin.find((y) => y.k.coucheId === x.coucheId); return a ? [{ o: x, rang: a.rang }] : []; }).sort((a, b) => b.rang - a.rang);
+      if (!touches.length) { effacerSelection(); return; }
+      const { o, rang: rang0 } = touches[0]!;
+      const charges = admin.map((a) => a.rang);
+      // Niveaux provisoires (ceux chargés, à partir de l'entité touchée), précisés par ses ancêtres en base dès leur arrivée.
+      const niveaux = niveauxDeSelection(charges.filter((r) => r <= rang0), []);
       const s: SerieSelection = { niveaux, unites: new Map([[rang0, { code: o.code, nom: "", coucheId: o.coucheId, pays: null, enCouche: true }]]), attendu: 1, jeton };
       serie.current = s;
       appliquerNiveau(s, rang0);
@@ -325,7 +344,8 @@ export function PageGeoData() {
           const couche = admin.find((x) => x.rang === a.rang);
           if (couche) s.unites.set(a.rang, { code: a.code, nom: a.nom, coucheId: couche.k.coucheId, pays: null, enCouche: true });
         }
-        const rang = rangPourClics(niveaux, s.attendu);
+        s.niveaux = niveauxDuPoint([rang0, ...u.ancetres.map((a) => a.rang)], charges);
+        const rang = rangPourClics(s.niveaux, s.attendu);
         if (s.attendu > 1 && rang && rang !== rang0) appliquerNiveau(s, rang);
       }).catch(() => undefined);
       return;
@@ -334,15 +354,16 @@ export function PageGeoData() {
     const haut = [...composition.couches].reverse().find((k) => k.visible && rs.has(k.coucheId));
     if (haut) { effacerSelection(); void ouvrirValeur(haut.coucheId, couches.get(haut.coucheId)?.titre ?? haut.coucheId, p); return; }
     // Carte vierge : les unités du pays courant (barre territoriale) qui contiennent le point ; hors du pays, aucune sélection.
-    const niveauxBase = (pays ?? []).filter((x) => x.code === paysClic).flatMap((x) => x.niveaux.map((n) => n.rang as RangAdministratif));
+    const niveauxBase = (pays ?? []).filter((x) => x.code === paysClic).flatMap((x) => x.niveaux.map((n) => n.rang));
     if (!paysClic || !niveauxDeSelection([], niveauxBase).length) { effacerSelection(); return; }
     const s: SerieSelection = { niveaux: [], unites: new Map(), attendu: 1, jeton };
     serie.current = s;
     api.unitesAuPoint(paysClic, p.lon, p.lat).then((r) => {
       if (serie.current !== s) return;
-      const us = r.unites.filter((u) => u.rang <= 3);
+      // Niveaux réels de l'endroit (D-GD-35) : toutes les unités en base qui contiennent le point, de la plus fine à la plus globale.
+      const us = r.unites;
       if (!us.length) { effacerSelection(); return; }
-      s.niveaux = niveauxDeSelection([], us.map((u) => u.rang as RangAdministratif));
+      s.niveaux = niveauxDuPoint(us.map((u) => u.rang), []);
       for (const u of us) if (!s.unites.has(u.rang)) s.unites.set(u.rang, { code: u.code, nom: u.nom, coucheId: u.coucheId, pays: u.pays, enCouche: false });
       const rang = rangPourClics(s.niveaux, s.attendu);
       if (rang) appliquerNiveau(s, rang);
@@ -463,7 +484,7 @@ export function PageGeoData() {
       // Depuis une fiche, l'unité est retrouvée par la version de sa couche : son pays peut différer du pays affiché.
       const u = versionId ? await api.uniteTerritorialeDeVersion(versionId, code, rang) : await api.uniteTerritoriale(paysCourant!, code, rang);
       if (u.pays !== paysCourant) { setPaysCourant(u.pays); ecrireLocal("geodata.pays", u.pays); }
-      setChemin([...u.ancetres, u].map((e) => ({ coucheId: "", rang: e.rang as RangAdministratif, code: e.code, nom: e.nom })));
+      setChemin([...u.ancetres, u].map((e) => ({ coucheId: "", rang: e.rang, code: e.code, nom: e.nom })));
       setContourTerritoire({ contour: u.contour, attribution: u.attribution });
       moteur.current?.allerA({ emprise: u.emprise as [number, number, number, number] });
       setAnnonce(`Niveau : ${u.nom}`);
@@ -504,8 +525,8 @@ export function PageGeoData() {
     }
   }
   /** Choix dans la barre : `index` = niveau (0 = premier) ; code null = revenir au niveau au-dessus de ce rang. */
-  function choisirTerritoire(index: number, code: string | null) {
-    if (code) { void allerUnite(code, paysListe?.find((x) => x.code === paysCourant)?.niveaux[index]?.rang); return; }
+  function choisirTerritoire(index: number, code: string | null, rang?: number) {
+    if (code) { void allerUnite(code, rang); return; }
     void remonterA(index);
   }
   function changerPays(code: string) {
@@ -514,50 +535,54 @@ export function PageGeoData() {
     setChemin([]);
     setContourTerritoire(null);
   }
-  // Producteur des valeurs (avant « ; contours : … ») : les couches HCP d'un niveau à l'autre ont des contours différents.
-  const producteurPrincipal = (c: CoucheRecue) => c.version.source.producteur.split(";")[0]!.trim();
-  /** Couche du rang inférieur : dans la composition, sinon au catalogue, du même producteur (ajoutée alors à la carte). */
-  function coucheEnfant(f: FicheRecue, rang: RangAdministratif): { id: string; aAjouter: CoucheRecue | null } | null {
-    // Couche de la carte au rang inférieur, du même producteur des valeurs (une couche geoBoundaries n'est pas la suite
-    // d'une couche du HCP : ses codes ne sont pas ceux du HCP).
-    const dans = composition.couches.find((k) => { const c = couchesConnues.get(k.coucheId); return rangs.get(k.coucheId) === rang + 1 && !!c && producteurPrincipal(c) === producteurPrincipal(f.couche); });
+  /** Rang (en base) des enfants directs d'une entité dans le découpage ; null si elle n'en a pas. */
+  const rangEnfants = (code: string): RangAdministratif | null => {
+    const rs = (decoupage.enfants.get(code) ?? []).map((c) => decoupage.rang.get(c) ?? 0).filter((r) => r > 0);
+    return rs.length ? Math.min(...rs) : null;
+  };
+  const paysDe = (c: CoucheRecue) => c.niveauAdministratif?.pays ?? null;
+  /** Couche du niveau des enfants (rang lu en base) : dans la composition, sinon au catalogue (ajoutée alors à la carte). */
+  function coucheEnfant(f: FicheRecue): { id: string; aAjouter: CoucheRecue | null } | null {
+    const r = rangEnfants(f.code);
+    if (r === null) return null;
+    const dans = composition.couches.find((k) => { const c = couchesConnues.get(k.coucheId); return rangs.get(k.coucheId) === r && !!c && paysDe(c) === paysDe(f.couche); });
     if (dans) return { id: dans.coucheId, aAjouter: null };
-    const c = catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === rang + 1 && producteurPrincipal(x) === producteurPrincipal(f.couche));
+    const c = catalogue?.find((x) => x.typeGeometrie !== "raster" && x.niveauAdministratif?.rang === r && paysDe(x) === paysDe(f.couche));
     return c ? { id: c.id, aAjouter: c } : null;
   }
-  /** Couche des arrondissements du même producteur (fiche d'une commune : chiffres de ses arrondissements). */
-  const coucheArrondissementsDe = (f: FicheRecue) => catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === 4 && producteurPrincipal(x) === producteurPrincipal(f.couche)) ?? null;
-  const rangDe = (f: FicheRecue | null) => (f ? rangs.get(f.couche.id) ?? rangAdministratif(f.couche) : null);
-  /** Nom (pluriel) du niveau sous celui de l'entité, lu dans le découpage en base du pays dont la version fait partie — jamais dans le code. */
-  const nomNiveauEnfant = (f: FicheRecue, rang: RangAdministratif): string | null => {
-    const pays = paysListe?.find((x) => x.versions.includes(f.couche.version.id)) ?? paysListe?.find((x) => x.code === paysCourant);
-    const n = pays?.niveaux.find((x) => x.rang === rang + 1)?.pluriel;
+  /** Subdivisions d'une entité pour sa fiche : couche du niveau de ses enfants, nom du niveau et propriété du parent. */
+  const subdivisionsDe = (f: FicheRecue) => {
+    const r = rangEnfants(f.code);
+    const n = decoupage.niveaux.find((x) => x.rang === r);
+    const parent = f.couche.niveauAdministratif;
+    const c = r === null ? null : catalogue?.find((x) => x.typeGeometrie !== "raster" && x.niveauAdministratif?.rang === r && paysDe(x) === paysDe(f.couche));
+    return c && n && parent ? { couche: c, niveau: n.pluriel, propriete: parent.code, codes: decoupage.enfants.get(f.code) ?? [] } : null;
+  };
+  const rangDe = (f: FicheRecue | null) => (f ? rangs.get(f.couche.id) ?? f.couche.niveauAdministratif?.rang ?? null : null);
+  /** Nom (pluriel) du niveau des enfants de l'entité, lu dans le découpage en base — jamais dans le code. */
+  const nomNiveauEnfant = (f: FicheRecue): string | null => {
+    const n = decoupage.niveaux.find((x) => x.rang === rangEnfants(f.code))?.pluriel;
     return n ? n.charAt(0).toLowerCase() + n.slice(1) : null;
   };
   const descentePossible = (f: FicheRecue | null): RangAdministratif | null => {
     const r = rangDe(f);
-    return f && r && r < 4 && estCodeHcp(f.code) && coucheEnfant(f, r) ? r : null;
+    return f && r && rangEnfants(f.code) !== null && coucheEnfant(f) ? r : null;
   };
-  /** Chemin complet jusqu'à une entité : ses ancêtres sont retrouvés par les codes HCP des couches de la carte. */
+  /** Chemin complet jusqu'à une entité : ses ancêtres viennent des liens en base, rangés dans les couches de la carte. */
   function cheminVers(e: EtapeNiveau): EtapeNiveau[] {
     const etapes = [e];
-    let courant = e;
-    while (courant.rang > 1) {
-      const rang = (courant.rang - 1) as RangAdministratif;
+    for (const code of ancetresDe(e.code, decoupage.parents)) {
+      const rang = decoupage.rang.get(code);
       const couche = couchesNiveau.find((c) => c.rang === rang);
-      if (!couche) break;
-      const p = parentHcp(courant.code, courant.rang, new Set(couche.codes));
-      if (!p) break;
-      const nom = unitesNiveaux.get(couche.coucheId)?.find((u) => u.code === p)?.nom ?? p;
-      courant = { coucheId: couche.coucheId, rang, code: p, nom };
-      etapes.unshift(courant);
+      if (!couche || !rang) continue;
+      etapes.unshift({ coucheId: couche.coucheId, rang, code, nom: unitesNiveaux.get(couche.coucheId)?.find((u) => u.code === code)?.nom ?? code });
     }
     return etapes;
   }
   function descendre(f: FicheRecue) {
     const r = descentePossible(f);
     if (!r) return;
-    const enfant = coucheEnfant(f, r)!;
+    const enfant = coucheEnfant(f)!;
     if (enfant.aAjouter) { const c = enfant.aAjouter; connaitre([c]); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); }
     if (!composition.couches.some((k) => k.coucheId === f.couche.id)) setComposition((x) => ajouterCouche(x, f.couche.id, f.couche.version.id, f.couche.styleDefaut));
     // L'entité est cherchée dans le découpage en base (barre territoriale) ; à défaut, le chemin se lit des couches.
@@ -769,7 +794,7 @@ export function PageGeoData() {
             <button type="button" className="gd-replier" onClick={() => setPanneauOuvert(false)} data-gd-fermer-panneau>Fermer</button>
           </div>
           <div id="gd-panneau-contenu" role="tabpanel" aria-labelledby={`gd-onglet-${onglet}`} className="gd-contenu">
-              {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} indicateurs={{ liste: indicateursCatalogue, actif: indicateurActif, onChoix: choisirIndicateur }} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
+              {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} indicateurs={{ liste: indicateursCatalogue, actif: indicateurActif, onChoix: choisirIndicateur }} niveaux={decoupage.niveaux} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
               {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))}
@@ -798,7 +823,7 @@ export function PageGeoData() {
           <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
             <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
-            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche, r); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "fiche" && <FicheObjet subdivisions={fiche ? subdivisionsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}

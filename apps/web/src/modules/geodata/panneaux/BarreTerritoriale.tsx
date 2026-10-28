@@ -3,6 +3,9 @@
  * alimentée par le découpage territorial **en base** (`/territoires`), jamais par les couches affichées ni par un pays
  * écrit dans le code. Les noms de pays, de niveaux et d'unités sont des données (affichés tels quels, `translate="no"`).
  * Chaque niveau est une liste ; choisir une unité cadre la carte et trace son contour ; « Retour » (Alt+↑) remonte.
+ * La profondeur suit le lien parent → enfant en base (D-GD-35) : la liste qui suit une unité est celle de ses enfants,
+ * nommée par leur niveau réel (des arrondissements peuvent suivre directement une commune), et s'arrête là où l'unité
+ * choisie n'a plus d'enfant.
  */
 import { useEffect, useState } from "react";
 import type { PaysTerritorial, UniteTerritoriale } from "@parcours/geodata-model";
@@ -15,7 +18,7 @@ export interface EtapeTerritoriale { readonly code: string; readonly nom: string
 
 export function BarreTerritoriale(p: {
   pays: readonly PaysTerritorial[] | null; erreur: string | null; paysCourant: string | null; chemin: readonly EtapeTerritoriale[];
-  onPays(code: string): void; onChoisir(index: number, code: string | null): void; onRetour(): void;
+  onPays(code: string): void; onChoisir(index: number, code: string | null, rang?: number): void; onRetour(): void;
 }) {
   const pays = p.pays?.find((x) => x.code === p.paysCourant) ?? null;
   // Listes des niveaux, par parent (null = premier niveau), lues en base au besoin et gardées le temps de la page.
@@ -23,7 +26,7 @@ export function BarreTerritoriale(p: {
   const [listes, setListes] = useState<Map<string, UniteTerritoriale[] | "erreur" | "chargement">>(new Map());
   const cle = (parent: string | null) => `${p.paysCourant}|${parent ?? ""}`;
   // Parent de chaque liste affichée : premier niveau (null), puis chaque unité choisie, jusqu'au niveau le plus fin.
-  const parents: (string | null)[] = pays ? pays.niveaux.slice(0, p.chemin.length + 1).map((_, i) => (i === 0 ? null : p.chemin[i - 1]!.code)) : [];
+  const parents: (string | null)[] = pays ? Array.from({ length: p.chemin.length + 1 }, (_, i) => (i === 0 ? null : p.chemin[i - 1]!.code)) : [];
   useEffect(() => {
     if (!p.paysCourant) return;
     for (const parent of parents) {
@@ -54,18 +57,21 @@ export function BarreTerritoriale(p: {
                 : n === 0 ? <span aria-current="location" translate="no" data-gd-pays-nom>{pays.nom}</span>
                 : <button type="button" onClick={() => p.onChoisir(0, null)} translate="no" data-gd-pays-nom>{pays.nom}</button>}
             </li>
-            {pays.niveaux.map((niveau, i) => {
-              if (i > n) return null;
-              const parent = i === 0 ? null : p.chemin[i - 1]!.code;
+            {parents.map((parent, i) => {
               const liste = listes.get(cle(parent));
+              // Dernière unité choisie sans enfant : la barre s'arrête là.
+              if (i === n && i > 0 && Array.isArray(liste) && liste.length === 0) return null;
               const choisi = p.chemin[i]?.code ?? "";
+              const rang = p.chemin[i]?.rang ?? (Array.isArray(liste) ? liste[0]?.rang : undefined) ?? (i === 0 ? pays.niveaux[0]?.rang : undefined);
+              const niveau = pays.niveaux.find((x) => x.rang === rang);
+              const id = `gd-niveau-${i}`;
               return (
-                <li key={niveau.rang}>
+                <li key={`${i}-${parent ?? ""}`}>
                   <span aria-hidden="true" className="gd-niveaux-sep">›</span>
                   {/* Nom du niveau : donnée du découpage en base (jamais traduite), nom accessible de la liste. */}
-                  <span id={`gd-niveau-${niveau.rang}`} className="sr-only" translate="no">{niveau.singulier}</span>
-                  <select aria-labelledby={`gd-niveau-${niveau.rang}`} value={choisi} onChange={(e) => p.onChoisir(i, e.target.value || null)} disabled={!choisi && !(Array.isArray(liste) && liste.length > 0)} data-gd-niveau-select={niveau.rang} data-gd-niveau-etat={Array.isArray(liste) ? "recu" : liste ?? "chargement"} translate="no">
-                    <option value="">{`${niveau.pluriel} (${Array.isArray(liste) ? liste.length : "…"})`}</option>
+                  <span id={id} className="sr-only" translate="no">{niveau?.singulier ?? "…"}</span>
+                  <select aria-labelledby={id} value={choisi} onChange={(e) => p.onChoisir(i, e.target.value || null, Array.isArray(liste) ? liste.find((u) => u.code === e.target.value)?.rang : undefined)} disabled={!choisi && !(Array.isArray(liste) && liste.length > 0)} data-gd-niveau-select={rang ?? ""} data-gd-niveau-etat={Array.isArray(liste) ? "recu" : liste ?? "chargement"} translate="no">
+                    <option value="">{`${niveau?.pluriel ?? "…"} (${Array.isArray(liste) ? liste.length : "…"})`}</option>
                     {Array.isArray(liste) && liste.map((u) => <option key={u.code} value={u.code}>{u.nom}</option>)}
                     {choisi && Array.isArray(liste) && !liste.some((u) => u.code === choisi) && <option value={choisi}>{p.chemin[i]!.nom}</option>}
                   </select>

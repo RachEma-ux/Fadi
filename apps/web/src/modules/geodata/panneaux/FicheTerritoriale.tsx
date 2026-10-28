@@ -1,11 +1,12 @@
 /**
  * Fiche territoriale (lot E, D-GD-22) : la fiche d'une entité, comme celle des cartes du HCP — indicateurs par thème,
- * familles déclinées présentées en tableaux de ventilation (modalité × milieu × sexe), arrondissements d'une commune
- * (leurs chiffres dans la fiche), douars d'une commune rurale (noms publiés en arabe, D-GD-21), impression.
+ * familles déclinées présentées en tableaux de ventilation (modalité × milieu × sexe), subdivisions de l'entité (ses
+ * enfants dans le découpage en base, D-GD-35 : arrondissements d'une commune, préfectures d'arrondissements… avec
+ * leurs chiffres), douars d'une commune rurale (noms publiés en arabe, D-GD-21), impression.
  * Les noms et valeurs des sources sont des données (`translate="no"`) ; une valeur absente n'est jamais zéro.
  */
 import { useEffect, useState } from "react";
-import { grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, parentHcp, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
+import { grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
 import { api, type CoucheRecue, type DouarRecu, type FicheRecue, type LigneTable } from "../client";
 import { formaterValeur } from "./consultation";
 
@@ -90,30 +91,35 @@ function Famille({ f }: { f: FamilleIndicateurs<IndicateurFiche> }) {
   );
 }
 
-/** Arrondissements d'une commune : leurs chiffres principaux, lus dans la couche des arrondissements (codes du HCP). */
-function Arrondissements({ commune, couche, onFiche }: { commune: string; couche: CoucheRecue; onFiche(coucheId: string, code: string): void }) {
+/** Subdivisions d'une entité (enfants dans le découpage en base, D-GD-35) : leurs chiffres principaux, lus dans la couche de leur niveau. */
+export interface Subdivisions { readonly couche: CoucheRecue; readonly niveau: string; readonly propriete: string; readonly codes: readonly string[] }
+function SubdivisionsDe({ parent, s, onFiche }: { parent: string; s: Subdivisions; onFiche(coucheId: string, code: string): void }) {
+  const { couche } = s;
   const [lignes, setLignes] = useState<LigneTable[] | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const codes = s.codes.join(",");
   useEffect(() => {
     let vivant = true;
-    api.table(couche.id, { page: 1, taille: 50, tri: "nom", ordre: "asc", propriete: "code", operateur: "contient", valeur: commune.slice(0, 6) })
-      .then((r) => vivant && setLignes(r.lignes.filter((l) => parentHcp(l.code, 4, new Set([commune])) === commune)))
-      .catch((e: Error) => vivant && setErreur(e.message));
+    const enfants = new Set(codes.split(","));
+    // La couche porte, pour chaque entité, le code de chacun de ses ancêtres (propriété nommée par le niveau, en base).
+    api.table(couche.id, { page: 1, taille: 200, tri: "nom", ordre: "asc", propriete: s.propriete, operateur: "egal", valeur: parent })
+      .then((r) => { if (vivant) setLignes(r.lignes.filter((l) => enfants.has(l.code))); })
+      .catch((e: Error) => { if (vivant) setErreur(e.message); });
     return () => { vivant = false; };
-  }, [commune, couche.id]);
+  }, [parent, couche.id, s.propriete, codes]);
   const pop = couche.indicateurs.find((i) => i.famille === "Population légale" && (i.milieu ?? "ensemble") === "ensemble" && (i.sexe ?? "ensemble") === "ensemble");
   const men = couche.indicateurs.find((i) => i.famille === "Ménages" && (i.milieu ?? "ensemble") === "ensemble" && !i.modalite);
   if (erreur) return <p role="alert" className="gd-alerte">{erreur}</p>;
-  if (!lignes) return <p role="status" className="gd-discret">Chargement des arrondissements…</p>;
+  if (!lignes) return <p role="status" className="gd-discret">Chargement des subdivisions…</p>;
   if (!lignes.length) return null;
   return (
-    <details className="gd-theme" open data-gd-arrondissements={lignes.length}>
-      <summary>{`Arrondissements (${lignes.length})`}</summary>
+    <details className="gd-theme" open data-gd-subdivisions={lignes.length}>
+      <summary><span translate="no">{s.niveau}</span>{` (${lignes.length})`}</summary>
       <table className="gd-ventilation">
-        <thead><tr><th scope="col">Arrondissement</th>{pop && <th scope="col">{`Population légale (${pop.unite})`}</th>}{men && <th scope="col">{`Ménages (${men.unite})`}</th>}<th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+        <thead><tr><th scope="col" translate="no">{s.niveau}</th>{pop && <th scope="col">{`Population légale (${pop.unite})`}</th>}{men && <th scope="col">{`Ménages (${men.unite})`}</th>}<th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
         <tbody>
           {lignes.map((l) => (
-            <tr key={l.code} data-gd-arrondissement={l.code}>
+            <tr key={l.code} data-gd-subdivision={l.code}>
               <th scope="row" translate="no">{l.nom ?? l.code}</th>
               {pop && <td>{formaterValeur(l.valeurs[pop.id])}</td>}
               {men && <td>{formaterValeur(l.valeurs[men.id])}</td>}
@@ -168,8 +174,8 @@ function Douars({ douars }: { douars: DouarRecu[] }) {
 export function FicheObjet(p: {
   fiche: FicheRecue | null; chargement: boolean; erreur: string | null; onFermer(): void; onCentrer(f: FicheRecue): void;
   descendre?: { libelle: string; onDescendre(): void } | null;
-  /** Couche des arrondissements (même producteur), pour la fiche d'une commune. */
-  coucheArrondissements?: CoucheRecue | null;
+  /** Subdivisions de l'entité (enfants dans le découpage en base) et couche de leur niveau. */
+  subdivisions?: Subdivisions | null;
   onFiche?(coucheId: string, code: string): void;
 }) {
   if (p.chargement) return <p role="status" className="gd-etat">Chargement de la fiche…</p>;
@@ -207,7 +213,7 @@ export function FicheObjet(p: {
             <dl className="gd-valeurs">{familles.filter((x) => x.theme === t).map((x) => <Famille key={`${x.theme}|${x.famille}`} f={x} />)}</dl>
           </details>
         ))}
-      {p.coucheArrondissements && p.onFiche && <Arrondissements commune={f.code} couche={p.coucheArrondissements} onFiche={p.onFiche} />}
+      {p.subdivisions && p.onFiche && <SubdivisionsDe parent={f.code} s={p.subdivisions} onFiche={p.onFiche} />}
       {f.douars && f.douars.length > 0 && <Douars douars={f.douars} />}
       <h4>Attributs</h4>
       <dl className="gd-valeurs">{Object.entries(f.proprietes).map(([k, v]) => <div key={k}><dt translate="no">{k}</dt><dd translate="no">{v === null || v === "" ? "—" : String(v)}</dd></div>)}</dl>
