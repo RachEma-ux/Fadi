@@ -540,6 +540,12 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ deja: true });
     const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
     expect(rows).toEqual([{ code: "1001", parent_code: "1" }, { code: "2001", parent_code: "2" }]);
+    // Nouvel import du découpage sans nouvelle version de la couche : 2001 retirée, 2002 nouvelle (sans contour) —
+    // le rechargement rapproche les unités du découpage en base (2001 ne reste pas servie).
+    await importerZZ([["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2002", "province", "2"]]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 1 });
+    expect((await pool.query("SELECT code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2")).rows).toEqual([{ code: "1001" }]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: true, unites: 1 });
     // Niveau absent du découpage en base : refus explicite (jamais de niveau deviné).
     await expect(chargerTerritoires(pool, vp, { pays: "ZZ", nomPays: "Pays synthétique", niveau: "inconnu" })).rejects.toThrow(/absent du découpage/);
   });

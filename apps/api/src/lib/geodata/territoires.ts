@@ -73,16 +73,19 @@ export async function chargerTerritoires(ex: Executeur, versionId: string, d: De
     `INSERT INTO geodata_pays (code, nom, niveaux) VALUES ($1, $2, jsonb_build_object($3::text, $4::jsonb))
      ON CONFLICT (code) DO UPDATE SET nom = EXCLUDED.nom, niveaux = geodata_pays.niveaux || EXCLUDED.niveaux, mis_a_jour_le = now()`,
     [d.pays, d.nomPays, String(n.rang), JSON.stringify({ singulier: n.singulier, pluriel: n.pluriel, parent: regle, ...(n.code ? { niveau: n.code } : {}) })], ex);
-  const [deja] = await requete<{ n: number }>("SELECT count(*)::int AS n FROM geodata_territoires WHERE pays = $1 AND rang = $2 AND version_id = $3", [d.pays, n.rang, versionId], ex);
   const libelle = n.code ?? n.pluriel;
-  // Même version déjà chargée et même règle : rien à refaire (les parents suivent quand même les liens en base).
-  if (deja && deja.n > 0 && regleAvant === regle) { await majParents(ex, d.pays, n.rang); return { pays: d.pays, rang: n.rang, unites: deja.n, deja: true, niveau: libelle }; }
-  await requete("DELETE FROM geodata_territoires WHERE pays = $1 AND rang = $2", [d.pays, n.rang], ex);
-  const admis = regle === "decoupage"
-    ? (await requete<{ code: string }>(
+  // Codes admis : pour la règle « decoupage », les entités non retirées de ce niveau **en base maintenant** (un nouvel
+  // import du découpage peut en ajouter, en retirer ou en changer de niveau sans nouvelle version de la couche).
+  const admis = (regle === "decoupage"
+    ? await requete<{ code: string }>(
       `SELECT o.code FROM geodata_objets o JOIN geodata_entites_administratives e ON e.pays = $1 AND e.code = o.code AND e.niveau = $3 AND e.retire_le IS NULL
-        WHERE o.couche_id = $2 AND ST_Dimension(o.geom) = 2`, [d.pays, v.couche_id, n.code], ex)).map((o) => o.code)
-    : (await requete<{ code: string }>("SELECT code FROM geodata_objets WHERE couche_id = $1 AND ST_Dimension(geom) = 2 AND btrim(code) <> ''", [v.couche_id], ex)).map((o) => o.code);
+        WHERE o.couche_id = $2 AND ST_Dimension(o.geom) = 2`, [d.pays, v.couche_id, n.code], ex)
+    : await requete<{ code: string }>("SELECT code FROM geodata_objets WHERE couche_id = $1 AND ST_Dimension(geom) = 2 AND btrim(code) <> ''", [v.couche_id], ex)).map((o) => o.code).sort();
+  const charges = (await requete<{ code: string }>("SELECT code FROM geodata_territoires WHERE pays = $1 AND rang = $2 AND version_id = $3 ORDER BY code", [d.pays, n.rang, versionId], ex)).map((r) => r.code);
+  // Même version, même règle et mêmes unités admises : rien à refaire (les parents suivent quand même les liens en base).
+  const memes = charges.length > 0 && charges.length === admis.length && [...charges].sort().every((c, i) => c === admis[i]);
+  if (memes && regleAvant === regle) { await majParents(ex, d.pays, n.rang); return { pays: d.pays, rang: n.rang, unites: charges.length, deja: true, niveau: libelle }; }
+  await requete("DELETE FROM geodata_territoires WHERE pays = $1 AND rang = $2", [d.pays, n.rang], ex);
   // Un code du découpage est unique dans le pays : une unité qui change de rang (nouveau niveau intercalé) quitte l'ancien.
   if (regle === "decoupage") await requete("DELETE FROM geodata_territoires WHERE pays = $1 AND code = ANY($2::text[])", [d.pays, admis], ex);
   await requete(
