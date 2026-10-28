@@ -14166,5 +14166,7 @@
 "Pays": "Country",
 "Chargement du découpage territorial…": "Loading the territorial divisions…",
 "Aucun découpage territorial en base.": "No territorial divisions in the database.",
-"Découpage territorial indisponible ({0}).": "Territorial divisions unavailable ({0})."
+"Découpage territorial indisponible ({0}).": "Territorial divisions unavailable ({0}).",
+"Recherche sur la carte": "Map search",
+"Rechercher (Alt+R)": "Search (Alt+R)"
 }

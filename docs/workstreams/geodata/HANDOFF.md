@@ -49,6 +49,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   couches chargées ou, carte vierge, découpage du pays courant en base ; double-clic sans zoom.
   Correctifs téléphone du 28 octobre 2026 : fiche différée après la série de tapes (#358, `d921230`) ; fenêtre de la
   série à 600 ms et clic daté à l'événement d'entrée (#359) — vérifié Pixel 7, cadence humaine, couches HCP chargées.
+- Recherche de la carte en mini-barre (D-GD-35) : loupe sous la barre d'outils (Alt+R), barre flottante, même logique ;
+  champ retiré de la barre au-dessus de la carte.
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.

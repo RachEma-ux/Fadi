@@ -19,6 +19,7 @@ import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte }
 import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
+import { BarreRecherche, type PlacementOutils } from "./panneaux/BarreRecherche";
 import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
 import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
@@ -92,6 +93,10 @@ export function PageGeoData() {
   const [recherche, setRecherche] = useState("");
   const [resultats, setResultats] = useState<ResultatRecherche[] | null>(null);
   const [avisRecherche, setAvisRecherche] = useState<string | null>(null);
+  // Recherche de la carte : barre flottante ouverte par la loupe de sa mini-barre (Alt+R) ; le texte saisi est gardé fermé.
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  const [placementOutils, setPlacementOutils] = useState<PlacementOutils | null>(null);
+  const basculerRecherche = (ouverte: boolean) => { setRechercheOuverte(ouverte); if (!ouverte) { setResultats(null); setAvisRecherche(null); } };
   const [annonce, setAnnonce] = useState("");
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [rangement, setRangement] = useState<RangementRecu | null>(null);
@@ -589,6 +594,8 @@ export function PageGeoData() {
     // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).
     if (e.altKey && (e.key === "m" || e.key === "M" || e.code === "KeyM") && !saisie && !erreurCarte) { e.preventDefault(); basculerMiniCarte(); return; }
     if (e.altKey && (e.key === "i" || e.key === "I" || e.code === "KeyI") && !saisie && !erreurCarte) { e.preventDefault(); imprimerCarte(); return; }
+    // Alt+R : barre de recherche de la carte ouverte ou fermée (loupe de la mini-barre) ; aussi depuis son propre champ.
+    if (e.altKey && (e.key === "r" || e.key === "R" || e.code === "KeyR") && (!saisie || !!cible?.closest("[data-gd-recherche-flottante]"))) { e.preventDefault(); basculerRecherche(!rechercheOuverte); return; }
     // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
     if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
@@ -723,18 +730,6 @@ export function PageGeoData() {
     <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")} data-gd-selection={entite ? `${entite.rang}:${entite.code}` : ""}>
       <p className="sr-only" role="status" aria-live="polite">{annonce}</p>
       <header className="gd-barre" aria-label="Barre de GeoData">
-        <form className="gd-recherche" role="search" onSubmit={(e) => { e.preventDefault(); void lancerRecherche(); }}>
-          <label className="sr-only" htmlFor="gd-recherche">Rechercher un territoire</label>
-          <input id="gd-recherche" type="search" placeholder="Commune, région, code, ou lon … lat …" value={recherche} onChange={(e) => setRecherche(e.target.value)} autoComplete="off" data-gd-recherche />
-          <button type="submit">Rechercher</button>
-          {(resultats || avisRecherche) && (
-            <div className="gd-resultats" role="region" aria-label="Résultats de la recherche">
-              {avisRecherche && <p className="gd-discret">{avisRecherche}</p>}
-              <ul>{resultats?.map((r, i) => <li key={i}><button type="button" onClick={() => choisirResultat(r)} data-gd-resultat={r.type === "unite" ? r.code : "coordonnees"}><strong translate="no">{r.libelle}</strong><span className="gd-discret" translate="no">{r.type === "unite" ? `${r.coucheTitre}${r.niveau ? ` · ${r.niveau}` : ""}` : r.provenance}</span></button></li>)}</ul>
-              <button type="button" onClick={() => { setResultats(null); setAvisRecherche(null); }}>Fermer les résultats</button>
-            </div>
-          )}
-        </form>
         <label className="gd-champ gd-fond">Fond
           <select value={composition.fond} onChange={(e) => setComposition((c) => ({ ...c, fond: e.target.value }))} data-gd-fond>
             {(espace ? fondsDisponibles : [fond]).map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
@@ -795,7 +790,10 @@ export function PageGeoData() {
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             etiquettes={composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId)) ? etiquettesToutesAffichees(composition, vectorielles) : null} onEtiquettes={basculerLibelles}
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
-            onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende} />
+            onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende}
+            onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
+          <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
+            resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}

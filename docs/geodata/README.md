@@ -94,6 +94,13 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Recherche de la carte (D-GD-35)
+
+La recherche (nom, code HCP, « lon … lat … ») s'ouvre par la **loupe** de la mini-barre placée sous la barre d'outils
+(Alt+R) : barre flottante à gauche de la loupe, même champ et même logique qu'auparavant. Échap, un nouvel appui sur la
+loupe ou un clic sur la carte la referment ; le texte saisi est gardé. La barre au-dessus de la carte ne porte plus de
+champ de recherche (Fond, Fournisseurs, Enregistrer et menu restent).
+
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :

@@ -363,6 +363,22 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         seconde ; chaque tape recommençait donc une série à la commune. `DELAI_CLICS_MS` passe à **600 ms** (fiche
         différée sur téléphone 650 ms après la dernière tape) ; la série est vérifiée à 250 et 400 ms de cadence.
 
+   - D-GD-35 (28 octobre 2026) — **recherche de la carte déplacée dans une mini-barre** (spécification du maître
+     d'ouvrage) :
+     1. Nouvelle mini-barre verticale **indépendante** de la barre d'outils (`panneaux/BarreRecherche.tsx`), même style
+        (fond blanc, coins arrondis, ombre, boutons de 40 px), placée sous elle à l'écart de ses groupes (8 px) et
+        suivant ses déplacements ; une seule icône, la loupe « Rechercher » (raccourci Alt+R, règle d'or). La barre
+        d'outils n'a reçu aucun bouton (13 outils) ; elle signale seulement son placement (`onPlacement`).
+     2. La loupe ouvre une barre flottante à gauche de la mini-barre, alignée sur la loupe : même champ, même indication,
+        même bouton, Entrée ; **même logique** (`lancerRecherche`, `choisirResultat` de la page, inchangés). Curseur dans
+        le champ à l'ouverture ; fermeture par Échap, nouvel appui sur la loupe ou clic sur la carte (le clic garde son
+        effet : sélection, outils) ; texte gardé jusqu'à la réouverture. Petit écran : toute la largeur libre à gauche
+        de la mini-barre ; résultats ouverts vers le haut quand la loupe est dans la moitié basse.
+     3. Placement pur et testé (`placerMiniBarre`, `placerRecherche`) : jamais sur l'échelle ni les sources du bas à
+        droite — sans place sous la barre d'outils, la mini-barre se range à gauche de son bas.
+     4. Barre au-dessus de la carte : champ et bouton Rechercher retirés ; Fond, Fournisseurs, état d'enregistrement,
+        Enregistrer et menu ☰ inchangés ; la loupe de l'en-tête vert (recherche de la plateforme) n'est pas touchée.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.
