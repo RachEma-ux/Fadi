@@ -585,16 +585,16 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     // R › P › C (ville) › G (regroupement) › A (arrondissement) ; R › P › K (commune ordinaire).
     await importerZZ([["1", "region", null], ["11", "province", "1"], ["111", "commune", "11"], ["112", "commune", "11"], ["1110", "groupe", "111"], ["11101", "arrondissement", "1110"]],
       [["region", 1], ["province", 2], ["commune", 3], ["groupe", 4], ["arrondissement", 5]]);
-    const charger = async (cle: string, code: string, rang: number, x: number, y: number, d: number) => {
-      const v = await publierLimites(cle, [{ code, nom: `U${code}`, x, y, d }]);
+    // Une couche par niveau (une nouvelle version d'un niveau remplace l'ancienne) : les deux communes dans la même couche.
+    const charger = async (cle: string, rang: number, unites: { code: string; x: number; y: number; d: number }[]) => {
+      const v = await publierLimites(cle, unites.map((u) => ({ ...u, nom: `U${u.code}` })));
       await chargerTerritoires(pool, v, { pays: "ZZ", nomPays: "Pays synthétique", niveau: ["region", "province", "commune", "groupe", "arrondissement"][rang - 1]! });
     };
-    await charger("p-r", "1", 1, -9, 30, 2);
-    await charger("p-p", "11", 2, -9, 30, 1.5);
-    await charger("p-c", "111", 3, -9, 30, 0.5);
-    await charger("p-k", "112", 3, -8, 31, 0.3);
-    await charger("p-g", "1110", 4, -9, 30, 0.4);
-    await charger("p-a", "11101", 5, -9, 30, 0.2);
+    await charger("p-r", 1, [{ code: "1", x: -9, y: 30, d: 2 }]);
+    await charger("p-p", 2, [{ code: "11", x: -9, y: 30, d: 1.5 }]);
+    await charger("p-c", 3, [{ code: "111", x: -9, y: 30, d: 0.5 }, { code: "112", x: -8, y: 31, d: 0.3 }]);
+    await charger("p-g", 4, [{ code: "1110", x: -9, y: 30, d: 0.4 }]);
+    await charger("p-a", 5, [{ code: "11101", x: -9, y: 30, d: 0.2 }]);
     const u = (await alice.client.get(`${API}/territoires/ZZ/unites/11101`)).body;
     expect(u.ancetres.map((a: { code: string }) => a.code)).toEqual(["1", "11", "111", "1110"]);
     expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=111`)).body.unites.map((x: { code: string }) => x.code)).toEqual(["1110"]);
