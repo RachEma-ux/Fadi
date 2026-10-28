@@ -79,9 +79,15 @@ export interface ExportRecu { id: string; etat: "autorise" | "refuse"; carteRevi
 export interface CategorieRecue { readonly id: string; readonly libelle: string; readonly ordre: number; readonly themes: readonly string[] }
 export interface RangementRecu { readonly categories: readonly CategorieRecue[]; readonly affectations: Readonly<Record<string, string>>; readonly modifiable: boolean }
 
-/** Unité du découpage territorial (lot H) : ancêtres, emprise, contour simplifié pour l'affichage, attribution. */
+/** Unité du découpage contenant un point cliqué (D-GD-34). */
+export interface UniteAuPoint { readonly pays: string; readonly code: string; readonly nom: string; readonly rang: 1 | 2 | 3 | 4; readonly versionId: string; readonly coucheId: string }
+
+/** Unité du découpage territorial (lot H) : ancêtres, emprise, contour tel qu'en base, attribution. */
 export interface UniteTerritorialeRecue extends UniteTerritoriale {
   readonly pays: string;
+  /** Version de référence et couche qui portent l'unité (fiche d'objet, D-GD-34). */
+  readonly versionId: string;
+  readonly coucheId: string;
   readonly ancetres: readonly { code: string; nom: string; rang: 1 | 2 | 3 | 4 }[];
   readonly enfants: number;
   readonly contour: unknown;
@@ -94,6 +100,8 @@ export const api = {
   unitesTerritoriales: (pays: string, parent: string | null) => appeler<{ unites: UniteTerritoriale[] }>(`/territoires/${encodeURIComponent(pays)}/unites${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
   uniteTerritoriale: (pays: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/${encodeURIComponent(pays)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   /** Unité retrouvée par la version de la couche d'une entité : le pays est celui de cette version, jamais le pays affiché. */
+  /** Unités du pays courant contenant un point, de la plus élémentaire à la plus globale (clics sur carte vierge, D-GD-34). */
+  unitesAuPoint: (pays: string, lon: number, lat: number) => appeler<{ unites: UniteAuPoint[] }>(`/territoires/${encodeURIComponent(pays)}/point?lon=${encodeURIComponent(lon.toFixed(6))}&lat=${encodeURIComponent(lat.toFixed(6))}`),
   uniteTerritorialeDeVersion: (versionId: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/version/${encodeURIComponent(versionId)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   espace: () => appeler<EspaceRecu>("/espace"),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),

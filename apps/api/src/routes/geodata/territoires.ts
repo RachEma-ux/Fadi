@@ -6,6 +6,8 @@
  *   GET /territoires/:pays/unites?parent=…   unités du premier niveau, ou enfants d'une unité (triées par nom)
  *   GET /territoires/:pays/unites/:code      une unité : ancêtres, emprise, contour simplifié pour l'affichage, attribution
  *   GET /territoires/version/:versionId/unites/:code   la même, retrouvée par la version de sa couche (pays déduit)
+ *   GET /territoires/:pays/point?lon=&lat=   unités du pays qui contiennent un point, de la plus élémentaire à la plus
+ *                                            globale (sélection par nombre de clics sur une carte vierge, D-GD-34)
  * Seules les unités d'une version de référence **publiée** et consultable sont servies : une version retirée disparaît
  * de la navigation sans attendre un nouveau chargement.
  */
@@ -36,6 +38,23 @@ territoiresRouter.get("/territoires", async (_req, res) => {
 
 const emprise = "json_build_array(ST_XMin(e), ST_YMin(e), ST_XMax(e), ST_YMax(e))";
 
+/**
+ * Unités du pays contenant un point (D-GD-34), de la plus élémentaire (rang le plus grand) à la plus globale, avec la
+ * couche de leur version (fiche d'objet). Un point hors du découpage du pays rend une liste vide : aucune sélection.
+ */
+territoiresRouter.get("/territoires/:pays/point", async (req, res) => {
+  const pays = req.params.pays;
+  const lon = Number(req.query["lon"]), lat = Number(req.query["lat"]);
+  if (!PAYS.test(pays)) return erreur(res, 400, "invalid_input", "Pays invalide.");
+  if (!Number.isFinite(lon) || !Number.isFinite(lat) || Math.abs(lon) > 180 || Math.abs(lat) > 90) return erreur(res, 400, "invalid_input", "Coordonnées lon / lat attendues (WGS 84).");
+  const unites = await requete<{ pays: string; code: string; nom: string; rang: number; versionId: string; coucheId: string }>(
+    `SELECT t.pays, t.code, t.nom, t.rang, t.version_id AS "versionId", c.id AS "coucheId"
+       FROM ${T} t JOIN geodata_couches c ON c.version_id = t.version_id
+      WHERE t.pays = $1 AND ST_Intersects(t.geom, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+      ORDER BY t.rang DESC, t.code`, [pays, lon, lat]);
+  res.json({ unites });
+});
+
 territoiresRouter.get("/territoires/:pays/unites", async (req, res) => {
   const pays = req.params.pays;
   const parent = typeof req.query["parent"] === "string" ? req.query["parent"] : null;
@@ -56,13 +75,13 @@ territoiresRouter.get("/territoires/:pays/unites", async (req, res) => {
 async function unite(res: import("express").Response, filtre: { pays: string } | { versionId: string }, code: string, rang: number | null) {
   // Contour tel qu'en base (D-GD-33 : aucune simplification propre, pour qu'il se superpose exactement aux tuiles des
   // couches de limites, qui partagent la même topologie) ; la géométrie de référence reste intacte.
-  const [u] = await requete<{ pays: string; code: string; nom: string; rang: number; parent_code: string | null; emprise: number[]; contour: string; attribution: string }>(
+  const [u] = await requete<{ pays: string; code: string; nom: string; rang: number; parent_code: string | null; emprise: number[]; contour: string; attribution: string; versionId: string; coucheId: string }>(
     `SELECT t.pays, t.code, t.nom, t.rang, t.parent_code, ${emprise} AS emprise,
             ST_AsGeoJSON(t.geom, 6) AS contour,
-            v.attribution
+            v.attribution, v.id AS "versionId", c.id AS "coucheId"
        FROM (SELECT *, ST_Envelope(geom) AS e FROM ${T} x
               WHERE ${"pays" in filtre ? "pays = $1" : "version_id = $1"} AND code = $2 AND ($3::int IS NULL OR rang = $3) ORDER BY rang LIMIT 1) t
-       JOIN geodata_versions v ON v.id = t.version_id`, ["pays" in filtre ? filtre.pays : filtre.versionId, code, rang]);
+       JOIN geodata_versions v ON v.id = t.version_id JOIN geodata_couches c ON c.version_id = v.id`, ["pays" in filtre ? filtre.pays : filtre.versionId, code, rang]);
   if (!u) return erreur(res, 404, "not_found", "Unité absente du découpage territorial en base.");
   // Ancêtres : remontée par parent_code, du plus haut au plus proche.
   const ancetres = await requete<{ code: string; nom: string; rang: number }>(
@@ -72,7 +91,7 @@ async function unite(res: import("express").Response, filtre: { pays: string } |
        SELECT t.code, t.nom, t.rang, t.parent_code FROM ${T} t JOIN a ON t.pays = $1 AND t.rang = a.rang - 1 AND t.code = a.parent_code
      ) SELECT code, nom, rang FROM a ORDER BY rang`, [u.pays, u.rang, u.parent_code]);
   const [enfants] = await requete<{ n: number }>(`SELECT count(*)::int AS n FROM ${T} t WHERE pays = $1 AND rang = $2 AND parent_code = $3`, [u.pays, u.rang + 1, u.code]);
-  res.json({ pays: u.pays, code: u.code, nom: u.nom, rang: u.rang, emprise: u.emprise, ancetres, enfants: enfants?.n ?? 0, contour: JSON.parse(u.contour), attribution: u.attribution });
+  res.json({ pays: u.pays, code: u.code, nom: u.nom, rang: u.rang, emprise: u.emprise, ancetres, enfants: enfants?.n ?? 0, contour: JSON.parse(u.contour), attribution: u.attribution, versionId: u.versionId, coucheId: u.coucheId });
 }
 const rangDemande = (q: unknown) => (typeof q === "string" && /^[1-4]$/.test(q) ? Number(q) : null);
 

@@ -476,6 +476,42 @@ await page.locator("[data-gd-retour]").click();
 await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor();
 check("barre territoriale : Alt+↑ puis Retour ramènent au pays", (await page.locator("[data-gd-retour]").isDisabled()) === true);
 
+// --- Sélection par nombre de clics (D-GD-34), carte vierge : aucune couche de limites sur la carte, les unités viennent
+// du découpage en base (ZZ : provinces puis régions) ; 1 clic → province, 2 clics → région, 3 clics → région encore ---
+const selectionCourante = async () => (await page.locator("[data-geodata-page]").getAttribute("data-gd-selection")) ?? "";
+const attendreSelection = (attendu) => page.waitForFunction((a) => document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-selection") === a, attendu, { timeout: 10_000 }).catch(() => undefined);
+await choixRegion.selectOption({ label: "Région synthétique Nord" });
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
+await page.waitForTimeout(1200);
+const canevas = await page.locator(".maplibregl-canvas").boundingBox();
+const xClic = canevas.x + canevas.width * 0.35, yClic = canevas.y + canevas.height * 0.5;
+const zoomAvantClics = await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom");
+await page.mouse.click(xClic, yClic);
+await attendreSelection("2:1001");
+await page.locator("[data-gd-fiche='1001']").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("clics, carte vierge : 1 clic sélectionne la province (niveau le plus élémentaire en base), fiche ouverte, aucune couche ajoutée", (await selectionCourante()) === "2:1001" && (await page.locator("[data-gd-fiche='1001']").count()) === 1 && (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 0, await selectionCourante());
+await page.waitForTimeout(500);
+await page.mouse.dblclick(xClic, yClic);
+await attendreSelection("1:1");
+await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("clics, carte vierge : 2 clics rapides sélectionnent la région (parent lu en base), fiche de la région", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1, await selectionCourante());
+check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvantClics);
+await page.waitForTimeout(500);
+await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic);
+await page.waitForTimeout(600);
+check("clics, carte vierge : un 3e clic ne change rien (dernier niveau)", (await selectionCourante()) === "1:1", await selectionCourante());
+// Clic hors du découpage du pays courant (carte recentrée loin des unités synthétiques) : la sélection est effacée.
+await page.locator("[data-gd-recherche]").fill("lon -7 lat 32.5");
+await page.locator("[data-gd-recherche]").press("Enter");
+await page.locator("[data-gd-resultat='coordonnees']").click();
+await page.waitForTimeout(1500);
+await page.mouse.click(canevas.x + canevas.width * 0.5, canevas.y + canevas.height * 0.6);
+await attendreSelection("");
+check("clics : un clic hors de toute entité efface la sélection", (await selectionCourante()) === "");
+await page.locator("[data-gd-retour]").click();
+await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor();
+
 // --- Navigation par niveaux (lot B) : descendre depuis la fiche, barre territoriale à jour, couche du niveau inférieur ajoutée, Alt+↑ ---
 await onglet(page, "catalogue");
 await page.locator("[data-gd-type='vecteurs']").click();
@@ -496,6 +532,27 @@ await page.locator("[data-gd-niveaux='1']").waitFor();
 check("niveaux : la barre territoriale passe à « Pays synthétique (test) › Région synthétique Nord »", (await page.locator("[data-gd-niveau-select='1']").inputValue()) === "1");
 await onglet(page, "couches");
 check("niveaux : la couche des provinces du même producteur est ajoutée à la carte", (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 1);
+// Sélection par clics avec couches chargées (D-GD-34) : régions et provinces sur la carte → 1 clic province, 2 clics
+// région (parent par les codes HCP, lu en base), 3e clic sans effet ; le double-clic ne zoome pas.
+await page.locator("[data-gd-fermer-panneau]").click();
+await page.waitForTimeout(1500);
+const canevas2 = await page.locator(".maplibregl-canvas").boundingBox();
+const xC = canevas2.x + canevas2.width * 0.35, yC = canevas2.y + canevas2.height * 0.5;
+const zoomAvant2 = await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom");
+await page.mouse.click(xC, yC);
+await attendreSelection("2:1001");
+await page.locator("[data-gd-fiche='1001']").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("clics, couches chargées : 1 clic sélectionne la province touchée (plus petit niveau chargé)", (await selectionCourante()) === "2:1001" && (await page.locator("[data-gd-fiche='1001']").count()) === 1, await selectionCourante());
+await page.waitForTimeout(500);
+await page.mouse.dblclick(xC, yC);
+await attendreSelection("1:1");
+await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("clics, couches chargées : 2 clics sélectionnent la région de la couche chargée", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1 && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant2, await selectionCourante());
+await page.waitForTimeout(500);
+await page.mouse.click(xC, yC); await page.mouse.click(xC, yC); await page.mouse.click(xC, yC);
+await page.waitForTimeout(600);
+check("clics, couches chargées : un 3e clic ne change rien (deux niveaux chargés)", (await selectionCourante()) === "1:1", await selectionCourante());
+await page.waitForTimeout(500);
 // Fiche territoriale (lot E) : impression de la fiche seule (bouton et Alt+P) dans une fenêtre d'impression, sections
 // dépliées, sans boutons ; la page n'est pas modifiée. L'impression est interceptée (aucune boîte de dialogue en recette).
 await page.evaluate(() => {

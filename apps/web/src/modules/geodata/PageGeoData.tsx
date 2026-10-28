@@ -12,10 +12,10 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { sansColorationThematique, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
-import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
+import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
@@ -72,6 +72,9 @@ export function PageGeoData() {
   const [categories, setCategories] = useState<Map<string, Categorie[]>>(new Map());
   const [valeurPoint, setValeurPoint] = useState<{ titre: string; etat: "chargement" | "erreur" | "ok"; recue?: ValeurRasterRecue; erreur?: string } | null>(null);
   const [selection, setSelection] = useState<{ coucheId: string; code: string } | null>(null);
+  // Sélection par nombre de clics (D-GD-34) : niveau sélectionné (recette) et contour d'une entité sans couche chargée.
+  const [entite, setEntite] = useState<{ rang: RangAdministratif; code: string; nom: string } | null>(null);
+  const [entiteContour, setEntiteContour] = useState<unknown | null>(null);
   const [fiche, setFiche] = useState<FicheRecue | null>(null);
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
   const [coucheTable, setCoucheTable] = useState<string | null>(null);
@@ -259,6 +262,94 @@ export function PageGeoData() {
   const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin)), [filtres, chemin, couchesDuChemin]);
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
   rastersCourants.current = { rasters, couches: couchesConnues };
+  /**
+   * Sélection par nombre de clics (D-GD-34) : 1 clic → le niveau le plus élémentaire, chaque clic rapide suivant → le
+   * niveau au-dessus. Couches de limites visibles : seuls leurs niveaux comptent, l'entité du premier clic est celle
+   * touchée dans la couche du plus petit niveau, ses parents viennent de la hiérarchie des codes HCP lue en base
+   * (`ancetres`), jamais d'un test géométrique. Carte vierge (aucune couche de limites) : les unités du découpage en base
+   * qui contiennent le point, affichées seules (contour et mise en évidence), sans ajouter de couche. Un clic hors de
+   * toute entité efface la sélection. Les clics d'un outil actif ne passent jamais ici (moteur).
+   */
+  interface SerieSelection { niveaux: RangAdministratif[]; unites: Map<number, { code: string; nom: string; coucheId: string; pays: string | null; enCouche: boolean }>; attendu: number; jeton: number }
+  const serie = useRef<SerieSelection | null>(null);
+  const jetons = useRef(0);
+  const contexteClic = useRef({ rangs, paysListe, paysCourant });
+  contexteClic.current = { rangs, paysListe, paysCourant };
+  const effacerSelection = () => { serie.current = null; setSelection(null); setEntite(null); setEntiteContour(null); };
+  const appliquerNiveau = (s: SerieSelection, rang: RangAdministratif) => {
+    const u = s.unites.get(rang);
+    if (!u) return;
+    setEntite({ rang, code: u.code, nom: u.nom });
+    setAnnonce(`Sélection : ${u.nom || u.code}`);
+    if (u.enCouche) { setSelection({ coucheId: u.coucheId, code: u.code }); setEntiteContour(null); }
+    else {
+      setSelection(null);
+      if (u.pays) api.uniteTerritoriale(u.pays, u.code, rang).then((r) => { if (serie.current === s && s.unites.get(rangPourClics(s.niveaux, s.attendu) ?? rang) === u) setEntiteContour(r.contour); }).catch(() => undefined);
+    }
+    void ouvrirFiche(u.coucheId, u.code);
+  };
+  const clicCarte = (objets: readonly ObjetDesigne[], p: { lon: number; lat: number }, nbClics: number) => {
+    const { rangs: rangsConnus, paysListe: pays, paysCourant: paysClic } = contexteClic.current;
+    const composition = compositionCourante.current;
+    const { rasters: rs, couches } = rastersCourants.current;
+    const visibles = composition.couches.filter((k) => k.visible);
+    const admin = visibles.flatMap((k) => { const r = rangsConnus.get(k.coucheId); return r && r <= 3 ? [{ k, rang: r }] : []; });
+    if (nbClics > 1) {
+      // Clic suivant d'une série : le niveau au-dessus, dès que ses parents sont connus (sinon à leur arrivée).
+      const s = serie.current;
+      if (!s) return;
+      s.attendu = nbClics;
+      const rang = rangPourClics(s.niveaux, nbClics);
+      if (rang && s.unites.has(rang)) appliquerNiveau(s, rang);
+      return;
+    }
+    // Premier clic. Un objet d'une couche qui n'est pas une limite administrative (point d'intérêt, ligne…) garde la sélection simple.
+    const autre = objets.find((o) => !admin.some((a) => a.k.coucheId === o.coucheId));
+    if (autre) { serie.current = null; setEntite(null); setEntiteContour(null); setSelection(autre); void ouvrirFiche(autre.coucheId, autre.code); return; }
+    const jeton = ++jetons.current;
+    if (admin.length) {
+      const niveaux = niveauxDeSelection(admin.map((a) => a.rang), []);
+      const rang0 = niveaux[0]!;
+      const o = objets.find((x) => admin.some((a) => a.rang === rang0 && a.k.coucheId === x.coucheId));
+      if (!o) { effacerSelection(); return; }
+      const s: SerieSelection = { niveaux, unites: new Map([[rang0, { code: o.code, nom: "", coucheId: o.coucheId, pays: null, enCouche: true }]]), attendu: 1, jeton };
+      serie.current = s;
+      appliquerNiveau(s, rang0);
+      if (niveaux.length < 2) return;
+      const versionId = composition.couches.find((k) => k.coucheId === o.coucheId)?.versionId;
+      if (!versionId) return;
+      api.uniteTerritorialeDeVersion(versionId, o.code, rang0).then((u) => {
+        if (serie.current !== s) return;
+        s.unites.set(rang0, { ...s.unites.get(rang0)!, nom: u.nom });
+        for (const a of u.ancetres) {
+          const couche = admin.find((x) => x.rang === a.rang);
+          if (couche) s.unites.set(a.rang, { code: a.code, nom: a.nom, coucheId: couche.k.coucheId, pays: null, enCouche: true });
+        }
+        const rang = rangPourClics(niveaux, s.attendu);
+        if (s.attendu > 1 && rang && rang !== rang0) appliquerNiveau(s, rang);
+      }).catch(() => undefined);
+      return;
+    }
+    // Aucune couche de limites : une couche raster visible garde la lecture de sa valeur au point (D-GD-13).
+    const haut = [...composition.couches].reverse().find((k) => k.visible && rs.has(k.coucheId));
+    if (haut) { effacerSelection(); void ouvrirValeur(haut.coucheId, couches.get(haut.coucheId)?.titre ?? haut.coucheId, p); return; }
+    // Carte vierge : les unités du pays courant (barre territoriale) qui contiennent le point ; hors du pays, aucune sélection.
+    const niveauxBase = (pays ?? []).filter((x) => x.code === paysClic).flatMap((x) => x.niveaux.map((n) => n.rang as RangAdministratif));
+    if (!paysClic || !niveauxDeSelection([], niveauxBase).length) { effacerSelection(); return; }
+    const s: SerieSelection = { niveaux: [], unites: new Map(), attendu: 1, jeton };
+    serie.current = s;
+    api.unitesAuPoint(paysClic, p.lon, p.lat).then((r) => {
+      if (serie.current !== s) return;
+      const us = r.unites.filter((u) => u.rang <= 3);
+      if (!us.length) { effacerSelection(); return; }
+      s.niveaux = niveauxDeSelection([], us.map((u) => u.rang as RangAdministratif));
+      for (const u of us) if (!s.unites.has(u.rang)) s.unites.set(u.rang, { code: u.code, nom: u.nom, coucheId: u.coucheId, pays: u.pays, enCouche: false });
+      const rang = rangPourClics(s.niveaux, s.attendu);
+      if (rang) appliquerNiveau(s, rang);
+    }).catch(() => { if (serie.current === s) effacerSelection(); });
+  };
+  const clicRef = useRef(clicCarte);
+  clicRef.current = clicCarte;
   const zonesGeo = useMemo(() => ({ type: "FeatureCollection" as const, features: zones.map((z) => ({ type: "Feature", properties: { id: z.id, nom: z.nom }, geometry: z.geometrie })) }), [zones]);
 
   // Moteur : créé une fois, à la demande (import dynamique).
@@ -270,14 +361,7 @@ export function PageGeoData() {
       try {
         moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
-          surClic: (o, p) => {
-            setSelection(o);
-            if (o) return void ouvrirFiche(o.coucheId, o.code);
-            // Aucun objet touché : valeur de la couche raster visible la plus haute, s'il y en a une.
-            const { rasters: rs, couches } = rastersCourants.current;
-            const haut = [...compositionCourante.current.couches].reverse().find((k) => k.visible && rs.has(k.coucheId));
-            if (haut) void ouvrirValeur(haut.coucheId, couches.get(haut.coucheId)?.titre ?? haut.coucheId, p);
-          },
+          surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
           surErreur: (m) => setErreurCarte(m),
@@ -614,6 +698,7 @@ export function PageGeoData() {
     return (parRang[0] ?? vecteurs[0])?.coucheId ?? null;
   }, [compositionAffichee, rasters, rangs]);
   useEffect(() => { moteur.current?.afficherTerritoire(contourTerritoire?.contour ?? null); }, [contourTerritoire, chargementMoteur]);
+  useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, chargementMoteur]);
   useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, chargementMoteur]);
 
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -627,7 +712,7 @@ export function PageGeoData() {
   };
 
   return (
-    <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")}>
+    <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")} data-gd-selection={entite ? `${entite.rang}:${entite.code}` : ""}>
       <p className="sr-only" role="status" aria-live="polite">{annonce}</p>
       <header className="gd-barre" aria-label="Barre de GeoData">
         <form className="gd-recherche" role="search" onSubmit={(e) => { e.preventDefault(); void lancerRecherche(); }}>
@@ -713,7 +798,7 @@ export function PageGeoData() {
           <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
             <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
-            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche, r); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche, r); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}

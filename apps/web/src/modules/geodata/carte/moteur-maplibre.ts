@@ -8,9 +8,9 @@ import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, t
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition } from "@parcours/geodata-model";
+import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition, type SerieClics } from "@parcours/geodata-model";
 import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
-import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, OutilCarte } from "./moteur";
+import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
 
 setWorkerUrl(urlWorker);
 
@@ -28,6 +28,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     attributionControl: false,
     canvasContextAttributes: { preserveDrawingBuffer: true, antialias: true },
     maxZoom: 18,
+    // Le double-clic (et la double-tape) ne zoome jamais : les clics rapides sélectionnent les niveaux (D-GD-34) ;
+    // le zoom reste possible par les boutons, la molette et le pincement.
+    doubleClickZoom: false,
   });
   const attribution = new AttributionControl({ compact: false, customAttribution: [] });
   // Zoom, nord et plein écran : barre d'outils verticale de la page (BarreOutilsCarte), pas de contrôle MapLibre.
@@ -38,6 +41,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   let pret = false;
   let enAttente: (() => void) | null = null;
   let outil: OutilCarte = "navigation";
+  let serieClics: SerieClics | null = null;
   let sommets: [number, number][] = [];
   let couchesAffichees: string[] = [];
   let fondCourant = "neutre";
@@ -46,6 +50,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.addSource("gd-zones", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-trace", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-territoire", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    carte.addSource("gd-entite", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     pret = true;
     enAttente?.();
     enAttente = null;
@@ -85,10 +90,15 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       dessinerTrace();
       return;
     }
+    serieClics = compterClic(serieClics, { t: Date.now(), x: e.point.x, y: e.point.y });
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
     const ids = couches.flatMap((id) => [`${id}-remplissage`, `${id}-lignes`, `${id}-points`]).filter((l) => carte.getLayer(l));
-    const f = ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids })[0] : undefined;
-    ev.surClic(f ? { coucheId: f.layer.id.replace(/-(remplissage|lignes|points)$/, "").slice(PREFIXE.length), code: String(f.properties["code"]) } : null, { lon: e.lngLat.lng, lat: e.lngLat.lat });
+    const objets: ObjetDesigne[] = [];
+    for (const f of ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids }) : []) {
+      const coucheId = f.layer.id.replace(/-(remplissage|lignes|points)$/, "").slice(PREFIXE.length);
+      if (!objets.some((o) => o.coucheId === coucheId)) objets.push({ coucheId, code: String(f.properties["code"]) });
+    }
+    ev.surClic(objets, { lon: e.lngLat.lng, lat: e.lngLat.lat }, serieClics.n);
   });
   carte.on("dblclick", (e) => {
     if (outil === "navigation") return;
@@ -184,7 +194,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (d.rasters.has(k.coucheId)) continue;
       for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
-    for (const t of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(t)) carte.moveLayer(t, "gd-trace-ligne");
+    for (const t of ["gd-entite-remplissage", "gd-entite-trait", "gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(t)) carte.moveLayer(t, "gd-trace-ligne");
     // Libellés et valeurs au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
     for (const k of ordre) for (const suffixe of ["-etiquettes", "-valeurs"]) if (carte.getLayer(`${PREFIXE}${k.coucheId}${suffixe}`)) carte.moveLayer(`${PREFIXE}${k.coucheId}${suffixe}`, "gd-trace-ligne");
     couchesAffichees = voulues;
@@ -258,6 +268,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.addLayer({ id: "gd-zones-remplissage", type: "fill", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#c77b35", "fill-opacity": 0.15 } });
     carte.addLayer({ id: "gd-zones-contour", type: "line", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#c77b35", "line-width": 2, "line-dasharray": [2, 1] } });
     carte.addLayer({ id: "gd-zones-points", type: "circle", source: "gd-zones", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#c77b35", "circle-radius": 6, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+    // Entité sélectionnée par clic sans couche chargée (D-GD-34) : mise en évidence et contour, comme une sélection de couche.
+    carte.addLayer({ id: "gd-entite-remplissage", type: "fill", source: "gd-entite", paint: { "fill-color": "#c77b35", "fill-opacity": 0.18 } });
+    carte.addLayer({ id: "gd-entite-trait", type: "line", source: "gd-entite", paint: { "line-color": "#c77b35", "line-width": 4 } });
     // Unité choisie dans la barre territoriale : liseré blanc puis trait foncé, au-dessus des couches, sous le tracé.
     carte.addLayer({ id: "gd-territoire-lisere", type: "line", source: "gd-territoire", paint: { "line-color": "#ffffff", "line-width": 6, "line-opacity": 0.9 } });
     carte.addLayer({ id: "gd-territoire-trait", type: "line", source: "gd-territoire", paint: { "line-color": "#0b3b45", "line-width": 3 } });
@@ -285,8 +298,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       sommets = [];
       dessinerTrace();
       carte.getCanvas().style.cursor = o === "navigation" ? "" : "crosshair";
-      if (o === "navigation") carte.doubleClickZoom.enable();
-      else carte.doubleClickZoom.disable();
+      serieClics = null;
     },
     terminerTrace: terminer,
     annulerTrace() { sommets = []; dessinerTrace(); },
@@ -340,6 +352,13 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     afficherTerritoire(contour) {
       const f = () => {
         const src = carte.getSource("gd-territoire") as GeoJSONSource | undefined;
+        src?.setData(contour ? { type: "Feature", properties: {}, geometry: contour as Feature["geometry"] } : { type: "FeatureCollection", features: [] });
+      };
+      if (pret) f(); else carte.once("load", f);
+    },
+    afficherEntite(contour) {
+      const f = () => {
+        const src = carte.getSource("gd-entite") as GeoJSONSource | undefined;
         src?.setData(contour ? { type: "Feature", properties: {}, geometry: contour as Feature["geometry"] } : { type: "FeatureCollection", features: [] });
       };
       if (pret) f(); else carte.once("load", f);
