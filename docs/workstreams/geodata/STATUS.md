@@ -80,6 +80,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   clics, double-clic sans zoom, couche `gd-entite`), page (niveaux chargés ou découpage en base, parents par `ancetres`),
   route `GET /territoires/:pays/point` (test API), `versionId` / `coucheId` dans l'unité servie ; recette `geodata.mjs`
   : carte vierge (1, 2, 3 clics, clic hors entité) et couches chargées (provinces + régions).
+  Correctifs du 28 octobre 2026 : fiche différée sur téléphone (#358) ; fenêtre de la série portée à **600 ms** et
+  horodatage de l'événement d'entrée (`originalEvent.timeStamp`) plutôt que du traitement — mesure en émulation tactile :
+  350 à 450 ms entre deux tapes humaines, remise du clic retardée par le rendu ; vérifié Pixel 7, cadence 280–460 ms,
+  carte vierge et couches HCP chargées : 1 → commune, 2 → province, 3 → région.
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :
