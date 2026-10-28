@@ -7,8 +7,12 @@
  */
 import type { RangAdministratif } from "./limites.js";
 
-/** Délai entre deux clics d'une même série (celui du navigateur, environ 300 ms) et déplacement toléré du pointeur (un doigt). */
-export const DELAI_CLICS_MS = 300;
+/**
+ * Délai entre deux clics d'une même série et déplacement toléré du pointeur (un doigt). Le délai est plus large que le
+ * double-clic du navigateur (~300 ms) : mesuré sur téléphone, deux tapes humaines sont séparées de 350 à 450 ms, et le
+ * rendu de la première (mise en évidence, couches lourdes) retarde encore la seconde (correctif D-GD-34 du 28 octobre 2026).
+ */
+export const DELAI_CLICS_MS = 600;
 export const TOLERANCE_CLICS_PX = 16;
 
 export interface ClicCarte { readonly t: number; readonly x: number; readonly y: number }

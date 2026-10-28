@@ -90,7 +90,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       dessinerTrace();
       return;
     }
-    serieClics = compterClic(serieClics, { t: Date.now(), x: e.point.x, y: e.point.y });
+    // Instant de l'événement d'entrée (horloge du navigateur), pas celui du traitement : sur téléphone, le rendu de la
+    // sélection précédente retarde la remise du clic suivant de plusieurs centaines de millisecondes.
+    serieClics = compterClic(serieClics, { t: e.originalEvent.timeStamp, x: e.point.x, y: e.point.y });
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
     const ids = couches.flatMap((id) => [`${id}-remplissage`, `${id}-lignes`, `${id}-points`]).filter((l) => carte.getLayer(l));
     const objets: ObjetDesigne[] = [];

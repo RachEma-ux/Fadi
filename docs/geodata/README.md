@@ -97,8 +97,9 @@ niveau administratif OpenStreetMap).
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :
-1 clic → commune, 2 → province / préfecture, 3 → région (délai du navigateur, ~300 ms ; au-delà, ou si le pointeur a
-bougé, on recommence). Couches de limites visibles : seuls leurs niveaux comptent (provinces et régions chargées :
+1 clic → commune, 2 → province / préfecture, 3 → région (600 ms au plus entre deux clics — plus que le double-clic du
+navigateur, car deux tapes humaines sur téléphone sont séparées de 350 à 450 ms ; au-delà, ou si le pointeur a bougé de
+plus de 16 px, on recommence). Couches de limites visibles : seuls leurs niveaux comptent (provinces et régions chargées :
 1 clic → province, 2 → région) ; l'entité du premier clic est celle touchée dans la couche du plus petit niveau, ses
 parents sont lus de la hiérarchie des codes HCP en base. Carte vierge : les unités du pays courant qui contiennent le
 point (`GET /territoires/:pays/point?lon=&lat=`) ; l'entité est affichée seule (contour et mise en évidence), sans

@@ -334,7 +334,7 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         provinces et les régions sont recalculées.
    - D-GD-34 (27 octobre 2026) — **sélection par nombre de clics, du plus élémentaire au plus global** (spécification du
      maître d'ouvrage ; avant : un clic sélectionnait toujours la région, couche la plus haute) :
-     1. Des clics rapides au même endroit (délai du navigateur, ~300 ms, pointeur immobile à 8 px près) montrent les
+     1. Des clics rapides au même endroit (600 ms au plus entre deux clics depuis le correctif du point 7, pointeur immobile à 16 px près) montrent les
         niveaux un par un : 1 clic → commune, 2 → province / préfecture, 3 → région. Le premier clic sélectionne tout de
         suite le plus petit niveau (aucun retard) ; chaque clic suivant remplace la sélection par le niveau au-dessus ;
         au-delà du dernier niveau, rien ne change ; un délai dépassé ou un pointeur déplacé recommence au plus petit.
@@ -357,6 +357,11 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      6. Téléphone (correctif du 28 octobre 2026) : la fiche d'objet recouvre la carte (volet du bas) ; elle ne s'ouvre
         qu'une fois la série de tapes terminée (≈350 ms après la dernière), la sélection restant immédiate, pour que la
         2ᵉ et la 3ᵉ tape atteignent encore la carte ; tolérance du pointeur portée à 16 px (un doigt).
+     7. Délai de la série (second correctif du 28 octobre 2026, après un nouvel essai infructueux du maître d'ouvrage) :
+        la fenêtre de 300 ms (double-clic du navigateur) était trop courte pour des tapes humaines — mesure en émulation
+        tactile : 350 à 400 ms entre deux tapes nominalement espacées de 250 ms, le rendu de la première retardant la
+        seconde ; chaque tape recommençait donc une série à la commune. `DELAI_CLICS_MS` passe à **600 ms** (fiche
+        différée sur téléphone 650 ms après la dernière tape) ; la série est vérifiée à 250 et 400 ms de cadence.
 
 ## Conséquences
 
