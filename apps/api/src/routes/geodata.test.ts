@@ -462,6 +462,10 @@ describe("Catégories du catalogue (D-GD-14)", () => {
 });
 
 describe("découpage territorial en base (lot H, D-GD-28)", () => {
+  // Découpage en base (D-GD-35) : tables sans lien aux comptes, vidées avant chaque cas (la remise à zéro commune ne les touche pas).
+  beforeEach(async () => {
+    for (const t of ["geodata_decoupage_imports", "geodata_entites_administratives", "geodata_niveaux_administratifs", "geodata_territoires", "geodata_pays"]) await pool.query(`DELETE FROM ${t}`);
+  });
   /** Version publiée de limites : unités (code, nom, carré), comme la chaîne d'import. */
   async function publierLimites(cle: string, unites: { code: string; nom: string; x: number; y: number; d: number }[], publier = true) {
     const v = validerGeoJSON({ type: "FeatureCollection", features: unites.map((u) => ({ type: "Feature", properties: { code: u.code, nom: u.nom }, geometry: { type: "Polygon", coordinates: carre(u.x, u.y, u.d) } })) });
@@ -495,7 +499,8 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     mkdirSync(join(d, "decoupage", "originaux"), { recursive: true });
     const ecrire = (f: string, t: string) => { writeFileSync(join(d, f), t); return { fichier: f, empreinte: createHash("sha256").update(t).digest("hex") }; };
     const original = ecrire("decoupage/originaux/source.txt", `source synthétique ${entites.length}`);
-    const nv = ecrire("decoupage/zz-niveaux.csv", `pays,code,rang,singulier,pluriel,fiche\n${niveaux.map(([c, r]) => `ZZ,${c},${r},Niveau ${c},Niveaux ${c},`).join("\n")}\n`);
+    const noms: Record<string, [string, string]> = { region: ["Région", "Régions"], province: ["Province", "Provinces"] };
+    const nv = ecrire("decoupage/zz-niveaux.csv", `pays,code,rang,singulier,pluriel,fiche\n${niveaux.map(([c, r]) => `ZZ,${c},${r},${(noms[c] ?? [`Niveau ${c}`, `Niveaux ${c}`]).join(",")},`).join("\n")}\n`);
     const en = ecrire("decoupage/zz-entites.csv", `pays,code,niveau,parent,nom,nom_ar,type\n${entites.map(([c, n, p]) => `ZZ,${c},${n},${p ?? ""},Unité ${c},,${n}`).join("\n")}\n`);
     writeFileSync(join(d, "decoupage", "zz.json"), JSON.stringify({ pays: "ZZ", nomPays: "Pays synthétique", source: "Jeu synthétique", original, niveaux: nv, entites: en }));
     return d;
@@ -559,7 +564,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     // Même version, nom du pays corrigé, même règle : rien n'est rechargé, la déclaration est répercutée.
     expect(await chargerTerritoires(pool, vp, { ...niveau(2), nomPays: "Pays synthétique (corrigé)" })).toMatchObject({ deja: true, unites: 2 });
     const [p] = (await pool.query("SELECT nom, niveaux -> '2' ->> 'pluriel' AS pluriel, niveaux -> '2' ->> 'parent' AS regle FROM geodata_pays WHERE code = 'ZZ'")).rows;
-    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Niveaux province", regle: "decoupage" });
+    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Provinces", regle: "decoupage" });
     // Règle changée (« inclusion ») : le rang est rebâti — les codes admis changent (« contour:x » entre) — et les
     // parents sont recalculés par la nouvelle règle.
     expect(await chargerTerritoires(pool, vp, niveau(2, "inclusion"))).toMatchObject({ deja: false, unites: 3 });

@@ -155,4 +155,3 @@ describe("fiches de source GeoData livrées", () => {
     }
   });
 });
-});
