@@ -291,7 +291,7 @@ export function PageGeoData() {
       if (u.pays) api.uniteTerritoriale(u.pays, u.code, rang).then((r) => { if (serie.current === s && s.unites.get(rangPourClics(s.niveaux, s.attendu) ?? rang) === u) setEntiteContour(r.contour); }).catch(() => undefined);
     }
     annulerFicheDifferee();
-    if (estTelephone()) ficheDifferee.current = window.setTimeout(() => { ficheDifferee.current = null; void ouvrirFiche(u.coucheId, u.code); }, DELAI_CLICS_MS + 50);
+    if (estTelephone()) ficheDifferee.current = window.setTimeout(() => { ficheDifferee.current = null; if (serie.current === s) void ouvrirFiche(u.coucheId, u.code); }, DELAI_CLICS_MS + 50);
     else void ouvrirFiche(u.coucheId, u.code);
   };
   const clicCarte = (objets: readonly ObjetDesigne[], p: { lon: number; lat: number }, nbClics: number) => {
@@ -309,7 +309,9 @@ export function PageGeoData() {
       if (rang && s.unites.has(rang)) appliquerNiveau(s, rang);
       return;
     }
-    // Premier clic. Un objet d'une couche qui n'est pas une limite administrative (point d'intérêt, ligne…) garde la sélection simple.
+    // Premier clic : toute fiche différée d'une série précédente est abandonnée.
+    annulerFicheDifferee();
+    // Un objet d'une couche qui n'est pas une limite administrative (point d'intérêt, ligne…) garde la sélection simple.
     const autre = objets.find((o) => !admin.some((a) => a.k.coucheId === o.coucheId));
     if (autre) { serie.current = null; setEntite(null); setEntiteContour(null); setSelection(autre); void ouvrirFiche(autre.coucheId, autre.code); return; }
     const jeton = ++jetons.current;
