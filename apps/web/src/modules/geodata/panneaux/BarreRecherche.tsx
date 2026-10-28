@@ -23,14 +23,20 @@ export interface Dimensions { readonly largeur: number; readonly hauteur: number
 
 /**
  * Place la mini-barre (écarts au bord droit et au bord haut de la carte) : sous la barre d'outils, au même bord droit ;
- * si la place manque au-dessus des contrôles du bas (échelle, sources, `reserveBas`), à gauche du bas de la barre d'outils.
+ * si la place manque au-dessus des contrôles du bas (échelle, sources, `reserveBas`), à côté du bas de la barre d'outils —
+ * à sa gauche, ou à sa droite quand elle est collée au bord gauche — et toujours entière dans la carte.
  */
 export function placerMiniBarre(outils: PlacementOutils, carte: Dimensions, mini: Dimensions, reserveBas: number): { droite: number; haut: number } {
   const hautMax = carte.hauteur - reserveBas - mini.hauteur - 4;
   const dessous = outils.haut + outils.hauteur + ECART_GROUPES;
   if (dessous <= hautMax) return { droite: outils.droite, haut: dessous };
   const haut = Math.max(4, Math.min(outils.haut + outils.hauteur - mini.hauteur, hautMax));
-  return { droite: outils.droite + outils.largeur + ECART_GROUPES, haut };
+  // À gauche de la barre d'outils s'il y a la place, sinon à sa droite ; toujours entière dans la carte.
+  const aGauche = outils.droite + outils.largeur + ECART_GROUPES;
+  const aDroite = outils.droite - ECART_GROUPES - mini.largeur;
+  const droiteMax = Math.max(4, carte.largeur - mini.largeur - 4);
+  const droite = aGauche <= droiteMax ? aGauche : aDroite >= 4 ? aDroite : Math.min(Math.max(4, aGauche), droiteMax);
+  return { droite, haut };
 }
 
 /**

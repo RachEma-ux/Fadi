@@ -15,6 +15,13 @@ describe("mini-barre de recherche GeoData", () => {
     expect(p.haut).toBeGreaterThanOrEqual(4);
     expect(p.haut + mini.hauteur).toBeLessThanOrEqual(320 - 50);
   });
+  it("barre d'outils collée au bord gauche d'une carte courte : la mini-barre passe à sa droite, jamais hors de la carte", () => {
+    const etroite = { largeur: 390, hauteur: 320 };
+    const q = placerMiniBarre({ droite: 344, haut: 4, largeur: 42, hauteur: 300 }, etroite, mini, 50);
+    expect(q.droite).toBe(344 - ECART_GROUPES - 42);
+    expect(q.droite).toBeGreaterThanOrEqual(4);
+    expect(q.droite + mini.largeur).toBeLessThanOrEqual(etroite.largeur - 4);
+  });
   it("barre flottante à gauche de la loupe, alignée ; toute la place disponible sur un petit écran ; à droite si la place manque", () => {
     const grand = placerRecherche({ droite: 10, haut: 578, ...mini }, carte);
     expect(grand).toEqual({ gauche: 1000 - 10 - 42 - ECART_GROUPES - LARGEUR_RECHERCHE, haut: 578, largeur: LARGEUR_RECHERCHE, resultatsVersLeHaut: true });
