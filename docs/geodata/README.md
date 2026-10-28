@@ -103,7 +103,9 @@ bougé, on recommence). Couches de limites visibles : seuls leurs niveaux compte
 parents sont lus de la hiérarchie des codes HCP en base. Carte vierge : les unités du pays courant qui contiennent le
 point (`GET /territoires/:pays/point?lon=&lat=`) ; l'entité est affichée seule (contour et mise en évidence), sans
 couche ajoutée. Le double-clic et la double-tape ne zooment plus ; un clic hors de toute entité efface la sélection ; les
-outils (dessin, mesure) gardent leurs clics. Logique pure : `geodata-model/src/selection-clics.ts`.
+outils (dessin, mesure) gardent leurs clics. Téléphone : la fiche (volet du bas, qui recouvre la carte) ne s'ouvre
+qu'une fois la série de tapes terminée, la sélection restant immédiate. Logique pure :
+`geodata-model/src/selection-clics.ts`.
 
 ## Régions et provinces construites à partir des communes (D-GD-33)
 
