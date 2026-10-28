@@ -1,13 +1,13 @@
 code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
-1,Région de Tanger-Tétouan-Al Hoceima,union:8 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-10,Région de Guelmim-Oued Noun,union:4 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-11,Région de Laâyoune-Sakia El Hamra,union:4 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-12,Région de Dakhla-Oued Ed-Dahab,union:2 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-2,Région de l'Oriental,union:8 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-3,Région de Fès-Meknès,union:9 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-4,Région de Rabat-Salé-Kénitra,union:7 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-5,Région de Béni Mellal-Khénifra,union:5 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-6,Région de Casablanca-Settat,union:9 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-7,Région de Marrakech-Safi,union:8 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-8,Région de Drâa-Tafilalet,union:5 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
-9,Région de Souss-Massa,union:6 provinces,,union des provinces et préfectures de même code HCP (D-GD-33),apparie
+1,Région de Tanger-Tétouan-Al Hoceima,union:147 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+10,Région de Guelmim-Oued Noun,union:51 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+11,Région de Laâyoune-Sakia El Hamra,union:18 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+12,Région de Dakhla-Oued Ed-Dahab,union:12 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+2,Région de l'Oriental,union:120 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+3,Région de Fès-Meknès,union:199 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+4,Région de Rabat-Salé-Kénitra,union:119 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+5,Région de Béni Mellal-Khénifra,union:135 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+6,Région de Casablanca-Settat,union:167 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+7,Région de Marrakech-Safi,union:255 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+8,Région de Drâa-Tafilalet,union:125 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
+9,Région de Souss-Massa,union:174 entités élémentaires,,union de la descendance dans le découpage HCP (D-GD-35),apparie
