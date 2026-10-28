@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-26 (UTC).
+Mis à jour : 2026-10-28 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
