@@ -812,6 +812,9 @@ check("fil (D-GD-38) : les clics sur la carte ne le replient pas", (await page.l
   const urb = await page.locator('[data-gd-chiffre="taux-urbanisation"]').textContent();
   check("onglets : filtre de zone → pays ; valeurs lues en base, rapport calculé marqué « * »", (await page.locator('[data-gd-chiffre="population-legale"]').getAttribute("data-gd-chiffre-valeur")) === "1000" && /60,0\*/.test(urb ?? "") && (await page.locator("[data-gd-compteur]").count()) === 1, urb);
   const bloc = page.locator('[data-gd-bloc="population-evolution"]');
+  check("onglets : graphique d'une seule série — une couleur et une entrée de légende par catégorie",
+    (await bloc.locator(".gd-legende-graphique li").allTextContents()).join("|") === "2014|2024"
+    && (await bloc.locator(".gd-legende-graphique li span").evaluateAll((ss) => new Set(ss.map((x) => getComputedStyle(x).backgroundColor)).size)) === 2);
   check("onglets : bloc tableau + graphique SVG, source citée, série absente « Donnée non disponible »", (await bloc.locator("svg[role='img']").count()) === 1 && ((await bloc.locator("[data-gd-source]").textContent()) ?? "").startsWith("Source") && (await bloc.locator("[data-gd-nd]").count()) >= 1);
   await bloc.locator("[data-gd-bloc-menu]").click();
   const [telechargement] = await Promise.all([page.waitForEvent("download"), bloc.locator("[data-gd-bloc-csv]").click()]);
