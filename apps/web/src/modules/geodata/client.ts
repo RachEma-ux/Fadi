@@ -98,6 +98,10 @@ export interface UniteTerritorialeRecue extends UniteTerritoriale {
   readonly attribution: string;
 }
 
+/** Tableau de bord RGPH 2024 (D-GD-37) : définition des blocs en base et zone nationale. */
+export interface TableauDeBordRecu { pays: string; versionId: string; attribution: string; zone: { code: string; nom: string; coucheId: string }; definition: unknown; concepts: Record<string, number> }
+export interface ConceptsRecus { langue: "fr" | "ar"; source: string | null; concepts: { titre: string; texte: string }[] }
+
 export const api = {
   /** Découpage territorial en base (lot H, D-GD-28) : pays chargés, unités d'un niveau, une unité. */
   territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
@@ -108,6 +112,8 @@ export const api = {
   unitesAuPoint: (pays: string, lon: number, lat: number) => appeler<{ unites: UniteAuPoint[] }>(`/territoires/${encodeURIComponent(pays)}/point?lon=${encodeURIComponent(lon.toFixed(6))}&lat=${encodeURIComponent(lat.toFixed(6))}`),
   uniteTerritorialeDeVersion: (versionId: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/version/${encodeURIComponent(versionId)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   espace: () => appeler<EspaceRecu>("/espace"),
+  tableauDeBord: (pays: string | null) => appeler<TableauDeBordRecu>(`/tableau-de-bord${pays ? `?pays=${encodeURIComponent(pays)}` : ""}`),
+  concepts: (pays: string | null, langue: "fr" | "ar") => appeler<ConceptsRecus>(`/tableau-de-bord/concepts?langue=${langue}${pays ? `&pays=${encodeURIComponent(pays)}` : ""}`),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   couche: (id: string) => appeler<CoucheRecue>(`/couches/${encodeURIComponent(id)}`),
   rechercher: (q: string) => appeler<{ resultats: ResultatRecherche[]; avertissement?: { code: string; message: string } }>(`/recherche?q=${encodeURIComponent(q)}`),

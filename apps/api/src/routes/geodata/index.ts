@@ -15,6 +15,7 @@ import { consultationRouter } from "./consultation.js";
 import { etudesRouter } from "./etudes.js";
 import { exportsRouter } from "./exports.js";
 import { importsRouter } from "./imports.js";
+import { tableauDeBordRouter } from "./tableau-de-bord.js";
 import { territoiresRouter } from "./territoires.js";
 
 export const geodataRouter = Router();
@@ -40,6 +41,7 @@ geodataRouter.get("/espace", async (req, res) => {
 
 geodataRouter.use(consultationRouter);
 geodataRouter.use(territoiresRouter);
+geodataRouter.use(tableauDeBordRouter);
 geodataRouter.use(categoriesRouter);
 geodataRouter.use(cartesRouter);
 geodataRouter.use(etudesRouter);

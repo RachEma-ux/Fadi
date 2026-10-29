@@ -65,8 +65,15 @@ def _texte(x):
     return " ".join(str(x).replace("\xa0", " ").split()) if x is not None else None
 
 
-def lire_indicateurs(chemin):
-    """Renvoie (indicateurs, valeurs) : liste ordonnée de déclarations, et {code HCP: {colonne: valeur ou signe}}."""
+CODE_NATIONAL = "MA"
+LIBELLE_NATIONAL = "Ensemble du territoire national"
+
+
+def lire_indicateurs(chemin, national=False):
+    """Renvoie (indicateurs, valeurs) : liste ordonnée de déclarations, et {code HCP: {colonne: valeur ou signe}}.
+
+    `national` : la ligne « Ensemble du territoire national » (sans code HCP) est lue sous le code `MA` (D-GD-37) ;
+    sinon elle est ignorée comme avant."""
     wb = openpyxl.load_workbook(chemin, read_only=True, data_only=True)
     declarations, valeurs, vus = [], {}, set()
     for nom_feuille, sorte, milieu in FEUILLES:
@@ -116,9 +123,14 @@ def lire_indicateurs(chemin):
                 "milieu": milieu, "sexe": sexe,
             })
         for r in lignes[debut:]:
-            if not r or r[0] is None:
+            if not r:
                 continue
-            code = str(r[0]).strip()
+            if r[0] is None:
+                if not (national and len(r) > 1 and _texte(r[1]) == LIBELLE_NATIONAL):
+                    continue
+                code = CODE_NATIONAL
+            else:
+                code = str(r[0]).strip()
             d = valeurs.setdefault(code, {})
             for j, ident in colonnes:
                 v = r[j] if j < len(r) else None

@@ -81,8 +81,11 @@ export interface ProprietesRecherche {
   avis: string | null;
   onChoisir(r: ResultatRecherche): void;
   onFermerResultats(): void;
-  /** Enregistrer : même action que le bouton de la barre au-dessus de la carte, même condition d'activation. */
-  enregistrement: { libelle: string; desactive: boolean; onEnregistrer(): void };
+  /**
+   * Enregistrer : la fonction `enregistrer()` de la page, sa condition d'activation, l'état d'enregistrement (pastille
+   * « Carte non enregistrée » tant que la carte n'est pas enregistrée, D-GD-37) et le nom de la carte ouverte.
+   */
+  enregistrement: { libelle: string; desactive: boolean; onEnregistrer(): void; etat: string; etatLibelle: string; carteNom: string | null };
   /** Fonds : mêmes choix que le sélecteur « Fond », fond actif, application d'un fond. */
   fonds: { choix: readonly ChoixFond[]; actif: string; onChoisir(id: string): void };
 }
@@ -174,10 +177,20 @@ export function BarreRecherche(p: ProprietesRecherche) {
           <button ref={loupe} type="button" className="gd-outil" title="Rechercher (Alt+R)" aria-label="Rechercher" aria-expanded={p.ouverte} aria-controls="gd-recherche-flottante" onClick={() => (p.ouverte ? fermer() : p.onBasculer(true))} data-gd-loupe>
             <Picto d={LOUPE} />
           </button>
-          <button type="button" className="gd-outil" title={p.enregistrement.libelle} aria-label={p.enregistrement.libelle} disabled={p.enregistrement.desactive} onClick={p.enregistrement.onEnregistrer} data-gd-mini-enregistrer>
-            <Picto d={DISQUETTE} />
-          </button>
-          <button ref={boutonFond} type="button" className="gd-outil" title="Fond de carte" aria-label="Fond de carte" aria-expanded={fondsOuverts} aria-controls="gd-fonds-flottants" onClick={basculerFonds} data-gd-mini-fond>
+          {(() => {
+            const e = p.enregistrement;
+            // Pastille tant que la carte n'est pas enregistrée (nouvelle, modifiée, en conflit ou en erreur).
+            const pastille = e.etat !== "enregistree" && e.etat !== "enregistrement";
+            return (
+              <button type="button" className="gd-outil gd-outil-pastille" title={pastille ? "Carte non enregistrée" : e.libelle} aria-label={e.libelle} aria-describedby="gd-etat-enregistrement" disabled={e.desactive} onClick={e.onEnregistrer}
+                data-gd-mini-enregistrer data-gd-etat-enregistrement={e.etat} data-gd-carte-nom={e.carteNom ?? ""}>
+                <Picto d={DISQUETTE} />
+                {pastille && <span className="gd-pastille" title="Carte non enregistrée" aria-hidden="true" data-gd-pastille-non-enregistree />}
+                <span id="gd-etat-enregistrement" className="sr-only">{e.etatLibelle}</span>
+              </button>
+            );
+          })()}
+          <button ref={boutonFond} type="button" className="gd-outil" title="Fond de carte" aria-label="Fond de carte" aria-expanded={fondsOuverts} aria-controls="gd-fonds-flottants" onClick={basculerFonds} data-gd-mini-fond data-gd-fond-actif={p.fonds.actif}>
             <Picto d={FOND} />
           </button>
         </div>

@@ -64,6 +64,17 @@ async function menuCartes(p) {
   if (!(await p.locator("#gd-menu-liste").count())) await p.locator("[data-gd-menu]").click();
   if ((await p.locator("[data-gd-menu-cartes]").getAttribute("aria-expanded")) !== "true") await p.locator("[data-gd-menu-cartes]").click();
 }
+/** Fond de carte (D-GD-37 : plus de sélecteur dans la barre) : fond actif, choix offerts et application, par la mini-barre. */
+const fondActif = (p) => p.locator("[data-gd-mini-fond]").getAttribute("data-gd-fond-actif");
+async function choixFonds(p, actifs = false) {
+  await p.locator("[data-gd-mini-fond]").click();
+  await p.locator("[data-gd-fonds-flottants]").waitFor();
+  const choix = await p.locator(`[data-gd-fonds-flottants] button${actifs ? ":not(:disabled)" : ""}`).evaluateAll((bs) => bs.map((b) => ({ texte: b.textContent.replace("✓", "").trim(), desactive: b.disabled })));
+  await p.keyboard.press("Escape");
+  return choix;
+}
+async function choisirFond(p, id) { await p.locator("[data-gd-mini-fond]").click(); await p.locator(`[data-gd-fond-choix='${id}']`).click(); }
+const carteOuverte = (p) => p.locator("[data-gd-mini-enregistrer]").getAttribute("data-gd-carte-nom");
 async function entreeMenu(p, cle) { await menuCartes(p); await p.locator(`[data-gd-menu-entree='${cle}']`).click(); }
 /** Onglet du panneau Données (rouvert par le bouton « Données » s'il est fermé). */
 async function onglet(p, o) { if (!(await p.locator("[data-gd-panneau]").count())) await p.locator("[data-gd-donnees]").click(); await p.locator(`[data-gd-onglet='${o}']`).click(); }
@@ -90,6 +101,9 @@ for (const n of ["regions", "provinces"]) {
   const sortie = npmApi("geodata:import-reference", ["--fiche", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.fiche.json`), "--fichier", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.geojson`), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
   check(`chaîne administrative : ${n === "regions" ? "régions" : "provinces"} synthétiques publiées`, /Version (\S+ )?publiée|Version déjà présente/.test(sortie));
 }
+// Tableau de bord (D-GD-37) : pays synthétique, valeurs fabriquées, définition des blocs et un concept en annexe.
+const sortiePays = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-pays.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
+check("chaîne administrative : pays synthétique et son tableau de bord publiés", /Version (\S+ )?publiée|Version déjà présente/.test(sortiePays), sortiePays.split("\n").filter((l) => /Version/.test(l)).join(" | "));
 const sortieRaster = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-raster.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
 check("chaîne administrative : grille raster synthétique (GeoTIFF) préparée puis publiée", /Version (\S+ )?publiée|Version déjà présente/.test(sortieRaster), sortieRaster.split("\n").filter((l) => /Version|raster/.test(l)).join(" | "));
 await page.context().clearCookies();
@@ -140,8 +154,8 @@ const retour = await barreOutils.boundingBox();
 check("barre d'outils : double-clic sur la poignée → position par défaut à droite", Math.abs(retour.x - boiteBarre.x) < 2 && Math.abs(retour.y - boiteBarre.y) < 2);
 
 // --- Mini-barre de recherche (loupe) : indépendante, sous la barre d'outils, même style ; barre flottante à sa gauche ---
-check("recherche : la barre au-dessus de la carte n'a plus de champ de recherche ; Fond, Fournisseurs, Enregistrer et menu restent",
-  (await page.locator("header.gd-barre [data-gd-recherche], header.gd-barre input[type='search']").count()) === 0 && (await page.locator("header.gd-barre [data-gd-fond]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-fournisseurs]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-enregistrer]").count()) === 1 && (await page.locator("header.gd-barre [data-gd-menu]").count()) === 1);
+check("barre au-dessus de la carte (D-GD-37) : ni recherche, ni Fond, ni Fournisseurs, ni « Carte non enregistrée / Enregistrer » ; ☰ reste",
+  (await page.locator("header.gd-barre input, header.gd-barre select, header.gd-barre [data-gd-fond], header.gd-barre [data-gd-fournisseurs], header.gd-barre [data-gd-enregistrer], header.gd-barre [data-gd-etat-enregistrement]").count()) === 0 && (await page.locator("header.gd-barre [data-gd-menu]").count()) === 1 && !((await page.locator("header.gd-barre").textContent()) ?? "").includes("non enregistrée"));
 const miniBarre = page.locator("[data-gd-barre-recherche]");
 await page.waitForTimeout(300);
 const loupe = page.locator("[data-gd-loupe]");
@@ -163,34 +177,34 @@ const basDroite = await page.locator(".maplibregl-ctrl-bottom-right").boundingBo
 check("mini-barre : ne chevauche ni l'échelle ni les sources (bas à droite)", !basDroite || boiteLoupe.y + boiteLoupe.height <= basDroite.y);
 // Enregistrer (disquette) : même action et même condition que le bouton Enregistrer de la barre au-dessus de la carte.
 const miniEnregistrer = page.locator("[data-gd-mini-enregistrer]");
-check("mini-barre : « Enregistrer » a la même condition d'activation que le bouton de la barre", (await miniEnregistrer.isDisabled()) === (await page.locator("header.gd-barre [data-gd-enregistrer]").isDisabled()) && (await miniEnregistrer.getAttribute("title")) === "Enregistrer");
+check("mini-barre : « Enregistrer » d'une carte jamais enregistrée porte la pastille « Carte non enregistrée » (D-GD-37)", !(await miniEnregistrer.isDisabled()) && (await miniEnregistrer.getAttribute("data-gd-etat-enregistrement")) === "nouvelle" && (await miniEnregistrer.locator("[data-gd-pastille-non-enregistree]").count()) === 1 && (await miniEnregistrer.getAttribute("title")) === "Carte non enregistrée");
 await miniEnregistrer.click();
 await page.locator("[data-gd-volet-ouvert='cartes'] [data-gd-nom-carte]").waitFor();
 check("mini-barre : « Enregistrer » d'une carte jamais enregistrée ouvre Mes cartes pour la nommer (comme le bouton de la barre)", (await page.locator("[data-gd-formulaire-enregistrer='nouvelle']").count()) === 1);
 await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
 // Fond de carte : liste flottante des mêmes fonds que le sélecteur, fond actif coché ; un clic applique et ferme.
-const choixSelect = await page.locator("header.gd-barre [data-gd-fond] option").evaluateAll((os) => os.map((o) => `${o.textContent}|${o.disabled}`));
+const fondsEspace = await page.evaluate(async () => (await (await fetch("/geodata/api/espace")).json()).fonds.map((f) => f.libelle));
 const miniFond = page.locator("[data-gd-mini-fond]");
 await miniFond.click();
 const listeFonds = page.locator("[data-gd-fonds-flottants]");
 await listeFonds.waitFor();
 const choixListe = await listeFonds.locator("button").evaluateAll((bs) => bs.map((b) => `${b.textContent.replace("✓", "")}|${b.disabled}`));
 const boiteFonds = await listeFonds.boundingBox(), boiteMiniFond = await miniFond.boundingBox();
-const fondActif = await page.locator("header.gd-barre [data-gd-fond]").inputValue();
-check("mini-barre : « Fond de carte » liste les mêmes fonds que le sélecteur, fond actif coché, à gauche de la mini-barre et alignée sur le bouton (vers le haut dans la moitié basse)",
-  JSON.stringify(choixListe) === JSON.stringify(choixSelect) && (await listeFonds.locator(`[data-gd-fond-choix='${fondActif}']`).getAttribute("aria-pressed")) === "true" && boiteFonds.x + boiteFonds.width <= boiteMiniFond.x && (Math.abs(boiteFonds.y - boiteMiniFond.y) <= 1.5 || Math.abs(boiteFonds.y + boiteFonds.height - (boiteMiniFond.y + boiteMiniFond.height)) <= 1.5),
-  `${choixListe.join(" ; ")} ≠ ${choixSelect.join(" ; ")}`);
+const fondDeDepart = await fondActif(page);
+check("mini-barre : « Fond de carte » liste les fonds de l'espace (et ceux du navigateur), fond actif coché, à gauche de la mini-barre et alignée sur le bouton (vers le haut dans la moitié basse)",
+  fondsEspace.every((l) => choixListe.some((c) => c.startsWith(`${l}|`))) && (await listeFonds.locator(`[data-gd-fond-choix='${fondDeDepart}']`).getAttribute("aria-pressed")) === "true" && boiteFonds.x + boiteFonds.width <= boiteMiniFond.x && (Math.abs(boiteFonds.y - boiteMiniFond.y) <= 1.5 || Math.abs(boiteFonds.y + boiteFonds.height - (boiteMiniFond.y + boiteMiniFond.height)) <= 1.5),
+  `${choixListe.join(" ; ")} / espace : ${fondsEspace.join(" ; ")}`);
 await page.keyboard.press("Escape");
 check("mini-barre : Échap referme la liste des fonds", (await listeFonds.count()) === 0);
 await miniFond.click();
 const autreFond = await listeFonds.locator(`button:not(:disabled):not([aria-pressed='true'])`).first().getAttribute("data-gd-fond-choix").catch(() => null);
 if (autreFond) {
   await listeFonds.locator(`[data-gd-fond-choix='${autreFond}']`).click();
-  check("mini-barre : un fond choisi dans la liste s'applique comme depuis le sélecteur, et la liste se ferme", (await page.locator("header.gd-barre [data-gd-fond]").inputValue()) === autreFond && (await listeFonds.count()) === 0);
-  await page.locator("header.gd-barre [data-gd-fond]").selectOption(fondActif);
+  check("mini-barre : un fond choisi dans la liste s'applique à la carte, et la liste se ferme", (await fondActif(page)) === autreFond && (await listeFonds.count()) === 0);
+  await choisirFond(page, fondDeDepart);
 } else {
-  await listeFonds.locator(`[data-gd-fond-choix='${fondActif}']`).click();
-  check("mini-barre : un fond choisi dans la liste s'applique comme depuis le sélecteur, et la liste se ferme", (await page.locator("header.gd-barre [data-gd-fond]").inputValue()) === fondActif && (await listeFonds.count()) === 0);
+  await listeFonds.locator(`[data-gd-fond-choix='${fondDeDepart}']`).click();
+  check("mini-barre : un fond choisi dans la liste s'applique à la carte, et la liste se ferme", (await fondActif(page)) === fondDeDepart && (await listeFonds.count()) === 0);
 }
 await miniFond.click();
 const canevasFonds = await page.locator(".maplibregl-canvas").boundingBox();
@@ -422,7 +436,7 @@ check("GEO 06 · table : zéro reste « 0 » et l'absence reste « Valeur absent
 await table.getByRole("button", { name: "Fermer la table" }).click();
 
 // --- GEO 05 : enregistrer, se reconnecter, retrouver la composition ---
-await page.locator("[data-gd-enregistrer]").click();
+await page.locator("[data-gd-mini-enregistrer]").click();
 await page.locator("[data-gd-nom-carte]").fill("Carte de recette");
 await page.locator("[data-gd-enregistrer-sous]").click();
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
@@ -442,11 +456,11 @@ await onglet2.goto(`${BASE}/geodata`);
 await onglet2.locator("[data-gd-etat-enregistrement='enregistree']").waitFor({ timeout: 20_000 });
 await onglet(page, "couches");
 await page.locator("[data-gd-couche-active] input[type='range']").first().fill("40");
-await page.locator("[data-gd-enregistrer]").click();
+await page.locator("[data-gd-mini-enregistrer]").click();
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
 await onglet(onglet2, "couches");
 await onglet2.locator("[data-gd-couche-active] input[type='range']").first().fill("90");
-await onglet2.locator("[data-gd-enregistrer]").click();
+await onglet2.locator("[data-gd-mini-enregistrer]").click();
 await onglet2.locator("[data-gd-conflit]").waitFor();
 check("GEO 13 · second onglet : enregistrement périmé refusé, conflit visible", (await onglet2.locator("[data-gd-etat-enregistrement='conflit']").count()) === 1);
 await onglet2.locator("[data-gd-copie-conflit]").click();
@@ -526,8 +540,8 @@ await page.waitForFunction((id) => document.querySelector("[data-gd-collection-o
 const rouverte = await panneauCol.locator("[data-gd-collection-carte]").evaluateAll((ls) => ls.map((l) => l.getAttribute("data-gd-collection-carte")));
 check("collection : rouverte, titre, description, cartes et ordre conservés", JSON.stringify(rouverte) === JSON.stringify([carteB.id, carteA.id]) && (await page.locator("[data-gd-collection-titre]").inputValue()) === "Atlas de recette" && (await page.locator("[data-gd-collection-description]").inputValue()) === "Cartes de la recette GeoData");
 await page.locator(`[data-gd-collection-ouvrir-carte='${carteA.id}']`).click();
-await page.waitForFunction(() => document.querySelector("header.gd-barre .gd-enregistrement strong")?.textContent === "Carte de recette", null, { timeout: 10_000 }).catch(() => undefined);
-check("collection : un clic sur une carte de la liste l'ouvre", ((await page.locator("header.gd-barre .gd-enregistrement strong").textContent()) ?? "") === "Carte de recette");
+await page.waitForFunction(() => document.querySelector("[data-gd-mini-enregistrer]")?.getAttribute("data-gd-carte-nom") === "Carte de recette", null, { timeout: 10_000 }).catch(() => undefined);
+check("collection : un clic sur une carte de la liste l'ouvre", (await carteOuverte(page)) === "Carte de recette");
 // Supprimer une collection laisse ses cartes intactes dans Mes cartes.
 await page.locator("[data-gd-collection-supprimer]").click();
 await page.locator("[data-gd-collection-confirmer-suppression]").click();
@@ -540,9 +554,10 @@ check("Mes cartes : les collections qui référencent la carte affichée sont in
 await onglet(page, "couches");
 await page.locator("[data-gd-couche-active] input[type='range']").first().fill("55");
 await page.locator("[data-gd-etat-enregistrement='non-enregistree']").waitFor();
+check("mini-barre : pastille « Carte non enregistrée » après une modification", (await page.locator("[data-gd-mini-enregistrer] [data-gd-pastille-non-enregistree]").count()) === 1 && (await page.locator("[data-gd-mini-enregistrer]").getAttribute("title")) === "Carte non enregistrée");
 await page.locator("[data-gd-mini-enregistrer]").click();
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
-check("mini-barre : « Enregistrer » enregistre la carte affichée et met à jour l'indicateur", (await page.locator("[data-gd-mini-enregistrer]").isDisabled()) && (await page.locator("header.gd-barre [data-gd-enregistrer]").isDisabled()));
+check("mini-barre : « Enregistrer » enregistre la carte affichée ; la pastille disparaît", (await page.locator("[data-gd-mini-enregistrer]").isDisabled()) && (await page.locator("[data-gd-mini-enregistrer] [data-gd-pastille-non-enregistree]").count()) === 0 && (await page.locator("[data-gd-mini-enregistrer]").getAttribute("title")) === "Enregistrer");
 // Mes cartes › Enregistrer sous : nouvelle carte, l'originale ne change pas. La copie de collection est ouverte et la
 // nouvelle carte y est ajoutée depuis Mes cartes : la collection ouverte est relue, son enregistrement ne perd rien.
 await entreeMenu(page, "collection:ouvrir");
@@ -553,10 +568,10 @@ const formSous = page.locator("[data-gd-formulaire-enregistrer='sous']");
 await formSous.waitFor();
 await formSous.locator("select").selectOption(idCopie);
 await page.waitForFunction(() => (document.querySelector("[data-gd-formulaire-enregistrer='sous'] [data-gd-nom-carte]")?.value ?? "") !== "", null, { timeout: 5000 }).catch(() => undefined);
-check("Mes cartes › Enregistrer sous : nom proposé « (copie) »", (await formSous.locator("[data-gd-nom-carte]").inputValue()) === "Carte de recette (copie)", `${await formSous.locator("[data-gd-nom-carte]").inputValue()} ; carte affichée ${await page.locator("header.gd-barre .gd-enregistrement strong").textContent()}`);
+check("Mes cartes › Enregistrer sous : nom proposé « (copie) »", (await formSous.locator("[data-gd-nom-carte]").inputValue()) === "Carte de recette (copie)", `${await formSous.locator("[data-gd-nom-carte]").inputValue()} ; carte affichée ${await carteOuverte(page)}`);
 await formSous.locator("[data-gd-nom-carte]").fill("Carte de recette bis");
 await formSous.locator("[data-gd-enregistrer-sous]").click();
-await page.waitForFunction(() => document.querySelector("header.gd-barre .gd-enregistrement strong")?.textContent === "Carte de recette bis", null, { timeout: 10_000 }).catch(() => undefined);
+await page.waitForFunction(() => document.querySelector("[data-gd-mini-enregistrer]")?.getAttribute("data-gd-carte-nom") === "Carte de recette bis", null, { timeout: 10_000 }).catch(() => undefined);
 const nomsCartes = await page.evaluate(async () => (await (await fetch("/geodata/api/cartes")).json()).cartes.map((c) => c.nom));
 check("Mes cartes › Enregistrer sous : nouvelle carte ouverte, l'originale intacte", nomsCartes.includes("Carte de recette bis") && nomsCartes.includes("Carte de recette"));
 await entreeMenu(page, "collection:enregistrer");
@@ -618,7 +633,7 @@ check("mesure indicative : distance affichée avec sa méthode", /Distance : .*(
 await page.locator("[data-gd-outil='navigation']").check();
 
 // --- GEO 09 : export autorisé (PNG + fiche) ---
-await page.locator("[data-gd-enregistrer]").click().catch(() => undefined);
+await page.locator("[data-gd-mini-enregistrer]").click().catch(() => undefined);
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
 await volet(page, "export");
 const telechargement = page.waitForEvent("download", { timeout: 30_000 });
@@ -728,6 +743,65 @@ await attendreSelection("1:1");
 await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
 check("clics, carte vierge : 2 clics rapides sélectionnent la région (parent lu en base), fiche de la région", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1, await selectionCourante());
 check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvantClics);
+
+// --- Onglets (D-GD-37) : une adresse par onglet, carte conservée, zone = sélection de la carte, valeurs lues en base ---
+{
+  const ongletPage = async (o, re) => { await page.locator(`[data-gd-onglet-page="${o}"]`).click(); await page.waitForURL(re); };
+  const bord = page.locator("[data-gd-tableau-bord]");
+  const zoneBord = () => bord.getAttribute("data-gd-zone");
+  const attendreZone = (z) => page.waitForFunction((a) => document.querySelector("[data-gd-tableau-bord]")?.getAttribute("data-gd-zone") === a, z, { timeout: 15_000 }).catch(() => undefined);
+  check("onglets : cinq onglets dans la barre, Cartes thématiques actif par défaut, ☰ à droite", (await page.locator("[data-gd-onglet-page]").allTextContents()).join("|") === "Cartes thématiques|Chiffres clés 2024|Tableaux RGPH 2024|CEE 2024|Concepts et définitions"
+    && (await page.locator('[data-gd-onglet-page="cartes"]').getAttribute("aria-current")) === "page"
+    && (await page.locator("[data-gd-menu]").boundingBox()).x > (await page.locator("[data-gd-barre-onglets]").boundingBox()).x);
+  const zoomAvant = await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom");
+  await ongletPage("chiffres-cles", /\/geodata\/chiffres-cles$/);
+  await attendreZone("1:1");
+  await page.locator('[data-gd-chiffre="population-legale"]').waitFor({ timeout: 15_000 }).catch(() => undefined);
+  check("onglets : la région sélectionnée sur la carte ouvre Chiffres clés sur cette zone", (await zoneBord()) === "1:1" && (await bord.getAttribute("data-gd-zone-nom")) === "Région synthétique Nord", await zoneBord());
+  check("onglets : valeur absente de la zone → « Donnée non disponible », jamais zéro", ((await page.locator('[data-gd-chiffre="population-legale"]').textContent()) ?? "").includes("Donnée non disponible"));
+  await page.locator('[data-gd-filtre-niveau="1"]').selectOption("");
+  await attendreZone("0:ZZ");
+  await page.waitForFunction(() => document.querySelector('[data-gd-chiffre="population-legale"]')?.getAttribute("data-gd-chiffre-valeur") === "1000", null, { timeout: 15_000 }).catch(() => undefined);
+  const urb = await page.locator('[data-gd-chiffre="taux-urbanisation"]').textContent();
+  check("onglets : filtre de zone → pays ; valeurs lues en base, rapport calculé marqué « * »", (await page.locator('[data-gd-chiffre="population-legale"]').getAttribute("data-gd-chiffre-valeur")) === "1000" && /60,0\*/.test(urb ?? "") && (await page.locator("[data-gd-compteur]").count()) === 1, urb);
+  const bloc = page.locator('[data-gd-bloc="population-evolution"]');
+  check("onglets : bloc tableau + graphique SVG, source citée, série absente « Donnée non disponible »", (await bloc.locator("svg[role='img']").count()) === 1 && ((await bloc.locator("[data-gd-source]").textContent()) ?? "").startsWith("Source") && (await bloc.locator("[data-gd-nd]").count()) >= 1);
+  await bloc.locator("[data-gd-bloc-menu]").click();
+  const [telechargement] = await Promise.all([page.waitForEvent("download"), bloc.locator("[data-gd-bloc-csv]").click()]);
+  const csv = readFileSync(await telechargement.path(), "utf8");
+  check("onglets : ⋮ → export CSV (zone, source, absent vide)", /^\uFEFFRecensement;Population légale\r\n2014;\r\n2024;1000\r\nZone : Pays synthétique/.test(csv), JSON.stringify(csv.slice(0, 120)));
+  await bloc.locator("[data-gd-bloc-menu]").click(); await bloc.locator("[data-gd-bloc-plein]").click();
+  const plein = (await bloc.getAttribute("data-gd-plein-ecran")) === "oui";
+  await page.keyboard.press("Escape");
+  check("onglets : ⋮ → plein écran, Échap en sort", plein && (await bloc.getAttribute("data-gd-plein-ecran")) === "non");
+  await bloc.locator('[data-gd-tri="0"]').click();
+  check("onglets : tableau triable (en-tête de colonne)", (await bloc.locator('th[aria-sort="descending"]').count()) === 1);
+  await ongletPage("tableaux", /\/geodata\/tableaux$/);
+  await page.locator('[data-gd-bloc^="theme-"]').first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+  const themes = await page.locator('[data-gd-bloc^="theme-"] h3').allTextContents();
+  check("onglets : Tableaux RGPH — un tableau par thème, la CEE servie par son onglet", themes.length === 1 && themes[0].startsWith("Démographie"), themes.join(" | "));
+  // Adresse partageable : ouverte dans un nouvel onglet du navigateur, elle mène au même onglet de GeoData.
+  const autre = await page.context().newPage();
+  await autre.goto(`${BASE}/geodata/tableaux`);
+  await autre.locator('[data-gd-bloc^="theme-"]').first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+  check("onglets : l'adresse de l'onglet s'ouvre telle quelle (rechargement, partage)", (await autre.locator('[data-gd-onglet-page="tableaux"]').getAttribute("aria-current")) === "page" && (await autre.locator('[data-gd-bloc^="theme-"]').count()) >= 1);
+  await autre.close();
+  await ongletPage("cee", /\/geodata\/cee$/);
+  await page.locator('[data-gd-bloc="cee-type"]').waitFor({ timeout: 15_000 }).catch(() => undefined);
+  check("onglets : CEE 2024 — tableaux de la définition en base, absent « Donnée non disponible »", ((await page.locator('[data-gd-bloc="cee-type"] td').first().textContent()) ?? "").includes("Donnée non disponible"));
+  await ongletPage("concepts", /\/geodata\/concepts$/);
+  await page.locator("[data-gd-concept]").first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+  const conceptsFr = await page.locator("[data-gd-concept] dt").allTextContents();
+  await page.locator('[data-gd-concepts-langue="ar"]').click();
+  await page.locator("[data-gd-concepts-vide]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+  check("onglets : Concepts — sous-onglets Arabe / Français, texte lu en base, arabe absent « Donnée non disponible »", conceptsFr.join("|") === "Concept synthétique" && (await page.locator("[data-gd-concepts-vide]").count()) === 1);
+  await page.goBack(); await page.waitForURL(/\/geodata\/cee$/);
+  check("onglets : bouton Retour du navigateur → onglet précédent", (await page.locator('[data-gd-onglet-page="cee"]').getAttribute("aria-current")) === "page");
+  await ongletPage("cartes", /\/geodata$/);
+  await page.waitForTimeout(600);
+  check("onglets : retour aux cartes — sélection, zoom et carte conservés", (await page.locator("[data-gd-tableau-bord]").isHidden()) && (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant && (await page.locator(".maplibregl-canvas").isVisible()), `${await selectionCourante()} ${zoomAvant}`);
+  await page.screenshot({ path: join(OUT, "07c-retour-cartes.png") });
+}
 await page.waitForTimeout(500);
 await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic);
 await page.waitForTimeout(600);
@@ -904,8 +978,9 @@ const sectionFonds = pf.locator("[data-settings-fournisseurs]");
 await sectionFonds.waitFor();
 check("Paramètres : fournisseurs de fonds, MapTiler intégré et par défaut", (await pf.locator("[data-fournisseur-defaut='maptiler']").isChecked()) && ((await sectionFonds.textContent()) ?? "").includes("clé MapTiler absente"));
 await pf.goto(`${BASE}/geodata`);
-await pf.locator("[data-gd-fond]").waitFor();
-check("GeoData sans clé MapTiler : fond neutre, MapTiler signalé « clé absente » (aucun fond inventé)", (await pf.locator("[data-gd-fond]").inputValue()) === "neutre" && (await pf.locator("[data-gd-fond] option[disabled]").filter({ hasText: "clé absente" }).count()) === 1);
+await pf.locator("[data-gd-mini-fond]").waitFor();
+const fondsSansCle = await choixFonds(pf);
+check("GeoData sans clé MapTiler : fond neutre, MapTiler signalé « clé absente » (aucun fond inventé)", (await fondActif(pf)) === "neutre" && fondsSansCle.filter((c) => c.desactive && c.texte.includes("clé absente")).length === 1, JSON.stringify(fondsSansCle));
 await pf.goto(`${BASE}/parametres`);
 await pf.fill("#settings-maptiler-key", "cle-recette-geodata");
 await pf.locator("#settings-maptiler-key").press("Enter");
@@ -925,18 +1000,18 @@ await pf.locator("[data-fournisseur-enregistrer]").click();
 check("Paramètres : fournisseur saisi puis modifié", ((await pf.locator("[data-fournisseur='fournisseur-recette']").textContent()) ?? "").includes("Fournisseur recette modifié"));
 const stockage = await pf.evaluate(() => localStorage.getItem("fadi.fournisseurs-carte.v1") ?? "");
 await pf.goto(`${BASE}/geodata`);
-await pf.locator("[data-gd-fond]").waitFor();
-// Les fournisseurs saisis sont relus après le montage : attendre leur option avant de lire la liste (sans changer le critère).
-await pf.locator("[data-gd-fond] option", { hasText: "Fournisseur recette modifié" }).waitFor({ state: "attached", timeout: 15_000 }).catch(() => {});
-const optionsFond = await pf.locator("[data-gd-fond] option:not([disabled])").allTextContents();
-check("GeoData : fonds MapTiler et fournisseur saisi proposés ; nouvelle carte sur le fond MapTiler par défaut", optionsFond.includes("MapTiler — Satellite") && optionsFond.includes("Fournisseur recette modifié") && (await pf.locator("[data-gd-fond]").inputValue()) === "navigateur:maptiler:satellite", optionsFond.join(" | "));
+await pf.locator("[data-gd-mini-fond]").waitFor();
+// Les fournisseurs saisis sont relus après le montage : attendre le fond MapTiler par défaut avant de lire la liste (sans changer le critère).
+await pf.waitForFunction(() => document.querySelector("[data-gd-mini-fond]")?.getAttribute("data-gd-fond-actif") === "navigateur:maptiler:satellite", null, { timeout: 15_000 }).catch(() => {});
+const optionsFond = (await choixFonds(pf, true)).map((c) => c.texte);
+check("GeoData : fonds MapTiler et fournisseur saisi proposés ; nouvelle carte sur le fond MapTiler par défaut", optionsFond.includes("MapTiler — Satellite") && optionsFond.includes("Fournisseur recette modifié") && (await fondActif(pf)) === "navigateur:maptiler:satellite", optionsFond.join(" | "));
 await pf.locator("[data-gd-avis-fond]").waitFor({ timeout: 15_000 });
 check("GeoData : tuiles du fond refusées → avis non bloquant, outils de la carte disponibles", (await pf.locator("[data-gd-erreur-carte]").count()) === 0 && !(await pf.locator("[data-gd-barre-outil='zoom-plus']").isDisabled()));
 await pf.locator("[data-gd-avis-fond] button").filter({ hasText: "Fond neutre" }).click();
-check("GeoData : retour au fond neutre en un geste", (await pf.locator("[data-gd-fond]").inputValue()) === "neutre");
+check("GeoData : retour au fond neutre en un geste", (await fondActif(pf)) === "neutre");
 const appelsApi = [];
 pf.on("request", (r) => { if (r.url().startsWith(`${BASE}/geodata/api`) && /cle-recette-geodata|cle-xyz/.test(`${r.url()} ${r.postData() ?? ""}`)) appelsApi.push(r.url()); });
-await pf.locator("[data-gd-fond]").selectOption("navigateur:fournisseur-recette:fond");
+await choisirFond(pf, "navigateur:fournisseur-recette:fond");
 await volet(pf, "cartes");
 await pf.locator("[data-gd-nom-carte]").fill(`Fond fournisseur ${suffixe}`);
 await pf.locator("[data-gd-enregistrer-sous]").click();
@@ -1000,6 +1075,9 @@ for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await vol
 for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }
 await en.locator("[data-gd-mini-fond]").click(); await releve(); await en.keyboard.press("Escape");
 await menuCartes(en); await releve(); await en.locator("[data-gd-menu]").click();
+for (const o of ["chiffres-cles", "tableaux", "cee", "concepts"]) { await en.locator(`[data-gd-onglet-page="${o}"]`).click(); await en.locator(`[data-gd-tableau-bord="${o}"]`).waitFor(); await en.waitForTimeout(1200); await releve(); }
+await en.locator("[data-gd-concepts-langue='ar']").click(); await releve();
+await en.locator('[data-gd-onglet-page="cartes"]').click();
 await onglet(en, "catalogue"); await en.locator("[data-gd-type='imagerie']").click(); await releve(); await en.locator("[data-gd-type='vecteurs']").click();
 for (const o of ["couches", "legende"]) { await onglet(en, o); await releve(); }
 writeFileSync(join(OUT, "residus-anglais.txt"), [...residus].join("\n"));

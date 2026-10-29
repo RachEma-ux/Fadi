@@ -12,7 +12,8 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { Link, useLocation } from "react-router-dom";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { sansColorationThematique, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
@@ -24,6 +25,7 @@ import { PanneauCollection, useCollection, type ModeCollection } from "./panneau
 import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
 import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
+import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
@@ -53,6 +55,11 @@ function empriseGeometrie(g: { type: string; coordinates: unknown }): [number, n
 
 export function PageGeoData() {
   const racine = useRef<HTMLDivElement>(null);
+  // Onglets de GeoData (D-GD-37) : une adresse par onglet (/geodata, /geodata/chiffres-cles…) ; la carte reste montée
+  // derrière les autres onglets : couches, sélection, indicateur actif et zoom sont conservés au retour.
+  const ongletPage: OngletGeoData = ongletDeChemin(useLocation().pathname);
+  const [bordVisite, setBordVisite] = useState(ongletPage !== "cartes");
+  useEffect(() => { if (ongletPage !== "cartes") setBordVisite(true); }, [ongletPage]);
   const conteneurCarte = useRef<HTMLDivElement>(null);
   const moteur = useRef<MoteurCarte | null>(null);
   // Composition courante lue par le moteur à sa création (chargé de façon asynchrone, après une éventuelle réouverture).
@@ -75,7 +82,7 @@ export function PageGeoData() {
   const [valeurPoint, setValeurPoint] = useState<{ titre: string; etat: "chargement" | "erreur" | "ok"; recue?: ValeurRasterRecue; erreur?: string } | null>(null);
   const [selection, setSelection] = useState<{ coucheId: string; code: string } | null>(null);
   // Sélection par nombre de clics (D-GD-34) : niveau sélectionné (recette) et contour d'une entité sans couche chargée.
-  const [entite, setEntite] = useState<{ rang: RangAdministratif; code: string; nom: string } | null>(null);
+  const [entite, setEntite] = useState<{ rang: RangAdministratif; code: string; nom: string; coucheId?: string } | null>(null);
   const [entiteContour, setEntiteContour] = useState<unknown | null>(null);
   const [fiche, setFiche] = useState<FicheRecue | null>(null);
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
@@ -308,7 +315,7 @@ export function PageGeoData() {
   const appliquerNiveau = (s: SerieSelection, rang: RangAdministratif) => {
     const u = s.unites.get(rang);
     if (!u) return;
-    setEntite({ rang, code: u.code, nom: u.nom });
+    setEntite({ rang, code: u.code, nom: u.nom, coucheId: u.coucheId });
     setAnnonce(`Sélection : ${u.nom || u.code}`);
     if (u.enCouche) { setSelection({ coucheId: u.coucheId, code: u.code }); setEntiteContour(null); }
     else {
@@ -778,21 +785,23 @@ export function PageGeoData() {
     if (e.key === "Enter" && outil !== "navigation" && outil !== "annotation" && (e.target as HTMLElement).classList.contains("maplibregl-canvas")) moteur.current?.terminerTrace();
   };
 
+  // Zone des onglets du tableau de bord : l'entité sélectionnée sur la carte, sinon le niveau courant de la barre
+  // territoriale, sinon rien (zone nationale de la définition en base).
+  const dernierNiveau = chemin[chemin.length - 1];
+  const zoneCarte = useMemo<ZoneCarte | null>(() => (entite ? { pays: paysCourant, rang: entite.rang, code: entite.code, nom: entite.nom, coucheId: entite.coucheId ?? null }
+    : dernierNiveau ? { pays: paysCourant, rang: dernierNiveau.rang, code: dernierNiveau.code, nom: dernierNiveau.nom, coucheId: dernierNiveau.coucheId || null } : null), [entite, dernierNiveau, paysCourant]);
+
   return (
-    <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")} data-gd-selection={entite ? `${entite.rang}:${entite.code}` : ""}>
+    <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")} data-gd-selection={entite ? `${entite.rang}:${entite.code}` : ""} data-gd-onglet-actif={ongletPage}>
       <p className="sr-only" role="status" aria-live="polite">{annonce}</p>
       <header className="gd-barre" aria-label="Barre de GeoData">
-        <label className="gd-champ gd-fond">Fond
-          <select value={composition.fond} onChange={(e) => choisirFond(e.target.value)} data-gd-fond>
-            {choixFonds.map((f) => <option key={f.cle} value={f.valeur} disabled={f.desactive}>{f.libelle}</option>)}
-          </select>
-        </label>
-        <a className="gd-lien-fonds" href="/parametres#settings-fournisseurs" title="Saisir ou modifier les fournisseurs de fonds de carte (Paramètres)" data-gd-fournisseurs>Fournisseurs</a>
-        <div className="gd-enregistrement" data-gd-etat-enregistrement={etat.etat}>
-          <span role="status" translate="no">{carte ? <strong>{carte.nom}</strong> : null}</span>
-          <span role="status">{LIBELLES_ENREGISTREMENT[etat.etat]}</span>
-          <button type="button" onClick={() => void enregistrer()} disabled={enregistrementImpossible} data-gd-enregistrer>Enregistrer</button>
-        </div>
+        {/* Barre d'onglets (D-GD-37) : Fond et Enregistrer vivent dans la mini-barre de la carte, Fournisseurs et
+            Enregistrer dans ☰ › Cartes ; l'état d'enregistrement est la pastille de l'icône Enregistrer. ☰ à droite. */}
+        <nav className="gd-barre-onglets" aria-label="Onglets de GeoData" data-gd-barre-onglets>
+          {ONGLETS_GEODATA.map((o) => (
+            <Link key={o.cle} to={cheminOnglet(o.cle)} className="gd-onglet-page" aria-current={ongletPage === o.cle ? "page" : undefined} data-gd-onglet-page={o.cle}>{o.libelle}</Link>
+          ))}
+        </nav>
         <div className="gd-menu">
           <button type="button" className="gd-hamburger" aria-label="Menu GeoData" title="Menu GeoData" aria-expanded={menuOuvert} aria-controls="gd-menu-liste" onClick={() => setMenuOuvert(!menuOuvert)} data-gd-menu>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={menuOuvert ? "M6 6l12 12M18 6 6 18" : "M4 7h16M4 12h16M4 17h16"} /></svg>
@@ -836,6 +845,7 @@ export function PageGeoData() {
       {etat.etat === "erreur" && <div role="alert" className="gd-bandeau gd-alerte"><p>{etat.message}</p><button type="button" onClick={() => void enregistrer()}>Réessayer</button></div>}
       {erreurEspace && <div role="alert" className="gd-bandeau gd-alerte"><p>{erreurEspace}</p></div>}
       <div className="gd-corps">
+        {bordVisite && <TableauDeBord onglet={ongletPage === "cartes" ? "chiffres-cles" : ongletPage} visible={ongletPage !== "cartes"} paysCourant={paysCourant} paysPret={paysListe !== null || erreurTerritoires !== null} zoneCarte={zoneCarte} />}
         {panneauOuvert && <aside className="gd-panneau gd-ouvert" aria-label="Catalogue, couches et légende" data-gd-panneau>
           <div className="gd-onglets">
             <div role="tablist" aria-label="Panneau GeoData" className="gd-liste-onglets">
@@ -866,7 +876,7 @@ export function PageGeoData() {
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
             resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }}
-            enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer() }}
+            enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer(), etat: etat.etat, etatLibelle: LIBELLES_ENREGISTREMENT[etat.etat], carteNom: carte?.nom ?? null }}
             fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
@@ -892,7 +902,7 @@ export function PageGeoData() {
           </aside>
         )}
       </div>
-      {coucheDeTable && <div className="gd-tiroir"><TableAttributs couche={coucheDeTable} filtreActif={composition.couches.find((k) => k.coucheId === coucheDeTable.id)?.filtre ?? null}
+      {coucheDeTable && ongletPage === "cartes" && <div className="gd-tiroir"><TableAttributs couche={coucheDeTable} filtreActif={composition.couches.find((k) => k.coucheId === coucheDeTable.id)?.filtre ?? null}
         onFiltre={(f: FiltreCouche | null) => setComposition((c) => definirFiltre(c, coucheDeTable.id, f))} onFermer={() => setCoucheTable(null)}
         onSelection={(code) => { setSelection({ coucheId: coucheDeTable.id, code }); void ouvrirFiche(coucheDeTable.id, code).then(() => undefined); }} /></div>}
     </div>

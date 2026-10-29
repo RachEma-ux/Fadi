@@ -398,6 +398,21 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         écrit. Révision attendue à chaque enregistrement (périmée → 409, jamais de perte silencieuse ; remarque de revue
         Codex). Concept, modèle de données et API : `docs/workstreams/geodata/COLLECTIONS.md`.
 
+   - D-GD-37 (29 octobre 2026) — **barre blanche supprimée, cinq onglets, tableau de bord RGPH 2024** (spécification du
+     maître d'ouvrage, étape 2 validée « Ok continue ») :
+     1. La barre blanche ne porte plus Fond / Fournisseurs / Enregistrer ni l'état « Carte non enregistrée » : Fond et
+        Enregistrer sont dans la mini-barre, Fournisseurs et Enregistrer dans ☰ › Cartes ; l'état est une pastille sur
+        l'icône Enregistrer (infobulle « Carte non enregistrée »).
+     2. Elle devient la **barre d'onglets** « Cartes thématiques · Chiffres clés 2024 · Tableaux RGPH 2024 · CEE 2024 ·
+        Concepts et définitions », ☰ à droite ; une adresse par onglet (`/geodata`, `/geodata/chiffres-cles`,
+        `/geodata/tableaux`, `/geodata/cee`, `/geodata/concepts`) ; la carte reste montée sous les autres onglets.
+     3. Données : ligne nationale du fichier HCP d'indicateurs importée (fiche `hcp-rgph2024-royaume`, code `MA`,
+        contour = union des 12 régions) ; taux d'urbanisation et totaux nationaux de la CEE **calculés** et marqués
+        comme tels (nature `calcule`, méthode écrite) ; concepts du HCP (français) en base (`geodata_concepts`) ;
+        définition des blocs en base (`geodata_tableaux_bord`, annexe de la fiche, aucune valeur). Séries 1960–2014,
+        concepts en arabe et emplois CEE par secteur absents : « Donnée non disponible ». Graphiques en SVG interne,
+        aucune nouvelle dépendance. Détail : `docs/workstreams/geodata/TABLEAU-DE-BORD.md`.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

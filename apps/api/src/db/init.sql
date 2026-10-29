@@ -3247,6 +3247,28 @@ CREATE TABLE IF NOT EXISTS geodata_douars (
 );
 CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
 
+-- Tableau de bord RGPH 2024 (D-GD-37) : annexes d'une version de référence. Concepts et définitions publiés par le HCP
+-- (une entrée par concept et par langue) et définition des blocs des onglets « Chiffres clés » et « CEE » (familles
+-- d'indicateurs désignées, sommes et rapports déclarés ; aucune valeur). Interface ≠ base de données (D-GD-29) :
+-- l'application lit ces tables, elle n'en contient aucune copie.
+CREATE TABLE IF NOT EXISTS geodata_concepts (
+  version_id text NOT NULL REFERENCES geodata_versions(id) ON DELETE CASCADE,
+  langue text NOT NULL CHECK (langue IN ('fr', 'ar')),
+  ordre integer NOT NULL CHECK (ordre >= 0),
+  titre text NOT NULL CHECK (length(btrim(titre)) > 0),
+  texte text NOT NULL,
+  source text NOT NULL,
+  PRIMARY KEY (version_id, langue, ordre)
+);
+CREATE TABLE IF NOT EXISTS geodata_tableaux_bord (
+  version_id text PRIMARY KEY REFERENCES geodata_versions(id) ON DELETE CASCADE,
+  pays text NOT NULL CHECK (pays ~ '^[A-Z]{2}$'),
+  zone_code text NOT NULL,
+  zone_nom text NOT NULL,
+  definition jsonb NOT NULL
+);
+CREATE INDEX IF NOT EXISTS geodata_tableaux_bord_pays ON geodata_tableaux_bord (pays);
+
 -- Découpage territorial (lot H, D-GD-28) : Fadi est neutre ; chaque pays est chargé en base depuis les fiches de source
 -- qui déclarent `territoire` (versions publiées seulement). La barre territoriale de l'interface lit ces tables,
 -- indépendamment des couches affichées. Les niveaux (nom, règle de parenté) sont ceux déclarés par les fiches.
