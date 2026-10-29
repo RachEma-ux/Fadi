@@ -502,6 +502,15 @@ await entreeMenu(page, "collection:enregistrer");
 await page.locator("[data-gd-collection-etat='enregistree']").waitFor();
 const enBase = await page.evaluate(async (id) => (await (await fetch(`/geodata/api/collections/${id}`)).json()), idCollection);
 check("collection : Collection › Enregistrer (menu) enregistre titre, description, cartes et ordre", JSON.stringify(enBase.cartes.map((c) => c.id)) === JSON.stringify([carteB.id, carteA.id]) && enBase.description === "Cartes de la recette GeoData");
+// Enregistrement lent : l'édition est bloquée jusqu'à la réponse (aucune modification faite entre-temps ne peut être écrasée).
+await page.route("**/geodata/api/collections/*", async (r) => { if (r.request().method() === "PUT") await new Promise((ok) => setTimeout(ok, 1200)); await r.continue(); });
+await page.locator("[data-gd-collection-titre]").fill("Atlas de recette");
+await page.locator("[data-gd-collection-enregistrer]").click();
+await page.waitForTimeout(300);
+check("collection : pendant un enregistrement, titre, liste et menu sont bloqués", (await page.locator("[data-gd-collection-titre]").isDisabled()) && (await page.locator(`[data-gd-collection-retirer='${carteA.id}']`).isDisabled()) && (await page.locator("[data-gd-collection-ouverte]").getAttribute("aria-busy")) === "true");
+await page.locator("[data-gd-collection-etat='enregistree']").waitFor();
+await page.waitForFunction(() => document.querySelector("[data-gd-collection-ouverte]")?.getAttribute("aria-busy") === "false");
+await page.unroute("**/geodata/api/collections/*");
 // Enregistrer sous : copie avec les mêmes références.
 await page.locator("[data-gd-collection-sous]").click();
 await page.locator("[data-gd-collection-enregistrer-sous] [data-gd-collection-titre-saisie]").fill("Atlas de recette (copie)");

@@ -694,8 +694,8 @@ export function PageGeoData() {
     { cle: "collection", titre: "Collection", entrees: [
       { cle: "nouveau", libelle: "Nouveau", action: () => ouvrirCollection("nouveau") },
       { cle: "ouvrir", libelle: "Ouvrir", action: () => ouvrirCollection("ouvrir") },
-      { cle: "enregistrer", libelle: "Enregistrer", action: () => void enregistrerCollection(), desactive: !collection.ouverte },
-      { cle: "enregistrer-sous", libelle: "Enregistrer sous", action: () => ouvrirCollection("enregistrer-sous"), desactive: !collection.ouverte },
+      { cle: "enregistrer", libelle: "Enregistrer", action: () => void enregistrerCollection(), desactive: !collection.ouverte || collection.enCours },
+      { cle: "enregistrer-sous", libelle: "Enregistrer sous", action: () => ouvrirCollection("enregistrer-sous"), desactive: !collection.ouverte || collection.enCours },
     ] },
     { cle: "fournisseurs", titre: "Fournisseurs", entrees: [
       { cle: "nouveau", libelle: "Nouveau (ajouter un fournisseur)", action: () => window.location.assign("/parametres#settings-fournisseurs-ajouter") },

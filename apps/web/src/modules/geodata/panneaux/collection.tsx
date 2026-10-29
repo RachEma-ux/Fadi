@@ -21,22 +21,28 @@ const depuis = (d: CollectionDetail): CollectionOuverte => ({ id: d.id, nom: d.n
 /** État de la collection ouverte et ses actions (une seule source pour le menu ☰ et le panneau). */
 export function useCollection() {
   const [ouverte, setOuverte] = useState<CollectionOuverte | null>(null);
+  // Enregistrement en cours : l'édition est bloquée (panneau et menu) jusqu'à la réponse, qui ne peut donc écraser aucune
+  // modification faite entre-temps ; une réponse ne s'applique qu'à la collection qu'elle concerne.
+  const [enCours, setEnCours] = useState(false);
+  const occupe = async <T,>(f: () => Promise<T>): Promise<T> => { setEnCours(true); try { return await f(); } finally { setEnCours(false); } };
   const ids = (c: CollectionOuverte) => c.cartes.map((x) => x.id);
   return {
     ouverte,
+    enCours,
     creer: async (nom: string, description: string) => setOuverte(depuis(await api.creerCollection({ nom: nom.trim(), description }))),
     ouvrir: async (id: string) => setOuverte(depuis(await api.collection(id))),
     modifier: (f: (c: CollectionOuverte) => Partial<CollectionOuverte>) => setOuverte((c) => (c ? { ...c, ...f(c), modifiee: true } : c)),
     // Révision attendue : une collection changée ailleurs entre-temps est refusée (409), marquée en conflit, jamais écrasée.
     enregistrer: async () => {
-      if (!ouverte) return;
-      try { setOuverte(depuis(await api.enregistrerCollection(ouverte.id, { revisionAttendue: ouverte.revision, nom: ouverte.nom.trim(), description: ouverte.description, cartes: ids(ouverte) }))); }
-      catch (e) { if (e instanceof ErreurGeoData && e.code === "revision_conflict") setOuverte((c) => (c ? { ...c, conflit: true } : c)); throw e; }
+      if (!ouverte || enCours) return;
+      const id = ouverte.id;
+      try { const r = await occupe(() => api.enregistrerCollection(id, { revisionAttendue: ouverte.revision, nom: ouverte.nom.trim(), description: ouverte.description, cartes: ids(ouverte) })); setOuverte((c) => (c?.id === id ? depuis(r) : c)); }
+      catch (e) { if (e instanceof ErreurGeoData && e.code === "revision_conflict") setOuverte((c) => (c?.id === id ? { ...c, conflit: true } : c)); throw e; }
     },
     /** Après un ajout fait ailleurs (Mes cartes › Ajouter à la collection) : relue si elle est ouverte et sans modification locale. */
-    rafraichir: async (id: string) => { if (ouverte?.id === id && !ouverte.modifiee) setOuverte(depuis(await api.collection(id))); },
-    enregistrerSous: async (nom: string) => { if (ouverte) setOuverte(depuis(await api.creerCollection({ nom: nom.trim(), description: ouverte.description, cartes: ids(ouverte) }))); },
-    supprimer: async () => { if (ouverte) { await api.supprimerCollection(ouverte.id); setOuverte(null); } },
+    rafraichir: async (id: string) => { if (ouverte?.id !== id || ouverte.modifiee) return; const d = await api.collection(id); setOuverte((c) => (c?.id === id && !c.modifiee ? depuis(d) : c)); },
+    enregistrerSous: async (nom: string) => { if (ouverte && !enCours) { const r = await occupe(() => api.creerCollection({ nom: nom.trim(), description: ouverte.description, cartes: ids(ouverte) })); setOuverte(depuis(r)); } },
+    supprimer: async () => { if (ouverte && !enCours) { const id = ouverte.id; await occupe(() => api.supprimerCollection(id)); setOuverte((c) => (c?.id === id ? null : c)); } },
     fermer: () => setOuverte(null),
   };
 }
@@ -112,7 +118,8 @@ export function PanneauCollection(p: { etat: EtatCollection; mode: ModeCollectio
         </section>
       )}
       {p.mode === "ouverte" && c && (
-        <section className="gd-formulaire" data-gd-collection-ouverte={c.id}>
+        <section className="gd-formulaire" data-gd-collection-ouverte={c.id} aria-busy={etat.enCours}>
+          <fieldset className="gd-sans-cadre" disabled={etat.enCours} data-gd-collection-edition>
           <label className="gd-champ">Titre<input value={c.nom} onChange={(e) => etat.modifier(() => ({ nom: e.target.value }))} maxLength={120} required translate="no" data-gd-collection-titre /></label>
           <label className="gd-champ">Description<textarea value={c.description} onChange={(e) => etat.modifier(() => ({ description: e.target.value }))} maxLength={2000} rows={2} translate="no" data-gd-collection-description /></label>
           <p role="status" className={c.modifiee ? "gd-alerte" : "gd-discret"} data-gd-collection-etat={c.modifiee ? "modifiee" : "enregistree"}>{c.modifiee ? "Collection modifiée, non enregistrée" : "Collection enregistrée"}</p>
@@ -152,6 +159,8 @@ export function PanneauCollection(p: { etat: EtatCollection; mode: ModeCollectio
               <button type="button" onClick={() => setConfirmer(false)}>Annuler</button>
             </div>
           )}
+          </fieldset>
+          {etat.enCours && <p role="status" className="gd-discret">Enregistrement en cours…</p>}
         </section>
       )}
     </div>

@@ -128,6 +128,7 @@
 .geodata-page .gd-menu-liste .gd-sous-menu button{text-transform:none;letter-spacing:0;font-weight:500;padding:4px 8px;min-height:32px}
 .geodata-page .gd-menu-liste .gd-sous-menu button:disabled{opacity:.55;cursor:not-allowed}
 .geodata-page .gd-bientot{font-style:italic;font-weight:400}
+.geodata-page .gd-sans-cadre{border:0;margin:0;padding:0;min-width:0}
 .geodata-page .gd-lien-carte{border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit}
 
 /* Catalogue rangé par catégorie (D-GD-14). */
