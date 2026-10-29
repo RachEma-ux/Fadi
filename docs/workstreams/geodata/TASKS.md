@@ -25,6 +25,8 @@
 - [x] GEO-CONTOURS-NIVEAUX — Régions et provinces construites par union des communes (codes HCP), topologie partagée simplifiée une seule fois, tuiles sans simplification propre ; rapport `CONTOURS-NIVEAUX.md` (D-GD-33).
 - [x] GEO-CLICS-NIVEAUX — Sélection par nombre de clics, du plus élémentaire au plus global ; carte vierge servie par le découpage en base ; double-clic sans zoom (D-GD-34).
 - [x] GEO-RECHERCHE-MINIBARRE — Recherche de la carte déplacée dans une mini-barre (loupe, Alt+R) sous la barre d'outils ; champ retiré de la barre au-dessus de la carte (D-GD-35).
+- [x] GEO-COLLECTIONS — Mini-barre Enregistrer et Fond, menu ☰ « Cartes » (Mes cartes, Collection, Fournisseurs ; Partager : bientôt), collections ordonnées de références (D-GD-36, `COLLECTIONS.md`).
+- [ ] GEO-PARTAGE-CARTE — « Partager » une carte : aucune fonction existante ; à spécifier par le maître d'ouvrage.
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 

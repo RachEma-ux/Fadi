@@ -150,9 +150,56 @@ describe("GEO 13 — modifications concurrentes", () => {
     const col = await alice.client.post(`${API}/collections`).send({ nom: "Études" });
     expect((await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: colBob.body.id })).status).toBe(400);
     const c = await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: col.body.id });
-    expect(c.body.collectionId).toBe(col.body.id);
+    expect(c.body.collections).toEqual([{ id: col.body.id, nom: "Études" }]);
     expect((await alice.client.post(`${API}/cartes/${c.body.id}/archiver`)).body.etat).toBe("archivee");
     expect((await alice.client.get(`${API}/cartes?etat=archivee`)).body.cartes).toHaveLength(1);
+  });
+  it("collections (D-GD-36) : ensemble ordonné de références, plusieurs collections par carte, suppression sans perte de carte", async () => {
+    const alice = await compte("gd-col2@example.com");
+    const bob = await compte("gd-col2-b@example.com");
+    const a = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte A" })).body;
+    const b = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte B" })).body;
+    const carteBob = (await bob.client.post(`${API}/cartes`).send({ nom: "Carte de Bob" })).body;
+    const nouvelle = await alice.client.post(`${API}/collections`).send({ nom: "Atlas du Souss", description: "Cartes du projet" });
+    expect(nouvelle.status).toBe(201);
+    expect(nouvelle.body).toMatchObject({ nom: "Atlas du Souss", description: "Cartes du projet", etat: "active", cartes: [] });
+    const id = nouvelle.body.id as string;
+    // Ajout de deux cartes puis ordre inversé : la liste enregistrée est l'ordre d'affichage.
+    expect(nouvelle.body.revision).toBe(1);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ cartes: [a.id] })).status).toBe(400); // révision attendue obligatoire
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 1, cartes: [a.id, b.id] })).body.cartes.map((x: { nom: string }) => x.nom)).toEqual(["Carte A", "Carte B"]);
+    const reordonnee = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 2, nom: "Atlas du Souss-Massa", cartes: [b.id, a.id] });
+    expect(reordonnee.body).toMatchObject({ nom: "Atlas du Souss-Massa", description: "Cartes du projet", revision: 3 });
+    // Carte ajoutée depuis Mes cartes pendant que la collection est ouverte : l'enregistrement périmé est refusé, rien n'est perdu.
+    const c = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte C", collectionId: id })).body;
+    const perime = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 3, cartes: [b.id, a.id] });
+    expect(perime.status).toBe(409);
+    expect(perime.body).toMatchObject({ error: "revision_conflict", revisionCourante: 4 });
+    expect(perime.body.collection.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id, c.id]);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 4, cartes: [b.id, a.id] })).status).toBe(200);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Refus : carte d'un autre espace, doublon, collection d'un autre compte.
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, carteBob.id] })).status).toBe(400);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, a.id] })).status).toBe(400);
+    expect((await bob.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    expect((await bob.client.delete(`${API}/collections/${id}`)).status).toBe(404);
+    // Enregistrer sous : copie avec les mêmes références ; la carte A est alors dans deux collections.
+    const copie = await alice.client.post(`${API}/collections`).send({ nom: "Atlas (copie)", description: "Cartes du projet", cartes: [b.id, a.id] });
+    expect(copie.body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)", "Atlas du Souss-Massa"]);
+    // Une carte modifiée l'est dans toutes ses collections (référence, jamais copie).
+    await alice.client.put(`${API}/cartes/${a.id}`).send({ revisionAttendue: a.revision, nom: "Carte A révisée" });
+    expect((await alice.client.get(`${API}/collections/${copie.body.id}`)).body.cartes[1].nom).toBe("Carte A révisée");
+    // Une carte ne se range plus par la carte elle-même.
+    expect((await alice.client.put(`${API}/cartes/${b.id}`).send({ revisionAttendue: b.revision, collectionId: id })).status).toBe(400);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Supprimer une collection laisse ses cartes intactes.
+    expect((await alice.client.delete(`${API}/collections/${id}`)).status).toBe(204);
+    expect((await alice.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    const restantes = (await alice.client.get(`${API}/cartes`)).body.cartes.map((x: { nom: string }) => x.nom);
+    expect(restantes).toEqual(expect.arrayContaining(["Carte A révisée", "Carte B", "Carte C"]));
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)"]);
+    expect((await alice.client.get(`${API}/collections`)).body.collections.find((x: { id: string }) => x.id === copie.body.id)).toMatchObject({ cartes: 2, description: "Cartes du projet" });
   });
 });
 
