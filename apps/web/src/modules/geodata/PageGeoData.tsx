@@ -782,17 +782,8 @@ export function PageGeoData() {
     <div ref={racine} className="geodata-page" style={{ height: `calc(100dvh - ${hauteurHaut}px)` }} onKeyDown={clavier} data-geodata-page data-gd-valeurs-affichees={[...valeursAffichees.keys()].join(" ")} data-gd-selection={entite ? `${entite.rang}:${entite.code}` : ""}>
       <p className="sr-only" role="status" aria-live="polite">{annonce}</p>
       <header className="gd-barre" aria-label="Barre de GeoData">
-        <label className="gd-champ gd-fond">Fond
-          <select value={composition.fond} onChange={(e) => choisirFond(e.target.value)} data-gd-fond>
-            {choixFonds.map((f) => <option key={f.cle} value={f.valeur} disabled={f.desactive}>{f.libelle}</option>)}
-          </select>
-        </label>
-        <a className="gd-lien-fonds" href="/parametres#settings-fournisseurs" title="Saisir ou modifier les fournisseurs de fonds de carte (Paramètres)" data-gd-fournisseurs>Fournisseurs</a>
-        <div className="gd-enregistrement" data-gd-etat-enregistrement={etat.etat}>
-          <span role="status" translate="no">{carte ? <strong>{carte.nom}</strong> : null}</span>
-          <span role="status">{LIBELLES_ENREGISTREMENT[etat.etat]}</span>
-          <button type="button" onClick={() => void enregistrer()} disabled={enregistrementImpossible} data-gd-enregistrer>Enregistrer</button>
-        </div>
+        {/* Barre allégée (D-GD-37) : Fond et Enregistrer vivent dans la mini-barre de la carte, Fournisseurs et Enregistrer
+            dans ☰ › Cartes ; l'état d'enregistrement est la pastille de l'icône Enregistrer. Seul ☰ reste ici. */}
         <div className="gd-menu">
           <button type="button" className="gd-hamburger" aria-label="Menu GeoData" title="Menu GeoData" aria-expanded={menuOuvert} aria-controls="gd-menu-liste" onClick={() => setMenuOuvert(!menuOuvert)} data-gd-menu>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={menuOuvert ? "M6 6l12 12M18 6 6 18" : "M4 7h16M4 12h16M4 17h16"} /></svg>
@@ -866,7 +857,7 @@ export function PageGeoData() {
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
             resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }}
-            enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer() }}
+            enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer(), etat: etat.etat, etatLibelle: LIBELLES_ENREGISTREMENT[etat.etat], carteNom: carte?.nom ?? null }}
             fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
