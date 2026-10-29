@@ -413,6 +413,18 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         concepts en arabe et emplois CEE par secteur absents : « Donnée non disponible ». Graphiques en SVG interne,
         aucune nouvelle dépendance. Détail : `docs/workstreams/geodata/TABLEAU-DE-BORD.md`.
 
+   - D-GD-38 (29 octobre 2026) — **fil de navigation administrative pliable, déplacé dans la mini-barre** (spécification
+     du maître d'ouvrage) :
+     1. Le fil (« Maroc › niveaux › Retour », composant `BarreTerritoriale` réutilisé sans réécriture) quitte le haut à
+        gauche de la carte ; « Données » ne bouge pas.
+     2. Mini-barre, de haut en bas : Loupe, Enregistrer, **≡ « Navigation administrative »**, Fond. ≡ plie / déplie le
+        fil, ouvert en panneau flottant à gauche de la mini-barre, aligné sur ≡ (sur la largeur disponible au téléphone).
+        Plié par défaut ; le fil reste monté et se tient à jour plié.
+     3. Un seul panneau (recherche, fil, fonds) ouvert à la fois, état tenu par la page : en ouvrir un referme l'autre
+        sans perdre son état (texte de recherche gardé). Le fil ne se ferme pas sur un clic de la carte (sélection par
+        clics) ; ≡ ou Échap le ferment. Son état est conservé d'un onglet à l'autre. Enregistrer une carte jamais
+        enregistrée ouvre la saisie du titre (Mes cartes, inchangé) et referme le panneau ouvert.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

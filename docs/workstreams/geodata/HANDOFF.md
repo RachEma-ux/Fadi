@@ -55,6 +55,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   mini-barre Enregistrer / Fond ; « Partager » attend une spécification (`COLLECTIONS.md`).
 - Onglets et tableau de bord RGPH 2024 (D-GD-37) : `TABLEAU-DE-BORD.md` ; données manquantes (séries 1960–2014,
   concepts en arabe, emplois CEE par secteur) affichées « Donnée non disponible » en attendant des fiches qualifiées.
+- Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, panneau flottant ;
+  un seul panneau de la mini-barre ouvert à la fois (`panneauMini` de la page).
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.

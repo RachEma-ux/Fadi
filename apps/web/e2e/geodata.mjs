@@ -79,6 +79,8 @@ async function entreeMenu(p, cle) { await menuCartes(p); await p.locator(`[data-
 /** Onglet du panneau Données (rouvert par le bouton « Données » s'il est fermé). */
 async function onglet(p, o) { if (!(await p.locator("[data-gd-panneau]").count())) await p.locator("[data-gd-donnees]").click(); await p.locator(`[data-gd-onglet='${o}']`).click(); }
 /** Barre de recherche flottante de la carte, ouverte par la loupe de sa mini-barre si elle est fermée. */
+/** Fil de navigation administrative (D-GD-38) : déplié par ≡ dans la mini-barre (plié par défaut). */
+async function deplierFil(p) { if ((await p.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) !== "true") await p.locator("[data-gd-mini-navigation]").click(); await p.locator("[data-gd-territoires]").waitFor(); }
 async function ouvrirRecherche(p) { if (!(await p.locator("[data-gd-recherche]").count())) await p.locator("[data-gd-loupe]").click(); await p.locator("[data-gd-recherche]").waitFor(); }
 const npmApi = (script, args) => execFileSync("npm", ["run", "-s", script, "--workspace=@fadi/api", "--", ...args], { cwd: RACINE, env: process.env, encoding: "utf8" });
 
@@ -167,8 +169,8 @@ const basBarre = groupes[groupes.length - 1].bottom;
 // jamais chevaucher l'échelle ni les sources, à gauche du bas de la barre d'outils (même écart, bas alignés).
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
 const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && Math.abs(boiteLoupe.y + boiteLoupe.height - basBarre) <= 1.5;
-check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), de haut en bas Loupe, Enregistrer, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
-  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Fond de carte" && (dessous || aCote),
+check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
+  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
 const tailles = await page.evaluate(() => [document.querySelector("[data-gd-barre-outil='zoom-plus']"), document.querySelector("[data-gd-loupe]")].map((b) => `${b.offsetWidth}x${b.offsetHeight}`));
@@ -178,8 +180,11 @@ check("mini-barre : ne chevauche ni l'échelle ni les sources (bas à droite)", 
 // Enregistrer (disquette) : même action et même condition que le bouton Enregistrer de la barre au-dessus de la carte.
 const miniEnregistrer = page.locator("[data-gd-mini-enregistrer]");
 check("mini-barre : « Enregistrer » d'une carte jamais enregistrée porte la pastille « Carte non enregistrée » (D-GD-37)", !(await miniEnregistrer.isDisabled()) && (await miniEnregistrer.getAttribute("data-gd-etat-enregistrement")) === "nouvelle" && (await miniEnregistrer.locator("[data-gd-pastille-non-enregistree]").count()) === 1 && (await miniEnregistrer.getAttribute("title")) === "Carte non enregistrée");
+await page.locator("[data-gd-mini-navigation]").click();
+const filOuvertAvant = (await page.locator("[data-gd-navigation-flottante]").getAttribute("data-gd-navigation-ouverte")) === "oui";
 await miniEnregistrer.click();
 await page.locator("[data-gd-volet-ouvert='cartes'] [data-gd-nom-carte]").waitFor();
+check("mini-barre (D-GD-38) : Enregistrer d'une carte jamais enregistrée ouvre la saisie du titre et referme le panneau ouvert (≡)", filOuvertAvant && (await page.locator("[data-gd-navigation-flottante]").getAttribute("data-gd-navigation-ouverte")) === "non" && (await page.locator("[data-gd-navigation-flottante]").isHidden()));
 check("mini-barre : « Enregistrer » d'une carte jamais enregistrée ouvre Mes cartes pour la nommer (comme le bouton de la barre)", (await page.locator("[data-gd-formulaire-enregistrer='nouvelle']").count()) === 1);
 await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
 // Fond de carte : liste flottante des mêmes fonds que le sélecteur, fond actif coché ; un clic applique et ferme.
@@ -698,6 +703,44 @@ await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", 
 // --- Barre territoriale permanente (lot H, D-GD-28) : découpage lu EN BASE (pays synthétique « ZZ » chargé par la
 // chaîne d'import), sans aucune couche de limites sur la carte ; aucun pays écrit dans le code ---
 const barreTerr = page.locator("[data-gd-territoires]");
+// D-GD-38 : le fil n'est plus en haut à gauche ; il est plié par défaut derrière ≡ (mini-barre), « Données » n'a pas bougé.
+const navMini = page.locator("[data-gd-mini-navigation]"), panneauFil = page.locator("[data-gd-navigation-flottante]");
+const boiteDonnees = await page.locator("[data-gd-donnees]").boundingBox(), boiteMoteur = await page.locator("[data-gd-moteur]").boundingBox();
+check("fil (D-GD-38) : plié par défaut, rien en haut à gauche de la carte ; « Données » reste à sa place", (await barreTerr.isHidden()) && (await navMini.getAttribute("aria-expanded")) === "false" && (await navMini.getAttribute("title")) === "Navigation administrative"
+  && Math.abs(boiteDonnees.x - boiteMoteur.x - 10) <= 2 && Math.abs(boiteDonnees.y - boiteMoteur.y - 10) <= 2, JSON.stringify({ boiteDonnees, boiteMoteur }));
+await navMini.click();
+await barreTerr.waitFor();
+const boiteFil = await panneauFil.boundingBox(), boiteNav = await navMini.boundingBox(), boiteMiniBarre = await page.locator("[data-gd-barre-recherche]").boundingBox();
+check("fil (D-GD-38) : ≡ le déplie à gauche de la mini-barre, aligné sur ≡ (vers le haut dans la moitié basse) ; Pays › niveaux › Retour", boiteFil.x + boiteFil.width <= boiteMiniBarre.x && (Math.abs(boiteFil.y - boiteNav.y) <= 1.5 || Math.abs(boiteFil.y + boiteFil.height - (boiteNav.y + boiteNav.height)) <= 1.5)
+  && (await panneauFil.locator("[data-gd-retour]").count()) === 1 && (await panneauFil.locator("[data-gd-niveau-select='1'], [data-gd-pays], [data-gd-pays-nom]").count()) >= 1, JSON.stringify({ boiteFil, boiteNav, boiteMiniBarre }));
+// Un seul panneau à la fois : Loupe, puis ≡, puis Fond ; chacun referme le précédent, sans perdre son état.
+const panneauxOuverts = () => page.evaluate(() => ["[data-gd-recherche-flottante]", "[data-gd-fonds-flottants]", "[data-gd-navigation-flottante]:not([hidden])"].filter((q) => document.querySelector(q)).length);
+await ouvrirRecherche(page);
+await page.locator("[data-gd-recherche]").fill("texte gardé");
+const apresLoupe = [await panneauxOuverts(), await barreTerr.isHidden()];
+await navMini.click();
+await barreTerr.waitFor();
+const apresFil = [await panneauxOuverts(), await page.locator("[data-gd-recherche-flottante]").count()];
+await page.locator("[data-gd-mini-fond]").click();
+await page.locator("[data-gd-fonds-flottants]").waitFor();
+const apresFond = [await panneauxOuverts(), await barreTerr.isHidden()];
+await navMini.click();
+await barreTerr.waitFor();
+const apresFil2 = [await panneauxOuverts(), await page.locator("[data-gd-fonds-flottants]").count()];
+await page.locator("[data-gd-loupe]").click();
+const texteGarde = await page.locator("[data-gd-recherche]").inputValue();
+check("mini-barre (D-GD-38) : Loupe, ≡, Fond — chaque panneau referme le précédent, jamais deux ouverts ; texte de recherche conservé",
+  JSON.stringify([apresLoupe, apresFil, apresFond, apresFil2]) === JSON.stringify([[1, true], [1, 0], [1, true], [1, 0]]) && texteGarde === "texte gardé", JSON.stringify([apresLoupe, apresFil, apresFond, apresFil2, texteGarde]));
+await page.locator("[data-gd-recherche]").fill("");
+await navMini.click();
+await barreTerr.waitFor();
+await page.keyboard.press("Escape");
+check("fil (D-GD-38) : Échap le replie", (await barreTerr.isHidden()) && (await navMini.getAttribute("aria-expanded")) === "false");
+await navMini.click();
+await barreTerr.waitFor();
+await navMini.click();
+check("fil (D-GD-38) : un nouvel appui sur ≡ le replie", await barreTerr.isHidden());
+await deplierFil(page);
 check("barre territoriale : présente sans couche de limites sur la carte", (await barreTerr.count()) === 1 && (await page.locator("[data-gd-couche-active]").filter({ hasText: "Régions synthétiques (test)" }).count()) === 0);
 await page.waitForFunction(() => document.querySelector("[data-gd-territoires]")?.getAttribute("data-gd-territoires") !== "", null, { timeout: 15_000 });
 if (await page.locator("[data-gd-pays]").count()) await page.locator("[data-gd-pays]").selectOption("ZZ");
@@ -707,27 +750,30 @@ await page.waitForFunction(() => (document.querySelector("[data-gd-territoires] 
 const optionsRegions = await choixRegion.locator("option").allTextContents();
 check("barre territoriale : niveau « Régions » de la base, ses unités listées", optionsRegions[0]?.startsWith("Régions (2)") === true && optionsRegions.includes("Région synthétique Nord"), optionsRegions.join(" | "));
 await choixRegion.selectOption({ label: "Région synthétique Nord" });
-await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor({ state: "attached" });
 const choixProvince = barreTerr.locator("[data-gd-niveau-select='2']");
 await page.waitForFunction(() => (document.querySelector("[data-gd-territoires] [data-gd-niveau-select='2']")?.querySelectorAll("option").length ?? 0) > 1, null, { timeout: 15_000 });
 const optionsProvinces = await choixProvince.locator("option").allTextContents();
 check("barre territoriale : une région choisie → ses provinces (parenté lue en base)", optionsProvinces.length === 3 && optionsProvinces.slice(1).every((x) => x.includes(" N-")), optionsProvinces.join(" | "));
 await choixProvince.selectOption({ index: 1 });
-await page.locator("[data-gd-territoires][data-gd-niveaux='2']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='2']").waitFor({ state: "attached" });
 check("barre territoriale : province choisie, Retour actif, attribution de la source affichée", !(await page.locator("[data-gd-retour]").isDisabled()) && ((await page.locator(".maplibregl-ctrl-attrib").textContent()) ?? "").includes("Jeu synthétique GeoData"));
 await page.screenshot({ path: join(OUT, "07a-barre-territoriale.png") });
+// Alt+↑ hors d'un champ (le fil déplié garde le focus sur la liste choisie, où les flèches parcourent la liste).
+await page.evaluate(() => document.activeElement?.blur());
 await page.locator("body").press("Alt+ArrowUp");
-await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor({ state: "attached" });
 await page.locator("[data-gd-retour]").click();
-await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor({ state: "attached" });
 check("barre territoriale : Alt+↑ puis Retour ramènent au pays", (await page.locator("[data-gd-retour]").isDisabled()) === true);
 
 // --- Sélection par nombre de clics (D-GD-34), carte vierge : aucune couche de limites sur la carte, les unités viennent
 // du découpage en base (ZZ : provinces puis régions) ; 1 clic → province, 2 clics → région, 3 clics → région encore ---
 const selectionCourante = async () => (await page.locator("[data-geodata-page]").getAttribute("data-gd-selection")) ?? "";
 const attendreSelection = (attendu) => page.waitForFunction((a) => document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-selection") === a, attendu, { timeout: 10_000 }).catch(() => undefined);
+await deplierFil(page);
 await choixRegion.selectOption({ label: "Région synthétique Nord" });
-await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor({ state: "attached" });
 if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
 await page.waitForTimeout(1200);
 const canevas = await page.locator(".maplibregl-canvas").boundingBox();
@@ -743,6 +789,7 @@ await attendreSelection("1:1");
 await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
 check("clics, carte vierge : 2 clics rapides sélectionnent la région (parent lu en base), fiche de la région", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1, await selectionCourante());
 check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvantClics);
+check("fil (D-GD-38) : les clics sur la carte ne le replient pas", (await page.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) === "true" && !(await page.locator("[data-gd-territoires]").isHidden()));
 
 // --- Onglets (D-GD-37) : une adresse par onglet, carte conservée, zone = sélection de la carte, valeurs lues en base ---
 {
@@ -799,7 +846,7 @@ check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom
   check("onglets : bouton Retour du navigateur → onglet précédent", (await page.locator('[data-gd-onglet-page="cee"]').getAttribute("aria-current")) === "page");
   await ongletPage("cartes", /\/geodata$/);
   await page.waitForTimeout(600);
-  check("onglets : retour aux cartes — sélection, zoom et carte conservés", (await page.locator("[data-gd-tableau-bord]").isHidden()) && (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant && (await page.locator(".maplibregl-canvas").isVisible()), `${await selectionCourante()} ${zoomAvant}`);
+  check("onglets : retour aux cartes — sélection, zoom, carte et fil déplié (D-GD-38) conservés", (await page.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) === "true" && (await page.locator("[data-gd-tableau-bord]").isHidden()) && (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant && (await page.locator(".maplibregl-canvas").isVisible()), `${await selectionCourante()} ${zoomAvant}`);
   await page.screenshot({ path: join(OUT, "07c-retour-cartes.png") });
 }
 await page.waitForTimeout(500);
@@ -815,8 +862,9 @@ await page.waitForTimeout(1500);
 await page.mouse.click(canevas.x + canevas.width * 0.5, canevas.y + canevas.height * 0.6);
 await attendreSelection("");
 check("clics : un clic hors de toute entité efface la sélection", (await selectionCourante()) === "");
+await deplierFil(page);
 await page.locator("[data-gd-retour]").click();
-await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor();
+await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor({ state: "attached" });
 
 // --- Navigation par niveaux (lot B) : descendre depuis la fiche, barre territoriale à jour, couche du niveau inférieur ajoutée, Alt+↑ ---
 await onglet(page, "catalogue");
@@ -835,7 +883,7 @@ await descendreBouton.waitFor();
 // Le nom du niveau inférieur vient du découpage en base (pays ZZ : « Provinces »), jamais d'un référentiel du code.
 check("niveaux : la fiche d'une région propose « Voir ses provinces » (nom du niveau lu en base, Alt+↓)", ((await descendreBouton.textContent()) ?? "").includes("Voir ses provinces") && !((await descendreBouton.textContent()) ?? "").includes("préfectures") && (await descendreBouton.getAttribute("aria-keyshortcuts")) === "Alt+ArrowDown");
 await descendreBouton.click();
-await page.locator("[data-gd-niveaux='1']").waitFor();
+await page.locator("[data-gd-niveaux='1']").waitFor({ state: "attached" });
 check("niveaux : la barre territoriale passe à « Pays synthétique (test) › Région synthétique Nord »", (await page.locator("[data-gd-niveau-select='1']").inputValue()) === "1");
 await onglet(page, "couches");
 check("niveaux : la couche des provinces du même producteur est ajoutée à la carte", (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 1);
@@ -876,7 +924,7 @@ await page.locator("body").press("Alt+p");
 const impressions = await page.evaluate(() => window.__impressions);
 check("fiche territoriale : « Imprimer la fiche » (et Alt+P) imprime la fiche seule, sections dépliées, sans boutons", impressions.length === 2 && impressions.every((x) => x.titre === "Région synthétique Nord" && x.fermees === 0 && x.boutons === "none"), JSON.stringify(impressions));
 await page.locator("body").press("Alt+ArrowUp");
-await page.locator("[data-gd-niveaux='0']").waitFor();
+await page.locator("[data-gd-niveaux='0']").waitFor({ state: "attached" });
 check("niveaux : Alt+↑ remonte au pays", (await page.locator("[data-gd-retour]").isDisabled()) === true);
 await page.screenshot({ path: join(OUT, "07-niveaux.png") });
 
@@ -945,7 +993,14 @@ const boiteMenuCartes = await page.locator("#gd-menu-liste").boundingBox();
 check("GEO 12 · téléphone : la rubrique « Cartes » dépliée reste dans l'écran", boiteMenuCartes.x >= 0 && boiteMenuCartes.x + boiteMenuCartes.width <= 391 && boiteMenuCartes.y + boiteMenuCartes.height <= 845, JSON.stringify(boiteMenuCartes));
 await page.locator("[data-gd-menu]").click();
 const barreMiniTel = await page.locator("[data-gd-barre-recherche]").boundingBox(), basTel = await page.locator(".maplibregl-ctrl-bottom-right").boundingBox();
-check("GEO 12 · téléphone : mini-barre (Loupe, Enregistrer, Fond) entière, sans chevaucher l'échelle ni les sources", (await page.locator("[data-gd-barre-recherche] button").count()) === 3 && barreMiniTel.x >= 0 && barreMiniTel.x + barreMiniTel.width <= 391 && (!basTel || barreMiniTel.y + barreMiniTel.height <= basTel.y || barreMiniTel.x + barreMiniTel.width <= basTel.x), `${JSON.stringify(barreMiniTel)} / ${JSON.stringify(basTel)}`);
+check("GEO 12 · téléphone : mini-barre (Loupe, Enregistrer, ≡, Fond) entière, sans chevaucher l'échelle ni les sources", (await page.locator("[data-gd-barre-recherche] button").count()) === 4 && barreMiniTel.x >= 0 && barreMiniTel.x + barreMiniTel.width <= 391 && (!basTel || barreMiniTel.y + barreMiniTel.height <= basTel.y || barreMiniTel.x + barreMiniTel.width <= basTel.x), `${JSON.stringify(barreMiniTel)} / ${JSON.stringify(basTel)}`);
+// Téléphone : le panneau Données (posé en bas) est refermé avant de déplier le fil.
+if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
+await deplierFil(page);
+const filTel = await page.locator("[data-gd-navigation-flottante]").boundingBox(), outilsTel = await page.locator("[data-gd-barre-outils]").boundingBox();
+check("GEO 12 · téléphone : fil déplié sur la largeur disponible, à gauche de la mini-barre, sans masquer les barres d'outils", filTel.x >= 0 && filTel.x + filTel.width <= barreMiniTel.x && (filTel.x + filTel.width <= outilsTel.x || filTel.y >= outilsTel.y + outilsTel.height || filTel.y + filTel.height <= outilsTel.y), JSON.stringify({ filTel, barreMiniTel, outilsTel }));
+await page.screenshot({ path: join(OUT, "02c-telephone-fil.png") });
+await page.locator("[data-gd-mini-navigation]").click();
 await volet(page, "cartes");
 const ouverts = await page.evaluate(() => [document.querySelector(".gd-panneau.gd-ouvert"), document.querySelector("[data-gd-volet-ouvert]")].filter(Boolean).length);
 check("GEO 12 · téléphone : un seul panneau principal ouvert", ouverts === 1);
@@ -1074,6 +1129,9 @@ await releve();
 for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await volet(en, v); await releve(); }
 for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }
 await en.locator("[data-gd-mini-fond]").click(); await releve(); await en.keyboard.press("Escape");
+await deplierFil(en); await releve();
+check("interface anglaise (D-GD-38) : ≡ et son panneau nommés en anglais", (await en.locator("[data-gd-mini-navigation]").getAttribute("title")) === "Administrative navigation" && (await en.locator("[data-gd-navigation-flottante]").getAttribute("aria-label")) === "Administrative navigation");
+await en.locator("[data-gd-mini-navigation]").click();
 await menuCartes(en); await releve(); await en.locator("[data-gd-menu]").click();
 for (const o of ["chiffres-cles", "tableaux", "cee", "concepts"]) { await en.locator(`[data-gd-onglet-page="${o}"]`).click(); await en.locator(`[data-gd-tableau-bord="${o}"]`).waitFor(); await en.waitForTimeout(1200); await releve(); }
 await en.locator("[data-gd-concepts-langue='ar']").click(); await releve();

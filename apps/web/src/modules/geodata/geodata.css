@@ -261,3 +261,9 @@
   .geodata-page .gd-table-bord{font-size:12px}
   .geodata-page .gd-table-bord th[scope="row"],.geodata-page .gd-table-bord thead tr:last-child th:first-child{min-width:130px;max-width:170px}
 }
+/* Fil de navigation administrative dans la mini-barre (D-GD-38) : panneau flottant à gauche de la mini-barre, aligné sur ≡ ;
+   le fil (BarreTerritoriale) y est repris tel quel, sans sa position propre ni son icône (≡ est dans la mini-barre). */
+.geodata-page .gd-navigation-flottante{position:absolute;z-index:7;box-sizing:border-box}
+.geodata-page .gd-navigation-flottante[hidden]{display:none}
+.geodata-page .gd-navigation-flottante .gd-niveaux{position:static;max-width:none;border-radius:8px;border:1px solid var(--gd-ligne);box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px 6px 4px 10px;flex-wrap:wrap}
+.geodata-page .gd-navigation-flottante .gd-niveaux-icone{display:none}
