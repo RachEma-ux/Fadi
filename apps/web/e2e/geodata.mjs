@@ -1129,7 +1129,9 @@ await releve();
 for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await volet(en, v); await releve(); }
 for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }
 await en.locator("[data-gd-mini-fond]").click(); await releve(); await en.keyboard.press("Escape");
-await deplierFil(en); await releve(); await en.locator("[data-gd-mini-navigation]").click();
+await deplierFil(en); await releve();
+check("interface anglaise (D-GD-38) : ≡ et son panneau nommés en anglais", (await en.locator("[data-gd-mini-navigation]").getAttribute("title")) === "Administrative navigation" && (await en.locator("[data-gd-navigation-flottante]").getAttribute("aria-label")) === "Administrative navigation");
+await en.locator("[data-gd-mini-navigation]").click();
 await menuCartes(en); await releve(); await en.locator("[data-gd-menu]").click();
 for (const o of ["chiffres-cles", "tableaux", "cee", "concepts"]) { await en.locator(`[data-gd-onglet-page="${o}"]`).click(); await en.locator(`[data-gd-tableau-bord="${o}"]`).waitFor(); await en.waitForTimeout(1200); await releve(); }
 await en.locator("[data-gd-concepts-langue='ar']").click(); await releve();
