@@ -3068,7 +3068,6 @@ ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS modifie_le timestamptz 
 ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
 ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_revision_positive;
 ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_revision_positive CHECK (revision >= 1);
-UPDATE geodata_collections co SET proprietaire_id = e.proprietaire_id FROM geodata_espaces e WHERE co.proprietaire_id IS NULL AND e.id = co.espace_id;
 CREATE TABLE IF NOT EXISTS geodata_collection_cartes (
   collection_id text NOT NULL,
   carte_id text NOT NULL,
@@ -3080,15 +3079,20 @@ CREATE TABLE IF NOT EXISTS geodata_collection_cartes (
 );
 CREATE INDEX IF NOT EXISTS geodata_collection_cartes_rang_idx ON geodata_collection_cartes (collection_id, rang);
 CREATE INDEX IF NOT EXISTS geodata_collection_cartes_carte_idx ON geodata_collection_cartes (carte_id);
--- Reprise du rattachement unique antérieur (`geodata_cartes.collection_id`, classement par nom) dans la liaison ordonnée,
--- puis la colonne n'est plus renseignée : la liaison est la seule source (idempotent : rien à reprendre au second passage).
-INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
-  SELECT ca.collection_id, ca.id, ca.espace_id,
-         coalesce((SELECT max(l.rang) FROM geodata_collection_cartes l WHERE l.collection_id = ca.collection_id), 0)
-           + row_number() OVER (PARTITION BY ca.collection_id ORDER BY ca.nom, ca.id)
-    FROM geodata_cartes ca WHERE ca.collection_id IS NOT NULL
-  ON CONFLICT (collection_id, carte_id) DO NOTHING;
-UPDATE geodata_cartes SET collection_id = NULL WHERE collection_id IS NOT NULL;
+-- Reprise des données (un seul bloc DO : init.sql ne contient que CREATE, ALTER et DO) : propriétaire des collections
+-- antérieures lu de leur espace ; rattachement unique antérieur (`geodata_cartes.collection_id`, classement par nom)
+-- recopié dans la liaison ordonnée, puis la colonne n'est plus renseignée : la liaison est la seule source (idempotent).
+DO $$
+BEGIN
+  UPDATE geodata_collections co SET proprietaire_id = e.proprietaire_id FROM geodata_espaces e WHERE co.proprietaire_id IS NULL AND e.id = co.espace_id;
+  INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
+    SELECT ca.collection_id, ca.id, ca.espace_id,
+           coalesce((SELECT max(l.rang) FROM geodata_collection_cartes l WHERE l.collection_id = ca.collection_id), 0)
+             + row_number() OVER (PARTITION BY ca.collection_id ORDER BY ca.nom, ca.id)
+      FROM geodata_cartes ca WHERE ca.collection_id IS NOT NULL
+    ON CONFLICT (collection_id, carte_id) DO NOTHING;
+  UPDATE geodata_cartes SET collection_id = NULL WHERE collection_id IS NOT NULL;
+END $$;
 CREATE TABLE IF NOT EXISTS geodata_zones (
   id text PRIMARY KEY,
   espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
