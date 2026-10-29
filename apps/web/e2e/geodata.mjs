@@ -101,6 +101,9 @@ for (const n of ["regions", "provinces"]) {
   const sortie = npmApi("geodata:import-reference", ["--fiche", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.fiche.json`), "--fichier", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.geojson`), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
   check(`chaîne administrative : ${n === "regions" ? "régions" : "provinces"} synthétiques publiées`, /Version (\S+ )?publiée|Version déjà présente/.test(sortie));
 }
+// Tableau de bord (D-GD-37) : pays synthétique, valeurs fabriquées, définition des blocs et un concept en annexe.
+const sortiePays = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-pays.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
+check("chaîne administrative : pays synthétique et son tableau de bord publiés", /Version (\S+ )?publiée|Version déjà présente/.test(sortiePays), sortiePays.split("\n").filter((l) => /Version/.test(l)).join(" | "));
 const sortieRaster = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-raster.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
 check("chaîne administrative : grille raster synthétique (GeoTIFF) préparée puis publiée", /Version (\S+ )?publiée|Version déjà présente/.test(sortieRaster), sortieRaster.split("\n").filter((l) => /Version|raster/.test(l)).join(" | "));
 await page.context().clearCookies();
@@ -740,6 +743,65 @@ await attendreSelection("1:1");
 await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
 check("clics, carte vierge : 2 clics rapides sélectionnent la région (parent lu en base), fiche de la région", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1, await selectionCourante());
 check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvantClics);
+
+// --- Onglets (D-GD-37) : une adresse par onglet, carte conservée, zone = sélection de la carte, valeurs lues en base ---
+{
+  const ongletPage = async (o, re) => { await page.locator(`[data-gd-onglet-page="${o}"]`).click(); await page.waitForURL(re); };
+  const bord = page.locator("[data-gd-tableau-bord]");
+  const zoneBord = () => bord.getAttribute("data-gd-zone");
+  const attendreZone = (z) => page.waitForFunction((a) => document.querySelector("[data-gd-tableau-bord]")?.getAttribute("data-gd-zone") === a, z, { timeout: 15_000 }).catch(() => undefined);
+  check("onglets : cinq onglets dans la barre, Cartes thématiques actif par défaut, ☰ à droite", (await page.locator("[data-gd-onglet-page]").allTextContents()).join("|") === "Cartes thématiques|Chiffres clés 2024|Tableaux RGPH 2024|CEE 2024|Concepts et définitions"
+    && (await page.locator('[data-gd-onglet-page="cartes"]').getAttribute("aria-current")) === "page"
+    && (await page.locator("[data-gd-menu]").boundingBox()).x > (await page.locator("[data-gd-barre-onglets]").boundingBox()).x);
+  const zoomAvant = await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom");
+  await ongletPage("chiffres-cles", /\/geodata\/chiffres-cles$/);
+  await attendreZone("1:1");
+  await page.locator('[data-gd-chiffre="population-legale"]').waitFor({ timeout: 15_000 }).catch(() => undefined);
+  check("onglets : la région sélectionnée sur la carte ouvre Chiffres clés sur cette zone", (await zoneBord()) === "1:1" && (await bord.getAttribute("data-gd-zone-nom")) === "Région synthétique Nord", await zoneBord());
+  check("onglets : valeur absente de la zone → « Donnée non disponible », jamais zéro", ((await page.locator('[data-gd-chiffre="population-legale"]').textContent()) ?? "").includes("Donnée non disponible"));
+  await page.locator('[data-gd-filtre-niveau="1"]').selectOption("");
+  await attendreZone("0:ZZ");
+  await page.waitForFunction(() => document.querySelector('[data-gd-chiffre="population-legale"]')?.getAttribute("data-gd-chiffre-valeur") === "1000", null, { timeout: 15_000 }).catch(() => undefined);
+  const urb = await page.locator('[data-gd-chiffre="taux-urbanisation"]').textContent();
+  check("onglets : filtre de zone → pays ; valeurs lues en base, rapport calculé marqué « * »", (await page.locator('[data-gd-chiffre="population-legale"]').getAttribute("data-gd-chiffre-valeur")) === "1000" && /60,0\*/.test(urb ?? "") && (await page.locator("[data-gd-compteur]").count()) === 1, urb);
+  const bloc = page.locator('[data-gd-bloc="population-evolution"]');
+  check("onglets : bloc tableau + graphique SVG, source citée, série absente « Donnée non disponible »", (await bloc.locator("svg[role='img']").count()) === 1 && ((await bloc.locator("[data-gd-source]").textContent()) ?? "").startsWith("Source") && (await bloc.locator("[data-gd-nd]").count()) >= 1);
+  await bloc.locator("[data-gd-bloc-menu]").click();
+  const [telechargement] = await Promise.all([page.waitForEvent("download"), bloc.locator("[data-gd-bloc-csv]").click()]);
+  const csv = readFileSync(await telechargement.path(), "utf8");
+  check("onglets : ⋮ → export CSV (zone, source, absent vide)", /^\uFEFFRecensement;Population légale\r\n2014;\r\n2024;1000\r\nZone : Pays synthétique/.test(csv), JSON.stringify(csv.slice(0, 120)));
+  await bloc.locator("[data-gd-bloc-menu]").click(); await bloc.locator("[data-gd-bloc-plein]").click();
+  const plein = (await bloc.getAttribute("data-gd-plein-ecran")) === "oui";
+  await page.keyboard.press("Escape");
+  check("onglets : ⋮ → plein écran, Échap en sort", plein && (await bloc.getAttribute("data-gd-plein-ecran")) === "non");
+  await bloc.locator('[data-gd-tri="0"]').click();
+  check("onglets : tableau triable (en-tête de colonne)", (await bloc.locator('th[aria-sort="descending"]').count()) === 1);
+  await ongletPage("tableaux", /\/geodata\/tableaux$/);
+  await page.locator('[data-gd-bloc^="theme-"]').first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+  const themes = await page.locator('[data-gd-bloc^="theme-"] h3').allTextContents();
+  check("onglets : Tableaux RGPH — un tableau par thème, la CEE servie par son onglet", themes.length === 1 && themes[0].startsWith("Démographie"), themes.join(" | "));
+  // Adresse partageable : ouverte dans un nouvel onglet du navigateur, elle mène au même onglet de GeoData.
+  const autre = await page.context().newPage();
+  await autre.goto(`${BASE}/geodata/tableaux`);
+  await autre.locator('[data-gd-bloc^="theme-"]').first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+  check("onglets : l'adresse de l'onglet s'ouvre telle quelle (rechargement, partage)", (await autre.locator('[data-gd-onglet-page="tableaux"]').getAttribute("aria-current")) === "page" && (await autre.locator('[data-gd-bloc^="theme-"]').count()) >= 1);
+  await autre.close();
+  await ongletPage("cee", /\/geodata\/cee$/);
+  await page.locator('[data-gd-bloc="cee-type"]').waitFor({ timeout: 15_000 }).catch(() => undefined);
+  check("onglets : CEE 2024 — tableaux de la définition en base, absent « Donnée non disponible »", ((await page.locator('[data-gd-bloc="cee-type"] td').first().textContent()) ?? "").includes("Donnée non disponible"));
+  await ongletPage("concepts", /\/geodata\/concepts$/);
+  await page.locator("[data-gd-concept]").first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+  const conceptsFr = await page.locator("[data-gd-concept] dt").allTextContents();
+  await page.locator('[data-gd-concepts-langue="ar"]').click();
+  await page.locator("[data-gd-concepts-vide]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+  check("onglets : Concepts — sous-onglets Arabe / Français, texte lu en base, arabe absent « Donnée non disponible »", conceptsFr.join("|") === "Concept synthétique" && (await page.locator("[data-gd-concepts-vide]").count()) === 1);
+  await page.goBack(); await page.waitForURL(/\/geodata\/cee$/);
+  check("onglets : bouton Retour du navigateur → onglet précédent", (await page.locator('[data-gd-onglet-page="cee"]').getAttribute("aria-current")) === "page");
+  await ongletPage("cartes", /\/geodata$/);
+  await page.waitForTimeout(600);
+  check("onglets : retour aux cartes — sélection, zoom et carte conservés", (await page.locator("[data-gd-tableau-bord]").isHidden()) && (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant && (await page.locator(".maplibregl-canvas").isVisible()), `${await selectionCourante()} ${zoomAvant}`);
+  await page.screenshot({ path: join(OUT, "07c-retour-cartes.png") });
+}
 await page.waitForTimeout(500);
 await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic); await page.mouse.click(xClic, yClic);
 await page.waitForTimeout(600);
@@ -1013,6 +1075,9 @@ for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await vol
 for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }
 await en.locator("[data-gd-mini-fond]").click(); await releve(); await en.keyboard.press("Escape");
 await menuCartes(en); await releve(); await en.locator("[data-gd-menu]").click();
+for (const o of ["chiffres-cles", "tableaux", "cee", "concepts"]) { await en.locator(`[data-gd-onglet-page="${o}"]`).click(); await en.locator(`[data-gd-tableau-bord="${o}"]`).waitFor(); await en.waitForTimeout(1200); await releve(); }
+await en.locator("[data-gd-concepts-langue='ar']").click(); await releve();
+await en.locator('[data-gd-onglet-page="cartes"]').click();
 await onglet(en, "catalogue"); await en.locator("[data-gd-type='imagerie']").click(); await releve(); await en.locator("[data-gd-type='vecteurs']").click();
 for (const o of ["couches", "legende"]) { await onglet(en, o); await releve(); }
 writeFileSync(join(OUT, "residus-anglais.txt"), [...residus].join("\n"));

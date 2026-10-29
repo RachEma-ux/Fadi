@@ -598,6 +598,16 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=10&lat=10`)).body).toEqual({ unites: [] });
     expect((await alice.client.get(`${API}/territoires/XX/point?lon=-7.98&lat=31.02`)).body).toEqual({ unites: [] });
     expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=abc&lat=1`)).status).toBe(400);
+    // Tableau de bord (D-GD-37) : définition et concepts lus en base, sur une version publiée ; langue contrôlée.
+    expect((await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).status).toBe(404);
+    await pool.query("INSERT INTO geodata_tableaux_bord (version_id, pays, zone_code, zone_nom, definition) VALUES ($1, 'ZZ', '1', 'R Nord', $2)", [vr, JSON.stringify({ pays: "ZZ", zone: { code: "1", nom: "R Nord" }, blocs: [] })]);
+    await pool.query("INSERT INTO geodata_concepts (version_id, langue, ordre, titre, texte, source) VALUES ($1, 'fr', 0, 'Concept', 'Texte', 'Source test')", [vr]);
+    const bord = (await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).body;
+    expect(bord).toMatchObject({ pays: "ZZ", versionId: vr, zone: { code: "1", nom: "R Nord" }, concepts: { fr: 1 } });
+    expect(typeof bord.zone.coucheId).toBe("string");
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=fr`)).body).toEqual({ langue: "fr", source: "Source test", concepts: [{ titre: "Concept", texte: "Texte" }] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=ar`)).body).toEqual({ langue: "ar", source: null, concepts: [] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=de`)).status).toBe(400);
     const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
     await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
     // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.

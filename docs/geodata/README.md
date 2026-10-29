@@ -108,6 +108,15 @@ mêmes fonds que le sélecteur). Le menu ☰ regroupe sous **Cartes** : Mes cart
 bientôt). Une **collection** est un ensemble ordonné de références vers des cartes enregistrées (atlas) ; concept, modèle
 de données et API : [`docs/workstreams/geodata/COLLECTIONS.md`](../workstreams/geodata/COLLECTIONS.md).
 
+## Onglets et tableau de bord RGPH 2024 (D-GD-37)
+
+La barre au-dessus de la carte est une barre d'onglets : **Cartes thématiques** (la carte), **Chiffres clés 2024**,
+**Tableaux RGPH 2024**, **CEE 2024**, **Concepts et définitions** ; ☰ à droite. Chaque onglet a son adresse
+(`/geodata/chiffres-cles`…) ; la carte reste telle quelle quand on revient. La zone affichée est celle sélectionnée sur
+la carte (ou le niveau de la barre territoriale), sinon le Royaume du Maroc ; un filtre de zone la change. L'état
+d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, calculs déclarés et données manquantes :
+[`docs/workstreams/geodata/TABLEAU-DE-BORD.md`](../workstreams/geodata/TABLEAU-DE-BORD.md).
+
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :

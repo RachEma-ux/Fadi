@@ -93,6 +93,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
   recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
   sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
+- Onglets et tableau de bord RGPH 2024 (D-GD-37) : barre blanche → barre d'onglets (5 adresses), pastille « Carte non
+  enregistrée » ; fiche `hcp-rgph2024-royaume` (ligne nationale, 670 indicateurs dont 22 totaux CEE calculés, 52
+  concepts, 18 blocs) importée en base locale ; tables `geodata_concepts`, `geodata_tableaux_bord` ; routes
+  `/tableau-de-bord`, `/tableau-de-bord/concepts` ; `panneaux/TableauDeBord.tsx` (SVG interne), `tableau-de-bord.ts`
+  (9 tests) ; valeurs de contrôle vérifiées (test des sources + navigateur, bureau 1885 × 893 et Pixel 7) ; recette
+  `geodata.mjs` 186 contrôles (17 nouveaux, dont l'interface anglaise des onglets) ; tests API sur base en CI seulement.
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :

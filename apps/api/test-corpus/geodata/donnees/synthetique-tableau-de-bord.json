@@ -1,0 +1,108 @@
+{
+ "pays": "ZZ",
+ "zone": {
+  "code": "ZZ",
+  "nom": "Pays synthétique"
+ },
+ "blocs": [
+  {
+   "cle": "population-legale",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Population légale",
+   "valeur": {
+    "indicateur": {
+     "famille": "Population légale",
+     "milieu": "ensemble"
+    }
+   },
+   "unite": "personnes",
+   "decimales": 0,
+   "source": "Jeu synthétique GeoData (test)"
+  },
+  {
+   "cle": "taux-urbanisation",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Taux d'urbanisation",
+   "valeur": {
+    "ratio": [
+     {
+      "indicateur": {
+       "famille": "Population légale",
+       "milieu": "urbain"
+      }
+     },
+     {
+      "indicateur": {
+       "famille": "Population légale",
+       "milieu": "ensemble"
+      }
+     }
+    ],
+    "facteur": 100
+   },
+   "unite": "%",
+   "decimales": 1,
+   "source": "Jeu synthétique GeoData (test)"
+  },
+  {
+   "cle": "population-evolution",
+   "onglet": "chiffres-cles",
+   "type": "tableau",
+   "titre": "Population légale et accroissement, 1960–2024",
+   "enTeteLignes": "Recensement",
+   "colonnes": [
+    "Population légale"
+   ],
+   "lignes": [
+    {
+     "libelle": "2014",
+     "cellules": [
+      {
+       "indisponible": "Série non chargée (test)"
+      }
+     ]
+    },
+    {
+     "libelle": "2024",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Population légale",
+        "milieu": "ensemble"
+       }
+      }
+     ]
+    }
+   ],
+   "graphique": "barres",
+   "source": "Jeu synthétique GeoData (test)"
+  },
+  {
+   "cle": "cee-type",
+   "onglet": "cee",
+   "type": "tableau",
+   "titre": "Établissements par type",
+   "enTeteLignes": "Type d'établissement",
+   "colonnes": [
+    "Établissements"
+   ],
+   "lignes": [
+    {
+     "libelle": "Total (test)",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Établissements (test)",
+        "milieu": "ensemble"
+       }
+      }
+     ]
+    }
+   ],
+   "graphique": "barres-horizontales",
+   "source": "Jeu synthétique GeoData (test)"
+  }
+ ]
+}

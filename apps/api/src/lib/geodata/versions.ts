@@ -7,7 +7,7 @@
  * réparation est **comptée et consignée** dans les transformations de la version (jamais silencieuse).
  */
 import type { PoolClient } from "pg";
-import type { DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, ObjetImporte, Sexe, StyleCouche } from "@parcours/geodata-model";
+import type { DefinitionTableauDeBord, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, ObjetImporte, Sexe, StyleCouche } from "@parcours/geodata-model";
 import { estMilieu, estMotifAbsence, estSexe } from "@parcours/geodata-model";
 import { newId } from "../ids.js";
 import { compresser, type GrilleRaster } from "./raster.js";
@@ -35,7 +35,15 @@ export interface IndicateurDeclare {
    */
   readonly valeurs?: ReadonlyMap<string, number | string | null>;
   readonly signes?: Readonly<Record<string, MotifAbsence>>;
+  /**
+   * Indicateur calculé par la préparation (D-GD-37 : total national de la CEE, somme des régions) : méthode écrite ;
+   * l'indicateur prend la nature « calcule », jamais présenté comme une valeur publiée par la source.
+   */
+  readonly calcul?: string;
 }
+
+/** Concept du producteur (D-GD-37) : une entrée par concept et par langue. */
+export interface ConceptAnnexe { readonly langue: "fr" | "ar"; readonly ordre: number; readonly titre: string; readonly texte: string }
 
 /** Douar du RGPH 2024 : nombres tels que publiés ; null = absent ; secret = pourcentages supprimés par le HCP. */
 export interface LigneDouar {
@@ -82,6 +90,10 @@ export interface VersionAEcrire {
   readonly raster?: { readonly grille: GrilleRaster; readonly description: DescriptionRaster };
   /** Douars (annexe sans géométrie, lot E) : rangés sous leur commune, affichés dans sa fiche. */
   readonly douars?: readonly LigneDouar[];
+  /** Concepts et définitions du producteur (annexe, D-GD-37), avec la citation de leur source. */
+  readonly concepts?: { readonly source: string; readonly liste: readonly ConceptAnnexe[] };
+  /** Définition du tableau de bord (annexe, D-GD-37), validée par `validerDefinitionTableauDeBord`. */
+  readonly tableauDeBord?: DefinitionTableauDeBord;
 }
 
 export interface VersionEcrite {
@@ -178,11 +190,11 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
     const id = newId("gdind");
     await client.query(
       `INSERT INTO geodata_indicateurs (id, couche_id, titre, unite, periode, nature, methode, denominateur, description, theme, famille, modalite, milieu, sexe, ordre)
-       VALUES ($1, $2, $3, $4, $5, 'source', $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+       VALUES ($1, $2, $3, $4, $5, $15, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [id, coucheId, ind.titre, ind.unite, ind.periode,
-        ind.valeurs ? `Valeur de la colonne « ${ind.propriete} » du tableau livré avec la source, sans transformation` : `Valeur de la propriété « ${ind.propriete} » de la source, sans transformation`,
+        ind.calcul ? ind.calcul : ind.valeurs ? `Valeur de la colonne « ${ind.propriete} » du tableau livré avec la source, sans transformation` : `Valeur de la propriété « ${ind.propriete} » de la source, sans transformation`,
         ind.denominateur, ind.description, ind.theme ?? null, ind.famille ?? null, ind.modalite ?? null,
-        estMilieu(ind.milieu) ? ind.milieu : null, estSexe(ind.sexe) ? ind.sexe : null, ind.ordre ?? rang],
+        estMilieu(ind.milieu) ? ind.milieu : null, estSexe(ind.sexe) ? ind.sexe : null, ind.ordre ?? rang, ind.calcul ? "calcule" : "source"],
     );
     const motif = estMotifAbsence(ind.motifSiAbsente) ? ind.motifSiAbsente : "non-evaluee";
     if (ind.valeurs) {
@@ -222,6 +234,17 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
               masculin double precision, feminin double precision, moins_15 double precision, de_15_a_59 double precision, plus_60 double precision, secret boolean)`,
       [versionId, JSON.stringify(v.douars!.slice(i, i + 5000))],
     );
+  }
+  if (v.concepts?.liste.length) {
+    await client.query(
+      `INSERT INTO geodata_concepts (version_id, langue, ordre, titre, texte, source)
+       SELECT $1, c.langue, c.ordre, c.titre, c.texte, $3 FROM jsonb_to_recordset($2::jsonb) AS c(langue text, ordre integer, titre text, texte text)`,
+      [versionId, JSON.stringify(v.concepts.liste), v.concepts.source],
+    );
+  }
+  if (v.tableauDeBord) {
+    const t = v.tableauDeBord;
+    await client.query(`INSERT INTO geodata_tableaux_bord (version_id, pays, zone_code, zone_nom, definition) VALUES ($1, $2, $3, $4, $5)`, [versionId, t.pays, t.zone.code, t.zone.nom, JSON.stringify(t)]);
   }
   if (v.superficie && typeCouche(v.objets) === "polygone") {
     const id = newId("gdind");
