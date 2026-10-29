@@ -3056,6 +3056,35 @@ CREATE TABLE IF NOT EXISTS geodata_cartes (
   CONSTRAINT geodata_cartes_collection_fk FOREIGN KEY (collection_id, espace_id) REFERENCES geodata_collections (id, espace_id)
 );
 CREATE INDEX IF NOT EXISTS geodata_cartes_espace_idx ON geodata_cartes (espace_id, etat, modifie_le DESC);
+-- Collections (D-GD-36) : ensemble nommé et ORDONNÉ de cartes enregistrées (atlas) ; une collection référence des
+-- cartes, jamais des copies ; une carte peut appartenir à plusieurs collections ; supprimer une collection ne supprime
+-- aucune carte (seules ses références, par cascade). Titre = `nom` (1 à 120 caractères).
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
+ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_description_longueur;
+ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_description_longueur CHECK (length(description) <= 2000);
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS proprietaire_id text REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS modifie_le timestamptz NOT NULL DEFAULT now();
+UPDATE geodata_collections co SET proprietaire_id = e.proprietaire_id FROM geodata_espaces e WHERE co.proprietaire_id IS NULL AND e.id = co.espace_id;
+CREATE TABLE IF NOT EXISTS geodata_collection_cartes (
+  collection_id text NOT NULL,
+  carte_id text NOT NULL,
+  espace_id text NOT NULL,
+  rang integer NOT NULL CHECK (rang >= 1),
+  PRIMARY KEY (collection_id, carte_id),
+  CONSTRAINT geodata_collection_cartes_collection_fk FOREIGN KEY (collection_id, espace_id) REFERENCES geodata_collections (id, espace_id) ON DELETE CASCADE,
+  CONSTRAINT geodata_collection_cartes_carte_fk FOREIGN KEY (carte_id, espace_id) REFERENCES geodata_cartes (id, espace_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS geodata_collection_cartes_rang_idx ON geodata_collection_cartes (collection_id, rang);
+CREATE INDEX IF NOT EXISTS geodata_collection_cartes_carte_idx ON geodata_collection_cartes (carte_id);
+-- Reprise du rattachement unique antérieur (`geodata_cartes.collection_id`, classement par nom) dans la liaison ordonnée,
+-- puis la colonne n'est plus renseignée : la liaison est la seule source (idempotent : rien à reprendre au second passage).
+INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
+  SELECT ca.collection_id, ca.id, ca.espace_id,
+         coalesce((SELECT max(l.rang) FROM geodata_collection_cartes l WHERE l.collection_id = ca.collection_id), 0)
+           + row_number() OVER (PARTITION BY ca.collection_id ORDER BY ca.nom, ca.id)
+    FROM geodata_cartes ca WHERE ca.collection_id IS NOT NULL
+  ON CONFLICT (collection_id, carte_id) DO NOTHING;
+UPDATE geodata_cartes SET collection_id = NULL WHERE collection_id IS NOT NULL;
 CREATE TABLE IF NOT EXISTS geodata_zones (
   id text PRIMARY KEY,
   espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,

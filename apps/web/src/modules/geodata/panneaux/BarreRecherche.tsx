@@ -1,6 +1,8 @@
 /**
- * Mini-barre de recherche de la carte GeoData : une barre verticale **indépendante** de la barre d'outils, au même style,
- * qui ne porte qu'une loupe (« Rechercher », Alt+R). Elle se place sous la barre d'outils, séparée d'elle par l'écart de
+ * Mini-barre de la carte GeoData : une barre verticale **indépendante** de la barre d'outils, au même style, qui porte de
+ * haut en bas la loupe (« Rechercher », Alt+R), « Enregistrer » (disquette : la même action que le bouton Enregistrer
+ * de la barre au-dessus de la carte, D-GD-36) et « Fond de carte » (couches : liste flottante des mêmes fonds que le
+ * sélecteur Fond, fournie par la page — jamais recopiée ; le fond actif est coché, un clic l'applique et ferme la liste). Elle se place sous la barre d'outils, séparée d'elle par l'écart de
  * ses groupes, et la suit quand celle-ci est déplacée ; elle ne recouvre jamais l'échelle ni les mentions de sources en
  * bas à droite (sinon elle se range à gauche du bas de la barre d'outils). La loupe ouvre une barre de recherche
  * flottante, à gauche de la mini-barre et alignée sur la loupe : même champ, même bouton, mêmes résultats que l'ancienne
@@ -58,6 +60,14 @@ export function placerRecherche(mini: { droite: number; haut: number } & Dimensi
 }
 
 const LOUPE = "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4";
+/** Disquette en contour : corps à coin coupé, étiquette du haut avec volet, étiquette du bas. */
+const DISQUETTE = "M6 3h10.5L20 6.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM8 3v3.5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3M13 4.5V6M8 21v-5.5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1V21M8 17.5h8";
+/** Fond de carte : deux plans superposés surmontés d'un repère de localisation, en contour. */
+const FOND = "M8.3 11.9 2.5 14.6 12 19.1l9.5-4.5-5.8-2.7M2.5 18 12 22.5l9.5-4.5M12 14.6s4.6-4.3 4.6-7.9a4.6 4.6 0 0 0-9.2 0c0 3.6 4.6 7.9 4.6 7.9ZM12 5a1.7 1.7 0 1 0 0 3.4A1.7 1.7 0 0 0 12 5Z";
+const Picto = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
+
+/** Un choix de fond tel que la page le calcule pour le sélecteur « Fond » (même source pour la liste de la mini-barre). */
+export interface ChoixFond { readonly valeur: string; readonly cle: string; readonly libelle: string; readonly desactive: boolean }
 
 export interface ProprietesRecherche {
   /** Placement de la barre d'outils (null tant qu'elle n'est pas mesurée). */
@@ -71,12 +81,21 @@ export interface ProprietesRecherche {
   avis: string | null;
   onChoisir(r: ResultatRecherche): void;
   onFermerResultats(): void;
+  /** Enregistrer : même action que le bouton de la barre au-dessus de la carte, même condition d'activation. */
+  enregistrement: { libelle: string; desactive: boolean; onEnregistrer(): void };
+  /** Fonds : mêmes choix que le sélecteur « Fond », fond actif, application d'un fond. */
+  fonds: { choix: readonly ChoixFond[]; actif: string; onChoisir(id: string): void };
 }
 
 export function BarreRecherche(p: ProprietesRecherche) {
   const mini = useRef<HTMLElement>(null);
   const loupe = useRef<HTMLButtonElement>(null);
   const champ = useRef<HTMLInputElement>(null);
+  const boutonFond = useRef<HTMLButtonElement>(null);
+  const listeFonds = useRef<HTMLUListElement>(null);
+  const [fondsOuverts, setFondsOuverts] = useState(false);
+  const [decalageFond, setDecalageFond] = useState(0);
+  const [hauteurCarte, setHauteurCarte] = useState(0);
   const [place, setPlace] = useState<{ droite: number; haut: number } | null>(null);
   const [panneau, setPanneau] = useState<ReturnType<typeof placerRecherche> | null>(null);
 
@@ -98,8 +117,11 @@ export function BarreRecherche(p: ProprietesRecherche) {
     setPlace((a) => (a && a.droite === q.droite && a.haut === q.haut ? a : q));
     const r = placerRecherche({ ...q, ...taille }, dims);
     setPanneau((a) => (a && a.gauche === r.gauche && a.haut === r.haut && a.largeur === r.largeur && a.resultatsVersLeHaut === r.resultatsVersLeHaut ? a : r));
+    const d = boutonFond.current?.offsetTop ?? 0;
+    setDecalageFond((a) => (a === d ? a : d));
+    setHauteurCarte((a) => (a === dims.hauteur ? a : dims.hauteur));
   };
-  useLayoutEffect(() => mesurer.current(), [p.outils, p.ouverte]);
+  useLayoutEffect(() => mesurer.current(), [p.outils, p.ouverte, fondsOuverts]);
   useEffect(() => {
     const carte = mini.current?.parentElement;
     const refaire = () => mesurer.current();
@@ -113,6 +135,19 @@ export function BarreRecherche(p: ProprietesRecherche) {
     refaire();
     return () => { window.removeEventListener("resize", refaire); ro?.disconnect(); mo?.disconnect(); observateur.current = null; basObserve.current = null; };
   }, []);
+
+  // Une seule liste flottante à la fois : ouvrir la recherche referme la liste des fonds, et inversement.
+  useEffect(() => { if (p.ouverte) setFondsOuverts(false); }, [p.ouverte]);
+  // Liste des fonds : focus sur le fond actif ; un clic sur la carte la referme (le clic garde son effet sur la carte).
+  useEffect(() => {
+    if (!fondsOuverts) return;
+    (listeFonds.current?.querySelector<HTMLButtonElement>("button[aria-pressed='true']") ?? listeFonds.current?.querySelector<HTMLButtonElement>("button:not(:disabled)"))?.focus();
+    const surCarte = (e: PointerEvent) => { if ((e.target as Element | null)?.closest?.("[data-gd-moteur]")) setFondsOuverts(false); };
+    document.addEventListener("pointerdown", surCarte, true);
+    return () => document.removeEventListener("pointerdown", surCarte, true);
+  }, [fondsOuverts]);
+  const fermerFonds = () => { setFondsOuverts(false); boutonFond.current?.focus(); };
+  const basculerFonds = () => { if (fondsOuverts) fermerFonds(); else { p.onBasculer(false); setFondsOuverts(true); } };
 
   // Ouverture : le curseur va dans le champ. Un clic sur la carte referme la barre (le clic garde son effet sur la carte).
   useEffect(() => {
@@ -137,10 +172,32 @@ export function BarreRecherche(p: ProprietesRecherche) {
       <nav ref={mini} className="gd-barre-recherche" aria-label="Recherche sur la carte" style={place ? { right: place.droite, top: place.haut } : { visibility: "hidden" }} data-gd-barre-recherche>
         <div className="gd-groupe-outils">
           <button ref={loupe} type="button" className="gd-outil" title="Rechercher (Alt+R)" aria-label="Rechercher" aria-expanded={p.ouverte} aria-controls="gd-recherche-flottante" onClick={() => (p.ouverte ? fermer() : p.onBasculer(true))} data-gd-loupe>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={LOUPE} /></svg>
+            <Picto d={LOUPE} />
+          </button>
+          <button type="button" className="gd-outil" title={p.enregistrement.libelle} aria-label={p.enregistrement.libelle} disabled={p.enregistrement.desactive} onClick={p.enregistrement.onEnregistrer} data-gd-mini-enregistrer>
+            <Picto d={DISQUETTE} />
+          </button>
+          <button ref={boutonFond} type="button" className="gd-outil" title="Fond de carte" aria-label="Fond de carte" aria-expanded={fondsOuverts} aria-controls="gd-fonds-flottants" onClick={basculerFonds} data-gd-mini-fond>
+            <Picto d={FOND} />
           </button>
         </div>
       </nav>
+      {fondsOuverts && panneau && (
+        <div id="gd-fonds-flottants" className="gd-fonds-flottants" role="group" aria-label="Fond de carte" style={{ left: panneau.gauche + Math.max(0, panneau.largeur - 300), width: Math.min(300, panneau.largeur),
+            // Bouton dans la moitié basse de la carte : la liste s'ouvre vers le haut (bas aligné sur le bouton), jamais hors de la carte.
+            ...(panneau.resultatsVersLeHaut ? { bottom: Math.max(4, hauteurCarte - (panneau.haut + decalageFond + (boutonFond.current?.offsetHeight ?? 40))) } : { top: panneau.haut + decalageFond }) }}
+          onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); fermerFonds(); } }} data-gd-fonds-flottants>
+          <ul ref={listeFonds}>
+            {p.fonds.choix.map((f) => (
+              <li key={f.cle}>
+                <button type="button" disabled={f.desactive} aria-pressed={!f.desactive && f.valeur === p.fonds.actif} onClick={() => { p.fonds.onChoisir(f.valeur); fermerFonds(); }} data-gd-fond-choix={f.desactive ? undefined : f.valeur}>
+                  <span className="gd-coche" aria-hidden="true">{!f.desactive && f.valeur === p.fonds.actif ? "✓" : ""}</span>{f.libelle}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {p.ouverte && panneau && (
         <form id="gd-recherche-flottante" className={`gd-recherche gd-recherche-flottante${panneau.resultatsVersLeHaut ? " gd-resultats-haut" : ""}`} role="search" style={{ left: panneau.gauche, top: panneau.haut, width: panneau.largeur }}
           onKeyDown={clavier} onSubmit={(e) => { e.preventDefault(); p.onLancer(); }} data-gd-recherche-flottante>

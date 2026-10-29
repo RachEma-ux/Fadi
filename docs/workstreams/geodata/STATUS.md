@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-28 (UTC).
+Mis à jour : 2026-10-29 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -88,6 +88,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   d'outils, Alt+R ; recette `geodata.mjs` 144 contrôles (15 nouveaux : place, style, ouverture / fermeture, texte gardé,
   clic sur la carte, outil de mesure actif, suivi du déplacement, sources non chevauchées) ; vérifié Pixel 7, 360 × 560
   et 1440 × 900, « Dir El Ksiba », code HCP 15710321, coordonnées.
+- Collections, menu « Cartes » et mini-barre (D-GD-36) : tables `geodata_collections` (+ description, propriétaire,
+  modification) et `geodata_collection_cartes` (rang), reprise idempotente de `collection_id` (vérifiée en base locale) ;
+  routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
+  recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
+  sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :

@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-28 (UTC).
+Mis à jour : 2026-10-29 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -51,6 +51,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   série à 600 ms et clic daté à l'événement d'entrée (#359) — vérifié Pixel 7, cadence humaine, couches HCP chargées.
 - Recherche de la carte en mini-barre (D-GD-35) : loupe sous la barre d'outils (Alt+R), barre flottante, même logique ;
   champ retiré de la barre au-dessus de la carte.
+- Collections de cartes (D-GD-36) : ensemble ordonné de références, plusieurs collections par carte, menu ☰ « Cartes »,
+  mini-barre Enregistrer / Fond ; « Partager » attend une spécification (`COLLECTIONS.md`).
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.

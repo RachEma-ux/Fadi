@@ -54,9 +54,17 @@ async function connecter(page, email) {
 /** Les espaces de travail sont des entrées du menu hamburger (en haut à droite). */
 async function volet(p, v) {
   if (await p.locator(`[data-gd-volet-ouvert='${v}']`).count()) return;
-  if (!(await p.locator(`[data-gd-volet='${v}']`).isVisible())) await p.locator("[data-gd-menu]").click();
+  if (!(await p.locator("#gd-menu-liste").count())) await p.locator("[data-gd-menu]").click();
+  // « Mes cartes › Ouvrir » vit dans la rubrique « Cartes » du menu ☰ (D-GD-36), dépliée au besoin.
+  if (!(await p.locator(`[data-gd-volet='${v}']`).isVisible())) await p.locator("[data-gd-menu-cartes]").click();
   await p.locator(`[data-gd-volet='${v}']`).click();
 }
+/** Entrée de la rubrique « Cartes » du menu ☰ (`groupe:entree`), menu et rubrique ouverts au besoin. */
+async function menuCartes(p) {
+  if (!(await p.locator("#gd-menu-liste").count())) await p.locator("[data-gd-menu]").click();
+  if ((await p.locator("[data-gd-menu-cartes]").getAttribute("aria-expanded")) !== "true") await p.locator("[data-gd-menu-cartes]").click();
+}
+async function entreeMenu(p, cle) { await menuCartes(p); await p.locator(`[data-gd-menu-entree='${cle}']`).click(); }
 /** Onglet du panneau Données (rouvert par le bouton « Données » s'il est fermé). */
 async function onglet(p, o) { if (!(await p.locator("[data-gd-panneau]").count())) await p.locator("[data-gd-donnees]").click(); await p.locator(`[data-gd-onglet='${o}']`).click(); }
 /** Barre de recherche flottante de la carte, ouverte par la loupe de sa mini-barre si elle est fermée. */
@@ -141,14 +149,53 @@ const boiteLoupe = await miniBarre.boundingBox();
 const groupes = await barreOutils.locator(".gd-groupe-outils").evaluateAll((gs) => gs.map((g) => g.getBoundingClientRect()));
 const ecartGroupes = Math.round(groupes[1].top - groupes[0].bottom);
 const basBarre = groupes[groupes.length - 1].bottom;
-check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), sous elle, au même bord droit, à l'écart de ses groupes",
-  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").count()) === 1 && Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5,
-  `écart groupes ${ecartGroupes}, mini y=${boiteLoupe.y} bas barre=${basBarre}`);
+// Place : sous la barre d'outils (même bord droit, écart des groupes) quand la carte est assez haute ; sinon, pour ne
+// jamais chevaucher l'échelle ni les sources, à gauche du bas de la barre d'outils (même écart, bas alignés).
+const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
+const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && Math.abs(boiteLoupe.y + boiteLoupe.height - basBarre) <= 1.5;
+check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), de haut en bas Loupe, Enregistrer, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
+  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Fond de carte" && (dessous || aCote),
+  `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
 const tailles = await page.evaluate(() => [document.querySelector("[data-gd-barre-outil='zoom-plus']"), document.querySelector("[data-gd-loupe]")].map((b) => `${b.offsetWidth}x${b.offsetHeight}`));
 check("mini-barre : même style que la barre d'outils (fond, coins, ombre, taille des boutons), loupe « Rechercher »", styles[0] === styles[1] && tailles[0] === tailles[1] && (await loupe.getAttribute("aria-label")) === "Rechercher" && ((await loupe.getAttribute("title")) ?? "").startsWith("Rechercher"), `${styles.join(" ≠ ")} ; ${tailles.join(" / ")}`);
 const basDroite = await page.locator(".maplibregl-ctrl-bottom-right").boundingBox();
 check("mini-barre : ne chevauche ni l'échelle ni les sources (bas à droite)", !basDroite || boiteLoupe.y + boiteLoupe.height <= basDroite.y);
+// Enregistrer (disquette) : même action et même condition que le bouton Enregistrer de la barre au-dessus de la carte.
+const miniEnregistrer = page.locator("[data-gd-mini-enregistrer]");
+check("mini-barre : « Enregistrer » a la même condition d'activation que le bouton de la barre", (await miniEnregistrer.isDisabled()) === (await page.locator("header.gd-barre [data-gd-enregistrer]").isDisabled()) && (await miniEnregistrer.getAttribute("title")) === "Enregistrer");
+await miniEnregistrer.click();
+await page.locator("[data-gd-volet-ouvert='cartes'] [data-gd-nom-carte]").waitFor();
+check("mini-barre : « Enregistrer » d'une carte jamais enregistrée ouvre Mes cartes pour la nommer (comme le bouton de la barre)", (await page.locator("[data-gd-formulaire-enregistrer='nouvelle']").count()) === 1);
+await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
+// Fond de carte : liste flottante des mêmes fonds que le sélecteur, fond actif coché ; un clic applique et ferme.
+const choixSelect = await page.locator("header.gd-barre [data-gd-fond] option").evaluateAll((os) => os.map((o) => `${o.textContent}|${o.disabled}`));
+const miniFond = page.locator("[data-gd-mini-fond]");
+await miniFond.click();
+const listeFonds = page.locator("[data-gd-fonds-flottants]");
+await listeFonds.waitFor();
+const choixListe = await listeFonds.locator("button").evaluateAll((bs) => bs.map((b) => `${b.textContent.replace("✓", "")}|${b.disabled}`));
+const boiteFonds = await listeFonds.boundingBox(), boiteMiniFond = await miniFond.boundingBox();
+const fondActif = await page.locator("header.gd-barre [data-gd-fond]").inputValue();
+check("mini-barre : « Fond de carte » liste les mêmes fonds que le sélecteur, fond actif coché, à gauche de la mini-barre et alignée sur le bouton (vers le haut dans la moitié basse)",
+  JSON.stringify(choixListe) === JSON.stringify(choixSelect) && (await listeFonds.locator(`[data-gd-fond-choix='${fondActif}']`).getAttribute("aria-pressed")) === "true" && boiteFonds.x + boiteFonds.width <= boiteMiniFond.x && (Math.abs(boiteFonds.y - boiteMiniFond.y) <= 1.5 || Math.abs(boiteFonds.y + boiteFonds.height - (boiteMiniFond.y + boiteMiniFond.height)) <= 1.5),
+  `${choixListe.join(" ; ")} ≠ ${choixSelect.join(" ; ")}`);
+await page.keyboard.press("Escape");
+check("mini-barre : Échap referme la liste des fonds", (await listeFonds.count()) === 0);
+await miniFond.click();
+const autreFond = await listeFonds.locator(`button:not(:disabled):not([aria-pressed='true'])`).first().getAttribute("data-gd-fond-choix").catch(() => null);
+if (autreFond) {
+  await listeFonds.locator(`[data-gd-fond-choix='${autreFond}']`).click();
+  check("mini-barre : un fond choisi dans la liste s'applique comme depuis le sélecteur, et la liste se ferme", (await page.locator("header.gd-barre [data-gd-fond]").inputValue()) === autreFond && (await listeFonds.count()) === 0);
+  await page.locator("header.gd-barre [data-gd-fond]").selectOption(fondActif);
+} else {
+  await listeFonds.locator(`[data-gd-fond-choix='${fondActif}']`).click();
+  check("mini-barre : un fond choisi dans la liste s'applique comme depuis le sélecteur, et la liste se ferme", (await page.locator("header.gd-barre [data-gd-fond]").inputValue()) === fondActif && (await listeFonds.count()) === 0);
+}
+await miniFond.click();
+const canevasFonds = await page.locator(".maplibregl-canvas").boundingBox();
+await page.mouse.click(canevasFonds.x + canevasFonds.width * 0.5, canevasFonds.y + canevasFonds.height - 80);
+check("mini-barre : un clic sur la carte referme la liste des fonds", (await listeFonds.count()) === 0);
 check("recherche : fermée par défaut", (await page.locator("[data-gd-recherche]").count()) === 0 && (await loupe.getAttribute("aria-expanded")) === "false");
 await loupe.click();
 const flottante = page.locator("[data-gd-recherche-flottante]");
@@ -190,7 +237,9 @@ await page.waitForTimeout(300);
 const miniSuivie = await miniBarre.boundingBox();
 const barreSuivie = await barreOutils.boundingBox();
 const basSuivi = await barreOutils.locator(".gd-groupe-outils").last().evaluate((g) => g.getBoundingClientRect().bottom);
-check("mini-barre : suit la barre d'outils quand elle est déplacée (même bord droit, toujours dessous)", Math.abs(miniSuivie.x + miniSuivie.width - (barreSuivie.x + barreSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y - basSuivi - ecartGroupes) <= 1.5 && Math.abs(barreSuivie.x - retour.x) > 5, `barre ${retour.x} → ${barreSuivie.x} ; mini ${boiteLoupe.x} → ${miniSuivie.x}`);
+const suitDessous = Math.abs(miniSuivie.x + miniSuivie.width - (barreSuivie.x + barreSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y - basSuivi - ecartGroupes) <= 1.5;
+const suitACote = Math.abs(barreSuivie.x - ecartGroupes - (miniSuivie.x + miniSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y + miniSuivie.height - basSuivi) <= 1.5;
+check("mini-barre : suit la barre d'outils quand elle est déplacée (dessous, ou à côté de son bas)", (suitDessous || suitACote) && Math.abs(barreSuivie.x - retour.x) > 5, `barre ${retour.x} → ${barreSuivie.x} ; mini ${boiteLoupe.x} → ${miniSuivie.x}`);
 await page.locator("[data-gd-poignee]").dblclick();
 await page.waitForTimeout(100);
 check("carte : aucun contrôle de navigation MapLibre en double", (await page.locator(".maplibregl-ctrl-zoom-in").count()) === 0);
@@ -202,7 +251,7 @@ check("carte : le bouton « Zoom avant » agit sur la carte (un cran)", Math.abs
 await page.locator("[data-gd-barre-outil='zoom-moins']").click();
 await page.locator("[data-gd-menu]").click();
 const entreesMenu = await page.locator("#gd-menu-liste button").allTextContents();
-check("menu hamburger : Données, Mes cartes, Études, Importer, Exporter", entreesMenu.join("|") === "Données|Mes cartes|Études|Importer|Exporter", entreesMenu.join("|"));
+check("menu hamburger : Données, Cartes (anciennement Mes cartes, D-GD-36), Études, Importer, Exporter", entreesMenu.join("|") === "Données|Cartes|Études|Importer|Exporter", entreesMenu.join("|"));
 await page.locator("[data-gd-menu]").click();
 check("bouton « Données » : le catalogue est ouvert sur la carte", (await page.locator("[data-gd-donnees]").getAttribute("aria-pressed")) === "true" && (await page.locator("[data-gd-catalogue]").count()) === 1);
 await page.locator("[data-gd-donnees]").click();
@@ -405,6 +454,102 @@ await onglet2.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
 const cartes = await page.evaluate(async () => (await (await fetch("/geodata/api/cartes")).json()).cartes.map((c) => c.nom));
 check("GEO 13 · « ma version » enregistrée comme copie, l'original intact", cartes.some((n) => n.endsWith("(ma version)")) && cartes.includes("Carte de recette"), cartes.join(", "));
 await onglet2.close();
+await page.goto(`${BASE}/geodata`);
+await page.locator("[data-gd-etat-enregistrement]").waitFor();
+
+// --- Menu ☰ « Cartes » et Collection (D-GD-36) ---
+await menuCartes(page);
+const structure = await page.locator("#gd-menu-cartes [data-gd-menu-groupe]").evaluateAll((gs) => gs.map((g) => `${g.querySelector("h3").textContent}: ${[...g.querySelectorAll("button")].map((b) => b.textContent.replace(" — bientôt", "")).join(", ")}`));
+check("menu ☰ : rubrique « Cartes » (Mes cartes, Collection, Fournisseurs) avec leurs entrées",
+  structure.join(" / ") === "Mes cartes: Nouveau, Ouvrir, Partager, Enregistrer, Enregistrer sous / Collection: Nouveau, Ouvrir, Enregistrer, Enregistrer sous / Fournisseurs: Nouveau (ajouter un fournisseur), Gérer"
+  && (await page.locator("[data-gd-menu-cartes]").textContent()) === "Cartes" && (await page.locator("#gd-menu-liste").getByText("Mes cartes", { exact: true }).count()) === 1, structure.join(" / "));
+const partager = page.locator("[data-gd-menu-entree='mes-cartes:partager']");
+check("menu ☰ : « Partager » sans fonction existante est affiché, désactivé, « bientôt »", (await partager.isDisabled()) && ((await partager.textContent()) ?? "").includes("bientôt"));
+check("menu ☰ : Collection › Enregistrer et Enregistrer sous désactivés sans collection ouverte", (await page.locator("[data-gd-menu-entree='collection:enregistrer']").isDisabled()) && (await page.locator("[data-gd-menu-entree='collection:enregistrer-sous']").isDisabled()));
+const cartesAvant = await page.evaluate(async () => (await (await fetch("/geodata/api/cartes")).json()).cartes);
+const carteA = cartesAvant.find((c) => c.nom === "Carte de recette"), carteB = cartesAvant.find((c) => c.nom.endsWith("(ma version)"));
+await page.locator("[data-gd-menu-entree='collection:nouveau']").click();
+await page.locator("[data-gd-collection-nouvelle] [data-gd-collection-titre-saisie]").fill("Atlas de recette");
+await page.locator("[data-gd-collection-nouvelle] textarea").fill("Cartes de la recette GeoData");
+await page.locator("[data-gd-collection-creer]").click();
+const panneauCol = page.locator("[data-gd-collection-ouverte]");
+await panneauCol.waitFor();
+const idCollection = await panneauCol.getAttribute("data-gd-collection-ouverte");
+check("collection : Nouveau crée une collection vide, ouverte, enregistrée", (await panneauCol.locator("[data-gd-collection-carte]").count()) === 0 && (await page.locator("[data-gd-collection-etat='enregistree']").count()) === 1 && (await page.locator("[data-gd-collection-titre]").inputValue()) === "Atlas de recette");
+// Carte A affichée puis ajoutée ; enregistrée.
+await volet(page, "cartes");
+await page.locator(`[data-gd-ouvrir-carte='${carteA.id}']`).click();
+await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
+await entreeMenu(page, "collection:ouvrir");
+await page.locator(`[data-gd-collection-ouvrir='${idCollection}']`).click();
+await panneauCol.waitFor();
+await page.locator("[data-gd-collection-ajouter]").click();
+check("collection : « Ajouter la carte affichée » ajoute la carte, collection marquée modifiée", (await panneauCol.locator(`[data-gd-collection-carte='${carteA.id}']`).count()) === 1 && (await page.locator("[data-gd-collection-etat='modifiee']").count()) === 1 && (await page.locator("[data-gd-collection-ajouter]").isDisabled()));
+await page.locator("[data-gd-collection-enregistrer]").click();
+await page.locator("[data-gd-collection-etat='enregistree']").waitFor();
+// Carte B affichée, collection rouverte, B ajoutée puis montée ; enregistrement par le menu.
+await volet(page, "cartes");
+await page.locator(`[data-gd-ouvrir-carte='${carteB.id}']`).click();
+await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
+await entreeMenu(page, "collection:ouvrir");
+await page.locator(`[data-gd-collection-ouvrir='${idCollection}']`).click();
+await panneauCol.waitFor();
+await page.locator("[data-gd-collection-ajouter]").click();
+await page.locator(`[data-gd-collection-monter='${carteB.id}']`).click();
+const ordrePanneau = await panneauCol.locator("[data-gd-collection-carte]").evaluateAll((ls) => ls.map((l) => l.getAttribute("data-gd-collection-carte")));
+check("collection : deux cartes, réordonnées par Monter", JSON.stringify(ordrePanneau) === JSON.stringify([carteB.id, carteA.id]));
+await entreeMenu(page, "collection:enregistrer");
+await page.locator("[data-gd-collection-etat='enregistree']").waitFor();
+const enBase = await page.evaluate(async (id) => (await (await fetch(`/geodata/api/collections/${id}`)).json()), idCollection);
+check("collection : Collection › Enregistrer (menu) enregistre titre, description, cartes et ordre", JSON.stringify(enBase.cartes.map((c) => c.id)) === JSON.stringify([carteB.id, carteA.id]) && enBase.description === "Cartes de la recette GeoData");
+// Enregistrer sous : copie avec les mêmes références.
+await page.locator("[data-gd-collection-sous]").click();
+await page.locator("[data-gd-collection-enregistrer-sous] [data-gd-collection-titre-saisie]").fill("Atlas de recette (copie)");
+await page.locator("[data-gd-collection-valider-sous]").click();
+await page.waitForFunction((id) => { const e = document.querySelector("[data-gd-collection-ouverte]"); return e && e.getAttribute("data-gd-collection-ouverte") !== id; }, idCollection);
+const idCopie = await panneauCol.getAttribute("data-gd-collection-ouverte");
+const copieBase = await page.evaluate(async (id) => (await (await fetch(`/geodata/api/collections/${id}`)).json()), idCopie);
+check("collection : Enregistrer sous crée une copie (nouveau titre, mêmes cartes dans le même ordre)", copieBase.nom === "Atlas de recette (copie)" && JSON.stringify(copieBase.cartes.map((c) => c.id)) === JSON.stringify([carteB.id, carteA.id]));
+// Rouvrir l'originale : tout est conservé ; un clic sur une carte l'ouvre.
+await entreeMenu(page, "collection:ouvrir");
+await page.locator(`[data-gd-collection-ouvrir='${idCollection}']`).click();
+await page.waitForFunction((id) => document.querySelector("[data-gd-collection-ouverte]")?.getAttribute("data-gd-collection-ouverte") === id, idCollection);
+const rouverte = await panneauCol.locator("[data-gd-collection-carte]").evaluateAll((ls) => ls.map((l) => l.getAttribute("data-gd-collection-carte")));
+check("collection : rouverte, titre, description, cartes et ordre conservés", JSON.stringify(rouverte) === JSON.stringify([carteB.id, carteA.id]) && (await page.locator("[data-gd-collection-titre]").inputValue()) === "Atlas de recette" && (await page.locator("[data-gd-collection-description]").inputValue()) === "Cartes de la recette GeoData");
+await page.locator(`[data-gd-collection-ouvrir-carte='${carteA.id}']`).click();
+await page.waitForFunction(() => document.querySelector("header.gd-barre .gd-enregistrement strong")?.textContent === "Carte de recette", null, { timeout: 10_000 }).catch(() => undefined);
+check("collection : un clic sur une carte de la liste l'ouvre", ((await page.locator("header.gd-barre .gd-enregistrement strong").textContent()) ?? "") === "Carte de recette");
+// Supprimer une collection laisse ses cartes intactes dans Mes cartes.
+await page.locator("[data-gd-collection-supprimer]").click();
+await page.locator("[data-gd-collection-confirmer-suppression]").click();
+await page.locator("[data-gd-collection-liste]").waitFor();
+const apresSuppression = await page.evaluate(async (id) => ({ statut: (await fetch(`/geodata/api/collections/${id}`)).status, cartes: (await (await fetch("/geodata/api/cartes")).json()).cartes.map((c) => c.id) }), idCollection);
+check("collection : supprimée, ses cartes restent intactes dans Mes cartes", apresSuppression.statut === 404 && apresSuppression.cartes.includes(carteA.id) && apresSuppression.cartes.includes(carteB.id));
+await volet(page, "cartes");
+check("Mes cartes : les collections qui référencent la carte affichée sont indiquées", ((await page.locator("[data-gd-collections-de-carte]").textContent()) ?? "").includes("Atlas de recette (copie)"));
+// Enregistrer depuis la mini-barre met à jour l'indicateur.
+await onglet(page, "couches");
+await page.locator("[data-gd-couche-active] input[type='range']").first().fill("55");
+await page.locator("[data-gd-etat-enregistrement='non-enregistree']").waitFor();
+await page.locator("[data-gd-mini-enregistrer]").click();
+await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
+check("mini-barre : « Enregistrer » enregistre la carte affichée et met à jour l'indicateur", (await page.locator("[data-gd-mini-enregistrer]").isDisabled()) && (await page.locator("header.gd-barre [data-gd-enregistrer]").isDisabled()));
+// Mes cartes › Enregistrer sous : nouvelle carte, l'originale ne change pas.
+await entreeMenu(page, "mes-cartes:enregistrer-sous");
+const formSous = page.locator("[data-gd-formulaire-enregistrer='sous']");
+await formSous.waitFor();
+await page.waitForFunction(() => (document.querySelector("[data-gd-formulaire-enregistrer='sous'] [data-gd-nom-carte]")?.value ?? "") !== "", null, { timeout: 5000 }).catch(() => undefined);
+check("Mes cartes › Enregistrer sous : nom proposé « (copie) »", (await formSous.locator("[data-gd-nom-carte]").inputValue()) === "Carte de recette (copie)", `${await formSous.locator("[data-gd-nom-carte]").inputValue()} ; carte affichée ${await page.locator("header.gd-barre .gd-enregistrement strong").textContent()}`);
+await formSous.locator("[data-gd-nom-carte]").fill("Carte de recette bis");
+await formSous.locator("[data-gd-enregistrer-sous]").click();
+await page.waitForFunction(() => document.querySelector("header.gd-barre .gd-enregistrement strong")?.textContent === "Carte de recette bis", null, { timeout: 10_000 }).catch(() => undefined);
+const nomsCartes = await page.evaluate(async () => (await (await fetch("/geodata/api/cartes")).json()).cartes.map((c) => c.nom));
+check("Mes cartes › Enregistrer sous : nouvelle carte ouverte, l'originale intacte", nomsCartes.includes("Carte de recette bis") && nomsCartes.includes("Carte de recette"));
+// Fournisseurs › Nouveau : le formulaire d'ajout existant des Paramètres s'ouvre.
+await entreeMenu(page, "fournisseurs:nouveau");
+await page.waitForURL(/\/parametres#settings-fournisseurs-ajouter$/);
+await page.locator("[data-fournisseur-formulaire]").waitFor();
+check("menu ☰ : Fournisseurs › Nouveau ouvre le formulaire d'ajout des Paramètres", (await page.locator("[data-fournisseur-formulaire]").count()) === 1);
 await page.goto(`${BASE}/geodata`);
 await page.locator("[data-gd-etat-enregistrement]").waitFor();
 
@@ -701,6 +846,12 @@ await page.locator("[data-gd-donnees]").click();
 await page.locator("[data-gd-menu]").click();
 const boiteMenu = await page.locator("#gd-menu-liste").boundingBox();
 check("GEO 12 · téléphone : le menu ☰ reste dans l'écran, à droite", !!boiteMenu && boiteMenu.x >= 60 && boiteMenu.x + boiteMenu.width <= 391, JSON.stringify(boiteMenu));
+await menuCartes(page);
+const boiteMenuCartes = await page.locator("#gd-menu-liste").boundingBox();
+check("GEO 12 · téléphone : la rubrique « Cartes » dépliée reste dans l'écran", boiteMenuCartes.x >= 0 && boiteMenuCartes.x + boiteMenuCartes.width <= 391 && boiteMenuCartes.y + boiteMenuCartes.height <= 845, JSON.stringify(boiteMenuCartes));
+await page.locator("[data-gd-menu]").click();
+const barreMiniTel = await page.locator("[data-gd-barre-recherche]").boundingBox(), basTel = await page.locator(".maplibregl-ctrl-bottom-right").boundingBox();
+check("GEO 12 · téléphone : mini-barre (Loupe, Enregistrer, Fond) entière, sans chevaucher l'échelle ni les sources", (await page.locator("[data-gd-barre-recherche] button").count()) === 3 && barreMiniTel.x >= 0 && barreMiniTel.x + barreMiniTel.width <= 391 && (!basTel || barreMiniTel.y + barreMiniTel.height <= basTel.y || barreMiniTel.x + barreMiniTel.width <= basTel.x), `${JSON.stringify(barreMiniTel)} / ${JSON.stringify(basTel)}`);
 await volet(page, "cartes");
 const ouverts = await page.evaluate(() => [document.querySelector(".gd-panneau.gd-ouvert"), document.querySelector("[data-gd-volet-ouvert]")].filter(Boolean).length);
 check("GEO 12 · téléphone : un seul panneau principal ouvert", ouverts === 1);
@@ -826,7 +977,9 @@ await en.goto(`${BASE}/geodata`);
 await en.locator("[data-geodata-page]").waitFor();
 await releve();
 for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await volet(en, v); await releve(); }
-await en.locator("[data-gd-menu]").click(); await releve(); await en.locator("[data-gd-menu]").click();
+for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }
+await en.locator("[data-gd-mini-fond]").click(); await releve(); await en.keyboard.press("Escape");
+await menuCartes(en); await releve(); await en.locator("[data-gd-menu]").click();
 await onglet(en, "catalogue"); await en.locator("[data-gd-type='imagerie']").click(); await releve(); await en.locator("[data-gd-type='vecteurs']").click();
 for (const o of ["couches", "legende"]) { await onglet(en, o); await releve(); }
 writeFileSync(join(OUT, "residus-anglais.txt"), [...residus].join("\n"));

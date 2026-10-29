@@ -379,6 +379,24 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. Barre au-dessus de la carte : champ et bouton Rechercher retirés ; Fond, Fournisseurs, état d'enregistrement,
         Enregistrer et menu ☰ inchangés ; la loupe de l'en-tête vert (recherche de la plateforme) n'est pas touchée.
 
+   - D-GD-36 (28 octobre 2026) — **mini-barre (Enregistrer, Fond), menu ☰ « Cartes », concept « Collection »**
+     (spécification du maître d'ouvrage) :
+     1. Mini-barre : sous la loupe, **Enregistrer** (disquette ; même fonction `enregistrer()` et même condition
+        d'activation que le bouton de la barre, même indicateur) et **Fond de carte** (couches et repère ; liste flottante
+        des choix calculés une seule fois par la page, `choixFonds`, qui alimentent aussi le sélecteur Fond ; fond actif
+        coché ; un clic applique et ferme ; Échap, nouvel appui ou clic sur la carte ferment ; vers le haut quand le
+        bouton est dans la moitié basse). Icônes tracées dans le module, même trait que les autres. Barre au-dessus de la
+        carte inchangée.
+     2. Menu ☰ : « Mes cartes » devient la rubrique dépliable **Cartes** › Mes cartes (Nouveau, Ouvrir, Partager,
+        Enregistrer, Enregistrer sous), Collection (Nouveau, Ouvrir, Enregistrer, Enregistrer sous), Fournisseurs
+        (Nouveau, Gérer). Chaque entrée appelle une fonction existante ; **Partager**, sans fonction existante, est
+        affiché désactivé « bientôt ». « Enregistrer sous » d'une carte ouverte = nouvelle carte, même composition
+        (création existante) ; Fournisseurs › Nouveau ouvre le formulaire d'ajout existant des Paramètres.
+     3. **Collection** = ensemble nommé et ordonné de références vers des cartes de l'espace (plusieurs collections par
+        carte ; supprimer une collection ne supprime aucune carte). Le rattachement unique antérieur
+        (`geodata_cartes.collection_id`) est repris dans la liaison ordonnée `geodata_collection_cartes` et n'est plus
+        écrit. Concept, modèle de données et API : `docs/workstreams/geodata/COLLECTIONS.md`.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

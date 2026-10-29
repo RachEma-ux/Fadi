@@ -101,6 +101,13 @@ La recherche (nom, code HCP, « lon … lat … ») s'ouvre par la **loupe** de 
 loupe ou un clic sur la carte la referment ; le texte saisi est gardé. La barre au-dessus de la carte ne porte plus de
 champ de recherche (Fond, Fournisseurs, Enregistrer et menu restent).
 
+## Mini-barre, menu « Cartes » et collections (D-GD-36)
+
+Sous la loupe, la mini-barre porte **Enregistrer** (même action que le bouton de la barre) et **Fond de carte** (liste des
+mêmes fonds que le sélecteur). Le menu ☰ regroupe sous **Cartes** : Mes cartes, Collection et Fournisseurs (Partager :
+bientôt). Une **collection** est un ensemble ordonné de références vers des cartes enregistrées (atlas) ; concept, modèle
+de données et API : [`docs/workstreams/geodata/COLLECTIONS.md`](../workstreams/geodata/COLLECTIONS.md).
+
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :

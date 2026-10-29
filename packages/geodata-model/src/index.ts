@@ -16,3 +16,4 @@ export * from "./etiquettes.js";
 export * from "./territoires.js";
 export * from "./indicateur-actif.js";
 export * from "./selection-clics.js";
+export * from "./collections.js";

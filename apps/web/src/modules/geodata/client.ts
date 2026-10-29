@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
+import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -64,9 +64,13 @@ export interface DouarRecu {
   pourcentages: { masculin: number | null; feminin: number | null; moins15: number | null; de15a59: number | null; plus60: number | null };
 }
 export type Disponibilite = { etat: "disponible"; versionPlusRecente: string | null } | { etat: "retiree" | "inaccessible"; motif: string };
-export interface CarteRecue { id: string; nom: string; revision: number; etat: "active" | "archivee"; collectionId: string | null; creeLe: string; modifieLe: string; composition: Composition; disponibilite: Record<string, Disponibilite> }
-export interface ResumeCarte { id: string; nom: string; revision: number; etat: string; collectionId: string | null; modifieLe: string; couches: number }
-export interface CollectionRecue { id: string; nom: string; etat: string; cartes: number }
+/** Collection qui référence une carte (une carte peut être dans plusieurs collections, D-GD-36). */
+export interface CollectionDeCarte { id: string; nom: string }
+export interface CarteRecue { id: string; nom: string; revision: number; etat: "active" | "archivee"; collections: CollectionDeCarte[]; creeLe: string; modifieLe: string; composition: Composition; disponibilite: Record<string, Disponibilite> }
+export interface ResumeCarte { id: string; nom: string; revision: number; etat: string; modifieLe: string; couches: number }
+export interface CollectionRecue { id: string; nom: string; description: string; etat: string; modifieLe: string; cartes: number }
+/** Collection ouverte (D-GD-36) : titre (`nom`), description et cartes référencées dans leur ordre. */
+export interface CollectionDetail { id: string; nom: string; description: string; etat: string; creeLe: string; modifieLe: string; cartes: CarteDeCollection[] }
 export interface ZoneRecue { id: string; nature: "zone" | "annotation"; nom: string; texte: string; provenance: string; revision: number; geometrieReparee: boolean; geometrie: { type: string; coordinates: unknown }; aireM2: number | null; avertissement: string; creeLe: string }
 export interface AnalyseRecue {
   id: string; zoneId: string; zoneRevision: number; coucheId: string; versionId: string; methode: string; versionMethode: string; creeLe: string; aRecalculer: boolean; motifsRecalcul: string[];
@@ -127,11 +131,14 @@ export const api = {
   cartes: (etat: "active" | "archivee" = "active") => appeler<{ cartes: ResumeCarte[] }>(`/cartes?etat=${etat}`),
   carte: (id: string) => appeler<CarteRecue>(`/cartes/${encodeURIComponent(id)}`),
   creerCarte: (nom: string, composition: Composition, collectionId: string | null) => envoyer<CarteRecue>("/cartes", "POST", { nom, composition, collectionId }),
-  reviserCarte: (id: string, corps: { revisionAttendue: number; nom?: string; composition?: Composition; collectionId?: string | null }) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}`, "PUT", corps),
+  reviserCarte: (id: string, corps: { revisionAttendue: number; nom?: string; composition?: Composition }) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}`, "PUT", corps),
   dupliquerCarte: (id: string, corps: { nom?: string; composition?: Composition } = {}) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}/dupliquer`, "POST", corps),
   archiverCarte: (id: string, restaurer = false) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}/${restaurer ? "restaurer" : "archiver"}`, "POST", {}),
   collections: () => appeler<{ collections: CollectionRecue[] }>("/collections"),
-  creerCollection: (nom: string) => envoyer<CollectionRecue>("/collections", "POST", { nom }),
+  collection: (id: string) => appeler<CollectionDetail>(`/collections/${encodeURIComponent(id)}`),
+  creerCollection: (corps: { nom: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>("/collections", "POST", corps),
+  enregistrerCollection: (id: string, corps: { nom?: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>(`/collections/${encodeURIComponent(id)}`, "PUT", corps),
+  supprimerCollection: (id: string) => envoyer<void>(`/collections/${encodeURIComponent(id)}`, "DELETE"),
   zones: () => appeler<{ zones: ZoneRecue[] }>("/zones"),
   creerZone: (corps: { nature: "zone" | "annotation"; nom: string; texte?: string; geometrie: unknown; provenance: "dessin" | "import" | "coordonnees" }) => envoyer<ZoneRecue>("/zones", "POST", corps),
   archiverZone: (id: string) => envoyer<{ id: string }>(`/zones/${encodeURIComponent(id)}/archiver`, "POST", {}),
