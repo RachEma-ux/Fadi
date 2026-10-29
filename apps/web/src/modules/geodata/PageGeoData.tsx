@@ -102,9 +102,14 @@ export function PageGeoData() {
   const [resultats, setResultats] = useState<ResultatRecherche[] | null>(null);
   const [avisRecherche, setAvisRecherche] = useState<string | null>(null);
   // Recherche de la carte : barre flottante ouverte par la loupe de sa mini-barre (Alt+R) ; le texte saisi est gardé fermé.
-  const [rechercheOuverte, setRechercheOuverte] = useState(false);
+  // Panneaux de la mini-barre (D-GD-38) : recherche (loupe), fil de navigation administrative (≡) et fonds — un seul
+  // ouvert à la fois ; en ouvrir un referme l'autre sans perdre son état (texte de recherche, fil à jour). État de la page :
+  // conservé quand on change d'onglet (la carte reste montée).
+  const [panneauMini, setPanneauMini] = useState<"recherche" | "navigation" | "fonds" | null>(null);
+  const rechercheOuverte = panneauMini === "recherche";
   const [placementOutils, setPlacementOutils] = useState<PlacementOutils | null>(null);
-  const basculerRecherche = (ouverte: boolean) => { setRechercheOuverte(ouverte); if (!ouverte) { setResultats(null); setAvisRecherche(null); } };
+  const basculerPanneauMini = (q: "recherche" | "navigation" | "fonds", ouvert: boolean) => setPanneauMini((a) => (ouvert ? q : a === q ? null : a));
+  const basculerRecherche = (ouverte: boolean) => { basculerPanneauMini("recherche", ouverte); if (!ouverte) { setResultats(null); setAvisRecherche(null); } };
   const [annonce, setAnnonce] = useState("");
   const [menuOuvert, setMenuOuvert] = useState(false);
   // Menu ☰ : rubrique « Cartes » dépliée (Mes cartes, Collection, Fournisseurs) ; panneau Collection et son mode ;
@@ -463,7 +468,8 @@ export function PageGeoData() {
   function nouvelleCarte() { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }
 
   async function enregistrer() {
-    if (!carte) { setVolet("cartes"); if (estTelephone()) setPanneauOuvert(false); return; }
+    // Carte jamais enregistrée : la saisie du titre s'ouvre et referme le panneau de la mini-barre ouvert.
+    if (!carte) { setPanneauMini(null); setResultats(null); setAvisRecherche(null); setVolet("cartes"); if (estTelephone()) setPanneauOuvert(false); return; }
     setEtatForce({ etat: "enregistrement" });
     try {
       const c = await api.reviserCarte(carte.id, { revisionAttendue: carte.revision, composition });
@@ -780,6 +786,7 @@ export function PageGeoData() {
       if (outil !== "navigation" && trace) { moteur.current?.annulerTrace(); setTrace(null); e.stopPropagation(); }
       else if (menuOuvert) setMenuOuvert(false);
       else if (resultats) setResultats(null);
+      else if (panneauMini) setPanneauMini(null);
       else if (volet && estTelephone()) setVolet(null);
     }
     if (e.key === "Enter" && outil !== "navigation" && outil !== "annotation" && (e.target as HTMLElement).classList.contains("maplibregl-canvas")) moteur.current?.terminerTrace();
@@ -868,7 +875,6 @@ export function PageGeoData() {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg>
             <span>Données</span>
           </button>
-          <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} />
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             etiquettes={composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId)) ? etiquettesToutesAffichees(composition, vectorielles) : null} onEtiquettes={basculerLibelles}
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
@@ -877,7 +883,9 @@ export function PageGeoData() {
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
             resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }}
             enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer(), etat: etat.etat, etatLibelle: LIBELLES_ENREGISTREMENT[etat.etat], carteNom: carte?.nom ?? null }}
-            fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond }} />
+            fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond, ouverts: panneauMini === "fonds", onBasculer: (o) => basculerPanneauMini("fonds", o) }}
+            navigation={{ ouverte: panneauMini === "navigation", onBasculer: (o) => basculerPanneauMini("navigation", o),
+              contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}

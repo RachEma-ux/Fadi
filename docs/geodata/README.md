@@ -117,6 +117,13 @@ la carte (ou le niveau de la barre territoriale), sinon le Royaume du Maroc ; un
 d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, calculs déclarés et données manquantes :
 [`docs/workstreams/geodata/TABLEAU-DE-BORD.md`](../workstreams/geodata/TABLEAU-DE-BORD.md).
 
+## Fil de navigation administrative dans la mini-barre (D-GD-38)
+
+La mini-barre porte, de haut en bas : **Loupe**, **Enregistrer**, **≡** (« Navigation administrative ») et **Fond**. ≡
+déplie le fil « Maroc › Régions › … › Retour » en panneau à gauche de la mini-barre (plié par défaut). Un seul panneau
+(recherche, fil ou fonds) est ouvert à la fois ; le fil reste ouvert pendant la sélection par clics et se ferme par ≡ ou
+Échap ; il garde son état d'un onglet à l'autre.
+
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :

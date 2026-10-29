@@ -8,8 +8,14 @@
  * flottante, à gauche de la mini-barre et alignée sur la loupe : même champ, même bouton, mêmes résultats que l'ancienne
  * barre au-dessus de la carte — la logique (requête, choix d'un résultat, recadrage) reste dans la page. Fermeture :
  * Échap, nouvel appui sur la loupe ou clic sur la carte ; le texte saisi est gardé par la page.
+ *
+ * D-GD-38 : ordre Loupe, Enregistrer, ≡ « Navigation administrative », Fond. ≡ plie ou déplie le fil de navigation
+ * administrative (composant `BarreTerritoriale` fourni par la page, réutilisé tel quel) dans un panneau flottant à gauche
+ * de la mini-barre, aligné sur ≡. Plié, le fil reste monté (caché) : il suit la sélection et se retrouve à jour. Un clic
+ * sur la carte ne le ferme pas (il met le fil à jour) ; ≡ ou Échap le ferment. Un seul panneau (recherche, fil, fonds)
+ * ouvert à la fois : l'état est tenu par la page.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { ResultatRecherche } from "../client";
 
 /** Écart entre deux groupes de la barre d'outils (px), repris entre la barre d'outils et la mini-barre. */
@@ -64,6 +70,8 @@ const LOUPE = "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4";
 const DISQUETTE = "M6 3h10.5L20 6.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM8 3v3.5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3M13 4.5V6M8 21v-5.5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1V21M8 17.5h8";
 /** Fond de carte : deux plans superposés surmontés d'un repère de localisation, en contour. */
 const FOND = "M8.3 11.9 2.5 14.6 12 19.1l9.5-4.5-5.8-2.7M2.5 18 12 22.5l9.5-4.5M12 14.6s4.6-4.3 4.6-7.9a4.6 4.6 0 0 0-9.2 0c0 3.6 4.6 7.9 4.6 7.9ZM12 5a1.7 1.7 0 1 0 0 3.4A1.7 1.7 0 0 0 12 5Z";
+/** Fil de navigation administrative : trois traits décroissants (même tracé que l'icône du fil). */
+const NAVIGATION = "M4 6h16M7 12h13M10 18h10";
 const Picto = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
 
 /** Un choix de fond tel que la page le calcule pour le sélecteur « Fond » (même source pour la liste de la mini-barre). */
@@ -86,8 +94,10 @@ export interface ProprietesRecherche {
    * « Carte non enregistrée » tant que la carte n'est pas enregistrée, D-GD-37) et le nom de la carte ouverte.
    */
   enregistrement: { libelle: string; desactive: boolean; onEnregistrer(): void; etat: string; etatLibelle: string; carteNom: string | null };
-  /** Fonds : mêmes choix que le sélecteur « Fond », fond actif, application d'un fond. */
-  fonds: { choix: readonly ChoixFond[]; actif: string; onChoisir(id: string): void };
+  /** Fonds : mêmes choix que le sélecteur « Fond », fond actif, application d'un fond ; liste ouverte (état de la page). */
+  fonds: { choix: readonly ChoixFond[]; actif: string; onChoisir(id: string): void; ouverts: boolean; onBasculer(ouverts: boolean): void };
+  /** Fil de navigation administrative (D-GD-38) : déplié ou plié (état de la page) et le fil lui-même. */
+  navigation: { ouverte: boolean; onBasculer(ouverte: boolean): void; contenu: ReactNode };
 }
 
 export function BarreRecherche(p: ProprietesRecherche) {
@@ -96,8 +106,13 @@ export function BarreRecherche(p: ProprietesRecherche) {
   const champ = useRef<HTMLInputElement>(null);
   const boutonFond = useRef<HTMLButtonElement>(null);
   const listeFonds = useRef<HTMLUListElement>(null);
-  const [fondsOuverts, setFondsOuverts] = useState(false);
+  const fondsOuverts = p.fonds.ouverts;
+  const setFondsOuverts = p.fonds.onBasculer;
+  const boutonNavigation = useRef<HTMLButtonElement>(null);
+  const panneauNavigation = useRef<HTMLDivElement>(null);
   const [decalageFond, setDecalageFond] = useState(0);
+  const [decalageNavigation, setDecalageNavigation] = useState(0);
+  const [largeurCarte, setLargeurCarte] = useState(0);
   const [hauteurCarte, setHauteurCarte] = useState(0);
   const [place, setPlace] = useState<{ droite: number; haut: number } | null>(null);
   const [panneau, setPanneau] = useState<ReturnType<typeof placerRecherche> | null>(null);
@@ -123,8 +138,11 @@ export function BarreRecherche(p: ProprietesRecherche) {
     const d = boutonFond.current?.offsetTop ?? 0;
     setDecalageFond((a) => (a === d ? a : d));
     setHauteurCarte((a) => (a === dims.hauteur ? a : dims.hauteur));
+    setLargeurCarte((a) => (a === dims.largeur ? a : dims.largeur));
+    const dn = boutonNavigation.current?.offsetTop ?? 0;
+    setDecalageNavigation((a) => (a === dn ? a : dn));
   };
-  useLayoutEffect(() => mesurer.current(), [p.outils, p.ouverte, fondsOuverts]);
+  useLayoutEffect(() => mesurer.current(), [p.outils, p.ouverte, fondsOuverts, p.navigation.ouverte]);
   useEffect(() => {
     const carte = mini.current?.parentElement;
     const refaire = () => mesurer.current();
@@ -139,8 +157,7 @@ export function BarreRecherche(p: ProprietesRecherche) {
     return () => { window.removeEventListener("resize", refaire); ro?.disconnect(); mo?.disconnect(); observateur.current = null; basObserve.current = null; };
   }, []);
 
-  // Une seule liste flottante à la fois : ouvrir la recherche referme la liste des fonds, et inversement.
-  useEffect(() => { if (p.ouverte) setFondsOuverts(false); }, [p.ouverte]);
+  // Une seule liste flottante à la fois : tenu par la page (un seul panneau ouvert).
   // Liste des fonds : focus sur le fond actif ; un clic sur la carte la referme (le clic garde son effet sur la carte).
   useEffect(() => {
     if (!fondsOuverts) return;
@@ -150,7 +167,12 @@ export function BarreRecherche(p: ProprietesRecherche) {
     return () => document.removeEventListener("pointerdown", surCarte, true);
   }, [fondsOuverts]);
   const fermerFonds = () => { setFondsOuverts(false); boutonFond.current?.focus(); };
-  const basculerFonds = () => { if (fondsOuverts) fermerFonds(); else { p.onBasculer(false); setFondsOuverts(true); } };
+  const basculerFonds = () => { if (fondsOuverts) fermerFonds(); else setFondsOuverts(true); };
+  const fermerNavigation = () => { p.navigation.onBasculer(false); boutonNavigation.current?.focus(); };
+  // Fil déplié : le focus va à son premier contrôle actif.
+  useEffect(() => {
+    if (p.navigation.ouverte) panneauNavigation.current?.querySelector<HTMLElement>("select:not(:disabled), button:not(:disabled)")?.focus();
+  }, [p.navigation.ouverte]);
 
   // Ouverture : le curseur va dans le champ. Un clic sur la carte referme la barre (le clic garde son effet sur la carte).
   useEffect(() => {
@@ -190,11 +212,28 @@ export function BarreRecherche(p: ProprietesRecherche) {
               </button>
             );
           })()}
+          <button ref={boutonNavigation} type="button" className="gd-outil" title="Navigation administrative" aria-label="Navigation administrative" aria-expanded={p.navigation.ouverte} aria-controls="gd-navigation-flottante"
+            onClick={() => (p.navigation.ouverte ? fermerNavigation() : p.navigation.onBasculer(true))} data-gd-mini-navigation>
+            <Picto d={NAVIGATION} />
+          </button>
           <button ref={boutonFond} type="button" className="gd-outil" title="Fond de carte" aria-label="Fond de carte" aria-expanded={fondsOuverts} aria-controls="gd-fonds-flottants" onClick={basculerFonds} data-gd-mini-fond data-gd-fond-actif={p.fonds.actif}>
             <Picto d={FOND} />
           </button>
         </div>
       </nav>
+      {/* Fil de navigation : toujours monté (il suit la sélection), affiché seulement déplié, à gauche de la mini-barre et
+          aligné sur ≡ ; sur la largeur disponible, jamais sur la mini-barre. */}
+      <div ref={panneauNavigation} id="gd-navigation-flottante" className="gd-navigation-flottante" role="group" aria-label="Navigation administrative" hidden={!p.navigation.ouverte || !panneau}
+        style={panneau ? {
+          ...(panneau.gauche + panneau.largeur <= largeurCarte - (place?.droite ?? 0) - (mini.current?.offsetWidth ?? 0)
+            ? { right: largeurCarte - panneau.gauche - panneau.largeur, maxWidth: panneau.gauche + panneau.largeur - 4 }
+            : { left: panneau.gauche, maxWidth: largeurCarte - panneau.gauche - 4 }),
+          // ≡ dans la moitié basse de la carte : le fil s'ouvre vers le haut (bas aligné sur ≡), jamais sur l'échelle ni les sources.
+          ...(panneau.resultatsVersLeHaut ? { bottom: Math.max(4, hauteurCarte - (panneau.haut + decalageNavigation + (boutonNavigation.current?.offsetHeight ?? 40))) } : { top: panneau.haut + decalageNavigation }),
+        } : undefined}
+        onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); fermerNavigation(); } }} data-gd-navigation-flottante data-gd-navigation-ouverte={p.navigation.ouverte ? "oui" : "non"}>
+        {p.navigation.contenu}
+      </div>
       {fondsOuverts && panneau && (
         <div id="gd-fonds-flottants" className="gd-fonds-flottants" role="group" aria-label="Fond de carte" style={{ left: panneau.gauche + Math.max(0, panneau.largeur - 300), width: Math.min(300, panneau.largeur),
             // Bouton dans la moitié basse de la carte : la liste s'ouvre vers le haut (bas aligné sur le bouton), jamais hors de la carte.
