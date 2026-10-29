@@ -47,7 +47,7 @@ function Valeur({ v, decimales }: { v: ValeurEvaluee; decimales: number | null }
 
 // ——— Graphique SVG interne (aucune dépendance) ———
 
-const COULEURS = ["var(--gd-serie-1)", "var(--gd-serie-2)", "var(--gd-serie-3)", "var(--gd-serie-4)"];
+const COULEURS = ["var(--gd-serie-1)", "var(--gd-serie-2)", "var(--gd-serie-3)", "var(--gd-serie-4)", "var(--gd-serie-5)", "var(--gd-serie-6)"];
 
 export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { type: Graphique; titre: string; colonnes: readonly string[]; lignes: readonly { libelle: string; valeurs: readonly (number | null)[] }[]; decimales: number | null }) {
   // Une courbe suit la première colonne (séries d'unités différentes non superposées) ; les barres montrent toutes les colonnes.
@@ -56,8 +56,14 @@ export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { typ
   if (!presentes.length) return <p className="gd-nd gd-graphique-vide" data-gd-graphique-vide>{`${DONNEE_NON_DISPONIBLE} : aucune valeur à représenter.`}</p>;
   const max = Math.max(...presentes, 0) || 1;
   const etiquette = (v: number) => nombre(v, decimales) ?? "";
-  const legende = series.length > 1 && (
-    <ul className="gd-legende-graphique" aria-hidden="true">{series.map((s) => <li key={s}><span style={{ background: COULEURS[s % COULEURS.length] }} />{colonnes[s]}</li>)}</ul>
+  // Une seule série (barres) : chaque catégorie a sa couleur et sa légende (ex. Urbain, Rural, Ensemble) ; plusieurs
+  // séries : une couleur par colonne, comme la légende.
+  const parLigne = series.length === 1 && type !== "courbe" && lignes.length > 1;
+  const couleur = (s: number, i: number) => COULEURS[(parLigne ? i : s) % COULEURS.length];
+  const entrees = parLigne ? lignes.map((li, i) => ({ cle: `l${i}`, libelle: li.libelle, i })) : series.length > 1 ? series.map((s) => ({ cle: `s${s}`, libelle: colonnes[s]!, i: s })) : [];
+  // Barres horizontales d'une seule série : chaque libellé est déjà écrit au-dessus de sa barre, pas de légende en double.
+  const legende = entrees.length > 0 && !(parLigne && type === "barres-horizontales") && (
+    <ul className="gd-legende-graphique" aria-hidden="true">{entrees.map((e) => <li key={e.cle}><span style={{ background: COULEURS[e.i % COULEURS.length] }} />{e.libelle}</li>)}</ul>
   );
   if (type === "barres-horizontales") {
     // Libellé complet au-dessus de ses barres (jamais tronqué : il reste traduisible et lisible).
@@ -73,7 +79,7 @@ export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { typ
                 const v = li.valeurs[s] ?? null;
                 if (v === null) return <text key={s} x={ml + 4} y={14 + k * 12 + 9} className="gd-txt gd-txt-nd">n. d.</text>;
                 const w = Math.max(1, (v / max) * larg);
-                return <g key={s}><rect x={ml} y={14 + k * 12} width={w} height={10} fill={COULEURS[s % COULEURS.length]}><title>{`${li.libelle} — ${colonnes[s]} : ${etiquette(v)}`}</title></rect><text x={ml + w + 4} y={14 + k * 12 + 8} className="gd-txt">{etiquette(v)}</text></g>;
+                return <g key={s}><rect x={ml} y={14 + k * 12} width={w} height={10} fill={couleur(s, i)}><title>{`${li.libelle} — ${colonnes[s]} : ${etiquette(v)}`}</title></rect><text x={ml + w + 4} y={14 + k * 12 + 8} className="gd-txt">{etiquette(v)}</text></g>;
               })}
             </g>
           ))}
@@ -88,7 +94,9 @@ export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { typ
   const l = 560, h = incline ? 270 : 230, ml = 64, mb = incline ? 84 : 44, mh = 12, largeur = l - ml - 10, hauteur = h - mb - mh;
   const pas = largeur / n;
   const y = (v: number) => mh + hauteur - (v / max) * hauteur;
-  const graduations = [0, max / 2, max];
+  // Graduation du milieu : entière quand toutes les valeurs le sont (jamais « 224 342,5 » personnes).
+  const entieres = presentes.every((v) => Number.isInteger(v));
+  const graduations = [0, entieres ? Math.round(max / 2) : max / 2, max];
   return (
     <figure className="gd-graphique" data-gd-graphique={type}>
       <svg viewBox={`0 0 ${l} ${h}`} role="img" aria-label={`Graphique du bloc : ${titre}`} preserveAspectRatio="xMinYMin meet">
@@ -100,7 +108,7 @@ export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { typ
           const v = li.valeurs[s] ?? null;
           const lb = (pas * 0.78) / series.length, x = ml + pas * i + pas * 0.11 + k * lb;
           if (v === null) return <text key={`${i}-${s}`} x={x + lb / 2} y={y(0) - 4} textAnchor="middle" className="gd-txt gd-txt-nd">n. d.</text>;
-          return <rect key={`${i}-${s}`} x={x} y={y(v)} width={Math.max(1, lb - 2)} height={Math.max(0, y(0) - y(v))} fill={COULEURS[s % COULEURS.length]}><title>{`${li.libelle} — ${colonnes[s]} : ${etiquette(v)}`}</title></rect>;
+          return <rect key={`${i}-${s}`} x={x} y={y(v)} width={Math.max(1, lb - 2)} height={Math.max(0, y(0) - y(v))} fill={couleur(s, i)}><title>{`${li.libelle} — ${colonnes[s]} : ${etiquette(v)}`}</title></rect>;
         }))}
         {type === "courbe" && (() => {
           const pts = lignes.map((li, i) => ({ x: ml + pas * i + pas / 2, v: li.valeurs[0] ?? null, libelle: li.libelle }));
