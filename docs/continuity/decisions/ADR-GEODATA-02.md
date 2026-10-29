@@ -395,7 +395,8 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      3. **Collection** = ensemble nommé et ordonné de références vers des cartes de l'espace (plusieurs collections par
         carte ; supprimer une collection ne supprime aucune carte). Le rattachement unique antérieur
         (`geodata_cartes.collection_id`) est repris dans la liaison ordonnée `geodata_collection_cartes` et n'est plus
-        écrit. Concept, modèle de données et API : `docs/workstreams/geodata/COLLECTIONS.md`.
+        écrit. Révision attendue à chaque enregistrement (périmée → 409, jamais de perte silencieuse ; remarque de revue
+        Codex). Concept, modèle de données et API : `docs/workstreams/geodata/COLLECTIONS.md`.
 
 ## Conséquences
 

@@ -70,7 +70,7 @@ export interface CarteRecue { id: string; nom: string; revision: number; etat: "
 export interface ResumeCarte { id: string; nom: string; revision: number; etat: string; modifieLe: string; couches: number }
 export interface CollectionRecue { id: string; nom: string; description: string; etat: string; modifieLe: string; cartes: number }
 /** Collection ouverte (D-GD-36) : titre (`nom`), description et cartes référencées dans leur ordre. */
-export interface CollectionDetail { id: string; nom: string; description: string; etat: string; creeLe: string; modifieLe: string; cartes: CarteDeCollection[] }
+export interface CollectionDetail { id: string; nom: string; description: string; etat: string; revision: number; creeLe: string; modifieLe: string; cartes: CarteDeCollection[] }
 export interface ZoneRecue { id: string; nature: "zone" | "annotation"; nom: string; texte: string; provenance: string; revision: number; geometrieReparee: boolean; geometrie: { type: string; coordinates: unknown }; aireM2: number | null; avertissement: string; creeLe: string }
 export interface AnalyseRecue {
   id: string; zoneId: string; zoneRevision: number; coucheId: string; versionId: string; methode: string; versionMethode: string; creeLe: string; aRecalculer: boolean; motifsRecalcul: string[];
@@ -137,7 +137,7 @@ export const api = {
   collections: () => appeler<{ collections: CollectionRecue[] }>("/collections"),
   collection: (id: string) => appeler<CollectionDetail>(`/collections/${encodeURIComponent(id)}`),
   creerCollection: (corps: { nom: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>("/collections", "POST", corps),
-  enregistrerCollection: (id: string, corps: { nom?: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>(`/collections/${encodeURIComponent(id)}`, "PUT", corps),
+  enregistrerCollection: (id: string, corps: { revisionAttendue: number; nom?: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>(`/collections/${encodeURIComponent(id)}`, "PUT", corps),
   supprimerCollection: (id: string) => envoyer<void>(`/collections/${encodeURIComponent(id)}`, "DELETE"),
   zones: () => appeler<{ zones: ZoneRecue[] }>("/zones"),
   creerZone: (corps: { nature: "zone" | "annotation"; nom: string; texte?: string; geometrie: unknown; provenance: "dessin" | "import" | "coordonnees" }) => envoyer<ZoneRecue>("/zones", "POST", corps),

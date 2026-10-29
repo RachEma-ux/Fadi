@@ -3064,6 +3064,10 @@ ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_de
 ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_description_longueur CHECK (length(description) <= 2000);
 ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS proprietaire_id text REFERENCES users (id) ON DELETE SET NULL;
 ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS modifie_le timestamptz NOT NULL DEFAULT now();
+-- Révision attendue à chaque enregistrement (comme une carte) : un enregistrement périmé est refusé, jamais une perte silencieuse.
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
+ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_revision_positive;
+ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_revision_positive CHECK (revision >= 1);
 UPDATE geodata_collections co SET proprietaire_id = e.proprietaire_id FROM geodata_espaces e WHERE co.proprietaire_id IS NULL AND e.id = co.espace_id;
 CREATE TABLE IF NOT EXISTS geodata_collection_cartes (
   collection_id text NOT NULL,

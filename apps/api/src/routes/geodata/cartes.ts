@@ -81,7 +81,7 @@ async function ajouterEnFin(espaceId: string, collectionId: string, carteId: str
   await requete(`INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
       VALUES ($1, $2, $3, coalesce((SELECT max(rang) FROM geodata_collection_cartes WHERE collection_id = $1), 0) + 1)
     ON CONFLICT (collection_id, carte_id) DO NOTHING`, [collectionId, carteId, espaceId]);
-  await requete("UPDATE geodata_collections SET modifie_le = now() WHERE id = $1 AND espace_id = $2", [collectionId, espaceId]);
+  await requete("UPDATE geodata_collections SET revision = revision + 1, modifie_le = now() WHERE id = $1 AND espace_id = $2", [collectionId, espaceId]);
 }
 
 const MAX_CARTES_COLLECTION = 500;
@@ -207,11 +207,11 @@ cartesRouter.get("/collections", async (req, res) => {
 
 /** Détail d'une collection : titre, description et cartes dans leur ordre (une carte archivée reste listée, signalée). */
 async function lireCollection(espaceId: string, id: string) {
-  const [co] = await requete(`SELECT id, nom, description, etat, cree_le, modifie_le FROM geodata_collections WHERE id = $1 AND espace_id = $2`, [id, espaceId]);
+  const [co] = await requete(`SELECT id, nom, description, etat, revision, cree_le, modifie_le FROM geodata_collections WHERE id = $1 AND espace_id = $2`, [id, espaceId]);
   if (!co) return null;
   const cartes = await requete(`SELECT ca.id, ca.nom, ca.etat, l.rang FROM geodata_collection_cartes l JOIN geodata_cartes ca ON ca.id = l.carte_id
     WHERE l.collection_id = $1 AND l.espace_id = $2 ORDER BY l.rang, ca.nom`, [id, espaceId]);
-  return { id: co["id"], nom: co["nom"], description: co["description"], etat: co["etat"], creeLe: co["cree_le"], modifieLe: co["modifie_le"],
+  return { id: co["id"], nom: co["nom"], description: co["description"], etat: co["etat"], revision: co["revision"], creeLe: co["cree_le"], modifieLe: co["modifie_le"],
     cartes: cartes.map((c) => ({ id: c["id"], nom: c["nom"], etat: c["etat"] })) };
 }
 
@@ -247,23 +247,35 @@ cartesRouter.post("/collections", async (req, res) => {
   res.status(201).json(await lireCollection(espaceId, id));
 });
 
-/** Enregistrement : titre, description, état et/ou liste ordonnée des cartes (remplacée en entier). */
+/**
+ * Enregistrement : titre, description, état et/ou liste ordonnée des cartes (remplacée en entier). `revisionAttendue`
+ * obligatoire : une collection changée depuis son ouverture (autre onglet, carte ajoutée depuis Mes cartes) → 409 avec
+ * l'état courant, jamais de remplacement silencieux.
+ */
 cartesRouter.put("/collections/:id", async (req, res) => {
   const espaceId = await espaceDe(req);
-  const { nom, description, etat, cartes } = (req.body ?? {}) as Record<string, unknown>;
+  const { nom, description, etat, cartes, revisionAttendue } = (req.body ?? {}) as Record<string, unknown>;
+  if (!Number.isInteger(revisionAttendue)) return erreur(res, 400, "invalid_input", "Révision attendue obligatoire.", { champs: ["revisionAttendue"] });
   if (nom !== undefined && !nomValide(nom)) return erreur(res, 400, "invalid_input", "Titre de collection de 1 à 120 caractères.", { champs: ["nom"] });
   if (description !== undefined && !descriptionValide(description)) return erreur(res, 400, "invalid_input", "Description de 2000 caractères au plus.", { champs: ["description"] });
   if (etat !== undefined && etat !== "active" && etat !== "archivee") return erreur(res, 400, "invalid_input", "État : active ou archivee.", { champs: ["etat"] });
   const liste = cartes === undefined ? undefined : await cartesDeLEspace(espaceId, cartes);
   if (liste === null) return erreur(res, 400, "invalid_input", "Cartes inconnues dans cet espace, en double ou trop nombreuses.", { champs: ["cartes"] });
-  const trouvee = await transaction(async (client) => {
-    const lignes = await requete(`UPDATE geodata_collections SET nom = coalesce($3, nom), description = coalesce($4, description), etat = coalesce($5, etat), modifie_le = now()
-      WHERE id = $1 AND espace_id = $2 RETURNING id`, [req.params.id, espaceId, typeof nom === "string" ? nom.trim() : null, typeof description === "string" ? description : null, etat ?? null], client);
+  const ecrite = await transaction(async (client) => {
+    const lignes = await requete(`UPDATE geodata_collections SET nom = coalesce($3, nom), description = coalesce($4, description), etat = coalesce($5, etat), revision = revision + 1, modifie_le = now()
+      WHERE id = $1 AND espace_id = $2 AND revision = $6 RETURNING id`, [req.params.id, espaceId, typeof nom === "string" ? nom.trim() : null, typeof description === "string" ? description : null, etat ?? null, revisionAttendue], client);
     if (!lignes.length) return false;
     if (liste) await ecrireCartes(client, espaceId, req.params.id, liste);
     return true;
   });
-  if (!trouvee) return introuvable(res);
+  if (!ecrite) {
+    const actuelle = await lireCollection(espaceId, req.params.id);
+    if (!actuelle) return introuvable(res);
+    await journal(req.user!.id, "collection.conflit", req.params.id, "refus", { attendue: revisionAttendue, courante: actuelle.revision });
+    return erreur(res, 409, "revision_conflict", "La collection a été modifiée depuis son ouverture (autre onglet, ou carte ajoutée depuis Mes cartes) : rechargez-la avant d'enregistrer.", {
+      revisionCourante: actuelle.revision, collection: actuelle,
+    });
+  }
   await journal(req.user!.id, "collection.enregistree", req.params.id, "succes");
   res.json(await lireCollection(espaceId, req.params.id));
 });

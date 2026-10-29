@@ -882,7 +882,7 @@ export function PageGeoData() {
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} enregistrerSous={enregistrerSousCarte} onFinEnregistrerSous={() => setEnregistrerSousCarte(false)} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={nouvelleCarte}
-              onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); }} />}
+              onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); if (collectionId) await collection.rafraichir(collectionId).catch(() => undefined); }} />}
             {volet === "collection" && <PanneauCollection etat={collection} mode={modeCollection} onMode={setModeCollection} carte={carte} onOuvrirCarte={(id) => void ouvrirCarte(id)} onAnnonce={setAnnonce} />}
             {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil}
               onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}

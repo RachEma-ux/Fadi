@@ -534,10 +534,15 @@ await page.locator("[data-gd-etat-enregistrement='non-enregistree']").waitFor();
 await page.locator("[data-gd-mini-enregistrer]").click();
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
 check("mini-barre : « Enregistrer » enregistre la carte affichée et met à jour l'indicateur", (await page.locator("[data-gd-mini-enregistrer]").isDisabled()) && (await page.locator("header.gd-barre [data-gd-enregistrer]").isDisabled()));
-// Mes cartes › Enregistrer sous : nouvelle carte, l'originale ne change pas.
+// Mes cartes › Enregistrer sous : nouvelle carte, l'originale ne change pas. La copie de collection est ouverte et la
+// nouvelle carte y est ajoutée depuis Mes cartes : la collection ouverte est relue, son enregistrement ne perd rien.
+await entreeMenu(page, "collection:ouvrir");
+await page.locator(`[data-gd-collection-ouvrir='${idCopie}']`).click();
+await page.waitForFunction((id) => document.querySelector("[data-gd-collection-ouverte]")?.getAttribute("data-gd-collection-ouverte") === id, idCopie);
 await entreeMenu(page, "mes-cartes:enregistrer-sous");
 const formSous = page.locator("[data-gd-formulaire-enregistrer='sous']");
 await formSous.waitFor();
+await formSous.locator("select").selectOption(idCopie);
 await page.waitForFunction(() => (document.querySelector("[data-gd-formulaire-enregistrer='sous'] [data-gd-nom-carte]")?.value ?? "") !== "", null, { timeout: 5000 }).catch(() => undefined);
 check("Mes cartes › Enregistrer sous : nom proposé « (copie) »", (await formSous.locator("[data-gd-nom-carte]").inputValue()) === "Carte de recette (copie)", `${await formSous.locator("[data-gd-nom-carte]").inputValue()} ; carte affichée ${await page.locator("header.gd-barre .gd-enregistrement strong").textContent()}`);
 await formSous.locator("[data-gd-nom-carte]").fill("Carte de recette bis");
@@ -545,6 +550,12 @@ await formSous.locator("[data-gd-enregistrer-sous]").click();
 await page.waitForFunction(() => document.querySelector("header.gd-barre .gd-enregistrement strong")?.textContent === "Carte de recette bis", null, { timeout: 10_000 }).catch(() => undefined);
 const nomsCartes = await page.evaluate(async () => (await (await fetch("/geodata/api/cartes")).json()).cartes.map((c) => c.nom));
 check("Mes cartes › Enregistrer sous : nouvelle carte ouverte, l'originale intacte", nomsCartes.includes("Carte de recette bis") && nomsCartes.includes("Carte de recette"));
+await entreeMenu(page, "collection:enregistrer");
+const annonceCollection = page.locator("[data-geodata-page] > p.sr-only[role='status']");
+await page.waitForFunction(() => /Collection enregistrée\.|modifiée depuis son ouverture/.test(document.querySelector("[data-geodata-page] > p.sr-only[role='status']")?.textContent ?? ""), null, { timeout: 10_000 }).catch(() => undefined);
+const copieApres = await page.evaluate(async (id) => (await (await fetch(`/geodata/api/collections/${id}`)).json()), idCopie);
+check("collection : une carte ajoutée depuis Mes cartes pendant que la collection est ouverte n'est pas perdue à son enregistrement (collection relue, aucun conflit)",
+  copieApres.cartes.map((c) => c.nom).join("|") === "Carte de recette (ma version)|Carte de recette|Carte de recette bis" && (await annonceCollection.textContent()) === "Collection enregistrée.", `${copieApres.cartes.map((c) => c.nom).join("|")} ; ${await annonceCollection.textContent()}`);
 // Fournisseurs › Nouveau : le formulaire d'ajout existant des Paramètres s'ouvre.
 await entreeMenu(page, "fournisseurs:nouveau");
 await page.waitForURL(/\/parametres#settings-fournisseurs-ajouter$/);

@@ -8,15 +8,15 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { ajouterCarte, deplacerCarte, retirerCarte, titreCollectionValide, type CarteDeCollection } from "@parcours/geodata-model";
-import { api, type CarteRecue, type CollectionDetail, type CollectionRecue } from "../client";
+import { api, ErreurGeoData, type CarteRecue, type CollectionDetail, type CollectionRecue } from "../client";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** Collection ouverte : dernier état enregistré et brouillon en cours d'édition. */
-export interface CollectionOuverte { id: string; nom: string; description: string; cartes: CarteDeCollection[]; modifiee: boolean }
+export interface CollectionOuverte { id: string; nom: string; description: string; revision: number; cartes: CarteDeCollection[]; modifiee: boolean; conflit: boolean }
 export type ModeCollection = "nouveau" | "ouvrir" | "ouverte" | "enregistrer-sous";
 
-const depuis = (d: CollectionDetail): CollectionOuverte => ({ id: d.id, nom: d.nom, description: d.description, cartes: d.cartes, modifiee: false });
+const depuis = (d: CollectionDetail): CollectionOuverte => ({ id: d.id, nom: d.nom, description: d.description, revision: d.revision, cartes: d.cartes, modifiee: false, conflit: false });
 
 /** État de la collection ouverte et ses actions (une seule source pour le menu ☰ et le panneau). */
 export function useCollection() {
@@ -27,7 +27,14 @@ export function useCollection() {
     creer: async (nom: string, description: string) => setOuverte(depuis(await api.creerCollection({ nom: nom.trim(), description }))),
     ouvrir: async (id: string) => setOuverte(depuis(await api.collection(id))),
     modifier: (f: (c: CollectionOuverte) => Partial<CollectionOuverte>) => setOuverte((c) => (c ? { ...c, ...f(c), modifiee: true } : c)),
-    enregistrer: async () => { if (ouverte) setOuverte(depuis(await api.enregistrerCollection(ouverte.id, { nom: ouverte.nom.trim(), description: ouverte.description, cartes: ids(ouverte) }))); },
+    // Révision attendue : une collection changée ailleurs entre-temps est refusée (409), marquée en conflit, jamais écrasée.
+    enregistrer: async () => {
+      if (!ouverte) return;
+      try { setOuverte(depuis(await api.enregistrerCollection(ouverte.id, { revisionAttendue: ouverte.revision, nom: ouverte.nom.trim(), description: ouverte.description, cartes: ids(ouverte) }))); }
+      catch (e) { if (e instanceof ErreurGeoData && e.code === "revision_conflict") setOuverte((c) => (c ? { ...c, conflit: true } : c)); throw e; }
+    },
+    /** Après un ajout fait ailleurs (Mes cartes › Ajouter à la collection) : relue si elle est ouverte et sans modification locale. */
+    rafraichir: async (id: string) => { if (ouverte?.id === id && !ouverte.modifiee) setOuverte(depuis(await api.collection(id))); },
     enregistrerSous: async (nom: string) => { if (ouverte) setOuverte(depuis(await api.creerCollection({ nom: nom.trim(), description: ouverte.description, cartes: ids(ouverte) }))); },
     supprimer: async () => { if (ouverte) { await api.supprimerCollection(ouverte.id); setOuverte(null); } },
     fermer: () => setOuverte(null),
@@ -109,6 +116,12 @@ export function PanneauCollection(p: { etat: EtatCollection; mode: ModeCollectio
           <label className="gd-champ">Titre<input value={c.nom} onChange={(e) => etat.modifier(() => ({ nom: e.target.value }))} maxLength={120} required translate="no" data-gd-collection-titre /></label>
           <label className="gd-champ">Description<textarea value={c.description} onChange={(e) => etat.modifier(() => ({ description: e.target.value }))} maxLength={2000} rows={2} translate="no" data-gd-collection-description /></label>
           <p role="status" className={c.modifiee ? "gd-alerte" : "gd-discret"} data-gd-collection-etat={c.modifiee ? "modifiee" : "enregistree"}>{c.modifiee ? "Collection modifiée, non enregistrée" : "Collection enregistrée"}</p>
+          {c.conflit && (
+            <div role="alert" className="gd-bandeau gd-alerte" data-gd-collection-conflit>
+              <p>La collection a été modifiée ailleurs depuis son ouverture : rechargez-la (vos changements non enregistrés seront perdus) ou enregistrez-la sous un autre titre.</p>
+              <button type="button" onClick={() => void agir(() => etat.ouvrir(c.id), "Collection rechargée.")} data-gd-collection-recharger>Recharger la collection</button>
+            </div>
+          )}
           <h3>{`Cartes (${c.cartes.length})`}</h3>
           {c.cartes.length === 0 && <p className="gd-etat">Aucune carte : ouvrez une carte enregistrée, puis « Ajouter la carte affichée ».</p>}
           <ol className="gd-liste gd-collection-cartes">

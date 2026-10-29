@@ -21,7 +21,7 @@ L'interface ne contient aucune collection : tout vit en base, lu par l'API.
 
 | Table | Colonnes | Rôle |
 | --- | --- | --- |
-| `geodata_collections` | `id`, `espace_id`, `nom` (titre, 1 à 120 caractères), `description` (≤ 2000), `proprietaire_id`, `etat` (`active` / `archivee`), `cree_le`, `modifie_le` | la collection |
+| `geodata_collections` | `id`, `espace_id`, `nom` (titre, 1 à 120 caractères), `description` (≤ 2000), `proprietaire_id`, `etat` (`active` / `archivee`), `revision` (≥ 1), `cree_le`, `modifie_le` | la collection |
 | `geodata_collection_cartes` | `collection_id`, `carte_id`, `espace_id`, `rang` (≥ 1) ; clé (`collection_id`, `carte_id`) | liaison collection ↔ cartes, ordonnée |
 
 - Clés étrangères composites avec l'espace (`(collection_id, espace_id)`, `(carte_id, espace_id)`) : une collection ne
@@ -40,8 +40,13 @@ L'interface ne contient aucune collection : tout vit en base, lu par l'API.
 | `GET /collections` | collections de l'espace : titre, description, état, dates, nombre de cartes actives |
 | `GET /collections/:id` | détail : titre, description, cartes dans leur ordre (`id`, `nom`, `etat`) |
 | `POST /collections` `{ nom, description?, cartes? }` | Nouveau ; Enregistrer sous (avec la liste de la collection copiée : mêmes références) |
-| `PUT /collections/:id` `{ nom?, description?, etat?, cartes? }` | Enregistrer : la liste ordonnée est remplacée en entier (transaction) |
+| `PUT /collections/:id` `{ revisionAttendue, nom?, description?, etat?, cartes? }` | Enregistrer : la liste ordonnée est remplacée en entier (transaction) ; révision périmée → 409 avec l'état courant |
 | `DELETE /collections/:id` | Supprimer : la collection et ses références ; les cartes restent |
+
+**Révision.** Comme une carte, une collection porte une révision, augmentée à chaque enregistrement et à chaque ajout
+d'une carte depuis *Mes cartes* (`POST /cartes { collectionId }`). Un enregistrement périmé (autre onglet, carte ajoutée
+entre-temps) est refusé (409, état courant joint) : jamais de remplacement silencieux. Côté interface, la collection
+ouverte et non modifiée est relue après un tel ajout ; modifiée, le conflit est affiché avec « Recharger la collection ».
 
 Refus : carte d'un autre espace, carte en double, plus de 500 cartes, titre vide ou trop long (400) ; collection d'un
 autre compte (404). Une carte expose `collections` (celles, actives, qui la référencent) à la place de l'ancien
