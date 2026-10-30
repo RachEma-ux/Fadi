@@ -72,6 +72,8 @@ const DISQUETTE = "M6 3h10.5L20 6.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1
 const FOND = "M8.3 11.9 2.5 14.6 12 19.1l9.5-4.5-5.8-2.7M2.5 18 12 22.5l9.5-4.5M12 14.6s4.6-4.3 4.6-7.9a4.6 4.6 0 0 0-9.2 0c0 3.6 4.6 7.9 4.6 7.9ZM12 5a1.7 1.7 0 1 0 0 3.4A1.7 1.7 0 0 0 12 5Z";
 /** Fil de navigation administrative : trois traits décroissants (même tracé que l'icône du fil). */
 const NAVIGATION = "M4 6h16M7 12h13M10 18h10";
+/** Plan / Satellite (D-GD-46) : un globe. */
+const GLOBE = "M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18";
 const Picto = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
 
 /** Un choix de fond tel que la page le calcule pour le sélecteur « Fond » (même source pour la liste de la mini-barre). */
@@ -98,6 +100,8 @@ export interface ProprietesRecherche {
   fonds: { choix: readonly ChoixFond[]; actif: string; onChoisir(id: string): void; ouverts: boolean; onBasculer(ouverts: boolean): void };
   /** Fil de navigation administrative (D-GD-38) : déplié ou plié (état de la page) et le fil lui-même. */
   navigation: { ouverte: boolean; onBasculer(ouverte: boolean): void; contenu: ReactNode };
+  /** Bascule Plan / Satellite (D-GD-46) : sens de la bascule ; `null` = aucun fond satellite réglé (bouton désactivé). */
+  planSatellite?: { versSatellite: boolean } | null; onPlanSatellite?(): void;
 }
 
 export function BarreRecherche(p: ProprietesRecherche) {
@@ -219,6 +223,15 @@ export function BarreRecherche(p: ProprietesRecherche) {
           <button ref={boutonFond} type="button" className="gd-outil" title="Fond de carte" aria-label="Fond de carte" aria-expanded={fondsOuverts} aria-controls="gd-fonds-flottants" onClick={basculerFonds} data-gd-mini-fond data-gd-fond-actif={p.fonds.actif}>
             <Picto d={FOND} />
           </button>
+          {p.onPlanSatellite && (() => {
+            const libelle = !p.planSatellite ? "Vue satellite indisponible : réglez la clé MapTiler dans Paramètres" : p.planSatellite.versSatellite ? "Vue satellite (Alt+S)" : "Vue plan (Alt+S)";
+            return (
+              <button type="button" className="gd-outil" title={libelle} aria-label={libelle} aria-keyshortcuts="Alt+S" aria-pressed={p.planSatellite ? !p.planSatellite.versSatellite : false}
+                disabled={!p.planSatellite} onClick={p.onPlanSatellite} data-gd-mini-plan-satellite={p.planSatellite ? (p.planSatellite.versSatellite ? "vers-satellite" : "vers-plan") : "indisponible"}>
+                <Picto d={GLOBE} />
+              </button>
+            );
+          })()}
         </div>
       </nav>
       {/* Fil de navigation : toujours monté (il suit la sélection), affiché seulement déplié, à gauche de la mini-barre et

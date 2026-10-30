@@ -136,3 +136,30 @@ export function fondsDesFournisseurs(r: ReglagesFournisseurs, cleMaptiler: strin
 export function fondParDefaut(r: ReglagesFournisseurs, fonds: readonly FondFournisseur[]): string | null {
   return r.defaut ? fonds.find((f) => f.fournisseurId === r.defaut)?.id ?? null : null;
 }
+
+/** Styles d'imagerie (vue aérienne) des fournisseurs ; les autres styles sont des plans. */
+const STYLES_IMAGERIE = new Set(["satellite", "hybride"]);
+const styleDe = (id: string): { fournisseur: string; style: string } | null => {
+  if (!id.startsWith(PREFIXE_FOND_NAVIGATEUR)) return null;
+  const [fournisseur, style] = id.slice(PREFIXE_FOND_NAVIGATEUR.length).split(":");
+  return fournisseur && style ? { fournisseur, style } : null;
+};
+export const estFondImagerie = (id: string): boolean => STYLES_IMAGERIE.has(styleDe(id)?.style ?? "");
+
+/**
+ * Bouton « Plan / Satellite » (D-GD-46) : depuis une imagerie, le plan du même fournisseur (sinon le fond neutre) ;
+ * depuis un plan ou le fond neutre, le satellite du même fournisseur, sinon le premier satellite disponible. `null` :
+ * aucun fond satellite n'est réglé (clé absente) — le bouton est alors désactivé. Aucun fond n'est inventé : seuls les
+ * fonds des fournisseurs réglés dans Paramètres sont proposés.
+ */
+export function fondBascule(actif: string, fonds: readonly { readonly id: string }[]): { readonly cible: string; readonly versSatellite: boolean } | null {
+  const ids = new Set(fonds.map((f) => f.id));
+  const courant = styleDe(actif);
+  if (courant && STYLES_IMAGERIE.has(courant.style)) {
+    const plan = `${PREFIXE_FOND_NAVIGATEUR}${courant.fournisseur}:plan`;
+    return { cible: ids.has(plan) ? plan : "neutre", versSatellite: false };
+  }
+  const memeFournisseur = courant ? `${PREFIXE_FOND_NAVIGATEUR}${courant.fournisseur}:satellite` : null;
+  const cible = memeFournisseur && ids.has(memeFournisseur) ? memeFournisseur : fonds.find((f) => styleDe(f.id)?.style === "satellite")?.id;
+  return cible ? { cible, versSatellite: true } : null;
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMPOSITION_INITIALE, validerComposition } from "./composition.js";
-import { FOURNISSEUR_MAPTILER, fondParDefaut, fondsDesFournisseurs, lireReglagesFournisseurs, REGLAGES_PAR_DEFAUT, validerFournisseurSaisi, validerModele } from "./fournisseurs.js";
+import { estFondImagerie, fondBascule, FOURNISSEUR_MAPTILER, fondParDefaut, fondsDesFournisseurs, lireReglagesFournisseurs, REGLAGES_PAR_DEFAUT, validerFournisseurSaisi, validerModele } from "./fournisseurs.js";
 
 const saisi = { nom: "IGN Maroc", modele: "https://tuiles.example.org/{z}/{x}/{y}.png?token={cle}", cle: "abc123", attribution: "© Exemple", zoomMax: "18" };
 
@@ -47,5 +47,26 @@ describe("fournisseurs de fonds de carte (D-GD-15)", () => {
   it("une composition garde l'identifiant du fond de fournisseur, jamais une adresse", () => {
     expect(validerComposition({ ...COMPOSITION_INITIALE, fond: "navigateur:maptiler:satellite" }).ok).toBe(true);
     expect(validerComposition({ ...COMPOSITION_INITIALE, fond: "https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=x" }).ok).toBe(false);
+  });
+});
+
+describe("bascule Plan / Satellite (D-GD-46)", () => {
+  const f = (...ids: string[]) => ids.map((id) => ({ id }));
+  const mt = f("navigateur:maptiler:satellite", "navigateur:maptiler:hybride", "navigateur:maptiler:plan", "navigateur:maptiler:topographique");
+  it("imagerie → plan du même fournisseur ; plan ou topographique → satellite du même fournisseur", () => {
+    expect(fondBascule("navigateur:maptiler:satellite", mt)).toEqual({ cible: "navigateur:maptiler:plan", versSatellite: false });
+    expect(fondBascule("navigateur:maptiler:hybride", mt)).toEqual({ cible: "navigateur:maptiler:plan", versSatellite: false });
+    expect(fondBascule("navigateur:maptiler:topographique", mt)).toEqual({ cible: "navigateur:maptiler:satellite", versSatellite: true });
+  });
+  it("fond neutre ou fournisseur sans imagerie → premier satellite disponible ; imagerie sans plan → fond neutre", () => {
+    expect(fondBascule("neutre", mt)).toEqual({ cible: "navigateur:maptiler:satellite", versSatellite: true });
+    expect(fondBascule("navigateur:xyz1:fond", [...f("navigateur:xyz1:fond"), ...mt])).toEqual({ cible: "navigateur:maptiler:satellite", versSatellite: true });
+    expect(fondBascule("navigateur:x:satellite", f("navigateur:x:satellite"))).toEqual({ cible: "neutre", versSatellite: false });
+  });
+  it("aucun satellite réglé (clé absente) → null", () => {
+    expect(fondBascule("neutre", [])).toBeNull();
+    expect(fondBascule("navigateur:xyz1:fond", f("navigateur:xyz1:fond"))).toBeNull();
+    expect(estFondImagerie("navigateur:maptiler:hybride")).toBe(true);
+    expect(estFondImagerie("neutre")).toBe(false);
   });
 });

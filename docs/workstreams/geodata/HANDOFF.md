@@ -94,6 +94,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot « Zone d'étude qui filtre » (D-GD-41, demandé le 30 octobre 2026) : filtre de zone sur la carte, la table et la
   synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Fusionné par la PR #369 (`976cd17`), CI verte ; branche
   `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
+- Programme des lots restants de l'analyse FeenWay (demande du maître d'ouvrage du 31 octobre 2026, « non-stop ») :
+  P1-6 Plan / Satellite (D-GD-46), puis P3-4, P2-1, P2-5, P2-2, P2-3, P3-1 ; P3-2, P3-3 et P2-4 évalués (faits ou
+  déclarés bloqués avec leur cause). Un lot par PR, fusion CI verte.
 - Données du MTNRA (D-GD-43, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
   (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-45), importés au démarrage comme les autres fiches, avec
   rapprochement provincial du RGPH. Le fichier des douars fourni le même jour (même empreinte que l'annexe livrée) est

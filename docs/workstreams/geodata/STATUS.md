@@ -116,6 +116,9 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
   isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
+- Plan / Satellite (D-GD-46) : `fondBascule` / `estFondImagerie` (`fournisseurs.ts`, 3 tests), globe de la mini-barre et
+  Alt+S ; désactivé et motivé sans clé MapTiler. Recette `geodata.mjs` sur PostGIS 16 local : 219 contrôles, tout
+  conforme (2 nouveaux) ; bascule vérifiée dans le navigateur avec une clé factice (satellite → plan → satellite).
 - Zone d'étude qui filtre (D-GD-41, PR #369 fusionnée, `976cd17`, CI verte) : route `/couches/:id/vue?zone=` (zone de
   l'espace, active ; sinon 404) et `/couches/:id/table?zone=` ; filtre de codes combiné sur la carte, table et synthèse ;
   puce « Zone d'étude : nom × », bouton « Filtrer par cette zone » des Études, Alt+Z, `z=` dans l'adresse

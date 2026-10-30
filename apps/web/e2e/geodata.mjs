@@ -177,7 +177,7 @@ const basBarre = groupes[groupes.length - 1].bottom;
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
 const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && Math.abs(boiteLoupe.y + boiteLoupe.height - basBarre) <= 1.5;
 check("mini-barre : séparée de la barre d'outils (qui garde ses 16 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
-  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte" && (dessous || aCote),
+  (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte|Vue satellite indisponible : réglez la clé MapTiler dans Paramètres" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
 const tailles = await page.evaluate(() => [document.querySelector("[data-gd-barre-outil='zoom-plus']"), document.querySelector("[data-gd-loupe]")].map((b) => `${b.offsetWidth}x${b.offsetHeight}`));
@@ -194,6 +194,12 @@ await page.locator("[data-gd-volet-ouvert='cartes'] [data-gd-nom-carte]").waitFo
 check("mini-barre (D-GD-38) : Enregistrer d'une carte jamais enregistrée ouvre la saisie du titre et referme le panneau ouvert (≡)", filOuvertAvant && (await page.locator("[data-gd-navigation-flottante]").getAttribute("data-gd-navigation-ouverte")) === "non" && (await page.locator("[data-gd-navigation-flottante]").isHidden()));
 check("mini-barre : « Enregistrer » d'une carte jamais enregistrée ouvre Mes cartes pour la nommer (comme le bouton de la barre)", (await page.locator("[data-gd-formulaire-enregistrer='nouvelle']").count()) === 1);
 await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
+// Plan / Satellite (D-GD-46) : sans clé MapTiler, aucun fond satellite n'est réglé — bouton désactivé, raison donnée ; Alt+S l'annonce.
+const boutonPlanSat = page.locator("[data-gd-mini-plan-satellite]");
+check("Plan / Satellite (D-GD-46) : bouton de la mini-barre (Alt+S), désactivé sans fond satellite réglé, avec sa raison", (await boutonPlanSat.getAttribute("data-gd-mini-plan-satellite")) === "indisponible" && (await boutonPlanSat.isDisabled()) && (await boutonPlanSat.getAttribute("aria-keyshortcuts")) === "Alt+S");
+await page.locator("body").press("Alt+s");
+await page.waitForTimeout(200);
+check("Plan / Satellite : Alt+S sans fond satellite annonce la raison, le fond ne change pas", ((await page.locator("[data-geodata-page] p.sr-only[role='status']").textContent()) ?? "").includes("Vue satellite indisponible"));
 // Fond de carte : liste flottante des mêmes fonds que le sélecteur, fond actif coché ; un clic applique et ferme.
 const fondsEspace = await page.evaluate(async () => (await (await fetch("/geodata/api/espace")).json()).fonds.map((f) => f.libelle));
 const miniFond = page.locator("[data-gd-mini-fond]");
@@ -1096,7 +1102,7 @@ const boiteMenuCartes = await page.locator("#gd-menu-liste").boundingBox();
 check("GEO 12 · téléphone : la rubrique « Cartes » dépliée reste dans l'écran", boiteMenuCartes.x >= 0 && boiteMenuCartes.x + boiteMenuCartes.width <= 391 && boiteMenuCartes.y + boiteMenuCartes.height <= 845, JSON.stringify(boiteMenuCartes));
 await page.locator("[data-gd-menu]").click();
 const barreMiniTel = await page.locator("[data-gd-barre-recherche]").boundingBox(), basTel = await page.locator(".maplibregl-ctrl-bottom-right").boundingBox();
-check("GEO 12 · téléphone : mini-barre (Loupe, Enregistrer, ≡, Fond) entière, sans chevaucher l'échelle ni les sources", (await page.locator("[data-gd-barre-recherche] button").count()) === 4 && barreMiniTel.x >= 0 && barreMiniTel.x + barreMiniTel.width <= 391 && (!basTel || barreMiniTel.y + barreMiniTel.height <= basTel.y || barreMiniTel.x + barreMiniTel.width <= basTel.x), `${JSON.stringify(barreMiniTel)} / ${JSON.stringify(basTel)}`);
+check("GEO 12 · téléphone : mini-barre (Loupe, Enregistrer, ≡, Fond, Plan / Satellite) entière, sans chevaucher l'échelle ni les sources", (await page.locator("[data-gd-barre-recherche] button").count()) === 5 && barreMiniTel.x >= 0 && barreMiniTel.x + barreMiniTel.width <= 391 && (!basTel || barreMiniTel.y + barreMiniTel.height <= basTel.y || barreMiniTel.x + barreMiniTel.width <= basTel.x), `${JSON.stringify(barreMiniTel)} / ${JSON.stringify(basTel)}`);
 // Téléphone : le panneau Données (posé en bas) est refermé avant de déplier le fil.
 if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
 await deplierFil(page);

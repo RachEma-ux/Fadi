@@ -14372,5 +14372,11 @@
 "Retirer le filtre de zone (Alt+Z)": "Remove the area filter (Alt+Z)",
 "(calcul…)": "(computing…)",
 "— filtre impossible, objets masqués pour": "— filter unavailable, features hidden for",
-"couche(s)": "layer(s)"
+"couche(s)": "layer(s)",
+"Vue satellite indisponible : réglez la clé MapTiler dans Paramètres": "Satellite view unavailable: set the MapTiler key in Settings",
+"Vue satellite (Alt+S)": "Satellite view (Alt+S)",
+"Vue plan (Alt+S)": "Map view (Alt+S)",
+"Vue satellite indisponible : réglez la clé MapTiler dans Paramètres.": "Satellite view unavailable: set the MapTiler key in Settings.",
+"Vue satellite": "Satellite view",
+"Vue plan": "Map view"
 }
