@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMPOSITION_INITIALE, validerComposition } from "@parcours/geodata-model";
-import { ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, retirerCouche, sansColorationThematique } from "./composition-ops";
+import { ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, retirerCouche, sansColorationThematique } from "./composition-ops";
 
 const simple = { mode: "simple", couleur: "#2b8cbe" } as const;
 
@@ -55,5 +55,18 @@ describe("composition locale de GeoData", () => {
     expect(basculerToutesEtiquettes(seulRaster, vect)).toBe(seulRaster);
     expect(basculerToutesEtiquettes(COMPOSITION_INITIALE, vect)).toBe(COMPOSITION_INITIALE);
     expect(validerComposition(toutes).ok).toBe(true);
+  });
+  it("regroupement des points (D-GD-39) : bascule par couche et pour toutes les couches de points visibles", () => {
+    let c = ajouterCouche(ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", simple), "p", "vp", simple);
+    const points = new Set(["a", "b"]);
+    expect(basculerRegroupement(c, "a").couches[0]!.regrouper).toBe(true);
+    expect("regrouper" in basculerRegroupement(basculerRegroupement(c, "a"), "a").couches[0]!).toBe(false);
+    c = basculerRegroupement(c, "a");
+    expect(regroupementsTousActifs(c, points)).toBe(false);
+    const tous = basculerTousRegroupements(c, points);
+    expect(tous.couches.map((k) => !!k.regrouper)).toEqual([true, true, false]);
+    expect(regroupementsTousActifs(tous, points)).toBe(true);
+    expect(basculerTousRegroupements(tous, points).couches.some((k) => "regrouper" in k)).toBe(false);
+    expect(basculerTousRegroupements(c, new Set())).toBe(c);
   });
 });

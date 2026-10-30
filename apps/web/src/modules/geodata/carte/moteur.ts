@@ -64,6 +64,8 @@ export interface MoteurCarte {
   attendreChargement(delaiMs: number): Promise<boolean>;
   /** Image de la carte telle qu'affichée (canevas WebGL). */
   canevas(): HTMLCanvasElement;
+  /** Emprise de la vue (ouest, sud, est, nord, WGS 84) pour la lecture de l'emprise (D-GD-39) ; null tant que la carte n'est pas prête. */
+  emprise(): readonly [number, number, number, number] | null;
   /** Échelle approximative au centre : mètres par pixel. */
   metresParPixel(): number;
   /**

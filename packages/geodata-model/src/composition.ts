@@ -52,6 +52,8 @@ export interface CoucheComposee {
   readonly filtre: FiltreCouche | null;
   /** Libellés affichés (nom de l'entité, valeur abrégée en thématique ; lot C, D-GD-24). Absent = masqués. */
   readonly etiquettes?: true;
+  /** Points regroupés en grappes numérotées jusqu'au zoom 13 (D-GD-39). Absent = chaque point affiché seul. */
+  readonly regrouper?: true;
 }
 
 export interface Composition {
@@ -145,9 +147,10 @@ export function validerComposition(x: unknown): ValidationComposition {
       const style = lireStyle(k["style"], `${chemin}.style`, erreurs);
       const filtre = lireFiltre(k["filtre"], `${chemin}.filtre`, erreurs);
       if (k["etiquettes"] !== undefined && typeof k["etiquettes"] !== "boolean") erreurs.push(`${chemin}.etiquettes : booléen attendu`);
+      if (k["regrouper"] !== undefined && typeof k["regrouper"] !== "boolean") erreurs.push(`${chemin}.regrouper : booléen attendu`);
       if (style && typeof coucheId === "string" && typeof versionId === "string" && typeof visible === "boolean" && fini(opacite)) {
-        // « Libellés masqués » n'est pas écrit : une composition enregistrée avant le lot C reste identique.
-        couches.push({ coucheId, versionId, visible, opacite, style, filtre, ...(k["etiquettes"] === true ? { etiquettes: true as const } : {}) });
+        // « Libellés masqués » et « points non regroupés » ne sont pas écrits : une composition antérieure reste identique.
+        couches.push({ coucheId, versionId, visible, opacite, style, filtre, ...(k["etiquettes"] === true ? { etiquettes: true as const } : {}), ...(k["regrouper"] === true ? { regrouper: true as const } : {}) });
       }
     });
   }

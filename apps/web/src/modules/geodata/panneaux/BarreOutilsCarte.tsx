@@ -2,7 +2,8 @@
  * Barre d'outils verticale **flottante** de la carte GeoData (organisation inspirée de Kharita) : placée à droite par
  * défaut, déplaçable par sa poignée (souris, doigt ou flèches du clavier), bornée à la carte ; sa position est un confort
  * mémorisé dans ce navigateur seulement. Outils : zoom, nord, position,
- * plein écran, mesures, zone, annotation, libellés (Alt+L), mini-carte (Alt+M), légende, impression (Alt+I). Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
+ * plein écran, mesures, zone, annotation, libellés (Alt+L), mini-carte (Alt+M), légende, impression (Alt+I), lecture de
+ * l'emprise (D-GD-39) : synthèse de la vue (Alt+V), regroupement des points (Alt+G), adresse de la vue (Alt+K). Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
  * et une infobulle ; les outils de tracé sont des bascules (aria-pressed) et retournent à la navigation au second appui.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
@@ -23,7 +24,7 @@ const lirePosition = (): PositionBarre => {
 };
 const ecrirePosition = (p: PositionBarre | null) => { try { if (p) window.localStorage.setItem(CLE_POSITION, JSON.stringify(p)); else window.localStorage.removeItem(CLE_POSITION); } catch { /* confort perdu */ } };
 
-const ICONES = {
+export const ICONES = {
   zoomPlus: "M12 5v14M5 12h14",
   zoomMoins: "M5 12h14",
   nord: "M12 3l5 16-5-4-5 4 5-16Z",
@@ -41,7 +42,16 @@ const ICONES = {
   miniCarte: "M3 4h18v16H3zM5 13h7v5H5z",
   /** Impression directe (D-GD-27) : imprimante. */
   imprimer: "M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z",
+  /** Synthèse de la vue (D-GD-39) : sigma de la somme, sur un cadre de vue. */
+  synthese: "M16 6H8l5 6-5 6h8M3 3h4M17 3h4M3 21h4M17 21h4",
+  /** Regroupement des points (D-GD-39) : trois grappes de tailles différentes. */
+  grappes: "M4 8a3 3 0 1 0 6 0a3 3 0 1 0-6 0M14 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M11 16a4 4 0 1 0 8 0a4 4 0 1 0-8 0",
+  /** Adresse de la vue (D-GD-39) : maillons d'une chaîne. */
+  lien: "M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1",
 } as const;
+
+/** Raccourcis des commandes de la barre (Alt + lettre), contrôlés par test : une commande, une touche. */
+export const RACCOURCIS_BARRE = { etiquettes: "Alt+L", "mini-carte": "Alt+M", imprimer: "Alt+I", synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" } as const;
 
 function Pictogramme({ d }: { d: string }) {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
@@ -64,6 +74,13 @@ export interface ActionsBarreCarte {
   onEtiquettes(): void;
   onMiniCarte(): void;
   onImprimer(): void;
+  /** Synthèse de la vue ouverte (D-GD-39). */
+  synthese: boolean;
+  onSynthese(): void;
+  /** Points de toutes les couches de points visibles regroupés ; `null` = aucune couche de points visible. */
+  regroupement: boolean | null;
+  onRegroupement(): void;
+  onCopierLien(): void;
   /** Placement de la barre dans la carte (position et taille), signalé à chaque changement : la mini-barre de recherche la suit. */
   onPlacement?(r: { droite: number; haut: number; largeur: number; hauteur: number }): void;
 }
@@ -111,9 +128,10 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
     },
     onDoubleClick: () => { ecrirePosition(null); setPosition(borner(POSITION_PAR_DEFAUT)); },
   };
-  const bouton = (cle: string, libelle: string, d: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => (
-    <button key={cle} type="button" className="gd-outil" title={libelle} aria-label={libelle} onClick={action} aria-pressed={extra.pressed} disabled={extra.disabled} data-gd-barre-outil={cle}><Pictogramme d={d} /></button>
-  );
+  const bouton = (cle: string, libelle: string, d: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => {
+    const raccourci = (RACCOURCIS_BARRE as Record<string, string>)[cle];
+    return <button key={cle} type="button" className="gd-outil" title={libelle} aria-label={libelle} onClick={action} aria-pressed={extra.pressed} disabled={extra.disabled} aria-keyshortcuts={raccourci} data-gd-barre-outil={cle}><Pictogramme d={d} /></button>;
+  };
   const trace = (o: Exclude<OutilCarte, "navigation">, libelle: string, d: string) => bouton(o, libelle, d, () => p.onOutil(p.outil === o ? "navigation" : o), { pressed: p.outil === o, disabled: !p.carteDisponible });
   return (
     <nav ref={barre} className="gd-barre-outils" aria-label="Outils de la carte" style={{ right: position.droite, top: position.haut }} data-gd-barre-outils>
@@ -138,6 +156,9 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
         {bouton("mini-carte", p.miniCarte ? "Masquer la mini-carte de situation (Alt+M)" : "Afficher la mini-carte de situation (Alt+M)", ICONES.miniCarte, p.onMiniCarte, { pressed: p.miniCarte, disabled: !p.carteDisponible })}
         {bouton("legende", "Légende", ICONES.legende, p.onLegende, { pressed: p.legendeOuverte })}
         {bouton("imprimer", "Imprimer la carte (Alt+I)", ICONES.imprimer, p.onImprimer, { disabled: !p.carteDisponible })}
+        {bouton("synthese", p.synthese ? "Fermer la synthèse de la vue (Alt+V)" : "Synthèse de la vue (Alt+V)", ICONES.synthese, p.onSynthese, { pressed: p.synthese, disabled: !p.carteDisponible })}
+        {bouton("regrouper", p.regroupement ? "Afficher chaque point seul (Alt+G)" : "Regrouper les points (Alt+G)", ICONES.grappes, p.onRegroupement, { pressed: !!p.regroupement, disabled: !p.carteDisponible || p.regroupement === null })}
+        {bouton("lien", "Copier l'adresse de cette vue (Alt+K)", ICONES.lien, p.onCopierLien)}
       </div>
     </nav>
   );

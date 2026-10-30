@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-29 (UTC).
+Mis à jour : 2026-10-30 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -93,6 +93,14 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
   recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
   sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
+- Lecture de l'emprise (D-GD-39, PR à venir sur `ccr-9ee33f24-q1rmt0`) : `geodata-model/src/emprise.ts` (synthèse d'une
+  couche dans la vue, grille de regroupement alignée sur les tuiles, 8 tests) et `adresse-vue.ts` (fragment d'adresse,
+  4 tests) ; composition `regrouper` ; route `GET /couches/:id/vue?bbox=` et tuiles `?regrouper=1` (`consultation.ts`) ;
+  `panneaux/SyntheseVue.tsx`, trois boutons de la barre d'outils (Alt+V, Alt+G, Alt+K ; icônes et touches distinctes,
+  test `barre-outils.test.ts`), case « Regrouper les points », zoom affiché, état écrit dans l'adresse et relu à
+  l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
+  isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` : RECETTE_RESULTAT. Test API sur base
+  (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, `BarreTerritoriale`
   réutilisée telle quelle dans un panneau flottant, un seul panneau à la fois (`panneauMini`) ; recette `geodata.mjs`
   194 contrôles (8 nouveaux), vérifié bureau 1885 × 893 et Pixel 7 sur données HCP réelles.

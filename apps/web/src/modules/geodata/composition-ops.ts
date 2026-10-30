@@ -70,6 +70,31 @@ export const etiquettesToutesAffichees = (c: Composition, admissibles: ReadonlyS
   return cibles.length > 0 && cibles.every((k) => k.etiquettes);
 };
 
+/** Regroupement des points d'une couche (D-GD-39) : grappes ↔ points seuls ; « points seuls » n'écrit aucune clé. */
+export const basculerRegroupement = (c: Composition, coucheId: string) => modifier(c, coucheId, ({ regrouper, ...k }) => (regrouper ? k : { ...k, regrouper: true as const }));
+
+/**
+ * Bouton « Regrouper les points » de la barre d'outils (Alt+G) : sur les couches de points visibles, regroupe tout si
+ * l'une d'elles ne l'est pas, sinon rend tous les points seuls. Sans couche admissible, la composition est rendue telle quelle.
+ */
+export function basculerTousRegroupements(c: Composition, admissibles: ReadonlySet<string>): Composition {
+  const cibles = c.couches.filter((k) => k.visible && admissibles.has(k.coucheId));
+  if (!cibles.length) return c;
+  const regrouper = cibles.some((k) => !k.regrouper);
+  const ids = new Set(cibles.map((k) => k.coucheId));
+  return avecCouches(c, c.couches.map((k) => {
+    if (!ids.has(k.coucheId)) return k;
+    const { regrouper: _r, ...reste } = k;
+    return regrouper ? { ...reste, regrouper: true as const } : reste;
+  }));
+}
+
+/** Les couches de points visibles sont-elles toutes regroupées ? (état du bouton de la barre d'outils) */
+export const regroupementsTousActifs = (c: Composition, admissibles: ReadonlySet<string>): boolean => {
+  const cibles = c.couches.filter((k) => k.visible && admissibles.has(k.coucheId));
+  return cibles.length > 0 && cibles.every((k) => k.regrouper);
+};
+
 /** Monte (+1, vers le dessus) ou descend (−1) une couche dans l'ordre d'affichage. */
 export function deplacerCouche(c: Composition, coucheId: string, sens: 1 | -1): Composition {
   const i = c.couches.findIndex((k) => k.coucheId === coucheId);

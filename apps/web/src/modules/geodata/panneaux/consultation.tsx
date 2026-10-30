@@ -220,7 +220,7 @@ function RubriqueIndicateursContenu(p: RubriqueIndicateurs) {
 
 export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
-  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
+  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onRegrouper?(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void;
   /** Indicateur actif du catalogue (D-GD-31, D-GD-32) : par couche qui le porte ; couches où ses valeurs sont masquées. */
   indicateurs?: ReadonlyMap<string, IndicateurRecu> | undefined; masques?: ReadonlySet<string> | undefined; onAfficherIndicateur?(id: string, afficher: boolean): void;
@@ -242,6 +242,11 @@ export function PanneauCouches(p: {
             {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
             {c && !c.raster && <label className="gd-case"><input type="checkbox" checked={!!k.etiquettes} onChange={() => p.onEtiquettes(k.coucheId)} data-gd-etiquettes={k.coucheId} />Libellés (nom)</label>}
+            {c && (c.typeGeometrie === "point" || c.typeGeometrie === "mixte") && p.onRegrouper && (
+              <label className="gd-case" title="Points réunis en grappes numérotées jusqu'au zoom 13 ; touchez une grappe pour vous en rapprocher. Sans effet sur une couche filtrée.">
+                <input type="checkbox" checked={!!k.regrouper} onChange={() => p.onRegrouper?.(k.coucheId)} data-gd-regrouper={k.coucheId} />Regrouper les points
+              </label>
+            )}
             {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
             {c && p.indicateurs?.get(k.coucheId) && (
               <label className="gd-case" data-gd-indicateur-affiche={k.coucheId}>

@@ -425,6 +425,26 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         clics) ; ≡ ou Échap le ferment. Son état est conservé d'un onglet à l'autre. Enregistrer une carte jamais
         enregistrée ouvre la saisie du titre (Mes cartes, inchangé) et referme le panneau ouvert.
 
+   - D-GD-39 (30 octobre 2026) — **lot « Lecture de l'emprise »** (demande du maître d'ouvrage, à partir de l'analyse
+     `docs/workstreams/geodata/ANALYSE-FEENWAY.md`, propositions P1-1, P1-2, P1-3 et P1-5) :
+     1. **Synthèse de la vue** (bouton de la barre d'outils, Alt+V) : pour chaque couche d'objets visible, objets qui
+        recoupent la vue sur le total de la couche, lus en base (`GET /couches/:id/vue?bbox=`, géométrie de référence,
+        filtre de la couche appliqué) ; avec un indicateur actif porté par la couche, minimum, moyenne **simple non
+        pondérée** et maximum des entités évaluées, et nombre d'entités non évaluées (une absence n'est jamais comptée).
+        Rien n'est lu tant que la synthèse est fermée ; relue à chaque arrêt de la carte.
+     2. **Regroupement des points** (case « Regrouper les points » par couche de points, bouton de la barre, Alt+G) :
+        calculé par le serveur dans les tuiles (`?regrouper=1`), grille Web Mercator de 8 × 8 cellules par tuile alignée
+        sur les tuiles, jusqu'au zoom 13 ; au zoom 14 chaque point est servi seul. Grappes numérotées, un clic s'en
+        rapproche de deux crans, aucune sélection. Enregistré dans la composition (`regrouper`, absent = non regroupé :
+        une carte antérieure reste identique). Une couche filtrée n'est jamais regroupée.
+     3. **État de la carte dans l'adresse** (fragment `#v=lon,lat,zoom,cap&carte=…&c=couche~version~m~g,…&i=…`), réécrit
+        sans entrée d'historique ; une adresse prime sur la dernière carte du navigateur. Carte enregistrée : ses couches
+        et styles font foi, la caméra du lien s'applique ; sinon couches du lien avec leur version figée et leur style par
+        défaut. Le fragment n'est jamais envoyé au serveur ; il ne contient que des identifiants contrôlés à la lecture (une
+        couche d'un autre espace reste refusée et est signalée). « Copier l'adresse de cette vue » (bouton, Alt+K) ;
+        « Partager » (droits, destinataires) reste à spécifier (GEO-PARTAGE-CARTE).
+     4. **Zoom courant affiché** en permanence à côté de l'échelle (déjà présente).
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.
