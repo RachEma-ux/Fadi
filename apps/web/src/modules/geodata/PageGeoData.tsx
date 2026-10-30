@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
@@ -275,6 +275,13 @@ export function PageGeoData() {
     ...fondsNav.sansCle.map((f) => ({ valeur: "", cle: `sans-cle:${f.fournisseurId}`, libelle: `${f.nom} — clé absente (Paramètres)`, desactive: true })),
   ], [espace, fondsDisponibles, fond, fondTrouve, composition.fond, fondsNav]);
   const choisirFond = (id: string) => setComposition((c) => ({ ...c, fond: id }));
+  /** Plan / Satellite (D-GD-46) : bascule entre l'imagerie et le plan du fournisseur réglé (Alt+S). */
+  const planSatellite = useMemo(() => fondBascule(composition.fond, fondsDisponibles), [composition.fond, fondsDisponibles]);
+  const basculerPlanSatellite = () => {
+    if (!planSatellite) return setAnnonce("Vue satellite indisponible : réglez la clé MapTiler dans Paramètres.");
+    choisirFond(planSatellite.cible);
+    setAnnonce(planSatellite.versSatellite ? "Vue satellite" : "Vue plan");
+  };
   useEffect(() => setAvisFond(null), [fond.id]);
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
@@ -804,6 +811,8 @@ export function PageGeoData() {
     if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
     if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
     if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
+    // Alt+S : vue plan ↔ vue satellite (D-GD-46).
+    if (e.altKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && !saisie && !erreurCarte) { e.preventDefault(); basculerPlanSatellite(); return; }
     // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
     if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
@@ -1068,6 +1077,7 @@ export function PageGeoData() {
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
             resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }}
             enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer(), etat: etat.etat, etatLibelle: LIBELLES_ENREGISTREMENT[etat.etat], carteNom: carte?.nom ?? null }}
+            planSatellite={planSatellite ? { versSatellite: planSatellite.versSatellite } : null} onPlanSatellite={basculerPlanSatellite}
             fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond, ouverts: panneauMini === "fonds", onBasculer: (o) => basculerPanneauMini("fonds", o) }}
             navigation={{ ouverte: panneauMini === "navigation", onBasculer: (o) => basculerPanneauMini("navigation", o),
               contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />

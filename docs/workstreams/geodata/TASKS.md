@@ -44,7 +44,7 @@
 - [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.
 - [ ] GEO-RAPPROCHEMENT-COMMUNES — Point du MTNRA dans le contour communal contre la commune publiée : attend des contours communaux complets (D-GD-33).
 - [ ] GEO-CONCEPT-PRIX — Indicateurs de contexte (population, logement, services) pour un module « Concept Prix » : module absent du dépôt, spécification attendue.
-- [ ] GEO-PLAN-SATELLITE — P1-6 de l'analyse : bascule Plan / Satellite du fournisseur réglé ; non engagé.
+- [x] GEO-PLAN-SATELLITE — Bascule Plan / Satellite du fournisseur réglé, mini-barre, Alt+S (D-GD-46).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

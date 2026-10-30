@@ -560,6 +560,12 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         liste : retrait seulement une fois les 13 couches publiées). Leurs objets sont tous dans la base fusionnée (test :
         chaque objet OSM présent exactement une fois).
 
+   - D-GD-46 (31 octobre 2026) — **bascule Plan / Satellite** (P1-6 de `ANALYSE-FEENWAY.md`, programme des lots restants
+     demandé par le maître d'ouvrage) : un bouton de la mini-barre (globe, Alt+S) passe de l'imagerie (satellite, hybride)
+     au plan du même fournisseur (sinon fond neutre), et d'un plan ou du fond neutre au satellite du même fournisseur
+     (sinon le premier satellite réglé). Seuls les fonds réglés dans Paramètres sont proposés (D-GD-15) ; sans clé
+     MapTiler, le bouton est désactivé et dit pourquoi. Logique pure : `fondBascule` (`fournisseurs.ts`).
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

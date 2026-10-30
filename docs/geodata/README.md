@@ -96,6 +96,11 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Plan / Satellite (D-GD-46)
+
+Le globe de la mini-barre (Alt+S) bascule entre la vue satellite et la vue plan du fournisseur réglé dans Paramètres.
+Sans clé MapTiler, aucun fond satellite n'existe : le bouton est désactivé et le dit.
+
 ## Recherche de la carte (D-GD-35)
 
 La recherche (nom, code HCP, « lon … lat … ») s'ouvre par la **loupe** de la mini-barre placée sous la barre d'outils
