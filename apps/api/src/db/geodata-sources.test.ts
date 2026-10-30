@@ -106,7 +106,7 @@ describe("fiches de source GeoData livrées", () => {
     expect(createHash("sha256").update(octets).digest("hex")).toBe(a!.empreinte);
     const [entete, ...lignes] = octets.toString("utf8").split("\n").filter((l) => l.length);
     expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60",
-      // Compléments (D-GD-42) : feuille de la population, puis feuille des ménages, jointes par le code.
+      // Compléments (D-GD-43) : feuille de la population, puis feuille des ménages, jointes par le code.
       "marocaine", "etrangere", "etat_civil", "pop_15_plus", "celibataire", "marie", "divorce", "veuf",
       "log_villa", "log_appartement", "log_traditionnelle", "log_moderne", "log_sommaire", "log_dur_rural", "log_pise_rural", "log_autre",
       "dist_route_goudronnee", "dist_route_carrossable", "dist_ecole", "dist_college", "dist_lycee", "dist_sante"]);
@@ -125,7 +125,7 @@ describe("fiches de source GeoData livrées", () => {
     expect(fautes.slice(0, 5)).toEqual([]);
   }, 30_000);
 
-  it("contours des niveaux (D-GD-33, D-GD-43) : codes attendus, frontières partagées sommet pour sommet, contours partiels déclarés", () => {
+  it("contours des niveaux (D-GD-33, D-GD-44) : codes attendus, frontières partagées sommet pour sommet, contours partiels déclarés", () => {
     type Fc = { features: { properties: Record<string, unknown>; geometry: { type: string; coordinates: unknown } }[] };
     const lire = (n: string) => JSON.parse(readFileSync(join(DOSSIER, "donnees", `hcp-rgph2024-population-${n}.geojson`), "utf8")) as Fc;
     const [communes, provinces, regions] = [lire("communes"), lire("provinces"), lire("regions")];
@@ -167,7 +167,7 @@ describe("fiches de source GeoData livrées", () => {
     }
   }, 60_000);
 
-  it("services publics (D-GD-42, D-GD-44) : MTNRA et OpenStreetMap fusionnés, chaque ligne et chaque objet OSM une seule fois", () => {
+  it("services publics (D-GD-43, D-GD-45) : MTNRA et OpenStreetMap fusionnés, chaque ligne et chaque objet OSM une seule fois", () => {
     const couches = fiches.filter((f) => f.startsWith("services-publics-"));
     expect(couches).toHaveLength(13);
     expect(fiches.some((f) => f.startsWith("mtnra-services-publics-"))).toBe(false);

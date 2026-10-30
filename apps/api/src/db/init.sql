@@ -3246,7 +3246,7 @@ CREATE TABLE IF NOT EXISTS geodata_douars (
   PRIMARY KEY (version_id, code)
 );
 CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
--- Compléments des douars (D-GD-42) : nationalité, état civil, état matrimonial, logement, distances aux équipements, tels
+-- Compléments des douars (D-GD-43) : nationalité, état civil, état matrimonial, logement, distances aux équipements, tels
 -- que publiés (nombre, ou null si absent ou supprimé par le HCP) ; null = version importée avant ces compléments.
 ALTER TABLE geodata_douars ADD COLUMN IF NOT EXISTS complements jsonb;
 

@@ -477,7 +477,7 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. La zone filtrée s'écrit dans l'adresse de la vue (`z=`) ; une zone d'un autre espace ou archivée répond 404 et le
         filtre est retiré avec un avis.
 
-   - D-GD-42 (30 octobre 2026) — **données « géoportail » du MTNRA** (fichiers fournis par le maître d'ouvrage) :
+   - D-GD-43 (30 octobre 2026) — **données « géoportail » du MTNRA** (fichiers fournis par le maître d'ouvrage) :
      1. `donnees-geoportail-open-data-2022.xlsx` est la ressource publiée sur data.gov.ma par le MTNRA (jeu
         « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma », mai 2022,
         ODbL) : empreinte du fichier fourni identique au téléchargement officiel (`7d1a4d30…a6f920`). La seconde copie
@@ -506,7 +506,7 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         contour, D-GD-33). L'exposition à un module « Concept Prix » n'est pas engagée : ce module n'existe pas dans le
         dépôt et attend une spécification du maître d'ouvrage.
 
-   - D-GD-43 (30 octobre 2026) — **alignement des contours région / province / commune** (proposition du maître
+   - D-GD-44 (30 octobre 2026) — **alignement des contours région / province / commune** (proposition du maître
      d'ouvrage) : `docs/workstreams/geodata/ALIGNEMENT-CONTOURS.md`.
      1. Diagnostic : les fichiers livrés depuis D-GD-33 sont alignés. Contrôle indépendant : 0 sommet de province ou de
         région hors des sommets des communes, parent = union exacte des enfants, construction reproductible à l'octet.
@@ -519,9 +519,9 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. Une couche de limites administratives restée sur une version antérieure dans une carte affiche une alerte (et non
         plus un avis discret) : le mélange de versions entre niveaux n'est jamais silencieux.
      5. Contrôles en CI : ensembles de codes (12 régions, 75 provinces), sommets partagés, marques de contour partiel.
-        Captures avant / après (Tétouan) dans `captures/d-gd-43/`.
+        Captures avant / après (Tétouan) dans `captures/d-gd-44/`.
 
-   - D-GD-44 (30 octobre 2026) — **base des services publics fusionnée MTNRA + OpenStreetMap, aucun doublon** (décision du
+   - D-GD-45 (30 octobre 2026) — **base des services publics fusionnée MTNRA + OpenStreetMap, aucun doublon** (décision du
      maître d'ouvrage, qui remplace la première idée d'un simple retrait des couches OSM) :
      1. Les extraits OSM « administrations », « hôpitaux et cliniques » et « gares » (2 495 objets) ne sont plus des couches :
         ce sont des entrées (`donnees/osm-extraits.json`) de la base `services-publics-*`, préparée par

@@ -70,7 +70,7 @@ objets restreints au territoire de geoBoundaries MAR ADM1, GeoJSON déterministe
 fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import, aucun téléchargement en production). Une couche
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
-Depuis D-GD-44, les administrations, hôpitaux et cliniques et gares d'OpenStreetMap ne sont plus des couches propres : ils
+Depuis D-GD-45, les administrations, hôpitaux et cliniques et gares d'OpenStreetMap ne sont plus des couches propres : ils
 sont fusionnés avec le MTNRA dans la base des services publics (voir plus bas), sans aucun objet en double.
 
 ## Catégories du catalogue et disposition (D-GD-14)
@@ -131,7 +131,7 @@ d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, 
   destinataire ne voit que les couches qu'il peut déjà consulter.
 - **Zoom** affiché en permanence en bas à gauche de la carte.
 
-## Services publics : MTNRA et OpenStreetMap fusionnés (D-GD-42, D-GD-44)
+## Services publics : MTNRA et OpenStreetMap fusionnés (D-GD-43, D-GD-45)
 
 Sources :
 - « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma » (Ministère de la
@@ -158,7 +158,7 @@ Chaque point porte aussi son rapprochement avec le RGPH, sans correction : `prov
 et `concordance` (`concorde`, `discorde`, `non-appariee`). L'original est archivé tel quel
 (`donnees/mtnra-services-publics-2022-origine.xlsx`).
 
-**Douars (compléments, D-GD-42).** L'annexe des douars reprend les deux feuilles du fichier HCP « Population et ménages
+**Douars (compléments, D-GD-43).** L'annexe des douars reprend les deux feuilles du fichier HCP « Population et ménages
 par douars » jointes par le code : nationalité, état civil, état matrimonial, type de logement et distances moyennes aux
 équipements, affichés en trois tableaux dans la fiche de la commune rurale. Régénération seule :
 `python3 -I scripts/geodata/douars_hcp.py --douars <fichier.xlsx>` (original archivé dans

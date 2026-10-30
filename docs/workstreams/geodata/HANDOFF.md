@@ -90,15 +90,15 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot « Zone d'étude qui filtre » (D-GD-41, demandé le 30 octobre 2026) : filtre de zone sur la carte, la table et la
   synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Branche
   `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
-- Données du MTNRA (D-GD-42, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
-  (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-44), importés au démarrage comme les autres fiches, avec
+- Données du MTNRA (D-GD-43, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
+  (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-45), importés au démarrage comme les autres fiches, avec
   rapprochement provincial du RGPH. Le fichier des douars fourni le même jour (même empreinte que l'annexe livrée) est
   repris en entier : 22 compléments par douar, trois tableaux dans la fiche ; originaux archivés. En attente : contrôle
   par commune (contours communaux complets) et « Concept Prix » (module à spécifier).
-- Services publics fusionnés (D-GD-44) : au déploiement, 13 couches `services-publics-*` (MTNRA + OSM, 19 797 objets)
+- Services publics fusionnés (D-GD-45) : au déploiement, 13 couches `services-publics-*` (MTNRA + OSM, 19 797 objets)
   sont publiées, puis les couches OSM administrations, santé et gares sont retirées du catalogue (leurs objets sont tous
   dans la base fusionnée).
-- Alignement des contours (D-GD-43, 30 octobre 2026) : `ALIGNEMENT-CONTOURS.md`. Après déploiement, vérifier en
+- Alignement des contours (D-GD-44, 30 octobre 2026) : `ALIGNEMENT-CONTOURS.md`. Après déploiement, vérifier en
   préproduction autour de Tétouan qu'une carte récente ne montre aucun décalage, et qu'une carte ancienne affiche
   l'alerte de version antérieure.
 

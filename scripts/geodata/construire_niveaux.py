@@ -42,7 +42,7 @@ RAPPORT = os.path.join(RACINE, "docs", "workstreams", "geodata", "CONTOURS-NIVEA
 MAPSHAPER = "npx --yes -p mapshaper@0.7.98 mapshaper"
 CLES = {"communes": "hcp-rgph2024-population-communes", "provinces": "hcp-rgph2024-population-provinces", "regions": "hcp-rgph2024-population-regions"}
 DECISION = "D-GD-33"
-# Mention de provenance des contours (D-GD-43) : ce ne sont pas des contours officiels du HCP.
+# Mention de provenance des contours (D-GD-44) : ce ne sont pas des contours officiels du HCP.
 PROVENANCE = ("géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; "
               "ce ne sont pas des contours officiels du HCP")
 

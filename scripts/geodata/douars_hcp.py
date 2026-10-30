@@ -9,7 +9,7 @@ commune du RGPH est celle dont le code finit par province + cercle + commune (un
 compté). Les noms ne sont publiés qu'en arabe : ils sont gardés tels quels (D-GD-21). « X » = donnée supprimée par le
 HCP (moins de 30 ménages ou faible taux de déclaration) : secret statistique, jamais zéro.
 
-Deux feuilles, jointes par le code du douar (D-GD-42) : « caractéristiques de la population » (nationalité, sexe, âge,
+Deux feuilles, jointes par le code du douar (D-GD-43) : « caractéristiques de la population » (nationalité, sexe, âge,
 état civil, état matrimonial) et « caractéristiques des ménages » (type de logement, distances moyennes aux équipements).
 Les colonnes répétées dans la seconde feuille (lieux, type, ménages, population) ne sont pas reprises une seconde fois :
 elles doivent être identiques à celles de la première, sinon la préparation s'arrête. Le fichier d'origine est archivé
@@ -31,7 +31,7 @@ import openpyxl
 TYPES = {"دوار مجمع": "groupé", "دوار مجزأ": "éclaté", "دوار مشتت": "dispersé"}
 # Colonnes gardées (feuille « caractéristiques de la population ») : indice → nom de colonne.
 COLONNES = [(8, "menages"), (9, "population"), (12, "masculin"), (13, "feminin"), (14, "moins_15"), (15, "de_15_a_59"), (16, "plus_60")]
-# Compléments (D-GD-42), ajoutés après les colonnes du lot E : population (feuille 1), puis ménages (feuille 2).
+# Compléments (D-GD-43), ajoutés après les colonnes du lot E : population (feuille 1), puis ménages (feuille 2).
 COMPLEMENTS_POPULATION = [(10, "marocaine"), (11, "etrangere"), (17, "etat_civil"), (18, "pop_15_plus"), (19, "celibataire"),
                           (20, "marie"), (21, "divorce"), (22, "veuf")]
 COMPLEMENTS_MENAGES = [(10, "log_villa"), (11, "log_appartement"), (12, "log_traditionnelle"), (13, "log_moderne"), (14, "log_sommaire"),
@@ -124,7 +124,7 @@ def annexer(sortie, chemin_excel, communes_hcp):
     fc["version"].setdefault("annexes", {})["douars"] = {
         "fichier": "donnees/hcp-rgph2024-douars.tsv", "empreinte": hashlib.sha256(octets_d).hexdigest(),
         "description": f"{len(lignes_d)} douars de {communes} communes rurales : code, fraction et nom (publiés en arabe seulement, "
-                       "D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; compléments (D-GD-42) : "
+                       "D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; compléments (D-GD-43) : "
                        "nationalité, inscription à l'état civil, population de 15 ans et plus et son état matrimonial (%), type de logement des "
                        "ménages (%), distances moyennes des logements à la route goudronnée, à la route carrossable, à l'école primaire, au collège, "
                        "au lycée et au centre de santé / hôpital (km) ; les deux feuilles sont jointes par le code (colonnes répétées identiques, "

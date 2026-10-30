@@ -239,7 +239,7 @@ export function PanneauCouches(p: {
               <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>
             </div>
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
-            {/* Limites administratives (D-GD-43) : un mélange de versions n'est jamais silencieux, les frontières d'une version
+            {/* Limites administratives (D-GD-44) : un mélange de versions n'est jamais silencieux, les frontières d'une version
                 antérieure peuvent ne pas coïncider avec celles des autres niveaux. */}
             {d?.etat === "disponible" && d.versionPlusRecente && (c?.niveau
               ? <p role="status" className="gd-alerte" data-gd-version-anterieure={k.coucheId}>Contours d'une version antérieure : leurs limites peuvent ne pas coïncider avec celles des autres niveaux administratifs. Retirez cette couche puis ajoutez-la depuis le Catalogue pour afficher la version publiée.</p>

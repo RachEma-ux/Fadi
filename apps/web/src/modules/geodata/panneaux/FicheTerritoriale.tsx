@@ -198,7 +198,7 @@ function Arrondissements({ commune, couche, onFiche }: { commune: string; couche
 const pourcent = (v: number | null, secret: boolean) => (v === null ? (secret ? "Secret statistique" : "—") : `${v.toFixed(1).replace(".", ",")} %`);
 
 /**
- * Compléments des douars (D-GD-42), par tableau : colonne de l'annexe (nom technique de la base) et libellé du HCP. Ce
+ * Compléments des douars (D-GD-43), par tableau : colonne de l'annexe (nom technique de la base) et libellé du HCP. Ce
  * sont des libellés d'interface, pas des données : les valeurs viennent de la base, telles que publiées.
  */
 type Unite = "pourcent" | "nombre" | "km";
@@ -224,7 +224,7 @@ const valeurDouar = (v: number | null | undefined, unite: Unite, secret: boolean
     : unite === "km" ? `${v.toFixed(2).replace(".", ",")} km`
     : String(v);
 
-/** Un tableau de compléments : une ligne par douar, une colonne par valeur du HCP (D-GD-42). */
+/** Un tableau de compléments : une ligne par douar, une colonne par valeur du HCP (D-GD-43). */
 function ComplementsDouars({ douars, tableau }: { douars: DouarRecu[]; tableau: (typeof TABLEAUX_DOUARS)[number] }) {
   return (
     <details className="gd-theme gd-douars-complements" data-gd-douars-complements={tableau.unite}>

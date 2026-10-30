@@ -41,7 +41,7 @@
       "services-publics-tanger-tetouan-al-hoceima"
     ],
     "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : administrations publiques d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
-    "decision": "D-GD-44"
+    "decision": "D-GD-45"
   },
   {
     "cle": "osm-mar-etablissements-sante",
@@ -61,7 +61,7 @@
       "services-publics-tanger-tetouan-al-hoceima"
     ],
     "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : hôpitaux et cliniques d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
-    "decision": "D-GD-44"
+    "decision": "D-GD-45"
   },
   {
     "cle": "osm-mar-gares",
@@ -81,6 +81,6 @@
       "services-publics-tanger-tetouan-al-hoceima"
     ],
     "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : gares d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
-    "decision": "D-GD-44"
+    "decision": "D-GD-45"
   }
 ]

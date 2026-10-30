@@ -1,4 +1,4 @@
-# Alignement des contours région / province / commune (D-GD-43)
+# Alignement des contours région / province / commune (D-GD-44)
 
 Proposition du maître d'ouvrage du 30 octobre 2026 : « Correction : alignement des contours Région / Province /
 Commune ». Ce document confronte chaque point de la proposition à l'état du dépôt, consigne ce qui a été corrigé et ce
@@ -11,7 +11,7 @@ au 27 octobre 2026** : les régions et provinces du lot A (PR #339, #340) portai
 communes ceux d'OpenStreetMap, simplifiés séparément. Capture « avant » (mêmes emprise et échelle, autour de Tétouan) :
 les limites bleues des provinces coupent les communes grises, par exemple autour de M'diq-Fnideq.
 
-![Avant](captures/d-gd-43/tetouan-avant.png)
+![Avant](captures/d-gd-44/tetouan-avant.png)
 
 Depuis D-GD-33 (PR #355, 27 octobre 2026), les deux niveaux supérieurs sont l'union des communes, sur une topologie
 partagée simplifiée une seule fois. Contrôle indépendant refait le 30 octobre 2026 sur les fichiers livrés : chaque
@@ -19,7 +19,7 @@ sommet d'une province ou d'une région est un sommet d'une commune (0 sommet hor
 exactement l'union de ses enfants (différence symétrique nulle). La construction est reproductible : relancée, elle
 redonne les mêmes octets.
 
-![Après](captures/d-gd-43/tetouan-apres.png)
+![Après](captures/d-gd-44/tetouan-apres.png)
 
 **Cause restante possible en préproduction** (non vérifiable d'ici : aucun accès à la préproduction) : une carte
 enregistrée, ou une adresse de vue (D-GD-40), **garde la version de couche avec laquelle elle a été composée**. Une
@@ -37,7 +37,7 @@ Source, méthode, comptes et contrôles de la construction : voir [`CONTOURS-NIV
 généré par `construire_niveaux.py`. Ils ne sont pas répétés ici. Les points 1 à 7 de la proposition y sont déjà tenus
 depuis D-GD-33 (référentiel et rapprochement traçable, complétude dans les deux sens, validation sans comblement,
 topologie partagée, simplification unique, tuiles sans simplification propre, indicateurs HCP inchangés). Apports de
-D-GD-43 :
+D-GD-44 :
 
 - **contours partiels** : un parent construit sans toutes ses communes porte `contour_complet` faux et
   `communes_sans_contour` (comptes dans le rapport) ;

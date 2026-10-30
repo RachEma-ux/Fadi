@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Captures de contrôle des contours (D-GD-43) — script hors application : trace en SVG les communes (gris), provinces
+Captures de contrôle des contours (D-GD-44) — script hors application : trace en SVG les communes (gris), provinces
 (bleu) et régions (rouge) de trois GeoJSON `<dossier>/<etat>-{communes,provinces,regions}.geojson` sur l'emprise de
 Tétouan, pour comparer deux états aux mêmes emprise et échelle :
 

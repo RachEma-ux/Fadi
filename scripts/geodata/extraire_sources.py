@@ -217,7 +217,7 @@ class Lecteur(osmium.SimpleHandler):
 # Extraits livrés sans fiche propre (D-GD-17, D-GD-18 « priorité HCP ») : ils servent de contours ou de points aux couches
 # du HCP (`preparer_hcp.py`), qui portent les noms et les valeurs du HCP ; leur fiche est consignée dans
 # `donnees/osm-extraits.json` (licence, empreinte), lue par `preparer_hcp.py`, jamais importée comme couche.
-# Administrations, santé et gares (D-GD-44) : entrées de la base des services publics fusionnée avec le MTNRA
+# Administrations, santé et gares (D-GD-45) : entrées de la base des services publics fusionnée avec le MTNRA
 # (`preparer_services_publics.py`), sans couche propre, pour qu'aucun objet n'existe en double dans le catalogue.
 SANS_FICHE = {"osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes",
               "osm-mar-administrations", "osm-mar-etablissements-sante", "osm-mar-gares"}

@@ -112,8 +112,8 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (`adresse-vue.ts`, 1 test) ; tableau de bord non filtré, avis affiché. Scénario API rejoué en HTTP sur l'API locale :
   7/7 ; recette `geodata.mjs` sur PostGIS 16 local : 215 contrôles conformes (6 nouveaux) ; test API sur base
   (`geodata.test.ts`, cas étendu) en CI seulement.
-- Services publics du MTNRA (D-GD-42, branche `ccr-202174a8-jkf2k9`) : `scripts/geodata/preparer_geoportail.py`
-  (empreinte de la source contrôlée), fiches régionales et leurs GeoJSON (fusionnées depuis avec OSM, voir D-GD-44) ; 17 473 points
+- Services publics du MTNRA (D-GD-43, branche `ccr-202174a8-jkf2k9`) : `scripts/geodata/preparer_geoportail.py`
+  (empreinte de la source contrôlée), fiches régionales et leurs GeoJSON (fusionnées depuis avec OSM, voir D-GD-45) ; 17 473 points
   (16 753 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point et 4 lignes strictement identiques à une autre écartées, 16 paires « même nom, même point » marquées `doublon_probable`. Test
   `geodata-sources.test.ts` (validation de chaque fiche + cas MTNRA). Import réel sur PostGIS 16 local
   (`geodata-reference.ts --livraison`) : Casablanca-Settat 4 670 objets, Souss-Massa 1 017, publiés.
@@ -124,16 +124,16 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   PostGIS 16 local : 33 189 douars, tous avec compléments, secret statistique gardé vide. Suite complète : 1 111 tests
   API et 1 326 tests web réussis ; les 17 fichiers sur base attestée (DB-3) ne tournent qu'en CI ; recette
   `geodata.mjs` non rejouée localement.
-- Services publics fusionnés (D-GD-44) : `preparer_services_publics.py` (renommé depuis `preparer_geoportail.py`) fusionne
+- Services publics fusionnés (D-GD-45) : `preparer_services_publics.py` (renommé depuis `preparer_geoportail.py`) fusionne
   le MTNRA et les 3 extraits OSM (passés en `osm-extraits.json`) : 171 objets OSM fusionnés, 30 marqués
   `doublon_probable`, 2 324 ajoutés (93 par contour le plus proche) → 19 797 objets, 13 couches. Paires relues à la
   main ; test « chaque objet OSM exactement une fois ». Vérifié sur PostGIS 16 local (`--fiche toutes --livraison` après
   import des anciennes couches OSM) : 13 couches publiées (19 797 objets), 3 couches OSM « retirée ».
-- Alignement des contours (D-GD-43, même branche) : contrôle indépendant des fichiers livrés (0 sommet hors des
+- Alignement des contours (D-GD-44, même branche) : contrôle indépendant des fichiers livrés (0 sommet hors des
   communes, parent = union exacte, construction reproductible à l'octet) ; `construire_niveaux.py` marque les
   contours partiels (13 provinces, 8 régions) et écrit la mention de provenance ; alerte de version antérieure pour
   une couche de limites (`consultation.tsx`) ; test « contours des niveaux » ; captures avant / après
-  (`captures/d-gd-43/`, `scripts/geodata/rendre_contours.py`). Préproduction non consultée (aucun accès).
+  (`captures/d-gd-44/`, `scripts/geodata/rendre_contours.py`). Préproduction non consultée (aucun accès).
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
   une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40

@@ -139,7 +139,7 @@ function lireAnnexeJson(a: AnnexeFichier | undefined, chemin: string, nom: strin
   return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, contenu: JSON.parse(octets.toString("utf8")) };
 }
 
-/** Colonnes de base de l'annexe des douars (lot E) ; toute autre colonne est un complément (D-GD-42). */
+/** Colonnes de base de l'annexe des douars (lot E) ; toute autre colonne est un complément (D-GD-43). */
 const COLONNES_DOUAR = ["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"];
 
 /** Douars en annexe (TSV : code, commune, fraction, nom, type, ménages, population, %, compléments) ; « X » = secret statistique. */
@@ -212,7 +212,7 @@ function fichesLivrees(): string[] {
 /**
  * Retraits déclarés (D-GD-23) : sources de référence remplacées, retirées du catalogue avec leur motif — seulement quand
  * leur remplaçante (`remplacePar`) a une version de référence publiée ; sinon l'ancienne source reste consultable. Une source
- * remplacée par plusieurs (`remplacePar` en liste, D-GD-44 : couches régionales du MTNRA) n'est retirée que lorsque
+ * remplacée par plusieurs (`remplacePar` en liste, D-GD-45 : couches régionales du MTNRA) n'est retirée que lorsque
  * toutes ont une version publiée.
  */
 interface RetraitDeclare { cle: string; remplacePar: string | string[]; motif: string; decision: string }

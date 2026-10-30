@@ -727,7 +727,7 @@ def main():
         ecrire(a.sortie, cle, titre, niveau, entites, desc, sources, lignes[niveau], part, declarations, valeurs, par_code, empreinte_arr)
         print(f"{cle} : {part}")
     if a.douars:
-        # Annexe de la fiche des communes (lot E, D-GD-42) : douars rattachés à leur commune rurale par le code (D-GD-20, D-GD-21).
+        # Annexe de la fiche des communes (lot E, D-GD-43) : douars rattachés à leur commune rurale par le code (D-GD-20, D-GD-21).
         annexer(a.sortie, a.douars, [c for (n, c) in hcp if n == "commune"])
     # Niveaux supérieurs construits à partir des communes (D-GD-33) : union par code HCP, topologie partagée simplifiée
     # une seule fois ; réécrit les trois GeoJSON, leurs fiches, les tables des provinces et des régions, et le rapport.

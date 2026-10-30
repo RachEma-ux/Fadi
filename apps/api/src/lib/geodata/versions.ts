@@ -50,7 +50,7 @@ export interface LigneDouar {
   readonly code: string; readonly commune: string; readonly fraction: string; readonly nom: string; readonly type: "groupé" | "éclaté" | "dispersé" | null;
   readonly menages: number | null; readonly population: number | null; readonly masculin: number | null; readonly feminin: number | null;
   readonly moins_15: number | null; readonly de_15_a_59: number | null; readonly plus_60: number | null; readonly secret: boolean;
-  /** Compléments (D-GD-42) : colonne de l'annexe → nombre publié, null si absent ou secret. */
+  /** Compléments (D-GD-43) : colonne de l'annexe → nombre publié, null si absent ou secret. */
   readonly complements?: Readonly<Record<string, number | null>>;
 }
 

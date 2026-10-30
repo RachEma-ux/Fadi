@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 Base des services publics du Maroc : MTNRA (maps.service-public.ma, data.gov.ma, mai 2022, ODbL) **fusionné** avec
-OpenStreetMap (administrations, hôpitaux et cliniques, gares ; ODbL) — script de préparation GeoData (D-GD-42, D-GD-44),
+OpenStreetMap (administrations, hôpitaux et cliniques, gares ; ODbL) — script de préparation GeoData (D-GD-43, D-GD-45),
 hors application :
 
     python3 -I scripts/geodata/preparer_services_publics.py --excel donnees-geoportail-open-data-2022.xlsx [--sortie <dossier>]
 
-Fusion sans doublon (D-GD-44) : chaque objet n'existe qu'une fois. Un objet OSM est **apparié** à un point du MTNRA quand,
+Fusion sans doublon (D-GD-45) : chaque objet n'existe qu'une fois. Un objet OSM est **apparié** à un point du MTNRA quand,
 à moins de 150 m, ce point est de la même famille (gare, santé, administration, reconnue par des mots du nom du MTNRA), du
 même échelon (régional, provincial, central, quand les deux noms le disent) et que les deux noms partagent au moins la
 moitié de leurs mots distinctifs (Jaccard ≥ 0,5, hors mots vides, noms de lieux et mots génériques comme « clinique »,
@@ -30,7 +30,7 @@ HCP sans contour OSM, D-GD-33 : Agadir, Al Hoceima…) : un point hors de tout c
 publiée par la source — d'abord la province du RGPH de même nom (`donnees/hcp-rgph2024-population-provinces.geojson`,
 nom comparé sans « Province / Préfecture de », accents, casse ni ponctuation), sinon la région où tombent tous les points
 de la même province de la source situés dans un contour (propriété `rattachement` : contour, province-hcp,
-province-source) ; sinon il est écarté et compté dans la fiche. Rapprochement avec le découpage du RGPH (D-GD-42),
+province-source) ; sinon il est écarté et compté dans la fiche. Rapprochement avec le découpage du RGPH (D-GD-43),
 consigné sur chaque objet sans rien corriger : `province_hcp` (code de la province du RGPH de même nom que la province
 publiée, absent si aucune) et `concordance` (`concorde` : cette province est dans la région de la couche ; `discorde` :
 elle est dans une autre région ; `non-appariee` : aucune province du RGPH de ce nom). Le rapprochement par commune
@@ -221,7 +221,7 @@ def lire_source(chemin):
 
 
 def fusionner_osm(regions):
-    """Ajoute aux régions les objets OSM non appariés et rattache les appariés à leur point du MTNRA (D-GD-44)."""
+    """Ajoute aux régions les objets OSM non appariés et rattache les appariés à leur point du MTNRA (D-GD-45)."""
     extraits = json.load(open(os.path.join(FICHES, "donnees", "osm-extraits.json"), encoding="utf-8"))
     # Noms de lieux (villes, communes, provinces du MTNRA ; communes, provinces, régions du RGPH) : jamais une preuve
     # d'identité entre deux services d'une même ville.
@@ -414,7 +414,7 @@ def main():
                f"contours sans province rattachable (lignes {', '.join(map(str, hors_contour)) or 'aucune'}) écartés, jamais déplacés ; "
                f"rapprochement avec les provinces du RGPH (propriété « concordance », toutes régions) : {concordance['concorde']} concordent, "
                f"{concordance['discorde']} discordent, {concordance['non-appariee']} sans province du RGPH de même nom")
-    osm_txt = ("Fusion avec OpenStreetMap (D-GD-44, aucun objet en double) : extraits « administrations », « hôpitaux et cliniques » et "
+    osm_txt = ("Fusion avec OpenStreetMap (D-GD-45, aucun objet en double) : extraits « administrations », « hôpitaux et cliniques » et "
                "« gares » (" + ", ".join(f"{k} SHA-256 {e}" for k, e in fusion["empreintes"].items()) + ", fiches dans donnees/osm-extraits.json) ; "
                f"{fusion['apparies']} objets OSM appariés à un point du MTNRA (moins de {RAYON_M} m, même famille, même échelon, natures de service "
                "compatibles, au moins la moitié des mots distinctifs en commun, ou nom français ou arabe identique) et fusionnés dans ce point (source « mtnra+osm », référence « osm ») ; "
