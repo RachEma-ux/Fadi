@@ -93,6 +93,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
   recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
   sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39) : `geodata-model/src/tableau-croise.ts` (6 tests), palette partagée
+  `--gd-cat-*` (tableaux, légendes des graphiques, impression), contrôle de cohérence ; vérifié sur 4 entités réelles
+  (commune urbaine d'Assilah, commune rurale de Boutferda, préfecture de Tanger-Assilah, région de Tanger-Tétouan-Al
+  Hoceima), bureau et Pixel 7, sans défilement horizontal ; captures avant / après dans `captures/d-gd-39/` ; recette
+  `geodata.mjs` 199 contrôles (3 nouveaux, jeu synthétique des régions ventilé Milieu × Sexe).
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, `BarreTerritoriale`
   réutilisée telle quelle dans un panneau flottant, un seul panneau à la fois (`panneauMini`) ; recette `geodata.mjs`
   194 contrôles (8 nouveaux), vérifié bureau 1885 × 893 et Pixel 7 sur données HCP réelles.
