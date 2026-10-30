@@ -129,6 +129,13 @@ d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, 
   destinataire ne voit que les couches qu'il peut déjà consulter.
 - **Zoom** affiché en permanence en bas à gauche de la carte.
 
+## Zone d'étude qui filtre (D-GD-41)
+
+Dans **Études**, « Filtrer par cette zone » limite la carte, la table attributaire et la synthèse de la vue aux objets
+qui recoupent la zone ; une puce « Zone d'étude : nom × » s'affiche en haut de la carte, Alt+Z retire ou rétablit le
+filtre, et la zone est écrite dans l'adresse de la vue. Le tableau de bord n'est pas filtré (territoires entiers) : pour
+une zone libre, « Analyser » donne l'analyse figée.
+
 ## Fil de navigation administrative dans la mini-barre (D-GD-38)
 
 La mini-barre porte, de haut en bas : **Loupe**, **Enregistrer**, **≡** (« Navigation administrative ») et **Fond**. ≡

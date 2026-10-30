@@ -322,7 +322,9 @@ function Concepts({ pays, langues }: { pays: string; langues: Record<string, num
 /** Familles désignées par les blocs d'un onglet (pour écarter leur thème de l'onglet Tableaux). */
 const famillesDe = (e: Expression): string[] => ("indicateur" in e ? [e.indicateur.famille] : "somme" in e ? e.somme.map((s) => s.famille) : "ratio" in e ? [...famillesDe(e.ratio[0]), ...famillesDe(e.ratio[1])] : []);
 
-export function TableauDeBord({ onglet, paysCourant, paysPret, zoneCarte, visible }: { onglet: OngletBord; paysCourant: string | null; /** Découpage territorial lu (pays courant connu, ou aucun). */ paysPret: boolean; zoneCarte: ZoneCarte | null; visible: boolean }) {
+export function TableauDeBord({ onglet, paysCourant, paysPret, zoneCarte, visible, zoneEtude = null }: { onglet: OngletBord; paysCourant: string | null; /** Découpage territorial lu (pays courant connu, ou aucun). */ paysPret: boolean; zoneCarte: ZoneCarte | null; visible: boolean;
+  /** Zone d'étude qui filtre la carte (D-GD-41) : signalée, jamais agrégée ici (les chiffres portent sur des territoires entiers). */
+  zoneEtude?: string | null }) {
   const [bord, setBord] = useState<{ recu: TableauDeBordRecu; definition: DefinitionTableauDeBord } | null>(null);
   const [erreurBord, setErreurBord] = useState<string | null>(null);
   const [niveaux, setNiveaux] = useState<PaysTerritorial["niveaux"]>([]);
@@ -402,6 +404,7 @@ export function TableauDeBord({ onglet, paysCourant, paysPret, zoneCarte, visibl
   return (
     <div className="gd-tableau-bord" hidden={!visible} data-gd-tableau-bord={onglet} data-gd-zone={resolue ? `${resolue.chaine.length}:${resolue.code}` : ""} data-gd-zone-nom={nomZone}>
       {erreurBord && <p role="alert" className="gd-alerte" data-gd-bord-erreur>{erreurBord}</p>}
+      {zoneEtude && onglet !== "concepts" && <p className="gd-discret" data-gd-bord-zone-etude><span>Le filtre de zone d'étude</span> <span translate="no">{`« ${zoneEtude} »`}</span> <span>ne s'applique pas ici : ces chiffres portent sur des territoires entiers. Pour une zone libre, utilisez « Analyser » dans Études.</span></p>}
       {!bord && !erreurBord && <p role="status">Chargement du tableau de bord…</p>}
       {bord && onglet !== "concepts" && (
         <FiltreZone pays={bord.recu.pays} niveaux={niveaux} nomNational={bord.recu.zone.nom} chaine={resolue?.chaine ?? []} onChoisir={choisirZone} compteur={compteur} />

@@ -462,6 +462,21 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         « Partager » (droits, destinataires) reste à spécifier (GEO-PARTAGE-CARTE).
      4. **Zoom courant affiché** en permanence à côté de l'échelle (déjà présente).
 
+   - D-GD-41 (30 octobre 2026) — **lot « Zone d'étude qui filtre »** (demande du maître d'ouvrage, proposition P1-4 de
+     `ANALYSE-FEENWAY.md`) :
+     1. Une zone d'étude enregistrée (Études) peut devenir **le filtre de zone** : « Filtrer par cette zone » dans Études,
+        puce « Zone d'étude : nom × » en haut de la carte, Alt+Z (retire le filtre, ou rétablit la dernière zone filtrée,
+        sinon la plus récente). Une seule zone à la fois.
+     2. Le filtre retient les objets qui **recoupent** la zone (intersection sur la géométrie de référence, en base) :
+        carte (filtre de codes combiné aux autres filtres), table attributaire (`/couches/:id/table?zone=`) et synthèse de
+        la vue (D-GD-40 : « N dans la vue sur T », T = objets de la zone). Codes lus par `/couches/:id/vue?zone=` (au plus
+        5 000 par couche ; au-delà, la puce dit « partiel »).
+     3. Le **tableau de bord** n'est pas filtré : ses chiffres portent sur des territoires entiers et une zone libre en
+        recoupe des parties ; il le signale et renvoie à « Analyser » (analyse figée des Études), seule agrégation sur une
+        zone libre, avec sa méthode écrite. Aucune valeur n'est répartie au prorata.
+     4. La zone filtrée s'écrit dans l'adresse de la vue (`z=`) ; une zone d'un autre espace ou archivée répond 404 et le
+        filtre est retiré avec un avis.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

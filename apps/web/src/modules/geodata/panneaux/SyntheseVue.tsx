@@ -21,13 +21,14 @@ export interface LigneSynthese {
 const val = (x: number | null, unite: string | null) => (x === null ? <span>non évaluée</span> : <span translate="no">{abregerValeur(x, unite)}</span>);
 
 /** `decalee` : panneau Données ouvert à gauche ; `haute` : mini-carte affichée dessous. */
-export function SyntheseVue(p: { lignes: readonly LigneSynthese[]; zoom: number; onFermer(): void; decalee: boolean; haute: boolean }) {
+export function SyntheseVue(p: { lignes: readonly LigneSynthese[]; zoom: number; onFermer(): void; decalee: boolean; haute: boolean; /** Zone d'étude qui filtre (D-GD-41). */ zone?: string | null }) {
   return (
     <section className={`gd-synthese${p.decalee ? " gd-synthese-decalee" : ""}${p.haute ? " gd-synthese-haute" : ""}`} aria-label="Synthèse de la vue" data-gd-synthese>
       <div className="gd-ligne-titre">
         <h2>Synthèse de la vue</h2>
         <button type="button" onClick={p.onFermer} aria-label="Fermer la synthèse de la vue" title="Fermer (Alt+V)">×</button>
       </div>
+      {p.zone && <p className="gd-discret" data-gd-synthese-zone><span>Filtre de zone d'étude :</span> <span translate="no">{p.zone}</span></p>}
       {!p.lignes.length && <p className="gd-etat" data-gd-synthese-vide>Aucune couche d'objets visible : ajoutez-en depuis le Catalogue.</p>}
       <ul className="gd-liste">
         {p.lignes.map((l) => (

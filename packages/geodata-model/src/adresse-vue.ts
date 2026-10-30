@@ -5,7 +5,8 @@
  * privée d'un autre espace reste refusée). Logique pure.
  *
  * Forme : `v=lon,lat,zoom,cap` ; `carte=<id>` (carte enregistrée ouverte) ; `c=<couche>~<version>[~m][~g],…` (couches,
- * de bas en haut ; `m` masquée, `g` points regroupés) ; `i=<clé de l'indicateur actif en JSON>`.
+ * de bas en haut ; `m` masquée, `g` points regroupés) ; `i=<clé de l'indicateur actif en JSON>` ; `z=<zone d'étude qui
+ * filtre>` (D-GD-41 ; une zone est propre à son espace : ailleurs, elle est refusée par le serveur et ignorée).
  */
 import type { Camera } from "./composition.js";
 import { MILIEUX, SEXES, type Milieu, type Sexe } from "./dimensions.js";
@@ -23,6 +24,8 @@ export interface EtatAdresse {
   readonly carteId: string | null;
   readonly couches: readonly CoucheAdresse[];
   readonly indicateur: CleIndicateur | null;
+  /** Zone d'étude qui filtre la carte, la table et la synthèse (D-GD-41) ; absente = aucun filtre de zone. */
+  readonly zoneId?: string | null;
 }
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -35,6 +38,7 @@ export function ecrireAdresseVue(e: EtatAdresse): string {
   if (e.carteId) p.set("carte", e.carteId);
   if (e.couches.length) p.set("c", e.couches.map((k) => [k.coucheId, k.versionId, ...(k.visible ? [] : ["m"]), ...(k.regrouper ? ["g"] : [])].join("~")).join(","));
   if (e.indicateur) p.set("i", JSON.stringify(e.indicateur));
+  if (e.zoneId) p.set("z", e.zoneId);
   return p.toString();
 }
 
@@ -79,6 +83,8 @@ export function lireAdresseVue(fragment: string): EtatAdresse | null {
   const carteId = carte && ID.test(carte) ? carte : null;
   const couches = lireCouches(p.get("c"));
   const indicateur = lireIndicateur(p.get("i"));
-  if (!camera && !carteId && !couches.length && !indicateur) return null;
-  return { camera, carteId, couches, indicateur };
+  const z = p.get("z");
+  const zoneId = z && ID.test(z) ? z : null;
+  if (!camera && !carteId && !couches.length && !indicateur && !zoneId) return null;
+  return { camera, carteId, couches, indicateur, ...(zoneId ? { zoneId } : {}) };
 }

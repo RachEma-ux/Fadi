@@ -296,3 +296,8 @@
 .geodata-page .gd-part{display:block;height:3px;border-radius:2px;margin-top:2px;margin-left:auto;opacity:.85}
 .geodata-page .gd-croise-bloc .gd-alerte{font-size:.82rem;margin:4px 0 0}
 @media (max-width:760px){.geodata-page .gd-croise{font-size:.8rem}.geodata-page .gd-croise th,.geodata-page .gd-croise td{padding:3px 4px}}
+/* Zone d'étude qui filtre (D-GD-41) : puce en haut au centre de la carte, × pour retirer le filtre. */
+.geodata-page .gd-puce-zone{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:.35em;max-width:min(420px,70%);background:#fff7ed;border:1px solid #c77b35;border-radius:999px;padding:3px 4px 3px 12px;box-shadow:0 2px 8px rgba(23,59,67,.12);font-size:.86rem;white-space:nowrap;overflow:hidden}
+.geodata-page .gd-puce-zone span[translate="no"]{overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.geodata-page .gd-puce-zone button{border:0;background:transparent;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:1rem;line-height:1;color:inherit}
+.geodata-page .gd-puce-zone button:hover,.geodata-page .gd-puce-zone button:focus-visible{background:#fde3c8}

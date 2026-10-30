@@ -30,4 +30,11 @@ describe("état de la carte dans l'adresse (D-GD-40)", () => {
     const lu = lireAdresseVue(`#carte=${encodeURIComponent("https://x")}&c=${encodeURIComponent("a~https://k?key=1")}`);
     expect(lu).toBeNull();
   });
+  it("zone d'étude qui filtre (D-GD-41) : aller-retour, identifiant contrôlé", () => {
+    const f = ecrireAdresseVue({ camera: null, carteId: null, couches: [], indicateur: null, zoneId: "gdzone_1" });
+    expect(f).toBe("z=gdzone_1");
+    expect(lireAdresseVue(`#${f}`)).toEqual({ camera: null, carteId: null, couches: [], indicateur: null, zoneId: "gdzone_1" });
+    expect(lireAdresseVue("#z=a/b")).toBeNull();
+    expect("zoneId" in lireAdresseVue("#v=1,2,3,0")!).toBe(false);
+  });
 });

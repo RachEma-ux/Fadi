@@ -675,6 +675,31 @@ await zone.locator("[data-gd-analyser]").click();
 const analyse = page.locator("[data-gd-analyse]").first();
 await analyse.waitFor();
 check("analyse : superficie et unités intersectées, limites déclarées", /unité\(s\) intersectée\(s\)/.test((await analyse.textContent()) ?? "") && ((await analyse.textContent()) ?? "").includes("ni population"));
+// --- Zone d'étude qui filtre (D-GD-41) : bouton des Études, puce sur la carte, table restreinte, adresse, Alt+Z ---
+const boutonFiltreZone = zone.locator("[data-gd-filtrer-zone]");
+check("zone qui filtre : bouton « Filtrer par cette zone » (Alt+Z) sur la zone d'étude", ((await boutonFiltreZone.textContent()) ?? "").trim() === "Filtrer par cette zone" && (await boutonFiltreZone.getAttribute("aria-keyshortcuts")) === "Alt+Z" && (await boutonFiltreZone.getAttribute("aria-pressed")) === "false");
+await boutonFiltreZone.click();
+const puceZone = page.locator("[data-gd-puce-zone]");
+await puceZone.waitFor({ timeout: 10_000 }).catch(() => undefined);
+await page.waitForTimeout(300);
+check("zone qui filtre : puce « Zone d'étude : Zone de recette × » sur la carte, bouton pressé, zone dans l'adresse",
+  ((await puceZone.textContent().catch(() => "")) ?? "").includes("Zone de recette") && (await boutonFiltreZone.getAttribute("aria-pressed")) === "true" && new URLSearchParams(new URL(page.url()).hash.slice(1)).get("z") === (await zone.getAttribute("data-gd-zone")), page.url());
+await onglet(page, "couches");
+await page.locator("[data-gd-couche-active]").filter({ hasText: "Unités synthétiques (test)" }).first().getByRole("button", { name: "Table" }).click();
+await page.locator("[data-gd-table-zone]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+await page.waitForFunction(() => document.querySelectorAll("[data-gd-table] [data-gd-ligne]").length === 2, null, { timeout: 10_000 }).catch(() => undefined);
+const lignesZone = await page.locator("[data-gd-table] [data-gd-ligne]").evaluateAll((ls) => ls.map((l) => l.getAttribute("data-gd-ligne")).sort());
+check("zone qui filtre : la table ne garde que les unités qui recoupent la zone (001, 002), et le dit", lignesZone.join(",") === "001,002" && (await page.locator("[data-gd-table-zone]").count()) === 1, lignesZone.join(","));
+await page.screenshot({ path: join(OUT, "05b-zone-filtre.png") });
+await page.locator("[data-gd-table]").getByRole("button", { name: "Fermer la table" }).click();
+await page.locator("body").press("Alt+z");
+check("zone qui filtre : Alt+Z retire le filtre (puce, adresse)", (await puceZone.count()) === 0 && !new URLSearchParams(new URL(page.url()).hash.slice(1)).has("z"));
+await page.locator("body").press("Alt+z");
+await puceZone.waitFor({ timeout: 5000 }).catch(() => undefined);
+check("zone qui filtre : Alt+Z rétablit la dernière zone filtrée", ((await puceZone.textContent().catch(() => "")) ?? "").includes("Zone de recette"));
+await page.locator("[data-gd-retirer-zone]").click();
+check("zone qui filtre : × de la puce retire le filtre", (await puceZone.count()) === 0);
+await volet(page, "etudes");
 // Mesure indicative au tracé.
 // Outil choisi depuis la barre verticale ; le panneau Données est refermé pour dégager la carte.
 if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
