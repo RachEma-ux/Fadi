@@ -15,6 +15,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Niveaux infra-communaux (D-GD-42) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
+  après #356). Après fusion et déploiement : lancer **une fois** sur le VPS
+  `node apps/api/dist/geodata-reference.js --decoupage MA` (jamais au démarrage ; relancé, il ne fait rien). À arbitrer :
+  Casablanca compte 5 niveaux selon le fichier HCP (la demande en comptait 4). Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
 - PR #307 fusionnée (outils d'exploitation dans l'image, dossier `RELEASE-V1.md`).
 - Préproduction : rôles et geoBoundaries ADM1/ADM2 importés le 25 octobre 2026 ; recette d'usage constatée par le maître
   d'ouvrage (carte, fiche, recherche, enregistrement, export).

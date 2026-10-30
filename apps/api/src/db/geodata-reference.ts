@@ -8,6 +8,9 @@
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
  *
+ * `--decoupage [pays]` (D-GD-42) : import **unique** du découpage administratif (niveaux, entités, liens parent → enfant)
+ * depuis `decoupage/<pays>.json`, lancé une fois par l'exploitant sur le serveur — jamais au démarrage de l'API ; relancé
+ * sur le même fichier, il ne fait rien ; bilan affiché (ajoutées, modifiées, retirées, sans parent).
  * `--archiver` (seul, ou avec `--fiche toutes`) copie d'abord en base tous les fichiers livrés, tels quels (`geodata_fichiers`,
  * D-GD-29 : l'interface ne garde aucune donnée) ; aucun compte n'est requis.
  * `--livraison` (D-GD-29, à la place de `--preparateur` / `--publier-par`) : les fiches livrées sont préparées et publiées
@@ -42,8 +45,9 @@ import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { empreinteAttendue, suiteAnnexes } from "../lib/geodata/empreinte-fiche.js";
 import { lireConcepts } from "../lib/geodata/annexes.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
-import { chargerTerritoires } from "../lib/geodata/territoires.js";
+import { chargerTerritoires, NiveauAbsent } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
+import { importerDecoupage, ligneBilanDecoupage } from "../lib/geodata/decoupage.js";
 
 interface AnnexeFichier { fichier: string; empreinte: string; description?: string }
 
@@ -88,7 +92,7 @@ async function assurerTerritoires(ex: Pool | PoolClient, fiche: FicheSource, emp
   const d = validerDeclarationTerritoire(fiche.territoire);
   if (!d.ok) throw new Error(`Fiche ${fiche.cle} : ${d.erreurs.join(" ; ")}`);
   const [v] = (await ex.query("SELECT v.id FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL AND v.etat = 'publiee'", [fiche.cle, empreinte])).rows as { id: string }[];
-  if (!v) { console.log(`Découpage territorial ${d.declaration.pays} (rang ${d.declaration.rang}) : version non publiée, rien de chargé.`); return; }
+  if (!v) { console.log(`Découpage territorial ${d.declaration.pays} (${fiche.cle}) : version non publiée, rien de chargé.`); return; }
   // Une transaction propre (client dédié si l'appelant donne un pool) : le remplacement du rang et le recalcul des parents
   // sont atomiques ; en cas d'échec, l'ancien découpage reste servi.
   const client = ex instanceof Pool ? await ex.connect() : ex;
@@ -96,9 +100,11 @@ async function assurerTerritoires(ex: Pool | PoolClient, fiche: FicheSource, emp
     await client.query("BEGIN");
     const b = await chargerTerritoires(client, v.id, d.declaration);
     await client.query("COMMIT");
-    console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${d.declaration.niveau.pluriel}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
+    console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${b.niveau}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
+    // Découpage pas encore importé (import unique, D-GD-42) : la couche reste publiée, ses unités attendent cet import.
+    if (e instanceof NiveauAbsent) { console.log(`Découpage territorial ${d.declaration.pays} (${fiche.cle}) : ${e.message}`); return; }
     throw e;
   } finally {
     if (ex instanceof Pool) (client as PoolClient).release();
@@ -270,6 +276,38 @@ async function archiver() {
   }
 }
 
+/**
+ * `--decoupage [pays]` (D-GD-42) : import **unique** du découpage administratif en base, lancé une fois par l'exploitant
+ * sur le serveur (jamais au démarrage de l'API). Relancé sur le même fichier : « déjà importé », rien n'est fait ; un
+ * nouveau fichier met à jour les entités par leur code, sans doublon, et affiche le bilan. Les unités du découpage
+ * territorial déjà publiées sont ensuite (re)chargées depuis leurs fiches, pour que la barre suive sans redémarrage.
+ */
+async function decoupage(pays: string | undefined, dossierDonne: string | undefined) {
+  const dossier = dossierDonne ?? dossierFiches();
+  const dossierDecoupage = join(dossier, "decoupage");
+  const declarations = existsSync(dossierDecoupage)
+    ? readdirSync(dossierDecoupage).filter((f) => /^[a-z]{2}\.json$/.test(f) && (!pays || f === `${pays.toLowerCase()}.json`)).sort()
+    : [];
+  if (!declarations.length) throw new Error(`Aucune déclaration de découpage${pays ? ` pour ${pays}` : ""} (decoupage/<pays>.json).`);
+  const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
+  const client = await pool.connect();
+  try {
+    for (const f of declarations) console.log(ligneBilanDecoupage(await importerDecoupage(client, dossier, `decoupage/${f}`)));
+  } finally {
+    client.release();
+  }
+  try {
+    for (const chemin of dossierDonne ? readdirSync(dossier).filter((f) => f.endsWith(".json")).map((f) => join(dossier, f)) : fichesLivrees()) {
+      const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
+      if (fiche.territoire === undefined) continue;
+      try { await assurerTerritoires(pool, fiche, empreinteAttendue(fiche)); }
+      catch (e) { console.error(`Découpage territorial non chargé (${fiche.cle}) : ${e instanceof Error ? e.message : e}`); }
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
 /** `--livraison` : préparation et publication par la chaîne de livraison, sans compte (D-GD-29). */
 const LIVRAISON = process.argv.includes("--livraison");
 /** Publication demandée : par un compte (`--publier-par`) ou par la livraison. */
@@ -278,6 +316,12 @@ const publicationDemandee = () => LIVRAISON || argument("publier-par") !== undef
 async function main() {
   const argFiche = argument("fiche");
   const preparateur = argument("preparateur") ?? null;
+  if (process.argv.includes("--decoupage")) {
+    const p = argument("decoupage");
+    // `--dossier <chemin>` : autre dossier de sources (jeu synthétique de la recette) ; sinon les fiches livrées.
+    await decoupage(p && /^[A-Za-z]{2}$/.test(p) ? p.toUpperCase() : undefined, argument("dossier"));
+    return;
+  }
   if (process.argv.includes("--archiver")) {
     await archiver();
     if (!argFiche) return;

@@ -4,7 +4,7 @@
   "producteur": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
   "theme": "test",
   "couverture": "Territoire fictif (carrés près de 31° N, 8° O)",
-  "description": "Deux régions fictives. Jeu SYNTHÉTIQUE pour la recette de la navigation par niveaux (codes au format du HCP : la province 1001 relève de la région 1). Il ne représente aucun territoire ni aucune statistique réelle.",
+  "description": "Deux régions fictives. Jeu SYNTHÉTIQUE pour la recette de la navigation par niveaux (découpage synthétique en données, `decoupage/zz-entites.csv` : la province 1001 relève de la région 1). Il ne représente aucun territoire ni aucune statistique réelle.",
   "version": {
     "libelle": "Jeu synthétique v1",
     "url": null,
@@ -188,11 +188,6 @@
   "territoire": {
     "pays": "ZZ",
     "nomPays": "Pays synthétique (test)",
-    "rang": 1,
-    "niveau": {
-      "singulier": "Région",
-      "pluriel": "Régions"
-    },
-    "parent": "codes-hcp"
+    "niveau": "region"
   }
 }
