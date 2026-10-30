@@ -129,6 +129,23 @@ d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, 
   destinataire ne voit que les couches qu'il peut déjà consulter.
 - **Zoom** affiché en permanence en bas à gauche de la carte.
 
+## Administrations et services publics du MTNRA (D-GD-42)
+
+Source : « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma »
+(Ministère de la Transition numérique et de la Réforme de l'Administration, data.gov.ma, données de mai 2022, ODbL),
+fichier `donnees-geoportail-open-data-2022.xlsx` (SHA-256 `7d1a4d30…a6f920`, 17 499 lignes, 17 477 points). La source
+n'a ni type ni région et dépasse la borne de 5 000 objets d'une couche : elle est livrée en **12 couches, une par région
+du RGPH 2024** (`mtnra-services-publics-2022-<région>`, catégorie « Équipements et services »). Rattachement d'un point
+(propriété `rattachement`) : `contour` (dans le contour régional livré), sinon `province-hcp` (province publiée = province
+du RGPH de même nom) ou `province-source` (région de tous les points de la même province situés dans un contour) ;
+22 lignes sans point lisible sont écartées et listées dans les fiches. Champs repris tels que publiés (français et
+arabe), jamais corrigés. Régénération (fichier hors dépôt, empreinte contrôlée ; une copie réenregistrée par un tableur
+est refusée) :
+
+```sh
+python3 -I scripts/geodata/preparer_geoportail.py --excel donnees-geoportail-open-data-2022.xlsx
+```
+
 ## Zone d'étude qui filtre (D-GD-41)
 
 Dans **Études**, « Filtrer par cette zone » limite la carte, la table attributaire et la synthèse de la vue aux objets

@@ -112,6 +112,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (`adresse-vue.ts`, 1 test) ; tableau de bord non filtré, avis affiché. Scénario API rejoué en HTTP sur l'API locale :
   7/7 ; recette `geodata.mjs` sur PostGIS 16 local : 215 contrôles conformes (6 nouveaux) ; test API sur base
   (`geodata.test.ts`, cas étendu) en CI seulement.
+- Services publics du MTNRA (D-GD-42, branche `ccr-202174a8-jkf2k9`) : `scripts/geodata/preparer_geoportail.py`
+  (empreinte de la source contrôlée), 12 fiches `mtnra-services-publics-2022-*` et leurs GeoJSON ; 17 477 points
+  (16 757 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point écartées. Test
+  `geodata-sources.test.ts` (validation de chaque fiche + cas MTNRA). Import réel sur PostGIS 16 local
+  (`geodata-reference.ts --livraison`) : Casablanca-Settat 4 670 objets, Souss-Massa 1 017, publiés.
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
   une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40

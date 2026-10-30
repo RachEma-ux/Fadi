@@ -477,6 +477,22 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. La zone filtrée s'écrit dans l'adresse de la vue (`z=`) ; une zone d'un autre espace ou archivée répond 404 et le
         filtre est retiré avec un avis.
 
+   - D-GD-42 (30 octobre 2026) — **données « géoportail » du MTNRA** (fichiers fournis par le maître d'ouvrage) :
+     1. `donnees-geoportail-open-data-2022.xlsx` est la ressource publiée sur data.gov.ma par le MTNRA (jeu
+        « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma », mai 2022,
+        ODbL) : empreinte du fichier fourni identique au téléchargement officiel (`7d1a4d30…a6f920`). La seconde copie
+        fournie (`d1045bb5…`) a été réenregistrée par un tableur le 30 octobre 2026 (caractères `\x92` / `\x96` des
+        adresses réécrits `_x0092_` / `_x0096_`) : non retenue, le script la refuse.
+     2. Une couche par région du RGPH 2024 (borne de 5 000 objets ; aucune colonne de type : aucun classement deviné).
+        Rattachement par le contour régional livré, sinon par la province publiée (province du RGPH de même nom, sinon
+        région des autres points de la même province) ; rattachement écrit sur chaque objet. Contrôle : la province
+        publiée concorde avec la région retenue pour 17 360 points ; 4 discordances (coordonnées publiées dans une autre
+        région) gardées telles quelles ; 113 points sans province du RGPH de même nom (M'diq-Fnidq, 2 vides).
+     3. `hcp-douars2024-1.xlsx` est le fichier « Population et ménages par douars » déjà intégré (même empreinte
+        `b04fa4f4…ae1b6`, annexe des douars de la fiche des communes, lot E) : rien à importer de nouveau. Ses colonnes non
+        reprises (nationalité, état civil, état matrimonial ; feuille des ménages : type de logement, distances aux
+        équipements) restent hors de la base tant que le maître d'ouvrage ne demande pas leur affichage.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

@@ -117,6 +117,28 @@ describe("fiches de source GeoData livrées", () => {
     expect(fautes.slice(0, 5)).toEqual([]);
   }, 30_000);
 
+  it("services publics du MTNRA (D-GD-42) : une couche par région du RGPH, chaque ligne de la source une seule fois, rattachement déclaré", () => {
+    const mtnra = fiches.filter((f) => f.startsWith("mtnra-services-publics-2022-"));
+    expect(mtnra).toHaveLength(12);
+    const lignes: number[] = [];
+    for (const nom of mtnra) {
+      const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
+      expect(fiche.theme).toBe("equipements");
+      expect(fiche.version.licence).toContain("ODbL");
+      expect(fiche.description).toContain("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
+      const fc = JSON.parse(readFileSync(join(DOSSIER, fiche.version.fichier!), "utf8")) as { features: { properties: Record<string, unknown>; geometry: { type: string } }[] };
+      for (const f of fc.features) {
+        expect(f.geometry.type).toBe("Point");
+        expect(f.properties["code"]).toBe(`l${String(f.properties["ligne"]).padStart(5, "0")}`);
+        expect(["contour", "province-hcp", "province-source"]).toContain(f.properties["rattachement"]);
+        lignes.push(f.properties["ligne"] as number);
+      }
+    }
+    // 17 499 lignes de données dans la source, dont 22 sans point lisible (écartées et listées dans les fiches).
+    expect(lignes.length).toBe(17_477);
+    expect(new Set(lignes).size).toBe(lignes.length);
+  });
+
   it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars)", () => {
     const sha = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
     for (const nom of fiches) {
