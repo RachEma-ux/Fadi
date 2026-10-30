@@ -1,12 +1,12 @@
 /**
  * Fiche territoriale (lot E, D-GD-22) : la fiche d'une entité, comme celle des cartes du HCP — indicateurs par thème,
  * familles déclinées présentées en tableaux de ventilation (modalité × milieu × sexe), subdivisions de l'entité (ses
- * enfants dans le découpage en base, D-GD-35 : arrondissements d'une commune, préfectures d'arrondissements… avec
+ * enfants dans le découpage en base, D-GD-42 : arrondissements d'une commune, préfectures d'arrondissements… avec
  * leurs chiffres), douars d'une commune rurale (noms publiés en arabe, D-GD-21), impression.
  * Les noms et valeurs des sources sont des données (`translate="no"`) ; une valeur absente n'est jamais zéro.
  */
 import { useEffect, useState } from "react";
-import { grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
+import { controlerCoherence, estUniteDeCompte, grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, partDansEnsemble, tableauCroise, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
 import { api, type CoucheRecue, type DouarRecu, type FicheRecue, type LigneTable } from "../client";
 import { formaterValeur } from "./consultation";
 
@@ -27,7 +27,12 @@ const STYLE_IMPRESSION = `
   table{border-collapse:collapse;width:100%;margin:2px 0 8px} caption{text-align:left;font-weight:600;padding:2px 0}
   th,td{border-bottom:1px solid #ddd;padding:2px 5px;text-align:right} th[scope="row"],thead th:first-child{text-align:left}
   tr{page-break-inside:avoid} [dir="rtl"]{text-align:right;font-family:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif}
-  abbr{text-decoration:none} .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}`;
+  abbr{text-decoration:none}
+  table.gd-croise{table-layout:auto} .gd-croise tr.gd-ligne-total th,.gd-croise tr.gd-ligne-total td{font-weight:700;border-top:2px solid #555}
+  .gd-croise th[scope="row"]{padding-left:8px} .gd-pastille-cat{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+  .gd-part{display:block;height:3px;border-radius:2px;margin-top:2px;margin-left:auto} .gd-alerte{color:#9a3412}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}`;
 
 /**
  * Imprime la fiche seule : copie de la fiche, toutes sections dépliées, dans une fenêtre d'impression (aucune iframe,
@@ -44,7 +49,7 @@ export function imprimerFiche(): boolean {
   if (!w) return false;
   const titre = (fiche.querySelector("h3")?.textContent ?? "Fiche").replace(/[<>&"]/g, "");
   w.document.open();
-  w.document.write(`<!doctype html><html lang="${document.documentElement.lang || "fr"}"><head><meta charset="utf-8"><title>${titre}</title><style>${STYLE_IMPRESSION}</style></head><body></body></html>`);
+  w.document.write(`<!doctype html><html lang="${document.documentElement.lang || "fr"}"><head><meta charset="utf-8"><title>${titre}</title><style>${STYLE_IMPRESSION}${jetonsCategories(fiche)}</style></head><body></body></html>`);
   w.document.close();
   w.document.body.appendChild(w.document.importNode(copie, true));
   w.focus();
@@ -52,6 +57,65 @@ export function imprimerFiche(): boolean {
   w.close();
   actif?.focus();
   return true;
+}
+
+/**
+ * Couleurs des catégories pour la fenêtre d'impression : relues dans la palette partagée (`--gd-cat-*` de geodata.css),
+ * jamais recopiées ; la fiche imprimée garde les mêmes couleurs que l'écran et les graphiques.
+ */
+function jetonsCategories(el: HTMLElement): string {
+  const css = getComputedStyle(el);
+  const jetons = CATEGORIES.map((c) => `--gd-cat-${c}:${css.getPropertyValue(`--gd-cat-${c}`).trim()};`).join("");
+  return `:root{${jetons.replace(/[<>]/g, "")}}`;
+}
+const CATEGORIES = ["urbain", "rural", "ensemble", "masculin", "feminin"] as const;
+/** Couleur d'une catégorie Milieu / Sexe : jeton de la palette partagée (geodata.css), commun aux graphiques. */
+export const couleurCategorie = (c: string) => `var(--gd-cat-${c})`;
+
+/**
+ * Tableau croisé Milieu × Sexe (D-GD-39) : lignes Urbain, Rural, Ensemble (en gras, séparée), colonnes Ensemble,
+ * Masculin, Féminin ; structure lue dans les déclinaisons de l'indicateur. Couleurs des catégories = celles des légendes
+ * des graphiques (liseré des lignes, pastille des colonnes), cellules neutres ; barre proportionnelle discrète sous les
+ * valeurs Urbain et Rural (part dans l'Ensemble, indicateurs de compte). Écarts de cohérence signalés, jamais corrigés.
+ */
+function TableauCroiseFiche({ f, t, titre }: { f: FamilleIndicateurs<IndicateurFiche>; t: NonNullable<ReturnType<typeof tableauCroise<IndicateurFiche>>>; titre: string }) {
+  const compte = estUniteDeCompte(f.indicateurs[0]!.unite);
+  const ecarts = compte ? controlerCoherence(t) : [];
+  const nombre = (x: number) => formaterValeur({ valeur: x, motifAbsence: null });
+  return (
+    <div className="gd-ventilation-bloc gd-croise-bloc">
+      <table className="gd-ventilation gd-croise" data-gd-ventilation={f.famille} data-gd-croise={`${t.lignes.join(",")}|${t.colonnes.join(",")}`}>
+        <caption translate="no">{titre}</caption>
+        <thead><tr>
+          <th scope="col"><span className="sr-only">Milieu</span></th>
+          {t.colonnes.map((s) => <th key={s} scope="col" data-gd-categorie={s}><span className="gd-pastille-cat" style={{ background: couleurCategorie(s) }} aria-hidden="true" />{LIBELLES_SEXE[s]}</th>)}
+        </tr></thead>
+        <tbody>
+          {t.lignes.map((m, i) => (
+            <tr key={m} className={m === "ensemble" ? "gd-ligne-total" : undefined} data-gd-ligne={m}>
+              <th scope="row" data-gd-categorie={m} style={{ borderLeft: `4px solid ${couleurCategorie(m)}` }}>{LIBELLES_MILIEU[m]}</th>
+              {t.cellules[i]!.map((c, k) => {
+                const part = compte && m !== "ensemble" ? partDansEnsemble(t, i, k) : null;
+                return (
+                  <td key={k} data-gd-valeur={c?.id} data-absente={c && c.valeur === null ? "" : undefined}>
+                    {!c ? "—" : c.valeur === null ? <abbr title={formaterValeur(c)}>{SIGNES_ABSENCE[c.motifAbsence ?? ""] ?? "n.d."}</abbr> : formaterValeur(c)}
+                    {part !== null && <span className="gd-part" style={{ width: `${(part * 100).toFixed(1)}%`, background: couleurCategorie(m) }} title={`${(part * 100).toFixed(1).replace(".", ",")} % de l'ensemble`} aria-hidden="true" data-gd-part={part.toFixed(4)} />}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {ecarts.map((e, n) => (
+        <p key={n} className="gd-alerte" role="note" data-gd-ecart={`${e.controle}:${e.ou}`}>
+          {e.controle === "milieu"
+            ? `Écart : Urbain + Rural = ${nombre(e.somme)} ≠ Ensemble ${nombre(e.total)} (colonne ${LIBELLES_SEXE[e.ou as keyof typeof LIBELLES_SEXE]})`
+            : `Écart : Masculin + Féminin = ${nombre(e.somme)} ≠ Ensemble ${nombre(e.total)} (ligne ${LIBELLES_MILIEU[e.ou as keyof typeof LIBELLES_MILIEU]})`}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 export const AVIS_IMPRESSION_BLOQUEE = "La fenêtre d'impression a été bloquée par le navigateur : autorisez les fenêtres de GeoData pour imprimer la fiche.";
@@ -63,6 +127,11 @@ function Famille({ f }: { f: FamilleIndicateurs<IndicateurFiche> }) {
     const i = premier;
     return <div data-gd-valeur={i.id} data-absente={i.valeur === null ? "" : undefined}><dt translate="no">{`${i.titre}${i.periode ? ` (${i.periode})` : ""}`}</dt><dd>{formaterValeur(i, i.unite)}{i.nature === "calcule" && <span className="gd-discret"> · résultat calculé</span>}</dd></div>;
   }
+  // Période de référence de la famille (ex. « CEE 2023/2024 » face au recensement) ; plusieurs périodes sont toutes citées.
+  const periodesF = [...new Set(f.indicateurs.map((i) => i.periode).filter((x): x is string => !!x))].join(", ");
+  // Indicateur ventilé Milieu × Sexe (sans modalité) : tableau croisé, structure lue dans ses déclinaisons (D-GD-39).
+  const croise = tableauCroise(f.indicateurs);
+  if (croise) return <TableauCroiseFiche f={f} t={croise} titre={`${f.famille}${unite}${periodesF ? ` — ${periodesF}` : ""}`} />;
   const brut = tableauVentilation(f);
   // Colonne entièrement « sans objet » pour cette entité (l'urbain d'une commune rurale…) : masquée.
   const garder = brut.colonnes.map((_, k) => brut.lignes.some((l) => { const i = l.cellules[k]; return !!i && !(i.valeur === null && i.motifAbsence === "sans-objet"); }));
@@ -91,7 +160,7 @@ function Famille({ f }: { f: FamilleIndicateurs<IndicateurFiche> }) {
   );
 }
 
-/** Subdivisions d'une entité (enfants dans le découpage en base, D-GD-35) : leurs chiffres principaux, lus dans la couche de leur niveau. */
+/** Subdivisions d'une entité (enfants dans le découpage en base, D-GD-42) : leurs chiffres principaux, lus dans la couche de leur niveau. */
 export interface Subdivisions { readonly couche: CoucheRecue; readonly niveau: string; readonly propriete: string; readonly codes: readonly string[] }
 function SubdivisionsDe({ parent, s, onFiche }: { parent: string; s: Subdivisions; onFiche(coucheId: string, code: string): void }) {
   const { couche } = s;

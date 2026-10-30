@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-28 (UTC).
+Mis à jour : 2026-10-30 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,7 +9,7 @@ Mis à jour : 2026-10-28 (UTC).
 
 ## Faits vérifiés
 
-- Niveaux infra-communaux (D-GD-35, **implémenté**, branche `claude/maroc-infra-communal-levels-5abxes`, après #356) :
+- Niveaux infra-communaux (D-GD-42, **implémenté**, branche `claude/maroc-infra-communal-levels-5abxes`, après #356) :
   découpage en base (`geodata_niveaux_administratifs`, `geodata_entites_administratives`, journal des imports), lu dans
   le fichier HCP RGPH 2024 livré tel quel (`decoupage_hcp.py` : 1 639 entités, 0 sans parent, sommes de population
   conformes) ; import **unique** sur le serveur (`geodata-reference.js --decoupage`), jamais au démarrage ; contours par
@@ -90,6 +90,52 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   clics, double-clic sans zoom, couche `gd-entite`), page (niveaux chargés ou découpage en base, parents par `ancetres`),
   route `GET /territoires/:pays/point` (test API), `versionId` / `coucheId` dans l'unité servie ; recette `geodata.mjs`
   : carte vierge (1, 2, 3 clics, clic hors entité) et couches chargées (provinces + régions).
+  Correctifs du 28 octobre 2026 : fiche différée sur téléphone (#358) ; fenêtre de la série portée à **600 ms** et
+  horodatage de l'événement d'entrée (`originalEvent.timeStamp`) plutôt que du traitement — mesure en émulation tactile :
+  350 à 450 ms entre deux tapes humaines, remise du clic retardée par le rendu ; vérifié Pixel 7, cadence 280–460 ms,
+  carte vierge et couches HCP chargées : 1 → commune, 2 → province, 3 → région.
+- Recherche en mini-barre (D-GD-35) : `panneaux/BarreRecherche.tsx` (placement pur, 3 tests), `onPlacement` de la barre
+  d'outils, Alt+R ; recette `geodata.mjs` 144 contrôles (15 nouveaux : place, style, ouverture / fermeture, texte gardé,
+  clic sur la carte, outil de mesure actif, suivi du déplacement, sources non chevauchées) ; vérifié Pixel 7, 360 × 560
+  et 1440 × 900, « Dir El Ksiba », code HCP 15710321, coordonnées.
+- Collections, menu « Cartes » et mini-barre (D-GD-36) : tables `geodata_collections` (+ description, propriétaire,
+  modification) et `geodata_collection_cartes` (rang), reprise idempotente de `collection_id` (vérifiée en base locale) ;
+  routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
+  recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
+  sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39) : `geodata-model/src/tableau-croise.ts` (6 tests), palette partagée
+  `--gd-cat-*` (tableaux, légendes des graphiques, impression), contrôle de cohérence ; vérifié sur 4 entités réelles
+  (commune urbaine d'Assilah, commune rurale de Boutferda, préfecture de Tanger-Assilah, région de Tanger-Tétouan-Al
+  Hoceima), bureau et Pixel 7, sans défilement horizontal ; captures avant / après dans `captures/d-gd-39/` ; recette
+  `geodata.mjs` 199 contrôles (3 nouveaux, jeu synthétique des régions ventilé Milieu × Sexe).
+- Lecture de l'emprise (D-GD-40, PR #367 fusionnée, `603504f`, CI verte) : `geodata-model/src/emprise.ts` (synthèse d'une
+  couche dans la vue, grille de regroupement alignée sur les tuiles, 8 tests) et `adresse-vue.ts` (fragment d'adresse,
+  4 tests) ; composition `regrouper` ; route `GET /couches/:id/vue?bbox=` et tuiles `?regrouper=1` (`consultation.ts`) ;
+  `panneaux/SyntheseVue.tsx`, trois boutons de la barre d'outils (Alt+V, Alt+G, Alt+K ; icônes et touches distinctes,
+  test `barre-outils.test.ts`), case « Regrouper les points », zoom affiché, état écrit dans l'adresse et relu à
+  l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
+  isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
+  (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
+- Zone d'étude qui filtre (D-GD-41, PR #369 fusionnée, `976cd17`, CI verte) : route `/couches/:id/vue?zone=` (zone de
+  l'espace, active ; sinon 404) et `/couches/:id/table?zone=` ; filtre de codes combiné sur la carte, table et synthèse ;
+  puce « Zone d'étude : nom × », bouton « Filtrer par cette zone » des Études, Alt+Z, `z=` dans l'adresse
+  (`adresse-vue.ts`, 1 test) ; tableau de bord non filtré, avis affiché. Scénario API rejoué en HTTP sur l'API locale :
+  7/7 ; recette `geodata.mjs` sur PostGIS 16 local : 215 contrôles conformes (6 nouveaux) ; test API sur base
+  (`geodata.test.ts`, cas étendu) en CI seulement.
+- Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
+  `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
+  une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40
+  ne contient que des constantes techniques (bornes Web Mercator, grille des tuiles, icônes) ; toutes ses données sont
+  lues en base par l'API.
+- Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, `BarreTerritoriale`
+  réutilisée telle quelle dans un panneau flottant, un seul panneau à la fois (`panneauMini`) ; recette `geodata.mjs`
+  194 contrôles (8 nouveaux), vérifié bureau 1885 × 893 et Pixel 7 sur données HCP réelles.
+- Onglets et tableau de bord RGPH 2024 (D-GD-37) : barre blanche → barre d'onglets (5 adresses), pastille « Carte non
+  enregistrée » ; fiche `hcp-rgph2024-royaume` (ligne nationale, 670 indicateurs dont 22 totaux CEE calculés, 52
+  concepts, 18 blocs) importée en base locale ; tables `geodata_concepts`, `geodata_tableaux_bord` ; routes
+  `/tableau-de-bord`, `/tableau-de-bord/concepts` ; `panneaux/TableauDeBord.tsx` (SVG interne), `tableau-de-bord.ts`
+  (9 tests) ; valeurs de contrôle vérifiées (test des sources + navigateur, bureau 1885 × 893 et Pixel 7) ; recette
+  `geodata.mjs` 186 contrôles (17 nouveaux, dont l'interface anglaise des onglets) ; tests API sur base en CI seulement.
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :

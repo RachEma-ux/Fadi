@@ -1,4 +1,4 @@
-# Contours des niveaux administratifs construits par union, de bas en haut (D-GD-35, après D-GD-33)
+# Contours des niveaux administratifs construits par union, de bas en haut (D-GD-42, après D-GD-33)
 
 Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-28 ; relancer le script régénère ce rapport.
 

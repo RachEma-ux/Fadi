@@ -1,4 +1,4 @@
-# Niveaux infra-communaux sur tout le territoire (D-GD-35)
+# Niveaux infra-communaux sur tout le territoire (D-GD-42)
 
 État : **Implémenté**, en revue (branche `claude/maroc-infra-communal-levels-5abxes`, PR vers `main`, après #356).
 Demande du maître d'ouvrage du 27 octobre 2026 : arrondissements et préfectures d'arrondissements dans la hiérarchie,

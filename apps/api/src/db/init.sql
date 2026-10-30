@@ -3056,6 +3056,43 @@ CREATE TABLE IF NOT EXISTS geodata_cartes (
   CONSTRAINT geodata_cartes_collection_fk FOREIGN KEY (collection_id, espace_id) REFERENCES geodata_collections (id, espace_id)
 );
 CREATE INDEX IF NOT EXISTS geodata_cartes_espace_idx ON geodata_cartes (espace_id, etat, modifie_le DESC);
+-- Collections (D-GD-36) : ensemble nommé et ORDONNÉ de cartes enregistrées (atlas) ; une collection référence des
+-- cartes, jamais des copies ; une carte peut appartenir à plusieurs collections ; supprimer une collection ne supprime
+-- aucune carte (seules ses références, par cascade). Titre = `nom` (1 à 120 caractères).
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
+ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_description_longueur;
+ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_description_longueur CHECK (length(description) <= 2000);
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS proprietaire_id text REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS modifie_le timestamptz NOT NULL DEFAULT now();
+-- Révision attendue à chaque enregistrement (comme une carte) : un enregistrement périmé est refusé, jamais une perte silencieuse.
+ALTER TABLE geodata_collections ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1;
+ALTER TABLE geodata_collections DROP CONSTRAINT IF EXISTS geodata_collections_revision_positive;
+ALTER TABLE geodata_collections ADD CONSTRAINT geodata_collections_revision_positive CHECK (revision >= 1);
+CREATE TABLE IF NOT EXISTS geodata_collection_cartes (
+  collection_id text NOT NULL,
+  carte_id text NOT NULL,
+  espace_id text NOT NULL,
+  rang integer NOT NULL CHECK (rang >= 1),
+  PRIMARY KEY (collection_id, carte_id),
+  CONSTRAINT geodata_collection_cartes_collection_fk FOREIGN KEY (collection_id, espace_id) REFERENCES geodata_collections (id, espace_id) ON DELETE CASCADE,
+  CONSTRAINT geodata_collection_cartes_carte_fk FOREIGN KEY (carte_id, espace_id) REFERENCES geodata_cartes (id, espace_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS geodata_collection_cartes_rang_idx ON geodata_collection_cartes (collection_id, rang);
+CREATE INDEX IF NOT EXISTS geodata_collection_cartes_carte_idx ON geodata_collection_cartes (carte_id);
+-- Reprise des données (un seul bloc DO : init.sql ne contient que CREATE, ALTER et DO) : propriétaire des collections
+-- antérieures lu de leur espace ; rattachement unique antérieur (`geodata_cartes.collection_id`, classement par nom)
+-- recopié dans la liaison ordonnée, puis la colonne n'est plus renseignée : la liaison est la seule source (idempotent).
+DO $$
+BEGIN
+  UPDATE geodata_collections co SET proprietaire_id = e.proprietaire_id FROM geodata_espaces e WHERE co.proprietaire_id IS NULL AND e.id = co.espace_id;
+  INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
+    SELECT ca.collection_id, ca.id, ca.espace_id,
+           coalesce((SELECT max(l.rang) FROM geodata_collection_cartes l WHERE l.collection_id = ca.collection_id), 0)
+             + row_number() OVER (PARTITION BY ca.collection_id ORDER BY ca.nom, ca.id)
+      FROM geodata_cartes ca WHERE ca.collection_id IS NOT NULL
+    ON CONFLICT (collection_id, carte_id) DO NOTHING;
+  UPDATE geodata_cartes SET collection_id = NULL WHERE collection_id IS NOT NULL;
+END $$;
 CREATE TABLE IF NOT EXISTS geodata_zones (
   id text PRIMARY KEY,
   espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
@@ -3210,6 +3247,28 @@ CREATE TABLE IF NOT EXISTS geodata_douars (
 );
 CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
 
+-- Tableau de bord RGPH 2024 (D-GD-37) : annexes d'une version de référence. Concepts et définitions publiés par le HCP
+-- (une entrée par concept et par langue) et définition des blocs des onglets « Chiffres clés » et « CEE » (familles
+-- d'indicateurs désignées, sommes et rapports déclarés ; aucune valeur). Interface ≠ base de données (D-GD-29) :
+-- l'application lit ces tables, elle n'en contient aucune copie.
+CREATE TABLE IF NOT EXISTS geodata_concepts (
+  version_id text NOT NULL REFERENCES geodata_versions(id) ON DELETE CASCADE,
+  langue text NOT NULL CHECK (langue IN ('fr', 'ar')),
+  ordre integer NOT NULL CHECK (ordre >= 0),
+  titre text NOT NULL CHECK (length(btrim(titre)) > 0),
+  texte text NOT NULL,
+  source text NOT NULL,
+  PRIMARY KEY (version_id, langue, ordre)
+);
+CREATE TABLE IF NOT EXISTS geodata_tableaux_bord (
+  version_id text PRIMARY KEY REFERENCES geodata_versions(id) ON DELETE CASCADE,
+  pays text NOT NULL CHECK (pays ~ '^[A-Z]{2}$'),
+  zone_code text NOT NULL,
+  zone_nom text NOT NULL,
+  definition jsonb NOT NULL
+);
+CREATE INDEX IF NOT EXISTS geodata_tableaux_bord_pays ON geodata_tableaux_bord (pays);
+
 -- Découpage territorial (lot H, D-GD-28) : Fadi est neutre ; chaque pays est chargé en base depuis les fiches de source
 -- qui déclarent `territoire` (versions publiées seulement). La barre territoriale de l'interface lit ces tables,
 -- indépendamment des couches affichées. Les niveaux (nom, règle de parenté) sont ceux déclarés par les fiches.
@@ -3232,11 +3291,11 @@ CREATE TABLE IF NOT EXISTS geodata_territoires (
 CREATE INDEX IF NOT EXISTS geodata_territoires_parent ON geodata_territoires (pays, rang, parent_code);
 CREATE INDEX IF NOT EXISTS geodata_territoires_code ON geodata_territoires (pays, code);
 CREATE INDEX IF NOT EXISTS geodata_territoires_geom ON geodata_territoires USING gist (geom);
--- D-GD-35 : le rang d'un niveau n'a plus de borne fixe (la table des niveaux en décide).
+-- D-GD-42 : le rang d'un niveau n'a plus de borne fixe (la table des niveaux en décide).
 ALTER TABLE geodata_territoires DROP CONSTRAINT IF EXISTS geodata_territoires_rang_check;
 ALTER TABLE geodata_territoires ADD CONSTRAINT geodata_territoires_rang_check CHECK (rang >= 1);
 
--- Découpage administratif en base (D-GD-35) : niveaux (rang du plus global au plus fin), entités (code, noms, niveau,
+-- Découpage administratif en base (D-GD-42) : niveaux (rang du plus global au plus fin), entités (code, noms, niveau,
 -- code du parent, type, source) et journal des imports. Chargés par une commande d'import **unique** sur le serveur
 -- (`geodata-reference.js --decoupage`), jamais au démarrage de l'API ; relancée sur le même fichier, elle ne fait rien ;
 -- un nouveau fichier met à jour les entités par leur code (aucun doublon), une entité absente du fichier est marquée

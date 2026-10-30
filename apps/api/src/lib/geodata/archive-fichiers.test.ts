@@ -36,7 +36,7 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     expect(par.get("donnees/osm-extraits.json")).toMatchObject({ role: "extrait" });
     expect(par.get("donnees/osm-mar-communes.geojson")).toMatchObject({ role: "extrait", typeMedia: "application/geo+json" });
     expect(par.get("donnees/retraits-sources.json")).toMatchObject({ role: "declaration" });
-    // Découpage administratif (D-GD-35) : fichier source du HCP tel quel, table des niveaux, entités, déclaration.
+    // Découpage administratif (D-GD-42) : fichier source du HCP tel quel, table des niveaux, entités, déclaration.
     expect(par.get("decoupage/originaux/hcp-rgph2024-population-legale.xlsx")).toMatchObject({ role: "decoupage", typeMedia: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     expect(par.get("decoupage/ma-niveaux.csv")).toMatchObject({ role: "decoupage", typeMedia: "text/csv" });
     expect(par.get("decoupage/hcp-rgph2024-entites.csv")).toMatchObject({ role: "decoupage" });

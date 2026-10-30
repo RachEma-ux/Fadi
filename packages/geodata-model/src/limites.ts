@@ -1,5 +1,5 @@
 /**
- * Limites administratives (D-GD-16, D-GD-35) : le rang d'une couche dans la hiérarchie est celui de son niveau dans la
+ * Limites administratives (D-GD-16, D-GD-42) : le rang d'une couche dans la hiérarchie est celui de son niveau dans la
  * table des niveaux **en base** (1 = le plus global), servi par l'API avec la couche — jamais lu du titre ni d'un code de
  * niveau écrit dans le code. Ordre d'affichage : en superposition, le niveau le plus global est au-dessus, avec le
  * contour le plus épais. Pur.

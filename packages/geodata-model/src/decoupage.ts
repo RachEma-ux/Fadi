@@ -1,5 +1,5 @@
 /**
- * Découpage administratif en base (D-GD-35) : **tout vient des données**. Les niveaux (rang du plus global au plus fin,
+ * Découpage administratif en base (D-GD-42) : **tout vient des données**. Les niveaux (rang du plus global au plus fin,
  * noms, fiche de la couche) et les entités (code, nom, niveau, code du parent, type) sont lus de fichiers de données
  * qualifiés (`decoupage/<pays>-niveaux.csv`, `decoupage/<source>-entites.csv`, produits depuis le fichier du HCP par
  * `scripts/geodata/decoupage_hcp.py`), puis enregistrés en base par une commande d'import unique. Aucun pays, niveau,

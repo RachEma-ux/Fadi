@@ -3,7 +3,7 @@
  * données (GeoJSON, CSV, TSV, GeoTIFF), tables de correspondance, extraits sans fiche importable, retraits déclarés —
  * est copié tel quel dans `geodata_fichiers` (contenu, taille, empreinte SHA-256, rôle, source). Rôle `reference` :
  * fiche de `references/`, lue par les scripts de préparation (contours d'origine), jamais importée comme couche (D-GD-30) ;
- * rôle `decoupage` : fichiers du découpage administratif (`decoupage/`, dont le fichier source du HCP tel quel, D-GD-35). L'interface et ses
+ * rôle `decoupage` : fichiers du découpage administratif (`decoupage/`, dont le fichier source du HCP tel quel, D-GD-42). L'interface et ses
  * outils ne gardent aucune donnée : les données vivent en base. Un fichier inchangé (même empreinte) n'est pas réécrit ;
  * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool.
  */

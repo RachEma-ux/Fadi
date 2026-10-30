@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { epaisseurContour, ordreAffichage } from "./limites.js";
 
-describe("limites administratives (D-GD-16, D-GD-35)", () => {
+describe("limites administratives (D-GD-16, D-GD-42)", () => {
   it("épaisseur : décroît avec le rang, quel que soit le nombre de niveaux", () => {
     for (let r = 1; r < 8; r++) expect(epaisseurContour(r)).toBeGreaterThanOrEqual(epaisseurContour(r + 1));
     expect(epaisseurContour(1)).toBeGreaterThan(epaisseurContour(2));

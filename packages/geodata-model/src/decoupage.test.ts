@@ -41,7 +41,7 @@ describe("découpage : lecture et contrôles purs", () => {
   });
 });
 
-describe("découpage HCP RGPH 2024 livré (contrôle, D-GD-35)", () => {
+describe("découpage HCP RGPH 2024 livré (contrôle, D-GD-42)", () => {
   it("découpage cohérent : aucune incohérence, aucune entité sans parent hors des régions", () => {
     expect(validerDecoupage(niveaux, entites)).toEqual([]);
     expect(sansParent(niveaux, entites)).toEqual([]);
@@ -98,7 +98,7 @@ describe("découpage HCP RGPH 2024 livré (contrôle, D-GD-35)", () => {
   });
 });
 
-describe("aucune liste de territoires ni de niveaux dans le code (D-GD-29, D-GD-35)", () => {
+describe("aucune liste de territoires ni de niveaux dans le code (D-GD-29, D-GD-42)", () => {
   // Noms propres du découpage et codes de niveau : ils ne doivent apparaître que dans les données et les tests.
   const interdits = [/Casablanca/, /Sidi Bernoussi/, /Ben M'?sick/i, /Moulay Rachid/, /Hay Hassani/, /Marrakech/, /Tanger/, /["']prefecture-arrondissements["']/, /["']arrondissement["']/];
   const racines = ["../../../packages/geodata-model/src", "../../../apps/api/src/lib/geodata", "../../../apps/api/src/routes/geodata", "../../../apps/web/src/modules/geodata"];

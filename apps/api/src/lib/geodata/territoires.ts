@@ -1,5 +1,5 @@
 /**
- * Chargement du découpage territorial en base (lot H, D-GD-28 ; D-GD-35) : les unités d'une version **publiée** dont la
+ * Chargement du découpage territorial en base (lot H, D-GD-28 ; D-GD-42) : les unités d'une version **publiée** dont la
  * fiche déclare `territoire` sont copiées dans `geodata_territoires` (pays, rang, code, nom, géométrie, version
  * d'origine) ; le niveau (nom, règle de parenté) est consigné dans `geodata_pays.niveaux`. Une nouvelle version du même
  * niveau remplace l'ancienne ; recharger la même version ne refait rien. Les parents ne sont jamais devinés :

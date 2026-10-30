@@ -8,7 +8,9 @@ describe("sélection par nombre de clics (D-GD-34)", () => {
     const s2 = compterClic(s1, { t: 1250, x: 13, y: 8 });
     expect(s2.n).toBe(2);
     expect(compterClic(s2, { t: 1500, x: 13, y: 8 }).n).toBe(3);
-    expect(compterClic(s2, { t: 1600, x: 13, y: 8 }).n).toBe(1); // 350 ms après le 2e clic : nouvelle série
+    expect(compterClic(s2, { t: 1650, x: 13, y: 8 }).n).toBe(3); // 400 ms après le 2e clic : cadence humaine sur téléphone, même série
+    expect(compterClic(s2, { t: 1900, x: 13, y: 8 }).n).toBe(1); // 650 ms après le 2e clic : nouvelle série
+    expect(compterClic(s1, { t: 1100, x: 22, y: 20 }).n).toBe(2); // 15,6 px : un doigt, même série
     expect(compterClic(s1, { t: 1100, x: 30, y: 10 }).n).toBe(1); // 20 px plus loin : nouvelle série
     expect(compterClic(s1, { t: 900, x: 10, y: 10 }).n).toBe(1); // horloge incohérente : jamais prolongée
   });
@@ -21,7 +23,7 @@ describe("sélection par nombre de clics (D-GD-34)", () => {
     expect(niveauxDeSelection([5], [1, 2, 3, 5])).toEqual([5]);
     expect(niveauxDeSelection([], [])).toEqual([]);
   });
-  it("niveaux réels de l'endroit cliqué (D-GD-35) : profondeur du lieu, restreinte aux couches chargées", () => {
+  it("niveaux réels de l'endroit cliqué (D-GD-42) : profondeur du lieu, restreinte aux couches chargées", () => {
     // Rangs d'une chaîne lue en base : 5 niveaux (arrondissement regroupé), 4 (arrondissement direct), 3 (commune).
     expect(niveauxDuPoint([1, 2, 3, 4, 5], [])).toEqual([5, 4, 3, 2, 1]);
     expect(niveauxDuPoint([5, 3, 2, 1], [])).toEqual([5, 3, 2, 1]);

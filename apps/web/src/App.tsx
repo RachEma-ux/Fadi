@@ -98,7 +98,7 @@ export function App() {
           />
           {/* GeoData : 9ᵉ module, autonome des projets (ADR-GEODATA-01/02) ; la page est la carte elle-même. */}
           <Route
-            path="/geodata"
+            path="/geodata/*"
             element={
               <Suspense fallback={<Loading />}>
                 <PageGeoData />

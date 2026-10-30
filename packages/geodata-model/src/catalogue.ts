@@ -58,7 +58,7 @@ export const typeCatalogue = (typeGeometrie: string): TypeCatalogue => (typeGeom
 
 export interface CoucheRangeable {
   readonly id: string; readonly titre: string; readonly typeGeometrie: string; readonly version: { readonly source: { readonly id?: string; readonly theme: string } };
-  /** Niveau administratif lu dans la table des niveaux en base (D-GD-35) : les couches de limites suivent l'ordre des niveaux. */
+  /** Niveau administratif lu dans la table des niveaux en base (D-GD-42) : les couches de limites suivent l'ordre des niveaux. */
   readonly niveauAdministratif?: { readonly rang: number } | null;
 }
 

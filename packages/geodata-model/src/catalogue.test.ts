@@ -25,7 +25,7 @@ describe("catalogue rangé par catégorie", () => {
     expect(tourisme.actives).toBe(1);
     expect(categorieDuTheme("theme-non-repertorie").libelle).toBe("Autres");
   });
-  it("limites administratives (D-GD-35) : couches rangées dans l'ordre de la table des niveaux, puis les autres par titre", () => {
+  it("limites administratives (D-GD-42) : couches rangées dans l'ordre de la table des niveaux, puis les autres par titre", () => {
     const n = (id: string, titre: string, rang: number) => ({ ...c(id, titre, "limites-administratives"), niveauAdministratif: { rang } });
     const g = regrouperCatalogue([n("z", "A — niveau fin", 5), c("y", "Autre limite", "limites-administratives"), n("x", "Z — niveau global", 1), n("w", "M — niveau intermédiaire", 4)], "vecteurs", new Set());
     expect(g[0]!.couches.map((x) => x.id)).toEqual(["x", "w", "z", "y"]);

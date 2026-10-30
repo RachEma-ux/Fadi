@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Découpage administratif du Maroc lu dans le fichier du HCP (D-GD-35) — script d'import hors application :
+Découpage administratif du Maroc lu dans le fichier du HCP (D-GD-42) — script d'import hors application :
 
     python3 scripts/geodata/decoupage_hcp.py --excel <population-legale.xlsx> [--indicateurs <indicateurs.xlsx>]
                                              [--sortie docs/geodata/sources] [--rapport docs/workstreams/geodata/INVENTAIRE-DECOUPAGE.md]
@@ -51,7 +51,7 @@ RAPPORT = os.path.join(RACINE, "docs", "workstreams", "geodata", "INVENTAIRE-DEC
 URL_HCP = "https://www.hcp.ma/file/242341/"
 ORIGINAL = "decoupage/originaux/hcp-rgph2024-population-legale.xlsx"
 CLE = "hcp-rgph2024"
-DECISION = "D-GD-35"
+DECISION = "D-GD-42"
 COLONNES = ["pays", "code", "niveau", "parent", "nom", "nom_ar", "type", "population", "menages"]
 
 

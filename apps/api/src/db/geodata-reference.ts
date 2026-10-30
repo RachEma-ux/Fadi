@@ -8,7 +8,7 @@
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
  *
- * `--decoupage [pays]` (D-GD-35) : import **unique** du découpage administratif (niveaux, entités, liens parent → enfant)
+ * `--decoupage [pays]` (D-GD-42) : import **unique** du découpage administratif (niveaux, entités, liens parent → enfant)
  * depuis `decoupage/<pays>.json`, lancé une fois par l'exploitant sur le serveur — jamais au démarrage de l'API ; relancé
  * sur le même fichier, il ne fait rien ; bilan affiché (ajoutées, modifiées, retirées, sans parent).
  * `--archiver` (seul, ou avec `--fiche toutes`) copie d'abord en base tous les fichiers livrés, tels quels (`geodata_fichiers`,
@@ -39,14 +39,17 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Pool, type PoolClient } from "pg";
-import { validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
+import { validerDefinitionTableauDeBord, type DefinitionTableauDeBord, validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
-import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
+import { empreinteAttendue, suiteAnnexes } from "../lib/geodata/empreinte-fiche.js";
+import { lireConcepts } from "../lib/geodata/annexes.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
 import { chargerTerritoires, NiveauAbsent } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 import { importerDecoupage, ligneBilanDecoupage } from "../lib/geodata/decoupage.js";
+
+interface AnnexeFichier { fichier: string; empreinte: string; description?: string }
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
@@ -58,7 +61,13 @@ export interface FicheSource {
      */
     tableau?: { fichier: string; empreinte: string; signes?: Record<string, string> };
     /** Annexes sans géométrie (lot E) : douars du RGPH 2024, TSV d'empreinte contrôlée, rangés sous leur commune. */
-    annexes?: { douars?: { fichier: string; empreinte: string; description?: string } };
+    annexes?: {
+      douars?: AnnexeFichier;
+      /** Concepts et définitions du producteur (D-GD-37) : JSON `{ source, concepts: [{ langue, ordre, titre, texte }] }`. */
+      concepts?: AnnexeFichier;
+      /** Définition du tableau de bord (D-GD-37) : JSON validé par `validerDefinitionTableauDeBord` ; aucune valeur. */
+      tableau?: AnnexeFichier;
+    };
   };
   couche: {
     titre: string; description: string; niveau: string | null; champCode: string; champNom: string | null; proprietesExposees: string[]; styleDefaut: StyleCouche;
@@ -94,7 +103,7 @@ async function assurerTerritoires(ex: Pool | PoolClient, fiche: FicheSource, emp
     console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${b.niveau}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
-    // Découpage pas encore importé (import unique, D-GD-35) : la couche reste publiée, ses unités attendent cet import.
+    // Découpage pas encore importé (import unique, D-GD-42) : la couche reste publiée, ses unités attendent cet import.
     if (e instanceof NiveauAbsent) { console.log(`Découpage territorial ${d.declaration.pays} (${fiche.cle}) : ${e.message}`); return; }
     throw e;
   } finally {
@@ -125,6 +134,15 @@ function lireTableau(fiche: FicheSource, chemin: string) {
   }
   const signes = Object.fromEntries(Object.entries(t.signes ?? {}).filter(([, m]) => estMotifAbsence(m))) as Record<string, MotifAbsence>;
   return { ok: empreinte === t.empreinte.toLowerCase(), empreinte, lignes: lignes.length, colonnes, signes };
+}
+
+/** Annexe JSON (D-GD-37) : chemin contrôlé, empreinte calculée, contenu lu. */
+function lireAnnexeJson(a: AnnexeFichier | undefined, chemin: string, nom: string): { ok: boolean; empreinte: string; contenu: unknown } | null {
+  if (!a) return null;
+  if (!/^donnees\/[a-z0-9-]+\.json$/.test(a.fichier)) throw new Error(`Annexe ${nom} refusée : ${a.fichier}`);
+  const octets = readFileSync(join(dirname(chemin), a.fichier));
+  const empreinte = createHash("sha256").update(octets).digest("hex");
+  return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, contenu: JSON.parse(octets.toString("utf8")) };
 }
 
 /** Douars en annexe (TSV : code, commune, fraction, nom, type, ménages, population, %) ; « X » = secret statistique. */
@@ -259,7 +277,7 @@ async function archiver() {
 }
 
 /**
- * `--decoupage [pays]` (D-GD-35) : import **unique** du découpage administratif en base, lancé une fois par l'exploitant
+ * `--decoupage [pays]` (D-GD-42) : import **unique** du découpage administratif en base, lancé une fois par l'exploitant
  * sur le serveur (jamais au démarrage de l'API). Relancé sur le même fichier : « déjà importé », rien n'est fait ; un
  * nouveau fichier met à jour les entités par leur code, sans doublon, et affiche le bilan. Les unités du découpage
  * territorial déjà publiées sont ensuite (re)chargées depuis leurs fiches, pour que la barre suive sans redémarrage.
@@ -362,7 +380,17 @@ async function importer(chemin: string, preparateur: string | null) {
   // Tableau de valeurs (lot A2) : empreinte contrôlée ; l'empreinte de la version couvre le fichier ET le tableau.
   const tableau = lireTableau(fiche, chemin);
   const douars = lireDouars(fiche, chemin);
-  const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}${douars ? `:${douars.empreinte}` : ""}`).digest("hex") : empreinteFichier;
+  const concepts = lireAnnexeJson(fiche.version.annexes?.concepts, chemin, "des concepts");
+  const tableauBord = lireAnnexeJson(fiche.version.annexes?.tableau, chemin, "du tableau de bord");
+  const listeConcepts = concepts ? lireConcepts(concepts.contenu) : null;
+  let definitionBord: DefinitionTableauDeBord | null = null;
+  if (tableauBord) {
+    const d = validerDefinitionTableauDeBord(tableauBord.contenu);
+    if (!d.ok) throw new Error(`Annexe du tableau de bord invalide : ${d.erreurs.slice(0, 5).join(" ; ")}`);
+    definitionBord = d.definition;
+  }
+  const lues = { douars: douars ?? undefined, concepts: concepts ?? undefined, tableau: tableauBord ?? undefined };
+  const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}${suiteAnnexes(lues, (x) => x.empreinte)}`).digest("hex") : empreinteFichier;
   let crsSource = "WGS 84 (CRS84)";
   let objets: ObjetImporte[] = [];
   let controles: Record<string, unknown> & { ok: boolean };
@@ -400,9 +428,11 @@ async function importer(chemin: string, preparateur: string | null) {
     objets = v.ok ? [...v.objets] : [];
     const { doublons, manquants } = codesDesObjets(objets, fiche.couche.champCode);
     controles = {
-      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok) && (!douars || douars.ok),
+      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok) && (!douars || douars.ok) && (!concepts || concepts.ok) && (!tableauBord || tableauBord.ok),
       empreinte: { attendue: fiche.version.empreinte, calculee: empreinteFichier, conforme: empreinteOk },
       ...(douars ? { douars: { fichier: fiche.version.annexes!.douars!.fichier, empreinte: douars.empreinte, conforme: douars.ok, lignes: douars.lignes.length } } : {}),
+      ...(concepts ? { concepts: { fichier: fiche.version.annexes!.concepts!.fichier, empreinte: concepts.empreinte, conforme: concepts.ok, entrees: listeConcepts!.liste.length } } : {}),
+      ...(tableauBord ? { tableauDeBord: { fichier: fiche.version.annexes!.tableau!.fichier, empreinte: tableauBord.empreinte, conforme: tableauBord.ok, blocs: definitionBord!.blocs.length } } : {}),
       ...(tableau ? { tableau: { fichier: fiche.version.tableau!.fichier, empreinte: tableau.empreinte, conforme: tableau.ok, lignes: tableau.lignes, colonnes: tableau.colonnes.size } } : {}),
       validation: v.rapport, codes: { champ: fiche.couche.champCode, doublons, manquants }, controleLe: new Date().toISOString(),
     };
@@ -457,6 +487,8 @@ async function importer(chemin: string, preparateur: string | null) {
       couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
       objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
       ...(douars ? { douars: douars.lignes } : {}),
+      ...(listeConcepts ? { concepts: listeConcepts } : {}),
+      ...(definitionBord ? { tableauDeBord: definitionBord } : {}),
       ...(raster ? { raster } : {}),
     });
     await client.query("COMMIT");

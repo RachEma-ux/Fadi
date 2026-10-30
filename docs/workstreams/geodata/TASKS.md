@@ -24,9 +24,20 @@
 - [x] GEO-INDICATEURS-2 — Étape 1 consolidée : l'indicateur est une valeur affichée en texte propre, jamais une coloration ; liste « Coloration » réduite aux modes de style ; nom et valeur indépendants (D-GD-32).
 - [x] GEO-CONTOURS-NIVEAUX — Régions et provinces construites par union des communes (codes HCP), topologie partagée simplifiée une seule fois, tuiles sans simplification propre ; rapport `CONTOURS-NIVEAUX.md` (D-GD-33).
 - [x] GEO-CLICS-NIVEAUX — Sélection par nombre de clics, du plus élémentaire au plus global ; carte vierge servie par le découpage en base ; double-clic sans zoom (D-GD-34).
-- [x] GEO-INFRA-COMMUNAL — Niveaux infra-communaux sur tout le territoire, découpage en base, import HCP unique sur le serveur, contours de bas en haut, clics selon les niveaux réels (D-GD-35) ; en revue.
+- [x] GEO-RECHERCHE-MINIBARRE — Recherche de la carte déplacée dans une mini-barre (loupe, Alt+R) sous la barre d'outils ; champ retiré de la barre au-dessus de la carte (D-GD-35).
+- [x] GEO-COLLECTIONS — Mini-barre Enregistrer et Fond, menu ☰ « Cartes » (Mes cartes, Collection, Fournisseurs ; Partager : bientôt), collections ordonnées de références (D-GD-36, `COLLECTIONS.md`).
+- [ ] GEO-PARTAGE-CARTE — « Partager » une carte : aucune fonction existante ; à spécifier par le maître d'ouvrage.
+- [x] GEO-ONGLETS-RGPH — Barre d'onglets et tableau de bord RGPH 2024 : chiffres clés, tableaux, CEE, concepts (D-GD-37, `TABLEAU-DE-BORD.md`).
+- [x] GEO-FIL-MINI-BARRE — Fil de navigation administrative pliable, ≡ dans la mini-barre, un seul panneau à la fois (D-GD-38).
+- [x] GEO-TABLEAU-CROISE — Fiche : tableaux croisés Milieu × Sexe, palette partagée des catégories, contrôle de cohérence (D-GD-39).
+- [ ] GEO-SERIES-RGPH — Séries des recensements 1960–2014, concepts en arabe, emplois CEE par secteur : fiches qualifiées à produire.
+- [x] GEO-INFRA-COMMUNAL — Niveaux infra-communaux sur tout le territoire, découpage en base, import HCP unique sur le serveur, contours de bas en haut, clics selon les niveaux réels (D-GD-42) ; en revue.
 - [ ] GEO-INFRA-COMMUNAL-VPS — Lancer une fois `geodata-reference.js --decoupage MA` sur le VPS après déploiement ; arbitrer la place de la commune de Casablanca (5 niveaux selon le HCP).
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
+- [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
+- [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).
+- [x] GEO-ZONE-FILTRE — Zone d'étude qui filtre carte, table et synthèse ; puce, Alt+Z, adresse ; tableau de bord signalé non filtré (D-GD-41).
+- [ ] GEO-PLAN-SATELLITE — P1-6 de l'analyse : bascule Plan / Satellite du fournisseur réglé ; non engagé.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

@@ -14,7 +14,7 @@ const arrondissements: CoucheNiveau = { coucheId: "a", rang: 5, codes: ["A1", "A
 const tout = [regions, provinces, communes, groupes, arrondissements];
 const etape = (c: CoucheNiveau, code: string): EtapeNiveau => ({ coucheId: c.coucheId, rang: c.rang, code, nom: code });
 
-describe("navigation par niveaux : liens parent → enfant lus en base (D-GD-35)", () => {
+describe("navigation par niveaux : liens parent → enfant lus en base (D-GD-42)", () => {
   it("enfants : la couche la plus proche en dessous qui a des descendants ; sinon la suivante", () => {
     expect(enfantsDe(etape(regions, "R"), tout, parents)).toEqual([{ coucheId: "p", codes: ["P", "Q"] }]);
     expect(enfantsDe(etape(communes, "C1"), tout, parents)).toEqual([{ coucheId: "g", codes: ["G"] }]);

@@ -1,5 +1,5 @@
 /**
- * Sélection par nombre de clics (D-GD-34, D-GD-35) : des clics rapides au même endroit montrent les niveaux administratifs
+ * Sélection par nombre de clics (D-GD-34, D-GD-42) : des clics rapides au même endroit montrent les niveaux administratifs
  * un par un, **du plus élémentaire au plus global**, en suivant les niveaux réels de l'endroit cliqué lus en base
  * (la profondeur varie : une ville à arrondissements a plus de niveaux qu'une commune ordinaire). Si des couches de limites sont chargées, seuls leurs niveaux comptent ; sinon ceux du découpage en base. Le
  * premier clic sélectionne tout de suite le plus petit niveau, sans attente ; chaque clic suivant dans le délai remplace
@@ -7,9 +7,13 @@
  */
 import type { RangAdministratif } from "./limites.js";
 
-/** Délai entre deux clics d'une même série (celui du navigateur, environ 300 ms) et déplacement toléré du pointeur. */
-export const DELAI_CLICS_MS = 300;
-export const TOLERANCE_CLICS_PX = 8;
+/**
+ * Délai entre deux clics d'une même série et déplacement toléré du pointeur (un doigt). Le délai est plus large que le
+ * double-clic du navigateur (~300 ms) : mesuré sur téléphone, deux tapes humaines sont séparées de 350 à 450 ms, et le
+ * rendu de la première (mise en évidence, couches lourdes) retarde encore la seconde (correctif D-GD-34 du 28 octobre 2026).
+ */
+export const DELAI_CLICS_MS = 600;
+export const TOLERANCE_CLICS_PX = 16;
 
 export interface ClicCarte { readonly t: number; readonly x: number; readonly y: number }
 /** Série de clics en cours : rang du dernier clic (1 = premier), instant et position du dernier. */
@@ -38,7 +42,7 @@ export function rangPourClics(niveaux: readonly RangAdministratif[], n: number):
 }
 
 /**
- * Niveaux réels de l'endroit cliqué (D-GD-35) : rangs de l'entité la plus fine qui contient le point et de ses ancêtres
+ * Niveaux réels de l'endroit cliqué (D-GD-42) : rangs de l'entité la plus fine qui contient le point et de ses ancêtres
  * (liens parent → enfant en base), du plus élémentaire au plus global ; avec des couches de limites chargées, seuls les
  * rangs de ces couches comptent. Aucun nombre de niveaux n'est supposé : la profondeur est celle du lieu.
  */

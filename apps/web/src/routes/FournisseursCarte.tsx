@@ -4,7 +4,7 @@
  * ce navigateur (stockage local) : ni les adresses ni les clés ne sont envoyées à l'API Fadi. La clé MapTiler est celle
  * de « Connexion MapTiler ».
  */
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { CLE_STOCKAGE_FOURNISSEURS, lireReglagesFournisseurs, validerFournisseurSaisi, type FournisseurCarte, type ReglagesFournisseurs } from "@parcours/geodata-model";
 import { maptilerKey } from "../lib/maptiler";
 
@@ -23,6 +23,12 @@ const identifiant = (nom: string, pris: readonly string[]) => {
 export function FournisseursCarte() {
   const [reglages, setReglages] = useState<ReglagesFournisseurs>(lire);
   const [saisie, setSaisie] = useState<Saisie | null>(null);
+  // Arrivée depuis GeoData (menu ☰ › Cartes › Fournisseurs › Nouveau, D-GD-36) : le formulaire d'ajout existant s'ouvre.
+  useEffect(() => {
+    if (window.location.hash !== "#settings-fournisseurs-ajouter") return;
+    setSaisie(VIDE);
+    document.getElementById("settings-fournisseurs")?.scrollIntoView({ block: "start" });
+  }, []);
   const [erreurs, setErreurs] = useState<readonly string[]>([]);
   const [avis, setAvis] = useState<string | null>(null);
   const cleMaptiler = !!maptilerKey();

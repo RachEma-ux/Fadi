@@ -9,10 +9,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, lireNiveaux, validerDeclarationRaster, validerDeclarationTerritoire, validerGeoJSON } from "@parcours/geodata-model";
+import { evaluer, trouverIndicateur, validerDefinitionTableauDeBord, type Expression, type IndicateurZone, CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, lireNiveaux, validerDeclarationRaster, validerDeclarationTerritoire, validerGeoJSON } from "@parcours/geodata-model";
 import { lireGeoTiff } from "../lib/geodata/raster.js";
 import { codesDesObjets } from "../lib/geodata/versions.js";
 import type { FicheSource } from "./geodata-reference.js";
+import { lireConcepts } from "../lib/geodata/annexes.js";
 import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 
 const DOSSIER = fileURLToPath(new URL("../../../../docs/geodata/sources/", import.meta.url));
@@ -123,11 +124,53 @@ describe("fiches de source GeoData livrées", () => {
       if (!fiche.version.fichier) continue;
       const ef = sha(readFileSync(join(DOSSIER, fiche.version.fichier)));
       const t = fiche.version.tableau;
-      const d = fiche.version.annexes?.douars;
-      const reelle = t ? sha(`${ef}:${sha(readFileSync(join(DOSSIER, t.fichier)))}${d ? `:${sha(readFileSync(join(DOSSIER, d.fichier)))}` : ""}`) : ef;
+      const a = fiche.version.annexes;
+      const annexes = [a?.douars, a?.concepts, a?.tableau].filter((x) => !!x).map((x) => `:${sha(readFileSync(join(DOSSIER, x!.fichier)))}`).join("");
+      const reelle = t ? sha(`${ef}:${sha(readFileSync(join(DOSSIER, t.fichier)))}${annexes}`) : ef;
       expect(empreinteAttendue(fiche), nom).toBe(reelle);
     }
   }, 60_000);
+
+  it("Royaume du Maroc (D-GD-37) : ligne nationale HCP, valeurs de contrôle, totaux CEE calculés, concepts, tableau de bord valide", () => {
+    const fiche = JSON.parse(readFileSync(join(DOSSIER, "hcp-rgph2024-royaume.json"), "utf8")) as FicheSource & { indicateurs: (FicheSource["indicateurs"] extends (infer T)[] | undefined ? T : never)[] };
+    const sha = (b: Buffer) => createHash("sha256").update(b).digest("hex");
+    const [entete, ligne] = readFileSync(join(DOSSIER, fiche.version.tableau!.fichier), "utf8").trim().split("\n");
+    const cellules = new Map(entete!.split(",").map((c, i) => [c, ligne!.split(",")[i]!]));
+    expect(cellules.get("code")).toBe("MA");
+    const zone: IndicateurZone[] = fiche.indicateurs.map((i) => {
+      const brut = cellules.get(i.propriete) ?? "";
+      const valeur = /^-?\d+(\.\d+)?$/.test(brut) ? Number(brut) : null;
+      return { titre: i.titre, unite: i.unite, nature: (i as { calcul?: string }).calcul ? "calcule" : "source", theme: i.theme ?? null, famille: i.famille ?? null, modalite: i.modalite ?? null, milieu: i.milieu ?? null, sexe: i.sexe ?? null, valeur, motifAbsence: valeur === null ? "non-publiee" : null };
+    });
+    const v = (famille: string, milieu: "ensemble" | "urbain" | "rural" = "ensemble") => evaluer({ indicateur: { famille, milieu } }, zone).valeur;
+    // Valeurs de contrôle de la demande (HCP, RGPH 2024).
+    expect(v("Population légale")).toBe(36828330);
+    expect(v("Ménages")).toBe(9275038);
+    expect(v("Population municipale")).toBe(36490591);
+    expect(v("Population municipale", "urbain")).toBe(22921202);
+    expect(v("Population municipale", "rural")).toBe(13569389);
+    expect(v("Taux de chômage (%)")).toBe(21.3);
+    // Tableau de bord : définition valide ; toute famille désignée existe dans la fiche nationale (aucune valeur écrite).
+    const t = JSON.parse(readFileSync(join(DOSSIER, fiche.version.annexes!.tableau!.fichier), "utf8"));
+    expect(sha(readFileSync(join(DOSSIER, fiche.version.annexes!.tableau!.fichier)))).toBe(fiche.version.annexes!.tableau!.empreinte);
+    const d = validerDefinitionTableauDeBord(t);
+    if (!d.ok) throw new Error(d.erreurs.join(" ; "));
+    const selecteurs = (e: Expression): { famille: string }[] => ("indicateur" in e ? [e.indicateur] : "somme" in e ? [...e.somme] : "ratio" in e ? [...selecteurs(e.ratio[0]), ...selecteurs(e.ratio[1])] : []);
+    const absents = d.definition.blocs.flatMap((b) => (b.type === "chiffre" ? [b.valeur] : b.lignes.flatMap((l) => l.cellules))).flatMap(selecteurs).filter((s) => !trouverIndicateur(s, zone));
+    expect(absents).toEqual([]);
+    const taux = d.definition.blocs.find((b) => b.cle === "taux-urbanisation");
+    expect(taux?.type === "chiffre" && Math.round(evaluer(taux.valeur, zone).valeur! * 10) / 10).toBe(62.8);
+    // Totaux CEE : calculés, déclarés comme tels.
+    const cee = fiche.indicateurs.filter((i) => i.propriete.startsWith("cee_"));
+    expect(cee.length).toBeGreaterThan(5);
+    for (const i of cee) expect((i as { calcul?: string }).calcul).toMatch(/Somme des valeurs des 12 régions/);
+    // Concepts : empreinte, français, titres uniques non vides.
+    const c = lireConcepts(JSON.parse(readFileSync(join(DOSSIER, fiche.version.annexes!.concepts!.fichier), "utf8")));
+    expect(c.source).toMatch(/HCP, RGPH 2024/);
+    expect(c.liste.length).toBeGreaterThan(40);
+    expect(new Set(c.liste.map((x) => x.titre)).size).toBe(c.liste.length);
+    expect(c.liste.find((x) => x.titre === "Population légale")?.texte).toMatch(/territoire national/);
+  });
 
   it("retraits déclarés (D-GD-23) : sources sans fiche importable, remplaçante livrée, motif et décision", () => {
     const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string; motif: string; decision: string }[];
@@ -144,7 +187,7 @@ describe("fiches de source GeoData livrées", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);
   });
-  it("découpage territorial (D-GD-35) : chaque niveau de la table des niveaux a sa fiche, qui déclare ce niveau du Maroc", () => {
+  it("découpage territorial (D-GD-42) : chaque niveau de la table des niveaux a sa fiche, qui déclare ce niveau du Maroc", () => {
     const niveaux = lireNiveaux(readFileSync(join(DOSSIER, "decoupage", "ma-niveaux.csv"), "utf8"));
     expect(niveaux.length).toBeGreaterThan(0);
     for (const n of niveaux) {

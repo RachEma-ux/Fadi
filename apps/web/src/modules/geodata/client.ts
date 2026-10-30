@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
+import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -45,12 +45,12 @@ export interface CoucheRecue {
   styleDefaut: StyleCouche; nombreObjets: number; emprise: { type: "Polygon"; coordinates: number[][][] } | null; indicateurs: IndicateurRecu[]; version: VersionRecue;
   /** Couche raster (D-GD-13) : grandeur, unité et symbologie ; null pour une couche d'objets. */
   raster: DescriptionRaster | null;
-  /** Niveau administratif de la couche (D-GD-35), lu dans la table des niveaux en base ; null hors découpage. */
+  /** Niveau administratif de la couche (D-GD-42), lu dans la table des niveaux en base ; null hors découpage. */
   niveauAdministratif?: NiveauCoucheRecu | null;
 }
 /** Niveau d'une couche de limites : rang (1 = le plus global) et noms, lus en base. */
 export interface NiveauCoucheRecu { readonly pays: string; readonly code: string; readonly rang: number; readonly singulier: string; readonly pluriel: string }
-/** Découpage administratif d'un pays (D-GD-35) : niveaux et liens parent → enfant, lus en base. */
+/** Découpage administratif d'un pays (D-GD-42) : niveaux et liens parent → enfant, lus en base. */
 export interface DecoupageRecu {
   readonly pays: string;
   readonly niveaux: readonly { code: string; rang: number; singulier: string; pluriel: string; fiche: string | null; coucheId: string | null }[];
@@ -74,9 +74,13 @@ export interface DouarRecu {
   pourcentages: { masculin: number | null; feminin: number | null; moins15: number | null; de15a59: number | null; plus60: number | null };
 }
 export type Disponibilite = { etat: "disponible"; versionPlusRecente: string | null } | { etat: "retiree" | "inaccessible"; motif: string };
-export interface CarteRecue { id: string; nom: string; revision: number; etat: "active" | "archivee"; collectionId: string | null; creeLe: string; modifieLe: string; composition: Composition; disponibilite: Record<string, Disponibilite> }
-export interface ResumeCarte { id: string; nom: string; revision: number; etat: string; collectionId: string | null; modifieLe: string; couches: number }
-export interface CollectionRecue { id: string; nom: string; etat: string; cartes: number }
+/** Collection qui référence une carte (une carte peut être dans plusieurs collections, D-GD-36). */
+export interface CollectionDeCarte { id: string; nom: string }
+export interface CarteRecue { id: string; nom: string; revision: number; etat: "active" | "archivee"; collections: CollectionDeCarte[]; creeLe: string; modifieLe: string; composition: Composition; disponibilite: Record<string, Disponibilite> }
+export interface ResumeCarte { id: string; nom: string; revision: number; etat: string; modifieLe: string; couches: number }
+export interface CollectionRecue { id: string; nom: string; description: string; etat: string; modifieLe: string; cartes: number }
+/** Collection ouverte (D-GD-36) : titre (`nom`), description et cartes référencées dans leur ordre. */
+export interface CollectionDetail { id: string; nom: string; description: string; etat: string; revision: number; creeLe: string; modifieLe: string; cartes: CarteDeCollection[] }
 export interface ZoneRecue { id: string; nature: "zone" | "annotation"; nom: string; texte: string; provenance: string; revision: number; geometrieReparee: boolean; geometrie: { type: string; coordinates: unknown }; aireM2: number | null; avertissement: string; creeLe: string }
 export interface AnalyseRecue {
   id: string; zoneId: string; zoneRevision: number; coucheId: string; versionId: string; methode: string; versionMethode: string; creeLe: string; aRecalculer: boolean; motifsRecalcul: string[];
@@ -104,10 +108,14 @@ export interface UniteTerritorialeRecue extends UniteTerritoriale {
   readonly attribution: string;
 }
 
+/** Tableau de bord RGPH 2024 (D-GD-37) : définition des blocs en base et zone nationale. */
+export interface TableauDeBordRecu { pays: string; versionId: string; attribution: string; zone: { code: string; nom: string; coucheId: string }; definition: unknown; concepts: Record<string, number> }
+export interface ConceptsRecus { langue: "fr" | "ar"; source: string | null; concepts: { titre: string; texte: string }[] }
+
 export const api = {
   /** Découpage territorial en base (lot H, D-GD-28) : pays chargés, unités d'un niveau, une unité. */
   territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
-  /** Niveaux et liens parent → enfant du découpage en base (D-GD-35) : aucune hiérarchie n'est écrite dans l'interface. */
+  /** Niveaux et liens parent → enfant du découpage en base (D-GD-42) : aucune hiérarchie n'est écrite dans l'interface. */
   decoupage: (pays: string) => appeler<DecoupageRecu>(`/territoires/${encodeURIComponent(pays)}/decoupage`),
   unitesTerritoriales: (pays: string, parent: string | null) => appeler<{ unites: UniteTerritoriale[] }>(`/territoires/${encodeURIComponent(pays)}/unites${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
   uniteTerritoriale: (pays: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/${encodeURIComponent(pays)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
@@ -116,14 +124,21 @@ export const api = {
   unitesAuPoint: (pays: string, lon: number, lat: number) => appeler<{ unites: UniteAuPoint[] }>(`/territoires/${encodeURIComponent(pays)}/point?lon=${encodeURIComponent(lon.toFixed(6))}&lat=${encodeURIComponent(lat.toFixed(6))}`),
   uniteTerritorialeDeVersion: (versionId: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/version/${encodeURIComponent(versionId)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   espace: () => appeler<EspaceRecu>("/espace"),
+  tableauDeBord: (pays: string | null) => appeler<TableauDeBordRecu>(`/tableau-de-bord${pays ? `?pays=${encodeURIComponent(pays)}` : ""}`),
+  concepts: (pays: string | null, langue: "fr" | "ar") => appeler<ConceptsRecus>(`/tableau-de-bord/concepts?langue=${langue}${pays ? `&pays=${encodeURIComponent(pays)}` : ""}`),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   couche: (id: string) => appeler<CoucheRecue>(`/couches/${encodeURIComponent(id)}`),
   rechercher: (q: string) => appeler<{ resultats: ResultatRecherche[]; avertissement?: { code: string; message: string } }>(`/recherche?q=${encodeURIComponent(q)}`),
-  table: (id: string, p: { page: number; taille: number; tri: "nom" | "code"; ordre: "asc" | "desc"; propriete?: string; operateur?: "egal" | "contient"; valeur?: string }) => {
-    const q = new URLSearchParams({ page: String(p.page), taille: String(p.taille), tri: p.tri, ordre: p.ordre, ...(p.propriete && p.valeur ? { propriete: p.propriete, operateur: p.operateur ?? "contient", valeur: p.valeur } : {}) });
+  table: (id: string, p: { page: number; taille: number; tri: "nom" | "code"; ordre: "asc" | "desc"; propriete?: string; operateur?: "egal" | "contient"; valeur?: string; zone?: string | null }) => {
+    const q = new URLSearchParams({ page: String(p.page), taille: String(p.taille), tri: p.tri, ordre: p.ordre, ...(p.propriete && p.valeur ? { propriete: p.propriete, operateur: p.operateur ?? "contient", valeur: p.valeur } : {}), ...(p.zone ? { zone: p.zone } : {}) });
     return appeler<{ page: number; taille: number; total: number; lignes: LigneTable[] }>(`/couches/${encodeURIComponent(id)}/table?${q}`);
   },
   codesFiltres: (id: string, f: { propriete: string; operateur: "egal" | "contient"; valeur: string }) => appeler<{ codes: string[] }>(`/couches/${encodeURIComponent(id)}/codes?${new URLSearchParams(f)}`),
+  /** Lecture de l'emprise (D-GD-40) : codes des objets qui recoupent la vue et nombre total d'objets de la couche. */
+  vue: (id: string, emprise: readonly [number, number, number, number], signal?: AbortSignal) =>
+    appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?bbox=${emprise.map((v) => v.toFixed(6)).join(",")}`, signal ? { signal } : {}),
+  /** Codes des objets qui recoupent une zone d'étude de l'espace (D-GD-41). */
+  codesZone: (id: string, zoneId: string) => appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?zone=${encodeURIComponent(zoneId)}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
@@ -139,11 +154,14 @@ export const api = {
   cartes: (etat: "active" | "archivee" = "active") => appeler<{ cartes: ResumeCarte[] }>(`/cartes?etat=${etat}`),
   carte: (id: string) => appeler<CarteRecue>(`/cartes/${encodeURIComponent(id)}`),
   creerCarte: (nom: string, composition: Composition, collectionId: string | null) => envoyer<CarteRecue>("/cartes", "POST", { nom, composition, collectionId }),
-  reviserCarte: (id: string, corps: { revisionAttendue: number; nom?: string; composition?: Composition; collectionId?: string | null }) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}`, "PUT", corps),
+  reviserCarte: (id: string, corps: { revisionAttendue: number; nom?: string; composition?: Composition }) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}`, "PUT", corps),
   dupliquerCarte: (id: string, corps: { nom?: string; composition?: Composition } = {}) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}/dupliquer`, "POST", corps),
   archiverCarte: (id: string, restaurer = false) => envoyer<CarteRecue>(`/cartes/${encodeURIComponent(id)}/${restaurer ? "restaurer" : "archiver"}`, "POST", {}),
   collections: () => appeler<{ collections: CollectionRecue[] }>("/collections"),
-  creerCollection: (nom: string) => envoyer<CollectionRecue>("/collections", "POST", { nom }),
+  collection: (id: string) => appeler<CollectionDetail>(`/collections/${encodeURIComponent(id)}`),
+  creerCollection: (corps: { nom: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>("/collections", "POST", corps),
+  enregistrerCollection: (id: string, corps: { revisionAttendue: number; nom?: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>(`/collections/${encodeURIComponent(id)}`, "PUT", corps),
+  supprimerCollection: (id: string) => envoyer<void>(`/collections/${encodeURIComponent(id)}`, "DELETE"),
   zones: () => appeler<{ zones: ZoneRecue[] }>("/zones"),
   creerZone: (corps: { nature: "zone" | "annotation"; nom: string; texte?: string; geometrie: unknown; provenance: "dessin" | "import" | "coordonnees" }) => envoyer<ZoneRecue>("/zones", "POST", corps),
   archiverZone: (id: string) => envoyer<{ id: string }>(`/zones/${encodeURIComponent(id)}/archiver`, "POST", {}),
@@ -156,8 +174,8 @@ export const api = {
   exporter: (carteId: string, revisionAttendue: number, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, revisionAttendue, analyseIds }),
 };
 
-/** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker). */
-export const adresseTuiles = (coucheId: string) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
+/** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker) ; points regroupés en grappes (D-GD-40). */
+export const adresseTuiles = (coucheId: string, regrouper = false) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}${regrouper ? "?regrouper=1" : ""}`;
 
 /** Adresse des points d'étiquette d'une couche (lot C, D-GD-24), lus seulement quand ses libellés sont affichés. */
 export const adresseEtiquettes = (coucheId: string) => `${window.location.origin}${RACINE_API}/etiquettes/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { regleDe, validerDeclarationTerritoire } from "./territoires.js";
 
-describe("découpage territorial (lot H, D-GD-28 ; D-GD-35)", () => {
+describe("découpage territorial (lot H, D-GD-28 ; D-GD-42)", () => {
   it("niveau du découpage en base : un code de niveau, règle « decoupage »", () => {
     const d = { pays: "MA", nomPays: "Maroc", niveau: "commune" };
     const v = validerDeclarationTerritoire(d);

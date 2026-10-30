@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-28 (UTC).
+Mis à jour : 2026-10-30 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,7 +15,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
-- Niveaux infra-communaux (D-GD-35) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
+- Niveaux infra-communaux (D-GD-42) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
   après #356). Après fusion et déploiement : lancer **une fois** sur le VPS
   `node apps/api/dist/geodata-reference.js --decoupage MA` (jamais au démarrage ; relancé, il ne fait rien). À arbitrer :
   Casablanca compte 5 niveaux selon le fichier HCP (la demande en comptait 4). Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
@@ -51,6 +51,18 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   sur chaque entité, case « Afficher l'indicateur — [nom] » cochée par défaut, indépendante de « Libellés (nom) ».
 - Sélection par nombre de clics (D-GD-34) : 1 clic → plus petit niveau, clics rapides suivants → niveaux au-dessus ;
   couches chargées ou, carte vierge, découpage du pays courant en base ; double-clic sans zoom.
+  Correctifs téléphone du 28 octobre 2026 : fiche différée après la série de tapes (#358, `d921230`) ; fenêtre de la
+  série à 600 ms et clic daté à l'événement d'entrée (#359) — vérifié Pixel 7, cadence humaine, couches HCP chargées.
+- Recherche de la carte en mini-barre (D-GD-35) : loupe sous la barre d'outils (Alt+R), barre flottante, même logique ;
+  champ retiré de la barre au-dessus de la carte.
+- Collections de cartes (D-GD-36) : ensemble ordonné de références, plusieurs collections par carte, menu ☰ « Cartes »,
+  mini-barre Enregistrer / Fond ; « Partager » attend une spécification (`COLLECTIONS.md`).
+- Onglets et tableau de bord RGPH 2024 (D-GD-37) : `TABLEAU-DE-BORD.md` ; données manquantes (séries 1960–2014,
+  concepts en arabe, emplois CEE par secteur) affichées « Donnée non disponible » en attendant des fiches qualifiées.
+- Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, panneau flottant ;
+  un seul panneau de la mini-barre ouvert à la fois (`panneauMini` de la page).
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39, `tableau-croise.ts`) ; palette partagée `--gd-cat-*` (tableaux et
+  graphiques) ; écarts de cohérence de 1 publiés par le HCP signalés, jamais corrigés.
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.
@@ -73,6 +85,15 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Contours colorés et hiérarchie des limites administratives (D-GD-16).
 - Fournisseurs de fonds dans Paramètres, MapTiler par défaut (D-GD-15).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
+
+- Analyse de la carte FeenWay (30 octobre 2026) : `ANALYSE-FEENWAY.md`, pistes P1 à P3.
+- Lot « Lecture de l'emprise » (D-GD-40, demandé par le maître d'ouvrage le 30 octobre 2026) : synthèse de la vue
+  (Alt+V), regroupement des points dans les tuiles (Alt+G), état de la carte dans l'adresse et « Copier l'adresse de
+  cette vue » (Alt+K), zoom affiché. Fusionné par la PR #367 (`603504f`), CI verte. Suites possibles de l'analyse, non engagées : P1-6
+  (Plan / Satellite), P2, P3.
+- Lot « Zone d'étude qui filtre » (D-GD-41, demandé le 30 octobre 2026) : filtre de zone sur la carte, la table et la
+  synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Fusionné par la PR #369 (`976cd17`), CI verte ; branche
+  `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
 
 ## Prochaine action
 

@@ -94,19 +94,78 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
-## Sélection par nombre de clics (D-GD-34, D-GD-35 : niveaux réels de l'endroit lus en base)
+## Recherche de la carte (D-GD-35)
+
+La recherche (nom, code HCP, « lon … lat … ») s'ouvre par la **loupe** de la mini-barre placée sous la barre d'outils
+(Alt+R) : barre flottante à gauche de la loupe, même champ et même logique qu'auparavant. Échap, un nouvel appui sur la
+loupe ou un clic sur la carte la referment ; le texte saisi est gardé. La barre au-dessus de la carte ne porte plus de
+champ de recherche (Fond, Fournisseurs, Enregistrer et menu restent).
+
+## Mini-barre, menu « Cartes » et collections (D-GD-36)
+
+Sous la loupe, la mini-barre porte **Enregistrer** (même action que le bouton de la barre) et **Fond de carte** (liste des
+mêmes fonds que le sélecteur). Le menu ☰ regroupe sous **Cartes** : Mes cartes, Collection et Fournisseurs (Partager :
+bientôt). Une **collection** est un ensemble ordonné de références vers des cartes enregistrées (atlas) ; concept, modèle
+de données et API : [`docs/workstreams/geodata/COLLECTIONS.md`](../workstreams/geodata/COLLECTIONS.md).
+
+## Onglets et tableau de bord RGPH 2024 (D-GD-37)
+
+La barre au-dessus de la carte est une barre d'onglets : **Cartes thématiques** (la carte), **Chiffres clés 2024**,
+**Tableaux RGPH 2024**, **CEE 2024**, **Concepts et définitions** ; ☰ à droite. Chaque onglet a son adresse
+(`/geodata/chiffres-cles`…) ; la carte reste telle quelle quand on revient. La zone affichée est celle sélectionnée sur
+la carte (ou le niveau de la barre territoriale), sinon le Royaume du Maroc ; un filtre de zone la change. L'état
+d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, calculs déclarés et données manquantes :
+[`docs/workstreams/geodata/TABLEAU-DE-BORD.md`](../workstreams/geodata/TABLEAU-DE-BORD.md).
+
+## Lecture de l'emprise (D-GD-40)
+
+- **Synthèse de la vue** (barre d'outils, Alt+V) : pour chaque couche d'objets visible, « N dans la vue sur T » (objets
+  lus en base qui recoupent la vue) ; avec un indicateur actif, min, moyenne simple et max des entités évaluées de la vue
+  et nombre d'entités non évaluées. Route `GET /geodata/api/couches/:id/vue?bbox=ouest,sud,est,nord`.
+- **Regrouper les points** (case par couche de points, barre d'outils, Alt+G) : grappes numérotées calculées dans les
+  tuiles (`/tuiles/…?regrouper=1`) jusqu'au zoom 13 ; un clic sur une grappe s'en rapproche.
+- **Adresse de la vue** : la caméra, la carte ouverte, les couches et l'indicateur actif s'écrivent dans le fragment de
+  l'adresse (`#v=…`) ; ouvrir cette adresse rouvre la même vue. « Copier l'adresse de cette vue » (Alt+K) ; un
+  destinataire ne voit que les couches qu'il peut déjà consulter.
+- **Zoom** affiché en permanence en bas à gauche de la carte.
+
+## Zone d'étude qui filtre (D-GD-41)
+
+Dans **Études**, « Filtrer par cette zone » limite la carte, la table attributaire et la synthèse de la vue aux objets
+qui recoupent la zone ; une puce « Zone d'étude : nom × » s'affiche en haut de la carte, Alt+Z retire ou rétablit le
+filtre, et la zone est écrite dans l'adresse de la vue. Le tableau de bord n'est pas filtré (territoires entiers) : pour
+une zone libre, « Analyser » donne l'analyse figée.
+
+## Fil de navigation administrative dans la mini-barre (D-GD-38)
+
+La mini-barre porte, de haut en bas : **Loupe**, **Enregistrer**, **≡** (« Navigation administrative ») et **Fond**. ≡
+déplie le fil « Maroc › Régions › … › Retour » en panneau à gauche de la mini-barre (plié par défaut). Un seul panneau
+(recherche, fil ou fonds) est ouvert à la fois ; le fil reste ouvert pendant la sélection par clics et se ferme par ≡ ou
+Échap ; il garde son état d'un onglet à l'autre.
+
+## Fiche d'information : tableaux croisés Milieu × Sexe (D-GD-39)
+
+Un indicateur décliné par milieu et par sexe (population légale, population municipale, taux…) s'affiche en tableau
+croisé : lignes Urbain, Rural, Ensemble ; colonnes Ensemble, Masculin, Féminin ; sans défilement horizontal. Les
+couleurs des catégories sont celles des légendes des graphiques (palette `--gd-cat-*`). Un écart Urbain + Rural ≠
+Ensemble ou Masculin + Féminin ≠ Ensemble est signalé sous le tableau, jamais corrigé.
+
+## Sélection par nombre de clics (D-GD-34 ; D-GD-42 : niveaux réels de l'endroit lus en base)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global, en
-suivant les niveaux réels de l'endroit lus en base (D-GD-35) : arrondissement, préfecture d'arrondissements, commune,
+suivant les niveaux réels de l'endroit lus en base (D-GD-42) : arrondissement, préfecture d'arrondissements, commune,
 préfecture, région à Casablanca (5 clics) ; arrondissement, commune, préfecture, région dans les autres communes à
-arrondissements (4) ; commune, province, région ailleurs (3) (délai du navigateur, ~300 ms ; au-delà, ou si le pointeur
-a bougé, on recommence). Couches de limites visibles : seuls leurs niveaux comptent ; l'entité du premier clic est la
-plus fine touchée, ses parents sont lus des liens parent → enfant en base. Carte vierge : les unités du pays courant qui contiennent le
+arrondissements (4) ; commune, province, région ailleurs (3) (600 ms au plus entre deux clics — plus que le double-clic
+du navigateur, car deux tapes humaines sur téléphone sont séparées de 350 à 450 ms ; au-delà, ou si le pointeur a bougé
+de plus de 16 px, on recommence). Couches de limites visibles : seuls leurs niveaux comptent ; l'entité du premier clic
+est la plus fine touchée, ses parents sont lus des liens parent → enfant en base. Carte vierge : les unités du pays courant qui contiennent le
 point (`GET /territoires/:pays/point?lon=&lat=`) ; l'entité est affichée seule (contour et mise en évidence), sans
 couche ajoutée. Le double-clic et la double-tape ne zooment plus ; un clic hors de toute entité efface la sélection ; les
-outils (dessin, mesure) gardent leurs clics. Logique pure : `geodata-model/src/selection-clics.ts`.
+outils (dessin, mesure) gardent leurs clics. Téléphone : la fiche (volet du bas, qui recouvre la carte) ne s'ouvre
+qu'une fois la série de tapes terminée, la sélection restant immédiate. Logique pure :
+`geodata-model/src/selection-clics.ts`.
 
-## Découpage administratif en base, niveaux infra-communaux (D-GD-35)
+## Découpage administratif en base, niveaux infra-communaux (D-GD-42)
 
 Niveaux (`geodata_niveaux_administratifs`), entités et liens parent → enfant (`geodata_entites_administratives`) sont en
 base ; aucun niveau ni territoire dans le code. Données : `docs/geodata/sources/decoupage/` (fichier HCP tel quel, table

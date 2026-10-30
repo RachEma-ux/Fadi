@@ -1,4 +1,4 @@
-# Inventaire du découpage administratif du Maroc (D-GD-35)
+# Inventaire du découpage administratif du Maroc (D-GD-42)
 
 Généré par `scripts/geodata/decoupage_hcp.py` le 2026-10-27 ; relancer le script régénère ce rapport.
 

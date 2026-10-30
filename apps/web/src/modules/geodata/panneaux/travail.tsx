@@ -11,14 +11,18 @@ import type { OutilCarte } from "../carte/moteur";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; onOuvrir(id: string): void; onNouvelle(): void; onEnregistrerSous(nom: string, collectionId: string | null): Promise<void>; onCarteModifiee(c: CarteRecue): void }) {
+/**
+ * Mes cartes : enregistrer la carte affichée (ou « Enregistrer sous » un autre nom : nouvelle carte, même composition),
+ * renommer, dupliquer, archiver, ouvrir. Les collections qui référencent la carte sont affichées ; on les compose dans
+ * le panneau Collection (D-GD-36), jamais ici.
+ */
+export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; enregistrerSous?: boolean; onOuvrir(id: string): void; onNouvelle(): void; onEnregistrerSous(nom: string, collectionId: string | null): Promise<void>; onCarteModifiee(c: CarteRecue): void; onFinEnregistrerSous?(): void }) {
   const [cartes, setCartes] = useState<ResumeCarte[] | null>(null);
   const [archives, setArchives] = useState(false);
   const [collections, setCollections] = useState<CollectionRecue[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [nom, setNom] = useState("");
   const [collection, setCollection] = useState("");
-  const [nouvelleCollection, setNouvelleCollection] = useState("");
   const [renommer, setRenommer] = useState<string | null>(null);
   const champNom = useRef<HTMLInputElement>(null);
   const charger = () => {
@@ -26,19 +30,24 @@ export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; onOu
     Promise.all([api.cartes(archives ? "archivee" : "active"), api.collections()]).then(([c, k]) => { setCartes(c.cartes); setCollections(k.collections.filter((x) => x.etat === "active")); }).catch((e) => setErreur(message(e)));
   };
   useEffect(charger, [archives, p.carte?.revision, p.carte?.id]);
-  useEffect(() => { if (p.nouvelle) champNom.current?.focus(); }, [p.nouvelle]);
+  const formulaire = !p.carte || !!p.enregistrerSous;
+  useEffect(() => { if (p.nouvelle || p.enregistrerSous) { if (p.carte && p.enregistrerSous) setNom(`${p.carte.nom.slice(0, 110)} (copie)`); champNom.current?.focus(); } }, [p.nouvelle, p.enregistrerSous]); // eslint-disable-line react-hooks/exhaustive-deps
   const agir = async (f: () => Promise<unknown>) => { try { setErreur(null); await f(); charger(); } catch (e) { setErreur(message(e)); } };
   return (
     <div data-gd-mes-cartes>
-      {!p.carte && (
-        <form className="gd-formulaire" onSubmit={(e) => { e.preventDefault(); if (nom.trim()) void agir(() => p.onEnregistrerSous(nom.trim(), collection || null)); }}>
-          <h3>Enregistrer cette carte</h3>
+      {formulaire && (
+        <form className="gd-formulaire" onSubmit={(e) => { e.preventDefault(); if (nom.trim()) void agir(async () => { await p.onEnregistrerSous(nom.trim(), collection || null); setNom(""); p.onFinEnregistrerSous?.(); }); }} data-gd-formulaire-enregistrer={p.carte ? "sous" : "nouvelle"}>
+          <h3>{p.carte ? "Enregistrer sous" : "Enregistrer cette carte"}</h3>
+          {p.carte && <p className="gd-discret">La carte affichée est enregistrée comme une nouvelle carte, sous ce nom ; l'originale ne change pas.</p>}
           <label className="gd-champ">Nom de la carte<input ref={champNom} value={nom} onChange={(e) => setNom(e.target.value)} maxLength={120} required data-gd-nom-carte /></label>
-          <label className="gd-champ">Collection<select value={collection} onChange={(e) => setCollection(e.target.value)}><option value="">Aucune</option>{collections.map((c) => <option key={c.id} value={c.id} translate="no">{c.nom}</option>)}</select></label>
-          <button type="submit" data-gd-enregistrer-sous>Enregistrer la carte</button>
+          <label className="gd-champ">Ajouter à la collection<select value={collection} onChange={(e) => setCollection(e.target.value)}><option value="">Aucune</option>{collections.map((c) => <option key={c.id} value={c.id} translate="no">{c.nom}</option>)}</select></label>
+          <div className="gd-actions">
+            <button type="submit" data-gd-enregistrer-sous>Enregistrer la carte</button>
+            {p.carte && <button type="button" onClick={() => { setNom(""); p.onFinEnregistrerSous?.(); }}>Annuler</button>}
+          </div>
         </form>
       )}
-      {p.carte && (
+      {p.carte && !p.enregistrerSous && (
         <section className="gd-formulaire">
           <h3 translate="no">{p.carte.nom}</h3>
           <p className="gd-discret">{`Révision ${p.carte.revision} · modifiée le ${new Date(p.carte.modifieLe).toLocaleString()}`}</p>
@@ -48,7 +57,7 @@ export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; onOu
               <button type="submit">Valider le nom</button><button type="button" onClick={() => setRenommer(null)}>Annuler</button>
             </form>
           )}
-          <label className="gd-champ">Collection<select value={p.carte.collectionId ?? ""} onChange={(e) => void agir(async () => p.onCarteModifiee(await api.reviserCarte(p.carte!.id, { revisionAttendue: p.carte!.revision, collectionId: e.target.value || null })))}><option value="">Aucune</option>{collections.map((c) => <option key={c.id} value={c.id} translate="no">{c.nom}</option>)}</select></label>
+          <p className="gd-discret" data-gd-collections-de-carte>{p.carte.collections.length ? <>{"Dans les collections : "}<span translate="no">{p.carte.collections.map((c) => c.nom).join(", ")}</span></> : "Dans aucune collection."}</p>
           <div className="gd-actions">
             <button type="button" onClick={() => void agir(async () => p.onOuvrir((await api.dupliquerCarte(p.carte!.id)).id))}>Dupliquer</button>
             <button type="button" onClick={() => void agir(async () => { await api.archiverCarte(p.carte!.id); p.onNouvelle(); })}>Archiver</button>
@@ -56,10 +65,6 @@ export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; onOu
           </div>
         </section>
       )}
-      <form className="gd-formulaire" onSubmit={(e) => { e.preventDefault(); if (nouvelleCollection.trim()) void agir(async () => { await api.creerCollection(nouvelleCollection.trim()); setNouvelleCollection(""); }); }}>
-        <label className="gd-champ">Nouvelle collection<input value={nouvelleCollection} onChange={(e) => setNouvelleCollection(e.target.value)} maxLength={120} /></label>
-        <button type="submit">Créer la collection</button>
-      </form>
       {erreur && <p role="alert" className="gd-alerte">{erreur}</p>}
       <div className="gd-ligne-titre"><h3>{archives ? "Cartes archivées" : "Mes cartes"}</h3><button type="button" onClick={() => setArchives(!archives)}>{archives ? "Voir les cartes actives" : "Voir les archives"}</button></div>
       {!cartes && !erreur && <p role="status">Chargement des cartes…</p>}
@@ -68,7 +73,7 @@ export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; onOu
         {cartes?.map((c) => (
           <li key={c.id} className="gd-carte-couche" data-gd-carte={c.id}>
             <strong translate="no">{c.nom}</strong>
-            <p className="gd-discret">{`${c.couches} couche(s) · révision ${c.revision}${c.collectionId ? ` · ${collections.find((k) => k.id === c.collectionId)?.nom ?? ""}` : ""}`}</p>
+            <p className="gd-discret">{`${c.couches} couche(s) · révision ${c.revision}`}</p>
             <div className="gd-actions">
               {!archives && <button type="button" onClick={() => p.onOuvrir(c.id)} aria-current={p.carte?.id === c.id ? "true" : undefined} data-gd-ouvrir-carte={c.id}>Ouvrir</button>}
               {archives && <button type="button" onClick={() => void agir(() => api.archiverCarte(c.id, true))}>Restaurer</button>}
@@ -94,6 +99,8 @@ export function mesureDuTrace(t: TraceEnCours | null): string | null {
 export function Etudes(p: {
   outil: OutilCarte; trace: TraceEnCours | null; tracePret: { outil: OutilCarte; sommets: readonly [number, number][] } | null; couchesPolygones: CoucheRecue[];
   onOutil(o: OutilCarte): void; onTerminer(): void; onAnnulerTrace(): void; onZonesChangees(): void; onCentrer(geometrie: { type: string; coordinates: unknown }): void; zones: ZoneRecue[];
+  /** Zone qui filtre la carte, la table et la synthèse (D-GD-41) ; `onFiltrerZone(null)` retire le filtre. */
+  zoneFiltre?: string | null; onFiltrerZone?(id: string | null): void;
 }) {
   const [analyses, setAnalyses] = useState<AnalyseRecue[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -164,6 +171,8 @@ export function Etudes(p: {
             {z.texte && <p translate="no">{z.texte}</p>}
             <div className="gd-actions">
               <button type="button" onClick={() => p.onCentrer(z.geometrie)}>Centrer</button>
+              {z.nature === "zone" && p.onFiltrerZone && <button type="button" aria-pressed={p.zoneFiltre === z.id} title="Carte, table et synthèse limitées aux objets qui recoupent cette zone (Alt+Z)" aria-keyshortcuts="Alt+Z"
+                onClick={() => p.onFiltrerZone?.(p.zoneFiltre === z.id ? null : z.id)} data-gd-filtrer-zone={z.id}>{p.zoneFiltre === z.id ? "Retirer le filtre de zone" : "Filtrer par cette zone"}</button>}
               {z.nature === "zone" && p.couchesPolygones.length > 0 && <button type="button" disabled={enCours === z.id} onClick={async () => {
                 setEnCours(z.id); setErreur(null);
                 try { await api.analyser(z.id, couche); chargerAnalyses(); } catch (e) { setErreur(message(e)); } finally { setEnCours(null); }

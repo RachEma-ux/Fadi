@@ -1,5 +1,5 @@
 /**
- * Navigation par niveaux (D-GD-17 lot B, D-GD-35) : pays → région → … → entité la plus fine, en suivant les liens
+ * Navigation par niveaux (D-GD-17 lot B, D-GD-42) : pays → région → … → entité la plus fine, en suivant les liens
  * parent → enfant du découpage **lus en base** (`Parents`), jamais une règle écrite dans le code sur les codes, les noms
  * ou les géométries. La profondeur varie selon l'endroit (une ville dont les arrondissements sont regroupés compte un
  * niveau de plus qu'une ville à arrondissements directs, elle-même un de plus qu'une commune ordinaire). Un code absent du découpage (contour non

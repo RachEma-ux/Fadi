@@ -8,7 +8,7 @@
  *   GET /territoires/version/:versionId/unites/:code   la même, retrouvée par la version de sa couche (pays déduit)
  *   GET /territoires/:pays/point?lon=&lat=   unités du pays qui contiennent un point, de la plus élémentaire à la plus
  *                                            globale (sélection par nombre de clics sur une carte vierge, D-GD-34)
- *   GET /territoires/:pays/decoupage         découpage administratif en base (D-GD-35) : niveaux (rang, noms, couche) et
+ *   GET /territoires/:pays/decoupage         découpage administratif en base (D-GD-42) : niveaux (rang, noms, couche) et
  *                                            liens parent → enfant de toutes les entités, pour l'interface
  * Seules les unités d'une version de référence **publiée** et consultable sont servies : une version retirée disparaît
  * de la navigation sans attendre un nouveau chargement.
@@ -85,7 +85,7 @@ async function unite(res: import("express").Response, filtre: { pays: string } |
               WHERE ${"pays" in filtre ? "pays = $1" : "version_id = $1"} AND code = $2 AND ($3::int IS NULL OR rang = $3) ORDER BY rang LIMIT 1) t
        JOIN geodata_versions v ON v.id = t.version_id JOIN geodata_couches c ON c.version_id = v.id`, ["pays" in filtre ? filtre.pays : filtre.versionId, code, rang]);
   if (!u) return erreur(res, 404, "not_found", "Unité absente du découpage territorial en base.");
-  // Ancêtres : remontée par le lien parent → enfant (D-GD-35 : la profondeur varie selon l'endroit), du plus haut au plus
+  // Ancêtres : remontée par le lien parent → enfant (D-GD-42 : la profondeur varie selon l'endroit), du plus haut au plus
   // proche ; un parent d'un rang qui n'est pas plus global arrête la remontée (jamais de boucle).
   const ancetres = await requete<{ code: string; nom: string; rang: number }>(
     `WITH RECURSIVE a AS (
@@ -111,7 +111,7 @@ territoiresRouter.get("/territoires/:pays/unites/:code", async (req, res) => {
 });
 
 /**
- * Découpage administratif en base (D-GD-35) : niveaux (du plus global au plus fin, avec la couche publiée de leur fiche)
+ * Découpage administratif en base (D-GD-42) : niveaux (du plus global au plus fin, avec la couche publiée de leur fiche)
  * et liens parent → enfant des entités non retirées. L'interface en tire rangs, parents et niveaux réels d'un endroit,
  * sans aucune règle écrite dans son code. Un pays sans découpage importé rend des listes vides.
  */

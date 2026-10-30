@@ -8,7 +8,7 @@ import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, t
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition, type SerieClics } from "@parcours/geodata-model";
+import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, zoomSurGrappe, type Composition, type SerieClics } from "@parcours/geodata-model";
 import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
 import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
 
@@ -44,6 +44,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   let serieClics: SerieClics | null = null;
   let sommets: [number, number][] = [];
   let couchesAffichees: string[] = [];
+  /** Sources vectorielles servies en grappes (D-GD-40) : changer de mode recrée la source (adresse de tuiles différente). */
+  const sourcesRegroupees = new Map<string, boolean>();
   let fondCourant = "neutre";
 
   carte.on("load", () => {
@@ -54,7 +56,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     pret = true;
     enAttente?.();
     enAttente = null;
+    ev.surEmprise?.();
   });
+  carte.on("resize", () => ev.surEmprise?.());
   let fondSignale: string | null = null;
   carte.on("error", (e) => {
     const m = (e as { error?: { status?: number; message?: string } }).error;
@@ -90,11 +94,21 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       dessinerTrace();
       return;
     }
-    serieClics = compterClic(serieClics, { t: Date.now(), x: e.point.x, y: e.point.y });
+    // Instant de l'événement d'entrée (horloge du navigateur), pas celui du traitement : sur téléphone, le rendu de la
+    // sélection précédente retarde la remise du clic suivant de plusieurs centaines de millisecondes.
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
     const ids = couches.flatMap((id) => [`${id}-remplissage`, `${id}-lignes`, `${id}-points`]).filter((l) => carte.getLayer(l));
+    const touches = ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids }) : [];
+    // Grappe de points (D-GD-40) touchée en premier : la carte se rapproche d'elle, aucune sélection.
+    if (Number(touches[0]?.properties["nombre"] ?? 1) > 1) {
+      serieClics = null;
+      carte.easeTo({ center: e.lngLat, zoom: zoomSurGrappe(carte.getZoom()), duration: 400 });
+      return;
+    }
+    serieClics = compterClic(serieClics, { t: e.originalEvent.timeStamp, x: e.point.x, y: e.point.y });
     const objets: ObjetDesigne[] = [];
-    for (const f of ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids }) : []) {
+    for (const f of touches) {
+      if (Number(f.properties["nombre"] ?? 1) > 1) continue;
       const coucheId = f.layer.id.replace(/-(remplissage|lignes|points)$/, "").slice(PREFIXE.length);
       if (!objets.some((o) => o.coucheId === coucheId)) objets.push({ coucheId, code: String(f.properties["code"]) });
     }
@@ -114,6 +128,17 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     dessinerTrace();
   }
 
+  /** Rendus et sources d'une couche vectorielle retirés (la source des étiquettes est gardée : elle ne dépend pas du regroupement). */
+  function retirerRendus(id: string) {
+    for (const suffixe of ["-remplissage", "-contour", "-selection", "-lignes", "-points", "-nombres", "-raster", "-etiquettes", "-valeurs"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+    if (carte.getSource(id)) carte.removeSource(id);
+    sourcesRegroupees.delete(id);
+  }
+  function retirerCouche(id: string) {
+    retirerRendus(id);
+    if (carte.getSource(`${id}-etq`)) carte.removeSource(`${id}-etq`);
+  }
+
   function appliquerMaintenant(composition: Composition, fond: Fond, d: DonneesAffichage) {
     // Fond : neutre (aucun fournisseur) ou raster configuré, sous toutes les couches.
     if (fondCourant !== fond.id) {
@@ -128,9 +153,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const voulues = composition.couches.map((k) => `${PREFIXE}${k.coucheId}`);
     for (const id of couchesAffichees) {
       if (voulues.includes(id)) continue;
-      for (const suffixe of ["-remplissage", "-contour", "-selection", "-lignes", "-points", "-raster", "-etiquettes", "-valeurs"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
-      if (carte.getSource(id)) carte.removeSource(id);
-      if (carte.getSource(`${id}-etq`)) carte.removeSource(`${id}-etq`);
+      retirerCouche(id);
     }
     // Ordre d'affichage (D-GD-16) : celui de la composition, sauf entre limites administratives (région au-dessus).
     const ordre = ordreAffichage(composition.couches, d.rangs);
@@ -147,19 +170,32 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         carte.setPaintProperty(`${id}-raster`, "raster-opacity", k.opacite);
         continue;
       }
+      // Points regroupés ou non (D-GD-40) : un changement de mode recrée la source et ses rendus. Une couche filtrée n'est
+      // jamais regroupée : une grappe n'a pas de code et compterait des points écartés par le filtre.
+      const regrouper = !!k.regrouper && !d.filtres.has(k.coucheId);
+      if (carte.getSource(id) && sourcesRegroupees.get(id) !== regrouper) retirerRendus(id);
       if (!carte.getSource(id)) {
-        carte.addSource(id, { type: "vector", tiles: [adresseTuiles(k.coucheId)], minzoom: 0, maxzoom: 14, promoteId: "code" });
+        sourcesRegroupees.set(id, regrouper);
+        carte.addSource(id, { type: "vector", tiles: [adresseTuiles(k.coucheId, regrouper)], minzoom: 0, maxzoom: 14, promoteId: "code" });
         carte.addLayer({ id: `${id}-remplissage`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#2b8cbe", "fill-opacity": 0.8 } });
         carte.addLayer({ id: `${id}-contour`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#29434a", "line-width": 0.8 } });
         carte.addLayer({ id: `${id}-lignes`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#2b8cbe", "line-width": 2 } });
-        carte.addLayer({ id: `${id}-points`, type: "circle", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#2b8cbe", "circle-radius": 5, "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
+        // Rayon selon le nombre de points de la grappe (1 = point seul, propriété absente hors regroupement).
+        carte.addLayer({ id: `${id}-points`, type: "circle", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#2b8cbe", "circle-radius": ["step", ["coalesce", ["get", "nombre"], 1], 5, 2, 10, 10, 13, 100, 16, 1000, 20], "circle-stroke-color": "#ffffff", "circle-stroke-width": ["step", ["coalesce", ["get", "nombre"], 1], 1, 2, 2] } });
+        // Nombre de points de chaque grappe, en chiffres (glyphes hébergés) ; jamais pour un point seul.
+        carte.addLayer({
+          id: `${id}-nombres`, type: "symbol", source: id, "source-layer": "objets", filter: [">", ["coalesce", ["get", "nombre"], 1], 1],
+          layout: { "text-field": ["to-string", ["get", "nombre"]], "text-font": [POLICE_ETIQUETTES], "text-size": 12, "text-allow-overlap": true, "text-ignore-placement": true },
+          // Texte foncé sur liseré blanc, comme les libellés : lisible quelle que soit la couleur de la couche.
+          paint: { "text-color": "#1d2b30", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
+        });
         carte.addLayer({ id: `${id}-selection`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["get", "code"], "__aucun__"], paint: { "line-color": "#c77b35", "line-width": 4 } });
       }
       // Ordre : la première couche est dessous ; les remplissages ici, les contours et objets linéaires ensuite, au-dessus
       // de tous les remplissages (une bordure n'est jamais masquée par le remplissage d'une autre couche).
       carte.moveLayer(`${id}-remplissage`, "gd-zones-remplissage");
       const visible = k.visible ? "visible" : "none";
-      for (const suffixe of ["-remplissage", "-contour", "-lignes", "-points", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
+      for (const suffixe of ["-remplissage", "-contour", "-lignes", "-points", "-nombres", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
       const codes = d.filtres.get(k.coucheId);
       const filtreCode: ExpressionSpecification | null = codes ? ["in", ["get", "code"], ["literal", [...codes]]] : null;
       const avec = (geom: string): ExpressionSpecification => (filtreCode ? ["all", ["==", ["geometry-type"], geom], filtreCode] : ["==", ["geometry-type"], geom]);
@@ -192,7 +228,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     for (const k of ordre) {
       const id = `${PREFIXE}${k.coucheId}`;
       if (d.rasters.has(k.coucheId)) continue;
-      for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
+      for (const suffixe of ["-contour", "-lignes", "-points", "-nombres", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
     for (const t of ["gd-entite-remplissage", "gd-entite-trait", "gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(t)) carte.moveLayer(t, "gd-trace-ligne");
     // Libellés et valeurs au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
@@ -317,6 +353,11 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       return attendre(mini.carte);
     },
     canevas: () => carte.getCanvas(),
+    emprise() {
+      if (!pret) return null;
+      const b = carte.getBounds();
+      return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+    },
     metresParPixel() {
       const lat = carte.getCenter().lat;
       return (40_075_016.7 * Math.cos((lat * Math.PI) / 180)) / (512 * 2 ** carte.getZoom());

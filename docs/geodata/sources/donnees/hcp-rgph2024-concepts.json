@@ -1,0 +1,317 @@
+{
+ "source": "HCP, RGPH 2024 — « Indicateurs démographiques et socio-économiques du Royaume du Maroc selon les résultats du RGPH 2024 », feuille « Définitions_des_Concepts » (https://www.hcp.ma/file/242671/, CC BY 4.0)",
+ "concepts": [
+  {
+   "langue": "fr",
+   "ordre": 0,
+   "titre": "Recensement Général de la Population et de l'Habitat (RGPH)",
+   "texte": "Ensemble des opérations qui consistent à collecter, à exploiter, à analyser et à publier les données démographiques et socioéconomiques et les conditions d'habitat, se rapportant à la date de référence du Recensement, à l'ensemble de la population résidente du Royaume du Maroc."
+  },
+  {
+   "langue": "fr",
+   "ordre": 1,
+   "titre": "Date de référence du Recensement",
+   "texte": "Le 1er septembre 2024."
+  },
+  {
+   "langue": "fr",
+   "ordre": 2,
+   "titre": "Population légale",
+   "texte": "Ensemble des personnes résidant sur le territoire national à la date de référence du Recensement, ou ayant l'intention d'y résider, pour une durée d'au moins 6 mois.\nLa population légale est constituée de :\n• la population municipale ; et\n• la population comptée à part."
+  },
+  {
+   "langue": "fr",
+   "ordre": 3,
+   "titre": "Population municipale",
+   "texte": "Ensemble des personnes sédentaires (ayant leur résidence habituelle dans un logement), des personnes nomades et des personnes sans-abri."
+  },
+  {
+   "langue": "fr",
+   "ordre": 4,
+   "titre": "Population comptée à part",
+   "texte": "Ensemble des personnes contraintes de vivre en communauté dans des établissements spécifiques pour raisons professionnelles, sociales ou sanitaires, à savoir :\n• les soldats, les gendarmes et les agents des forces auxiliaires vivant dans les casernes, les quartiers, les camps militaires et assimilés ;\n• les travailleurs logés dans les baraques de chantiers des travaux publics et n'ayant pas de résidence habituelle ;\n• les détenus dans les prisons ;\n• les personnes vivant dans les maisons de bienfaisance, dans les maisons de retraite, dans les maisons d'éducation surveillée, dans les centres de protection de l'enfance et dans les zaouïas ; et\n• les personnes hospitalisées pendant au moins 6 mois."
+  },
+  {
+   "langue": "fr",
+   "ordre": 5,
+   "titre": "Âge",
+   "texte": "Âge révolu (ou âge au dernier anniversaire), soit le nombre entier d’années écoulées depuis la naissance."
+  },
+  {
+   "langue": "fr",
+   "ordre": 6,
+   "titre": "État matrimonial",
+   "texte": "Situation conjugale d'une personne compte tenu des lois et des coutumes du mariage.\nLes personnes sont classées selon les catégories suivantes :\n• Célibataire.\n• Marié.e.\n• Divorcé.e.\n• Veuf.ve."
+  },
+  {
+   "langue": "fr",
+   "ordre": 7,
+   "titre": "Célibataire",
+   "texte": "État matrimonial d'une personne qui n'a jamais contracté un mariage civil ou coutumier."
+  },
+  {
+   "langue": "fr",
+   "ordre": 8,
+   "titre": "Marié.e",
+   "texte": "État matrimonial d'une personne unie par les liens du mariage, civil ou coutumier, avec une autre personne, abstraction faite de la tenue de la cérémonie de mariage et de la cohabitation des époux."
+  },
+  {
+   "langue": "fr",
+   "ordre": 9,
+   "titre": "Divorcé.e",
+   "texte": "État matrimonial d'une personne dont le dernier mariage a été dissous et qui ne s'est pas remariée depuis. S'il s'agissait d'un mariage civil, il est impératif que la dissolution ait été prononcée par un tribunal."
+  },
+  {
+   "langue": "fr",
+   "ordre": 10,
+   "titre": "Veuf.ve",
+   "texte": "État matrimonial d'une personne dont le dernier époux ou la dernière épouse est décédé et qui ne s'est pas remariée depuis."
+  },
+  {
+   "langue": "fr",
+   "ordre": 11,
+   "titre": "Âge moyen singulier au mariage",
+   "texte": "Durée moyenne de célibat, exprimée en années, des personnes qui se sont mariées avant l'âge de 55 ans."
+  },
+  {
+   "langue": "fr",
+   "ordre": 12,
+   "titre": "Naissance vivante",
+   "texte": "Nouveau-né ayant manifesté des signes de vie, tels que le premier cri, la respiration et les battements cardiaques, par opposition au mort-né."
+  },
+  {
+   "langue": "fr",
+   "ordre": 13,
+   "titre": "Indicateur conjoncturel de fécondité",
+   "texte": "Nombre moyen de naissances vivantes qu'aurait une femme si elle connaissait, durant toute sa vie féconde, les conditions de fécondité observées durant les 12 mois précédant la date de référence du recensement."
+  },
+  {
+   "langue": "fr",
+   "ordre": 14,
+   "titre": "Descendance finale des femmes",
+   "texte": "Nombre moyen de naissances vivantes qu'ont eu les femmes parvenues en fin de vie féconde à la date de référence du recensement.\nEn pratique, la descendance finale est calculée pour les femmes de 45 à 49 ans."
+  },
+  {
+   "langue": "fr",
+   "ordre": 15,
+   "titre": "Personne en situation de handicap",
+   "texte": "Personne ayant soit une incapacité totale, soit beaucoup de difficulté dans au moins un des six domaines fonctionnels suivants :\n• La vision.\n• L'audition.\n• La mobilité.\n• La communication.\n• La mémoire et la concentration.\n• L'entretien personnel."
+  },
+  {
+   "langue": "fr",
+   "ordre": 16,
+   "titre": "Taux de prévalence du handicap",
+   "texte": "Rapport entre le nombre de personnes en situation de handicap et l'ensemble de la population."
+  },
+  {
+   "langue": "fr",
+   "ordre": 17,
+   "titre": "Population scolarisée en 2023/2024",
+   "texte": "Ensemble des personnes qui ont fréquenté un établissement d'enseignement général ou de formation professionnelle –public ou privé– durant l'année scolaire 2023/2024, sans avoir nécessairement terminé leur année."
+  },
+  {
+   "langue": "fr",
+   "ordre": 18,
+   "titre": "Taux de scolarisation des 6-11 ans en 2023/2024",
+   "texte": "Proportion de personnes scolarisées durant l'année scolaire 2023/2024 et âgées de 6 à 11 ans durant cette même année scolaire.\nCette tranche d'âge correspond aux 7-12 ans à la date de référence du recensement."
+  },
+  {
+   "langue": "fr",
+   "ordre": 19,
+   "titre": "Moyenne d'années de scolarisation dans l'enseignement général",
+   "texte": "Nombre moyen d'années de scolarisation dans l'enseignement général d'une population donnée, abstraction faite des redoublements."
+  },
+  {
+   "langue": "fr",
+   "ordre": 20,
+   "titre": "Espérance de scolarisation dans l'enseignement général",
+   "texte": "Nombre d'années de scolarisation dans l'enseignement général qu'aurait un enfant en âge d'entrée à l'école s'il connaissait, tout au long de son parcours scolaire, les conditions de scolarisation observées durant l'année scolaire 2023/2024."
+  },
+  {
+   "langue": "fr",
+   "ordre": 21,
+   "titre": "Analphabète",
+   "texte": "Personne ne pouvant ni lire ni écrire, en le comprenant, un énoncé simple et bref se rapportant à sa vie quotidienne."
+  },
+  {
+   "langue": "fr",
+   "ordre": 22,
+   "titre": "Taux d'analphabétisme des 10 ans et plus",
+   "texte": "Rapport entre le nombre d'analphabètes âgés de 10 ans et plus à l'ensemble de la population du même âge."
+  },
+  {
+   "langue": "fr",
+   "ordre": 23,
+   "titre": "Taux d'analphabétisme des 15 ans et plus",
+   "texte": "Rapport entre le nombre d'analphabètes âgés de 15 ans et plus à l'ensemble de la population du même âge."
+  },
+  {
+   "langue": "fr",
+   "ordre": 24,
+   "titre": "Population active de 15 ans et plus",
+   "texte": "Ensemble des personnes de 15 ans et plus disponibles sur le marché du travail, qu'elles exercent ou qu'elles recherchent une activité professionnelle.\nLa population active est constituée :\n• de la population active occupée ; et\n• des chômeurs."
+  },
+  {
+   "langue": "fr",
+   "ordre": 25,
+   "titre": "Population active occupée de 15 ans et plus",
+   "texte": "Ensemble des personnes de 15 ans et plus ayant travaillé –ne serait-ce qu'une heure– au cours de la semaine précédant leur interview, et des personnes pourvues d'un emploi mais qui en sont temporairement absentes pour un motif tel qu'une maladie, un congé payé, un congé de maternité, un conflit du travail, une formation, une intempérie, etc.\nCette définition est en conformité avec les recommandations de l'Organisation Internationale du Travail (OIT)."
+  },
+  {
+   "langue": "fr",
+   "ordre": 26,
+   "titre": "Chômeurs",
+   "texte": "Personnes de 15 ans et plus qui n'ont pas d'emploi, qui sont prêtes à travailler et qui recherchent activement ou passivement un travail.\nDeux catégories de chômeurs sont à distinguer :\n• Les chômeurs n'ayant jamais travaillé.\n• Les chômeurs ayant déjà travaillé."
+  },
+  {
+   "langue": "fr",
+   "ordre": 27,
+   "titre": "Population inactive de 15 ans et plus",
+   "texte": "Ensemble des personnes de 15 ans et plus qui n'exercent pas d'activité professionnelle et qui n'en recherchent pas.\nLes inactifs sont classés selon la raison de leur inactivité, et sont :\n• les femmes au foyer ;\n• les élèves et les étudiants ;\n• les rentiers ;\n• les retraités ;\n• les infirmes et les malades ;\n• les personnes âgées ; et\n• les autres inactifs non classés ailleurs."
+  },
+  {
+   "langue": "fr",
+   "ordre": 28,
+   "titre": "Taux d'activité des 15 ans et plus",
+   "texte": "Rapport de la population active de 15 ans et plus à l'ensemble de la population du même âge."
+  },
+  {
+   "langue": "fr",
+   "ordre": 29,
+   "titre": "Taux de chômage",
+   "texte": "Proportion de chômeurs dans la population active de 15 ans et plus."
+  },
+  {
+   "langue": "fr",
+   "ordre": 30,
+   "titre": "Statut professionnel",
+   "texte": "Type de relation de travail qu'a une personne avec des personnes physiques ou morales dans le cadre de son activité professionnelle.\nLes catégories de statut professionnel utilisées sont les suivantes :\n• Employeur.\n• Indépendant.\n• Salarié du secteur public.\n• Salarié du secteur privé.\n• Aide familial.\n• Apprenti.\n• Coopérateur/Associé.\n• Autre."
+  },
+  {
+   "langue": "fr",
+   "ordre": 31,
+   "titre": "Employeur",
+   "texte": "Statut professionnel d'une personne qui travaille pour compte propre, avec éventuellement un ou plusieurs partenaires, et qui emploie au moins un salarié permanent."
+  },
+  {
+   "langue": "fr",
+   "ordre": 32,
+   "titre": "Indépendant",
+   "texte": "Statut professionnel d'une personne qui travaille pour compte propre et qui n'emploie aucun salarié permanent."
+  },
+  {
+   "langue": "fr",
+   "ordre": 33,
+   "titre": "Salarié",
+   "texte": "Statut professionnel d'une personne qui travaille, aux termes d'un contrat explicite ou implicite, pour le compte d'autrui en échange d'un salaire, d'une rétribution ou d'avantages en nature.\nLe statut de salarié se divise en deux catégories, selon le secteur employeur :\n• Salarié du secteur public (services de l’État, établissements et entreprises publics et semi-publics, collectivités territoriales, etc.).\n• Salarié du secteur privé (établissements et entreprises privés, associations, coopératives, ordres professionnels, ménages, etc.)."
+  },
+  {
+   "langue": "fr",
+   "ordre": 34,
+   "titre": "Aide familial",
+   "texte": "Statut professionnel d'une personne qui travaille pour le compte d'un membre de sa famille vivant au sein du même ménage, et qui ne perçoit aucune rémunération."
+  },
+  {
+   "langue": "fr",
+   "ordre": 35,
+   "titre": "Apprenti",
+   "texte": "Statut professionnel d'une personne qui travaille, généralement contre une rémunération symbolique, en vue de se former à un métier en dehors de son cursus d'enseignement général et de formation professionnelle."
+  },
+  {
+   "langue": "fr",
+   "ordre": 36,
+   "titre": "Coopérateur/Associé",
+   "texte": "Statut professionnel d'une personne qui travaille dans une unité de production de biens et services (par exemple une coopérative, une association ou une entreprise), dans laquelle tous les membres sont sur un pied d'égalité quant à la prise de décision et à la répartition des bénéfices."
+  },
+  {
+   "langue": "fr",
+   "ordre": 37,
+   "titre": "Ménage",
+   "texte": "Ensemble de personnes vivant sous le même toit et ayant des dépenses quotidiennes communes, sans qu'ils soient nécessairement unis par des liens de parenté.\nLe ménage peut être :\n• soit un ménage sédentaire ;\n• soit un ménage nomade ;\n• soit un ménage sans-abri."
+  },
+  {
+   "langue": "fr",
+   "ordre": 38,
+   "titre": "Ménage sédentaire",
+   "texte": "Ménage résidant habituellement dans un logement."
+  },
+  {
+   "langue": "fr",
+   "ordre": 39,
+   "titre": "Ménage nomade",
+   "texte": "Ménage ayant principalement une activité pastorale et se déplaçant périodiquement à la recherche de pâturages et de points d'eau."
+  },
+  {
+   "langue": "fr",
+   "ordre": 40,
+   "titre": "Ménage sans-abri",
+   "texte": "Ménage n'ayant pas de toit et contraint de résider et de dormir dans la rue ou l'espace public."
+  },
+  {
+   "langue": "fr",
+   "ordre": 41,
+   "titre": "Taille moyenne des ménages",
+   "texte": "Nombre moyen de personnes par ménage."
+  },
+  {
+   "langue": "fr",
+   "ordre": 42,
+   "titre": "Logement",
+   "texte": "Local occupé par un ménage à titre de résidence principale.\nLes logements sont catégorisés selon plusieurs types :\n• Villa / Étage de villa.\n• Appartement.\n• Maison marocaine.\n• Maison sommaire / Bidonville.\n• Logement rural (diffère des types cités ci-dessus et comporte généralement des locaux à usage agricole).\n• Autre."
+  },
+  {
+   "langue": "fr",
+   "ordre": 43,
+   "titre": "Pièce d'habitation",
+   "texte": "Pièce d'un logement destinée au séjour ou au sommeil (chambre à coucher, chambre de service, séjour, bureau, salle de jeux, etc.).\nUne cuisine, une salle de bains, des W.-C., un vestibule, un couloir, une buanderie, un débarras, un garage inoccupé ou une pièce à usage exclusivement professionnel ne sont pas considérés comme des pièces d'habitation."
+  },
+  {
+   "langue": "fr",
+   "ordre": 44,
+   "titre": "Nombre moyen de personnes par pièce d'habitation",
+   "texte": "Rapport de la population sédentaire au nombre total de pièces d'habitation des ménages sédentaires."
+  },
+  {
+   "langue": "fr",
+   "ordre": 45,
+   "titre": "Âge du logement",
+   "texte": "Nombre d'années révolues écoulées depuis la construction du logement occupé par le ménage sédentaire, ou de sa plus ancienne partie s'il a été construit en plusieurs étapes."
+  },
+  {
+   "langue": "fr",
+   "ordre": 46,
+   "titre": "Statut d'occupation du logement",
+   "texte": "Situation d'un ménage sédentaire concernant l'occupation de sa résidence principale.\nLes statuts d'occupation utilisés sont les suivants :\n• Propriétaire.\n• Locataire.\n• Autre."
+  },
+  {
+   "langue": "fr",
+   "ordre": 47,
+   "titre": "Propriétaire",
+   "texte": "Statut d'occupation d'un ménage propriétaire non accédant (qui n'a pas de prêts en cours), copropriétaire (qui partage la propriété avec d'autres personnes) ou propriétaire accédant (qui a encore des emprunts à rembourser) de son logement."
+  },
+  {
+   "langue": "fr",
+   "ordre": 48,
+   "titre": "Locataire",
+   "texte": "Statut d'occupation d'un ménage acquittant un loyer pour le logement qu'il occupe, qu'il soit sous hypothèque ou non."
+  },
+  {
+   "langue": "fr",
+   "ordre": 49,
+   "titre": "Part des ménages sédentaires disposant de l'électricité",
+   "texte": "Proportion des ménages sédentaires dont le logement est raccordé à un réseau public de distribution d'électricité, ou dont le mode d'éclairage repose sur l'énergie solaire ou sur un groupe électrogène."
+  },
+  {
+   "langue": "fr",
+   "ordre": 50,
+   "titre": "Part des ménages sédentaires disposant de l'eau courante",
+   "texte": "Proportion des ménages sédentaires dont le logement est raccordé à un réseau public de distribution d'eau courante."
+  },
+  {
+   "langue": "fr",
+   "ordre": 51,
+   "titre": "Distance à la route goudronnée",
+   "texte": "Distance réelle que doivent parcourir les membres du ménage sédentaire pour aller de leur logement à la plus proche route goudronnée, par opposition à la distance à vol d'oiseau."
+  }
+ ]
+}

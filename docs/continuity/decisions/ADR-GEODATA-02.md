@@ -334,7 +334,7 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         provinces et les régions sont recalculées.
    - D-GD-34 (27 octobre 2026) — **sélection par nombre de clics, du plus élémentaire au plus global** (spécification du
      maître d'ouvrage ; avant : un clic sélectionnait toujours la région, couche la plus haute) :
-     1. Des clics rapides au même endroit (délai du navigateur, ~300 ms, pointeur immobile à 8 px près) montrent les
+     1. Des clics rapides au même endroit (600 ms au plus entre deux clics depuis le correctif du point 7, pointeur immobile à 16 px près) montrent les
         niveaux un par un : 1 clic → commune, 2 → province / préfecture, 3 → région. Le premier clic sélectionne tout de
         suite le plus petit niveau (aucun retard) ; chaque clic suivant remplace la sélection par le niveau au-dessus ;
         au-delà du dernier niveau, rien ne change ; un délai dépassé ou un pointeur déplacé recommence au plus petit.
@@ -354,7 +354,130 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      5. Précédences conservées : un objet d'une couche qui n'est pas une limite (point d'intérêt, ligne) garde la
         sélection simple ; sans couche de limites, une couche raster visible garde la lecture de sa valeur au point
         (D-GD-13). Logique pure `geodata-model/src/selection-clics.ts` (comptage, niveaux, rang du n-ième clic), testée.
-   - D-GD-35 (27 octobre 2026) — **niveaux infra-communaux sur tout le territoire, tout venant de la base** (demande du
+     6. Téléphone (correctif du 28 octobre 2026) : la fiche d'objet recouvre la carte (volet du bas) ; elle ne s'ouvre
+        qu'une fois la série de tapes terminée (≈350 ms après la dernière), la sélection restant immédiate, pour que la
+        2ᵉ et la 3ᵉ tape atteignent encore la carte ; tolérance du pointeur portée à 16 px (un doigt).
+     7. Délai de la série (second correctif du 28 octobre 2026, après un nouvel essai infructueux du maître d'ouvrage) :
+        la fenêtre de 300 ms (double-clic du navigateur) était trop courte pour des tapes humaines — mesure en émulation
+        tactile : 350 à 400 ms entre deux tapes nominalement espacées de 250 ms, le rendu de la première retardant la
+        seconde ; chaque tape recommençait donc une série à la commune. `DELAI_CLICS_MS` passe à **600 ms** (fiche
+        différée sur téléphone 650 ms après la dernière tape) ; la série est vérifiée à 250 et 400 ms de cadence.
+
+   - D-GD-35 (28 octobre 2026) — **recherche de la carte déplacée dans une mini-barre** (spécification du maître
+     d'ouvrage) :
+     1. Nouvelle mini-barre verticale **indépendante** de la barre d'outils (`panneaux/BarreRecherche.tsx`), même style
+        (fond blanc, coins arrondis, ombre, boutons de 40 px), placée sous elle à l'écart de ses groupes (8 px) et
+        suivant ses déplacements ; une seule icône, la loupe « Rechercher » (raccourci Alt+R, règle d'or). La barre
+        d'outils n'a reçu aucun bouton (13 outils) ; elle signale seulement son placement (`onPlacement`).
+     2. La loupe ouvre une barre flottante à gauche de la mini-barre, alignée sur la loupe : même champ, même indication,
+        même bouton, Entrée ; **même logique** (`lancerRecherche`, `choisirResultat` de la page, inchangés). Curseur dans
+        le champ à l'ouverture ; fermeture par Échap, nouvel appui sur la loupe ou clic sur la carte (le clic garde son
+        effet : sélection, outils) ; texte gardé jusqu'à la réouverture. Petit écran : toute la largeur libre à gauche
+        de la mini-barre ; résultats ouverts vers le haut quand la loupe est dans la moitié basse.
+     3. Placement pur et testé (`placerMiniBarre`, `placerRecherche`) : jamais sur l'échelle ni les sources du bas à
+        droite — sans place sous la barre d'outils, la mini-barre se range à gauche de son bas.
+     4. Barre au-dessus de la carte : champ et bouton Rechercher retirés ; Fond, Fournisseurs, état d'enregistrement,
+        Enregistrer et menu ☰ inchangés ; la loupe de l'en-tête vert (recherche de la plateforme) n'est pas touchée.
+
+   - D-GD-36 (28 octobre 2026) — **mini-barre (Enregistrer, Fond), menu ☰ « Cartes », concept « Collection »**
+     (spécification du maître d'ouvrage) :
+     1. Mini-barre : sous la loupe, **Enregistrer** (disquette ; même fonction `enregistrer()` et même condition
+        d'activation que le bouton de la barre, même indicateur) et **Fond de carte** (couches et repère ; liste flottante
+        des choix calculés une seule fois par la page, `choixFonds`, qui alimentent aussi le sélecteur Fond ; fond actif
+        coché ; un clic applique et ferme ; Échap, nouvel appui ou clic sur la carte ferment ; vers le haut quand le
+        bouton est dans la moitié basse). Icônes tracées dans le module, même trait que les autres. Barre au-dessus de la
+        carte inchangée.
+     2. Menu ☰ : « Mes cartes » devient la rubrique dépliable **Cartes** › Mes cartes (Nouveau, Ouvrir, Partager,
+        Enregistrer, Enregistrer sous), Collection (Nouveau, Ouvrir, Enregistrer, Enregistrer sous), Fournisseurs
+        (Nouveau, Gérer). Chaque entrée appelle une fonction existante ; **Partager**, sans fonction existante, est
+        affiché désactivé « bientôt ». « Enregistrer sous » d'une carte ouverte = nouvelle carte, même composition
+        (création existante) ; Fournisseurs › Nouveau ouvre le formulaire d'ajout existant des Paramètres.
+     3. **Collection** = ensemble nommé et ordonné de références vers des cartes de l'espace (plusieurs collections par
+        carte ; supprimer une collection ne supprime aucune carte). Le rattachement unique antérieur
+        (`geodata_cartes.collection_id`) est repris dans la liaison ordonnée `geodata_collection_cartes` et n'est plus
+        écrit. Révision attendue à chaque enregistrement (périmée → 409, jamais de perte silencieuse ; remarque de revue
+        Codex). Concept, modèle de données et API : `docs/workstreams/geodata/COLLECTIONS.md`.
+
+   - D-GD-37 (29 octobre 2026) — **barre blanche supprimée, cinq onglets, tableau de bord RGPH 2024** (spécification du
+     maître d'ouvrage, étape 2 validée « Ok continue ») :
+     1. La barre blanche ne porte plus Fond / Fournisseurs / Enregistrer ni l'état « Carte non enregistrée » : Fond et
+        Enregistrer sont dans la mini-barre, Fournisseurs et Enregistrer dans ☰ › Cartes ; l'état est une pastille sur
+        l'icône Enregistrer (infobulle « Carte non enregistrée »).
+     2. Elle devient la **barre d'onglets** « Cartes thématiques · Chiffres clés 2024 · Tableaux RGPH 2024 · CEE 2024 ·
+        Concepts et définitions », ☰ à droite ; une adresse par onglet (`/geodata`, `/geodata/chiffres-cles`,
+        `/geodata/tableaux`, `/geodata/cee`, `/geodata/concepts`) ; la carte reste montée sous les autres onglets.
+     3. Données : ligne nationale du fichier HCP d'indicateurs importée (fiche `hcp-rgph2024-royaume`, code `MA`,
+        contour = union des 12 régions) ; taux d'urbanisation et totaux nationaux de la CEE **calculés** et marqués
+        comme tels (nature `calcule`, méthode écrite) ; concepts du HCP (français) en base (`geodata_concepts`) ;
+        définition des blocs en base (`geodata_tableaux_bord`, annexe de la fiche, aucune valeur). Séries 1960–2014,
+        concepts en arabe et emplois CEE par secteur absents : « Donnée non disponible ». Graphiques en SVG interne,
+        aucune nouvelle dépendance. Détail : `docs/workstreams/geodata/TABLEAU-DE-BORD.md`.
+
+   - D-GD-38 (29 octobre 2026) — **fil de navigation administrative pliable, déplacé dans la mini-barre** (spécification
+     du maître d'ouvrage) :
+     1. Le fil (« Maroc › niveaux › Retour », composant `BarreTerritoriale` réutilisé sans réécriture) quitte le haut à
+        gauche de la carte ; « Données » ne bouge pas.
+     2. Mini-barre, de haut en bas : Loupe, Enregistrer, **≡ « Navigation administrative »**, Fond. ≡ plie / déplie le
+        fil, ouvert en panneau flottant à gauche de la mini-barre, aligné sur ≡ (sur la largeur disponible au téléphone).
+        Plié par défaut ; le fil reste monté et se tient à jour plié.
+     3. Un seul panneau (recherche, fil, fonds) ouvert à la fois, état tenu par la page : en ouvrir un referme l'autre
+        sans perdre son état (texte de recherche gardé). Le fil ne se ferme pas sur un clic de la carte (sélection par
+        clics) ; ≡ ou Échap le ferment. Son état est conservé d'un onglet à l'autre. Enregistrer une carte jamais
+        enregistrée ouvre la saisie du titre (Mes cartes, inchangé) et referme le panneau ouvert.
+
+   - D-GD-39 (30 octobre 2026) — **fiche d'information : tableau croisé Milieu × Sexe** (spécification du maître
+     d'ouvrage) :
+     1. Tout indicateur sans modalité décliné par milieu et / ou par sexe (Population légale, Population municipale, taux,
+        effectifs…) s'affiche en tableau croisé : lignes Urbain, Rural, puis Ensemble (en gras, séparée) ; colonnes
+        Ensemble, Masculin, Féminin. Structure lue dans les déclinaisons en base (`tableauCroise`, geodata-model), jamais
+        écrite pour un indicateur ; ligne ou colonne entièrement sans objet masquée ; donnée non publiée : convention
+        actuelle (« . », « n.d. », motif au survol). Population légale : colonne Ensemble seule (non ventilée par sexe).
+     2. Couleurs : palette partagée `--gd-cat-urbain|rural|ensemble|masculin|feminin` (geodata.css), utilisée par les
+        tableaux (liseré des lignes, pastille des colonnes, barre de part sous Urbain et Rural) et par les légendes des
+        graphiques (séries `--gd-serie-*` dérivées, catégories reconnues par leur libellé du modèle) ; l'impression relit
+        ces jetons. Cellules neutres ; le libellé reste écrit. Fadi n'a pas de thème sombre : contraste vérifié en clair.
+     3. Cohérence (indicateurs de compte seulement) : Urbain + Rural = Ensemble, Masculin + Féminin = Ensemble ; un écart
+        est affiché sous le tableau, jamais corrigé. Données HCP : aucun écart sur la population légale ni municipale ;
+        écarts de 1 (arrondis du HCP) sur 5 familles d'effectifs (population alphabète, active, inactive, active occupée,
+        actifs occupés sédentaires). L'écart du constat (1 494 413 ≠ 1 487 236) venait du rapprochement de l'Ensemble de
+        la population légale avec Masculin / Féminin de la population municipale : chaque cellule lit désormais son
+        propre indicateur.
+   - D-GD-40 (30 octobre 2026) — **lot « Lecture de l'emprise »** (demande du maître d'ouvrage, à partir de l'analyse
+     `docs/workstreams/geodata/ANALYSE-FEENWAY.md`, propositions P1-1, P1-2, P1-3 et P1-5) :
+     1. **Synthèse de la vue** (bouton de la barre d'outils, Alt+V) : pour chaque couche d'objets visible, objets qui
+        recoupent la vue sur le total de la couche, lus en base (`GET /couches/:id/vue?bbox=`, géométrie de référence,
+        filtre de la couche appliqué) ; avec un indicateur actif porté par la couche, minimum, moyenne **simple non
+        pondérée** et maximum des entités évaluées, et nombre d'entités non évaluées (une absence n'est jamais comptée).
+        Rien n'est lu tant que la synthèse est fermée ; relue à chaque arrêt de la carte.
+     2. **Regroupement des points** (case « Regrouper les points » par couche de points, bouton de la barre, Alt+G) :
+        calculé par le serveur dans les tuiles (`?regrouper=1`), grille Web Mercator de 8 × 8 cellules par tuile alignée
+        sur les tuiles, jusqu'au zoom 13 ; au zoom 14 chaque point est servi seul. Grappes numérotées, un clic s'en
+        rapproche de deux crans, aucune sélection. Enregistré dans la composition (`regrouper`, absent = non regroupé :
+        une carte antérieure reste identique). Une couche filtrée n'est jamais regroupée.
+     3. **État de la carte dans l'adresse** (fragment `#v=lon,lat,zoom,cap&carte=…&c=couche~version~m~g,…&i=…`), réécrit
+        sans entrée d'historique ; une adresse prime sur la dernière carte du navigateur. Carte enregistrée : ses couches
+        et styles font foi, la caméra du lien s'applique ; sinon couches du lien avec leur version figée et leur style par
+        défaut. Le fragment n'est jamais envoyé au serveur ; il ne contient que des identifiants contrôlés à la lecture (une
+        couche d'un autre espace reste refusée et est signalée). « Copier l'adresse de cette vue » (bouton, Alt+K) ;
+        « Partager » (droits, destinataires) reste à spécifier (GEO-PARTAGE-CARTE).
+     4. **Zoom courant affiché** en permanence à côté de l'échelle (déjà présente).
+
+   - D-GD-41 (30 octobre 2026) — **lot « Zone d'étude qui filtre »** (demande du maître d'ouvrage, proposition P1-4 de
+     `ANALYSE-FEENWAY.md`) :
+     1. Une zone d'étude enregistrée (Études) peut devenir **le filtre de zone** : « Filtrer par cette zone » dans Études,
+        puce « Zone d'étude : nom × » en haut de la carte, Alt+Z (retire le filtre, ou rétablit la dernière zone filtrée,
+        sinon la plus récente). Une seule zone à la fois.
+     2. Le filtre retient les objets qui **recoupent** la zone (intersection sur la géométrie de référence, en base) :
+        carte (filtre de codes combiné aux autres filtres), table attributaire (`/couches/:id/table?zone=`) et synthèse de
+        la vue (D-GD-40 : « N dans la vue sur T », T = objets de la zone). Codes lus par `/couches/:id/vue?zone=` (au plus
+        5 000 par couche ; au-delà, la puce dit « partiel »).
+     3. Le **tableau de bord** n'est pas filtré : ses chiffres portent sur des territoires entiers et une zone libre en
+        recoupe des parties ; il le signale et renvoie à « Analyser » (analyse figée des Études), seule agrégation sur une
+        zone libre, avec sa méthode écrite. Aucune valeur n'est répartie au prorata.
+     4. La zone filtrée s'écrit dans l'adresse de la vue (`z=`) ; une zone d'un autre espace ou archivée répond 404 et le
+        filtre est retiré avec un avis.
+
+   - D-GD-42 (27 octobre 2026, intégré le 30 octobre 2026 après D-GD-42 à D-GD-41) — **niveaux infra-communaux sur tout le territoire, tout venant de la base** (demande du
      maître d'ouvrage ; détail : `docs/workstreams/geodata/DECOUPAGE-INFRA-COMMUNAL.md`) :
      1. Tables `geodata_niveaux_administratifs` (rang sans borne, du plus global au plus fin), `geodata_entites_administratives`
         (code HCP, noms, niveau, code du parent, type, source, période) et `geodata_decoupage_imports` ; aucune liste de

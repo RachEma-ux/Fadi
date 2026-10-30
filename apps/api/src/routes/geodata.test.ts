@@ -154,9 +154,56 @@ describe("GEO 13 — modifications concurrentes", () => {
     const col = await alice.client.post(`${API}/collections`).send({ nom: "Études" });
     expect((await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: colBob.body.id })).status).toBe(400);
     const c = await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: col.body.id });
-    expect(c.body.collectionId).toBe(col.body.id);
+    expect(c.body.collections).toEqual([{ id: col.body.id, nom: "Études" }]);
     expect((await alice.client.post(`${API}/cartes/${c.body.id}/archiver`)).body.etat).toBe("archivee");
     expect((await alice.client.get(`${API}/cartes?etat=archivee`)).body.cartes).toHaveLength(1);
+  });
+  it("collections (D-GD-36) : ensemble ordonné de références, plusieurs collections par carte, suppression sans perte de carte", async () => {
+    const alice = await compte("gd-col2@example.com");
+    const bob = await compte("gd-col2-b@example.com");
+    const a = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte A" })).body;
+    const b = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte B" })).body;
+    const carteBob = (await bob.client.post(`${API}/cartes`).send({ nom: "Carte de Bob" })).body;
+    const nouvelle = await alice.client.post(`${API}/collections`).send({ nom: "Atlas du Souss", description: "Cartes du projet" });
+    expect(nouvelle.status).toBe(201);
+    expect(nouvelle.body).toMatchObject({ nom: "Atlas du Souss", description: "Cartes du projet", etat: "active", cartes: [] });
+    const id = nouvelle.body.id as string;
+    // Ajout de deux cartes puis ordre inversé : la liste enregistrée est l'ordre d'affichage.
+    expect(nouvelle.body.revision).toBe(1);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ cartes: [a.id] })).status).toBe(400); // révision attendue obligatoire
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 1, cartes: [a.id, b.id] })).body.cartes.map((x: { nom: string }) => x.nom)).toEqual(["Carte A", "Carte B"]);
+    const reordonnee = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 2, nom: "Atlas du Souss-Massa", cartes: [b.id, a.id] });
+    expect(reordonnee.body).toMatchObject({ nom: "Atlas du Souss-Massa", description: "Cartes du projet", revision: 3 });
+    // Carte ajoutée depuis Mes cartes pendant que la collection est ouverte : l'enregistrement périmé est refusé, rien n'est perdu.
+    const c = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte C", collectionId: id })).body;
+    const perime = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 3, cartes: [b.id, a.id] });
+    expect(perime.status).toBe(409);
+    expect(perime.body).toMatchObject({ error: "revision_conflict", revisionCourante: 4 });
+    expect(perime.body.collection.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id, c.id]);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 4, cartes: [b.id, a.id] })).status).toBe(200);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Refus : carte d'un autre espace, doublon, collection d'un autre compte.
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, carteBob.id] })).status).toBe(400);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, a.id] })).status).toBe(400);
+    expect((await bob.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    expect((await bob.client.delete(`${API}/collections/${id}`)).status).toBe(404);
+    // Enregistrer sous : copie avec les mêmes références ; la carte A est alors dans deux collections.
+    const copie = await alice.client.post(`${API}/collections`).send({ nom: "Atlas (copie)", description: "Cartes du projet", cartes: [b.id, a.id] });
+    expect(copie.body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)", "Atlas du Souss-Massa"]);
+    // Une carte modifiée l'est dans toutes ses collections (référence, jamais copie).
+    await alice.client.put(`${API}/cartes/${a.id}`).send({ revisionAttendue: a.revision, nom: "Carte A révisée" });
+    expect((await alice.client.get(`${API}/collections/${copie.body.id}`)).body.cartes[1].nom).toBe("Carte A révisée");
+    // Une carte ne se range plus par la carte elle-même.
+    expect((await alice.client.put(`${API}/cartes/${b.id}`).send({ revisionAttendue: b.revision, collectionId: id })).status).toBe(400);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Supprimer une collection laisse ses cartes intactes.
+    expect((await alice.client.delete(`${API}/collections/${id}`)).status).toBe(204);
+    expect((await alice.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    const restantes = (await alice.client.get(`${API}/cartes`)).body.cartes.map((x: { nom: string }) => x.nom);
+    expect(restantes).toEqual(expect.arrayContaining(["Carte A révisée", "Carte B", "Carte C"]));
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)"]);
+    expect((await alice.client.get(`${API}/collections`)).body.collections.find((x: { id: string }) => x.id === copie.body.id)).toMatchObject({ cartes: 2, description: "Cartes du projet" });
   });
 });
 
@@ -211,6 +258,54 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     const bob = await compte("gd-etq-bob@example.com");
     expect((await bob.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`)).status).toBe(404);
     expect((await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/999/102`)).status).toBe(400);
+  });
+  it("lecture de l'emprise (D-GD-40) : objets de la vue lus en base, grappes de points dans les tuiles, mêmes accès", async () => {
+    const alice = await compte("gd-vue@example.com");
+    const point = (nom: string, lon: number, lat: number) => ({ type: "Feature", properties: { nom }, geometry: { type: "Point", coordinates: [lon, lat] } });
+    // Trois points d'une même cellule de la tuile 8/123/103 (8 × 8 cellules) et un point isolé dans une autre cellule.
+    const contenu = JSON.stringify({ type: "FeatureCollection", features: [point("Point A", -6.95, 33.05), point("Point B", -6.951, 33.051), point("Point C", -6.952, 33.05), point("Point Lointain", -6.0, 32.2)] });
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-vue-1", nomFichier: "p.geojson", contenu });
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Points" });
+    expect(conf.status).toBe(201);
+    const id = conf.body.coucheId as string;
+    const vue = await alice.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`);
+    expect(vue.status).toBe(200);
+    expect(vue.body).toMatchObject({ total: 4, tronque: false });
+    expect(vue.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=-180,-85,180,85`)).body.codes).toHaveLength(4);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=1,2,3`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=3,2,1,4`)).status).toBe(400);
+    const octets = async (chemin: string) => (await alice.client.get(chemin).buffer(true).parse((r, fin) => { const b: Buffer[] = []; r.on("data", (x: Buffer) => b.push(x)); r.on("end", () => fin(null, Buffer.concat(b))); })).body as Buffer;
+    const seuls = await octets(`${API}/tuiles/${id}/8/123/103`);
+    expect(seuls.includes(Buffer.from("Point A"))).toBe(true);
+    expect(seuls.includes(Buffer.from("nombre"))).toBe(false);
+    const grappes = await octets(`${API}/tuiles/${id}/8/123/103?regrouper=1`);
+    expect(grappes.includes(Buffer.from("nombre"))).toBe(true);
+    expect(grappes.includes(Buffer.from("Point A"))).toBe(false);
+    // Une cellule d'un seul point garde son nom ; au zoom 14, aucun regroupement.
+    expect(grappes.includes(Buffer.from("Point Lointain"))).toBe(true);
+    expect((await octets(`${API}/tuiles/${id}/14/7875/6596?regrouper=1`)).includes(Buffer.from("nombre"))).toBe(false);
+    const bob = await compte("gd-vue-bob@example.com");
+    expect((await bob.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`)).status).toBe(404);
+    expect((await bob.client.get(`${API}/tuiles/${id}/8/123/103?regrouper=1`)).status).toBe(404);
+    // Zone d'étude qui filtre (D-GD-41) : objets qui recoupent la zone, seule ou avec la vue ; table restreinte.
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Trois points", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect(zone.status).toBe(201);
+    const dansZone = await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`);
+    expect(dansZone.status).toBe(200);
+    expect(dansZone.body).toMatchObject({ zone: zone.body.id, total: 4 });
+    expect(dansZone.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}&bbox=-6.9505,33,-6.9,33.1`)).body.codes).toHaveLength(1);
+    const table = await alice.client.get(`${API}/couches/${id}/table?zone=${zone.body.id}`);
+    expect(table.body.total).toBe(3);
+    expect(table.body.lignes.map((l: { nom: string }) => l.nom).sort()).toEqual(["Point A", "Point B", "Point C"]);
+    expect((await alice.client.get(`${API}/couches/${id}/vue`)).status).toBe(400);
+    // Zone d'un autre espace ou archivée : 404, comme une couche inaccessible.
+    const zoneBob = await bob.client.post(`${API}/zones`).send({ nature: "zone", nom: "Ailleurs", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zoneBob.body.id}`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/couches/${id}/table?zone=${zoneBob.body.id}`)).status).toBe(404);
+    await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
   });
   it("cartes, zones, analyses et fiches d'export d'un tiers : 404, y compris en accès direct", async () => {
     const alice = await compte("gd-a8@example.com");
@@ -462,7 +557,7 @@ describe("Catégories du catalogue (D-GD-14)", () => {
 });
 
 describe("découpage territorial en base (lot H, D-GD-28)", () => {
-  // Découpage en base (D-GD-35) : tables sans lien aux comptes, vidées avant chaque cas (la remise à zéro commune ne les touche pas).
+  // Découpage en base (D-GD-42) : tables sans lien aux comptes, vidées avant chaque cas (la remise à zéro commune ne les touche pas).
   beforeEach(async () => {
     for (const t of ["geodata_decoupage_imports", "geodata_entites_administratives", "geodata_niveaux_administratifs", "geodata_territoires", "geodata_pays"]) await pool.query(`DELETE FROM ${t}`);
   });
@@ -491,7 +586,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     }
   }
   /**
-   * Découpage synthétique (D-GD-35) importé par la commande d'import unique, depuis un dossier de données comme celui
+   * Découpage synthétique (D-GD-42) importé par la commande d'import unique, depuis un dossier de données comme celui
    * livré : déclaration, table des niveaux, entités (code, niveau, parent), fichier source. Aucun nom réel.
    */
   function dossierDecoupage(entites: [string, string, string | null][], niveaux: [string, number][] = [["region", 1], ["province", 2]]) {
@@ -514,7 +609,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     ? { pays: "ZZ", nomPays: "Pays synthétique", niveau: rang === 1 ? "region" : "province" }
     : { pays: "ZZ", nomPays: "Pays synthétique", rang, niveau: rang === 1 ? { singulier: "Région", pluriel: "Régions" } : { singulier: "Province", pluriel: "Provinces" }, parent: "inclusion" as const };
 
-  it("import unique du découpage (D-GD-35) : relancé sur le même fichier, rien ; nouveau fichier, mise à jour par code sans doublon", async () => {
+  it("import unique du découpage (D-GD-42) : relancé sur le même fichier, rien ; nouveau fichier, mise à jour par code sans doublon", async () => {
     const b1 = await importerZZ(ENTITES_ZZ);
     expect(b1).toMatchObject({ deja: false, entites: 5, niveaux: 2, ajoutees: ["1", "1001", "2", "2001", "9001"], modifiees: [], retirees: [], sansParent: ["9001"] });
     expect(await importerZZ(ENTITES_ZZ)).toMatchObject({ deja: true, ajoutees: [] });
@@ -580,7 +675,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
   });
 
-  it("profondeur variable (D-GD-35) : ancêtres et enfants par le lien parent, niveaux réels au point, découpage servi à l'interface", async () => {
+  it("profondeur variable (D-GD-42) : ancêtres et enfants par le lien parent, niveaux réels au point, découpage servi à l'interface", async () => {
     const alice = await compte("gd-prof@example.com");
     // R › P › C (ville) › G (regroupement) › A (arrondissement) ; R › P › K (commune ordinaire).
     await importerZZ([["1", "region", null], ["11", "province", "1"], ["111", "commune", "11"], ["112", "commune", "11"], ["1110", "groupe", "111"], ["11101", "arrondissement", "1110"]],
@@ -636,6 +731,16 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=10&lat=10`)).body).toEqual({ unites: [] });
     expect((await alice.client.get(`${API}/territoires/XX/point?lon=-7.98&lat=31.02`)).body).toEqual({ unites: [] });
     expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=abc&lat=1`)).status).toBe(400);
+    // Tableau de bord (D-GD-37) : définition et concepts lus en base, sur une version publiée ; langue contrôlée.
+    expect((await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).status).toBe(404);
+    await pool.query("INSERT INTO geodata_tableaux_bord (version_id, pays, zone_code, zone_nom, definition) VALUES ($1, 'ZZ', '1', 'R Nord', $2)", [vr, JSON.stringify({ pays: "ZZ", zone: { code: "1", nom: "R Nord" }, blocs: [] })]);
+    await pool.query("INSERT INTO geodata_concepts (version_id, langue, ordre, titre, texte, source) VALUES ($1, 'fr', 0, 'Concept', 'Texte', 'Source test')", [vr]);
+    const bord = (await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).body;
+    expect(bord).toMatchObject({ pays: "ZZ", versionId: vr, zone: { code: "1", nom: "R Nord" }, concepts: { fr: 1 } });
+    expect(typeof bord.zone.coucheId).toBe("string");
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=fr`)).body).toEqual({ langue: "fr", source: "Source test", concepts: [{ titre: "Concept", texte: "Texte" }] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=ar`)).body).toEqual({ langue: "ar", source: null, concepts: [] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=de`)).status).toBe(400);
     const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
     await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
     // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Contours de tous les niveaux administratifs construits par union, de bas en haut, en suivant les liens du découpage
-(D-GD-33, D-GD-35) — script hors application :
+(D-GD-33, D-GD-42) — script hors application :
 
     python3 scripts/geodata/construire_niveaux.py [--pays MA] [--sortie docs/geodata/sources] [--intervalle 20]
                                                  [--mapshaper "npx --yes -p mapshaper@0.7.98 mapshaper"]
@@ -46,7 +46,7 @@ FICHES = os.path.join(RACINE, "docs", "geodata", "sources")
 RAPPORT = os.path.join(RACINE, "docs", "workstreams", "geodata", "CONTOURS-NIVEAUX.md")
 MAPSHAPER = "npx --yes -p mapshaper@0.7.98 mapshaper"
 ENTITES = "decoupage/hcp-rgph2024-entites.csv"
-DECISION = "D-GD-35"
+DECISION = "D-GD-42"
 KM2 = 12_300  # degré² → km² approché à la latitude du Maroc (contrôles seulement)
 
 

@@ -18,7 +18,7 @@ export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, un
 };
 
 /**
- * Niveaux administratifs du pays courant (D-GD-35), lus dans la table des niveaux en base : « Limites administratives »
+ * Niveaux administratifs du pays courant (D-GD-42), lus dans la table des niveaux en base : « Limites administratives »
  * en est généré — une entrée par niveau, dans l'ordre des rangs, avec sa couche publiée ; un niveau sans couche en base
  * le dit. Ajouter un niveau en base ajoute son entrée, sans modifier l'interface.
  */
@@ -235,7 +235,7 @@ function RubriqueIndicateursContenu(p: RubriqueIndicateurs) {
 
 export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
-  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
+  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onRegrouper?(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void;
   /** Indicateur actif du catalogue (D-GD-31, D-GD-32) : par couche qui le porte ; couches où ses valeurs sont masquées. */
   indicateurs?: ReadonlyMap<string, IndicateurRecu> | undefined; masques?: ReadonlySet<string> | undefined; onAfficherIndicateur?(id: string, afficher: boolean): void;
@@ -257,6 +257,11 @@ export function PanneauCouches(p: {
             {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
             {c && !c.raster && <label className="gd-case"><input type="checkbox" checked={!!k.etiquettes} onChange={() => p.onEtiquettes(k.coucheId)} data-gd-etiquettes={k.coucheId} />Libellés (nom)</label>}
+            {c && (c.typeGeometrie === "point" || c.typeGeometrie === "mixte") && p.onRegrouper && (
+              <label className="gd-case" title="Points réunis en grappes numérotées jusqu'au zoom 13 ; touchez une grappe pour vous en rapprocher. Sans effet sur une couche filtrée.">
+                <input type="checkbox" checked={!!k.regrouper} onChange={() => p.onRegrouper?.(k.coucheId)} data-gd-regrouper={k.coucheId} />Regrouper les points
+              </label>
+            )}
             {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
             {c && p.indicateurs?.get(k.coucheId) && (
               <label className="gd-case" data-gd-indicateur-affiche={k.coucheId}>
@@ -326,7 +331,9 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
   );
 }
 
-export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: string): void; onFiltre(f: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null): void; filtreActif: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null; onFermer(): void }) {
+export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: string): void; onFiltre(f: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null): void; filtreActif: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null; onFermer(): void;
+  /** Zone d'étude qui filtre (D-GD-41) : seuls les objets qui la recoupent ; null = aucune. */
+  zone?: { readonly id: string; readonly nom: string } | null }) {
   const [page, setPage] = useState(1);
   const [tri, setTri] = useState<"nom" | "code">("nom");
   const [ordre, setOrdre] = useState<"asc" | "desc">("asc");
@@ -339,15 +346,17 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
   useEffect(() => {
     let vivant = true;
     setErreur(null);
-    api.table(p.couche.id, { page, taille, tri, ordre, ...(p.filtreActif ?? {}) }).then((d) => vivant && setDonnees(d)).catch((e: Error) => vivant && setErreur(e.message));
+    api.table(p.couche.id, { page, taille, tri, ordre, ...(p.filtreActif ?? {}), zone: p.zone?.id ?? null }).then((d) => vivant && setDonnees(d)).catch((e: Error) => vivant && setErreur(e.message));
     return () => { vivant = false; };
-  }, [p.couche.id, page, tri, ordre, p.filtreActif]);
+  }, [p.couche.id, page, tri, ordre, p.filtreActif, p.zone?.id]);
+  useEffect(() => setPage(1), [p.zone?.id]);
   const pages = donnees ? Math.max(1, Math.ceil(donnees.total / taille)) : 1;
   const colonnes = indicateursPrincipaux(p.couche.indicateurs);
   const trier = (t: "nom" | "code") => { if (t === tri) setOrdre(ordre === "asc" ? "desc" : "asc"); else { setTri(t); setOrdre("asc"); } setPage(1); };
   return (
     <section className="gd-table" aria-label="Table des attributs" data-gd-table={p.couche.id}>
       <div className="gd-ligne-titre"><h3 translate="no">{p.couche.titre}</h3><button type="button" onClick={p.onFermer}>Fermer la table</button></div>
+      {p.zone && <p className="gd-discret" data-gd-table-zone={p.zone.id}><span>Objets qui recoupent la zone d'étude</span> <span translate="no">{`« ${p.zone.nom} »`}</span></p>}
       <form className="gd-filtre" onSubmit={(e) => { e.preventDefault(); setPage(1); p.onFiltre(valeur.trim() ? { propriete, operateur, valeur: valeur.trim() } : null); }}>
         <label className="gd-champ">Propriété<select value={propriete} onChange={(e) => setPropriete(e.target.value)}><option value="nom">nom</option><option value="code">code</option>{p.couche.proprietesExposees.map((x) => <option key={x} value={x} translate="no">{x}</option>)}</select></label>
         <label className="gd-champ">Condition<select value={operateur} onChange={(e) => setOperateur(e.target.value as "egal" | "contient")}><option value="contient">contient</option><option value="egal">est égal à</option></select></label>

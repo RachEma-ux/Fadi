@@ -3,7 +3,7 @@
  * alimentée par le découpage territorial **en base** (`/territoires`), jamais par les couches affichées ni par un pays
  * écrit dans le code. Les noms de pays, de niveaux et d'unités sont des données (affichés tels quels, `translate="no"`).
  * Chaque niveau est une liste ; choisir une unité cadre la carte et trace son contour ; « Retour » (Alt+↑) remonte.
- * La profondeur suit le lien parent → enfant en base (D-GD-35) : la liste qui suit une unité est celle de ses enfants,
+ * La profondeur suit le lien parent → enfant en base (D-GD-42) : la liste qui suit une unité est celle de ses enfants,
  * nommée par leur niveau réel (des arrondissements peuvent suivre directement une commune), et s'arrête là où l'unité
  * choisie n'a plus d'enfant.
  */

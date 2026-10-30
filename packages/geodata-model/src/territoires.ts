@@ -1,5 +1,5 @@
 /**
- * Découpage territorial d'un pays (lot H, D-GD-28 ; D-GD-35) : Fadi est neutre — aucun pays, niveau ni unité n'est écrit
+ * Découpage territorial d'un pays (lot H, D-GD-28 ; D-GD-42) : Fadi est neutre — aucun pays, niveau ni unité n'est écrit
  * dans le code. Une fiche de couche déclare sa place dans le découpage (`territoire`) ; une fois sa version publiée, ses
  * unités (contours) sont copiées dans `geodata_territoires`. La barre territoriale de l'interface lit ce découpage en
  * base, indépendamment des couches affichées. Pur : aucun DOM, aucune base.

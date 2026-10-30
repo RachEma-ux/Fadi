@@ -1,5 +1,5 @@
 /**
- * Import du découpage administratif en base (D-GD-35) — opération **unique** sur le serveur, lancée par l'exploitant
+ * Import du découpage administratif en base (D-GD-42) — opération **unique** sur le serveur, lancée par l'exploitant
  * (`geodata-reference.js --decoupage`), jamais au démarrage de l'API. Les niveaux et les entités viennent des fichiers de
  * données qualifiés déclarés par `decoupage/<pays>.json` (empreintes contrôlées, fichier source du HCP compris) :
  *   - même fichier déjà importé (empreinte consignée dans `geodata_decoupage_imports`) : rien n'est fait (« déjà importé ») ;
