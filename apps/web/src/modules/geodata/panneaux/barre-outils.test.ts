@@ -17,3 +17,14 @@ describe("barre d'outils flottante GeoData", () => {
     expect(RACCOURCIS_BARRE).toMatchObject({ synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" });
   });
 });
+
+describe("barre du bas sur téléphone (D-GD-52)", () => {
+  it("chaque commande a sa propre icône et sa propre touche, distinctes de la barre d'outils", async () => {
+    const { ICONES_BARRE_BAS, RACCOURCIS_BARRE_BAS } = await import("./BarreBas");
+    const { ICONES, RACCOURCIS_BARRE } = await import("./BarreOutilsCarte");
+    const icones = [...Object.values(ICONES_BARRE_BAS), ...Object.values(ICONES)];
+    expect(new Set(icones).size).toBe(icones.length);
+    const touches = [...Object.values(RACCOURCIS_BARRE_BAS), ...Object.values(RACCOURCIS_BARRE)];
+    expect(new Set(touches).size).toBe(touches.length);
+  });
+});

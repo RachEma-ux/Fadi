@@ -96,6 +96,32 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Barre du bas sur téléphone (D-GD-52)
+
+Au téléphone, une barre en bas de l'écran donne Carte (Alt+X), Chercher (Alt+R), Couches (Alt+C) et Enregistrer
+(Alt+E).
+
+## Synthèse d'une entité et fiabilité déclarée (D-GD-50, D-GD-51)
+
+La fiche d'une région ou d'une province donne, pour l'indicateur actif, le min, la moyenne simple et le max de ses
+subdivisions, avec la source. Elle affiche aussi la fiabilité déclarée par la source (indice de confiance de l'entité,
+précision, période, date de récupération) ; ce qui n'est pas déclaré est « Non évalué ».
+
+## Pastilles de thème (D-GD-48)
+
+En haut de la carte, une pastille par catégorie du catalogue affiche ou masque d'un clic toutes ses couches ; son badge
+compte les objets dessinés dans la vue. « Thèmes » (Alt+T) replie la bande.
+
+## À proximité (D-GD-49)
+
+La fiche d'un objet compte, pour chaque couche de points affichée, les objets à moins de 250 m à 5 km (rayon au choix)
+et donne le plus proche. Route `GET /geodata/api/couches/:id/objets/:code/proximite?rayon=500&couches=a,b`.
+
+## État des couches (D-GD-47)
+
+Dans le panneau Couches, chaque couche visible dit si elle charge, combien de ses objets sont dessinés dans la vue, ou
+qu'aucun objet n'est dans la vue.
+
 ## Plan / Satellite (D-GD-46)
 
 Le globe de la mini-barre (Alt+S) bascule entre la vue satellite et la vue plan du fournisseur réglé dans Paramètres.

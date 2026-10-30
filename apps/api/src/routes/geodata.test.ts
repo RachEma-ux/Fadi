@@ -304,6 +304,17 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     const zoneBob = await bob.client.post(`${API}/zones`).send({ nature: "zone", nom: "Ailleurs", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
     expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zoneBob.body.id}`)).status).toBe(404);
     expect((await alice.client.get(`${API}/couches/${id}/table?zone=${zoneBob.body.id}`)).status).toBe(404);
+    // Proximité des équipements (D-GD-49) : depuis le point A, B et C (≈ 140 et 190 m) sont dans 500 m, aucun dans 50 m.
+    const proche = await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`);
+    expect(proche.status).toBe(200);
+    expect(proche.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 2 });
+    expect(proche.body.couches[0].plusProche.distanceM).toBeGreaterThan(50);
+    expect(proche.body.couches[0].plusProche.distanceM).toBeLessThan(500);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=50&couches=${id}`)).body.couches[0]).toMatchObject({ nombre: 0, plusProche: null });
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=10&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=inconnue`)).body.couches[0]).toEqual({ coucheId: "inconnue", accessible: false });
+    expect((await bob.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`)).status).toBe(404);
     await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
     expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
   });

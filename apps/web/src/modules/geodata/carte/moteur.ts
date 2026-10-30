@@ -6,6 +6,9 @@
 import type { Composition, RangAdministratif, ValeurIndicateur } from "@parcours/geodata-model";
 import type { Fond } from "../client";
 
+/** État d'affichage d'une couche dans la vue (P3-4). */
+export type EtatCouche = "chargement" | "vide" | "ok";
+
 export type OutilCarte = "navigation" | "distance" | "surface" | "zone" | "annotation";
 
 export interface ObjetDesigne { readonly coucheId: string; readonly code: string }
@@ -50,6 +53,12 @@ export interface EvenementsMoteur {
   surErreur(message: string): void;
   /** Tuiles du fond refusées (clé absente, invalide, quota) : avis non bloquant, la carte reste utilisable. */
   surErreurFond?(message: string): void;
+  /**
+   * État d'affichage de chaque couche visible (P3-4) : `chargement` tant que ses tuiles arrivent, `vide` si aucun de ses
+   * objets n'est dessiné dans la vue, `ok` sinon ; `nombres` : objets distincts dessinés dans la vue (une grappe compte ses
+   * points). Signalé seulement quand il change.
+   */
+  surEtatsCouches?(etats: ReadonlyMap<string, EtatCouche>, nombres: ReadonlyMap<string, number>): void;
 }
 
 export interface MoteurCarte {

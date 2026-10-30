@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { couleurCategorie, couleurPixel, formatNombre, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
+import { MAX_COUCHES, couleurCategorie, couleurPixel, formatNombre, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -137,4 +137,34 @@ export function entreesRaster(d: DescriptionRaster): EntreeLegende[] {
     const v = d.min + (d.max - d.min) * t;
     return { classe: i, couleur: hex(couleurPixel(v, d)), libelle: `${i === 0 ? "≤ " : i === 4 ? "≥ " : ""}${fmt(v)}`, effectif: 0 };
   });
+}
+
+/** Couche d'un thème (pastille, D-GD-48) : identifiant, version publiée et style par défaut. */
+export interface CoucheDeTheme { readonly id: string; readonly versionId: string; readonly style: StyleCouche }
+
+/** Thème sur la carte : aucune de ses couches, une partie visible, ou toutes présentes et visibles. */
+export function etatTheme(c: Composition, couches: readonly { readonly id: string }[]): "absent" | "partiel" | "affiche" {
+  const presentes = couches.map((x) => c.couches.find((k) => k.coucheId === x.id));
+  if (presentes.every((k) => !k || !k.visible)) return "absent";
+  return presentes.every((k) => k && k.visible) ? "affiche" : "partiel";
+}
+
+/**
+ * Pastille de thème (D-GD-48) : un thème affiché est masqué (ses couches restent sur la carte, masquées) ; sinon toutes
+ * ses couches sont affichées, les absentes ajoutées par-dessus dans la limite de la composition (`omises` : couches non
+ * ajoutées faute de place).
+ */
+export function basculerTheme(c: Composition, couches: readonly CoucheDeTheme[]): { composition: Composition; omises: number } {
+  if (etatTheme(c, couches) === "affiche") {
+    const ids = new Set(couches.map((x) => x.id));
+    return { composition: avecCouches(c, c.couches.map((k) => (ids.has(k.coucheId) ? { ...k, visible: false } : k))), omises: 0 };
+  }
+  let r = avecCouches(c, c.couches.map((k) => (couches.some((x) => x.id === k.coucheId) ? { ...k, visible: true } : k)));
+  let omises = 0;
+  for (const x of couches) {
+    if (r.couches.some((k) => k.coucheId === x.id)) continue;
+    if (r.couches.length >= MAX_COUCHES) { omises++; continue; }
+    r = ajouterCouche(r, x.id, x.versionId, x.style);
+  }
+  return { composition: r, omises };
 }

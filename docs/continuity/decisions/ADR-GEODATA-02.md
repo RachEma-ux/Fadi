@@ -566,6 +566,47 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      (sinon le premier satellite réglé). Seuls les fonds réglés dans Paramètres sont proposés (D-GD-15) ; sans clé
      MapTiler, le bouton est désactivé et dit pourquoi. Logique pure : `fondBascule` (`fournisseurs.ts`).
 
+   - D-GD-47 (31 octobre 2026) — **état d'affichage par couche** (P3-4) : le moteur relève, quand la carte est au repos ou
+     qu'une source charge, l'état de chaque couche visible — « Chargement… », « Aucun objet dans la vue : déplacez ou
+     dézoomez la carte. », ou le nombre d'objets distincts dessinés (un objet coupé entre deux tuiles compte une fois, une
+     grappe compte ses points) — affiché sur la couche dans le panneau Couches. Compte d'affichage seulement : les comptes
+     en base restent ceux de la synthèse de la vue (D-GD-40).
+
+   - D-GD-48 (31 octobre 2026) — **pastilles de thème** (P2-1) : une pastille par catégorie gérée du catalogue (D-GD-14,
+     en base), en bande à droite du bouton « Données » (repliable : bouton « Thèmes », Alt+T). Une pastille affiche toutes
+     les couches de son thème (les absentes ajoutées, au plus 20 couches par carte : les autres sont comptées et
+     annoncées) ou les masque (couches gardées, masquées) ; badge = objets dessinés dans la vue (D-GD-47) quand le thème
+     est affiché, sinon nombre de couches. Les limites administratives n'ont pas de pastille (barre territoriale).
+   - D-GD-49 (31 octobre 2026) — **proximité des équipements** (P2-5) : section « À proximité » de la fiche — pour l'objet,
+     nombre d'objets de chaque couche de points affichée à moins d'un rayon choisi (250 m à 5 km), et le plus proche avec
+     sa distance (cliquable). Distance géodésique en base (`ST_DWithin` / `ST_Distance` sur le géographique), versions
+     publiées, rien d'enregistré ; une surface compte ce qui est dedans ou à moins du rayon de son bord. Route
+     `GET /couches/:id/objets/:code/proximite?rayon=&couches=` (1 à 20 couches, couches inaccessibles signalées).
+   - D-GD-50 (31 octobre 2026) — **synthèse d'une entité sur ses subdivisions** (P2-2) : dans la fiche d'une entité qui a
+     des subdivisions (découpage en base, D-GD-42), pour l'indicateur actif porté par la couche des subdivisions : min,
+     moyenne simple non pondérée et max des subdivisions évaluées, sur une échelle verticale (repère de la moyenne),
+     nombre de subdivisions évaluées et non évaluées, valeur de l'entité donnée à part (un total n'est pas comparable à
+     ses parties), source et période de la couche des subdivisions. Rien si cette couche ne porte pas l'indicateur.
+   - D-GD-51 (31 octobre 2026) — **fiabilité déclarée** (P2-3) : la fiche affiche l'indice de confiance que la source
+     déclare pour l'entité (propriété exposée `confiance`, `indice_confiance` ou `fiabilite`), la précision, la période
+     et la date de récupération déclarées pour la version. GeoData ne calcule ni n'estime aucune confiance : ce qui n'est
+     pas déclaré est « Non évalué ». Aucune source chargée à ce jour ne déclare d'indice par entité.
+   - D-GD-52 (31 octobre 2026) — **barre du bas sur téléphone** (P3-1) : au téléphone (≤ 760 px), une barre fixe en bas
+     de l'écran — Carte (panneaux et recherche fermés, Alt+X), Chercher (Alt+R), Couches (Alt+C), Enregistrer (Alt+E) —
+     sous laquelle panneaux et volets s'arrêtent ; chaque bouton appelle la fonction existante de la page. Masquée au
+     bureau. La barre d'outils et la mini-barre restent.
+   - D-GD-53 (31 octobre 2026) — **pistes P3-2, P3-3 et P2-4 évaluées** :
+     1. P3-2 (chargement par emprise des couches non tuilées) : **sans objet**. Toutes les couches d'objets sont servies
+        en tuiles vectorielles, donc par emprise et par zoom ; seules les zones et annotations de l'espace (au plus 500,
+        celles de l'utilisateur) sont lues en entier, ce qui ne justifie pas de lecture par emprise.
+     2. P3-3 (écriture de droite à gauche sur la carte) : **sans objet tant que D-GD-24 tient**. Les libellés de la carte
+        n'utilisent que les glyphes latins hébergés ; les noms en arabe (douars) s'affichent dans la fiche, dont le HTML
+        gère la droite à gauche. L'arabe sur la carte demanderait d'héberger des glyphes arabes (Noto Sans Arabic, OFL) et
+        le greffon RTL de MapLibre : décision du maître d'ouvrage (nouvelle dépendance et nouveaux fichiers servis).
+     3. P2-4 (champ continu, qualité de l'air) : **bloqué faute de source qualifiée** (D-GD-29 : aucune donnée sans fiche
+        de source qualifiée). Le support existe déjà (couches raster, D-GD-13 ; valeur au point) : une grille publiée par
+        une source dont les droits sont établis (par exemple Copernicus / CAMS) s'importera comme les 17 rasters actuels.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.
