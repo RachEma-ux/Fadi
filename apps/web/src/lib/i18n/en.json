@@ -14329,5 +14329,22 @@
 "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).": "Extent expected: bbox=west,south,east,north (WGS 84).",
 "Écart : Urbain + Rural = {0} ≠ Ensemble {1} (colonne {2})": "Gap: Urban + Rural = {0} ≠ All {1} (column {2})",
 "Écart : Masculin + Féminin = {0} ≠ Ensemble {1} (ligne {2})": "Gap: Male + Female = {0} ≠ All {1} (row {2})",
-"{0} % de l'ensemble": "{0} % of the total"
+"{0} % de l'ensemble": "{0} % of the total",
+"Objets qui recoupent la zone d'étude": "Features that intersect the study area",
+"Retirer le filtre de zone": "Remove the area filter",
+"Filtrer par cette zone": "Filter by this area",
+"Carte, table et synthèse limitées aux objets qui recoupent cette zone (Alt+Z)": "Map, table and summary limited to the features that intersect this area (Alt+Z)",
+"Le filtre de zone d'étude": "The study area filter",
+"ne s'applique pas ici : ces chiffres portent sur des territoires entiers. Pour une zone libre, utilisez « Analyser » dans Études.": "does not apply here: these figures cover whole territories. For a free-form area, use “Analyse” in Studies.",
+"Filtre de zone d'étude :": "Study area filter:",
+"Zone d'étude introuvable : filtre de zone retiré.": "Study area not found: area filter removed.",
+"Filtre de zone d'étude : {0}": "Study area filter: {0}",
+"Filtre de zone d'étude retiré": "Study area filter removed",
+"Aucune zone d'étude : tracez-en une avec « Tracer une zone d'étude ».": "No study area: draw one with “Draw a study area”.",
+"Zone d'étude :": "Study area:",
+"(partiel)": "(partial)",
+"Retirer le filtre de zone (Alt+Z)": "Remove the area filter (Alt+Z)",
+"(calcul…)": "(computing…)",
+"— filtre impossible, objets masqués pour": "— filter unavailable, features hidden for",
+"couche(s)": "layer(s)"
 }

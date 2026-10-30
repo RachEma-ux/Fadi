@@ -184,25 +184,50 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   res.send(r?.mvt ?? Buffer.alloc(0));
 });
 
+/** Zone d'étude active de l'espace (D-GD-41), sinon null : une zone d'un autre espace ou archivée n'existe pas. */
+async function zoneDeLEspace(espaceId: string, zoneId: unknown): Promise<string | null> {
+  if (typeof zoneId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(zoneId)) return null;
+  const [z] = await requete<{ id: string }>(`SELECT id FROM geodata_zones WHERE id = $1 AND espace_id = $2 AND etat = 'active' AND nature = 'zone'`, [zoneId, espaceId]);
+  return z?.id ?? null;
+}
+
 /**
  * Lecture de l'emprise (D-GD-40) : objets d'une couche qui recoupent la vue `bbox=ouest,sud,est,nord` (WGS 84), lus sur
  * la géométrie de référence, et nombre total d'objets. Les codes sont renvoyés (au plus `OBJETS_PAR_COUCHE`) pour que la
  * page applique le filtre de la couche et calcule les statistiques de l'indicateur actif ; `tronque` signale une borne
  * atteinte. Mêmes règles d'accès que la table.
+ *
+ * `zone=<id>` (D-GD-41) : objets qui recoupent la zone d'étude (de l'espace, active), seule ou avec la vue ; la zone
+ * d'un autre espace répond 404 comme une couche inaccessible.
  */
 consultationRouter.get("/couches/:id/vue", async (req, res) => {
-  const emprise = bornerEmprise(String(req.query["bbox"] ?? "").split(",").map((v) => (v.trim() === "" ? NaN : Number(v))));
-  if (!emprise) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
-  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  const espaceId = await espaceDe(req);
+  const avecBbox = req.query["bbox"] !== undefined;
+  const emprise = avecBbox ? bornerEmprise(String(req.query["bbox"]).split(",").map((v) => (v.trim() === "" ? NaN : Number(v)))) : null;
+  if (avecBbox && !emprise) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
+  const avecZone = req.query["zone"] !== undefined;
+  if (!avecBbox && !avecZone) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
+  const couche = await coucheConsultable(espaceId, req.params.id);
   if (!couche) return introuvable(res);
+  const zone = avecZone ? await zoneDeLEspace(espaceId, req.query["zone"]) : null;
+  if (avecZone && !zone) return introuvable(res);
+  const params: unknown[] = [req.params.id, OBJETS_PAR_COUCHE + 1];
+  const conditions: string[] = [];
+  if (emprise) {
+    params.push(...emprise);
+    conditions.push(`o.geom && ST_MakeEnvelope($3, $4, $5, $6, 4326) AND ST_Intersects(o.geom, ST_MakeEnvelope($3, $4, $5, $6, 4326))`);
+  }
+  if (zone) {
+    params.push(zone);
+    const n = params.length;
+    conditions.push(`EXISTS (SELECT 1 FROM geodata_zones z WHERE z.id = $${n} AND o.geom && z.geom AND ST_Intersects(o.geom, z.geom))`);
+  }
   const lignes = await requete<{ code: string }>(
-    `SELECT o.code FROM geodata_objets o
-      WHERE o.couche_id = $1 AND o.geom && ST_MakeEnvelope($2, $3, $4, $5, 4326) AND ST_Intersects(o.geom, ST_MakeEnvelope($2, $3, $4, $5, 4326))
-      ORDER BY o.code LIMIT $6`,
-    [req.params.id, ...emprise, OBJETS_PAR_COUCHE + 1],
+    `SELECT o.code FROM geodata_objets o WHERE o.couche_id = $1 AND ${conditions.join(" AND ")} ORDER BY o.code LIMIT $2`,
+    params,
   );
   const [t] = await requete<{ n: string }>(`SELECT count(*) AS n FROM geodata_objets o WHERE o.couche_id = $1`, [req.params.id]);
-  res.json({ emprise, total: Number(t?.n ?? 0), codes: lignes.slice(0, OBJETS_PAR_COUCHE).map((l) => l.code), tronque: lignes.length > OBJETS_PAR_COUCHE });
+  res.json({ emprise, zone, total: Number(t?.n ?? 0), codes: lignes.slice(0, OBJETS_PAR_COUCHE).map((l) => l.code), tronque: lignes.length > OBJETS_PAR_COUCHE });
 });
 
 /**
@@ -304,14 +329,19 @@ consultationRouter.get("/couches/:id/table", async (req, res) => {
   const val = typeof req.query["valeur"] === "string" ? req.query["valeur"].slice(0, 200) : "";
   const op = req.query["operateur"] === "egal" ? "egal" : "contient";
   if (prop && !["nom", "code", ...exposees].includes(prop)) return erreur(res, 400, "invalid_input", "Propriété de filtre non autorisée.", { champs: ["propriete"] });
+  // Zone d'étude active (D-GD-41) : seuls les objets qui la recoupent ; une zone d'un autre espace répond 404.
+  const zone = req.query["zone"] !== undefined ? await zoneDeLEspace(espaceId, req.query["zone"]) : null;
+  if (req.query["zone"] !== undefined && !zone) return introuvable(res);
   const expr = prop === "nom" ? "coalesce(o.nom, '')" : prop === "code" ? "o.code" : "coalesce(o.proprietes ->> $5, '')";
   const filtre = prop ? (op === "egal" ? `AND lower(${expr}) = lower($4)` : `AND lower(${expr}) LIKE '%' || lower($4) || '%'`) : "";
   const params: unknown[] = [req.params.id, taille, (page - 1) * taille];
   if (prop) params.push(val);
   if (prop && prop !== "nom" && prop !== "code") params.push(prop);
+  let filtreZone = "";
+  if (zone) { params.push(zone); filtreZone = `AND EXISTS (SELECT 1 FROM geodata_zones z WHERE z.id = $${params.length} AND o.geom && z.geom AND ST_Intersects(o.geom, z.geom))`; }
   const lignes = await requete(
     `SELECT o.code, o.nom, o.niveau, o.proprietes, o.geometrie_reparee, count(*) OVER () AS total FROM geodata_objets o
-      WHERE o.couche_id = $1 ${filtre} ORDER BY ${tri} ${ordre}, o.code LIMIT $2 OFFSET $3`,
+      WHERE o.couche_id = $1 ${filtre} ${filtreZone} ORDER BY ${tri} ${ordre}, o.code LIMIT $2 OFFSET $3`,
     params,
   );
   const codes = lignes.map((l) => l["code"] as string);

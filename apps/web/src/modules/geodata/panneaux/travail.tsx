@@ -99,6 +99,8 @@ export function mesureDuTrace(t: TraceEnCours | null): string | null {
 export function Etudes(p: {
   outil: OutilCarte; trace: TraceEnCours | null; tracePret: { outil: OutilCarte; sommets: readonly [number, number][] } | null; couchesPolygones: CoucheRecue[];
   onOutil(o: OutilCarte): void; onTerminer(): void; onAnnulerTrace(): void; onZonesChangees(): void; onCentrer(geometrie: { type: string; coordinates: unknown }): void; zones: ZoneRecue[];
+  /** Zone qui filtre la carte, la table et la synthèse (D-GD-41) ; `onFiltrerZone(null)` retire le filtre. */
+  zoneFiltre?: string | null; onFiltrerZone?(id: string | null): void;
 }) {
   const [analyses, setAnalyses] = useState<AnalyseRecue[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -169,6 +171,8 @@ export function Etudes(p: {
             {z.texte && <p translate="no">{z.texte}</p>}
             <div className="gd-actions">
               <button type="button" onClick={() => p.onCentrer(z.geometrie)}>Centrer</button>
+              {z.nature === "zone" && p.onFiltrerZone && <button type="button" aria-pressed={p.zoneFiltre === z.id} title="Carte, table et synthèse limitées aux objets qui recoupent cette zone (Alt+Z)" aria-keyshortcuts="Alt+Z"
+                onClick={() => p.onFiltrerZone?.(p.zoneFiltre === z.id ? null : z.id)} data-gd-filtrer-zone={z.id}>{p.zoneFiltre === z.id ? "Retirer le filtre de zone" : "Filtrer par cette zone"}</button>}
               {z.nature === "zone" && p.couchesPolygones.length > 0 && <button type="button" disabled={enCours === z.id} onClick={async () => {
                 setEnCours(z.id); setErreur(null);
                 try { await api.analyser(z.id, couche); chargerAnalyses(); } catch (e) { setErreur(message(e)); } finally { setEnCours(null); }

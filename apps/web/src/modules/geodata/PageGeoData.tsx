@@ -95,6 +95,11 @@ export function PageGeoData() {
   const [trace, setTrace] = useState<TraceEnCours | null>(null);
   const [tracePret, setTracePret] = useState<TraceEnCours | null>(null);
   const [zones, setZones] = useState<ZoneRecue[]>([]);
+  // Zone d'étude qui filtre la carte, la table et la synthèse (D-GD-41) ; codes des objets qui la recoupent, par couche.
+  const [zonesLues, setZonesLues] = useState(false);
+  const [zoneFiltre, setZoneFiltre] = useState<string | null>(null);
+  const derniereZone = useRef<string | null>(null);
+  const [codesZone, setCodesZone] = useState<{ zone: string; couches: Map<string, { codes: string[]; tronque: boolean } | { erreur: string }> } | null>(null);
   const [analysesIds, setAnalysesIds] = useState<string[]>([]);
   const [webgl] = useState(webglDisponible);
   const [erreurCarte, setErreurCarte] = useState<string | null>(webgl ? null : "WebGL n'est pas disponible dans ce navigateur : la carte ne peut pas s'afficher. La recherche, le catalogue, la table et les fiches restent utilisables.");
@@ -180,7 +185,7 @@ export function PageGeoData() {
     try { setRangement(await api.rangement()); setErreurRangement(null); } catch (e) { setErreurRangement(message(e)); }
   }, []);
   const rangementCatalogue = useMemo(() => rangementDepuis(rangement), [rangement]);
-  const chargerZones = useCallback(() => { api.zones().then((r) => setZones(r.zones)).catch(() => undefined); api.analyses().then((r) => setAnalysesIds(r.analyses.map((a) => a.id))).catch(() => undefined); }, []);
+  const chargerZones = useCallback(() => { api.zones().then((r) => { setZones(r.zones); setZonesLues(true); }).catch(() => undefined); api.analyses().then((r) => setAnalysesIds(r.analyses.map((a) => a.id))).catch(() => undefined); }, []);
 
   useEffect(() => {
     api.espace().then(setEspace).catch((e) => setErreurEspace(message(e)));
@@ -309,7 +314,51 @@ export function PageGeoData() {
     const versions = new Set(paysListe?.find((x) => x.code === paysCourant)?.versions ?? []);
     return couchesNiveau.filter((c) => versions.has(couchesConnues.get(c.coucheId)?.version.id ?? ""));
   }, [chemin, couchesNiveau, paysListe, paysCourant, couchesConnues]);
-  const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin)), [filtres, chemin, couchesDuChemin]);
+  const zoneActive = useMemo(() => zones.find((z) => z.id === zoneFiltre && z.nature === "zone") ?? null, [zones, zoneFiltre]);
+  // Zone archivée ou inconnue (adresse d'un autre espace) : le filtre est retiré une fois les zones lues.
+  useEffect(() => { if (zoneFiltre && zonesLues && !zoneActive) { setZoneFiltre(null); setAnnonce("Zone d'étude introuvable : filtre de zone retiré."); } }, [zoneFiltre, zonesLues, zoneActive]);
+  const cleCouchesVectorielles = [...vectorielles].sort().join(",");
+  useEffect(() => {
+    if (!zoneActive) { setCodesZone(null); return; }
+    const zone = zoneActive.id;
+    setCodesZone((c) => (c?.zone === zone ? c : { zone, couches: new Map() }));
+    for (const id of vectorielles) {
+      api.codesZone(id, zone)
+        .then((r) => setCodesZone((c) => (c?.zone === zone ? { zone, couches: new Map(c.couches).set(id, { codes: r.codes, tronque: r.tronque }) } : c)))
+        .catch((e: unknown) => setCodesZone((c) => (c?.zone === zone ? { zone, couches: new Map(c.couches).set(id, { erreur: message(e) }) } : c)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneActive?.id, cleCouchesVectorielles]);
+  const filtresAffiches = useMemo(() => {
+    const base = combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin));
+    if (!zoneActive) return base;
+    // Une couche dont les codes de la zone ne sont pas (encore) connus — calcul en cours ou échec — ne montre aucun objet :
+    // jamais d'objet hors zone présenté comme filtré. La puce dit le calcul en cours ou l'échec.
+    const parZone = new Map<string, string[]>();
+    for (const id of vectorielles) {
+      const v = codesZone?.zone === zoneActive.id ? codesZone.couches.get(id) : undefined;
+      parZone.set(id, v && "codes" in v ? v.codes : []);
+    }
+    return combinerFiltres(base, parZone);
+  }, [filtres, chemin, couchesDuChemin, zoneActive, codesZone, vectorielles]);
+  const etatsZone = zoneActive ? [...vectorielles].map((id) => (codesZone?.zone === zoneActive.id ? codesZone.couches.get(id) : undefined)) : [];
+  const zonePartielle = etatsZone.some((v) => !!v && "codes" in v && v.tronque);
+  const zoneEnCalcul = etatsZone.some((v) => !v);
+  const zoneEchecs = etatsZone.filter((v) => !!v && "erreur" in v).length;
+  const filtrerZone = (id: string | null) => {
+    if (id) derniereZone.current = id;
+    setZoneFiltre(id);
+    const z = zones.find((x) => x.id === id);
+    setAnnonce(id ? `Filtre de zone d'étude : ${z?.nom ?? id}` : "Filtre de zone d'étude retiré");
+  };
+  /** Alt+Z : retire le filtre de zone, ou rétablit la dernière zone filtrée (sinon la zone d'étude la plus récente). */
+  const basculerFiltreZone = () => {
+    if (zoneFiltre) return filtrerZone(null);
+    const candidates = zones.filter((z) => z.nature === "zone");
+    const cible = candidates.find((z) => z.id === derniereZone.current) ?? candidates[0];
+    if (!cible) return setAnnonce("Aucune zone d'étude : tracez-en une avec « Tracer une zone d'étude ».");
+    filtrerZone(cible.id);
+  };
   // Synthèse de la vue (D-GD-40) : couches d'objets visibles ; à chaque arrêt de la carte, objets de la vue lus en base
   // (une requête par couche, la réponse d'une vue dépassée est ignorée). Rien n'est demandé quand la synthèse est fermée.
   const couchesSynthese = useMemo(() => compositionAffichee.couches.filter((k) => k.visible && vectorielles.has(k.coucheId)), [compositionAffichee, vectorielles]);
@@ -488,12 +537,12 @@ export function PageGeoData() {
     if (ongletPage !== "cartes") return;
     if (!adresseLue.current) { adresseLue.current = true; if (window.location.hash && composition === COMPOSITION_INITIALE) return; }
     const fragment = ecrireAdresseVue({
-      camera: composition.camera, carteId: carte?.id ?? null, indicateur: indicateurActif,
+      camera: composition.camera, carteId: carte?.id ?? null, indicateur: indicateurActif, zoneId: zoneFiltre,
       couches: carte ? [] : composition.couches.map((k) => ({ coucheId: k.coucheId, versionId: k.versionId, visible: k.visible, regrouper: !!k.regrouper })),
     });
     const adresse = `${window.location.pathname}${window.location.search}#${fragment}`;
     if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== adresse) window.history.replaceState(window.history.state, "", adresse);
-  }, [ongletPage, composition, carte?.id, indicateurActif]);
+  }, [ongletPage, composition, carte?.id, indicateurActif, zoneFiltre]);
 
   async function ouvrirValeur(coucheId: string, titre: string, p: { lon: number; lat: number }) {
     setVolet("valeur");
@@ -534,6 +583,7 @@ export function PageGeoData() {
     const camera = a.camera;
     const placer = () => { if (camera) { setComposition((c) => ({ ...c, camera })); moteur.current?.allerA({ lon: camera.lon, lat: camera.lat, zoom: camera.zoom, cap: camera.cap }); } };
     if (a.indicateur) setIndicateurActif(a.indicateur);
+    if (a.zoneId) { derniereZone.current = a.zoneId; setZoneFiltre(a.zoneId); }
     if (a.carteId) { await ouvrirCarte(a.carteId); placer(); return; }
     let c = compositionNeuve(camera ?? undefined);
     const recues = await Promise.all(a.couches.map((k) => api.couche(k.coucheId).catch(() => null)));
@@ -729,6 +779,8 @@ export function PageGeoData() {
     if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
     if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
     if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
+    // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
+    if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
     if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
@@ -958,7 +1010,7 @@ export function PageGeoData() {
       {etat.etat === "erreur" && <div role="alert" className="gd-bandeau gd-alerte"><p>{etat.message}</p><button type="button" onClick={() => void enregistrer()}>Réessayer</button></div>}
       {erreurEspace && <div role="alert" className="gd-bandeau gd-alerte"><p>{erreurEspace}</p></div>}
       <div className="gd-corps">
-        {bordVisite && <TableauDeBord onglet={ongletPage === "cartes" ? "chiffres-cles" : ongletPage} visible={ongletPage !== "cartes"} paysCourant={paysCourant} paysPret={paysListe !== null || erreurTerritoires !== null} zoneCarte={zoneCarte} />}
+        {bordVisite && <TableauDeBord onglet={ongletPage === "cartes" ? "chiffres-cles" : ongletPage} visible={ongletPage !== "cartes"} paysCourant={paysCourant} paysPret={paysListe !== null || erreurTerritoires !== null} zoneCarte={zoneCarte} zoneEtude={zoneActive?.nom ?? null} />}
         {panneauOuvert && <aside className="gd-panneau gd-ouvert" aria-label="Catalogue, couches et légende" data-gd-panneau>
           <div className="gd-onglets">
             <div role="tablist" aria-label="Panneau GeoData" className="gd-liste-onglets">
@@ -995,7 +1047,13 @@ export function PageGeoData() {
             navigation={{ ouverte: panneauMini === "navigation", onBasculer: (o) => basculerPanneauMini("navigation", o),
               contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
-          {syntheseOuverte && !erreurCarte && <SyntheseVue lignes={lignesSynthese} zoom={composition.camera.zoom} decalee={panneauOuvert} haute={miniCarte} onFermer={basculerSynthese} />}
+          {syntheseOuverte && !erreurCarte && <SyntheseVue lignes={lignesSynthese} zoom={composition.camera.zoom} zone={zoneActive?.nom ?? null} decalee={panneauOuvert} haute={miniCarte} onFermer={basculerSynthese} />}
+          {zoneActive && <div className="gd-puce-zone" role="status" data-gd-puce-zone={zoneActive.id}>
+            <span>Zone d'étude :</span> <span translate="no">{zoneActive.nom}</span>{zonePartielle && <span> (partiel)</span>}
+            {zoneEnCalcul && <span data-gd-zone-calcul> (calcul…)</span>}
+            {zoneEchecs > 0 && <span className="gd-alerte" data-gd-zone-echec><span>— filtre impossible, objets masqués pour</span> <span>{zoneEchecs}</span> <span>couche(s)</span></span>}
+            <button type="button" onClick={() => filtrerZone(null)} aria-label="Retirer le filtre de zone (Alt+Z)" title="Retirer le filtre de zone (Alt+Z)" aria-keyshortcuts="Alt+Z" data-gd-retirer-zone>×</button>
+          </div>}
           {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
@@ -1012,7 +1070,7 @@ export function PageGeoData() {
               onNouvelle={nouvelleCarte}
               onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); if (collectionId) await collection.rafraichir(collectionId).catch(() => undefined); }} />}
             {volet === "collection" && <PanneauCollection etat={collection} mode={modeCollection} onMode={setModeCollection} carte={carte} onOuvrirCarte={(id) => void ouvrirCarte(id)} onAnnonce={setAnnonce} />}
-            {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil}
+            {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil} zoneFiltre={zoneFiltre} onFiltrerZone={filtrerZone}
               onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}
               onCentrer={(g) => { const e = empriseGeometrie(g); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "import" && <Import onCoucheImportee={async (id) => { const c = await api.couche(id); connaitre([c]); chargerCatalogue(); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); const e = empriseDe(c.emprise?.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
@@ -1020,7 +1078,7 @@ export function PageGeoData() {
           </aside>
         )}
       </div>
-      {coucheDeTable && ongletPage === "cartes" && <div className="gd-tiroir"><TableAttributs couche={coucheDeTable} filtreActif={composition.couches.find((k) => k.coucheId === coucheDeTable.id)?.filtre ?? null}
+      {coucheDeTable && ongletPage === "cartes" && <div className="gd-tiroir"><TableAttributs couche={coucheDeTable} zone={zoneActive ? { id: zoneActive.id, nom: zoneActive.nom } : null} filtreActif={composition.couches.find((k) => k.coucheId === coucheDeTable.id)?.filtre ?? null}
         onFiltre={(f: FiltreCouche | null) => setComposition((c) => definirFiltre(c, coucheDeTable.id, f))} onFermer={() => setCoucheTable(null)}
         onSelection={(code) => { setSelection({ coucheId: coucheDeTable.id, code }); void ouvrirFiche(coucheDeTable.id, code).then(() => undefined); }} /></div>}
     </div>

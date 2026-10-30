@@ -284,6 +284,24 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     const bob = await compte("gd-vue-bob@example.com");
     expect((await bob.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`)).status).toBe(404);
     expect((await bob.client.get(`${API}/tuiles/${id}/8/123/103?regrouper=1`)).status).toBe(404);
+    // Zone d'étude qui filtre (D-GD-41) : objets qui recoupent la zone, seule ou avec la vue ; table restreinte.
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Trois points", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect(zone.status).toBe(201);
+    const dansZone = await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`);
+    expect(dansZone.status).toBe(200);
+    expect(dansZone.body).toMatchObject({ zone: zone.body.id, total: 4 });
+    expect(dansZone.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}&bbox=-6.9505,33,-6.9,33.1`)).body.codes).toHaveLength(1);
+    const table = await alice.client.get(`${API}/couches/${id}/table?zone=${zone.body.id}`);
+    expect(table.body.total).toBe(3);
+    expect(table.body.lignes.map((l: { nom: string }) => l.nom).sort()).toEqual(["Point A", "Point B", "Point C"]);
+    expect((await alice.client.get(`${API}/couches/${id}/vue`)).status).toBe(400);
+    // Zone d'un autre espace ou archivée : 404, comme une couche inaccessible.
+    const zoneBob = await bob.client.post(`${API}/zones`).send({ nature: "zone", nom: "Ailleurs", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zoneBob.body.id}`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/couches/${id}/table?zone=${zoneBob.body.id}`)).status).toBe(404);
+    await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
   });
   it("cartes, zones, analyses et fiches d'export d'un tiers : 404, y compris en accès direct", async () => {
     const alice = await compte("gd-a8@example.com");

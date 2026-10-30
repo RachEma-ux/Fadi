@@ -316,7 +316,9 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
   );
 }
 
-export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: string): void; onFiltre(f: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null): void; filtreActif: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null; onFermer(): void }) {
+export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: string): void; onFiltre(f: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null): void; filtreActif: { propriete: string; operateur: "egal" | "contient"; valeur: string } | null; onFermer(): void;
+  /** Zone d'étude qui filtre (D-GD-41) : seuls les objets qui la recoupent ; null = aucune. */
+  zone?: { readonly id: string; readonly nom: string } | null }) {
   const [page, setPage] = useState(1);
   const [tri, setTri] = useState<"nom" | "code">("nom");
   const [ordre, setOrdre] = useState<"asc" | "desc">("asc");
@@ -329,15 +331,17 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
   useEffect(() => {
     let vivant = true;
     setErreur(null);
-    api.table(p.couche.id, { page, taille, tri, ordre, ...(p.filtreActif ?? {}) }).then((d) => vivant && setDonnees(d)).catch((e: Error) => vivant && setErreur(e.message));
+    api.table(p.couche.id, { page, taille, tri, ordre, ...(p.filtreActif ?? {}), zone: p.zone?.id ?? null }).then((d) => vivant && setDonnees(d)).catch((e: Error) => vivant && setErreur(e.message));
     return () => { vivant = false; };
-  }, [p.couche.id, page, tri, ordre, p.filtreActif]);
+  }, [p.couche.id, page, tri, ordre, p.filtreActif, p.zone?.id]);
+  useEffect(() => setPage(1), [p.zone?.id]);
   const pages = donnees ? Math.max(1, Math.ceil(donnees.total / taille)) : 1;
   const colonnes = indicateursPrincipaux(p.couche.indicateurs);
   const trier = (t: "nom" | "code") => { if (t === tri) setOrdre(ordre === "asc" ? "desc" : "asc"); else { setTri(t); setOrdre("asc"); } setPage(1); };
   return (
     <section className="gd-table" aria-label="Table des attributs" data-gd-table={p.couche.id}>
       <div className="gd-ligne-titre"><h3 translate="no">{p.couche.titre}</h3><button type="button" onClick={p.onFermer}>Fermer la table</button></div>
+      {p.zone && <p className="gd-discret" data-gd-table-zone={p.zone.id}><span>Objets qui recoupent la zone d'étude</span> <span translate="no">{`« ${p.zone.nom} »`}</span></p>}
       <form className="gd-filtre" onSubmit={(e) => { e.preventDefault(); setPage(1); p.onFiltre(valeur.trim() ? { propriete, operateur, valeur: valeur.trim() } : null); }}>
         <label className="gd-champ">Propriété<select value={propriete} onChange={(e) => setPropriete(e.target.value)}><option value="nom">nom</option><option value="code">code</option>{p.couche.proprietesExposees.map((x) => <option key={x} value={x} translate="no">{x}</option>)}</select></label>
         <label className="gd-champ">Condition<select value={operateur} onChange={(e) => setOperateur(e.target.value as "egal" | "contient")}><option value="contient">contient</option><option value="egal">est égal à</option></select></label>

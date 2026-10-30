@@ -117,14 +117,16 @@ export const api = {
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   couche: (id: string) => appeler<CoucheRecue>(`/couches/${encodeURIComponent(id)}`),
   rechercher: (q: string) => appeler<{ resultats: ResultatRecherche[]; avertissement?: { code: string; message: string } }>(`/recherche?q=${encodeURIComponent(q)}`),
-  table: (id: string, p: { page: number; taille: number; tri: "nom" | "code"; ordre: "asc" | "desc"; propriete?: string; operateur?: "egal" | "contient"; valeur?: string }) => {
-    const q = new URLSearchParams({ page: String(p.page), taille: String(p.taille), tri: p.tri, ordre: p.ordre, ...(p.propriete && p.valeur ? { propriete: p.propriete, operateur: p.operateur ?? "contient", valeur: p.valeur } : {}) });
+  table: (id: string, p: { page: number; taille: number; tri: "nom" | "code"; ordre: "asc" | "desc"; propriete?: string; operateur?: "egal" | "contient"; valeur?: string; zone?: string | null }) => {
+    const q = new URLSearchParams({ page: String(p.page), taille: String(p.taille), tri: p.tri, ordre: p.ordre, ...(p.propriete && p.valeur ? { propriete: p.propriete, operateur: p.operateur ?? "contient", valeur: p.valeur } : {}), ...(p.zone ? { zone: p.zone } : {}) });
     return appeler<{ page: number; taille: number; total: number; lignes: LigneTable[] }>(`/couches/${encodeURIComponent(id)}/table?${q}`);
   },
   codesFiltres: (id: string, f: { propriete: string; operateur: "egal" | "contient"; valeur: string }) => appeler<{ codes: string[] }>(`/couches/${encodeURIComponent(id)}/codes?${new URLSearchParams(f)}`),
   /** Lecture de l'emprise (D-GD-40) : codes des objets qui recoupent la vue et nombre total d'objets de la couche. */
   vue: (id: string, emprise: readonly [number, number, number, number], signal?: AbortSignal) =>
     appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?bbox=${emprise.map((v) => v.toFixed(6)).join(",")}`, signal ? { signal } : {}),
+  /** Codes des objets qui recoupent une zone d'étude de l'espace (D-GD-41). */
+  codesZone: (id: string, zoneId: string) => appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?zone=${encodeURIComponent(zoneId)}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),

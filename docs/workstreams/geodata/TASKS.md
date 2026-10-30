@@ -34,7 +34,7 @@
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
 - [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).
-- [ ] GEO-ZONE-FILTRE — P1-4 de l'analyse : la zone d'étude filtre table, tableau de bord et synthèse ; non engagé.
+- [x] GEO-ZONE-FILTRE — Zone d'étude qui filtre carte, table et synthèse ; puce, Alt+Z, adresse ; tableau de bord signalé non filtré (D-GD-41).
 - [ ] GEO-PLAN-SATELLITE — P1-6 de l'analyse : bascule Plan / Satellite du fournisseur réglé ; non engagé.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
