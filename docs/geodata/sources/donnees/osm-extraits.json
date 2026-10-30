@@ -1,4 +1,58 @@
 {
+  "osm-mar-administrations": {
+    "cle": "osm-mar-administrations",
+    "titre": "Administrations publiques du Maroc (OpenStreetMap)",
+    "description": "Objets OpenStreetMap « amenity=townhall|courthouse ou office=government », restreints au territoire couvert par geoBoundaries MAR ADM1. Extraits : morocco.osm.pbf du 2026-10-23 (SHA-256 9fd7ee67e3cf0abd2c7b1b3ac74f48374c097e475c342353d73e632dabeea39c) ; western_sahara.osm.pbf du 2026-10-23 (SHA-256 7875b8da19f2c47690f085d2f4afefc4dee1bf0579ab005806ce7f406c61e1b9). Données collaboratives : exhaustivité et exactitude non garanties ; ce n'est pas un inventaire officiel.",
+    "producteur": "Contributeurs OpenStreetMap",
+    "theme": "equipements",
+    "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+    "version": {
+      "libelle": "OpenStreetMap — extraits du 2026-10-23",
+      "url": null,
+      "fichier": "donnees/osm-mar-administrations.geojson",
+      "empreinte": "ea1cc03306b1746f7ff2df553ef60f99796389cd2e9b2cf2b123786078ba77c6",
+      "periode": "Base OpenStreetMap des extraits du 2026-10-23",
+      "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+      "attribution": "© contributeurs OpenStreetMap (ODbL)",
+      "droits": {
+        "consultation": "autorise",
+        "stockage": "autorise",
+        "calcul": "autorise",
+        "tuiles": "autorise",
+        "commercial": "autorise",
+        "partage": "autorise",
+        "telechargement": "autorise",
+        "export": "autorise"
+      },
+      "precision": "Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets) ; coordonnées arrondies à 10⁻⁷ degré",
+      "synthetique": false,
+      "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+    },
+    "couche": {
+      "titre": "Administrations publiques du Maroc (OpenStreetMap)",
+      "description": "1575 objets ; code = type et identifiant OSM (n = nœud, w = voie, r = relation).",
+      "niveau": null,
+      "champCode": "code",
+      "champNom": "nom",
+      "proprietesExposees": [
+        "code",
+        "osm",
+        "nom",
+        "name",
+        "name:fr",
+        "name:ar",
+        "amenity",
+        "office",
+        "government"
+      ],
+      "styleDefaut": {
+        "mode": "simple",
+        "couleur": "#33a02c"
+      }
+    },
+    "indicateurs": [],
+    "superficie": false
+  },
   "osm-mar-arrondissements": {
     "cle": "osm-mar-arrondissements",
     "titre": "Arrondissements et subdivisions des communes du Maroc (OpenStreetMap, niveau administratif 10)",
@@ -104,6 +158,114 @@
     },
     "indicateurs": [],
     "superficie": true
+  },
+  "osm-mar-etablissements-sante": {
+    "cle": "osm-mar-etablissements-sante",
+    "titre": "Hôpitaux et cliniques du Maroc (OpenStreetMap)",
+    "description": "Objets OpenStreetMap « amenity=hospital ou clinic », restreints au territoire couvert par geoBoundaries MAR ADM1. Extraits : morocco.osm.pbf du 2026-10-23 (SHA-256 9fd7ee67e3cf0abd2c7b1b3ac74f48374c097e475c342353d73e632dabeea39c) ; western_sahara.osm.pbf du 2026-10-23 (SHA-256 7875b8da19f2c47690f085d2f4afefc4dee1bf0579ab005806ce7f406c61e1b9). Données collaboratives : exhaustivité et exactitude non garanties ; ce n'est pas un inventaire officiel.",
+    "producteur": "Contributeurs OpenStreetMap",
+    "theme": "equipements",
+    "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+    "version": {
+      "libelle": "OpenStreetMap — extraits du 2026-10-23",
+      "url": null,
+      "fichier": "donnees/osm-mar-etablissements-sante.geojson",
+      "empreinte": "0c2510084287eb60af1d1600bd3ed847ccc1820689be220a5c54ebdee574c851",
+      "periode": "Base OpenStreetMap des extraits du 2026-10-23",
+      "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+      "attribution": "© contributeurs OpenStreetMap (ODbL)",
+      "droits": {
+        "consultation": "autorise",
+        "stockage": "autorise",
+        "calcul": "autorise",
+        "tuiles": "autorise",
+        "commercial": "autorise",
+        "partage": "autorise",
+        "telechargement": "autorise",
+        "export": "autorise"
+      },
+      "precision": "Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets) ; coordonnées arrondies à 10⁻⁷ degré",
+      "synthetique": false,
+      "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+    },
+    "couche": {
+      "titre": "Hôpitaux et cliniques du Maroc (OpenStreetMap)",
+      "description": "763 objets ; code = type et identifiant OSM (n = nœud, w = voie, r = relation).",
+      "niveau": null,
+      "champCode": "code",
+      "champNom": "nom",
+      "proprietesExposees": [
+        "code",
+        "osm",
+        "nom",
+        "name",
+        "name:fr",
+        "name:ar",
+        "amenity",
+        "healthcare",
+        "operator",
+        "operator:type"
+      ],
+      "styleDefaut": {
+        "mode": "simple",
+        "couleur": "#33a02c"
+      }
+    },
+    "indicateurs": [],
+    "superficie": false
+  },
+  "osm-mar-gares": {
+    "cle": "osm-mar-gares",
+    "titre": "Gares ferroviaires du Maroc (OpenStreetMap)",
+    "description": "Objets OpenStreetMap « railway=station », restreints au territoire couvert par geoBoundaries MAR ADM1. Extraits : morocco.osm.pbf du 2026-10-23 (SHA-256 9fd7ee67e3cf0abd2c7b1b3ac74f48374c097e475c342353d73e632dabeea39c) ; western_sahara.osm.pbf du 2026-10-23 (SHA-256 7875b8da19f2c47690f085d2f4afefc4dee1bf0579ab005806ce7f406c61e1b9). Données collaboratives : exhaustivité et exactitude non garanties ; ce n'est pas un inventaire officiel.",
+    "producteur": "Contributeurs OpenStreetMap",
+    "theme": "infrastructures",
+    "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+    "version": {
+      "libelle": "OpenStreetMap — extraits du 2026-10-23",
+      "url": null,
+      "fichier": "donnees/osm-mar-gares.geojson",
+      "empreinte": "e86749bd6a900ec1583cd68ade80f28da996c1aae46d5274bff81ae603d42849",
+      "periode": "Base OpenStreetMap des extraits du 2026-10-23",
+      "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+      "attribution": "© contributeurs OpenStreetMap (ODbL)",
+      "droits": {
+        "consultation": "autorise",
+        "stockage": "autorise",
+        "calcul": "autorise",
+        "tuiles": "autorise",
+        "commercial": "autorise",
+        "partage": "autorise",
+        "telechargement": "autorise",
+        "export": "autorise"
+      },
+      "precision": "Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets) ; coordonnées arrondies à 10⁻⁷ degré",
+      "synthetique": false,
+      "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+    },
+    "couche": {
+      "titre": "Gares ferroviaires du Maroc (OpenStreetMap)",
+      "description": "157 objets ; code = type et identifiant OSM (n = nœud, w = voie, r = relation).",
+      "niveau": null,
+      "champCode": "code",
+      "champNom": "nom",
+      "proprietesExposees": [
+        "code",
+        "osm",
+        "nom",
+        "name",
+        "name:fr",
+        "name:ar",
+        "operator",
+        "station"
+      ],
+      "styleDefaut": {
+        "mode": "simple",
+        "couleur": "#6a3d9a"
+      }
+    },
+    "indicateurs": [],
+    "superficie": false
   },
   "osm-mar-villes": {
     "cle": "osm-mar-villes",

@@ -203,6 +203,58 @@ function SubdivisionsDe({ parent, s, onFiche }: { parent: string; s: Subdivision
 
 const pourcent = (v: number | null, secret: boolean) => (v === null ? (secret ? "Secret statistique" : "—") : `${v.toFixed(1).replace(".", ",")} %`);
 
+/**
+ * Compléments des douars (D-GD-43), par tableau : colonne de l'annexe (nom technique de la base) et libellé du HCP. Ce
+ * sont des libellés d'interface, pas des données : les valeurs viennent de la base, telles que publiées.
+ */
+type Unite = "pourcent" | "nombre" | "km";
+const TABLEAUX_DOUARS: readonly { titre: string; unite: Unite; colonnes: readonly (readonly [string, string, Unite?])[] }[] = [
+  { titre: "Nationalité, état civil et état matrimonial", unite: "pourcent", colonnes: [
+    ["marocaine", "Marocaine"], ["etrangere", "Étrangère"], ["etat_civil", "Inscrits à l'état civil"], ["pop_15_plus", "Population de 15 ans et plus", "nombre"],
+    ["celibataire", "Célibataire"], ["marie", "Marié"], ["divorce", "Divorcé"], ["veuf", "Veuf"],
+  ] },
+  { titre: "Type de logement des ménages", unite: "pourcent", colonnes: [
+    ["log_villa", "Villa ou niveau de villa"], ["log_appartement", "Appartement"], ["log_traditionnelle", "Maison marocaine traditionnelle"],
+    ["log_moderne", "Maison marocaine moderne"], ["log_sommaire", "Maison sommaire ou bidonville"], ["log_dur_rural", "Logement en dur rural"],
+    ["log_pise_rural", "Logement en pisé rural"], ["log_autre", "Autres"],
+  ] },
+  { titre: "Distance moyenne des logements aux équipements", unite: "km", colonnes: [
+    ["dist_route_goudronnee", "Route goudronnée"], ["dist_route_carrossable", "Route carrossable"], ["dist_ecole", "École primaire"],
+    ["dist_college", "Collège"], ["dist_lycee", "Lycée"], ["dist_sante", "Centre de santé / hôpital"],
+  ] },
+];
+
+const valeurDouar = (v: number | null | undefined, unite: Unite, secret: boolean) =>
+  v === null || v === undefined ? (secret ? "Secret statistique" : "—")
+    : unite === "pourcent" ? pourcent(v, secret)
+    : unite === "km" ? `${v.toFixed(2).replace(".", ",")} km`
+    : String(v);
+
+/** Un tableau de compléments : une ligne par douar, une colonne par valeur du HCP (D-GD-43). */
+function ComplementsDouars({ douars, tableau }: { douars: DouarRecu[]; tableau: (typeof TABLEAUX_DOUARS)[number] }) {
+  return (
+    <details className="gd-theme gd-douars-complements" data-gd-douars-complements={tableau.unite}>
+      <summary>{tableau.titre}</summary>
+      <div className="gd-defilement">
+        <table className="gd-ventilation gd-douars">
+          <thead><tr>
+            <th scope="col">Douar</th>
+            {tableau.colonnes.map(([cle, libelle]) => <th key={cle} scope="col">{libelle}</th>)}
+          </tr></thead>
+          <tbody>
+            {douars.map((d) => (
+              <tr key={d.code} data-gd-douar={d.code}>
+                <th scope="row" lang="ar" dir="rtl" translate="no">{d.nom || d.code}</th>
+                {tableau.colonnes.map(([cle, , unite]) => <td key={cle}>{valeurDouar(d.complements?.[cle], unite ?? tableau.unite, d.secret)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  );
+}
+
 /** Douars d'une commune rurale (RGPH 2024) : noms publiés seulement en arabe, affichés tels quels (D-GD-21). */
 function Douars({ douars }: { douars: DouarRecu[] }) {
   const parType = Object.entries(douars.reduce<Record<string, number>>((m, d) => { const k = d.type ?? "—"; m[k] = (m[k] ?? 0) + 1; return m; }, {}));
@@ -235,6 +287,7 @@ function Douars({ douars }: { douars: DouarRecu[] }) {
           </tbody>
         </table>
       </div>
+      {douars.some((d) => d.complements) && TABLEAUX_DOUARS.map((t) => <ComplementsDouars key={t.titre} douars={douars} tableau={t} />)}
       <p className="gd-discret">Noms publiés en arabe seulement par le HCP, affichés tels quels. « Secret statistique » : donnée supprimée par le HCP (moins de 30 ménages ou faible taux de déclaration).</p>
     </details>
   );

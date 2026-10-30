@@ -47,6 +47,9 @@ RAPPORT = os.path.join(RACINE, "docs", "workstreams", "geodata", "CONTOURS-NIVEA
 MAPSHAPER = "npx --yes -p mapshaper@0.7.98 mapshaper"
 ENTITES = "decoupage/hcp-rgph2024-entites.csv"
 DECISION = "D-GD-42"
+# Mention de provenance des contours (D-GD-44) : ce ne sont pas des contours officiels du HCP.
+PROVENANCE = ("géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; "
+              "ce ne sont pas des contours officiels du HCP")
 KM2 = 12_300  # degré² → km² approché à la latitude du Maroc (contrôles seulement)
 
 
@@ -203,12 +206,15 @@ def mettre_a_jour_fiche(sortie, n, octets, info, intervalle, comptes, nom_pays, 
                f"(mapshaper, intervalle {intervalle} m, petites formes conservées) et nettoyée ; toute entité qui a des enfants dans le découpage en base "
                "est l'union de sa descendance")
     fi["version"]["libelle"] = "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; " + methode
-    fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; contours construits par union de bas en haut "
+    fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; " + PROVENANCE
+                                  + " ; contours construits par union de bas en haut "
                                   f"en suivant les liens parent → enfant du découpage HCP ({DECISION}) : une frontière est la même à tous les niveaux ; "
-                                  "une entité élémentaire sans contour laisse une lacune signalée, jamais comblée")
+                                  "une entité élémentaire sans contour laisse une lacune signalée, jamais comblée, et le contour de ses ancêtres est "
+                                  "marqué partiel (propriétés contour_complet et entites_sans_contour, D-GD-44)")
     fi["version"]["empreinte"] = hashlib.sha256(octets).hexdigest()
     fi["couche"]["niveau"] = n["code"]
-    fi["couche"]["proprietesExposees"] = ["code", "nom", "contour", "nom_contour", "appariement"] + [m["code"] for m in info["niveaux"] if m["rang"] < n["rang"]]
+    fi["couche"]["proprietesExposees"] = (["code", "nom", "contour", "nom_contour", "appariement"] + [m["code"] for m in info["niveaux"] if m["rang"] < n["rang"]]
+                                          + ["contour_complet", "entites_sans_contour"])
     fi["theme"] = "limites-administratives"
     fi["territoire"] = {"pays": pays, "nomPays": nom_pays, "niveau": n["code"]}
     fi["construction"] = {
@@ -251,6 +257,14 @@ def construire(sortie=FICHES, intervalle=20, commande=MAPSHAPER, rapport=RAPPORT
             if c in info["par_niveau"]:
                 nb_feuilles[(c, f["properties"][c])] = nb_feuilles.get((c, f["properties"][c]), 0) + 1
     par_code = {f["properties"]["code"]: f for f in feuilles}
+    # Contours partiels (D-GD-44) : un ancêtre d'une entité élémentaire sans contour est construit sans elle ; il porte le
+    # nombre d'entités élémentaires manquantes et n'est jamais présenté comme complet.
+    manquantes = {}
+    for e in info["sans_contour"]:
+        for a in ancetres(e["code"], entites).values():
+            if a != e["code"]:
+                manquantes[a] = manquantes.get(a, 0) + 1
+    info["manquantes"] = manquantes
     couches = {}
     for n in niveaux:
         c = n["code"]
@@ -266,7 +280,8 @@ def construire(sortie=FICHES, intervalle=20, commande=MAPSHAPER, rapport=RAPPORT
             props = {"code": code, "nom": e["nom"],
                      "contour": src["properties"]["contour"] if src else f"union:{nb_feuilles[(c, code)]} entités élémentaires",
                      "nom_contour": src["properties"]["nom_contour"] if src else "",
-                     "appariement": src["properties"]["appariement"] if src else f"union de la descendance dans le découpage HCP ({DECISION})"}
+                     "appariement": src["properties"]["appariement"] if src else f"union de la descendance dans le découpage HCP ({DECISION})",
+                     "contour_complet": manquantes.get(code, 0) == 0, "entites_sans_contour": manquantes.get(code, 0)}
             for s in sup:
                 a = ancetres(code, entites).get(s)
                 if a:
@@ -318,6 +333,9 @@ def ecrire_rapport(chemin, niveaux, entites, info, c, sommets_avant, intervalle,
     L.append("")
     L.append("- Écarts d'emprise entre niveaux construits successifs : " + ", ".join(f"{k} {v} km²" for k, v in c["ecarts_emprise_km2"].items()) + ".")
     L.append(f"- Entités élémentaires sans contour (lacune du niveau supérieur, signalée, jamais comblée) : {len(info['sans_contour'])}.")
+    partiels = {n["pluriel"]: sum(1 for code in info["manquantes"] if entites[code]["niveau"] == n["code"]) for n in niveaux}
+    L.append("- Contours partiels (D-GD-44 : `contour_complet` faux, `entites_sans_contour` > 0) : "
+             + ", ".join(f"{k.lower()} {v}" for k, v in partiels.items() if v) + " ; tous les autres sont complets.")
     for e in info["sans_contour"]:
         chaine = []
         p = e["parent"]

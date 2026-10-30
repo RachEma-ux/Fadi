@@ -419,7 +419,7 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
   const ind = await indicateursDe([req.params.id]);
   // Douars de la commune rurale (lot E) : annexe de la même version, tels que publiés (noms en arabe, D-GD-21).
   const douars = await requete(
-    `SELECT code, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret
+    `SELECT code, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret, complements
        FROM geodata_douars WHERE version_id = $1 AND commune = $2 ORDER BY code LIMIT 5000`,
     [couche["version_id"], req.params.code],
   );
@@ -436,6 +436,7 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
     douars: douars.map((d) => ({
       code: d["code"], fraction: d["fraction"], nom: d["nom"], type: d["type"], menages: d["menages"], population: d["population"], secret: d["secret"],
       pourcentages: { masculin: d["masculin"], feminin: d["feminin"], moins15: d["moins_15"], de15a59: d["de_15_a_59"], plus60: d["plus_60"] },
+      complements: d["complements"] ?? null,
     })),
   });
 });

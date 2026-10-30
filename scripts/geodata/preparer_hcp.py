@@ -37,7 +37,7 @@ from shapely.geometry import shape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from indicateurs_hcp import lire_indicateurs  # noqa: E402
-from douars_hcp import ecrire_douars, lire_douars  # noqa: E402
+from douars_hcp import annexer  # noqa: E402
 from sources_hcp_communales import SIGNE_VIDE, lire_cee, lire_logement, lire_transport  # noqa: E402
 
 RACINE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -727,24 +727,8 @@ def main():
         ecrire(a.sortie, cle, titre, niveau, entites, desc, sources, lignes[niveau], part, declarations, valeurs, par_code, empreinte_arr)
         print(f"{cle} : {part}")
     if a.douars:
-        # Annexe de la fiche des communes (lot E) : douars rattachés à leur commune rurale par le code (D-GD-20, D-GD-21).
-        lignes_d, ecartes = lire_douars(a.douars, [c for (n, c) in hcp if n == "commune"])
-        if ecartes:
-            sys.exit(f"{len(ecartes)} douars sans commune unique du RGPH (ex. {ecartes[:3]}) : vérifier la lecture des codes.")
-        octets_d = ecrire_douars(os.path.join(a.sortie, "donnees", "hcp-rgph2024-douars.tsv"), lignes_d)
-        chemin_fiche = os.path.join(a.sortie, "hcp-rgph2024-population-communes.json")
-        with open(chemin_fiche, encoding="utf-8") as f:
-            fc = json.load(f)
-        fc["version"]["annexes"] = {"douars": {
-            "fichier": "donnees/hcp-rgph2024-douars.tsv", "empreinte": hashlib.sha256(octets_d).hexdigest(),
-            "description": f"{len(lignes_d)} douars de {len({l['commune'] for l in lignes_d})} communes rurales : code, fraction et nom (publiés en arabe seulement, "
-                           "D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; « X » = donnée supprimée par le HCP "
-                           f"(secret statistique). Source : « Population et ménages par douars, RGPH 2024 » (HCP, octobre 2025, SHA-256 {sources['douars']}).",
-        }}
-        with open(chemin_fiche, "w", encoding="utf-8") as f:
-            json.dump(fc, f, ensure_ascii=False, indent=2)
-            f.write("\n")
-        print(f"douars : {len(lignes_d)} douars rattachés à {len({l['commune'] for l in lignes_d})} communes rurales")
+        # Annexe de la fiche des communes (lot E, D-GD-43) : douars rattachés à leur commune rurale par le code (D-GD-20, D-GD-21).
+        annexer(a.sortie, a.douars, [c for (n, c) in hcp if n == "commune"])
     # Niveaux supérieurs construits à partir des communes (D-GD-33) : union par code HCP, topologie partagée simplifiée
     # une seule fois ; réécrit les trois GeoJSON, leurs fiches, les tables des provinces et des régions, et le rapport.
     from construire_niveaux import construire  # noqa: E402

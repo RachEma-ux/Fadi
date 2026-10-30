@@ -9,7 +9,7 @@
     "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours d'origine des entités élémentaires (communes : OpenStreetMap (OpenStreetMap — extraits du 2026-10-23); arrondissements : OpenStreetMap (OpenStreetMap — extraits du 2026-10-23)), topologie partagée accrochée, simplifiée une seule fois (mapshaper, intervalle 20 m, petites formes conservées) et nettoyée ; toute entité qui a des enfants dans le découpage en base est l'union de sa descendance",
     "url": null,
     "fichier": "donnees/hcp-rgph2024-arrondissements.geojson",
-    "empreinte": "ffc49465ed04a8a9a7874e101acd53018cfb7b7797b9bedd6681b8bf0d2a6966",
+    "empreinte": "67810516b44459027f6d906fc3c26abebedf0aebc7170671c789f2b7785a127b",
     "tableau": {
       "fichier": "donnees/hcp-rgph2024-arrondissements.csv",
       "empreinte": "162f188a2fabf9316a09a7bae4fcd74ef389f55ee28c12ae93729c53259ce2db",
@@ -33,7 +33,7 @@
       "telechargement": "autorise",
       "export": "autorise"
     },
-    "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; contours construits par union de bas en haut en suivant les liens parent → enfant du découpage HCP (D-GD-42) : une frontière est la même à tous les niveaux ; une entité élémentaire sans contour laisse une lacune signalée, jamais comblée",
+    "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ; contours construits par union de bas en haut en suivant les liens parent → enfant du découpage HCP (D-GD-42) : une frontière est la même à tous les niveaux ; une entité élémentaire sans contour laisse une lacune signalée, jamais comblée, et le contour de ses ancêtres est marqué partiel (propriétés contour_complet et entites_sans_contour, D-GD-44)",
     "synthetique": false,
     "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). Sources : https://www.hcp.ma/file/242341/ (SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca) et https://www.hcp.ma/file/242671/ (SHA-256 f3d96fcae3c10a2c194b2fe97ee8352a242fb3f36b1b63d4d2a7006176dc7c3e) ; « Indicateurs communaux du parc logement urbain au Maroc en 2024 » (HCP) (SHA-256 c5ca0d86eef04cac4692cc0fff691e81f77e73726515b12eb17a0d7f3a8ff421) ; « Indicateurs communaux : mode de transport domicile – lieu de travail des actifs occupés, RGPH 2024 » (HCP, juin 2026) (SHA-256 30e8fc0047fe7ada2cb1db36e127e8d31966da2e775183b9bb0c7eeffd540027) ; « Cartographie des Établissements Économiques (CEE 2023/2024) : principaux résultats par commune » (HCP) (SHA-256 33887f36154129e9fc8eceb6d5393d5b26fae0851f153cdb1ed6358e0aed38ee). Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
   },
@@ -52,7 +52,9 @@
       "region",
       "province",
       "commune",
-      "prefecture-arrondissements"
+      "prefecture-arrondissements",
+      "contour_complet",
+      "entites_sans_contour"
     ],
     "styleDefaut": {
       "mode": "simple",

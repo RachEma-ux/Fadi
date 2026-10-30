@@ -77,7 +77,7 @@ describe("fiches de source GeoData livrées", () => {
 
   it("extraits OpenStreetMap sans couche propre (D-GD-18) : fiche consignée, empreinte vérifiée, aucune fiche importable", () => {
     const extraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "osm-extraits.json"), "utf8")) as Record<string, FicheSource>;
-    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"]);
+    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-administrations", "osm-mar-arrondissements", "osm-mar-communes", "osm-mar-etablissements-sante", "osm-mar-gares", "osm-mar-villes"]);
     for (const [cle, f] of Object.entries(extraits)) {
       expect(f.cle).toBe(cle);
       expect(fiches).not.toContain(`${cle}.json`);
@@ -105,7 +105,15 @@ describe("fiches de source GeoData livrées", () => {
     const octets = readFileSync(join(DOSSIER, a!.fichier));
     expect(createHash("sha256").update(octets).digest("hex")).toBe(a!.empreinte);
     const [entete, ...lignes] = octets.toString("utf8").split("\n").filter((l) => l.length);
-    expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"]);
+    expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60",
+      // Compléments (D-GD-43) : feuille de la population, puis feuille des ménages, jointes par le code.
+      "marocaine", "etrangere", "etat_civil", "pop_15_plus", "celibataire", "marie", "divorce", "veuf",
+      "log_villa", "log_appartement", "log_traditionnelle", "log_moderne", "log_sommaire", "log_dur_rural", "log_pise_rural", "log_autre",
+      "dist_route_goudronnee", "dist_route_carrossable", "dist_ecole", "dist_college", "dist_lycee", "dist_sante"]);
+    // Fichier d'origine archivé tel quel (D-GD-29), empreinte déclarée dans la fiche.
+    const origine = (a as unknown as { origine: { fichier: string; empreinte: string } }).origine;
+    expect(createHash("sha256").update(readFileSync(join(DOSSIER, origine.fichier))).digest("hex")).toBe(origine.empreinte);
+    expect(origine.empreinte).toBe("b04fa4f479aa77a4fbd741c50b734fc80e42be3786ea8a94e2adb085fc5ae1b6");
     expect(lignes.length).toBeGreaterThan(30_000);
     const fautes: string[] = [];
     for (const l of lignes) {
@@ -116,6 +124,93 @@ describe("fiches de source GeoData livrées", () => {
     }
     expect(fautes.slice(0, 5)).toEqual([]);
   }, 30_000);
+
+  it("contours des niveaux (D-GD-33, D-GD-44) : codes attendus, frontières partagées sommet pour sommet, contours partiels déclarés", () => {
+    type Fc = { features: { properties: Record<string, unknown>; geometry: { type: string; coordinates: unknown } }[] };
+    const lire = (n: string) => JSON.parse(readFileSync(join(DOSSIER, "donnees", `hcp-rgph2024-population-${n}.geojson`), "utf8")) as Fc;
+    const [communes, provinces, regions] = [lire("communes"), lire("provinces"), lire("regions")];
+    const attendus = (n: string) => readFileSync(join(DOSSIER, "correspondances", `hcp-rgph2024-${n}.csv`), "utf8").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0]!).sort();
+    const codes = (fc: Fc) => fc.features.map((f) => String(f.properties["code"])).sort();
+    // Ensembles de codes comparés (pas seulement les nombres) : 12 régions, 75 provinces et préfectures.
+    expect(codes(regions)).toEqual(attendus("regions"));
+    expect(codes(provinces)).toEqual(attendus("provinces"));
+    expect(codes(regions)).toHaveLength(12);
+    expect(codes(provinces)).toHaveLength(75);
+    const codesProvinces = new Set(codes(provinces));
+    const regionDe = new Map(provinces.features.map((f) => [String(f.properties["code"]), String(f.properties["region"])]));
+    for (const c of communes.features) {
+      expect(codesProvinces.has(String(c.properties["province"]))).toBe(true);
+      expect(regionDe.get(String(c.properties["province"]))).toBe(String(c.properties["region"]));
+    }
+    // Chaque sommet d'une province ou d'une région est un sommet d'une commune : aucune frontière simplifiée à part.
+    const cles = (g: unknown, acc: Set<string>): Set<string> => {
+      if (Array.isArray(g) && typeof g[0] === "number") acc.add(`${g[0]},${g[1]}`);
+      else if (Array.isArray(g)) for (const x of g) cles(x, acc);
+      return acc;
+    };
+    const sommetsCommunes = new Set<string>();
+    for (const f of communes.features) cles(f.geometry.coordinates, sommetsCommunes);
+    for (const fc of [provinces, regions]) {
+      const hors = fc.features.flatMap((f) => [...cles(f.geometry.coordinates, new Set())].filter((s) => !sommetsCommunes.has(s)));
+      expect(hors).toEqual([]);
+    }
+    // Un parent construit sans toutes ses communes est marqué partiel, jamais présenté comme complet.
+    const manquantesRegion = new Map<string, number>();
+    for (const p of provinces.features) {
+      const n = p.properties["entites_sans_contour"] as number;
+      expect(p.properties["contour_complet"]).toBe(n === 0);
+      manquantesRegion.set(String(p.properties["region"]), (manquantesRegion.get(String(p.properties["region"])) ?? 0) + n);
+    }
+    for (const r of regions.features) {
+      expect(r.properties["entites_sans_contour"]).toBe(manquantesRegion.get(String(r.properties["code"])) ?? 0);
+      expect(r.properties["contour_complet"]).toBe(r.properties["entites_sans_contour"] === 0);
+    }
+  }, 60_000);
+
+  it("services publics (D-GD-43, D-GD-45) : MTNRA et OpenStreetMap fusionnés, chaque ligne et chaque objet OSM une seule fois", () => {
+    const couches = fiches.filter((f) => f.startsWith("services-publics-"));
+    expect(couches).toHaveLength(13);
+    expect(fiches.some((f) => f.startsWith("mtnra-services-publics-"))).toBe(false);
+    const lignes: number[] = [];
+    const osmVus: string[] = [];
+    for (const nom of couches) {
+      const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
+      expect(fiche.theme).toBe("equipements");
+      expect(fiche.version.licence).toContain("ODbL");
+      expect(fiche.version.attribution).toContain("OpenStreetMap");
+      expect(fiche.description).toContain("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
+      // Fichier d'origine archivé tel quel (D-GD-29) : celui publié sur data.gov.ma.
+      const origine = (fiche.version as unknown as { origine: { fichier: string; empreinte: string } }).origine;
+      expect(origine.empreinte).toBe("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
+      expect(createHash("sha256").update(readFileSync(join(DOSSIER, origine.fichier))).digest("hex")).toBe(origine.empreinte);
+      const fc = JSON.parse(readFileSync(join(DOSSIER, fiche.version.fichier!), "utf8")) as { features: { properties: Record<string, unknown>; geometry: { type: string } }[] };
+      expect(fc.features.length).toBeLessThanOrEqual(OBJETS_PAR_COUCHE);
+      for (const f of fc.features) {
+        const p = f.properties;
+        expect(f.geometry.type).toBe("Point");
+        expect(["mtnra", "mtnra+osm", "osm"]).toContain(p["source"]);
+        if (p["source"] !== "mtnra") osmVus.push(...String(p["osm"]).split(", "));
+        if (p["source"] === "osm") {
+          expect(["contour", "plus-proche-contour"]).toContain(p["rattachement"]);
+          continue;
+        }
+        expect(p["code"]).toBe(`l${String(p["ligne"]).padStart(5, "0")}`);
+        expect(["contour", "province-hcp", "province-source"]).toContain(p["rattachement"]);
+        expect(["concorde", "discorde", "non-appariee"]).toContain(p["concordance"]);
+        expect(p["concordance"] === "non-appariee").toBe(p["province_hcp"] === undefined);
+        lignes.push(p["ligne"] as number);
+      }
+    }
+    // 17 499 lignes de données dans la source : 22 sans point lisible et 4 strictement identiques à une ligne précédente
+    // (écartées et listées dans les fiches) ; aucune ligne reprise deux fois.
+    expect(lignes.length).toBe(17_473);
+    expect(lignes).not.toContain(1096);
+    expect(new Set(lignes).size).toBe(lignes.length);
+    // Chaque objet des trois extraits OSM est présent exactement une fois : ajouté, ou fusionné dans un point du MTNRA.
+    const extraits = ["administrations", "etablissements-sante", "gares"].flatMap((k) =>
+      (JSON.parse(readFileSync(join(DOSSIER, "donnees", `osm-mar-${k}.geojson`), "utf8")) as { features: { properties: { osm: string } }[] }).features.map((f) => f.properties.osm));
+    expect(osmVus.sort()).toEqual(extraits.sort());
+  }, 60_000);
 
   it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars)", () => {
     const sha = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
@@ -173,11 +268,11 @@ describe("fiches de source GeoData livrées", () => {
   });
 
   it("retraits déclarés (D-GD-23) : sources sans fiche importable, remplaçante livrée, motif et décision", () => {
-    const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string; motif: string; decision: string }[];
-    expect(retraits.map((r) => r.cle).sort()).toEqual(["geoboundaries-mar-adm1", "geoboundaries-mar-adm2", "osm-mar-communes", "osm-mar-villes"]);
+    const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string | string[]; motif: string; decision: string }[];
+    expect(retraits.map((r) => r.cle).sort()).toEqual(["geoboundaries-mar-adm1", "geoboundaries-mar-adm2", "osm-mar-administrations", "osm-mar-communes", "osm-mar-etablissements-sante", "osm-mar-gares", "osm-mar-villes"]);
     for (const r of retraits) {
       expect(fiches).not.toContain(`${r.cle}.json`);
-      expect(fiches).toContain(`${r.remplacePar}.json`);
+      for (const k of [r.remplacePar].flat()) expect(fiches).toContain(`${k}.json`);
       expect(r.motif.trim().length).toBeGreaterThanOrEqual(3);
       expect(r.decision).toMatch(/^D-GD-\d+$/);
     }

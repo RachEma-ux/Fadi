@@ -254,7 +254,11 @@ export function PanneauCouches(p: {
               <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>
             </div>
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
-            {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
+            {/* Limites administratives (D-GD-44) : un mélange de versions n'est jamais silencieux, les frontières d'une version
+                antérieure peuvent ne pas coïncider avec celles des autres niveaux. */}
+            {d?.etat === "disponible" && d.versionPlusRecente && (c?.niveau
+              ? <p role="status" className="gd-alerte" data-gd-version-anterieure={k.coucheId}>Contours d'une version antérieure : leurs limites peuvent ne pas coïncider avec celles des autres niveaux administratifs. Retirez cette couche puis ajoutez-la depuis le Catalogue pour afficher la version publiée.</p>
+              : <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>)}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
             {c && !c.raster && <label className="gd-case"><input type="checkbox" checked={!!k.etiquettes} onChange={() => p.onEtiquettes(k.coucheId)} data-gd-etiquettes={k.coucheId} />Libellés (nom)</label>}
             {c && (c.typeGeometrie === "point" || c.typeGeometrie === "mixte") && p.onRegrouper && (

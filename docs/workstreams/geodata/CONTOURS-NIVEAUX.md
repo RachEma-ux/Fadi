@@ -1,6 +1,6 @@
 # Contours des niveaux administratifs construits par union, de bas en haut (D-GD-42, après D-GD-33)
 
-Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-28 ; relancer le script régénère ce rapport.
+Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-30 ; relancer le script régénère ce rapport.
 
 ## Source
 
@@ -28,6 +28,7 @@ Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-28 ; relancer l
 
 - Écarts d'emprise entre niveaux construits successifs : region/province 0.0 km².
 - Entités élémentaires sans contour (lacune du niveau supérieur, signalée, jamais comblée) : 16.
+- Contours partiels (D-GD-44 : `contour_complet` faux, `entites_sans_contour` > 0) : régions 8, provinces et préfectures 13 ; tous les autres sont complets.
   - Commune de Mirleft (104730107) — Région de Guelmim-Oued Noun › Province de Sidi Ifni
   - Commune d'Al Hoceima (10510101) — Région de Tanger-Tétouan-Al Hoceima › Province d'Al Hoceima
   - Commune de Chbika (105210505) — Région de Guelmim-Oued Noun › Province de Tan-Tan
@@ -99,8 +100,6 @@ Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-28 ; relancer l
 ## Journal mapshaper
 
 ```
-npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
-npm warn deprecated geographiclib@1.48.0: This package has been split into geographic-geodesic + geographiclib-dms; use one or both of these instead of geographiclib.  WARNING: there's a potential buffer overrun on this package.  SWITCH TO THE NEW PACKAGES NOW.
 [i] Snapped 59 points
 [simplify] Repaired 0 intersections; 2 intersections could not be repaired
 [clean] Removed 2 of 4 slivers using 290m width threshold
@@ -108,17 +107,17 @@ npm warn deprecated geographiclib@1.48.0: This package has been split into geogr
 [filter] Retained 1,522 of 1,522 features
 [dissolve2] This command has been merged into -dissolve and is deprecated. Use -dissolve (or -dissolve no-repair for the legacy fast algorithm).
 [dissolve2] Dissolved 1,522 features into 12 features
-[o] Wrote /tmp/tmp0ubm3ztu/region.json
+[o] Wrote /tmp/tmprrw33m8j/region.json
 [filter] Retained 1,522 of 1,522 features
 [dissolve2] Dissolved 1,522 features into 75 features
-[o] Wrote /tmp/tmp0ubm3ztu/province.json
+[o] Wrote /tmp/tmprrw33m8j/province.json
 [filter] Retained 1,522 of 1,522 features
 [dissolve2] Dissolved 1,522 features into 1,487 features
-[o] Wrote /tmp/tmp0ubm3ztu/commune.json
+[o] Wrote /tmp/tmprrw33m8j/commune.json
 [filter] Retained 16 of 1,522 features
 [dissolve2] Dissolved 16 features into 8 features
-[o] Wrote /tmp/tmp0ubm3ztu/prefecture-arrondissements.json
+[o] Wrote /tmp/tmprrw33m8j/prefecture-arrondissements.json
 [filter] Retained 41 of 1,522 features
 [dissolve2] Dissolved 41 features into 41 features
-[o] Wrote /tmp/tmp0ubm3ztu/arrondissement.json
+[o] Wrote /tmp/tmprrw33m8j/arrondissement.json
 ```
