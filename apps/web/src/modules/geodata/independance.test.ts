@@ -70,3 +70,26 @@ describe("GeoData — module autonome (GEO 04)", () => {
     for (const c of cles) expect(c).toMatch(/^geodata\./);
   });
 });
+
+/**
+ * Interface ≠ base de données (D-GD-29, règle du maître d'ouvrage) : ni la page GeoData ni son modèle pur ne contiennent
+ * de donnée. Aucun fichier de données importé, aucune géométrie écrite en dur, aucune série de valeurs, aucun nom de lieu :
+ * tout vient de la base, lu par l'API. Les seules valeurs admises sont techniques (projection, bornes, styles, icônes).
+ */
+describe("GeoData — aucune donnée dans l'interface ni dans le modèle (D-GD-29)", () => {
+  const MODELE = resolve(SRC, "../../../packages/geodata-model/src");
+  const tous = [...sources, ...fichiers(MODELE).filter((f) => /\.ts$/.test(f) && !f.endsWith(".test.ts"))];
+  it("aucun fichier de données importé (JSON, GeoJSON, CSV, raster, tableur)", () => {
+    for (const f of tous) for (const i of imports(f)) expect(i, `${rel(f)} → ${i}`).not.toMatch(/\.(json|geojson|csv|tsv|tif|tiff|gpkg|xlsx?|shp|kml|pbf)(\?.*)?$/i);
+  });
+  it("aucune géométrie écrite en dur (coordonnées numériques)", () => {
+    for (const f of tous) expect(sansCommentaires(code(f)), rel(f)).not.toMatch(/["']?coordinates["']?\s*:\s*\[\s*\[*\s*-?\d/);
+  });
+  it("aucune série de valeurs codée (12 nombres ou plus à la suite)", () => {
+    for (const f of tous) expect(sansCommentaires(code(f)), rel(f)).not.toMatch(/\[\s*-?\d+(\.\d+)?(\s*,\s*-?\d+(\.\d+)?){11,}\s*\]/);
+  });
+  it("aucun nom de région, province ou ville du référentiel écrit dans le code", () => {
+    const LIEUX = /(?<![\wÀ-ÿ])(Casablanca|Rabat|Marrakech|Tanger|Fès|Fes|Meknès|Agadir|Oujda|Kénitra|Tétouan|Laâyoune|Dakhla|Zenata|Mohammedia|Béni Mellal|Settat|Safi|El Jadida|Nador)(?![\wÀ-ÿ])/;
+    for (const f of tous) expect(sansCommentaires(code(f)), rel(f)).not.toMatch(LIEUX);
+  });
+});

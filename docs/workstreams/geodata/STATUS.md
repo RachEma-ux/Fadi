@@ -101,6 +101,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
   isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` : RECETTE_RESULTAT. Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
+- Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
+  `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
+  une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-39
+  ne contient que des constantes techniques (bornes Web Mercator, grille des tuiles, icônes) ; toutes ses données sont
+  lues en base par l'API.
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, `BarreTerritoriale`
   réutilisée telle quelle dans un panneau flottant, un seul panneau à la fois (`panneauMini`) ; recette `geodata.mjs`
   194 contrôles (8 nouveaux), vérifié bureau 1885 × 893 et Pixel 7 sur données HCP réelles.
