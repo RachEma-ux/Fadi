@@ -425,6 +425,24 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         clics) ; ≡ ou Échap le ferment. Son état est conservé d'un onglet à l'autre. Enregistrer une carte jamais
         enregistrée ouvre la saisie du titre (Mes cartes, inchangé) et referme le panneau ouvert.
 
+   - D-GD-39 (30 octobre 2026) — **fiche d'information : tableau croisé Milieu × Sexe** (spécification du maître
+     d'ouvrage) :
+     1. Tout indicateur sans modalité décliné par milieu et / ou par sexe (Population légale, Population municipale, taux,
+        effectifs…) s'affiche en tableau croisé : lignes Urbain, Rural, puis Ensemble (en gras, séparée) ; colonnes
+        Ensemble, Masculin, Féminin. Structure lue dans les déclinaisons en base (`tableauCroise`, geodata-model), jamais
+        écrite pour un indicateur ; ligne ou colonne entièrement sans objet masquée ; donnée non publiée : convention
+        actuelle (« . », « n.d. », motif au survol). Population légale : colonne Ensemble seule (non ventilée par sexe).
+     2. Couleurs : palette partagée `--gd-cat-urbain|rural|ensemble|masculin|feminin` (geodata.css), utilisée par les
+        tableaux (liseré des lignes, pastille des colonnes, barre de part sous Urbain et Rural) et par les légendes des
+        graphiques (séries `--gd-serie-*` dérivées, catégories reconnues par leur libellé du modèle) ; l'impression relit
+        ces jetons. Cellules neutres ; le libellé reste écrit. Fadi n'a pas de thème sombre : contraste vérifié en clair.
+     3. Cohérence (indicateurs de compte seulement) : Urbain + Rural = Ensemble, Masculin + Féminin = Ensemble ; un écart
+        est affiché sous le tableau, jamais corrigé. Données HCP : aucun écart sur la population légale ni municipale ;
+        écarts de 1 (arrondis du HCP) sur 5 familles d'effectifs (population alphabète, active, inactive, active occupée,
+        actifs occupés sédentaires). L'écart du constat (1 494 413 ≠ 1 487 236) venait du rapprochement de l'Ensemble de
+        la population légale avec Masculin / Féminin de la population municipale : chaque cellule lit désormais son
+        propre indicateur.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

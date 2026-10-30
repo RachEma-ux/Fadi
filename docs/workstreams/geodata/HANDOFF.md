@@ -57,6 +57,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   concepts en arabe, emplois CEE par secteur) affichées « Donnée non disponible » en attendant des fiches qualifiées.
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, panneau flottant ;
   un seul panneau de la mini-barre ouvert à la fois (`panneauMini` de la page).
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39, `tableau-croise.ts`) ; palette partagée `--gd-cat-*` (tableaux et
+  graphiques) ; écarts de cohérence de 1 publiés par le HCP signalés, jamais corrigés.
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.

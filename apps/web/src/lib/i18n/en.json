@@ -14297,5 +14297,8 @@
 "Taux 2014–2024 : population 2014 non chargée en base": "2014–2024 rate: 2014 population not loaded in the database",
 "Série des recensements 1960–2014 non chargée en base": "1960–2014 census series not loaded in the database",
 "Emplois par secteur non publiés dans le fichier CEE chargé": "Jobs by sector not published in the loaded CEE file",
-"Navigation administrative": "Administrative navigation"
+"Navigation administrative": "Administrative navigation",
+"Écart : Urbain + Rural = {0} ≠ Ensemble {1} (colonne {2})": "Gap: Urban + Rural = {0} ≠ All {1} (column {2})",
+"Écart : Masculin + Féminin = {0} ≠ Ensemble {1} (ligne {2})": "Gap: Male + Female = {0} ≠ All {1} (row {2})",
+"{0} % de l'ensemble": "{0} % of the total"
 }

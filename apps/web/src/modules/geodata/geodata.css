@@ -1,6 +1,9 @@
+/* Palette partagée (D-GD-39) : --gd-cat-<catégorie> = couleur d'une catégorie Milieu / Sexe (Urbain, Rural, Ensemble,
+   Masculin, Féminin), utilisée par les légendes des graphiques et par les tableaux croisés de la fiche ; les séries des
+   graphiques en dérivent (--gd-serie-*). Un changement de couleur ici s'applique partout. */
 /* GeoData (/geodata) : carte pleine largeur sous le bandeau général de Fadi, petites marges, panneaux repliables.
    Toutes les règles sont sous .geodata-page (feuille isolée, contrôlée par le test d'indépendance). */
-.geodata-page{--gd-serie-1:#1a6b70;--gd-serie-2:#c77b35;--gd-serie-3:#5b6fb3;--gd-serie-4:#8a5a9e;--gd-serie-5:#3f8f5a;--gd-serie-6:#b5485d;--gd-encre:#173b43;--gd-accent:#1a6b70;--gd-ligne:#d4e0e2;--gd-fond:#f7faf9;--gd-alerte:#9a3412;--gd-succes:#166534;display:flex;flex-direction:column;min-height:420px;color:var(--gd-encre);background:var(--gd-fond);box-sizing:border-box;font-size:14px}
+.geodata-page{--gd-cat-urbain:#1a6b70;--gd-cat-rural:#c77b35;--gd-cat-ensemble:#5b6fb3;--gd-cat-masculin:#8a5a9e;--gd-cat-feminin:#b5485d;--gd-serie-1:var(--gd-cat-urbain);--gd-serie-2:var(--gd-cat-rural);--gd-serie-3:var(--gd-cat-ensemble);--gd-serie-4:var(--gd-cat-masculin);--gd-serie-5:#3f8f5a;--gd-serie-6:var(--gd-cat-feminin);--gd-encre:#173b43;--gd-accent:#1a6b70;--gd-ligne:#d4e0e2;--gd-fond:#f7faf9;--gd-alerte:#9a3412;--gd-succes:#166534;display:flex;flex-direction:column;min-height:420px;color:var(--gd-encre);background:var(--gd-fond);box-sizing:border-box;font-size:14px}
 .geodata-page *,.geodata-page *::before,.geodata-page *::after{box-sizing:border-box}
 .geodata-page .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .geodata-page button{min-height:36px;border:1px solid #b9cdd0;border-radius:7px;padding:6px 11px;background:#fff;color:var(--gd-encre);cursor:pointer;font:inherit}
@@ -267,3 +270,13 @@
 .geodata-page .gd-navigation-flottante[hidden]{display:none}
 .geodata-page .gd-navigation-flottante .gd-niveaux{position:static;max-width:none;border-radius:8px;border:1px solid var(--gd-ligne);box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px 6px 4px 10px;flex-wrap:wrap}
 .geodata-page .gd-navigation-flottante .gd-niveaux-icone{display:none}
+/* Tableau croisé Milieu × Sexe de la fiche (D-GD-39) : tient dans la largeur, couleur = repère de catégorie seulement. */
+.geodata-page .gd-croise-bloc{overflow-x:visible}
+.geodata-page .gd-croise{table-layout:auto}
+.geodata-page .gd-croise th,.geodata-page .gd-croise td{white-space:nowrap;font-variant-numeric:tabular-nums}
+.geodata-page .gd-croise th[scope="row"]{padding-left:8px;font-weight:500}
+.geodata-page .gd-croise tr.gd-ligne-total th,.geodata-page .gd-croise tr.gd-ligne-total td{font-weight:700;border-top:2px solid #8aa3a8}
+.geodata-page .gd-pastille-cat{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
+.geodata-page .gd-part{display:block;height:3px;border-radius:2px;margin-top:2px;margin-left:auto;opacity:.85}
+.geodata-page .gd-croise-bloc .gd-alerte{font-size:.82rem;margin:4px 0 0}
+@media (max-width:760px){.geodata-page .gd-croise{font-size:.8rem}.geodata-page .gd-croise th,.geodata-page .gd-croise td{padding:3px 4px}}

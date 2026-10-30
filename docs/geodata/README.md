@@ -124,6 +124,13 @@ déplie le fil « Maroc › Régions › … › Retour » en panneau à gauche 
 (recherche, fil ou fonds) est ouvert à la fois ; le fil reste ouvert pendant la sélection par clics et se ferme par ≡ ou
 Échap ; il garde son état d'un onglet à l'autre.
 
+## Fiche d'information : tableaux croisés Milieu × Sexe (D-GD-39)
+
+Un indicateur décliné par milieu et par sexe (population légale, population municipale, taux…) s'affiche en tableau
+croisé : lignes Urbain, Rural, Ensemble ; colonnes Ensemble, Masculin, Féminin ; sans défilement horizontal. Les
+couleurs des catégories sont celles des légendes des graphiques (palette `--gd-cat-*`). Un écart Urbain + Rural ≠
+Ensemble ou Masculin + Féminin ≠ Ensemble est signalé sous le tableau, jamais corrigé.
+
 ## Sélection par nombre de clics (D-GD-34)
 
 Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :

@@ -18,3 +18,4 @@ export * from "./indicateur-actif.js";
 export * from "./selection-clics.js";
 export * from "./collections.js";
 export * from "./tableau-de-bord.js";
+export * from "./tableau-croise.js";
