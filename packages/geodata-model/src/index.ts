@@ -22,3 +22,4 @@ export * from "./tableau-de-bord.js";
 export * from "./emprise.js";
 export * from "./adresse-vue.js";
 export * from "./tableau-croise.js";
+export * from "./prix/index.js";
