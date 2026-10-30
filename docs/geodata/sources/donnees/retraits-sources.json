@@ -22,5 +22,62 @@
     "remplacePar": "hcp-rgph2024-population-provinces",
     "motif": "Remplacée par « Limites administratives — provinces et préfectures (RGPH 2024) » : contours construits par union des communes (D-GD-33), noms, codes et valeurs du HCP ; une seule source par niveau",
     "decision": "D-GD-30"
+  },
+  {
+    "cle": "osm-mar-administrations",
+    "remplacePar": [
+      "mtnra-services-publics-2022-beni-mellal-khenifra",
+      "mtnra-services-publics-2022-casablanca-settat",
+      "mtnra-services-publics-2022-dakhla-oued-ed-dahab",
+      "mtnra-services-publics-2022-draa-tafilalet",
+      "mtnra-services-publics-2022-fes-meknes",
+      "mtnra-services-publics-2022-guelmim-oued-noun",
+      "mtnra-services-publics-2022-laayoune-sakia-el-hamra",
+      "mtnra-services-publics-2022-marrakech-safi",
+      "mtnra-services-publics-2022-oriental",
+      "mtnra-services-publics-2022-rabat-sale-kenitra",
+      "mtnra-services-publics-2022-souss-massa",
+      "mtnra-services-publics-2022-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Remplacée par « Administrations et services publics (MTNRA, 2022) » : source officielle prioritaire sur OpenStreetMap pour les administrations publiques, aucun doublon entre couches",
+    "decision": "D-GD-44"
+  },
+  {
+    "cle": "osm-mar-etablissements-sante",
+    "remplacePar": [
+      "mtnra-services-publics-2022-beni-mellal-khenifra",
+      "mtnra-services-publics-2022-casablanca-settat",
+      "mtnra-services-publics-2022-dakhla-oued-ed-dahab",
+      "mtnra-services-publics-2022-draa-tafilalet",
+      "mtnra-services-publics-2022-fes-meknes",
+      "mtnra-services-publics-2022-guelmim-oued-noun",
+      "mtnra-services-publics-2022-laayoune-sakia-el-hamra",
+      "mtnra-services-publics-2022-marrakech-safi",
+      "mtnra-services-publics-2022-oriental",
+      "mtnra-services-publics-2022-rabat-sale-kenitra",
+      "mtnra-services-publics-2022-souss-massa",
+      "mtnra-services-publics-2022-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Remplacée par « Administrations et services publics (MTNRA, 2022) » : source officielle prioritaire sur OpenStreetMap pour les hôpitaux et cliniques, aucun doublon entre couches",
+    "decision": "D-GD-44"
+  },
+  {
+    "cle": "osm-mar-gares",
+    "remplacePar": [
+      "mtnra-services-publics-2022-beni-mellal-khenifra",
+      "mtnra-services-publics-2022-casablanca-settat",
+      "mtnra-services-publics-2022-dakhla-oued-ed-dahab",
+      "mtnra-services-publics-2022-draa-tafilalet",
+      "mtnra-services-publics-2022-fes-meknes",
+      "mtnra-services-publics-2022-guelmim-oued-noun",
+      "mtnra-services-publics-2022-laayoune-sakia-el-hamra",
+      "mtnra-services-publics-2022-marrakech-safi",
+      "mtnra-services-publics-2022-oriental",
+      "mtnra-services-publics-2022-rabat-sale-kenitra",
+      "mtnra-services-publics-2022-souss-massa",
+      "mtnra-services-publics-2022-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Remplacée par « Administrations et services publics (MTNRA, 2022) » : source officielle prioritaire sur OpenStreetMap pour les gares, aucun doublon entre couches",
+    "decision": "D-GD-44"
   }
 ]

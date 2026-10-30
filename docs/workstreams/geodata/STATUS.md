@@ -124,6 +124,9 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   PostGIS 16 local : 33 189 douars, tous avec compléments, secret statistique gardé vide. Suite complète : 1 111 tests
   API et 1 326 tests web réussis ; les 17 fichiers sur base attestée (DB-3) ne tournent qu'en CI ; recette
   `geodata.mjs` non rejouée localement.
+- Priorité MTNRA (D-GD-44) : 3 couches OSM retirées par `retraits-sources.json` (remplaçantes en liste, retrait seulement
+  si les 12 couches MTNRA sont publiées) ; vérifié sur PostGIS 16 local : ancienne version des gares OSM importée puis
+  `--fiche toutes --livraison` → 12 couches MTNRA publiées, gares OSM « retirée » avec son motif.
 - Alignement des contours (D-GD-43, même branche) : contrôle indépendant des fichiers livrés (0 sommet hors des
   communes, parent = union exacte, construction reproductible à l'octet) ; `construire_niveaux.py` marque les
   contours partiels (13 provinces, 8 régions) et écrit la mention de provenance ; alerte de version antérieure pour

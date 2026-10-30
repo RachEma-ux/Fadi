@@ -253,11 +253,11 @@ describe("fiches de source GeoData livrées", () => {
   });
 
   it("retraits déclarés (D-GD-23) : sources sans fiche importable, remplaçante livrée, motif et décision", () => {
-    const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string; motif: string; decision: string }[];
-    expect(retraits.map((r) => r.cle).sort()).toEqual(["geoboundaries-mar-adm1", "geoboundaries-mar-adm2", "osm-mar-communes", "osm-mar-villes"]);
+    const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string | string[]; motif: string; decision: string }[];
+    expect(retraits.map((r) => r.cle).sort()).toEqual(["geoboundaries-mar-adm1", "geoboundaries-mar-adm2", "osm-mar-administrations", "osm-mar-communes", "osm-mar-etablissements-sante", "osm-mar-gares", "osm-mar-villes"]);
     for (const r of retraits) {
       expect(fiches).not.toContain(`${r.cle}.json`);
-      expect(fiches).toContain(`${r.remplacePar}.json`);
+      for (const k of [r.remplacePar].flat()) expect(fiches).toContain(`${k}.json`);
       expect(r.motif.trim().length).toBeGreaterThanOrEqual(3);
       expect(r.decision).toMatch(/^D-GD-\d+$/);
     }

@@ -70,6 +70,8 @@ objets restreints au territoire de geoBoundaries MAR ADM1, GeoJSON déterministe
 fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import, aucun téléchargement en production). Une couche
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
+Depuis D-GD-44, les administrations, hôpitaux et cliniques et gares d'OpenStreetMap ne sont plus livrés : la source
+officielle du MTNRA les remplace (retrait déclaré, aucun doublon entre couches).
 
 ## Catégories du catalogue et disposition (D-GD-14)
 

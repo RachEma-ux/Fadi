@@ -211,15 +211,19 @@ function fichesLivrees(): string[] {
 
 /**
  * Retraits déclarés (D-GD-23) : sources de référence remplacées, retirées du catalogue avec leur motif — seulement quand
- * leur remplaçante (`remplacePar`) a une version de référence publiée ; sinon l'ancienne source reste consultable.
+ * leur remplaçante (`remplacePar`) a une version de référence publiée ; sinon l'ancienne source reste consultable. Une source
+ * remplacée par plusieurs (`remplacePar` en liste, D-GD-44 : couches régionales du MTNRA) n'est retirée que lorsque
+ * toutes ont une version publiée.
  */
-interface RetraitDeclare { cle: string; remplacePar: string; motif: string; decision: string }
+interface RetraitDeclare { cle: string; remplacePar: string | string[]; motif: string; decision: string }
+
+const remplacantes = (r: RetraitDeclare): string[] => (Array.isArray(r.remplacePar) ? r.remplacePar : [r.remplacePar]);
 
 function lireRetraits(): RetraitDeclare[] {
   const chemin = join(dossierFiches(), "donnees", "retraits-sources.json");
   if (!existsSync(chemin)) return [];
   const brut = JSON.parse(readFileSync(chemin, "utf8")) as unknown;
-  if (!Array.isArray(brut) || !brut.every((r) => r && typeof r.cle === "string" && typeof r.remplacePar === "string" && r.remplacePar !== r.cle && typeof r.motif === "string" && r.motif.trim().length >= 3 && typeof r.decision === "string")) {
+  if (!Array.isArray(brut) || !brut.every((r) => r && typeof r.cle === "string" && (typeof r.remplacePar === "string" || (Array.isArray(r.remplacePar) && r.remplacePar.length > 0 && r.remplacePar.every((x: unknown) => typeof x === "string"))) && !remplacantes(r).includes(r.cle) && typeof r.motif === "string" && r.motif.trim().length >= 3 && typeof r.decision === "string")) {
     throw new Error("retraits-sources.json : liste de { cle, remplacePar, motif (3 caractères au moins), decision } attendue.");
   }
   return brut as RetraitDeclare[];
@@ -234,9 +238,9 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
     if (publieur === undefined) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : aucun retrait appliqué.`);
     for (const r of retraits) {
       // Jamais de couche retirée sans sa remplaçante publiée (import ou publication échoués : l'ancienne reste).
-      const remplacante = (await pool.query("SELECT 1 FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.espace_id IS NULL AND v.etat = 'publiee' LIMIT 1", [r.remplacePar])).rows.length > 0;
-      if (!remplacante) {
-        console.error(`Retrait refusé : ${r.cle} reste consultable, sa remplaçante ${r.remplacePar} n'a pas de version publiée.`);
+      const publiees = (await pool.query("SELECT DISTINCT s.cle FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = ANY($1) AND v.espace_id IS NULL AND v.etat = 'publiee'", [remplacantes(r)])).rows.length;
+      if (publiees < remplacantes(r).length) {
+        console.error(`Retrait refusé : ${r.cle} reste consultable, ses remplaçantes (${remplacantes(r).join(", ")}) n'ont pas toutes une version publiée.`);
         continue;
       }
       const ids = (await pool.query(

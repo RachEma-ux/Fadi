@@ -218,10 +218,17 @@ class Lecteur(osmium.SimpleHandler):
 # du HCP (`preparer_hcp.py`), qui portent les noms et les valeurs du HCP ; leur fiche est consignée dans
 # `donnees/osm-extraits.json` (licence, empreinte), lue par `preparer_hcp.py`, jamais importée comme couche.
 SANS_FICHE = {"osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"}
+# Couches remplacées par une source officielle (D-GD-44 : administrations et services publics du MTNRA, aucun doublon
+# entre couches) : plus extraites ni livrées ; leurs versions sont retirées par `donnees/retraits-sources.json`.
+REMPLACEES = {"osm-mar-administrations", "osm-mar-etablissements-sante", "osm-mar-gares"}
 
 
 def ecrire(sortie, cle, titre, theme, features, meta, resultat):
     ligne = {"cle": cle, "titre": titre, "objets": len(features)}
+    if cle in REMPLACEES:
+        ligne["ecartee"] = "remplacée par une source officielle (D-GD-44)"
+        resultat.append(ligne)
+        return
     if not features or len(features) > MAX_OBJETS:
         ligne["ecartee"] = "aucun objet" if not features else f"{len(features)} objets > {MAX_OBJETS} (borne d'une couche V1)"
         resultat.append(ligne)
