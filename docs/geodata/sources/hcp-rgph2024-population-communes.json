@@ -6,10 +6,10 @@
   "theme": "limites-administratives",
   "couverture": "Maroc — communes",
   "version": {
-    "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours des communes OpenStreetMap (OpenStreetMap — extraits du 2026-10-23), topologie partagée accrochée, simplifiée une seule fois (mapshaper, intervalle 20 m, petites formes conservées) et nettoyée",
+    "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours d'origine des entités élémentaires (communes : OpenStreetMap (OpenStreetMap — extraits du 2026-10-23); arrondissements : OpenStreetMap (OpenStreetMap — extraits du 2026-10-23)), topologie partagée accrochée, simplifiée une seule fois (mapshaper, intervalle 20 m, petites formes conservées) et nettoyée ; toute entité qui a des enfants dans le découpage en base est l'union de sa descendance",
     "url": null,
     "fichier": "donnees/hcp-rgph2024-population-communes.geojson",
-    "empreinte": "cde4c0c05560bb2f9f4f22931c527c1ed7a9868ad5bbfa70ba5453687f9472bd",
+    "empreinte": "e5819f46341304e04c3c2fb0f213426ba7f60b28e98d74c5c839d85956c3a380",
     "tableau": {
       "fichier": "donnees/hcp-rgph2024-population-communes.csv",
       "empreinte": "dbfe093d1bbb4609be6cda7b37769b67cba8744164402b22c1a6fa51d3430a23",
@@ -33,7 +33,7 @@
       "telechargement": "autorise",
       "export": "autorise"
     },
-    "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ; contours OpenStreetMap simplifiés une seule fois sur la topologie partagée des trois niveaux (D-GD-33, intervalle 20 m)",
+    "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ; contours construits par union de bas en haut en suivant les liens parent → enfant du découpage HCP (D-GD-42) : une frontière est la même à tous les niveaux ; une entité élémentaire sans contour laisse une lacune signalée, jamais comblée, et le contour de ses ancêtres est marqué partiel (propriétés contour_complet et entites_sans_contour, D-GD-44)",
     "synthetique": false,
     "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). Sources : https://www.hcp.ma/file/242341/ (SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca) et https://www.hcp.ma/file/242671/ (SHA-256 f3d96fcae3c10a2c194b2fe97ee8352a242fb3f36b1b63d4d2a7006176dc7c3e) ; « Indicateurs communaux du parc logement urbain au Maroc en 2024 » (HCP) (SHA-256 c5ca0d86eef04cac4692cc0fff691e81f77e73726515b12eb17a0d7f3a8ff421) ; « Indicateurs communaux : mode de transport domicile – lieu de travail des actifs occupés, RGPH 2024 » (HCP, juin 2026) (SHA-256 30e8fc0047fe7ada2cb1db36e127e8d31966da2e775183b9bb0c7eeffd540027) ; « Cartographie des Établissements Économiques (CEE 2023/2024) : principaux résultats par commune » (HCP) (SHA-256 33887f36154129e9fc8eceb6d5393d5b26fae0851f153cdb1ed6358e0aed38ee). Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution.",
     "annexes": {
@@ -51,7 +51,7 @@
   "couche": {
     "titre": "RGPH 2024 — communes",
     "description": "Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
-    "niveau": "OSM8",
+    "niveau": "commune",
     "champCode": "code",
     "champNom": "nom",
     "proprietesExposees": [
@@ -60,8 +60,10 @@
       "contour",
       "nom_contour",
       "appariement",
+      "region",
       "province",
-      "region"
+      "contour_complet",
+      "entites_sans_contour"
     ],
     "styleDefaut": {
       "mode": "simple",
@@ -12734,24 +12736,19 @@
   "territoire": {
     "pays": "MA",
     "nomPays": "Maroc",
-    "rang": 3,
-    "niveau": {
-      "singulier": "Commune",
-      "pluriel": "Communes"
-    },
-    "parent": "codes-hcp"
+    "niveau": "commune"
   },
   "construction": {
-    "decision": "D-GD-33",
-    "methode": "union des communes par code HCP, topologie partagée simplifiée une seule fois",
+    "decision": "D-GD-42",
+    "methode": "union de bas en haut suivant les liens parent → enfant du découpage en base, topologie partagée simplifiée une seule fois",
     "outil": "mapshaper 0.7.98",
     "intervalle_m": 20,
     "script": "scripts/geodata/construire_niveaux.py",
+    "decoupage": "decoupage/hcp-rgph2024-entites.csv",
     "comptes": {
       "entites": 1487,
-      "sommets": 206577,
-      "communes_hcp_sans_contour": 16,
-      "contours_osm_ecartes": 11
+      "sommets": 206592,
+      "entites_elementaires_sans_contour": 16
     },
     "rapport": "docs/workstreams/geodata/CONTOURS-NIVEAUX.md"
   }

@@ -3294,6 +3294,53 @@ CREATE TABLE IF NOT EXISTS geodata_territoires (
 CREATE INDEX IF NOT EXISTS geodata_territoires_parent ON geodata_territoires (pays, rang, parent_code);
 CREATE INDEX IF NOT EXISTS geodata_territoires_code ON geodata_territoires (pays, code);
 CREATE INDEX IF NOT EXISTS geodata_territoires_geom ON geodata_territoires USING gist (geom);
+-- D-GD-42 : le rang d'un niveau n'a plus de borne fixe (la table des niveaux en décide).
+ALTER TABLE geodata_territoires DROP CONSTRAINT IF EXISTS geodata_territoires_rang_check;
+ALTER TABLE geodata_territoires ADD CONSTRAINT geodata_territoires_rang_check CHECK (rang >= 1);
+
+-- Découpage administratif en base (D-GD-42) : niveaux (rang du plus global au plus fin), entités (code, noms, niveau,
+-- code du parent, type, source) et journal des imports. Chargés par une commande d'import **unique** sur le serveur
+-- (`geodata-reference.js --decoupage`), jamais au démarrage de l'API ; relancée sur le même fichier, elle ne fait rien ;
+-- un nouveau fichier met à jour les entités par leur code (aucun doublon), une entité absente du fichier est marquée
+-- retirée, jamais effacée. La hiérarchie se lit par le lien parent → enfant ; aucun niveau n'est écrit dans le code.
+CREATE TABLE IF NOT EXISTS geodata_niveaux_administratifs (
+  pays text NOT NULL REFERENCES geodata_pays (code) ON DELETE CASCADE,
+  code text NOT NULL CHECK (code ~ '^[A-Za-z0-9._-]{1,64}$'),
+  rang smallint NOT NULL CHECK (rang >= 1),
+  singulier text NOT NULL,
+  pluriel text NOT NULL,
+  fiche_cle text,
+  mis_a_jour_le timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (pays, code),
+  UNIQUE (pays, rang)
+);
+CREATE TABLE IF NOT EXISTS geodata_entites_administratives (
+  pays text NOT NULL,
+  code text NOT NULL CHECK (code ~ '^[A-Za-z0-9:._-]{1,64}$'),
+  niveau text NOT NULL,
+  parent_code text,
+  nom text NOT NULL,
+  nom_ar text,
+  type text,
+  source text NOT NULL,
+  periode text,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  mis_a_jour_le timestamptz NOT NULL DEFAULT now(),
+  retire_le timestamptz,
+  PRIMARY KEY (pays, code),
+  FOREIGN KEY (pays, niveau) REFERENCES geodata_niveaux_administratifs (pays, code)
+);
+CREATE INDEX IF NOT EXISTS geodata_entites_parent ON geodata_entites_administratives (pays, parent_code);
+CREATE TABLE IF NOT EXISTS geodata_decoupage_imports (
+  id bigserial PRIMARY KEY,
+  pays text NOT NULL,
+  fichier text NOT NULL,
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  source text NOT NULL,
+  bilan jsonb NOT NULL,
+  importe_le timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (pays, empreinte)
+);
 
 -- Archive des fichiers de données livrés (D-GD-29) : interface et données distinctes ; chaque fichier du dossier des
 -- sources qualifiées (fiches, données, correspondances, extraits, retraits déclarés) est copié tel quel en base par la
@@ -3312,7 +3359,7 @@ CREATE TABLE IF NOT EXISTS geodata_fichiers (
 );
 CREATE INDEX IF NOT EXISTS geodata_fichiers_source ON geodata_fichiers (source_cle);
 ALTER TABLE geodata_fichiers DROP CONSTRAINT IF EXISTS geodata_fichiers_role_check;
-ALTER TABLE geodata_fichiers ADD CONSTRAINT geodata_fichiers_role_check CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration', 'reference'));
+ALTER TABLE geodata_fichiers ADD CONSTRAINT geodata_fichiers_role_check CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration', 'reference', 'decoupage'));
 
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon

@@ -31,6 +31,8 @@
 - [x] GEO-FIL-MINI-BARRE — Fil de navigation administrative pliable, ≡ dans la mini-barre, un seul panneau à la fois (D-GD-38).
 - [x] GEO-TABLEAU-CROISE — Fiche : tableaux croisés Milieu × Sexe, palette partagée des catégories, contrôle de cohérence (D-GD-39).
 - [ ] GEO-SERIES-RGPH — Séries des recensements 1960–2014, concepts en arabe, emplois CEE par secteur : fiches qualifiées à produire.
+- [x] GEO-INFRA-COMMUNAL — Niveaux infra-communaux sur tout le territoire, découpage en base, import HCP unique sur le serveur, contours de bas en haut, clics selon les niveaux réels (D-GD-42) ; en revue.
+- [ ] GEO-INFRA-COMMUNAL-VPS — Lancer une fois `geodata-reference.js --decoupage MA` sur le VPS après déploiement ; arbitrer la place de la commune de Casablanca (5 niveaux selon le HCP).
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
 - [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).

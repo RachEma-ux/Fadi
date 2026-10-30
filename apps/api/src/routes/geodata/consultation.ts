@@ -64,11 +64,15 @@ export function lireCouche(r: Record<string, unknown>, indicateurs: unknown[]) {
     id: r["couche_id"], titre: r["couche_titre"], description: r["couche_description"], typeGeometrie: r["type_geometrie"], niveau: r["niveau"],
     proprietesExposees: r["proprietes_exposees"], styleDefaut: r["style_defaut"], nombreObjets: r["nombre_objets"],
     emprise: r["emprise"] ? JSON.parse(r["emprise"] as string) : null, indicateurs, version: lireVersion(r), raster: r["raster"] ?? null,
+    // Niveau administratif de la couche (D-GD-42) : lu dans la table des niveaux en base (fiche de la couche), jamais du titre.
+    niveauAdministratif: r["niveau_administratif"] ?? null,
   };
 }
 
 const COLONNES_COUCHE = `c.id AS couche_id, c.titre AS couche_titre, c.description AS couche_description, c.type_geometrie, c.niveau, c.proprietes_exposees,
-  c.style_defaut, c.nombre_objets, ST_AsGeoJSON(c.emprise, 6) AS emprise, (SELECT ra.description FROM geodata_rasters ra WHERE ra.couche_id = c.id) AS raster, ${COLONNES_VERSION}`;
+  c.style_defaut, c.nombre_objets, ST_AsGeoJSON(c.emprise, 6) AS emprise, (SELECT ra.description FROM geodata_rasters ra WHERE ra.couche_id = c.id) AS raster,
+  (SELECT json_build_object('pays', na.pays, 'code', na.code, 'rang', na.rang, 'singulier', na.singulier, 'pluriel', na.pluriel)
+     FROM geodata_niveaux_administratifs na WHERE na.fiche_cle = s.cle AND v.espace_id IS NULL ORDER BY na.pays LIMIT 1) AS niveau_administratif, ${COLONNES_VERSION}`;
 
 /** Couche consultable par l'espace, sinon `null` (absente, privée d'un tiers, retirée : même réponse). */
 export async function coucheConsultable(espaceId: string, coucheId: string) {

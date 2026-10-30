@@ -1,104 +1,123 @@
-# Contours des niveaux administratifs construits à partir des communes (D-GD-33)
+# Contours des niveaux administratifs construits par union, de bas en haut (D-GD-42, après D-GD-33)
 
 Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-30 ; relancer le script régénère ce rapport.
 
 ## Source
 
-- Communes : extrait OpenStreetMap `donnees/osm-mar-communes.geojson` (OpenStreetMap — extraits du 2026-10-23, 1498 contours, licence ODbL), rattachées à leur code géographique HCP par la table relue `correspondances/hcp-rgph2024-communes.csv` (`preparer_hcp.py`, D-GD-17). Ce fichier peut être remplacé par un fichier officiel du HCP sans changer la logique : les provinces et les régions sont recalculées.
-- Codes HCP : province = plus long code de province dont le code de la commune est le préfixe ; région = code de province sans ses trois derniers chiffres. Les noms viennent des tables `correspondances/hcp-rgph2024-{provinces,regions}.csv`.
-- geoBoundaries (ADM1 / ADM2) n'est plus utilisé pour aucun contour livré ; ses fiches de référence ne servent plus qu'au rattachement des communes par la géographie dans `preparer_hcp.py`.
+- Découpage : `decoupage/hcp-rgph2024-entites.csv` (entités, niveaux et parents lus dans le fichier HCP par `decoupage_hcp.py`) et table des niveaux `decoupage/ma-niveaux.csv` ; aucun niveau n'est écrit dans le script.
+- Contours d'origine des communes : extrait OpenStreetMap `donnees/osm-mar-communes.geojson` (OpenStreetMap — extraits du 2026-10-23, 1498 contours, licence ODbL), rattachés par `correspondances/hcp-rgph2024-communes.csv`.
+- Contours d'origine des arrondissements : extrait OpenStreetMap `donnees/osm-mar-arrondissements.geojson` (OpenStreetMap — extraits du 2026-10-23, 103 contours, licence ODbL), rattachés par `correspondances/hcp-rgph2024-arrondissements.csv`.
 
 ## Méthode
 
-1. Rattachement de chaque contour OSM apparié à son code HCP de commune, de province et de région (16 communes HCP sans contour, 11 contours OSM sans unité HCP, 0 rattachement ambigu).
-2. mapshaper 0.7.98 : `snap` (accrochage des sommets voisins), `-simplify interval=20 keep-shapes` (Visvalingam, petites formes conservées), `-clean` (chevauchements et interstices résiduels), **une seule fois, sur la topologie partagée** : une frontière commune n'existe qu'en un exemplaire.
-3. Provinces / préfectures : `-dissolve2 province` (union des communes de même code) ; régions : `-dissolve2 region` sur les provinces.
-4. Sommets : 280293 avant, 206577 après pour les communes ; 68238 provinces ; 40622 régions.
-5. Les tuiles de l'API ne simplifient plus séparément ces contours (quantification MVT seule) : les limites se superposent à tous les zooms.
+1. Entités élémentaires (sans enfant dans le découpage) : 1522 contours d'origine ; 16 sans contour (lacune signalée).
+2. mapshaper 0.7.98 : `snap`, `-simplify interval=20 keep-shapes`, `-clean`, **une seule fois, sur la topologie partagée**.
+3. Chaque niveau : `-dissolve2` des entités élémentaires par le code de leur ancêtre à ce niveau (union de bas en haut).
+4. Contours d'origine remplacés par l'union de leurs enfants (entités qui ont des enfants) : 6 — Commune de Tanger (1511010), Commune de Fès (3231010), Commune de Rabat (4421010), Commune de Salé (4441010), Commune de Casablanca (6141010), Commune de Marrakech (7351010).
+5. Sommets des entités élémentaires : 284041 avant simplification.
 
-## Comptes
+## Comptes et contrôles par niveau
 
-- Régions construites : 12 / 12 ; provinces et préfectures : 75 / 75 ; communes livrées : 1487 (rattachées à un code HCP).
-- Communes HCP sans contour (lacune du niveau supérieur, signalée, jamais comblée ; le parent est marqué partiel : `contour_complet` faux, `communes_sans_contour` > 0) : 16.
-- Contours partiels : 13 provinces / préfectures, 8 régions ; tous les autres sont complets (`contour_complet` vrai).
-  - Province de Sidi Ifni (10473) : Commune de Mirleft (104730107)
-  - Province d'Al Hoceima (1051) : Commune d'Al Hoceima (10510101)
-  - Province de Tan-Tan (10521) : Commune de Chbika (105210505)
-  - Province de Laâyoune (11321) : Commune d'El Marsa (113210101), Commune de Foum El Oued (113210305)
-  - Province d'Oued Ed-Dahab (12391) : Commune d'El Argoub (123910901)
-  - Préfecture de M'diq-Fnideq (1573) : Commune de M'diq (15730105)
-  - Province de Berkane (2113) : Commune de Saidia (21130125)
-  - Province de Nador (2381) : Commune de Bni Ansar (23810103), Commune d'Al Barkanyene (23810703)
-  - Préfecture d'Oujda-Angad (2411) : Commune de Bni Khaled (24110305)
-  - Province de Kénitra (4281) : Commune de Mehdya (42810105), Commune de Sidi Mohamed Benmansour (42810511)
-  - Préfecture de Skhirate-Témara (4501) : Commune de Harhoura (45010103)
-  - Province de Sidi Bennour (6467) : Commune de Loualidia (64670105)
-  - Préfecture d'Agadir-Ida-Ou-Tanane (9001) : Commune d'Agadir (90010101)
-- Contours OSM sans unité HCP, écartés (entièrement inclus dans une commune rattachée, aucune valeur) : 11 — w1338748400, w183919379, w189229517, w191547315, w193804981, w207633044, w208360487, w217660503, w303649959 (Blida), w336734081, w336764990.
+| Rang | Niveau | Entités en base | Contours livrés | Sommets | Chevauchements | Lacunes intérieures | Invalides | Frontière hors des limites élémentaires |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Régions | 12 | 12 | 40623 | 0 | 2 | 0 | 0.0 m |
+| 2 | Provinces et préfectures | 75 | 75 | 68247 | 0 | 1 | 0 | 0.0 m |
+| 3 | Communes | 1503 | 1487 | 206592 | 0 | 44 | 0 | 0.0 m |
+| 4 | Préfectures d'arrondissements | 8 | 8 | 858 | 0 | 1 | 0 | 0.0 m |
+| 5 | Arrondissements | 41 | 41 | 4189 | 0 | 1 | 0 | 0.0 m |
 
-## Contrôles
-
-- communes : 1487 entités, 206577 sommets, 0 chevauchement(s) entre voisines, 44 lacune(s) intérieure(s), 0 géométrie(s) invalide(s).
-  - lacune dans 100710305 : 52.911 km²
-  - lacune dans 102610309 : 6.645 km²
-  - lacune dans 21130307 : 1.615 km²
-  - lacune dans 21130503 : 3.741 km²
-  - lacune dans 21671709 : 12.902 km²
-  - lacune dans 22510503 : 5.607 km²
-  - lacune dans 22650505 : 31.066 km²
-  - lacune dans 22750501 : 16.463 km²
-  - lacune dans 22750707 : 20.873 km²
-  - lacune dans 25330317 : 3.522 km²
-  - lacune dans 25330703 : 15.010 km²
-  - lacune dans 25330901 : 22.264 km²
-  - lacune dans 30610101 : 1.036 km²
-  - lacune dans 30610709 : 3.030 km²
-  - lacune dans 31310505 : 10.680 km²
-  - lacune dans 31310903 : 3.946 km²
-  - lacune dans 31710507 : 6.319 km²
-  - lacune dans 3231010 : 1.971 km²
-  - lacune dans 34510503 : 5.641 km²
-  - lacune dans 34510701 : 3.818 km²
-  - lacune dans 35610305 : 7.313 km²
-  - lacune dans 35610707 : 6.755 km²
-  - lacune dans 35910305 : 0.386 km²
-  - lacune dans 42810703 : 27.386 km²
-  - lacune dans 42910713 : 5.057 km²
-  - lacune dans 4421010 : 1.425 km²
-  - lacune dans 44410113 : 2.518 km²
-  - lacune dans 44810707 : 3.948 km²
-  - lacune dans 50910703 : 8.273 km²
-  - lacune dans 50910707 : 6.912 km²
-  - lacune dans 52550911 : 36.674 km²
-  - lacune dans 53010707 : 8.974 km²
-  - lacune dans 6141010 : 0.505 km²
-  - lacune dans 63550107 : 5.255 km²
-  - lacune dans 64611333 : 8.826 km²
-  - lacune dans 70410913 : 6.873 km²
-  - lacune dans 74270906 : 30.940 km²
-  - lacune dans 82010303 : 7.454 km²
-  - lacune dans 82010709 : 5.705 km²
-  - lacune dans 82011101 : 6.500 km²
-- provinces : 75 entités, 68238 sommets, 0 chevauchement(s) entre voisines, 1 lacune(s) intérieure(s), 0 géométrie(s) invalide(s) ; frontière hors des limites de communes : 0.0 m.
-  - lacune dans 4281 : 13.141 km²
-- regions : 12 entités, 40622 sommets, 0 chevauchement(s) entre voisines, 2 lacune(s) intérieure(s), 0 géométrie(s) invalide(s) ; frontière hors des limites de communes : 0.0 m.
-  - lacune dans 3 : 105.324 km²
-  - lacune dans 4 : 13.141 km²
-- Écart d'emprise entre l'union des provinces et l'union des régions : 0.0 km².
-- Les indicateurs RGPH 2024 restent reliés par le code HCP (`code`) à chaque niveau : tableaux de valeurs inchangés.
+- Écarts d'emprise entre niveaux construits successifs : region/province 0.0 km².
+- Entités élémentaires sans contour (lacune du niveau supérieur, signalée, jamais comblée) : 16.
+- Contours partiels (D-GD-44 : `contour_complet` faux, `entites_sans_contour` > 0) : régions 8, provinces et préfectures 13 ; tous les autres sont complets.
+  - Commune de Mirleft (104730107) — Région de Guelmim-Oued Noun › Province de Sidi Ifni
+  - Commune d'Al Hoceima (10510101) — Région de Tanger-Tétouan-Al Hoceima › Province d'Al Hoceima
+  - Commune de Chbika (105210505) — Région de Guelmim-Oued Noun › Province de Tan-Tan
+  - Commune d'El Marsa (113210101) — Région de Laâyoune-Sakia El Hamra › Province de Laâyoune
+  - Commune de Foum El Oued (113210305) — Région de Laâyoune-Sakia El Hamra › Province de Laâyoune
+  - Commune d'El Argoub (123910901) — Région de Dakhla-Oued Ed-Dahab › Province d'Oued Ed-Dahab
+  - Commune de M'diq (15730105) — Région de Tanger-Tétouan-Al Hoceima › Préfecture de M'diq-Fnideq
+  - Commune de Saidia (21130125) — Région de l'Oriental › Province de Berkane
+  - Commune de Bni Ansar (23810103) — Région de l'Oriental › Province de Nador
+  - Commune d'Al Barkanyene (23810703) — Région de l'Oriental › Province de Nador
+  - Commune de Bni Khaled (24110305) — Région de l'Oriental › Préfecture d'Oujda-Angad
+  - Commune de Mehdya (42810105) — Région de Rabat-Salé-Kénitra › Province de Kénitra
+  - Commune de Sidi Mohamed Benmansour (42810511) — Région de Rabat-Salé-Kénitra › Province de Kénitra
+  - Commune de Harhoura (45010103) — Région de Rabat-Salé-Kénitra › Préfecture de Skhirate-Témara
+  - Commune de Loualidia (64670105) — Région de Casablanca-Settat › Province de Sidi Bennour
+  - Commune d'Agadir (90010101) — Région de Souss-Massa › Préfecture d'Agadir-Ida-Ou-Tanane
+- lacune intérieure region 3 (Région de Fès-Meknès) : 105.324 km²
+- lacune intérieure region 4 (Région de Rabat-Salé-Kénitra) : 13.141 km²
+- lacune intérieure province 4281 (Province de Kénitra) : 13.141 km²
+- lacune intérieure commune 100710305 (Commune de Touizgui) : 52.911 km²
+- lacune intérieure commune 102610309 (Commune de Tagante) : 6.645 km²
+- lacune intérieure commune 21130307 (Commune de Fezouane) : 1.615 km²
+- lacune intérieure commune 21130503 (Commune de Boughriba) : 3.741 km²
+- lacune intérieure commune 21671709 (Commune de Mtalssa) : 12.902 km²
+- lacune intérieure commune 22510503 (Commune de Bni Guil) : 5.607 km²
+- lacune intérieure commune 22650505 (Commune de Houara Oulad Raho) : 31.066 km²
+- lacune intérieure commune 22750501 (Commune de Bni Mathar) : 16.463 km²
+- lacune intérieure commune 22750707 (Commune de Laaouinate) : 20.873 km²
+- lacune intérieure commune 25330317 (Commune de Sidi Ali Bel Quassem) : 3.522 km²
+- lacune intérieure commune 25330703 (Commune d'Ain Lehjer) : 15.010 km²
+- lacune intérieure commune 25330901 (Commune d'Ahl Oued Za) : 22.264 km²
+- lacune intérieure commune 30610101 (Commune de Meknès) : 1.036 km²
+- lacune intérieure commune 30610709 (Commune d'Oualili) : 3.030 km²
+- lacune intérieure commune 31310505 (Commune de Sidi Boutayeb) : 10.680 km²
+- lacune intérieure commune 31310903 (Commune d'Ait El Mane) : 3.946 km²
+- lacune intérieure commune 31710507 (Commune de Laqsir) : 6.319 km²
+- lacune intérieure commune 3231010 (Commune de Fès) : 1.971 km²
+- lacune intérieure commune 34510503 (Commune d'Ait Sebaa Lajrouf) : 5.641 km²
+- lacune intérieure commune 34510701 (Commune d'Aghbalou Aqorar) : 3.818 km²
+- lacune intérieure commune 35610305 (Commune de Gzenaya Al Janoubia) : 7.313 km²
+- lacune intérieure commune 35610707 (Commune de Ghiata Al Gharbia) : 6.755 km²
+- lacune intérieure commune 35910305 (Commune de Sebaa Rouadi) : 0.386 km²
+- lacune intérieure commune 42810703 (Commune de Beni Malek) : 27.386 km²
+- lacune intérieure commune 42910713 (Commune de Marchouch) : 5.057 km²
+- lacune intérieure commune 4421010 (Commune de Rabat) : 1.426 km²
+- lacune intérieure commune 44410113 (Commune d'Ameur) : 2.518 km²
+- lacune intérieure commune 44810707 (Commune de Lamrabih) : 3.948 km²
+- lacune intérieure commune 50910703 (Commune d'Ait Oum El Bekht) : 8.273 km²
+- lacune intérieure commune 50910707 (Commune de Dir El Ksiba) : 6.912 km²
+- lacune intérieure commune 52550911 (Commune de Krifate) : 36.674 km²
+- lacune intérieure commune 53010707 (Commune d'El Hammam) : 8.974 km²
+- lacune intérieure commune 6141010 (Commune de Casablanca) : 0.505 km²
+- lacune intérieure commune 63550107 (Commune d'Almajjatia Oulad Taleb) : 5.255 km²
+- lacune intérieure commune 64611333 (Commune de Sidi Hajjaj) : 8.826 km²
+- lacune intérieure commune 70410913 (Commune d'Aghouatim) : 6.873 km²
+- lacune intérieure commune 74270906 (Commune de Jbilate) : 30.940 km²
+- lacune intérieure commune 82010303 (Commune d'Aarab Sebbah Ziz) : 7.454 km²
+- lacune intérieure commune 82010709 (Commune d'Oued Naam) : 5.705 km²
+- lacune intérieure commune 82011101 (Commune de Bni M'hamed-Sijelmassa) : 6.500 km²
+- lacune intérieure commune 84010311 (Commune d'Ouisselsate) : 26.946 km²
+- lacune intérieure commune 84010709 (Commune de Tarmigt) : 35.060 km²
+- lacune intérieure commune 91630723 (Commune d'Oued Essafa) : 12.253 km²
+- lacune intérieure commune 95510709 (Commune de Tigzmerte) : 17.247 km²
+- lacune intérieure prefecture-arrondissements 61410110 (Préfecture d'arrondissements d'Al-Fida-Mers-Sultan) : 0.505 km²
+- lacune intérieure arrondissement 61410113 (Arrondissement de Mers-Sultan) : 0.505 km²
+- Les lacunes intérieures des communes sont des enclaves d'autres communes ; celles des niveaux supérieurs viennent des communes sans contour.
+- Les indicateurs RGPH 2024 restent reliés par le code HCP (`code`) à chaque niveau.
 
 ## Journal mapshaper
 
 ```
-[i] Snapped 61 points
+[i] Snapped 59 points
 [simplify] Repaired 0 intersections; 2 intersections could not be repaired
-[clean] Removed 1 of 3 slivers using 290m width threshold
-[clean] Retained 1,487 of 1,487 features
-[o] Wrote /tmp/tmp8gpi5fke/communes.json
-[filter] Retained 1,487 of 1,487 features
+[clean] Removed 2 of 4 slivers using 290m width threshold
+[clean] Retained 1,522 of 1,522 features
+[filter] Retained 1,522 of 1,522 features
 [dissolve2] This command has been merged into -dissolve and is deprecated. Use -dissolve (or -dissolve no-repair for the legacy fast algorithm).
-[dissolve2] Dissolved 1,487 features into 75 features
-[o] Wrote /tmp/tmp8gpi5fke/provinces.json
-[dissolve2] Dissolved 75 features into 12 features
-[o] Wrote /tmp/tmp8gpi5fke/regions.json
+[dissolve2] Dissolved 1,522 features into 12 features
+[o] Wrote /tmp/tmprrw33m8j/region.json
+[filter] Retained 1,522 of 1,522 features
+[dissolve2] Dissolved 1,522 features into 75 features
+[o] Wrote /tmp/tmprrw33m8j/province.json
+[filter] Retained 1,522 of 1,522 features
+[dissolve2] Dissolved 1,522 features into 1,487 features
+[o] Wrote /tmp/tmprrw33m8j/commune.json
+[filter] Retained 16 of 1,522 features
+[dissolve2] Dissolved 16 features into 8 features
+[o] Wrote /tmp/tmprrw33m8j/prefecture-arrondissements.json
+[filter] Retained 41 of 1,522 features
+[dissolve2] Dissolved 41 features into 41 features
+[o] Wrote /tmp/tmprrw33m8j/arrondissement.json
 ```

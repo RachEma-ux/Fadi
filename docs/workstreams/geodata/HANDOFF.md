@@ -15,6 +15,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Niveaux infra-communaux (D-GD-42) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
+  après #356). Après fusion et déploiement : lancer **une fois** sur le VPS
+  `node apps/api/dist/geodata-reference.js --decoupage MA` (jamais au démarrage ; relancé, il ne fait rien). À arbitrer :
+  Casablanca compte 5 niveaux selon le fichier HCP (la demande en comptait 4). Voir `DECOUPAGE-INFRA-COMMUNAL.md`.
 - PR #307 fusionnée (outils d'exploitation dans l'image, dossier `RELEASE-V1.md`).
 - Préproduction : rôles et geoBoundaries ADM1/ADM2 importés le 25 octobre 2026 ; recette d'usage constatée par le maître
   d'ouvrage (carte, fiche, recherche, enregistrement, export).
@@ -88,7 +92,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   cette vue » (Alt+K), zoom affiché. Fusionné par la PR #367 (`603504f`), CI verte. Suites possibles de l'analyse, non engagées : P1-6
   (Plan / Satellite), P2, P3.
 - Lot « Zone d'étude qui filtre » (D-GD-41, demandé le 30 octobre 2026) : filtre de zone sur la carte, la table et la
-  synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Branche
+  synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Fusionné par la PR #369 (`976cd17`), CI verte ; branche
   `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
 - Données du MTNRA (D-GD-43, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
   (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-45), importés au démarrage comme les autres fiches, avec

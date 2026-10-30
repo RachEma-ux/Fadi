@@ -301,3 +301,5 @@
 .geodata-page .gd-puce-zone span[translate="no"]{overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .geodata-page .gd-puce-zone button{border:0;background:transparent;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:1rem;line-height:1;color:inherit}
 .geodata-page .gd-puce-zone button:hover,.geodata-page .gd-puce-zone button:focus-visible{background:#fde3c8}
+.geodata-page .gd-niveau-admin{margin:0 0 2px;font-size:.78em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.geodata-page .gd-niveau-sans-couche{opacity:.7}

@@ -5,12 +5,16 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion } from "@parcours/geodata-model";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { ecrireVersion } from "../lib/geodata/versions.js";
 import { chargerTerritoires } from "../lib/geodata/territoires.js";
+import { importerDecoupage } from "../lib/geodata/decoupage.js";
 import { archiverFichiers } from "../lib/geodata/archive-fichiers.js";
 
 const app = createApp();
@@ -553,6 +557,10 @@ describe("Catégories du catalogue (D-GD-14)", () => {
 });
 
 describe("découpage territorial en base (lot H, D-GD-28)", () => {
+  // Découpage en base (D-GD-42) : tables sans lien aux comptes, vidées avant chaque cas (la remise à zéro commune ne les touche pas).
+  beforeEach(async () => {
+    for (const t of ["geodata_decoupage_imports", "geodata_entites_administratives", "geodata_niveaux_administratifs", "geodata_territoires", "geodata_pays"]) await pool.query(`DELETE FROM ${t}`);
+  });
   /** Version publiée de limites : unités (code, nom, carré), comme la chaîne d'import. */
   async function publierLimites(cle: string, unites: { code: string; nom: string; x: number; y: number; d: number }[], publier = true) {
     const v = validerGeoJSON({ type: "FeatureCollection", features: unites.map((u) => ({ type: "Feature", properties: { code: u.code, nom: u.nom }, geometry: { type: "Polygon", coordinates: carre(u.x, u.y, u.d) } })) });
@@ -577,9 +585,49 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
       client.release();
     }
   }
-  const niveau = (rang: 1 | 2, parent: "codes-hcp" | "inclusion" = "codes-hcp") => ({ pays: "ZZ", nomPays: "Pays synthétique", rang, niveau: rang === 1 ? { singulier: "Région", pluriel: "Régions" } : { singulier: "Province", pluriel: "Provinces" }, parent });
+  /**
+   * Découpage synthétique (D-GD-42) importé par la commande d'import unique, depuis un dossier de données comme celui
+   * livré : déclaration, table des niveaux, entités (code, niveau, parent), fichier source. Aucun nom réel.
+   */
+  function dossierDecoupage(entites: [string, string, string | null][], niveaux: [string, number][] = [["region", 1], ["province", 2]]) {
+    const d = mkdtempSync(join(tmpdir(), "gd-decoupage-"));
+    mkdirSync(join(d, "decoupage", "originaux"), { recursive: true });
+    const ecrire = (f: string, t: string) => { writeFileSync(join(d, f), t); return { fichier: f, empreinte: createHash("sha256").update(t).digest("hex") }; };
+    const original = ecrire("decoupage/originaux/source.txt", `source synthétique ${entites.length}`);
+    const noms: Record<string, [string, string]> = { region: ["Région", "Régions"], province: ["Province", "Provinces"] };
+    const nv = ecrire("decoupage/zz-niveaux.csv", `pays,code,rang,singulier,pluriel,fiche\n${niveaux.map(([c, r]) => `ZZ,${c},${r},${(noms[c] ?? [`Niveau ${c}`, `Niveaux ${c}`]).join(",")},`).join("\n")}\n`);
+    const en = ecrire("decoupage/zz-entites.csv", `pays,code,niveau,parent,nom,nom_ar,type\n${entites.map(([c, n, p]) => `ZZ,${c},${n},${p ?? ""},Unité ${c},,${n}`).join("\n")}\n`);
+    writeFileSync(join(d, "decoupage", "zz.json"), JSON.stringify({ pays: "ZZ", nomPays: "Pays synthétique", source: "Jeu synthétique", original, niveaux: nv, entites: en }));
+    return d;
+  }
+  async function importerZZ(entites: [string, string, string | null][], niveaux?: [string, number][]) {
+    const client = await pool.connect();
+    try { return await importerDecoupage(client, dossierDecoupage(entites, niveaux), "decoupage/zz.json"); } finally { client.release(); }
+  }
+  const ENTITES_ZZ: [string, string, string | null][] = [["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2001", "province", "2"], ["9001", "province", null]];
+  const niveau = (rang: 1 | 2, parent: "decoupage" | "inclusion" = "decoupage") => parent === "decoupage"
+    ? { pays: "ZZ", nomPays: "Pays synthétique", niveau: rang === 1 ? "region" : "province" }
+    : { pays: "ZZ", nomPays: "Pays synthétique", rang, niveau: rang === 1 ? { singulier: "Région", pluriel: "Régions" } : { singulier: "Province", pluriel: "Provinces" }, parent: "inclusion" as const };
 
-  it("chargement depuis des versions publiées (provinces d'abord) : parents par les codes, contour non codé écarté, rechargement sans effet", async () => {
+  it("import unique du découpage (D-GD-42) : relancé sur le même fichier, rien ; nouveau fichier, mise à jour par code sans doublon", async () => {
+    const b1 = await importerZZ(ENTITES_ZZ);
+    expect(b1).toMatchObject({ deja: false, entites: 5, niveaux: 2, ajoutees: ["1", "1001", "2", "2001", "9001"], modifiees: [], retirees: [], sansParent: ["9001"] });
+    expect(await importerZZ(ENTITES_ZZ)).toMatchObject({ deja: true, ajoutees: [] });
+    const compte = async () => (await pool.query("SELECT count(*)::int AS n, count(DISTINCT code)::int AS d FROM geodata_entites_administratives WHERE pays = 'ZZ' AND retire_le IS NULL")).rows[0];
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+    // Nouveau fichier : un niveau intercalé, une entité renommée de parent, une entité absente (retirée, jamais effacée).
+    const b2 = await importerZZ([["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2001", "province", "1"], ["10011", "district", "1001"]], [["region", 1], ["province", 2], ["district", 3]]);
+    expect(b2).toMatchObject({ deja: false, niveaux: 3, ajoutees: ["10011"], modifiees: ["2001"], retirees: ["9001"], sansParent: [] });
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_entites_administratives WHERE pays = 'ZZ'")).rows[0].n).toBe(6);
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_decoupage_imports WHERE pays = 'ZZ'")).rows[0].n).toBe(2);
+    // Incohérence (parent d'un niveau qui n'est pas plus global) : refusée, la base reste dans son état précédent.
+    await expect(importerZZ([["1", "province", null], ["1001", "region", "1"]])).rejects.toThrow(/pas plus global/);
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+  });
+
+  it("chargement depuis des versions publiées (provinces d'abord) : parents par le découpage en base, code hors découpage écarté, rechargement sans effet", async () => {
+    await importerZZ(ENTITES_ZZ);
     const vp = await publierLimites("terr-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }, { code: "2001", nom: "P Sud", x: -8, y: 30, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -7, y: 30, d: 0.1 }]);
     const vr = await publierLimites("terr-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }, { code: "2", nom: "R Sud", x: -8.2, y: 29.9, d: 0.5 }]);
     expect((await chargerTerritoires(pool, vp, niveau(2))).unites).toBe(2);
@@ -587,9 +635,17 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ deja: true });
     const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
     expect(rows).toEqual([{ code: "1001", parent_code: "1" }, { code: "2001", parent_code: "2" }]);
+    // Nouvel import du découpage sans nouvelle version de la couche : 2001 retirée, 2002 nouvelle (sans contour) —
+    // le rechargement rapproche les unités du découpage en base (2001 ne reste pas servie).
+    await importerZZ([["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2002", "province", "2"]]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 1 });
+    expect((await pool.query("SELECT code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2")).rows).toEqual([{ code: "1001" }]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: true, unites: 1 });
+    // Niveau absent du découpage en base : refus explicite (jamais de niveau deviné).
+    await expect(chargerTerritoires(pool, vp, { pays: "ZZ", nomPays: "Pays synthétique", niveau: "inconnu" })).rejects.toThrow(/absent du découpage/);
   });
 
-  it("règle « inclusion » (pays sans codes hiérarchiques) : parent = unité du rang supérieur qui contient l'unité", async () => {
+  it("règle « inclusion » (pays sans découpage importé) : parent = unité du rang supérieur qui contient l'unité", async () => {
     const vr = await publierLimites("incl-regions", [{ code: "A", nom: "Grande A", x: -8.5, y: 30.5, d: 1 }]);
     const vp = await publierLimites("incl-provinces", [{ code: "a1", nom: "Petite a1", x: -8.2, y: 30.7, d: 0.2 }, { code: "b1", nom: "Ailleurs", x: -5, y: 30, d: 0.2 }]);
     await chargerTerritoires(pool, vr, niveau(1, "inclusion"));
@@ -599,28 +655,57 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
   });
 
   it("déclaration corrigée sans nouvelle donnée : nom du pays et du niveau répercutés, parents recalculés si la règle change", async () => {
+    await importerZZ(ENTITES_ZZ);
     const vr = await publierLimites("decl-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
-    const vp = await publierLimites("decl-provinces", [{ code: "1001", nom: "P codée", x: -8, y: 31, d: 0.1 }, { code: "9001", nom: "P sans parent codé", x: -8.1, y: 31.2, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -8.15, y: 31, d: 0.05 }]);
+    const vp = await publierLimites("decl-provinces", [{ code: "1001", nom: "P codée", x: -8, y: 31, d: 0.1 }, { code: "9001", nom: "P sans parent", x: -8.1, y: 31.2, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -8.15, y: 31, d: 0.05 }]);
     await chargerTerritoires(pool, vr, niveau(1));
     expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
     const parents = async () => (await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code")).rows;
     expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
-    // Même version, noms corrigés, même règle : rien n'est rechargé, la déclaration est répercutée.
-    expect(await chargerTerritoires(pool, vp, { ...niveau(2), nomPays: "Pays synthétique (corrigé)", niveau: { singulier: "Province", pluriel: "Provinces (corrigé)" } })).toMatchObject({ deja: true, unites: 2 });
+    // Même version, nom du pays corrigé, même règle : rien n'est rechargé, la déclaration est répercutée.
+    expect(await chargerTerritoires(pool, vp, { ...niveau(2), nomPays: "Pays synthétique (corrigé)" })).toMatchObject({ deja: true, unites: 2 });
     const [p] = (await pool.query("SELECT nom, niveaux -> '2' ->> 'pluriel' AS pluriel, niveaux -> '2' ->> 'parent' AS regle FROM geodata_pays WHERE code = 'ZZ'")).rows;
-    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Provinces (corrigé)", regle: "codes-hcp" });
+    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Provinces", regle: "decoupage" });
     // Règle changée (« inclusion ») : le rang est rebâti — les codes admis changent (« contour:x » entre) — et les
     // parents sont recalculés par la nouvelle règle.
     expect(await chargerTerritoires(pool, vp, niveau(2, "inclusion"))).toMatchObject({ deja: false, unites: 3 });
     expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: "1" }, { code: "contour:x", parent_code: "1" }]);
-    // Retour à « codes-hcp » : « contour:x » ressort, le parent de 9001 redevient inconnu (jamais inventé).
+    // Retour au découpage en base : « contour:x » ressort, le parent de 9001 redevient inconnu (jamais inventé).
     expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
     expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
+  });
+
+  it("profondeur variable (D-GD-42) : ancêtres et enfants par le lien parent, niveaux réels au point, découpage servi à l'interface", async () => {
+    const alice = await compte("gd-prof@example.com");
+    // R › P › C (ville) › G (regroupement) › A (arrondissement) ; R › P › K (commune ordinaire).
+    await importerZZ([["1", "region", null], ["11", "province", "1"], ["111", "commune", "11"], ["112", "commune", "11"], ["1110", "groupe", "111"], ["11101", "arrondissement", "1110"]],
+      [["region", 1], ["province", 2], ["commune", 3], ["groupe", 4], ["arrondissement", 5]]);
+    // Une couche par niveau (une nouvelle version d'un niveau remplace l'ancienne) : les deux communes dans la même couche.
+    const charger = async (cle: string, rang: number, unites: { code: string; x: number; y: number; d: number }[]) => {
+      const v = await publierLimites(cle, unites.map((u) => ({ ...u, nom: `U${u.code}` })));
+      await chargerTerritoires(pool, v, { pays: "ZZ", nomPays: "Pays synthétique", niveau: ["region", "province", "commune", "groupe", "arrondissement"][rang - 1]! });
+    };
+    await charger("p-r", 1, [{ code: "1", x: -9, y: 30, d: 2 }]);
+    await charger("p-p", 2, [{ code: "11", x: -9, y: 30, d: 1.5 }]);
+    await charger("p-c", 3, [{ code: "111", x: -9, y: 30, d: 0.5 }, { code: "112", x: -8, y: 31, d: 0.3 }]);
+    await charger("p-g", 4, [{ code: "1110", x: -9, y: 30, d: 0.4 }]);
+    await charger("p-a", 5, [{ code: "11101", x: -9, y: 30, d: 0.2 }]);
+    const u = (await alice.client.get(`${API}/territoires/ZZ/unites/11101`)).body;
+    expect(u.ancetres.map((a: { code: string }) => a.code)).toEqual(["1", "11", "111", "1110"]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=111`)).body.unites.map((x: { code: string }) => x.code)).toEqual(["1110"]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/111`)).body.enfants).toBe(1);
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=-8.9&lat=30.1`)).body.unites.map((x: { rang: number }) => x.rang)).toEqual([5, 4, 3, 2, 1]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=-7.9&lat=31.1`)).body.unites.map((x: { rang: number }) => x.rang)).toEqual([3, 2, 1]);
+    const dec = (await alice.client.get(`${API}/territoires/ZZ/decoupage`)).body;
+    expect(dec.niveaux.map((n: { code: string; rang: number }) => [n.code, n.rang])).toEqual([["region", 1], ["province", 2], ["commune", 3], ["groupe", 4], ["arrondissement", 5]]);
+    expect(dec.entites).toContainEqual({ code: "11101", parent: "1110", niveau: "arrondissement" });
+    expect((await alice.client.get(`${API}/territoires/XX/decoupage`)).body).toEqual({ pays: "XX", niveaux: [], entites: [] });
   });
 
   it("API : pays et niveaux de la base, unités d'un niveau, unité avec ancêtres, contour et attribution ; version non publiée refusée", async () => {
     const alice = await compte("gd-terr@example.com");
     expect((await alice.client.get(`${API}/territoires`)).body).toEqual({ pays: [] });
+    await importerZZ(ENTITES_ZZ);
     const vr = await publierLimites("api-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
     const vp = await publierLimites("api-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }]);
     await chargerTerritoires(pool, vr, niveau(1));

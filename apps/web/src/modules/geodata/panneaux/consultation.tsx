@@ -17,7 +17,14 @@ export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, un
   return `${formatNombre(v.valeur, Math.abs(v.valeur) >= 100 || Number.isInteger(v.valeur) ? 0 : 2)}${unite ? ` ${unite}` : ""}`;
 };
 
-export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void; indicateurs?: RubriqueIndicateurs | undefined }) {
+/**
+ * Niveaux administratifs du pays courant (D-GD-42), lus dans la table des niveaux en base : « Limites administratives »
+ * en est généré — une entrée par niveau, dans l'ordre des rangs, avec sa couche publiée ; un niveau sans couche en base
+ * le dit. Ajouter un niveau en base ajoute son entrée, sans modifier l'interface.
+ */
+export interface NiveauCatalogue { readonly code: string; readonly rang: number; readonly pluriel: string; readonly coucheId: string | null }
+
+export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void; indicateurs?: RubriqueIndicateurs | undefined; niveaux?: readonly NiveauCatalogue[] | undefined }) {
   const [filtre, setFiltre] = useState("");
   const [details, setDetails] = useState<string | null>(null);
   const [type, setType] = useState<TypeCatalogue>("vecteurs");
@@ -68,6 +75,7 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
                     const dedans = actives.has(c.id);
                     return (
                       <li key={c.id} className={`gd-carte-couche${dedans ? " gd-active" : ""}`} data-gd-couche-catalogue={c.id}>
+                        {c.niveauAdministratif && <p className="gd-niveau-admin" translate="no" data-gd-niveau-admin={c.niveauAdministratif.code}>{c.niveauAdministratif.pluriel}</p>}
                         <div className="gd-ligne-titre"><strong translate="no">{c.titre}</strong>{c.version.privee && <span className="gd-badge">Privée</span>}{c.version.synthetique && <span className="gd-badge gd-badge-alerte">Jeu synthétique</span>}</div>
                         <p className="gd-discret" translate="no">{c.version.source.producteur}</p>
                         <p className="gd-discret">{c.typeGeometrie === "raster" ? "Couche raster (grille de valeurs)" : `${c.nombreObjets} objets · ${c.indicateurs.length} indicateur(s)`}</p>
@@ -79,6 +87,13 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
                       </li>
                     );
                   })}
+                  {/* Niveaux de la table des niveaux sans couche publiée (rangés avec les autres niveaux) : signalés, jamais inventés. */}
+                  {couches.some((c) => c.niveauAdministratif) && !f && (p.niveaux ?? []).filter((n) => !p.couches!.some((c) => c.niveauAdministratif?.code === n.code)).map((n) => (
+                    <li key={`niveau-${n.code}`} className="gd-carte-couche gd-niveau-sans-couche" data-gd-niveau-sans-couche={n.code}>
+                      <p className="gd-niveau-admin" translate="no">{n.pluriel}</p>
+                      <p className="gd-discret">Aucune couche publiée en base pour ce niveau.</p>
+                    </li>
+                  ))}
                 </ul>
               )}
             </li>

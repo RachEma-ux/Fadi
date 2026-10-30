@@ -477,6 +477,26 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. La zone filtrée s'écrit dans l'adresse de la vue (`z=`) ; une zone d'un autre espace ou archivée répond 404 et le
         filtre est retiré avec un avis.
 
+   - D-GD-42 (27 octobre 2026, intégré le 30 octobre 2026 après D-GD-42 à D-GD-41) — **niveaux infra-communaux sur tout le territoire, tout venant de la base** (demande du
+     maître d'ouvrage ; détail : `docs/workstreams/geodata/DECOUPAGE-INFRA-COMMUNAL.md`) :
+     1. Tables `geodata_niveaux_administratifs` (rang sans borne, du plus global au plus fin), `geodata_entites_administratives`
+        (code HCP, noms, niveau, code du parent, type, source, période) et `geodata_decoupage_imports` ; aucune liste de
+        territoires ni de niveaux dans le code (test). La hiérarchie se lit par le lien parent → enfant.
+     2. Données lues dans le fichier HCP de la population légale RGPH 2024 (livré tel quel, archivé en base) par
+        `scripts/geodata/decoupage_hcp.py` : 12 régions, 75 provinces / préfectures, 1 503 communes, 8 préfectures
+        d'arrondissements, 41 arrondissements ; inventaire `INVENTAIRE-DECOUPAGE.md`.
+     3. Import en base **unique**, sur le serveur, par l'exploitant (`geodata-reference.js --decoupage`), jamais au
+        démarrage de l'API (consigne du 27 octobre 2026) ; relancé sur le même fichier, il ne fait rien ; un nouveau
+        fichier met à jour par code, sans doublon, avec bilan (ajoutées, modifiées, retirées, sans parent).
+     4. Contours de tous les niveaux par union de bas en haut suivant les liens (`construire_niveaux.py`), une seule
+        simplification sur la topologie partagée ; couche « Préfectures d'arrondissements » (indicateurs RGPH 2024).
+     5. Fiches : `territoire: { pays, nomPays, niveau: "<code>" }` (règle « decoupage ») ; la règle « codes-hcp » (parenté
+        écrite dans le code) est retirée ; la règle « inclusion » reste pour un pays sans découpage importé.
+     6. Interface : rang des couches, parents, sélection par clics (niveaux réels de l'endroit : 5 à Casablanca selon le
+        fichier HCP, 4 dans les autres communes à arrondissements, 3 ailleurs), barre territoriale, fiche et catalogue
+        « Limites administratives » (ordre de la table des niveaux) lus en base.
+     7. À arbitrer : le fichier HCP range les préfectures d'arrondissements sous la commune de Casablanca (5 niveaux, la
+        demande en comptait 4) ; la hiérarchie livrée suit le fichier.
    - D-GD-43 (30 octobre 2026) — **données « géoportail » du MTNRA** (fichiers fournis par le maître d'ouvrage) :
      1. `donnees-geoportail-open-data-2022.xlsx` est la ressource publiée sur data.gov.ma par le MTNRA (jeu
         « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma », mai 2022,
@@ -513,7 +533,7 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         Le décalage constaté correspond aux contours geoBoundaries d'avant D-GD-33 ; une carte enregistrée qui garde ces
         versions les affiche encore.
      2. Un parent construit sans toutes ses communes est **partiel** : propriétés `contour_complet` et
-        `communes_sans_contour` (13 provinces, 8 régions), rapport et fiches.
+        `entites_sans_contour` (13 provinces, 8 régions), rapport et fiches.
      3. Mention de provenance dans les trois fiches : « géométries dérivées des contours communaux OpenStreetMap,
         agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ».
      4. Une couche de limites administratives restée sur une version antérieure dans une carte affiche une alerte (et non

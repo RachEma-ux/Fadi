@@ -1,0 +1,6 @@
+pays,code,niveau,parent,nom,nom_ar,type
+ZZ,1,region,,Région synthétique Nord,,Région
+ZZ,2,region,,Région synthétique Sud,,Région
+ZZ,1001,province,1,Province synthétique N-1,,Province
+ZZ,1002,province,1,Province synthétique N-2,,Province
+ZZ,2001,province,2,Province synthétique S-1,,Province

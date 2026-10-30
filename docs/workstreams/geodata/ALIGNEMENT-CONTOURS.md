@@ -40,7 +40,7 @@ topologie partagée, simplification unique, tuiles sans simplification propre, i
 D-GD-44 :
 
 - **contours partiels** : un parent construit sans toutes ses communes porte `contour_complet` faux et
-  `communes_sans_contour` (comptes dans le rapport) ;
+  `entites_sans_contour` (comptes dans le rapport) ;
 - **mention de provenance** dans les trois fiches : « géométries dérivées des contours communaux OpenStreetMap, agrégées
   selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP » ;
 - **alerte de version antérieure** : une couche de limites administratives restée sur une version antérieure dans une
@@ -63,7 +63,7 @@ Plus la validation partagée de chaque GeoJSON livré : géométrie valide, born
 ## Bascule et retour arrière
 
 - **Bascule** : à la fusion puis au déploiement, l'import automatique (D-GD-23) publie une nouvelle version des
-  provinces et des régions (même géométrie, propriétés `contour_complet` et `communes_sans_contour` en plus). Les
+  provinces et des régions (même géométrie, propriétés `contour_complet` et `entites_sans_contour` en plus). Les
   communes gardent leur version. Le catalogue sert la nouvelle version. Une carte enregistrée affiche l'alerte pour
   chaque couche de limites restée sur une version antérieure ; il suffit de retirer la couche puis de l'ajouter depuis
   le catalogue.

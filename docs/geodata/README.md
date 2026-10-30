@@ -185,19 +185,36 @@ croisé : lignes Urbain, Rural, Ensemble ; colonnes Ensemble, Masculin, Féminin
 couleurs des catégories sont celles des légendes des graphiques (palette `--gd-cat-*`). Un écart Urbain + Rural ≠
 Ensemble ou Masculin + Féminin ≠ Ensemble est signalé sous le tableau, jamais corrigé.
 
-## Sélection par nombre de clics (D-GD-34)
+## Sélection par nombre de clics (D-GD-34 ; D-GD-42 : niveaux réels de l'endroit lus en base)
 
-Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global :
-1 clic → commune, 2 → province / préfecture, 3 → région (600 ms au plus entre deux clics — plus que le double-clic du
-navigateur, car deux tapes humaines sur téléphone sont séparées de 350 à 450 ms ; au-delà, ou si le pointeur a bougé de
-plus de 16 px, on recommence). Couches de limites visibles : seuls leurs niveaux comptent (provinces et régions chargées :
-1 clic → province, 2 → région) ; l'entité du premier clic est celle touchée dans la couche du plus petit niveau, ses
-parents sont lus de la hiérarchie des codes HCP en base. Carte vierge : les unités du pays courant qui contiennent le
+Des clics rapides au même endroit de la carte montrent les niveaux un par un, du plus élémentaire au plus global, en
+suivant les niveaux réels de l'endroit lus en base (D-GD-42) : arrondissement, préfecture d'arrondissements, commune,
+préfecture, région à Casablanca (5 clics) ; arrondissement, commune, préfecture, région dans les autres communes à
+arrondissements (4) ; commune, province, région ailleurs (3) (600 ms au plus entre deux clics — plus que le double-clic
+du navigateur, car deux tapes humaines sur téléphone sont séparées de 350 à 450 ms ; au-delà, ou si le pointeur a bougé
+de plus de 16 px, on recommence). Couches de limites visibles : seuls leurs niveaux comptent ; l'entité du premier clic
+est la plus fine touchée, ses parents sont lus des liens parent → enfant en base. Carte vierge : les unités du pays courant qui contiennent le
 point (`GET /territoires/:pays/point?lon=&lat=`) ; l'entité est affichée seule (contour et mise en évidence), sans
 couche ajoutée. Le double-clic et la double-tape ne zooment plus ; un clic hors de toute entité efface la sélection ; les
 outils (dessin, mesure) gardent leurs clics. Téléphone : la fiche (volet du bas, qui recouvre la carte) ne s'ouvre
 qu'une fois la série de tapes terminée, la sélection restant immédiate. Logique pure :
 `geodata-model/src/selection-clics.ts`.
+
+## Découpage administratif en base, niveaux infra-communaux (D-GD-42)
+
+Niveaux (`geodata_niveaux_administratifs`), entités et liens parent → enfant (`geodata_entites_administratives`) sont en
+base ; aucun niveau ni territoire dans le code. Données : `docs/geodata/sources/decoupage/` (fichier HCP tel quel, table
+des niveaux, entités produites par `python3 scripts/geodata/decoupage_hcp.py --excel <fichier HCP>`). Import **unique**,
+une fois, sur le serveur :
+
+```
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --decoupage MA
+```
+
+Relancé sur le même fichier : « déjà importé », rien n'est fait. Nouveau fichier HCP : relancer le script, livrer, puis
+relancer la commande (mise à jour par code, sans doublon, bilan). Le démarrage de l'API ne lance jamais cet import ;
+avant lui, les couches HCP sont publiées mais la barre territoriale attend (avis dans la quittance). Contours : union de
+bas en haut suivant les liens (`construire_niveaux.py`). Détail : `docs/workstreams/geodata/DECOUPAGE-INFRA-COMMUNAL.md`.
 
 ## Régions et provinces construites à partir des communes (D-GD-33)
 
