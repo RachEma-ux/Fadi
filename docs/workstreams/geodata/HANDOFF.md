@@ -80,6 +80,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Fournisseurs de fonds dans Paramètres, MapTiler par défaut (D-GD-15).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
 
+- Analyse de la carte FeenWay (30 octobre 2026) : `ANALYSE-FEENWAY.md`, pistes P1 à P3 ; lot proposé « Lecture de
+  l'emprise » non engagé.
+
 ## Prochaine action
 
 Catégories (D-GD-14) : en préproduction, menu ☰ → « Données » avec un compte « gestionnaire-donnees » pour créer,

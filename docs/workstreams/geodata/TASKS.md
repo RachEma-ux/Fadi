@@ -31,6 +31,8 @@
 - [x] GEO-FIL-MINI-BARRE — Fil de navigation administrative pliable, ≡ dans la mini-barre, un seul panneau à la fois (D-GD-38).
 - [ ] GEO-SERIES-RGPH — Séries des recensements 1960–2014, concepts en arabe, emplois CEE par secteur : fiches qualifiées à produire.
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
+- [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
+- [ ] GEO-EMPRISE — Lot proposé « Lecture de l'emprise » (synthèse de la vue, regroupement des points, état dans l'adresse, zoom et échelle) : attend la demande du maître d'ouvrage.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours
