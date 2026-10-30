@@ -8,7 +8,7 @@ const etat: EtatAdresse = {
   indicateur: { theme: "Démographie", famille: "Population légale", modalite: null, milieu: "urbain", sexe: "ensemble" },
 };
 
-describe("état de la carte dans l'adresse (D-GD-39)", () => {
+describe("état de la carte dans l'adresse (D-GD-40)", () => {
   it("aller-retour : caméra arrondie, couches dans l'ordre avec masquage et regroupement, indicateur", () => {
     const lu = lireAdresseVue(`#${ecrireAdresseVue(etat)}`);
     expect(lu).toEqual({ ...etat, camera: { lon: -7.46828, lat: 33.64643, zoom: 14.3, cap: 0 } });

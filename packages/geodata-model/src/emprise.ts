@@ -1,5 +1,5 @@
 /**
- * Lecture de l'emprise (D-GD-39) : ce que montre la vue courante, calculé sur les objets en base qui la recoupent (jamais
+ * Lecture de l'emprise (D-GD-40) : ce que montre la vue courante, calculé sur les objets en base qui la recoupent (jamais
  * sur ce que le moteur a dessiné). Logique pure : synthèse d'une couche dans la vue et grille du regroupement des points
  * dans les tuiles. Une valeur absente n'est jamais comptée comme zéro : elle est « non évaluée » et reste hors du min, de
  * la moyenne et du max.
@@ -68,7 +68,7 @@ export function syntheseCouche(p: {
 }
 
 /**
- * Regroupement des points dans les tuiles (D-GD-39) : jusqu'au zoom 13 compris, les points d'une couche regroupée sont
+ * Regroupement des points dans les tuiles (D-GD-40) : jusqu'au zoom 13 compris, les points d'une couche regroupée sont
  * réunis par cellule d'une grille Web Mercator de 8 × 8 cellules par tuile ; à partir du zoom 14 (dernier zoom des
  * tuiles), chaque point est servi seul.
  */

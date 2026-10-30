@@ -70,7 +70,7 @@ export const etiquettesToutesAffichees = (c: Composition, admissibles: ReadonlyS
   return cibles.length > 0 && cibles.every((k) => k.etiquettes);
 };
 
-/** Regroupement des points d'une couche (D-GD-39) : grappes ↔ points seuls ; « points seuls » n'écrit aucune clé. */
+/** Regroupement des points d'une couche (D-GD-40) : grappes ↔ points seuls ; « points seuls » n'écrit aucune clé. */
 export const basculerRegroupement = (c: Composition, coucheId: string) => modifier(c, coucheId, ({ regrouper, ...k }) => (regrouper ? k : { ...k, regrouper: true as const }));
 
 /**

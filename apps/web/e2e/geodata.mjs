@@ -348,7 +348,7 @@ await page.locator("[data-gd-mini-carte]").click({ position: { x: 20, y: 20 } })
 check("mini-carte : un clic ne provoque aucune erreur de carte", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
 await boutonMini.click();
 check("mini-carte : le bouton la masque", (await page.locator("[data-gd-mini-carte]").count()) === 0 && (await boutonMini.getAttribute("aria-pressed")) === "false");
-// --- Lecture de l'emprise (D-GD-39) : zoom affiché, synthèse de la vue (Alt+V), regroupement (Alt+G), adresse (Alt+K) ---
+// --- Lecture de l'emprise (D-GD-40) : zoom affiché, synthèse de la vue (Alt+V), regroupement (Alt+G), adresse (Alt+K) ---
 const zoomAffiche = ((await page.locator("[data-gd-zoom-affiche]").textContent()) ?? "").replace(/\s+/g, " ").trim();
 check("emprise : zoom courant affiché en permanence sur la carte", /^Zoom \d+,\d$/.test(zoomAffiche), zoomAffiche);
 const boutonSynthese = page.locator("[data-gd-barre-outil='synthese']");
@@ -433,7 +433,7 @@ check("nom / valeur : valeur seule (recocher l'indicateur n'affiche pas les noms
 await page.waitForTimeout(800);
 check("indicateur actif : aucune erreur de carte avec les valeurs affichées", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
 await page.screenshot({ path: join(OUT, "01c-valeurs-indicateur.png") });
-// Synthèse de la vue avec l'indicateur actif (D-GD-39) : valeurs 0, 12, absente, 45, 0, 7 → 5 évaluées (0 compris),
+// Synthèse de la vue avec l'indicateur actif (D-GD-40) : valeurs 0, 12, absente, 45, 0, 7 → 5 évaluées (0 compris),
 // min 0, moyenne simple 12,8, max 45, 1 non évaluée (jamais comptée comme zéro).
 for (let i = 0; i < 2; i++) { await page.locator("[data-gd-barre-outil='zoom-moins']").click(); await page.waitForTimeout(350); }
 await page.locator("body").press("Alt+v");
@@ -968,13 +968,33 @@ await page.evaluate(() => {
   const ouvrir = window.open.bind(window);
   window.open = (...a) => {
     const w = ouvrir(...a);
-    w.print = () => { const d = w.document; window.__impressions.push({ titre: d.querySelector(".gd-fiche h3")?.textContent ?? "", fermees: d.querySelectorAll("details:not([open])").length, boutons: w.getComputedStyle(d.querySelector("[data-gd-imprimer]")).display }); };
+    w.print = () => { const d = w.document; const liseré = d.querySelector(".gd-croise th[data-gd-categorie='urbain']"); window.__impressions.push({ titre: d.querySelector(".gd-fiche h3")?.textContent ?? "", fermees: d.querySelectorAll("details:not([open])").length, boutons: w.getComputedStyle(d.querySelector("[data-gd-imprimer]")).display, croise: d.querySelectorAll(".gd-croise").length, couleurUrbain: liseré ? w.getComputedStyle(liseré).borderLeftColor : "" }); };
     return w;
   };
 });
+// Tableau croisé Milieu × Sexe (D-GD-39) : lignes Urbain, Rural, Ensemble ; colonnes Ensemble, Masculin, Féminin ;
+// couleurs = palette partagée des légendes des graphiques ; sans défilement horizontal ; cohérence contrôlée.
+const croise = page.locator("[data-gd-fiche='1'] [data-gd-ventilation='Population municipale']");
+const couleursCroiseUrbain = await page.evaluate(() => getComputedStyle(document.querySelector("[data-gd-fiche='1'] .gd-croise th[data-gd-categorie='urbain']")).borderLeftColor);
+const couleursCroise = await page.evaluate(() => {
+  const racine = getComputedStyle(document.querySelector("[data-geodata-page]"));
+  const jeton = (c) => { const e = document.createElement("span"); e.style.color = `var(--gd-cat-${c})`; document.querySelector("[data-geodata-page]").appendChild(e); const v = getComputedStyle(e).color; e.remove(); return v; };
+  const t = document.querySelector("[data-gd-fiche='1'] [data-gd-ventilation='Population municipale']");
+  return {
+    lignes: ["urbain", "rural", "ensemble"].map((c) => getComputedStyle(t.querySelector(`tbody th[data-gd-categorie='${c}']`)).borderLeftColor === jeton(c)),
+    colonnes: ["ensemble", "masculin", "feminin"].map((c) => getComputedStyle(t.querySelector(`thead [data-gd-categorie='${c}'] .gd-pastille-cat`)).backgroundColor === jeton(c)),
+    serie1: racine.getPropertyValue("--gd-serie-1").trim() === racine.getPropertyValue("--gd-cat-urbain").trim(), deborde: t.closest(".gd-ventilation-bloc").scrollWidth > t.closest(".gd-ventilation-bloc").clientWidth,
+  };
+});
+check("fiche (D-GD-39) : Population municipale en tableau croisé — lignes Urbain, Rural, Ensemble (en gras) ; colonnes Ensemble, Masculin, Féminin ; sans défilement ni écart",
+  (await croise.getAttribute("data-gd-croise")) === "urbain,rural,ensemble|ensemble,masculin,feminin" && (await croise.locator("tr.gd-ligne-total th").textContent()) === "Ensemble"
+  && (await page.locator("[data-gd-fiche='1'] [data-gd-ecart]").count()) === 0 && !couleursCroise.deborde && (await croise.locator("[data-gd-part]").count()) === 6, JSON.stringify(couleursCroise));
+check("fiche (D-GD-39) : couleurs des catégories = palette partagée des graphiques (liseré des lignes, pastille des colonnes)", couleursCroise.lignes.every(Boolean) && couleursCroise.colonnes.every(Boolean) && couleursCroise.serie1 === true, JSON.stringify(couleursCroise));
+await page.screenshot({ path: join(OUT, "07b-fiche-croise.png") });
 await page.locator("[data-gd-imprimer]").click();
 await page.locator("body").press("Alt+p");
 const impressions = await page.evaluate(() => window.__impressions);
+check("fiche (D-GD-39) : l'impression reprend le tableau croisé et ses couleurs (palette relue, non recopiée)", impressions.length === 2 && impressions.every((x) => x.croise >= 1 && x.couleurUrbain !== "" && x.couleurUrbain !== "rgba(0, 0, 0, 0)" && x.couleurUrbain === couleursCroiseUrbain), JSON.stringify(impressions));
 check("fiche territoriale : « Imprimer la fiche » (et Alt+P) imprime la fiche seule, sections dépliées, sans boutons", impressions.length === 2 && impressions.every((x) => x.titre === "Région synthétique Nord" && x.fermees === 0 && x.boutons === "none"), JSON.stringify(impressions));
 await page.locator("body").press("Alt+ArrowUp");
 await page.locator("[data-gd-niveaux='0']").waitFor({ state: "attached" });

@@ -1,5 +1,5 @@
 /**
- * État de la carte dans l'adresse (D-GD-39) : la vue courante s'écrit dans le fragment de l'adresse (`#…`), pour être
+ * État de la carte dans l'adresse (D-GD-40) : la vue courante s'écrit dans le fragment de l'adresse (`#…`), pour être
  * rouverte telle quelle par un lien. Le fragment ne quitte jamais le navigateur (il n'est pas envoyé au serveur) et ne
  * contient ni donnée, ni adresse, ni clé : seulement des identifiants que le serveur contrôle à la lecture (une couche
  * privée d'un autre espace reste refusée). Logique pure.

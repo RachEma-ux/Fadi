@@ -149,7 +149,7 @@ export function PageGeoData() {
   const [pleinEcran, setPleinEcran] = useState(false);
   // Mini-carte de situation (lot G) : confort mémorisé dans ce navigateur seulement.
   const [miniCarte, setMiniCarte] = useState(() => lireLocal("geodata.mini-carte") === "1");
-  // Synthèse de la vue (D-GD-39) : ouverte ou fermée, mémorisée dans ce navigateur ; objets lus en base par couche.
+  // Synthèse de la vue (D-GD-40) : ouverte ou fermée, mémorisée dans ce navigateur ; objets lus en base par couche.
   const [syntheseOuverte, setSyntheseOuverte] = useState(() => lireLocal("geodata.synthese") === "1");
   // Emprise changée sans changement de caméra (carte prête, redimensionnement) : relance la lecture de la vue.
   const [versionEmprise, setVersionEmprise] = useState(0);
@@ -187,7 +187,7 @@ export function PageGeoData() {
     chargerCatalogue();
     void chargerRangement();
     chargerZones();
-    // Adresse d'une vue (D-GD-39) : elle prime sur la dernière carte ouverte dans ce navigateur.
+    // Adresse d'une vue (D-GD-40) : elle prime sur la dernière carte ouverte dans ce navigateur.
     const adresse = lireAdresseVue(window.location.hash);
     if (adresse) void ouvrirAdresse(adresse);
     else {
@@ -288,7 +288,7 @@ export function PageGeoData() {
   }, []);
   // Libellés (lot C, D-GD-24) : couches vectorielles admises (le nom de l'entité, indépendant de l'indicateur).
   const vectorielles = useMemo(() => new Set(composition.couches.map((k) => k.coucheId).filter((id) => !rasters.has(id))), [composition, rasters]);
-  // Regroupement des points (D-GD-39) : couches de points ou mixtes de la composition.
+  // Regroupement des points (D-GD-40) : couches de points ou mixtes de la composition.
   const couchesPoints = useMemo(() => new Set(composition.couches.map((k) => k.coucheId).filter((id) => { const t = couchesConnues.get(id)?.typeGeometrie; return t === "point" || t === "mixte"; })), [composition, couchesConnues]);
   // Valeurs affichées (D-GD-32) : la valeur abrégée de l'indicateur actif, par couche où « Afficher l'indicateur » est coché.
   const valeursAffichees = useMemo(() => {
@@ -310,7 +310,7 @@ export function PageGeoData() {
     return couchesNiveau.filter((c) => versions.has(couchesConnues.get(c.coucheId)?.version.id ?? ""));
   }, [chemin, couchesNiveau, paysListe, paysCourant, couchesConnues]);
   const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin)), [filtres, chemin, couchesDuChemin]);
-  // Synthèse de la vue (D-GD-39) : couches d'objets visibles ; à chaque arrêt de la carte, objets de la vue lus en base
+  // Synthèse de la vue (D-GD-40) : couches d'objets visibles ; à chaque arrêt de la carte, objets de la vue lus en base
   // (une requête par couche, la réponse d'une vue dépassée est ignorée). Rien n'est demandé quand la synthèse est fermée.
   const couchesSynthese = useMemo(() => compositionAffichee.couches.filter((k) => k.visible && vectorielles.has(k.coucheId)), [compositionAffichee, vectorielles]);
   const jetonVue = useRef(0);
@@ -480,7 +480,7 @@ export function PageGeoData() {
 
   compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
-  // État de la carte dans l'adresse (D-GD-39) : caméra, carte ouverte, couches et indicateur actif, réécrits sans ajouter
+  // État de la carte dans l'adresse (D-GD-40) : caméra, carte ouverte, couches et indicateur actif, réécrits sans ajouter
   // d'entrée à l'historique ; seulement sur l'onglet de la carte, une fois la page initialisée (le fragment d'arrivée
   // est lu d'abord).
   const adresseLue = useRef(false);
@@ -526,7 +526,7 @@ export function PageGeoData() {
   }
 
   /**
-   * Vue rouverte depuis son adresse (D-GD-39) : carte enregistrée (ses couches et styles font foi, la caméra du lien
+   * Vue rouverte depuis son adresse (D-GD-40) : carte enregistrée (ses couches et styles font foi, la caméra du lien
    * s'applique), sinon couches du lien avec leur version figée et le style par défaut de la couche ; caméra et indicateur
    * actif. Une couche refusée par le serveur (privée d'un autre espace, retirée) est écartée et signalée.
    */
@@ -725,7 +725,7 @@ export function PageGeoData() {
     if (e.altKey && (e.key === "r" || e.key === "R" || e.code === "KeyR") && (!saisie || !!cible?.closest("[data-gd-recherche-flottante]"))) { e.preventDefault(); basculerRecherche(!rechercheOuverte); return; }
     // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
     if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
-    // Lecture de l'emprise (D-GD-39) : Alt+V synthèse de la vue, Alt+G regroupement des points, Alt+K adresse de la vue.
+    // Lecture de l'emprise (D-GD-40) : Alt+V synthèse de la vue, Alt+G regroupement des points, Alt+K adresse de la vue.
     if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
     if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
     if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
@@ -869,7 +869,7 @@ export function PageGeoData() {
     setComposition((c) => basculerTousRegroupements(c, couchesPoints));
     setAnnonce(avant ? "Chaque point est affiché seul" : "Points regroupés");
   };
-  /** Copie l'adresse de la vue (D-GD-39) ; si le presse-papiers est refusé, l'adresse est annoncée pour être copiée à la main. */
+  /** Copie l'adresse de la vue (D-GD-40) ; si le presse-papiers est refusé, l'adresse est annoncée pour être copiée à la main. */
   const copierLien = async () => {
     const adresse = window.location.href;
     try { await navigator.clipboard.writeText(adresse); setAnnonce("Adresse de la vue copiée. Elle ne donne accès qu'aux couches que son destinataire peut déjà consulter."); }

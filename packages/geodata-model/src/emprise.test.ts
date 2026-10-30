@@ -5,7 +5,7 @@ import type { ValeurIndicateur } from "./valeurs.js";
 const v = (x: number): ValeurIndicateur => ({ valeur: x, motifAbsence: null });
 const absente: ValeurIndicateur = { valeur: null, motifAbsence: "secret-statistique" };
 
-describe("lecture de l'emprise (D-GD-39) : synthèse d'une couche dans la vue", () => {
+describe("lecture de l'emprise (D-GD-40) : synthèse d'une couche dans la vue", () => {
   it("compte les objets de la vue et ceux de la couche", () => {
     expect(syntheseCouche({ codes: ["a", "b"], total: 10 })).toEqual({ dansVue: 2, total: 10, indicateur: null });
   });
@@ -28,7 +28,7 @@ describe("lecture de l'emprise (D-GD-39) : synthèse d'une couche dans la vue", 
   });
 });
 
-describe("regroupement des points dans les tuiles (D-GD-39)", () => {
+describe("regroupement des points dans les tuiles (D-GD-40)", () => {
   it("8 × 8 cellules par tuile, bords des cellules sur les bords des tuiles", () => {
     for (const z of [0, 5, 13]) {
       const { cote, origine } = grilleRegroupement(z);

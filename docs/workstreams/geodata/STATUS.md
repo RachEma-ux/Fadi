@@ -93,7 +93,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   routes `GET/POST/PUT/DELETE /collections` ; `panneaux/collection.tsx`, `geodata-model/src/collections.ts` (4 tests) ;
   recette `geodata.mjs` 168 contrôles (24 nouveaux) ; scénario API rejoué en HTTP sur l'API locale (19/19) — les tests API
   sur base (`geodata.test.ts`, étendus) tournent en CI seulement (cible de test signée).
-- Lecture de l'emprise (D-GD-39, PR à venir sur `ccr-9ee33f24-q1rmt0`) : `geodata-model/src/emprise.ts` (synthèse d'une
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39) : `geodata-model/src/tableau-croise.ts` (6 tests), palette partagée
+  `--gd-cat-*` (tableaux, légendes des graphiques, impression), contrôle de cohérence ; vérifié sur 4 entités réelles
+  (commune urbaine d'Assilah, commune rurale de Boutferda, préfecture de Tanger-Assilah, région de Tanger-Tétouan-Al
+  Hoceima), bureau et Pixel 7, sans défilement horizontal ; captures avant / après dans `captures/d-gd-39/` ; recette
+  `geodata.mjs` 199 contrôles (3 nouveaux, jeu synthétique des régions ventilé Milieu × Sexe).
+- Lecture de l'emprise (D-GD-40, PR à venir sur `ccr-9ee33f24-q1rmt0`) : `geodata-model/src/emprise.ts` (synthèse d'une
   couche dans la vue, grille de regroupement alignée sur les tuiles, 8 tests) et `adresse-vue.ts` (fragment d'adresse,
   4 tests) ; composition `regrouper` ; route `GET /couches/:id/vue?bbox=` et tuiles `?regrouper=1` (`consultation.ts`) ;
   `panneaux/SyntheseVue.tsx`, trois boutons de la barre d'outils (Alt+V, Alt+G, Alt+K ; icônes et touches distinctes,
@@ -103,7 +108,7 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
-  une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-39
+  une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40
   ne contient que des constantes techniques (bornes Web Mercator, grille des tuiles, icônes) ; toutes ses données sont
   lues en base par l'API.
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, `BarreTerritoriale`

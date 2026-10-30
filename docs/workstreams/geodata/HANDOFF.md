@@ -57,6 +57,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   concepts en arabe, emplois CEE par secteur) affichées « Donnée non disponible » en attendant des fiches qualifiées.
 - Fil de navigation administrative dans la mini-barre (D-GD-38) : ≡ entre Enregistrer et Fond, panneau flottant ;
   un seul panneau de la mini-barre ouvert à la fois (`panneauMini` de la page).
+- Fiche : tableaux croisés Milieu × Sexe (D-GD-39, `tableau-croise.ts`) ; palette partagée `--gd-cat-*` (tableaux et
+  graphiques) ; écarts de cohérence de 1 publiés par le HCP signalés, jamais corrigés.
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.
@@ -81,7 +83,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
 
 - Analyse de la carte FeenWay (30 octobre 2026) : `ANALYSE-FEENWAY.md`, pistes P1 à P3.
-- Lot « Lecture de l'emprise » (D-GD-39, demandé par le maître d'ouvrage le 30 octobre 2026) : synthèse de la vue
+- Lot « Lecture de l'emprise » (D-GD-40, demandé par le maître d'ouvrage le 30 octobre 2026) : synthèse de la vue
   (Alt+V), regroupement des points dans les tuiles (Alt+G), état de la carte dans l'adresse et « Copier l'adresse de
   cette vue » (Alt+K), zoom affiché. Branche `ccr-9ee33f24-q1rmt0`. Suites possibles de l'analyse, non engagées : P1-4
   (zone d'étude qui filtre), P1-6 (Plan / Satellite), P2, P3.

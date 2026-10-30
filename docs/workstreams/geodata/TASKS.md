@@ -29,10 +29,11 @@
 - [ ] GEO-PARTAGE-CARTE — « Partager » une carte : aucune fonction existante ; à spécifier par le maître d'ouvrage.
 - [x] GEO-ONGLETS-RGPH — Barre d'onglets et tableau de bord RGPH 2024 : chiffres clés, tableaux, CEE, concepts (D-GD-37, `TABLEAU-DE-BORD.md`).
 - [x] GEO-FIL-MINI-BARRE — Fil de navigation administrative pliable, ≡ dans la mini-barre, un seul panneau à la fois (D-GD-38).
+- [x] GEO-TABLEAU-CROISE — Fiche : tableaux croisés Milieu × Sexe, palette partagée des catégories, contrôle de cohérence (D-GD-39).
 - [ ] GEO-SERIES-RGPH — Séries des recensements 1960–2014, concepts en arabe, emplois CEE par secteur : fiches qualifiées à produire.
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
-- [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-39).
+- [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).
 - [ ] GEO-ZONE-FILTRE — P1-4 de l'analyse : la zone d'étude filtre table, tableau de bord et synthèse ; non engagé.
 - [ ] GEO-PLAN-SATELLITE — P1-6 de l'analyse : bascule Plan / Satellite du fournisseur réglé ; non engagé.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.

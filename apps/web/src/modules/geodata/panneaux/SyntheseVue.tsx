@@ -1,5 +1,5 @@
 /**
- * Synthèse de la vue (lecture de l'emprise, D-GD-39) : pour chaque couche d'objets visible, le nombre d'objets qui
+ * Synthèse de la vue (lecture de l'emprise, D-GD-40) : pour chaque couche d'objets visible, le nombre d'objets qui
  * recoupent la vue sur le total de la couche (lus en base, filtre de la couche appliqué) et, si l'indicateur actif est
  * porté par la couche, son minimum, sa moyenne simple et son maximum sur les entités évaluées de la vue. Une valeur
  * absente n'est jamais comptée : elle est « non évaluée ». Panneau flottant, refermé par son bouton ou Alt+V.

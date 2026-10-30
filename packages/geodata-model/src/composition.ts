@@ -52,7 +52,7 @@ export interface CoucheComposee {
   readonly filtre: FiltreCouche | null;
   /** Libellés affichés (nom de l'entité, valeur abrégée en thématique ; lot C, D-GD-24). Absent = masqués. */
   readonly etiquettes?: true;
-  /** Points regroupés en grappes numérotées jusqu'au zoom 13 (D-GD-39). Absent = chaque point affiché seul. */
+  /** Points regroupés en grappes numérotées jusqu'au zoom 13 (D-GD-40). Absent = chaque point affiché seul. */
   readonly regrouper?: true;
 }
 

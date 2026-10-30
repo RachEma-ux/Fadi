@@ -47,6 +47,8 @@ function Valeur({ v, decimales }: { v: ValeurEvaluee; decimales: number | null }
 
 // ——— Graphique SVG interne (aucune dépendance) ———
 
+/** Libellés des catégories Milieu / Sexe (modèle) → jeton de couleur de la palette partagée. */
+const CATEGORIE_DE_LIBELLE = new Map<string, string>([...Object.entries(LIBELLES_MILIEU), ...Object.entries(LIBELLES_SEXE)].map(([k, v]) => [v, k]));
 const COULEURS = ["var(--gd-serie-1)", "var(--gd-serie-2)", "var(--gd-serie-3)", "var(--gd-serie-4)", "var(--gd-serie-5)", "var(--gd-serie-6)"];
 
 export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { type: Graphique; titre: string; colonnes: readonly string[]; lignes: readonly { libelle: string; valeurs: readonly (number | null)[] }[]; decimales: number | null }) {
@@ -59,11 +61,14 @@ export function GraphiqueSvg({ type, titre, colonnes, lignes, decimales }: { typ
   // Une seule série (barres) : chaque catégorie a sa couleur et sa légende (ex. Urbain, Rural, Ensemble) ; plusieurs
   // séries : une couleur par colonne, comme la légende.
   const parLigne = series.length === 1 && type !== "courbe" && lignes.length > 1;
-  const couleur = (s: number, i: number) => COULEURS[(parLigne ? i : s) % COULEURS.length];
+  // Une série ou une catégorie nommée Urbain / Rural / Ensemble / Masculin / Féminin prend la couleur de sa catégorie
+  // (palette partagée --gd-cat-*, la même que les tableaux de la fiche) ; sinon la couleur de son rang.
+  const couleurDe = (libelle: string | undefined, rang: number) => { const c = libelle === undefined ? undefined : CATEGORIE_DE_LIBELLE.get(libelle); return c ? `var(--gd-cat-${c})` : COULEURS[rang % COULEURS.length]; };
+  const couleur = (s: number, i: number) => (parLigne ? couleurDe(lignes[i]?.libelle, i) : couleurDe(colonnes[s], s));
   const entrees = parLigne ? lignes.map((li, i) => ({ cle: `l${i}`, libelle: li.libelle, i })) : series.length > 1 ? series.map((s) => ({ cle: `s${s}`, libelle: colonnes[s]!, i: s })) : [];
   // Barres horizontales d'une seule série : chaque libellé est déjà écrit au-dessus de sa barre, pas de légende en double.
   const legende = entrees.length > 0 && !(parLigne && type === "barres-horizontales") && (
-    <ul className="gd-legende-graphique" aria-hidden="true">{entrees.map((e) => <li key={e.cle}><span style={{ background: COULEURS[e.i % COULEURS.length] }} />{e.libelle}</li>)}</ul>
+    <ul className="gd-legende-graphique" aria-hidden="true">{entrees.map((e) => <li key={e.cle}><span style={{ background: couleurDe(e.libelle, e.i) }} />{e.libelle}</li>)}</ul>
   );
   if (type === "barres-horizontales") {
     // Libellé complet au-dessus de ses barres (jamais tronqué : il reste traduisible et lisible).

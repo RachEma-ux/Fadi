@@ -255,7 +255,7 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect((await bob.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`)).status).toBe(404);
     expect((await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/999/102`)).status).toBe(400);
   });
-  it("lecture de l'emprise (D-GD-39) : objets de la vue lus en base, grappes de points dans les tuiles, mêmes accès", async () => {
+  it("lecture de l'emprise (D-GD-40) : objets de la vue lus en base, grappes de points dans les tuiles, mêmes accès", async () => {
     const alice = await compte("gd-vue@example.com");
     const point = (nom: string, lon: number, lat: number) => ({ type: "Feature", properties: { nom }, geometry: { type: "Point", coordinates: [lon, lat] } });
     // Trois points d'une même cellule de la tuile 8/123/103 (8 × 8 cellules) et un point isolé dans une autre cellule.

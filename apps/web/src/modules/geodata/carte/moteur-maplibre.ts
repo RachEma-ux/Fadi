@@ -44,7 +44,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   let serieClics: SerieClics | null = null;
   let sommets: [number, number][] = [];
   let couchesAffichees: string[] = [];
-  /** Sources vectorielles servies en grappes (D-GD-39) : changer de mode recrée la source (adresse de tuiles différente). */
+  /** Sources vectorielles servies en grappes (D-GD-40) : changer de mode recrée la source (adresse de tuiles différente). */
   const sourcesRegroupees = new Map<string, boolean>();
   let fondCourant = "neutre";
 
@@ -99,7 +99,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
     const ids = couches.flatMap((id) => [`${id}-remplissage`, `${id}-lignes`, `${id}-points`]).filter((l) => carte.getLayer(l));
     const touches = ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids }) : [];
-    // Grappe de points (D-GD-39) touchée en premier : la carte se rapproche d'elle, aucune sélection.
+    // Grappe de points (D-GD-40) touchée en premier : la carte se rapproche d'elle, aucune sélection.
     if (Number(touches[0]?.properties["nombre"] ?? 1) > 1) {
       serieClics = null;
       carte.easeTo({ center: e.lngLat, zoom: zoomSurGrappe(carte.getZoom()), duration: 400 });
@@ -170,7 +170,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         carte.setPaintProperty(`${id}-raster`, "raster-opacity", k.opacite);
         continue;
       }
-      // Points regroupés ou non (D-GD-39) : un changement de mode recrée la source et ses rendus. Une couche filtrée n'est
+      // Points regroupés ou non (D-GD-40) : un changement de mode recrée la source et ses rendus. Une couche filtrée n'est
       // jamais regroupée : une grappe n'a pas de code et compterait des points écartés par le filtre.
       const regrouper = !!k.regrouper && !d.filtres.has(k.coucheId);
       if (carte.getSource(id) && sourcesRegroupees.get(id) !== regrouper) retirerRendus(id);

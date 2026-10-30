@@ -3,7 +3,7 @@
  * défaut, déplaçable par sa poignée (souris, doigt ou flèches du clavier), bornée à la carte ; sa position est un confort
  * mémorisé dans ce navigateur seulement. Outils : zoom, nord, position,
  * plein écran, mesures, zone, annotation, libellés (Alt+L), mini-carte (Alt+M), légende, impression (Alt+I), lecture de
- * l'emprise (D-GD-39) : synthèse de la vue (Alt+V), regroupement des points (Alt+G), adresse de la vue (Alt+K). Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
+ * l'emprise (D-GD-40) : synthèse de la vue (Alt+V), regroupement des points (Alt+G), adresse de la vue (Alt+K). Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
  * et une infobulle ; les outils de tracé sont des bascules (aria-pressed) et retournent à la navigation au second appui.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
@@ -42,11 +42,11 @@ export const ICONES = {
   miniCarte: "M3 4h18v16H3zM5 13h7v5H5z",
   /** Impression directe (D-GD-27) : imprimante. */
   imprimer: "M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z",
-  /** Synthèse de la vue (D-GD-39) : sigma de la somme, sur un cadre de vue. */
+  /** Synthèse de la vue (D-GD-40) : sigma de la somme, sur un cadre de vue. */
   synthese: "M16 6H8l5 6-5 6h8M3 3h4M17 3h4M3 21h4M17 21h4",
-  /** Regroupement des points (D-GD-39) : trois grappes de tailles différentes. */
+  /** Regroupement des points (D-GD-40) : trois grappes de tailles différentes. */
   grappes: "M4 8a3 3 0 1 0 6 0a3 3 0 1 0-6 0M14 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M11 16a4 4 0 1 0 8 0a4 4 0 1 0-8 0",
-  /** Adresse de la vue (D-GD-39) : maillons d'une chaîne. */
+  /** Adresse de la vue (D-GD-40) : maillons d'une chaîne. */
   lien: "M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1",
 } as const;
 
@@ -74,7 +74,7 @@ export interface ActionsBarreCarte {
   onEtiquettes(): void;
   onMiniCarte(): void;
   onImprimer(): void;
-  /** Synthèse de la vue ouverte (D-GD-39). */
+  /** Synthèse de la vue ouverte (D-GD-40). */
   synthese: boolean;
   onSynthese(): void;
   /** Points de toutes les couches de points visibles regroupés ; `null` = aucune couche de points visible. */

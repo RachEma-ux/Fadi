@@ -132,7 +132,7 @@ consultationRouter.get("/recherche", async (req, res) => {
  * identique pour toutes les couches, pour qu'une frontière partagée (région, province, commune) se superpose exactement à
  * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private` ; versions privées `no-store`.
  *
- * `?regrouper=1` (D-GD-39) : jusqu'au zoom 13, les points sont réunis par cellule (grille Web Mercator de 8 × 8 cellules
+ * `?regrouper=1` (D-GD-40) : jusqu'au zoom 13, les points sont réunis par cellule (grille Web Mercator de 8 × 8 cellules
  * par tuile, `grilleRegroupement`) en une grappe au centre de gravité de ses points, avec leur `nombre` ; une cellule d'un
  * seul point garde son code et son nom. Chaque point est compté dans une seule tuile (bords demi-ouverts). Lignes et
  * surfaces sont servies comme sans regroupement.
@@ -185,7 +185,7 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
 });
 
 /**
- * Lecture de l'emprise (D-GD-39) : objets d'une couche qui recoupent la vue `bbox=ouest,sud,est,nord` (WGS 84), lus sur
+ * Lecture de l'emprise (D-GD-40) : objets d'une couche qui recoupent la vue `bbox=ouest,sud,est,nord` (WGS 84), lus sur
  * la géométrie de référence, et nombre total d'objets. Les codes sont renvoyés (au plus `OBJETS_PAR_COUCHE`) pour que la
  * page applique le filtre de la couche et calcule les statistiques de l'indicateur actif ; `tronque` signale une borne
  * atteinte. Mêmes règles d'accès que la table.

@@ -56,7 +56,7 @@ describe("composition locale de GeoData", () => {
     expect(basculerToutesEtiquettes(COMPOSITION_INITIALE, vect)).toBe(COMPOSITION_INITIALE);
     expect(validerComposition(toutes).ok).toBe(true);
   });
-  it("regroupement des points (D-GD-39) : bascule par couche et pour toutes les couches de points visibles", () => {
+  it("regroupement des points (D-GD-40) : bascule par couche et pour toutes les couches de points visibles", () => {
     let c = ajouterCouche(ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", simple), "p", "vp", simple);
     const points = new Set(["a", "b"]);
     expect(basculerRegroupement(c, "a").couches[0]!.regrouper).toBe(true);

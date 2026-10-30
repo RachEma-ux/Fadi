@@ -14326,5 +14326,8 @@
 "Copiez l'adresse de la vue : {0}": "Copy the view address: {0}",
 "Vue ouverte depuis son adresse ; {0} couche(s) inaccessible(s) écartée(s).": "View opened from its address; {0} inaccessible layer(s) left out.",
 "Vue ouverte depuis son adresse.": "View opened from its address.",
-"Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).": "Extent expected: bbox=west,south,east,north (WGS 84)."
+"Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).": "Extent expected: bbox=west,south,east,north (WGS 84).",
+"Écart : Urbain + Rural = {0} ≠ Ensemble {1} (colonne {2})": "Gap: Urban + Rural = {0} ≠ All {1} (column {2})",
+"Écart : Masculin + Féminin = {0} ≠ Ensemble {1} (ligne {2})": "Gap: Male + Female = {0} ≠ All {1} (row {2})",
+"{0} % de l'ensemble": "{0} % of the total"
 }

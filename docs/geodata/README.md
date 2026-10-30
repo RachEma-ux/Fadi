@@ -117,7 +117,7 @@ la carte (ou le niveau de la barre territoriale), sinon le Royaume du Maroc ; un
 d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, calculs déclarés et données manquantes :
 [`docs/workstreams/geodata/TABLEAU-DE-BORD.md`](../workstreams/geodata/TABLEAU-DE-BORD.md).
 
-## Lecture de l'emprise (D-GD-39)
+## Lecture de l'emprise (D-GD-40)
 
 - **Synthèse de la vue** (barre d'outils, Alt+V) : pour chaque couche d'objets visible, « N dans la vue sur T » (objets
   lus en base qui recoupent la vue) ; avec un indicateur actif, min, moyenne simple et max des entités évaluées de la vue
@@ -135,6 +135,13 @@ La mini-barre porte, de haut en bas : **Loupe**, **Enregistrer**, **≡** (« Na
 déplie le fil « Maroc › Régions › … › Retour » en panneau à gauche de la mini-barre (plié par défaut). Un seul panneau
 (recherche, fil ou fonds) est ouvert à la fois ; le fil reste ouvert pendant la sélection par clics et se ferme par ≡ ou
 Échap ; il garde son état d'un onglet à l'autre.
+
+## Fiche d'information : tableaux croisés Milieu × Sexe (D-GD-39)
+
+Un indicateur décliné par milieu et par sexe (population légale, population municipale, taux…) s'affiche en tableau
+croisé : lignes Urbain, Rural, Ensemble ; colonnes Ensemble, Masculin, Féminin ; sans défilement horizontal. Les
+couleurs des catégories sont celles des légendes des graphiques (palette `--gd-cat-*`). Un écart Urbain + Rural ≠
+Ensemble ou Masculin + Féminin ≠ Ensemble est signalé sous le tableau, jamais corrigé.
 
 ## Sélection par nombre de clics (D-GD-34)
 
