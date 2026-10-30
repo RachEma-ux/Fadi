@@ -142,11 +142,15 @@ export function entreesRaster(d: DescriptionRaster): EntreeLegende[] {
 /** Couche d'un thème (pastille, D-GD-48) : identifiant, version publiée et style par défaut. */
 export interface CoucheDeTheme { readonly id: string; readonly versionId: string; readonly style: StyleCouche }
 
-/** Thème sur la carte : aucune de ses couches, une partie visible, ou toutes présentes et visibles. */
+/**
+ * Thème sur la carte : aucune de ses couches visible, une partie, ou affiché — toutes ses couches présentes sont visibles
+ * et les absentes ne peuvent plus être ajoutées (carte pleine, 20 couches) : un thème tronqué par la limite reste masquable.
+ */
 export function etatTheme(c: Composition, couches: readonly { readonly id: string }[]): "absent" | "partiel" | "affiche" {
   const presentes = couches.map((x) => c.couches.find((k) => k.coucheId === x.id));
   if (presentes.every((k) => !k || !k.visible)) return "absent";
-  return presentes.every((k) => k && k.visible) ? "affiche" : "partiel";
+  if (presentes.some((k) => k && !k.visible)) return "partiel";
+  return presentes.every(Boolean) || c.couches.length >= MAX_COUCHES ? "affiche" : "partiel";
 }
 
 /**

@@ -88,5 +88,9 @@ describe("composition locale de GeoData", () => {
     const r = basculerTheme(c, [{ id: "a", versionId: "va", style: simple }, { id: "b", versionId: "vb", style: simple }]);
     expect(r.composition.couches).toHaveLength(20);
     expect(r.omises).toBe(1);
+    // Thème tronqué par la limite : affiché, donc masquable au clic suivant (jamais bloqué en « partiel »).
+    expect(etatTheme(r.composition, [{ id: "a" }, { id: "b" }])).toBe("affiche");
+    const masque = basculerTheme(r.composition, [{ id: "a", versionId: "va", style: simple }, { id: "b", versionId: "vb", style: simple }]);
+    expect(masque.composition.couches.find((k) => k.coucheId === "a")?.visible).toBe(false);
   });
 });
