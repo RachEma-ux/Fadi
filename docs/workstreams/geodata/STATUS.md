@@ -106,7 +106,7 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
   isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
-- Zone d'étude qui filtre (D-GD-41, PR à venir sur `ccr-9ee33f24-q1rmt0`) : route `/couches/:id/vue?zone=` (zone de
+- Zone d'étude qui filtre (D-GD-41, PR #369 fusionnée, `976cd17`, CI verte) : route `/couches/:id/vue?zone=` (zone de
   l'espace, active ; sinon 404) et `/couches/:id/table?zone=` ; filtre de codes combiné sur la carte, table et synthèse ;
   puce « Zone d'étude : nom × », bouton « Filtrer par cette zone » des Études, Alt+Z, `z=` dans l'adresse
   (`adresse-vue.ts`, 1 test) ; tableau de bord non filtré, avis affiché. Scénario API rejoué en HTTP sur l'API locale :

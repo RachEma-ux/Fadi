@@ -88,7 +88,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   cette vue » (Alt+K), zoom affiché. Fusionné par la PR #367 (`603504f`), CI verte. Suites possibles de l'analyse, non engagées : P1-6
   (Plan / Satellite), P2, P3.
 - Lot « Zone d'étude qui filtre » (D-GD-41, demandé le 30 octobre 2026) : filtre de zone sur la carte, la table et la
-  synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Branche
+  synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Fusionné par la PR #369 (`976cd17`), CI verte ; branche
   `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
 
 ## Prochaine action
