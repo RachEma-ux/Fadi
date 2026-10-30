@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-29 (UTC).
+Mis à jour : 2026-10-30 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -81,6 +81,12 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Contours colorés et hiérarchie des limites administratives (D-GD-16).
 - Fournisseurs de fonds dans Paramètres, MapTiler par défaut (D-GD-15).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
+
+- Analyse de la carte FeenWay (30 octobre 2026) : `ANALYSE-FEENWAY.md`, pistes P1 à P3.
+- Lot « Lecture de l'emprise » (D-GD-40, demandé par le maître d'ouvrage le 30 octobre 2026) : synthèse de la vue
+  (Alt+V), regroupement des points dans les tuiles (Alt+G), état de la carte dans l'adresse et « Copier l'adresse de
+  cette vue » (Alt+K), zoom affiché. Branche `ccr-9ee33f24-q1rmt0`. Suites possibles de l'analyse, non engagées : P1-4
+  (zone d'étude qui filtre), P1-6 (Plan / Satellite), P2, P3.
 
 ## Prochaine action
 

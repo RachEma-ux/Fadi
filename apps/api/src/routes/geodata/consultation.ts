@@ -4,7 +4,7 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { attribuerCategories, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, verifierUsage } from "@parcours/geodata-model";
+import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, regroupementActif, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
 import type { DescriptionRaster } from "@parcours/geodata-model";
@@ -131,6 +131,11 @@ consultationRouter.get("/recherche", async (req, res) => {
  * propre à une couche (D-GD-33) : la seule réduction est la quantification de `ST_AsMVTGeom` sur la grille de la tuile,
  * identique pour toutes les couches, pour qu'une frontière partagée (région, province, commune) se superpose exactement à
  * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private` ; versions privées `no-store`.
+ *
+ * `?regrouper=1` (D-GD-40) : jusqu'au zoom 13, les points sont réunis par cellule (grille Web Mercator de 8 × 8 cellules
+ * par tuile, `grilleRegroupement`) en une grappe au centre de gravité de ses points, avec leur `nombre` ; une cellule d'un
+ * seul point garde son code et son nom. Chaque point est compté dans une seule tuile (bords demi-ouverts). Lignes et
+ * surfaces sont servies comme sans regroupement.
  */
 consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   const z = Number(req.params.z);
@@ -141,20 +146,63 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   if (!couche) return introuvable(res);
   const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
   if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const geom = `ST_AsMVTGeom(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), b.e, 4096, 64, true)`;
+  const regrouper = req.query["regrouper"] === "1" && regroupementActif(z);
+  const grille = grilleRegroupement(z);
   const [r] = await requete<{ mvt: Buffer | null }>(
-    `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
-     m AS (
-       SELECT ST_AsMVTGeom(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), b.e, 4096, 64, true) AS geom,
-              o.code, coalesce(o.nom, o.code) AS nom
-         FROM geodata_objets o, b
-        WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)
-     )
-     SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
-    [req.params.coucheId, z, x, y],
+    regrouper
+      ? `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+         o AS (SELECT o.code, o.nom, o.geom FROM geodata_objets o, b WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)),
+         p AS (
+           SELECT o.code, coalesce(o.nom, o.code) AS nom, ST_Transform(o.geom, 3857) AS g FROM o, b
+            WHERE GeometryType(o.geom) = 'POINT'
+              AND ST_X(ST_Transform(o.geom, 3857)) >= ST_XMin(b.e) AND ST_X(ST_Transform(o.geom, 3857)) < ST_XMax(b.e)
+              AND ST_Y(ST_Transform(o.geom, 3857)) >= ST_YMin(b.e) AND ST_Y(ST_Transform(o.geom, 3857)) < ST_YMax(b.e)
+         ),
+         grappes AS (
+           SELECT count(*)::int AS nombre, CASE WHEN count(*) = 1 THEN min(p.code) ELSE '' END AS code,
+                  CASE WHEN count(*) = 1 THEN min(p.nom) ELSE '' END AS nom, ST_Centroid(ST_Collect(p.g)) AS g
+             FROM p GROUP BY ST_SnapToGrid(p.g, $5, $5, $6, $6)
+         ),
+         m AS (
+           SELECT ${geom} AS geom, o.code, coalesce(o.nom, o.code) AS nom, 1 AS nombre FROM o, b WHERE GeometryType(o.geom) <> 'POINT'
+           UNION ALL
+           SELECT ST_AsMVTGeom(grappes.g, b.e, 4096, 64, true) AS geom, grappes.code, grappes.nom, grappes.nombre FROM grappes, b
+         )
+         SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`
+      : `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+         m AS (
+           SELECT ${geom} AS geom, o.code, coalesce(o.nom, o.code) AS nom
+             FROM geodata_objets o, b
+            WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)
+         )
+         SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
+    regrouper ? [req.params.coucheId, z, x, y, grille.origine, grille.cote] : [req.params.coucheId, z, x, y],
   );
   res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
   res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");
   res.send(r?.mvt ?? Buffer.alloc(0));
+});
+
+/**
+ * Lecture de l'emprise (D-GD-40) : objets d'une couche qui recoupent la vue `bbox=ouest,sud,est,nord` (WGS 84), lus sur
+ * la géométrie de référence, et nombre total d'objets. Les codes sont renvoyés (au plus `OBJETS_PAR_COUCHE`) pour que la
+ * page applique le filtre de la couche et calcule les statistiques de l'indicateur actif ; `tronque` signale une borne
+ * atteinte. Mêmes règles d'accès que la table.
+ */
+consultationRouter.get("/couches/:id/vue", async (req, res) => {
+  const emprise = bornerEmprise(String(req.query["bbox"] ?? "").split(",").map((v) => (v.trim() === "" ? NaN : Number(v))));
+  if (!emprise) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  const lignes = await requete<{ code: string }>(
+    `SELECT o.code FROM geodata_objets o
+      WHERE o.couche_id = $1 AND o.geom && ST_MakeEnvelope($2, $3, $4, $5, 4326) AND ST_Intersects(o.geom, ST_MakeEnvelope($2, $3, $4, $5, 4326))
+      ORDER BY o.code LIMIT $6`,
+    [req.params.id, ...emprise, OBJETS_PAR_COUCHE + 1],
+  );
+  const [t] = await requete<{ n: string }>(`SELECT count(*) AS n FROM geodata_objets o WHERE o.couche_id = $1`, [req.params.id]);
+  res.json({ emprise, total: Number(t?.n ?? 0), codes: lignes.slice(0, OBJETS_PAR_COUCHE).map((l) => l.code), tronque: lignes.length > OBJETS_PAR_COUCHE });
 });
 
 /**

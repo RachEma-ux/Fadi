@@ -117,6 +117,18 @@ la carte (ou le niveau de la barre territoriale), sinon le Royaume du Maroc ; un
 d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, calculs déclarés et données manquantes :
 [`docs/workstreams/geodata/TABLEAU-DE-BORD.md`](../workstreams/geodata/TABLEAU-DE-BORD.md).
 
+## Lecture de l'emprise (D-GD-40)
+
+- **Synthèse de la vue** (barre d'outils, Alt+V) : pour chaque couche d'objets visible, « N dans la vue sur T » (objets
+  lus en base qui recoupent la vue) ; avec un indicateur actif, min, moyenne simple et max des entités évaluées de la vue
+  et nombre d'entités non évaluées. Route `GET /geodata/api/couches/:id/vue?bbox=ouest,sud,est,nord`.
+- **Regrouper les points** (case par couche de points, barre d'outils, Alt+G) : grappes numérotées calculées dans les
+  tuiles (`/tuiles/…?regrouper=1`) jusqu'au zoom 13 ; un clic sur une grappe s'en rapproche.
+- **Adresse de la vue** : la caméra, la carte ouverte, les couches et l'indicateur actif s'écrivent dans le fragment de
+  l'adresse (`#v=…`) ; ouvrir cette adresse rouvre la même vue. « Copier l'adresse de cette vue » (Alt+K) ; un
+  destinataire ne voit que les couches qu'il peut déjà consulter.
+- **Zoom** affiché en permanence en bas à gauche de la carte.
+
 ## Fil de navigation administrative dans la mini-barre (D-GD-38)
 
 La mini-barre porte, de haut en bas : **Loupe**, **Enregistrer**, **≡** (« Navigation administrative ») et **Fond**. ≡

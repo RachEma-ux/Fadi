@@ -118,7 +118,7 @@ check("GEO 01 · le compte n'a aucun projet", Array.isArray(projets) && projets.
 const entree = page.locator("[data-nav-geodata]");
 check("GEO 02 · entrée GeoData dans la navigation générale", (await entree.count()) === 1);
 await entree.click();
-await page.waitForURL(/\/geodata$/);
+await page.waitForURL(/\/geodata(#.*)?$/);
 await page.locator("[data-geodata-page]").waitFor();
 check("GEO 02 · /geodata ouvre directement la carte (aucun tableau de bord intermédiaire)", (await page.locator("[data-gd-moteur]").count()) === 1);
 check("GEO 02 · aucun sélecteur ni navigation de projet dans l'espace GeoData", (await page.locator("[data-geodata-page] select, [data-geodata-page] a").evaluateAll((els) => els.filter((e) => /projet/i.test(e.textContent ?? "")).length)) === 0);
@@ -129,7 +129,7 @@ check("carte : moteur chargé (canevas MapLibre)", (await page.locator(".maplibr
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
 const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
-check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression), chaque bouton nommé", outils.length === 13 && outils.every(Boolean), outils.join(" | "));
+check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression, synthèse de la vue, regroupement, adresse de la vue), chaque bouton nommé", outils.length === 16 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
 check("carte : barre d'outils flottante, verticale, à droite par défaut", !!boiteBarre && !!boiteCarte && boiteCarte.x + boiteCarte.width - (boiteBarre.x + boiteBarre.width) < 30 && boiteBarre.height > boiteBarre.width * 3);
@@ -141,7 +141,9 @@ await page.mouse.down();
 await page.mouse.move(px - 300, py + 40, { steps: 8 });
 await page.mouse.up();
 const deplacee = await barreOutils.boundingBox();
-check("barre d'outils : déplacée à la souris par sa poignée", Math.abs(deplacee.x - (boiteBarre.x - 300)) < 3 && Math.abs(deplacee.y - (boiteBarre.y + 40)) < 3, `${boiteBarre.x},${boiteBarre.y} → ${deplacee.x},${deplacee.y}`);
+// Bornée à la carte : une barre presque aussi haute que la carte ne descend que jusqu'à 4 px de son bord bas.
+const yAttendu = Math.min(boiteBarre.y + 40, boiteCarte.y + boiteCarte.height - boiteBarre.height - 4);
+check("barre d'outils : déplacée à la souris par sa poignée", Math.abs(deplacee.x - (boiteBarre.x - 300)) < 3 && Math.abs(deplacee.y - yAttendu) < 3, `${boiteBarre.x},${boiteBarre.y} → ${deplacee.x},${deplacee.y} (attendu y ${yAttendu})`);
 await page.mouse.move(px - 300, py + 40);
 await page.mouse.down();
 await page.mouse.move(px + 900, py - 900, { steps: 8 });
@@ -169,7 +171,7 @@ const basBarre = groupes[groupes.length - 1].bottom;
 // jamais chevaucher l'échelle ni les sources, à gauche du bas de la barre d'outils (même écart, bas alignés).
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
 const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && Math.abs(boiteLoupe.y + boiteLoupe.height - basBarre) <= 1.5;
-check("mini-barre : séparée de la barre d'outils (qui garde ses 13 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
+check("mini-barre : séparée de la barre d'outils (qui garde ses 16 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
   (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
@@ -346,6 +348,44 @@ await page.locator("[data-gd-mini-carte]").click({ position: { x: 20, y: 20 } })
 check("mini-carte : un clic ne provoque aucune erreur de carte", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
 await boutonMini.click();
 check("mini-carte : le bouton la masque", (await page.locator("[data-gd-mini-carte]").count()) === 0 && (await boutonMini.getAttribute("aria-pressed")) === "false");
+// --- Lecture de l'emprise (D-GD-40) : zoom affiché, synthèse de la vue (Alt+V), regroupement (Alt+G), adresse (Alt+K) ---
+const zoomAffiche = ((await page.locator("[data-gd-zoom-affiche]").textContent()) ?? "").replace(/\s+/g, " ").trim();
+check("emprise : zoom courant affiché en permanence sur la carte", /^Zoom \d+,\d$/.test(zoomAffiche), zoomAffiche);
+const boutonSynthese = page.locator("[data-gd-barre-outil='synthese']");
+check("emprise : bouton « Synthèse de la vue (Alt+V) », sa propre icône et son raccourci", (await boutonSynthese.getAttribute("aria-label")) === "Synthèse de la vue (Alt+V)" && (await boutonSynthese.getAttribute("aria-keyshortcuts")) === "Alt+V" && (await boutonSynthese.getAttribute("aria-pressed")) === "false");
+const lectureVue = page.waitForResponse((r) => /\/geodata\/api\/couches\/[^/]+\/vue\?bbox=/.test(r.url()), { timeout: 15_000 }).catch(() => null);
+await page.locator("body").press("Alt+v");
+const repVue = await lectureVue;
+await page.locator("[data-gd-synthese-compte]").first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+const compteVue = (await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte").catch(() => null)) ?? "";
+const [dansVue, totalVue] = compteVue.split("/").map(Number);
+check("emprise : Alt+V ouvre la synthèse ; objets de la vue lus en base (/vue, 200) sur le total de la couche", repVue?.status() === 200 && (await boutonSynthese.getAttribute("aria-pressed")) === "true" && totalVue > 0 && dansVue >= 0 && dansVue <= totalVue, `${repVue?.status()} ${compteVue}`);
+// Vue élargie (zoom arrière) : toutes les unités du jeu synthétique sont dans la vue, relues en base.
+for (let i = 0; i < 4; i++) { await page.locator("[data-gd-barre-outil='zoom-moins']").click(); await page.waitForTimeout(350); }
+await page.waitForFunction((t) => document.querySelector("[data-gd-synthese-compte]")?.getAttribute("data-gd-synthese-compte") === `${t}/${t}`, totalVue, { timeout: 15_000 }).catch(() => undefined);
+check("emprise : la synthèse est relue quand la vue change (vue élargie : toutes les unités dans la vue)", (await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte")) === `${totalVue}/${totalVue}`, `${compteVue} → ${await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte")}`);
+await page.screenshot({ path: join(OUT, "01e-synthese-vue.png") });
+const boutonGrappes = page.locator("[data-gd-barre-outil='regrouper']");
+check("emprise : « Regrouper les points (Alt+G) » désactivé sans couche de points visible", (await boutonGrappes.isDisabled()) && (await boutonGrappes.getAttribute("aria-keyshortcuts")) === "Alt+G");
+await page.waitForTimeout(500);
+const adresseVue = new URL(page.url());
+const fragment = new URLSearchParams(adresseVue.hash.slice(1));
+check("emprise : la vue est écrite dans l'adresse (caméra et couches), sans adresse ni clé", /^-?[\d.]+,-?[\d.]+,[\d.]+,[\d.]+$/.test(fragment.get("v") ?? "") && (fragment.get("c") ?? "").includes("~") && !/https?:|key=|token=/i.test(adresseVue.hash), adresseVue.hash);
+await page.locator("body").press("Alt+k");
+await page.waitForTimeout(300);
+check("emprise : Alt+K copie l'adresse de la vue (ou l'annonce si le presse-papiers est refusé)", /Adresse de la vue copiée|Copiez l'adresse de la vue/.test((await annonceGd.textContent()) ?? ""), (await annonceGd.textContent()) ?? "");
+const pageLien = await page.context().newPage();
+await pageLien.goto(adresseVue.toString());
+await pageLien.locator("[data-gd-zoom]").waitFor({ timeout: 20_000 });
+await pageLien.waitForFunction((v) => document.querySelector("main.gd-carte")?.getAttribute("data-gd-zoom") === Number(v.split(",")[2]).toFixed(2), fragment.get("v") ?? "", { timeout: 15_000 }).catch(() => undefined);
+await onglet(pageLien, "couches");
+const couchesLien = await pageLien.locator("[data-gd-couche-active]").evaluateAll((els) => els.map((e) => e.getAttribute("data-gd-couche-active")));
+const couchesAdresse = (fragment.get("c") ?? "").split(",").map((k) => k.split("~")[0]).reverse();
+check("emprise : l'adresse rouvre la même vue (couches dans l'ordre, zoom)", JSON.stringify(couchesLien) === JSON.stringify(couchesAdresse) && (await pageLien.locator("main.gd-carte").getAttribute("data-gd-zoom")) === Number((fragment.get("v") ?? "0,0,0").split(",")[2]).toFixed(2), `${couchesLien} / ${couchesAdresse}`);
+await pageLien.close();
+await page.locator("body").press("Alt+v");
+check("emprise : Alt+V referme la synthèse", (await page.locator("[data-gd-synthese]").count()) === 0 && (await boutonSynthese.getAttribute("aria-pressed")) === "false");
+
 // Impression directe : une carte non enregistrée n'est pas imprimée (mêmes droits que l'export).
 await page.locator("[data-gd-barre-outil='imprimer']").click();
 check("impression : carte non enregistrée → invitation à l'enregistrer (aucune fenêtre)", ((await annonceGd.textContent()) ?? "").includes("Enregistrez la carte pour l'imprimer"));
@@ -393,6 +433,16 @@ check("nom / valeur : valeur seule (recocher l'indicateur n'affiche pas les noms
 await page.waitForTimeout(800);
 check("indicateur actif : aucune erreur de carte avec les valeurs affichées", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
 await page.screenshot({ path: join(OUT, "01c-valeurs-indicateur.png") });
+// Synthèse de la vue avec l'indicateur actif (D-GD-40) : valeurs 0, 12, absente, 45, 0, 7 → 5 évaluées (0 compris),
+// min 0, moyenne simple 12,8, max 45, 1 non évaluée (jamais comptée comme zéro).
+for (let i = 0; i < 2; i++) { await page.locator("[data-gd-barre-outil='zoom-moins']").click(); await page.waitForTimeout(350); }
+await page.locator("body").press("Alt+v");
+await page.waitForFunction(() => document.querySelector("[data-gd-synthese-compte]")?.getAttribute("data-gd-synthese-compte") === "6/6" && !!document.querySelector("[data-gd-synthese-moyenne]"), null, { timeout: 15_000 }).catch(() => undefined);
+const statsVue = ((await page.locator("[data-gd-synthese-indicateur]").first().textContent().catch(() => "")) ?? "").replace(/\s+/g, " ");
+check("synthèse de la vue : min, moyenne simple et max de l'indicateur actif sur les entités évaluées ; l'absence est « non évaluée », jamais zéro",
+  (await page.locator("[data-gd-synthese-non-evaluees]").first().textContent().catch(() => "")) === "1" && ((await page.locator("[data-gd-synthese-moyenne]").first().textContent().catch(() => "")) ?? "").includes("12,8") && statsVue.includes("Effectif synthétique") && /Max\s*45/.test(statsVue) && /Min\s*0/.test(statsVue), statsVue);
+await page.screenshot({ path: join(OUT, "01f-synthese-indicateur.png") });
+await page.locator("body").press("Alt+v");
 // Couche retirée puis rechargée : elle repart comme une couche nouvelle et reçoit l'indicateur actif (case cochée).
 await carteIndicateur.getByRole("button", { name: "Retirer", exact: true }).click();
 await onglet(page, "catalogue");
@@ -847,7 +897,7 @@ check("fil (D-GD-38) : les clics sur la carte ne le replient pas", (await page.l
   check("onglets : Concepts — sous-onglets Arabe / Français, texte lu en base, arabe absent « Donnée non disponible »", conceptsFr.join("|") === "Concept synthétique" && (await page.locator("[data-gd-concepts-vide]").count()) === 1);
   await page.goBack(); await page.waitForURL(/\/geodata\/cee$/);
   check("onglets : bouton Retour du navigateur → onglet précédent", (await page.locator('[data-gd-onglet-page="cee"]').getAttribute("aria-current")) === "page");
-  await ongletPage("cartes", /\/geodata$/);
+  await ongletPage("cartes", /\/geodata(#.*)?$/);
   await page.waitForTimeout(600);
   check("onglets : retour aux cartes — sélection, zoom, carte et fil déplié (D-GD-38) conservés", (await page.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) === "true" && (await page.locator("[data-gd-tableau-bord]").isHidden()) && (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvant && (await page.locator(".maplibregl-canvas").isVisible()), `${await selectionCourante()} ${zoomAvant}`);
   await page.screenshot({ path: join(OUT, "07c-retour-cartes.png") });

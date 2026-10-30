@@ -33,6 +33,11 @@ export interface DonneesAffichage {
 export interface EvenementsMoteur {
   surDeplacement(camera: Composition["camera"]): void;
   /**
+   * Emprise visible changée sans que la caméra le dise (D-GD-40) : carte prête (`load`) ou canevas redimensionné
+   * (fenêtre, rotation, plein écran). La synthèse de la vue s'y relit.
+   */
+  surEmprise?(): void;
+  /**
    * Clic en navigation : objets touchés (toutes les couches, la plus haute d'abord ; vide = aucun), point cliqué et rang du
    * clic dans sa série (1 = premier, 2 = second clic rapide au même endroit… ; D-GD-34). Aucun retard : chaque clic est
    * transmis tout de suite, le double-clic ne zoome jamais.
@@ -64,6 +69,8 @@ export interface MoteurCarte {
   attendreChargement(delaiMs: number): Promise<boolean>;
   /** Image de la carte telle qu'affichée (canevas WebGL). */
   canevas(): HTMLCanvasElement;
+  /** Emprise de la vue (ouest, sud, est, nord, WGS 84) pour la lecture de l'emprise (D-GD-40) ; null tant que la carte n'est pas prête. */
+  emprise(): readonly [number, number, number, number] | null;
   /** Échelle approximative au centre : mètres par pixel. */
   metresParPixel(): number;
   /**

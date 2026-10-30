@@ -13,9 +13,9 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, rangPourClics, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
-import { sansColorationThematique, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
+import { sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
@@ -26,6 +26,7 @@ import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
 import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
+import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
@@ -148,6 +149,11 @@ export function PageGeoData() {
   const [pleinEcran, setPleinEcran] = useState(false);
   // Mini-carte de situation (lot G) : confort mémorisé dans ce navigateur seulement.
   const [miniCarte, setMiniCarte] = useState(() => lireLocal("geodata.mini-carte") === "1");
+  // Synthèse de la vue (D-GD-40) : ouverte ou fermée, mémorisée dans ce navigateur ; objets lus en base par couche.
+  const [syntheseOuverte, setSyntheseOuverte] = useState(() => lireLocal("geodata.synthese") === "1");
+  // Emprise changée sans changement de caméra (carte prête, redimensionnement) : relance la lecture de la vue.
+  const [versionEmprise, setVersionEmprise] = useState(0);
+  const [vues, setVues] = useState<Map<string, { cle: string; etat: "chargement" | "ok" | "erreur"; codes: string[]; total: number; tronque: boolean; erreur?: string }>>(new Map());
   const conteneurMini = useRef<HTMLDivElement>(null);
 
   // Plein écran de toute la page GeoData (carte, barre, panneaux) ; le canevas suit la nouvelle taille.
@@ -181,9 +187,14 @@ export function PageGeoData() {
     chargerCatalogue();
     void chargerRangement();
     chargerZones();
-    const derniere = lireLocal(CLE_DERNIERE_CARTE);
-    if (derniere) void ouvrirCarte(derniere, true);
-    else setComposition((c) => (c === COMPOSITION_INITIALE ? compositionNeuve() : c));
+    // Adresse d'une vue (D-GD-40) : elle prime sur la dernière carte ouverte dans ce navigateur.
+    const adresse = lireAdresseVue(window.location.hash);
+    if (adresse) void ouvrirAdresse(adresse);
+    else {
+      const derniere = lireLocal(CLE_DERNIERE_CARTE);
+      if (derniere) void ouvrirCarte(derniere, true);
+      else setComposition((c) => (c === COMPOSITION_INITIALE ? compositionNeuve() : c));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -277,6 +288,8 @@ export function PageGeoData() {
   }, []);
   // Libellés (lot C, D-GD-24) : couches vectorielles admises (le nom de l'entité, indépendant de l'indicateur).
   const vectorielles = useMemo(() => new Set(composition.couches.map((k) => k.coucheId).filter((id) => !rasters.has(id))), [composition, rasters]);
+  // Regroupement des points (D-GD-40) : couches de points ou mixtes de la composition.
+  const couchesPoints = useMemo(() => new Set(composition.couches.map((k) => k.coucheId).filter((id) => { const t = couchesConnues.get(id)?.typeGeometrie; return t === "point" || t === "mixte"; })), [composition, couchesConnues]);
   // Valeurs affichées (D-GD-32) : la valeur abrégée de l'indicateur actif, par couche où « Afficher l'indicateur » est coché.
   const valeursAffichees = useMemo(() => {
     const m = new Map<string, Map<string, string>>();
@@ -297,6 +310,41 @@ export function PageGeoData() {
     return couchesNiveau.filter((c) => versions.has(couchesConnues.get(c.coucheId)?.version.id ?? ""));
   }, [chemin, couchesNiveau, paysListe, paysCourant, couchesConnues]);
   const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin)), [filtres, chemin, couchesDuChemin]);
+  // Synthèse de la vue (D-GD-40) : couches d'objets visibles ; à chaque arrêt de la carte, objets de la vue lus en base
+  // (une requête par couche, la réponse d'une vue dépassée est ignorée). Rien n'est demandé quand la synthèse est fermée.
+  const couchesSynthese = useMemo(() => compositionAffichee.couches.filter((k) => k.visible && vectorielles.has(k.coucheId)), [compositionAffichee, vectorielles]);
+  const jetonVue = useRef(0);
+  const cleCouchesSynthese = couchesSynthese.map((k) => `${k.coucheId}@${k.versionId}`).join(",");
+  useEffect(() => {
+    if (!syntheseOuverte || chargementMoteur) return;
+    const jeton = ++jetonVue.current;
+    const minuterie = window.setTimeout(() => {
+      const emprise = moteur.current?.emprise();
+      if (!emprise) return;
+      const cle = emprise.map((v) => v.toFixed(5)).join(",");
+      setVues((m) => new Map(couchesSynthese.map((k) => [k.coucheId, { ...(m.get(k.coucheId) ?? { codes: [], total: 0, tronque: false }), cle, etat: "chargement" as const }])));
+      for (const k of couchesSynthese) {
+        api.vue(k.coucheId, emprise)
+          .then((r) => { if (jeton === jetonVue.current) setVues((m) => new Map(m).set(k.coucheId, { cle, etat: "ok", codes: r.codes, total: r.total, tronque: r.tronque })); })
+          .catch((e: unknown) => { if (jeton === jetonVue.current) setVues((m) => new Map(m).set(k.coucheId, { cle, etat: "erreur", codes: [], total: 0, tronque: false, erreur: message(e) })); });
+      }
+    }, 250);
+    return () => window.clearTimeout(minuterie);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese, versionEmprise]);
+  const lignesSynthese = useMemo<LigneSynthese[]>(() => couchesSynthese.map((k) => {
+    const titre = couchesConnues.get(k.coucheId)?.titre ?? k.coucheId;
+    const v = vues.get(k.coucheId);
+    if (!v || v.etat !== "ok") return { coucheId: k.coucheId, titre, etat: v?.etat ?? "chargement", ...(v?.erreur ? { erreur: v.erreur } : {}) };
+    const i = indicateursParCouche.get(k.coucheId) ?? null;
+    const retenus = filtresAffiches.get(k.coucheId);
+    const valeursI = i ? valeurs.get(i.id) : undefined;
+    return {
+      coucheId: k.coucheId, titre, etat: "ok", tronque: v.tronque,
+      synthese: syntheseCouche({ codes: v.codes, total: v.total, retenus: retenus ? new Set(retenus) : null, valeurs: i ? valeursI ?? new Map() : null }),
+      indicateur: i ? { titre: i.titre, unite: i.unite } : null,
+    };
+  }), [couchesSynthese, couchesConnues, vues, indicateursParCouche, filtresAffiches, valeurs]);
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
   rastersCourants.current = { rasters, couches: couchesConnues };
   /**
@@ -405,6 +453,7 @@ export function PageGeoData() {
       if (detruit || !conteneurCarte.current) return;
       try {
         moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
+          surEmprise: () => setVersionEmprise((n) => n + 1),
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
@@ -431,6 +480,20 @@ export function PageGeoData() {
 
   compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
+  // État de la carte dans l'adresse (D-GD-40) : caméra, carte ouverte, couches et indicateur actif, réécrits sans ajouter
+  // d'entrée à l'historique ; seulement sur l'onglet de la carte, une fois la page initialisée (le fragment d'arrivée
+  // est lu d'abord).
+  const adresseLue = useRef(false);
+  useEffect(() => {
+    if (ongletPage !== "cartes") return;
+    if (!adresseLue.current) { adresseLue.current = true; if (window.location.hash && composition === COMPOSITION_INITIALE) return; }
+    const fragment = ecrireAdresseVue({
+      camera: composition.camera, carteId: carte?.id ?? null, indicateur: indicateurActif,
+      couches: carte ? [] : composition.couches.map((k) => ({ coucheId: k.coucheId, versionId: k.versionId, visible: k.visible, regrouper: !!k.regrouper })),
+    });
+    const adresse = `${window.location.pathname}${window.location.search}#${fragment}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== adresse) window.history.replaceState(window.history.state, "", adresse);
+  }, [ongletPage, composition, carte?.id, indicateurActif]);
 
   async function ouvrirValeur(coucheId: string, titre: string, p: { lon: number; lat: number }) {
     setVolet("valeur");
@@ -460,6 +523,32 @@ export function PageGeoData() {
       if (silencieux && e instanceof ErreurGeoData && e.statut === 404) ecrireLocal(CLE_DERNIERE_CARTE, null);
       else if (!silencieux) setAnnonce(message(e));
     }
+  }
+
+  /**
+   * Vue rouverte depuis son adresse (D-GD-40) : carte enregistrée (ses couches et styles font foi, la caméra du lien
+   * s'applique), sinon couches du lien avec leur version figée et le style par défaut de la couche ; caméra et indicateur
+   * actif. Une couche refusée par le serveur (privée d'un autre espace, retirée) est écartée et signalée.
+   */
+  async function ouvrirAdresse(a: NonNullable<ReturnType<typeof lireAdresseVue>>) {
+    const camera = a.camera;
+    const placer = () => { if (camera) { setComposition((c) => ({ ...c, camera })); moteur.current?.allerA({ lon: camera.lon, lat: camera.lat, zoom: camera.zoom, cap: camera.cap }); } };
+    if (a.indicateur) setIndicateurActif(a.indicateur);
+    if (a.carteId) { await ouvrirCarte(a.carteId); placer(); return; }
+    let c = compositionNeuve(camera ?? undefined);
+    const recues = await Promise.all(a.couches.map((k) => api.couche(k.coucheId).catch(() => null)));
+    const refusees = a.couches.filter((_, i) => !recues[i]).length;
+    recues.forEach((r, i) => {
+      const k = a.couches[i]!;
+      if (!r) return;
+      connaitre([r]);
+      c = ajouterCouche(c, r.id, k.versionId, r.styleDefaut);
+      if (!k.visible) c = basculerVisibilite(c, r.id);
+      if (k.regrouper) c = basculerRegroupement(c, r.id);
+    });
+    setCarte(null); setComposition(c); setEtatForce(null);
+    placer();
+    setAnnonce(refusees ? `Vue ouverte depuis son adresse ; ${refusees} couche(s) inaccessible(s) écartée(s).` : "Vue ouverte depuis son adresse.");
   }
 
   /** Enregistrer impossible (enregistrement en cours, ou rien à enregistrer) : même condition partout (barre, mini-barre, menu). */
@@ -636,6 +725,10 @@ export function PageGeoData() {
     if (e.altKey && (e.key === "r" || e.key === "R" || e.code === "KeyR") && (!saisie || !!cible?.closest("[data-gd-recherche-flottante]"))) { e.preventDefault(); basculerRecherche(!rechercheOuverte); return; }
     // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
     if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
+    // Lecture de l'emprise (D-GD-40) : Alt+V synthèse de la vue, Alt+G regroupement des points, Alt+K adresse de la vue.
+    if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
+    if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
+    if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
     if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
@@ -769,6 +862,19 @@ export function PageGeoData() {
       else fenetre.erreur(`Impression refusée : ${r.refus.map((x) => `${x.titre} — ${x.motif}`).join(" ; ") || "export non autorisé."}`);
     }).catch((e: unknown) => fenetre.erreur(message(e)));
   };
+  const basculerSynthese = () => setSyntheseOuverte((v) => { ecrireLocal("geodata.synthese", v ? null : "1"); setAnnonce(v ? "Synthèse de la vue fermée" : "Synthèse de la vue ouverte"); return !v; });
+  const basculerRegroupements = () => {
+    if (!composition.couches.some((k) => k.visible && couchesPoints.has(k.coucheId))) return;
+    const avant = regroupementsTousActifs(composition, couchesPoints);
+    setComposition((c) => basculerTousRegroupements(c, couchesPoints));
+    setAnnonce(avant ? "Chaque point est affiché seul" : "Points regroupés");
+  };
+  /** Copie l'adresse de la vue (D-GD-40) ; si le presse-papiers est refusé, l'adresse est annoncée pour être copiée à la main. */
+  const copierLien = async () => {
+    const adresse = window.location.href;
+    try { await navigator.clipboard.writeText(adresse); setAnnonce("Adresse de la vue copiée. Elle ne donne accès qu'aux couches que son destinataire peut déjà consulter."); }
+    catch { setAnnonce(`Copiez l'adresse de la vue : ${adresse}`); }
+  };
   const basculerMiniCarte = () => setMiniCarte((v) => { ecrireLocal("geodata.mini-carte", v ? null : "1"); setAnnonce(v ? "Mini-carte masquée" : "Mini-carte affichée"); return !v; });
   // Couche des contours de la mini-carte : la limite administrative la plus haute (région) visible, sinon la première
   // couche vectorielle visible ; sans couche, le fond seul.
@@ -864,7 +970,7 @@ export function PageGeoData() {
               {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} indicateurs={{ liste: indicateursCatalogue, actif: indicateurActif, onChoix: choisirIndicateur }} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
               {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
-                onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))}
+                onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))} onRegrouper={(id) => setComposition((c) => basculerRegroupement(c, id))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
               {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} />}
           </div>
@@ -878,6 +984,8 @@ export function PageGeoData() {
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             etiquettes={composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId)) ? etiquettesToutesAffichees(composition, vectorielles) : null} onEtiquettes={basculerLibelles}
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
+            synthese={syntheseOuverte} onSynthese={basculerSynthese} onCopierLien={() => void copierLien()}
+            regroupement={composition.couches.some((k) => k.visible && couchesPoints.has(k.coucheId)) ? regroupementsTousActifs(composition, couchesPoints) : null} onRegroupement={basculerRegroupements}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende}
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
@@ -887,6 +995,8 @@ export function PageGeoData() {
             navigation={{ ouverte: panneauMini === "navigation", onBasculer: (o) => basculerPanneauMini("navigation", o),
               contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
+          {syntheseOuverte && !erreurCarte && <SyntheseVue lignes={lignesSynthese} zoom={composition.camera.zoom} decalee={panneauOuvert} haute={miniCarte} onFermer={basculerSynthese} />}
+          {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}

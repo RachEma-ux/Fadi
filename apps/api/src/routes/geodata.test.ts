@@ -255,6 +255,36 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect((await bob.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`)).status).toBe(404);
     expect((await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/999/102`)).status).toBe(400);
   });
+  it("lecture de l'emprise (D-GD-40) : objets de la vue lus en base, grappes de points dans les tuiles, mêmes accès", async () => {
+    const alice = await compte("gd-vue@example.com");
+    const point = (nom: string, lon: number, lat: number) => ({ type: "Feature", properties: { nom }, geometry: { type: "Point", coordinates: [lon, lat] } });
+    // Trois points d'une même cellule de la tuile 8/123/103 (8 × 8 cellules) et un point isolé dans une autre cellule.
+    const contenu = JSON.stringify({ type: "FeatureCollection", features: [point("Point A", -6.95, 33.05), point("Point B", -6.951, 33.051), point("Point C", -6.952, 33.05), point("Point Lointain", -6.0, 32.2)] });
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-vue-1", nomFichier: "p.geojson", contenu });
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Points" });
+    expect(conf.status).toBe(201);
+    const id = conf.body.coucheId as string;
+    const vue = await alice.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`);
+    expect(vue.status).toBe(200);
+    expect(vue.body).toMatchObject({ total: 4, tronque: false });
+    expect(vue.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=-180,-85,180,85`)).body.codes).toHaveLength(4);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=1,2,3`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=3,2,1,4`)).status).toBe(400);
+    const octets = async (chemin: string) => (await alice.client.get(chemin).buffer(true).parse((r, fin) => { const b: Buffer[] = []; r.on("data", (x: Buffer) => b.push(x)); r.on("end", () => fin(null, Buffer.concat(b))); })).body as Buffer;
+    const seuls = await octets(`${API}/tuiles/${id}/8/123/103`);
+    expect(seuls.includes(Buffer.from("Point A"))).toBe(true);
+    expect(seuls.includes(Buffer.from("nombre"))).toBe(false);
+    const grappes = await octets(`${API}/tuiles/${id}/8/123/103?regrouper=1`);
+    expect(grappes.includes(Buffer.from("nombre"))).toBe(true);
+    expect(grappes.includes(Buffer.from("Point A"))).toBe(false);
+    // Une cellule d'un seul point garde son nom ; au zoom 14, aucun regroupement.
+    expect(grappes.includes(Buffer.from("Point Lointain"))).toBe(true);
+    expect((await octets(`${API}/tuiles/${id}/14/7875/6596?regrouper=1`)).includes(Buffer.from("nombre"))).toBe(false);
+    const bob = await compte("gd-vue-bob@example.com");
+    expect((await bob.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`)).status).toBe(404);
+    expect((await bob.client.get(`${API}/tuiles/${id}/8/123/103?regrouper=1`)).status).toBe(404);
+  });
   it("cartes, zones, analyses et fiches d'export d'un tiers : 404, y compris en accès direct", async () => {
     const alice = await compte("gd-a8@example.com");
     const bob = await compte("gd-b8@example.com");

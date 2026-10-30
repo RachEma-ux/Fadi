@@ -270,6 +270,22 @@
 .geodata-page .gd-navigation-flottante[hidden]{display:none}
 .geodata-page .gd-navigation-flottante .gd-niveaux{position:static;max-width:none;border-radius:8px;border:1px solid var(--gd-ligne);box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px 6px 4px 10px;flex-wrap:wrap}
 .geodata-page .gd-navigation-flottante .gd-niveaux-icone{display:none}
+/* Lecture de l'emprise (D-GD-40) : synthèse de la vue en bas à gauche (au-dessus de la mini-carte si elle est affichée,
+   à droite du panneau Données s'il est ouvert) et zoom courant affiché en permanence. */
+.geodata-page .gd-synthese{position:absolute;left:10px;bottom:34px;width:300px;max-height:min(46%,420px);overflow:auto;z-index:4;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;padding:8px 10px;box-shadow:0 4px 14px rgba(23,59,67,.12);font-size:.86rem}
+.geodata-page .gd-synthese.gd-synthese-haute{bottom:184px;max-height:min(40%,360px)}
+.geodata-page .gd-synthese.gd-synthese-decalee{left:380px}
+.geodata-page .gd-synthese h2{font-size:.95rem;margin:0}
+.geodata-page .gd-synthese li{display:flex;flex-direction:column;gap:2px;padding:4px 0;border-bottom:1px solid var(--gd-ligne)}
+.geodata-page .gd-synthese li>span{display:flex;flex-wrap:wrap;gap:0 .3em}
+.geodata-page .gd-synthese-stats{margin:2px 0 0}
+.geodata-page .gd-synthese-stats dt{font-weight:600}
+.geodata-page .gd-synthese-stats dd{margin:0;display:flex;flex-wrap:wrap;gap:0 .35em}
+.geodata-page .gd-zoom-affiche{position:absolute;left:10px;bottom:6px;margin:0;z-index:3;background:rgba(255,255,255,.9);border:1px solid var(--gd-ligne);border-radius:6px;padding:1px 8px;font-size:.78rem;pointer-events:none}
+@media (max-width:760px){
+  .geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{left:10px;right:10px;width:auto;bottom:34px;max-height:40%}
+  .geodata-page .gd-synthese.gd-synthese-haute{bottom:134px}
+}
 /* Tableau croisé Milieu × Sexe de la fiche (D-GD-39) : tient dans la largeur, couleur = repère de catégorie seulement. */
 .geodata-page .gd-croise-bloc{overflow-x:visible}
 .geodata-page .gd-croise{table-layout:auto}

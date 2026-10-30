@@ -122,6 +122,9 @@ export const api = {
     return appeler<{ page: number; taille: number; total: number; lignes: LigneTable[] }>(`/couches/${encodeURIComponent(id)}/table?${q}`);
   },
   codesFiltres: (id: string, f: { propriete: string; operateur: "egal" | "contient"; valeur: string }) => appeler<{ codes: string[] }>(`/couches/${encodeURIComponent(id)}/codes?${new URLSearchParams(f)}`),
+  /** Lecture de l'emprise (D-GD-40) : codes des objets qui recoupent la vue et nombre total d'objets de la couche. */
+  vue: (id: string, emprise: readonly [number, number, number, number], signal?: AbortSignal) =>
+    appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?bbox=${emprise.map((v) => v.toFixed(6)).join(",")}`, signal ? { signal } : {}),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
@@ -157,8 +160,8 @@ export const api = {
   exporter: (carteId: string, revisionAttendue: number, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, revisionAttendue, analyseIds }),
 };
 
-/** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker). */
-export const adresseTuiles = (coucheId: string) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
+/** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker) ; points regroupés en grappes (D-GD-40). */
+export const adresseTuiles = (coucheId: string, regrouper = false) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}${regrouper ? "?regrouper=1" : ""}`;
 
 /** Adresse des points d'étiquette d'une couche (lot C, D-GD-24), lus seulement quand ses libellés sont affichés. */
 export const adresseEtiquettes = (coucheId: string) => `${window.location.origin}${RACINE_API}/etiquettes/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
