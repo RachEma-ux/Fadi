@@ -70,8 +70,8 @@ objets restreints au territoire de geoBoundaries MAR ADM1, GeoJSON déterministe
 fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import, aucun téléchargement en production). Une couche
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
-Depuis D-GD-44, les administrations, hôpitaux et cliniques et gares d'OpenStreetMap ne sont plus livrés : la source
-officielle du MTNRA les remplace (retrait déclaré, aucun doublon entre couches).
+Depuis D-GD-44, les administrations, hôpitaux et cliniques et gares d'OpenStreetMap ne sont plus des couches propres : ils
+sont fusionnés avec le MTNRA dans la base des services publics (voir plus bas), sans aucun objet en double.
 
 ## Catégories du catalogue et disposition (D-GD-14)
 
@@ -131,21 +131,27 @@ d'enregistrement de la carte est la pastille de l'icône Enregistrer. Données, 
   destinataire ne voit que les couches qu'il peut déjà consulter.
 - **Zoom** affiché en permanence en bas à gauche de la carte.
 
-## Administrations et services publics du MTNRA (D-GD-42)
+## Services publics : MTNRA et OpenStreetMap fusionnés (D-GD-42, D-GD-44)
 
-Source : « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma »
-(Ministère de la Transition numérique et de la Réforme de l'Administration, data.gov.ma, données de mai 2022, ODbL),
-fichier `donnees-geoportail-open-data-2022.xlsx` (SHA-256 `7d1a4d30…a6f920`, 17 499 lignes, 17 473 points). La source
-n'a ni type ni région et dépasse la borne de 5 000 objets d'une couche : elle est livrée en **12 couches, une par région
-du RGPH 2024** (`mtnra-services-publics-2022-<région>`, catégorie « Équipements et services »). Rattachement d'un point
-(propriété `rattachement`) : `contour` (dans le contour régional livré), sinon `province-hcp` (province publiée = province
-du RGPH de même nom) ou `province-source` (région de tous les points de la même province situés dans un contour) ;
-22 lignes sans point lisible et 4 lignes strictement identiques à une ligne précédente sont écartées et listées dans les fiches ; 16 paires de même nom au même point, aux autres champs différents, sont gardées et marquées `doublon_probable` (aucun choix entre elles). Champs repris tels que publiés (français et
-arabe), jamais corrigés. Régénération (fichier hors dépôt, empreinte contrôlée ; une copie réenregistrée par un tableur
-est refusée) :
+Sources :
+- « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma » (Ministère de la
+  Transition numérique et de la Réforme de l'Administration, data.gov.ma, données de mai 2022, ODbL), fichier
+  `donnees-geoportail-open-data-2022.xlsx` (SHA-256 `7d1a4d30…a6f920`, 17 499 lignes, 17 473 points retenus) ;
+- extraits OpenStreetMap « administrations », « hôpitaux et cliniques » et « gares » (2 495 objets, ODbL).
+
+**Une seule base, sans doublon** : 19 797 objets en 13 couches `services-publics-<région>` (Casablanca-Settat découpée
+par province sous la borne de 5 000 objets), catégorie « Équipements et services ». Propriété `source` : `mtnra`,
+`mtnra+osm` (objet OSM apparié et fusionné dans le point du MTNRA, dont les attributs priment, référence `osm`) ou
+`osm` (objet ajouté). Règle d'appariement : moins de 150 m, même famille, même échelon, natures compatibles, au moins la
+moitié des mots distinctifs en commun, ou nom identique. Un objet à plusieurs candidats est gardé et marqué
+`doublon_probable`. Dans la source MTNRA, 22 lignes sans point lisible et 4 lignes strictement identiques à une précédente
+sont écartées, et 16 paires de même nom au même point sont gardées et marquées `doublon_probable`. Le rattachement est
+noté sur chaque objet (`rattachement`), avec le rapprochement provincial du RGPH (`province_hcp`, `concordance`) pour les
+objets du MTNRA. Champs tels que publiés, jamais corrigés. Régénération (fichier MTNRA hors dépôt, empreinte contrôlée ;
+une copie réenregistrée par un tableur est refusée) :
 
 ```sh
-python3 -I scripts/geodata/preparer_geoportail.py --excel donnees-geoportail-open-data-2022.xlsx
+python3 -I scripts/geodata/preparer_services_publics.py --excel donnees-geoportail-open-data-2022.xlsx
 ```
 
 Chaque point porte aussi son rapprochement avec le RGPH, sans correction : `province_hcp` (province du RGPH de même nom)

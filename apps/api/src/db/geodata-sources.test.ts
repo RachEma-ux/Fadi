@@ -77,7 +77,7 @@ describe("fiches de source GeoData livrées", () => {
 
   it("extraits OpenStreetMap sans couche propre (D-GD-18) : fiche consignée, empreinte vérifiée, aucune fiche importable", () => {
     const extraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "osm-extraits.json"), "utf8")) as Record<string, FicheSource>;
-    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"]);
+    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-administrations", "osm-mar-arrondissements", "osm-mar-communes", "osm-mar-etablissements-sante", "osm-mar-gares", "osm-mar-villes"]);
     for (const [cle, f] of Object.entries(extraits)) {
       expect(f.cle).toBe(cle);
       expect(fiches).not.toContain(`${cle}.json`);
@@ -167,27 +167,38 @@ describe("fiches de source GeoData livrées", () => {
     }
   }, 60_000);
 
-  it("services publics du MTNRA (D-GD-42) : une couche par région du RGPH, chaque ligne de la source une seule fois, rattachement déclaré", () => {
-    const mtnra = fiches.filter((f) => f.startsWith("mtnra-services-publics-2022-"));
-    expect(mtnra).toHaveLength(12);
+  it("services publics (D-GD-42, D-GD-44) : MTNRA et OpenStreetMap fusionnés, chaque ligne et chaque objet OSM une seule fois", () => {
+    const couches = fiches.filter((f) => f.startsWith("services-publics-"));
+    expect(couches).toHaveLength(13);
+    expect(fiches.some((f) => f.startsWith("mtnra-services-publics-"))).toBe(false);
     const lignes: number[] = [];
-    for (const nom of mtnra) {
+    const osmVus: string[] = [];
+    for (const nom of couches) {
       const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
       expect(fiche.theme).toBe("equipements");
       expect(fiche.version.licence).toContain("ODbL");
+      expect(fiche.version.attribution).toContain("OpenStreetMap");
       expect(fiche.description).toContain("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
       // Fichier d'origine archivé tel quel (D-GD-29) : celui publié sur data.gov.ma.
       const origine = (fiche.version as unknown as { origine: { fichier: string; empreinte: string } }).origine;
       expect(origine.empreinte).toBe("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
       expect(createHash("sha256").update(readFileSync(join(DOSSIER, origine.fichier))).digest("hex")).toBe(origine.empreinte);
       const fc = JSON.parse(readFileSync(join(DOSSIER, fiche.version.fichier!), "utf8")) as { features: { properties: Record<string, unknown>; geometry: { type: string } }[] };
+      expect(fc.features.length).toBeLessThanOrEqual(OBJETS_PAR_COUCHE);
       for (const f of fc.features) {
+        const p = f.properties;
         expect(f.geometry.type).toBe("Point");
-        expect(f.properties["code"]).toBe(`l${String(f.properties["ligne"]).padStart(5, "0")}`);
-        expect(["contour", "province-hcp", "province-source"]).toContain(f.properties["rattachement"]);
-        expect(["concorde", "discorde", "non-appariee"]).toContain(f.properties["concordance"]);
-        expect(f.properties["concordance"] === "non-appariee").toBe(f.properties["province_hcp"] === undefined);
-        lignes.push(f.properties["ligne"] as number);
+        expect(["mtnra", "mtnra+osm", "osm"]).toContain(p["source"]);
+        if (p["source"] !== "mtnra") osmVus.push(...String(p["osm"]).split(", "));
+        if (p["source"] === "osm") {
+          expect(["contour", "plus-proche-contour"]).toContain(p["rattachement"]);
+          continue;
+        }
+        expect(p["code"]).toBe(`l${String(p["ligne"]).padStart(5, "0")}`);
+        expect(["contour", "province-hcp", "province-source"]).toContain(p["rattachement"]);
+        expect(["concorde", "discorde", "non-appariee"]).toContain(p["concordance"]);
+        expect(p["concordance"] === "non-appariee").toBe(p["province_hcp"] === undefined);
+        lignes.push(p["ligne"] as number);
       }
     }
     // 17 499 lignes de données dans la source : 22 sans point lisible et 4 strictement identiques à une ligne précédente
@@ -195,7 +206,11 @@ describe("fiches de source GeoData livrées", () => {
     expect(lignes.length).toBe(17_473);
     expect(lignes).not.toContain(1096);
     expect(new Set(lignes).size).toBe(lignes.length);
-  });
+    // Chaque objet des trois extraits OSM est présent exactement une fois : ajouté, ou fusionné dans un point du MTNRA.
+    const extraits = ["administrations", "etablissements-sante", "gares"].flatMap((k) =>
+      (JSON.parse(readFileSync(join(DOSSIER, "donnees", `osm-mar-${k}.geojson`), "utf8")) as { features: { properties: { osm: string } }[] }).features.map((f) => f.properties.osm));
+    expect(osmVus.sort()).toEqual(extraits.sort());
+  }, 60_000);
 
   it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars)", () => {
     const sha = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");

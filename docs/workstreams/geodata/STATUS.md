@@ -113,7 +113,7 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   7/7 ; recette `geodata.mjs` sur PostGIS 16 local : 215 contrôles conformes (6 nouveaux) ; test API sur base
   (`geodata.test.ts`, cas étendu) en CI seulement.
 - Services publics du MTNRA (D-GD-42, branche `ccr-202174a8-jkf2k9`) : `scripts/geodata/preparer_geoportail.py`
-  (empreinte de la source contrôlée), 12 fiches `mtnra-services-publics-2022-*` et leurs GeoJSON ; 17 473 points
+  (empreinte de la source contrôlée), fiches régionales et leurs GeoJSON (fusionnées depuis avec OSM, voir D-GD-44) ; 17 473 points
   (16 753 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point et 4 lignes strictement identiques à une autre écartées, 16 paires « même nom, même point » marquées `doublon_probable`. Test
   `geodata-sources.test.ts` (validation de chaque fiche + cas MTNRA). Import réel sur PostGIS 16 local
   (`geodata-reference.ts --livraison`) : Casablanca-Settat 4 670 objets, Souss-Massa 1 017, publiés.
@@ -124,9 +124,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   PostGIS 16 local : 33 189 douars, tous avec compléments, secret statistique gardé vide. Suite complète : 1 111 tests
   API et 1 326 tests web réussis ; les 17 fichiers sur base attestée (DB-3) ne tournent qu'en CI ; recette
   `geodata.mjs` non rejouée localement.
-- Priorité MTNRA (D-GD-44) : 3 couches OSM retirées par `retraits-sources.json` (remplaçantes en liste, retrait seulement
-  si les 12 couches MTNRA sont publiées) ; vérifié sur PostGIS 16 local : ancienne version des gares OSM importée puis
-  `--fiche toutes --livraison` → 12 couches MTNRA publiées, gares OSM « retirée » avec son motif.
+- Services publics fusionnés (D-GD-44) : `preparer_services_publics.py` (renommé depuis `preparer_geoportail.py`) fusionne
+  le MTNRA et les 3 extraits OSM (passés en `osm-extraits.json`) : 171 objets OSM fusionnés, 30 marqués
+  `doublon_probable`, 2 324 ajoutés (93 par contour le plus proche) → 19 797 objets, 13 couches. Paires relues à la
+  main ; test « chaque objet OSM exactement une fois ». Vérifié sur PostGIS 16 local (`--fiche toutes --livraison` après
+  import des anciennes couches OSM) : 13 couches publiées (19 797 objets), 3 couches OSM « retirée ».
 - Alignement des contours (D-GD-43, même branche) : contrôle indépendant des fichiers livrés (0 sommet hors des
   communes, parent = union exacte, construction reproductible à l'octet) ; `construire_niveaux.py` marque les
   contours partiels (13 provinces, 8 régions) et écrit la mention de provenance ; alerte de version antérieure pour

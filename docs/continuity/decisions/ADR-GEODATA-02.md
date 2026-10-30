@@ -521,14 +521,24 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      5. Contrôles en CI : ensembles de codes (12 régions, 75 provinces), sommets partagés, marques de contour partiel.
         Captures avant / après (Tétouan) dans `captures/d-gd-43/`.
 
-   - D-GD-44 (30 octobre 2026) — **priorité de la source officielle du MTNRA, aucun doublon entre couches** (accord du
-     maître d'ouvrage) : les couches OpenStreetMap `osm-mar-administrations`, `osm-mar-etablissements-sante` et
-     `osm-mar-gares`, dont le sujet est couvert par les administrations et services publics du MTNRA (D-GD-42), sont
-     retirées du catalogue par retrait déclaré. Mesure préalable : 602 / 1 575, 264 / 763 et 25 / 157 de leurs points
-     avaient un point du MTNRA à moins de 50 m. Une source peut désormais être remplacée par plusieurs (`remplacePar` en
-     liste) : elle n'est retirée qu'une fois les 12 couches régionales publiées. Les anciennes versions restent en base
-     (cartes enregistrées : « Version retirée » et son motif), leurs fichiers restent archivés ; `extraire_sources.py`
-     ne les produit plus.
+   - D-GD-44 (30 octobre 2026) — **base des services publics fusionnée MTNRA + OpenStreetMap, aucun doublon** (décision du
+     maître d'ouvrage, qui remplace la première idée d'un simple retrait des couches OSM) :
+     1. Les extraits OSM « administrations », « hôpitaux et cliniques » et « gares » (2 495 objets) ne sont plus des couches :
+        ce sont des entrées (`donnees/osm-extraits.json`) de la base `services-publics-*`, préparée par
+        `scripts/geodata/preparer_services_publics.py` avec les 17 473 points du MTNRA.
+     2. Appariement explicite, jamais deviné : à moins de 150 m, même famille (gare, santé, administration), même échelon
+        (régional, provincial, central), natures de service compatibles, au moins la moitié des mots distinctifs en commun
+        (Jaccard ≥ 0,5, hors noms de lieux, mots génériques et numéros), ou nom français ou arabe identique. Avec un seul
+        candidat, l'objet OSM est fusionné dans le point du MTNRA, dont les attributs priment (`source` = `mtnra+osm`,
+        référence `osm`) : 171 cas. Avec plusieurs candidats, il est gardé et marqué `doublon_probable` : 30 cas. Sans
+        candidat, il est ajouté (`source` = `osm`) : 2 324 cas, dont 93 rattachés au contour régional le plus proche (lacunes
+        des communes sans contour, distance consignée). Les 134 premières paires ont été relues à la main : les règles de
+        nature, d'échelon et de numéro ont été ajoutées pour écarter les faux appariements relevés.
+     3. 19 797 objets en 13 couches : une par région, Casablanca-Settat découpée par province (Préfecture de Casablanca ;
+        autres provinces) sous la borne de 5 000 objets.
+     4. Les couches OSM d'origine sont retirées du catalogue par retrait déclaré, à plusieurs remplaçantes (`remplacePar` en
+        liste : retrait seulement une fois les 13 couches publiées). Leurs objets sont tous dans la base fusionnée (test :
+        chaque objet OSM présent exactement une fois).
 
 ## Conséquences
 
