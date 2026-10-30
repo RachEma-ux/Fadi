@@ -99,7 +99,7 @@ export function PageGeoData() {
   const [zonesLues, setZonesLues] = useState(false);
   const [zoneFiltre, setZoneFiltre] = useState<string | null>(null);
   const derniereZone = useRef<string | null>(null);
-  const [codesZone, setCodesZone] = useState<{ zone: string; couches: Map<string, { codes: string[]; tronque: boolean }> } | null>(null);
+  const [codesZone, setCodesZone] = useState<{ zone: string; couches: Map<string, { codes: string[]; tronque: boolean } | { erreur: string }> } | null>(null);
   const [analysesIds, setAnalysesIds] = useState<string[]>([]);
   const [webgl] = useState(webglDisponible);
   const [erreurCarte, setErreurCarte] = useState<string | null>(webgl ? null : "WebGL n'est pas disponible dans ce navigateur : la carte ne peut pas s'afficher. La recherche, le catalogue, la table et les fiches restent utilisables.");
@@ -325,16 +325,26 @@ export function PageGeoData() {
     for (const id of vectorielles) {
       api.codesZone(id, zone)
         .then((r) => setCodesZone((c) => (c?.zone === zone ? { zone, couches: new Map(c.couches).set(id, { codes: r.codes, tronque: r.tronque }) } : c)))
-        .catch(() => undefined);
+        .catch((e: unknown) => setCodesZone((c) => (c?.zone === zone ? { zone, couches: new Map(c.couches).set(id, { erreur: message(e) }) } : c)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneActive?.id, cleCouchesVectorielles]);
   const filtresAffiches = useMemo(() => {
     const base = combinerFiltres(filtres, filtresNiveaux(chemin, couchesDuChemin));
-    if (!zoneActive || codesZone?.zone !== zoneActive.id) return base;
-    return combinerFiltres(base, new Map([...codesZone.couches].map(([id, v]) => [id, v.codes])));
-  }, [filtres, chemin, couchesDuChemin, zoneActive, codesZone]);
-  const zonePartielle = !!codesZone && [...codesZone.couches.values()].some((v) => v.tronque);
+    if (!zoneActive) return base;
+    // Une couche dont les codes de la zone ne sont pas (encore) connus — calcul en cours ou échec — ne montre aucun objet :
+    // jamais d'objet hors zone présenté comme filtré. La puce dit le calcul en cours ou l'échec.
+    const parZone = new Map<string, string[]>();
+    for (const id of vectorielles) {
+      const v = codesZone?.zone === zoneActive.id ? codesZone.couches.get(id) : undefined;
+      parZone.set(id, v && "codes" in v ? v.codes : []);
+    }
+    return combinerFiltres(base, parZone);
+  }, [filtres, chemin, couchesDuChemin, zoneActive, codesZone, vectorielles]);
+  const etatsZone = zoneActive ? [...vectorielles].map((id) => (codesZone?.zone === zoneActive.id ? codesZone.couches.get(id) : undefined)) : [];
+  const zonePartielle = etatsZone.some((v) => !!v && "codes" in v && v.tronque);
+  const zoneEnCalcul = etatsZone.some((v) => !v);
+  const zoneEchecs = etatsZone.filter((v) => !!v && "erreur" in v).length;
   const filtrerZone = (id: string | null) => {
     if (id) derniereZone.current = id;
     setZoneFiltre(id);
@@ -1040,6 +1050,8 @@ export function PageGeoData() {
           {syntheseOuverte && !erreurCarte && <SyntheseVue lignes={lignesSynthese} zoom={composition.camera.zoom} zone={zoneActive?.nom ?? null} decalee={panneauOuvert} haute={miniCarte} onFermer={basculerSynthese} />}
           {zoneActive && <div className="gd-puce-zone" role="status" data-gd-puce-zone={zoneActive.id}>
             <span>Zone d'étude :</span> <span translate="no">{zoneActive.nom}</span>{zonePartielle && <span> (partiel)</span>}
+            {zoneEnCalcul && <span data-gd-zone-calcul> (calcul…)</span>}
+            {zoneEchecs > 0 && <span className="gd-alerte" data-gd-zone-echec><span>— filtre impossible, objets masqués pour</span> <span>{zoneEchecs}</span> <span>couche(s)</span></span>}
             <button type="button" onClick={() => filtrerZone(null)} aria-label="Retirer le filtre de zone (Alt+Z)" title="Retirer le filtre de zone (Alt+Z)" aria-keyshortcuts="Alt+Z" data-gd-retirer-zone>×</button>
           </div>}
           {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}

@@ -14343,5 +14343,8 @@
 "Aucune zone d'étude : tracez-en une avec « Tracer une zone d'étude ».": "No study area: draw one with “Draw a study area”.",
 "Zone d'étude :": "Study area:",
 "(partiel)": "(partial)",
-"Retirer le filtre de zone (Alt+Z)": "Remove the area filter (Alt+Z)"
+"Retirer le filtre de zone (Alt+Z)": "Remove the area filter (Alt+Z)",
+"(calcul…)": "(computing…)",
+"— filtre impossible, objets masqués pour": "— filter unavailable, features hidden for",
+"couche(s)": "layer(s)"
 }
