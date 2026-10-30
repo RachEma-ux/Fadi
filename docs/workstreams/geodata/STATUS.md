@@ -99,7 +99,7 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   `panneaux/SyntheseVue.tsx`, trois boutons de la barre d'outils (Alt+V, Alt+G, Alt+K ; icônes et touches distinctes,
   test `barre-outils.test.ts`), case « Regrouper les points », zoom affiché, état écrit dans l'adresse et relu à
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
-  isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` : RECETTE_RESULTAT. Test API sur base
+  isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
