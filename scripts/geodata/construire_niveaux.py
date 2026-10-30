@@ -42,6 +42,9 @@ RAPPORT = os.path.join(RACINE, "docs", "workstreams", "geodata", "CONTOURS-NIVEA
 MAPSHAPER = "npx --yes -p mapshaper@0.7.98 mapshaper"
 CLES = {"communes": "hcp-rgph2024-population-communes", "provinces": "hcp-rgph2024-population-provinces", "regions": "hcp-rgph2024-population-regions"}
 DECISION = "D-GD-33"
+# Mention de provenance des contours (D-GD-43) : ce ne sont pas des contours officiels du HCP.
+PROVENANCE = ("géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; "
+              "ce ne sont pas des contours officiels du HCP")
 
 
 def lire_json(chemin):
@@ -180,15 +183,17 @@ def mettre_a_jour_fiche(sortie, niveau, octets, fi_osm, intervalle, info, compte
                f"(mapshaper, intervalle {intervalle} m, petites formes conservées) et nettoyée")
     if niveau == "communes":
         fi["version"]["libelle"] = "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; " + methode
-        fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; contours OpenStreetMap "
-                                      f"simplifiés une seule fois sur la topologie partagée des trois niveaux ({DECISION}, intervalle {intervalle} m)")
+        fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; " + PROVENANCE
+                                      + f" ; contours OpenStreetMap simplifiés une seule fois sur la topologie partagée des trois niveaux ({DECISION}, intervalle {intervalle} m)")
     else:
         unite = "provinces / préfectures" if niveau == "provinces" else "régions"
         base = "des communes de même code HCP" if niveau == "provinces" else "des provinces et préfectures de même code HCP (elles-mêmes union des communes)"
         fi["version"]["libelle"] = ("RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; "
                                     f"contours des {unite} construits par union {base}, sur " + methode)
-        fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; contours construits par union "
-                                      f"{base} ({DECISION}) : une frontière est la même à tous les niveaux ; une commune HCP sans contour laisse une lacune signalée, jamais comblée")
+        fi["version"]["precision"] = ("Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; " + PROVENANCE
+                                      + f" ; contours construits par union {base} ({DECISION}) : une frontière est la même à tous les niveaux ; une commune HCP "
+                                      "sans contour laisse une lacune signalée, jamais comblée, et son contour parent est marqué partiel "
+                                      "(propriétés contour_complet et communes_sans_contour)")
         fi["version"]["licence"] = "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : " + fi_osm["version"]["licence"]
         fi["version"]["attribution"] = "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; " + fi_osm["version"]["attribution"]
         cond = fi["version"]["conditions"]
@@ -199,7 +204,7 @@ def mettre_a_jour_fiche(sortie, niveau, octets, fi_osm, intervalle, info, compte
             desc = desc.replace(ancien, f"sur des contours construits par union {base} (OpenStreetMap, {DECISION}).")
         fi["description"] = desc
         fi["couche"]["description"] = f"Valeurs RGPH 2024 sur des contours construits par union {base} ; code = code géographique HCP."
-        fi["couche"]["proprietesExposees"] = ["code", "nom", "contour", "appariement"] + (["region"] if niveau == "provinces" else [])
+        fi["couche"]["proprietesExposees"] = ["code", "nom", "contour", "appariement"] + (["region"] if niveau == "provinces" else []) + ["contour_complet", "communes_sans_contour"]
     if niveau == "communes":
         fi["couche"]["proprietesExposees"] = ["code", "nom", "contour", "nom_contour", "appariement", "province", "region"]
     fi["version"]["empreinte"] = hashlib.sha256(octets).hexdigest()
@@ -244,22 +249,32 @@ def construire(sortie=FICHES, intervalle=20, commande=MAPSHAPER, rapport=RAPPORT
     par_province = {}
     for f in communes:
         par_province.setdefault(f["properties"]["province"], []).append(f["properties"]["code"])
-    provinces = [{"type": "Feature", "properties": {
-        "code": f["properties"]["province"], "nom": f["properties"]["province_nom"], "contour": f"union:{len(par_province[f['properties']['province']])} communes",
-        "appariement": "union des communes de même code HCP (" + DECISION + ")", "region": f["properties"]["region"],
-    }, "geometry": f["geometry"]} for f in brut["provinces"]["features"] if f.get("geometry")]
-    regions = [{"type": "Feature", "properties": {
-        "code": f["properties"]["region"], "nom": f["properties"]["region_nom"],
-        "contour": f"union:{sum(1 for p in provinces if p['properties']['region'] == f['properties']['region'])} provinces",
-        "appariement": "union des provinces et préfectures de même code HCP (" + DECISION + ")",
-    }, "geometry": f["geometry"]} for f in brut["regions"]["features"] if f.get("geometry")]
-    niveaux = {"communes": collection(communes), "provinces": collection(provinces), "regions": collection(regions)}
-    controles = controler(niveaux)
-    fi_osm = info["osm"]
+    # Communes HCP sans contour, par province : un niveau supérieur construit sans elles est **partiel** (contour_complet
+    # faux, nombre de communes manquantes) ; il n'est jamais présenté comme un contour complet.
     manquantes_par_province = {}
     for l in info["sans_contour"]:
         p = next((p for p in sorted(info["provinces"], key=len, reverse=True) if l["code_hcp"].startswith(p)), "?")
         manquantes_par_province.setdefault(p, []).append(l)
+    provinces = [{"type": "Feature", "properties": {
+        "code": f["properties"]["province"], "nom": f["properties"]["province_nom"], "contour": f"union:{len(par_province[f['properties']['province']])} communes",
+        "appariement": "union des communes de même code HCP (" + DECISION + ")", "region": f["properties"]["region"],
+        "communes_sans_contour": len(manquantes_par_province.get(f["properties"]["province"], [])),
+        "contour_complet": not manquantes_par_province.get(f["properties"]["province"]),
+    }, "geometry": f["geometry"]} for f in brut["provinces"]["features"] if f.get("geometry")]
+    manquantes_par_region = {}
+    for p in provinces:
+        r = p["properties"]["region"]
+        manquantes_par_region[r] = manquantes_par_region.get(r, 0) + p["properties"]["communes_sans_contour"]
+    regions = [{"type": "Feature", "properties": {
+        "code": f["properties"]["region"], "nom": f["properties"]["region_nom"],
+        "contour": f"union:{sum(1 for p in provinces if p['properties']['region'] == f['properties']['region'])} provinces",
+        "appariement": "union des provinces et préfectures de même code HCP (" + DECISION + ")",
+        "communes_sans_contour": manquantes_par_region.get(f["properties"]["region"], 0),
+        "contour_complet": manquantes_par_region.get(f["properties"]["region"], 0) == 0,
+    }, "geometry": f["geometry"]} for f in brut["regions"]["features"] if f.get("geometry")]
+    niveaux = {"communes": collection(communes), "provinces": collection(provinces), "regions": collection(regions)}
+    controles = controler(niveaux)
+    fi_osm = info["osm"]
     for n, fc in niveaux.items():
         octets = octets_geojson(fc)
         with open(os.path.join(sortie, "donnees", f"{CLES[n]}.geojson"), "wb") as f:
@@ -296,7 +311,9 @@ def ecrire_rapport(chemin, info, c, sommets_avant, intervalle, journal, manquant
     L.append("## Comptes\n")
     L.append(f"- Régions construites : {c['regions']['entites']} / {len(info['regions'])} ; provinces et préfectures : {c['provinces']['entites']} / {len(info['provinces'])} ; "
              f"communes livrées : {c['communes']['entites']} (rattachées à un code HCP).")
-    L.append(f"- Communes HCP sans contour (lacune du niveau supérieur, signalée, jamais comblée) : {len(info['sans_contour'])}.")
+    L.append(f"- Communes HCP sans contour (lacune du niveau supérieur, signalée, jamais comblée ; le parent est marqué partiel : `contour_complet` faux, `communes_sans_contour` > 0) : {len(info['sans_contour'])}.")
+    L.append(f"- Contours partiels : {len(manquantes)} provinces / préfectures, "
+             f"{len({p[:-3] for p in manquantes})} régions ; tous les autres sont complets (`contour_complet` vrai).")
     for p, ls in sorted(manquantes.items()):
         L.append(f"  - {info['provinces'].get(p, p)} ({p}) : " + ", ".join(f"{l['nom_hcp']} ({l['code_hcp']})" for l in ls))
     L.append(f"- Contours OSM sans unité HCP, écartés (entièrement inclus dans une commune rattachée, aucune valeur) : {len(info['ecartes'])} — "

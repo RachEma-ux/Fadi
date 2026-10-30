@@ -124,6 +124,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   PostGIS 16 local : 33 189 douars, tous avec compléments, secret statistique gardé vide. Suite complète : 1 111 tests
   API et 1 326 tests web réussis ; les 17 fichiers sur base attestée (DB-3) ne tournent qu'en CI ; recette
   `geodata.mjs` non rejouée localement.
+- Alignement des contours (D-GD-43, même branche) : contrôle indépendant des fichiers livrés (0 sommet hors des
+  communes, parent = union exacte, construction reproductible à l'octet) ; `construire_niveaux.py` marque les
+  contours partiels (13 provinces, 8 régions) et écrit la mention de provenance ; alerte de version antérieure pour
+  une couche de limites (`consultation.tsx`) ; test « contours des niveaux » ; captures avant / après
+  (`captures/d-gd-43/`, `scripts/geodata/rendre_contours.py`). Préproduction non consultée (aucun accès).
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
   une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40

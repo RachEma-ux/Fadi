@@ -125,6 +125,48 @@ describe("fiches de source GeoData livrées", () => {
     expect(fautes.slice(0, 5)).toEqual([]);
   }, 30_000);
 
+  it("contours des niveaux (D-GD-33, D-GD-43) : codes attendus, frontières partagées sommet pour sommet, contours partiels déclarés", () => {
+    type Fc = { features: { properties: Record<string, unknown>; geometry: { type: string; coordinates: unknown } }[] };
+    const lire = (n: string) => JSON.parse(readFileSync(join(DOSSIER, "donnees", `hcp-rgph2024-population-${n}.geojson`), "utf8")) as Fc;
+    const [communes, provinces, regions] = [lire("communes"), lire("provinces"), lire("regions")];
+    const attendus = (n: string) => readFileSync(join(DOSSIER, "correspondances", `hcp-rgph2024-${n}.csv`), "utf8").split("\n").slice(1).filter(Boolean).map((l) => l.split(",")[0]!).sort();
+    const codes = (fc: Fc) => fc.features.map((f) => String(f.properties["code"])).sort();
+    // Ensembles de codes comparés (pas seulement les nombres) : 12 régions, 75 provinces et préfectures.
+    expect(codes(regions)).toEqual(attendus("regions"));
+    expect(codes(provinces)).toEqual(attendus("provinces"));
+    expect(codes(regions)).toHaveLength(12);
+    expect(codes(provinces)).toHaveLength(75);
+    const codesProvinces = new Set(codes(provinces));
+    const regionDe = new Map(provinces.features.map((f) => [String(f.properties["code"]), String(f.properties["region"])]));
+    for (const c of communes.features) {
+      expect(codesProvinces.has(String(c.properties["province"]))).toBe(true);
+      expect(regionDe.get(String(c.properties["province"]))).toBe(String(c.properties["region"]));
+    }
+    // Chaque sommet d'une province ou d'une région est un sommet d'une commune : aucune frontière simplifiée à part.
+    const cles = (g: unknown, acc: Set<string>): Set<string> => {
+      if (Array.isArray(g) && typeof g[0] === "number") acc.add(`${g[0]},${g[1]}`);
+      else if (Array.isArray(g)) for (const x of g) cles(x, acc);
+      return acc;
+    };
+    const sommetsCommunes = new Set<string>();
+    for (const f of communes.features) cles(f.geometry.coordinates, sommetsCommunes);
+    for (const fc of [provinces, regions]) {
+      const hors = fc.features.flatMap((f) => [...cles(f.geometry.coordinates, new Set())].filter((s) => !sommetsCommunes.has(s)));
+      expect(hors).toEqual([]);
+    }
+    // Un parent construit sans toutes ses communes est marqué partiel, jamais présenté comme complet.
+    const manquantesRegion = new Map<string, number>();
+    for (const p of provinces.features) {
+      const n = p.properties["communes_sans_contour"] as number;
+      expect(p.properties["contour_complet"]).toBe(n === 0);
+      manquantesRegion.set(String(p.properties["region"]), (manquantesRegion.get(String(p.properties["region"])) ?? 0) + n);
+    }
+    for (const r of regions.features) {
+      expect(r.properties["communes_sans_contour"]).toBe(manquantesRegion.get(String(r.properties["code"])) ?? 0);
+      expect(r.properties["contour_complet"]).toBe(r.properties["communes_sans_contour"] === 0);
+    }
+  }, 60_000);
+
   it("services publics du MTNRA (D-GD-42) : une couche par région du RGPH, chaque ligne de la source une seule fois, rattachement déclaré", () => {
     const mtnra = fiches.filter((f) => f.startsWith("mtnra-services-publics-2022-"));
     expect(mtnra).toHaveLength(12);

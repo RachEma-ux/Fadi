@@ -12662,6 +12662,7 @@
 "Télécharger la fiche de sources": "Download the source sheet",
 "Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.": "A layer is no longer accessible: its tiles are refused by the server.",
 "Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.": "A more recent version of this source is published; the map keeps the saved version.",
+"Contours d'une version antérieure : leurs limites peuvent ne pas coïncider avec celles des autres niveaux administratifs. Retirez cette couche puis ajoutez-la depuis le Catalogue pour afficher la version publiée.": "Boundaries from an earlier version: their lines may not match those of the other administrative levels. Remove this layer, then add it again from the Catalogue to show the published version.",
 "Une version plus récente de la source est publiée.": "A more recent version of the source is published.",
 "Une zone d'étude est un polygone.": "A study zone is a polygon.",
 "Unité non appariée entre l'indicateur et les limites": "Unit not matched between the indicator and the boundaries",

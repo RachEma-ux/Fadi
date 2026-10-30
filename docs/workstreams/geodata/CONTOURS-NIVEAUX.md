@@ -1,6 +1,6 @@
 # Contours des niveaux administratifs construits à partir des communes (D-GD-33)
 
-Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-27 ; relancer le script régénère ce rapport.
+Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-30 ; relancer le script régénère ce rapport.
 
 ## Source
 
@@ -19,7 +19,8 @@ Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-27 ; relancer l
 ## Comptes
 
 - Régions construites : 12 / 12 ; provinces et préfectures : 75 / 75 ; communes livrées : 1487 (rattachées à un code HCP).
-- Communes HCP sans contour (lacune du niveau supérieur, signalée, jamais comblée) : 16.
+- Communes HCP sans contour (lacune du niveau supérieur, signalée, jamais comblée ; le parent est marqué partiel : `contour_complet` faux, `communes_sans_contour` > 0) : 16.
+- Contours partiels : 13 provinces / préfectures, 8 régions ; tous les autres sont complets (`contour_complet` vrai).
   - Province de Sidi Ifni (10473) : Commune de Mirleft (104730107)
   - Province d'Al Hoceima (1051) : Commune d'Al Hoceima (10510101)
   - Province de Tan-Tan (10521) : Commune de Chbika (105210505)
@@ -93,11 +94,11 @@ Généré par `scripts/geodata/construire_niveaux.py` le 2026-10-27 ; relancer l
 [simplify] Repaired 0 intersections; 2 intersections could not be repaired
 [clean] Removed 1 of 3 slivers using 290m width threshold
 [clean] Retained 1,487 of 1,487 features
-[o] Wrote /tmp/tmp75t6tm9_/communes.json
+[o] Wrote /tmp/tmp8gpi5fke/communes.json
 [filter] Retained 1,487 of 1,487 features
 [dissolve2] This command has been merged into -dissolve and is deprecated. Use -dissolve (or -dissolve no-repair for the legacy fast algorithm).
 [dissolve2] Dissolved 1,487 features into 75 features
-[o] Wrote /tmp/tmp75t6tm9_/provinces.json
+[o] Wrote /tmp/tmp8gpi5fke/provinces.json
 [dissolve2] Dissolved 75 features into 12 features
-[o] Wrote /tmp/tmp75t6tm9_/regions.json
+[o] Wrote /tmp/tmp8gpi5fke/regions.json
 ```

@@ -504,6 +504,21 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         contour, D-GD-33). L'exposition à un module « Concept Prix » n'est pas engagée : ce module n'existe pas dans le
         dépôt et attend une spécification du maître d'ouvrage.
 
+   - D-GD-43 (30 octobre 2026) — **alignement des contours région / province / commune** (proposition du maître
+     d'ouvrage) : `docs/workstreams/geodata/ALIGNEMENT-CONTOURS.md`.
+     1. Diagnostic : les fichiers livrés depuis D-GD-33 sont alignés. Contrôle indépendant : 0 sommet de province ou de
+        région hors des sommets des communes, parent = union exacte des enfants, construction reproductible à l'octet.
+        Le décalage constaté correspond aux contours geoBoundaries d'avant D-GD-33 ; une carte enregistrée qui garde ces
+        versions les affiche encore.
+     2. Un parent construit sans toutes ses communes est **partiel** : propriétés `contour_complet` et
+        `communes_sans_contour` (13 provinces, 8 régions), rapport et fiches.
+     3. Mention de provenance dans les trois fiches : « géométries dérivées des contours communaux OpenStreetMap,
+        agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ».
+     4. Une couche de limites administratives restée sur une version antérieure dans une carte affiche une alerte (et non
+        plus un avis discret) : le mélange de versions entre niveaux n'est jamais silencieux.
+     5. Contrôles en CI : ensembles de codes (12 régions, 75 provinces), sommets partagés, marques de contour partiel.
+        Captures avant / après (Tétouan) dans `captures/d-gd-43/`.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.
