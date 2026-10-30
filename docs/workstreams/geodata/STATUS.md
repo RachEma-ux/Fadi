@@ -113,11 +113,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   7/7 ; recette `geodata.mjs` sur PostGIS 16 local : 215 contrôles conformes (6 nouveaux) ; test API sur base
   (`geodata.test.ts`, cas étendu) en CI seulement.
 - Services publics du MTNRA (D-GD-42, branche `ccr-202174a8-jkf2k9`) : `scripts/geodata/preparer_geoportail.py`
-  (empreinte de la source contrôlée), 12 fiches `mtnra-services-publics-2022-*` et leurs GeoJSON ; 17 477 points
-  (16 757 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point écartées. Test
+  (empreinte de la source contrôlée), 12 fiches `mtnra-services-publics-2022-*` et leurs GeoJSON ; 17 473 points
+  (16 753 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point et 4 lignes strictement identiques à une autre écartées, 16 paires « même nom, même point » marquées `doublon_probable`. Test
   `geodata-sources.test.ts` (validation de chaque fiche + cas MTNRA). Import réel sur PostGIS 16 local
   (`geodata-reference.ts --livraison`) : Casablanca-Settat 4 670 objets, Souss-Massa 1 017, publiés.
-  Suite (suggestions du maître d'ouvrage) : `province_hcp` / `concordance` sur chaque point (17 360 / 4 / 113) ;
+  Suite (suggestions du maître d'ouvrage) : `province_hcp` / `concordance` sur chaque point (17 356 / 4 / 113) ;
   douars à 22 compléments (`douars_hcp.py`, deux feuilles jointes, utilisable seul), colonne
   `geodata_douars.complements`, API `/couches/:id/objets/:code` (`douars[].complements`), trois tableaux dans la fiche
   (libellés traduits dans `en.json`) ; originaux `.xlsx` archivés (`archive-fichiers.ts`, type ajouté). Import réel sur

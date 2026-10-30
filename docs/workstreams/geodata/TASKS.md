@@ -35,7 +35,7 @@
 - [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
 - [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).
 - [x] GEO-ZONE-FILTRE — Zone d'étude qui filtre carte, table et synthèse ; puce, Alt+Z, adresse ; tableau de bord signalé non filtré (D-GD-41).
-- [x] GEO-MTNRA-SERVICES — Administrations et services publics du MTNRA (data.gov.ma, 2022, ODbL) : 12 couches régionales, 17 477 points (D-GD-42).
+- [x] GEO-MTNRA-SERVICES — Administrations et services publics du MTNRA (data.gov.ma, 2022, ODbL) : 12 couches régionales, 17 473 points, doublons de la source écartés ou marqués (D-GD-42).
 - [x] GEO-DOUARS-COMPLEMENTS — Douars : nationalité, état civil, état matrimonial, type de logement, distances aux équipements, deux feuilles jointes par le code ; originaux archivés (D-GD-42).
 - [x] GEO-ALIGNEMENT-CONTOURS — Contours région / province / commune : diagnostic, contours partiels marqués, mention de provenance, alerte de version antérieure, contrôles en CI (D-GD-43, `ALIGNEMENT-CONTOURS.md`).
 - [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.

@@ -22,6 +22,10 @@ GeoData : module autonome de données géographiques (9ᵉ module de Fadi), dont
 - Aucun `projectId`, rôle ou contexte de projet dans le noyau (tests d'indépendance API et web, `scripts/frontieres.json`).
 - Une valeur absente n'est jamais zéro ; version publiée immuable ; droits par usage, un droit inconnu bloque.
 - Interface bilingue (D-163) : textes français traduits dans `en.json`.
+- Aucun doublon (remarque du maître d'ouvrage, 30 octobre 2026) : avant d'ajouter une donnée, une couche, une fiche, une
+  tâche ou un document, vérifier ce qui existe déjà et le compléter plutôt que le dupliquer. Une ligne répétée dans une
+  source n'est reprise qu'une fois ; un recouvrement entre sources distinctes est mesuré et signalé, jamais retiré
+  sans décision.
 
 ## Hypothèses et questions ouvertes
 

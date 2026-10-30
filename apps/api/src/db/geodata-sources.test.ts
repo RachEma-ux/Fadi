@@ -190,8 +190,10 @@ describe("fiches de source GeoData livrées", () => {
         lignes.push(f.properties["ligne"] as number);
       }
     }
-    // 17 499 lignes de données dans la source, dont 22 sans point lisible (écartées et listées dans les fiches).
-    expect(lignes.length).toBe(17_477);
+    // 17 499 lignes de données dans la source : 22 sans point lisible et 4 strictement identiques à une ligne précédente
+    // (écartées et listées dans les fiches) ; aucune ligne reprise deux fois.
+    expect(lignes.length).toBe(17_473);
+    expect(lignes).not.toContain(1096);
     expect(new Set(lignes).size).toBe(lignes.length);
   });
 

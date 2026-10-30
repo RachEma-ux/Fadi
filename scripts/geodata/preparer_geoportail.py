@@ -21,7 +21,10 @@ province-source) ; sinon il est écarté et compté dans la fiche. Rapprochement
 consigné sur chaque objet sans rien corriger : `province_hcp` (code de la province du RGPH de même nom que la province
 publiée, absent si aucune) et `concordance` (`concorde` : cette province est dans la région de la couche ; `discorde` :
 elle est dans une autre région ; `non-appariee` : aucune province du RGPH de ce nom). Le rapprochement par commune
-attend des contours communaux complets (D-GD-33). Le fichier d'origine est archivé tel quel
+attend des contours communaux complets (D-GD-33). Doublons de la source : une ligne strictement identique à une ligne
+précédente n'est pas reprise une seconde fois (écartée, listée dans la fiche) ; deux lignes de même nom au même point
+mais aux autres champs différents sont gardées (aucun choix entre elles) et se citent l'une l'autre
+(`doublon_probable`). Le fichier d'origine est archivé tel quel
 (`donnees/mtnra-services-publics-2022-origine.xlsx`, D-GD-29). Aucun point n'est déplacé. Chaque ligne garde son numéro de
 ligne dans la source (code `l<ligne>`) et ses champs tels que publiés (vides omis, aucun champ corrigé ; code postal lu
 en nombre écrit sans « .0 »).
@@ -141,12 +144,17 @@ def main():
         code_de_province_hcp.setdefault(nom_compare(f["properties"]["nom"]), set()).add(f["properties"]["code"])
     empreinte_provinces = sha256(open(os.path.join(FICHES, PROVINCES), "rb").read())
 
-    total, sans_point, hors_contour, points = 0, [], [], []
-    regions_de_province = {}
+    total, sans_point, hors_contour, points, doublons = 0, [], [], [], []
+    regions_de_province, deja, meme_lieu = {}, {}, {}
     for n, v in lire_source(a.excel):
         if not any(v):
             continue
         total += 1
+        if tuple(v) in deja:
+            doublons.append((n, deja[tuple(v)]))
+            continue
+        deja[tuple(v)] = n
+        meme_lieu.setdefault((v[0].casefold(), v[8]), []).append(n)
         m = POINT.match(v[8])
         if not m:
             sans_point.append(n)
@@ -170,6 +178,9 @@ def main():
                 hors_contour.append(n)
                 continue
         props = {"code": f"l{n:05d}", "ligne": n, "rattachement": rattachement}
+        autres = [m for m in meme_lieu.get((v[0].casefold(), v[8]), []) if m != n] if v[0] else []
+        if autres:
+            props["doublon_probable"] = ", ".join(f"l{m:05d}" for m in autres)
         codes_hcp = code_de_province_hcp.get(province, set())
         if len(codes_hcp) == 1:
             props["province_hcp"] = next(iter(codes_hcp))
@@ -182,13 +193,17 @@ def main():
     os.makedirs(os.path.join(a.sortie, "donnees"), exist_ok=True)
     with open(os.path.join(a.sortie, ORIGINE), "wb") as fh:
         fh.write(octets_source)
-    bilan = {"lignes": total, "sansPoint": sans_point, "horsContour": hors_contour, "couches": []}
+    bilan = {"lignes": total, "doublons": doublons, "sansPoint": sans_point, "horsContour": hors_contour, "couches": []}
     par_hcp = sum(1 for r in regions for o in r["objets"] if o["properties"]["rattachement"] == "province-hcp")
     par_source = sum(1 for r in regions for o in r["objets"] if o["properties"]["rattachement"] == "province-source")
     concordance = {k: sum(1 for r in regions for o in r["objets"] if o["properties"]["concordance"] == k) for k in ("concorde", "discorde", "non-appariee")}
     ecartes = (f"{par_hcp + par_source} points situés dans une lacune des contours rattachés par leur province publiée (propriété « rattachement » : "
                f"{par_hcp} « province-hcp » par le nom d'une province du RGPH, {PROVINCES}, SHA-256 {empreinte_provinces} ; "
                f"{par_source} « province-source ») ; "
+               f"{len(doublons)} lignes strictement identiques à une ligne précédente non reprises ("
+               + ", ".join(f"ligne {n} = ligne {m}" for n, m in doublons) + ") ; "
+               f"{sum(1 for r in regions for o in r['objets'] if 'doublon_probable' in o['properties'])} objets de même nom au même point qu'un autre, "
+               "aux autres champs différents, gardés et marqués (propriété « doublon_probable ») ; "
                f"{len(sans_point)} lignes sans point lisible (lignes {', '.join(map(str, sans_point))}) et {len(hors_contour)} points hors des "
                f"contours sans province rattachable (lignes {', '.join(map(str, hors_contour)) or 'aucune'}) écartés, jamais déplacés ; "
                f"rapprochement avec les provinces du RGPH (propriété « concordance », toutes régions) : {concordance['concorde']} concordent, "
@@ -237,7 +252,7 @@ def main():
                 "niveau": None,
                 "champCode": "code",
                 "champNom": "nom",
-                "proprietesExposees": ["code", "ligne", "rattachement", "province_hcp", "concordance"] + [c for _, c in COLONNES if c and any(c in o["properties"] for o in r["objets"])],
+                "proprietesExposees": ["code", "ligne", "rattachement", "province_hcp", "concordance", "doublon_probable"] + [c for _, c in COLONNES if c and any(c in o["properties"] for o in r["objets"])],
                 "styleDefaut": {"mode": "simple", "couleur": "#1b9e77"},
             },
             "indicateurs": [],

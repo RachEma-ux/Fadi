@@ -33,16 +33,20 @@ restent identiques. Toutes les couches vectorielles ont le même zoom maximal (1
 
 ## Point par point
 
-| Point de la proposition | État |
-| --- | --- |
-| 1. Référentiel des communes attendues, codes en texte, rapprochement traçable | Fait (D-GD-17, D-GD-33) : `correspondances/hcp-rgph2024-communes.csv` relu (code HCP, nom, contour OSM, méthode, statut), codes en texte ; aucun rattachement deviné (0 ambigu). |
-| 2. Complétude dans les deux sens, rapport des anomalies | Fait : 16 communes HCP sans contour (listées), 11 contours OSM sans unité HCP (écartés, listés), 0 ambigu. **Nouveau :** un parent construit sans toutes ses communes est marqué **partiel** (`contour_complet` faux, `communes_sans_contour`) : 13 provinces / préfectures et 8 régions. |
-| 3. Validation des communes avant agrégation | Fait : 0 chevauchement entre voisines, 0 géométrie invalide ; 44 lacunes intérieures listées, **jamais comblées** ; 2 auto-intersections que mapshaper n'a pas pu réparer, consignées dans le journal. |
-| 4. Topologie commune, union par code | Fait (mapshaper 0.7.98 : accrochage, `dissolve` par code de province puis de région). |
-| 5. Une simplification commune par niveau de détail | Une seule simplification (Visvalingam, 20 m) sur la topologie partagée, reprise par les trois niveaux. La référence non simplifiée reste l'extrait OSM livré (`donnees/osm-mar-communes.geojson`, archivé en base). Plusieurs niveaux de détail : non nécessaires à ce jour (tuiles quantifiées). |
-| 6. Alignement jusqu'au rendu | Vérifié (voir plus haut). Un réseau de frontières typées par segment n'est pas nécessaire tant que les sommets sont partagés ; il n'a pas été construit. |
-| 7. Indicateurs et priorité du HCP | Inchangé : aucun indicateur n'est recalculé par union ; les valeurs publiées par le HCP restent liées par le code à chaque niveau ; aucune somme de pourcentages. |
-| 8. Sources, mention, remplacement de geoBoundaries | geoBoundaries est retiré des couches actives depuis D-GD-30 / D-GD-33 (retraits déclarés, anciennes versions conservées pour l'audit). **Nouveau :** mention de provenance dans les trois fiches (« géométries dérivées des contours communaux OpenStreetMap, agrégées selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP ») ; une carte qui garde une version antérieure d'une couche de limites administratives affiche une **alerte**, et non plus un avis discret. |
+Source, méthode, comptes et contrôles de la construction : voir [`CONTOURS-NIVEAUX.md`](CONTOURS-NIVEAUX.md), rapport
+généré par `construire_niveaux.py`. Ils ne sont pas répétés ici. Les points 1 à 7 de la proposition y sont déjà tenus
+depuis D-GD-33 (référentiel et rapprochement traçable, complétude dans les deux sens, validation sans comblement,
+topologie partagée, simplification unique, tuiles sans simplification propre, indicateurs HCP inchangés). Apports de
+D-GD-43 :
+
+- **contours partiels** : un parent construit sans toutes ses communes porte `contour_complet` faux et
+  `communes_sans_contour` (comptes dans le rapport) ;
+- **mention de provenance** dans les trois fiches : « géométries dérivées des contours communaux OpenStreetMap, agrégées
+  selon les rattachements territoriaux HCP ; ce ne sont pas des contours officiels du HCP » ;
+- **alerte de version antérieure** : une couche de limites administratives restée sur une version antérieure dans une
+  carte affiche une alerte, et non plus un avis discret ;
+- **non construits** : plusieurs niveaux de détail et un réseau de frontières typées par segment. Ils ne sont pas
+  nécessaires tant que les sommets sont partagés et que toutes les couches passent par la même quantification de tuiles.
 
 ## Contrôles automatisés (CI)
 
@@ -69,8 +73,8 @@ Plus la validation partagée de chaque GeoJSON livré : géométrie valide, born
 
 ## Limites connues
 
-- 16 communes du HCP sans contour (Agadir, Al Hoceima, M'diq…) : 13 provinces et 8 régions partielles. La lacune est
-  visible sur la carte et signalée, jamais comblée. Il faut reprendre ces communes à la source (OSM ou fichier officiel).
+- Communes du HCP sans contour (liste dans le rapport) : leurs parents sont partiels. La lacune est visible et signalée,
+  jamais comblée. Il faut reprendre ces communes à la source (tâche GEO-COMMUNES-SANS-CONTOUR).
 - La géométrie dépend de la qualité des contours communaux d'OpenStreetMap (extraits du 23 octobre 2026). Ce ne sont
   pas des contours officiels. Un fichier officiel du HCP pourra remplacer l'extrait sans changer la logique : relancer
   `construire_niveaux.py`.
