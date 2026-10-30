@@ -105,7 +105,15 @@ describe("fiches de source GeoData livrées", () => {
     const octets = readFileSync(join(DOSSIER, a!.fichier));
     expect(createHash("sha256").update(octets).digest("hex")).toBe(a!.empreinte);
     const [entete, ...lignes] = octets.toString("utf8").split("\n").filter((l) => l.length);
-    expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"]);
+    expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60",
+      // Compléments (D-GD-42) : feuille de la population, puis feuille des ménages, jointes par le code.
+      "marocaine", "etrangere", "etat_civil", "pop_15_plus", "celibataire", "marie", "divorce", "veuf",
+      "log_villa", "log_appartement", "log_traditionnelle", "log_moderne", "log_sommaire", "log_dur_rural", "log_pise_rural", "log_autre",
+      "dist_route_goudronnee", "dist_route_carrossable", "dist_ecole", "dist_college", "dist_lycee", "dist_sante"]);
+    // Fichier d'origine archivé tel quel (D-GD-29), empreinte déclarée dans la fiche.
+    const origine = (a as unknown as { origine: { fichier: string; empreinte: string } }).origine;
+    expect(createHash("sha256").update(readFileSync(join(DOSSIER, origine.fichier))).digest("hex")).toBe(origine.empreinte);
+    expect(origine.empreinte).toBe("b04fa4f479aa77a4fbd741c50b734fc80e42be3786ea8a94e2adb085fc5ae1b6");
     expect(lignes.length).toBeGreaterThan(30_000);
     const fautes: string[] = [];
     for (const l of lignes) {
@@ -126,11 +134,17 @@ describe("fiches de source GeoData livrées", () => {
       expect(fiche.theme).toBe("equipements");
       expect(fiche.version.licence).toContain("ODbL");
       expect(fiche.description).toContain("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
+      // Fichier d'origine archivé tel quel (D-GD-29) : celui publié sur data.gov.ma.
+      const origine = (fiche.version as unknown as { origine: { fichier: string; empreinte: string } }).origine;
+      expect(origine.empreinte).toBe("7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920");
+      expect(createHash("sha256").update(readFileSync(join(DOSSIER, origine.fichier))).digest("hex")).toBe(origine.empreinte);
       const fc = JSON.parse(readFileSync(join(DOSSIER, fiche.version.fichier!), "utf8")) as { features: { properties: Record<string, unknown>; geometry: { type: string } }[] };
       for (const f of fc.features) {
         expect(f.geometry.type).toBe("Point");
         expect(f.properties["code"]).toBe(`l${String(f.properties["ligne"]).padStart(5, "0")}`);
         expect(["contour", "province-hcp", "province-source"]).toContain(f.properties["rattachement"]);
+        expect(["concorde", "discorde", "non-appariee"]).toContain(f.properties["concordance"]);
+        expect(f.properties["concordance"] === "non-appariee").toBe(f.properties["province_hcp"] === undefined);
         lignes.push(f.properties["ligne"] as number);
       }
     }

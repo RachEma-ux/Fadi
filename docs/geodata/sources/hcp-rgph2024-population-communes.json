@@ -39,8 +39,12 @@
     "annexes": {
       "douars": {
         "fichier": "donnees/hcp-rgph2024-douars.tsv",
-        "empreinte": "8071fd9c7d93f60b53a693886fa2070d8d8578dda958d9e59fa0609daaee54f1",
-        "description": "33189 douars de 1279 communes rurales : code, fraction et nom (publiés en arabe seulement, D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; « X » = donnée supprimée par le HCP (secret statistique). Source : « Population et ménages par douars, RGPH 2024 » (HCP, octobre 2025, SHA-256 b04fa4f479aa77a4fbd741c50b734fc80e42be3786ea8a94e2adb085fc5ae1b6)."
+        "empreinte": "fd87b2f3547b26a0991dba6c2ec3510f44ea5d5c1fffde6d03b4b4cba04d95dc",
+        "description": "33189 douars de 1279 communes rurales : code, fraction et nom (publiés en arabe seulement, D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; compléments (D-GD-42) : nationalité, inscription à l'état civil, population de 15 ans et plus et son état matrimonial (%), type de logement des ménages (%), distances moyennes des logements à la route goudronnée, à la route carrossable, à l'école primaire, au collège, au lycée et au centre de santé / hôpital (km) ; les deux feuilles sont jointes par le code (colonnes répétées identiques, reprises une fois) ; « X » = donnée supprimée par le HCP (secret statistique). Source : « Population et ménages par douars, RGPH 2024 » (HCP, octobre 2025, SHA-256 b04fa4f479aa77a4fbd741c50b734fc80e42be3786ea8a94e2adb085fc5ae1b6), archivée telle quelle (donnees/hcp-rgph2024-douars-origine.xlsx).",
+        "origine": {
+          "fichier": "donnees/hcp-rgph2024-douars-origine.xlsx",
+          "empreinte": "b04fa4f479aa77a4fbd741c50b734fc80e42be3786ea8a94e2adb085fc5ae1b6"
+        }
       }
     }
   },

@@ -117,6 +117,13 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (16 757 par contour, 657 par province du RGPH, 63 par province de la source), 22 lignes sans point écartées. Test
   `geodata-sources.test.ts` (validation de chaque fiche + cas MTNRA). Import réel sur PostGIS 16 local
   (`geodata-reference.ts --livraison`) : Casablanca-Settat 4 670 objets, Souss-Massa 1 017, publiés.
+  Suite (suggestions du maître d'ouvrage) : `province_hcp` / `concordance` sur chaque point (17 360 / 4 / 113) ;
+  douars à 22 compléments (`douars_hcp.py`, deux feuilles jointes, utilisable seul), colonne
+  `geodata_douars.complements`, API `/couches/:id/objets/:code` (`douars[].complements`), trois tableaux dans la fiche
+  (libellés traduits dans `en.json`) ; originaux `.xlsx` archivés (`archive-fichiers.ts`, type ajouté). Import réel sur
+  PostGIS 16 local : 33 189 douars, tous avec compléments, secret statistique gardé vide. Suite complète : 1 111 tests
+  API et 1 326 tests web réussis ; les 17 fichiers sur base attestée (DB-3) ne tournent qu'en CI ; recette
+  `geodata.mjs` non rejouée localement.
 - Garde « interface ≠ base de données » (D-GD-29, rappel du maître d'ouvrage du 30 octobre 2026) :
   `independance.test.ts` échoue si la page GeoData ou `geodata-model` importe un fichier de données, écrit une géométrie,
   une série de 12 nombres ou plus, ou un nom de lieu du référentiel (vérifié : un fichier piège est refusé). Le lot D-GD-40

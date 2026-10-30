@@ -62,6 +62,8 @@ export interface FicheRecue {
 export interface DouarRecu {
   code: string; fraction: string; nom: string; type: "groupé" | "éclaté" | "dispersé" | null; menages: number | null; population: number | null; secret: boolean;
   pourcentages: { masculin: number | null; feminin: number | null; moins15: number | null; de15a59: number | null; plus60: number | null };
+  /** Compléments (D-GD-42) : colonne → valeur publiée ; null = version importée sans compléments. */
+  complements?: Record<string, number | null> | null;
 }
 export type Disponibilite = { etat: "disponible"; versionPlusRecente: string | null } | { etat: "retiree" | "inaccessible"; motif: string };
 /** Collection qui référence une carte (une carte peut être dans plusieurs collections, D-GD-36). */

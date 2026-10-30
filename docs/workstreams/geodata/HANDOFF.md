@@ -91,8 +91,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   synthèse ; puce et Alt+Z ; `z=` dans l'adresse ; tableau de bord non filtré, signalé. Branche
   `ccr-9ee33f24-q1rmt0` repartie de `main` après la fusion de #367.
 - Données du MTNRA (D-GD-42, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
-  (data.gov.ma, 2022, ODbL) livrés en 12 couches régionales, importées au démarrage comme les autres fiches. Le fichier
-  des douars fourni le même jour est celui déjà intégré (même empreinte).
+  (data.gov.ma, 2022, ODbL) livrés en 12 couches régionales, importées au démarrage comme les autres fiches, avec
+  rapprochement provincial du RGPH. Le fichier des douars fourni le même jour (même empreinte que l'annexe livrée) est
+  repris en entier : 22 compléments par douar, trois tableaux dans la fiche ; originaux archivés. En attente : contrôle
+  par commune (contours communaux complets) et « Concept Prix » (module à spécifier).
 
 ## Prochaine action
 

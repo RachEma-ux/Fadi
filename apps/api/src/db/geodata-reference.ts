@@ -139,7 +139,10 @@ function lireAnnexeJson(a: AnnexeFichier | undefined, chemin: string, nom: strin
   return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, contenu: JSON.parse(octets.toString("utf8")) };
 }
 
-/** Douars en annexe (TSV : code, commune, fraction, nom, type, ménages, population, %) ; « X » = secret statistique. */
+/** Colonnes de base de l'annexe des douars (lot E) ; toute autre colonne est un complément (D-GD-42). */
+const COLONNES_DOUAR = ["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"];
+
+/** Douars en annexe (TSV : code, commune, fraction, nom, type, ménages, population, %, compléments) ; « X » = secret statistique. */
 function lireDouars(fiche: FicheSource, chemin: string): { ok: boolean; empreinte: string; lignes: LigneDouar[] } | null {
   const a = fiche.version.annexes?.douars;
   if (!a) return null;
@@ -149,6 +152,7 @@ function lireDouars(fiche: FicheSource, chemin: string): { ok: boolean; empreint
   const [entete, ...corps] = octets.toString("utf8").split("\n").filter((l) => l.length);
   const noms = entete!.split("\t");
   const nombre = (x: string | undefined) => (x && /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : null);
+  const complements = noms.filter((n) => !COLONNES_DOUAR.includes(n));
   const lignes = corps.map((l) => {
     const c = Object.fromEntries(l.split("\t").map((x, i) => [noms[i]!, x]));
     const type = ["groupé", "éclaté", "dispersé"].includes(c["type"] ?? "") ? (c["type"] as LigneDouar["type"]) : null;
@@ -157,6 +161,7 @@ function lireDouars(fiche: FicheSource, chemin: string): { ok: boolean; empreint
       menages: nombre(c["menages"]), population: nombre(c["population"]), masculin: nombre(c["masculin"]), feminin: nombre(c["feminin"]),
       moins_15: nombre(c["moins_15"]), de_15_a_59: nombre(c["de_15_a_59"]), plus_60: nombre(c["plus_60"]),
       secret: ["masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"].some((k) => c[k] === "X"),
+      ...(complements.length ? { complements: Object.fromEntries(complements.map((k) => [k, nombre(c[k])])) } : {}),
     };
   });
   return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, lignes };

@@ -17,7 +17,12 @@ HCP sans contour OSM, D-GD-33 : Agadir, Al Hoceima…) : un point hors de tout c
 publiée par la source — d'abord la province du RGPH de même nom (`donnees/hcp-rgph2024-population-provinces.geojson`,
 nom comparé sans « Province / Préfecture de », accents, casse ni ponctuation), sinon la région où tombent tous les points
 de la même province de la source situés dans un contour (propriété `rattachement` : contour, province-hcp,
-province-source) ; sinon il est écarté et compté dans la fiche. Aucun point n'est déplacé. Chaque ligne garde son numéro de
+province-source) ; sinon il est écarté et compté dans la fiche. Rapprochement avec le découpage du RGPH (D-GD-42),
+consigné sur chaque objet sans rien corriger : `province_hcp` (code de la province du RGPH de même nom que la province
+publiée, absent si aucune) et `concordance` (`concorde` : cette province est dans la région de la couche ; `discorde` :
+elle est dans une autre région ; `non-appariee` : aucune province du RGPH de ce nom). Le rapprochement par commune
+attend des contours communaux complets (D-GD-33). Le fichier d'origine est archivé tel quel
+(`donnees/mtnra-services-publics-2022-origine.xlsx`, D-GD-29). Aucun point n'est déplacé. Chaque ligne garde son numéro de
 ligne dans la source (code `l<ligne>`) et ses champs tels que publiés (vides omis, aucun champ corrigé ; code postal lu
 en nombre écrit sans « .0 »).
 """
@@ -38,6 +43,7 @@ EMPREINTE_SOURCE = "7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6
 URL_JEU = "https://data.gov.ma/data/fr/dataset/coordonnees-alphanumeriques-des-administrations-disponibles-sur-le-portail-maps-service-public-ma"
 URL_FICHIER = ("https://data.gov.ma/data/fr/dataset/ae610ab4-9300-41cd-876b-f66ff60cc05e/resource/"
                "6898670a-b11f-416a-8aa3-30692b2841a7/download/donnees-geoportail-open-data-2022.xlsx")
+ORIGINE = "donnees/mtnra-services-publics-2022-origine.xlsx"
 REGIONS = "donnees/hcp-rgph2024-population-regions.geojson"
 PROVINCES = "donnees/hcp-rgph2024-population-provinces.geojson"
 DROITS_OUVERTS = {u: "autorise" for u in ["consultation", "stockage", "calcul", "tuiles", "commercial", "partage", "telechargement", "export"]}
@@ -129,9 +135,10 @@ def main():
         polys = polygones(f["geometry"])
         regions.append({"code": f["properties"]["code"], "nom": f["properties"]["nom"], "polys": polys, "boite": boite(polys), "objets": []})
     empreinte_regions = sha256(open(os.path.join(FICHES, REGIONS), "rb").read())
-    region_de_province_hcp = {}
+    region_de_province_hcp, code_de_province_hcp = {}, {}
     for f in json.load(open(os.path.join(FICHES, PROVINCES), encoding="utf-8"))["features"]:
         region_de_province_hcp.setdefault(nom_compare(f["properties"]["nom"]), set()).add(f["properties"]["region"])
+        code_de_province_hcp.setdefault(nom_compare(f["properties"]["nom"]), set()).add(f["properties"]["code"])
     empreinte_provinces = sha256(open(os.path.join(FICHES, PROVINCES), "rb").read())
 
     total, sans_point, hors_contour, points = 0, [], [], []
@@ -163,18 +170,29 @@ def main():
                 hors_contour.append(n)
                 continue
         props = {"code": f"l{n:05d}", "ligne": n, "rattachement": rattachement}
+        codes_hcp = code_de_province_hcp.get(province, set())
+        if len(codes_hcp) == 1:
+            props["province_hcp"] = next(iter(codes_hcp))
+            props["concordance"] = "concorde" if region_de_province_hcp[province] == {region["code"]} else "discorde"
+        else:
+            props["concordance"] = "non-appariee"
         props.update({cle: v[i] for i, (_, cle) in enumerate(COLONNES) if cle and i < len(v) and v[i]})
         region["objets"].append({"type": "Feature", "properties": props, "geometry": {"type": "Point", "coordinates": [x, y]}})
 
     os.makedirs(os.path.join(a.sortie, "donnees"), exist_ok=True)
+    with open(os.path.join(a.sortie, ORIGINE), "wb") as fh:
+        fh.write(octets_source)
     bilan = {"lignes": total, "sansPoint": sans_point, "horsContour": hors_contour, "couches": []}
     par_hcp = sum(1 for r in regions for o in r["objets"] if o["properties"]["rattachement"] == "province-hcp")
     par_source = sum(1 for r in regions for o in r["objets"] if o["properties"]["rattachement"] == "province-source")
+    concordance = {k: sum(1 for r in regions for o in r["objets"] if o["properties"]["concordance"] == k) for k in ("concorde", "discorde", "non-appariee")}
     ecartes = (f"{par_hcp + par_source} points situés dans une lacune des contours rattachés par leur province publiée (propriété « rattachement » : "
                f"{par_hcp} « province-hcp » par le nom d'une province du RGPH, {PROVINCES}, SHA-256 {empreinte_provinces} ; "
                f"{par_source} « province-source ») ; "
                f"{len(sans_point)} lignes sans point lisible (lignes {', '.join(map(str, sans_point))}) et {len(hors_contour)} points hors des "
-               f"contours sans province rattachable (lignes {', '.join(map(str, hors_contour)) or 'aucune'}) écartés, jamais déplacés")
+               f"contours sans province rattachable (lignes {', '.join(map(str, hors_contour)) or 'aucune'}) écartés, jamais déplacés ; "
+               f"rapprochement avec les provinces du RGPH (propriété « concordance », toutes régions) : {concordance['concorde']} concordent, "
+               f"{concordance['discorde']} discordent, {concordance['non-appariee']} sans province du RGPH de même nom")
     for r in sorted(regions, key=lambda r: int(r["code"])):
         if len(r["objets"]) > MAX_OBJETS:
             sys.exit(f"{r['nom']} : {len(r['objets'])} objets > {MAX_OBJETS} (borne d'une couche V1).")
@@ -211,6 +229,7 @@ def main():
                 "synthetique": False,
                 "conditions": (f"ODbL 1.0 : attribution obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique). "
                                f"Fichier d'origine : {URL_FICHIER}."),
+                "origine": {"fichier": ORIGINE, "empreinte": EMPREINTE_SOURCE, "url": URL_FICHIER},
             },
             "couche": {
                 "titre": titre,
@@ -218,7 +237,7 @@ def main():
                 "niveau": None,
                 "champCode": "code",
                 "champNom": "nom",
-                "proprietesExposees": ["code", "ligne", "rattachement"] + [c for _, c in COLONNES if c and any(c in o["properties"] for o in r["objets"])],
+                "proprietesExposees": ["code", "ligne", "rattachement", "province_hcp", "concordance"] + [c for _, c in COLONNES if c and any(c in o["properties"] for o in r["objets"])],
                 "styleDefaut": {"mode": "simple", "couleur": "#1b9e77"},
             },
             "indicateurs": [],

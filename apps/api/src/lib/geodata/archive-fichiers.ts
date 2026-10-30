@@ -29,6 +29,7 @@ export interface BilanArchive { readonly ajoutes: number; readonly modifies: num
 const TYPES: Readonly<Record<string, string>> = {
   ".json": "application/json", ".geojson": "application/geo+json", ".csv": "text/csv", ".tsv": "text/tab-separated-values",
   ".tif": "image/tiff", ".tiff": "image/tiff", ".gpkg": "application/geopackage+sqlite3",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 const CHEMIN = /^[A-Za-z0-9._/-]{1,200}$/;
 

@@ -146,6 +146,16 @@ est refusée) :
 python3 -I scripts/geodata/preparer_geoportail.py --excel donnees-geoportail-open-data-2022.xlsx
 ```
 
+Chaque point porte aussi son rapprochement avec le RGPH, sans correction : `province_hcp` (province du RGPH de même nom)
+et `concordance` (`concorde`, `discorde`, `non-appariee`). L'original est archivé tel quel
+(`donnees/mtnra-services-publics-2022-origine.xlsx`).
+
+**Douars (compléments, D-GD-42).** L'annexe des douars reprend les deux feuilles du fichier HCP « Population et ménages
+par douars » jointes par le code : nationalité, état civil, état matrimonial, type de logement et distances moyennes aux
+équipements, affichés en trois tableaux dans la fiche de la commune rurale. Régénération seule :
+`python3 -I scripts/geodata/douars_hcp.py --douars <fichier.xlsx>` (original archivé dans
+`donnees/hcp-rgph2024-douars-origine.xlsx`).
+
 ## Zone d'étude qui filtre (D-GD-41)
 
 Dans **Études**, « Filtrer par cette zone » limite la carte, la table attributaire et la synthèse de la vue aux objets

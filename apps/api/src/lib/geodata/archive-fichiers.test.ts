@@ -29,6 +29,9 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     }
     expect(par.get("donnees/hcp-rgph2024-douars.tsv")).toMatchObject({ role: "donnees", sourceCle: "hcp-rgph2024-population-communes" });
     expect(par.get("donnees/hcp-rgph2024-population-communes.csv")).toMatchObject({ role: "donnees", typeMedia: "text/csv" });
+    // Fichiers d'origine fournis tels quels (D-GD-29, D-GD-42) : archivés avec la source qui les cite.
+    expect(par.get("donnees/hcp-rgph2024-douars-origine.xlsx")).toMatchObject({ role: "donnees", sourceCle: "hcp-rgph2024-population-communes" });
+    expect(par.get("donnees/mtnra-services-publics-2022-origine.xlsx")).toMatchObject({ role: "donnees", typeMedia: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   });
 
   it("correspondances, extraits sans fiche importable et retraits déclarés sont archivés aussi", () => {

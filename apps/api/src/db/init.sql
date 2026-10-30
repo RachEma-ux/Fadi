@@ -3246,6 +3246,9 @@ CREATE TABLE IF NOT EXISTS geodata_douars (
   PRIMARY KEY (version_id, code)
 );
 CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
+-- Compléments des douars (D-GD-42) : nationalité, état civil, état matrimonial, logement, distances aux équipements, tels
+-- que publiés (nombre, ou null si absent ou supprimé par le HCP) ; null = version importée avant ces compléments.
+ALTER TABLE geodata_douars ADD COLUMN IF NOT EXISTS complements jsonb;
 
 -- Tableau de bord RGPH 2024 (D-GD-37) : annexes d'une version de référence. Concepts et définitions publiés par le HCP
 -- (une entrée par concept et par langue) et définition des blocs des onglets « Chiffres clés » et « CEE » (familles

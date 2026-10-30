@@ -1,7 +1,7 @@
 {
   "cle": "mtnra-services-publics-2022-casablanca-settat",
   "titre": "Administrations et services publics — Région de Casablanca-Settat (MTNRA, 2022)",
-  "description": "Administrations et services publics recensés sur le portail maps.service-public.ma (Ministère de la Transition numérique et de la Réforme de l'Administration), données à jour en mai 2022, publiées sur data.gov.ma : « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma » (https://data.gov.ma/data/fr/dataset/coordonnees-alphanumeriques-des-administrations-disponibles-sur-le-portail-maps-service-public-ma), fichier donnees-geoportail-open-data-2022.xlsx (SHA-256 7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920, 17499 lignes). Points retenus : ceux situés dans le contour de la Région de Casablanca-Settat (donnees/hcp-rgph2024-population-regions.geojson, SHA-256 58be4163bc8a62c22b4d4ef900e492db19f13704959698f05e9f27a376351cdd) ; la source n'ayant ni colonne de région ni colonne de type, elle est répartie par région (borne de 5000 objets par couche) ; 720 points situés dans une lacune des contours rattachés par leur province publiée (propriété « rattachement » : 657 « province-hcp » par le nom d'une province du RGPH, donnees/hcp-rgph2024-population-provinces.geojson, SHA-256 22c6ea714114c29bc4a7d10427cb230f5463cf6a8dc9b8500ea6b4a3c4a75559 ; 63 « province-source ») ; 22 lignes sans point lisible (lignes 5643, 6561, 6601, 6613, 6614, 6666, 6712, 6713, 6729, 6765, 8615, 9795, 9796, 9820, 9828, 12320, 12362, 12517, 12528, 14575, 14627, 15526) et 0 points hors des contours sans province rattachable (lignes aucune) écartés, jamais déplacés. Champs tels que publiés, en français et en arabe ; coordonnées, téléphones et adresses non vérifiés par Fadi.",
+  "description": "Administrations et services publics recensés sur le portail maps.service-public.ma (Ministère de la Transition numérique et de la Réforme de l'Administration), données à jour en mai 2022, publiées sur data.gov.ma : « Coordonnées alphanumériques des administrations disponibles sur le portail maps.service-public.ma » (https://data.gov.ma/data/fr/dataset/coordonnees-alphanumeriques-des-administrations-disponibles-sur-le-portail-maps-service-public-ma), fichier donnees-geoportail-open-data-2022.xlsx (SHA-256 7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920, 17499 lignes). Points retenus : ceux situés dans le contour de la Région de Casablanca-Settat (donnees/hcp-rgph2024-population-regions.geojson, SHA-256 58be4163bc8a62c22b4d4ef900e492db19f13704959698f05e9f27a376351cdd) ; la source n'ayant ni colonne de région ni colonne de type, elle est répartie par région (borne de 5000 objets par couche) ; 720 points situés dans une lacune des contours rattachés par leur province publiée (propriété « rattachement » : 657 « province-hcp » par le nom d'une province du RGPH, donnees/hcp-rgph2024-population-provinces.geojson, SHA-256 22c6ea714114c29bc4a7d10427cb230f5463cf6a8dc9b8500ea6b4a3c4a75559 ; 63 « province-source ») ; 22 lignes sans point lisible (lignes 5643, 6561, 6601, 6613, 6614, 6666, 6712, 6713, 6729, 6765, 8615, 9795, 9796, 9820, 9828, 12320, 12362, 12517, 12528, 14575, 14627, 15526) et 0 points hors des contours sans province rattachable (lignes aucune) écartés, jamais déplacés ; rapprochement avec les provinces du RGPH (propriété « concordance », toutes régions) : 17360 concordent, 4 discordent, 113 sans province du RGPH de même nom. Champs tels que publiés, en français et en arabe ; coordonnées, téléphones et adresses non vérifiés par Fadi.",
   "producteur": "Ministère de la Transition numérique et de la Réforme de l'Administration (MTNRA)",
   "theme": "equipements",
   "couverture": "Région de Casablanca-Settat (contour RGPH 2024 livré)",
@@ -9,7 +9,7 @@
     "libelle": "data.gov.ma — mai 2022 (jeu modifié le 17 juin 2022)",
     "url": null,
     "fichier": "donnees/mtnra-services-publics-2022-casablanca-settat.geojson",
-    "empreinte": "114b30e0e448f9c7ddb893b0a4e08c9554b5215b3dd7d67ef16d83d65c955f1d",
+    "empreinte": "0681eb4fe6f614902cc942afdbaa83dfd195a372d83b6615d782e1eec83bcbdb",
     "periode": "Données à jour en mai 2022",
     "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
     "attribution": "© MTNRA — maps.service-public.ma, via data.gov.ma (ODbL)",
@@ -25,7 +25,12 @@
     },
     "precision": "Points WKT publiés par le MTNRA (degrés, WGS 84) repris sans arrondi ; positions et adresses non vérifiées",
     "synthetique": false,
-    "conditions": "ODbL 1.0 : attribution obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique). Fichier d'origine : https://data.gov.ma/data/fr/dataset/ae610ab4-9300-41cd-876b-f66ff60cc05e/resource/6898670a-b11f-416a-8aa3-30692b2841a7/download/donnees-geoportail-open-data-2022.xlsx."
+    "conditions": "ODbL 1.0 : attribution obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique). Fichier d'origine : https://data.gov.ma/data/fr/dataset/ae610ab4-9300-41cd-876b-f66ff60cc05e/resource/6898670a-b11f-416a-8aa3-30692b2841a7/download/donnees-geoportail-open-data-2022.xlsx.",
+    "origine": {
+      "fichier": "donnees/mtnra-services-publics-2022-origine.xlsx",
+      "empreinte": "7d1a4d308bd89089e18fff9639a2ab90e976d7efd1bfa13c1a28524c64a6f920",
+      "url": "https://data.gov.ma/data/fr/dataset/ae610ab4-9300-41cd-876b-f66ff60cc05e/resource/6898670a-b11f-416a-8aa3-30692b2841a7/download/donnees-geoportail-open-data-2022.xlsx"
+    }
   },
   "couche": {
     "titre": "Administrations et services publics — Région de Casablanca-Settat (MTNRA, 2022)",
@@ -37,6 +42,8 @@
       "code",
       "ligne",
       "rattachement",
+      "province_hcp",
+      "concordance",
       "nom",
       "nom_ar",
       "adresse",

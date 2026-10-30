@@ -489,9 +489,20 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         publiée concorde avec la région retenue pour 17 360 points ; 4 discordances (coordonnées publiées dans une autre
         région) gardées telles quelles ; 113 points sans province du RGPH de même nom (M'diq-Fnidq, 2 vides).
      3. `hcp-douars2024-1.xlsx` est le fichier « Population et ménages par douars » déjà intégré (même empreinte
-        `b04fa4f4…ae1b6`, annexe des douars de la fiche des communes, lot E) : rien à importer de nouveau. Ses colonnes non
-        reprises (nationalité, état civil, état matrimonial ; feuille des ménages : type de logement, distances aux
-        équipements) restent hors de la base tant que le maître d'ouvrage ne demande pas leur affichage.
+        `b04fa4f4…ae1b6`, annexe des douars de la fiche des communes, lot E). Sur suggestion du maître d'ouvrage, l'annexe
+        reprend désormais **les deux feuilles, jointes par le code du douar** : 22 compléments (nationalité, inscription à
+        l'état civil, population de 15 ans et plus et état matrimonial ; type de logement des ménages ; distances moyennes
+        aux équipements). Les colonnes répétées (lieux, type, ménages, population) sont contrôlées identiques puis reprises
+        une seule fois (33 189 douars, aucun écart). Base : colonne `geodata_douars.complements` (jsonb) ; fiche de la
+        commune rurale : trois tableaux repliables. Les douars restent sans géométrie (aucune coordonnée publiée).
+     4. **Fichiers d'origine archivés tels quels** (D-GD-29) : `donnees/hcp-rgph2024-douars-origine.xlsx` et
+        `donnees/mtnra-services-publics-2022-origine.xlsx`, cités par leur fiche (`origine` : fichier, empreinte), donc
+        copiés dans `geodata_fichiers` à chaque démarrage.
+     5. **Rapprochement avec le découpage du RGPH**, consigné sans correction sur chaque point du MTNRA : `province_hcp`
+        et `concordance` (`concorde` 17 360, `discorde` 4, `non-appariee` 113). Le contrôle par commune (point dans le
+        contour communal contre la commune publiée) attend des contours communaux complets (16 communes du HCP sans
+        contour, D-GD-33). L'exposition à un module « Concept Prix » n'est pas engagée : ce module n'existe pas dans le
+        dépôt et attend une spécification du maître d'ouvrage.
 
 ## Conséquences
 

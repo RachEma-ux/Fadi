@@ -50,6 +50,8 @@ export interface LigneDouar {
   readonly code: string; readonly commune: string; readonly fraction: string; readonly nom: string; readonly type: "groupé" | "éclaté" | "dispersé" | null;
   readonly menages: number | null; readonly population: number | null; readonly masculin: number | null; readonly feminin: number | null;
   readonly moins_15: number | null; readonly de_15_a_59: number | null; readonly plus_60: number | null; readonly secret: boolean;
+  /** Compléments (D-GD-42) : colonne de l'annexe → nombre publié, null si absent ou secret. */
+  readonly complements?: Readonly<Record<string, number | null>>;
 }
 
 export interface VersionAEcrire {
@@ -228,10 +230,11 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
   }
   for (let i = 0; i < (v.douars?.length ?? 0); i += 5000) {
     await client.query(
-      `INSERT INTO geodata_douars (version_id, code, commune, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret)
-       SELECT $1, d.code, d.commune, d.fraction, d.nom, d.type, d.menages, d.population, d.masculin, d.feminin, d.moins_15, d.de_15_a_59, d.plus_60, d.secret
+      `INSERT INTO geodata_douars (version_id, code, commune, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret, complements)
+       SELECT $1, d.code, d.commune, d.fraction, d.nom, d.type, d.menages, d.population, d.masculin, d.feminin, d.moins_15, d.de_15_a_59, d.plus_60, d.secret, d.complements
          FROM jsonb_to_recordset($2::jsonb) AS d(code text, commune text, fraction text, nom text, type text, menages integer, population integer,
-              masculin double precision, feminin double precision, moins_15 double precision, de_15_a_59 double precision, plus_60 double precision, secret boolean)`,
+              masculin double precision, feminin double precision, moins_15 double precision, de_15_a_59 double precision, plus_60 double precision, secret boolean,
+              complements jsonb)`,
       [versionId, JSON.stringify(v.douars!.slice(i, i + 5000))],
     );
   }
