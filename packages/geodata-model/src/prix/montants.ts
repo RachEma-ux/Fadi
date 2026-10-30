@@ -22,6 +22,11 @@ export interface MontantLu {
   readonly centimes: number | null;
   /** Vrai si le montant est abrégé (K, M) : arrondi par l'éditeur. */
   readonly approximatif: boolean;
+  /**
+   * Pas du dernier chiffre écrit, en centimes (« 3,3M » → 100 000 DH = 10 000 000 centimes ; « 18 548 » → 100) : un
+   * montant abrégé représente toute valeur à ± pas / 2. Null si aucun montant.
+   */
+  readonly pasCentimes: number | null;
   /** Monnaie déclarée (ISO 4217, `DH` → `MAD`), ou null si le texte n'en porte pas. */
   readonly monnaie: Monnaie | null;
   /** Montant rapporté au m² (« DH/m² »). */
@@ -163,7 +168,7 @@ export function uniteCanonique(texte: string): string | null {
 export function parserMontant(texte: string | null | undefined): MontantLu {
   const texteOriginal = texte ?? "";
   const vide = (motif: MotifMontantIllisible): MontantLu =>
-    ({ valeur: null, centimes: null, approximatif: false, monnaie: null, parM2: false, periode: null, unite: null, texteOriginal, motif });
+    ({ valeur: null, centimes: null, approximatif: false, pasCentimes: null, monnaie: null, parM2: false, periode: null, unite: null, texteOriginal, motif });
   const t = texteOriginal.replace(ESPACES, " ").trim();
   if (!/\d/.test(t)) return vide("absent");
   const m = /^(-)?\s*(\d[\d .,]*\d|\d)\s*(?:([KkM])(?![a-zA-Z]))?\s*(\D.*)?$/.exec(t);
@@ -186,6 +191,7 @@ export function parserMontant(texte: string | null | undefined): MontantLu {
     valeur: centimes / 100,
     centimes,
     approximatif: exposant > 0,
+    pasCentimes: 10 ** Math.max(0, exposant - frac.length + 2),
     monnaie: unite.monnaie,
     parM2: unite.parM2,
     periode: unite.periode,

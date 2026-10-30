@@ -143,8 +143,12 @@ function lireMontantPublie(
     else if (a === "false" || a === "0" || a === "") approximatif = lu.approximatif;
     else erreurs.push({ ligne, colonne: "median_price_is_abbreviated", code: "abreviation-illisible" });
   }
-  // Le texte affiché doit représenter le même montant (exactement, ou à l'arrondi de l'abréviation près).
-  if (lu.centimes !== null && lu.centimes !== centimes && !lu.approximatif) erreurs.push({ ligne, colonne, code: "affichage-incoherent" });
+  // Le texte affiché doit représenter le même montant : exactement, ou à la moitié du pas de l'abréviation près
+  // (« 3,3M » couvre 3 250 000 à 3 350 000).
+  if (lu.centimes !== null && lu.pasCentimes !== null) {
+    const tolerance = lu.approximatif ? lu.pasCentimes / 2 : 0;
+    if (Math.abs(lu.centimes - centimes) > tolerance) erreurs.push({ ligne, colonne, code: "affichage-incoherent" });
+  }
   return { valeur: centimes / 100, centimes, approximatif, texteOriginal: affiche };
 }
 

@@ -10,7 +10,9 @@ describe("lecture des montants écrits à la française", () => {
 
   it("abréviations K et M : décalage décimal exact, marqué approximatif", () => {
     expect(parserMontant("3,3M DH")).toMatchObject({ valeur: 3300000, centimes: 330000000, approximatif: true });
-    expect(parserMontant("769K DH")).toMatchObject({ valeur: 769000, approximatif: true });
+    expect(parserMontant("769K DH")).toMatchObject({ valeur: 769000, approximatif: true, pasCentimes: 100000 });
+    expect(parserMontant("3,3M DH").pasCentimes).toBe(10_000_000);
+    expect(parserMontant("18 548 DH").pasCentimes).toBe(100);
     expect(parserMontant("954,8K DH")).toMatchObject({ valeur: 954800, centimes: 95480000, approximatif: true });
     // 1,23456789 × 10^6 = 1 234 567,89 DH = 123 456 789 centimes, obtenu par décalage de chaîne (1.23456789 * 1e6 * 100
     // en flottant vaut 123456788.99999999).

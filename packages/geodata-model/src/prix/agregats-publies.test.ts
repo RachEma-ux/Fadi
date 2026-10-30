@@ -5,12 +5,11 @@ import { ENTETES_FEENWAY, lireAgregatsFeenway, valeurMarcheDepuisAgregat } from 
 
 // Baromètre SYNTHÉTIQUE au format de l'en-tête FeenWay (aucune valeur réelle) : villes et quartiers fictifs.
 const ENTETE = ENTETES_FEENWAY.join(",");
-const L = (champs: string) => `${champs}`;
 const CSV = [
   ENTETE,
-  L('Ville-Synthetique,neighborhood,Quartier-Synthetique-1,APPARTEMENT,SALE,120,"1,5M DH",1500000.0,True,12 345 DH,12345.0,MAD,MAD/m2,-2.5,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/'),
-  L("Ville-Synthetique,neighborhood,Quartier-Synthetique-1,APPARTEMENT,RENT,80,9 000 DH/mois,9000.0,False,95 DH,95.0,MAD/month,MAD/m2/month,,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/"),
-  L('Ville-Synthetique,city,Ville-Synthetique,Locaux commerciaux,SALE,15,"954,8K DH",954800.0,True,—,,MAD,MAD/m2,,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/'),
+  ('Ville-Synthetique,neighborhood,Quartier-Synthetique-1,APPARTEMENT,SALE,120,"1,5M DH",1500000.0,True,12 345 DH,12345.0,MAD,MAD/m2,-2.5,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/'),
+  ("Ville-Synthetique,neighborhood,Quartier-Synthetique-1,APPARTEMENT,RENT,80,9 000 DH/mois,9000.0,False,95 DH,95.0,MAD/month,MAD/m2/month,,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/"),
+  ('Ville-Synthetique,city,Ville-Synthetique,Locaux commerciaux,SALE,15,"954,8K DH",954800.0,True,—,,MAD,MAD/m2,,editeur-synthetique,https://exemple.invalid/barometre,2026-01-01/2026-06-30,https://creativecommons.org/licenses/by/4.0/'),
 ].join("\n");
 
 describe("agrégats publiés par un tiers (format FeenWay)", () => {
@@ -36,6 +35,13 @@ describe("agrégats publiés par un tiers (format FeenWay)", () => {
       .toEqual(["appartement", "villa", "local-commercial", "terrain", "bureau", "maison", "studio", "immeuble", "ferme"]);
   });
 
+  it("montant abrégé : le nombre publié doit tomber dans le pas de l'abréviation", () => {
+    const [vente] = lireCsv(CSV) as [Record<string, string>];
+    // « 1,5M » couvre 1 450 000 à 1 550 000 (pas 100 000, ± 50 000).
+    expect(lireAgregatsFeenway([{ ...vente, median_price_numeric: "1549999.0" }], { edition: "e" }).erreurs).toEqual([]);
+    expect(lireAgregatsFeenway([{ ...vente, median_price_numeric: "1560000.0" }], { edition: "e" }).erreurs.map((e) => e.code)).toEqual(["affichage-incoherent"]);
+  });
+
   it("colonnes manquantes : aucune ligne retenue", () => {
     const sans = lireCsv(CSV).map(({ listing_count: _l, ...reste }) => reste);
     const r = lireAgregatsFeenway(sans, { edition: "e" });
@@ -57,7 +63,7 @@ describe("agrégats publiés par un tiers (format FeenWay)", () => {
       { ...vente, zone: "Z9", median_unit_price_display: "99 DH" },
       { ...vente, zone: "Z10" }, { ...vente, zone: "Z10" },
     ], { edition: "e" });
-    expect(r.agregats.map((a) => a.libelleGeo)).toEqual(["Z8".replace("Z8", "Z10")].filter(() => false).concat(["Z10"]));
+    expect(r.agregats.map((a) => a.libelleGeo)).toEqual(["Z10"]);
     expect(r.erreurs.map((e) => [e.ligne, e.code])).toEqual([
       [1, "unite-incoherente"],
       [2, "unite-incoherente"],
@@ -66,7 +72,7 @@ describe("agrégats publiés par un tiers (format FeenWay)", () => {
       [5, "montant-negatif"],
       [6, "periode-illisible"],
       [7, "niveau-inconnu"], [7, "type-bien-inconnu"], [7, "transaction-inconnue"],
-      [8, "abreviation-illisible"], [8, "tendance-illisible"],
+      [8, "abreviation-illisible"], [8, "affichage-incoherent"], [8, "tendance-illisible"],
       [9, "affichage-incoherent"],
       [11, "ligne-en-double"],
     ]);
