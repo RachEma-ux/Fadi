@@ -56,7 +56,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     pret = true;
     enAttente?.();
     enAttente = null;
+    ev.surEmprise?.();
   });
+  carte.on("resize", () => ev.surEmprise?.());
   let fondSignale: string | null = null;
   carte.on("error", (e) => {
     const m = (e as { error?: { status?: number; message?: string } }).error;

@@ -33,6 +33,11 @@ export interface DonneesAffichage {
 export interface EvenementsMoteur {
   surDeplacement(camera: Composition["camera"]): void;
   /**
+   * Emprise visible changée sans que la caméra le dise (D-GD-39) : carte prête (`load`) ou canevas redimensionné
+   * (fenêtre, rotation, plein écran). La synthèse de la vue s'y relit.
+   */
+  surEmprise?(): void;
+  /**
    * Clic en navigation : objets touchés (toutes les couches, la plus haute d'abord ; vide = aucun), point cliqué et rang du
    * clic dans sa série (1 = premier, 2 = second clic rapide au même endroit… ; D-GD-34). Aucun retard : chaque clic est
    * transmis tout de suite, le double-clic ne zoome jamais.

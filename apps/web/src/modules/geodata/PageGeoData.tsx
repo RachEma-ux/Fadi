@@ -151,6 +151,8 @@ export function PageGeoData() {
   const [miniCarte, setMiniCarte] = useState(() => lireLocal("geodata.mini-carte") === "1");
   // Synthèse de la vue (D-GD-39) : ouverte ou fermée, mémorisée dans ce navigateur ; objets lus en base par couche.
   const [syntheseOuverte, setSyntheseOuverte] = useState(() => lireLocal("geodata.synthese") === "1");
+  // Emprise changée sans changement de caméra (carte prête, redimensionnement) : relance la lecture de la vue.
+  const [versionEmprise, setVersionEmprise] = useState(0);
   const [vues, setVues] = useState<Map<string, { cle: string; etat: "chargement" | "ok" | "erreur"; codes: string[]; total: number; tronque: boolean; erreur?: string }>>(new Map());
   const conteneurMini = useRef<HTMLDivElement>(null);
 
@@ -329,7 +331,7 @@ export function PageGeoData() {
     }, 250);
     return () => window.clearTimeout(minuterie);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese]);
+  }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese, versionEmprise]);
   const lignesSynthese = useMemo<LigneSynthese[]>(() => couchesSynthese.map((k) => {
     const titre = couchesConnues.get(k.coucheId)?.titre ?? k.coucheId;
     const v = vues.get(k.coucheId);
@@ -451,6 +453,7 @@ export function PageGeoData() {
       if (detruit || !conteneurCarte.current) return;
       try {
         moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
+          surEmprise: () => setVersionEmprise((n) => n + 1),
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),

@@ -17,7 +17,8 @@ export interface LigneSynthese {
   readonly erreur?: string;
 }
 
-const val = (x: number | null, unite: string | null) => (x === null ? "non évaluée" : abregerValeur(x, unite));
+/** Valeur protégée de la traduction ; l'état « non évaluée » est un texte d'interface, traduit. */
+const val = (x: number | null, unite: string | null) => (x === null ? <span>non évaluée</span> : <span translate="no">{abregerValeur(x, unite)}</span>);
 
 /** `decalee` : panneau Données ouvert à gauche ; `haute` : mini-carte affichée dessous. */
 export function SyntheseVue(p: { lignes: readonly LigneSynthese[]; zoom: number; onFermer(): void; decalee: boolean; haute: boolean }) {
@@ -46,9 +47,9 @@ export function SyntheseVue(p: { lignes: readonly LigneSynthese[]; zoom: number;
                   <dl className="gd-synthese-stats" data-gd-synthese-indicateur={l.coucheId}>
                     <dt translate="no">{l.indicateur.titre}</dt>
                     <dd>
-                      <span>Min</span><span translate="no">{val(l.synthese.indicateur.min, l.indicateur.unite)}</span>
-                      <span>Moyenne</span><span translate="no" data-gd-synthese-moyenne>{val(l.synthese.indicateur.moyenne, l.indicateur.unite)}</span>
-                      <span>Max</span><span translate="no">{val(l.synthese.indicateur.max, l.indicateur.unite)}</span>
+                      <span>Min</span><span>{val(l.synthese.indicateur.min, l.indicateur.unite)}</span>
+                      <span>Moyenne</span><span data-gd-synthese-moyenne>{val(l.synthese.indicateur.moyenne, l.indicateur.unite)}</span>
+                      <span>Max</span><span>{val(l.synthese.indicateur.max, l.indicateur.unite)}</span>
                     </dd>
                     <dd className="gd-discret">
                       <span>Entités évaluées :</span>
