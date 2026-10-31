@@ -627,8 +627,12 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      méthode, jamais en silence.
    - D-GD-57 (31 octobre 2026) — **valeurs officielles et comparaison** : une valeur officielle garde sa forme (unique,
      fourchette, terrain + construction, conditionnelle) et son texte d'origine ; l'écart en pourcentage n'existe que
-     face à une valeur unique, courante et autorisée ; une fourchette donne une position (en dessous, dans, au-dessus)
-     sans pourcentage ; sinon la comparaison est refusée avec les dimensions incompatibles. Le référentiel DGI de
+     face à une valeur unique, courante et autorisée, ou face à un couple terrain + construction ou une valeur
+     conditionnelle dont l'applicabilité à la cohorte est **explicitement** établie (composante retenue du couple,
+     condition remplie : `OptionsComparaison.applicabilite` de `comparaison.ts`, jamais présumée — l'API n'en établit
+     aucune aujourd'hui, ces formes y sont donc refusées avec la dimension `forme-non-applicable`) ; une fourchette donne
+     une position (en dessous, dans, au-dessus) sans pourcentage ; sinon la comparaison est refusée avec les dimensions
+     incompatibles. Le référentiel DGI de
      Casablanca (édition 2015, copies tierces, sans mention de réutilisation) reste bloqué.
 
 ## Conséquences

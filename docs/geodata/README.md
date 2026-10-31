@@ -399,9 +399,14 @@ version de l'analyseur + source, fichier archivé dans `geodata_fichiers`, rôle
 `geodata_prix_valeurs_officielles` (formes unique, fourchette, terrain + construction, conditionnelle ; texte d'origine ;
 validité `verifiee` / `non-verifiee` / `historique`), `geodata_prix_observations` (unicité source, annonce, date),
 `geodata_prix_quarantaine`, `geodata_prix_rattachements`, `geodata_prix_decisions_doublons` (ajout seul),
-`geodata_prix_instantanes` (immuables, empreinte unique, manifeste), `geodata_prix_cellules`, `geodata_prix_biens`,
-`geodata_prix_publications` (un pointeur actif par couche et produit ; publication, retour, retrait en ajout seul).
-Montants en `numeric` ; absent = NULL, jamais 0.
+`geodata_prix_instantanes` (immuables, empreinte unique, manifeste), `geodata_prix_cellules`, `geodata_prix_biens`
+(tous les biens d'un instantané) et `geodata_prix_biens_observations` (lien bien ↔ observation : méthode `identifiant`,
+`empreinte` ou `decision`, confiance `certaine`, `forte` ou `revue` ; figés avec l'instantané),
+`geodata_prix_publications` (un pointeur actif par couche et produit ; publication, retour, retrait en ajout seul),
+`geodata_prix_decisions_rattachement` (décisions de revue des rattachements, en ajout seul). Montants en `numeric` ;
+absent = NULL, jamais 0 (un montant publié nul n'est retenu que si l'éditeur affiche lui-même 0, sinon erreur
+`montant-nul`). `geodata_prix_sources.amont` : sources amont d'une source dérivée (FeenWay : Avito, Mubawab, portails
+candidats) ; `geodata_prix_agregats_publies.prix_m2_approximatif` : prix au m² abrégé (≈) comme le prix médian.
 
 **Import.** Au démarrage (`--archiver`) ou par `geodata-reference.js --prix-sources` : `prix/prix-sources.json` est
 archivé (rôle `prix`) puis chargé dans `geodata_prix_sources` (même empreinte : rien n'est réécrit ; un statut posé par
@@ -413,24 +418,73 @@ Observations : `POST /prix/imports` (aperçu puis validation avec la clé d'idem
 `observations` et au statut `active` ou `autorisee`, sinon refus 409 avec le motif du registre — aucune source réelle ne
 l'est aujourd'hui). Colonnes : `annonce_id, observe_le, transaction, type_bien, etat_bien, prix, monnaie, periode,
 surface, base_surface, localite, precision, empreinte` (CSV à en-tête ou JSON liste d'objets, 10 Mo et 50 000 lignes
-au plus). `precision` = code d'un niveau du découpage en base ; le rattachement n'est jamais plus fin.
+au plus). `precision` = code d'un niveau du découpage en base ; le rattachement n'est jamais plus fin. **Règle unique
+des nombres** (`prix` et `surface`, celle de `parserMontant` : `lireNombreObservation`) : espaces = milliers, virgule
+= décimale, point = milliers s'il sépare des groupes de trois chiffres (« 450.000 » = 450 000), sinon décimal ;
+« 1,250,000 », une abréviation (K, M) ou une unité dans la cellule sont illisibles → quarantaine `montant-illisible` /
+`surface-illisible` (distincte de `prix-absent`). Numéro de ligne de la quarantaine = ligne physique du fichier
+(en-tête = 1) ; rang de l'objet pour un JSON. Même (source, annonce, date) déjà en base avec un autre contenu →
+quarantaine `conflit-reimport` (la première version reste). Une source **dérivée** (agrégateur) n'est jamais combinée
+avec une autre source dans un instantané : refus 409 `source_derivee_combinee`.
+Valeurs officielles : `POST /prix/officielles/imports` (gestionnaire de données ; même aperçu puis validation ; source
+au produit `valeurs-officielles` active ou autorisée, sinon 409 avec le motif du registre — aucune ne l'est
+aujourd'hui ; `edition.validite` déclarée `verifiee`, `non-verifiee` ou `historique`, jamais déduite, et inchangeable
+pour une édition existante). Colonnes (`COLONNES_VALEURS_OFFICIELLES`) : `zone_code, zone_libelle, zone_description,
+territoire, geometrie, crs, categorie_originale, type_bien, etat_bien, transaction, base_surface, forme, valeur,
+valeur_min, valeur_max, valeur_terrain, valeur_construction, condition, texte_original, monnaie, unite, date_debut,
+date_fin, page_ou_ligne` ; géométrie GeoJSON en WGS 84 déclaré (`EPSG:4326`, `CRS84`), aucune reprojection ; le
+territoire proposé est gardé à part (`territoire_propose`), la zone attend toujours la revue.
 
 **Routes** (`/geodata/api`, `routes/geodata/prix.ts`) — lecture pour tout compte connecté : `GET /prix/sources`,
-`GET /prix/couches` (états, `motifs` en codes stables, `details` en texte, `capacites`), `GET /prix/agregats-publies`
-(`code`, `versionId`, `transaction`, `type`), `GET /prix/cellules` (`code`, `niveau`, `transaction`, `type`, `base` ;
-instantané publié seulement ; jamais la lignée), `GET /prix/comparaison` (`code`, `type`, `transaction`, `base`) ; la
-fiche d'objet porte `prixPublies`. Réservé : `GET /prix/observations`, `/prix/lots`, `/prix/lots/:id/quarantaine`,
-`/prix/instantanes`, `/prix/publications/:couche` (rôles GeoData) ; `POST /prix/imports`, `POST /prix/instantanes`,
-`POST /prix/doublons/decisions` (gestionnaire de données) ; `POST /prix/instantanes/:id/publier { attendu, motif }` et
+`GET /prix/couches` (états, `motifs` en codes stables — liste fermée `MOTIFS_COUCHE_PRIX` du modèle —, `details` en
+texte, `capacites`), `GET /prix/agregats-publies` (`code`, `versionId`, `transaction`, `type` ; **fail closed** : seule
+une fiche déclarée par une source du registre au produit `agregat-publie`, active ou autorisée, est servie ; une ligne
+non rattachée porte sa `correspondance` revue, s'il y en a une), `GET /prix/cellules` (`code`, `niveau`,
+`transaction`, `type`, `base` ; instantané publié seulement ; jamais la lignée), `GET /prix/comparaison` (`code`,
+`type`, `transaction`, `base` ; refus avec `motif` codé — `MOTIFS_COMPARAISON_PRIX` — et `coucheEnCause` : couche,
+état, motif), `GET /prix/officielles/zones/:id` (zone officielle : identifiant, géométrie ou description d'origine,
+revue, édition et validité, valeurs sous leur forme et leur texte d'origine ; 409 sans valeur si la source ou
+l'édition n'est pas autorisée) ; la fiche d'objet porte `prixPublies`. Réservé : `GET /prix/observations`,
+`/prix/lots`, `/prix/lots/:id/quarantaine`, `/prix/instantanes`, `/prix/publications/:couche`,
+`GET /prix/rattachements?etat=a-revoir|revus` (file de revue : observations ambiguës ou non rattachées, zones
+officielles, libellés publiés non rattachés — quartiers commerciaux FeenWay — sans décision ; ou historique) (rôles
+GeoData) ; `POST /prix/imports`, `POST /prix/officielles/imports`, `POST /prix/instantanes` (gestionnaire de données) ;
+`POST /prix/doublons/decisions` et `POST /prix/rattachements/:id/decision { decision: validee|refusee, territoire:
+{ pays, code }, motif }` (capacité `prix-reviser`, gestionnaire de données ; territoire de la hiérarchie en base, jamais
+plus fin que la précision d'une observation — 409 `precision_insuffisante` ; une correspondance libellé → unité
+administrative n'existe que par une décision validée, jamais automatique ; la ligne publiée reste inchangée) ; `POST /prix/instantanes/:id/publier { attendu, motif }` et
 `POST /prix/publications/:couche/retour { attendu, instantaneId?, motif }` (responsable de publication ; pointeur
 attendu périmé → 409 consigné, PRX11) ; `POST /prix/sources/:cle/statut { statut, motif }` (administrateur ; une
-suspension retire les publications construites avec la source et masque ses agrégats, PRX13) ;
-`GET /prix/export?format=csv&produit=agregats|cellules[&versionId=…]` (rôles GeoData, droit « export » de la source,
-attribution et identifiants d'édition ou d'instantané dans chaque ligne).
+suspension retire les publications construites avec la source, masque ses agrégats **et** sa couche GeoData
+générique, PRX13) ; `GET /prix/export?format=csv&produit=agregats|cellules[&versionId=…]` (rôles GeoData, droit
+« export » de la source, attribution et identifiants d'édition ou d'instantané dans chaque ligne ; rien de consultable
+→ 404 ; cellules texte commençant par `=`, `+`, `-`, `@` préfixées d'une apostrophe, nombres intacts). Toutes les
+réponses portent `Cache-Control: private, no-store`.
+
+**Suspension d'une source (PRX13).** Le statut d'une source du registre gouverne aussi la couche GeoData générique de
+la fiche qu'elle déclare (`fiche_geodata`, ex. `feenway-barometre-casablanca` et ses indicateurs) : tant que la source
+n'est ni `active` ni `autorisee`, la version n'est plus consultable (`VERSION_CONSULTABLE` : catalogue, tuiles, fiche
+d'objet, tableaux, export de carte). Le retrait est réversible — la version publiée, immuable, n'est pas modifiée ; le
+rétablissement de la source la rend de nouveau consultable — et journalisé (`prix.fiche.retrait`,
+`prix.fiche.retablissement`, versions concernées). **Export : règle unique** — l'export de carte (`POST /exports`)
+d'une couche liée au registre des prix exige la même capacité que `GET /prix/export` (`prix-exporter`, rôle GeoData)
+**et** le droit « export » de sa version ; la consultation seule ne peut exporter ni l'une ni l'autre.
+
+**Concurrence.** Un verrou unique des sources (`verrouillerSourcesPrix`) est pris d'abord par la publication et le
+retour arrière, la construction d'un instantané, le changement de statut d'une source et le rechargement du registre
+(ordre : sources, puis couche ou construction, puis lignes) : une publication concurrente d'une suspension voit la
+suspension et est refusée ; un import tient la ligne de sa source en partage.
+
+**Sauvegarde et restauration (PRX14).** `lib/geodata/prix/sauvegarde.ts` : `sauvegarderPrix` exporte les tables de la
+chaîne (`TABLES_PRIX_SAUVEGARDEES`, ordre des clés étrangères, empreinte SHA-256) ; `restaurerPrix` les réinsère à
+l'identique dans des tables vides (refus si une table n'est pas vide ou si l'empreinte diffère) et recale les
+séquences. Les agrégats publiés suivent leur version GeoData ; `geodata_fichiers` et les comptes ne sont pas concernés.
 
 **Essais.** Sans base : `apps/api/src/lib/geodata/prix/prix.test.ts`, `src/db/geodata-sources.test.ts` ; base
-attestée (DB-3) : `src/routes/geodata-prix.test.ts` (scénarios `geodata-prix.scenarios.ts`, PRX01 à PRX14, fiche
-FeenWay et registre réels, jeux d'observations synthétiques créés dans la base de test seulement).
+attestée (DB-3) : `src/routes/geodata-prix.test.ts` (scénarios `geodata-prix.scenarios.ts`, PRX01 à PRX14 dont la
+restauration, fiche FeenWay et registre réels, jeux d'observations et de valeurs officielles synthétiques créés dans la
+base de test seulement ; horloge des prix figée au 31 octobre 2026 par `figerHorloge`, aucun résultat ne dépend de la
+date d'exécution).
 
 ## Sauvegarde, restauration, retrait
 
