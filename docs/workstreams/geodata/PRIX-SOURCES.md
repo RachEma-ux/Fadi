@@ -5,7 +5,7 @@ Relevé du 30 au 31 octobre 2026 (heure suisse). Spécification : `Fadi Concept/
 `candidate → qualifiée → autorisée → active → suspendue → retirée`. « Bloqué » est noté avec cause, responsable,
 essais, déblocage et prochaine action. Une source techniquement accessible n'est pas pour autant autorisée.
 
-Responsable des dossiers : chef de projet GeoData (délégation totale du maître d'ouvrage, 31 octobre 2026, D-GD-47).
+Responsable des dossiers : chef de projet GeoData (délégation totale du maître d'ouvrage, 31 octobre 2026, D-GD-54).
 Révision des dossiers : au plus tard le 31 janvier 2027, ou à chaque nouvelle édition d'une source.
 
 ## Synthèse
