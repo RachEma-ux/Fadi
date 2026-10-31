@@ -385,6 +385,53 @@ retenue ; les extraits OSM des communes, villes et arrondissements n'ont plus de
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
 superficie officielle.
 
+## Prix immobiliers (Concept Prix v1.1, lots P2 à P6)
+
+Deux couches indépendantes : **valeurs immobilières de référence officielles** (`officielle`) et **prix immobiliers
+affichés dans les annonces** (`annonces`). Tout vit en base (D-GD-29) ; une base vide donne des états vides explicites
+(PRX01). Sources et blocages : `docs/workstreams/geodata/PRIX-SOURCES.md` ; points d'extension :
+`docs/workstreams/geodata/PRIX-INVENTAIRE.md`.
+
+**Tables** (`apps/api/src/db/init.sql`, additives) : `geodata_prix_sources` (registre ; statut et origine du statut,
+changements journalisés `prix.source.statut`), `geodata_prix_agregats_publies` (agrégats publiés par un tiers, annexe
+d'une version, figés avec elle), `geodata_prix_editions`, `geodata_prix_lots` (clé d'idempotence = SHA-256 du fichier +
+version de l'analyseur + source, fichier archivé dans `geodata_fichiers`, rôle `import-prix`), `geodata_prix_zones` et
+`geodata_prix_valeurs_officielles` (formes unique, fourchette, terrain + construction, conditionnelle ; texte d'origine ;
+validité `verifiee` / `non-verifiee` / `historique`), `geodata_prix_observations` (unicité source, annonce, date),
+`geodata_prix_quarantaine`, `geodata_prix_rattachements`, `geodata_prix_decisions_doublons` (ajout seul),
+`geodata_prix_instantanes` (immuables, empreinte unique, manifeste), `geodata_prix_cellules`, `geodata_prix_biens`,
+`geodata_prix_publications` (un pointeur actif par couche et produit ; publication, retour, retrait en ajout seul).
+Montants en `numeric` ; absent = NULL, jamais 0.
+
+**Import.** Au démarrage (`--archiver`) ou par `geodata-reference.js --prix-sources` : `prix/prix-sources.json` est
+archivé (rôle `prix`) puis chargé dans `geodata_prix_sources` (même empreinte : rien n'est réécrit ; un statut posé par
+l'administration n'est pas levé par un rechargement). Une fiche peut porter l'annexe `version.annexes.prixPublies`
+(CSV d'en-tête `ENTETES_FEENWAY`, empreinte contrôlée, comprise dans l'empreinte de la version) : lignes validées par
+`lireAgregatsFeenway`, niveau ville rattaché à l'objet dont la propriété `ville_source` porte ce nom, quartiers
+commerciaux non rattachés (PRX06). Baromètre FeenWay livré : 66 lignes, 16 rattachées à la commune 6141010.
+Observations : `POST /prix/imports` (aperçu puis validation avec la clé d'idempotence ; source au produit
+`observations` et au statut `active` ou `autorisee`, sinon refus 409 avec le motif du registre — aucune source réelle ne
+l'est aujourd'hui). Colonnes : `annonce_id, observe_le, transaction, type_bien, etat_bien, prix, monnaie, periode,
+surface, base_surface, localite, precision, empreinte` (CSV à en-tête ou JSON liste d'objets, 10 Mo et 50 000 lignes
+au plus). `precision` = code d'un niveau du découpage en base ; le rattachement n'est jamais plus fin.
+
+**Routes** (`/geodata/api`, `routes/geodata/prix.ts`) — lecture pour tout compte connecté : `GET /prix/sources`,
+`GET /prix/couches` (états, `motifs` en codes stables, `details` en texte, `capacites`), `GET /prix/agregats-publies`
+(`code`, `versionId`, `transaction`, `type`), `GET /prix/cellules` (`code`, `niveau`, `transaction`, `type`, `base` ;
+instantané publié seulement ; jamais la lignée), `GET /prix/comparaison` (`code`, `type`, `transaction`, `base`) ; la
+fiche d'objet porte `prixPublies`. Réservé : `GET /prix/observations`, `/prix/lots`, `/prix/lots/:id/quarantaine`,
+`/prix/instantanes`, `/prix/publications/:couche` (rôles GeoData) ; `POST /prix/imports`, `POST /prix/instantanes`,
+`POST /prix/doublons/decisions` (gestionnaire de données) ; `POST /prix/instantanes/:id/publier { attendu, motif }` et
+`POST /prix/publications/:couche/retour { attendu, instantaneId?, motif }` (responsable de publication ; pointeur
+attendu périmé → 409 consigné, PRX11) ; `POST /prix/sources/:cle/statut { statut, motif }` (administrateur ; une
+suspension retire les publications construites avec la source et masque ses agrégats, PRX13) ;
+`GET /prix/export?format=csv&produit=agregats|cellules[&versionId=…]` (rôles GeoData, droit « export » de la source,
+attribution et identifiants d'édition ou d'instantané dans chaque ligne).
+
+**Essais.** Sans base : `apps/api/src/lib/geodata/prix/prix.test.ts`, `src/db/geodata-sources.test.ts` ; base
+attestée (DB-3) : `src/routes/geodata-prix.test.ts` (scénarios `geodata-prix.scenarios.ts`, PRX01 à PRX14, fiche
+FeenWay et registre réels, jeux d'observations synthétiques créés dans la base de test seulement).
+
 ## Sauvegarde, restauration, retrait
 
 - Les tables `geodata_*` sont dans le schéma `public` : couvertes par les sauvegardes et la restauration existantes de la
