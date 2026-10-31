@@ -9,9 +9,12 @@
  * Valeurs reprises telles que publiées : les montants passent en texte décimal exact (centimes), jamais recalculés.
  * Logique pure : aucune base, aucune donnée embarquée (D-GD-29).
  */
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   centimesEnTexte, lireAgregatsFeenway, lireCsv, normaliserLibelleLocalite,
-  type AgregatPublie, type ResultatLectureAgregats,
+  type AgregatPublie, type ObjetImporte, type ResultatLectureAgregats,
 } from "@parcours/geodata-model";
 
 /** Propriété des objets de la couche qui porte le nom de ville de l'éditeur (convention des fiches `prixPublies`). */
@@ -99,4 +102,23 @@ export function rattacherAgregats(agregats: readonly AgregatPublie[], objets: re
       licence: a.licence,
     };
   });
+}
+
+/**
+ * Annexe `prixPublies` d'une fiche (chemin `donnees/<nom>.csv` relatif au dossier de la fiche, contrôlé) : empreinte
+ * SHA-256 calculée et comparée à celle de la fiche, lecture et validation. Partagée par la chaîne d'import et ses tests.
+ */
+export function lireAnnexePrix(annexe: { readonly fichier: string; readonly empreinte: string }, dossierFiche: string, edition: string) {
+  if (!/^donnees\/[a-z0-9-]+\.csv$/.test(annexe.fichier)) throw new Error(`Annexe des prix publiés refusée : ${annexe.fichier}`);
+  const octets = readFileSync(join(dossierFiche, annexe.fichier));
+  const empreinte = createHash("sha256").update(octets).digest("hex");
+  return { ok: empreinte === annexe.empreinte.toLowerCase(), empreinte, lecture: lirePrixPublies(octets.toString("utf8"), edition) };
+}
+
+/** Lignes à écrire pour une couche : rattachement aux objets (codes de la couche, propriété `ville_source`). */
+export function lignesPrixDeLaCouche(lecture: ResultatLectureAgregats, objets: readonly ObjetImporte[], codes: readonly string[]): LignePrixPublie[] {
+  return rattacherAgregats(lecture.agregats, objets.map((o, i) => {
+    const vs = o.proprietes[PROPRIETE_VILLE_SOURCE];
+    return { code: codes[i]!, villeSource: typeof vs === "string" ? vs : null };
+  }));
 }

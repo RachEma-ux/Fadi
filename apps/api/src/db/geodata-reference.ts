@@ -50,7 +50,7 @@ import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar 
 import { chargerTerritoires, NiveauAbsent } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 import { importerDecoupage, ligneBilanDecoupage } from "../lib/geodata/decoupage.js";
-import { lirePrixPublies, PROPRIETE_VILLE_SOURCE, rattacherAgregats } from "../lib/geodata/prix/agregats.js";
+import { lignesPrixDeLaCouche, lireAnnexePrix, type LignePrixPublie } from "../lib/geodata/prix/agregats.js";
 import { chargerRegistrePrix, ligneBilanRegistre } from "../lib/geodata/prix/registre.js";
 
 interface AnnexeFichier { fichier: string; empreinte: string; description?: string }
@@ -152,20 +152,6 @@ function lireAnnexeJson(a: AnnexeFichier | undefined, chemin: string, nom: strin
   const octets = readFileSync(join(dirname(chemin), a.fichier));
   const empreinte = createHash("sha256").update(octets).digest("hex");
   return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, contenu: JSON.parse(octets.toString("utf8")) };
-}
-
-/**
- * Agrégats de prix publiés (annexe `prixPublies`) : chemin contrôlé, empreinte SHA-256 calculée, lecture CSV et
- * validation par `lireAgregatsFeenway` (une ligne en erreur n'est jamais retenue ; ses erreurs sont rapportées).
- */
-function lireAnnexePrix(fiche: FicheSource, chemin: string) {
-  const a = fiche.version.annexes?.prixPublies;
-  if (!a) return null;
-  if (!/^donnees\/[a-z0-9-]+\.csv$/.test(a.fichier)) throw new Error(`Annexe des prix publiés refusée : ${a.fichier}`);
-  const octets = readFileSync(join(dirname(chemin), a.fichier));
-  const empreinte = createHash("sha256").update(octets).digest("hex");
-  const lecture = lirePrixPublies(octets.toString("utf8"), fiche.version.libelle);
-  return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, lecture };
 }
 
 /** Colonnes de base de l'annexe des douars (lot E) ; toute autre colonne est un complément (D-GD-43). */
@@ -442,7 +428,9 @@ async function importer(chemin: string, preparateur: string | null) {
   const douars = lireDouars(fiche, chemin);
   const concepts = lireAnnexeJson(fiche.version.annexes?.concepts, chemin, "des concepts");
   const tableauBord = lireAnnexeJson(fiche.version.annexes?.tableau, chemin, "du tableau de bord");
-  const prix = lireAnnexePrix(fiche, chemin);
+  // Agrégats de prix publiés (annexe `prixPublies`) : chemin contrôlé, empreinte calculée, lecture et validation
+  // (`lireAgregatsFeenway` : une ligne en erreur n'est jamais retenue, ses erreurs sont rapportées dans les contrôles).
+  const prix = fiche.version.annexes?.prixPublies ? lireAnnexePrix(fiche.version.annexes.prixPublies, dirname(chemin), fiche.version.libelle) : null;
   const listeConcepts = concepts ? lireConcepts(concepts.contenu) : null;
   let definitionBord: DefinitionTableauDeBord | null = null;
   if (tableauBord) {
@@ -457,7 +445,7 @@ async function importer(chemin: string, preparateur: string | null) {
   let controles: Record<string, unknown> & { ok: boolean };
   let raster: { grille: GrilleRaster; description: DescriptionRaster } | undefined;
   let lecture = "GeoJSON ; géométries conservées en WGS 84 sans reprojection";
-  let lignesPrix: ReturnType<typeof rattacherAgregats> = [];
+  let lignesPrix: LignePrixPublie[] = [];
   if (/\.tiff?$/i.test(nomFichier)) {
     // Couche raster (D-GD-13) : GeoTIFF EPSG:4326, symbologie déclarée par la fiche (couche.raster).
     const decl = fiche.couche.raster;
@@ -506,11 +494,7 @@ async function importer(chemin: string, preparateur: string | null) {
     if (prix) {
       if (prix.lecture.erreurs.length) console.error(`Agrégats de prix publiés : ${prix.lecture.erreurs.length} erreur(s), ex. ${JSON.stringify(prix.lecture.erreurs.slice(0, 3))}`);
       // Rattachement des lignes de niveau ville à l'objet de la couche qui porte ce nom de ville (`ville_source`).
-      const { codes } = codesDesObjets(objets, fiche.couche.champCode);
-      lignesPrix = rattacherAgregats(prix.lecture.agregats, objets.map((o, i) => {
-        const vs = o.proprietes[PROPRIETE_VILLE_SOURCE];
-        return { code: codes[i]!, villeSource: typeof vs === "string" ? vs : null };
-      }));
+      lignesPrix = lignesPrixDeLaCouche(prix.lecture, objets, codesDesObjets(objets, fiche.couche.champCode).codes);
       console.log(`Agrégats de prix publiés : ${lignesPrix.length} ligne(s), ${lignesPrix.filter((l) => l.etatRattachement === "exact").length} rattachée(s), ${lignesPrix.filter((l) => l.etatRattachement !== "exact").length} non rattachée(s).`);
     }
   }
