@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-30 (UTC).
+Mis à jour : 2026-10-31 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,6 +15,13 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57) : PR #374 (`claude/prix-immobiliers-geodata`), qui remplace la PR #368.
+  Après fusion par le maître d'ouvrage et déploiement : l'import automatique au démarrage archive et publie la fiche
+  `feenway-barometre-casablanca` et charge le registre `prix/prix-sources.json` ; vérifier la quittance
+  `GET /version/donnees` puis, en préproduction, la rubrique « Prix immobiliers » du catalogue et la fiche de la commune
+  de Casablanca (appartements : 14 000 MAD/m² à la vente, 8 500 MAD/mois à la location ; 25 + 25 quartiers). Sources
+  bloquées : envoyer les demandes de l'annexe A de `PRIX-SOURCES.md` (maître d'ouvrage). Prochaine action technique :
+  nouvelle édition du baromètre (autres villes) par une nouvelle fiche, jamais un écrasement.
 - Niveaux infra-communaux (D-GD-42) : **implémenté** sur `claude/maroc-infra-communal-levels-5abxes` (PR vers `main`,
   après #356). Après fusion et déploiement : lancer **une fois** sur le VPS
   `node apps/api/dist/geodata-reference.js --decoupage MA` (jamais au démarrage ; relancé, il ne fait rien). À arbitrer :
