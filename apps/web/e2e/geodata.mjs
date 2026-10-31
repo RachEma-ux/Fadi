@@ -1247,6 +1247,98 @@ await p2.locator("[data-gd-fiche='002']").waitFor();
 check("GEO 11 · sans WebGL : recherche et fiche restent utilisables", true);
 await sansGl.close();
 
+// --- Prix immobiliers (lot P7, Concept Prix v1.1 §4–§6) : panneau du catalogue et section de la fiche ---
+// Joué contre ce que la base contient : états et registre comparés aux réponses de l'API ; la section de la fiche n'est
+// contrôlée que si la couche des prix affichés est publiée (relevé FeenWay de la commune, chargé par la chaîne
+// d'import) — sinon le scénario le dit, sans rien inventer.
+let routesPrix = false;
+{
+  const ctxPrix = await navigateur.newContext({ viewport: { width: 1440, height: 900 } });
+  const pp = await ctxPrix.newPage();
+  pp.on("pageerror", (e) => erreurs.push(e.message));
+  await inscrire(pp, `gd-prix-${suffixe}@example.test`);
+  const lire = async (c) => { const r = await pp.request.get(`${BASE}/geodata/api${c}`); return { status: r.status(), body: await r.json().catch(() => null) }; };
+  const espaces = (t) => (t ?? "").replace(/[  ]/g, " ").replace(/\s+/g, " ").trim();
+  const etatPrix = await lire("/prix/couches");
+  routesPrix = etatPrix.status === 200;
+  if (!routesPrix) console.log(`– prix immobiliers : GET /geodata/api/prix/couches répond ${etatPrix.status}, scénario non joué`);
+  else {
+    const sourcesPrix = (await lire("/prix/sources")).body?.sources ?? [];
+    const couchePrix = ((await lire("/catalogue")).body?.couches ?? []).find((c) => c.version?.source?.theme === "prix-immobiliers") ?? null;
+    await pp.goto(`${BASE}/geodata`);
+    await pp.locator("[data-geodata-page]").waitFor();
+    await onglet(pp, "catalogue");
+    // Avec la couche publiée, le panneau vit dans sa catégorie (ouverte par le filtre) ; sinon dans la rubrique dédiée.
+    if (couchePrix) await pp.locator("[data-gd-filtre-catalogue]").fill("prix-immobiliers");
+    else await pp.locator("[data-gd-entete-categorie='prix']").click();
+    await pp.locator("[data-gd-prix-panneau='pret']").waitFor({ timeout: 15_000 });
+    const etatsAffiches = await pp.locator("[data-gd-prix-couche]").evaluateAll((as) => Object.fromEntries(as.map((a) => [a.getAttribute("data-gd-prix-couche"), a.getAttribute("data-gd-prix-couche-etat")])));
+    const etatsApi = Object.fromEntries(etatPrix.body.couches.map((c) => [c.couche, c.etat]));
+    check("prix · catalogue : les deux couches et leur état lu sur le serveur (icône + texte)", etatsAffiches.annonces === (etatsApi.annonces ?? "indisponible") && etatsAffiches.officielle === (etatsApi.officielle ?? "indisponible") && (await pp.locator("[data-gd-prix-couche] [data-gd-etat-prix] .gd-etat-prix-icone").count()) >= 2, JSON.stringify(etatsAffiches));
+    const bloqueesOff = sourcesPrix.filter((s) => s.couche === "officielle" && !["active", "autorisee"].includes(s.statut)).length;
+    check("prix · catalogue : couche officielle — chaque source bloquée avec son motif et sa prochaine action", (await pp.locator("[data-gd-prix-couche='officielle'] [data-gd-prix-blocage]").count()) === bloqueesOff, `${bloqueesOff} attendue(s)`);
+    await pp.locator("[data-gd-prix-sources-bouton]").click();
+    await pp.locator("[data-gd-prix-sources]").waitFor();
+    check("prix · « Sources et dossiers » : le registre en base, chaque source avec son statut", (await pp.locator("[data-gd-prix-source]").count()) === sourcesPrix.length && (await pp.locator("[data-gd-prix-source] [data-gd-prix-statut]").count()) === sourcesPrix.length, `${sourcesPrix.length} source(s)`);
+    if (!couchePrix) console.log("– prix immobiliers : aucune couche « prix-immobiliers » publiée dans cette base, section de la fiche non jouée");
+    else {
+      const premiere = (await lire(`/couches/${encodeURIComponent(couchePrix.id)}/table?page=1&taille=5&tri=nom&ordre=asc`)).body?.lignes?.[0];
+      const ficheApi = premiere ? (await lire(`/couches/${encodeURIComponent(couchePrix.id)}/objets/${encodeURIComponent(premiere.code)}`)).body : null;
+      if (!ficheApi?.prixPublies) console.log("– prix immobiliers : la fiche de l'objet ne porte pas de prixPublies, section non jouée");
+      else {
+        await pp.locator(`[data-gd-ajouter='${couchePrix.id}']`).click();
+        await onglet(pp, "couches");
+        await pp.locator(`[data-gd-couche-active='${couchePrix.id}']`).getByRole("button", { name: "Table" }).click();
+        await pp.locator(`[data-gd-table] [data-gd-ligne='${premiere.code}']`).getByRole("button", { name: /Fiche|Voir la fiche/ }).click();
+        const section = pp.locator("[data-gd-prix-section]");
+        await section.waitFor({ timeout: 15_000 });
+        const venteApp = espaces(await section.locator("[data-gd-prix-ville='vente'] [data-gd-prix-ligne='vente|appartement']").textContent().catch(() => ""));
+        const locApp = espaces(await section.locator("[data-gd-prix-ville='location'] [data-gd-prix-ligne='location|appartement']").textContent().catch(() => ""));
+        check("prix · fiche : commune — appartements à vendre 14 000 MAD/m², 16 802 annonces", venteApp.includes("14 000") && venteApp.includes("16 802"), venteApp);
+        check("prix · fiche : commune — appartements à louer 8 500 MAD/mois, 25 431 annonces", locApp.includes("8 500") && locApp.includes("25 431"), locApp);
+        const enTete = espaces(await section.locator("[data-gd-prix-edition]").first().textContent());
+        check("prix · fiche : en-tête — éditeur, attribution avec lien, prix demandés et effectifs = annonces", (await section.locator("[data-gd-prix-attribution] a[href^='http']").count()) >= 1 && enTete.length > 0 && ((await section.textContent()) ?? "").includes("pas des prix de transaction") && ((await section.textContent()) ?? "").includes("pas des biens distincts"));
+        const nV = await section.locator("[data-gd-prix-quartiers='vente'] tbody [data-gd-prix-quartier]").count();
+        const nL = await section.locator("[data-gd-prix-quartiers='location'] tbody [data-gd-prix-quartier]").count();
+        check("prix · fiche : quartiers commerciaux non rattachés — 25 à la vente + 25 à la location, sans polygone", nV === 25 && nL === 25, `${nV} + ${nL}`);
+        const absents = await section.locator("[data-gd-prix-quartiers] td[data-absente]").allTextContents();
+        check("prix · fiche : valeur non publiée écrite en toutes lettres, jamais 0", absents.every((t) => /non publiée?/.test(t)), absents.slice(0, 3).join(" | "));
+        const nomFiltre = espaces(await section.locator("[data-gd-prix-quartiers='vente'] tbody [data-gd-prix-quartier] th").first().textContent());
+        await section.locator("[data-gd-prix-filtre]").fill(nomFiltre);
+        check("prix · fiche : le filtre texte réduit les deux tableaux", (await section.locator("[data-gd-prix-quartiers='vente'] tbody [data-gd-prix-quartier]").count()) >= 1 && (await section.locator("[data-gd-prix-quartiers='vente'] tbody [data-gd-prix-quartier]").count()) < 25, nomFiltre);
+        await section.locator("[data-gd-prix-filtre]").fill("");
+        const triM2 = section.locator("[data-gd-prix-quartiers='vente'] [data-gd-prix-tri='prixM2']");
+        await triM2.focus();
+        await pp.keyboard.press("Enter");
+        const sens1 = await triM2.locator("xpath=..").getAttribute("aria-sort");
+        await pp.keyboard.press("Enter");
+        const sens2 = await triM2.locator("xpath=..").getAttribute("aria-sort");
+        check("prix · fiche : tri au clavier, sens annoncé (aria-sort)", sens1 === "descending" && sens2 === "ascending", `${sens1} → ${sens2}`);
+        await pp.waitForFunction(() => !["chargement", null].includes(document.querySelector("[data-gd-prix-comparaison]")?.getAttribute("data-gd-prix-comparaison") ?? null), null, { timeout: 15_000 }).catch(() => undefined);
+        const comp = await section.locator("[data-gd-prix-comparaison]").getAttribute("data-gd-prix-comparaison");
+        check("prix · comparaison : résultat ou « Comparaison impossible » avec ses dimensions, ou motif d'échec — jamais muet", comp === "comparable" || comp === "erreur" || (comp === "impossible" && ((await section.locator("[data-gd-prix-dimension]").count()) >= 1 || ((await section.locator("[data-gd-prix-comparaison-impossible]").textContent()) ?? "").includes("Aucune dimension"))), comp ?? "");
+        await pp.waitForFunction(() => document.querySelector("[data-gd-prix-cellules]")?.getAttribute("data-gd-prix-cellules") !== "chargement", null, { timeout: 15_000 }).catch(() => undefined);
+        const cel = await section.locator("[data-gd-prix-cellules]").getAttribute("data-gd-prix-cellules");
+        check("prix · instantané : « Aucun instantané publié » avec son état, ou cellules de l'instantané", (cel === "aucun" && (await section.locator("[data-gd-prix-sans-instantane] [data-gd-etat-prix]").count()) === 1) || cel === "instantane" || cel === "erreur", cel ?? "");
+        const capacites = (await lire("/espace")).body?.capacites ?? [];
+        if (capacites.includes("exporter")) {
+          const href = await section.locator("[data-gd-prix-export]").first().getAttribute("href");
+          const telechargement = await pp.request.get(`${BASE}${href}`);
+          check("prix · export CSV de l'agrégat publié, attribution incluse", /\/geodata\/api\/prix\/export\?format=csv&versionId=/.test(href ?? "") && telechargement.status() === 200, `${href} → ${telechargement.status()}`);
+        }
+        await pp.screenshot({ path: join(OUT, "20-prix-fiche.png") });
+        // Téléphone : détails en feuille pleine largeur, aucun défilement horizontal.
+        await pp.setViewportSize({ width: 390, height: 844 });
+        await pp.waitForTimeout(400);
+        const debord = await pp.evaluate(() => { const v = document.querySelector("[data-gd-prix-section]")?.closest(".gd-volet"); return v ? { sw: v.scrollWidth, cw: v.clientWidth, l: v.getBoundingClientRect().width } : null; });
+        check("prix · téléphone : feuille pleine largeur, tableaux sans défilement horizontal", !!debord && debord.sw <= debord.cw + 1 && debord.l >= 380, JSON.stringify(debord));
+        await pp.screenshot({ path: join(OUT, "20b-prix-telephone.png") });
+      }
+    }
+  }
+  await ctxPrix.close();
+}
+
 // --- Interface anglaise : aucun résidu français hors données ---
 const en = await (await navigateur.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 await en.goto(`${BASE}/inscription`);
@@ -1284,6 +1376,15 @@ await en.locator("[data-gd-concepts-langue='ar']").click(); await releve();
 await en.locator('[data-gd-onglet-page="cartes"]').click();
 await onglet(en, "catalogue"); await en.locator("[data-gd-type='imagerie']").click(); await releve(); await en.locator("[data-gd-type='vecteurs']").click();
 for (const o of ["couches", "legende"]) { await onglet(en, o); await releve(); }
+// Prix immobiliers (lot P7) : panneau du catalogue et registre des sources, en anglais (seulement si l'API sert les prix).
+if (routesPrix) {
+  await onglet(en, "catalogue");
+  const entetePrix = en.locator("[data-gd-entete-categorie='prix']");
+  if (await entetePrix.count()) await entetePrix.click(); else await en.locator("[data-gd-filtre-catalogue]").fill("prix-immobiliers");
+  await en.locator("[data-gd-prix-panneau='pret']").waitFor({ timeout: 15_000 });
+  await en.locator("[data-gd-prix-sources-bouton]").click();
+  await releve();
+}
 writeFileSync(join(OUT, "residus-anglais.txt"), [...residus].join("\n"));
 check("interface anglaise : aucun texte d'interface resté en français", residus.size === 0, [...residus].slice(0, 8).join(" | "));
 
