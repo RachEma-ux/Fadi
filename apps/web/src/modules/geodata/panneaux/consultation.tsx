@@ -314,13 +314,15 @@ export function PanneauCouches(p: {
   );
 }
 
-export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]> }) {
+export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]>; /** Couches colorées selon l'indicateur actif (D-GD-55). */ colorations?: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }> }) {
   const visibles = [...p.composition.couches].reverse().filter((k) => k.visible);
   if (!visibles.length) return <p className="gd-etat">Aucune couche visible.</p>;
   return (
     <div data-gd-legende>
       {visibles.map((k) => {
         const c = p.couches.get(k.coucheId);
+        const col = p.colorations?.get(k.coucheId);
+        if (col) return <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId}><h3 translate="no">{c?.titre ?? k.coucheId}</h3><EntreesIndicateur indicateur={col.indicateur} entrees={col.entrees} /></section>;
         if (k.style.mode === "simple") return <section key={k.coucheId} className="gd-legende"><h3 translate="no">{c?.titre ?? k.coucheId}</h3><p className="gd-entree"><span className="gd-pastille" style={{ background: k.style.couleur }} />Objets de la couche</p></section>;
         if (k.style.mode === "raster") {
           const r = c?.raster;
@@ -456,21 +458,30 @@ export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, { indica
         const couche = p.couches.get(id);
         return (
           <div key={id}>
-            <h3 translate="no">{c.indicateur.titre}{c.indicateur.unite ? ` (${c.indicateur.unite})` : ""}</h3>
-            <ul className="gd-entrees">
-              {c.entrees.map((e) => (
-                <li key={String(e.classe)} className="gd-entree">
-                  <span className="gd-pastille" style={{ background: e.couleur }} />
-                  {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
-                  <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
-                </li>
-              ))}
-            </ul>
+            <EntreesIndicateur indicateur={c.indicateur} entrees={c.entrees} />
             {couche && <p className="gd-discret"><span translate="no">{couche.version.attribution}</span>{couche.version.qualification?.etat === "provisoire" && <>{" · "}<span>Source provisoire</span></>}</p>}
           </div>
         );
       })}
     </section>
+  );
+}
+
+/** Classes de la coloration selon l'indicateur (D-GD-55) : titre, unité, bornes, effectifs, valeur absente. */
+function EntreesIndicateur({ indicateur: i, entrees }: { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }) {
+  return (
+    <>
+      <h3 translate="no">{i.titre}{i.unite ? ` (${i.unite})` : ""}</h3>
+      <ul className="gd-entrees" data-gd-legende-classes>
+        {entrees.map((e) => (
+          <li key={String(e.classe)} className="gd-entree">
+            <span className="gd-pastille" style={{ background: e.couleur }} />
+            {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
+            <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

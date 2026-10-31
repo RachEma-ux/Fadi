@@ -859,7 +859,8 @@ export function PageGeoData() {
     return () => window.removeEventListener("keydown", ecouter);
   }, []);
 
-  const changerStyle = (id: string, s: StyleCouche) => setComposition((c) => definirStyle(c, id, s));
+  // Une coloration choisie à la main l'emporte : la coloration selon l'indicateur de cette couche est coupée (D-GD-55).
+  const changerStyle = (id: string, s: StyleCouche) => { setComposition((c) => definirStyle(c, id, s)); setColorationsCoupees((m) => new Set(m).add(id)); };
   /** Réunion des indicateurs des couches vectorielles du catalogue (rubrique « Indicateurs », D-GD-31). */
   const indicateursCatalogue = useMemo(() => unionIndicateurs((catalogue ?? []).filter((c) => c.typeGeometrie !== "raster")), [catalogue]);
   /**
@@ -958,6 +959,9 @@ export function PageGeoData() {
       // Valeurs de l'indicateur actif affichées sur la couche (D-GD-32) : la légende exportée nomme ce que sont ces nombres.
       const i = valeursAffichees.has(k.coucheId) ? indicateursParCouche.get(k.coucheId) : undefined;
       const titre = `${c?.titre ?? k.coucheId}${i ? ` — valeurs affichées : ${i.titre} (${i.unite})${i.periode ? `, ${i.periode}` : ""}` : ""}`;
+      // Couche colorée selon l'indicateur actif (D-GD-55) : la légende exportée décrit ces classes, pas le style enregistré.
+      const col = colorations.get(k.coucheId);
+      if (col) return { titre: `${c?.titre ?? k.coucheId} — ${col.indicateur.titre}${col.indicateur.unite ? ` (${col.indicateur.unite})` : ""}`, entrees: col.entrees };
       if (k.style.mode === "simple") return { titre, entrees: null, couleur: k.style.couleur };
       if (k.style.mode === "categories") return { titre, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
       if (k.style.mode === "raster") return { titre: `${c?.titre ?? k.coucheId}${c?.raster ? ` — ${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}` : ""}`, entrees: c?.raster ? entreesRaster(c.raster) : null, sansEffectif: true };
@@ -1115,7 +1119,7 @@ export function PageGeoData() {
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))} onRegrouper={(id) => setComposition((c) => basculerRegroupement(c, id))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
-              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} />}
+              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} colorations={colorations} />}
           </div>
         </aside>}
         <main className="gd-carte" aria-label="Carte" data-gd-zoom={composition.camera.zoom.toFixed(2)}>

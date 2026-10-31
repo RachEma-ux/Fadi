@@ -448,6 +448,9 @@ await caseCouleur.uncheck();
 check("coloration selon l'indicateur : décochée, la légende disparaît", (await page.locator("[data-gd-legende-indicateur]").count()) === 0);
 await caseCouleur.check();
 check("coloration selon l'indicateur : recochée, la légende revient", (await page.locator("[data-gd-legende-indicateur]").count()) === 1);
+await onglet(page, "legende");
+check("coloration selon l'indicateur : l'onglet « Légende » donne les mêmes classes", (await page.locator("[data-gd-legende] [data-gd-legende-classes] .gd-entree").count()) === (await legendeIndic.locator(".gd-entree").count()));
+await onglet(page, "couches");
 // Les quatre combinaisons nom / valeur : deux cases sans aucun lien entre elles.
 check("nom / valeur : état de départ — noms masqués, valeurs affichées", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()));
 await caseNoms.check();

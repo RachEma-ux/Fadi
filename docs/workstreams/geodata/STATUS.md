@@ -118,7 +118,7 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
 - Coloration selon l'indicateur et légende (D-GD-55, demande du 1ᵉʳ novembre 2026) : `colorationIndicateur`
   (`composition-ops.ts`, 2 tests), légende `LegendeIndicateur`, case « Colorer selon l'indicateur », indicateur principal
-  activé par la pastille de thème. Recette `geodata.mjs` : 236 contrôles, tout conforme (4 nouveaux) ; captures bureau
+  activé par la pastille de thème. Recette `geodata.mjs` : 237 contrôles, tout conforme (5 nouveaux) ; captures bureau
   et téléphone de la pastille « Immobilier et foncier » à Tanger (prix écrits, 5 classes, légende).
 - Prix des quartiers provisoires FeenWay et sources futures (D-GD-54, décision du maître d'ouvrage du 31 octobre 2026) :
   qualification « provisoire » (`qualification.ts`, 4 tests ; colonnes de `geodata_versions`), garde

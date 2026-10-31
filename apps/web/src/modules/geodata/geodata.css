@@ -344,4 +344,4 @@
 .geodata-page .gd-legende-indicateur .gd-entrees{list-style:none;margin:0;padding:0}
 .geodata-page .gd-legende-indicateur p{margin:4px 0 0}
 @media (min-width:761px){.geodata-page .gd-legende-indicateur.gd-legende-decalee{left:380px}}
-@media (max-width:760px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}}
+@media (max-width:760px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}

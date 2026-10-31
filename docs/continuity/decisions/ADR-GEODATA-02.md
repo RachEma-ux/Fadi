@@ -639,7 +639,9 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      préproduction) — **coloration selon l'indicateur actif et légende sur la carte** ; lève D-GD-32 en partie :
      1. Une couche qui porte l'indicateur actif est colorée selon ses valeurs **lues en base** : 5 classes par quantiles,
         palette séquentielle jaune → rouge, gris pour une valeur absente (jamais zéro) ; contours blancs. Case « Colorer
-        selon l'indicateur » de la carte de couche (cochée par défaut) ; le style enregistré de la couche ne change pas.
+        selon l'indicateur » de la carte de couche (cochée par défaut) ; le style enregistré de la couche ne change pas ;
+        une coloration choisie à la main décoche la case (le choix de l'utilisateur l'emporte). Légende aussi dans l'onglet
+        « Légende » et dans l'image exportée ou imprimée ; au téléphone, panneau ouvert, elle n'est que dans l'onglet.
      2. Légende de l'indicateur sur la carte (en bas à gauche) : nom, unité, bornes des classes, nombre d'entités par
         classe, valeur absente, attribution et statut provisoire de la source.
      3. Afficher un thème par sa pastille, sans indicateur actif, active son indicateur principal (première valeur de la
