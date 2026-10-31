@@ -3775,7 +3775,8 @@ CREATE TABLE IF NOT EXISTS geodata_prix_decisions_doublons (
 );
 
 -- Instantanés : construction candidate immuable (identifiant, empreinte SHA-256 reproductible, manifeste des entrées,
--- version de méthode, paramètres, sources, lots, découpage). Seuls l'état et le retrait (avec motif) changent ensuite.
+-- version de méthode, paramètres, sources, lots, découpage). Seul l'état change ensuite (candidat → validé à sa première
+-- publication) ; une même entrée et une même méthode redonnent la même empreinte, donc le même instantané (PRX12).
 CREATE TABLE IF NOT EXISTS geodata_prix_instantanes (
   id text PRIMARY KEY,
   couche text NOT NULL CHECK (couche IN ('officielle', 'annonces')),
@@ -3789,19 +3790,16 @@ CREATE TABLE IF NOT EXISTS geodata_prix_instantanes (
   lots text[] NOT NULL,
   decoupage text,
   rapport jsonb NOT NULL DEFAULT '{}'::jsonb,
-  etat text NOT NULL DEFAULT 'candidat' CHECK (etat IN ('candidat', 'valide', 'retire')),
-  motif_retrait text,
-  retire_le timestamptz,
+  etat text NOT NULL DEFAULT 'candidat' CHECK (etat IN ('candidat', 'valide')),
   cree_par text REFERENCES users (id) ON DELETE SET NULL,
-  cree_le timestamptz NOT NULL DEFAULT clock_timestamp(),
-  CONSTRAINT geodata_prix_instantanes_retrait CHECK (etat <> 'retire' OR (motif_retrait IS NOT NULL AND length(btrim(motif_retrait)) >= 3))
+  cree_le timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE OR REPLACE FUNCTION geodata_prix_instantane_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'geodata_prix_instantane_immuable'; END IF;
-  IF (to_jsonb(NEW) - ARRAY['etat', 'motif_retrait', 'retire_le', 'cree_par']) <> (to_jsonb(OLD) - ARRAY['etat', 'motif_retrait', 'retire_le', 'cree_par'])
+  IF (to_jsonb(NEW) - ARRAY['etat', 'cree_par']) <> (to_jsonb(OLD) - ARRAY['etat', 'cree_par'])
      OR (NEW.cree_par IS DISTINCT FROM OLD.cree_par AND NEW.cree_par IS NOT NULL)
-     OR (OLD.etat = 'retire' AND NEW.etat <> 'retire') THEN
+     OR (OLD.etat = 'valide' AND NEW.etat <> 'valide') THEN
     RAISE EXCEPTION 'geodata_prix_instantane_immuable';
   END IF;
   RETURN NEW;
