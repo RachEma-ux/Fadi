@@ -9,3 +9,4 @@ export * from "./statistiques.js";
 export * from "./etats.js";
 export * from "./comparaison.js";
 export * from "./agregats-publies.js";
+export * from "./officielles.js";

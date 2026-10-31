@@ -52,6 +52,28 @@ export type MotifEtatCouche =
   | "date-donnees-inconnue"
   | "donnees-perimees";
 
+/**
+ * Motifs codés « hors chaîne de l'édition » que l'API rend pour un produit ou une couche : aucune source enregistrée
+ * pour ce produit, ou aucune publication active (instantané des observations).
+ */
+export const MOTIFS_PRODUIT_PRIX = ["aucune-source", "aucune-publication"] as const;
+
+/**
+ * Liste unique et fermée des codes de motif que l'API des prix peut rendre pour une couche ou un produit
+ * (`GET /prix/couches`, `GET /prix/cellules`) : statuts de source non autorisés, motifs de `deriverEtatCouche`, puis
+ * `MOTIFS_PRODUIT_PRIX`. L'interface porte un libellé pour chacun (contrôlé par test).
+ */
+export const MOTIFS_COUCHE_PRIX = [
+  ...STATUTS_SOURCE_PRIX.filter((s) => s !== "autorisee" && s !== "active").map((s) => `source-${s}` as const),
+  "aucune-edition", "aucune-donnee", "import-echoue", "edition-historique", "validite-non-verifiee", "date-donnees-inconnue", "donnees-perimees",
+  ...MOTIFS_PRODUIT_PRIX,
+] as readonly (MotifEtatCouche | (typeof MOTIFS_PRODUIT_PRIX)[number])[];
+export type MotifCouchePrix = MotifEtatCouche | (typeof MOTIFS_PRODUIT_PRIX)[number];
+
+/** Motifs codés d'une comparaison refusée (`GET /prix/comparaison`, champ `motif`). */
+export const MOTIFS_COMPARAISON_PRIX = ["aucune-reference-officielle", "aucune-valeur-marche", "dimensions-incompatibles"] as const;
+export type MotifComparaisonPrix = (typeof MOTIFS_COMPARAISON_PRIX)[number];
+
 export interface EtatCouche {
   readonly etat: EtatDonneePrix;
   /** Motif codé ; null si `disponible`. */

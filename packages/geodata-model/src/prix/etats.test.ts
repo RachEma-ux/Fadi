@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriverEtatCouche, REGLE_FRAICHEUR_V1, type EntreeEtatCouche } from "./etats.js";
+import { deriverEtatCouche, MOTIFS_COUCHE_PRIX, REGLE_FRAICHEUR_V1, STATUTS_SOURCE_PRIX, type EntreeEtatCouche } from "./etats.js";
 
 const base: EntreeEtatCouche = {
   couche: "annonces", source: { statut: "active" }, edition: { validite: null, dateDonnees: "2026-10-30" }, nombreValeurs: 64, dateReference: "2026-10-31",
@@ -37,5 +37,20 @@ describe("état d'une couche de prix", () => {
     expect(deriverEtatCouche({ ...base, edition: { validite: null, dateDonnees: null } }).motif).toBe("date-donnees-inconnue");
     expect(deriverEtatCouche({ ...base, regleFraicheur: { version: "fraicheur-test", joursMaximum: 0 } })).toMatchObject({ etat: "perime", regleFraicheur: "fraicheur-test" });
     expect(REGLE_FRAICHEUR_V1.joursMaximum).toBe(180);
+  });
+});
+
+describe("liste fermée des motifs codés", () => {
+  it("chaque motif de deriverEtatCouche figure dans MOTIFS_COUCHE_PRIX ; aucun doublon", () => {
+    const vus = new Set<string>();
+    for (const statut of STATUTS_SOURCE_PRIX) for (const validite of ["verifiee", "non-verifiee", "historique", null] as const) for (const n of [0, 3]) for (const date of [null, "2026-01-01", "2020-01-01"]) for (const echec of [false, true]) {
+      for (const sansEdition of [false, true]) {
+        const e = deriverEtatCouche({ couche: "officielle", source: { statut }, edition: sansEdition ? null : { validite, dateDonnees: date, importEchoue: echec }, nombreValeurs: n, dateReference: "2026-10-31" });
+        if (e.motif) vus.add(e.motif);
+      }
+    }
+    for (const m of vus) expect(MOTIFS_COUCHE_PRIX).toContain(m);
+    expect(new Set(MOTIFS_COUCHE_PRIX).size).toBe(MOTIFS_COUCHE_PRIX.length);
+    expect(MOTIFS_COUCHE_PRIX).toEqual(expect.arrayContaining(["aucune-source", "aucune-publication", "source-bloquee"]));
   });
 });
