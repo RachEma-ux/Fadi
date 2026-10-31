@@ -42,6 +42,20 @@ describe("agrégats publiés par un tiers (format FeenWay)", () => {
     expect(lireAgregatsFeenway([{ ...vente, median_price_numeric: "1560000.0" }], { edition: "e" }).erreurs.map((e) => e.code)).toEqual(["affichage-incoherent"]);
   });
 
+  it("montant publié nul : erreur, sauf si l'éditeur affiche lui-même 0 (jamais 0 pour une valeur manquante)", () => {
+    const [vente] = lireCsv(CSV) as [Record<string, string>];
+    const code = (l: Record<string, string>) => lireAgregatsFeenway([l], { edition: "e" }).erreurs.map((e) => [e.colonne, e.code]);
+    expect(code({ ...vente, median_price_numeric: "0", median_price_display: "—", median_price_is_abbreviated: "" })).toEqual([["median_price_numeric", "montant-nul"]]);
+    expect(code({ ...vente, median_price_numeric: "0.0", median_price_display: "", median_price_is_abbreviated: "" })).toEqual([["median_price_numeric", "montant-nul"]]);
+    expect(code({ ...vente, median_unit_price_numeric: "0", median_unit_price_display: "—" })).toEqual([["median_unit_price_numeric", "montant-nul"]]);
+    // Nombre publié sans affichage correspondant : incohérent, la ligne n'est pas retenue.
+    expect(code({ ...vente, median_unit_price_numeric: "12345.0", median_unit_price_display: "—" })).toEqual([["median_unit_price_numeric", "affichage-incoherent"]]);
+    // L'éditeur affiche 0 : valeur publiée 0 retenue telle quelle.
+    const zero = lireAgregatsFeenway([{ ...vente, median_price_numeric: "0", median_price_display: "0 DH", median_price_is_abbreviated: "False" }], { edition: "e" });
+    expect(zero.erreurs).toEqual([]);
+    expect(zero.agregats[0]!.prixMedian).toMatchObject({ valeur: 0, centimes: 0, texteOriginal: "0 DH" });
+  });
+
   it("colonnes manquantes : aucune ligne retenue", () => {
     const sans = lireCsv(CSV).map(({ listing_count: _l, ...reste }) => reste);
     const r = lireAgregatsFeenway(sans, { edition: "e" });

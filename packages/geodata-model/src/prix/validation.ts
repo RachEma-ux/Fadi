@@ -20,15 +20,20 @@ export const MOTIFS_QUARANTAINE = [
   "type-bien-inconnu",
   "base-surface-inconnue",
   "prix-absent",
+  "montant-illisible",
   "prix-non-positif",
   "prix-fictif",
   "surface-absente",
+  "surface-illisible",
   "surface-non-positive",
   "periode-inconnue",
   "periode-incoherente",
   "monnaie-absente",
   "monnaie-non-supportee",
   "base-surface-incoherente",
+  // Posé par la chaîne d'import (pas par `validerObservation`) : même source, même annonce, même date déjà en base avec
+  // un contenu différent. La première version reste ; la nouvelle est gardée en quarantaine pour revue, jamais ignorée.
+  "conflit-reimport",
 ] as const;
 export type MotifQuarantaine = (typeof MOTIFS_QUARANTAINE)[number];
 
@@ -68,11 +73,13 @@ export function validerObservation(o: ObservationAnnonce): ResultatValidation {
   if (!estTypeBien(o.typeBien)) motifs.add("type-bien-inconnu");
   if (!estBaseSurface(o.baseSurface)) motifs.add("base-surface-inconnue");
 
-  if (o.prix === null || o.prix === undefined || Number.isNaN(o.prix)) motifs.add("prix-absent");
+  if (o.illisibles?.includes("prix")) motifs.add("montant-illisible");
+  else if (o.prix === null || o.prix === undefined || Number.isNaN(o.prix)) motifs.add("prix-absent");
   else if (!Number.isFinite(o.prix) || o.prix <= 0) motifs.add("prix-non-positif");
   else if (estPrixFictif(o.prix)) motifs.add("prix-fictif");
 
-  if (o.surface === null || o.surface === undefined || Number.isNaN(o.surface)) motifs.add("surface-absente");
+  if (o.illisibles?.includes("surface")) motifs.add("surface-illisible");
+  else if (o.surface === null || o.surface === undefined || Number.isNaN(o.surface)) motifs.add("surface-absente");
   else if (!Number.isFinite(o.surface) || o.surface <= 0) motifs.add("surface-non-positive");
 
   if (!estPeriodePrix(o.periode)) motifs.add("periode-inconnue");

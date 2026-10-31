@@ -23,6 +23,12 @@ describe("validation des observations et quarantaine", () => {
     expect(validerObservation(obs({ prix: 123456 })).motifs).toEqual(["prix-fictif"]);
   });
 
+  it("montant ou surface écrits mais illisibles : motifs propres, distincts d'une valeur absente", () => {
+    expect(validerObservation(obs({ prix: null, illisibles: ["prix"] })).motifs).toEqual(["montant-illisible"]);
+    expect(validerObservation(obs({ surface: null, illisibles: ["surface"] })).motifs).toEqual(["surface-illisible"]);
+    expect(validerObservation(obs({ prix: null, surface: null, illisibles: ["prix", "surface"] })).motifs).toEqual(["montant-illisible", "surface-illisible"]);
+  });
+
   it("un prix extrême mais plausible n'est pas fictif (pas de suppression du luxe)", () => {
     expect(estPrixFictif(45_000_000)).toBe(false);
     expect(estPrixFictif(1111)).toBe(false);

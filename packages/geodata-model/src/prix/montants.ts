@@ -200,3 +200,34 @@ export function parserMontant(texte: string | null | undefined): MontantLu {
     motif: null,
   };
 }
+
+/** Lecture d'un nombre d'observation (prix ou surface) : valeur, ou motif d'illisibilité ; jamais 0 pour « absent ». */
+export interface NombreObservationLu {
+  /** Valeur lue (négative si le texte l'est, pour que la validation la refuse comme non positive), ou null. */
+  readonly valeur: number | null;
+  /** `absent` : rien d'écrit ; `illisible` : écriture non reconnue par la règle unique ci-dessous. */
+  readonly motif: "absent" | "illisible" | null;
+}
+
+/**
+ * Lit un nombre d'un fichier d'observations (colonnes `prix` et `surface`) avec la **même règle que `parserMontant`**,
+ * seule règle de lecture des montants de Fadi (écriture française) :
+ * - espaces (y compris insécables) = séparateurs de milliers ; virgule = séparateur décimal (« 82,5 ») ;
+ * - point = séparateur de milliers s'il sépare des groupes de trois chiffres (« 450.000 » = 450 000, « 1.250.000 »),
+ *   sinon point décimal (« 82.5 ») ;
+ * - plusieurs virgules (« 1,250,000 », écriture anglaise des milliers) ou mélange ambigu : illisible, jamais deviné ;
+ * - une abréviation (K, M) ou une unité écrite dans la cellule est illisible ici : l'observation exige le montant exact,
+ *   et la monnaie et la période ont leurs propres colonnes ;
+ * - un signe moins est conservé (valeur négative) : la validation la met en quarantaine comme non positive.
+ */
+export function lireNombreObservation(texte: string | null | undefined): NombreObservationLu {
+  const t = (texte ?? "").replace(ESPACES, " ").trim();
+  // Vide ou tiret seul (« — ») : rien d'écrit. Tout autre texte sans chiffre est illisible, pas absent.
+  if (!t || /^[—–-]$/.test(t)) return { valeur: null, motif: "absent" };
+  const negatif = /^-\s*\d/.test(t);
+  const lu = parserMontant(negatif ? t.replace(/^-\s*/, "") : t);
+  if (lu.valeur === null || lu.approximatif || lu.monnaie !== null || lu.parM2 || lu.periode !== null) {
+    return { valeur: null, motif: "illisible" };
+  }
+  return { valeur: negatif ? -lu.valeur : lu.valeur, motif: null };
+}

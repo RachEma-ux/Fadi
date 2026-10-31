@@ -98,6 +98,7 @@ export const CODES_ERREUR_AGREGAT = [
   "montant-negatif",
   "abreviation-illisible",
   "affichage-incoherent",
+  "montant-nul",
   "unite-inconnue",
   "unite-incoherente",
   "tendance-illisible",
@@ -136,6 +137,11 @@ function lireMontantPublie(
   const centimes = versCentimes(n);
   if (centimes === null) { erreurs.push({ ligne, colonne, code: "montant-illisible" }); return null; }
   const lu = parserMontant(affiche);
+  // Un montant publié nul n'est retenu que si l'éditeur affiche lui-même 0 : un 0 numérique face à un affichage absent
+  // (« — », vide) est une valeur manquante déguisée, jamais stockée comme 0 (Concept §5 : null ne devient jamais zéro).
+  if (centimes === 0 && lu.centimes !== 0) { erreurs.push({ ligne, colonne, code: "montant-nul" }); return null; }
+  // Nombre publié sans montant affiché correspondant : affichage incohérent (le texte d'origine doit porter la valeur).
+  if (lu.centimes === null) { erreurs.push({ ligne, colonne, code: "affichage-incoherent" }); return null; }
   let approximatif = lu.approximatif;
   if (abrege !== null) {
     const a = abrege.trim().toLowerCase();

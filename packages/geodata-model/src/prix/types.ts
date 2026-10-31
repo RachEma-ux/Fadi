@@ -128,6 +128,11 @@ export interface ObservationAnnonce {
   readonly territoire: TerritoirePrix | null;
   /** Empreinte de contenu autorisée (ex. hachage du descriptif), pour la déduplication inter-sources. */
   readonly empreinte?: string | null;
+  /**
+   * Champs écrits mais illisibles à la lecture du fichier (`lireNombreObservation`) : la validation les rapporte avec
+   * leur propre motif (`montant-illisible`, `surface-illisible`), distinct d'une valeur absente. Absent ailleurs.
+   */
+  readonly illisibles?: readonly ("prix" | "surface")[];
 }
 
 /** Clé d'une annonce : source + identifiant d'annonce. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrondirDecimal, centimesEnTexte, parserMontant, uniteCanonique, versCentimes } from "./montants.js";
+import { arrondirDecimal, centimesEnTexte, parserMontant, uniteCanonique, versCentimes, lireNombreObservation } from "./montants.js";
 
 describe("lecture des montants écrits à la française", () => {
   it("« 18 548 DH » (espace insécable) : montant exact, non abrégé, en MAD", () => {
@@ -68,5 +68,24 @@ describe("lecture des montants écrits à la française", () => {
     expect(uniteCanonique("MAD")).toBe("MAD");
     expect(uniteCanonique("m2")).toBeNull();
     expect(uniteCanonique("MAD/heure")).toBeNull();
+  });
+});
+
+describe("nombres des fichiers d'observations : même règle que parserMontant", () => {
+  it("écriture française : espaces et points de milliers, virgule décimale", () => {
+    expect(lireNombreObservation("450.000")).toEqual({ valeur: 450_000, motif: null });
+    expect(lireNombreObservation("1.250.000")).toEqual({ valeur: 1_250_000, motif: null });
+    expect(lireNombreObservation("1 250 000")).toEqual({ valeur: 1_250_000, motif: null });
+    expect(lireNombreObservation("82,5")).toEqual({ valeur: 82.5, motif: null });
+    expect(lireNombreObservation("82.5")).toEqual({ valeur: 82.5, motif: null });
+    expect(lireNombreObservation("1250000")).toEqual({ valeur: 1_250_000, motif: null });
+    expect(lireNombreObservation("-5")).toEqual({ valeur: -5, motif: null });
+    expect(lireNombreObservation("0")).toEqual({ valeur: 0, motif: null });
+  });
+  it("illisible (jamais deviné) : milliers à l'anglaise, abréviation, unité dans la cellule ; absent : vide", () => {
+    for (const t of ["1,250,000", "1,2M", "769K", "1 250 000 DH", "12 €/m²", "abc", "1.2.3"]) expect(lireNombreObservation(t), t).toEqual({ valeur: null, motif: "illisible" });
+    expect(lireNombreObservation("")).toEqual({ valeur: null, motif: "absent" });
+    expect(lireNombreObservation("  ")).toEqual({ valeur: null, motif: "absent" });
+    expect(lireNombreObservation("—")).toEqual({ valeur: null, motif: "absent" });
   });
 });
