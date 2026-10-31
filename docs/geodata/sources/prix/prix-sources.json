@@ -17,6 +17,7 @@
    "motif": null,
    "prochaineAction": "Relevé périodique de la page : chaque nouvelle édition est un nouvel import archivé, jamais un écrasement.",
    "derivee": true,
+   "amont": ["avito", "mubawab", "portails-candidats"],
    "ficheGeodata": "feenway-barometre-casablanca"
   },
   {
@@ -31,6 +32,7 @@
    "motif": "robots.txt interdit /api/ à tous les robots (réserve de droits ai-train=no, use=reference) ; aucune licence pour les annonces ; conditions des portails amont.",
    "prochaineAction": "Demande de partenariat écrite à FeenWay (modèle en annexe A de PRIX-SOURCES.md).",
    "derivee": true,
+   "amont": ["avito", "mubawab", "portails-candidats"],
    "ficheGeodata": null
   },
   {

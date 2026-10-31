@@ -17,15 +17,15 @@
  */
 import { createHash } from "node:crypto";
 import {
-  chercherCandidatsDoublons, cleAnnonce, construireBiens, construireCellules, dedoublonnerExact, estBaseSurface, estDateIso,
-  estPeriodePrix, estTransactionPrix, estTypeBien, lireCsv, parserMontant, rattacherLocalite, trierObservations, versCentimes,
-  type BaseSurface, type DecisionDoublon, type EtatBien, type ObservationAnnonce, type ResultatRattachement, type TerritoireCandidat,
+  chercherCandidatsDoublons, cleAnnonce, cleObservation, construireBiens, construireCellules, dedoublonnerExact, estBaseSurface, estDateIso,
+  estPeriodePrix, estTransactionPrix, estTypeBien, lireCsvLignes, lireNombreObservation, rattacherLocalite, trierObservations,
+  type BaseSurface, type DecisionDoublon, type EtatBien, type MotifQuarantaine, type ObservationAnnonce, type ResultatRattachement, type TerritoireCandidat,
 } from "@parcours/geodata-model";
 import type { Executeur } from "../archive-fichiers.js";
 import { newId } from "../../ids.js";
 
 /** Version de l'analyseur des fichiers d'observations (entre dans la clé d'idempotence). */
-export const VERSION_ANALYSEUR_PRIX = "prix-observations-1";
+export const VERSION_ANALYSEUR_PRIX = "prix-observations-2";
 /** Version de la méthode des cellules (consignée dans chaque manifeste). */
 export const VERSION_METHODE_PRIX = "prix-methode-1";
 /** Paramètres de départ du pilote (Concept §4) : fenêtre de 90 jours, seuil de 20 biens distincts, versionnés. */
@@ -43,6 +43,20 @@ export const COLONNES_OBLIGATOIRES = ["annonce_id", "observe_le", "transaction",
 
 export const sourceAutorisee = (statut: string | null | undefined): boolean => statut === "active" || statut === "autorisee";
 
+/**
+ * Verrou unique des sources de prix (verrou consultatif transactionnel). **Ordre des verrous**, le même partout :
+ * (1) ce verrou des sources ; (2) le verrou d'une couche de publication ou de la construction des instantanés ;
+ * (3) les verrous de lignes. Le prennent : la publication et le retour arrière (`publier`), la construction d'un
+ * instantané, le changement de statut d'une source (`changerStatutSource`), le retrait de ses sorties et le chargement
+ * du registre (`chargerRegistrePrix`). Une suspension et une publication concurrentes sont donc sérialisées : la
+ * publication qui suit une suspension voit la source suspendue et est refusée ; une suspension qui suit une publication
+ * retire ce qui vient d'être publié (PRX13). Réentrant dans une même transaction.
+ */
+export const VERROU_SOURCES_PRIX = "geodata_prix_sources";
+export async function verrouillerSourcesPrix(ex: Executeur): Promise<void> {
+  await ex.query("SELECT pg_advisory_xact_lock(hashtext($1))", [VERROU_SOURCES_PRIX]);
+}
+
 /** Erreur métier de la chaîne des prix : statut HTTP, code stable, message, détails. */
 export class ErreurPrix extends Error {
   constructor(readonly statut: number, readonly code: string, message: string, readonly details: Record<string, unknown> = {}) { super(message); }
@@ -50,35 +64,36 @@ export class ErreurPrix extends Error {
 
 // ——— Lecture et normalisation ———
 
-/** Lit un fichier d'observations (CSV ou JSON) en lignes de texte ; refuse un format illisible ou incomplet. */
-export function lireFichierObservations(contenu: string, format: "csv" | "json"): Record<string, string>[] {
-  let lignes: Record<string, string>[];
-  if (format === "csv") lignes = lireCsv(contenu);
+/** Ligne lue d'un fichier : numéro (ligne physique du CSV, ou rang de l'objet dans la liste JSON) et valeurs en texte. */
+export interface LigneLue { readonly ligne: number; readonly valeurs: Record<string, string> }
+
+/**
+ * Lit un fichier tabulaire (CSV ou JSON) en lignes de texte numérotées ; refuse un format illisible, vide, trop long ou
+ * sans ses colonnes obligatoires. Pour un CSV, le numéro est celui de la ligne physique du fichier (en-tête et lignes
+ * vides comptés) ; pour un JSON, le rang de l'objet dans la liste (1 = premier).
+ */
+export function lireFichierTabulaire(contenu: string, format: "csv" | "json", obligatoires: readonly string[]): LigneLue[] {
+  let lignes: LigneLue[];
+  if (format === "csv") lignes = lireCsvLignes(contenu).map((e) => ({ ligne: e.ligneFichier, valeurs: e.valeurs }));
   else {
     let brut: unknown;
     try { brut = JSON.parse(contenu); } catch { throw new ErreurPrix(400, "format_illisible", "Le fichier n'est pas un JSON valide."); }
     if (!Array.isArray(brut) || !brut.every((x) => x && typeof x === "object" && !Array.isArray(x))) throw new ErreurPrix(400, "format_illisible", "Liste d'objets attendue.");
     // Valeurs ramenées en texte : la normalisation est la même pour les deux formats ; null et absent = vide.
-    lignes = (brut as Record<string, unknown>[]).map((o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.trim(), v === null || v === undefined ? "" : String(v).trim()])));
+    lignes = (brut as Record<string, unknown>[]).map((o, i) => ({
+      ligne: i + 1, valeurs: Object.fromEntries(Object.entries(o).map(([k, v]) => [k.trim(), v === null || v === undefined ? "" : String(v).trim()])),
+    }));
   }
-  if (!lignes.length) throw new ErreurPrix(400, "fichier_vide", "Aucune ligne d'observation.");
+  if (!lignes.length) throw new ErreurPrix(400, "fichier_vide", "Aucune ligne de données.");
   if (lignes.length > LIMITES_IMPORT_PRIX.lignes) throw new ErreurPrix(413, "limite_depassee", `${lignes.length} lignes : ${LIMITES_IMPORT_PRIX.lignes} au plus.`);
-  const presentes = new Set(lignes.flatMap((l) => Object.keys(l)));
-  const manquantes = COLONNES_OBLIGATOIRES.filter((c) => !presentes.has(c));
+  const presentes = new Set(lignes.flatMap((l) => Object.keys(l.valeurs)));
+  const manquantes = obligatoires.filter((c) => !presentes.has(c));
   if (manquantes.length) throw new ErreurPrix(400, "colonnes_manquantes", `Colonne(s) manquante(s) : ${manquantes.join(", ")}.`, { colonnes: manquantes });
   return lignes;
 }
 
-/** Nombre décimal d'un texte (« 1250000 », « 82,5 », « -3 ») ; montants convertis par centimes (sans flottant) ; null si illisible. */
-function lireNombre(t: string): number | null {
-  const s = t.replace(/[\s  ]/g, "").replace(",", ".");
-  if (!s) return null;
-  const negatif = s.startsWith("-");
-  const c = versCentimes(negatif ? s.slice(1) : s);
-  if (c !== null) return (negatif ? -c : c) / 100;
-  const m = parserMontant(t);
-  return m.valeur;
-}
+/** Lit un fichier d'observations (CSV ou JSON) : voir `lireFichierTabulaire`. */
+export const lireFichierObservations = (contenu: string, format: "csv" | "json"): LigneLue[] => lireFichierTabulaire(contenu, format, COLONNES_OBLIGATOIRES);
 
 export interface LigneNormalisee {
   readonly ligne: number;
@@ -103,6 +118,11 @@ export function normaliserLigne(l: Readonly<Record<string, string>>, source: str
   else if (et) avertissements.push("etat-bien-inconnu");
   const pe = v("periode").toLowerCase();
   const base = v("base_surface").toLowerCase();
+  // Règle unique de lecture des montants (`lireNombreObservation`, celle de `parserMontant`) : « 450.000 » = 450 000 ;
+  // une écriture illisible (« 1,250,000 ») a son propre motif de quarantaine, distinct d'une valeur absente.
+  const prix = lireNombreObservation(v("prix"));
+  const surface = lireNombreObservation(v("surface"));
+  const illisibles = [...(prix.motif === "illisible" ? ["prix" as const] : []), ...(surface.motif === "illisible" ? ["surface" as const] : [])];
   const observation: ObservationAnnonce = {
     source,
     idAnnonce: v("annonce_id"),
@@ -110,15 +130,16 @@ export function normaliserLigne(l: Readonly<Record<string, string>>, source: str
     transaction: estTransactionPrix(tr) ? tr : null,
     typeBien: estTypeBien(ty) ? ty : null,
     etat,
-    prix: lireNombre(v("prix")),
+    prix: prix.valeur,
     monnaie: v("monnaie") ? v("monnaie").toUpperCase() : null,
     periode: estPeriodePrix(pe) ? pe : null,
-    surface: lireNombre(v("surface")),
+    surface: surface.valeur,
     // Base inconnue de la liste : gardée telle quelle pour que la validation la refuse (`base-surface-inconnue`).
     baseSurface: (estBaseSurface(base) ? base : base || "absente") as BaseSurface,
     libelleLocalite: v("localite"),
     territoire: null,
     empreinte: v("empreinte") || null,
+    ...(illisibles.length ? { illisibles } : {}),
   };
   return { ligne, observation, prixOriginal: v("prix"), surfaceOriginale: v("surface"), precision: v("precision") || null, avertissements };
 }
@@ -186,9 +207,11 @@ export interface RapportImport {
 export const cleIdempotence = (empreinte: string, source: string) => `${empreinte}.${VERSION_ANALYSEUR_PRIX}.${source}`;
 
 /** Source du registre autorisée pour un produit, sinon refus avec le motif de blocage enregistré. */
-export async function exigerSource(ex: Executeur, cle: string, produit: string): Promise<{ cle: string; statut: string }> {
+export async function exigerSource(ex: Executeur, cle: string, produit: string, verrou = false): Promise<{ cle: string; statut: string }> {
+  // `verrou` : ligne de la source tenue en partage jusqu'à la fin de la transaction (une suspension concurrente attend
+  // la fin de l'import, puis retire ses sorties ; un import qui suit une suspension est refusé).
   const [s] = (await ex.query<{ cle: string; statut: string; produit: string; motif: string | null; prochaine_action: string | null }>(
-    "SELECT cle, statut, produit, motif, prochaine_action FROM geodata_prix_sources WHERE cle = $1", [cle],
+    `SELECT cle, statut, produit, motif, prochaine_action FROM geodata_prix_sources WHERE cle = $1${verrou ? " FOR SHARE" : ""}`, [cle],
   )).rows;
   if (!s) throw new ErreurPrix(404, "source_inconnue", "Source absente du registre des sources de prix.");
   if (s.produit !== produit) throw new ErreurPrix(409, "produit_incompatible", `La source « ${cle} » fournit le produit « ${s.produit} », pas « ${produit} ».`, { produit: s.produit });
@@ -209,19 +232,38 @@ interface Analyse {
 export async function analyserImport(ex: Executeur, d: DemandeImport): Promise<Analyse> {
   const empreinte = createHash("sha256").update(d.contenu, "utf8").digest("hex");
   const lues = lireFichierObservations(d.contenu, d.format);
-  const normalisees = lues.map((l, i) => normaliserLigne(l, d.source, i + 1));
+  const normalisees = lues.map((l) => normaliserLigne(l.valeurs, d.source, l.ligne));
   const tri = trierObservations(normalisees.map((n) => n.observation));
   const parObs = new Map(normalisees.map((n) => [n.observation, n]));
-  const quarantaine = tri.quarantaine.map((q) => ({ n: parObs.get(q.observation)!, motifs: q.motifs }));
+  const quarantaine: { n: LigneNormalisee; motifs: readonly MotifQuarantaine[] }[] = tri.quarantaine.map((q) => ({ n: parObs.get(q.observation)!, motifs: q.motifs }));
+  const parMotif: Record<string, number> = { ...(tri.parMotif as Record<string, number>) };
   // Doublons exacts dans le fichier : une seule observation par (source, annonce, date) ; conflits signalés.
   const dedup = dedoublonnerExact(tri.admises);
   const retenues = new Set(dedup.observations);
-  const admisesN = tri.admises.filter((o) => retenues.has(o)).map((o) => parObs.get(o)!);
-  const cles = admisesN.map((n) => [n.observation.idAnnonce, n.observation.dateObservation] as const);
-  const existantes = cles.length ? (await ex.query<{ n: string }>(
-    `SELECT count(*) AS n FROM geodata_prix_observations o JOIN jsonb_to_recordset($2::jsonb) AS e(a text, d text) ON o.annonce_id = e.a AND o.observe_le = e.d::date
-      WHERE o.source_cle = $1`, [d.source, JSON.stringify(cles.map(([a, dt]) => ({ a, d: dt })))],
+  const candidates = tri.admises.filter((o) => retenues.has(o)).map((o) => parObs.get(o)!);
+  // Déjà en base (même source, annonce et date) : même contenu → déjà présente (rien n'est réécrit, PRX02) ; contenu
+  // différent → conflit de réimport, gardé en quarantaine avec son motif (la première version reste, rien n'est ignoré).
+  const existantes = candidates.length ? (await ex.query<Record<string, string | null>>(
+    `SELECT o.annonce_id, to_char(o.observe_le, 'YYYY-MM-DD') AS observe_le, o.transaction, o.type_bien, o.etat_bien, o.prix::text AS prix, o.monnaie, o.periode,
+            o.surface::text AS surface, o.base_surface, o.libelle_localite, o.precision_niveau, o.empreinte_contenu
+       FROM geodata_prix_observations o JOIN jsonb_to_recordset($2::jsonb) AS e(a text, d text) ON o.annonce_id = e.a AND o.observe_le = e.d::date
+      WHERE o.source_cle = $1`,
+    [d.source, JSON.stringify(candidates.map((n) => ({ a: n.observation.idAnnonce, d: n.observation.dateObservation })))],
   )).rows : [];
+  const enBase = new Map(existantes.map((x) => [`${x["annonce_id"]}|${x["observe_le"]}`, x]));
+  let dejaPresentes = 0;
+  const admisesN: LigneNormalisee[] = [];
+  for (const n of candidates) {
+    const x = enBase.get(`${n.observation.idAnnonce}|${n.observation.dateObservation}`);
+    if (!x) { admisesN.push(n); continue; }
+    const o = n.observation;
+    const identique = x["transaction"] === o.transaction && x["type_bien"] === o.typeBien && (x["etat_bien"] ?? null) === o.etat && Number(x["prix"]) === o.prix
+      && x["monnaie"] === o.monnaie && x["periode"] === o.periode && Number(x["surface"]) === o.surface && x["base_surface"] === o.baseSurface
+      && x["libelle_localite"] === o.libelleLocalite && (x["precision_niveau"] ?? null) === n.precision && (x["empreinte_contenu"] ?? null) === (o.empreinte ?? null);
+    if (identique) { dejaPresentes++; admisesN.push(n); }
+    else { quarantaine.push({ n, motifs: ["conflit-reimport"] }); parMotif["conflit-reimport"] = (parMotif["conflit-reimport"] ?? 0) + 1; }
+  }
+  quarantaine.sort((a, b) => a.n.ligne - b.n.ligne);
   const c = await lireCandidats(ex, d.pays);
   const admises = admisesN.map((n) => ({ n, r: rattacher(n.observation.libelleLocalite, n.precision, c) }));
   const nonRattachees: Record<string, number> = {};
@@ -231,8 +273,8 @@ export async function analyserImport(ex: Executeur, d: DemandeImport): Promise<A
   return {
     rapport: {
       cleIdempotence: cleIdempotence(empreinte, d.source), empreinte, versionAnalyseur: VERSION_ANALYSEUR_PRIX,
-      lignesLues: lues.length, admises: admises.length, quarantaine: quarantaine.length, parMotif: tri.parMotif as Record<string, number>,
-      dejaPresentes: Number(existantes[0]?.n ?? 0), doublonsDansLeFichier: tri.admises.length - dedup.observations.length, conflits: dedup.conflits,
+      lignesLues: lues.length, admises: admises.length, quarantaine: quarantaine.length, parMotif,
+      dejaPresentes, doublonsDansLeFichier: tri.admises.length - dedup.observations.length, conflits: dedup.conflits,
       rattachees: admises.filter((a) => a.r.resultat === "exact").length, nonRattachees, avertissements,
       exemplesQuarantaine: quarantaine.slice(0, 50).map((q) => ({ ligne: q.n.ligne, annonceId: q.n.observation.idAnnonce || null, motifs: q.motifs })),
     },
@@ -254,7 +296,7 @@ export interface ResultatImport { readonly deja: boolean; readonly lotId: string
  * admises (nouvelles seulement), rattachements, quarantaine. Même clé d'idempotence → lot existant rendu, rien d'écrit.
  */
 export async function importerObservations(ex: Executeur, d: DemandeImport, cleAttendue: string | null): Promise<ResultatImport> {
-  await exigerSource(ex, d.source, "observations");
+  await exigerSource(ex, d.source, "observations", true);
   const empreinte = createHash("sha256").update(d.contenu, "utf8").digest("hex");
   const cle = cleIdempotence(empreinte, d.source);
   if (cleAttendue !== null && cleAttendue !== cle) throw new ErreurPrix(409, "cle_idempotence_differente", "Le fichier ne correspond pas à l'aperçu validé (clé d'idempotence différente).", { attendue: cleAttendue, calculee: cle });
@@ -352,7 +394,7 @@ export interface InstantaneConstruit { readonly id: string; readonly empreinte: 
 /** Observations admises des lots valides des sources autorisées, avec leur rattachement exact (sinon territoire nul). */
 async function lireEntrees(ex: Executeur) {
   const lignes = (await ex.query<Record<string, string | null>>(
-    `SELECT o.source_cle, o.annonce_id, to_char(o.observe_le, 'YYYY-MM-DD') AS observe_le, o.transaction, o.type_bien, o.etat_bien, o.prix::text AS prix,
+    `SELECT o.id::text AS id, o.source_cle, o.annonce_id, to_char(o.observe_le, 'YYYY-MM-DD') AS observe_le, o.transaction, o.type_bien, o.etat_bien, o.prix::text AS prix,
             o.monnaie, o.periode, o.surface::text AS surface, o.base_surface, o.libelle_localite, o.empreinte_contenu, o.lot_id,
             r.territoire_code, r.territoire_niveau, r.decoupage
        FROM geodata_prix_observations o
@@ -372,6 +414,8 @@ async function lireEntrees(ex: Executeur) {
   }));
   return {
     observations,
+    /** Identifiant en base de chaque observation lue (clé d'observation → id), pour la table des liens bien ↔ observation. */
+    ids: new Map(lignes.map((l, i) => [cleObservation(observations[i]!), l["id"]!])),
     sources: [...new Set(lignes.map((l) => l["source_cle"]!))].sort(),
     lots: [...new Set(lignes.map((l) => l["lot_id"]!))].sort(),
     decoupage: [...new Set(lignes.map((l) => l["decoupage"]).filter((x): x is string => !!x))].sort().join(" ; ") || null,
@@ -389,10 +433,22 @@ export async function construireInstantane(ex: Executeur, d: DemandeInstantane):
   const seuil = d.seuil ?? PARAMETRES_PILOTE.seuil;
   if (!Number.isInteger(fenetreJours) || fenetreJours < 1 || fenetreJours > 3660) throw new ErreurPrix(400, "invalid_input", "Fenêtre de 1 à 3 660 jours.", { champs: ["fenetreJours"] });
   if (!Number.isInteger(seuil) || seuil < 1 || seuil > 10_000) throw new ErreurPrix(400, "invalid_input", "Seuil de 1 à 10 000 biens.", { champs: ["seuil"] });
-  // Une construction à la fois : deux demandes simultanées des mêmes entrées n'écrivent qu'un instantané.
+  // Ordre des verrous (voir `verrouillerSourcesPrix`) : sources, puis construction. Une construction à la fois : deux
+  // demandes simultanées des mêmes entrées n'écrivent qu'un instantané.
+  await verrouillerSourcesPrix(ex);
   await ex.query("SELECT pg_advisory_xact_lock(hashtext('geodata_prix_instantane'))");
   const e = await lireEntrees(ex);
   if (!e.observations.length) throw new ErreurPrix(409, "aucune_observation", "Aucune observation admise d'une source autorisée : rien à construire.");
+  // Source dérivée (agrégateur, Concept §2) : jamais combinée avec une autre source dans un même instantané, tant que le
+  // dédoublonnage inter-sources n'est pas prouvé sur l'ensemble combiné (règle sûre et simple : refus de tout mélange).
+  const derivees = (await ex.query<{ cle: string; amont: string[] | null }>(
+    "SELECT cle, amont FROM geodata_prix_sources WHERE cle = ANY($1) AND derivee", [e.sources],
+  )).rows;
+  if (derivees.length && e.sources.length > 1) {
+    throw new ErreurPrix(409, "source_derivee_combinee", "Une source dérivée (agrégateur) ne se combine avec aucune autre source dans un instantané.", {
+      derivees: derivees.map((x) => ({ cle: x.cle, amont: x.amont ?? [] })), sources: e.sources,
+    });
+  }
   const decisions: DecisionDoublon[] = (await ex.query<{ a: string; b: string; decision: "fusion" | "separation"; le: string; auteur: string | null; motif: string }>(
     `SELECT annonce_a AS a, annonce_b AS b, decision, to_char(decide_le AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS le, auteur_id AS auteur, motif
        FROM geodata_prix_decisions_doublons ORDER BY decide_le, id`,
@@ -436,16 +492,43 @@ export async function construireInstantane(ex: Executeur, d: DemandeInstantane):
       })))],
     );
   }
-  const multiples = biens.biens.filter((b) => b.annonces.length > 1);
-  if (multiples.length) {
+  // Biens (grappes stables d'annonces) et liens bien ↔ observation (Plan §4 : `geodata_prix_biens_observations`) :
+  // chaque observation lue est liée à son bien, avec la méthode et la catégorie de confiance du lien.
+  for (let i = 0; i < biens.biens.length; i += 1000) {
     await ex.query(
       `INSERT INTO geodata_prix_biens (instantane_id, bien_id, annonces, liens) SELECT $1, b.id, b.annonces, b.liens FROM jsonb_to_recordset($2::jsonb) AS b(id text, annonces text[], liens jsonb)`,
-      [id, JSON.stringify(multiples.map((b) => ({ id: b.id, annonces: b.annonces, liens: b.liens })))],
+      [id, JSON.stringify(biens.biens.slice(i, i + 1000).map((b) => ({ id: b.id, annonces: b.annonces, liens: b.liens })))],
+    );
+  }
+  const liensObs = liensBiensObservations(biens.biens, e.observations, e.ids);
+  for (let i = 0; i < liensObs.length; i += 2000) {
+    await ex.query(
+      `INSERT INTO geodata_prix_biens_observations (instantane_id, bien_id, observation_id, annonce, methode, confiance)
+       SELECT $1, l.bien, l.observation, l.annonce, l.methode, l.confiance FROM jsonb_to_recordset($2::jsonb) AS l(bien text, observation bigint, annonce text, methode text, confiance text)`,
+      [id, JSON.stringify(liensObs.slice(i, i + 2000))],
     );
   }
   await ex.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'prix.instantane.construit', $2, 'succes', $3)",
     [d.acteur, id, JSON.stringify({ empreinte: r.empreinte, cellules: r.cellules.length, sources: e.sources })]);
   return { id, empreinte: r.empreinte, deja: false, cellules: r.cellules.length, rapport };
+}
+
+/**
+ * Liens bien ↔ observation d'un instantané : chaque observation est liée au bien de son annonce. Méthode : `identifiant`
+ * (bien d'une seule annonce : mêmes source et identifiant), `empreinte` (rapprochement inter-sources par empreinte de
+ * contenu égale, confiance `forte`), `decision` (fusion revue, confiance `revue`).
+ */
+export function liensBiensObservations(biens: readonly { readonly id: string; readonly annonces: readonly string[]; readonly liens: readonly { readonly a: string; readonly b: string; readonly origine: "empreinte" | "decision" }[] }[],
+  observations: readonly ObservationAnnonce[], ids: ReadonlyMap<string, string>) {
+  const bienDe = new Map<string, (typeof biens)[number]>();
+  for (const b of biens) for (const a of b.annonces) bienDe.set(a, b);
+  return observations.map((o) => {
+    const annonce = cleAnnonce(o);
+    const b = bienDe.get(annonce)!;
+    const touche = b.liens.filter((l) => l.a === annonce || l.b === annonce);
+    const methode = b.annonces.length === 1 ? "identifiant" : touche.some((l) => l.origine === "decision") ? "decision" : "empreinte";
+    return { bien: b.id, observation: Number(ids.get(cleObservation(o))), annonce, methode, confiance: methode === "identifiant" ? "certaine" : methode === "decision" ? "revue" : "forte" };
+  });
 }
 
 /** Décision revue sur une paire d'annonces (en ajout seulement) ; rejouée à la prochaine construction. */
@@ -487,6 +570,9 @@ export interface DemandePublication {
  * autorisées. L'ancien pointeur est désactivé, le nouveau inséré ; l'instantané devient « validé ».
  */
 export async function publier(ex: Executeur, d: DemandePublication): Promise<{ publicationId: string; precedentId: string | null }> {
+  // Ordre des verrous : sources (une suspension concurrente est soit déjà visible, soit postérieure et retirera cette
+  // publication), puis couche de publication.
+  await verrouillerSourcesPrix(ex);
   await ex.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`geodata_prix_publication:${d.couche}:${d.produit}`]);
   const courante = await publicationActive(ex, d.couche, d.produit);
   if ((courante?.instantaneId ?? null) !== d.attendu) {
@@ -498,7 +584,7 @@ export async function publier(ex: Executeur, d: DemandePublication): Promise<{ p
   if (!inst || inst.couche !== d.couche || inst.produit !== d.produit) throw new ErreurPrix(404, "not_found", "Instantané introuvable pour cette couche.");
   if (d.action === "retour" && inst.etat !== "valide") throw new ErreurPrix(409, "instantane_non_valide", "Le retour arrière ne resélectionne qu'un instantané déjà validé.");
   if (courante?.instantaneId === inst.id) throw new ErreurPrix(409, "deja_publie", "Cet instantané est déjà publié.");
-  const etats = (await ex.query<{ cle: string; statut: string }>("SELECT cle, statut FROM geodata_prix_sources WHERE cle = ANY($1)", [inst.sources])).rows;
+  const etats = (await ex.query<{ cle: string; statut: string }>("SELECT cle, statut FROM geodata_prix_sources WHERE cle = ANY($1) FOR SHARE", [inst.sources])).rows;
   const bloquees = inst.sources.filter((k) => !sourceAutorisee(etats.find((x) => x.cle === k)?.statut));
   if (bloquees.length) {
     throw new ErreurPrix(409, "source_non_autorisee", "Une source de cet instantané n'est plus autorisée : publication refusée.", {
@@ -544,6 +630,7 @@ export async function retourArriere(ex: Executeur, d: Omit<DemandePublication, "
  * source n'est pas de nouveau autorisée. Les lectures de l'API ne servent que le pointeur actif : rien n'est gardé en cache.
  */
 export async function retirerSortiesDeSource(ex: Executeur, cle: string, motif: string, acteur: string | null): Promise<number> {
+  await verrouillerSourcesPrix(ex);
   const actives = (await ex.query<{ id: string; couche: string; produit: string; instantane_id: string }>(
     `SELECT p.id::text AS id, p.couche, p.produit, p.instantane_id FROM geodata_prix_publications p JOIN geodata_prix_instantanes i ON i.id = p.instantane_id
       WHERE p.active AND $1 = ANY(i.sources) FOR UPDATE OF p`, [cle],
@@ -558,11 +645,35 @@ export async function retirerSortiesDeSource(ex: Executeur, cle: string, motif: 
       [acteur, p.instantane_id, JSON.stringify({ source: cle, motif: motif.slice(0, 500), ...(acteur ? {} : { par: "registre" }) })]);
   }
   await ex.query("UPDATE geodata_prix_editions SET etat = 'suspendue' WHERE source_cle = $1 AND etat = 'active'", [cle]);
+  await journaliserFiche(ex, cle, "prix.fiche.retrait", motif, acteur);
   return actives.length;
+}
+
+/**
+ * Couche GeoData générique d'une source de prix (fiche `fiche_geodata`, ex. baromètre FeenWay et ses indicateurs) :
+ * sa consultation, sa carte, sa fiche et son export suivent le statut de la source (`VERSION_CONSULTABLE`, retrait
+ * réversible sans toucher la version publiée, immuable). Le retrait et le rétablissement sont journalisés avec les
+ * versions concernées.
+ */
+async function journaliserFiche(ex: Executeur, cle: string, action: "prix.fiche.retrait" | "prix.fiche.retablissement", motif: string, acteur: string | null) {
+  const versions = (await ex.query<{ id: string }>(
+    `SELECT v.id FROM geodata_prix_sources ps JOIN geodata_sources gs ON gs.cle = ps.fiche_geodata AND gs.espace_id IS NULL
+       JOIN geodata_versions v ON v.source_id = gs.id AND v.etat = 'publiee' WHERE ps.cle = $1 ORDER BY v.id`, [cle],
+  )).rows.map((x) => x.id);
+  if (!versions.length) return;
+  await ex.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, $2, $3, 'succes', $4)",
+    [acteur, action, cle, JSON.stringify({ versions, motif: motif.slice(0, 500), ...(acteur ? {} : { par: "registre" }) })]);
+}
+
+/** Source de nouveau autorisée : éditions suspendues reprises, couche générique rétablie (aucune publication rétablie d'office). */
+export async function retablirSource(ex: Executeur, cle: string, motif: string, acteur: string | null): Promise<void> {
+  await ex.query("UPDATE geodata_prix_editions SET etat = 'active' WHERE source_cle = $1 AND etat = 'suspendue'", [cle]);
+  await journaliserFiche(ex, cle, "prix.fiche.retablissement", motif, acteur);
 }
 
 /** Statut d'une source changé par l'administration (journalisé ; sortie de l'état autorisé → retrait des sorties). */
 export async function changerStatutSource(ex: Executeur, cle: string, statut: string, motif: string, acteur: string): Promise<{ avant: string; apres: string; retraits: number }> {
+  await verrouillerSourcesPrix(ex);
   const [s] = (await ex.query<{ statut: string }>("SELECT statut FROM geodata_prix_sources WHERE cle = $1 FOR UPDATE", [cle])).rows;
   if (!s) throw new ErreurPrix(404, "not_found", "Source absente du registre.");
   if (s.statut === statut) return { avant: s.statut, apres: statut, retraits: 0 };
@@ -575,6 +686,6 @@ export async function changerStatutSource(ex: Executeur, cle: string, statut: st
   let retraits = 0;
   if (sourceAutorisee(s.statut) && !sourceAutorisee(statut)) retraits = await retirerSortiesDeSource(ex, cle, `Source « ${cle} » ${statut} : ${motif}`, acteur);
   // Source de nouveau autorisée : ses éditions suspendues par la suspension reprennent (aucune publication rétablie d'office).
-  if (!sourceAutorisee(s.statut) && sourceAutorisee(statut)) await ex.query("UPDATE geodata_prix_editions SET etat = 'active' WHERE source_cle = $1 AND etat = 'suspendue'", [cle]);
+  if (!sourceAutorisee(s.statut) && sourceAutorisee(statut)) await retablirSource(ex, cle, motif, acteur);
   return { avant: s.statut, apres: statut, retraits };
 }

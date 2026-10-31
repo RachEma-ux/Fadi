@@ -12,8 +12,8 @@
  */
 import express, { Router, type NextFunction, type Request, type Response } from "express";
 import {
-  comparerAuReferentiel, deriverEtatCouche, LIBELLE_ECART_REFERENCE, lireDroits, valeurMarcheDepuisAgregat, verifierUsage,
-  type AgregatPublie, type EtatCouche, type EtatDonneePrix, type ReferenceOfficielle, type StatutSourcePrix, type ValeurMarche,
+  comparerAuReferentiel, deriverEtatCouche, LIBELLE_ECART_REFERENCE, lireDroits, parserMontant, valeurMarcheDepuisAgregat, verifierUsage,
+  type AgregatPublie, type EtatCouche, type EtatDonneePrix, type MotifComparaisonPrix, type ReferenceOfficielle, type StatutSourcePrix, type ValeurMarche,
 } from "@parcours/geodata-model";
 import { pool } from "../../db/client.js";
 import { erreur, journal, requete, rolesDe, transaction } from "../../lib/geodata/acces.js";
@@ -23,12 +23,21 @@ import {
   publicationActive, publier, retourArriere, sourceAutorisee, type CouchePublication, type DemandeImport, type ProduitPublication,
 } from "../../lib/geodata/prix/pipeline.js";
 import { STATUTS_REGISTRE } from "../../lib/geodata/prix/registre.js";
+import { csv } from "../../lib/geodata/prix/csv.js";
+import { analyserImportOfficiel, importerValeursOfficielles, VALIDITES_DECLAREES, type DemandeImportOfficiel, type ValiditeDeclaree } from "../../lib/geodata/prix/officielles.js";
+import { correspondancesLibelles, deciderRattachement, decisionsRevues, fileARevoir, idLibelle } from "../../lib/geodata/prix/rattachements.js";
 
 export const prixRouter = Router();
 const corpsImport = express.json({ limit: Math.ceil(LIMITES_IMPORT_PRIX.octets * 1.2) });
 
+/**
+ * Horloge des prix : seule source de « maintenant » des routes (fraîcheur, comparaisons, date de référence par défaut
+ * d'un instantané). Les tests la figent (`horlogePrix.maintenant = () => new Date(…)`) : aucun scénario ne dépend de
+ * la date réelle d'exécution.
+ */
+export const horlogePrix: { maintenant: () => Date } = { maintenant: () => new Date() };
 /** Date du jour en heure suisse (AAAA-MM-JJ) : fraîcheur et comparaisons. */
-export const aujourdhui = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+export const aujourdhui = (d = horlogePrix.maintenant()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 const capacitesPrix = async (req: Request) => capacitesPrixDe(await rolesDe(req.user!.id));
 
@@ -70,13 +79,18 @@ interface LigneSource extends Record<string, unknown> {
 
 const lireSources = () => requete<LigneSource>(`SELECT * FROM geodata_prix_sources ORDER BY couche DESC, produit, cle`);
 
-/** Agrégats publiés consultables : version commune publiée, consultation autorisée, source du registre non suspendue. */
+/**
+ * Agrégats publiés consultables, **fail closed** : version commune publiée, consultation autorisée, et fiche déclarée
+ * par une source du registre des prix au produit `agregat-publie`, active ou autorisée ; aucune source du registre liée
+ * à cette fiche n'est suspendue. Une version dont la fiche n'est pas au registre n'est jamais servie comme agrégat.
+ */
 const AGREGATS_CONSULTABLES = `
   FROM geodata_prix_agregats_publies a
   JOIN geodata_versions v ON v.id = a.version_id
   JOIN geodata_sources s ON s.id = v.source_id
- WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise'
-   AND NOT EXISTS (SELECT 1 FROM geodata_prix_sources ps WHERE ps.fiche_geodata = s.cle AND ps.statut NOT IN ('active', 'autorisee'))`;
+  JOIN geodata_prix_sources ps ON ps.fiche_geodata = s.cle AND ps.produit = 'agregat-publie' AND ps.statut IN ('active', 'autorisee')
+ WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND s.espace_id IS NULL AND v.droits->>'consultation' = 'autorise'
+   AND NOT EXISTS (SELECT 1 FROM geodata_prix_sources px WHERE px.fiche_geodata = s.cle AND px.statut NOT IN ('active', 'autorisee'))`;
 
 /** État dérivé (deriverEtatCouche) d'une source et de ce qu'elle a en base ; un statut « bloquee » reste non autorisé. */
 async function etatSource(s: LigneSource, dateReference: string): Promise<EtatCouche> {
@@ -189,9 +203,18 @@ const lireLigneAgregat = (l: Record<string, unknown>) => ({
   etatRattachement: l["etat_rattachement"], typeBien: l["type_bien"], typeBienOriginal: l["type_bien_original"], transaction: l["transaction"],
   nombreAnnonces: Number(l["nombre_annonces"]),
   prixMedian: l["prix_median"] === null ? null : { valeur: Number(l["prix_median"]), approximatif: l["prix_median_approximatif"], texte: l["prix_median_texte"] },
-  prixM2: l["prix_m2"] === null ? null : { valeur: Number(l["prix_m2"]), texte: l["prix_m2_texte"] },
+  prixM2: l["prix_m2"] === null ? null : { valeur: Number(l["prix_m2"]), approximatif: approximatifM2(l), texte: l["prix_m2_texte"] },
   unite: l["unite"], uniteM2: l["unite_m2"], tendance90j: nombre(l["tendance_90j"]),
+  // Correspondance revue d'un libellé non rattaché (quartier commercial → unité administrative), jamais automatique.
+  correspondance: (l["correspondance"] as unknown) ?? null,
 });
+
+/**
+ * Abréviation du prix au m² publié (≈) : colonne `prix_m2_approximatif` ; pour une ligne écrite avant cette colonne, la
+ * même règle que l'import, lue sur le texte affiché par l'éditeur (`parserMontant`, K / M = abrégé).
+ */
+const approximatifM2 = (l: Record<string, unknown>): boolean =>
+  typeof l["prix_m2_approximatif"] === "boolean" ? l["prix_m2_approximatif"] : parserMontant(String(l["prix_m2_texte"] ?? "")).approximatif;
 
 const COLONNES_AGREGAT = `a.*, v.libelle, v.periode AS version_periode, v.attribution, v.licence AS version_licence, v.publiee_le, v.droits, v.synthetique, s.cle AS fiche,
   (SELECT min(c.id) FROM geodata_couches c WHERE c.version_id = v.id) AS couche_id`;
@@ -201,9 +224,10 @@ const COLONNES_AGREGAT = `a.*, v.libelle, v.periode AS version_periode, v.attrib
  * leurs lignes rattachées et les lignes non rattachées de la même édition (quartiers commerciaux, tableau de la commune).
  */
 export async function agregatsPublies(filtres: { code?: string | null; versionId?: string | null; transaction?: string | null; type?: string | null }) {
-  const lignes = await requete(
-    `SELECT ${COLONNES_AGREGAT} ${AGREGATS_CONSULTABLES}
-       AND ($1::text IS NULL OR a.version_id IN (SELECT a2.version_id FROM geodata_prix_agregats_publies a2 WHERE a2.code_rattache = $1))
+  const brutes = await requete(
+    `SELECT ${COLONNES_AGREGAT}, ps.cle AS source_prix ${AGREGATS_CONSULTABLES}
+       AND ($1::text IS NULL OR a.version_id IN (SELECT a2.version_id FROM geodata_prix_agregats_publies a2 WHERE a2.code_rattache = $1)
+            OR ps.cle IN (SELECT d.source_cle FROM geodata_prix_decisions_rattachement d WHERE d.cible = 'libelle' AND d.decision = 'validee' AND d.territoire_code = $1))
        AND ($1::text IS NULL OR a.code_rattache = $1 OR a.code_rattache IS NULL)
        AND ($2::text IS NULL OR a.version_id = $2)
        AND ($3::text IS NULL OR a.transaction = $3)
@@ -211,6 +235,17 @@ export async function agregatsPublies(filtres: { code?: string | null; versionId
      ORDER BY v.publiee_le DESC, a.version_id, a.ordre LIMIT 5000`,
     [filtres.code ?? null, filtres.versionId ?? null, filtres.transaction ?? null, filtres.type ?? null],
   );
+  // Correspondances revues des libellés non rattachés (dernière décision validée) : servies à côté de la ligne publiée.
+  const correspondances = await correspondancesLibelles(pool, [...new Set(brutes.map((l) => String(l["source_prix"])))]);
+  const avecCorrespondance: Record<string, unknown>[] = brutes.map((l) => {
+    const c = l["code_rattache"] === null ? correspondances.get(idLibelle(String(l["source_prix"]), String(l["ville"]), String(l["libelle_geo"]))) : undefined;
+    return { ...l, correspondance: c && c.decision === "validee" ? { pays: c.pays, code: c.code, niveau: c.niveau, decoupage: c.decoupage, revueLe: c.le } : null };
+  });
+  // Avec `code` : une édition retenue seulement par une correspondance revue ne sert que les lignes qui y correspondent.
+  const parRattachement = new Set(avecCorrespondance.filter((l) => filtres.code && l["code_rattache"] === filtres.code).map((l) => String(l["version_id"])));
+  const lignes = filtres.code
+    ? avecCorrespondance.filter((l) => parRattachement.has(String(l["version_id"])) || (l["correspondance"] as { code: string } | null)?.code === filtres.code)
+    : avecCorrespondance;
   const editions = new Map<string, ReturnType<typeof lireEdition>>();
   for (const l of lignes) if (!editions.has(String(l["version_id"]))) editions.set(String(l["version_id"]), lireEdition(l));
   return { editions: [...editions.values()], lignes };
@@ -331,7 +366,7 @@ prixRouter.get("/prix/comparaison", async (req, res) => {
         editeur: String(a["editeur"]), edition: String(a["libelle"]), ligne: Number(a["ordre"]), ville: String(a["ville"]), niveauGeo: a["niveau_geo"] as AgregatPublie["niveauGeo"],
         libelleGeo: String(a["libelle_geo"]), typeBien: a["type_bien"] as AgregatPublie["typeBien"], typeBienOriginal: String(a["type_bien_original"]), transaction,
         nombreAnnonces: Number(a["nombre_annonces"]), prixMedian: montant(a["prix_median"], a["prix_median_texte"], a["prix_median_approximatif"]),
-        prixMedianM2: montant(a["prix_m2"], a["prix_m2_texte"], false), unite: String(a["unite"]), uniteM2: String(a["unite_m2"]), tendance90j: nombre(a["tendance_90j"]),
+        prixMedianM2: montant(a["prix_m2"], a["prix_m2_texte"], approximatifM2(a)), unite: String(a["unite"]), uniteM2: String(a["unite_m2"]), tendance90j: nombre(a["tendance_90j"]),
         periode: { debut: dateIso(a["periode_debut"])!, fin: dateIso(a["periode_fin"])! }, source: String(a["editeur"]), sourceUrl: String(a["source_url"]), licence: String(a["licence"]),
       };
       marche = valeurMarcheDepuisAgregat(agregat, { territoire: code, autorisee: true });
@@ -350,8 +385,13 @@ prixRouter.get("/prix/comparaison", async (req, res) => {
   } : null;
   const descriptionReference = reference ? { ...reference, editionId: r!["edition_id"], territoire: r!["territoire_code"] ?? null } : null;
   if (!reference || !marche) {
+    // Motif structuré, avec l'état de la couche en cause (ex. couche officielle non autorisée : source bloquée).
+    const motif: MotifComparaisonPrix = !reference ? "aucune-reference-officielle" : "aucune-valeur-marche";
+    const sources = await lireSources();
+    const e = !reference ? await etatProduit("valeurs-officielles", sources, date) : await etatProduit("observations", sources, date);
     return void res.json({
-      comparable: false, dimensionsIncompatibles: [], motif: !reference ? "aucune-reference-officielle" : "aucune-valeur-marche", libelle: LIBELLE_ECART_REFERENCE,
+      comparable: false, dimensionsIncompatibles: [], motif, libelle: LIBELLE_ECART_REFERENCE,
+      coucheEnCause: { couche: !reference ? "officielle" : "annonces", etat: e.etat, motif: e.motif, detail: e.detail ?? null },
       reference: descriptionReference, marche: descriptionMarche,
     });
   }
@@ -439,7 +479,7 @@ prixRouter.get("/prix/observations", exiger("prix-lire-observations"), async (re
 });
 
 /** Décision revue sur une paire d'annonces (`source|annonce`) : fusion ou séparation, rejouée à la construction suivante. */
-prixRouter.post("/prix/doublons/decisions", exiger("prix-construire"), gerer(async (req, res) => {
+prixRouter.post("/prix/doublons/decisions", exiger("prix-reviser"), gerer(async (req, res) => {
   const { a, b, decision, motif } = (req.body ?? {}) as Record<string, unknown>;
   const cle = /^[a-z0-9][a-z0-9-]{1,79}\|[^|]{1,200}$/;
   if (typeof a !== "string" || !cle.test(a) || typeof b !== "string" || !cle.test(b) || (decision !== "fusion" && decision !== "separation") || typeof motif !== "string" || motif.trim().length < 3 || motif.length > 500) {
@@ -447,6 +487,132 @@ prixRouter.post("/prix/doublons/decisions", exiger("prix-construire"), gerer(asy
   }
   await transaction((c) => deciderDoublon(c, a, b, decision, motif.trim(), req.user!.id));
   res.status(201).json({ a: a < b ? a : b, b: a < b ? b : a, decision });
+}));
+
+// ——— Valeurs officielles : import contrôlé (restreint) et zone (consultation) ———
+
+/** Champs communs d'une demande d'import de fichier (source, édition, format, contenu, mode, clé d'idempotence). */
+function champsImport(b: Record<string, unknown>, ed: Record<string, unknown>): string[] {
+  const champs: string[] = [];
+  if (typeof b["source"] !== "string" || !/^[a-z0-9][a-z0-9-]{1,79}$/.test(b["source"])) champs.push("source");
+  if (typeof ed["libelle"] !== "string" || ed["libelle"].trim().length < 2 || ed["libelle"].length > 200) champs.push("edition.libelle");
+  for (const k of ["dateDebut", "dateFin"]) if (ed[k] !== undefined && ed[k] !== null && (typeof ed[k] !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(ed[k] as string))) champs.push(`edition.${k}`);
+  if (ed["url"] !== undefined && ed["url"] !== null && (typeof ed["url"] !== "string" || !/^https:\/\/\S{3,500}$/.test(ed["url"]))) champs.push("edition.url");
+  if (b["format"] !== "csv" && b["format"] !== "json") champs.push("format");
+  if (typeof b["contenu"] !== "string" || !b["contenu"].length) champs.push("contenu");
+  if (b["mode"] !== "apercu" && b["mode"] !== "valider") champs.push("mode");
+  if (b["mode"] === "valider" && typeof b["cleIdempotence"] !== "string") champs.push("cleIdempotence");
+  return champs;
+}
+
+/**
+ * Import d'un fichier de valeurs officielles (gestionnaire de données) : aperçu sans écriture, puis validation avec la
+ * clé d'idempotence de l'aperçu. Refusé (409, motif du registre) tant que la source officielle n'est ni active ni
+ * autorisée. La validité de l'édition est déclarée (`verifiee`, `non-verifiee`, `historique`), jamais déduite.
+ */
+prixRouter.post("/prix/officielles/imports", exiger("prix-importer"), corpsImport, gerer(async (req, res) => {
+  const b = (req.body ?? {}) as Record<string, unknown>;
+  const ed = (b["edition"] ?? {}) as Record<string, unknown>;
+  const champs = champsImport(b, ed);
+  if (typeof ed["validite"] !== "string" || !(VALIDITES_DECLAREES as readonly string[]).includes(ed["validite"])) champs.push("edition.validite");
+  if (champs.length) return erreur(res, 400, "invalid_input", "Demande d'import incomplète.", { champs });
+  const contenu = b["contenu"] as string;
+  if (Buffer.byteLength(contenu, "utf8") > LIMITES_IMPORT_PRIX.octets) return erreur(res, 413, "limite_depassee", `Fichier au-delà de ${LIMITES_IMPORT_PRIX.octets} octets.`, { limite: LIMITES_IMPORT_PRIX.octets });
+  const d: DemandeImportOfficiel = {
+    source: b["source"] as string, format: b["format"] as "csv" | "json", contenu, acteur: req.user!.id,
+    edition: {
+      libelle: (ed["libelle"] as string).trim(), dateDebut: (ed["dateDebut"] as string | undefined) ?? null, dateFin: (ed["dateFin"] as string | undefined) ?? null,
+      url: (ed["url"] as string | undefined) ?? null, validite: ed["validite"] as ValiditeDeclaree,
+    },
+  };
+  try {
+    if (b["mode"] === "apercu") {
+      const a = await transaction(async (c) => { await exigerSource(c, d.source, "valeurs-officielles"); return analyserImportOfficiel(c, d); });
+      const [deja] = await requete(`SELECT id FROM geodata_prix_lots WHERE cle_idempotence = $1`, [a.rapport.cleIdempotence]);
+      return void res.json({ mode: "apercu", dejaImporte: deja ? deja["id"] : null, rapport: a.rapport });
+    }
+    const r = await transaction((c) => importerValeursOfficielles(c, d, b["cleIdempotence"] as string));
+    res.status(r.deja ? 200 : 201).json({ mode: "valider", deja: r.deja, lotId: r.lotId, editionId: r.editionId, nouvelles: r.nouvelles, rapport: r.rapport });
+  } catch (e) {
+    if (e instanceof ErreurPrix && e.code === "source_non_autorisee") await journal(req.user!.id, "prix.officielles.import.refuse", d.source, "refus", { motif: e.code });
+    throw e;
+  }
+}));
+
+/**
+ * Zone officielle (consultation) : identifiant et libellé d'origine, édition (validité déclarée, dates, adresse),
+ * géométrie GeoJSON d'origine ou description textuelle, état de revue de l'attribution territoriale, et ses valeurs sous
+ * leur forme d'origine (texte, page ou ligne). Rien n'est servi d'une source ni active ni autorisée, ni d'une édition
+ * suspendue ou retirée (409, sans aucune valeur).
+ */
+prixRouter.get("/prix/officielles/zones/:id", gerer(async (req, res) => {
+  const id = String(req.params["id"]);
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) return void erreur(res, 404, "not_found", "Zone officielle inconnue.");
+  const [z] = await requete(
+    `SELECT z.id, z.zone_code, z.libelle, z.description_textuelle, z.crs_origine, z.territoire_code, z.territoire_propose, z.revue,
+            CASE WHEN z.geom IS NULL THEN NULL ELSE ST_AsGeoJSON(z.geom)::jsonb END AS geometrie,
+            e.id AS edition_id, e.libelle AS edition, e.validite, e.date_debut, e.date_fin, e.url_origine, e.etat AS etat_edition,
+            s.cle AS source, s.titre AS source_titre, s.editeur, s.licence, s.statut, s.motif AS motif_source
+       FROM geodata_prix_zones z JOIN geodata_prix_editions e ON e.id = z.edition_id JOIN geodata_prix_sources s ON s.cle = e.source_cle WHERE z.id = $1`, [id],
+  );
+  if (!z) return void erreur(res, 404, "not_found", "Zone officielle inconnue.");
+  if (!sourceAutorisee(String(z["statut"])) || z["etat_edition"] !== "active") {
+    return void erreur(res, 409, "source_non_autorisee", "Source ou édition officielle non autorisée : aucune valeur servie.", { statut: z["statut"], edition: z["etat_edition"], motif: z["motif_source"] ?? null });
+  }
+  const valeurs = await requete(
+    `SELECT id, categorie_originale, type_bien, etat_bien, transaction, base_surface, forme, valeur, valeur_min, valeur_max, valeur_terrain, valeur_construction, condition,
+            texte_original, monnaie, unite, date_debut, date_fin, page_ou_ligne, validite FROM geodata_prix_valeurs_officielles WHERE zone_id = $1 ORDER BY type_bien, transaction, date_debut, id`, [id],
+  );
+  res.json({
+    zone: {
+      id: z["id"], code: z["zone_code"], libelle: z["libelle"] ?? null, description: z["description_textuelle"] ?? null, geometrie: z["geometrie"] ?? null, crsOrigine: z["crs_origine"] ?? null,
+      revue: z["revue"], territoire: z["revue"] === "validee" ? z["territoire_code"] : null, territoirePropose: z["territoire_propose"] ?? null,
+    },
+    edition: {
+      id: z["edition_id"], libelle: z["edition"], validite: z["validite"], dateDebut: dateIso(z["date_debut"]), dateFin: dateIso(z["date_fin"]), url: z["url_origine"] ?? null,
+      source: z["source"], sourceTitre: z["source_titre"], editeur: z["editeur"], licence: z["licence"] ?? null,
+    },
+    valeurs: valeurs.map((v) => ({
+      id: v["id"], categorieOriginale: v["categorie_originale"], typeBien: v["type_bien"], etatBien: v["etat_bien"] ?? null, transaction: v["transaction"], baseSurface: v["base_surface"],
+      forme: v["forme"], valeur: nombre(v["valeur"]), min: nombre(v["valeur_min"]), max: nombre(v["valeur_max"]), terrain: nombre(v["valeur_terrain"]),
+      construction: nombre(v["valeur_construction"]), condition: v["condition"] ?? null, texteOriginal: v["texte_original"], monnaie: v["monnaie"], unite: v["unite"],
+      dateDebut: dateIso(v["date_debut"]), dateFin: dateIso(v["date_fin"]), pageOuLigne: v["page_ou_ligne"] ?? null, validite: v["validite"],
+    })),
+  });
+}));
+
+// ——— Revue des rattachements (restreinte) ———
+
+/**
+ * File de revue : `etat=a-revoir` (défaut) — observations ambiguës ou non rattachées, zones officielles à attribuer,
+ * libellés publiés non rattachés (quartiers commerciaux FeenWay) sans correspondance décidée ; `etat=revus` —
+ * historique des décisions.
+ */
+prixRouter.get("/prix/rattachements", exiger("prix-lire-observations"), gerer(async (req, res) => {
+  const etat = req.query["etat"] ?? "a-revoir";
+  if (etat === "revus") return void res.json({ etat, decisions: await decisionsRevues(pool) });
+  if (etat !== "a-revoir") return void erreur(res, 400, "invalid_input", "État attendu : a-revoir ou revus.", { champs: ["etat"] });
+  const f = await fileARevoir(pool);
+  res.json({ etat, ...f, total: f.observations.length + f.zones.length + f.libelles.length });
+}));
+
+/**
+ * Décision de revue (gestionnaire de données) : `validee` avec un territoire de la hiérarchie en base (`{ pays, code }`)
+ * ou `refusee` sans territoire ; motif obligatoire. Jamais automatique ; une observation n'est jamais rattachée plus
+ * finement que la précision de sa source (409 `precision_insuffisante`).
+ */
+prixRouter.post("/prix/rattachements/:id/decision", exiger("prix-reviser"), gerer(async (req, res) => {
+  const { decision, territoire, motif } = (req.body ?? {}) as Record<string, unknown>;
+  const t = territoire as Record<string, unknown> | null | undefined;
+  const champs: string[] = [];
+  if (decision !== "validee" && decision !== "refusee") champs.push("decision");
+  if (!motifValide(motif)) champs.push("motif");
+  if (t !== undefined && t !== null && (typeof t !== "object" || typeof t["pays"] !== "string" || !/^[A-Z]{2}$/.test(t["pays"]) || typeof t["code"] !== "string" || !/^[A-Za-z0-9:._-]{1,64}$/.test(t["code"]))) champs.push("territoire");
+  if (champs.length) return void erreur(res, 400, "invalid_input", "Décision (validee ou refusee), territoire { pays, code } et motif (3 à 500 caractères) attendus.", { champs });
+  const r = await transaction((c) => deciderRattachement(c, String(req.params["id"]), {
+    decision: decision as "validee" | "refusee", territoire: t ? { pays: t["pays"] as string, code: t["code"] as string } : null, motif: (motif as string).trim(), acteur: req.user!.id,
+  }));
+  res.status(201).json(r);
 }));
 
 // ——— Instantanés et publications ———
@@ -532,11 +698,6 @@ prixRouter.post("/prix/sources/:cle/statut", exiger("prix-gerer-sources"), gerer
 
 // ——— Export (restreint ; droit « export » de chaque source ; provenance et attribution) ———
 
-const csv = (lignes: readonly (readonly unknown[])[]) =>
-  `${lignes.map((l) => l.map((v) => {
-    const t = v === null || v === undefined ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
-    return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-  }).join(",")).join("\r\n")}\r\n`;
 
 prixRouter.get("/prix/export", exiger("prix-exporter"), async (req, res) => {
   if ((req.query["format"] ?? "csv") !== "csv") return erreur(res, 400, "format_non_pris_en_charge", "Format d'export : csv.", { champs: ["format"] });
@@ -544,6 +705,8 @@ prixRouter.get("/prix/export", exiger("prix-exporter"), async (req, res) => {
   if (produit === "agregats") {
     const { lignes } = await agregatsPublies({ code: param(req, "code"), versionId: param(req, "versionId"), transaction: param(req, "transaction"), type: param(req, "type") });
     const refusees = new Set(lignes.filter((l) => !verifierUsage(lireDroits(l["droits"]), "export").ok).map((l) => String(l["version_id"])));
+    // Rien de consultable (édition inconnue, source suspendue ou fiche hors registre) : aucun fichier, pas même un en-tête.
+    if (!lignes.length) return void erreur(res, 404, "not_found", "Aucun agrégat publié consultable pour ces critères.");
     const permises = lignes.filter((l) => !refusees.has(String(l["version_id"])));
     if (!permises.length && refusees.size) {
       await journal(req.user!.id, "prix.export.refuse", null, "refus", { versions: [...refusees] });
@@ -551,9 +714,9 @@ prixRouter.get("/prix/export", exiger("prix-exporter"), async (req, res) => {
     }
     const corps = csv([
       ["version_id", "edition", "editeur", "niveau_geo", "libelle_geo", "code_rattache", "etat_rattachement", "type_bien", "type_bien_original", "transaction", "nombre_annonces",
-        "prix_median", "prix_median_approximatif", "prix_median_texte", "prix_m2", "prix_m2_texte", "unite", "unite_m2", "tendance_90j", "periode", "source_url", "licence", "attribution", "nature"],
+        "prix_median", "prix_median_approximatif", "prix_median_texte", "prix_m2", "prix_m2_approximatif", "prix_m2_texte", "unite", "unite_m2", "tendance_90j", "periode", "source_url", "licence", "attribution", "nature"],
       ...permises.map((l) => [l["version_id"], l["libelle"], l["editeur"], l["niveau_geo"], l["libelle_geo"], l["code_rattache"], l["etat_rattachement"], l["type_bien"], l["type_bien_original"],
-        l["transaction"], l["nombre_annonces"], l["prix_median"], l["prix_median_approximatif"], l["prix_median_texte"], l["prix_m2"], l["prix_m2_texte"], l["unite"], l["unite_m2"], l["tendance_90j"],
+        l["transaction"], l["nombre_annonces"], l["prix_median"], l["prix_median_approximatif"], l["prix_median_texte"], l["prix_m2"], l["prix_m2"] === null ? null : approximatifM2(l), l["prix_m2_texte"], l["unite"], l["unite_m2"], l["tendance_90j"],
         l["periode"], l["source_url"], l["version_licence"], l["attribution"], "agregat publie par un tiers (source unique derivee), non recalcule"]),
     ]);
     await journal(req.user!.id, "prix.export", null, "succes", { produit: "agregats", lignes: permises.length, versions: [...new Set(permises.map((l) => String(l["version_id"])))] });

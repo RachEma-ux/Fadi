@@ -1,13 +1,14 @@
 /**
  * Prix immobiliers de GeoData (Plan Prix §8) — intégration contre PostgreSQL/PostGIS (suite DB-3) : PRX01 à PRX14 sur la
  * base de test attestée. Fiche FeenWay et registre des sources réels ; sources d'observations, territoires et valeurs
- * officielles SYNTHÉTIQUES, créés dans la base de test seulement (`geodata-prix.scenarios.ts`).
+ * officielles SYNTHÉTIQUES, créés dans la base de test seulement (`geodata-prix.scenarios.ts`). L'horloge des prix est
+ * figée au 31 octobre 2026 par chaque scénario : aucun résultat ne dépend de la date réelle d'exécution.
  */
 import { afterAll, beforeEach, describe, it } from "vitest";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
-import { chaineObservations, feenwayReel, prx01BaseVide, referenceOfficielle, registreReel, type ContexteEssai } from "./geodata-prix.scenarios.js";
+import { chaineObservations, feenwayReel, prx01BaseVide, referenceOfficielle, registreReel, restaurationBase, type ContexteEssai } from "./geodata-prix.scenarios.js";
 
 const ctx: ContexteEssai = { app: createApp(), pool };
 // `users` en CASCADE vide aussi toutes les tables geodata_* et geodata_prix_* (sources du registre comprises).
@@ -23,13 +24,17 @@ describe("Prix immobiliers — registre des sources réel", () => {
 });
 
 describe("Prix immobiliers — baromètre FeenWay réel (agrégat publié)", () => {
-  it("66 lignes, 16 rattachées à 6141010, 50 quartiers non rattachés ; réimport sans nouvelle version ; fiche d'objet ; catégorie ; suspension (PRX13) ; export attribué", () => feenwayReel(ctx));
+  it("66 lignes, 16 rattachées à 6141010, 50 quartiers non rattachés ; réimport sans nouvelle version ; fiche d'objet ; catégorie ; fail closed ; revue des quartiers ; suspension de la couche générique et des agrégats (PRX13) ; export attribué", () => feenwayReel(ctx), 60_000);
 });
 
 describe("Prix immobiliers — chaîne des observations (jeux synthétiques)", () => {
-  it("PRX02 à PRX07, PRX10 à PRX14 : idempotence, doublons, cohortes, seuil, droits, publication concurrente, retour arrière, suspension", () => chaineObservations(ctx), 60_000);
+  it("PRX02 à PRX07, PRX10 à PRX14 : idempotence, conflit de réimport, doublons et liens bien ↔ observation, cohortes, seuil, droits, publication concurrente, retour arrière, suspension concurrente, source dérivée", () => chaineObservations(ctx), 60_000);
 });
 
 describe("Prix immobiliers — référence officielle (jeu synthétique)", () => {
-  it("PRX08 / PRX09 : validité non vérifiée jamais courante, comparaison refusée avec ses raisons, écart puis position une fois vérifiée", () => referenceOfficielle(ctx), 60_000);
+  it("import officiel (aperçu, validation, idempotence, quarantaine), zone revue, PRX08 / PRX09 (dimension incompatible), écart puis position, zone consultée, suspension", () => referenceOfficielle(ctx), 60_000);
+});
+
+describe("Prix immobiliers — PRX14 restauration de la base", () => {
+  it("sauvegarde logique, tables vidées, restauration : même instantané publié, même empreinte, même lignée ; reconstruction identique ; retour arrière", () => restaurationBase(ctx), 60_000);
 });

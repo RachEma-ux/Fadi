@@ -3811,10 +3811,27 @@ CREATE OR REPLACE TRIGGER geodata_prix_instantanes_immuables BEFORE UPDATE OR DE
 CREATE TABLE IF NOT EXISTS geodata_prix_biens (
   instantane_id text NOT NULL REFERENCES geodata_prix_instantanes (id) ON DELETE CASCADE,
   bien_id text NOT NULL,
-  annonces text[] NOT NULL CHECK (cardinality(annonces) >= 2),
+  annonces text[] NOT NULL,
   liens jsonb NOT NULL,
   PRIMARY KEY (instantane_id, bien_id)
 );
+-- Tous les biens de l'instantané (une annonce ou plus) : base des liens bien ↔ observation ci-dessous.
+ALTER TABLE geodata_prix_biens DROP CONSTRAINT IF EXISTS geodata_prix_biens_annonces_check;
+ALTER TABLE geodata_prix_biens ADD CONSTRAINT geodata_prix_biens_annonces_check CHECK (cardinality(annonces) >= 1);
+-- Liens bien ↔ observation (Plan §4, `geodata_prix_biens_observations`) : chaque observation lue par l'instantané est
+-- liée à son bien, avec la méthode (`identifiant` : une seule annonce ; `empreinte` : rapprochement inter-sources par
+-- empreinte égale ; `decision` : fusion revue) et la catégorie de confiance. Figés avec l'instantané (lignée).
+CREATE TABLE IF NOT EXISTS geodata_prix_biens_observations (
+  instantane_id text NOT NULL,
+  bien_id text NOT NULL,
+  observation_id bigint NOT NULL REFERENCES geodata_prix_observations (id),
+  annonce text NOT NULL,
+  methode text NOT NULL CHECK (methode IN ('identifiant', 'empreinte', 'decision')),
+  confiance text NOT NULL CHECK (confiance IN ('certaine', 'forte', 'revue')),
+  PRIMARY KEY (instantane_id, observation_id),
+  FOREIGN KEY (instantane_id, bien_id) REFERENCES geodata_prix_biens (instantane_id, bien_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_biens_observations_bien ON geodata_prix_biens_observations (instantane_id, bien_id);
 -- Cellules d'un instantané : cohorte explicite, médiane et quartiles (type 7) ou échantillon insuffisant sans valeur,
 -- effectifs, exclusions, contribution des sources ; `cles_retenues` (lignée) n'est jamais servie à la consultation.
 CREATE TABLE IF NOT EXISTS geodata_prix_cellules (
@@ -3854,6 +3871,7 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER geodata_prix_cellules_figees BEFORE UPDATE OR DELETE ON geodata_prix_cellules FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
 CREATE OR REPLACE TRIGGER geodata_prix_biens_figes BEFORE UPDATE OR DELETE ON geodata_prix_biens FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
+CREATE OR REPLACE TRIGGER geodata_prix_biens_observations_figes BEFORE UPDATE OR DELETE ON geodata_prix_biens_observations FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
 
 -- Publications : un seul pointeur actif par couche et produit (index unique partiel), instantané précédent, approbateur,
 -- motif, portée des droits ; publication, retour arrière et retrait sont des événements en ajout seulement (seule la
@@ -3888,6 +3906,61 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER geodata_prix_publications_ajout_seul BEFORE UPDATE OR DELETE ON geodata_prix_publications
   FOR EACH ROW EXECUTE FUNCTION geodata_prix_publication_ajout_seul();
+
+-- Sources amont d'une source dérivée (agrégateur) : clés du registre ; une source dérivée n'est jamais combinée avec
+-- une autre source dans un instantané.
+ALTER TABLE geodata_prix_sources ADD COLUMN IF NOT EXISTS amont text[] NOT NULL DEFAULT '{}';
+-- Zone officielle : territoire proposé par le fichier importé, gardé à part ; `territoire_code` n'est posé que par une
+-- décision de revue validée (jamais d'office).
+ALTER TABLE geodata_prix_zones ADD COLUMN IF NOT EXISTS territoire_propose text;
+-- Indicateur d'abréviation du prix au m² publié (≈), comme pour le prix médian ; NULL quand aucun prix au m² n'est publié.
+ALTER TABLE geodata_prix_agregats_publies ADD COLUMN IF NOT EXISTS prix_m2_approximatif boolean;
+
+-- Revue des rattachements d'observations (file `a-revoir`) : décision validée (territoire choisi, jamais plus fin que la
+-- précision de la source) ou refusée ; auteur, date et motif conservés, et chaque décision journalisée en ajout seul.
+ALTER TABLE geodata_prix_rattachements DROP CONSTRAINT IF EXISTS geodata_prix_rattachements_revue_check;
+ALTER TABLE geodata_prix_rattachements ADD CONSTRAINT geodata_prix_rattachements_revue_check CHECK (revue IN ('automatique', 'a-revoir', 'validee', 'refusee'));
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_par text REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_le timestamptz;
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_motif text;
+
+-- Décisions de revue des rattachements (observations, zones officielles et libellés de localité publiés), en ajout
+-- seul. `cible` : `observation` (rattachement d'une observation), `zone` (attribution d'une zone officielle à un
+-- territoire, Concept §3) ou `libelle` (libellé d'un agrégat publié, ex. quartier commercial FeenWay → unité administrative). Une correspondance n'est JAMAIS créée automatiquement : seule une décision
+-- `validee` d'un réviseur rattache un libellé ; la plus récente décision d'un même libellé l'emporte.
+CREATE TABLE IF NOT EXISTS geodata_prix_decisions_rattachement (
+  id bigserial PRIMARY KEY,
+  cible text NOT NULL CHECK (cible IN ('observation', 'libelle', 'zone')),
+  observation_id bigint REFERENCES geodata_prix_observations (id),
+  zone_id text REFERENCES geodata_prix_zones (id),
+  source_cle text REFERENCES geodata_prix_sources (cle),
+  ville_normalisee text,
+  libelle_normalise text,
+  libelle text,
+  decision text NOT NULL CHECK (decision IN ('validee', 'refusee')),
+  pays text,
+  territoire_code text,
+  territoire_niveau text,
+  decoupage text,
+  motif text NOT NULL CHECK (length(btrim(motif)) >= 3),
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  decide_le timestamptz NOT NULL DEFAULT clock_timestamp(),
+  CONSTRAINT geodata_prix_decisions_rattachement_cible CHECK (
+    (cible = 'observation' AND observation_id IS NOT NULL AND zone_id IS NULL AND source_cle IS NULL)
+    OR (cible = 'zone' AND zone_id IS NOT NULL AND observation_id IS NULL AND source_cle IS NULL)
+    OR (cible = 'libelle' AND observation_id IS NULL AND zone_id IS NULL AND source_cle IS NOT NULL AND libelle_normalise IS NOT NULL AND ville_normalisee IS NOT NULL)
+  ),
+  CONSTRAINT geodata_prix_decisions_rattachement_territoire CHECK ((decision = 'validee') = (territoire_code IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_decisions_rattachement_libelle ON geodata_prix_decisions_rattachement (source_cle, ville_normalisee, libelle_normalise, decide_le DESC);
+CREATE OR REPLACE FUNCTION geodata_prix_decision_ajout_seul() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND (to_jsonb(NEW) - 'auteur_id') = (to_jsonb(OLD) - 'auteur_id') AND NEW.auteur_id IS NULL THEN RETURN NEW; END IF;
+  RAISE EXCEPTION 'geodata_prix_decision_ajout_seul';
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_decisions_rattachement_ajout_seul BEFORE UPDATE OR DELETE ON geodata_prix_decisions_rattachement
+  FOR EACH ROW EXECUTE FUNCTION geodata_prix_decision_ajout_seul();
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à

@@ -74,11 +74,25 @@ export async function journal(acteurId: string | null, action: string, ressource
 }
 
 /**
+ * Condition SQL « la source de prix liée à cette version n'est pas suspendue » (alias `v`, PRX13) : une fiche GeoData
+ * déclarée par le registre des prix (`geodata_prix_sources.fiche_geodata`, ex. le baromètre FeenWay et ses indicateurs)
+ * n'est consultable — catalogue, carte et tuiles, fiche d'objet, export de carte — que tant que cette source est
+ * `active` ou `autorisee`. Retrait réversible et journalisé (`prix.fiche.retrait` / `prix.fiche.retablissement`) : la
+ * version publiée, immuable, n'est pas modifiée ; le rétablissement de la source la rend de nouveau consultable.
+ * Une version sans lien au registre des prix n'est pas concernée.
+ */
+export const VERSION_SOURCE_PRIX_AUTORISEE = (alias: string) =>
+  `NOT EXISTS (SELECT 1 FROM geodata_sources gsp JOIN geodata_prix_sources psp ON psp.fiche_geodata = gsp.cle
+     WHERE gsp.id = ${alias}.source_id AND gsp.espace_id IS NULL AND psp.statut NOT IN ('active', 'autorisee'))`;
+
+/**
  * Condition SQL « version consultable par l'espace `$n` » (alias `v`) : version commune publiée dont la consultation est
- * autorisée, ou version privée publiée de l'espace lui-même. Une version retirée ou en préparation n'est pas consultable.
+ * autorisée, ou version privée publiée de l'espace lui-même. Une version retirée ou en préparation n'est pas consultable,
+ * ni celle d'une source de prix suspendue (`VERSION_SOURCE_PRIX_AUTORISEE`).
  */
 export const VERSION_CONSULTABLE = (alias: string, parametreEspace: string) =>
-  `(${alias}.etat = 'publiee' AND ((${alias}.espace_id IS NULL AND ${alias}.droits->>'consultation' = 'autorise') OR ${alias}.espace_id = ${parametreEspace}))`;
+  `(${alias}.etat = 'publiee' AND ((${alias}.espace_id IS NULL AND ${alias}.droits->>'consultation' = 'autorise') OR ${alias}.espace_id = ${parametreEspace})
+    AND ${VERSION_SOURCE_PRIX_AUTORISEE(alias)})`;
 
 /** Fond cartographique déclaré par la configuration (`GEODATA_FONDS`) ; le fond neutre est toujours disponible. */
 export interface Fond {

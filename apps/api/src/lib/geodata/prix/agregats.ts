@@ -39,6 +39,8 @@ export interface LignePrixPublie {
   readonly prixMedianApproximatif: boolean | null;
   readonly prixMedianTexte: string;
   readonly prixM2: string | null;
+  /** Prix au m² abrégé par l'éditeur (≈) ; null quand aucun prix au m² n'est publié. */
+  readonly prixM2Approximatif: boolean | null;
   readonly prixM2Texte: string;
   readonly unite: string;
   readonly uniteM2: string;
@@ -91,6 +93,7 @@ export function rattacherAgregats(agregats: readonly AgregatPublie[], objets: re
       prixMedianApproximatif: a.prixMedian ? a.prixMedian.approximatif : null,
       prixMedianTexte: a.prixMedian?.texteOriginal ?? "",
       prixM2: a.prixMedianM2 ? centimesEnTexte(a.prixMedianM2.centimes) : null,
+      prixM2Approximatif: a.prixMedianM2 ? a.prixMedianM2.approximatif : null,
       prixM2Texte: a.prixMedianM2?.texteOriginal ?? "",
       unite: a.unite,
       uniteM2: a.uniteM2,

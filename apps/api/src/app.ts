@@ -51,7 +51,7 @@ export function createApp() {
   // jointes des étapes, les exports de l'Atelier, l'import IFC, l'import d'archive et la réception d'un modèle externe Studio
   // (6 Mo, routes/studio.ts) ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|^\/geodata\/api\/prix\/officielles\/imports$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());

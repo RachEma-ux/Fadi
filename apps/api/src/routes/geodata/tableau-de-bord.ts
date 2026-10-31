@@ -6,7 +6,7 @@
  * Aucun pays n'est connu du code : seul ce qui est en base est servi (D-GD-29).
  */
 import { Router } from "express";
-import { erreur, requete } from "../../lib/geodata/acces.js";
+import { erreur, requete, VERSION_SOURCE_PRIX_AUTORISEE } from "../../lib/geodata/acces.js";
 
 export const tableauDeBordRouter = Router();
 
@@ -14,7 +14,7 @@ const PAYS = /^[A-Z]{2}$/;
 /** Dernière version publiée de référence (pas d'espace), consultable, qui porte un tableau de bord pour ce pays. */
 const VERSION_BORD = `SELECT t.version_id, t.pays, t.zone_code, t.zone_nom, t.definition, v.attribution, v.publiee_le, c.id AS couche_id
   FROM geodata_tableaux_bord t JOIN geodata_versions v ON v.id = t.version_id JOIN geodata_couches c ON c.version_id = v.id
- WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise' AND ($1::text IS NULL OR t.pays = $1)
+ WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise' AND ${VERSION_SOURCE_PRIX_AUTORISEE("v")} AND ($1::text IS NULL OR t.pays = $1)
  ORDER BY v.publiee_le DESC, t.pays LIMIT 1`;
 
 const paysDemande = (q: unknown) => (typeof q === "string" ? q : null);

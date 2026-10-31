@@ -14,7 +14,7 @@
  * de la navigation sans attendre un nouveau chargement.
  */
 import { Router } from "express";
-import { erreur, requete } from "../../lib/geodata/acces.js";
+import { erreur, requete, VERSION_SOURCE_PRIX_AUTORISEE } from "../../lib/geodata/acces.js";
 
 export const territoiresRouter = Router();
 
@@ -23,7 +23,7 @@ const CODE = /^[A-Za-z0-9:._-]{1,64}$/;
 const VERSION = /^[A-Za-z0-9_-]{1,80}$/;
 /** Unités servies : version de référence publiée, consultation autorisée (comme `VERSION_CONSULTABLE` sans espace). */
 const T = `(SELECT t.* FROM geodata_territoires t JOIN geodata_versions v ON v.id = t.version_id
-  WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise')`;
+  WHERE v.etat = 'publiee' AND v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise' AND ${VERSION_SOURCE_PRIX_AUTORISEE("v")})`;
 
 territoiresRouter.get("/territoires", async (_req, res) => {
   const pays = await requete<{ code: string; nom: string; niveaux: Record<string, { singulier: string; pluriel: string }> }>("SELECT code, nom, niveaux FROM geodata_pays ORDER BY nom");
@@ -121,7 +121,7 @@ territoiresRouter.get("/territoires/:pays/decoupage", async (req, res) => {
   const niveaux = await requete<{ code: string; rang: number; singulier: string; pluriel: string; fiche: string | null; coucheId: string | null }>(
     `SELECT n.code, n.rang, n.singulier, n.pluriel, n.fiche_cle AS fiche,
             (SELECT c.id FROM geodata_sources s JOIN geodata_versions v ON v.source_id = s.id JOIN geodata_couches c ON c.version_id = v.id
-              WHERE s.cle = n.fiche_cle AND s.espace_id IS NULL AND v.espace_id IS NULL AND v.etat = 'publiee' AND v.droits->>'consultation' = 'autorise'
+              WHERE s.cle = n.fiche_cle AND s.espace_id IS NULL AND v.espace_id IS NULL AND v.etat = 'publiee' AND v.droits->>'consultation' = 'autorise' AND ${VERSION_SOURCE_PRIX_AUTORISEE("v")}
               ORDER BY v.publiee_le DESC NULLS LAST LIMIT 1) AS "coucheId"
        FROM geodata_niveaux_administratifs n WHERE n.pays = $1 ORDER BY n.rang`, [pays]);
   const entites = await requete<{ code: string; parent: string | null; niveau: string }>(

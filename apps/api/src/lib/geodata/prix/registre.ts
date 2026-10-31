@@ -15,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { estDateIso } from "@parcours/geodata-model";
 import type { Executeur } from "../archive-fichiers.js";
-import { retirerSortiesDeSource, sourceAutorisee } from "./pipeline.js";
+import { retablirSource, retirerSortiesDeSource, sourceAutorisee, verrouillerSourcesPrix } from "./pipeline.js";
 
 /** Chemin du registre dans le dossier des sources livrées (et dans `geodata_fichiers`). */
 export const CHEMIN_REGISTRE_PRIX = "prix/prix-sources.json";
@@ -37,6 +37,11 @@ export interface SourceRegistre {
   readonly motif: string | null;
   readonly prochaineAction: string | null;
   readonly derivee: boolean;
+  /**
+   * Sources amont d'une source dérivée (portails dont l'agrégateur republie les annonces) : clés du registre. Une source
+   * dérivée n'est jamais combinée avec une autre source dans un instantané (`construireInstantane`).
+   */
+  readonly amont: readonly string[];
   readonly ficheGeodata: string | null;
 }
 
@@ -79,8 +84,18 @@ export function lireRegistrePrix(contenu: unknown): RegistrePrix {
     if (!texteOuNul(s["url"], 500) || (typeof s["url"] === "string" && !/^https:\/\//.test(s["url"]))) e("url");
     for (const k of ["licence", "motif", "prochaineAction", "ficheGeodata"]) if (!texteOuNul(s[k])) e(k);
     if (typeof s["derivee"] !== "boolean") e("derivee");
+    const amont = s["amont"];
+    if (amont !== undefined && (!Array.isArray(amont) || !amont.every((k) => typeof k === "string" && /^[a-z0-9][a-z0-9-]{1,79}$/.test(k)))) e("amont");
+    else if (Array.isArray(amont) && amont.length && s["derivee"] !== true) e("amont (source non dérivée)");
     // Une source qui n'est ni autorisée ni active porte le motif de son état (Concept §2 : jamais un blocage muet).
     if (dans(STATUTS_REGISTRE, s["statut"]) && !["autorisee", "active"].includes(s["statut"]) && !texte(s["motif"])) e("motif (obligatoire hors autorisation)");
+  }
+  // Une fiche GeoData n'est déclarée que par une seule source (ses agrégats et son retrait suivent cette source).
+  const fiches = ((Array.isArray(r["sources"]) ? r["sources"] : []) as Record<string, unknown>[]).map((s) => s?.["ficheGeodata"]).filter((f): f is string => typeof f === "string");
+  for (const f of new Set(fiches)) if (fiches.filter((x) => x === f).length > 1) erreurs.push(`ficheGeodata ${f} (déclarée par plusieurs sources)`);
+  // Sources amont : chacune doit exister dans le registre.
+  for (const [i, s] of ((Array.isArray(r["sources"]) ? r["sources"] : []) as Record<string, unknown>[]).entries()) {
+    if (Array.isArray(s?.["amont"])) for (const k of s["amont"] as unknown[]) if (typeof k === "string" && !vues.has(k)) erreurs.push(`sources[${i}].amont (${k} absente du registre)`);
   }
   if (erreurs.length) throw new Error(`Registre des sources de prix invalide : ${erreurs.slice(0, 10).join(", ")}.`);
   return {
@@ -90,6 +105,7 @@ export function lireRegistrePrix(contenu: unknown): RegistrePrix {
       cle: s["cle"] as string, titre: s["titre"] as string, couche: s["couche"] as SourceRegistre["couche"], produit: s["produit"] as SourceRegistre["produit"],
       statut: s["statut"] as StatutRegistre, editeur: s["editeur"] as string, url: (s["url"] as string | null) ?? null, licence: (s["licence"] as string | null) ?? null,
       motif: (s["motif"] as string | null) ?? null, prochaineAction: (s["prochaineAction"] as string | null) ?? null, derivee: s["derivee"] as boolean,
+      amont: Array.isArray(s["amont"]) ? [...(s["amont"] as string[])].sort() : [],
       ficheGeodata: (s["ficheGeodata"] as string | null) ?? null,
     })),
   };
@@ -120,6 +136,8 @@ export async function chargerRegistrePrix(ex: Executeur, dossier: string): Promi
   const octets = readFileSync(plein);
   const empreinte = createHash("sha256").update(octets).digest("hex");
   const registre = lireRegistrePrix(JSON.parse(octets.toString("utf8")));
+  // Ordre des verrous (voir `verrouillerSourcesPrix`) : le rechargement est sérialisé avec publications et suspensions.
+  await verrouillerSourcesPrix(ex);
   // Le fichier est archivé tel quel (normalement déjà fait par l'archive des fichiers livrés, qui précède).
   await ex.query(
     `INSERT INTO geodata_fichiers (chemin, role, source_cle, type_media, taille, empreinte, contenu, archive_le, retire_le)
@@ -145,12 +163,12 @@ export async function chargerRegistrePrix(ex: Executeur, dossier: string): Promi
     const conserve = !!avant && avant.statut_origine === "administration" && avant.statut !== s.statut;
     const statut = conserve ? avant!.statut : s.statut;
     const valeurs = [s.cle, s.titre, s.couche, s.produit, statut, conserve ? "administration" : "registre", s.editeur, s.url, s.licence, s.motif, s.prochaineAction,
-      s.derivee, s.ficheGeodata, registre.revueLe, registre.revueAvant, registre.responsable, registre.dossier, CHEMIN_REGISTRE_PRIX, empreinte, registre.version];
+      s.derivee, s.ficheGeodata, registre.revueLe, registre.revueAvant, registre.responsable, registre.dossier, CHEMIN_REGISTRE_PRIX, empreinte, registre.version, s.amont];
     if (!avant) {
       await ex.query(
         `INSERT INTO geodata_prix_sources (cle, titre, couche, produit, statut, statut_origine, editeur, url, licence, motif, prochaine_action, derivee, fiche_geodata,
-           revue_le, revue_avant, responsable, dossier, fichier_chemin, empreinte_registre, version_registre)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+           revue_le, revue_avant, responsable, dossier, fichier_chemin, empreinte_registre, version_registre, amont)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         valeurs,
       );
       await journal(ex, "prix.source.ajoutee", s.cle, { statut });
@@ -161,7 +179,7 @@ export async function chargerRegistrePrix(ex: Executeur, dossier: string): Promi
     await ex.query(
       `UPDATE geodata_prix_sources SET titre = $2, couche = $3, produit = $4, statut = $5, statut_origine = $6, editeur = $7, url = $8, licence = $9, motif = $10,
          prochaine_action = $11, derivee = $12, fiche_geodata = $13, revue_le = $14, revue_avant = $15, responsable = $16, dossier = $17, fichier_chemin = $18,
-         empreinte_registre = $19, version_registre = $20, charge_le = now()
+         empreinte_registre = $19, version_registre = $20, amont = $21, charge_le = now()
        WHERE cle = $1`,
       valeurs,
     );
@@ -171,6 +189,7 @@ export async function chargerRegistrePrix(ex: Executeur, dossier: string): Promi
       await journal(ex, "prix.source.statut", s.cle, { avant: avant.statut, apres: statut, origine: "registre", version: registre.version });
       statutsChanges++;
       if (sourceAutorisee(avant.statut) && !sourceAutorisee(statut)) await retirerSortiesDeSource(ex, s.cle, `Source « ${s.cle} » : statut ${statut} (registre ${registre.version})`, null);
+      if (!sourceAutorisee(avant.statut) && sourceAutorisee(statut)) await retablirSource(ex, s.cle, `Source « ${s.cle} » : statut ${statut} (registre ${registre.version})`, null);
     }
   }
   // Sources absentes du registre : retirées, jamais effacées (historique et lignée conservés).

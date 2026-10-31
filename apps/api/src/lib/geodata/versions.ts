@@ -259,14 +259,14 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
     await client.query(
       `INSERT INTO geodata_prix_agregats_publies (version_id, ordre, editeur, ville, niveau_geo, libelle_geo, code_rattache, etat_rattachement, type_bien,
          type_bien_original, transaction, nombre_annonces, prix_median, prix_median_approximatif, prix_median_texte, prix_m2, prix_m2_texte, unite, unite_m2,
-         tendance_90j, periode_debut, periode_fin, periode, source_url, licence)
+         tendance_90j, periode_debut, periode_fin, periode, source_url, licence, prix_m2_approximatif)
        SELECT $1, a."ordre", a."editeur", a."ville", a."niveauGeo", a."libelleGeo", a."codeRattache", a."etatRattachement", a."typeBien",
          a."typeBienOriginal", a."transaction", a."nombreAnnonces", a."prixMedian"::numeric, a."prixMedianApproximatif", a."prixMedianTexte", a."prixM2"::numeric,
-         a."prixM2Texte", a."unite", a."uniteM2", a."tendance90j"::numeric, a."periodeDebut"::date, a."periodeFin"::date, a."periode", a."sourceUrl", a."licence"
+         a."prixM2Texte", a."unite", a."uniteM2", a."tendance90j"::numeric, a."periodeDebut"::date, a."periodeFin"::date, a."periode", a."sourceUrl", a."licence", a."prixM2Approximatif"
          FROM jsonb_to_recordset($2::jsonb) AS a("ordre" integer, "editeur" text, "ville" text, "niveauGeo" text, "libelleGeo" text, "codeRattache" text,
               "etatRattachement" text, "typeBien" text, "typeBienOriginal" text, "transaction" text, "nombreAnnonces" integer, "prixMedian" text,
               "prixMedianApproximatif" boolean, "prixMedianTexte" text, "prixM2" text, "prixM2Texte" text, "unite" text, "uniteM2" text, "tendance90j" text,
-              "periodeDebut" text, "periodeFin" text, "periode" text, "sourceUrl" text, "licence" text)`,
+              "periodeDebut" text, "periodeFin" text, "periode" text, "sourceUrl" text, "licence" text, "prixM2Approximatif" boolean)`,
       // Tendance en texte : le nombre publié (« -4.8 ») passe tel quel en `numeric`, sans arrondi binaire.
       [versionId, JSON.stringify(v.prixPublies.map((l) => ({ ...l, tendance90j: l.tendance90j === null ? null : String(l.tendance90j) })))],
     );

@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest";
 import { trierObservations } from "@parcours/geodata-model";
 import { lirePrixPublies, rattacherAgregats } from "./agregats.js";
 import { capacitesPrixDe } from "./droits.js";
-import { cleIdempotence, ErreurPrix, lireFichierObservations, normaliserLigne, rattacher, VERSION_ANALYSEUR_PRIX } from "./pipeline.js";
+import { cleIdempotence, ErreurPrix, liensBiensObservations, lireFichierObservations, normaliserLigne, rattacher, VERSION_ANALYSEUR_PRIX } from "./pipeline.js";
+import { celluleCsv, csv as versCsv } from "./csv.js";
 import { ligneBilanRegistre, lireRegistrePrix } from "./registre.js";
 
 const DOSSIER = fileURLToPath(new URL("../../../../../../docs/geodata/sources/", import.meta.url));
@@ -66,7 +67,8 @@ describe("registre des sources de prix (fichier réel)", () => {
   it("9 sources ; seul le baromètre FeenWay est actif ; aucune source d'observations ni édition officielle autorisée", () => {
     expect(registre.sources).toHaveLength(9);
     expect(registre.sources.filter((s) => s.statut === "active").map((s) => s.cle)).toEqual(["feenway-barometre"]);
-    expect(registre.sources.find((s) => s.cle === "feenway-barometre")).toMatchObject({ produit: "agregat-publie", ficheGeodata: "feenway-barometre-casablanca", derivee: true });
+    expect(registre.sources.find((s) => s.cle === "feenway-barometre")).toMatchObject({ produit: "agregat-publie", ficheGeodata: "feenway-barometre-casablanca", derivee: true, amont: ["avito", "mubawab", "portails-candidats"] });
+    expect(registre.sources.filter((s) => !s.derivee).every((s) => s.amont.length === 0)).toBe(true);
     expect(registre.sources.filter((s) => s.produit === "observations" && ["active", "autorisee"].includes(s.statut))).toEqual([]);
     expect(registre.sources.filter((s) => s.produit === "valeurs-officielles" && ["active", "autorisee"].includes(s.statut))).toEqual([]);
     expect(registre.sources.filter((s) => s.statut !== "active").every((s) => !!s.motif)).toBe(true);
@@ -77,6 +79,8 @@ describe("registre des sources de prix (fichier réel)", () => {
     expect(() => lireRegistrePrix({ ...base, sources: [...base.sources, base.sources[0]] })).toThrow(/en double/);
     expect(() => lireRegistrePrix({ ...base, sources: [{ ...base.sources[0], couche: "autre" }] })).toThrow(/couche/);
     expect(() => lireRegistrePrix({ ...base, sources: [{ ...base.sources[1], motif: null }] })).toThrow(/motif/);
+    expect(() => lireRegistrePrix({ ...base, sources: [{ ...base.sources[0], amont: ["inconnue"] }] })).toThrow(/amont \(inconnue absente du registre\)/);
+    expect(() => lireRegistrePrix({ ...base, sources: [...base.sources, { ...base.sources[2], cle: "autre", ficheGeodata: "feenway-barometre-casablanca" }] })).toThrow(/plusieurs sources/);
   });
 
   it("bilan lisible", () => {
@@ -93,21 +97,40 @@ describe("fichiers d'observations (synthétiques)", () => {
     "A4,2026-10-04,location,appartement,,7000,MAD,jour,60,parcelle,Commune synthétique,,",
   ].join("\n");
 
-  it("CSV et JSON donnent les mêmes lignes ; colonnes obligatoires contrôlées", () => {
+  it("CSV et JSON donnent les mêmes valeurs ; colonnes obligatoires contrôlées", () => {
     const lignes = lireFichierObservations(CSV, "csv");
     expect(lignes).toHaveLength(4);
-    expect(lireFichierObservations(JSON.stringify(lignes), "json")).toEqual(lignes);
+    expect(lireFichierObservations(JSON.stringify(lignes.map((l) => l.valeurs)), "json").map((l) => l.valeurs)).toEqual(lignes.map((l) => l.valeurs));
     expect(() => lireFichierObservations("annonce_id,prix\nA,1", "csv")).toThrow(ErreurPrix);
     expect(() => lireFichierObservations("{", "json")).toThrow(/JSON/);
   });
 
   it("normalisation : montants décimaux exacts, état inconnu signalé (non précisé), validation : prix négatif et monnaie non admise en quarantaine", () => {
-    const n = lireFichierObservations(CSV, "csv").map((l, i) => normaliserLigne(l, "synthetique-a", i + 1));
+    const n = lireFichierObservations(CSV, "csv").map((l) => normaliserLigne(l.valeurs, "synthetique-a", l.ligne));
     expect(n[0]!.observation).toMatchObject({ prix: 1_250_000, surface: 82.5, etat: "neuf", empreinte: "h1" });
     expect(n[1]!.avertissements).toEqual(["etat-bien-inconnu"]);
     const tri = trierObservations(n.map((x) => x.observation));
     expect(tri.admises.map((o) => o.idAnnonce)).toEqual(["A1", "A4"]);
     expect(tri.quarantaine.map((q) => [q.observation.idAnnonce, q.motifs])).toEqual([["A2", ["prix-non-positif"]], ["A3", ["monnaie-non-supportee"]]]);
+  });
+
+  it("numéros de ligne : ligne physique du fichier (en-tête, lignes vides comptées) ; rang de l'objet pour un JSON", () => {
+    const avecVides = CSV.replace("\nA2,", "\n\nA2,");
+    expect(lireFichierObservations(avecVides, "csv").map((l) => [l.ligne, l.valeurs["annonce_id"]])).toEqual([[2, "A1"], [4, "A2"], [5, "A3"], [6, "A4"]]);
+    expect(lireFichierObservations(JSON.stringify([{ ...lireFichierObservations(CSV, "csv")[0]!.valeurs }]), "json")[0]!.ligne).toBe(1);
+  });
+
+  it("montants : règle unique (« 450.000 » = 450 000) ; écriture illisible en quarantaine avec son motif, distinct de « absent »", () => {
+    const entete = CSV.split("\n")[0]!;
+    const fichier = [entete,
+      "B1,2026-10-01,vente,appartement,,450.000,MAD,total,82,habitable,Commune synthétique,commune,",
+      'B2,2026-10-01,vente,appartement,,"1,250,000",MAD,total,82,habitable,Commune synthétique,commune,',
+      "B3,2026-10-01,vente,appartement,,,MAD,total,8x2,habitable,Commune synthétique,commune,",
+    ].join("\n");
+    const n = lireFichierObservations(fichier, "csv").map((l) => normaliserLigne(l.valeurs, "synthetique-a", l.ligne));
+    expect(n[0]!.observation.prix).toBe(450_000);
+    const tri = trierObservations(n.map((x) => x.observation));
+    expect(tri.quarantaine.map((q) => [q.observation.idAnnonce, q.motifs])).toEqual([["B2", ["montant-illisible"]], ["B3", ["prix-absent", "surface-illisible"]]]);
   });
 
   it("PRX06 : rattachement jamais plus fin que la précision déclarée ; précision absente → non rattachée", () => {
@@ -137,5 +160,44 @@ describe("PRX10 — capacités des prix portées sur les rôles GeoData", () => 
     expect(capacitesPrixDe(["responsable-publication"]).has("prix-importer")).toBe(false);
     expect(capacitesPrixDe(["administrateur"]).has("prix-gerer-sources")).toBe(true);
     expect(capacitesPrixDe(["administrateur"]).has("prix-publier")).toBe(false);
+    expect(capacitesPrixDe(["gestionnaire-donnees"]).has("prix-reviser")).toBe(true);
+    expect(capacitesPrixDe(["responsable-publication"]).has("prix-reviser")).toBe(false);
+  });
+});
+
+describe("export CSV : injection de formules neutralisée", () => {
+  it("texte commençant par = + - @ préfixé d'une apostrophe ; nombres (négatifs compris) intacts", () => {
+    expect(celluleCsv("=HYPERLINK(\"x\")")).toBe(`"'=HYPERLINK(""x"")"`);
+    expect(celluleCsv("+33 1")).toBe("'+33 1");
+    expect(celluleCsv("-Quartier")).toBe("'-Quartier");
+    expect(celluleCsv("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(celluleCsv("\tx")).toBe("'\tx");
+    expect(celluleCsv("-4.8")).toBe("-4.8");
+    expect(celluleCsv(-4.8)).toBe("-4.8");
+    expect(celluleCsv("3300000.00")).toBe("3300000.00");
+    expect(celluleCsv("Racine")).toBe("Racine");
+    expect(celluleCsv(null)).toBe("");
+    expect(versCsv([["a", "=1+1"], [1, "-2"]])).toBe("a,'=1+1\r\n1,-2\r\n");
+  });
+});
+
+describe("liens bien ↔ observation (Plan §4)", () => {
+  it("chaque observation liée au bien de son annonce, avec méthode et confiance", () => {
+    const o = (source: string, id: string, date: string) => ({ source, idAnnonce: id, dateObservation: date, transaction: "vente" as const, typeBien: "appartement" as const, etat: null,
+      prix: 1, monnaie: "MAD", periode: "total" as const, surface: 1, baseSurface: "habitable" as const, libelleLocalite: "x", territoire: null });
+    const obs = [o("s-a", "A1", "2026-10-01"), o("s-a", "A1", "2026-10-02"), o("s-b", "B1", "2026-10-01"), o("s-a", "A2", "2026-10-01"), o("s-b", "B2", "2026-10-01")];
+    const ids = new Map(obs.map((x, i) => [`${x.source}|${x.idAnnonce}|${x.dateObservation}`, String(i + 10)]));
+    const biens = [
+      { id: "s-a|A1", annonces: ["s-a|A1", "s-b|B1"], liens: [{ a: "s-a|A1", b: "s-b|B1", origine: "empreinte" as const }] },
+      { id: "s-a|A2", annonces: ["s-a|A2", "s-b|B2"], liens: [{ a: "s-a|A2", b: "s-b|B2", origine: "decision" as const }] },
+    ];
+    expect(liensBiensObservations(biens, obs, ids)).toEqual([
+      { bien: "s-a|A1", observation: 10, annonce: "s-a|A1", methode: "empreinte", confiance: "forte" },
+      { bien: "s-a|A1", observation: 11, annonce: "s-a|A1", methode: "empreinte", confiance: "forte" },
+      { bien: "s-a|A1", observation: 12, annonce: "s-b|B1", methode: "empreinte", confiance: "forte" },
+      { bien: "s-a|A2", observation: 13, annonce: "s-a|A2", methode: "decision", confiance: "revue" },
+      { bien: "s-a|A2", observation: 14, annonce: "s-b|B2", methode: "decision", confiance: "revue" },
+    ]);
+    expect(liensBiensObservations([{ id: "s-a|A1", annonces: ["s-a|A1"], liens: [] }], [obs[0]!], ids)[0]).toMatchObject({ methode: "identifiant", confiance: "certaine" });
   });
 });
