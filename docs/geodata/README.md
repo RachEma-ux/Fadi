@@ -113,6 +113,10 @@ minimal / maximal au m² (DH/m²) et indice de confiance tels qu'affichés par F
 GEODATA_SOURCES_PROVISOIRES=oui node apps/api/dist/geodata-reference.js --fiche feenway-prix-quartiers --livraison
 ```
 
+Afficher : pastille « Immobilier et foncier » — le prix moyen au m² devient l'indicateur actif, écrit sur chaque quartier,
+couches colorées en 5 classes (jaune → rouge) avec leur légende sur la carte (D-GD-55 ; case « Colorer selon
+l'indicateur » dans le panneau Couches).
+
 Sources futures de prix : déclarer la source dans `scripts/geodata/sources-prix/` puis
 `python3 -I scripts/geodata/preparer_prix_quartiers.py --declaration scripts/geodata/sources-prix/<source>.json` (schéma
 commun, mêmes indicateurs : rien à changer dans le code) ; procédure complète dans `scripts/geodata/sources-prix/README.md`.

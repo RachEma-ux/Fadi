@@ -232,7 +232,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.setFilter(`${id}-contour`, avec("Polygon"));
       carte.setFilter(`${id}-lignes`, avec("LineString"));
       carte.setFilter(`${id}-points`, avec("Point"));
-      // Coloration : couleur unie ou une couleur par entité (D-GD-32 : aucune coloration dérivée d'un indicateur).
+      // Coloration : couleur unie ou une couleur par entité, ou selon l'indicateur actif (D-GD-55).
       let couleur: string | ExpressionSpecification = "#2b8cbe";
       if (k.style.mode === "simple") couleur = k.style.couleur;
       else if (k.style.mode === "categories") {
@@ -240,10 +240,14 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         const branches = [...(d.categories.get(k.coucheId) ?? new Map<string, string>())].flat();
         couleur = branches.length ? (["match", ["get", "code"], ...branches, "#2b8cbe"] as unknown as ExpressionSpecification) : "#2b8cbe";
       }
+      // Coloration selon l'indicateur actif (D-GD-55) : classes de valeurs lues en base ; contours blancs pour lire les classes.
+      const parIndicateur = d.couleursIndicateur?.get(k.coucheId);
+      const contour: string | ExpressionSpecification = parIndicateur ? "#ffffff" : couleur;
+      if (parIndicateur?.size) couleur = ["match", ["get", "code"], ...[...parIndicateur].flat(), "#9e9e9e"] as unknown as ExpressionSpecification;
       carte.setPaintProperty(`${id}-remplissage`, "fill-color", couleur);
       carte.setPaintProperty(`${id}-remplissage`, "fill-opacity", k.opacite);
       // Contour de la couleur de l'entité, opaque même à 0 % de remplissage ; épaisseur selon le rang administratif.
-      carte.setPaintProperty(`${id}-contour`, "line-color", couleur);
+      carte.setPaintProperty(`${id}-contour`, "line-color", contour);
       carte.setPaintProperty(`${id}-contour`, "line-width", epaisseurContour(d.rangs.get(k.coucheId) ?? null));
       carte.setPaintProperty(`${id}-contour`, "line-opacity", 1);
       carte.setPaintProperty(`${id}-lignes`, "line-color", couleur);

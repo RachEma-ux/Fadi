@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { MAX_COUCHES, couleurCategorie, couleurPixel, formatNombre, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
+import { MAX_COUCHES, calculerSeuils, classer, couleurCategorie, couleurPixel, couleursPalette, formatNombre, legende, COULEUR_ABSENTE, type ValeurIndicateur, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -171,4 +171,24 @@ export function basculerTheme(c: Composition, couches: readonly CoucheDeTheme[])
     r = ajouterCouche(r, x.id, x.versionId, x.style);
   }
   return { composition: r, omises };
+}
+
+/**
+ * Coloration d'une couche selon l'indicateur actif (D-GD-55, levée partielle de D-GD-32 à la demande du maître d'ouvrage,
+ * comme la carte « Prix Quartier » de FeenWay) : 5 classes par quantiles des valeurs **lues en base** (jamais estimées),
+ * palette séquentielle jaune → rouge, couleur grise pour une valeur absente (jamais zéro). Renvoie la couleur de chaque
+ * code et les entrées de légende (bornes, effectifs) ; null si moins de deux valeurs présentes.
+ */
+export function colorationIndicateur(vs: ReadonlyMap<string, ValeurIndicateur>, unite: string | null): { couleurs: Map<string, string>; entrees: EntreeLegende[] } | null {
+  const liste = [...vs.values()];
+  const seuils = calculerSeuils(liste, "quantiles", 5);
+  if (!seuils.length) return null;
+  const couleurs = couleursPalette("jaune-rouge", seuils.length + 1);
+  const m = new Map<string, string>();
+  for (const [code, v] of vs) {
+    const k = classer(v, seuils);
+    m.set(code, k === "absente" ? COULEUR_ABSENTE : couleurs[k]!);
+  }
+  const format = (x: number) => `${formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)}${unite ? ` ${unite}` : ""}`;
+  return { couleurs: m, entrees: legende(liste, seuils, couleurs, format).filter((e) => e.classe !== "absente" || e.effectif > 0) };
 }

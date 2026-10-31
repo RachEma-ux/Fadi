@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-31 (UTC).
+Mis à jour : 2026-11-01 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -103,6 +103,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   schéma commun et préparation génériques pour les sources futures. À faire par le maître d'ouvrage : choisir une source
   qualifiée de prix ; la brancher par `scripts/geodata/sources-prix/` puis retirer FeenWay (procédure dans le README de
   ce dossier).
+- D-GD-55 (1ᵉʳ novembre 2026) : prix visibles dès la pastille, coloration selon l'indicateur actif et légende sur la carte.
 - Données du MTNRA (D-GD-43, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
   (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-45), importés au démarrage comme les autres fiches, avec
   rapprochement provincial du RGPH. Le fichier des douars fourni le même jour (même empreinte que l'annexe livrée) est

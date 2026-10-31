@@ -53,6 +53,7 @@
   qualification « provisoire » en base, garde d'environnement, badge (D-GD-54).
 - [x] GEO-PRIX-SOURCES-FUTURES — Schéma commun des prix de quartier, déclaration de source et préparation génériques,
   procédure de remplacement (D-GD-54).
+- [x] GEO-PRIX-AFFICHAGE — Prix visibles à l'ouverture du thème, coloration selon l'indicateur et légende sur la carte (D-GD-55).
 - [ ] GEO-PRIX-QUALIFIE — Source qualifiée de prix (ANCFCC / DGI / Bank Al-Maghrib, droits à établir) : à choisir par le
   maître d'ouvrage ; puis retrait de la source FeenWay.
 - [x] GEO-SYNTHESE-ENTITE — Min / moyenne / max de l'indicateur actif sur les subdivisions, dans la fiche (D-GD-50).

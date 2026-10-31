@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue, type VersionRecue } from "../client";
 import { entreesCategories, type Categorie } from "../composition-ops";
 
@@ -253,6 +253,8 @@ export function PanneauCouches(p: {
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void;
   /** Indicateur actif du catalogue (D-GD-31, D-GD-32) : par couche qui le porte ; couches où ses valeurs sont masquées. */
   indicateurs?: ReadonlyMap<string, IndicateurRecu> | undefined; masques?: ReadonlySet<string> | undefined; onAfficherIndicateur?(id: string, afficher: boolean): void;
+  /** Coloration selon l'indicateur actif (D-GD-55) : couches où elle est coupée. */
+  colorationsCoupees?: ReadonlySet<string>; onColorerIndicateur?(id: string, colorer: boolean): void;
 }) {
   if (!p.composition.couches.length) return <p className="gd-etat">Aucune couche active : ajoutez-en depuis le Catalogue.</p>;
   const ordre = [...p.composition.couches].reverse();
@@ -289,6 +291,12 @@ export function PanneauCouches(p: {
                 <input type="checkbox" checked={!p.masques?.has(k.coucheId)} onChange={(e) => p.onAfficherIndicateur?.(k.coucheId, e.target.checked)} />
                 Afficher l'indicateur
                 <span className="gd-discret" translate="no">{` — ${p.indicateurs.get(k.coucheId)!.titre}`}</span>
+              </label>
+            )}
+            {c && p.indicateurs?.get(k.coucheId) && (
+              <label className="gd-case" data-gd-indicateur-couleur={k.coucheId}>
+                <input type="checkbox" checked={!p.colorationsCoupees?.has(k.coucheId)} onChange={(e) => p.onColorerIndicateur?.(k.coucheId, e.target.checked)} />
+                Colorer selon l'indicateur
               </label>
             )}
             {c && !c.raster && <ChoixColoration couche={c} style={k.style} onStyle={(st) => p.onStyle(k.coucheId, st)} coucheId={k.coucheId} />}
@@ -436,3 +444,33 @@ export function FicheValeur(p: { titre: string; etat: "chargement" | "erreur" | 
     </article>
   );
 }
+
+/**
+ * Légende de la coloration selon l'indicateur actif (D-GD-55), sur la carte : indicateur, unité, classes (bornes et nombre
+ * d'entités), valeur absente en gris (jamais zéro), source de la couche et son statut provisoire le cas échéant.
+ */
+export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }>; couches: ReadonlyMap<string, CoucheRecue>; /** Panneau Données ouvert à gauche (bureau). */ decalee?: boolean }) {
+  return (
+    <section className={`gd-legende-indicateur${p.decalee ? " gd-legende-decalee" : ""}`} aria-label="Légende de l'indicateur" data-gd-legende-indicateur>
+      {[...p.colorations].map(([id, c]) => {
+        const couche = p.couches.get(id);
+        return (
+          <div key={id}>
+            <h3 translate="no">{c.indicateur.titre}{c.indicateur.unite ? ` (${c.indicateur.unite})` : ""}</h3>
+            <ul className="gd-entrees">
+              {c.entrees.map((e) => (
+                <li key={String(e.classe)} className="gd-entree">
+                  <span className="gd-pastille" style={{ background: e.couleur }} />
+                  {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
+                  <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
+                </li>
+              ))}
+            </ul>
+            {couche && <p className="gd-discret"><span translate="no">{couche.version.attribution}</span>{couche.version.qualification?.etat === "provisoire" && <>{" · "}<span>Source provisoire</span></>}</p>}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+

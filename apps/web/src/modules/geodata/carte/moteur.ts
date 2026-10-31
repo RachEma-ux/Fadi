@@ -18,6 +18,8 @@ export interface DonneesAffichage {
   readonly valeurs: ReadonlyMap<string, ReadonlyMap<string, ValeurIndicateur>>;
   /** Couleur de chaque unité (code → couleur) des couches au style « une couleur par entité ». */
   readonly categories: ReadonlyMap<string, ReadonlyMap<string, string>>;
+  /** Coloration selon l'indicateur actif (D-GD-55) : par couche, couleur de chaque code ; prime sur le style de la couche. */
+  readonly couleursIndicateur?: ReadonlyMap<string, ReadonlyMap<string, string>>;
   /** Rang administratif des couches de limites (1 région, 2 province, 3 commune ; D-GD-16) : ordre et épaisseur des contours. */
   readonly rangs: ReadonlyMap<string, RangAdministratif>;
   /** Couches raster de la composition (tuiles d'image, D-GD-13). */
