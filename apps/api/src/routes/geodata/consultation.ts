@@ -8,6 +8,7 @@ import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
 import type { DescriptionRaster } from "@parcours/geodata-model";
+import { prixPubliesDeLObjet } from "./prix.js";
 
 export const consultationRouter = Router();
 
@@ -441,7 +442,11 @@ consultationRouter.get("/couches/:id/objets/:code/proximite", async (req, res) =
   res.json({ rayon, couches: resultats });
 });
 
-/** Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. */
+/**
+ * Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. `prixPublies` :
+ * agrégats de prix publiés par un tiers rattachés à cet objet dans la même version (et lignes non rattachées de la même
+ * édition — quartiers commerciaux, sans polygone), ou null.
+ */
 consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
   const couche = await coucheConsultable(await espaceDe(req), req.params.id);
   if (!couche) return introuvable(res);
@@ -462,6 +467,7 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
        FROM geodata_douars WHERE version_id = $1 AND commune = $2 ORDER BY code LIMIT 5000`,
     [couche["version_id"], req.params.code],
   );
+  const prixPublies = await prixPubliesDeLObjet(String(couche["version_id"]), req.params.code);
   res.json({
     code: o["code"], nom: o["nom"], niveau: o["niveau"], geometrieReparee: o["geometrie_reparee"],
     emprise: JSON.parse(o["emprise"] as string), centre: JSON.parse(o["centre"] as string),
@@ -477,6 +483,7 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
       pourcentages: { masculin: d["masculin"], feminin: d["feminin"], moins15: d["moins_15"], de15a59: d["de_15_a_59"], plus60: d["plus_60"] },
       complements: d["complements"] ?? null,
     })),
+    prixPublies,
   });
 });
 

@@ -27,6 +27,8 @@ export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
   { cle: "occupation-sol", libelle: "Occupation du sol", themes: ["occupation-sol"] },
   { cle: "sols", libelle: "Sols et pédologie", themes: ["sols"] },
   { cle: "geologie", libelle: "Géologie", themes: ["geologie"] },
+  // Prix immobiliers (Concept Prix v1.1, §5) : entrée propre du catalogue (agrégats publiés, couches de prix).
+  { cle: "prix-immobiliers", libelle: "Prix immobiliers", themes: ["prix-immobiliers"] },
   { cle: "personnelles", libelle: "Mes données importées", themes: ["donnees-personnelles"] },
   { cle: "test", libelle: "Jeux de test", themes: ["test"] },
 ];
