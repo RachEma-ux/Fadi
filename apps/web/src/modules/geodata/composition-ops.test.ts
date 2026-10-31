@@ -94,3 +94,25 @@ describe("composition locale de GeoData", () => {
     expect(masque.composition.couches.find((k) => k.coucheId === "a")?.visible).toBe(false);
   });
 });
+
+describe("coloration selon l'indicateur actif (D-GD-55)", () => {
+  it("5 classes par quantiles des valeurs lues, gris pour l'absence (jamais zéro), légende avec effectifs", async () => {
+    const { colorationIndicateur } = await import("./composition-ops");
+    const vs = new Map<string, { valeur: number; motifAbsence: null } | { valeur: null; motifAbsence: "non-publiee" }>(
+      [...Array.from({ length: 10 }, (_, i) => [`q${i}`, { valeur: (i + 1) * 1000, motifAbsence: null }] as const), ["absent", { valeur: null, motifAbsence: "non-publiee" }]],
+    );
+    const c = colorationIndicateur(vs, "DH/m²")!;
+    expect(c.couleurs.size).toBe(11);
+    expect(c.couleurs.get("absent")).toBe("#9e9e9e");
+    expect(c.couleurs.get("q0")).not.toBe(c.couleurs.get("q9"));
+    const classes = c.entrees.filter((e) => e.classe !== "absente");
+    expect(classes).toHaveLength(5);
+    expect(classes.reduce((n, e) => n + e.effectif, 0)).toBe(10);
+    expect(c.entrees.find((e) => e.classe === "absente")?.effectif).toBe(1);
+    expect(classes[0]!.libelle).toMatch(/DH\/m²/);
+  });
+  it("moins de deux valeurs présentes : aucune coloration", async () => {
+    const { colorationIndicateur } = await import("./composition-ops");
+    expect(colorationIndicateur(new Map([["a", { valeur: 5, motifAbsence: null }]]), null)).toBeNull();
+  });
+});

@@ -106,7 +106,7 @@
 .geodata-page .gd-recherche.gd-recherche-flottante{position:absolute;z-index:7;flex:none;box-sizing:border-box;align-items:center;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px}
 .geodata-page .gd-recherche-flottante.gd-resultats-haut .gd-resultats{top:auto;bottom:calc(100% + 4px)}
 .geodata-page .gd-outil-pastille{position:relative}
-.geodata-page .gd-pastille{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--gd-alerte);box-shadow:0 0 0 2px #fff}
+.geodata-page .gd-outil-pastille .gd-pastille{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--gd-alerte);box-shadow:0 0 0 2px #fff}
 .geodata-page .gd-barre{justify-content:flex-end}
 .geodata-page .gd-fonds-flottants{position:absolute;z-index:7;box-sizing:border-box;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 2px 10px rgba(23,59,67,.14);padding:4px;max-height:60%;overflow:auto}
 .geodata-page .gd-fonds-flottants ul{list-style:none;margin:0;padding:0}
@@ -337,3 +337,11 @@
   .geodata-page .gd-carte{padding-bottom:var(--gd-barre-bas);box-sizing:border-box}
 }
 @media (max-width:760px){.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px + var(--gd-barre-bas))}.geodata-page .gd-mini-carte{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese.gd-synthese-haute{bottom:calc(134px + var(--gd-barre-bas))}.geodata-page .gd-zoom-affiche{bottom:calc(6px + var(--gd-barre-bas))}}
+
+/* Légende de la coloration selon l'indicateur actif (D-GD-55) : en bas à gauche de la carte, au-dessus du zoom affiché. */
+.geodata-page .gd-legende-indicateur{position:absolute;left:10px;bottom:34px;z-index:3;max-width:min(300px,calc(100% - 80px));max-height:45%;overflow:auto;background:rgba(255,255,255,.95);border:1px solid var(--gd-ligne);border-radius:8px;padding:6px 10px;font-size:.8rem;box-shadow:0 1px 6px rgba(23,59,67,.15)}
+.geodata-page .gd-legende-indicateur h3{margin:0 0 4px;font-size:.84rem}
+.geodata-page .gd-legende-indicateur .gd-entrees{list-style:none;margin:0;padding:0}
+.geodata-page .gd-legende-indicateur p{margin:4px 0 0}
+@media (min-width:761px){.geodata-page .gd-legende-indicateur.gd-legende-decalee{left:380px}}
+@media (max-width:760px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}

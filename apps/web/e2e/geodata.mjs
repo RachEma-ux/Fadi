@@ -437,7 +437,20 @@ const caseNoms = carteIndicateur.locator("[data-gd-etiquettes]");
 const valeursAffichees = async () => ((await page.locator("[data-geodata-page]").getAttribute("data-gd-valeurs-affichees")) ?? "").split(" ").filter(Boolean);
 await page.waitForFunction(() => ((document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-valeurs-affichees")) ?? "") !== "", null, { timeout: 10_000 }).catch(() => undefined);
 check("indicateur actif : case « Afficher l'indicateur — Effectif synthétique » cochée par défaut, valeurs affichées sur la couche", (await caseIndicateur.isChecked()) && ((await carteIndicateur.locator("[data-gd-indicateur-affiche]").textContent()) ?? "").includes("Afficher l'indicateur — Effectif synthétique") && (await valeursAffichees()).length === 1);
-check("indicateur actif : la coloration de la couche n'a pas changé (couleur unie), aucune classe en légende", (await carteIndicateur.locator("[data-gd-coloration]").inputValue()) === "");
+check("indicateur actif : le style enregistré de la couche n'a pas changé (couleur unie)", (await carteIndicateur.locator("[data-gd-coloration]").inputValue()) === "");
+// Coloration selon l'indicateur actif (D-GD-55) : cochée par défaut, légende des classes sur la carte ; décochée, légende retirée.
+const caseCouleur = carteIndicateur.locator("[data-gd-indicateur-couleur] input");
+await page.locator("[data-gd-legende-indicateur]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+const legendeIndic = page.locator("[data-gd-legende-indicateur]");
+check("coloration selon l'indicateur (D-GD-55) : case cochée, légende sur la carte avec le nom de l'indicateur et ses classes", (await caseCouleur.isChecked()) && ((await legendeIndic.textContent()) ?? "").includes("Effectif synthétique") && (await legendeIndic.locator(".gd-entree").count()) >= 2, ((await legendeIndic.textContent().catch(() => "")) ?? "").slice(0, 200));
+check("coloration selon l'indicateur : la valeur absente est en gris dans la légende, jamais comptée comme zéro", ((await legendeIndic.textContent()) ?? "").includes("Valeur absente (1)"));
+await caseCouleur.uncheck();
+check("coloration selon l'indicateur : décochée, la légende disparaît", (await page.locator("[data-gd-legende-indicateur]").count()) === 0);
+await caseCouleur.check();
+check("coloration selon l'indicateur : recochée, la légende revient", (await page.locator("[data-gd-legende-indicateur]").count()) === 1);
+await onglet(page, "legende");
+check("coloration selon l'indicateur : l'onglet « Légende » donne les mêmes classes", (await page.locator("[data-gd-legende] [data-gd-legende-classes] .gd-entree").count()) === (await legendeIndic.locator(".gd-entree").count()));
+await onglet(page, "couches");
 // Les quatre combinaisons nom / valeur : deux cases sans aucun lien entre elles.
 check("nom / valeur : état de départ — noms masqués, valeurs affichées", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()));
 await caseNoms.check();
