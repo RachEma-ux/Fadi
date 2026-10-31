@@ -23,7 +23,7 @@ import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
 import { BarreRecherche, type ChoixFond, type PlacementOutils } from "./panneaux/BarreRecherche";
 import { PanneauCollection, useCollection, type ModeCollection } from "./panneaux/collection";
 import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
-import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
+import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche, refusImpressionFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
@@ -809,7 +809,7 @@ export function PageGeoData() {
   // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
   const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
   raccourcisNiveaux.current = (e) => {
-    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
+    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); const refus = refusImpressionFiche(fiche); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
     const cible = e.target as HTMLElement | null;
     const saisie = !!cible?.closest("input, select, textarea, [contenteditable='true']");
     // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).

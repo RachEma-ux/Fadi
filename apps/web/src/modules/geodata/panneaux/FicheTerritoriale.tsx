@@ -39,6 +39,15 @@ const STYLE_IMPRESSION = `
  * ARC-10 ; aucune règle de style hors de `.geodata-page`), avec son titre, sa source et sa date ; la fenêtre se ferme
  * après l'impression. Renvoie false si le navigateur a bloqué la fenêtre.
  */
+/**
+ * Impression d'une fiche (D-GD-54) : c'est une sortie des données, soumise au droit d'export de la source comme
+ * l'impression de la carte ; refusée quand la source refuse l'export (source provisoire FeenWay, par exemple). Renvoie le
+ * motif du refus, ou null si l'impression est permise.
+ */
+export function refusImpressionFiche(f: { couche: { version: { droits: { export: string } } } }): string | null {
+  return f.couche.version.droits.export === "refuse" ? "Impression refusée : la source de cette fiche n'autorise pas l'export de ses données." : null;
+}
+
 export function imprimerFiche(): boolean {
   const fiche = document.querySelector<HTMLElement>(".gd-fiche");
   if (!fiche) return false;
@@ -446,7 +455,7 @@ export function FicheObjet(p: {
             <span>{p.descendre.libelle}</span>
           </button>
         )}
-        <button type="button" onClick={() => { if (!imprimerFiche()) window.alert(AVIS_IMPRESSION_BLOQUEE); }} title="Imprimer la fiche (Alt+P)" aria-keyshortcuts="Alt+P" data-gd-imprimer>
+        <button type="button" onClick={() => { if (!imprimerFiche()) window.alert(AVIS_IMPRESSION_BLOQUEE); }} disabled={refusImpressionFiche(f) !== null} title={refusImpressionFiche(f) ?? "Imprimer la fiche (Alt+P)"} aria-keyshortcuts="Alt+P" data-gd-imprimer>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={IMPRIMER} /></svg>
           <span>Imprimer la fiche</span>
         </button>

@@ -621,7 +621,8 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         même si une version se trouvait en base. Les fiches provisoires vivent à part : `docs/geodata/sources/provisoires/`.
      3. **Signalement** : badge « Source provisoire » au catalogue et dans le panneau Couches (motif et décision en
         infobulle), ligne « Qualification » dans la fiche de la couche, avertissement dans la fiche d'information,
-        attribution « source provisoire non qualifiée » sur la carte.
+        attribution « source provisoire non qualifiée » sur la carte. L'impression d'une fiche suit le droit d'export de sa
+        source (`refusImpressionFiche` : bouton désactivé et Alt+P refusé quand l'export est refusé), comme celle de la carte.
      4. **Couche** « Prix des quartiers (FeenWay, provisoire) » : 1 368 quartiers de 58 villes relevés le 31 octobre 2026
         par l'API publique de la carte FeenWay (`scripts/geodata/collecter_feenway.py`, réponse archivée telle quelle),
         prix moyen, minimal et maximal en DH/m² et indice de confiance 0–5 tels qu'affichés, sans recalcul ; thème
