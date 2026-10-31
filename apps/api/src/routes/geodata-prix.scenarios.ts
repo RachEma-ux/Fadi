@@ -20,11 +20,15 @@ import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 import { lignesPrixDeLaCouche, lireAnnexePrix } from "../lib/geodata/prix/agregats.js";
 import { changerStatutSource } from "../lib/geodata/prix/pipeline.js";
 import { chargerRegistrePrix } from "../lib/geodata/prix/registre.js";
-import { restaurerPrix, sauvegarderPrix, TABLES_PRIX_SAUVEGARDEES } from "../lib/geodata/prix/sauvegarde.js";
+import { restaurerPrix, sauvegarderPrix } from "../lib/geodata/prix/sauvegarde.js";
 import { horlogePrix } from "./geodata/prix.js";
 import type { FicheSource } from "../db/geodata-reference.js";
 
-export interface ContexteEssai { readonly app: Express; readonly pool: Pool }
+/**
+ * Contexte d'essai. `reinitialiser` vide la base par le seul moyen admis par la garde DB-3 (`resetTestDatabase` sur
+ * projects, sessions et users, en cascade) : aucune requête d'essai n'écrit TRUNCATE elle-même.
+ */
+export interface ContexteEssai { readonly app: Express; readonly pool: Pool; readonly reinitialiser: () => Promise<void> }
 
 /**
  * Date d'essai figée : l'horloge des prix (`horlogePrix`) est fixée au 31 octobre 2026 à midi (UTC) pour chaque
@@ -722,8 +726,20 @@ export async function restaurationBase(ctx: ContexteEssai) {
     await c.query("COMMIT");
   } finally { c.release(); }
   assert.match(sauvegarde.empreinte, /^[0-9a-f]{64}$/);
-  // Perte simulée des tables des prix (base jetable de test).
-  await ctx.pool.query(`TRUNCATE ${TABLES_PRIX_SAUVEGARDEES.join(", ")}`);
+  // Perte simulée de la base (base jetable de test) : la remise à zéro admise par la garde vide en cascade toutes les
+  // tables des prix — et aussi les comptes, rôles et sessions. Les comptes et rôles GeoData sont d'abord relevés pour
+  // être réinsérés tels quels (une restauration réelle reprend aussi ces tables), puis la sauvegarde des prix est rejouée.
+  const comptes = (await ctx.pool.query("SELECT coalesce(json_agg(u), '[]'::json) AS l FROM users u")).rows[0].l as unknown[];
+  const roles = (await ctx.pool.query("SELECT coalesce(json_agg(r), '[]'::json) AS l FROM geodata_roles r")).rows[0].l as unknown[];
+  await ctx.reinitialiser();
+  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_instantanes"), 0);
+  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_observations"), 0);
+  await ctx.pool.query("INSERT INTO users SELECT * FROM json_populate_recordset(NULL::users, $1::json)", [JSON.stringify(comptes)]);
+  await ctx.pool.query("INSERT INTO geodata_roles SELECT * FROM json_populate_recordset(NULL::geodata_roles, $1::json)", [JSON.stringify(roles)]);
+  // Sessions perdues avec la base : chaque compte se reconnecte.
+  for (const [a, email] of [[gestion, "prix-gestion@example.com"], [publication, "prix-publication@example.com"], [lecteur, "prix-lecteur-obs@example.com"]] as const) {
+    assert.equal((await a.client.post("/auth/login").send({ email, password: PASSWORD })).status, 200, `reconnexion ${email}`);
+  }
   assert.equal((await lecteur.client.get(`${API}/prix/cellules`)).body.instantane, null);
   // Une sauvegarde altérée est refusée avant toute écriture.
   const alteree = { ...sauvegarde, tables: { ...sauvegarde.tables, geodata_prix_cellules: [] } };

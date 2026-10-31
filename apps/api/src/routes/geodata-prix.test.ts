@@ -10,7 +10,7 @@ import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { chaineObservations, feenwayReel, prx01BaseVide, referenceOfficielle, registreReel, restaurationBase, type ContexteEssai } from "./geodata-prix.scenarios.js";
 
-const ctx: ContexteEssai = { app: createApp(), pool };
+const ctx: ContexteEssai = { app: createApp(), pool, reinitialiser: () => resetTestDatabase(pool, ["projects", "sessions", "users"]) };
 // `users` en CASCADE vide aussi toutes les tables geodata_* et geodata_prix_* (sources du registre comprises).
 beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
 afterAll(async () => { await pool.end(); });
