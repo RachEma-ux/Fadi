@@ -14413,5 +14413,12 @@
 "Carte (Alt+X)": "Map (Alt+X)",
 "Chercher (Alt+R)": "Search (Alt+R)",
 "Couches (Alt+C)": "Layers (Alt+C)",
-"Enregistrer (Alt+E)": "Save (Alt+E)"
+"Enregistrer (Alt+E)": "Save (Alt+E)",
+"Source provisoire": "Provisional source",
+"Source provisoire, non qualifiée ({0}) : {1}": "Provisional, unqualified source ({0}): {1}",
+"Qualification": "Qualification",
+"Source provisoire, non qualifiée": "Provisional, unqualified source",
+"Source provisoire, non qualifiée : valeurs à ne pas diffuser ni retenir pour une décision.": "Provisional, unqualified source: values not to be shared or relied on for a decision.",
+"Immobilier et foncier": "Real estate and land",
+"Impression refusée : la source de cette fiche n'autorise pas l'export de ses données.": "Printing refused: the source of this record does not allow its data to be exported."
 }

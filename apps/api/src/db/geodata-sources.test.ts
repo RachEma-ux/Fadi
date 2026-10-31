@@ -9,7 +9,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { evaluer, trouverIndicateur, validerDefinitionTableauDeBord, type Expression, type IndicateurZone, CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, lireNiveaux, validerDeclarationRaster, validerDeclarationTerritoire, validerGeoJSON } from "@parcours/geodata-model";
+import { evaluer, trouverIndicateur, validerDefinitionTableauDeBord, type Expression, type IndicateurZone, CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, lireNiveaux, validerDeclarationRaster, validerDeclarationTerritoire, validerGeoJSON, validerQualification } from "@parcours/geodata-model";
 import { lireGeoTiff } from "../lib/geodata/raster.js";
 import { codesDesObjets } from "../lib/geodata/versions.js";
 import type { FicheSource } from "./geodata-reference.js";
@@ -282,6 +282,13 @@ describe("fiches de source GeoData livrées", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);
   });
+  it("fiches livrées : toutes qualifiées (D-GD-54) — une source provisoire n'est jamais une fiche de premier rang", () => {
+    for (const nom of fiches) {
+      const q = validerQualification((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).version.qualification);
+      expect(q.ok && q.qualification.etat, nom).toBe("qualifiee");
+    }
+  });
+
   it("découpage territorial (D-GD-42) : chaque niveau de la table des niveaux a sa fiche, qui déclare ce niveau du Maroc", () => {
     const niveaux = lireNiveaux(readFileSync(join(DOSSIER, "decoupage", "ma-niveaux.csv"), "utf8"));
     expect(niveaux.length).toBeGreaterThan(0);
@@ -292,4 +299,49 @@ describe("fiches de source GeoData livrées", () => {
       expect(v.ok && v.declaration).toEqual({ pays: n.pays, nomPays: "Maroc", niveau: n.code });
     }
   });
+});
+
+/**
+ * Sources provisoires (D-GD-54, `docs/geodata/sources/provisoires/`) : déclarées provisoires avec motif et décision,
+ * droits de diffusion refusés, schéma commun des prix de quartier, empreintes conformes, codes uniques.
+ */
+const PROVISOIRES = join(DOSSIER, "provisoires");
+const fichesProvisoires = readdirSync(PROVISOIRES).filter((f) => f.endsWith(".json")).sort();
+
+describe("fiches de source provisoires (D-GD-54)", () => {
+  it("prix des quartiers FeenWay livrés comme source provisoire", () => {
+    expect(fichesProvisoires).toEqual(["feenway-prix-quartiers.json"]);
+  });
+  for (const nom of fichesProvisoires) {
+    it(nom, () => {
+      const fiche = JSON.parse(readFileSync(join(PROVISOIRES, nom), "utf8")) as FicheSource & { version: { origine?: { fichier: string; empreinte: string } } };
+      expect(`${fiche.cle}.json`).toBe(nom);
+      const q = validerQualification(fiche.version.qualification);
+      expect(q.ok && q.qualification).toMatchObject({ etat: "provisoire", decision: "D-GD-54" });
+      // Diffusion refusée : ni export, ni téléchargement, ni partage, ni usage commercial d'une source aux droits non établis.
+      for (const u of ["commercial", "partage", "telechargement", "export"]) expect(fiche.version.droits[u], u).toBe("refuse");
+      expect(fiche.theme).toBe("immobilier");
+      expect(CATEGORIES_CATALOGUE.some((c) => c.themes.includes(fiche.theme))).toBe(true);
+      const octets = readFileSync(join(PROVISOIRES, fiche.version.fichier!));
+      expect(createHash("sha256").update(octets).digest("hex")).toBe(fiche.version.empreinte);
+      const origine = fiche.version.origine!;
+      expect(createHash("sha256").update(readFileSync(join(PROVISOIRES, origine.fichier))).digest("hex")).toBe(origine.empreinte);
+      const v = validerGeoJSON(JSON.parse(octets.toString("utf8")), { octets: 200 * 1024 * 1024, objets: OBJETS_PAR_COUCHE, sommets: 20_000_000, proprietes: 200, longueurTexte: 2000 });
+      expect(v.ok).toBe(true);
+      if (!v.ok) return;
+      const { doublons, manquants } = codesDesObjets(v.objets, fiche.couche.champCode);
+      expect(doublons).toEqual([]);
+      expect(manquants).toBe(0);
+      // Schéma commun des prix de quartier : mêmes propriétés et mêmes indicateurs pour toute source de prix.
+      expect(fiche.couche.proprietesExposees).toEqual(["code", "nom", "ville", "prix_m2", "prix_min_m2", "prix_max_m2", "indice_confiance"]);
+      expect((fiche.indicateurs ?? []).map((i) => [i.propriete, i.theme, i.famille, i.unite])).toEqual([
+        ["prix_m2", "Immobilier", "Prix moyen au m²", "DH/m²"], ["prix_min_m2", "Immobilier", "Prix minimal au m²", "DH/m²"], ["prix_max_m2", "Immobilier", "Prix maximal au m²", "DH/m²"],
+      ]);
+      // Aucune valeur inventée : un prix est un nombre de la source ou absent, jamais zéro.
+      for (const o of v.objets) for (const k of ["prix_m2", "prix_min_m2", "prix_max_m2"]) {
+        const x = o.proprietes[k];
+        expect(x === null || x === undefined || (typeof x === "number" && x > 0), `${String(o.proprietes["code"])} ${k}`).toBe(true);
+      }
+    }, 60_000);
+  }
 });

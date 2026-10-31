@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import type { PoolClient } from "pg";
+import { DOSSIER_PROVISOIRES } from "./provisoires.js";
 
 export type Executeur = Pick<PoolClient, "query">;
 
@@ -52,22 +53,30 @@ function fichiersCites(x: unknown, acc: Set<string>): Set<string> {
   return acc;
 }
 
-/** Inventaire du dossier des sources : rôle de chaque fichier et source (clé de fiche) quand une fiche le cite. */
-export function inventaireFichiers(dossier: string): FichierLivre[] {
-  const chemins = parcourir(dossier, dossier, []).filter((c) => CHEMIN.test(c) && !c.includes(".."));
+/** Fiche provisoire (D-GD-54) : `provisoires/<cle>.json`, ses données sous `provisoires/donnees/`. */
+const PREFIXE_PROVISOIRES = `${DOSSIER_PROVISOIRES}/`;
+const estFicheProvisoire = (c: string) => c.startsWith(PREFIXE_PROVISOIRES) && !c.slice(PREFIXE_PROVISOIRES.length).includes("/");
+
+/**
+ * Inventaire du dossier des sources : rôle de chaque fichier et source (clé de fiche) quand une fiche le cite. Le
+ * dossier des sources provisoires n'est inventorié (donc archivé en base) que si l'environnement les admet (D-GD-54).
+ */
+export function inventaireFichiers(dossier: string, options: { provisoires?: boolean } = {}): FichierLivre[] {
+  const chemins = parcourir(dossier, dossier, []).filter((c) => CHEMIN.test(c) && !c.includes("..") && (options.provisoires === true || !c.startsWith(PREFIXE_PROVISOIRES)));
   const sourceDe = new Map<string, string>();
   const fiches = new Map<string, string>();
   for (const c of chemins) {
-    if (!c.endsWith(".json") || (c.includes("/") && !c.startsWith("references/"))) continue;
+    if (!c.endsWith(".json") || (c.includes("/") && !c.startsWith("references/") && !estFicheProvisoire(c))) continue;
     try {
       const fiche = JSON.parse(readFileSync(join(dossier, c), "utf8")) as { cle?: unknown };
       if (typeof fiche.cle !== "string") continue;
       fiches.set(c, fiche.cle);
-      for (const f of fichiersCites(fiche, new Set())) sourceDe.set(f, fiche.cle);
+      const prefixe = estFicheProvisoire(c) ? PREFIXE_PROVISOIRES : "";
+      for (const f of fichiersCites(fiche, new Set())) sourceDe.set(`${prefixe}${f}`, fiche.cle);
     } catch { /* fiche illisible : archivée quand même, sans source */ }
   }
   return chemins.map((chemin) => {
-    const role: RoleFichier = !chemin.includes("/") ? "fiche"
+    const role: RoleFichier = !chemin.includes("/") || estFicheProvisoire(chemin) ? "fiche"
       : chemin.startsWith("references/") ? "reference"
       : chemin.startsWith("correspondances/") ? "correspondance"
       : chemin.startsWith("decoupage/") ? "decoupage"
@@ -82,10 +91,10 @@ export function inventaireFichiers(dossier: string): FichierLivre[] {
 }
 
 /** Copie en base chaque fichier livré dont l'empreinte a changé ; marque retirés ceux qui ne sont plus livrés. */
-export async function archiverFichiers(ex: Executeur, dossier: string): Promise<BilanArchive> {
+export async function archiverFichiers(ex: Executeur, dossier: string, options: { provisoires?: boolean } = {}): Promise<BilanArchive> {
   const enBase = new Map((await ex.query<{ chemin: string; empreinte: string; retire: boolean }>("SELECT chemin, empreinte, retire_le IS NOT NULL AS retire FROM geodata_fichiers")).rows.map((r) => [r.chemin, r]));
   let ajoutes = 0, modifies = 0, inchanges = 0, octets = 0;
-  const livres = inventaireFichiers(dossier);
+  const livres = inventaireFichiers(dossier, options);
   for (const f of livres) {
     const contenu = readFileSync(join(dossier, f.chemin));
     const empreinte = createHash("sha256").update(contenu).digest("hex");

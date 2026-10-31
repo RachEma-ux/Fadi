@@ -13,7 +13,8 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     // Parcours indépendant de l'inventaire (récursif, fichiers cachés écartés) : tout fichier livré doit y être.
     const parcourir = (d: string, prefixe: string): string[] => readdirSync(d, { withFileTypes: true }).filter((e) => !e.name.startsWith(".")).flatMap((e) => (e.isDirectory() ? parcourir(`${d}${e.name}/`, `${prefixe}${e.name}/`) : [`${prefixe}${e.name}`]));
     const fichiers = parcourir(DOSSIER, "");
-    expect(inventaire.map((f) => f.chemin).sort()).toEqual(fichiers.sort());
+    // Sources provisoires (D-GD-54) : hors inventaire par défaut (ni archivées en base sans GEODATA_SOURCES_PROVISOIRES).
+    expect(inventaire.map((f) => f.chemin).sort()).toEqual(fichiers.filter((f) => !f.startsWith("provisoires/")).sort());
     for (const f of inventaire) {
       expect(ROLES_FICHIER).toContain(f.role);
       expect(f.taille).toBeGreaterThan(0);
@@ -49,5 +50,13 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
 
   it("bilan lisible par l'import automatique", () => {
     expect(ligneBilanArchive({ ajoutes: 3, modifies: 1, inchanges: 2, retires: 0, octets: 10 })).toBe("Archive des fichiers : 3 ajouté(s), 1 modifié(s), 2 inchangé(s), 0 retiré(s).");
+  });
+
+  it("sources provisoires (D-GD-54) : inventoriées seulement si admises, fiche et données rattachées à leur source", () => {
+    expect(inventaire.some((f) => f.chemin.startsWith("provisoires/"))).toBe(false);
+    const avec = new Map(inventaireFichiers(DOSSIER, { provisoires: true }).map((f) => [f.chemin, f]));
+    expect(avec.get("provisoires/feenway-prix-quartiers.json")).toMatchObject({ role: "fiche", sourceCle: "feenway-prix-quartiers" });
+    expect(avec.get("provisoires/donnees/feenway-prix-quartiers.geojson")).toMatchObject({ role: "donnees", sourceCle: "feenway-prix-quartiers" });
+    expect(avec.get("provisoires/donnees/feenway-prix-quartiers-origine.json")).toMatchObject({ role: "donnees", sourceCle: "feenway-prix-quartiers" });
   });
 });

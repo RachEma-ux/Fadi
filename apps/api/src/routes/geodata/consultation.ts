@@ -4,7 +4,7 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, regroupementActif, verifierUsage } from "@parcours/geodata-model";
+import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees, lireDroits, lireQualification, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, regroupementActif, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
 import type { DescriptionRaster } from "@parcours/geodata-model";
@@ -16,6 +16,7 @@ const espaceDe = async (req: Request) => (await espacePersonnel(req.user!.id)).i
 /** Description publique d'une version (fiche obligatoire, concept § 7.2) ; jamais de chemin de fichier interne. */
 export const COLONNES_VERSION = `v.id AS version_id, v.libelle, v.empreinte, v.url_source, v.recupere_le, v.periode, v.licence, v.attribution, v.droits,
   v.crs_source, v.precision_donnees, v.transformations, v.controles, v.synthetique, v.etat, v.publiee_le, v.motif_retrait, (v.espace_id IS NOT NULL) AS privee,
+  v.qualification, v.qualification_motif, v.qualification_decision,
   s.id AS source_id, s.titre AS source_titre, s.producteur, s.theme, s.couverture, s.description AS source_description`;
 
 /**
@@ -31,6 +32,7 @@ export function lireVersion(r: Record<string, unknown>) {
     licence: r["licence"], attribution: r["attribution"], droits: lireDroits(r["droits"]), crsSource: r["crs_source"], precision: r["precision_donnees"],
     transformations: r["transformations"], controles: r["controles"], synthetique: r["synthetique"], etat: r["etat"], publieeLe: r["publiee_le"],
     motifRetrait: r["motif_retrait"], privee: r["privee"],
+    qualification: lireQualification(r["qualification"], r["qualification_motif"], r["qualification_decision"]),
     source: { id: r["source_id"], titre: r["source_titre"], producteur: r["producteur"], theme: r["theme"], couverture: r["couverture"], description: r["source_description"] },
   };
 }

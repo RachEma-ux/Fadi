@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-30 (UTC).
+Mis à jour : 2026-10-31 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -98,6 +98,11 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   P1-6 Plan / Satellite (D-GD-46, PR #372), puis D-GD-47 à D-GD-53 (état des couches, pastilles, proximité, synthèse
   d'une entité, fiabilité déclarée, barre du bas, pistes évaluées) dans une seconde PR. Restent hors délégation :
   libellés arabes sur la carte (décision MO) et champ continu (source qualifiée à fournir).
+- Prix des quartiers (D-GD-54, décision du maître d'ouvrage du 31 octobre 2026) : FeenWay comme **source provisoire**
+  (préproduction et développement seulement, `GEODATA_SOURCES_PROVISOIRES=oui` réglé dans `deploy/preprod/compose.yml`),
+  schéma commun et préparation génériques pour les sources futures. À faire par le maître d'ouvrage : choisir une source
+  qualifiée de prix ; la brancher par `scripts/geodata/sources-prix/` puis retirer FeenWay (procédure dans le README de
+  ce dossier).
 - Données du MTNRA (D-GD-43, 30 octobre 2026) : administrations et services publics de maps.service-public.ma
   (data.gov.ma, 2022, ODbL), fusionnés depuis avec OSM (D-GD-45), importés au démarrage comme les autres fiches, avec
   rapprochement provincial du RGPH. Le fichier des douars fourni le même jour (même empreinte que l'annexe livrée) est

@@ -107,6 +107,9 @@ services:
       # les fiches importées, publiées, le découpage territorial écrit — sans doublon, par la livraison elle-même (vide :
       # aucun compte requis) ou au nom de ce compte GeoData s'il est donné. État : GET /version/donnees.
       GEODATA_IMPORT_AUTO_PAR: ${PREPROD_GEODATA_IMPORT_AUTO_PAR:-}
+      # Sources provisoires (D-GD-54) : admises en préproduction (étape de développement, décision du maître d'ouvrage du
+      # 31 octobre 2026) ; « non » les coupe. Jamais réglé en production : une source provisoire n'y est ni importée ni servie.
+      GEODATA_SOURCES_PROVISOIRES: ${PREPROD_GEODATA_SOURCES_PROVISOIRES:-oui}
     ports:
       - "127.0.0.1:3101:3001"
     networks:

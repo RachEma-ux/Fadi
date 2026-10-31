@@ -49,6 +49,12 @@
   sur la carte), P2-4 bloqué faute de source qualifiée (D-GD-53).
 - [ ] GEO-ARABE-CARTE — Libellés arabes sur la carte (glyphes arabes + greffon RTL) : décision du maître d'ouvrage.
 - [ ] GEO-CHAMP-CONTINU — Couche de qualité de l'air ou autre champ continu : source qualifiée à fournir.
+- [x] GEO-PRIX-PROVISOIRE — Prix des quartiers FeenWay comme source provisoire (préproduction et développement seulement),
+  qualification « provisoire » en base, garde d'environnement, badge (D-GD-54).
+- [x] GEO-PRIX-SOURCES-FUTURES — Schéma commun des prix de quartier, déclaration de source et préparation génériques,
+  procédure de remplacement (D-GD-54).
+- [ ] GEO-PRIX-QUALIFIE — Source qualifiée de prix (ANCFCC / DGI / Bank Al-Maghrib, droits à établir) : à choisir par le
+  maître d'ouvrage ; puis retrait de la source FeenWay.
 - [x] GEO-SYNTHESE-ENTITE — Min / moyenne / max de l'indicateur actif sur les subdivisions, dans la fiche (D-GD-50).
 - [x] GEO-FIABILITE — Fiabilité déclarée par la source dans la fiche, « Non évalué » sinon (D-GD-51).
 - [x] GEO-PASTILLES — Pastilles de thème sur la carte, badge, Alt+T (D-GD-48).

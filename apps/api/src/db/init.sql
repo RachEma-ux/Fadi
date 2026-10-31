@@ -3220,6 +3220,15 @@ ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS sexe text;
 ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS ordre integer NOT NULL DEFAULT 0;
 ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS nb_absentes integer;
 ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS nb_total integer;
+-- Qualification d'une source (D-GD-54) : « qualifiee » (fiche relue, droits établis) ou « provisoire » (admise par une
+-- décision du maître d'ouvrage pour une étape de développement : motif et décision obligatoires). Une version provisoire
+-- n'est importée et publiée que si l'environnement admet les sources provisoires (GEODATA_SOURCES_PROVISOIRES=oui).
+ALTER TABLE geodata_versions ADD COLUMN IF NOT EXISTS qualification text NOT NULL DEFAULT 'qualifiee';
+ALTER TABLE geodata_versions ADD COLUMN IF NOT EXISTS qualification_motif text;
+ALTER TABLE geodata_versions ADD COLUMN IF NOT EXISTS qualification_decision text;
+ALTER TABLE geodata_versions DROP CONSTRAINT IF EXISTS geodata_versions_qualification_check;
+ALTER TABLE geodata_versions ADD CONSTRAINT geodata_versions_qualification_check CHECK (
+  qualification = 'qualifiee' OR (qualification = 'provisoire' AND length(btrim(coalesce(qualification_motif, ''))) >= 10 AND qualification_decision ~ '^D-GD-[0-9]+$'));
 ALTER TABLE geodata_indicateurs DROP CONSTRAINT IF EXISTS geodata_indicateurs_milieu_check;
 ALTER TABLE geodata_indicateurs ADD CONSTRAINT geodata_indicateurs_milieu_check CHECK (milieu IS NULL OR milieu IN ('ensemble', 'urbain', 'rural'));
 ALTER TABLE geodata_indicateurs DROP CONSTRAINT IF EXISTS geodata_indicateurs_sexe_check;

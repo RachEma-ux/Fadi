@@ -39,7 +39,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Pool, type PoolClient } from "pg";
-import { validerDefinitionTableauDeBord, type DefinitionTableauDeBord, validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
+import { validerDefinitionTableauDeBord, type DefinitionTableauDeBord, validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, validerQualification, lireQualification, qualificationAdmise, type Qualification, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { empreinteAttendue, suiteAnnexes } from "../lib/geodata/empreinte-fiche.js";
@@ -48,6 +48,17 @@ import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar 
 import { chargerTerritoires, NiveauAbsent } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 import { importerDecoupage, ligneBilanDecoupage } from "../lib/geodata/decoupage.js";
+import { DOSSIER_PROVISOIRES, sourcesProvisoiresAdmises } from "../lib/geodata/provisoires.js";
+
+/** Sources provisoires admises sur cet environnement (D-GD-54, `GEODATA_SOURCES_PROVISOIRES=oui`). */
+const PROVISOIRES = sourcesProvisoiresAdmises();
+
+/** Qualification déclarée par une fiche ; une déclaration mal formée est une erreur. */
+function qualificationDe(fiche: FicheSource): Qualification {
+  const q = validerQualification(fiche.version.qualification);
+  if (!q.ok) throw new Error(`Fiche ${fiche.cle} : ${q.erreur}`);
+  return q.qualification;
+}
 
 interface AnnexeFichier { fichier: string; empreinte: string; description?: string }
 
@@ -55,6 +66,8 @@ export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
   version: {
     libelle: string; url: string | null; /** Fichier livré avec la fiche (chemin relatif au dossier des fiches), à défaut d'adresse. */ fichier?: string; empreinte: string; periode: string | null; licence: string; attribution: string; droits: Record<string, string>; precision: string | null; synthetique: boolean; conditions?: string;
+    /** Qualification de la source (D-GD-54) : absente = qualifiée ; `{ etat: "provisoire", motif, decision }` sinon. */
+    qualification?: unknown;
     /**
      * Tableau de valeurs livré avec la fiche (D-GD-17, lot A2) : CSV « code,colonne… », une ligne par objet ; chaque
      * indicateur lit sa colonne (`propriete`). Les signes conventionnels déclarés donnent leur motif d'absence.
@@ -189,8 +202,10 @@ function cheminFiche(valeur: string): string {
   if (existsSync(valeur)) return valeur;
   if (/^[a-z0-9-]{3,80}$/.test(valeur)) {
     for (const base of ["./geodata-sources/", "../../../../docs/geodata/sources/"]) {
-      const p = fileURLToPath(new URL(`${base}${valeur}.json`, import.meta.url));
-      if (existsSync(p)) return p;
+      for (const sous of ["", `${DOSSIER_PROVISOIRES}/`]) {
+        const p = fileURLToPath(new URL(`${base}${sous}${valeur}.json`, import.meta.url));
+        if (existsSync(p)) return p;
+      }
     }
   }
   throw new Error(`Fiche introuvable : ${valeur}`);
@@ -210,9 +225,11 @@ function dossierFiches(): string {
   throw new Error("Aucun dossier de fiches qualifiées.");
 }
 
+/** Fiches livrées ; les fiches provisoires (`provisoires/`) seulement si l'environnement les admet (D-GD-54). */
 function fichesLivrees(): string[] {
   const dossier = dossierFiches();
-  return readdirSync(dossier).filter((f) => f.endsWith(".json")).sort().map((f) => join(dossier, f));
+  const liste = (d: string) => (existsSync(d) ? readdirSync(d).filter((f) => f.endsWith(".json")).sort().map((f) => join(d, f)) : []);
+  return [...liste(dossier), ...(PROVISOIRES ? liste(join(dossier, DOSSIER_PROVISOIRES)) : [])];
 }
 
 /**
@@ -271,7 +288,7 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
 async function archiver() {
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   try {
-    console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches())));
+    console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches(), { provisoires: PROVISOIRES })));
     for (const chemin of fichesLivrees()) {
       try {
         const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
@@ -355,6 +372,10 @@ async function main() {
 
 async function importer(chemin: string, preparateur: string | null) {
   const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
+  // Source provisoire (D-GD-54) : ni lue, ni importée, ni publiée sur un environnement qui ne l'admet pas.
+  const qualification = qualificationDe(fiche);
+  const admise = qualificationAdmise(qualification, PROVISOIRES);
+  if (!admise.ok) throw new Error(`${admise.motif} Rien n'est importé.`);
   if (!argument("fichier")) {
     // Version déjà en base (empreinte attendue, lue dans la fiche) : ni lecture ni téléchargement ; une version encore en
     // préparation suit le chemin normal si --publier-par est donné (reprise de la publication).
@@ -461,8 +482,10 @@ async function importer(chemin: string, preparateur: string | null) {
     const publier = async (versionId: string) => {
       const publieurId = publierPar === null ? null : await role(publierPar, "responsable-publication");
       if (publieurId === undefined) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : version ${versionId} laissée en préparation.`);
-      const [v] = (await client.query("SELECT droits, (controles->>'ok')::boolean AS ok FROM geodata_versions WHERE id = $1 AND etat = 'preparation'", [versionId])).rows;
+      const [v] = (await client.query("SELECT droits, (controles->>'ok')::boolean AS ok, qualification, qualification_motif, qualification_decision FROM geodata_versions WHERE id = $1 AND etat = 'preparation'", [versionId])).rows;
       if (!v) throw new Error(`Version ${versionId} absente ou déjà hors préparation : rien n'est publié.`);
+      const q = qualificationAdmise(lireQualification(v.qualification, v.qualification_motif, v.qualification_decision), PROVISOIRES);
+      if (!q.ok) throw new Error(`Publication bloquée : ${q.motif} Version ${versionId} laissée en préparation.`);
       const droits = lireDroits(v.droits);
       const bloque = (["consultation", "tuiles"] as const).map((u) => verifierUsage(droits, u)).filter((d) => !d.ok);
       if (bloque.length || v.ok !== true) throw new Error(`Publication bloquée (droits enregistrés ou contrôles) : version ${versionId} laissée en préparation.`);
@@ -491,7 +514,7 @@ async function importer(chemin: string, preparateur: string | null) {
         recupereLe: new Date().toISOString(), periode: fiche.version.periode, licence: fiche.version.licence,
         attribution: fiche.version.attribution, droits: lireDroits(fiche.version.droits), crsSource, precision: fiche.version.precision,
         transformations: [`Lecture ${lecture}`, ...(fiche.version.conditions ? [`Conditions : ${fiche.version.conditions}`] : [])],
-        controles, synthetique: fiche.version.synthetique,
+        controles, synthetique: fiche.version.synthetique, qualification,
       },
       couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
       objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
