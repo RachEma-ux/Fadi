@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion } from "@parcours/geodata-model";
+import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion, type Qualification } from "@parcours/geodata-model";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
@@ -35,7 +35,7 @@ const carre = (x: number, y: number, d = 0.2) => [[[x, y], [x + d, y], [x + d, y
 const TOUT: DroitsVersion = { consultation: "autorise", stockage: "autorise", calcul: "autorise", tuiles: "autorise", commercial: "autorise", partage: "autorise", telechargement: "autorise", export: "autorise" };
 
 /** Version commune publiée de six unités (codes à zéros initiaux, une valeur zéro, une valeur absente). */
-async function publierReference(opts: { cle?: string; libelle?: string; droits?: DroitsVersion; valeurs?: (number | null)[]; publier?: boolean } = {}) {
+async function publierReference(opts: { cle?: string; libelle?: string; droits?: DroitsVersion; valeurs?: (number | null)[]; publier?: boolean; qualification?: Qualification } = {}) {
   const valeurs = opts.valeurs ?? [0, 12, null, 45, 0, 7];
   const fc = { type: "FeatureCollection", features: valeurs.map((v, i) => ({ type: "Feature", properties: { code: `00${i + 1}`, nom: `Unité ${String.fromCharCode(65 + i)}`, effectif: v }, geometry: { type: "Polygon", coordinates: carre(-9 + (i % 3) * 0.2, 30 + Math.floor(i / 3) * 0.2) } })) };
   const v = validerGeoJSON(fc);
@@ -46,7 +46,7 @@ async function publierReference(opts: { cle?: string; libelle?: string; droits?:
     const e = await ecrireVersion(client, {
       source: { cle: opts.cle ?? "test-unites", titre: "Unités de test", producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
       espaceId: null,
-      version: { libelle: opts.libelle ?? "v1", empreinte: "a".repeat(64), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution de test", droits: opts.droits ?? TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+      version: { libelle: opts.libelle ?? "v1", empreinte: "a".repeat(64), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution de test", droits: opts.droits ?? TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true, ...(opts.qualification ? { qualification: opts.qualification } : {}) },
       couche: { titre: "Unités", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom", "effectif"], styleDefaut: { mode: "simple", couleur: "#123456" } },
       objets: v.objets, indicateurs: [{ propriete: "effectif", titre: "Effectif", unite: "u", periode: null, denominateur: null, description: "", motifSiAbsente: "secret-statistique" }], superficie: true, preparePar: null,
     });
@@ -429,6 +429,35 @@ describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
     expect(bloque.status).toBe(409);
     expect(bloque.body.motifs).toEqual(["Production de tuiles : droit non qualifié pour cette source"]);
     expect((await alice.client.get(`${API}/admin/roles`)).status).toBe(403);
+  });
+
+  it("source provisoire (D-GD-54) : publication refusée et version cachée sans GEODATA_SOURCES_PROVISOIRES ; servie et signalée avec", async () => {
+    const avant = process.env["GEODATA_SOURCES_PROVISOIRES"];
+    delete process.env["GEODATA_SOURCES_PROVISOIRES"];
+    try {
+      const qualification = { etat: "provisoire", motif: "Droits du producteur non établis (test).", decision: "D-GD-54" } as const;
+      const pub = await compte("gd-provisoire@example.com");
+      await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'responsable-publication')", [pub.id]);
+      const prep = await publierReference({ cle: "test-provisoire-prep", publier: false, qualification });
+      const refus = await pub.client.post(`${API}/admin/versions/${prep.versionId}/publier`);
+      expect(refus.status).toBe(409);
+      expect(refus.body.motifs.join(" ")).toMatch(/Source provisoire \(D-GD-54\)/);
+      // Une version provisoire déjà publiée (base d'une préproduction copiée, par exemple) n'est servie nulle part.
+      const e = await publierReference({ cle: "test-provisoire", qualification });
+      const cache = await pub.client.get(`${API}/catalogue`);
+      expect(JSON.stringify(cache.body)).not.toContain(e.coucheId);
+      expect((await pub.client.get(`${API}/couches/${e.coucheId}`)).status).toBe(404);
+      expect((await pub.client.get(`${API}/couches/${e.coucheId}/objets/001`)).status).toBe(404);
+      process.env["GEODATA_SOURCES_PROVISOIRES"] = "oui";
+      const servie = await pub.client.get(`${API}/couches/${e.coucheId}`);
+      expect(servie.status).toBe(200);
+      expect(servie.body.version.qualification).toEqual(qualification);
+      expect((await pub.client.post(`${API}/admin/versions/${prep.versionId}/publier`)).status).toBe(200);
+      // Une source qualifiée l'est sans rien déclarer.
+      expect((await pub.client.get(`${API}/couches/${(await publierReference({ cle: "test-qualifiee" })).coucheId}`)).body.version.qualification).toEqual({ etat: "qualifiee", motif: null, decision: null });
+    } finally {
+      if (avant === undefined) delete process.env["GEODATA_SOURCES_PROVISOIRES"]; else process.env["GEODATA_SOURCES_PROVISOIRES"] = avant;
+    }
   });
   it("version publiée immuable et non effaçable ; retrait motivé : la carte garde la référence et l'explique", async () => {
     const alice = await compte("gd-ret@example.com");

@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-30 (UTC).
+Mis à jour : 2026-10-31 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -116,6 +116,14 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
   isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
+- Prix des quartiers provisoires FeenWay et sources futures (D-GD-54, décision du maître d'ouvrage du 31 octobre 2026) :
+  qualification « provisoire » (`qualification.ts`, 4 tests ; colonnes de `geodata_versions`), garde
+  `GEODATA_SOURCES_PROVISOIRES` (import, archive, publication, consultation), catégorie « Immobilier et foncier »,
+  badge. Vérifié sur PostGIS 16 local : import refusé sans réglage, accepté avec (1 368 quartiers publiés) ; scénario
+  HTTP 8/8 avec réglage (catalogue, qualification, valeur fw-25 = 13 566 DH/m², fiche, tuile, catégorie) et 5/5 sans
+  réglage (absente du catalogue ; couche, fiche, tuile, table : 404) ; captures de la carte, des couches et de la fiche ;
+  tests des fiches (provisoire : droits de diffusion refusés, schéma commun, empreintes) et de l'archive. Non couvert par
+  la recette `geodata.mjs` (jeu synthétique).
 - Barre du bas (D-GD-52) : `BarreBas.tsx`, Alt+X / Alt+C / Alt+E (icônes et touches distinctes contrôlées par test) ;
   recette au téléphone (390 × 844). Pistes P3-2, P3-3, P2-4 évaluées (D-GD-53). Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
 - Synthèse d'une entité (D-GD-50) : `SyntheseEntite` (`FicheTerritoriale.tsx`), calcul par `syntheseCouche` (déjà testé) ;

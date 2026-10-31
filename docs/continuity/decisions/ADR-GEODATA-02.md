@@ -606,6 +606,34 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      3. P2-4 (champ continu, qualité de l'air) : **bloqué faute de source qualifiée** (D-GD-29 : aucune donnée sans fiche
         de source qualifiée). Le support existe déjà (couches raster, D-GD-13 ; valeur au point) : une grille publiée par
         une source dont les droits sont établis (par exemple Copernicus / CAMS) s'importera comme les 17 rasters actuels.
+   - D-GD-54 (31 octobre 2026, **décision du maître d'ouvrage**) — **prix des quartiers : source provisoire FeenWay et
+     préparation des sources futures**. Demande : « Provisoirement on va 1. utiliser les prix de FeenWay pour cette étape
+     de développement 2. tout préparer pour les futures sources de données ». Elle lève, pour l'étape de développement
+     seulement, la réserve de l'analyse FeenWay (« données de marché reprises de FeenWay : droits non établis ») :
+     1. **Qualification d'une source** : une fiche déclare `version.qualification` — absente = « qualifiée » ;
+        « provisoire » exige un motif et une décision (`validerQualification`, modèle `qualification.ts`). Colonnes
+        `qualification`, `qualification_motif`, `qualification_decision` de `geodata_versions` (contrainte : motif et
+        décision obligatoires pour une version provisoire).
+     2. **Garde d'environnement** : une source provisoire n'est importée, archivée en base, publiée **et servie** que si
+        `GEODATA_SOURCES_PROVISOIRES=oui` (préproduction : `deploy/preprod/compose.yml`, réglable par
+        `PREPROD_GEODATA_SOURCES_PROVISOIRES`) ; sans ce réglage (production), la chaîne d'import la refuse, la
+        publication par l'API la refuse et `VERSION_CONSULTABLE` la cache (catalogue, couche, tuiles, table, fiche : 404),
+        même si une version se trouvait en base. Les fiches provisoires vivent à part : `docs/geodata/sources/provisoires/`.
+     3. **Signalement** : badge « Source provisoire » au catalogue et dans le panneau Couches (motif et décision en
+        infobulle), ligne « Qualification » dans la fiche de la couche, avertissement dans la fiche d'information,
+        attribution « source provisoire non qualifiée » sur la carte.
+     4. **Couche** « Prix des quartiers (FeenWay, provisoire) » : 1 368 quartiers de 58 villes relevés le 31 octobre 2026
+        par l'API publique de la carte FeenWay (`scripts/geodata/collecter_feenway.py`, réponse archivée telle quelle),
+        prix moyen, minimal et maximal en DH/m² et indice de confiance 0–5 tels qu'affichés, sans recalcul ; thème
+        « immobilier », catégorie « Immobilier et foncier » (semée une fois sur les bases existantes). Droits : consultation,
+        stockage, calcul et tuiles admis à titre interne et provisoire ; usage commercial, partage, téléchargement et export
+        **refusés**. Provenance, date et méthode des prix non déclarées par FeenWay : dit dans la fiche.
+     5. **Sources futures** : schéma commun des prix de quartier (`code`, `nom`, `ville`, `prix_m2`, `prix_min_m2`,
+        `prix_max_m2`, `indice_confiance` ; indicateurs du thème « Immobilier » de mêmes familles et même unité) produit par
+        `scripts/geodata/preparer_prix_quartiers.py` depuis une **déclaration de source** (`scripts/geodata/sources-prix/`) ;
+        une source qualifiée (ANCFCC, DGI, Bank Al-Maghrib…) ou une autre provisoire s'y branche sans changer le code ; la
+        source FeenWay se retire alors par `donnees/retraits-sources.json` (procédure dans
+        `scripts/geodata/sources-prix/README.md`).
 
 ## Conséquences
 

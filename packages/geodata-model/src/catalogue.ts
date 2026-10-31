@@ -16,6 +16,7 @@ export interface RangementCatalogue { readonly categories: readonly CategorieCat
 export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
   { cle: "limites", libelle: "Limites administratives", themes: ["limites-administratives"] },
   { cle: "population", libelle: "Population et démographie", themes: ["population"] },
+  { cle: "immobilier", libelle: "Immobilier et foncier", themes: ["immobilier"] },
   { cle: "agriculture", libelle: "Agriculture et irrigation", themes: ["agriculture"] },
   { cle: "hydrologie", libelle: "Eau et hydrologie", themes: ["hydrologie"] },
   { cle: "infrastructures", libelle: "Infrastructures et transport", themes: ["infrastructures"] },
@@ -30,6 +31,11 @@ export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
   { cle: "personnelles", libelle: "Mes données importées", themes: ["donnees-personnelles"] },
   { cle: "test", libelle: "Jeux de test", themes: ["test"] },
 ];
+/**
+ * Catégories ajoutées après le premier semis (une base déjà semée les reçoit une fois, chacune avec son repère ; une
+ * catégorie supprimée ensuite ne revient pas). D-GD-54 : « Immobilier et foncier » (prix des quartiers).
+ */
+export const CATEGORIES_AJOUTEES: readonly { readonly cle: string; readonly decision: string }[] = [{ cle: "immobilier", decision: "D-GD-54" }];
 export const CATEGORIE_AUTRES: CategorieCatalogue = { cle: "autres", libelle: "Autres", themes: [] };
 
 export const RANGEMENT_PAR_DEFAUT: RangementCatalogue = { categories: CATEGORIES_CATALOGUE, affectations: new Map() };

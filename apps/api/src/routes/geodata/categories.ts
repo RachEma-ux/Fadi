@@ -6,7 +6,7 @@
  * à « Autres ». Chaque modification est journalisée.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { CATEGORIES_CATALOGUE, validerLibelleCategorie } from "@parcours/geodata-model";
+import { CATEGORIES_AJOUTEES, CATEGORIES_CATALOGUE, validerLibelleCategorie } from "@parcours/geodata-model";
 import { capacites, erreur, introuvable, journal, requete, transaction } from "../../lib/geodata/acces.js";
 import { newId } from "../../lib/ids.js";
 
@@ -21,9 +21,25 @@ export async function semerCategories(): Promise<void> {
   if (semees) return;
   await transaction(async (c) => {
     const pose = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ('categories-semees') ON CONFLICT DO NOTHING RETURNING cle`);
-    if (!pose.rowCount) return;
-    for (const [i, k] of CATEGORIES_CATALOGUE.entries()) {
-      await c.query(`INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [k.cle, k.libelle, i * 10, [...k.themes]]);
+    if (pose.rowCount) {
+      for (const [i, k] of CATEGORIES_CATALOGUE.entries()) {
+        await c.query(`INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [k.cle, k.libelle, i * 10, [...k.themes]]);
+      }
+    }
+    // Catégories ajoutées après coup (D-GD-54) : semées une fois chacune (repère propre), juste après leur voisine
+    // précédente ; sur une base neuve, déjà présentes (rien n'est fait) ; supprimées ensuite, elles ne reviennent pas.
+    for (const a of CATEGORIES_AJOUTEES) {
+      const i = CATEGORIES_CATALOGUE.findIndex((k) => k.cle === a.cle);
+      const k = CATEGORIES_CATALOGUE[i];
+      if (!k) continue;
+      const repere = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ($1) ON CONFLICT DO NOTHING RETURNING cle`, [`categorie-semee:${a.cle}`]);
+      if (!repere.rowCount) continue;
+      await c.query(
+        `INSERT INTO geodata_categories (id, libelle, ordre, themes)
+         SELECT $1, $2, coalesce((SELECT ordre + 5 FROM geodata_categories WHERE id = $5), $3), $4
+          WHERE NOT EXISTS (SELECT 1 FROM geodata_categories WHERE id = $1 OR lower(libelle) = lower($2))`,
+        [k.cle, k.libelle, i * 10, [...k.themes], CATEGORIES_CATALOGUE[i - 1]?.cle ?? null],
+      );
     }
   });
   semees = true;

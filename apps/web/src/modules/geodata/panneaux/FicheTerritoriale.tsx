@@ -471,6 +471,7 @@ export function FicheObjet(p: {
       <dl className="gd-valeurs">{Object.entries(f.proprietes).map(([k, v]) => <div key={k}><dt translate="no">{k}</dt><dd translate="no">{v === null || v === "" ? "—" : String(v)}</dd></div>)}</dl>
       <h4>Source</h4>
       <p translate="no">{`${f.couche.version.source.titre} — ${f.couche.version.libelle}`}</p>
+      {f.couche.version.qualification?.etat === "provisoire" && <p className="gd-alerte" data-gd-fiche-provisoire><span>Source provisoire, non qualifiée : valeurs à ne pas diffuser ni retenir pour une décision.</span>{" "}<span translate="no">{`(${f.couche.version.qualification.decision ?? ""}) ${f.couche.version.qualification.motif ?? ""}`}</span></p>}
       <FiabiliteDeclaree fiche={f} />
       <p className="gd-discret" translate="no">{f.couche.version.attribution}</p>
       <p className="gd-imprime-seulement">{`Imprimée le ${new Date().toLocaleDateString("fr-CH", { timeZone: "Europe/Zurich" })}`}</p>
