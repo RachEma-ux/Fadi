@@ -337,3 +337,45 @@
   .geodata-page .gd-carte{padding-bottom:var(--gd-barre-bas);box-sizing:border-box}
 }
 @media (max-width:760px){.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px + var(--gd-barre-bas))}.geodata-page .gd-mini-carte{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese.gd-synthese-haute{bottom:calc(134px + var(--gd-barre-bas))}.geodata-page .gd-zoom-affiche{bottom:calc(6px + var(--gd-barre-bas))}}
+/* Prix immobiliers (lot P7) : état = icône + texte (jamais la couleur seule), tableaux sans défilement horizontal
+   (texte replié, colonnes resserrées), couleurs de la palette partagée. */
+.geodata-page .gd-prix{display:flex;flex-direction:column;gap:8px;margin:4px 0 8px}
+.geodata-page .gd-prix h5,.geodata-page .gd-prix-fiche h5{font-size:13px;margin:8px 0 4px}
+.geodata-page .gd-prix-couche{border:1px solid var(--gd-ligne);border-radius:8px;background:#fff;padding:8px 10px}
+.geodata-page .gd-prix-couche h5{margin-top:0}
+.geodata-page .gd-prix-motifs,.geodata-page .gd-prix-produits,.geodata-page .gd-prix-blocages ul,.geodata-page .gd-prix-avertissements{margin:6px 0;padding-left:18px;font-size:12px}
+.geodata-page .gd-prix-produits>li,.geodata-page .gd-prix-blocages li{margin:4px 0}
+.geodata-page .gd-prix-blocages summary{cursor:pointer;font-size:12px;font-weight:600;margin-top:6px}
+.geodata-page .gd-prix-blocages p{margin:2px 0;font-size:12px;overflow-wrap:anywhere}
+.geodata-page .gd-etat-prix{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:0 7px;line-height:1.6}
+.geodata-page .gd-etat-prix-ok{color:var(--gd-succes)}
+.geodata-page .gd-etat-prix-attente{color:#577079}
+.geodata-page .gd-etat-prix-alerte{color:var(--gd-alerte)}
+.geodata-page .gd-etat-prix-icone{font-weight:700}
+.geodata-page .gd-prix-registre{margin-top:6px}
+.geodata-page .gd-prix-registre li{border-bottom:1px solid #eef3f3;padding-bottom:6px}
+.geodata-page .gd-prix-registre a{overflow-wrap:anywhere;color:var(--gd-accent)}
+.geodata-page .gd-prix .gd-lien{border:0;background:none;padding:0;cursor:pointer;color:var(--gd-accent);text-decoration:underline;font:inherit;text-align:left}
+.geodata-page .gd-prix-fiche{border-top:2px solid var(--gd-ligne);margin-top:10px;padding-top:4px}
+.geodata-page .gd-prix-fiche a{color:var(--gd-accent);overflow-wrap:anywhere}
+.geodata-page .gd-bouton-lien{display:inline-block;border:1px solid var(--gd-accent);border-radius:6px;padding:4px 8px;text-decoration:none;font-size:13px}
+.geodata-page .gd-prix-bloc{overflow-x:visible}
+.geodata-page .gd-prix-table{table-layout:auto;font-variant-numeric:tabular-nums}
+.geodata-page .gd-prix-table th,.geodata-page .gd-prix-table td{white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+.geodata-page .gd-prix-table thead th{font-weight:600;font-size:.78rem}
+.geodata-page .gd-prix-table th[scope="row"]{font-weight:500}
+.geodata-page .gd-prix-table caption .gd-discret{font-weight:400}
+.geodata-page .gd-prix-unite{font-weight:400;white-space:nowrap}
+.geodata-page .gd-prix-absent{color:#577079;font-style:italic}
+.geodata-page .gd-prix-table abbr{text-decoration:underline dotted;cursor:help}
+.geodata-page .gd-prix-tri{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:inherit;width:100%}
+.geodata-page .gd-prix-tri:focus-visible{outline:2px solid var(--gd-accent);outline-offset:1px}
+.geodata-page .gd-prix-tri-sens{color:var(--gd-accent)}
+.geodata-page .gd-prix-carte{border:1px solid var(--gd-ligne);border-radius:8px;background:#fff;padding:8px 10px;margin:10px 0}
+.geodata-page .gd-prix-carte h5{margin-top:0}
+.geodata-page .gd-prix-carte ul{margin:4px 0;padding-left:18px;font-size:12px}
+@media (max-width:760px){
+  .geodata-page .gd-prix-table{font-size:.76rem}
+  .geodata-page .gd-prix-table th,.geodata-page .gd-prix-table td{padding:3px 3px}
+  .geodata-page .gd-prix-table thead th{font-size:.7rem}
+}
