@@ -20,7 +20,7 @@
   "annexes": {
    "prixPublies": {
     "fichier": "donnees/feenway-barometre-casablanca-2026-10-30.csv",
-    "empreinte": "07a56782239759e7ec76c2e08a2205d7bb4e13a1994dedb2e49f28330b014216"
+    "empreinte": "13615dd604681a61b8a5d39c521255678f246914318066d41e4b4d285a61829e"
    }
   },
   "periode": "Annonces en ligne du 28 février au 30 octobre 2026 ; tendance : 90 jours contre les 90 précédents",
@@ -38,7 +38,7 @@
   },
   "precision": "Médianes publiées reprises telles quelles ; montants abrégés par FeenWay (3,3M, 769K) marqués approximatifs ; effectifs = annonces (doublons possibles selon FeenWay) ; tendance absente quand FeenWay ne la publie pas (« non publiée », jamais zéro).",
   "synthetique": false,
-  "conditions": "CC BY 4.0 : citer « Source : FeenWay » avec le lien https://www.feenway.com/prix-immobilier/casablanca, la ville, le type de bien, le nombre d'annonces et la date des données ; indiquer les modifications (rattachement de la ville à la commune HCP 6141010, mise en tableau). Les droits couvrent le baromètre publié seulement : ni les annonces, ni les photos, ni les API internes (robots.txt : /api/ interdit). Extraction : page HTML publique, une requête sans compte, recoupée par une seconde extraction indépendante (64 lignes identiques)."
+  "conditions": "CC BY 4.0 : citer « Source : FeenWay » avec le lien https://www.feenway.com/prix-immobilier/casablanca, la ville, le type de bien, le nombre d'annonces et la date des données ; indiquer les modifications (rattachement de la ville à la commune HCP 6141010, mise en tableau). Les droits couvrent le baromètre publié seulement : ni les annonces, ni les photos, ni les API internes (robots.txt : /api/ interdit). Extraction : page HTML publique, une requête sans compte, recoupée par une seconde extraction indépendante (64 lignes identiques). Annexe : 64 lignes des trois tableaux de la page plus 2 lignes « ville » tirées des indicateurs clés de la même page (appartements : prix médian au m² à la vente 14 000 DH et 16 802 annonces, tendance −9,8 % ; loyer médian 8 500 DH/mois et 25 431 annonces)."
  },
  "couche": {
   "titre": "Prix immobiliers affichés — FeenWay, Casablanca",
