@@ -116,6 +116,20 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   l'ouverture. Requête de regroupement vérifiée sur PostGIS 16 local (3 points d'une cellule → une grappe « 3 », point
   isolé gardant son nom, polygone inchangé). Recette `geodata.mjs` sur PostGIS 16 local : 206 contrôles, tout conforme (14 nouveaux : zoom affiché, synthèse lue en base et relue au déplacement, statistiques de l'indicateur avec absence non comptée, adresse écrite, copiée et rouverte, raccourcis). Test API sur base
   (`geodata.test.ts`, nouveau cas « lecture de l'emprise ») : en CI seulement (cible de test signée DB-3).
+- Barre du bas (D-GD-52) : `BarreBas.tsx`, Alt+X / Alt+C / Alt+E (icônes et touches distinctes contrôlées par test) ;
+  recette au téléphone (390 × 844). Pistes P3-2, P3-3, P2-4 évaluées (D-GD-53). Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
+- Synthèse d'une entité (D-GD-50) : `SyntheseEntite` (`FicheTerritoriale.tsx`), calcul par `syntheseCouche` (déjà testé) ;
+  le jeu synthétique de la recette n'a pas d'indicateur sur ses subdivisions : affichage non contrôlé par la recette, ni
+  vérifié sur données réelles en local (fichiers HCP absents de la base locale).
+- Fiabilité déclarée (D-GD-51) : `FiabiliteDeclaree` (`FicheTerritoriale.tsx`) ; recette : « Non évalué » sans indice
+  déclaré. Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
+- Pastilles de thème (D-GD-48) : `PastillesThemes.tsx`, `basculerTheme` / `etatTheme` (`composition-ops.ts`, 2 tests),
+  Alt+T. Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
+- À proximité (D-GD-49) : route `/couches/:id/objets/:code/proximite` (`consultation.ts`), section de la fiche ; scénario
+  HTTP sur l'API locale 6/6 ; test API sur base étendu (CI). Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
+- État par couche (D-GD-47) : `surEtatsCouches` du moteur (relevé au repos et au chargement d'une source, objets
+  distincts par code, grappes comptées par leurs points), panneau Couches, attribut de recette `data-gd-etats-couches`.
+  Recette `geodata.mjs` sur PostGIS 16 local : 232 contrôles, tout conforme (lots D-GD-47 à D-GD-53).
 - Plan / Satellite (D-GD-46) : `fondBascule` / `estFondImagerie` (`fournisseurs.ts`, 3 tests), globe de la mini-barre et
   Alt+S ; désactivé et motivé sans clé MapTiler. Recette `geodata.mjs` sur PostGIS 16 local : 219 contrôles, tout
   conforme (2 nouveaux) ; bascule vérifiée dans le navigateur avec une clé factice (satellite → plan → satellite).

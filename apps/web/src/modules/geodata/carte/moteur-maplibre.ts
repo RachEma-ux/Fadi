@@ -10,7 +10,7 @@ import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, zoomSurGrappe, type Composition, type SerieClics } from "@parcours/geodata-model";
 import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
-import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
+import type { DonneesAffichage, EtatCouche, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
 
 setWorkerUrl(urlWorker);
 
@@ -72,6 +72,35 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
   });
   conteneur.addEventListener("webglcontextlost", () => ev.surErreur("Le rendu graphique (WebGL) a été perdu : la recherche, la table et les fiches restent disponibles."), true);
+  // État d'affichage par couche (P3-4) : relevé quand la carte est au repos (toutes les tuiles visibles chargées) et quand
+  // une source charge ; signalé seulement s'il change. Une couche masquée n'a pas d'état.
+  let etatsSignales = "";
+  const releverEtats = (enCours: boolean) => {
+    if (!pret) return;
+    const etats = new Map<string, EtatCouche>();
+    const nombres = new Map<string, number>();
+    for (const id of couchesAffichees) {
+      const coucheId = id.slice(PREFIXE.length);
+      const calques = ["-remplissage", "-lignes", "-points", "-raster"].map((s) => id + s).filter((l) => carte.getLayer(l));
+      if (!calques.length || calques.every((l) => carte.getLayoutProperty(l, "visibility") === "none")) continue;
+      if (enCours && !carte.isSourceLoaded(id)) { etats.set(coucheId, "chargement"); continue; }
+      if (calques.some((l) => l.endsWith("-raster"))) { etats.set(coucheId, "ok"); continue; }
+      // Objets distincts : un objet coupé entre deux tuiles n'est compté qu'une fois (code) ; une grappe compte ses points.
+      const codes = new Set<string>();
+      let grappes = 0;
+      for (const f of carte.queryRenderedFeatures({ layers: calques })) {
+        const n = Number(f.properties["nombre"] ?? 1);
+        if (n > 1) grappes += n; else codes.add(String(f.properties["code"]));
+      }
+      const total = codes.size + grappes;
+      etats.set(coucheId, total ? "ok" : "vide");
+      nombres.set(coucheId, total);
+    }
+    const cle = [...etats].map(([k, v]) => `${k}:${v}:${nombres.get(k) ?? ""}`).join(",");
+    if (cle !== etatsSignales) { etatsSignales = cle; ev.surEtatsCouches?.(etats, nombres); }
+  };
+  carte.on("idle", () => releverEtats(false));
+  carte.on("dataloading", () => releverEtats(true));
   carte.on("moveend", () => {
     const c = carte.getCenter();
     ev.surDeplacement({ lon: Number(c.lng.toFixed(6)), lat: Number(c.lat.toFixed(6)), zoom: Number(carte.getZoom().toFixed(2)), cap: Number(carte.getBearing().toFixed(1)) });

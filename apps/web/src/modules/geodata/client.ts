@@ -59,6 +59,9 @@ export interface DecoupageRecu {
 export type ResultatRecherche =
   | { type: "coordonnees"; libelle: string; point: { lon: number; lat: number }; provenance: string }
   | { type: "unite"; code: string; libelle: string; niveau: string | null; coucheId: string; coucheTitre: string; emprise: { coordinates: number[][][] }; centre: { coordinates: [number, number] }; provenance: string };
+export type ProximiteCouche =
+  | { coucheId: string; accessible: false }
+  | { coucheId: string; accessible: true; titre: string; nombre: number; plusProche: { code: string; nom: string; distanceM: number } | null };
 export interface ValeurRasterRecue { lon: number; lat: number; valeur: number | null; classe: string | null; unite: string | null; grandeur: string }
 export interface ValeurRecue { valeur: number | null; motifAbsence: MotifAbsence | null }
 export interface LigneTable { code: string; nom: string | null; niveau: string | null; geometrieReparee: boolean; proprietes: Record<string, unknown>; valeurs: Record<string, ValeurRecue> }
@@ -141,6 +144,9 @@ export const api = {
     appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?bbox=${emprise.map((v) => v.toFixed(6)).join(",")}`, signal ? { signal } : {}),
   /** Codes des objets qui recoupent une zone d'étude de l'espace (D-GD-41). */
   codesZone: (id: string, zoneId: string) => appeler<{ total: number; codes: string[]; tronque: boolean }>(`/couches/${encodeURIComponent(id)}/vue?zone=${encodeURIComponent(zoneId)}`),
+  /** Proximité des équipements (D-GD-49) : objets des couches demandées à moins de `rayon` m de l'objet. */
+  proximite: (coucheId: string, code: string, rayon: number, couches: readonly string[]) =>
+    appeler<{ rayon: number; couches: ProximiteCouche[] }>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}/proximite?rayon=${rayon}&couches=${couches.map(encodeURIComponent).join(",")}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),

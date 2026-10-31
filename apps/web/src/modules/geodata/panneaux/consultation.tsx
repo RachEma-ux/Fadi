@@ -235,6 +235,10 @@ function RubriqueIndicateursContenu(p: RubriqueIndicateurs) {
 
 export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
+  /** État d'affichage de chaque couche visible dans la vue (P3-4). */
+  etats?: ReadonlyMap<string, "chargement" | "vide" | "ok">;
+  /** Objets distincts dessinés dans la vue, par couche (P3-4). */
+  nombres?: ReadonlyMap<string, number>;
   onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onRegrouper?(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void;
   /** Indicateur actif du catalogue (D-GD-31, D-GD-32) : par couche qui le porte ; couches où ses valeurs sont masquées. */
@@ -254,6 +258,9 @@ export function PanneauCouches(p: {
               <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>
             </div>
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
+            {k.visible && p.etats?.get(k.coucheId) === "chargement" && <p className="gd-discret" role="status" data-gd-etat-couche="chargement">Chargement…</p>}
+            {k.visible && p.etats?.get(k.coucheId) === "ok" && p.nombres?.has(k.coucheId) && <p className="gd-discret" data-gd-etat-couche="ok"><span>{formatNombre(p.nombres.get(k.coucheId)!, 0)}</span> <span>objet(s) dessiné(s) dans la vue</span></p>}
+            {k.visible && p.etats?.get(k.coucheId) === "vide" && <p className="gd-discret" role="status" data-gd-etat-couche="vide">Aucun objet dans la vue : déplacez ou dézoomez la carte.</p>}
             {/* Limites administratives (D-GD-44) : un mélange de versions n'est jamais silencieux, les frontières d'une version
                 antérieure peuvent ne pas coïncider avec celles des autres niveaux. */}
             {d?.etat === "disponible" && d.versionPlusRecente && (c?.niveau

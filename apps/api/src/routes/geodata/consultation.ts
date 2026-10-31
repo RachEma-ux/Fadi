@@ -402,6 +402,45 @@ consultationRouter.get("/couches/:id/categories", async (req, res) => {
   res.json({ categories });
 });
 
+/**
+ * Proximité des équipements (D-GD-49) : pour un objet (point, ligne ou surface), nombre d'objets de chaque couche demandée
+ * à moins de `rayon` mètres (distance géodésique, `ST_DWithin` sur le géographique, entité comprise pour une surface) et
+ * l'objet le plus proche avec sa distance. Couches inaccessibles signalées, jamais comptées ; au plus 20 couches, rayon de
+ * 50 à 5 000 m. Calculé à la demande sur les versions publiées, rien n'est enregistré.
+ */
+export const RAYONS_PROXIMITE = { min: 50, max: 5000 } as const;
+consultationRouter.get("/couches/:id/objets/:code/proximite", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const rayon = Number(req.query["rayon"] ?? 500);
+  if (!Number.isFinite(rayon) || rayon < RAYONS_PROXIMITE.min || rayon > RAYONS_PROXIMITE.max) return erreur(res, 400, "invalid_input", `Rayon attendu : ${RAYONS_PROXIMITE.min} à ${RAYONS_PROXIMITE.max} m.`, { champs: ["rayon"] });
+  const ids = [...new Set(String(req.query["couches"] ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > 20 || !ids.every((x) => /^[A-Za-z0-9_-]{1,64}$/.test(x))) return erreur(res, 400, "invalid_input", "Couches attendues : 1 à 20 identifiants.", { champs: ["couches"] });
+  const couche = await coucheConsultable(espaceId, req.params.id);
+  if (!couche) return introuvable(res);
+  const [cible] = await requete<{ ok: number }>(`SELECT 1 AS ok FROM geodata_objets o WHERE o.couche_id = $1 AND o.code = $2`, [req.params.id, req.params.code]);
+  if (!cible) return introuvable(res);
+  const resultats = [];
+  for (const id of ids) {
+    const c = await coucheConsultable(espaceId, id);
+    if (!c) { resultats.push({ coucheId: id, accessible: false }); continue; }
+    const [r] = await requete<{ nombre: string; nom: string | null; code: string | null; distance: number | null }>(
+      `WITH t AS (SELECT geom FROM geodata_objets WHERE couche_id = $1 AND code = $2),
+       p AS (
+         SELECT o.code, o.nom, ST_Distance(o.geom::geography, t.geom::geography) AS d
+           FROM geodata_objets o, t
+          WHERE o.couche_id = $3 AND NOT (o.couche_id = $1 AND o.code = $2) AND ST_DWithin(o.geom::geography, t.geom::geography, $4)
+       )
+       SELECT (SELECT count(*) FROM p) AS nombre, q.nom, q.code, q.d AS distance FROM (SELECT * FROM p ORDER BY d, code LIMIT 1) q RIGHT JOIN (SELECT 1) un ON true`,
+      [req.params.id, req.params.code, id, rayon],
+    );
+    resultats.push({
+      coucheId: id, accessible: true, titre: c["couche_titre"], nombre: Number(r?.nombre ?? 0),
+      plusProche: r?.code ? { code: r.code, nom: r.nom ?? r.code, distanceM: Math.round(Number(r.distance)) } : null,
+    });
+  }
+  res.json({ rayon, couches: resultats });
+});
+
 /** Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. */
 consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
   const couche = await coucheConsultable(await espaceDe(req), req.params.id);

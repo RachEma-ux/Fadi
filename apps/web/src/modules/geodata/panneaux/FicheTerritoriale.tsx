@@ -6,8 +6,8 @@
  * Les noms et valeurs des sources sont des données (`translate="no"`) ; une valeur absente n'est jamais zéro.
  */
 import { useEffect, useState } from "react";
-import { controlerCoherence, estUniteDeCompte, grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, partDansEnsemble, tableauCroise, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
-import { api, type CoucheRecue, type DouarRecu, type FicheRecue, type LigneTable } from "../client";
+import { abregerValeur, indicateurPourCle, lireValeur, syntheseCouche, type CleIndicateur, formatNombre, controlerCoherence, estUniteDeCompte, grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, partDansEnsemble, tableauCroise, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
+import { api, type CoucheRecue, type DouarRecu, type FicheRecue, type LigneTable, type ProximiteCouche } from "../client";
 import { formaterValeur } from "./consultation";
 
 type IndicateurFiche = FicheRecue["indicateurs"][number];
@@ -293,12 +293,140 @@ function Douars({ douars }: { douars: DouarRecu[] }) {
   );
 }
 
+/**
+ * Synthèse d'une entité (D-GD-50) : pour l'indicateur actif, minimum, moyenne simple et maximum sur ses subdivisions
+ * (découpage en base), sur une échelle verticale, avec la source et la période de la couche des subdivisions. Une valeur
+ * absente n'est jamais comptée ; la valeur de l'entité elle-même est donnée à part (un total n'est pas comparable à ses
+ * parties). Rien si la couche des subdivisions ne porte pas l'indicateur.
+ */
+function SyntheseEntite(p: { fiche: FicheRecue; s: Subdivisions; cle: CleIndicateur }) {
+  const enfant = indicateurPourCle(p.s.couche.indicateurs, p.cle);
+  const propre = indicateurPourCle(p.fiche.indicateurs, p.cle);
+  const [valeurs, setValeurs] = useState<{ id: string; m?: Map<string, ReturnType<typeof lireValeur>>; erreur?: string } | null>(null);
+  useEffect(() => {
+    if (!enfant) return;
+    let vivant = true;
+    setValeurs({ id: enfant.id });
+    api.valeurs(enfant.id).then((r) => vivant && setValeurs({ id: enfant.id, m: new Map(r.valeurs.map((v) => [v.code, lireValeur(v.valeur, v.motifAbsence)])) }))
+      .catch((e: Error) => vivant && setValeurs({ id: enfant.id, erreur: e.message }));
+    return () => { vivant = false; };
+  }, [enfant?.id]);
+  if (!enfant || !p.s.codes.length) return null;
+  const s = valeurs?.m ? syntheseCouche({ codes: p.s.codes, total: p.s.codes.length, valeurs: valeurs.m }).indicateur : null;
+  const val = (x: number | null) => (x === null ? <span>non évaluée</span> : <span translate="no">{abregerValeur(x, enfant.unite)}</span>);
+  const pos = (x: number | null) => (s && x !== null && s.max !== null && s.min !== null && s.max > s.min ? ((x - s.min) / (s.max - s.min)) * 100 : 50);
+  const v = p.s.couche.version;
+  return (
+    <section className="gd-synthese-entite" aria-label="Synthèse sur les subdivisions" data-gd-synthese-entite={p.fiche.code}>
+      <h4><span>Ses</span> <span translate="no">{p.s.niveau}</span> <span>—</span> <span translate="no">{enfant.titre}</span></h4>
+      {!valeurs?.m && !valeurs?.erreur && <p className="gd-discret" role="status">Calcul…</p>}
+      {valeurs?.erreur && <p className="gd-alerte" role="status">{valeurs.erreur}</p>}
+      {s && (
+        <div className="gd-echelle">
+          <div className="gd-echelle-barre" aria-hidden="true">
+            {s.moyenne !== null && <span className="gd-echelle-moyenne" style={{ bottom: `${pos(s.moyenne)}%` }} />}
+          </div>
+          <dl>
+            <dt>Max</dt><dd data-gd-entite-max>{val(s.max)}</dd>
+            <dt>Moyenne</dt><dd data-gd-entite-moyenne>{val(s.moyenne)}</dd>
+            <dt>Min</dt><dd data-gd-entite-min>{val(s.min)}</dd>
+          </dl>
+        </div>
+      )}
+      {s && <p className="gd-discret"><span>Subdivisions évaluées :</span> <span>{formatNombre(s.evaluees, 0)}</span> <span>· non évaluées :</span> <span data-gd-entite-non-evaluees>{formatNombre(s.nonEvaluees, 0)}</span> <span>· moyenne simple, non pondérée.</span></p>}
+      {propre && <p className="gd-discret"><span>Valeur de l'entité :</span> <span translate="no">{propre.valeur === null ? "—" : abregerValeur(propre.valeur, propre.unite)}</span></p>}
+      <p className="gd-discret"><span>Source :</span> <span translate="no">{`${v.source.producteur} — ${v.libelle}${enfant.periode ? ` (${enfant.periode})` : v.periode ? ` (${v.periode})` : ""}`}</span></p>
+    </section>
+  );
+}
+
+/** Propriétés par lesquelles une source déclare la confiance de chaque entité (D-GD-51) ; aucune n'est calculée ici. */
+export const PROPRIETES_CONFIANCE = ["confiance", "indice_confiance", "fiabilite"] as const;
+
+/**
+ * Fiabilité déclarée (D-GD-51) : l'indice de confiance que la source déclare pour cette entité (une de ses propriétés
+ * exposées), la précision, la période et la date de récupération déclarées pour la version. Rien n'est calculé ni
+ * estimé : une information non déclarée est « Non évaluée ».
+ */
+function FiabiliteDeclaree({ fiche: f }: { fiche: FicheRecue }) {
+  const v = f.couche.version;
+  const cle = PROPRIETES_CONFIANCE.find((k) => Object.hasOwn(f.proprietes, k) && f.proprietes[k] !== null && f.proprietes[k] !== "");
+  const recupere = v.recupereLe ? new Date(v.recupereLe).toLocaleDateString("fr-CH", { timeZone: "Europe/Zurich" }) : null;
+  return (
+    <dl className="gd-fiche-version gd-fiabilite" data-gd-fiabilite={cle ? "declaree" : "non-evaluee"}>
+      <dt>Indice de confiance de l'entité</dt>
+      <dd>{cle ? <span translate="no">{String(f.proprietes[cle])}</span> : <span>Non évalué (non déclaré par la source)</span>}</dd>
+      <dt>Précision déclarée</dt><dd>{v.precision ? <span translate="no">{v.precision}</span> : <span>Non évaluée</span>}</dd>
+      <dt>Période</dt><dd>{v.periode ? <span translate="no">{v.periode}</span> : <span>Non évaluée</span>}</dd>
+      <dt>Données récupérées le</dt><dd>{recupere ? <span translate="no">{recupere}</span> : <span>Non évaluée</span>}</dd>
+    </dl>
+  );
+}
+
+const RAYONS = [250, 500, 1000, 2000, 5000] as const;
+const distance = (m: number) => (m < 1000 ? `${formatNombre(m, 0)} m` : `${formatNombre(m / 1000, 1)} km`);
+
+/**
+ * À proximité (D-GD-49) : pour l'objet de la fiche, nombre d'objets de chaque couche de points affichée à moins du rayon
+ * choisi (distance géodésique, en base) et le plus proche. Rien sans couche de points sur la carte : la section le dit.
+ */
+function Proximite(p: { fiche: FicheRecue; couches: readonly { id: string; titre: string }[]; onFiche?(coucheId: string, code: string): void }) {
+  const [rayon, setRayon] = useState<number>(500);
+  const [etat, setEtat] = useState<{ cle: string; couches?: ProximiteCouche[]; erreur?: string } | null>(null);
+  const ids = p.couches.map((c) => c.id);
+  const cle = `${p.fiche.couche.id}|${p.fiche.code}|${rayon}|${ids.join(",")}`;
+  useEffect(() => {
+    if (!ids.length) return;
+    let vivant = true;
+    setEtat({ cle });
+    api.proximite(p.fiche.couche.id, p.fiche.code, rayon, ids)
+      .then((r) => vivant && setEtat({ cle, couches: r.couches }))
+      .catch((e: Error) => vivant && setEtat({ cle, erreur: e.message }));
+    return () => { vivant = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cle]);
+  return (
+    <section className="gd-proximite gd-ecran-seulement" aria-label="À proximité" data-gd-proximite>
+      <h4>À proximité</h4>
+      {!ids.length
+        ? <p className="gd-discret" data-gd-proximite-vide>Affichez sur la carte une couche de points (équipements, services) pour compter ce qui se trouve à proximité.</p>
+        : <>
+          <label className="gd-champ">Rayon<select value={rayon} onChange={(e) => setRayon(Number(e.target.value))} data-gd-proximite-rayon>{RAYONS.map((r) => <option key={r} value={r}>{distance(r)}</option>)}</select></label>
+          {etat?.cle === cle && !etat.couches && !etat.erreur && <p className="gd-discret" role="status">Calcul…</p>}
+          {etat?.erreur && <p className="gd-alerte" role="status">{etat.erreur}</p>}
+          {etat?.cle === cle && etat.couches && (
+            <ul className="gd-liste">
+              {etat.couches.map((c) => (
+                <li key={c.coucheId} data-gd-proximite-couche={c.coucheId} data-gd-proximite-nombre={c.accessible ? c.nombre : ""}>
+                  {!c.accessible ? <span className="gd-discret">Couche inaccessible</span> : <>
+                    <strong translate="no">{c.titre}</strong>
+                    <span> : </span><span>{formatNombre(c.nombre, 0)}</span> <span>à moins de</span> <span>{distance(rayon)}</span>
+                    {c.plusProche && <span className="gd-discret">
+                      <span> · le plus proche :</span>{" "}
+                      {p.onFiche ? <button type="button" className="gd-lien" onClick={() => p.onFiche?.(c.coucheId, c.plusProche!.code)} translate="no">{c.plusProche.nom}</button> : <span translate="no">{c.plusProche.nom}</span>}
+                      {" "}<span>{`(${distance(c.plusProche.distanceM)})`}</span>
+                    </span>}
+                  </>}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="gd-discret">Distance géodésique en base, sur les versions publiées ; une surface compte ce qui se trouve dedans ou à moins du rayon de son bord.</p>
+        </>}
+    </section>
+  );
+}
+
 export function FicheObjet(p: {
   fiche: FicheRecue | null; chargement: boolean; erreur: string | null; onFermer(): void; onCentrer(f: FicheRecue): void;
   descendre?: { libelle: string; onDescendre(): void } | null;
   /** Subdivisions de l'entité (enfants dans le découpage en base) et couche de leur niveau. */
   subdivisions?: Subdivisions | null;
   onFiche?(coucheId: string, code: string): void;
+  /** Indicateur actif du catalogue (D-GD-31) : synthèse sur les subdivisions de l'entité (D-GD-50). */
+  indicateurActif?: CleIndicateur | null;
+  /** Couches de points affichées sur la carte, pour la section « À proximité » (D-GD-49). */
+  proximite?: readonly { id: string; titre: string }[];
 }) {
   if (p.chargement) return <p role="status" className="gd-etat">Chargement de la fiche…</p>;
   if (p.erreur) return <p role="alert" className="gd-etat">{p.erreur}</p>;
@@ -335,12 +463,15 @@ export function FicheObjet(p: {
             <dl className="gd-valeurs">{familles.filter((x) => x.theme === t).map((x) => <Famille key={`${x.theme}|${x.famille}`} f={x} />)}</dl>
           </details>
         ))}
+      {p.subdivisions && p.indicateurActif && <SyntheseEntite fiche={f} s={p.subdivisions} cle={p.indicateurActif} />}
       {p.subdivisions && p.onFiche && <SubdivisionsDe parent={f.code} s={p.subdivisions} onFiche={p.onFiche} />}
+      {p.proximite && <Proximite fiche={f} couches={p.proximite} onFiche={p.onFiche} />}
       {f.douars && f.douars.length > 0 && <Douars douars={f.douars} />}
       <h4>Attributs</h4>
       <dl className="gd-valeurs">{Object.entries(f.proprietes).map(([k, v]) => <div key={k}><dt translate="no">{k}</dt><dd translate="no">{v === null || v === "" ? "—" : String(v)}</dd></div>)}</dl>
       <h4>Source</h4>
       <p translate="no">{`${f.couche.version.source.titre} — ${f.couche.version.libelle}`}</p>
+      <FiabiliteDeclaree fiche={f} />
       <p className="gd-discret" translate="no">{f.couche.version.attribution}</p>
       <p className="gd-imprime-seulement">{`Imprimée le ${new Date().toLocaleDateString("fr-CH", { timeZone: "Europe/Zurich" })}`}</p>
       <div className="gd-actions gd-ecran-seulement"><button type="button" onClick={() => p.onCentrer(f)}>Centrer la carte</button><button type="button" onClick={p.onFermer}>Fermer la fiche</button></div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMPOSITION_INITIALE, validerComposition } from "@parcours/geodata-model";
-import { ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, retirerCouche, sansColorationThematique } from "./composition-ops";
+import { basculerTheme, etatTheme, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, retirerCouche, sansColorationThematique } from "./composition-ops";
 
 const simple = { mode: "simple", couleur: "#2b8cbe" } as const;
 
@@ -68,5 +68,29 @@ describe("composition locale de GeoData", () => {
     expect(regroupementsTousActifs(tous, points)).toBe(true);
     expect(basculerTousRegroupements(tous, points).couches.some((k) => "regrouper" in k)).toBe(false);
     expect(basculerTousRegroupements(c, new Set())).toBe(c);
+  });
+  it("pastilles de thème (D-GD-48) : afficher ajoute les couches absentes, masquer garde les couches masquées", () => {
+    const theme = [{ id: "s1", versionId: "v1", style: simple }, { id: "s2", versionId: "v2", style: simple }];
+    let c = ajouterCouche(COMPOSITION_INITIALE, "s1", "v1", simple);
+    c = basculerVisibilite(c, "s1");
+    expect(etatTheme(c, theme)).toBe("absent");
+    const affiche = basculerTheme(c, theme);
+    expect(affiche.omises).toBe(0);
+    expect(affiche.composition.couches.map((k) => [k.coucheId, k.visible])).toEqual([["s1", true], ["s2", true]]);
+    expect(etatTheme(affiche.composition, theme)).toBe("affiche");
+    const masque = basculerTheme(affiche.composition, theme).composition;
+    expect(masque.couches.map((k) => [k.coucheId, k.visible])).toEqual([["s1", false], ["s2", false]]);
+    expect(etatTheme(basculerVisibilite(masque, "s2"), theme)).toBe("partiel");
+  });
+  it("pastilles de thème : au-delà de 20 couches, les couches en trop sont comptées, jamais ajoutées", () => {
+    let c = COMPOSITION_INITIALE;
+    for (let i = 0; i < 19; i++) c = ajouterCouche(c, `x${i}`, `v${i}`, simple);
+    const r = basculerTheme(c, [{ id: "a", versionId: "va", style: simple }, { id: "b", versionId: "vb", style: simple }]);
+    expect(r.composition.couches).toHaveLength(20);
+    expect(r.omises).toBe(1);
+    // Thème tronqué par la limite : affiché, donc masquable au clic suivant (jamais bloqué en « partiel »).
+    expect(etatTheme(r.composition, [{ id: "a" }, { id: "b" }])).toBe("affiche");
+    const masque = basculerTheme(r.composition, [{ id: "a", versionId: "va", style: simple }, { id: "b", versionId: "vb", style: simple }]);
+    expect(masque.composition.couches.find((k) => k.coucheId === "a")?.visible).toBe(false);
   });
 });

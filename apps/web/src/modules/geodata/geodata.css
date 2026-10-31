@@ -303,3 +303,37 @@
 .geodata-page .gd-puce-zone button:hover,.geodata-page .gd-puce-zone button:focus-visible{background:#fde3c8}
 .geodata-page .gd-niveau-admin{margin:0 0 2px;font-size:.78em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
 .geodata-page .gd-niveau-sans-couche{opacity:.7}
+/* Pastilles de thème (D-GD-48) : bande à droite du bouton « Données », défilement horizontal, jamais sous la barre
+   d'outils (à droite) ; la puce de zone d'étude passe dessous. */
+.geodata-page .gd-pastilles{position:absolute;left:150px;top:10px;z-index:4;display:flex;gap:6px;align-items:center;max-width:calc(100% - 150px - 120px);overflow-x:auto;padding:2px;scrollbar-width:thin}
+.geodata-page .gd-pastilles button{flex:none;display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid var(--gd-ligne);background:#fff;padding:5px 10px;font:inherit;font-size:.84rem;cursor:pointer;box-shadow:0 1px 6px rgba(23,59,67,.12);white-space:nowrap}
+.geodata-page .gd-pastilles .gd-theme-affiche{background:var(--gd-encre);color:#fff;border-color:var(--gd-encre)}
+.geodata-page .gd-pastilles .gd-theme-partiel{border-color:var(--gd-encre);border-style:dashed}
+.geodata-page .gd-pastille-badge{min-width:1.4em;text-align:center;border-radius:999px;padding:0 6px;background:#e8f0f0;color:var(--gd-encre);font-size:.78rem;font-weight:600}
+.geodata-page .gd-theme-affiche .gd-pastille-badge{background:#fff}
+.geodata-page .gd-puce-zone{top:52px}
+@media (max-width:760px){.geodata-page .gd-pastilles{left:10px;top:52px;max-width:calc(100% - 70px)}.geodata-page .gd-puce-zone{top:94px}}
+/* À proximité (D-GD-49) : objet le plus proche cliquable, ouvert dans la fiche. */
+.geodata-page .gd-proximite .gd-lien{border:0;background:none;padding:0;cursor:pointer;color:var(--gd-accent);text-decoration:underline;font:inherit}
+.geodata-page .gd-proximite li{display:block;padding:3px 0}
+/* Synthèse d'une entité sur ses subdivisions (D-GD-50) : échelle verticale min → max, repère de la moyenne. */
+.geodata-page .gd-synthese-entite{border:1px solid var(--gd-ligne);border-radius:8px;padding:6px 10px;margin:8px 0}
+.geodata-page .gd-echelle{display:flex;gap:12px;align-items:stretch}
+.geodata-page .gd-echelle-barre{position:relative;width:10px;min-height:96px;border-radius:5px;background:linear-gradient(to top,#d6e9ec,#1a6b70)}
+.geodata-page .gd-echelle-moyenne{position:absolute;left:-4px;width:18px;height:3px;background:#c77b35;transform:translateY(50%)}
+.geodata-page .gd-echelle dl{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin:0;align-content:space-between}
+.geodata-page .gd-echelle dt{font-weight:600}
+.geodata-page .gd-echelle dd{margin:0}
+@media print{.geodata-page .gd-echelle-barre{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+/* Barre du bas (D-GD-52) : téléphone seulement ; panneaux, volets, échelle et encarts remontent de sa hauteur. */
+.geodata-page .gd-barre-bas{display:none}
+@media (max-width:760px){
+  .geodata-page{--gd-barre-bas:58px}
+  .geodata-page .gd-barre-bas{position:absolute;left:0;right:0;bottom:0;height:var(--gd-barre-bas);z-index:7;display:flex;justify-content:space-around;align-items:stretch;background:#fff;border-top:1px solid var(--gd-ligne);box-shadow:0 -2px 10px rgba(23,59,67,.10)}
+  .geodata-page .gd-barre-bas-bouton{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;font:inherit;font-size:.72rem;color:var(--gd-encre);min-height:44px;padding:4px 0}
+  .geodata-page .gd-barre-bas-bouton[aria-pressed="true"]{color:var(--gd-accent);font-weight:600}
+  .geodata-page .gd-barre-bas-bouton:disabled{opacity:.45}
+  .geodata-page .gd-panneau,.geodata-page .gd-volet{bottom:var(--gd-barre-bas)}
+  .geodata-page .gd-carte{padding-bottom:var(--gd-barre-bas);box-sizing:border-box}
+}
+@media (max-width:760px){.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px + var(--gd-barre-bas))}.geodata-page .gd-mini-carte{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese.gd-synthese-haute{bottom:calc(134px + var(--gd-barre-bas))}.geodata-page .gd-zoom-affiche{bottom:calc(6px + var(--gd-barre-bas))}}

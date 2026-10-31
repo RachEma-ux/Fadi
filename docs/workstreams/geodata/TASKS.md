@@ -44,6 +44,16 @@
 - [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.
 - [ ] GEO-RAPPROCHEMENT-COMMUNES — Point du MTNRA dans le contour communal contre la commune publiée : attend des contours communaux complets (D-GD-33).
 - [ ] GEO-CONCEPT-PRIX — Indicateurs de contexte (population, logement, services) pour un module « Concept Prix » : module absent du dépôt, spécification attendue.
+- [x] GEO-BARRE-BAS — Barre du bas sur téléphone : Carte, Chercher, Couches, Enregistrer (D-GD-52).
+- [x] GEO-PISTES-EVALUEES — P3-2 sans objet (tout est tuilé), P3-3 sans objet sous D-GD-24 (décision MO pour l'arabe
+  sur la carte), P2-4 bloqué faute de source qualifiée (D-GD-53).
+- [ ] GEO-ARABE-CARTE — Libellés arabes sur la carte (glyphes arabes + greffon RTL) : décision du maître d'ouvrage.
+- [ ] GEO-CHAMP-CONTINU — Couche de qualité de l'air ou autre champ continu : source qualifiée à fournir.
+- [x] GEO-SYNTHESE-ENTITE — Min / moyenne / max de l'indicateur actif sur les subdivisions, dans la fiche (D-GD-50).
+- [x] GEO-FIABILITE — Fiabilité déclarée par la source dans la fiche, « Non évalué » sinon (D-GD-51).
+- [x] GEO-PASTILLES — Pastilles de thème sur la carte, badge, Alt+T (D-GD-48).
+- [x] GEO-PROXIMITE — À proximité dans la fiche : objets des couches de points à moins d'un rayon, le plus proche (D-GD-49).
+- [x] GEO-ETAT-COUCHES — État d'affichage par couche : chargement, objets dessinés, aucun objet dans la vue (D-GD-47).
 - [x] GEO-PLAN-SATELLITE — Bascule Plan / Satellite du fournisseur réglé, mini-barre, Alt+S (D-GD-46).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 

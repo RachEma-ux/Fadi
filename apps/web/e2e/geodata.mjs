@@ -371,10 +371,17 @@ await page.locator("[data-gd-synthese-compte]").first().waitFor({ timeout: 15_00
 const compteVue = (await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte").catch(() => null)) ?? "";
 const [dansVue, totalVue] = compteVue.split("/").map(Number);
 check("emprise : Alt+V ouvre la synthèse ; objets de la vue lus en base (/vue, 200) sur le total de la couche", repVue?.status() === 200 && (await boutonSynthese.getAttribute("aria-pressed")) === "true" && totalVue > 0 && dansVue >= 0 && dansVue <= totalVue, `${repVue?.status()} ${compteVue}`);
+// État par couche (P3-4) : aucune unité dans la vue → « vide » ; relevé par le moteur quand la carte est au repos.
+await page.waitForFunction(() => /:vide(\s|$)/.test(document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-etats-couches") ?? ""), null, { timeout: 10_000 }).catch(() => undefined);
+const etatsAvant = (await page.locator("[data-geodata-page]").getAttribute("data-gd-etats-couches")) ?? "";
+check("état par couche (P3-4) : sans objet dans la vue, la couche est « vide »", dansVue !== 0 || /:vide(\s|$)/.test(etatsAvant), etatsAvant);
 // Vue élargie (zoom arrière) : toutes les unités du jeu synthétique sont dans la vue, relues en base.
 for (let i = 0; i < 4; i++) { await page.locator("[data-gd-barre-outil='zoom-moins']").click(); await page.waitForTimeout(350); }
 await page.waitForFunction((t) => document.querySelector("[data-gd-synthese-compte]")?.getAttribute("data-gd-synthese-compte") === `${t}/${t}`, totalVue, { timeout: 15_000 }).catch(() => undefined);
 check("emprise : la synthèse est relue quand la vue change (vue élargie : toutes les unités dans la vue)", (await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte")) === `${totalVue}/${totalVue}`, `${compteVue} → ${await page.locator("[data-gd-synthese-compte]").first().getAttribute("data-gd-synthese-compte")}`);
+await page.waitForFunction(() => /:ok(\s|$)/.test(document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-etats-couches") ?? ""), null, { timeout: 10_000 }).catch(() => undefined);
+const etatsApres = (await page.locator("[data-geodata-page]").getAttribute("data-gd-etats-couches")) ?? "";
+check("état par couche (P3-4) : objets dans la vue → « ok », plus aucune couche « vide »", /:ok(\s|$)/.test(etatsApres) && !/:vide(\s|$)/.test(etatsApres), etatsApres);
 await page.screenshot({ path: join(OUT, "01e-synthese-vue.png") });
 const boutonGrappes = page.locator("[data-gd-barre-outil='regrouper']");
 check("emprise : « Regrouper les points (Alt+G) » désactivé sans couche de points visible", (await boutonGrappes.isDisabled()) && (await boutonGrappes.getAttribute("aria-keyshortcuts")) === "Alt+G");
@@ -668,6 +675,22 @@ await page.locator("[data-gd-confirmer-import]").click();
 await page.locator(".gd-succes").waitFor();
 const coucheImportee = await page.evaluate(async () => (await (await fetch("/geodata/api/catalogue")).json()).couches.find((c) => c.titre === "Mon secteur"));
 check("GEO 07 · import confirmé : couche privée versionnée", coucheImportee?.version?.privee === true);
+// --- Pastilles de thème (D-GD-48) : catégories du catalogue sur la carte, badge, afficher / masquer un thème, Alt+T ---
+const pastilleImport = page.locator("[data-gd-pastille-theme]").filter({ hasText: "Mes données importées" });
+await pastilleImport.waitFor({ timeout: 15_000 }).catch(() => undefined);
+// L'import vient d'ajouter sa couche à la carte : le thème est affiché.
+check("pastilles (D-GD-48) : un thème par catégorie du catalogue, dont « Mes données importées », affiché (couche importée sur la carte)", (await pastilleImport.count()) === 1 && (await pastilleImport.getAttribute("aria-pressed")) === "true");
+const visibleDansCouches = async () => { await onglet(page, "couches"); const carteCouche = page.locator(`[data-gd-couche-active='${coucheImportee?.id}']`); return (await carteCouche.count()) ? carteCouche.locator("input[type=checkbox]").first().isChecked() : null; };
+await pastilleImport.click();
+await page.waitForTimeout(400);
+check("pastilles : un clic masque le thème (couche gardée sur la carte, masquée)", (await pastilleImport.getAttribute("aria-pressed")) === "false" && (await visibleDansCouches()) === false);
+await pastilleImport.click();
+await page.waitForTimeout(400);
+check("pastilles : un second clic le réaffiche", (await pastilleImport.getAttribute("aria-pressed")) === "true" && (await visibleDansCouches()) === true);
+await page.locator("body").press("Alt+t");
+check("pastilles : Alt+T replie la bande (bouton « Thèmes » seul)", (await page.locator("[data-gd-pastille-theme]").count()) === 0 && (await page.locator("[data-gd-pastilles-bascule]").getAttribute("aria-expanded")) === "false");
+await page.locator("body").press("Alt+t");
+check("pastilles : Alt+T la rouvre", (await page.locator("[data-gd-pastille-theme]").count()) > 0);
 
 // --- Zone par coordonnées (clavier) et analyse (GEO 10 côté interface) ---
 await volet(page, "etudes");
@@ -874,6 +897,8 @@ await page.mouse.dblclick(xClic, yClic);
 await attendreSelection("1:1");
 await page.locator("[data-gd-fiche='1']").waitFor({ timeout: 10_000 }).catch(() => undefined);
 check("clics, carte vierge : 2 clics rapides sélectionnent la région (parent lu en base), fiche de la région", (await selectionCourante()) === "1:1" && (await page.locator("[data-gd-fiche='1']").count()) === 1, await selectionCourante());
+check("à proximité (D-GD-49) : sans couche de points sur la carte, la fiche dit quoi afficher pour compter les équipements proches", (await page.locator("[data-gd-fiche='1'] [data-gd-proximite-vide]").count()) === 1);
+check("fiabilité déclarée (D-GD-51) : sans indice déclaré par la source, la fiche dit « Non évalué », jamais une valeur calculée", (await page.locator("[data-gd-fiche='1'] [data-gd-fiabilite='non-evaluee']").count()) === 1 && ((await page.locator("[data-gd-fiche='1'] [data-gd-fiabilite]").textContent()) ?? "").includes("Non évalué (non déclaré par la source)"));
 check("clics : le double-clic ne zoome plus", (await page.locator("[data-gd-zoom]").getAttribute("data-gd-zoom")) === zoomAvantClics);
 check("fil (D-GD-38) : les clics sur la carte ne le replient pas", (await page.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) === "true" && !(await page.locator("[data-gd-territoires]").isHidden()));
 
@@ -1114,6 +1139,18 @@ await volet(page, "cartes");
 const ouverts = await page.evaluate(() => [document.querySelector(".gd-panneau.gd-ouvert"), document.querySelector("[data-gd-volet-ouvert]")].filter(Boolean).length);
 check("GEO 12 · téléphone : un seul panneau principal ouvert", ouverts === 1);
 check("GEO 12 · téléphone : aucun débordement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+// Barre du bas (D-GD-52) : Carte · Chercher · Couches · Enregistrer, en bas de l'écran, sous les panneaux.
+const barreBas = page.locator("[data-gd-barre-bas-nav]");
+const boiteBas = await barreBas.boundingBox();
+check("barre du bas (D-GD-52) : au téléphone, quatre boutons nommés en bas de l'écran, panneaux au-dessus", !!boiteBas && Math.abs(boiteBas.y + boiteBas.height - 844) <= 2 && (await barreBas.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-bas")).join(","))) === "carte,chercher,couches,enregistrer"
+  && await page.evaluate(() => { const v = document.querySelector("[data-gd-volet-ouvert], .gd-panneau.gd-ouvert")?.getBoundingClientRect(); const b = document.querySelector("[data-gd-barre-bas-nav]")?.getBoundingClientRect(); return !v || !b || v.bottom <= b.top + 1; }), JSON.stringify(boiteBas));
+await barreBas.locator("[data-gd-barre-bas='carte']").click();
+check("barre du bas : « Carte » ferme panneaux et volets", (await page.locator("[data-gd-volet-ouvert], .gd-panneau.gd-ouvert").count()) === 0 && (await barreBas.locator("[data-gd-barre-bas='carte']").getAttribute("aria-pressed")) === "true");
+await barreBas.locator("[data-gd-barre-bas='couches']").click();
+check("barre du bas : « Couches » ouvre l'onglet Couches", (await page.locator("[data-gd-onglet='couches'][aria-pressed='true'], [data-gd-onglet='couches'].gd-actif, [data-gd-couches], [data-gd-panneau] .gd-etat").count()) > 0 && (await barreBas.locator("[data-gd-barre-bas='couches']").getAttribute("aria-pressed")) === "true");
+await page.locator("body").press("Alt+x");
+check("barre du bas : Alt+X revient à la carte seule", (await page.locator("[data-gd-volet-ouvert], .gd-panneau.gd-ouvert").count()) === 0);
+await volet(page, "cartes");
 await page.screenshot({ path: join(OUT, "02-telephone.png") });
 // Mini-carte au téléphone, panneau Données ouvert (posé en bas) : elle reste visible au-dessus du panneau, cliquable.
 if (await page.locator("[data-gd-volet-ouvert]").count()) await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
