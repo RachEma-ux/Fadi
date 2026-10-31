@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, type Categorie } from "../composition-ops";
+import { PanneauPrix } from "./PrixImmobiliers";
+import { THEME_PRIX } from "./prix-ops";
 
 /** Valeur de l'option « une couleur par entité » de la liste « Coloration ». */
 const ENTITES = "__entites__";
@@ -37,6 +39,10 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
   const groupes = regrouperCatalogue(liste, type, actives, p.rangement);
   const nombres = compterParType(p.couches);
   const basculer = (cle: string) => setOuvertes((o) => { const n = new Set(o); if (n.has(cle)) n.delete(cle); else n.add(cle); return n; });
+  // Prix immobiliers (lot P7) : panneau d'état des deux couches dans la catégorie qui range la couche des prix affichés ;
+  // sans elle (aucune couche de prix publiée pour ce compte), une rubrique dédiée dit l'état des couches, jamais vide.
+  const categoriePrix = groupes.find((g) => g.couches.some((c) => c.version.source.theme === THEME_PRIX))?.categorie.cle ?? null;
+  const ouvertePrix = ouvertes.has("prix");
   return (
     <div className="gd-catalogue" data-gd-catalogue>
       <div className="gd-types" role="group" aria-label="Type de couches">
@@ -71,6 +77,7 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
               </button>
               {ouverte && (
                 <ul className="gd-liste" id={`gd-categorie-${categorie.cle}`}>
+                  {categorie.cle === categoriePrix && <li className="gd-prix-entree" data-gd-prix-entree="categorie"><PanneauPrix catalogue={p.couches!} /></li>}
                   {couches.map((c) => {
                     const dedans = actives.has(c.id);
                     return (
@@ -100,6 +107,15 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
           );
           return blocIndicateurs ? [bloc, blocIndicateurs] : [bloc];
         })}
+        {type === "vecteurs" && !f && !categoriePrix && (
+          <li key="prix" className="gd-categorie" data-gd-categorie="prix">
+            <button type="button" className="gd-entete-categorie" aria-expanded={ouvertePrix} aria-controls="gd-categorie-prix" onClick={() => basculer("prix")} data-gd-entete-categorie="prix">
+              <span aria-hidden="true" className="gd-chevron">{ouvertePrix ? "▾" : "▸"}</span>
+              <span className="gd-nom-categorie">Prix immobiliers</span>
+            </button>
+            {ouvertePrix && <div id="gd-categorie-prix" data-gd-prix-entree="rubrique"><PanneauPrix catalogue={p.couches} /></div>}
+          </li>
+        )}
       </ul>
     </div>
   );

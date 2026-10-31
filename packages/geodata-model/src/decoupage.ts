@@ -29,31 +29,52 @@ export interface EntiteAdministrative {
   readonly type: string | null;
 }
 
-/** Lecture d'un CSV (RFC 4180 : champs entre guillemets, guillemets doublés), première ligne = en-tête. */
-export function lireCsv(texte: string): Record<string, string>[] {
-  const lignes: string[][] = [];
+/** Enregistrement d'un CSV avec le numéro de la ligne physique du fichier où il commence (1 = première ligne du fichier). */
+export interface EnregistrementCsv {
+  readonly ligneFichier: number;
+  readonly valeurs: Record<string, string>;
+}
+
+/**
+ * Lecture d'un CSV (RFC 4180 : champs entre guillemets, guillemets doublés), première ligne non vide = en-tête. Chaque
+ * enregistrement garde le numéro de la ligne physique du fichier où il commence (en-tête, lignes vides et champs sur
+ * plusieurs lignes comptés) : un rapport d'erreur cite la ligne que l'utilisateur voit dans son éditeur.
+ */
+export function lireCsvLignes(texte: string): EnregistrementCsv[] {
+  const lignes: { debut: number; champs: string[] }[] = [];
   let champ = "", ligne: string[] = [], guillemets = false;
+  let physique = 1, debut = 1;
   const t = texte.replace(/^﻿/, "");
   for (let i = 0; i < t.length; i++) {
     const c = t[i]!;
     if (guillemets) {
       if (c === '"' && t[i + 1] === '"') { champ += '"'; i++; }
       else if (c === '"') guillemets = false;
-      else champ += c;
+      else {
+        if (c === "\n" || (c === "\r" && t[i + 1] !== "\n")) physique++;
+        champ += c;
+      }
     } else if (c === '"') guillemets = true;
     else if (c === ",") { ligne.push(champ); champ = ""; }
     else if (c === "\n" || c === "\r") {
       if (c === "\r" && t[i + 1] === "\n") i++;
       ligne.push(champ); champ = "";
-      if (ligne.some((x) => x !== "")) lignes.push(ligne);
+      if (ligne.some((x) => x !== "")) lignes.push({ debut, champs: ligne });
       ligne = [];
+      physique++;
+      debut = physique;
     } else champ += c;
   }
   ligne.push(champ);
-  if (ligne.some((x) => x !== "")) lignes.push(ligne);
+  if (ligne.some((x) => x !== "")) lignes.push({ debut, champs: ligne });
   const [entete, ...corps] = lignes;
   if (!entete) return [];
-  return corps.map((l) => Object.fromEntries(entete.map((n, i) => [n.trim(), (l[i] ?? "").trim()])));
+  return corps.map((l) => ({ ligneFichier: l.debut, valeurs: Object.fromEntries(entete.champs.map((n, i) => [n.trim(), (l.champs[i] ?? "").trim()])) }));
+}
+
+/** Lecture d'un CSV (RFC 4180 : champs entre guillemets, guillemets doublés), première ligne = en-tête. */
+export function lireCsv(texte: string): Record<string, string>[] {
+  return lireCsvLignes(texte).map((e) => e.valeurs);
 }
 
 const exiger = (l: Record<string, string>, cles: readonly string[], quoi: string) => {

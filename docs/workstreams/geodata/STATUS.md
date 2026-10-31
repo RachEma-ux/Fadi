@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-30 (UTC).
+Mis à jour : 2026-10-31 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -8,6 +8,19 @@ Mis à jour : 2026-10-30 (UTC).
 **Vérifié et fusionné dans `main`** : GeoData V1 (ADR-GEODATA-02, Issue #299), PR #301 fusionnée le 25 octobre 2026 (`1d92920`), CI entièrement verte sur `1d7798e`. **Non accepté** en production : la mise en production reste la Release du maître d'ouvrage.
 
 ## Faits vérifiés
+
+- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57, PR #374, branche `claude/prix-immobiliers-geodata`, **implémenté**,
+  recette en cours) : Concept Prix et Plan v1.1 (paires MD/DOCX, v1.0 archivée) ; dossiers de sources `PRIX-SOURCES.md`
+  (FeenWay baromètre actif CC BY 4.0 ; DGI, DGI–ANCFCC, Mubawab, Avito, API FeenWay, notaires/Yakeey bloqués) ;
+  inventaire `PRIX-INVENTAIRE.md`. Logique pure `geodata-model/src/prix/` : 196 tests du paquet verts (jeu doré calculé à
+  la main). Base : tables `geodata_prix_*`, registre des 9 sources chargé au démarrage, annexe `prixPublies`. Import réel
+  sur base PostGIS locale (31 octobre 2026) : fiche `feenway-barometre-casablanca` publiée, 66 lignes dont 16 rattachées à
+  la commune 6141010 et 50 quartiers commerciaux non rattachés ; relance → « Version déjà présente », registre inchangé
+  (9 sources). Deux extractions indépendantes du baromètre concordent (64 lignes, 0 écart). Contrôles : `npm run
+  typecheck` vert ; `npm run test:db-guard` 251/251 ; tests API hors BD 1 125 verts (suites BD refusées sans attestation,
+  liste attendue, nouvelle suite `geodata-prix.test.ts` en attente DB-3) ; tests web 1 346 verts ; `npm run build` vert ;
+  scénarios PRX01, registre, FeenWay, chaîne d'observations et référence officielle passés sur la base locale (script
+  hors dépôt). Suite DB-3 et recette e2e : CI de la PR.
 
 - Niveaux infra-communaux (D-GD-42, **implémenté**, branche `claude/maroc-infra-communal-levels-5abxes`, après #356) :
   découpage en base (`geodata_niveaux_administratifs`, `geodata_entites_administratives`, journal des imports), lu dans

@@ -3,7 +3,10 @@
  * données (GeoJSON, CSV, TSV, GeoTIFF), tables de correspondance, extraits sans fiche importable, retraits déclarés —
  * est copié tel quel dans `geodata_fichiers` (contenu, taille, empreinte SHA-256, rôle, source). Rôle `reference` :
  * fiche de `references/`, lue par les scripts de préparation (contours d'origine), jamais importée comme couche (D-GD-30) ;
- * rôle `decoupage` : fichiers du découpage administratif (`decoupage/`, dont le fichier source du HCP tel quel, D-GD-42). L'interface et ses
+ * rôle `decoupage` : fichiers du découpage administratif (`decoupage/`, dont le fichier source du HCP tel quel, D-GD-42) ;
+ * rôle `prix` : registre des sources de prix immobiliers (`prix/prix-sources.json`, chargé dans `geodata_prix_sources`) ;
+ * rôle `import-prix` : fichier d'observations reçu par l'API des prix (jamais livré avec le code, donc jamais marqué
+ * retiré par cette archive). L'interface et ses
  * outils ne gardent aucune donnée : les données vivent en base. Un fichier inchangé (même empreinte) n'est pas réécrit ;
  * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool.
  */
@@ -14,7 +17,7 @@ import type { PoolClient } from "pg";
 
 export type Executeur = Pick<PoolClient, "query">;
 
-export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration", "reference", "decoupage"] as const;
+export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration", "reference", "decoupage", "prix", "import-prix"] as const;
 export type RoleFichier = (typeof ROLES_FICHIER)[number];
 
 export interface FichierLivre {
@@ -71,6 +74,7 @@ export function inventaireFichiers(dossier: string): FichierLivre[] {
       : chemin.startsWith("references/") ? "reference"
       : chemin.startsWith("correspondances/") ? "correspondance"
       : chemin.startsWith("decoupage/") ? "decoupage"
+      : chemin.startsWith("prix/") ? "prix"
       : chemin === "donnees/retraits-sources.json" ? "declaration"
       : sourceDe.has(chemin) ? "donnees" : "extrait";
     return {
@@ -107,7 +111,7 @@ export async function archiverFichiers(ex: Executeur, dossier: string): Promise<
     if (avant) modifies++; else ajoutes++;
   }
   const presents = livres.map((f) => f.chemin);
-  const retires = (await ex.query("UPDATE geodata_fichiers SET retire_le = now() WHERE retire_le IS NULL AND NOT (chemin = ANY($1::text[])) RETURNING chemin", [presents])).rowCount ?? 0;
+  const retires = (await ex.query("UPDATE geodata_fichiers SET retire_le = now() WHERE retire_le IS NULL AND role <> 'import-prix' AND NOT (chemin = ANY($1::text[])) RETURNING chemin", [presents])).rowCount ?? 0;
   return { ajoutes, modifies, inchanges, retires, octets };
 }
 

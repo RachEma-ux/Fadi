@@ -606,6 +606,30 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      3. P2-4 (champ continu, qualité de l'air) : **bloqué faute de source qualifiée** (D-GD-29 : aucune donnée sans fiche
         de source qualifiée). Le support existe déjà (couches raster, D-GD-13 ; valeur au point) : une grille publiée par
         une source dont les droits sont établis (par exemple Copernicus / CAMS) s'importera comme les 17 rasters actuels.
+   - D-GD-54 (31 octobre 2026) — **Concept Prix v1.1 et exécution complète du plan** (délégation totale du maître
+     d'ouvrage du 31 octobre 2026 pour tout le plan Prix, lots P0 à P9) : les couches de prix immobiliers sont une
+     capacité de GeoData (tables `geodata_prix_*`, routes `/geodata/api/prix/…`), pas un module. Porte « go / no-go »
+     après la qualification des sources (P1) : aucune source d'annonces ligne à ligne et aucune édition officielle ne
+     sont autorisées au 31 octobre 2026 ; P2 à P9 sont donc exécutés en entier avec le baromètre publié FeenWay comme
+     seule donnée réelle, les chaînes « observations » et « valeurs officielles » livrées vides, testées sur des jeux
+     synthétiques (tests seulement) et affichant leur motif de blocage. Dossiers : `PRIX-SOURCES.md`.
+   - D-GD-55 (31 octobre 2026) — **FeenWay = source dérivée ; baromètre seul autorisé** : le baromètre publié
+     (`/prix-immobilier/<ville>`, CC BY 4.0 déclarée, mention « Source : FeenWay » et lien) est importé comme agrégat
+     publié par un tiers, valeurs reprises sans recalcul, effectifs = annonces ; ses API internes restent bloquées
+     (`robots.txt` interdit `/api/`) ; FeenWay ne compte jamais comme source indépendante ni ne se cumule avec ses
+     portails amont. Les quartiers commerciaux FeenWay, sans limites publiées, restent non rattachés (tableau sous la
+     commune, sans polygone) ; la ville est rattachée à la commune HCP de Casablanca (6141010).
+   - D-GD-56 (31 octobre 2026) — **méthode statistique des prix** : quantiles Hyndman–Fan type 7 ; fenêtre 90 jours et
+     seuil de 20 biens distincts par cellule (paramètres versionnés, de départ) ; valeurs atypiques signalées et jamais
+     retirées (règle `atypique-iqr3-v1` : hors Q1 − 3·IQR / Q3 + 3·IQR à partir de 5 valeurs) ; prix fictifs mis en
+     quarantaine (`prix-validation-1`) ; fraîcheur d'une couche : 180 jours (`fraicheur-v1`) ; empreinte SHA-256 du
+     manifeste d'entrée pour la reproductibilité. Ces paramètres de départ se révisent par une nouvelle version de
+     méthode, jamais en silence.
+   - D-GD-57 (31 octobre 2026) — **valeurs officielles et comparaison** : une valeur officielle garde sa forme (unique,
+     fourchette, terrain + construction, conditionnelle) et son texte d'origine ; l'écart en pourcentage n'existe que
+     face à une valeur unique, courante et autorisée ; une fourchette donne une position (en dessous, dans, au-dessus)
+     sans pourcentage ; sinon la comparaison est refusée avec les dimensions incompatibles. Le référentiel DGI de
+     Casablanca (édition 2015, copies tierces, sans mention de réutilisation) reste bloqué.
 
 ## Conséquences
 

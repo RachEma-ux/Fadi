@@ -43,7 +43,14 @@
 - [x] GEO-SERVICES-PUBLICS-FUSION — Base des services publics MTNRA + OSM (administrations, santé, gares) sans doublon : 19 797 objets, 13 couches ; couches OSM d'origine retirées du catalogue, leurs objets tous repris (D-GD-45).
 - [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.
 - [ ] GEO-RAPPROCHEMENT-COMMUNES — Point du MTNRA dans le contour communal contre la commune publiée : attend des contours communaux complets (D-GD-33).
-- [ ] GEO-CONCEPT-PRIX — Indicateurs de contexte (population, logement, services) pour un module « Concept Prix » : module absent du dépôt, spécification attendue.
+- [ ] GEO-PRIX — Prix immobiliers (Concept Prix v1.1, D-GD-54 à D-GD-57), branche `claude/prix-immobiliers-geodata` :
+  - [x] P0 inventaire (`PRIX-INVENTAIRE.md`) ; P1 dossiers de sources (`PRIX-SOURCES.md`), porte go / no-go décidée.
+  - [x] Logique pure `packages/geodata-model/src/prix/` (jeu doré, type 7, dédoublonnage, comparaison).
+  - [ ] P2–P6 base, import (baromètre FeenWay + registre des sources), chaîne d'observations, API.
+  - [ ] P7 interface (catalogue, fiche, états, comparaison, export).
+  - [ ] P8 recette PRX01–PRX15 ; P9 fusion (maître d'ouvrage) puis quittance d'import en préproduction.
+  - Bloqué (sources) : DGI, DGI–ANCFCC, Mubawab, Avito, API FeenWay, notaires/Yakeey — demandes à envoyer par le maître
+    d'ouvrage (modèle en annexe A de `PRIX-SOURCES.md`).
 - [x] GEO-BARRE-BAS — Barre du bas sur téléphone : Carte, Chercher, Couches, Enregistrer (D-GD-52).
 - [x] GEO-PISTES-EVALUEES — P3-2 sans objet (tout est tuilé), P3-3 sans objet sous D-GD-24 (décision MO pour l'arabe
   sur la carte), P2-4 bloqué faute de source qualifiée (D-GD-53).

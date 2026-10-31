@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ancetresDe, bilanDecoupage, descendDe, lireCsv, lireEntites, lireNiveaux, sansParent, validerDecoupage, type EntiteAdministrative } from "./decoupage.js";
+import { ancetresDe, bilanDecoupage, descendDe, lireCsv, lireCsvLignes, lireEntites, lireNiveaux, sansParent, validerDecoupage, type EntiteAdministrative } from "./decoupage.js";
 import { niveauxDuPoint } from "./selection-clics.js";
 
 // Données livrées (fichiers qualifiés, chargés en base par la commande d'import) : lues ici seulement comme contrôle.
@@ -21,6 +21,10 @@ const chaine = (code: string) => [code, ...ancetresDe(code, parents)];
 describe("découpage : lecture et contrôles purs", () => {
   it("CSV : guillemets, virgules et guillemets doublés dans un champ", () => {
     expect(lireCsv('a,b\n"x, y","il dit ""oui"""\n\n1,2\r\n')).toEqual([{ a: "x, y", b: 'il dit "oui"' }, { a: "1", b: "2" }]);
+  });
+  it("CSV : numéro de ligne physique du fichier (en-tête, lignes vides, champ sur deux lignes, CRLF, BOM)", () => {
+    const l = lireCsvLignes('﻿\na,b\r\n1,2\r\n\r\n"x\ny",3\n\n4,5');
+    expect(l.map((e) => [e.ligneFichier, e.valeurs["a"]])).toEqual([[3, "1"], [5, "x\ny"], [8, "4"]]);
   });
   it("incohérences refusées : niveau inconnu, parent absent, parent pas plus global, doublon", () => {
     const n = lireNiveaux("pays,code,rang,singulier,pluriel\nZZ,haut,1,Haut,Hauts\nZZ,bas,2,Bas,Bas\n");

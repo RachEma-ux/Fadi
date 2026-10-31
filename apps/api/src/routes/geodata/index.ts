@@ -15,6 +15,7 @@ import { consultationRouter } from "./consultation.js";
 import { etudesRouter } from "./etudes.js";
 import { exportsRouter } from "./exports.js";
 import { importsRouter } from "./imports.js";
+import { prixRouter } from "./prix.js";
 import { tableauDeBordRouter } from "./tableau-de-bord.js";
 import { territoiresRouter } from "./territoires.js";
 
@@ -47,4 +48,6 @@ geodataRouter.use(cartesRouter);
 geodataRouter.use(etudesRouter);
 geodataRouter.use(importsRouter);
 geodataRouter.use(exportsRouter);
+// Prix immobiliers (Concept Prix v1.1) : /prix/… — registre, couches, agrégats publiés, cellules, imports, publications.
+geodataRouter.use(prixRouter);
 geodataRouter.use(adminRouter);

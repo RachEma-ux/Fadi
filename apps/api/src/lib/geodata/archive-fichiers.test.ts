@@ -45,6 +45,10 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     expect(par.get("decoupage/hcp-rgph2024-entites.csv")).toMatchObject({ role: "decoupage" });
     // Fiches de référence des contours (D-GD-30) : archivées, jamais importées comme couches.
     expect(par.get("references/geoboundaries-mar-adm1.json")).toMatchObject({ role: "reference", sourceCle: "geoboundaries-mar-adm1" });
+    // Registre des sources de prix immobiliers : archivé tel quel, jamais pris pour une fiche (lot P2).
+    expect(par.get("prix/prix-sources.json")).toMatchObject({ role: "prix", sourceCle: null, typeMedia: "application/json" });
+    // Annexe des agrégats publiés FeenWay : citée par sa fiche, archivée avec elle.
+    expect(par.get("donnees/feenway-barometre-casablanca-2026-10-30.csv")).toMatchObject({ role: "donnees", sourceCle: "feenway-barometre-casablanca" });
   });
 
   it("bilan lisible par l'import automatique", () => {
