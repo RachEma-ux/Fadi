@@ -7,7 +7,7 @@ import { estDateIso } from "./validation.js";
 import type { CouchePrix, EtatDonneePrix, ValiditeEdition } from "./types.js";
 
 /** Statuts d'une source (Concept §2). Seules `autorisee` et `active` permettent l'usage des données. */
-export const STATUTS_SOURCE_PRIX = ["candidate", "qualifiee", "autorisee", "active", "suspendue", "retiree"] as const;
+export const STATUTS_SOURCE_PRIX = ["candidate", "qualifiee", "autorisee", "active", "bloquee", "suspendue", "retiree"] as const;
 export type StatutSourcePrix = (typeof STATUTS_SOURCE_PRIX)[number];
 
 /** Règle de fraîcheur versionnée : au-delà de `joursMaximum` après la date des données, la couche est périmée. */
