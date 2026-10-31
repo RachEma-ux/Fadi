@@ -15,7 +15,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
-- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57) : PR #374 (`claude/prix-immobiliers-geodata`), qui remplace la PR #368.
+- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57) : PR #374 (`claude/prix-immobiliers-geodata`), qui remplace la PR #368 ;
+  lots P0 à P8 livrés et vérifiés (CI verte sur `1cacb2b`, recette e2e 260/0), **en attente de fusion par le maître
+  d'ouvrage** (la fusion n'est pas permise à la session).
   Après fusion par le maître d'ouvrage et déploiement : l'import automatique au démarrage archive et publie la fiche
   `feenway-barometre-casablanca` et charge le registre `prix/prix-sources.json` ; vérifier la quittance
   `GET /version/donnees` puis, en préproduction, la rubrique « Prix immobiliers » du catalogue et la fiche de la commune

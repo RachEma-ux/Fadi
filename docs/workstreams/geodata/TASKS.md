@@ -46,9 +46,10 @@
 - [ ] GEO-PRIX — Prix immobiliers (Concept Prix v1.1, D-GD-54 à D-GD-57), branche `claude/prix-immobiliers-geodata` :
   - [x] P0 inventaire (`PRIX-INVENTAIRE.md`) ; P1 dossiers de sources (`PRIX-SOURCES.md`), porte go / no-go décidée.
   - [x] Logique pure `packages/geodata-model/src/prix/` (jeu doré, type 7, dédoublonnage, comparaison).
-  - [ ] P2–P6 base, import (baromètre FeenWay + registre des sources), chaîne d'observations, API.
-  - [ ] P7 interface (catalogue, fiche, états, comparaison, export).
-  - [ ] P8 recette PRX01–PRX15 ; P9 fusion (maître d'ouvrage) puis quittance d'import en préproduction.
+  - [x] P2–P6 base, import (baromètre FeenWay + registre des sources), chaînes d'observations et officielle, API.
+  - [x] P7 interface (catalogue, fiche, états, comparaison, export).
+  - [x] P8 recette PRX01–PRX15 (CI verte `1cacb2b`, e2e 260/0, revue indépendante corrigée).
+  - [ ] P9 fusion de la PR #374 (maître d'ouvrage) puis quittance d'import en préproduction.
   - Bloqué (sources) : DGI, DGI–ANCFCC, Mubawab, Avito, API FeenWay, notaires/Yakeey — demandes à envoyer par le maître
     d'ouvrage (modèle en annexe A de `PRIX-SOURCES.md`).
 - [x] GEO-BARRE-BAS — Barre du bas sur téléphone : Carte, Chercher, Couches, Enregistrer (D-GD-52).

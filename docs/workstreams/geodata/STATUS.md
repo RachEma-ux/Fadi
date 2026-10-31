@@ -9,19 +9,21 @@ Mis à jour : 2026-10-31 (UTC).
 
 ## Faits vérifiés
 
-- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57, PR #374, branche `claude/prix-immobiliers-geodata`, **implémenté**,
-  recette en cours) : Concept Prix et Plan v1.1 (paires MD/DOCX, v1.0 archivée) ; dossiers de sources `PRIX-SOURCES.md`
-  (FeenWay baromètre actif CC BY 4.0 ; DGI, DGI–ANCFCC, Mubawab, Avito, API FeenWay, notaires/Yakeey bloqués) ;
-  inventaire `PRIX-INVENTAIRE.md`. Logique pure `geodata-model/src/prix/` : 196 tests du paquet verts (jeu doré calculé à
-  la main). Base : tables `geodata_prix_*`, registre des 9 sources chargé au démarrage, annexe `prixPublies`. Import réel
-  sur base PostGIS locale (31 octobre 2026) : fiche `feenway-barometre-casablanca` publiée, 66 lignes dont 16 rattachées à
-  la commune 6141010 et 50 quartiers commerciaux non rattachés ; relance → « Version déjà présente », registre inchangé
-  (9 sources). Deux extractions indépendantes du baromètre concordent (64 lignes, 0 écart). Contrôles : `npm run
-  typecheck` vert ; `npm run test:db-guard` 251/251 ; tests API hors BD 1 125 verts (suites BD refusées sans attestation,
-  liste attendue, nouvelle suite `geodata-prix.test.ts` en attente DB-3) ; tests web 1 346 verts ; `npm run build` vert ;
-  scénarios PRX01, registre, FeenWay, chaîne d'observations et référence officielle passés sur la base locale (script
-  hors dépôt). Suite DB-3 et recette e2e : CI de la PR.
-
+- Prix immobiliers (GEO-PRIX, D-GD-54 à D-GD-57, PR #374, branche `claude/prix-immobiliers-geodata`) : **vérifié**
+  (CI entièrement verte sur `1cacb2b`, 31 octobre 2026 : `validate` avec la suite DB-3 `geodata-prix.test.ts` sur base
+  jetable attestée, e2e des six tranches dont `complements` qui joue la recette GeoData) ; **non accepté**, non fusionné
+  (fusion = maître d'ouvrage). Contenu : Concept Prix et Plan v1.1 (paires MD/DOCX, v1.0 archivée) ; dossiers de sources
+  `PRIX-SOURCES.md` (FeenWay baromètre actif CC BY 4.0 ; DGI, DGI–ANCFCC, Mubawab, Avito, API FeenWay, notaires/Yakeey
+  bloqués) ; inventaire `PRIX-INVENTAIRE.md` ; logique pure `geodata-model/src/prix/` (207 tests, jeu doré calculé à la
+  main) ; tables `geodata_prix_*`, registre des 9 sources chargé au démarrage, annexe `prixPublies`, chaîne des
+  observations et des valeurs officielles, API `/geodata/api/prix/…`, panneau du catalogue et section de la fiche.
+  Preuves : recette e2e GeoData locale sur base neuve (31 octobre 2026) **260 ✓ / 0 ✗** « tout est conforme » (import
+  réel FeenWay : 66 lignes, 16 rattachées à 6141010, 50 quartiers non rattachés ; fiche 14 000 MAD/m² et 16 802
+  annonces à la vente, 8 500 MAD/mois et 25 431 annonces à la location ; export attribué « Source : FeenWay » ;
+  téléphone 390 px ; anglais sans résidu) ; scénarios DB PRX01, registre, FeenWay, observations (PRX02–PRX13),
+  référence officielle (PRX08, PRX09), restauration (PRX14) passés en local et en CI ; revue indépendante (aucun
+  bloquant, 6 majeurs et 10 mineurs, tous corrigés). Deux extractions indépendantes du baromètre concordent (64 lignes).
+  Les deux lignes « ville » des appartements viennent des indicateurs clés de la même page (deux lectures concordantes).
 - Niveaux infra-communaux (D-GD-42, **implémenté**, branche `claude/maroc-infra-communal-levels-5abxes`, après #356) :
   découpage en base (`geodata_niveaux_administratifs`, `geodata_entites_administratives`, journal des imports), lu dans
   le fichier HCP RGPH 2024 livré tel quel (`decoupage_hcp.py` : 1 639 entités, 0 sans parent, sommes de population
