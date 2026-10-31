@@ -107,6 +107,18 @@ export function checkReportDb3Active(report, pending = DB3_PENDING_SUITES) {
   return { errors, passedTests, db3Tests };
 }
 
+/** Annotations `::error` des tests en échec d'un rapport Vitest (au plus 20), message sur une ligne, 900 caractères. */
+export function annotationsEchecs(report, max = 20) {
+  const lignes = [];
+  const propre = (t) => String(t ?? '').replace(/\u001b\[[0-9;]*m/g, '').replace(/[\r\n]+/g, ' ⏎ ').replace(/::/g, ': :').slice(0, 900);
+  for (const suite of report?.testResults ?? []) {
+    const echecs = (suite.assertionResults ?? []).filter((a) => a.status === 'failed');
+    if (!echecs.length && suite.status !== 'passed' && suite.message) lignes.push(`::error title=${propre(relative(suite.name))}::${propre(suite.message)}`);
+    for (const a of echecs) lignes.push(`::error title=${propre(relative(suite.name))}::${propre(a.fullName ?? a.title)} — ${propre((a.failureMessages ?? [])[0])}`);
+  }
+  return lignes.slice(0, max);
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const actif = process.argv.includes('--db3-actif');
   const file = process.argv.slice(2).find((a) => !a.startsWith('--'));
@@ -116,7 +128,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   if (actif) {
     const { errors, passedTests, db3Tests } = checkReportDb3Active(report);
     console.log(`API : ${passedTests} test(s) réussis, dont ${db3Tests} dans les ${DB3_PENDING_SUITES.length} suites DB-3, sur base jetable attestée.`);
-    if (errors.length) { for (const e of errors) console.error(`✗ ${e}`); process.exit(1); }
+    if (errors.length) {
+      for (const e of errors) console.error(`✗ ${e}`);
+      // Sous GitHub Actions, chaque échec devient aussi une annotation lisible par l'API des checks (journaux bruts
+      // parfois inaccessibles) : test, puis premier message d'assertion, tronqué et sans retour à la ligne.
+      if (process.env.GITHUB_ACTIONS === 'true') for (const a of annotationsEchecs(report)) console.log(a);
+      process.exit(1);
+    }
     console.log('✓ DB-3 actif : toutes les suites API tournent sur la base attestée, aucune n\'est refusée.');
     process.exit(0);
   }
