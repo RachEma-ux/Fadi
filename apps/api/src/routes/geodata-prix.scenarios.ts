@@ -148,7 +148,8 @@ export async function prx01BaseVide(ctx: ContexteEssai) {
   assert.equal(s.status, 200);
   assert.deepEqual(s.body, { sources: [], dossier: null, version: null, responsable: null, chargeLe: null });
   const c = await client.get(`${API}/prix/couches`);
-  assert.deepEqual(c.body.couches.map((x: { couche: string; etat: string; motifs: string[] }) => [x.couche, x.etat, x.motifs]), [["officielle", "indisponible", []], ["annonces", "indisponible", []]]);
+  assert.deepEqual(c.body.couches.map((x: { couche: string; etat: string; motifs: string[]; details: string[] }) => [x.couche, x.etat, x.motifs, x.details]),
+    [["officielle", "indisponible", ["aucune-source"], []], ["annonces", "indisponible", ["aucune-source"], []]]);
   assert.deepEqual(c.body.couches[1].produits.map((p: { produit: string; etat: string; motif: string }) => [p.produit, p.etat, p.motif]), [["agregat-publie", "indisponible", "aucune-source"], ["observations", "indisponible", "aucune-source"]]);
   assert.deepEqual((await client.get(`${API}/prix/agregats-publies?code=6141010`)).body, { editions: [], lignes: [] });
   const cel = await client.get(`${API}/prix/cellules`);
@@ -176,7 +177,8 @@ export async function registreReel(ctx: ContexteEssai) {
   const c = (await client.get(`${API}/prix/couches`)).body;
   const officielle = c.couches.find((x: { couche: string }) => x.couche === "officielle");
   assert.equal(officielle.etat, "non-autorise");
-  assert.ok(officielle.motifs.some((m: string) => m.includes("DGI")), "motif de blocage de la DGI affiché");
+  assert.deepEqual(officielle.motifs, ["source-bloquee"]);
+  assert.ok(officielle.details.some((m: string) => m.includes("DGI")), "motif de blocage de la DGI affiché");
   const annonces = c.couches.find((x: { couche: string }) => x.couche === "annonces");
   assert.deepEqual(annonces.produits.map((p: { produit: string; etat: string }) => [p.produit, p.etat]), [["agregat-publie", "indisponible"], ["observations", "non-autorise"]]);
   // Aucune source réelle d'observations n'est autorisée : l'import est refusé avec le motif enregistré au registre.
@@ -193,15 +195,15 @@ export async function feenwayReel(ctx: ContexteEssai) {
   const { client: lecteur } = await compte(ctx, "prix-lecteur@example.com");
   const v = await importerFicheFeenway(ctx);
   assert.equal(v.deja, false);
-  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies WHERE version_id = $1", [v.versionId]), 64);
-  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies WHERE version_id = $1 AND code_rattache = '6141010' AND niveau_geo = 'ville'", [v.versionId]), 14);
+  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies WHERE version_id = $1", [v.versionId]), 66);
+  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies WHERE version_id = $1 AND code_rattache = '6141010' AND niveau_geo = 'ville'", [v.versionId]), 16);
   assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies WHERE version_id = $1 AND code_rattache IS NULL AND etat_rattachement = 'non-rattache' AND niveau_geo = 'quartier-commercial'", [v.versionId]), 50);
   // Réimport : même source, même empreinte → aucune nouvelle version (« Version déjà présente »).
   const again = await importerFicheFeenway(ctx);
   assert.equal(again.deja, true);
   assert.equal(again.versionId, v.versionId);
   assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = 'feenway-barometre-casablanca'"), 1);
-  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies"), 64);
+  assert.equal(await compter(ctx, "SELECT count(*) AS n FROM geodata_prix_agregats_publies"), 66);
   // Contenu figé avec la version publiée.
   // La garde DB-3 masque le texte de l'erreur SQL : refus constaté, puis ligne vérifiée intacte.
   await assert.rejects(ctx.pool.query("UPDATE geodata_prix_agregats_publies SET nombre_annonces = 0 WHERE version_id = $1", [v.versionId]));
@@ -213,13 +215,17 @@ export async function feenwayReel(ctx: ContexteEssai) {
   assert.equal(a.editions[0].coucheId, v.coucheId);
   assert.equal(a.editions[0].editeur, "FeenWay");
   assert.match(a.editions[0].attribution, /^Source : FeenWay/);
-  assert.equal(a.lignes.length, 64);
+  assert.equal(a.lignes.length, 66);
   const racine = a.lignes.find((l: { libelleGeo: string; transaction: string }) => l.libelleGeo === "Racine" && l.transaction === "vente");
   assert.deepEqual(racine, {
     versionId: v.versionId, ordre: 1, niveauGeo: "quartier-commercial", libelleGeo: "Racine", ville: "Casablanca", codeRattache: null, etatRattachement: "non-rattache",
     typeBien: "appartement", typeBienOriginal: "APPARTEMENT", transaction: "vente", nombreAnnonces: 764,
     prixMedian: { valeur: 3_300_000, approximatif: true, texte: "3,3M DH" }, prixM2: { valeur: 18_548, texte: "18\u00a0548 DH" }, unite: "MAD", uniteM2: "MAD/m2", tendance90j: -4.8,
   });
+  // Valeur non publiée (« — ») : null, jamais 0.
+  const appartVille = a.lignes.filter((l: { niveauGeo: string; typeBien: string }) => l.niveauGeo === "ville" && l.typeBien === "appartement");
+  assert.deepEqual(appartVille.map((l: { transaction: string; prixMedian: unknown; prixM2: unknown; nombreAnnonces: number }) => [l.transaction, l.prixMedian, l.prixM2, l.nombreAnnonces]),
+    [["vente", null, { valeur: 14_000, texte: "14 000 DH" }, 16_802], ["location", { valeur: 8_500, approximatif: false, texte: "8 500 DH/mois" }, null, 25_431]]);
   const villasLocation = (await lecteur.get(`${API}/prix/agregats-publies?code=6141010&transaction=location&type=villa`)).body.lignes;
   assert.equal(villasLocation.length, 1);
   assert.equal(villasLocation[0].codeRattache, "6141010");
@@ -229,7 +235,7 @@ export async function feenwayReel(ctx: ContexteEssai) {
   assert.equal(f.code, "6141010");
   assert.ok(Array.isArray(f.indicateurs) && Array.isArray(f.douars) && f.couche && f.proprietes);
   assert.equal(f.prixPublies.editions[0].versionId, v.versionId);
-  assert.equal(f.prixPublies.lignes.length, 14);
+  assert.equal(f.prixPublies.lignes.length, 16);
   assert.ok(f.prixPublies.lignes.every((l: { codeRattache: string }) => l.codeRattache === "6141010"));
   assert.equal(f.prixPublies.nonRattaches.length, 50);
 
@@ -255,15 +261,15 @@ export async function feenwayReel(ctx: ContexteEssai) {
   await chargerRegistre(ctx);
   assert.equal((await ctx.pool.query("SELECT statut FROM geodata_prix_sources WHERE cle = 'feenway-barometre'")).rows[0].statut, "suspendue");
   await admin.post(`${API}/prix/sources/feenway-barometre/statut`).send({ statut: "active", motif: "Droits confirmés (essai)" });
-  assert.equal((await lecteur.get(`${API}/prix/agregats-publies?code=6141010`)).body.lignes.length, 64);
+  assert.equal((await lecteur.get(`${API}/prix/agregats-publies?code=6141010`)).body.lignes.length, 66);
 
   // Export : réservé aux rôles ; attribution CC BY et identifiant d'édition dans chaque ligne.
   assert.equal((await lecteur.get(`${API}/prix/export?format=csv`)).status, 403);
-  const ex = await admin.get(`${API}/prix/export?format=csv&code=6141010`);
+  const ex = await admin.get(`${API}/prix/export?format=csv&versionId=${v.versionId}`);
   assert.equal(ex.status, 200);
-  assert.match(ex.headers["content-type"], /text\/csv/);
+  assert.match(String(ex.headers["content-type"]), /text\/csv/);
   const lignesCsv = ex.text.replace(/^﻿/, "").trim().split("\r\n");
-  assert.equal(lignesCsv.length, 65);
+  assert.equal(lignesCsv.length, 67);
   assert.ok(lignesCsv[1]!.startsWith(v.versionId));
   assert.match(lignesCsv[1]!, /Source : FeenWay/);
 }
@@ -280,7 +286,8 @@ async function preparerObservations(ctx: ContexteEssai) {
   return { gestion, publication, admin, lecteur };
 }
 
-const cellule = (cellules: { cohorte: Record<string, unknown> }[], f: Record<string, unknown>) =>
+type CelluleVue = { cohorte: Record<string, unknown> } & Record<string, unknown>;
+const cellule = (cellules: CelluleVue[], f: Record<string, unknown>) =>
   cellules.find((c) => Object.entries(f).every(([k, v]) => c.cohorte[k] === v));
 
 export async function chaineObservations(ctx: ContexteEssai) {

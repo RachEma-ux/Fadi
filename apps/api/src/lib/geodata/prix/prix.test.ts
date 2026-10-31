@@ -23,19 +23,19 @@ describe("agrégats publiés FeenWay (annexe prixPublies, fichier réel)", () =>
   const lecture = lirePrixPublies(csv, fiche.version.libelle);
   const lignes = rattacherAgregats(lecture.agregats, objets);
 
-  it("64 lignes lues et retenues, aucune erreur ; CSV à guillemets (« 3,3M DH ») et BOM lus", () => {
+  it("66 lignes lues et retenues, aucune erreur ; CSV à guillemets (« 3,3M DH ») et BOM lus", () => {
     expect(lecture.erreurs).toEqual([]);
-    expect(lecture.lignesLues).toBe(64);
-    expect(lecture.agregats).toHaveLength(64);
+    expect(lecture.lignesLues).toBe(66);
+    expect(lecture.agregats).toHaveLength(66);
     expect(lignes[0]).toMatchObject({ ordre: 1, libelleGeo: "Racine", typeBien: "appartement", transaction: "vente", prixMedian: "3300000.00", prixMedianApproximatif: true, prixMedianTexte: "3,3M DH", prixM2: "18548.00", tendance90j: -4.8, unite: "MAD", uniteM2: "MAD/m2" });
   });
 
-  it("PRX06 : les 14 lignes de la ville sont rattachées à la commune 6141010 (8 ventes, 6 locations) ; les 50 quartiers commerciaux restent non rattachés, sans code", () => {
+  it("PRX06 : les 16 lignes de la ville sont rattachées à la commune 6141010 (9 ventes, 7 locations) ; les 50 quartiers commerciaux restent non rattachés, sans code", () => {
     const ville = lignes.filter((l) => l.niveauGeo === "ville");
-    expect(ville).toHaveLength(14);
+    expect(ville).toHaveLength(16);
     expect(ville.every((l) => l.etatRattachement === "exact" && l.codeRattache === "6141010")).toBe(true);
-    expect(ville.filter((l) => l.transaction === "vente")).toHaveLength(8);
-    expect(ville.filter((l) => l.transaction === "location")).toHaveLength(6);
+    expect(ville.filter((l) => l.transaction === "vente")).toHaveLength(9);
+    expect(ville.filter((l) => l.transaction === "location")).toHaveLength(7);
     const quartiers = lignes.filter((l) => l.niveauGeo === "quartier-commercial");
     expect(quartiers).toHaveLength(50);
     expect(quartiers.every((l) => l.etatRattachement === "non-rattache" && l.codeRattache === null)).toBe(true);
@@ -46,6 +46,11 @@ describe("agrégats publiés FeenWay (annexe prixPublies, fichier réel)", () =>
     expect(immeubles.prixM2).toBeNull();
     expect(immeubles.tendance90j).toBeNull();
     const loyer = lignes.find((l) => l.niveauGeo === "ville" && l.typeBien === "bureau" && l.transaction === "location")!;
+    // Lignes ajoutées des appartements de la ville : prix médian ou prix au m² non publié → null, approximatif null.
+    const appVente = lignes.find((l) => l.niveauGeo === "ville" && l.typeBien === "appartement" && l.transaction === "vente")!;
+    expect(appVente).toMatchObject({ prixMedian: null, prixMedianApproximatif: null, prixM2: "14000.00", tendance90j: -9.8, nombreAnnonces: 16802, codeRattache: "6141010" });
+    const appLoc = lignes.find((l) => l.niveauGeo === "ville" && l.typeBien === "appartement" && l.transaction === "location")!;
+    expect(appLoc).toMatchObject({ prixMedian: "8500.00", prixM2: null, unite: "MAD/mois" });
     expect(loyer).toMatchObject({ unite: "MAD/mois", uniteM2: "MAD/m2/mois", prixMedian: "13500.00", prixMedianApproximatif: false });
   });
 

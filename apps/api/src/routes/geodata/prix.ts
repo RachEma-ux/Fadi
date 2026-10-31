@@ -49,7 +49,12 @@ const gerer = (f: (req: Request, res: Response) => Promise<void>) => async (req:
 };
 
 const nombre = (x: unknown): number | null => (x === null || x === undefined ? null : Number(x));
-const dateIso = (x: unknown): string | null => (x === null || x === undefined ? null : x instanceof Date ? x.toISOString().slice(0, 10) : String(x).slice(0, 10));
+/** Date AAAA-MM-JJ : `pg` lit une colonne `date` comme minuit LOCAL ; ses composantes locales sont donc la date en base. */
+const dateIso = (x: unknown): string | null => {
+  if (x === null || x === undefined) return null;
+  if (x instanceof Date) return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  return String(x).slice(0, 10);
+};
 const param = (req: Request, k: string, motif = /^[A-Za-z0-9:._-]{1,80}$/): string | null => {
   const v = req.query[k];
   return typeof v === "string" && motif.test(v) ? v : null;
@@ -119,6 +124,12 @@ interface Produit { produit: string; etat: EtatDonneePrix; motif: string | null;
 
 /** Motifs lisibles des sources non autorisées d'un produit (« Titre : motif »), tels qu'enregistrés au registre. */
 const motifsBlocage = (sources: readonly LigneSource[]) => sources.filter((s) => !sourceAutorisee(s.statut)).map((s) => `${s.titre} : ${s.motif ?? s.statut}`);
+/**
+ * Codes stables des motifs de blocage (`source-<statut>`, ex. `source-bloquee`, `source-candidate`), traduits par
+ * l'interface. Le statut « bloquee » du registre (cause, responsable, prochaine action consignés) n'est pas un état de
+ * la chaîne de `STATUTS_SOURCE_PRIX` : il est traité comme non autorisé, avec son propre code.
+ */
+const codesBlocage = (sources: readonly LigneSource[]) => [...new Set(sources.filter((s) => !sourceAutorisee(s.statut)).map((s) => `source-${s.statut}`))].sort();
 
 async function etatProduit(produit: "valeurs-officielles" | "agregat-publie" | "observations", sources: readonly LigneSource[], date: string): Promise<Produit> {
   const du = sources.filter((s) => s.produit === produit);
@@ -155,12 +166,12 @@ prixRouter.get("/prix/couches", async (req, res) => {
   const date = aujourdhui();
   const officielle = [await etatProduit("valeurs-officielles", sources, date)];
   const annonces = [await etatProduit("agregat-publie", sources, date), await etatProduit("observations", sources, date)];
-  const couche = (c: "officielle" | "annonces", produits: Produit[]) => ({
-    couche: c,
-    etat: meilleur(produits.map((p) => p.etat)),
-    motifs: motifsBlocage(sources.filter((s) => s.couche === c && (c === "annonces" ? ["agregat-publie", "observations"] : ["valeurs-officielles"]).includes(s.produit))),
-    produits,
-  });
+  const couche = (c: "officielle" | "annonces", produits: Produit[]) => {
+    const du = sources.filter((s) => s.couche === c && (c === "annonces" ? ["agregat-publie", "observations"] : ["valeurs-officielles"]).includes(s.produit));
+    // `motifs` : codes stables (blocages des sources, puis motifs des produits non disponibles) ; `details` : textes du registre.
+    const motifs = [...new Set([...codesBlocage(du), ...produits.filter((p) => p.etat !== "disponible" && p.motif).map((p) => p.motif!)])];
+    return { couche: c, etat: meilleur(produits.map((p) => p.etat)), motifs, details: motifsBlocage(du), produits };
+  };
   res.json({ couches: [couche("officielle", officielle), couche("annonces", annonces)], dateReference: date, capacites: [...(await capacitesPrix(req))].sort() });
 });
 
@@ -206,7 +217,7 @@ export async function agregatsPublies(filtres: { code?: string | null; versionId
 }
 
 prixRouter.get("/prix/agregats-publies", async (req, res) => {
-  const { editions, lignes } = await agregatsPublies({ code: param(req, "code"), transaction: param(req, "transaction"), type: param(req, "type") });
+  const { editions, lignes } = await agregatsPublies({ code: param(req, "code"), versionId: param(req, "versionId"), transaction: param(req, "transaction"), type: param(req, "type") });
   res.json({ editions, lignes: lignes.map(lireLigneAgregat) });
 });
 
@@ -531,7 +542,7 @@ prixRouter.get("/prix/export", exiger("prix-exporter"), async (req, res) => {
   if ((req.query["format"] ?? "csv") !== "csv") return erreur(res, 400, "format_non_pris_en_charge", "Format d'export : csv.", { champs: ["format"] });
   const produit = req.query["produit"] ?? "agregats";
   if (produit === "agregats") {
-    const { lignes } = await agregatsPublies({ code: param(req, "code"), transaction: param(req, "transaction"), type: param(req, "type") });
+    const { lignes } = await agregatsPublies({ code: param(req, "code"), versionId: param(req, "versionId"), transaction: param(req, "transaction"), type: param(req, "type") });
     const refusees = new Set(lignes.filter((l) => !verifierUsage(lireDroits(l["droits"]), "export").ok).map((l) => String(l["version_id"])));
     const permises = lignes.filter((l) => !refusees.has(String(l["version_id"])));
     if (!permises.length && refusees.size) {

@@ -23,7 +23,7 @@ describe("Prix immobiliers — registre des sources réel", () => {
 });
 
 describe("Prix immobiliers — baromètre FeenWay réel (agrégat publié)", () => {
-  it("64 lignes, 14 rattachées à 6141010, 50 quartiers non rattachés ; réimport sans nouvelle version ; fiche d'objet ; catégorie ; suspension (PRX13) ; export attribué", () => feenwayReel(ctx));
+  it("66 lignes, 16 rattachées à 6141010, 50 quartiers non rattachés ; réimport sans nouvelle version ; fiche d'objet ; catégorie ; suspension (PRX13) ; export attribué", () => feenwayReel(ctx));
 });
 
 describe("Prix immobiliers — chaîne des observations (jeux synthétiques)", () => {
