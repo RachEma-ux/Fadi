@@ -17,8 +17,9 @@ import { LIBELLE_ECART_REFERENCE } from "@parcours/geodata-model";
 import { adresseExportPrix, api, type CellulesPrixRecues, type ComparaisonPrixRecue, type CouchePrixRecue, type CoucheRecue, type EditionPrixRecue, type FicheRecue, type LignePrixRecue, type PrixPubliesRecus, type SourcePrixRecue } from "../client";
 import {
   choixComparaison, filtrerLignesPrix, formaterDatePrix, formaterEcartPrix, formaterMontantPrix, formaterNombrePrix, formaterPeriodePrix, formaterTendancePrix, formaterUnitePrix,
-  libelleCohorte, libelleDimension, libelleEtatPrix, libelleMotifPrix, libelleProduitPrix, libelleStatutSource, libelleTypeBien, LIBELLES_COUCHE_PRIX, LIBELLES_POSITION_FOURCHETTE,
-  LIBELLES_TRANSACTION_PRIX, lignesVillePrix, quartiersParTransaction, statutSourceUtilisable, symboleEtatPrix, tonEtatPrix, totalExclusions, trierLignesPrix, triSuivant,
+  libelleCohorte, libelleDimension, libelleEtatPrix, libelleMotifComparaison, libelleMotifPrix, libelleProduitPrix, libelleStatutSource, libelleTypeBien, LIBELLES_COUCHE_PRIX,
+  LIBELLES_POSITION_FOURCHETTE, LIBELLES_TRANSACTION_PRIX, lignesVillePrix, peutExporterPrix, quartiersParTransaction, statutSourceUtilisable, symboleEtatPrix, tonEtatPrix,
+  totalExclusions, trierLignesPrix, triSuivant,
   type CleTriPrix, type OrdreTri,
 } from "./prix-ops";
 
@@ -309,13 +310,23 @@ function EnteteEdition({ e, peutExporter }: { e: EditionPrixRecue; peutExporter:
 
 /**
  * Section « Prix immobiliers affichés » de la fiche : rien si la fiche ne porte pas de prix publiés. Les valeurs sont
- * celles de l'éditeur, sans recalcul ni fusion avec les médianes calculées par Fadi.
+ * celles de l'éditeur, sans recalcul ni fusion avec les médianes calculées par Fadi. Le lien d'export suit la capacité
+ * `prix-exporter` rendue par le serveur (`GET /prix/couches`), jamais une autre capacité GeoData.
  */
-export function SectionPrixFiche(p: { fiche: FicheRecue; peutExporter: boolean }) {
+export function SectionPrixFiche(p: { fiche: FicheRecue }) {
   const prix: PrixPubliesRecus | null | undefined = p.fiche.prixPublies;
   const [filtre, setFiltre] = useState("");
+  const [capacites, setCapacites] = useState<string[] | null>(null);
   const titreId = useId();
+  const avecPrix = !!prix;
+  useEffect(() => {
+    if (!avecPrix) return;
+    let vivant = true;
+    api.prixCouches().then((r) => vivant && setCapacites(r.capacites ?? [])).catch(() => vivant && setCapacites([]));
+    return () => { vivant = false; };
+  }, [avecPrix]);
   if (!prix) return null;
+  const peutExporter = peutExporterPrix(capacites);
   const vente = lignesVillePrix(prix.lignes, "vente");
   const location = lignesVillePrix(prix.lignes, "location");
   const quartiers = quartiersParTransaction(prix.nonRattaches.length ? prix.nonRattaches : prix.lignes);
@@ -324,7 +335,7 @@ export function SectionPrixFiche(p: { fiche: FicheRecue; peutExporter: boolean }
   return (
     <section className="gd-prix-fiche" aria-labelledby={titreId} data-gd-prix-section={p.fiche.code}>
       <h4 id={titreId}>Prix immobiliers affichés</h4>
-      {prix.editions.map((e) => <EnteteEdition key={e.versionId} e={e} peutExporter={p.peutExporter} />)}
+      {prix.editions.map((e) => <EnteteEdition key={e.versionId} e={e} peutExporter={peutExporter} />)}
       <ul className="gd-prix-avertissements">
         <li>Prix demandés dans les annonces, pas des prix de transaction.</li>
         <li>Effectifs = annonces, pas des biens distincts (doublons possibles).</li>
@@ -390,11 +401,19 @@ function CarteComparaison(p: { code: string; lignes: readonly LignePrixRecue[] }
         </div>
       )}
       {r && !r.comparable && (
-        <div role="status" data-gd-prix-comparaison-impossible>
+        <div role="status" data-gd-prix-comparaison-impossible data-gd-prix-comparaison-motif={r.motif ?? ""}>
           <p><span aria-hidden="true">⊘ </span><strong>Comparaison impossible</strong></p>
+          <p data-gd-prix-comparaison-raison>{libelleMotifComparaison(r.motif)}</p>
+          {r.coucheEnCause && (
+            <p className="gd-discret" data-gd-prix-comparaison-couche={r.coucheEnCause.couche}>
+              <span>{LIBELLES_COUCHE_PRIX[r.coucheEnCause.couche]}</span><span> : </span><EtatPrix etat={r.coucheEnCause.etat} />
+              {r.coucheEnCause.motif && <><span> — </span><Motif m={r.coucheEnCause.motif} /></>}
+            </p>
+          )}
+          {r.coucheEnCause?.detail && <p className="gd-discret"><span>Motif enregistré :</span> <span translate="no">{r.coucheEnCause.detail}</span></p>}
           {r.dimensionsIncompatibles && r.dimensionsIncompatibles.length > 0
             ? <><p className="gd-discret">Dimensions qui empêchent la comparaison :</p><ul>{r.dimensionsIncompatibles.map((d) => <li key={d} data-gd-prix-dimension={d}>{libelleDimension(d)}</li>)}</ul></>
-            : <p className="gd-discret">Aucune dimension précisée par le serveur.</p>}
+            : r.motif === "dimensions-incompatibles" ? <p className="gd-discret">Aucune dimension précisée par le serveur.</p> : null}
         </div>
       )}
     </section>

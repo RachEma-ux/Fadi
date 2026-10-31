@@ -4,7 +4,7 @@
  * l'éditeur abrège), tri et filtre des tableaux. Aucune donnée : les valeurs viennent toutes de la base, lues par l'API
  * (D-GD-29). Une valeur absente n'est jamais 0 : elle porte un libellé explicite.
  */
-import { formatNombre, type DimensionComparaison, type EtatDonneePrix, type TypeBien } from "@parcours/geodata-model";
+import { formatNombre, type DimensionComparaison, type EtatDonneePrix, type MotifComparaisonPrix, type MotifCouchePrix, type TypeBien } from "@parcours/geodata-model";
 import type { CellulePrixRecue, EditionPrixRecue, LignePrixRecue, MontantPublieRecu } from "../client";
 
 /** Thème des sources de la couche des prix affichés (code technique de la fiche de source, pas une donnée). */
@@ -76,8 +76,11 @@ export const LIBELLES_COUCHE_PRIX: Readonly<Record<"annonces" | "officielle", st
   officielle: "Valeurs immobilières de référence officielles",
 };
 
-/** Motifs codés d'état d'une couche (`MotifEtatCouche` du modèle) et statuts de source qui bloquent. */
-export const LIBELLES_MOTIF_PRIX: Readonly<Record<string, string>> = {
+/**
+ * Motifs codés d'état d'une couche ou d'un produit : un libellé pour CHAQUE code de la liste fermée du modèle
+ * (`MOTIFS_COUCHE_PRIX` : statuts de source qui bloquent, motifs de l'édition, aucune source, aucune publication).
+ */
+export const LIBELLES_MOTIF_PRIX: Readonly<Record<MotifCouchePrix, string>> = {
   "source-candidate": "Source candidate : réutilisation non établie",
   "source-qualifiee": "Source qualifiée mais pas encore autorisée",
   "source-suspendue": "Source suspendue",
@@ -90,11 +93,29 @@ export const LIBELLES_MOTIF_PRIX: Readonly<Record<string, string>> = {
   "validite-non-verifiee": "Validité de l'édition non vérifiée",
   "date-donnees-inconnue": "Date des données inconnue",
   "donnees-perimees": "Données plus anciennes que la règle de fraîcheur",
-  "aucun-instantane": "Aucun instantané publié",
+  "aucune-source": "Aucune source enregistrée en base pour ce produit",
+  "aucune-publication": "Aucun instantané publié",
 };
 /** Motif : libellé d'interface s'il est codé, sinon le texte du registre tel quel (donnée, non traduite). */
-export const libelleMotifPrix = (m: string): { texte: string; code: boolean } =>
-  LIBELLES_MOTIF_PRIX[m] !== undefined ? { texte: LIBELLES_MOTIF_PRIX[m]!, code: true } : { texte: m, code: false };
+export const libelleMotifPrix = (m: string): { texte: string; code: boolean } => {
+  const l = (LIBELLES_MOTIF_PRIX as Readonly<Record<string, string>>)[m];
+  return l !== undefined ? { texte: l, code: true } : { texte: m, code: false };
+};
+
+/** Motifs codés d'une comparaison refusée (`MOTIFS_COMPARAISON_PRIX` du modèle). */
+export const LIBELLES_MOTIF_COMPARAISON: Readonly<Record<MotifComparaisonPrix, string>> = {
+  "aucune-reference-officielle": "Aucune référence officielle disponible pour ce territoire et cette cohorte",
+  "aucune-valeur-marche": "Aucun prix affiché disponible pour cette cohorte",
+  "dimensions-incompatibles": "Dimensions incompatibles",
+};
+export const libelleMotifComparaison = (m: string | null | undefined): string =>
+  (m && (LIBELLES_MOTIF_COMPARAISON as Readonly<Record<string, string>>)[m]) || "Motif non précisé par le serveur";
+
+/**
+ * Export des prix : permis seulement si le serveur accorde la capacité `prix-exporter` (liste `capacites` rendue par
+ * `GET /prix/couches`), jamais d'après une autre capacité GeoData.
+ */
+export const peutExporterPrix = (capacites: readonly string[] | null | undefined): boolean => !!capacites?.includes("prix-exporter");
 
 /** Types de biens (codes du modèle) au pluriel, comme dans les tableaux. */
 export const LIBELLES_TYPE_BIEN: Readonly<Record<TypeBien, string>> = {
@@ -257,6 +278,7 @@ export const TEXTES_PRIX: readonly string[] = [
   ...Object.values(LIBELLES_ETAT_PRIX), ...Object.values(LIBELLES_STATUT_SOURCE), ...Object.values(LIBELLES_PRODUIT_PRIX),
   ...Object.values(LIBELLES_COUCHE_PRIX), ...Object.values(LIBELLES_MOTIF_PRIX), ...Object.values(LIBELLES_TYPE_BIEN),
   ...Object.values(LIBELLES_TRANSACTION_PRIX), ...Object.values(LIBELLES_DIMENSION_COMPARAISON), ...Object.values(LIBELLES_POSITION_FOURCHETTE),
+  ...Object.values(LIBELLES_MOTIF_COMPARAISON), "Motif non précisé par le serveur",
   "État non reconnu", "Statut non reconnu", "Produit non reconnu", "Type de bien non reconnu", "Dimension non reconnue",
   "unité non publiée", "non publié", "non publiée",
 ];

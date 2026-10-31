@@ -428,8 +428,6 @@ export function FicheObjet(p: {
   indicateurActif?: CleIndicateur | null;
   /** Couches de points affichées sur la carte, pour la section « À proximité » (D-GD-49). */
   proximite?: readonly { id: string; titre: string }[];
-  /** Capacité « exporter » de l'espace (GET /espace) : export CSV des agrégats de prix publiés (lot P7). */
-  peutExporter?: boolean;
 }) {
   if (p.chargement) return <p role="status" className="gd-etat">Chargement de la fiche…</p>;
   if (p.erreur) return <p role="alert" className="gd-etat">{p.erreur}</p>;
@@ -466,7 +464,7 @@ export function FicheObjet(p: {
             <dl className="gd-valeurs">{familles.filter((x) => x.theme === t).map((x) => <Famille key={`${x.theme}|${x.famille}`} f={x} />)}</dl>
           </details>
         ))}
-      <SectionPrixFiche fiche={f} peutExporter={!!p.peutExporter} />
+      <SectionPrixFiche fiche={f} />
       {p.subdivisions && p.indicateurActif && <SyntheseEntite fiche={f} s={p.subdivisions} cle={p.indicateurActif} />}
       {p.subdivisions && p.onFiche && <SubdivisionsDe parent={f.code} s={p.subdivisions} onFiche={p.onFiche} />}
       {p.proximite && <Proximite fiche={f} couches={p.proximite} onFiche={p.onFiche} />}

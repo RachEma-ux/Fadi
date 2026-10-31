@@ -2,14 +2,14 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { DIMENSIONS_COMPARAISON, ETATS_DONNEE_PRIX, LIBELLE_ECART_REFERENCE, TYPES_BIEN } from "@parcours/geodata-model";
+import { DIMENSIONS_COMPARAISON, ETATS_DONNEE_PRIX, LIBELLE_ECART_REFERENCE, MOTIFS_COMPARAISON_PRIX, MOTIFS_COUCHE_PRIX, TYPES_BIEN } from "@parcours/geodata-model";
 import dico from "../../../lib/i18n/en.json";
 import { Traducteur } from "../../../lib/i18n/traduire";
 import type { LignePrixRecue } from "../client";
 import {
   choixComparaison, filtrerLignesPrix, formaterDatePrix, formaterEcartPrix, formaterMontantPrix, formaterNombrePrix, formaterPeriodePrix, formaterTendancePrix, formaterUnitePrix,
   libelleCohorte, libelleDimension, libelleEtatPrix, libelleMotifPrix, libelleStatutSource, libelleTypeBien, LIBELLES_DIMENSION_COMPARAISON, LIBELLES_ETAT_PRIX, LIBELLES_TYPE_BIEN,
-  lignesVillePrix, quartiersParTransaction, statutSourceUtilisable, symboleEtatPrix, TEXTES_PRIX, tonEtatPrix, totalExclusions, trierLignesPrix, triSuivant,
+  libelleMotifComparaison, LIBELLES_MOTIF_COMPARAISON, LIBELLES_MOTIF_PRIX, lignesVillePrix, peutExporterPrix, quartiersParTransaction, statutSourceUtilisable, symboleEtatPrix, TEXTES_PRIX, tonEtatPrix, totalExclusions, trierLignesPrix, triSuivant,
 } from "./prix-ops";
 
 /** Lignes fabriquées pour les tests (libellés fictifs, aucune donnée réelle). */
@@ -135,6 +135,46 @@ describe("Prix immobiliers — tableaux", () => {
     expect(totalExclusions({ "prix-nul": 2, "surface-absente": 3 })).toBe(5);
     expect(totalExclusions(4)).toBe(4);
     expect(totalExclusions(null)).toBeNull();
+  });
+});
+
+describe("Prix immobiliers — motifs codés rendus par l'API (liste fermée du modèle)", () => {
+  it("chaque motif de couche ou de produit que l'API peut rendre a son libellé ; aucun libellé orphelin", () => {
+    for (const m of MOTIFS_COUCHE_PRIX) expect(libelleMotifPrix(m), m).toMatchObject({ code: true });
+    expect(Object.keys(LIBELLES_MOTIF_PRIX).sort()).toEqual([...MOTIFS_COUCHE_PRIX].sort());
+    expect(libelleMotifPrix("aucune-source").texte).toBe("Aucune source enregistrée en base pour ce produit");
+    expect(libelleMotifPrix("aucune-publication").texte).toBe("Aucun instantané publié");
+    // Ancien code jamais rendu par l'API : plus de libellé (un texte non codé reste une donnée du registre).
+    expect(libelleMotifPrix("aucun-instantane")).toEqual({ texte: "aucun-instantane", code: false });
+  });
+  it("chaque motif de comparaison a son libellé ; motif absent signalé", () => {
+    expect(Object.keys(LIBELLES_MOTIF_COMPARAISON).sort()).toEqual([...MOTIFS_COMPARAISON_PRIX].sort());
+    expect(libelleMotifComparaison("aucune-reference-officielle")).toBe("Aucune référence officielle disponible pour ce territoire et cette cohorte");
+    expect(libelleMotifComparaison(undefined)).toBe("Motif non précisé par le serveur");
+  });
+});
+
+describe("Prix immobiliers — lien d'export (capacité « prix-exporter » du serveur)", () => {
+  it("seule la capacité prix-exporter rendue par GET /prix/couches ouvre l'export ; la capacité générique « exporter » ne suffit pas", () => {
+    expect(peutExporterPrix(["prix-consulter", "prix-exporter"])).toBe(true);
+    expect(peutExporterPrix(["exporter", "prix-consulter"])).toBe(false);
+    expect(peutExporterPrix([])).toBe(false);
+    expect(peutExporterPrix(null)).toBe(false);
+  });
+  it("la fiche ne lit plus la capacité de l'espace pour les prix", () => {
+    const ici = dirname(fileURLToPath(import.meta.url));
+    const section = readFileSync(join(ici, "PrixImmobiliers.tsx"), "utf8");
+    expect(section).toMatch(/peutExporterPrix\(capacites\)/);
+    expect(section).toMatch(/api\.prixCouches\(\)/);
+    expect(readFileSync(join(ici, "FicheTerritoriale.tsx"), "utf8")).not.toMatch(/peutExporter/);
+    expect(readFileSync(join(ici, "..", "PageGeoData.tsx"), "utf8")).not.toMatch(/peutExporter/);
+  });
+});
+
+describe("Prix immobiliers — prix au m² abrégé", () => {
+  it("≈ aussi pour le prix au m² quand l'éditeur l'abrège", () => {
+    expect(formaterMontantPrix({ valeur: 18_500, approximatif: true, texte: "18,5K DH" })).toMatchObject({ approximatif: true, texte: expect.stringMatching(/^≈ /) });
+    expect(formaterMontantPrix({ valeur: 18_548, approximatif: false, texte: "18 548 DH" }).approximatif).toBe(false);
   });
 });
 

@@ -109,6 +109,10 @@ export interface CellulePrixRecue {
 export interface CellulesPrixRecues { instantane: { id: string; empreinte: string; methode: string; publieLe: string } | null; etat: string; motif?: string | null; cellules: CellulePrixRecue[] }
 export interface ComparaisonPrixRecue {
   comparable: boolean; dimensionsIncompatibles?: string[]; ecartPourcent?: number | null; position?: "en-dessous" | "dans" | "au-dessus" | null; libelle?: string | null;
+  /** Motif codé d'une comparaison refusée (`aucune-reference-officielle`, `aucune-valeur-marche`, `dimensions-incompatibles`). */
+  motif?: string | null;
+  /** Couche en cause quand une des deux valeurs manque : son état et son motif codé (ex. couche officielle non autorisée). */
+  coucheEnCause?: { couche: "officielle" | "annonces"; etat: string; motif: string | null; detail: string | null } | null;
 }
 /** Douar du RGPH 2024 : nom et fraction tels que publiés (en arabe) ; secret = pourcentages supprimés par le HCP. */
 export interface DouarRecu {
@@ -221,7 +225,7 @@ export const api = {
   exporter: (carteId: string, revisionAttendue: number, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, revisionAttendue, analyseIds }),
   // Prix immobiliers (lot P7) : registre des sources, état des deux couches, agrégats publiés, instantané, comparaison.
   prixSources: () => appeler<{ sources: SourcePrixRecue[]; dossier: string | null }>("/prix/sources"),
-  prixCouches: () => appeler<{ couches: CouchePrixRecue[] }>("/prix/couches"),
+  prixCouches: () => appeler<{ couches: CouchePrixRecue[]; capacites: string[] }>("/prix/couches"),
   prixAgregats: (code: string) => appeler<{ editions: EditionPrixRecue[]; lignes: LignePrixRecue[] }>(`/prix/agregats-publies?code=${encodeURIComponent(code)}`),
   prixCellules: () => appeler<CellulesPrixRecues>("/prix/cellules"),
   prixComparaison: (code: string, type: string, transaction: string) =>
