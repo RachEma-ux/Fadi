@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { abregerValeur, indicateurPourCle, lireValeur, syntheseCouche, type CleIndicateur, formatNombre, controlerCoherence, estUniteDeCompte, grouperIndicateurs, LIBELLES_MILIEU, LIBELLES_SEXE, partDansEnsemble, tableauCroise, tableauVentilation, type FamilleIndicateurs } from "@parcours/geodata-model";
 import { api, type CoucheRecue, type DouarRecu, type FicheRecue, type LigneTable, type ProximiteCouche } from "../client";
 import { formaterValeur } from "./consultation";
+import { SectionPrixFiche } from "./PrixImmobiliers";
 
 type IndicateurFiche = FicheRecue["indicateurs"][number];
 
@@ -472,6 +473,7 @@ export function FicheObjet(p: {
             <dl className="gd-valeurs">{familles.filter((x) => x.theme === t).map((x) => <Famille key={`${x.theme}|${x.famille}`} f={x} />)}</dl>
           </details>
         ))}
+      <SectionPrixFiche fiche={f} />
       {p.subdivisions && p.indicateurActif && <SyntheseEntite fiche={f} s={p.subdivisions} cle={p.indicateurActif} />}
       {p.subdivisions && p.onFiche && <SubdivisionsDe parent={f.code} s={p.subdivisions} onFiche={p.onFiche} />}
       {p.proximite && <Proximite fiche={f} couches={p.proximite} onFiche={p.onFiche} />}

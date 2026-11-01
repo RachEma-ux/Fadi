@@ -3368,7 +3368,7 @@ CREATE TABLE IF NOT EXISTS geodata_fichiers (
 );
 CREATE INDEX IF NOT EXISTS geodata_fichiers_source ON geodata_fichiers (source_cle);
 ALTER TABLE geodata_fichiers DROP CONSTRAINT IF EXISTS geodata_fichiers_role_check;
-ALTER TABLE geodata_fichiers ADD CONSTRAINT geodata_fichiers_role_check CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration', 'reference', 'decoupage'));
+ALTER TABLE geodata_fichiers ADD CONSTRAINT geodata_fichiers_role_check CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration', 'reference', 'decoupage', 'prix', 'import-prix'));
 
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
@@ -3530,6 +3530,446 @@ ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_self_control b
 -- Évènement `approuver` du journal append-only : marque figée au moment de l'approbation (NULL pour les autres actions
 -- et pour les approbations antérieures au lot).
 ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS self_control boolean;
+
+-- ---------------------------------------------------------------------------
+-- GeoData — Prix immobiliers (Fadi Concept Prix v1.1, Plan §4, lots P2 à P6). Tables dédiées `geodata_prix_*` de la base
+-- existante, additives et rejouables ; aucune table existante n'est réécrite. Interface ≠ base de données (D-GD-29) :
+-- registre des sources, agrégats publiés, éditions, lots, observations, rattachements, instantanés et publications
+-- vivent ici, chargés par la chaîne d'import et lus par l'API. Montants en `numeric` (décimal exact) avec monnaie et
+-- unité explicites ; une valeur absente est NULL (avec son état), jamais 0. Les territoires référencent la hiérarchie
+-- administrative en base (`geodata_entites_administratives`) par leur code, sans la copier.
+-- ---------------------------------------------------------------------------
+-- Fichiers archivés : rôles « prix » (registre des sources livré, `prix/`) et « import-prix » (fichier d'observations
+-- reçu par l'API, archivé tel quel, jamais marqué retiré par l'archive des fichiers livrés) : contrainte de
+-- `geodata_fichiers` plus haut.
+
+-- Registre des sources de prix (PRIX-SOURCES.md, `prix/prix-sources.json`) : une ligne par source, chargée par la chaîne
+-- d'import (même empreinte → rien n'est réécrit). Un changement de statut est journalisé (`geodata_journal`,
+-- action `prix.source.statut`, avant / après / origine) : l'historique n'est jamais effacé. `statut_origine` dit qui a
+-- posé le statut courant : le registre livré ou l'administration (une suspension décidée par l'administrateur n'est
+-- pas levée par un rechargement du registre).
+CREATE TABLE IF NOT EXISTS geodata_prix_sources (
+  cle text PRIMARY KEY CHECK (cle ~ '^[a-z0-9][a-z0-9-]{1,79}$'),
+  titre text NOT NULL,
+  couche text NOT NULL CHECK (couche IN ('officielle', 'annonces')),
+  produit text NOT NULL CHECK (produit IN ('agregat-publie', 'observations', 'valeurs-officielles', 'contexte-indice', 'contexte-transactions')),
+  statut text NOT NULL CHECK (statut IN ('candidate', 'qualifiee', 'autorisee', 'active', 'bloquee', 'suspendue', 'retiree')),
+  statut_origine text NOT NULL DEFAULT 'registre' CHECK (statut_origine IN ('registre', 'administration')),
+  editeur text NOT NULL,
+  url text,
+  licence text,
+  motif text,
+  prochaine_action text,
+  derivee boolean NOT NULL DEFAULT false,
+  fiche_geodata text,
+  revue_le date,
+  revue_avant date,
+  responsable text,
+  dossier text,
+  fichier_chemin text REFERENCES geodata_fichiers (chemin),
+  empreinte_registre text CHECK (empreinte_registre IS NULL OR empreinte_registre ~ '^[0-9a-f]{64}$'),
+  version_registre text,
+  charge_le timestamptz NOT NULL DEFAULT now(),
+  modifie_par text REFERENCES users (id) ON DELETE SET NULL,
+  modifie_le timestamptz
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_sources_fiche ON geodata_prix_sources (fiche_geodata);
+
+-- Agrégats publiés par un tiers (Concept §4, Plan §5 : baromètre FeenWay) : annexe `prixPublies` d'une version GeoData,
+-- valeurs reprises TELLES QUE PUBLIÉES (jamais recalculées), édition = version (immuable). Niveau ville rattaché à
+-- l'objet de la couche ; quartiers commerciaux non rattachés (code NULL, PRX06) tant qu'aucune correspondance revue.
+CREATE TABLE IF NOT EXISTS geodata_prix_agregats_publies (
+  version_id text NOT NULL REFERENCES geodata_versions (id) ON DELETE CASCADE,
+  ordre integer NOT NULL CHECK (ordre >= 1),
+  editeur text NOT NULL,
+  ville text NOT NULL,
+  niveau_geo text NOT NULL CHECK (niveau_geo IN ('ville', 'quartier-commercial')),
+  libelle_geo text NOT NULL,
+  code_rattache text,
+  etat_rattachement text NOT NULL CHECK (etat_rattachement IN ('exact', 'non-rattache', 'ambigu')),
+  type_bien text NOT NULL CHECK (type_bien IN ('appartement', 'maison', 'villa', 'terrain', 'bureau', 'local-commercial', 'studio', 'immeuble', 'ferme', 'autre')),
+  type_bien_original text NOT NULL,
+  transaction text NOT NULL CHECK (transaction IN ('vente', 'location')),
+  nombre_annonces integer NOT NULL CHECK (nombre_annonces >= 0),
+  prix_median numeric CHECK (prix_median IS NULL OR prix_median >= 0),
+  prix_median_approximatif boolean,
+  prix_median_texte text NOT NULL DEFAULT '',
+  prix_m2 numeric CHECK (prix_m2 IS NULL OR prix_m2 >= 0),
+  prix_m2_texte text NOT NULL DEFAULT '',
+  unite text NOT NULL,
+  unite_m2 text NOT NULL,
+  tendance_90j numeric,
+  periode_debut date NOT NULL,
+  periode_fin date NOT NULL,
+  periode text NOT NULL,
+  source_url text NOT NULL DEFAULT '',
+  licence text NOT NULL DEFAULT '',
+  PRIMARY KEY (version_id, ordre),
+  CONSTRAINT geodata_prix_agregats_rattachement CHECK ((etat_rattachement = 'exact') = (code_rattache IS NOT NULL)),
+  CONSTRAINT geodata_prix_agregats_approx CHECK ((prix_median IS NULL) = (prix_median_approximatif IS NULL)),
+  CONSTRAINT geodata_prix_agregats_periode CHECK (periode_debut <= periode_fin)
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_agregats_code ON geodata_prix_agregats_publies (code_rattache, version_id);
+-- Figés avec leur version : écrits seulement pendant la préparation.
+CREATE OR REPLACE FUNCTION geodata_prix_agregats_figes() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  v text;
+BEGIN
+  SELECT etat INTO v FROM geodata_versions WHERE id = NEW.version_id;
+  IF v IS DISTINCT FROM 'preparation' THEN RAISE EXCEPTION 'geodata_contenu_fige'; END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_agregats_figes BEFORE INSERT OR UPDATE ON geodata_prix_agregats_publies FOR EACH ROW EXECUTE FUNCTION geodata_prix_agregats_figes();
+
+-- Éditions d'une source (observations d'annonces, valeurs officielles) : une édition n'est jamais présumée en vigueur
+-- parce qu'elle est la dernière importée (`validite`, couche officielle). Les agrégats publiés ont pour édition leur
+-- version GeoData (`geodata_prix_agregats_publies.version_id`).
+CREATE TABLE IF NOT EXISTS geodata_prix_editions (
+  id text PRIMARY KEY,
+  source_cle text NOT NULL REFERENCES geodata_prix_sources (cle) ON DELETE CASCADE,
+  couche text NOT NULL CHECK (couche IN ('officielle', 'annonces')),
+  produit text NOT NULL CHECK (produit IN ('observations', 'valeurs-officielles')),
+  libelle text NOT NULL CHECK (length(btrim(libelle)) BETWEEN 2 AND 200),
+  date_debut date,
+  date_fin date,
+  url_origine text,
+  etat text NOT NULL DEFAULT 'active' CHECK (etat IN ('active', 'suspendue', 'retiree')),
+  validite text CHECK (validite IS NULL OR validite IN ('verifiee', 'non-verifiee', 'historique')),
+  revue text NOT NULL DEFAULT 'a-revoir' CHECK (revue IN ('a-revoir', 'revue', 'refusee')),
+  cree_par text REFERENCES users (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (source_cle, libelle),
+  CONSTRAINT geodata_prix_editions_validite CHECK ((couche = 'officielle') = (validite IS NOT NULL)),
+  CONSTRAINT geodata_prix_editions_dates CHECK (date_debut IS NULL OR date_fin IS NULL OR date_debut <= date_fin)
+);
+
+-- Lots d'import : fichier d'origine archivé (`geodata_fichiers`), empreinte, version de l'analyseur et clé d'idempotence
+-- (SHA-256 du fichier + version de l'analyseur + source) : le même fichier importé deux fois ne crée rien (PRX02).
+CREATE TABLE IF NOT EXISTS geodata_prix_lots (
+  id text PRIMARY KEY,
+  edition_id text NOT NULL REFERENCES geodata_prix_editions (id) ON DELETE CASCADE,
+  source_cle text NOT NULL REFERENCES geodata_prix_sources (cle) ON DELETE CASCADE,
+  cle_idempotence text NOT NULL UNIQUE,
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  version_analyseur text NOT NULL,
+  format text NOT NULL CHECK (format IN ('csv', 'json')),
+  fichier_chemin text NOT NULL REFERENCES geodata_fichiers (chemin),
+  etat text NOT NULL CHECK (etat IN ('valide', 'echec')),
+  lignes_lues integer NOT NULL DEFAULT 0 CHECK (lignes_lues >= 0),
+  admises integer NOT NULL DEFAULT 0 CHECK (admises >= 0),
+  quarantaine integer NOT NULL DEFAULT 0 CHECK (quarantaine >= 0),
+  nouvelles integer NOT NULL DEFAULT 0 CHECK (nouvelles >= 0),
+  deja_presentes integer NOT NULL DEFAULT 0 CHECK (deja_presentes >= 0),
+  rattachees integer NOT NULL DEFAULT 0 CHECK (rattachees >= 0),
+  erreurs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  cree_par text REFERENCES users (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+
+-- Zones officielles : géométrie d'origine (WGS 84) et CRS déclaré, ou description textuelle seule ; une zone décrite
+-- en texte attend la revue de son interprétation spatiale (file de revue) et reste consultable en tableau.
+CREATE TABLE IF NOT EXISTS geodata_prix_zones (
+  id text PRIMARY KEY,
+  edition_id text NOT NULL REFERENCES geodata_prix_editions (id) ON DELETE CASCADE,
+  zone_code text NOT NULL,
+  libelle text,
+  geom geometry(MultiPolygon, 4326),
+  crs_origine text,
+  description_textuelle text,
+  territoire_code text,
+  revue text NOT NULL DEFAULT 'a-revoir' CHECK (revue IN ('a-revoir', 'validee', 'refusee')),
+  UNIQUE (edition_id, zone_code),
+  CONSTRAINT geodata_prix_zones_description CHECK (geom IS NOT NULL OR description_textuelle IS NOT NULL),
+  CONSTRAINT geodata_prix_zones_crs CHECK (geom IS NULL OR crs_origine IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_zones_geom ON geodata_prix_zones USING gist (geom);
+-- Valeurs officielles, sans transformation : valeur unique, fourchette, couple terrain + construction ou valeur
+-- conditionnelle ; texte d'origine toujours conservé.
+CREATE TABLE IF NOT EXISTS geodata_prix_valeurs_officielles (
+  id text PRIMARY KEY,
+  edition_id text NOT NULL REFERENCES geodata_prix_editions (id) ON DELETE CASCADE,
+  zone_id text NOT NULL REFERENCES geodata_prix_zones (id) ON DELETE CASCADE,
+  lot_id text REFERENCES geodata_prix_lots (id) ON DELETE SET NULL,
+  categorie_originale text NOT NULL,
+  type_bien text NOT NULL CHECK (type_bien IN ('appartement', 'maison', 'villa', 'terrain', 'bureau', 'local-commercial', 'studio', 'immeuble', 'ferme', 'autre')),
+  etat_bien text CHECK (etat_bien IS NULL OR etat_bien IN ('ancien', 'recent', 'neuf')),
+  transaction text NOT NULL CHECK (transaction IN ('vente', 'location')),
+  base_surface text NOT NULL CHECK (base_surface IN ('habitable', 'construite', 'vendable', 'parcelle', 'inconnue')),
+  forme text NOT NULL CHECK (forme IN ('unique', 'fourchette', 'terrain-construction', 'conditionnelle')),
+  valeur numeric,
+  valeur_min numeric,
+  valeur_max numeric,
+  valeur_terrain numeric,
+  valeur_construction numeric,
+  condition text,
+  texte_original text NOT NULL,
+  monnaie text NOT NULL CHECK (monnaie ~ '^[A-Z]{3}$'),
+  unite text NOT NULL,
+  date_debut date NOT NULL,
+  date_fin date,
+  page_ou_ligne text,
+  validite text NOT NULL CHECK (validite IN ('verifiee', 'non-verifiee', 'historique')),
+  CONSTRAINT geodata_prix_valeurs_officielles_forme CHECK (
+    (forme = 'unique' AND valeur > 0 AND valeur_min IS NULL AND valeur_max IS NULL AND valeur_terrain IS NULL AND valeur_construction IS NULL AND condition IS NULL)
+    OR (forme = 'fourchette' AND valeur IS NULL AND valeur_min > 0 AND valeur_max >= valeur_min AND valeur_terrain IS NULL AND valeur_construction IS NULL AND condition IS NULL)
+    OR (forme = 'terrain-construction' AND valeur IS NULL AND valeur_min IS NULL AND valeur_max IS NULL AND valeur_terrain > 0 AND valeur_construction > 0 AND condition IS NULL)
+    OR (forme = 'conditionnelle' AND valeur > 0 AND valeur_min IS NULL AND valeur_max IS NULL AND valeur_terrain IS NULL AND valeur_construction IS NULL AND length(btrim(coalesce(condition, ''))) > 0)
+  ),
+  CONSTRAINT geodata_prix_valeurs_officielles_dates CHECK (date_fin IS NULL OR date_debut <= date_fin)
+);
+
+-- Observations d'annonces admises (montants d'origine et normalisés, aucune donnée personnelle) ; unicité par source,
+-- identifiant d'annonce et date d'observation (Plan §4).
+CREATE TABLE IF NOT EXISTS geodata_prix_observations (
+  id bigserial PRIMARY KEY,
+  lot_id text NOT NULL REFERENCES geodata_prix_lots (id) ON DELETE CASCADE,
+  source_cle text NOT NULL REFERENCES geodata_prix_sources (cle) ON DELETE CASCADE,
+  annonce_id text NOT NULL CHECK (length(annonce_id) BETWEEN 1 AND 200),
+  observe_le date NOT NULL,
+  transaction text NOT NULL CHECK (transaction IN ('vente', 'location')),
+  type_bien text NOT NULL CHECK (type_bien IN ('appartement', 'maison', 'villa', 'terrain', 'bureau', 'local-commercial', 'studio', 'immeuble', 'ferme', 'autre')),
+  etat_bien text CHECK (etat_bien IS NULL OR etat_bien IN ('ancien', 'recent', 'neuf')),
+  prix_original text NOT NULL,
+  prix numeric NOT NULL CHECK (prix > 0),
+  monnaie text NOT NULL CHECK (monnaie ~ '^[A-Z]{3}$'),
+  periode text NOT NULL CHECK (periode IN ('total', 'jour', 'semaine', 'mois', 'an')),
+  surface_originale text NOT NULL,
+  surface numeric NOT NULL CHECK (surface > 0),
+  base_surface text NOT NULL CHECK (base_surface IN ('habitable', 'construite', 'vendable', 'parcelle', 'inconnue')),
+  libelle_localite text NOT NULL,
+  precision_niveau text,
+  empreinte_contenu text,
+  CONSTRAINT geodata_prix_observations_uniq UNIQUE (source_cle, annonce_id, observe_le)
+);
+-- Lignes refusées : tous leurs motifs (codes stables de la validation), ligne du fichier, colonnes documentées seulement.
+CREATE TABLE IF NOT EXISTS geodata_prix_quarantaine (
+  id bigserial PRIMARY KEY,
+  lot_id text NOT NULL REFERENCES geodata_prix_lots (id) ON DELETE CASCADE,
+  ligne integer NOT NULL CHECK (ligne >= 1),
+  annonce_id text,
+  motifs text[] NOT NULL CHECK (cardinality(motifs) > 0),
+  donnees jsonb NOT NULL
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_quarantaine_lot ON geodata_prix_quarantaine (lot_id, ligne);
+
+-- Rattachement territorial d'une observation : code et niveau du territoire en base, édition du découpage, précision
+-- de la source, méthode ; jamais plus fin que la précision déclarée (PRX06). Un rattachement ambigu ou absent garde
+-- son motif et attend la revue.
+CREATE TABLE IF NOT EXISTS geodata_prix_rattachements (
+  observation_id bigint PRIMARY KEY REFERENCES geodata_prix_observations (id) ON DELETE CASCADE,
+  resultat text NOT NULL CHECK (resultat IN ('exact', 'ambigu', 'non-rattache')),
+  pays text,
+  territoire_code text,
+  territoire_niveau text,
+  methode text CHECK (methode IS NULL OR methode IN ('nom', 'alias', 'revue')),
+  motif text,
+  candidats jsonb NOT NULL DEFAULT '[]'::jsonb,
+  decoupage text,
+  revue text NOT NULL DEFAULT 'automatique' CHECK (revue IN ('automatique', 'a-revoir', 'validee')),
+  CONSTRAINT geodata_prix_rattachements_exact CHECK ((resultat = 'exact') = (territoire_code IS NOT NULL))
+);
+
+-- Décisions revues sur une paire d'annonces (fusion ou séparation) : en ajout seulement, rejouées à chaque
+-- construction ; une correction produit un nouvel instantané, jamais une sortie historique modifiée.
+CREATE TABLE IF NOT EXISTS geodata_prix_decisions_doublons (
+  id bigserial PRIMARY KEY,
+  annonce_a text NOT NULL,
+  annonce_b text NOT NULL,
+  decision text NOT NULL CHECK (decision IN ('fusion', 'separation')),
+  motif text NOT NULL CHECK (length(btrim(motif)) >= 3),
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  decide_le timestamptz NOT NULL DEFAULT clock_timestamp(),
+  CONSTRAINT geodata_prix_decisions_paire CHECK (annonce_a < annonce_b)
+);
+
+-- Instantanés : construction candidate immuable (identifiant, empreinte SHA-256 reproductible, manifeste des entrées,
+-- version de méthode, paramètres, sources, lots, découpage). Seul l'état change ensuite (candidat → validé à sa première
+-- publication) ; une même entrée et une même méthode redonnent la même empreinte, donc le même instantané (PRX12).
+CREATE TABLE IF NOT EXISTS geodata_prix_instantanes (
+  id text PRIMARY KEY,
+  couche text NOT NULL CHECK (couche IN ('officielle', 'annonces')),
+  produit text NOT NULL CHECK (produit IN ('observations', 'valeurs-officielles')),
+  empreinte text NOT NULL UNIQUE CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  empreinte_manifeste text NOT NULL CHECK (empreinte_manifeste ~ '^[0-9a-f]{64}$'),
+  manifeste jsonb NOT NULL,
+  methode_version text NOT NULL,
+  parametres jsonb NOT NULL,
+  sources text[] NOT NULL,
+  lots text[] NOT NULL,
+  decoupage text,
+  rapport jsonb NOT NULL DEFAULT '{}'::jsonb,
+  etat text NOT NULL DEFAULT 'candidat' CHECK (etat IN ('candidat', 'valide')),
+  cree_par text REFERENCES users (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE OR REPLACE FUNCTION geodata_prix_instantane_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'geodata_prix_instantane_immuable'; END IF;
+  IF (to_jsonb(NEW) - ARRAY['etat', 'cree_par']) <> (to_jsonb(OLD) - ARRAY['etat', 'cree_par'])
+     OR (NEW.cree_par IS DISTINCT FROM OLD.cree_par AND NEW.cree_par IS NOT NULL)
+     OR (OLD.etat = 'valide' AND NEW.etat <> 'valide') THEN
+    RAISE EXCEPTION 'geodata_prix_instantane_immuable';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_instantanes_immuables BEFORE UPDATE OR DELETE ON geodata_prix_instantanes
+  FOR EACH ROW EXECUTE FUNCTION geodata_prix_instantane_immuable();
+-- Biens (grappes d'annonces) d'un instantané : lignée complète, liens appliqués (empreinte ou décision revue).
+CREATE TABLE IF NOT EXISTS geodata_prix_biens (
+  instantane_id text NOT NULL REFERENCES geodata_prix_instantanes (id) ON DELETE CASCADE,
+  bien_id text NOT NULL,
+  annonces text[] NOT NULL,
+  liens jsonb NOT NULL,
+  PRIMARY KEY (instantane_id, bien_id)
+);
+-- Tous les biens de l'instantané (une annonce ou plus) : base des liens bien ↔ observation ci-dessous.
+ALTER TABLE geodata_prix_biens DROP CONSTRAINT IF EXISTS geodata_prix_biens_annonces_check;
+ALTER TABLE geodata_prix_biens ADD CONSTRAINT geodata_prix_biens_annonces_check CHECK (cardinality(annonces) >= 1);
+-- Liens bien ↔ observation (Plan §4, `geodata_prix_biens_observations`) : chaque observation lue par l'instantané est
+-- liée à son bien, avec la méthode (`identifiant` : une seule annonce ; `empreinte` : rapprochement inter-sources par
+-- empreinte égale ; `decision` : fusion revue) et la catégorie de confiance. Figés avec l'instantané (lignée).
+CREATE TABLE IF NOT EXISTS geodata_prix_biens_observations (
+  instantane_id text NOT NULL,
+  bien_id text NOT NULL,
+  observation_id bigint NOT NULL REFERENCES geodata_prix_observations (id),
+  annonce text NOT NULL,
+  methode text NOT NULL CHECK (methode IN ('identifiant', 'empreinte', 'decision')),
+  confiance text NOT NULL CHECK (confiance IN ('certaine', 'forte', 'revue')),
+  PRIMARY KEY (instantane_id, observation_id),
+  FOREIGN KEY (instantane_id, bien_id) REFERENCES geodata_prix_biens (instantane_id, bien_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_biens_observations_bien ON geodata_prix_biens_observations (instantane_id, bien_id);
+-- Cellules d'un instantané : cohorte explicite, médiane et quartiles (type 7) ou échantillon insuffisant sans valeur,
+-- effectifs, exclusions, contribution des sources ; `cles_retenues` (lignée) n'est jamais servie à la consultation.
+CREATE TABLE IF NOT EXISTS geodata_prix_cellules (
+  instantane_id text NOT NULL REFERENCES geodata_prix_instantanes (id) ON DELETE CASCADE,
+  cle text NOT NULL,
+  territoire_code text NOT NULL,
+  niveau text NOT NULL,
+  transaction text NOT NULL CHECK (transaction IN ('vente', 'location')),
+  type_bien text NOT NULL,
+  etat_bien text,
+  base_surface text NOT NULL,
+  periode text NOT NULL,
+  monnaie text NOT NULL,
+  unite text NOT NULL,
+  etat text NOT NULL CHECK (etat IN ('disponible', 'echantillon-insuffisant')),
+  mediane numeric,
+  q1 numeric,
+  q3 numeric,
+  brutes integer NOT NULL,
+  eligibles integer NOT NULL,
+  distinctes integer NOT NULL,
+  exclusions jsonb NOT NULL,
+  contribution_sources jsonb NOT NULL,
+  atypiques integer NOT NULL DEFAULT 0,
+  mediane_hors_atypiques numeric,
+  premiere_observation date,
+  derniere_observation date,
+  cles_retenues text[] NOT NULL,
+  PRIMARY KEY (instantane_id, cle),
+  CONSTRAINT geodata_prix_cellules_valeur CHECK ((etat = 'disponible') = (mediane IS NOT NULL) AND (mediane IS NULL) = (q1 IS NULL) AND (mediane IS NULL) = (q3 IS NULL))
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_cellules_territoire ON geodata_prix_cellules (instantane_id, territoire_code);
+CREATE OR REPLACE FUNCTION geodata_prix_contenu_instantane_fige() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'geodata_prix_instantane_immuable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_cellules_figees BEFORE UPDATE OR DELETE ON geodata_prix_cellules FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
+CREATE OR REPLACE TRIGGER geodata_prix_biens_figes BEFORE UPDATE OR DELETE ON geodata_prix_biens FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
+CREATE OR REPLACE TRIGGER geodata_prix_biens_observations_figes BEFORE UPDATE OR DELETE ON geodata_prix_biens_observations FOR EACH ROW EXECUTE FUNCTION geodata_prix_contenu_instantane_fige();
+
+-- Publications : un seul pointeur actif par couche et produit (index unique partiel), instantané précédent, approbateur,
+-- motif, portée des droits ; publication, retour arrière et retrait sont des événements en ajout seulement (seule la
+-- désactivation du pointeur courant est permise). Une publication concurrente ou périmée est refusée (409), le refus
+-- consigné au journal ; l'instantané précédent reste servi (PRX11).
+CREATE TABLE IF NOT EXISTS geodata_prix_publications (
+  id bigserial PRIMARY KEY,
+  couche text NOT NULL CHECK (couche IN ('officielle', 'annonces')),
+  produit text NOT NULL CHECK (produit IN ('observations', 'valeurs-officielles')),
+  action text NOT NULL CHECK (action IN ('publication', 'retour', 'retrait')),
+  instantane_id text REFERENCES geodata_prix_instantanes (id),
+  precedent_id text REFERENCES geodata_prix_instantanes (id),
+  active boolean NOT NULL,
+  approuve_par text REFERENCES users (id) ON DELETE SET NULL,
+  motif text NOT NULL CHECK (length(btrim(motif)) >= 3),
+  portee_droits jsonb NOT NULL DEFAULT '{}'::jsonb,
+  le timestamptz NOT NULL DEFAULT clock_timestamp(),
+  desactivee_le timestamptz,
+  CONSTRAINT geodata_prix_publications_active CHECK (NOT active OR (action <> 'retrait' AND instantane_id IS NOT NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_prix_publications_active_uniq ON geodata_prix_publications (couche, produit) WHERE active;
+CREATE OR REPLACE FUNCTION geodata_prix_publication_ajout_seul() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'geodata_prix_publication_ajout_seul'; END IF;
+  IF (to_jsonb(NEW) - ARRAY['active', 'desactivee_le', 'approuve_par']) <> (to_jsonb(OLD) - ARRAY['active', 'desactivee_le', 'approuve_par'])
+     OR (NEW.approuve_par IS DISTINCT FROM OLD.approuve_par AND NEW.approuve_par IS NOT NULL)
+     OR (NEW.active AND NOT OLD.active) THEN
+    RAISE EXCEPTION 'geodata_prix_publication_ajout_seul';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_publications_ajout_seul BEFORE UPDATE OR DELETE ON geodata_prix_publications
+  FOR EACH ROW EXECUTE FUNCTION geodata_prix_publication_ajout_seul();
+
+-- Sources amont d'une source dérivée (agrégateur) : clés du registre ; une source dérivée n'est jamais combinée avec
+-- une autre source dans un instantané.
+ALTER TABLE geodata_prix_sources ADD COLUMN IF NOT EXISTS amont text[] NOT NULL DEFAULT '{}';
+-- Zone officielle : territoire proposé par le fichier importé, gardé à part ; `territoire_code` n'est posé que par une
+-- décision de revue validée (jamais d'office).
+ALTER TABLE geodata_prix_zones ADD COLUMN IF NOT EXISTS territoire_propose text;
+-- Indicateur d'abréviation du prix au m² publié (≈), comme pour le prix médian ; NULL quand aucun prix au m² n'est publié.
+ALTER TABLE geodata_prix_agregats_publies ADD COLUMN IF NOT EXISTS prix_m2_approximatif boolean;
+
+-- Revue des rattachements d'observations (file `a-revoir`) : décision validée (territoire choisi, jamais plus fin que la
+-- précision de la source) ou refusée ; auteur, date et motif conservés, et chaque décision journalisée en ajout seul.
+ALTER TABLE geodata_prix_rattachements DROP CONSTRAINT IF EXISTS geodata_prix_rattachements_revue_check;
+ALTER TABLE geodata_prix_rattachements ADD CONSTRAINT geodata_prix_rattachements_revue_check CHECK (revue IN ('automatique', 'a-revoir', 'validee', 'refusee'));
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_par text REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_le timestamptz;
+ALTER TABLE geodata_prix_rattachements ADD COLUMN IF NOT EXISTS revue_motif text;
+
+-- Décisions de revue des rattachements (observations, zones officielles et libellés de localité publiés), en ajout
+-- seul. `cible` : `observation` (rattachement d'une observation), `zone` (attribution d'une zone officielle à un
+-- territoire, Concept §3) ou `libelle` (libellé d'un agrégat publié, ex. quartier commercial FeenWay → unité administrative). Une correspondance n'est JAMAIS créée automatiquement : seule une décision
+-- `validee` d'un réviseur rattache un libellé ; la plus récente décision d'un même libellé l'emporte.
+CREATE TABLE IF NOT EXISTS geodata_prix_decisions_rattachement (
+  id bigserial PRIMARY KEY,
+  cible text NOT NULL CHECK (cible IN ('observation', 'libelle', 'zone')),
+  observation_id bigint REFERENCES geodata_prix_observations (id),
+  zone_id text REFERENCES geodata_prix_zones (id),
+  source_cle text REFERENCES geodata_prix_sources (cle),
+  ville_normalisee text,
+  libelle_normalise text,
+  libelle text,
+  decision text NOT NULL CHECK (decision IN ('validee', 'refusee')),
+  pays text,
+  territoire_code text,
+  territoire_niveau text,
+  decoupage text,
+  motif text NOT NULL CHECK (length(btrim(motif)) >= 3),
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  decide_le timestamptz NOT NULL DEFAULT clock_timestamp(),
+  CONSTRAINT geodata_prix_decisions_rattachement_cible CHECK (
+    (cible = 'observation' AND observation_id IS NOT NULL AND zone_id IS NULL AND source_cle IS NULL)
+    OR (cible = 'zone' AND zone_id IS NOT NULL AND observation_id IS NULL AND source_cle IS NULL)
+    OR (cible = 'libelle' AND observation_id IS NULL AND zone_id IS NULL AND source_cle IS NOT NULL AND libelle_normalise IS NOT NULL AND ville_normalisee IS NOT NULL)
+  ),
+  CONSTRAINT geodata_prix_decisions_rattachement_territoire CHECK ((decision = 'validee') = (territoire_code IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS geodata_prix_decisions_rattachement_libelle ON geodata_prix_decisions_rattachement (source_cle, ville_normalisee, libelle_normalise, decide_le DESC);
+CREATE OR REPLACE FUNCTION geodata_prix_decision_ajout_seul() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND (to_jsonb(NEW) - 'auteur_id') = (to_jsonb(OLD) - 'auteur_id') AND NEW.auteur_id IS NULL THEN RETURN NEW; END IF;
+  RAISE EXCEPTION 'geodata_prix_decision_ajout_seul';
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_prix_decisions_rattachement_ajout_seul BEFORE UPDATE OR DELETE ON geodata_prix_decisions_rattachement
+  FOR EACH ROW EXECUTE FUNCTION geodata_prix_decision_ajout_seul();
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à

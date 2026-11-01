@@ -12,7 +12,9 @@
  * depuis `decoupage/<pays>.json`, lancé une fois par l'exploitant sur le serveur — jamais au démarrage de l'API ; relancé
  * sur le même fichier, il ne fait rien ; bilan affiché (ajoutées, modifiées, retirées, sans parent).
  * `--archiver` (seul, ou avec `--fiche toutes`) copie d'abord en base tous les fichiers livrés, tels quels (`geodata_fichiers`,
- * D-GD-29 : l'interface ne garde aucune donnée) ; aucun compte n'est requis.
+ * D-GD-29 : l'interface ne garde aucune donnée) ; aucun compte n'est requis. Il charge ensuite le registre des sources de
+ * prix immobiliers (`prix/prix-sources.json` → `geodata_prix_sources`, idempotent) ; `--prix-sources` fait ces deux
+ * étapes seules.
  * `--livraison` (D-GD-29, à la place de `--preparateur` / `--publier-par`) : les fiches livrées sont préparées et publiées
  * par la chaîne de livraison elle-même, sans compte (`preparee_par` et `publiee_par` nuls, journal « livraison ») — c'est
  * le mode du démarrage de l'API sans `GEODATA_IMPORT_AUTO_PAR` ; la responsabilité est celle du dépôt (fiche relue,
@@ -48,6 +50,8 @@ import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar 
 import { chargerTerritoires, NiveauAbsent } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 import { importerDecoupage, ligneBilanDecoupage } from "../lib/geodata/decoupage.js";
+import { lignesPrixDeLaCouche, lireAnnexePrix, type LignePrixPublie } from "../lib/geodata/prix/agregats.js";
+import { chargerRegistrePrix, ligneBilanRegistre } from "../lib/geodata/prix/registre.js";
 import { DOSSIER_PROVISOIRES, sourcesProvisoiresAdmises } from "../lib/geodata/provisoires.js";
 
 /** Sources provisoires admises sur cet environnement (D-GD-54, `GEODATA_SOURCES_PROVISOIRES=oui`). */
@@ -80,6 +84,11 @@ export interface FicheSource {
       concepts?: AnnexeFichier;
       /** Définition du tableau de bord (D-GD-37) : JSON validé par `validerDefinitionTableauDeBord` ; aucune valeur. */
       tableau?: AnnexeFichier;
+      /**
+       * Agrégats de prix publiés par un tiers (Concept Prix §4, baromètre FeenWay) : CSV d'en-tête `ENTETES_FEENWAY`,
+       * guillemets admis ; lignes de niveau ville rattachées à l'objet dont la propriété `ville_source` porte ce nom.
+       */
+      prixPublies?: AnnexeFichier;
     };
   };
   couche: {
@@ -289,6 +298,8 @@ async function archiver() {
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   try {
     console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches(), { provisoires: PROVISOIRES })));
+    // Registre des sources de prix (lot P2) : chargé après l'archive, qui en garde le fichier tel quel.
+    await registrePrix(pool);
     for (const chemin of fichesLivrees()) {
       try {
         const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
@@ -299,6 +310,22 @@ async function archiver() {
     }
   } finally {
     await pool.end();
+  }
+}
+
+/**
+ * Registre des sources de prix immobiliers (`prix/prix-sources.json`, PRIX-SOURCES.md) chargé dans `geodata_prix_sources`
+ * (même empreinte : rien n'est réécrit ; changements de statut journalisés). Une erreur est signalée sans arrêter la
+ * chaîne d'import des fiches.
+ */
+async function registrePrix(pool: Pool) {
+  const client = await pool.connect();
+  try {
+    console.log(ligneBilanRegistre(await chargerRegistrePrix(client, dossierFiches())));
+  } catch (e) {
+    console.error(`Registre des sources de prix non chargé : ${e instanceof Error ? e.message : e}`);
+  } finally {
+    client.release();
   }
 }
 
@@ -350,6 +377,16 @@ async function main() {
   }
   if (process.argv.includes("--archiver")) {
     await archiver();
+    if (!argFiche) return;
+  } else if (process.argv.includes("--prix-sources")) {
+    // `--prix-sources` : archive des fichiers livrés puis registre des sources de prix seulement.
+    const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
+    try {
+      console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches())));
+      await registrePrix(pool);
+    } finally {
+      await pool.end();
+    }
     if (!argFiche) return;
   }
   if (LIVRAISON && (preparateur || argument("publier-par"))) throw new Error("--livraison ne se combine pas avec --preparateur ni --publier-par.");
@@ -412,6 +449,9 @@ async function importer(chemin: string, preparateur: string | null) {
   const douars = lireDouars(fiche, chemin);
   const concepts = lireAnnexeJson(fiche.version.annexes?.concepts, chemin, "des concepts");
   const tableauBord = lireAnnexeJson(fiche.version.annexes?.tableau, chemin, "du tableau de bord");
+  // Agrégats de prix publiés (annexe `prixPublies`) : chemin contrôlé, empreinte calculée, lecture et validation
+  // (`lireAgregatsFeenway` : une ligne en erreur n'est jamais retenue, ses erreurs sont rapportées dans les contrôles).
+  const prix = fiche.version.annexes?.prixPublies ? lireAnnexePrix(fiche.version.annexes.prixPublies, dirname(chemin), fiche.version.libelle) : null;
   const listeConcepts = concepts ? lireConcepts(concepts.contenu) : null;
   let definitionBord: DefinitionTableauDeBord | null = null;
   if (tableauBord) {
@@ -419,13 +459,14 @@ async function importer(chemin: string, preparateur: string | null) {
     if (!d.ok) throw new Error(`Annexe du tableau de bord invalide : ${d.erreurs.slice(0, 5).join(" ; ")}`);
     definitionBord = d.definition;
   }
-  const lues = { douars: douars ?? undefined, concepts: concepts ?? undefined, tableau: tableauBord ?? undefined };
+  const lues = { douars: douars ?? undefined, concepts: concepts ?? undefined, tableau: tableauBord ?? undefined, prixPublies: prix ?? undefined };
   const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}${suiteAnnexes(lues, (x) => x.empreinte)}`).digest("hex") : empreinteFichier;
   let crsSource = "WGS 84 (CRS84)";
   let objets: ObjetImporte[] = [];
   let controles: Record<string, unknown> & { ok: boolean };
   let raster: { grille: GrilleRaster; description: DescriptionRaster } | undefined;
   let lecture = "GeoJSON ; géométries conservées en WGS 84 sans reprojection";
+  let lignesPrix: LignePrixPublie[] = [];
   if (/\.tiff?$/i.test(nomFichier)) {
     // Couche raster (D-GD-13) : GeoTIFF EPSG:4326, symbologie déclarée par la fiche (couche.raster).
     const decl = fiche.couche.raster;
@@ -458,17 +499,25 @@ async function importer(chemin: string, preparateur: string | null) {
     objets = v.ok ? [...v.objets] : [];
     const { doublons, manquants } = codesDesObjets(objets, fiche.couche.champCode);
     controles = {
-      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok) && (!douars || douars.ok) && (!concepts || concepts.ok) && (!tableauBord || tableauBord.ok),
+      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok) && (!douars || douars.ok) && (!concepts || concepts.ok) && (!tableauBord || tableauBord.ok)
+        && (!prix || (prix.ok && prix.lecture.erreurs.length === 0 && prix.lecture.agregats.length > 0)),
       empreinte: { attendue: fiche.version.empreinte, calculee: empreinteFichier, conforme: empreinteOk },
       ...(douars ? { douars: { fichier: fiche.version.annexes!.douars!.fichier, empreinte: douars.empreinte, conforme: douars.ok, lignes: douars.lignes.length } } : {}),
       ...(concepts ? { concepts: { fichier: fiche.version.annexes!.concepts!.fichier, empreinte: concepts.empreinte, conforme: concepts.ok, entrees: listeConcepts!.liste.length } } : {}),
       ...(tableauBord ? { tableauDeBord: { fichier: fiche.version.annexes!.tableau!.fichier, empreinte: tableauBord.empreinte, conforme: tableauBord.ok, blocs: definitionBord!.blocs.length } } : {}),
       ...(tableau ? { tableau: { fichier: fiche.version.tableau!.fichier, empreinte: tableau.empreinte, conforme: tableau.ok, lignes: tableau.lignes, colonnes: tableau.colonnes.size } } : {}),
+      ...(prix ? { prixPublies: { fichier: fiche.version.annexes!.prixPublies!.fichier, empreinte: prix.empreinte, conforme: prix.ok, lignesLues: prix.lecture.lignesLues, retenues: prix.lecture.agregats.length, erreurs: prix.lecture.erreurs.slice(0, 20) } } : {}),
       validation: v.rapport, codes: { champ: fiche.couche.champCode, doublons, manquants }, controleLe: new Date().toISOString(),
     };
     console.log(JSON.stringify({ fichier: nomFichier, objets: v.rapport.objets, sommets: v.rapport.sommets, controlesOk: controles.ok, empreinteOk, doublons: doublons.length, manquants, diagnostics: v.rapport.diagnostics.slice(0, 10) }, null, 2));
     if (!v.ok) throw new Error("Validation refusée : aucune version préparée.");
     if (doublons.length) throw new Error(`Codes en double (${doublons.slice(0, 5).join(", ")}) : aucune version préparée.`);
+    if (prix) {
+      if (prix.lecture.erreurs.length) console.error(`Agrégats de prix publiés : ${prix.lecture.erreurs.length} erreur(s), ex. ${JSON.stringify(prix.lecture.erreurs.slice(0, 3))}`);
+      // Rattachement des lignes de niveau ville à l'objet de la couche qui porte ce nom de ville (`ville_source`).
+      lignesPrix = lignesPrixDeLaCouche(prix.lecture, objets, codesDesObjets(objets, fiche.couche.champCode).codes);
+      console.log(`Agrégats de prix publiés : ${lignesPrix.length} ligne(s), ${lignesPrix.filter((l) => l.etatRattachement === "exact").length} rattachée(s), ${lignesPrix.filter((l) => l.etatRattachement !== "exact").length} non rattachée(s).`);
+    }
   }
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   const client = await pool.connect();
@@ -521,6 +570,7 @@ async function importer(chemin: string, preparateur: string | null) {
       ...(douars ? { douars: douars.lignes } : {}),
       ...(listeConcepts ? { concepts: listeConcepts } : {}),
       ...(definitionBord ? { tableauDeBord: definitionBord } : {}),
+      ...(lignesPrix.length ? { prixPublies: lignesPrix } : {}),
       ...(raster ? { raster } : {}),
     });
     await client.query("COMMIT");

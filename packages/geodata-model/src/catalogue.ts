@@ -28,6 +28,8 @@ export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
   { cle: "occupation-sol", libelle: "Occupation du sol", themes: ["occupation-sol"] },
   { cle: "sols", libelle: "Sols et pédologie", themes: ["sols"] },
   { cle: "geologie", libelle: "Géologie", themes: ["geologie"] },
+  // Prix immobiliers (Concept Prix v1.1, §5) : entrée propre du catalogue (agrégats publiés, couches de prix).
+  { cle: "prix-immobiliers", libelle: "Prix immobiliers", themes: ["prix-immobiliers"] },
   { cle: "personnelles", libelle: "Mes données importées", themes: ["donnees-personnelles"] },
   { cle: "test", libelle: "Jeux de test", themes: ["test"] },
 ];
@@ -35,7 +37,11 @@ export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
  * Catégories ajoutées après le premier semis (une base déjà semée les reçoit une fois, chacune avec son repère ; une
  * catégorie supprimée ensuite ne revient pas). D-GD-54 : « Immobilier et foncier » (prix des quartiers).
  */
-export const CATEGORIES_AJOUTEES: readonly { readonly cle: string; readonly decision: string }[] = [{ cle: "immobilier", decision: "D-GD-54" }];
+export const CATEGORIES_AJOUTEES: readonly { readonly cle: string; readonly decision: string }[] = [
+  { cle: "immobilier", decision: "D-GD-54" },
+  // Prix immobiliers (Concept Prix v1.1, §5 et Plan §7) : la couche FeenWay (thème `prix-immobiliers`) y est rangée.
+  { cle: "prix-immobiliers", decision: "D-GD-56" },
+];
 export const CATEGORIE_AUTRES: CategorieCatalogue = { cle: "autres", libelle: "Autres", themes: [] };
 
 export const RANGEMENT_PAR_DEFAUT: RangementCatalogue = { categories: CATEGORIES_CATALOGUE, affectations: new Map() };

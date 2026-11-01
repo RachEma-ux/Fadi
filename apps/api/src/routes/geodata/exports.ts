@@ -7,7 +7,8 @@
  */
 import { Router, type Request } from "express";
 import { LIBELLES_USAGES, lireDroits, PREFIXE_FOND_NAVIGATEUR, verifierUsage, type Composition } from "@parcours/geodata-model";
-import { erreur, espacePersonnel, fondsConfigures, introuvable, journal, requete } from "../../lib/geodata/acces.js";
+import { erreur, espacePersonnel, fondsConfigures, introuvable, journal, requete, rolesDe, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
+import { capacitesPrixDe } from "../../lib/geodata/prix/droits.js";
 import { newId } from "../../lib/ids.js";
 import { COLONNES_VERSION, lireVersion } from "./consultation.js";
 
@@ -70,13 +71,19 @@ exportsRouter.post("/exports", async (req, res) => {
   else if (!fond.export) refus.push({ coucheId: null, titre: fond.libelle, motif: "Les conditions de ce fond n'autorisent pas l'export ; choisissez le fond neutre." });
   const lignes = visibles.length ? await requete(
     `SELECT c.id AS couche_id, c.titre AS couche_titre, c.version_id, ${COLONNES_VERSION},
-            (v.etat = 'publiee' AND ((v.espace_id IS NULL AND v.droits->>'consultation' = 'autorise') OR v.espace_id = $1)) AS consultable
+            ${VERSION_CONSULTABLE("v", "$1")} AS consultable,
+            EXISTS (SELECT 1 FROM geodata_prix_sources ps WHERE ps.fiche_geodata = s.cle AND s.espace_id IS NULL) AS source_prix
        FROM geodata_couches c JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
       WHERE c.id = ANY($2)`, [espaceId, visibles.map((c) => c.coucheId)]) : [];
   const sources: LigneSource[] = [];
+  // Couche d'une source de prix (fiche du registre des prix, ex. baromètre FeenWay) : même droit que l'export des prix
+  // (`prix-exporter`, rôle GeoData) en plus du droit « export » de sa version — l'export de la carte et `/prix/export`
+  // obéissent ainsi à la même règle (choix documenté dans docs/geodata/README.md).
+  const peutExporterPrix = lignes.some((l) => l["source_prix"]) ? capacitesPrixDe(await rolesDe(req.user!.id)).has("prix-exporter") : true;
   for (const c of visibles) {
     const l = lignes.find((x) => x["couche_id"] === c.coucheId && x["version_id"] === c.versionId);
     if (!l || !l["consultable"]) { refus.push({ coucheId: c.coucheId, titre: (l?.["couche_titre"] as string) ?? c.coucheId, motif: "Couche indisponible (retirée ou inaccessible) : retirez-la de la carte avant d'exporter." }); continue; }
+    if (l["source_prix"] && !peutExporterPrix) { refus.push({ coucheId: c.coucheId, titre: l["couche_titre"] as string, motif: "Couche de prix immobiliers : export réservé aux rôles GeoData autorisés à exporter les prix." }); continue; }
     const d = verifierUsage(lireDroits(l["droits"]), "export");
     if (!d.ok) refus.push({ coucheId: c.coucheId, titre: l["couche_titre"] as string, motif: d.motif });
     else sources.push({ titre: l["couche_titre"] as string, version: lireVersion(l) });

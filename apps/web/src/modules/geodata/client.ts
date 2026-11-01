@@ -72,6 +72,49 @@ export interface FicheRecue {
   proprietes: Record<string, unknown>; indicateurs: (IndicateurRecu & ValeurRecue)[]; couche: CoucheRecue;
   /** Douars d'une commune rurale (lot E) ; vide ailleurs. */
   douars?: DouarRecu[];
+  /** Prix immobiliers publiés par un tiers et rattachés à l'objet (lot P7) ; null ou absent ailleurs. */
+  prixPublies?: PrixPubliesRecus | null;
+}
+
+// ——— Prix immobiliers (Concept Prix v1.1, lot P7) : tout est lu en base par l'API, rien n'est embarqué (D-GD-29). ———
+
+/** Édition d'un agrégat publié par un tiers (ex. baromètre d'un agrégateur) : éditeur, période, attribution, licence. */
+export interface EditionPrixRecue {
+  versionId: string; coucheId: string | null; editeur: string; libelle: string;
+  /** Période déclarée : texte, ou bornes AAAA-MM-JJ. */
+  periode: string | { debut: string; fin: string } | null;
+  attribution: string; licence: string; sourceUrl: string | null; publieeLe: string | null;
+}
+/** Montant tel que publié : valeur numérique, abréviation de l'éditeur (≈) et texte d'origine. */
+export interface MontantPublieRecu { valeur: number | null; approximatif?: boolean; texte?: string | null }
+export interface LignePrixRecue {
+  versionId: string; niveauGeo: "ville" | "quartier-commercial"; libelleGeo: string; codeRattache: string | null; etatRattachement: string | null;
+  typeBien: string; transaction: "vente" | "location"; nombreAnnonces: number | null;
+  prixMedian: MontantPublieRecu | null; prixM2: MontantPublieRecu | null; unite: string; uniteM2: string;
+  /** Tendance sur 90 jours en pour cent, telle que publiée ; null = non publiée (jamais 0). */
+  tendance90j: number | null;
+}
+export interface PrixPubliesRecus { editions: EditionPrixRecue[]; lignes: LignePrixRecue[]; nonRattaches: LignePrixRecue[] }
+/** Source du registre des prix (dossier de qualification) : statut, motif de blocage et prochaine action. */
+export interface SourcePrixRecue {
+  cle: string; titre: string; couche: "officielle" | "annonces"; produit: string; statut: string; editeur: string | null; url: string | null; licence: string | null;
+  motif: string | null; prochaineAction: string | null; derivee: boolean; ficheGeodata: string | null; revueLe: string | null; revueAvant: string | null;
+}
+export interface ProduitPrixRecu { produit: string; etat: string; motif: string | null; versionIds?: string[]; instantaneId?: string | null }
+export interface CouchePrixRecue { couche: "officielle" | "annonces"; etat: string; motifs: string[]; produits: ProduitPrixRecu[] }
+export interface CellulePrixRecue {
+  cohorte: string | Record<string, unknown>; etat: string; mediane: number | null; q1: number | null; q3: number | null;
+  nombres: { brutes: number | null; eligibles: number | null; distinctes: number | null };
+  exclusions: number | Record<string, number> | null; contributionSources: Record<string, number> | string | null;
+  premiereObservation: string | null; derniereObservation: string | null;
+}
+export interface CellulesPrixRecues { instantane: { id: string; empreinte: string; methode: string; publieLe: string } | null; etat: string; motif?: string | null; cellules: CellulePrixRecue[] }
+export interface ComparaisonPrixRecue {
+  comparable: boolean; dimensionsIncompatibles?: string[]; ecartPourcent?: number | null; position?: "en-dessous" | "dans" | "au-dessus" | null; libelle?: string | null;
+  /** Motif codé d'une comparaison refusée (`aucune-reference-officielle`, `aucune-valeur-marche`, `dimensions-incompatibles`). */
+  motif?: string | null;
+  /** Couche en cause quand une des deux valeurs manque : son état et son motif codé (ex. couche officielle non autorisée). */
+  coucheEnCause?: { couche: "officielle" | "annonces"; etat: string; motif: string | null; detail: string | null } | null;
 }
 /** Douar du RGPH 2024 : nom et fraction tels que publiés (en arabe) ; secret = pourcentages supprimés par le HCP. */
 export interface DouarRecu {
@@ -182,7 +225,17 @@ export const api = {
   confirmerImport: (id: string, titre: string) => envoyer<ImportRecu>(`/imports/${encodeURIComponent(id)}/confirmer`, "POST", { titre }),
   annulerImport: (id: string) => envoyer<ImportRecu>(`/imports/${encodeURIComponent(id)}/annuler`, "POST", {}),
   exporter: (carteId: string, revisionAttendue: number, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, revisionAttendue, analyseIds }),
+  // Prix immobiliers (lot P7) : registre des sources, état des deux couches, agrégats publiés, instantané, comparaison.
+  prixSources: () => appeler<{ sources: SourcePrixRecue[]; dossier: string | null }>("/prix/sources"),
+  prixCouches: () => appeler<{ couches: CouchePrixRecue[]; capacites: string[] }>("/prix/couches"),
+  prixAgregats: (code: string) => appeler<{ editions: EditionPrixRecue[]; lignes: LignePrixRecue[] }>(`/prix/agregats-publies?code=${encodeURIComponent(code)}`),
+  prixCellules: () => appeler<CellulesPrixRecues>("/prix/cellules"),
+  prixComparaison: (code: string, type: string, transaction: string) =>
+    appeler<ComparaisonPrixRecue>(`/prix/comparaison?${new URLSearchParams({ code, type, transaction })}`),
 };
+
+/** Adresse du téléchargement CSV d'une édition d'agrégat publié (attribution incluse par le serveur). */
+export const adresseExportPrix = (versionId: string) => `${RACINE_API}/prix/export?format=csv&versionId=${encodeURIComponent(versionId)}`;
 
 /** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker) ; points regroupés en grappes (D-GD-40). */
 export const adresseTuiles = (coucheId: string, regrouper = false) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}${regrouper ? "?regrouper=1" : ""}`;

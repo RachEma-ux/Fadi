@@ -212,7 +212,7 @@ describe("fiches de source GeoData livrées", () => {
     expect(osmVus.sort()).toEqual(extraits.sort());
   }, 60_000);
 
-  it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars)", () => {
+  it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars, agrégats de prix publiés)", () => {
     const sha = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
     for (const nom of fiches) {
       const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
@@ -220,7 +220,7 @@ describe("fiches de source GeoData livrées", () => {
       const ef = sha(readFileSync(join(DOSSIER, fiche.version.fichier)));
       const t = fiche.version.tableau;
       const a = fiche.version.annexes;
-      const annexes = [a?.douars, a?.concepts, a?.tableau].filter((x) => !!x).map((x) => `:${sha(readFileSync(join(DOSSIER, x!.fichier)))}`).join("");
+      const annexes = [a?.douars, a?.concepts, a?.tableau, a?.prixPublies].filter((x) => !!x).map((x) => `:${sha(readFileSync(join(DOSSIER, x!.fichier)))}`).join("");
       const reelle = t ? sha(`${ef}:${sha(readFileSync(join(DOSSIER, t.fichier)))}${annexes}`) : ef;
       expect(empreinteAttendue(fiche), nom).toBe(reelle);
     }
