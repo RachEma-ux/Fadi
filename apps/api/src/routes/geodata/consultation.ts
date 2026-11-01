@@ -1,0 +1,497 @@
+/**
+ * Consultation GeoData (plan GD-04) : catalogue, couche, recherche, tuiles vectorielles, table paginée, fiche d'objet et
+ * valeurs d'indicateur. Toute lecture passe par `VERSION_CONSULTABLE` : une version privée d'un autre espace, retirée ou en
+ * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
+ */
+import { Router, type Request } from "express";
+import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees, lireDroits, lireQualification, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, regroupementActif, verifierUsage } from "@parcours/geodata-model";
+import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
+import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
+import type { DescriptionRaster } from "@parcours/geodata-model";
+
+export const consultationRouter = Router();
+
+const espaceDe = async (req: Request) => (await espacePersonnel(req.user!.id)).id;
+
+/** Description publique d'une version (fiche obligatoire, concept § 7.2) ; jamais de chemin de fichier interne. */
+export const COLONNES_VERSION = `v.id AS version_id, v.libelle, v.empreinte, v.url_source, v.recupere_le, v.periode, v.licence, v.attribution, v.droits,
+  v.crs_source, v.precision_donnees, v.transformations, v.controles, v.synthetique, v.etat, v.publiee_le, v.motif_retrait, (v.espace_id IS NOT NULL) AS privee,
+  v.qualification, v.qualification_motif, v.qualification_decision,
+  s.id AS source_id, s.titre AS source_titre, s.producteur, s.theme, s.couverture, s.description AS source_description`;
+
+/**
+ * Catalogue et recherche présentent, pour chaque source, sa version publiée la plus récente ; les versions précédentes
+ * restent servies (tuiles, table, fiches) aux cartes et analyses qui les référencent (INV-07).
+ */
+const DERNIERE_VERSION = (alias: string, parametreEspace: string) =>
+  `NOT EXISTS (SELECT 1 FROM geodata_versions vr WHERE vr.source_id = ${alias}.source_id AND ${VERSION_CONSULTABLE("vr", parametreEspace)} AND vr.publiee_le > ${alias}.publiee_le)`;
+
+export function lireVersion(r: Record<string, unknown>) {
+  return {
+    id: r["version_id"], libelle: r["libelle"], empreinte: r["empreinte"], urlSource: r["url_source"], recupereLe: r["recupere_le"], periode: r["periode"],
+    licence: r["licence"], attribution: r["attribution"], droits: lireDroits(r["droits"]), crsSource: r["crs_source"], precision: r["precision_donnees"],
+    transformations: r["transformations"], controles: r["controles"], synthetique: r["synthetique"], etat: r["etat"], publieeLe: r["publiee_le"],
+    motifRetrait: r["motif_retrait"], privee: r["privee"],
+    qualification: lireQualification(r["qualification"], r["qualification_motif"], r["qualification_decision"]),
+    source: { id: r["source_id"], titre: r["source_titre"], producteur: r["producteur"], theme: r["theme"], couverture: r["couverture"], description: r["source_description"] },
+  };
+}
+
+/** Dimensions d'un indicateur (D-GD-17, lot A2) ; nulles pour les indicateurs sans déclinaison. */
+const dimensions = (l: Record<string, unknown>) => ({ theme: l["theme"] ?? null, famille: l["famille"] ?? null, modalite: l["modalite"] ?? null, milieu: l["milieu"] ?? null, sexe: l["sexe"] ?? null });
+
+async function indicateursDe(coucheIds: string[]) {
+  if (!coucheIds.length) return new Map<string, unknown[]>();
+  const lignes = await requete(
+    // Comptes d'absences enregistrés à l'import (lot A2 : des centaines d'indicateurs par couche), sinon recomptés.
+    `SELECT i.id, i.couche_id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur, i.description,
+            i.theme, i.famille, i.modalite, i.milieu, i.sexe,
+            coalesce(i.nb_absentes, (SELECT count(*) FROM geodata_valeurs va WHERE va.indicateur_id = i.id AND va.valeur IS NULL)) AS absentes,
+            coalesce(i.nb_total, (SELECT count(*) FROM geodata_valeurs va WHERE va.indicateur_id = i.id)) AS total
+       FROM geodata_indicateurs i
+      WHERE i.couche_id = ANY($1) ORDER BY i.nature DESC, i.ordre, i.titre`,
+    [coucheIds],
+  );
+  const m = new Map<string, unknown[]>();
+  for (const l of lignes) {
+    const liste = m.get(l["couche_id"] as string) ?? [];
+    liste.push({ id: l["id"], titre: l["titre"], unite: l["unite"], periode: l["periode"], nature: l["nature"], methode: l["methode"], denominateur: l["denominateur"], description: l["description"], absentes: Number(l["absentes"]), total: Number(l["total"]), ...dimensions(l) });
+    m.set(l["couche_id"] as string, liste);
+  }
+  return m;
+}
+
+export function lireCouche(r: Record<string, unknown>, indicateurs: unknown[]) {
+  return {
+    id: r["couche_id"], titre: r["couche_titre"], description: r["couche_description"], typeGeometrie: r["type_geometrie"], niveau: r["niveau"],
+    proprietesExposees: r["proprietes_exposees"], styleDefaut: r["style_defaut"], nombreObjets: r["nombre_objets"],
+    emprise: r["emprise"] ? JSON.parse(r["emprise"] as string) : null, indicateurs, version: lireVersion(r), raster: r["raster"] ?? null,
+    // Niveau administratif de la couche (D-GD-42) : lu dans la table des niveaux en base (fiche de la couche), jamais du titre.
+    niveauAdministratif: r["niveau_administratif"] ?? null,
+  };
+}
+
+const COLONNES_COUCHE = `c.id AS couche_id, c.titre AS couche_titre, c.description AS couche_description, c.type_geometrie, c.niveau, c.proprietes_exposees,
+  c.style_defaut, c.nombre_objets, ST_AsGeoJSON(c.emprise, 6) AS emprise, (SELECT ra.description FROM geodata_rasters ra WHERE ra.couche_id = c.id) AS raster,
+  (SELECT json_build_object('pays', na.pays, 'code', na.code, 'rang', na.rang, 'singulier', na.singulier, 'pluriel', na.pluriel)
+     FROM geodata_niveaux_administratifs na WHERE na.fiche_cle = s.cle AND v.espace_id IS NULL ORDER BY na.pays LIMIT 1) AS niveau_administratif, ${COLONNES_VERSION}`;
+
+/** Couche consultable par l'espace, sinon `null` (absente, privée d'un tiers, retirée : même réponse). */
+export async function coucheConsultable(espaceId: string, coucheId: string) {
+  const [r] = await requete(`SELECT ${COLONNES_COUCHE} FROM geodata_couches c JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
+    WHERE c.id = $2 AND ${VERSION_CONSULTABLE("v", "$1")}`, [espaceId, coucheId]);
+  return r ?? null;
+}
+
+consultationRouter.get("/catalogue", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const q = typeof req.query["q"] === "string" ? req.query["q"].trim().slice(0, 80).toLowerCase() : "";
+  const lignes = await requete(
+    `SELECT ${COLONNES_COUCHE} FROM geodata_couches c JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
+      WHERE ${VERSION_CONSULTABLE("v", "$1")}
+        AND ${DERNIERE_VERSION("v", "$1")}
+        AND ($2 = '' OR lower(c.titre || ' ' || s.titre || ' ' || s.theme || ' ' || s.producteur) LIKE '%' || $2 || '%')
+      ORDER BY (v.espace_id IS NOT NULL), s.theme, c.titre LIMIT 200`,
+    [espaceId, q],
+  );
+  const ind = await indicateursDe(lignes.map((l) => l["couche_id"] as string));
+  // Versions plus récentes publiées pour une même source : signalées, jamais substituées (INV-07).
+  res.json({ couches: lignes.map((l) => lireCouche(l, ind.get(l["couche_id"] as string) ?? [])) });
+});
+
+consultationRouter.get("/couches/:id", async (req, res) => {
+  const r = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!r) return introuvable(res);
+  const ind = await indicateursDe([r["couche_id"] as string]);
+  res.json(lireCouche(r, ind.get(r["couche_id"] as string) ?? []));
+});
+
+/** Recherche : coordonnées étiquetées, sinon unités par nom ou code dans les couches consultables (20 résultats au plus). */
+// Recherche : les unités du HCP d'abord (D-GD-18, priorité HCP quand une donnée existe aussi dans OpenStreetMap).
+consultationRouter.get("/recherche", async (req, res) => {
+  const q = typeof req.query["q"] === "string" ? req.query["q"].trim().slice(0, 120) : "";
+  if (q.length < 2) return erreur(res, 400, "invalid_input", "Saisissez au moins deux caractères.", { champs: ["q"] });
+  const c = lireCoordonnees(q);
+  if (c.ok) return void res.json({ resultats: [{ type: "coordonnees", libelle: `lon ${c.point.lon} · lat ${c.point.lat}`, point: c.point, provenance: "Saisie de l'utilisateur (WGS 84, longitude puis latitude)" }] });
+  if (c.refus !== "pas-de-coordonnees") return void res.json({ resultats: [], avertissement: { code: `coordonnees-${c.refus}`, message: c.message } });
+  const espaceId = await espaceDe(req);
+  const t = q.toLowerCase();
+  const lignes = await requete(
+    `SELECT o.code, o.nom, o.niveau, c.id AS couche_id, c.titre AS couche_titre, v.libelle, s.titre AS source_titre,
+            ST_AsGeoJSON(ST_Envelope(o.geom), 6) AS emprise, ST_AsGeoJSON(ST_PointOnSurface(o.geom), 6) AS centre
+       FROM geodata_objets o JOIN geodata_couches c ON c.id = o.couche_id JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
+      WHERE ${VERSION_CONSULTABLE("v", "$1")} AND ${DERNIERE_VERSION("v", "$1")} AND (lower(o.nom) LIKE '%' || $2 || '%' OR lower(o.code) = $2)
+      ORDER BY (s.producteur LIKE 'Haut-Commissariat au Plan%') DESC, (lower(o.nom) LIKE $2 || '%') DESC, length(o.nom), o.nom LIMIT 20`,
+    [espaceId, t],
+  );
+  res.json({
+    resultats: lignes.map((l) => ({
+      type: "unite", code: l["code"], libelle: l["nom"] ?? l["code"], niveau: l["niveau"], coucheId: l["couche_id"], coucheTitre: l["couche_titre"],
+      emprise: JSON.parse(l["emprise"] as string), centre: JSON.parse(l["centre"] as string), provenance: `${l["source_titre"]} — ${l["libelle"]}`,
+    })),
+  });
+});
+
+/**
+ * Tuiles vectorielles (MVT) d'une couche consultable : autorisation vérifiée AVANT toute lecture. Aucune simplification
+ * propre à une couche (D-GD-33) : la seule réduction est la quantification de `ST_AsMVTGeom` sur la grille de la tuile,
+ * identique pour toutes les couches, pour qu'une frontière partagée (région, province, commune) se superpose exactement à
+ * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private` ; versions privées `no-store`.
+ *
+ * `?regrouper=1` (D-GD-40) : jusqu'au zoom 13, les points sont réunis par cellule (grille Web Mercator de 8 × 8 cellules
+ * par tuile, `grilleRegroupement`) en une grappe au centre de gravité de ses points, avec leur `nombre` ; une cellule d'un
+ * seul point garde son code et son nom. Chaque point est compté dans une seule tuile (bords demi-ouverts). Lignes et
+ * surfaces sont servies comme sans regroupement.
+ */
+consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
+  const z = Number(req.params.z);
+  const x = Number(req.params.x);
+  const y = Number(String(req.params.y).replace(/\.pbf$|\.mvt$/, ""));
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return erreur(res, 400, "invalid_input", "Tuile hors limites.");
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
+  if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const geom = `ST_AsMVTGeom(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), b.e, 4096, 64, true)`;
+  const regrouper = req.query["regrouper"] === "1" && regroupementActif(z);
+  const grille = grilleRegroupement(z);
+  const [r] = await requete<{ mvt: Buffer | null }>(
+    regrouper
+      ? `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+         o AS (SELECT o.code, o.nom, o.geom FROM geodata_objets o, b WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)),
+         p AS (
+           SELECT o.code, coalesce(o.nom, o.code) AS nom, ST_Transform(o.geom, 3857) AS g FROM o, b
+            WHERE GeometryType(o.geom) = 'POINT'
+              AND ST_X(ST_Transform(o.geom, 3857)) >= ST_XMin(b.e) AND ST_X(ST_Transform(o.geom, 3857)) < ST_XMax(b.e)
+              AND ST_Y(ST_Transform(o.geom, 3857)) >= ST_YMin(b.e) AND ST_Y(ST_Transform(o.geom, 3857)) < ST_YMax(b.e)
+         ),
+         grappes AS (
+           SELECT count(*)::int AS nombre, CASE WHEN count(*) = 1 THEN min(p.code) ELSE '' END AS code,
+                  CASE WHEN count(*) = 1 THEN min(p.nom) ELSE '' END AS nom, ST_Centroid(ST_Collect(p.g)) AS g
+             FROM p GROUP BY ST_SnapToGrid(p.g, $5, $5, $6, $6)
+         ),
+         m AS (
+           SELECT ${geom} AS geom, o.code, coalesce(o.nom, o.code) AS nom, 1 AS nombre FROM o, b WHERE GeometryType(o.geom) <> 'POINT'
+           UNION ALL
+           SELECT ST_AsMVTGeom(grappes.g, b.e, 4096, 64, true) AS geom, grappes.code, grappes.nom, grappes.nombre FROM grappes, b
+         )
+         SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`
+      : `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+         m AS (
+           SELECT ${geom} AS geom, o.code, coalesce(o.nom, o.code) AS nom
+             FROM geodata_objets o, b
+            WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)
+         )
+         SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
+    regrouper ? [req.params.coucheId, z, x, y, grille.origine, grille.cote] : [req.params.coucheId, z, x, y],
+  );
+  res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
+  res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");
+  res.send(r?.mvt ?? Buffer.alloc(0));
+});
+
+/** Zone d'étude active de l'espace (D-GD-41), sinon null : une zone d'un autre espace ou archivée n'existe pas. */
+async function zoneDeLEspace(espaceId: string, zoneId: unknown): Promise<string | null> {
+  if (typeof zoneId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(zoneId)) return null;
+  const [z] = await requete<{ id: string }>(`SELECT id FROM geodata_zones WHERE id = $1 AND espace_id = $2 AND etat = 'active' AND nature = 'zone'`, [zoneId, espaceId]);
+  return z?.id ?? null;
+}
+
+/**
+ * Lecture de l'emprise (D-GD-40) : objets d'une couche qui recoupent la vue `bbox=ouest,sud,est,nord` (WGS 84), lus sur
+ * la géométrie de référence, et nombre total d'objets. Les codes sont renvoyés (au plus `OBJETS_PAR_COUCHE`) pour que la
+ * page applique le filtre de la couche et calcule les statistiques de l'indicateur actif ; `tronque` signale une borne
+ * atteinte. Mêmes règles d'accès que la table.
+ *
+ * `zone=<id>` (D-GD-41) : objets qui recoupent la zone d'étude (de l'espace, active), seule ou avec la vue ; la zone
+ * d'un autre espace répond 404 comme une couche inaccessible.
+ */
+consultationRouter.get("/couches/:id/vue", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const avecBbox = req.query["bbox"] !== undefined;
+  const emprise = avecBbox ? bornerEmprise(String(req.query["bbox"]).split(",").map((v) => (v.trim() === "" ? NaN : Number(v)))) : null;
+  if (avecBbox && !emprise) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
+  const avecZone = req.query["zone"] !== undefined;
+  if (!avecBbox && !avecZone) return erreur(res, 400, "invalid_input", "Emprise attendue : bbox=ouest,sud,est,nord (WGS 84).", { champs: ["bbox"] });
+  const couche = await coucheConsultable(espaceId, req.params.id);
+  if (!couche) return introuvable(res);
+  const zone = avecZone ? await zoneDeLEspace(espaceId, req.query["zone"]) : null;
+  if (avecZone && !zone) return introuvable(res);
+  const params: unknown[] = [req.params.id, OBJETS_PAR_COUCHE + 1];
+  const conditions: string[] = [];
+  if (emprise) {
+    params.push(...emprise);
+    conditions.push(`o.geom && ST_MakeEnvelope($3, $4, $5, $6, 4326) AND ST_Intersects(o.geom, ST_MakeEnvelope($3, $4, $5, $6, 4326))`);
+  }
+  if (zone) {
+    params.push(zone);
+    const n = params.length;
+    conditions.push(`EXISTS (SELECT 1 FROM geodata_zones z WHERE z.id = $${n} AND o.geom && z.geom AND ST_Intersects(o.geom, z.geom))`);
+  }
+  const lignes = await requete<{ code: string }>(
+    `SELECT o.code FROM geodata_objets o WHERE o.couche_id = $1 AND ${conditions.join(" AND ")} ORDER BY o.code LIMIT $2`,
+    params,
+  );
+  const [t] = await requete<{ n: string }>(`SELECT count(*) AS n FROM geodata_objets o WHERE o.couche_id = $1`, [req.params.id]);
+  res.json({ emprise, zone, total: Number(t?.n ?? 0), codes: lignes.slice(0, OBJETS_PAR_COUCHE).map((l) => l.code), tronque: lignes.length > OBJETS_PAR_COUCHE });
+});
+
+/**
+ * Points d'étiquette d'une couche (lot C, D-GD-24), demandés seulement quand ses libellés sont affichés : un point par
+ * entité, sur sa surface (`ST_PointOnSurface`, jamais hors de l'entité), placé dans la seule tuile qui le contient (aucun
+ * libellé doublé au bord des tuiles). Le nom ne garde que les caractères des glyphes livrés (écriture latine, voir
+ * `etiquettes.ts`) ; s'il n'en reste rien, le code de l'entité. Mêmes règles d'accès que les tuiles.
+ */
+const hex4 = (n: number) => n.toString(16).padStart(4, "0");
+const HORS_GLYPHES = `[^${PLAGES_GLYPHES.map(([a, b]) => `\\u${hex4(Math.max(a, 32))}-\\u${hex4(b)}`).join("")}]`;
+consultationRouter.get("/etiquettes/:coucheId/:z/:x/:y", async (req, res) => {
+  const z = Number(req.params.z);
+  const x = Number(req.params.x);
+  const y = Number(String(req.params.y).replace(/\.pbf$|\.mvt$/, ""));
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return erreur(res, 400, "invalid_input", "Tuile hors limites.");
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
+  if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const [r] = await requete<{ mvt: Buffer | null }>(
+    `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+     p AS (
+       SELECT o.code, nullif(btrim(regexp_replace(regexp_replace(coalesce(o.nom, ''), $5, '', 'g'), '\\s+', ' ', 'g')), '') AS nom,
+              ST_Transform(ST_PointOnSurface(o.geom), 3857) AS pt
+         FROM geodata_objets o, b
+        WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326) AND NOT ST_IsEmpty(o.geom)
+     ),
+     m AS (
+       SELECT ST_AsMVTGeom(p.pt, b.e, 4096, 0, true) AS geom, p.code, coalesce(p.nom, p.code) AS nom
+         FROM p, b
+        WHERE ST_Intersects(p.pt, b.e)
+     )
+     SELECT ST_AsMVT(m.*, 'etiquettes', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
+    [req.params.coucheId, z, x, y, HORS_GLYPHES],
+  );
+  res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
+  res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");
+  res.send(r?.mvt ?? Buffer.alloc(0));
+});
+
+/**
+ * Couches raster (D-GD-13) : grille figée lue une fois puis gardée en mémoire (au plus 12 grilles), tuiles PNG et valeur
+ * en un point. Mêmes règles d'accès que les tuiles vectorielles (couche consultable, droit « tuiles »).
+ */
+const grilles = new Map<string, { grille: GrilleRaster; description: DescriptionRaster }>();
+async function grilleDe(coucheId: string) {
+  const deja = grilles.get(coucheId);
+  if (deja) return deja;
+  const [r] = await requete<{ largeur: number; hauteur: number; ouest: number; sud: number; est: number; nord: number; nodata: number | null; valeurs: Buffer; description: DescriptionRaster }>(
+    `SELECT largeur, hauteur, ouest, sud, est, nord, nodata, valeurs, description FROM geodata_rasters WHERE couche_id = $1`, [coucheId]);
+  if (!r) return null;
+  const g = { grille: { largeur: r.largeur, hauteur: r.hauteur, emprise: [r.ouest, r.sud, r.est, r.nord] as const, nodata: r.nodata, valeurs: decompresser(r.valeurs, r.largeur * r.hauteur) }, description: r.description };
+  if (grilles.size >= 12) grilles.delete(grilles.keys().next().value!);
+  grilles.set(coucheId, g);
+  return g;
+}
+
+consultationRouter.get("/raster/:coucheId/:z/:x/:y", async (req, res) => {
+  const z = Number(req.params.z);
+  const x = Number(req.params.x);
+  const y = Number(String(req.params.y).replace(/\.png$/, ""));
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return erreur(res, 400, "invalid_input", "Tuile hors limites.");
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
+  if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const g = await grilleDe(req.params.coucheId);
+  if (!g) return introuvable(res);
+  res.setHeader("Content-Type", "image/png");
+  res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=3600");
+  res.send(tuileRaster(g.grille, g.description, z, x, y) ?? pngTransparent());
+});
+
+/** Valeur d'une couche raster au point (lon, lat WGS 84) ; hors emprise ou nodata : `null` (« non évaluée »). */
+consultationRouter.get("/raster/:coucheId/valeur", async (req, res) => {
+  const lon = Number(req.query["lon"]);
+  const lat = Number(req.query["lat"]);
+  if (!Number.isFinite(lon) || !Number.isFinite(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) return erreur(res, 400, "invalid_input", "Point lon/lat attendu.", { champs: ["lon", "lat"] });
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const g = await grilleDe(req.params.coucheId);
+  if (!g) return introuvable(res);
+  const v = valeurAuPoint(g.grille, lon, lat);
+  const classe = v !== null && g.description.classes ? g.description.classes.find((c) => c.valeur === v) ?? null : null;
+  res.json({ lon, lat, valeur: v, classe: classe?.libelle ?? null, unite: g.description.unite, grandeur: g.description.grandeur });
+});
+
+/** Table paginée des objets d'une couche (sans géométrie), filtre et tri sur liste autorisée. */
+consultationRouter.get("/couches/:id/table", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const couche = await coucheConsultable(espaceId, req.params.id);
+  if (!couche) return introuvable(res);
+  const page = Math.max(1, Math.min(10_000, Number(req.query["page"]) || 1));
+  const taille = Math.max(1, Math.min(200, Number(req.query["taille"]) || 50));
+  const tri = req.query["tri"] === "code" ? "o.code" : "coalesce(o.nom, o.code)";
+  const ordre = req.query["ordre"] === "desc" ? "DESC" : "ASC";
+  const exposees = (couche["proprietes_exposees"] as string[]) ?? [];
+  const prop = typeof req.query["propriete"] === "string" ? req.query["propriete"] : "";
+  const val = typeof req.query["valeur"] === "string" ? req.query["valeur"].slice(0, 200) : "";
+  const op = req.query["operateur"] === "egal" ? "egal" : "contient";
+  if (prop && !["nom", "code", ...exposees].includes(prop)) return erreur(res, 400, "invalid_input", "Propriété de filtre non autorisée.", { champs: ["propriete"] });
+  // Zone d'étude active (D-GD-41) : seuls les objets qui la recoupent ; une zone d'un autre espace répond 404.
+  const zone = req.query["zone"] !== undefined ? await zoneDeLEspace(espaceId, req.query["zone"]) : null;
+  if (req.query["zone"] !== undefined && !zone) return introuvable(res);
+  const expr = prop === "nom" ? "coalesce(o.nom, '')" : prop === "code" ? "o.code" : "coalesce(o.proprietes ->> $5, '')";
+  const filtre = prop ? (op === "egal" ? `AND lower(${expr}) = lower($4)` : `AND lower(${expr}) LIKE '%' || lower($4) || '%'`) : "";
+  const params: unknown[] = [req.params.id, taille, (page - 1) * taille];
+  if (prop) params.push(val);
+  if (prop && prop !== "nom" && prop !== "code") params.push(prop);
+  let filtreZone = "";
+  if (zone) { params.push(zone); filtreZone = `AND EXISTS (SELECT 1 FROM geodata_zones z WHERE z.id = $${params.length} AND o.geom && z.geom AND ST_Intersects(o.geom, z.geom))`; }
+  const lignes = await requete(
+    `SELECT o.code, o.nom, o.niveau, o.proprietes, o.geometrie_reparee, count(*) OVER () AS total FROM geodata_objets o
+      WHERE o.couche_id = $1 ${filtre} ${filtreZone} ORDER BY ${tri} ${ordre}, o.code LIMIT $2 OFFSET $3`,
+    params,
+  );
+  const codes = lignes.map((l) => l["code"] as string);
+  const valeurs = codes.length ? await requete(
+    `SELECT va.indicateur_id, va.code, va.valeur, va.motif_absence FROM geodata_valeurs va JOIN geodata_indicateurs i ON i.id = va.indicateur_id
+      WHERE i.couche_id = $1 AND va.code = ANY($2)`, [req.params.id, codes]) : [];
+  res.json({
+    page, taille, total: Number(lignes[0]?.["total"] ?? 0),
+    lignes: lignes.map((l) => ({
+      code: l["code"], nom: l["nom"], niveau: l["niveau"], geometrieReparee: l["geometrie_reparee"],
+      proprietes: Object.fromEntries(exposees.filter((p) => Object.hasOwn(l["proprietes"] as object, p)).map((p) => [p, (l["proprietes"] as Record<string, unknown>)[p]])),
+      valeurs: Object.fromEntries(valeurs.filter((v) => v["code"] === l["code"]).map((v) => [v["indicateur_id"], { valeur: v["valeur"], motifAbsence: v["motif_absence"] }])),
+    })),
+  });
+});
+
+/** Codes des objets qui passent un filtre (pour filtrer la carte), bornés à 5 000. */
+consultationRouter.get("/couches/:id/codes", async (req, res) => {
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  const exposees = (couche["proprietes_exposees"] as string[]) ?? [];
+  const prop = typeof req.query["propriete"] === "string" ? req.query["propriete"] : "";
+  const val = typeof req.query["valeur"] === "string" ? req.query["valeur"].slice(0, 200) : "";
+  if (!["nom", "code", ...exposees].includes(prop)) return erreur(res, 400, "invalid_input", "Propriété de filtre non autorisée.", { champs: ["propriete"] });
+  const expr = prop === "nom" ? "coalesce(o.nom, '')" : prop === "code" ? "o.code" : "coalesce(o.proprietes ->> $3, '')";
+  const cond = req.query["operateur"] === "egal" ? `lower(${expr}) = lower($2)` : `lower(${expr}) LIKE '%' || lower($2) || '%'`;
+  const lignes = await requete<{ code: string }>(`SELECT o.code FROM geodata_objets o WHERE o.couche_id = $1 AND ${cond} LIMIT 5000`, prop === "nom" || prop === "code" ? [req.params.id, val] : [req.params.id, val, prop]);
+  res.json({ codes: lignes.map((l) => l.code) });
+});
+
+/**
+ * Couleur par entité (style `categories`) : rang de couleur de chaque unité, calculé sur la géométrie de référence (unités
+ * qui se touchent ou se recouvrent = voisines). Le contenu d'une couche est figé : le résultat est conservé en mémoire par
+ * couche (au plus 50 couches).
+ */
+const cacheCategories = new Map<string, { code: string; nom: string | null; rang: number }[]>();
+/** Borne des paires de voisins lues : au-delà (objets superposés en masse), couleurs attribuées sans voisinage. */
+const PAIRES_MAX = 50_000;
+consultationRouter.get("/couches/:id/categories", async (req, res) => {
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  let categories = cacheCategories.get(req.params.id);
+  if (!categories) {
+    const objets = await requete<{ code: string; nom: string | null }>(`SELECT o.code, o.nom FROM geodata_objets o WHERE o.couche_id = $1 ORDER BY o.code LIMIT $2`, [req.params.id, OBJETS_PAR_COUCHE]);
+    const paires = await requete<{ a: string; b: string }>(
+      `SELECT a.code AS a, b.code AS b FROM geodata_objets a JOIN geodata_objets b ON b.couche_id = a.couche_id AND a.code < b.code AND a.geom && b.geom AND ST_Intersects(a.geom, b.geom)
+        WHERE a.couche_id = $1 LIMIT $2`, [req.params.id, PAIRES_MAX + 1]);
+    // Mémoire bornée : un graphe trop dense n'est pas construit, les couleurs suivent alors l'ordre des noms.
+    const rangs = attribuerCategories(objets, paires.length > PAIRES_MAX ? [] : paires.map((p) => [p.a, p.b] as const));
+    categories = objets.map((o) => ({ code: o.code, nom: o.nom, rang: rangs.get(o.code) ?? 0 }));
+    if (cacheCategories.size >= 50) cacheCategories.delete(cacheCategories.keys().next().value!);
+    cacheCategories.set(req.params.id, categories);
+  }
+  res.json({ categories });
+});
+
+/**
+ * Proximité des équipements (D-GD-49) : pour un objet (point, ligne ou surface), nombre d'objets de chaque couche demandée
+ * à moins de `rayon` mètres (distance géodésique, `ST_DWithin` sur le géographique, entité comprise pour une surface) et
+ * l'objet le plus proche avec sa distance. Couches inaccessibles signalées, jamais comptées ; au plus 20 couches, rayon de
+ * 50 à 5 000 m. Calculé à la demande sur les versions publiées, rien n'est enregistré.
+ */
+export const RAYONS_PROXIMITE = { min: 50, max: 5000 } as const;
+consultationRouter.get("/couches/:id/objets/:code/proximite", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const rayon = Number(req.query["rayon"] ?? 500);
+  if (!Number.isFinite(rayon) || rayon < RAYONS_PROXIMITE.min || rayon > RAYONS_PROXIMITE.max) return erreur(res, 400, "invalid_input", `Rayon attendu : ${RAYONS_PROXIMITE.min} à ${RAYONS_PROXIMITE.max} m.`, { champs: ["rayon"] });
+  const ids = [...new Set(String(req.query["couches"] ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > 20 || !ids.every((x) => /^[A-Za-z0-9_-]{1,64}$/.test(x))) return erreur(res, 400, "invalid_input", "Couches attendues : 1 à 20 identifiants.", { champs: ["couches"] });
+  const couche = await coucheConsultable(espaceId, req.params.id);
+  if (!couche) return introuvable(res);
+  const [cible] = await requete<{ ok: number }>(`SELECT 1 AS ok FROM geodata_objets o WHERE o.couche_id = $1 AND o.code = $2`, [req.params.id, req.params.code]);
+  if (!cible) return introuvable(res);
+  const resultats = [];
+  for (const id of ids) {
+    const c = await coucheConsultable(espaceId, id);
+    if (!c) { resultats.push({ coucheId: id, accessible: false }); continue; }
+    const [r] = await requete<{ nombre: string; nom: string | null; code: string | null; distance: number | null }>(
+      `WITH t AS (SELECT geom FROM geodata_objets WHERE couche_id = $1 AND code = $2),
+       p AS (
+         SELECT o.code, o.nom, ST_Distance(o.geom::geography, t.geom::geography) AS d
+           FROM geodata_objets o, t
+          WHERE o.couche_id = $3 AND NOT (o.couche_id = $1 AND o.code = $2) AND ST_DWithin(o.geom::geography, t.geom::geography, $4)
+       )
+       SELECT (SELECT count(*) FROM p) AS nombre, q.nom, q.code, q.d AS distance FROM (SELECT * FROM p ORDER BY d, code LIMIT 1) q RIGHT JOIN (SELECT 1) un ON true`,
+      [req.params.id, req.params.code, id, rayon],
+    );
+    resultats.push({
+      coucheId: id, accessible: true, titre: c["couche_titre"], nombre: Number(r?.nombre ?? 0),
+      plusProche: r?.code ? { code: r.code, nom: r.nom ?? r.code, distanceM: Math.round(Number(r.distance)) } : null,
+    });
+  }
+  res.json({ rayon, couches: resultats });
+});
+
+/** Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. */
+consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  const [o] = await requete(
+    `SELECT o.code, o.nom, o.niveau, o.proprietes, o.geometrie_reparee, ST_AsGeoJSON(ST_Envelope(o.geom), 6) AS emprise, ST_AsGeoJSON(ST_PointOnSurface(o.geom), 6) AS centre
+       FROM geodata_objets o WHERE o.couche_id = $1 AND o.code = $2`, [req.params.id, req.params.code]);
+  if (!o) return introuvable(res);
+  const valeurs = await requete(
+    `SELECT i.id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur, i.theme, i.famille, i.modalite, i.milieu, i.sexe, va.valeur, va.motif_absence
+       FROM geodata_indicateurs i LEFT JOIN geodata_valeurs va ON va.indicateur_id = i.id AND va.code = $2 WHERE i.couche_id = $1 ORDER BY i.nature DESC, i.ordre, i.titre`,
+    [req.params.id, req.params.code],
+  );
+  const exposees = (couche["proprietes_exposees"] as string[]) ?? [];
+  const ind = await indicateursDe([req.params.id]);
+  // Douars de la commune rurale (lot E) : annexe de la même version, tels que publiés (noms en arabe, D-GD-21).
+  const douars = await requete(
+    `SELECT code, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret, complements
+       FROM geodata_douars WHERE version_id = $1 AND commune = $2 ORDER BY code LIMIT 5000`,
+    [couche["version_id"], req.params.code],
+  );
+  res.json({
+    code: o["code"], nom: o["nom"], niveau: o["niveau"], geometrieReparee: o["geometrie_reparee"],
+    emprise: JSON.parse(o["emprise"] as string), centre: JSON.parse(o["centre"] as string),
+    proprietes: Object.fromEntries(exposees.filter((p) => Object.hasOwn(o["proprietes"] as object, p)).map((p) => [p, (o["proprietes"] as Record<string, unknown>)[p]])),
+    indicateurs: valeurs.map((v) => ({
+      id: v["id"], titre: v["titre"], unite: v["unite"], periode: v["periode"], nature: v["nature"], methode: v["methode"], denominateur: v["denominateur"], ...dimensions(v),
+      // Ligne de valeur absente pour cette unité : « non appariée », jamais zéro.
+      valeur: v["valeur"] ?? null, motifAbsence: v["valeur"] === null || v["valeur"] === undefined ? (v["motif_absence"] ?? "non-appariee") : null,
+    })),
+    couche: lireCouche(couche, ind.get(req.params.id) ?? []),
+    douars: douars.map((d) => ({
+      code: d["code"], fraction: d["fraction"], nom: d["nom"], type: d["type"], menages: d["menages"], population: d["population"], secret: d["secret"],
+      pourcentages: { masculin: d["masculin"], feminin: d["feminin"], moins15: d["moins_15"], de15a59: d["de_15_a_59"], plus60: d["plus_60"] },
+      complements: d["complements"] ?? null,
+    })),
+  });
+});
+
+/** Valeurs d'un indicateur d'une couche consultable : toutes, une couche comptant au plus OBJETS_PAR_COUCHE objets (refus à l'ingestion au-delà). */
+consultationRouter.get("/indicateurs/:id/valeurs", async (req, res) => {
+  const espaceId = await espaceDe(req);
+  const [i] = await requete(`SELECT i.id, i.couche_id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur FROM geodata_indicateurs i
+    JOIN geodata_couches c ON c.id = i.couche_id JOIN geodata_versions v ON v.id = c.version_id WHERE i.id = $2 AND ${VERSION_CONSULTABLE("v", "$1")}`, [espaceId, req.params.id]);
+  if (!i) return introuvable(res);
+  const vs = await requete(`SELECT o.code, va.valeur, va.motif_absence FROM geodata_objets o LEFT JOIN geodata_valeurs va ON va.indicateur_id = $2 AND va.code = o.code
+    WHERE o.couche_id = $1 ORDER BY o.code LIMIT $3`, [i["couche_id"], req.params.id, OBJETS_PAR_COUCHE]);
+  res.json({
+    indicateur: { id: i["id"], coucheId: i["couche_id"], titre: i["titre"], unite: i["unite"], periode: i["periode"], nature: i["nature"], methode: i["methode"], denominateur: i["denominateur"] },
+    valeurs: vs.map((v) => ({ code: v["code"], valeur: v["valeur"], motifAbsence: v["valeur"] === null ? (v["motif_absence"] ?? "non-appariee") : null })),
+  });
+});

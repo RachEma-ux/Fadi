@@ -1,0 +1,193 @@
+{
+  "cle": "geodata-synthetique-regions",
+  "titre": "Jeu synthétique de test — deux régions",
+  "producteur": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
+  "theme": "test",
+  "couverture": "Territoire fictif (carrés près de 31° N, 8° O)",
+  "description": "Deux régions fictives. Jeu SYNTHÉTIQUE pour la recette de la navigation par niveaux (découpage synthétique en données, `decoupage/zz-entites.csv` : la province 1001 relève de la région 1). Il ne représente aucun territoire ni aucune statistique réelle.",
+  "version": {
+    "libelle": "Jeu synthétique v1",
+    "url": null,
+    "empreinte": "58a94ebe8509f079c82d54236616b32573fdea0c75010e6880cc11774a3fab16",
+    "periode": "Sans objet (synthétique)",
+    "licence": "Jeu de test GeoData (aucune restriction)",
+    "attribution": "Jeu synthétique GeoData — aucune donnée réelle",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Sans objet",
+    "synthetique": true,
+    "tableau": {
+      "fichier": "donnees/synthetique-regions.csv",
+      "empreinte": "55bfb4b0de67852a5782fab4758278ba3b161a887efc1281cc750cae8cdc4a49",
+      "signes": {
+        "…": "sans-objet"
+      }
+    }
+  },
+  "couche": {
+    "titre": "Régions synthétiques (test)",
+    "description": "Deux régions fictives.",
+    "niveau": "ADM1",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#7570b3"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "mun_e_e",
+      "titre": "Population municipale",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 0
+    },
+    {
+      "propriete": "mun_e_m",
+      "titre": "Population municipale — Masculin",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "masculin",
+      "ordre": 1
+    },
+    {
+      "propriete": "mun_e_f",
+      "titre": "Population municipale — Féminin",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "feminin",
+      "ordre": 2
+    },
+    {
+      "propriete": "mun_u_e",
+      "titre": "Population municipale — Urbain",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "urbain",
+      "sexe": "ensemble",
+      "ordre": 3
+    },
+    {
+      "propriete": "mun_u_m",
+      "titre": "Population municipale — Masculin — Urbain",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "urbain",
+      "sexe": "masculin",
+      "ordre": 4
+    },
+    {
+      "propriete": "mun_u_f",
+      "titre": "Population municipale — Féminin — Urbain",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "urbain",
+      "sexe": "feminin",
+      "ordre": 5
+    },
+    {
+      "propriete": "mun_r_e",
+      "titre": "Population municipale — Rural",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "rural",
+      "sexe": "ensemble",
+      "ordre": 6
+    },
+    {
+      "propriete": "mun_r_m",
+      "titre": "Population municipale — Masculin — Rural",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "rural",
+      "sexe": "masculin",
+      "ordre": 7
+    },
+    {
+      "propriete": "mun_r_f",
+      "titre": "Population municipale — Féminin — Rural",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test du tableau croisé Milieu × Sexe).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population municipale",
+      "modalite": null,
+      "milieu": "rural",
+      "sexe": "feminin",
+      "ordre": 8
+    }
+  ],
+  "superficie": true,
+  "territoire": {
+    "pays": "ZZ",
+    "nomPays": "Pays synthétique (test)",
+    "niveau": "region"
+  }
+}

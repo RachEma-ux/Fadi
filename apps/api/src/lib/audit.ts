@@ -31,6 +31,7 @@ export type AuditAction =
   | "account.deletion.cancelled"
   | "account.anonymized"
   | "admin.user.role_changed"
+  | "admin.user.self_control_changed"
   | "admin.user.suspended"
   | "admin.user.reactivated"
   | "admin.user.sessions_revoked"
@@ -47,12 +48,80 @@ export type AuditAction =
   | "support.granted"
   | "support.revoked"
   | "support.accessed"
+  // Changements d'accès à un projet (écart E3, 2026-10-24) : cible = le projet ; métadonnées = membre visé, rôle et
+  // export avant / après — jamais d'adresse.
+  | "project.member.added"
+  | "project.member.role_changed"
+  | "project.member.export_changed"
+  | "project.member.removed"
+  | "project.member.left"
+  | "project.ownership.transferred"
+  // Audience d'un fil changée par son auteur ou le propriétaire (écart E1) : cible = le projet.
+  | "comment.audience_changed"
+  // Participants et équipe (Issue #262, phase 2) : cible = le projet ; métadonnées = identifiants (participation,
+  // personne, organisation), statuts, rôles et noms de champs modifiés — jamais une adresse ni une coordonnée.
+  | "participation.created"
+  | "participation.updated"
+  | "participation.status_changed"
+  | "participation.role_assigned"
+  | "participation.role_removed"
+  // Phase 3 (invitations acceptées) : fiche liée au compte vérifié, participation activée par l'acceptation, échéance d'accès.
+  | "participation.linked"
+  | "participation.activated"
+  | "participation.access_expiry_changed"
+  // Représentant mandaté invité au projet (reliquat de la phase 5) : partie représentée posée à l'acceptation.
+  | "participation.representation_recorded"
+  | "person.contact_created"
+  | "person.contact_erased"
+  | "project.closed"
+  | "project.reopened"
+  // Organisations (phase 5, Issue #262) : cible = l'organisation ; métadonnées = identifiants (adhésion, groupe, gabarit,
+  // mandat, projet), rôles et statuts avant / après — jamais d'adresse ni de nom de personne.
+  | "organization.created"
+  | "organization.updated"
+  | "organization.status_changed"
+  | "organization.membership.created"
+  | "organization.membership.changed"
+  | "organization.membership.ended"
+  | "organization.group.created"
+  | "organization.group.updated"
+  | "organization.group.member_added"
+  | "organization.group.member_removed"
+  | "organization.template.created"
+  | "organization.template.version_created"
+  | "organization.template.applied"
+  | "organization.mandate.proposed"
+  | "organization.mandate.accepted"
+  | "organization.mandate.declined"
+  | "organization.mandate.cancelled"
+  | "organization.mandate.ended"
+  | "organization.project.participation_recorded"
+  | "organization.project.owner_declared"
+  // Revue externe (phase 4, Issue #262) : cible = le projet ; métadonnées = identifiants (paquet, affectation,
+  // constat, publication), version, responsabilité, permissions, résultat ou décision — jamais d'adresse ni de texte.
+  | "review.package.created"
+  | "review.package.updated"
+  | "review.package.deleted"
+  | "review.package.shared"
+  | "review.package.superseded"
+  | "review.package.version_created"
+  | "review.package.closed"
+  | "review.recipient.recorded"
+  | "review.assignment.created"
+  | "review.assignment.accepted"
+  | "review.assignment.revoked"
+  | "review.finding.created"
+  | "review.finding.rechecked"
+  | "review.response.recorded"
+  | "review.decision.recorded"
+  // OP-6 (lot OP-AUTOCONTROLE) : approbation Studio, avec sa marque d'auto-contrôle.
+  | "review.approval.recorded"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {
   actorId: string | null;
   action: AuditAction;
-  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail"; id: string } | undefined;
+  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person" | "organization"; id: string } | undefined;
   metadata?: Record<string, unknown> | undefined;
   ip?: string | null | undefined;
 }

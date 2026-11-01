@@ -16,12 +16,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { StudioDocument } from "@parcours/atelier-model";
 import { api, ApiError, type StudioComment, type StudioParticipant } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
+import { declenche, propsRaccourci } from "../../collaboration/commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/IconeCollaboration";
 import { ObservationCommentaire } from "../commentaires/Observation";
 import { STATUT_LIBELLE } from "../commentaires/observations";
 import { apiExigences } from "../exigences/api-exigences";
-import { apiObservations, type DomaineObservation, type NatureDecision, type ObservationSuivie, type PassageTache, type PorteeDecision, type TacheObservation, type VueObservation } from "./api-observations";
 import {
-  compterSuivi, DOMAINES, FILTRES_SUIVI, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE,
+  apiObservations, CATEGORIES_OBSERVATION, GRAVITES_OBSERVATION, type CategorieObservation, type DomaineObservation, type GraviteObservation, type NatureDecision, type ObservationSuivie,
+  type PassageTache, type PieceSaisie, type PorteeDecision, type RapprochementLu, type TacheObservation, type VueObservation,
+} from "./api-observations";
+import {
+  compterSuivi, dernierRapprochement, enBase64, LIBELLE_CATEGORIE, LIBELLE_GRAVITE, LIBELLE_RESOLUTION, LIBELLE_SUIVI_RAPPROCHEMENT, DOMAINES, FILTRES_SUIVI, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE,
   LIBELLE_STATUT_TACHE, LIBELLE_VUE, lireRefus, optionsLien, passeFiltreSuivi, suiviPar, type FiltreSuivi, type SourcesLien,
 } from "./suivi-ui";
 import "./observations.css";
@@ -39,7 +44,11 @@ export interface PanneauObservationsProps {
   surSelection: (ids: string[]) => void;
 }
 
-interface Ctx extends PanneauObservationsProps { participants: readonly StudioParticipant[]; meId: string | undefined; sources: SourcesLien; liste: readonly ObservationSuivie[]; relire: () => void; montrer: (id: string) => void }
+interface Ctx extends PanneauObservationsProps {
+  participants: readonly StudioParticipant[]; meId: string | undefined; equipe: boolean; sources: SourcesLien; liste: readonly ObservationSuivie[]; relire: () => void; montrer: (id: string) => void;
+  /** Dernier rapprochement consigné de chaque observation (EX-086). */
+  rapprochements: ReadonlyMap<string, RapprochementLu>;
+}
 
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
 const court = (id: string) => id.slice(-8);
@@ -61,14 +70,18 @@ export function PanneauObservations(props: PanneauObservationsProps) {
   const lecture = useQuery({ queryKey: cle, queryFn: () => apiObservations.lire(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1 });
   const exigences = useQuery({ queryKey: ["studio-observations-exigences", projectId, studyId], queryFn: () => apiExigences.lire(projectId, studyId), retry: false });
   const publications = useQuery({ queryKey: ["studio-observations-publications", projectId, studyId], queryFn: () => api.studioPublications(projectId, studyId), retry: false });
+  const rapprochements = useQuery({ queryKey: [...cle, "rapprochements"], queryFn: () => apiObservations.rapprochements(projectId, studyId, variantId), retry: false });
   const [filtre, setFiltre] = useState<FiltreSuivi>("toutes");
   const [ouvrir, setOuvrir] = useState(false);
+  const [rapprochement, setRapprochement] = useState<{ enCours: boolean; message: string | null }>({ enCours: false, message: null });
   const liste = lecture.data?.observations ?? [];
   const comptes = compterSuivi(liste);
   const visibles = liste.filter((o) => passeFiltreSuivi(o, filtre));
   const archived = lecture.data?.archived === true;
   const ctx: Ctx = {
     ...props, participants: lecture.data?.participants ?? [], meId: lecture.data?.me.id, liste,
+    // Audience (écart E1) : propriétaire et éditeurs choisissent ; un lecteur ouvre toujours pour tout le projet.
+    equipe: lecture.data?.me.role === "proprietaire" || lecture.data?.me.role === "editeur",
     sources: {
       revision: props.revision, selection: props.selection,
       exigences: (exigences.data?.courante?.exigences ?? []).map((x) => ({ id: x.id, libelle: x.libelle })),
@@ -76,13 +89,43 @@ export function PanneauObservations(props: PanneauObservationsProps) {
     },
     // Le fil des commentaires montre aussi les observations : les deux lectures sont relues ensemble.
     relire: () => { void client.invalidateQueries({ queryKey: cle }); void client.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] }); },
+    rapprochements: dernierRapprochement(rapprochements.data?.rapprochements ?? [], props.revisionId),
     montrer: (id) => {
       setFiltre("toutes");
       requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-studio-suivi="${CSS.escape(id)}"]`)?.focus());
     },
   };
 
-  return <section className="studio-revisions studio-observations" aria-labelledby="studio-observations-titre" data-studio-observations tabIndex={-1}>
+  // Rapprochement avec la révision affichée (EX-086) : propriétaire ou éditeur ; aucun statut d'observation n'est modifié.
+  const peutRapprocher = ctx.equipe && !archived && liste.length > 0;
+  async function rapprocher() {
+    if (rapprochement.enCours) return;
+    setRapprochement({ enCours: true, message: null });
+    try {
+      const r = await apiObservations.rapprocher(projectId, studyId, variantId, props.revisionId);
+      const disparus = r.resultats.filter((x) => x.suivi === "objet-disparu").length;
+      setRapprochement({ enCours: false, message: `${r.resultats.length} observation(s) rapprochée(s) avec la révision ${court(r.revisionId)} ; ${disparus} avec un objet disparu (aucune n’est close).` });
+      void client.invalidateQueries({ queryKey: [...cle, "rapprochements"] });
+    } catch (err) { setRapprochement({ enCours: false, message: lireRefus(err, "Rapprochement refusé par le serveur.").message }); }
+  }
+  // Échange BCF 2.1 minimal (IF-010) : export des observations lisibles ; import réservé au propriétaire et aux éditeurs.
+  const lienBcf = useRef<HTMLAnchorElement>(null);
+  const fichierBcf = useRef<HTMLInputElement>(null);
+  const [importBcf, setImportBcf] = useState<{ enCours: boolean; message: string | null }>({ enCours: false, message: null });
+  async function importerBcf(f: File) {
+    setImportBcf({ enCours: true, message: null });
+    try {
+      const r = await apiObservations.importerBcf(projectId, studyId, variantId, enBase64(new Uint8Array(await f.arrayBuffer())));
+      setImportBcf({ enCours: false, message: `Import BCF : ${r.crees.length} observation(s) créée(s), ${r.reconnus.length} sujet(s) déjà importé(s) dans ce contexte, ${r.homonymes.length} identifiant(s) déjà connu(s) dans un autre contexte (observations distinctes), ${r.absents.length} sujet(s) absent(s) (aucune clôture).` });
+      ctx.relire();
+    } catch (err) { setImportBcf({ enCours: false, message: lireRefus(err, "Import BCF refusé par le serveur.").message }); }
+  }
+  return <section className="studio-revisions studio-observations" aria-labelledby="studio-observations-titre" data-studio-observations tabIndex={-1}
+    onKeyDown={(e) => {
+      if (peutRapprocher && declenche(e, "rapprocher-observations")) { e.preventDefault(); void rapprocher(); }
+      else if (declenche(e, "exporter-bcf")) { e.preventDefault(); lienBcf.current?.click(); }
+      else if (ctx.equipe && declenche(e, "importer-bcf")) { e.preventDefault(); fichierBcf.current?.click(); }
+    }}>
     <h2 id="studio-observations-titre">Observations</h2>
     <p className="studio-revisions-sub">Une observation garde la même identité dans chaque domaine (objet, métré, exigence, revue). Seul le propriétaire du projet la clôture ; un éditeur propose.</p>
     {lecture.isPending && <p role="status">Chargement des observations…</p>}
@@ -90,7 +133,19 @@ export function PanneauObservations(props: PanneauObservationsProps) {
     {archived && <p role="status">Variante archivée : observations en lecture seule.</p>}
     {lecture.data && !archived && <div className="studio-commentaires-actions">
       <button type="button" aria-expanded={ouvrir} onClick={() => setOuvrir((v) => !v)} data-studio-suivi-ouvrir>Ouvrir une observation</button>
+      {peutRapprocher && <button type="button" disabled={rapprochement.enCours} onClick={() => void rapprocher()} data-studio-suivi-rapprocher {...propsRaccourci("rapprocher-observations")}>
+        <IconeCollaboration commande="rapprocher-observations" /> Rapprocher avec la révision courante <RaccourciCollaboration commande="rapprocher-observations" />
+      </button>}
+      <a ref={lienBcf} className="studio-bouton" href={apiObservations.urlExportBcf(projectId, studyId, variantId)} download data-studio-bcf-exporter {...propsRaccourci("exporter-bcf")}>
+        <IconeCollaboration commande="exporter-bcf" /> Exporter en BCF <RaccourciCollaboration commande="exporter-bcf" />
+      </a>
+      {ctx.equipe && <button type="button" disabled={importBcf.enCours} onClick={() => fichierBcf.current?.click()} data-studio-bcf-importer {...propsRaccourci("importer-bcf")}>
+        <IconeCollaboration commande="importer-bcf" /> Importer un fichier BCF <RaccourciCollaboration commande="importer-bcf" />
+      </button>}
+      <input ref={fichierBcf} type="file" accept=".bcfzip,.bcf,application/zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importerBcf(f); }} data-studio-bcf-fichier />
     </div>}
+    {importBcf.message && <p role="status" data-studio-bcf-message>{importBcf.message}</p>}
+    {rapprochement.message && <p role="status" data-studio-suivi-rapprochement-message>{rapprochement.message}</p>}
     {ouvrir && <Ouverture ctx={ctx} surFermer={() => setOuvrir(false)} />}
     {liste.length > 0 && <div className="studio-commentaires-filtres" role="group" aria-label="Filtrer le suivi des observations" data-studio-suivi-filtres>
       {FILTRES_SUIVI.map((f) => <button key={f} type="button" aria-pressed={filtre === f} onClick={() => setFiltre(f)} data-studio-suivi-filtre={f}>{`${LIBELLE_FILTRE_SUIVI[f]} (${comptes[f]})`}</button>)}
@@ -132,11 +187,23 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
   const [responsableId, setResponsable] = useState(assignables[0]?.id ?? "");
   const [echeance, setEcheance] = useState("");
   const [citer, setCiter] = useState(true);
+  const [lecteurs, setLecteurs] = useState(false);
   const [domaine, setDomaine] = useState<DomaineObservation | "">("");
   const [refLien, setRef] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [refus, setRefus] = useState<{ message: string; observationId: string | null } | null>(null);
+  const [categorie, setCategorie] = useState<CategorieObservation | "">("");
+  const [gravite, setGravite] = useState<GraviteObservation | "">("");
+  const [pieces, setPieces] = useState<PieceSaisie[]>([]);
   const demande = useDemande();
+  async function lirePieces(files: FileList | null) {
+    const lues: PieceSaisie[] = [];
+    for (const f of [...(files ?? [])].slice(0, 5)) {
+      if (f.type !== "application/pdf" && f.type !== "image/png" && f.type !== "image/jpeg") continue;
+      lues.push({ name: f.name, mime: f.type, contentBase64: enBase64(new Uint8Array(await f.arrayBuffer())) });
+    }
+    setPieces(lues);
+  }
   const known = new Set([...ctx.revision.objects.map((o) => o.id), ...(ctx.revision.dimensions ?? []).map((d) => d.id)]);
   const citables = ctx.selection.filter((id) => known.has(id));
   const deja = domaine && refLien ? suiviPar(ctx.liste, domaine, refLien) : null;
@@ -148,6 +215,8 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
       body: body.trim(), responsableId, ...(echeance ? { echeance } : {}), vue: { mode: ctx.vue },
       ...(citer && citables.length ? { objectIds: citables, revisionId: ctx.revisionId } : {}),
       ...(domaine && refLien ? { liens: [{ domaine, ref: refLien, ...(domaine === "objet" || domaine === "metre" ? { revisionId: ctx.revisionId } : {}) }] } : {}),
+      ...(ctx.equipe && lecteurs ? { audience: "projet" as const } : {}),
+      ...(categorie ? { categorie } : {}), ...(gravite ? { gravite } : {}), ...(pieces.length ? { pieces } : {}),
     };
     try {
       await apiObservations.ouvrir(ctx.projectId, ctx.studyId, ctx.variantId, { ...input, requestId: demande.id(JSON.stringify(input)) });
@@ -155,7 +224,8 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     } catch (err) { setRefus(lireRefus(err, "Observation refusée par le serveur.")); }
     finally { setEnvoi(false); }
   }
-  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-suivi-ouverture>
+  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-suivi-ouverture
+    onKeyDown={(e) => { if (ctx.equipe && declenche(e, "visible-lecteurs")) { e.preventDefault(); setLecteurs((v) => !v); } }}>
     <label htmlFor="studio-suivi-texte">Observation</label>
     <textarea id="studio-suivi-texte" required maxLength={4000} rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
     <label htmlFor="studio-suivi-responsable">Responsable</label>
@@ -165,8 +235,22 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     {assignables.length === 0 && <p className="studio-info">Aucun membre ne peut être responsable (propriétaire ou éditeur requis).</p>}
     <label htmlFor="studio-suivi-echeance">Échéance (facultative)</label>
     <input id="studio-suivi-echeance" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
+    <label htmlFor="studio-suivi-categorie">Catégorie</label>
+    <select id="studio-suivi-categorie" value={categorie} onChange={(e) => setCategorie(e.target.value as CategorieObservation | "")} data-studio-suivi-categorie>
+      <option value="">Non évaluée</option>
+      {CATEGORIES_OBSERVATION.map((c) => <option key={c} value={c}>{LIBELLE_CATEGORIE[c]}</option>)}
+    </select>
+    <label htmlFor="studio-suivi-gravite">Gravité</label>
+    <select id="studio-suivi-gravite" value={gravite} onChange={(e) => setGravite(e.target.value as GraviteObservation | "")} data-studio-suivi-gravite>
+      <option value="">Non évaluée</option>
+      {GRAVITES_OBSERVATION.map((g) => <option key={g} value={g}>{LIBELLE_GRAVITE[g]}</option>)}
+    </select>
+    {gravite === "bloquante" && <p className="studio-info">Une observation bloquante empêche la publication tant qu’elle n’est ni clôturée ni dérogée par une décision du propriétaire.</p>}
+    <label htmlFor="studio-suivi-pieces">Pièces justificatives (PDF, PNG ou JPEG ; 5 au plus, 2 Mo chacune)</label>
+    <input id="studio-suivi-pieces" type="file" multiple accept="application/pdf,image/png,image/jpeg" onChange={(e) => void lirePieces(e.target.files)} data-studio-suivi-pieces />
     {citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={citer} onChange={(e) => setCiter(e.target.checked)} /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
     <p className="studio-info">{`Vue citée : ${LIBELLE_VUE[ctx.vue]}`}</p>
+    {ctx.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience {...propsRaccourci("visible-lecteurs")} /><IconeCollaboration commande="visible-lecteurs" /> Visible par les lecteurs <RaccourciCollaboration commande="visible-lecteurs" /></label>}
     <ChoixLien ctx={ctx} domaine={domaine} refLien={refLien} surDomaine={setDomaine} surRef={setRef} />
     {refus && <p role="alert">{refus.message} {refus.observationId && <button type="button" onClick={() => ctx.montrer(refus.observationId!)}>Voir l’observation</button>}</p>}
     <div className="studio-commentaires-actions">
@@ -181,6 +265,7 @@ function commentaireDe(o: ObservationSuivie, meId: string | undefined): StudioCo
   return {
     id: o.id, variantId: o.contexte.variantId, parentId: null, revisionId: o.contexte.revisionId, objectIds: o.contexte.objectIds, authorId: o.authorId,
     authorEmail: o.authorEmail, body: o.body, createdAt: o.createdAt, deletedAt: null, mine: meId !== undefined && o.authorId === meId, observation: o,
+    ...(o.audience ? { audience: o.audience } : {}),
   };
 }
 
@@ -192,13 +277,28 @@ function Fiche({ o, ctx }: { o: ObservationSuivie; ctx: Ctx }) {
       <strong>{STATUT_LIBELLE[o.statut]}</strong>
       <span>Auteur : <span translate="no">{o.authorEmail}</span></span>
       <span translate="no">{date(o.createdAt)}</span>
+      <span data-studio-audience-etat={o.audience ?? "projet"}>{(o.audience ?? "projet") === "projet" ? "Visible par les lecteurs" : "Équipe"}</span>
     </p>
     <p className="studio-commentaire-texte" translate="no">{o.body}</p>
+    <p className="studio-suivi-contexte" data-studio-suivi-qualification data-gravite={o.gravite ?? ""} data-resolution={o.resolution ?? ""}>
+      {o.issueId && <span>Identifiant <span translate="no" title={o.issueId}>{court(o.issueId)}</span></span>}
+      <span>{`Catégorie : ${o.categorie ? LIBELLE_CATEGORIE[o.categorie] : "non évaluée"}`}</span>
+      <span>{`Gravité : ${o.gravite ? LIBELLE_GRAVITE[o.gravite] : "non évaluée"}`}</span>
+      {o.gravite === "bloquante" && o.resolution && <span data-studio-suivi-resolution>{LIBELLE_RESOLUTION[o.resolution]}</span>}
+    </p>
+    {(o.pieces?.length ?? 0) > 0 && <ul className="studio-suivi-liste" data-studio-suivi-pieces-liste>{o.pieces!.map((p) => <li key={p.sha256}>
+      <a href={apiObservations.urlPiece(ctx.projectId, ctx.studyId, ctx.variantId, o.id, p.sha256)} download={p.name} translate="no">{p.name}</a> <span translate="no">{`(${p.mime}, ${p.size} o)`}</span>
+    </li>)}</ul>}
+    {(o.bcfRefs?.length ?? 0) > 0 && <p className="studio-info" data-studio-suivi-bcf>{"Références BCF reçues (conservées, distinctes de l’identifiant interne) : "}<span translate="no">{o.bcfRefs!.map((r) => `${r.guid} · ${r.contexte}`).join(" ; ")}</span></p>}
     <p className="studio-suivi-contexte" data-studio-suivi-contexte>
       {o.contexte.revisionId && <span>Révision <span translate="no" title={o.contexte.revisionId}>{court(o.contexte.revisionId)}</span></span>}
       {o.contexte.objectIds.length > 0 && <button type="button" onClick={() => ctx.surSelection(o.contexte.objectIds)}>{`Sélectionner les objets cités (${o.contexte.objectIds.length})`}</button>}
       {o.vue && <span data-studio-suivi-vue={o.vue.mode}>{`Vue : ${LIBELLE_VUE[o.vue.mode]}`}</span>}
     </p>
+    {ctx.rapprochements.get(o.id) && <p className={`studio-suivi-rapprochement suivi-${ctx.rapprochements.get(o.id)!.suivi}`} data-studio-suivi-rapprochement={ctx.rapprochements.get(o.id)!.suivi}>
+      <span>{LIBELLE_SUIVI_RAPPROCHEMENT[ctx.rapprochements.get(o.id)!.suivi]}</span>{" "}
+      <span translate="no">{`· ${court(ctx.rapprochements.get(o.id)!.revisionId)} · ${date(ctx.rapprochements.get(o.id)!.createdAt)}`}</span>
+    </p>}
     <ObservationCommentaire c={commentaireDe(o, ctx.meId)} ctx={{ projectId: ctx.projectId, studyId: ctx.studyId, variantId: ctx.variantId, revisionId: ctx.revisionId, participants: ctx.participants, peutPromouvoir: false, surModifie: ctx.relire }} />
     <h3 className="studio-suivi-titre">{`Domaines suivis (${o.liens.length})`}</h3>
     {o.liens.length > 0 ? <ul className="studio-suivi-liste" data-studio-suivi-liens>{o.liens.map((l) => <li key={l.id} data-domaine={l.domaine} data-ref={l.ref}>
@@ -353,8 +453,8 @@ function Decision({ o, ctx, surFermer }: { o: ObservationSuivie; ctx: Ctx; surFe
   const [envoi, setEnvoi] = useState(false);
   const [error, setError] = useState("");
   const demande = useDemande();
-  // La décision de clôture se prend par le passage « Clôturer » (après recontrôle) : jamais ici.
-  const porteeAdmise = nature === "decision" ? "autre" : portee;
+  // La décision de clôture se prend par le passage « Clôturer » (après recontrôle) : jamais ici ; la dérogation (IF-009) se décide ici.
+  const porteeAdmise = nature === "decision" && portee === "cloture" ? "autre" : portee;
   async function envoyer(e: FormEvent) {
     e.preventDefault();
     if (!texte.trim() || envoi) return;
@@ -375,13 +475,12 @@ function Decision({ o, ctx, surFermer }: { o: ObservationSuivie; ctx: Ctx; surFe
         <option value="decision">Décision</option>
       </select>
     </>}
-    {nature === "proposition" && <>
-      <label htmlFor={`${id}-portee`}>Portée</label>
-      <select id={`${id}-portee`} value={portee} onChange={(e) => setPortee(e.target.value as PorteeDecision)} data-studio-decision-portee>
-        <option value="autre">Autre</option>
-        <option value="cloture">Clôture de l’observation</option>
-      </select>
-    </>}
+    <label htmlFor={`${id}-portee`}>Portée</label>
+    <select id={`${id}-portee`} value={porteeAdmise} onChange={(e) => setPortee(e.target.value as PorteeDecision)} data-studio-decision-portee>
+      <option value="autre">Autre</option>
+      {nature === "proposition" && <option value="cloture">Clôture de l’observation</option>}
+      <option value="derogation">Dérogation pour la publication</option>
+    </select>
     {nature === "decision" && <p className="studio-info">La décision de clôture se prend par le passage « Clôturer », après recontrôle.</p>}
     <label htmlFor={`${id}-texte`}>Texte</label>
     <textarea id={`${id}-texte`} required maxLength={2000} rows={2} value={texte} onChange={(e) => setTexte(e.target.value)} />

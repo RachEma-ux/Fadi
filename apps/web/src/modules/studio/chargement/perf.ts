@@ -42,7 +42,7 @@ export const DEFINITIONS_PERF: readonly DefinitionPerf[] = Object.freeze([
   { code: "PERF-06", mesure: "Modif. objet architectural.", profils: "Mur hôte, ouvertures, dépendances, index.", porte: "Coût d’invalidation vs reconstruction totale.",
     instrumentation: "Durée d’application d’une commande d’architecture au brouillon (application complète par le modèle) ; l’invalidation incrémentale n’existe pas encore, la comparaison reste à faire.", etat: "instrumente" },
   { code: "PERF-07", mesure: "Booléen exact.", profils: "Formes simples, cas dégénérés, BRep fournisseurs.", porte: "Chargement, calcul, mémoire, erreurs, précision.",
-    instrumentation: "Aucun booléen exact dans Studio V1 (aucun noyau exact chargé) : non mesuré, déclaré non applicable.", etat: "non-applicable" },
+    instrumentation: "Booléen exact (lot F2, noyau OCCT chargé à la demande dans un Worker) : durée du premier chargement, octets transférés du .wasm, instances compilées, durée de chaque calcul et son issue (aboutie, calcul, plantage, délai, annulée) ; mémoire du tas après chaque calcul (PERF-09). Précision : comparaison aperçu / exact relevée par le panneau, cas dégénérés et BRep fournisseurs non mesurés.", etat: "instrumente" },
   { code: "PERF-08", mesure: "Génération documentaire.", profils: "Détails, vues, feuilles multi-sources, PDF/DXF.", porte: "Temps, annulation, export fidèle.",
     instrumentation: "Durée de composition de la feuille de présentation (tâche du groupe de Workers), aboutie, annulée ou en échec.", etat: "instrumente" },
   { code: "PERF-09", mesure: "Mémoire longue session.", profils: "Changement d’outils, fermer/réouvrir.", porte: "Pic, résiduelle, absence de fuite.",
@@ -68,6 +68,65 @@ export interface SyntheseCode {
   readonly mediane: number | null;
   readonly max: number | null;
   readonly derniere: MesurePerf | null;
+}
+
+/**
+ * Relevé exporté (`studio-releve-perf.json`, Tool Manager) : format versionné `studio-releve-perf/1`. Un changement
+ * incompatible (champ retiré, renommé, de type ou de sens changé) exige `studio-releve-perf/2` ; `controlerRelevePerf`
+ * relit un relevé et en nomme chaque écart (jamais de correction).
+ */
+export const STUDIO_RELEVE_PERF_SCHEMA = "studio-releve-perf/1" as const;
+export interface RelevePerf {
+  readonly schema: typeof STUDIO_RELEVE_PERF_SCHEMA;
+  readonly definitions: readonly DefinitionPerf[];
+  readonly contexte: Readonly<Record<string, string | number | null>>;
+  readonly synthese: readonly SyntheseCode[];
+  readonly journal: readonly MesurePerf[];
+}
+
+const CODES_PERF: readonly string[] = ["PERF-01", "PERF-02", "PERF-03", "PERF-04", "PERF-05", "PERF-06", "PERF-07", "PERF-08", "PERF-09", "PERF-10"];
+const UNITES_PERF: readonly string[] = ["ms", "octets", "nombre"];
+const estObjet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const fini = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v);
+const nombreOuNul = (v: unknown): boolean => v === null || fini(v);
+const cles = (o: Record<string, unknown>): string => Object.keys(o).sort().join(",");
+function ecartsMesure(m: unknown, ou: string): string[] {
+  if (!estObjet(m)) return [`${ou} : objet attendu`];
+  const e: string[] = [];
+  if (cles(m) !== "code,etiquettes,t,unite,valeur") e.push(`${ou} : champs code, valeur, unite, t, etiquettes attendus`);
+  if (!CODES_PERF.includes(m["code"] as string)) e.push(`${ou}.code : code PERF-01 à PERF-10 attendu`);
+  if (!fini(m["valeur"])) e.push(`${ou}.valeur : nombre fini attendu`);
+  if (!UNITES_PERF.includes(m["unite"] as string)) e.push(`${ou}.unite : ms, octets ou nombre attendu`);
+  if (!fini(m["t"])) e.push(`${ou}.t : nombre fini attendu`);
+  const et = m["etiquettes"];
+  if (!estObjet(et) || !Object.values(et).every((x) => typeof x === "string" || fini(x))) e.push(`${ou}.etiquettes : texte ou nombre attendus`);
+  return e;
+}
+
+/** Écarts d'un relevé au schéma `studio-releve-perf/1` (liste vide : conforme). Pur. */
+export function controlerRelevePerf(r: unknown): string[] {
+  if (!estObjet(r)) return ["relevé : objet attendu"];
+  const e: string[] = [];
+  if (r["schema"] !== STUDIO_RELEVE_PERF_SCHEMA) e.push(`schema : ${STUDIO_RELEVE_PERF_SCHEMA} attendu`);
+  if (cles(r) !== "contexte,definitions,journal,schema,synthese") e.push("relevé : champs schema, definitions, contexte, synthese, journal attendus");
+  const defs = r["definitions"];
+  if (!Array.isArray(defs) || defs.map((d) => (estObjet(d) ? d["code"] : null)).join(",") !== CODES_PERF.join(",")) e.push("definitions : les dix codes PERF-01 à PERF-10, dans l'ordre");
+  else defs.forEach((d: Record<string, unknown>, i) => {
+    if (!["mesure", "profils", "porte", "instrumentation"].every((k) => typeof d[k] === "string") || !["instrumente", "non-applicable"].includes(d["etat"] as string)) e.push(`definitions[${i}] : mesure, profils, porte, instrumentation et état attendus`);
+  });
+  const ctx = r["contexte"];
+  if (!estObjet(ctx) || !Object.values(ctx).every((x) => x === null || typeof x === "string" || fini(x))) e.push("contexte : texte, nombre ou null attendus");
+  const synthese = r["synthese"];
+  if (!Array.isArray(synthese)) e.push("synthese : liste attendue");
+  else synthese.forEach((s: unknown, i) => {
+    if (!estObjet(s) || !CODES_PERF.includes(s["code"] as string)) { e.push(`synthese[${i}] : code attendu`); return; }
+    if (!(s["unite"] === null || UNITES_PERF.includes(s["unite"] as string)) || !Number.isInteger(s["n"]) || !["min", "mediane", "max"].every((k) => nombreOuNul(s[k]))) e.push(`synthese[${i}] : unite, n, min, mediane, max attendus`);
+    if (s["derniere"] !== null) e.push(...ecartsMesure(s["derniere"], `synthese[${i}].derniere`));
+  });
+  const journal = r["journal"];
+  if (!Array.isArray(journal)) e.push("journal : liste attendue");
+  else journal.forEach((m: unknown, i) => e.push(...ecartsMesure(m, `journal[${i}]`)));
+  return e;
 }
 
 /** Mesures gardées par code (les plus récentes) : un code fréquent (rendu, survol) n'efface jamais les autres. */
@@ -138,9 +197,9 @@ export class ReleveurPerf {
     });
   }
 
-  /** Relevé complet exportable (définitions, synthèse, journal). */
-  releve(contexte: Record<string, string | number | null> = {}) {
-    return { definitions: DEFINITIONS_PERF, contexte, synthese: this.synthese(), journal: this.journal };
+  /** Relevé complet exportable (schéma versionné, définitions, contexte, synthèse, journal). */
+  releve(contexte: Record<string, string | number | null> = {}): RelevePerf {
+    return { schema: STUDIO_RELEVE_PERF_SCHEMA, definitions: DEFINITIONS_PERF, contexte, synthese: this.synthese(), journal: this.journal };
   }
 
   readonly abonner = (f: () => void): (() => void) => { this.abonnes.add(f); return () => { this.abonnes.delete(f); }; };

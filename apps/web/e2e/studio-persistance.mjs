@@ -6,6 +6,7 @@
  * PHASE=initial écrit l'état de réouverture dans STUDIO_STATE s'il est fourni.
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
@@ -212,7 +213,7 @@ if (PHASE === 'reopen') {
   const editor = client();
   const editorCredentials = credentials();
   check('compte éditeur créé', (await editor('POST', '/auth/register', editorCredentials)).status === 201);
-  check('éditeur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: editorCredentials.email, role: 'editeur' })).status === 201);
+  check('éditeur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, editor, projectId, editorCredentials.email, 'editeur')).ok);
   const studyRequestId = `creation-${randomUUID()}`;
   const ideal = await owner('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
   check('étude créée avec requestId (201, replayed=false)', ideal.status === 201 && ideal.body.replayed === false && ideal.headers.get('idempotent-replayed') === 'false', JSON.stringify(ideal.body).slice(0, 200));
@@ -310,17 +311,18 @@ if (PHASE === 'reopen') {
   const reader = client();
   const readerCredentials = credentials();
   check('compte lecteur créé', (await reader('POST', '/auth/register', readerCredentials)).status === 201);
-  check('lecteur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: readerCredentials.email, role: 'lecteur' })).status === 201);
+  check('lecteur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, 'lecteur')).ok);
   const emptyComments = await owner('GET', commentsPath);
   check('commentaires : liste vide au départ', emptyComments.status === 200 && Array.isArray(emptyComments.body?.comments) && emptyComments.body.comments.length === 0, JSON.stringify(emptyComments.body));
   const commentRequestId = `commentaire-${randomUUID()}`;
-  const anchored = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  // Audience « projet » (écart E1) : le lecteur de la recette lit ces fils, y répond et en est notifié.
+  const anchored = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('commentaire ancré (201) : texte épuré, révision et objets cités', anchored.status === 201 && anchored.body.replayed === false && anchored.body.body === 'Vérifier la ligne et le rectangle' && anchored.body.revisionId === saved.body.revision.id && JSON.stringify(anchored.body.objectIds) === JSON.stringify(['ligne-1', 'rect-1']) && anchored.body.mine === true && anchored.body.parentId === null && anchored.body.deletedAt === null && isIso(anchored.body.createdAt), `${anchored.status} ${JSON.stringify(anchored.body)}`);
-  const anchoredAgain = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  const anchoredAgain = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('commentaire : rejeu du même requestId (201, même commentaire, replayed=true)', anchoredAgain.status === 201 && anchoredAgain.body.replayed === true && anchoredAgain.headers.get('idempotent-replayed') === 'true' && anchoredAgain.body.id === anchored.body.id, `${anchoredAgain.status} ${JSON.stringify(anchoredAgain.body)}`);
   check('commentaire : requestId réutilisé avec un autre texte → 409', (await owner('POST', commentsPath, { body: 'Autre texte', requestId: commentRequestId })).body?.error === 'request_conflict');
   check('commentaire : requestId réutilisé par un autre auteur → 409', (await editor('POST', commentsPath, { body: 'Vérifier la ligne et le rectangle', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId })).status === 409);
-  const headAnchored = await owner('POST', commentsPath, { body: 'Ancré à la tête', objectIds: ['ligne-1'] });
+  const headAnchored = await owner('POST', commentsPath, { body: 'Ancré à la tête', objectIds: ['ligne-1'], audience: 'projet' });
   check('commentaire : objets sans révision ancrés à la tête vérifiée', headAnchored.status === 201 && headAnchored.body.revisionId === moved.body.revision.id, JSON.stringify(headAnchored.body));
   const unknownObjects = await owner('POST', commentsPath, { body: 'Objet inconnu', objectIds: ['ligne-1', 'objet-inconnu'] });
   check('commentaire : objet absent de la tête → 400', unknownObjects.status === 400 && unknownObjects.body?.code === 'unknown_objects' && JSON.stringify(unknownObjects.body.objectIds) === JSON.stringify(['objet-inconnu']), `${unknownObjects.status} ${JSON.stringify(unknownObjects.body)}`);
@@ -338,7 +340,7 @@ if (PHASE === 'reopen') {
   const replyToReply = await reader('POST', commentsPath, { body: 'Réponse à la réponse', parentId: reply.body?.id });
   check('réponse à une réponse : rattachée au commentaire d\'origine (un seul niveau)', replyToReply.status === 201 && replyToReply.body.parentId === anchored.body.id);
   check('réponse à un commentaire inconnu → 404', (await owner('POST', commentsPath, { body: 'Perdue', parentId: 'studio_comment_inconnu' })).status === 404);
-  const otherVariantComment = await owner('POST', `${studyPath}/variants/${bId}/comments`, { body: 'Sur la variante B' });
+  const otherVariantComment = await owner('POST', `${studyPath}/variants/${bId}/comments`, { body: 'Sur la variante B', audience: 'projet' });
   check('réponse à un commentaire d\'une autre variante → 404', otherVariantComment.status === 201 && (await owner('POST', commentsPath, { body: 'Croisée', parentId: otherVariantComment.body.id })).status === 404);
   const thread = await reader('GET', commentsPath);
   const threadIds = thread.body?.comments?.map((x) => x.id);
@@ -357,7 +359,7 @@ if (PHASE === 'reopen') {
   const deletedView = afterDelete.body?.comments?.find((x) => x.id === anchored.body.id);
   check('suppression douce : fil conservé, texte et objets retirés, date de suppression', deletedView && deletedView.body === null && deletedView.objectIds.length === 0 && isIso(deletedView.deletedAt) && afterDelete.body.comments.length === 5 && afterDelete.body.comments[1].id === reply.body.id, JSON.stringify(deletedView));
   check('réponse à un commentaire supprimé → 404', (await editor('POST', commentsPath, { body: 'Trop tard', parentId: anchored.body.id })).status === 404);
-  const deletedReplay = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  const deletedReplay = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('rejeu après suppression : même commentaire, toujours supprimé, aucun doublon', deletedReplay.status === 201 && deletedReplay.body.replayed === true && deletedReplay.body.id === anchored.body.id && deletedReplay.body.deletedAt !== null && (await owner('GET', commentsPath)).body?.comments?.length === 5);
   check('commentaires : la tête du dessin n\'est pas modifiée', (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
   const commentIds = (await owner('GET', commentsPath)).body?.comments?.map((x) => x.id);
@@ -676,6 +678,99 @@ if (PHASE === 'reopen') {
     check('A.4 : cascade explicite — mur et ouverture supprimés ensemble', r3.status === 200 && r3.body.revision.document.architecture === undefined, JSON.stringify(r3.body).slice(0, 300));
     const ancienne = await owner('GET', `${variantPath(av)}/revisions/${r2.body?.revision?.id}`);
     check('A.4 : la révision de l\'élargissement reste lisible et identique', ancienne.status === 200 && digest(ancienne.body.revision.document) === digest(r2.body.revision.document));
+  }
+
+  // EX-001 — mêmes comptes et même catalogue : la session Fadi (/auth) ouvre le Studio, l'auteur des révisions est ce
+  // compte, les rôles viennent des membres du projet Fadi, et la même session lit le catalogue des Documents du projet.
+  {
+    const moi = (await owner('GET', '/auth/me')).body;
+    const moiId = moi?.user?.id ?? moi?.id;
+    const hist = (await owner('GET', `${variantPath(s)}/revisions`)).body?.revisions ?? [];
+    check('EX-001 : le compte Fadi de la session (/auth/me) est l\'auteur enregistré des révisions Studio', !!moiId && moiId === ownerUser.body.id && hist.length > 0 && hist.every((r) => r.authorId === moiId), JSON.stringify([moiId, hist.map((r) => r.authorId)]));
+    const docs = await owner('GET', `/projects/${projectId}/documents`);
+    check('EX-001 : la même session lit le projet Fadi et son catalogue des Documents (aucune connexion propre au Studio)', (await owner('GET', `/projects/${projectId}`)).status === 200 && docs.status === 200 && Array.isArray(docs.body?.studioPackages) && Array.isArray(docs.body?.studioDossiers), `${docs.status} ${JSON.stringify(docs.body).slice(0, 200)}`);
+    const lu = await reader('GET', variantPath(s));
+    check('EX-001 : un membre invité dans le projet Fadi (rôle lecteur) lit l\'étude sans écrire ; un compte hors projet est refusé', lu.status === 200 && lu.body?.canWrite === false && [403, 404].includes((await foreign('GET', variantPath(s))).status));
+  }
+
+  // EX-012 — immuabilité : R12 capturée (document et métadonnées), R13 produite, puis une annulation (déplacement
+  // inverse) : chacune crée une nouvelle révision ; R12 relue est identique octet pour octet (empreinte canonique).
+  {
+    const e12 = await owner('POST', root, { name: 'Étude EX-012' });
+    const v12 = { projectId, studyId: e12.body?.study?.id, variantId: e12.body?.variant?.id };
+    const lot = (base, commands) => owner('POST', `${variantPath(v12)}/commands`, { contractVersion: 'studio-commands/1', requestId: `ex012-${randomUUID()}`, baseRevisionId: base, commands });
+    const r12 = await lot(e12.body?.revision?.id, [{ toolId: 'studio.dessin.ligne', params: { id: 'l12', type: 'line', start: { x: 0, y: 0 }, end: { x: 3, y: 0 } } }, { toolId: 'studio.dessin.rectangle', params: { id: 'r12', type: 'rectangle', origin: { x: 0, y: 2 }, width: 2, height: 1 } }]);
+    const capture = await owner('GET', `${variantPath(v12)}/revisions/${r12.body?.revision?.id}`);
+    const empreinteR12 = createHash('sha256').update(canonical(capture.body?.revision)).digest('hex');
+    const r13 = await lot(r12.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'l12', dx: 2, dy: 0 } }, { toolId: 'studio.dessin.supprimer', params: { ids: ['r12'] } }]);
+    const annulation = await lot(r13.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'l12', dx: -2, dy: 0 } }]);
+    const relu = await owner('GET', `${variantPath(v12)}/revisions/${r12.body?.revision?.id}`);
+    check('EX-012 : R12 capturée, R13 produite puis annulée — deux nouvelles révisions, chaîne R12 → R13 → R14',
+      capture.status === 200 && r13.status === 200 && annulation.status === 200 && r13.body.revision.parentRevisionId === r12.body.revision.id && annulation.body.revision.parentRevisionId === r13.body.revision.id
+        && annulation.body.revision.id !== r12.body.revision.id && (await owner('GET', variantPath(v12))).body?.revision?.id === annulation.body.revision.id, `${capture.status} ${r13.status} ${annulation.status}`);
+    check('EX-012 : R12 relue après R13 et l\'annulation — empreinte et contenu complet (document et métadonnées) inchangés, lecture seule',
+      relu.status === 200 && createHash('sha256').update(canonical(relu.body?.revision)).digest('hex') === empreinteR12 && canonical(relu.body.revision.document) === canonical(r12.body.revision.document) && relu.body.canWrite === false,
+      JSON.stringify(relu.body?.revision).slice(0, 300));
+    check('EX-012 : l\'annulation est une nouvelle opération — R14 a le contenu de R12 pour la ligne, mais pas son identité ni son rectangle supprimé',
+      annulation.body.revision.document.objects.find((o) => o.id === 'l12')?.start.x === 0 && !annulation.body.revision.document.objects.some((o) => o.id === 'r12') && relu.body.revision.document.objects.some((o) => o.id === 'r12'));
+  }
+
+  // EX-013 — clonage : la variante dérivée est identifiée par sa propre variante (ses objets y sont propres), sa
+  // provenance pointe vers la source ; aucune propagation implicite, dans un sens comme dans l'autre.
+  {
+    const e13 = await owner('POST', root, { name: 'Étude EX-013' });
+    const p13 = `${root}/${e13.body?.study?.id}`;
+    const src = { projectId, studyId: e13.body?.study?.id, variantId: e13.body?.variant?.id };
+    const lot = (v, base, commands) => owner('POST', `${variantPath(v)}/commands`, { contractVersion: 'studio-commands/1', requestId: `ex013-${randomUUID()}`, baseRevisionId: base, commands });
+    const s1 = await lot(src, e13.body?.revision?.id, [{ toolId: 'studio.dessin.ligne', params: { id: 'l13', type: 'line', start: { x: 0, y: 0 }, end: { x: 3, y: 0 } } }]);
+    const clone = await owner('POST', `${p13}/variants`, { name: 'Clone EX-013', fromVariantId: src.variantId });
+    const cv = { ...src, variantId: clone.body?.variant?.id };
+    const s2 = await lot(src, s1.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'l13', dx: 5, dy: 0 } }]);
+    const cloneApres = await owner('GET', variantPath(cv));
+    check('EX-013 : clone identifié dans sa propre variante, provenance vers la source ; la source modifiée ne se propage pas au clone',
+      clone.status === 201 && cv.variantId !== src.variantId && JSON.stringify(clone.body?.derivedFrom) === JSON.stringify({ variantId: src.variantId, revisionId: s1.body?.revision?.id })
+        && s2.status === 200 && cloneApres.body?.revision?.id === clone.body.revision.id && cloneApres.body.revision.document.objects.find((o) => o.id === 'l13')?.start.x === 0,
+      JSON.stringify(cloneApres.body?.revision).slice(0, 200));
+    const c1 = await lot(cv, clone.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'l13', dx: 0, dy: 4 } }]);
+    const sourceApres = await owner('GET', variantPath(src));
+    check('EX-013 : le clone modifié ne se propage pas à la source (tête et contenu de la source inchangés)',
+      c1.status === 200 && sourceApres.body?.revision?.id === s2.body?.revision?.id && sourceApres.body.revision.document.objects.find((o) => o.id === 'l13')?.start.y === 0 && sourceApres.body.revision.document.objects.find((o) => o.id === 'l13')?.start.x === 5);
+    check('EX-013 : une révision de la source n\'est pas lisible par la variante clone ni l\'inverse (404) ; écrire sur le clone depuis une révision de la source est refusé (409)',
+      (await owner('GET', `${variantPath(cv)}/revisions/${s1.body?.revision?.id}`)).status === 404 && (await owner('GET', `${variantPath(src)}/revisions/${c1.body?.revision?.id}`)).status === 404
+        && (await lot(cv, s2.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'l13', dx: 1, dy: 0 } }])).status === 409);
+  }
+
+  // EX-007 — workflow transversal : les sept phases Cadrer → … → Publier déclarées dans l'ordre sur une même révision
+  // (aucune révision créée), puis une publication préparée et diffusée : les 21 étapes du Parcours restent identiques.
+  {
+    const e7 = await owner('POST', root, { name: 'Étude EX-007' });
+    const p7 = `${root}/${e7.body?.study?.id}`;
+    const v7 = { projectId, studyId: e7.body?.study?.id, variantId: e7.body?.variant?.id };
+    const r7 = await owner('POST', `${variantPath(v7)}/commands`, { contractVersion: 'studio-commands/1', requestId: `ex007-${randomUUID()}`, baseRevisionId: e7.body?.revision?.id, commands: [{ toolId: 'studio.dessin.ligne', params: { id: 'l7', type: 'line', start: { x: 0, y: 0 }, end: { x: 2, y: 0 } } }] });
+    const etapesAvant = await owner('GET', `/projects/${projectId}/steps`);
+    const phases = ['cadrer', 'explorer', 'concevoir', 'controler', 'coordonner', 'approuver', 'publier'];
+    const parcours = [];
+    for (const phase of phases) {
+      const r = await owner('PATCH', `${p7}/workflow`, { phase });
+      const lue = (await owner('GET', p7)).body?.study?.workflowPhase;
+      const tete7 = (await owner('GET', variantPath(v7))).body?.revision?.id;
+      parcours.push([phase, r.status, lue, tete7 === r7.body?.revision?.id]);
+    }
+    check('EX-007 : les sept phases Cadrer → Explorer → Concevoir → Contrôler → Coordonner → Approuver → Publier déclarées dans l\'ordre, chacune relue, sur la même révision (aucune révision créée)',
+      r7.status === 200 && parcours.every(([phase, statut, lue, meme]) => statut === 200 && lue === phase && meme) && ((await owner('GET', `${variantPath(v7)}/revisions`)).body?.revisions ?? []).length === 2,
+      JSON.stringify(parcours));
+    const pub7 = await owner('POST', `${variantPath(v7)}/publications`, { contenu: 'dessin-2d', title: 'EX-007' });
+    const id7 = pub7.body?.id;
+    const pubs7 = `${p7}/publications`;
+    const m7 = (await owner('GET', `${pubs7}/${id7}`)).body;
+    const s7 = await owner('POST', `${pubs7}/${id7}/soumettre`, {});
+    const a7 = await owner('POST', `${pubs7}/${id7}/approuver`, { manifestHash: m7?.manifestHash });
+    const d7 = await owner('POST', `${pubs7}/${id7}/diffuser`, {});
+    const etapesApres = await owner('GET', `/projects/${projectId}/steps`);
+    check('EX-007 : publier (préparer, soumettre, approuver, diffuser) ne valide aucune des 21 étapes du Parcours — états des étapes identiques avant et après',
+      pub7.status === 201 && s7.status === 200 && a7.status === 200 && d7.status === 200 && etapesAvant.status === 200 && Array.isArray(etapesAvant.body) && etapesAvant.body.length === 21
+        && canonical(etapesApres.body) === canonical(etapesAvant.body), `${pub7.status} ${s7.status} ${a7.status} ${d7.status} ${etapesAvant.body?.length}`);
+    check('EX-007 : la phase déclarée reste une déclaration — l\'étude ne porte que sa phase, la publication ne la change pas', (await owner('GET', p7)).body?.study?.workflowPhase === 'publier');
   }
 
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });

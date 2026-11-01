@@ -1,11 +1,15 @@
 # Organisations, participation et revue externe — Statut
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**En cours — plan validé (🛑 0, OP-1) ; phase 1 implémentée sur la branche `feat/op-phase1-participations`, en attente de
-la revue 🛑 1.**
+**Implémenté et fusionné — toutes les phases du plan.** Phases 1, 2, 3 bis et 5 (PR #265, #281), phases 3, 4, 6 et
+reliquats (PR #290, `0ff0638`, CI complète verte sur `866f54d`, suites DB-3 comprises). Recommandations de la recette
+appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-25. **Accepté par le maître d'ouvrage le
+2026-10-25 (OP-5, 🛑 final franchi)** ; rien n'est déployé (accord explicite requis). Lot OP-PONT fusionné dans `main`.
+Lot **OP-AUTOCONTROLE** (OP-6, séparation des responsabilités) : **Implémenté**, vérifié en local, DB-3 et CI à passer,
+non accepté.
 
 ## Faits vérifiés
 
@@ -31,17 +35,48 @@ la revue 🛑 1.**
   l'API qui les crée.
 - Concept de référence : `docs/workstreams/users-management/concept.md` v2.2, protégé par le test anti-dérive existant.
 
+- Phase 3 bis livrée sur la branche (2026-10-24) : `GET /admin/audit`, `GET /auth/me/history`, `GET /projects/:id/journal`,
+  écrans et recette `journal-activite.mjs` (50 contrôles verts en local, axe-core bureau et téléphone) ; DB-3 en CI. Écarts :
+  route `/auth/me/history` (au lieu de `/account/history`), aucun export d'administration (UM-20 ne définit l'export que par
+  projet) — [phase-3bis.md](phase-3bis.md).
+
+- Phases 2 et 5 livrées sur la branche (2026-10-24) : [phase-2.md](phase-2.md) (vue `project_effective_access` source unique
+  des droits, six rôles par portée, Approbateur / Diffuseur pour Studio, annuaire et équipe, effacement des contacts ; écart :
+  miroir `op_sync_access` conservé comme pont) et [phase-5.md](phase-5.md) (espace d'organisation, adhésions par invitation
+  acceptée, groupes et mandats sans droit, gabarits versionnés). **CI complète verte sur `9abca29`** (run 40137263799), suites
+  DB-3 comprises.
+
+- Phases 3, 4, 6 et reliquats (2026-10-25, PR #290), vérifiés en local : typecheck, tests (seules les suites DB-3 refusées
+  par la garde), build, migrations ×2 sur base neuve et existante, contrôles `*-migration-check.mjs`, script
+  post-déploiement « conforme » ; recettes `invitations-participation` 107, `revue-externe` 132, `portees-etroites` 87,
+  `organisations` 182, `organisations-participation-final` 155, `participants` 92, `collaboration-support-telephone` 5.
+  Suites DB-3 de ces lots : **vertes en CI** sur `866f54d` (PR #290). Matrice des exigences : [recette-finale.md](recette-finale.md).
+- OP-4 (2026-10-25) appliquée : durée d'accès de revue par défaut 14 jours ; effacement automatique des contacts désactivé
+  par défaut (`CONTACT_RETENTION_ENABLED=1` pour l'activer après l'avis juridique) ; tests purs ajoutés.
+- Écarts déclarés : pont `op_sync_access` retiré par le lot OP-PONT (fusionné, `7eed727`) ; acceptation dans l'application réservée aux adresses
+  vérifiées (conservée, OP-4) ; raccourcis des Participants en Ctrl+Alt+Maj (Alt+Maj saturé).
+- Lot OP-AUTOCONTROLE (décision OP-6 du 2026-10-25) **implémenté** sur la branche `lot-autocontrole` (depuis `main` = `a37bc69`) :
+  option « Auto-contrôle » par compte (activée par défaut, changée par l'administration), approbation de son propre dossier
+  signalée (Studio et revue externe), refusée en 422 quand l'option est désactivée, empreintes inchangées —
+  [lot-autocontrole.md](lot-autocontrole.md). Vérifié localement : typecheck, tests (seules les 15 suites DB-3 refusées par
+  la garde), build, migrations ×2 (base neuve et copie existante), `auto-controle.mjs` 53/53, `studio-publication.mjs`
+  129/129, `comptes-admin.mjs` 82/82, `revue-externe.mjs` 132/132, `interface-anglais.mjs` vert. DB-3 et CI : non exécutés.
+
 ## Points ouverts
 
-- Revue 🛑 1 de la phase 1 (modèle et migration) par le maître d'ouvrage.
-- OP-D9 décidée le 2026-10-24 (OP-2 : projet + 2 ans après clôture, plus tôt sur demande) ; effacement à livrer en phase 2 ;
-  réserve : obligations légales de conservation à vérifier par le conseil juridique du maître d'ouvrage.
-- OP-D12 révisée le 2026-10-24 (OP-2) : envoi réel des courriels en préproduction, réalisé dans une PR distincte (UM-28).
+- OP-5 : réserve juridique levée par le maître d'ouvrage (activation `CONTACT_RETENTION_ENABLED=1` au déploiement) ;
+  listes métier : saisie libre définitive.
+- Déploiement : accord explicite du maître d'ouvrage requis (runbook ; § 10 pour l'auto-contrôle).
+- Lot OP-AUTOCONTROLE : PR à ouvrir, suites DB-3 et CI à faire passer, acceptation du maître d'ouvrage à recueillir.
+- Lot OP-PONT livré (`lot-pont.md`) : égalité des accès prouvée localement (base des phases 1 à 6 et production d'avant le
+  chantier), recettes vertes ; suites DB-3 et CI à passer sur sa PR.
+- PR #297 (OP-4, OP-5, préproduction) fusionnée, CI verte sur `739d019` ; préproduction déployée par `fadi-preprod-auto`
+  depuis `main` vert (version en ligne vérifiable sur le VPS : `sudo fadi-preprod status`).
 
 ## Liens de suivi
 
 - Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche : `ccr-266c1e83-7780ml`, imposée par la session. PR de cadrage : [#263](https://github.com/RachEma-ux/Fadi/pull/263).
+- Branche : `ccr-3b26a9f6-z073dc`. PR #263 (cadrage), #265 (phase 1), #281 (phases 2, 3 bis, 5) fusionnées ; PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6, reliquats) fusionnée le 2026-10-25.
   Le commit était d'abord poussé sur la PR #259, fusionnée avec sa tête précédente sans lui : il est rebasé sur `main`.
 
 ## Préconditions de clôture

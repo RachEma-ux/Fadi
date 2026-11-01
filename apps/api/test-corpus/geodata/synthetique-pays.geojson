@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"code": "ZZ", "nom": "Pays synthétique"}, "geometry": {"type": "Polygon", "coordinates": [[[-8.0, 30.8], [-7.6, 30.8], [-7.6, 31.6], [-8.0, 31.6], [-8.0, 30.8]]]}}]}

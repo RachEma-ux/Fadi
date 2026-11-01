@@ -3,7 +3,7 @@
  * courant, messages d'interface (français source, traduits par le dictionnaire) et libellés du rapport. Pur : ni React
  * ni DOM.
  */
-import { lireDxfStudio, STUDIO_DXF_LIMITES, STUDIO_LIMITS, StudioValidationError, type StudioDocument, type StudioDxfResultat, type StudioDxfUnite } from "@parcours/atelier-model";
+import { lireDxfStudio, STUDIO_DXF_LIMITES, STUDIO_LIMITS, StudioValidationError, type StudioDocument, type StudioDxfResultat, type StudioDxfUnite, studioSha256, studioVersionDxf } from "@parcours/atelier-model";
 
 /** Unités proposées quand le fichier n'en déclare pas : aucune n'est présélectionnée. */
 export const UNITES_PROPOSEES: readonly { valeur: StudioDxfUnite; libelle: string }[] = Object.freeze([
@@ -17,7 +17,8 @@ export const UNITES_PROPOSEES: readonly { valeur: StudioDxfUnite; libelle: strin
 export const TAILLE_MAX_OCTETS = STUDIO_DXF_LIMITES.octets;
 export const MESSAGE_TROP_GROS = "Fichier trop volumineux : 5 Mo au plus.";
 
-export type LectureDxf = { resultat: StudioDxfResultat } | { erreur: string };
+/** Lecture d'un DXF : résultat du lecteur, plus l'empreinte SHA-256 et la version du format lues sur le texte (EX-014). */
+export type LectureDxf = { resultat: StudioDxfResultat; empreinteSha256: string; versionFormat: string | null } | { erreur: string };
 
 /** Message d'interface pour un refus du lecteur ; jamais le message technique brut. */
 export function messageImport(e: unknown): string {
@@ -33,9 +34,10 @@ export function messageImport(e: unknown): string {
   return "Fichier DXF illisible : seul le DXF ASCII (R12 ou suivant) est lu.";
 }
 
-export function lireDxf(texte: string, document: StudioDocument, unite: StudioDxfUnite | null): LectureDxf {
+export function lireDxf(texte: string, document: StudioDocument, unite: StudioDxfUnite | null, conserverNonNatifs = false): LectureDxf {
   try {
-    return { resultat: lireDxfStudio(texte, { document, ...(unite ? { unite } : {}) }) };
+    const resultat = lireDxfStudio(texte, { document, ...(unite ? { unite } : {}), ...(conserverNonNatifs ? { conserverNonNatifs } : {}) });
+    return { resultat, empreinteSha256: studioSha256(texte), versionFormat: studioVersionDxf(texte) };
   } catch (e) {
     return { erreur: messageImport(e) };
   }

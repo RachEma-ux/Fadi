@@ -260,6 +260,27 @@ try {
   check('déclin', (await agent().call('POST', '/auth/invitations/decline', { token: hToken })).body?.declined === true);
   check('invitation déclinée : aucune activation', (await agent().call('POST', '/auth/activate', { token: hToken, password: strong(), acceptTerms: true })).body?.error === 'declined');
 
+  // ===== Organisations-participation, phase 3 — invitation acceptée pour tous (OP-D2 a, fin de l'ajout direct UM-8) =====
+  // Le détail (rôles par portée, aperçu, mauvais compte, invitant révoqué, accès expiré, navigateur) est dans
+  // apps/web/e2e/invitations-participation.mjs ; ici, le contrat des comptes : un compte existant est invité, jamais ajouté.
+  const P3 = agent(), xEmail = mail('existant');
+  await P3.call('POST', '/auth/register', { email: xEmail, password: strong() });
+  const xinv = await A.call('POST', `/projects/${pid}/members`, { email: xEmail, role: 'lecteur' });
+  check('compte existant : invitation (202), aucun ajout direct', xinv.status === 202 && xinv.body.accountExists === true && xinv.body.invitation.projectRole === 'lecteur', xinv);
+  check('compte existant : aucun accès avant acceptation', (await P3.call('GET', `/projects/${pid}`)).status === 404);
+  check('compte existant : notification « invitation en attente » dans l\'application', (await P3.call('GET', '/notifications')).body?.items?.some((i) => i.invitation?.id === xinv.body.invitation.id));
+  check('propriétaire : invitation listée « en attente d\'acceptation »', (await A.call('GET', `/projects/${pid}/members`)).body?.invitations?.some((i) => i.email === xEmail && i.awaiting === 'acceptation'));
+  const xNotif = await P3.call('POST', `/notifications/invitations/${xinv.body.invitation.id}/accept`, {});
+  check('acceptation depuis la notification : adresse non vérifiée refusée (403)', xNotif.status === 403 && xNotif.body?.error === 'email_unverified', xNotif);
+  check('acceptation depuis la notification : une autre adresse ne la voit pas (404)', (await E.call('POST', `/notifications/invitations/${xinv.body.invitation.id}/accept`, {})).status === 404);
+  const xToken = await lastLink(xEmail, '/compte/invitation');
+  const xAcc = await P3.call('POST', '/auth/invitations/accept', { token: xToken });
+  check('acceptation par le lien du courriel : entrée dans le projet, travail en attente', xAcc.status === 200 && xAcc.body.projectId === pid && xAcc.body.pendingWork?.openTasks === 0, xAcc);
+  check('double soumission : même résultat, aucun nouvel effet', (await P3.call('POST', '/auth/invitations/accept', { token: xToken })).status === 200
+    && (await sql.query("SELECT count(*)::int AS c FROM admin.audit_log WHERE action = 'invitation.accepted' AND target_id = $1", [xinv.body.invitation.id])).rows[0].c === 1);
+  check('compte existant : accès ouvert après acceptation (lecteur)', (await P3.call('GET', `/projects/${pid}`)).status === 200);
+  check('notification retirée après acceptation', !(await P3.call('GET', '/notifications')).body?.items?.some((i) => i.invitation));
+
   // ===== Phase 3 — accès support (D-2) =====
   check('admin sans accès support : projet → 404', (await B.call('GET', `/projects/${pid}`)).status === 404);
   const grants = await A.call('GET', `/projects/${pid}/support-grants`);

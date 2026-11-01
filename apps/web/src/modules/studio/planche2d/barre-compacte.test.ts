@@ -10,16 +10,21 @@ const largeurRangee = (d: ReturnType<typeof disposerBarre>, m: MesureFamille[], 
     const f = m.find((x) => x.id === e.id)!;
     return s + (e.menu ? f.menu : sep) + f.elements.slice(0, e.enLigne).reduce((a, b) => a + b, 0);
   }, 0) + (d.plus.length ? plus : 0);
+const somme = (v: readonly number[]) => v.reduce((a, b) => a + b, 0);
 const disposer = (largeur: number, active: IdFamille = "selection", m = mesures()) => disposerBarre({ largeur, familles: m, active, plus: 52, separateur: 13 });
 
 describe("Barre compacte — familles", () => {
   it("chaque famille garde ses outils les plus utilisés en tête ; Courbes et Annotation sortent de Dessin", () => {
-    expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle"]);
+    // Lot W3-A (X.1-01) : les blocs définis par l'utilisateur (définir, insérer, éclater) après les tracés de base.
+    expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.bloc.definir", "studio.bloc.inserer", "studio.bloc.eclater"]);
+    expect(familleDeOutil("studio.contrainte.poser")).toBe("modification");
     expect(ELEMENTS_FAMILLE.get("courbes")?.map((e) => e.id)).toEqual(["studio.dessin.arc", "studio.dessin.polyligne", "terminer-polyligne", "fermer-polyligne"]);
-    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
+    // Graphismes (EX-055) : créer et retirer, après les annotations.
+    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.graphisme.creer", "studio.graphisme.retirer"]);
     expect(ELEMENTS_FAMILLE.get("selection")?.map((e) => e.id)).toEqual(["studio.dessin.selection", "tout-selectionner"]);
     expect(ELEMENTS_FAMILLE.get("vue")?.map((e) => e.id)).toContain("accrochage-grille");
-    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
+    // Lot F3 : les deux outils des éléments non natifs (registre) en tête, puis Importer IFC et Modèles externes.
+    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["studio.nonnatif.conserver", "studio.nonnatif.retirer", "studio.source.declarer", "importer-dxf", "importer-ifc", "modeles-externes", "exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "echanges"]);
     expect(familleDeOutil("studio.dessin.cote")).toBe("annotation");
     expect(familleDeOutil("studio.objet.extruder")).toBe("volume");
   });
@@ -76,6 +81,24 @@ describe("Barre compacte — disposition en une rangée", () => {
     const m = mesures().filter((f) => f.id !== "volume");
     const d = disposer(Number.POSITIVE_INFINITY, "selection", m);
     expect(d.rangee.some((e) => e.id === "volume")).toBe(false);
+  });
+});
+
+describe("Barre compacte — familles prioritaires d'un domaine", () => {
+  it("palette d'un domaine : une famille prioritaire passe juste après l'active, avant l'Édition, et reste en rangée quand l'Édition grossit", () => {
+    // Sélection (active), Édition (grossie de deux commandes « à définir ») et Présentation ; place restante après les
+    // menus et la famille active : celle de la plus coûteuse des deux autres familles, qui ne tiennent pas ensemble.
+    const m = mesures().filter((f) => ["selection", "edition", "presentation"].includes(f.id));
+    const edition = m.find((f) => f.id === "edition")!;
+    edition.elements = [...edition.elements, 44, 44];
+    const presentation = m.find((f) => f.id === "presentation")!;
+    const cout = (f: MesureFamille) => somme(f.elements) + 13 - f.menu;
+    const largeur = somme(m.map((f) => f.menu)) + cout(m.find((f) => f.id === "selection")!) + Math.max(cout(edition), cout(presentation));
+    const sans = disposerBarre({ largeur, familles: m, active: "selection", plus: 52, separateur: 13 });
+    const avec = disposerBarre({ largeur, familles: m, active: "selection", prioritaires: ["presentation"], plus: 52, separateur: 13 });
+    expect(sans.rangee.find((e) => e.id === "presentation")!.menu).toBe(true);
+    expect(avec.rangee.find((e) => e.id === "presentation")).toMatchObject({ menu: false, enLigne: presentation.elements.length });
+    expect(largeurRangee(avec, m)).toBeLessThanOrEqual(largeur);
   });
 });
 

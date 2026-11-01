@@ -1,27 +1,33 @@
 # Organisations, participation et revue externe — Tâches
 
+Mis à jour : 2026-10-25 (UTC).
+
 ## À faire
 
-- [ ] OP-P2 — Phase 2 : écran « Collaboration > Équipe et participants », bascule de l'accès vers les rôles métier (OP-D3 c) (Issue : #262).
-- [ ] OP-P3 — Phase 3 : invitations acceptées liées à une participation (Issue : #262).
-- [ ] OP-P3b — Phase 3 bis : journal d'activité et historique (administrateur, utilisateur, projet) (Issue : #262).
-- [ ] OP-P4 — Phase 4 : revue externe, paquet, destinataires, accès limité au paquet, boucle de correction (Issue : #262).
-- [ ] OP-P5 — Phase 5 : organisations, partie 5 du concept, après la revue externe (Issue : #262).
-- [ ] OP-P6 — Phase 6 : recette et runbook ; aucun déploiement sans accord (Issue : #262).
+- [ ] OP-DEPLOI — Préproduction : demandée par le maître d'ouvrage (2026-10-25) ; déployée automatiquement par `fadi-preprod-auto` depuis `main` vert (PR #297 : OP-4, OP-5, `CONTACT_RETENTION_ENABLED=1` dans `deploy/preprod/compose.yml`), OP-PONT compris. Production : sur accord explicite seulement, selon RUNBOOK-deploiement.md.
 
 ## En cours
 
-- OP-P1 — Phase 1 : personnes, organisations (minimal), participations, rôles par portée, miroir des accès, reprise de
-  l'existant — implémentée sur `feat/op-phase1-participations`, en attente de la revue 🛑 1 (Issue : #262).
+- OP-AUTOCONTROLE — Séparation des responsabilités (décision OP-6) : implémenté sur `lot-autocontrole`, vérifié en local (`lot-autocontrole.md`) ; PR, suites DB-3 et CI à faire passer, acceptation à recueillir (Issue : #262).
 
 ## Terminé
 
-- [x] OP-P0 — Plan validé et décisions OP-D1 à OP-D13 prises (OP-1, 2026-10-23) (Issue : #262).
-- [x] OP-INIT — Dossier de continuité, Issue #262, audit de l'existant et plan proposé (`PLAN.md`) (Issue : #262).
+- [x] OP-PONT — Retrait du pont `op_sync_access` fusionné dans `main` (`7eed727`, `d23a880`).
+
+- [x] OP-P297 — OP-4, OP-5 et réglage de préproduction fusionnés (PR #297, CI verte sur `739d019`).
+- [x] OP-FINAL — 🛑 final franchi : périmètre accepté (OP-5, 2026-10-25).
+- [x] OP-JURIDIQUE — Réserve d'OP-2 levée par le maître d'ouvrage, sous sa responsabilité (OP-5).
+- [x] OP-LISTES — Listes métier : saisie libre définitive (OP-5).
+
+- [x] OP-REC — Recommandations de la recette appliquées (OP-4) : accès de revue 14 jours, effacement automatique des contacts désactivé par défaut, décisions consignées.
+- [x] OP-P3, OP-P4, OP-P6, OP-RELIQUATS — fusionnés (PR #290, CI verte sur `866f54d`).
+- [x] OP-P2, OP-P3b, OP-P5 — fusionnées (PR #281) (Issue : #262).
+- [x] OP-P1 — Phase 1 fusionnée (PR #265) (Issue : #262).
+- [x] OP-P0, OP-INIT — Plan validé, décisions OP-D1 à OP-D13 (OP-1), dossier de continuité (Issue : #262).
 
 ## Bloqué
 
-- Phases 2 à 6 : après la revue 🛑 1 de la phase 1 (maître d'ouvrage).
+- Aucune tâche bloquée : OP-AUTOCONTROLE attend sa PR et sa CI (suites DB-3 non exécutables hors CI) ; la production attend l'accord explicite du maître d'ouvrage.
 
 ## Critères de sortie
 

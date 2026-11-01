@@ -19,6 +19,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-observations.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -54,8 +55,8 @@ for (const [k, c] of [["owner", owner], ["editor", editor], ["reader", reader]])
 const project = await owner("POST", "/projects", { code: `SO_${randomUUID().slice(0, 8)}`, name: "Studio — observations (recette synthétique)" });
 check("projet créé", project.status === 201, String(project.status));
 const projectId = project.body?.id;
-check("éditeur et lecteur ajoutés au projet", (await owner("POST", `/projects/${projectId}/members`, { email: cEditor.email, role: "editeur" })).status === 201
-  && (await owner("POST", `/projects/${projectId}/members`, { email: cReader.email, role: "lecteur" })).status === 201);
+check("éditeur et lecteur invités, invitations acceptées (phase 3)", (await inviterEtAccepter(owner, editor, projectId, cEditor.email, "editeur")).ok
+  && (await inviterEtAccepter(owner, reader, projectId, cReader.email, "lecteur")).ok);
 const root = `/projects/${projectId}/studio/studies`;
 const created = await owner("POST", root, { name: "Étude observations" });
 const studyId = created.body?.study?.id, variantId = created.body?.variant?.id;
@@ -84,7 +85,8 @@ const one = (o) => `${obsPath}/${o}`;
 // ---------------------------------------------------------------------------
 // E.2-01 / E.2-02 — ouverture depuis un domaine, identité réemployée, contexte et responsable.
 const ouvRequest = rid();
-const ouverture = { body: "Écart sur l'exigence des murs", responsableId: ids.editor, vue: { mode: "exigences" }, liens: [{ domaine: "exigence", ref: "exi-1", controleId }], requestId: ouvRequest };
+// Audience « projet » (écart E1) : le lecteur de la recette lit et tente d'agir sur cette observation.
+const ouverture = { body: "Écart sur l'exigence des murs", responsableId: ids.editor, vue: { mode: "exigences" }, liens: [{ domaine: "exigence", ref: "exi-1", controleId }], requestId: ouvRequest, audience: "projet" };
 const opened = await owner("POST", obsPath, ouverture);
 const O = opened.body?.id;
 check("E.2-01 ouverture depuis une exigence et son contrôle (201) : lien lié à la révision du contrôle", opened.status === 201 && opened.body?.liens?.length === 1
@@ -102,6 +104,11 @@ for (const [domaine, ref] of [["metre", "mur-1#volume-net"], ["objet", "mur-1"],
 const relu = await reader("GET", `${obsPath}?domaine=metre&ref=${encodeURIComponent("mur-1#volume-net")}`);
 check("E.2-01 recherche par domaine (lecteur) : la même identité, une seule", relu.status === 200 && relu.body?.observations?.length === 1 && relu.body.observations[0].id === O);
 check("E.2-01 élément déjà lié à cette observation → 409 deja_liee", (await owner("POST", `${one(O)}/liens`, { domaine: "objet", ref: "mur-1", requestId: rid() })).body?.error === "deja_liee");
+// EX-069 : le même constat ouvert depuis un AUTRE domaine (Dessin, objet mur-1 déjà suivi par O ouverte depuis l'exigence).
+const autreDomaine = await editor("POST", obsPath, { body: "Mur 1 : même écart vu depuis le dessin", responsableId: ids.editor, vue: { mode: "plan" }, liens: [{ domaine: "objet", ref: "mur-1" }], requestId: rid(), audience: "projet" });
+const nbObservations = (await owner("GET", obsPath)).body?.observations?.length;
+check("EX-069 [−] même constat ouvert depuis un second domaine (objet) : doublon détecté (409 deja_suivie, identifiant de l'observation existante), aucune seconde observation",
+  autreDomaine.status === 409 && autreDomaine.body?.error === "deja_suivie" && autreDomaine.body?.observationId === O && autreDomaine.body?.domaine === "objet" && nbObservations === 1, j([autreDomaine.status, autreDomaine.body, nbObservations]));
 const invalides = await Promise.all([
   owner("POST", `${one(O)}/liens`, { domaine: "objet", ref: "inconnu" }), owner("POST", `${one(O)}/liens`, { domaine: "metre", ref: "mur-1#surface" }),
   owner("POST", `${one(O)}/liens`, { domaine: "exigence", ref: "exi-9" }), owner("POST", `${one(O)}/liens`, { domaine: "revue", ref: "publication-inconnue" }),
@@ -173,6 +180,10 @@ check("E.2-04 décision de clôture non motivée → 400 motif_exige", (await tr
 const attente = await transition(owner, { action: "cloturer", note: "Recontrôle conforme" });
 check("E.2-04 clôture refusée tant qu'une tâche reste à faire (409 taches_ouvertes)", attente.status === 409 && attente.body?.error === "taches_ouvertes" && attente.body?.count === 2, j(attente.body));
 check("E.2-03 le propriétaire termine et annule les tâches restantes", (await passe(owner, T2, { action: "terminer" })).status === 200 && (await passe(owner, T3, { action: "annuler" })).status === 200);
+const sansTache = (await owner("GET", one(O))).body;
+check("EX-084 [−] toutes les tâches faites ou annulées : l'observation reste non clôturée (aucune transition implicite, la clôture reste une décision)",
+  sansTache?.statut === "recontrolee" && (sansTache.taches ?? []).length >= 3 && sansTache.taches.every((t) => ["faite", "annulee"].includes(t.statut))
+  && !(sansTache.decisions ?? []).some((d) => d.portee === "cloture" && d.nature === "decision"), j([sansTache?.statut, sansTache?.taches?.map((t) => t.statut)]));
 const close = await transition(owner, { action: "cloturer", note: "Recontrôle conforme en r3" });
 const derniere = close.body?.decisions?.at(-1);
 check("E.2-04 / E.2-05 le propriétaire clôt : décision de clôture consignée (motif, rôle, révision recontrôlée)", close.status === 200 && close.body.statut === "cloturee"
@@ -184,6 +195,27 @@ check("E.2-04 rien n'est proposé sur une observation clôturée (possibles, peu
 const reouv = await transition(reader, { action: "rouvrir" });
 check("E.2-04 rouvrir réservé à l'auteur ou au propriétaire (lecteur non auteur → 403) ; le propriétaire rouvre", reouv.status === 403 && (await transition(owner, { action: "rouvrir", note: "Nouvel écart" })).body?.statut === "rouverte");
 check("E.2-04 l'élément reste suivi par la même identité après réouverture", (await owner("GET", `${obsPath}?domaine=exigence&ref=exi-1`)).body?.observations?.[0]?.id === O);
+
+// ---------------------------------------------------------------------------
+// EX-086 — réexamen : le contrôle d'une nouvelle révision rapproche les observations par identité/source/règle ;
+// un objet disparu est marqué, jamais clos.
+const obsLigne = await owner("POST", obsPath, { body: "Ligne à reprendre (recette)", responsableId: ids.editor, revisionId: r3, objectIds: ["ligne-1"], liens: [{ domaine: "objet", ref: "ligne-1", revisionId: r3 }], requestId: rid(), audience: "projet" });
+const OL = obsLigne.body?.id;
+check("EX-086 préparation : observation ancrée sur ligne-1 (r3)", obsLigne.status === 201 && Boolean(OL), j(obsLigne.body).slice(0, 300));
+const r4 = (await envoi(r3, [{ toolId: "studio.dessin.supprimer", params: { ids: ["ligne-1"] } }])).body?.revision?.id;
+const ctl4 = await owner("POST", `${vp}/controles`, { revisionId: r4, requestId: rid() });
+const rapLigne = ctl4.body?.rapprochements?.find((x) => x.observationId === OL);
+check("EX-086 contrôle de r4 : l'observation est rapprochée, objet disparu marqué, statut inchangé (ouverte)", ctl4.status === 201 && rapLigne?.suivi === "objet-disparu" && rapLigne.statut === "ouverte", j(ctl4.body?.rapprochements));
+const rapO = ctl4.body?.rapprochements?.find((x) => x.observationId === O);
+check("EX-086 l'observation rouverte (exigence, mur) est rapprochée par règle et identité, sans changer de statut", rapO?.statut === "rouverte" && ["persiste", "a-recontroler"].includes(rapO.suivi), j(rapO));
+const relueLigne = (await owner("GET", one(OL))).body;
+check("EX-086 aucune fermeture automatique : observation toujours ouverte, journal inchangé (ouvrir seul)", relueLigne?.statut === "ouverte" && j(relueLigne.journal?.map((e) => e.action)) === '["ouvrir"]', j(relueLigne?.journal));
+const consignes = (await reader("GET", `${obsPath}/rapprochements`)).body?.rapprochements ?? [];
+check("EX-086 le lecteur lit le rapprochement consigné (révision, contrôle, éléments)", consignes.some((x) => x.observationId === OL && x.revisionId === r4 && x.checkId === ctl4.body?.id && x.suivi === "objet-disparu"
+  && x.elements.some((e) => e.domaine === "objet" && e.ref === "ligne-1" && e.issue === "disparu")), j(consignes).slice(0, 400));
+check("EX-086 le lecteur ne lance pas de rapprochement (403)", (await reader("POST", `${obsPath}/rapprochements`, {})).status === 403);
+const surR3 = await editor("POST", `${obsPath}/rapprochements`, { revisionId: r3 });
+check("EX-086 sur r3 (objet présent) : l'objet est retrouvé, à recontrôler", surR3.status === 200 && surR3.body?.resultats?.find((x) => x.observationId === OL)?.suivi === "a-recontroler", j(surR3.body).slice(0, 300));
 
 // ---------------------------------------------------------------------------
 // Notifications et refus d'accès.
@@ -217,6 +249,17 @@ try {
   await panneau.waitFor();
   await panneau.locator(`[data-studio-suivi="${O}"]`).waitFor();
   check("interface : l'observation suivie est listée avec ses quatre domaines", (await panneau.locator(`[data-studio-suivi="${O}"] [data-studio-suivi-liens] li`).count()) === 4);
+  // EX-086 : le dernier rapprochement est affiché ; « Rapprocher » (icône, raccourci) ne ferme rien.
+  await panneau.locator(`[data-studio-suivi="${OL}"] [data-studio-suivi-rapprochement]`).waitFor();
+  check("interface : rapprochement affiché « objet disparu », observation toujours ouverte", (await panneau.locator(`[data-studio-suivi="${OL}"]`).getAttribute("data-statut")) === "ouverte"
+    && (await panneau.locator(`[data-studio-suivi="${OL}"] [data-studio-suivi-rapprochement]`).getAttribute("data-studio-suivi-rapprochement")) === "objet-disparu");
+  const rapprocher = panneau.locator("[data-studio-suivi-rapprocher]");
+  check("interface : commande « Rapprocher » avec icône et raccourci déclaré", (await rapprocher.locator("[data-icone-collaboration=\"rapprocher-observations\"]").count()) === 1
+    && (await rapprocher.getAttribute("aria-keyshortcuts")) === "Control+Alt+Shift+M");
+  await rapprocher.click();
+  await panneau.locator("[data-studio-suivi-rapprochement-message]").waitFor();
+  check("interface : rapprochement sur demande annoncé, aucune observation close", /aucune n’est close/.test(await panneau.locator("[data-studio-suivi-rapprochement-message]").innerText())
+    && (await panneau.locator(`[data-studio-suivi="${OL}"]`).getAttribute("data-statut")) === "ouverte");
 
   // Identité réemployée : choisir une exigence déjà suivie la signale et bloque une seconde ouverture.
   await panneau.locator("[data-studio-suivi-ouvrir]").click();

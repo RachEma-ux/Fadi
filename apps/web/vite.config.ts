@@ -1,9 +1,10 @@
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { createRequire } from "node:module";
 import { defineConfig, type Plugin } from "vite";
-import { classesPrecache, construireCarte, type SortieBuild } from "./src/modules/studio/chargement/carte-morceaux";
+import { classesPrecache, construireCarte, detecterDuplications, type BundleModules, type SortieBuild } from "./src/modules/studio/chargement/carte-morceaux";
 import { FICHIER_CARTE } from "./src/modules/studio/chargement/moteurs";
 
 /**
@@ -48,6 +49,23 @@ function publicFiles(dir: string): string[] {
   }
 }
 
+/**
+ * Modules des bundles de Workers (EX-041) : chaque Worker est construit à part par Vite ; ce greffon de la construction
+ * des Workers relève les modules (et leurs octets rendus) de chacun de leurs morceaux, pour le détecteur de duplication.
+ */
+const modulesWorkers: BundleModules[] = [];
+function releveModulesWorkers(): Plugin {
+  return {
+    name: "fadi-releve-modules-workers",
+    generateBundle(_options, bundle) {
+      for (const o of Object.values(bundle)) {
+        if (o.type !== "chunk") continue;
+        modulesWorkers.push({ fichier: `/${o.fileName}`, nature: "worker", modules: Object.entries(o.modules).map(([id, m]) => ({ id, octets: m.renderedLength })) });
+      }
+    },
+  };
+}
+
 function serviceWorkerBuildId(): Plugin {
   let outDir = "dist";
   return {
@@ -63,10 +81,18 @@ function serviceWorkerBuildId(): Plugin {
       const sorties: SortieBuild[] = Object.values(bundle).map((o) => o.type === "chunk"
         ? { type: "chunk", fileName: o.fileName, taille: Buffer.byteLength(o.code), isEntry: o.isEntry, facadeModuleId: o.facadeModuleId, moduleIds: o.moduleIds, imports: o.imports, dynamicImports: o.dynamicImports, css: [...(o.viteMetadata?.importedCss ?? [])] }
         : { type: "asset", fileName: o.fileName, taille: typeof o.source === "string" ? Buffer.byteLength(o.source) : o.source.byteLength, nomsOriginaux: o.originalFileNames ?? [] });
-      const carte = construireCarte(sorties, buildId());
-      if (!carte.verification.ok) {
-        throw new Error(`[fadi-sw-build-id] découpage des bundles non conforme (B.3-06) :\n- ${carte.verification.violations.join("\n- ")}`);
+      const carteBrute = construireCarte(sorties, buildId());
+      if (!carteBrute.verification.ok) {
+        throw new Error(`[fadi-sw-build-id] découpage des bundles non conforme (B.3-06) :\n- ${carteBrute.verification.violations.join("\n- ")}`);
       }
+      // EX-041 : duplication en octets entre morceaux du bundle principal et bundles des Workers (échec du build si un
+      // noyau lourd est dupliqué hors des exceptions déclarées) ; le rapport complet va dans la carte.
+      const principaux: BundleModules[] = Object.values(bundle).flatMap((o) => (o.type === "chunk" ? [{ fichier: `/${o.fileName}`, nature: "principal" as const, modules: Object.entries(o.modules).map(([id, m]) => ({ id, octets: m.renderedLength })) }] : []));
+      const duplication = detecterDuplications([...principaux, ...modulesWorkers]);
+      if (duplication.violations.length) {
+        throw new Error(`[fadi-sw-build-id] duplication d'un noyau entre bundles (EX-041) :\n- ${duplication.violations.join("\n- ")}`);
+      }
+      const carte = { ...carteBrute, duplication };
       const classes = classesPrecache(carte, assets);
       // Carte écrite avec l'identifiant complet du build (celui du cache) ; à défaut, avec le commit.
       const ecrireCarte = (build: string) => writeFileSync(join(outDir, FICHIER_CARTE.slice(1)), JSON.stringify({ ...carte, build }));
@@ -93,6 +119,59 @@ function serviceWorkerBuildId(): Plugin {
 }
 
 /**
+ * Notice de licence et de provenance du noyau exact distribué (D-177, EX-096 / TR-EX-096) : à chaque build, pour le
+ * binaire `.wasm` OCCT réellement émis, `licences/occt-wasm/NOTICE.txt` et `NOTICE.json` (composant, version, licence
+ * LGPL-2.1-only du binaire, licence de l'outillage, fichier distribué, SHA-256, taille, provenance, chargement séparé,
+ * remplacement par l'utilisateur) ; le texte de la LGPL 2.1 est servi depuis `public/licences/occt-wasm/`. Le contrôle
+ * `scripts/controle-licence-occt.mjs` vérifie ensuite l'artefact distribué.
+ */
+function noticeOcct(): Plugin {
+  let outDir = "dist";
+  return {
+    name: "fadi-notice-occt",
+    apply: "build",
+    configResolved(config) { outDir = config.build.outDir; },
+    writeBundle(_options, bundle) {
+      const wasm = Object.values(bundle).filter((o) => o.type === "asset" && /(^|\/)occt-wasm[^/]*\.wasm$/.test(o.fileName));
+      if (wasm.length !== 1 || wasm[0]!.type !== "asset") throw new Error(`[fadi-notice-occt] un seul binaire .wasm OCCT attendu, ${wasm.length} trouvé(s)`);
+      const actif = wasm[0]!;
+      const octets = typeof actif.source === "string" ? Buffer.from(actif.source) : Buffer.from(actif.source);
+      const dossierPaquet = dirname(dirname(createRequire(import.meta.url).resolve("occt-wasm/dist/occt-wasm.wasm")));
+      const pkg = JSON.parse(readFileSync(join(dossierPaquet, "package.json"), "utf8")) as { version: string; license: string; repository?: { url?: string } };
+      const depot = (pkg.repository?.url ?? "").replace(/^git\+/, "");
+      const notice = {
+        composant: "occt-wasm", version: pkg.version, licence: "LGPL-2.1-only", licenceOutillage: pkg.license,
+        fichier: `/${actif.fileName}`, sha256: createHash("sha256").update(octets).digest("hex"), taille: octets.length,
+        provenance: `paquet npm occt-wasm@${pkg.version}, non modifié ; dépôt ${depot} ; sources OCCT : https://dev.opencascade.org/resources/download`,
+        chargement: "fichier séparé, téléchargé à la demande par un Web Worker (outil « Booléen exact » de Studio, outil « Solide exact » de l'Atelier), jamais incorporé au code de Fadi ni préchargé",
+        remplacement: "l'utilisateur peut remplacer ce composant : localStorage[\"fadi.occt.wasm\"] = adresse d'un binaire occt-wasm compatible ; il est alors chargé à la place de celui-ci",
+        texteLicence: "/licences/occt-wasm/LGPL-2.1.txt", decision: "docs/atelier/decisions.md, D-177",
+      };
+      const texte = [
+        "Noyau exact de Fadi — licence et provenance du composant WebAssembly distribué",
+        "",
+        `Composant : ${notice.composant} (OpenCascade Technology compilé en WebAssembly)`,
+        `Version : ${notice.version}`,
+        `Licence du binaire WebAssembly : ${notice.licence} (hérite d'OCCT) — texte complet : ${notice.texteLicence}`,
+        `Licence de l'outillage TypeScript du paquet : ${notice.licenceOutillage}`,
+        `Fichier distribué : ${notice.fichier}`,
+        `SHA-256 : ${notice.sha256}`,
+        `Taille : ${notice.taille} octets`,
+        `Provenance : ${notice.provenance}`,
+        `Chargement : ${notice.chargement}`,
+        `Remplacement : ${notice.remplacement}`,
+        `Décision : ${notice.decision} (composant LGPL chargé séparément, remplaçable, non modifié)`,
+        "",
+      ].join("\n");
+      const dossier = join(outDir, "licences", "occt-wasm");
+      mkdirSync(dossier, { recursive: true });
+      writeFileSync(join(dossier, "NOTICE.json"), JSON.stringify(notice, null, 2));
+      writeFileSync(join(dossier, "NOTICE.txt"), texte);
+    },
+  };
+}
+
+/**
  * En développement, le frontend appelle l'API avec des chemins relatifs
  * (`/auth/...`, `/projects/...`, `/notifications`) et Vite les relaie vers `apps/api` sur le
  * port 3001. Même origine du point de vue du navigateur → pas de CORS à
@@ -107,10 +186,10 @@ function serviceWorkerBuildId(): Plugin {
  * un seul port à exposer, l'API reste jointe en coulisses.
  */
 export default defineConfig({
-  plugins: [serviceWorkerBuildId()],
+  plugins: [serviceWorkerBuildId(), noticeOcct()],
   // Workers en modules ES (P2-1) : le Worker du noyau exact importe occt-wasm, dont le chargeur découpe son code ;
   // le format IIFE par défaut de Vite refuse ce découpage. Le `.wasm` reste un fichier séparé (`?url`, D-177).
-  worker: { format: "es" },
+  worker: { format: "es", plugins: () => [releveModulesWorkers()] },
   // Le même identifiant de build, lisible par l'application (page Paramètres : « Version »).
   define: { __FADI_BUILD__: JSON.stringify(buildId()) },
   server: {
@@ -119,13 +198,17 @@ export default defineConfig({
       "/auth": "http://localhost:3001",
       "^/admin/(users|invitations|trash)": "http://localhost:3001",
       "/projects": "http://localhost:3001",
+      "/organizations": "http://localhost:3001",
       "/examples": "http://localhost:3001",
       "/library": "http://localhost:3001",
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
+      "/geodata/api": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
+      // Temps réel (Issue #283) : canal WebSocket des sessions en direct.
+      "/temps-reel": { target: "http://localhost:3001", ws: true },
     },
   },
   preview: {
@@ -142,13 +225,17 @@ export default defineConfig({
       "/auth": "http://localhost:3001",
       "^/admin/(users|invitations|trash)": "http://localhost:3001",
       "/projects": "http://localhost:3001",
+      "/organizations": "http://localhost:3001",
       "/examples": "http://localhost:3001",
       "/library": "http://localhost:3001",
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
+      "/geodata/api": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
+      // Temps réel (Issue #283) : canal WebSocket des sessions en direct.
+      "/temps-reel": { target: "http://localhost:3001", ws: true },
     },
   },
 });

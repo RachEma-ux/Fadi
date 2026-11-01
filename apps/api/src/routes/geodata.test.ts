@@ -1,0 +1,842 @@
+/**
+ * GeoData (9ᵉ module, ADR-GEODATA-02) — intégration contre PostgreSQL/PostGIS (suite DB-3) : critères de réception
+ * GEO 01, 03, 05 à 10 et 13 du concept, isolation entre espaces, séparation des rôles, immuabilité des versions.
+ */
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import request from "supertest";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion, type Qualification } from "@parcours/geodata-model";
+import { createApp } from "../app.js";
+import { pool } from "../db/client.js";
+import { resetTestDatabase } from "../testing/guarded-test-pool.js";
+import { ecrireVersion } from "../lib/geodata/versions.js";
+import { chargerTerritoires } from "../lib/geodata/territoires.js";
+import { importerDecoupage } from "../lib/geodata/decoupage.js";
+import { archiverFichiers } from "../lib/geodata/archive-fichiers.js";
+
+const app = createApp();
+// `users` en CASCADE vide aussi toutes les tables geodata_* (espaces → sources → versions → couches…), liste fermée de la garde inchangée.
+beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
+afterAll(async () => { await pool.end(); });
+
+const PASSWORD = "correct-horse-battery";
+const API = "/geodata/api";
+async function compte(email: string) {
+  const client = request.agent(app);
+  const r = await client.post("/auth/register").send({ email, password: PASSWORD });
+  expect(r.status).toBe(201);
+  return { client, id: r.body.id as string };
+}
+
+const carre = (x: number, y: number, d = 0.2) => [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]];
+const TOUT: DroitsVersion = { consultation: "autorise", stockage: "autorise", calcul: "autorise", tuiles: "autorise", commercial: "autorise", partage: "autorise", telechargement: "autorise", export: "autorise" };
+
+/** Version commune publiée de six unités (codes à zéros initiaux, une valeur zéro, une valeur absente). */
+async function publierReference(opts: { cle?: string; libelle?: string; droits?: DroitsVersion; valeurs?: (number | null)[]; publier?: boolean; qualification?: Qualification } = {}) {
+  const valeurs = opts.valeurs ?? [0, 12, null, 45, 0, 7];
+  const fc = { type: "FeatureCollection", features: valeurs.map((v, i) => ({ type: "Feature", properties: { code: `00${i + 1}`, nom: `Unité ${String.fromCharCode(65 + i)}`, effectif: v }, geometry: { type: "Polygon", coordinates: carre(-9 + (i % 3) * 0.2, 30 + Math.floor(i / 3) * 0.2) } })) };
+  const v = validerGeoJSON(fc);
+  if (!v.ok) throw new Error("jeu de test invalide");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const e = await ecrireVersion(client, {
+      source: { cle: opts.cle ?? "test-unites", titre: "Unités de test", producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
+      espaceId: null,
+      version: { libelle: opts.libelle ?? "v1", empreinte: "a".repeat(64), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution de test", droits: opts.droits ?? TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true, ...(opts.qualification ? { qualification: opts.qualification } : {}) },
+      couche: { titre: "Unités", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom", "effectif"], styleDefaut: { mode: "simple", couleur: "#123456" } },
+      objets: v.objets, indicateurs: [{ propriete: "effectif", titre: "Effectif", unite: "u", periode: null, denominateur: null, description: "", motifSiAbsente: "secret-statistique" }], superficie: true, preparePar: null,
+    });
+    if (opts.publier !== false) await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
+    await client.query("COMMIT");
+    return e;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+const composition = (coucheId: string, versionId: string, indicateurId?: string) => ({
+  ...COMPOSITION_INITIALE,
+  camera: { lon: -8.8, lat: 30.2, zoom: 8, cap: 0 },
+  couches: [{ coucheId, versionId, visible: true, opacite: 0.75, filtre: null, style: indicateurId ? { mode: "thematique", indicateurId, methode: "manuel", seuils: [1, 20], couleurs: ["#f1eef6", "#74a9cf", "#045a8d"] } : { mode: "simple", couleur: "#2b8cbe" } }],
+});
+
+describe("GEO 01 / GEO 02 — compte sans projet", () => {
+  it("espace personnel créé au premier accès, idempotent même pour deux requêtes simultanées ; catalogue consultable", async () => {
+    const alice = await compte("gd-alice@example.com");
+    expect((await alice.client.get("/projects")).body).toEqual([]);
+    const [a, b] = await Promise.all([alice.client.get(`${API}/espace`), alice.client.get(`${API}/espace`)]);
+    expect(a.status).toBe(200);
+    expect(a.body.espace.id).toBe(b.body.espace.id);
+    expect(a.body.capacites).toEqual(["composer", "consulter", "exporter", "importer"]);
+    expect(a.body.fonds.map((f: { id: string }) => f.id)).toEqual(["neutre"]);
+    await publierReference();
+    const cat = await alice.client.get(`${API}/catalogue`);
+    expect(cat.body.couches).toHaveLength(1);
+    expect(cat.body.couches[0].version).toMatchObject({ licence: "Test", synthetique: true, privee: false });
+    expect((await request(app).get(`${API}/espace`)).status).toBe(401);
+  });
+});
+
+describe("GEO 03 — un projet sans rapport n'affecte rien", () => {
+  it("créer puis supprimer un projet laisse cartes et zones intactes", async () => {
+    const alice = await compte("gd-p@example.com");
+    const ref = await publierReference();
+    const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Ma carte", composition: composition(ref.coucheId, ref.versionId) });
+    expect(carte.status).toBe(201);
+    const p = await alice.client.post("/projects").send({ code: "GD.1", name: "Sans rapport" });
+    expect(p.status).toBe(201);
+    expect((await alice.client.delete(`/projects/${p.body.id}`)).status).toBeLessThan(300);
+    const relue = await alice.client.get(`${API}/cartes/${carte.body.id}`);
+    expect(relue.status).toBe(200);
+    expect(relue.body.revision).toBe(1);
+    expect(relue.body.composition).toEqual(carte.body.composition);
+  });
+});
+
+describe("GEO 05 / GEO 06 — composition restaurée, absence distincte de zéro", () => {
+  it("composition thématique relue à l'identique ; zéro et absence distincts dans valeurs, table et fiche", async () => {
+    const alice = await compte("gd-c@example.com");
+    const ref = await publierReference();
+    const indicateur = ref.indicateurs[0]!;
+    const comp = composition(ref.coucheId, ref.versionId, indicateur);
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Thématique", composition: comp });
+    expect(c.status).toBe(201);
+    const autre = request.agent(app);
+    await autre.post("/auth/login").send({ email: "gd-c@example.com", password: PASSWORD });
+    const relue = await autre.get(`${API}/cartes/${c.body.id}`);
+    expect(relue.body.composition).toEqual(comp);
+    expect(relue.body.disponibilite[ref.coucheId]).toEqual({ etat: "disponible", versionPlusRecente: null });
+    const vs = (await alice.client.get(`${API}/indicateurs/${indicateur}/valeurs`)).body.valeurs as { code: string; valeur: number | null; motifAbsence: string | null }[];
+    expect(vs.find((v) => v.code === "001")).toEqual({ code: "001", valeur: 0, motifAbsence: null });
+    expect(vs.find((v) => v.code === "003")).toEqual({ code: "003", valeur: null, motifAbsence: "secret-statistique" });
+    const fiche = await alice.client.get(`${API}/couches/${ref.coucheId}/objets/003`);
+    expect(fiche.body.indicateurs.find((i: { id: string }) => i.id === indicateur)).toMatchObject({ valeur: null, motifAbsence: "secret-statistique" });
+    const table = await alice.client.get(`${API}/couches/${ref.coucheId}/table?tri=code&taille=2`);
+    expect(table.body.total).toBe(6);
+    expect(table.body.lignes[0].code).toBe("001");
+    expect(table.body.lignes[0].valeurs[indicateur]).toEqual({ valeur: 0, motifAbsence: null });
+  });
+  it("une composition avec adresse de fournisseur ou une couche inconnue est refusée", async () => {
+    const alice = await compte("gd-r@example.com");
+    expect((await alice.client.post(`${API}/cartes`).send({ nom: "X", composition: { ...COMPOSITION_INITIALE, fond: "https://x/{z}" } })).status).toBe(400);
+    const r = await alice.client.post(`${API}/cartes`).send({ nom: "X", composition: composition("gdcou_inconnue", "gdver_inconnue") });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe("couche_inaccessible");
+  });
+});
+
+describe("GEO 13 — modifications concurrentes", () => {
+  it("le second enregistrement périmé est refusé (409) avec l'état courant ; la copie préserve le travail local", async () => {
+    const alice = await compte("gd-m@example.com");
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Partagée entre onglets" });
+    const premier = await alice.client.put(`${API}/cartes/${c.body.id}`).send({ revisionAttendue: 1, nom: "Onglet 1" });
+    expect(premier.status).toBe(200);
+    expect(premier.body.revision).toBe(2);
+    const second = await alice.client.put(`${API}/cartes/${c.body.id}`).send({ revisionAttendue: 1, nom: "Onglet 2", composition: { ...COMPOSITION_INITIALE, camera: { lon: 1, lat: 2, zoom: 3, cap: 0 } } });
+    expect(second.status).toBe(409);
+    expect(second.body).toMatchObject({ error: "revision_conflict", revisionCourante: 2, carte: { nom: "Onglet 1" } });
+    const copie = await alice.client.post(`${API}/cartes/${c.body.id}/dupliquer`).send({ nom: "Onglet 2 (copie)", composition: { ...COMPOSITION_INITIALE, camera: { lon: 1, lat: 2, zoom: 3, cap: 0 } } });
+    expect(copie.status).toBe(201);
+    expect(copie.body.composition.camera).toEqual({ lon: 1, lat: 2, zoom: 3, cap: 0 });
+    expect((await alice.client.put(`${API}/cartes/${c.body.id}`).send({ nom: "sans révision" })).status).toBe(400);
+  });
+  it("collections : une carte ne se classe que dans une collection de son espace", async () => {
+    const alice = await compte("gd-col@example.com");
+    const bob = await compte("gd-col-b@example.com");
+    const colBob = await bob.client.post(`${API}/collections`).send({ nom: "Bob" });
+    const col = await alice.client.post(`${API}/collections`).send({ nom: "Études" });
+    expect((await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: colBob.body.id })).status).toBe(400);
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "A", collectionId: col.body.id });
+    expect(c.body.collections).toEqual([{ id: col.body.id, nom: "Études" }]);
+    expect((await alice.client.post(`${API}/cartes/${c.body.id}/archiver`)).body.etat).toBe("archivee");
+    expect((await alice.client.get(`${API}/cartes?etat=archivee`)).body.cartes).toHaveLength(1);
+  });
+  it("collections (D-GD-36) : ensemble ordonné de références, plusieurs collections par carte, suppression sans perte de carte", async () => {
+    const alice = await compte("gd-col2@example.com");
+    const bob = await compte("gd-col2-b@example.com");
+    const a = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte A" })).body;
+    const b = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte B" })).body;
+    const carteBob = (await bob.client.post(`${API}/cartes`).send({ nom: "Carte de Bob" })).body;
+    const nouvelle = await alice.client.post(`${API}/collections`).send({ nom: "Atlas du Souss", description: "Cartes du projet" });
+    expect(nouvelle.status).toBe(201);
+    expect(nouvelle.body).toMatchObject({ nom: "Atlas du Souss", description: "Cartes du projet", etat: "active", cartes: [] });
+    const id = nouvelle.body.id as string;
+    // Ajout de deux cartes puis ordre inversé : la liste enregistrée est l'ordre d'affichage.
+    expect(nouvelle.body.revision).toBe(1);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ cartes: [a.id] })).status).toBe(400); // révision attendue obligatoire
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 1, cartes: [a.id, b.id] })).body.cartes.map((x: { nom: string }) => x.nom)).toEqual(["Carte A", "Carte B"]);
+    const reordonnee = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 2, nom: "Atlas du Souss-Massa", cartes: [b.id, a.id] });
+    expect(reordonnee.body).toMatchObject({ nom: "Atlas du Souss-Massa", description: "Cartes du projet", revision: 3 });
+    // Carte ajoutée depuis Mes cartes pendant que la collection est ouverte : l'enregistrement périmé est refusé, rien n'est perdu.
+    const c = (await alice.client.post(`${API}/cartes`).send({ nom: "Carte C", collectionId: id })).body;
+    const perime = await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 3, cartes: [b.id, a.id] });
+    expect(perime.status).toBe(409);
+    expect(perime.body).toMatchObject({ error: "revision_conflict", revisionCourante: 4 });
+    expect(perime.body.collection.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id, c.id]);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 4, cartes: [b.id, a.id] })).status).toBe(200);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Refus : carte d'un autre espace, doublon, collection d'un autre compte.
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, carteBob.id] })).status).toBe(400);
+    expect((await alice.client.put(`${API}/collections/${id}`).send({ revisionAttendue: 5, cartes: [a.id, a.id] })).status).toBe(400);
+    expect((await bob.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    expect((await bob.client.delete(`${API}/collections/${id}`)).status).toBe(404);
+    // Enregistrer sous : copie avec les mêmes références ; la carte A est alors dans deux collections.
+    const copie = await alice.client.post(`${API}/collections`).send({ nom: "Atlas (copie)", description: "Cartes du projet", cartes: [b.id, a.id] });
+    expect(copie.body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)", "Atlas du Souss-Massa"]);
+    // Une carte modifiée l'est dans toutes ses collections (référence, jamais copie).
+    await alice.client.put(`${API}/cartes/${a.id}`).send({ revisionAttendue: a.revision, nom: "Carte A révisée" });
+    expect((await alice.client.get(`${API}/collections/${copie.body.id}`)).body.cartes[1].nom).toBe("Carte A révisée");
+    // Une carte ne se range plus par la carte elle-même.
+    expect((await alice.client.put(`${API}/cartes/${b.id}`).send({ revisionAttendue: b.revision, collectionId: id })).status).toBe(400);
+    expect((await alice.client.get(`${API}/collections/${id}`)).body.cartes.map((x: { id: string }) => x.id)).toEqual([b.id, a.id]);
+    // Supprimer une collection laisse ses cartes intactes.
+    expect((await alice.client.delete(`${API}/collections/${id}`)).status).toBe(204);
+    expect((await alice.client.get(`${API}/collections/${id}`)).status).toBe(404);
+    const restantes = (await alice.client.get(`${API}/cartes`)).body.cartes.map((x: { nom: string }) => x.nom);
+    expect(restantes).toEqual(expect.arrayContaining(["Carte A révisée", "Carte B", "Carte C"]));
+    expect((await alice.client.get(`${API}/cartes/${a.id}`)).body.collections.map((x: { nom: string }) => x.nom)).toEqual(["Atlas (copie)"]);
+    expect((await alice.client.get(`${API}/collections`)).body.collections.find((x: { id: string }) => x.id === copie.body.id)).toMatchObject({ cartes: 2, description: "Cartes du projet" });
+  });
+});
+
+describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
+  const fichier = (crs?: string, coords = carre(-7, 33, 0.1)) => JSON.stringify({ type: "FeatureCollection", ...(crs ? { crs: { type: "name", properties: { name: crs } } } : {}), features: [{ type: "Feature", properties: { nom: "Mon secteur" }, geometry: { type: "Polygon", coordinates: coords } }] });
+  it("CRS projeté ou coordonnées projetées : rejet motivé, rien de publié ; import valide → couche privée", async () => {
+    const alice = await compte("gd-i@example.com");
+    const proj = await alice.client.post(`${API}/imports`).send({ requestId: "req-projete-1", nomFichier: "a.geojson", contenu: fichier("urn:ogc:def:crs:EPSG::26191") });
+    expect(proj.body.etat).toBe("rejete");
+    expect(proj.body.rapport.diagnostics[0].code).toBe("crs-non-pris-en-charge");
+    expect((await alice.client.post(`${API}/imports/${proj.body.id}/confirmer`).send({ titre: "x" })).status).toBe(409);
+    const metres = await alice.client.post(`${API}/imports`).send({ requestId: "req-metres-1", nomFichier: "b.geojson", contenu: fichier(undefined, [[[350000, 380000], [351000, 380000], [351000, 381000], [350000, 380000]]]) });
+    expect(metres.body.rapport.diagnostics.map((d: { code: string }) => d.code)).toContain("hors-plage");
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-valide-1", nomFichier: "c.geojson", contenu: fichier() });
+    expect(ok.body.etat).toBe("valide");
+    const repete = await alice.client.post(`${API}/imports`).send({ requestId: "req-valide-1", nomFichier: "c.geojson", contenu: fichier() });
+    expect(repete.status).toBe(200);
+    expect(repete.body.id).toBe(ok.body.id);
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Mon secteur" });
+    expect(conf.status).toBe(201);
+    expect((await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Mon secteur" })).status).toBe(200);
+    const cat = await alice.client.get(`${API}/catalogue`);
+    expect(cat.body.couches.map((c: { id: string }) => c.id)).toContain(conf.body.coucheId);
+    const bob = await compte("gd-i-bob@example.com");
+    expect((await bob.client.get(`${API}/catalogue`)).body.couches.map((c: { id: string }) => c.id)).not.toContain(conf.body.coucheId);
+    expect((await bob.client.get(`${API}/couches/${conf.body.coucheId}`)).status).toBe(404);
+    expect((await bob.client.get(`${API}/tuiles/${conf.body.coucheId}/8/120/105`)).status).toBe(404);
+    expect((await bob.client.get(`${API}/couches/${conf.body.coucheId}/table`)).status).toBe(404);
+    expect((await bob.client.post(`${API}/imports/${ok.body.id}/annuler`)).status).toBe(404);
+    expect((await bob.client.post(`${API}/cartes`).send({ nom: "Vol", composition: composition(conf.body.coucheId, conf.body.versionId) })).body.error).toBe("couche_inaccessible");
+    const tuile = await alice.client.get(`${API}/tuiles/${conf.body.coucheId}/8/122/102`);
+    expect(tuile.status).toBe(200);
+    expect(tuile.headers["cache-control"]).toBe("private, no-store");
+  });
+  it("points d'étiquette (D-GD-24) : un point par entité, nom réduit aux glyphes livrés, mêmes accès que les tuiles", async () => {
+    const alice = await compte("gd-etq@example.com");
+    const contenu = JSON.stringify({ type: "FeatureCollection", features: [{ type: "Feature", properties: { nom: "Aït Secteur الرباط" }, geometry: { type: "Polygon", coordinates: carre(-7.1, 33, 0.2) } }] });
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-etiquettes-1", nomFichier: "e.geojson", contenu });
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Étiquettes" });
+    const t = await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`).buffer(true).parse((r, fin) => { const b: Buffer[] = []; r.on("data", (x: Buffer) => b.push(x)); r.on("end", () => fin(null, Buffer.concat(b))); });
+    expect(t.status).toBe(200);
+    expect(t.headers["content-type"]).toContain("application/vnd.mapbox-vector-tile");
+    expect(t.headers["cache-control"]).toBe("private, no-store");
+    const octets = t.body as Buffer;
+    expect(octets.includes(Buffer.from("etiquettes"))).toBe(true);
+    expect(octets.includes(Buffer.from("Aït Secteur"))).toBe(true);
+    expect(octets.includes(Buffer.from("الرباط"))).toBe(false);
+    // Tuile voisine, que l'entité chevauche : son point n'y est pas (aucun libellé doublé au bord des tuiles).
+    const voisine = await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/122/103`);
+    expect(voisine.status).toBe(200);
+    expect(Number(voisine.headers["content-length"] ?? 0)).toBe(0);
+    const bob = await compte("gd-etq-bob@example.com");
+    expect((await bob.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/999/102`)).status).toBe(400);
+  });
+  it("lecture de l'emprise (D-GD-40) : objets de la vue lus en base, grappes de points dans les tuiles, mêmes accès", async () => {
+    const alice = await compte("gd-vue@example.com");
+    const point = (nom: string, lon: number, lat: number) => ({ type: "Feature", properties: { nom }, geometry: { type: "Point", coordinates: [lon, lat] } });
+    // Trois points d'une même cellule de la tuile 8/123/103 (8 × 8 cellules) et un point isolé dans une autre cellule.
+    const contenu = JSON.stringify({ type: "FeatureCollection", features: [point("Point A", -6.95, 33.05), point("Point B", -6.951, 33.051), point("Point C", -6.952, 33.05), point("Point Lointain", -6.0, 32.2)] });
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-vue-1", nomFichier: "p.geojson", contenu });
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Points" });
+    expect(conf.status).toBe(201);
+    const id = conf.body.coucheId as string;
+    const vue = await alice.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`);
+    expect(vue.status).toBe(200);
+    expect(vue.body).toMatchObject({ total: 4, tronque: false });
+    expect(vue.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=-180,-85,180,85`)).body.codes).toHaveLength(4);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=1,2,3`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?bbox=3,2,1,4`)).status).toBe(400);
+    const octets = async (chemin: string) => (await alice.client.get(chemin).buffer(true).parse((r, fin) => { const b: Buffer[] = []; r.on("data", (x: Buffer) => b.push(x)); r.on("end", () => fin(null, Buffer.concat(b))); })).body as Buffer;
+    const seuls = await octets(`${API}/tuiles/${id}/8/123/103`);
+    expect(seuls.includes(Buffer.from("Point A"))).toBe(true);
+    expect(seuls.includes(Buffer.from("nombre"))).toBe(false);
+    const grappes = await octets(`${API}/tuiles/${id}/8/123/103?regrouper=1`);
+    expect(grappes.includes(Buffer.from("nombre"))).toBe(true);
+    expect(grappes.includes(Buffer.from("Point A"))).toBe(false);
+    // Une cellule d'un seul point garde son nom ; au zoom 14, aucun regroupement.
+    expect(grappes.includes(Buffer.from("Point Lointain"))).toBe(true);
+    expect((await octets(`${API}/tuiles/${id}/14/7875/6596?regrouper=1`)).includes(Buffer.from("nombre"))).toBe(false);
+    const bob = await compte("gd-vue-bob@example.com");
+    expect((await bob.client.get(`${API}/couches/${id}/vue?bbox=-7,33,-6.9,33.1`)).status).toBe(404);
+    expect((await bob.client.get(`${API}/tuiles/${id}/8/123/103?regrouper=1`)).status).toBe(404);
+    // Zone d'étude qui filtre (D-GD-41) : objets qui recoupent la zone, seule ou avec la vue ; table restreinte.
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Trois points", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect(zone.status).toBe(201);
+    const dansZone = await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`);
+    expect(dansZone.status).toBe(200);
+    expect(dansZone.body).toMatchObject({ zone: zone.body.id, total: 4 });
+    expect(dansZone.body.codes).toHaveLength(3);
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}&bbox=-6.9505,33,-6.9,33.1`)).body.codes).toHaveLength(1);
+    const table = await alice.client.get(`${API}/couches/${id}/table?zone=${zone.body.id}`);
+    expect(table.body.total).toBe(3);
+    expect(table.body.lignes.map((l: { nom: string }) => l.nom).sort()).toEqual(["Point A", "Point B", "Point C"]);
+    expect((await alice.client.get(`${API}/couches/${id}/vue`)).status).toBe(400);
+    // Zone d'un autre espace ou archivée : 404, comme une couche inaccessible.
+    const zoneBob = await bob.client.post(`${API}/zones`).send({ nature: "zone", nom: "Ailleurs", geometrie: { type: "Polygon", coordinates: carre(-6.96, 33.04, 0.02) } });
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zoneBob.body.id}`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/couches/${id}/table?zone=${zoneBob.body.id}`)).status).toBe(404);
+    // Proximité des équipements (D-GD-49) : depuis le point A, B et C (≈ 140 et 190 m) sont dans 500 m, aucun dans 50 m.
+    const proche = await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`);
+    expect(proche.status).toBe(200);
+    expect(proche.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 2 });
+    expect(proche.body.couches[0].plusProche.distanceM).toBeGreaterThan(50);
+    expect(proche.body.couches[0].plusProche.distanceM).toBeLessThan(500);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=50&couches=${id}`)).body.couches[0]).toMatchObject({ nombre: 0, plusProche: null });
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=10&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=inconnue`)).body.couches[0]).toEqual({ coucheId: "inconnue", accessible: false });
+    expect((await bob.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`)).status).toBe(404);
+    await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
+    expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
+  });
+  it("cartes, zones, analyses et fiches d'export d'un tiers : 404, y compris en accès direct", async () => {
+    const alice = await compte("gd-a8@example.com");
+    const bob = await compte("gd-b8@example.com");
+    const ref = await publierReference();
+    const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Privée", composition: composition(ref.coucheId, ref.versionId) });
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Zone", geometrie: { type: "Polygon", coordinates: carre(-8.9, 30.05, 0.3) } });
+    const analyse = await alice.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: ref.coucheId });
+    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });
+    expect(exp.body.etat).toBe("autorise");
+    for (const url of [`/cartes/${carte.body.id}`, `/analyses/${analyse.body.id}`, `/exports/${exp.body.id}/fiche`]) expect((await bob.client.get(`${API}${url}`)).status, url).toBe(404);
+    expect((await bob.client.put(`${API}/cartes/${carte.body.id}`).send({ revisionAttendue: 1, nom: "x" })).status).toBe(404);
+    expect((await bob.client.put(`${API}/zones/${zone.body.id}`).send({ revisionAttendue: 1, nom: "x" })).status).toBe(404);
+    expect((await bob.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: ref.coucheId })).status).toBe(404);
+    expect((await bob.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 })).status).toBe(404);
+    expect((await bob.client.get(`${API}/zones`)).body.zones).toEqual([]);
+  });
+});
+
+describe("Zones et analyses — GEO 10", () => {
+  it("analyse figée : superficie, unités intersectées, hors couverture ; nouvelle version → à recalculer, ancien résultat conservé", async () => {
+    const alice = await compte("gd-z@example.com");
+    const v1 = await publierReference();
+    // Zone qui recouvre deux unités et déborde hors de la couverture.
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Étude", geometrie: { type: "Polygon", coordinates: [[[-9.1, 30.05], [-8.7, 30.05], [-8.7, 30.15], [-9.1, 30.15], [-9.1, 30.05]]] } });
+    expect(zone.status).toBe(201);
+    expect(zone.body.aireM2).toBeGreaterThan(0);
+    const a1 = await alice.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: v1.coucheId });
+    expect(a1.status).toBe(201);
+    expect(a1.body.resultat.unitesIntersectees).toBe(2);
+    expect(a1.body.resultat.aireHorsCouvertureM2).toBeGreaterThan(0);
+    expect(a1.body.resultat.unites.map((u: { code: string }) => u.code).sort()).toEqual(["001", "002"]);
+    expect(a1.body.resultat.limites).toMatch(/ni population/);
+    expect(a1.body.aRecalculer).toBe(false);
+    const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Avec v1", composition: composition(v1.coucheId, v1.versionId) });
+    const v2 = await publierReference({ libelle: "v2", valeurs: [1, 1, 1, 1, 1, 1] });
+    const a1relue = await alice.client.get(`${API}/analyses/${a1.body.id}`);
+    expect(a1relue.body.aRecalculer).toBe(true);
+    expect(a1relue.body.versionPlusRecente).toBe(v2.versionId);
+    expect(a1relue.body.resultat).toEqual(a1.body.resultat);
+    expect(a1relue.body.versionId).toBe(v1.versionId);
+    expect((await alice.client.get(`${API}/cartes/${carte.body.id}`)).body.disponibilite[v1.coucheId]).toEqual({ etat: "disponible", versionPlusRecente: v2.versionId });
+    const modif = await alice.client.put(`${API}/zones/${zone.body.id}`).send({ revisionAttendue: 1, geometrie: { type: "Polygon", coordinates: carre(-9, 30, 0.1) } });
+    expect(modif.body.revision).toBe(2);
+    expect((await alice.client.put(`${API}/zones/${zone.body.id}`).send({ revisionAttendue: 1, nom: "périmé" })).status).toBe(409);
+    expect((await alice.client.get(`${API}/analyses/${a1.body.id}`)).body.motifsRecalcul).toContain("La zone a été modifiée depuis le calcul.");
+    // La garde DB-3 masque le texte de l'erreur SQL (QUERY_FAILED) : refus constaté, puis ligne vérifiée intacte.
+    await expect(pool.query("UPDATE geodata_analyses SET methode = 'x' WHERE id = $1", [a1.body.id])).rejects.toThrow();
+    expect((await pool.query("SELECT methode FROM geodata_analyses WHERE id = $1", [a1.body.id])).rows[0].methode).toBe("geodata-analyse-superficie");
+  });
+  it("une zone non polygonale et un calcul non autorisé sont refusés", async () => {
+    const alice = await compte("gd-z2@example.com");
+    expect((await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "P", geometrie: { type: "Point", coordinates: [-7, 33] } })).status).toBe(400);
+    expect((await alice.client.post(`${API}/zones`).send({ nature: "annotation", nom: "Repère", texte: "Note", geometrie: { type: "Point", coordinates: [-7, 33] } })).status).toBe(201);
+    const ref = await publierReference({ droits: { ...TOUT, calcul: "inconnu" } });
+    const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Z", geometrie: { type: "Polygon", coordinates: carre(-9, 30) } });
+    const r = await alice.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: ref.coucheId });
+    expect(r.status).toBe(403);
+    expect(r.body).toMatchObject({ error: "usage_refuse", usage: "calcul", etat: "inconnu" });
+  });
+});
+
+describe("GEO 09 — exports", () => {
+  it("droit d'export inconnu : refus motivé ; export permis : attributions et fiche de sources", async () => {
+    const alice = await compte("gd-e@example.com");
+    const libre = await publierReference({ cle: "libre" });
+    const fermee = await publierReference({ cle: "fermee", droits: { ...TOUT, export: "inconnu" } });
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Deux couches", composition: { ...composition(libre.coucheId, libre.versionId), couches: [composition(libre.coucheId, libre.versionId).couches[0], composition(fermee.coucheId, fermee.versionId).couches[0]] } });
+    const refus = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(refus.body.etat).toBe("refuse");
+    expect(refus.body.refus).toEqual([{ coucheId: fermee.coucheId, titre: "Unités", motif: "Export de composition : droit non qualifié pour cette source" }]);
+    expect(refus.body.fiche).toBeNull();
+    const seule = await alice.client.put(`${API}/cartes/${c.body.id}`).send({ revisionAttendue: 1, composition: composition(libre.coucheId, libre.versionId) });
+    // L'export porte sur la révision affichée : une révision périmée est refusée, sans fiche.
+    const perime = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(perime.status).toBe(409);
+    expect(perime.body).toMatchObject({ error: "revision_conflict", revisionCourante: seule.body.revision });
+    const ok = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: seule.body.revision });
+    expect(ok.body).toMatchObject({ etat: "autorise", carteRevision: seule.body.revision, attributions: ["Attribution de test"] });
+    const fiche = await alice.client.get(ok.body.fiche);
+    expect(fiche.status).toBe(200);
+    expect(fiche.headers["content-disposition"]).toMatch(/attachment/);
+    expect(fiche.text).toContain("Attribution de test");
+    expect(fiche.text).toContain("Jeu synthétique de test");
+  });
+  it("fond d'un fournisseur réglé dans le navigateur (D-GD-15) : carte enregistrée (identifiant seul), export refusé et motivé", async () => {
+    const alice = await compte("gd-fond@example.com");
+    const libre = await publierReference({ cle: "libre-fond" });
+    const comp = { ...composition(libre.coucheId, libre.versionId), fond: "navigateur:maptiler:satellite" };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Sur fond MapTiler", composition: comp });
+    expect(c.status).toBe(201);
+    expect(c.body.composition.fond).toBe("navigateur:maptiler:satellite");
+    const r = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(r.body.etat).toBe("refuse");
+    expect(r.body.refus).toEqual([{ coucheId: null, titre: "Fond de fournisseur", motif: expect.stringContaining("conditions d'export ne sont pas établies") }]);
+  });
+});
+
+describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
+  it("le propriétaire d'un projet n'a aucun droit GeoData ; préparer ≠ publier ; un droit inconnu bloque la publication", async () => {
+    const alice = await compte("gd-role@example.com");
+    expect((await alice.client.post("/projects").send({ code: "GD.2", name: "Projet" })).status).toBe(201);
+    const prep = await publierReference({ publier: false, droits: { ...TOUT, tuiles: "inconnu" } });
+    expect((await alice.client.post(`${API}/admin/versions/${prep.versionId}/publier`)).status).toBe(403);
+    await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'gestionnaire-donnees')", [alice.id]);
+    expect((await alice.client.get(`${API}/admin/versions`)).status).toBe(200);
+    expect((await alice.client.post(`${API}/admin/versions/${prep.versionId}/publier`)).status).toBe(403);
+    await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'responsable-publication')", [alice.id]);
+    const bloque = await alice.client.post(`${API}/admin/versions/${prep.versionId}/publier`);
+    expect(bloque.status).toBe(409);
+    expect(bloque.body.motifs).toEqual(["Production de tuiles : droit non qualifié pour cette source"]);
+    expect((await alice.client.get(`${API}/admin/roles`)).status).toBe(403);
+  });
+
+  it("source provisoire (D-GD-54) : publication refusée et version cachée sans GEODATA_SOURCES_PROVISOIRES ; servie et signalée avec", async () => {
+    const avant = process.env["GEODATA_SOURCES_PROVISOIRES"];
+    delete process.env["GEODATA_SOURCES_PROVISOIRES"];
+    try {
+      const qualification = { etat: "provisoire", motif: "Droits du producteur non établis (test).", decision: "D-GD-54" } as const;
+      const pub = await compte("gd-provisoire@example.com");
+      await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'responsable-publication')", [pub.id]);
+      const prep = await publierReference({ cle: "test-provisoire-prep", publier: false, qualification });
+      const refus = await pub.client.post(`${API}/admin/versions/${prep.versionId}/publier`);
+      expect(refus.status).toBe(409);
+      expect(refus.body.motifs.join(" ")).toMatch(/Source provisoire \(D-GD-54\)/);
+      // Une version provisoire déjà publiée (base d'une préproduction copiée, par exemple) n'est servie nulle part.
+      const e = await publierReference({ cle: "test-provisoire", qualification });
+      const cache = await pub.client.get(`${API}/catalogue`);
+      expect(JSON.stringify(cache.body)).not.toContain(e.coucheId);
+      expect((await pub.client.get(`${API}/couches/${e.coucheId}`)).status).toBe(404);
+      expect((await pub.client.get(`${API}/couches/${e.coucheId}/objets/001`)).status).toBe(404);
+      process.env["GEODATA_SOURCES_PROVISOIRES"] = "oui";
+      const servie = await pub.client.get(`${API}/couches/${e.coucheId}`);
+      expect(servie.status).toBe(200);
+      expect(servie.body.version.qualification).toEqual(qualification);
+      expect((await pub.client.post(`${API}/admin/versions/${prep.versionId}/publier`)).status).toBe(200);
+      // Une source qualifiée l'est sans rien déclarer.
+      expect((await pub.client.get(`${API}/couches/${(await publierReference({ cle: "test-qualifiee" })).coucheId}`)).body.version.qualification).toEqual({ etat: "qualifiee", motif: null, decision: null });
+    } finally {
+      if (avant === undefined) delete process.env["GEODATA_SOURCES_PROVISOIRES"]; else process.env["GEODATA_SOURCES_PROVISOIRES"] = avant;
+    }
+  });
+  it("version publiée immuable et non effaçable ; retrait motivé : la carte garde la référence et l'explique", async () => {
+    const alice = await compte("gd-ret@example.com");
+    await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'responsable-publication')", [alice.id]);
+    const ref = await publierReference();
+    // La garde DB-3 masque le texte de l'erreur SQL (QUERY_FAILED) : refus constatés, puis lignes vérifiées intactes.
+    await expect(pool.query("UPDATE geodata_versions SET libelle = 'réécrite' WHERE id = $1", [ref.versionId])).rejects.toThrow();
+    await expect(pool.query("DELETE FROM geodata_versions WHERE id = $1", [ref.versionId])).rejects.toThrow();
+    await expect(pool.query("UPDATE geodata_valeurs SET valeur = 99 WHERE indicateur_id = $1", [ref.indicateurs[0]])).rejects.toThrow();
+    expect((await pool.query("SELECT libelle FROM geodata_versions WHERE id = $1", [ref.versionId])).rows).toEqual([{ libelle: "v1" }]);
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_valeurs WHERE indicateur_id = $1 AND valeur = 99", [ref.indicateurs[0]])).rows[0].n).toBe(0);
+    const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Référence", composition: composition(ref.coucheId, ref.versionId) });
+    expect((await alice.client.post(`${API}/admin/versions/${ref.versionId}/retirer`).send({})).status).toBe(400);
+    expect((await alice.client.post(`${API}/admin/versions/${ref.versionId}/retirer`).send({ motif: "Droits retirés par le producteur" })).status).toBe(200);
+    const relue = await alice.client.get(`${API}/cartes/${carte.body.id}`);
+    expect(relue.body.composition.couches[0].versionId).toBe(ref.versionId);
+    expect(relue.body.disponibilite[ref.coucheId]).toEqual({ etat: "retiree", motif: "Version retirée : Droits retirés par le producteur" });
+    expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/121/107`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/catalogue`)).body.couches).toEqual([]);
+    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });
+    expect(exp.body.etat).toBe("refuse");
+    expect(DROITS_IMPORT_PERSONNEL.partage).toBe("refuse");
+  });
+});
+
+describe("Recherche", () => {
+  it("coordonnées étiquetées, paire nue refusée, unité trouvée par nom ou code à zéro initial", async () => {
+    const alice = await compte("gd-s@example.com");
+    await publierReference();
+    expect((await alice.client.get(`${API}/recherche?q=lon -7.6 lat 33.5`)).body.resultats[0]).toMatchObject({ type: "coordonnees", point: { lon: -7.6, lat: 33.5 } });
+    expect((await alice.client.get(`${API}/recherche?q=33.5, -7.6`)).body.avertissement.code).toBe("coordonnees-non-etiquetees");
+    expect((await alice.client.get(`${API}/recherche?q=unité b`)).body.resultats[0]).toMatchObject({ type: "unite", code: "002" });
+    expect((await alice.client.get(`${API}/recherche?q=004`)).body.resultats[0]).toMatchObject({ code: "004" });
+  });
+});
+
+describe("Une couleur par entité (style categories)", () => {
+  it("six unités : six rangs distincts dans l'ordre des noms ; composition « categories » enregistrée ; couche d'un tiers → 404", async () => {
+    const alice = await compte("gd-k@example.com");
+    const ref = await publierReference();
+    const r = await alice.client.get(`${API}/couches/${ref.coucheId}/categories`);
+    expect(r.status).toBe(200);
+    const cs = r.body.categories as { code: string; nom: string; rang: number }[];
+    expect(cs).toHaveLength(6);
+    expect(cs.find((c) => c.code === "001")).toEqual({ code: "001", nom: "Unité A", rang: 0 });
+    expect(new Set(cs.map((c) => c.rang)).size).toBe(6);
+    // Même résultat au second appel (contenu figé).
+    expect((await alice.client.get(`${API}/couches/${ref.coucheId}/categories`)).body.categories).toEqual(cs);
+    const comp = { ...composition(ref.coucheId, ref.versionId), couches: [{ ...composition(ref.coucheId, ref.versionId).couches[0]!, style: { mode: "categories" } }] };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Par entité", composition: comp });
+    expect(c.status).toBe(201);
+    expect((await alice.client.get(`${API}/cartes/${c.body.id}`)).body.composition).toEqual(comp);
+    expect((await alice.client.get(`${API}/couches/gdcou_inconnue/categories`)).status).toBe(404);
+  });
+});
+
+describe("Couches raster (D-GD-13)", () => {
+  it("grille préparée par la chaîne d'import : description, tuile PNG, valeur au point, nodata « non évaluée », droits", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { lireGeoTiff } = await import("../lib/geodata/raster.js");
+    const alice = await compte("gd-r@example.com");
+    const r = await lireGeoTiff(readFileSync(new URL("../../test-corpus/geodata/synthetique-raster.tif", import.meta.url)));
+    const client = await pool.connect();
+    let coucheId = "";
+    try {
+      await client.query("BEGIN");
+      const e = await ecrireVersion(client, {
+        source: { cle: "test-raster", titre: "Raster de test", producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
+        espaceId: null,
+        version: { libelle: "v1", empreinte: "b".repeat(64), fichierNom: "t.tif", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution raster", droits: TOUT, crsSource: r.crs, precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+        couche: { titre: "Grille", description: "", niveau: null, champCode: null, champNom: null, proprietesExposees: [], styleDefaut: { mode: "raster" } },
+        objets: [], indicateurs: [], superficie: false, preparePar: null,
+        raster: { grille: r.grille, description: { unite: "u", grandeur: "Valeur", palette: "viridis", min: 0, max: 420, classes: null, largeur: r.grille.largeur, hauteur: r.grille.hauteur, emprise: r.grille.emprise } },
+      });
+      await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
+      await client.query("COMMIT");
+      coucheId = e.coucheId;
+    } finally { client.release(); }
+    const c = await alice.client.get(`${API}/couches/${coucheId}`);
+    expect(c.body.typeGeometrie).toBe("raster");
+    expect(c.body.raster).toMatchObject({ grandeur: "Valeur", unite: "u", largeur: 40, hauteur: 30 });
+    const t = await alice.client.get(`${API}/raster/${coucheId}/9/243/210.png`).buffer(true);
+    expect(t.status).toBe(200);
+    expect(t.headers["content-type"]).toBe("image/png");
+    expect((t.body as Buffer).subarray(1, 4).toString("ascii")).toBe("PNG");
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body).toMatchObject({ valeur: 225, unite: "u" });
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.995&lat=30.295`)).body.valeur).toBeNull();
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=10&lat=10`)).body.valeur).toBeNull();
+    expect((await alice.client.get(`${API}/raster/gdcou_inconnue/0/0/0.png`)).status).toBe(404);
+    // Contenu figé : la grille d'une version publiée ne se modifie pas.
+    await expect(pool.query("UPDATE geodata_rasters SET nodata = 1 WHERE couche_id = $1", [coucheId])).rejects.toThrow();
+  });
+});
+
+describe("Catégories du catalogue (D-GD-14)", () => {
+  it("lecture pour tous ; créer, renommer, ordonner, ranger, libérer, supprimer réservés au gestionnaire ; journalisé", async () => {
+    const alice = await compte("gd-cat@example.com");
+    const ref = await publierReference();
+    const sourceId = (await pool.query("SELECT source_id FROM geodata_versions WHERE id = $1", [ref.versionId])).rows[0].source_id as string;
+    const lu = await alice.client.get(`${API}/categories`);
+    expect(lu.status).toBe(200);
+    expect(lu.body.modifiable).toBe(false);
+    // Catégories initiales semées une fois (dont « Jeux de test », thème « test »).
+    expect(lu.body.categories.find((c: { id: string }) => c.id === "test")).toMatchObject({ libelle: "Jeux de test", themes: ["test"] });
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "Forêts" })).status).toBe(403);
+    await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'gestionnaire-donnees')", [alice.id]);
+    expect((await alice.client.get(`${API}/categories`)).body.modifiable).toBe(true);
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "x" })).status).toBe(400);
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "jeux DE test" })).status).toBe(400);
+    const cree = await alice.client.post(`${API}/categories`).send({ libelle: "  Forêts   et végétation " });
+    expect(cree.status).toBe(201);
+    expect(cree.body.libelle).toBe("Forêts et végétation");
+    const id = cree.body.id as string;
+    try {
+      expect((await alice.client.patch(`${API}/categories/${id}`).send({ libelle: "Forêts" })).body.libelle).toBe("Forêts");
+      expect((await alice.client.patch(`${API}/categories/gdcat_inconnue`).send({ libelle: "Nouvelle" })).status).toBe(404);
+      const ids = ((await alice.client.get(`${API}/categories`)).body.categories as { id: string }[]).map((c) => c.id);
+      expect((await alice.client.put(`${API}/categories-ordre`).send({ ids: ids.slice(1) })).status).toBe(400);
+      const nouvelOrdre = [id, ...ids.filter((x) => x !== id)];
+      expect((await alice.client.put(`${API}/categories-ordre`).send({ ids: nouvelOrdre })).status).toBe(200);
+      expect(((await alice.client.get(`${API}/categories`)).body.categories as { id: string }[])[0]!.id).toBe(id);
+      expect((await alice.client.put(`${API}/categories/${id}/sources/${sourceId}`)).status).toBe(200);
+      expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({ [sourceId]: id });
+      expect((await alice.client.put(`${API}/categories/${id}/sources/gdsrc_inconnue`)).status).toBe(404);
+      expect((await alice.client.delete(`${API}/categories-sources/${sourceId}`)).status).toBe(204);
+      expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({});
+      expect((await alice.client.put(`${API}/categories/${id}/sources/${sourceId}`)).status).toBe(200);
+    } finally {
+      // Supprimer la catégorie ne supprime aucune couche ; son rangement disparaît avec elle.
+      expect((await alice.client.delete(`${API}/categories/${id}`)).status).toBe(204);
+    }
+    expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({});
+    expect(((await alice.client.get(`${API}/catalogue`)).body.couches as { id: string }[]).map((c) => c.id)).toEqual([ref.coucheId]);
+    const actions = (await pool.query("SELECT action FROM geodata_journal WHERE acteur_id = $1 AND action LIKE 'categorie.%'", [alice.id])).rows.map((l) => l.action);
+    expect(actions).toEqual(expect.arrayContaining(["categorie.refusee", "categorie.creee", "categorie.renommee", "categorie.ordonnee", "categorie.source_rangee", "categorie.source_liberee", "categorie.supprimee"]));
+  });
+});
+
+describe("découpage territorial en base (lot H, D-GD-28)", () => {
+  // Découpage en base (D-GD-42) : tables sans lien aux comptes, vidées avant chaque cas (la remise à zéro commune ne les touche pas).
+  beforeEach(async () => {
+    for (const t of ["geodata_decoupage_imports", "geodata_entites_administratives", "geodata_niveaux_administratifs", "geodata_territoires", "geodata_pays"]) await pool.query(`DELETE FROM ${t}`);
+  });
+  /** Version publiée de limites : unités (code, nom, carré), comme la chaîne d'import. */
+  async function publierLimites(cle: string, unites: { code: string; nom: string; x: number; y: number; d: number }[], publier = true) {
+    const v = validerGeoJSON({ type: "FeatureCollection", features: unites.map((u) => ({ type: "Feature", properties: { code: u.code, nom: u.nom }, geometry: { type: "Polygon", coordinates: carre(u.x, u.y, u.d) } })) });
+    if (!v.ok) throw new Error("jeu de test invalide");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const e = await ecrireVersion(client, {
+        source: { cle, titre: cle, producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
+        espaceId: null,
+        version: { libelle: "v1", empreinte: createHash("sha256").update(cle).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: `Attribution ${cle}`, droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+        couche: { titre: cle, description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom"], styleDefaut: { mode: "simple", couleur: "#123456" } },
+        objets: v.objets, indicateurs: [], superficie: false, preparePar: null,
+      });
+      if (publier) await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
+      await client.query("COMMIT");
+      return e.versionId;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+  /**
+   * Découpage synthétique (D-GD-42) importé par la commande d'import unique, depuis un dossier de données comme celui
+   * livré : déclaration, table des niveaux, entités (code, niveau, parent), fichier source. Aucun nom réel.
+   */
+  function dossierDecoupage(entites: [string, string, string | null][], niveaux: [string, number][] = [["region", 1], ["province", 2]]) {
+    const d = mkdtempSync(join(tmpdir(), "gd-decoupage-"));
+    mkdirSync(join(d, "decoupage", "originaux"), { recursive: true });
+    const ecrire = (f: string, t: string) => { writeFileSync(join(d, f), t); return { fichier: f, empreinte: createHash("sha256").update(t).digest("hex") }; };
+    const original = ecrire("decoupage/originaux/source.txt", `source synthétique ${entites.length}`);
+    const noms: Record<string, [string, string]> = { region: ["Région", "Régions"], province: ["Province", "Provinces"] };
+    const nv = ecrire("decoupage/zz-niveaux.csv", `pays,code,rang,singulier,pluriel,fiche\n${niveaux.map(([c, r]) => `ZZ,${c},${r},${(noms[c] ?? [`Niveau ${c}`, `Niveaux ${c}`]).join(",")},`).join("\n")}\n`);
+    const en = ecrire("decoupage/zz-entites.csv", `pays,code,niveau,parent,nom,nom_ar,type\n${entites.map(([c, n, p]) => `ZZ,${c},${n},${p ?? ""},Unité ${c},,${n}`).join("\n")}\n`);
+    writeFileSync(join(d, "decoupage", "zz.json"), JSON.stringify({ pays: "ZZ", nomPays: "Pays synthétique", source: "Jeu synthétique", original, niveaux: nv, entites: en }));
+    return d;
+  }
+  async function importerZZ(entites: [string, string, string | null][], niveaux?: [string, number][]) {
+    const client = await pool.connect();
+    try { return await importerDecoupage(client, dossierDecoupage(entites, niveaux), "decoupage/zz.json"); } finally { client.release(); }
+  }
+  const ENTITES_ZZ: [string, string, string | null][] = [["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2001", "province", "2"], ["9001", "province", null]];
+  const niveau = (rang: 1 | 2, parent: "decoupage" | "inclusion" = "decoupage") => parent === "decoupage"
+    ? { pays: "ZZ", nomPays: "Pays synthétique", niveau: rang === 1 ? "region" : "province" }
+    : { pays: "ZZ", nomPays: "Pays synthétique", rang, niveau: rang === 1 ? { singulier: "Région", pluriel: "Régions" } : { singulier: "Province", pluriel: "Provinces" }, parent: "inclusion" as const };
+
+  it("import unique du découpage (D-GD-42) : relancé sur le même fichier, rien ; nouveau fichier, mise à jour par code sans doublon", async () => {
+    const b1 = await importerZZ(ENTITES_ZZ);
+    expect(b1).toMatchObject({ deja: false, entites: 5, niveaux: 2, ajoutees: ["1", "1001", "2", "2001", "9001"], modifiees: [], retirees: [], sansParent: ["9001"] });
+    expect(await importerZZ(ENTITES_ZZ)).toMatchObject({ deja: true, ajoutees: [] });
+    const compte = async () => (await pool.query("SELECT count(*)::int AS n, count(DISTINCT code)::int AS d FROM geodata_entites_administratives WHERE pays = 'ZZ' AND retire_le IS NULL")).rows[0];
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+    // Nouveau fichier : un niveau intercalé, une entité renommée de parent, une entité absente (retirée, jamais effacée).
+    const b2 = await importerZZ([["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2001", "province", "1"], ["10011", "district", "1001"]], [["region", 1], ["province", 2], ["district", 3]]);
+    expect(b2).toMatchObject({ deja: false, niveaux: 3, ajoutees: ["10011"], modifiees: ["2001"], retirees: ["9001"], sansParent: [] });
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_entites_administratives WHERE pays = 'ZZ'")).rows[0].n).toBe(6);
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_decoupage_imports WHERE pays = 'ZZ'")).rows[0].n).toBe(2);
+    // Incohérence (parent d'un niveau qui n'est pas plus global) : refusée, la base reste dans son état précédent.
+    await expect(importerZZ([["1", "province", null], ["1001", "region", "1"]])).rejects.toThrow(/pas plus global/);
+    expect(await compte()).toEqual({ n: 5, d: 5 });
+  });
+
+  it("chargement depuis des versions publiées (provinces d'abord) : parents par le découpage en base, code hors découpage écarté, rechargement sans effet", async () => {
+    await importerZZ(ENTITES_ZZ);
+    const vp = await publierLimites("terr-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }, { code: "2001", nom: "P Sud", x: -8, y: 30, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -7, y: 30, d: 0.1 }]);
+    const vr = await publierLimites("terr-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }, { code: "2", nom: "R Sud", x: -8.2, y: 29.9, d: 0.5 }]);
+    expect((await chargerTerritoires(pool, vp, niveau(2))).unites).toBe(2);
+    expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ unites: 2, deja: false });
+    expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ deja: true });
+    const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
+    expect(rows).toEqual([{ code: "1001", parent_code: "1" }, { code: "2001", parent_code: "2" }]);
+    // Nouvel import du découpage sans nouvelle version de la couche : 2001 retirée, 2002 nouvelle (sans contour) —
+    // le rechargement rapproche les unités du découpage en base (2001 ne reste pas servie).
+    await importerZZ([["1", "region", null], ["2", "region", null], ["1001", "province", "1"], ["2002", "province", "2"]]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 1 });
+    expect((await pool.query("SELECT code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2")).rows).toEqual([{ code: "1001" }]);
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: true, unites: 1 });
+    // Niveau absent du découpage en base : refus explicite (jamais de niveau deviné).
+    await expect(chargerTerritoires(pool, vp, { pays: "ZZ", nomPays: "Pays synthétique", niveau: "inconnu" })).rejects.toThrow(/absent du découpage/);
+  });
+
+  it("règle « inclusion » (pays sans découpage importé) : parent = unité du rang supérieur qui contient l'unité", async () => {
+    const vr = await publierLimites("incl-regions", [{ code: "A", nom: "Grande A", x: -8.5, y: 30.5, d: 1 }]);
+    const vp = await publierLimites("incl-provinces", [{ code: "a1", nom: "Petite a1", x: -8.2, y: 30.7, d: 0.2 }, { code: "b1", nom: "Ailleurs", x: -5, y: 30, d: 0.2 }]);
+    await chargerTerritoires(pool, vr, niveau(1, "inclusion"));
+    await chargerTerritoires(pool, vp, niveau(2, "inclusion"));
+    const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
+    expect(rows).toEqual([{ code: "a1", parent_code: "A" }, { code: "b1", parent_code: null }]);
+  });
+
+  it("déclaration corrigée sans nouvelle donnée : nom du pays et du niveau répercutés, parents recalculés si la règle change", async () => {
+    await importerZZ(ENTITES_ZZ);
+    const vr = await publierLimites("decl-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
+    const vp = await publierLimites("decl-provinces", [{ code: "1001", nom: "P codée", x: -8, y: 31, d: 0.1 }, { code: "9001", nom: "P sans parent", x: -8.1, y: 31.2, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -8.15, y: 31, d: 0.05 }]);
+    await chargerTerritoires(pool, vr, niveau(1));
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
+    const parents = async () => (await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code")).rows;
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
+    // Même version, nom du pays corrigé, même règle : rien n'est rechargé, la déclaration est répercutée.
+    expect(await chargerTerritoires(pool, vp, { ...niveau(2), nomPays: "Pays synthétique (corrigé)" })).toMatchObject({ deja: true, unites: 2 });
+    const [p] = (await pool.query("SELECT nom, niveaux -> '2' ->> 'pluriel' AS pluriel, niveaux -> '2' ->> 'parent' AS regle FROM geodata_pays WHERE code = 'ZZ'")).rows;
+    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Provinces", regle: "decoupage" });
+    // Règle changée (« inclusion ») : le rang est rebâti — les codes admis changent (« contour:x » entre) — et les
+    // parents sont recalculés par la nouvelle règle.
+    expect(await chargerTerritoires(pool, vp, niveau(2, "inclusion"))).toMatchObject({ deja: false, unites: 3 });
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: "1" }, { code: "contour:x", parent_code: "1" }]);
+    // Retour au découpage en base : « contour:x » ressort, le parent de 9001 redevient inconnu (jamais inventé).
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
+  });
+
+  it("profondeur variable (D-GD-42) : ancêtres et enfants par le lien parent, niveaux réels au point, découpage servi à l'interface", async () => {
+    const alice = await compte("gd-prof@example.com");
+    // R › P › C (ville) › G (regroupement) › A (arrondissement) ; R › P › K (commune ordinaire).
+    await importerZZ([["1", "region", null], ["11", "province", "1"], ["111", "commune", "11"], ["112", "commune", "11"], ["1110", "groupe", "111"], ["11101", "arrondissement", "1110"]],
+      [["region", 1], ["province", 2], ["commune", 3], ["groupe", 4], ["arrondissement", 5]]);
+    // Une couche par niveau (une nouvelle version d'un niveau remplace l'ancienne) : les deux communes dans la même couche.
+    const charger = async (cle: string, rang: number, unites: { code: string; x: number; y: number; d: number }[]) => {
+      const v = await publierLimites(cle, unites.map((u) => ({ ...u, nom: `U${u.code}` })));
+      await chargerTerritoires(pool, v, { pays: "ZZ", nomPays: "Pays synthétique", niveau: ["region", "province", "commune", "groupe", "arrondissement"][rang - 1]! });
+    };
+    await charger("p-r", 1, [{ code: "1", x: -9, y: 30, d: 2 }]);
+    await charger("p-p", 2, [{ code: "11", x: -9, y: 30, d: 1.5 }]);
+    await charger("p-c", 3, [{ code: "111", x: -9, y: 30, d: 0.5 }, { code: "112", x: -8, y: 31, d: 0.3 }]);
+    await charger("p-g", 4, [{ code: "1110", x: -9, y: 30, d: 0.4 }]);
+    await charger("p-a", 5, [{ code: "11101", x: -9, y: 30, d: 0.2 }]);
+    const u = (await alice.client.get(`${API}/territoires/ZZ/unites/11101`)).body;
+    expect(u.ancetres.map((a: { code: string }) => a.code)).toEqual(["1", "11", "111", "1110"]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=111`)).body.unites.map((x: { code: string }) => x.code)).toEqual(["1110"]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/111`)).body.enfants).toBe(1);
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=-8.9&lat=30.1`)).body.unites.map((x: { rang: number }) => x.rang)).toEqual([5, 4, 3, 2, 1]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=-7.9&lat=31.1`)).body.unites.map((x: { rang: number }) => x.rang)).toEqual([3, 2, 1]);
+    const dec = (await alice.client.get(`${API}/territoires/ZZ/decoupage`)).body;
+    expect(dec.niveaux.map((n: { code: string; rang: number }) => [n.code, n.rang])).toEqual([["region", 1], ["province", 2], ["commune", 3], ["groupe", 4], ["arrondissement", 5]]);
+    expect(dec.entites).toContainEqual({ code: "11101", parent: "1110", niveau: "arrondissement" });
+    expect((await alice.client.get(`${API}/territoires/XX/decoupage`)).body).toEqual({ pays: "XX", niveaux: [], entites: [] });
+  });
+
+  it("API : pays et niveaux de la base, unités d'un niveau, unité avec ancêtres, contour et attribution ; version non publiée refusée", async () => {
+    const alice = await compte("gd-terr@example.com");
+    expect((await alice.client.get(`${API}/territoires`)).body).toEqual({ pays: [] });
+    await importerZZ(ENTITES_ZZ);
+    const vr = await publierLimites("api-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
+    const vp = await publierLimites("api-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }]);
+    await chargerTerritoires(pool, vr, niveau(1));
+    await chargerTerritoires(pool, vp, niveau(2));
+    const pays = (await alice.client.get(`${API}/territoires`)).body.pays;
+    expect(pays).toEqual([{ code: "ZZ", nom: "Pays synthétique", niveaux: [{ rang: 1, singulier: "Région", pluriel: "Régions", unites: 1 }, { rang: 2, singulier: "Province", pluriel: "Provinces", unites: 1 }], versions: [vr, vp].sort() }]);
+    const racine = (await alice.client.get(`${API}/territoires/ZZ/unites`)).body.unites;
+    expect(racine.map((u: { code: string }) => u.code)).toEqual(["1"]);
+    expect(racine[0].emprise.map((x: number) => Number(x.toFixed(1)))).toEqual([-8.2, 30.9, -7.7, 31.4]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites.map((u: { nom: string }) => u.nom)).toEqual(["P Nord"]);
+    const u = (await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).body;
+    expect(u).toMatchObject({ code: "1001", nom: "P Nord", rang: 2, ancetres: [{ code: "1", nom: "R Nord", rang: 1 }], enfants: 0, attribution: "Attribution api-provinces" });
+    expect(u.contour.type).toBe("Polygon");
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/9999`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/territoires/zz/unites`)).status).toBe(400);
+    // Unités contenant un point (D-GD-34) : de la plus élémentaire à la plus globale, avec la couche de leur version ;
+    // hors de tout découpage : liste vide ; coordonnées invalides refusées.
+    const auPoint = (await alice.client.get(`${API}/territoires/ZZ/point?lon=-7.98&lat=31.02`)).body.unites;
+    expect(auPoint.map((x: { code: string; rang: number }) => [x.code, x.rang])).toEqual([["1001", 2], ["1", 1]]);
+    expect(auPoint[0]).toMatchObject({ pays: "ZZ", nom: "P Nord", versionId: vp });
+    expect(typeof auPoint[0].coucheId).toBe("string");
+    expect(u).toMatchObject({ versionId: vp, coucheId: auPoint[0].coucheId });
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=10&lat=10`)).body).toEqual({ unites: [] });
+    expect((await alice.client.get(`${API}/territoires/XX/point?lon=-7.98&lat=31.02`)).body).toEqual({ unites: [] });
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=abc&lat=1`)).status).toBe(400);
+    // Tableau de bord (D-GD-37) : définition et concepts lus en base, sur une version publiée ; langue contrôlée.
+    expect((await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).status).toBe(404);
+    await pool.query("INSERT INTO geodata_tableaux_bord (version_id, pays, zone_code, zone_nom, definition) VALUES ($1, 'ZZ', '1', 'R Nord', $2)", [vr, JSON.stringify({ pays: "ZZ", zone: { code: "1", nom: "R Nord" }, blocs: [] })]);
+    await pool.query("INSERT INTO geodata_concepts (version_id, langue, ordre, titre, texte, source) VALUES ($1, 'fr', 0, 'Concept', 'Texte', 'Source test')", [vr]);
+    const bord = (await alice.client.get(`${API}/tableau-de-bord?pays=ZZ`)).body;
+    expect(bord).toMatchObject({ pays: "ZZ", versionId: vr, zone: { code: "1", nom: "R Nord" }, concepts: { fr: 1 } });
+    expect(typeof bord.zone.coucheId).toBe("string");
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=fr`)).body).toEqual({ langue: "fr", source: "Source test", concepts: [{ titre: "Concept", texte: "Texte" }] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=ar`)).body).toEqual({ langue: "ar", source: null, concepts: [] });
+    expect((await alice.client.get(`${API}/tableau-de-bord/concepts?pays=ZZ&langue=de`)).status).toBe(400);
+    const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
+    await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
+    // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).body).toMatchObject({ pays: "ZZ", code: "1001", ancetres: [{ code: "1" }] });
+    expect((await alice.client.get(`${API}/territoires/version/${vr}/unites/1001`)).status).toBe(404);
+    // Version retirée : ses unités ne sont plus servies (pays, listes, détail), sans attendre un nouveau chargement.
+    await pool.query("UPDATE geodata_versions SET etat = 'retiree', retiree_le = now(), motif_retrait = 'Remplacée (test)' WHERE id = $1", [vp]);
+    expect((await alice.client.get(`${API}/territoires`)).body.pays[0]).toMatchObject({ niveaux: [{ rang: 1 }], versions: [vr] });
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites).toEqual([]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).status).toBe(404);
+  });
+});
+
+describe("métadonnées de source (D-GD-30) : la fiche fait foi", () => {
+  it("une nouvelle version d'une source existante met à jour titre, thème et description de la source", async () => {
+    const base = { espaceId: null, couche: { titre: "c", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom"], styleDefaut: { mode: "simple" as const, couleur: "#123456" } }, objets: [], indicateurs: [], superficie: false, preparePar: null };
+    const version = (e: string) => ({ libelle: "v", empreinte: createHash("sha256").update(e).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "A", droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await ecrireVersion(client, { ...base, source: { cle: "meta-src", titre: "Ancien titre", producteur: "P", theme: "population", couverture: "C", description: "d1" }, version: version("a") });
+      await ecrireVersion(client, { ...base, source: { cle: "meta-src", titre: "Nouveau titre", producteur: "P", theme: "limites-administratives", couverture: "C", description: "d2" }, version: version("b") });
+      await client.query("COMMIT");
+    } finally { client.release(); }
+    const [s] = (await pool.query("SELECT titre, theme, description, (SELECT count(*)::int FROM geodata_versions v WHERE v.source_id = s.id) AS n FROM geodata_sources s WHERE cle = 'meta-src'")).rows;
+    expect(s).toEqual({ titre: "Nouveau titre", theme: "limites-administratives", description: "d2", n: 2 });
+  });
+});
+
+describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
+  it("copie chaque fichier tel quel ; inchangé non réécrit ; modifié remplacé ; plus livré marqué retiré, jamais effacé", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const dossier = mkdtempSync(join(tmpdir(), "gd-fichiers-"));
+    mkdirSync(join(dossier, "donnees"));
+    writeFileSync(join(dossier, "zz-test.json"), JSON.stringify({ cle: "zz-test", version: { fichier: "donnees/zz-test.csv" } }));
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;\n");
+    writeFileSync(join(dossier, "donnees", "zz-extrait.geojson"), "{}");
+    await pool.query("DELETE FROM geodata_fichiers");
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 3, modifies: 0, inchanges: 0, retires: 0 });
+    const lignes = (await pool.query("SELECT chemin, role, source_cle, taille, convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers ORDER BY chemin")).rows;
+    expect(lignes).toEqual([
+      { chemin: "donnees/zz-extrait.geojson", role: "extrait", source_cle: null, taille: "2", texte: "{}" },
+      { chemin: "donnees/zz-test.csv", role: "donnees", source_cle: "zz-test", taille: "15", texte: "code;valeur\n1;\n" },
+      expect.objectContaining({ chemin: "zz-test.json", role: "fiche", source_cle: "zz-test" }),
+    ]);
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 0, inchanges: 3, retires: 0 });
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;2\n");
+    rmSync(join(dossier, "donnees", "zz-extrait.geojson"));
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 1, inchanges: 1, retires: 1 });
+    const [retire] = (await pool.query("SELECT retire_le IS NOT NULL AS retire FROM geodata_fichiers WHERE chemin = 'donnees/zz-extrait.geojson'")).rows;
+    expect(retire).toEqual({ retire: true });
+    const [csv] = (await pool.query("SELECT convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers WHERE chemin = 'donnees/zz-test.csv'")).rows;
+    expect(csv).toEqual({ texte: "code;valeur\n1;2\n" });
+    await pool.query("DELETE FROM geodata_fichiers");
+  });
+});

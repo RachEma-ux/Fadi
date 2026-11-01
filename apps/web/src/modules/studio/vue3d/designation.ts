@@ -6,9 +6,9 @@
 import type { StudioDocument } from "@parcours/atelier-model";
 import { estSelectionnable } from "../planche2d/calques";
 
-/** Solides libres désignables du document courant. */
+/** Solides libres, solides exacts (lot F2) et surfaces libres NURBS (X.1-05) désignables du document courant. */
 export function solidesDesignables(doc: StudioDocument): (id: string) => boolean {
-  const ids = new Set((doc.solides ?? []).filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
+  const ids = new Set([...(doc.solides ?? []), ...(doc.exacts ?? []), ...(doc.surfaces ?? []), ...(doc.subdivisions ?? [])].filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
   return (id) => ids.has(id);
 }
 
@@ -18,6 +18,7 @@ export function architectureDesignable(doc: StudioDocument, affiches: ReadonlySe
   return (id) => {
     const a = courante.get(id);
     if (!a || !affiches.has(id)) return false;
+    if (a.type === "ladder" || a.type === "column" || a.type === "beam" || a.type === "slab") return estSelectionnable(doc, a.layerId);
     const hote = a.type === "wall" ? a : courante.get(a.hostId);
     return hote?.type === "wall" && estSelectionnable(doc, hote.layerId);
   };

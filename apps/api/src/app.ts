@@ -10,18 +10,27 @@ import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
+import { reviewsRouter } from "./routes/reviews.js";
 import { notificationsRouter } from "./routes/notifications.js";
+import { comGlobalRouter } from "./routes/com.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
+import { geodataRouter } from "./routes/geodata/index.js";
 import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
+import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
+import { activerJournalAccesStudio } from "./lib/studio-journal-acces.js";
+import { studioMcpRouter } from "./routes/mcp-studio.js";
+import { surveillanceStudio } from "./lib/studio-surveillance.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash)|projects|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews|mcp)(\/|$)/;
 
 export function createApp() {
   const app = express();
+  // Journal d'accès Studio (TR-EX-046) : refus et sorties de contenu des routes Studio, minimisés, conservés 12 mois.
+  activerJournalAccesStudio();
 
   app.disable("x-powered-by");
   // Derrière un relais TLS (Caddy, Traefik, hébergeur) : `TRUST_PROXY=1` pour que l'adresse du client (limites) et le
@@ -39,9 +48,10 @@ export function createApp() {
   );
 
   // Limite générale de 256 ko ; les lots de commandes de l'Atelier (1 Mo, routes/atelier-commands.ts), les pièces
-  // jointes des étapes, les exports de l'Atelier, l'import IFC et l'import d'archive ont leur propre lecture de corps (limite dédiée).
+  // jointes des étapes, les exports de l'Atelier, l'import IFC, l'import d'archive et la réception d'un modèle externe Studio
+  // (6 Mo, routes/studio.ts) ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());
@@ -60,20 +70,33 @@ export function createApp() {
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
   // Administration de la plateforme (comptes seulement, D-2) : 404 tant que FADI_ADMIN_ENABLED n'est pas `true`.
-  // Seuls `/admin/users*`, `/admin/invitations*` et `/admin/trash` (corbeille, UM-27) sont l'API ; `/admin/utilisateurs`
+  // Seuls `/admin/users*`, `/admin/invitations*` et `/admin/trash` (corbeille, UM-27) et `/admin/audit` (journal, phase 3 bis) et `/admin/surveillance` (R.5-03) sont l'API ; `/admin/utilisateurs`
   // est la page du client (repli SPA).
-  app.use("/admin", (req, res, next) => (/^\/(users|invitations|trash)(\/|$)/.test(req.path) ? authLimiter(req, res, () => adminRouter(req, res, next)) : next()));
+  app.use("/admin", (req, res, next) => (/^\/(users|invitations|trash|audit|surveillance)(\/|$)/.test(req.path) ? authLimiter(req, res, () => adminRouter(req, res, next)) : next()));
 
   // `API_RATE_LIMIT` ne sert, comme `AUTH_RATE_LIMIT`, qu'à desserrer la limite pour la suite de tests (une seule instance, des dizaines de scénarios) ; production : 300 requêtes / minute.
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
+  // Serveur MCP de Studio (lot F, décision P-12) : jeton d'agent seulement, jamais la session ; transport HTTP.
+  app.use("/mcp/studio", apiLimiter, studioMcpRouter(webOrigin.split(",")));
+  // Espace d'organisation (phase 5 des organisations, Issue #262) : la page du client est `/organisations` (repli SPA).
+  app.use("/organizations", apiLimiter, organizationsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);
   app.use("/notifications", apiLimiter, notificationsRouter);
+  // Revue externe (phase 4) : espace du destinataire, hors de `/projects` — garde `loadReviewAccess` seule. La page du
+  // client est `/revues` (repli SPA).
+  app.use("/reviews", apiLimiter, reviewsRouter);
+  // Communication (COM, Issue #280) : boîte personnelle, tous projets accessibles ; le reste est sous /projects/:id/com.
+  app.use("/com", apiLimiter, comGlobalRouter);
   app.use("/preferences", apiLimiter, preferencesRouter);
   // Sandbox (lot 5) : seules ses préférences d'outils passent par le serveur ; la page `/sandbox` reste celle du client.
   app.use("/sandbox/preferences", apiLimiter, sandboxPreferencesRouter);
+  // GeoData (9ᵉ module, ADR-GEODATA-02) : API sous `/geodata/api` ; la page `/geodata` reste celle du client. Les tuiles
+  // ont leur propre limite (une carte en demande des dizaines par déplacement).
+  const tuilesLimiter = rateLimit({ windowMs: 60 * 1000, limit: Number(process.env["GEODATA_TILE_RATE_LIMIT"] ?? 3000), standardHeaders: true, legacyHeaders: false });
+  app.use("/geodata/api", (req, res, next) => (req.path.startsWith("/tuiles/") ? tuilesLimiter : apiLimiter)(req, res, next), geodataRouter);
 
   // Sonde de vie (hébergement, sonde de joignabilité du client) : l'API et sa base répondent-elles ? 503 sinon.
   app.get("/health", async (_req, res) => {
@@ -113,8 +136,16 @@ export function createApp() {
   // Gestionnaire d'erreurs final : jamais de stack trace renvoyée au client
   // (Definition of Done), log structuré côté serveur.
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+    // Corps au-delà de la limite de sa route (lecture JSON d'express) : refus explicite 413, jamais une erreur interne
+    // (EX-087 : taille d'entrée contrôlée ; rien n'a été lu ni écrit).
+    if ((err as { type?: string } | null)?.type === "entity.too.large") {
+      res.status(413).json({ error: "payload_too_large", message: "Le corps de la requête dépasse la taille admise." });
+      return;
+    }
     // eslint-disable-next-line no-console
     console.error(JSON.stringify({ level: "error", message: (err as Error).message, stack: (err as Error).stack }));
+    // Surveillance d'exploitation (R.5-03) : erreur applicative comptée (règle « api.erreurs-internes »).
+    surveillanceStudio.erreurApplicative(err);
     res.status(500).json({ error: "internal_error" });
   };
   app.use(errorHandler);

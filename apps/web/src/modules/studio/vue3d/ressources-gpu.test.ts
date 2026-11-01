@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { compteGpu, libererObjet, vider } from "./ressources-gpu";
+import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
 
 /** Suit les ressources vivantes comme `renderer.info.memory` (incrément à la création, décrément à `dispose`). */
 function suivi() {
@@ -55,3 +55,28 @@ describe("ressources GPU de la vue 3D", () => {
     expect(compteGpu({ info: { memory: { geometries: 3, textures: 1 } } })).toEqual({ geometries: 3, textures: 1 });
   });
 });
+
+describe("textures partagées entre moteurs de rendu (TEST-037)", () => {
+  it("la table DFG des uniformes est relevée (pas les cartes propres du matériau) ; sa libération désabonne chaque moteur", () => {
+    const lut = new THREE.DataTexture(new Uint8Array(4), 1, 1);
+    lut.name = "DFG_LUT";
+    const carte = new THREE.Texture();
+    const materiau = new THREE.MeshStandardMaterial({ map: carte });
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(), materiau));
+    g.add(new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial()));
+    const uniformes = new Map<object, Record<string, { value?: unknown }>>([[materiau, { dfgLUT: { value: lut }, map: { value: carte }, autre: { value: new THREE.Texture() } }]]);
+    const renderer = { properties: { get: (o: object) => ({ uniforms: uniformes.get(o) }) } };
+    // Deux moteurs de rendu successifs s'abonnent à la table partagée, comme dans three.js.
+    const abonnements: Array<() => void> = [];
+    for (let i = 0; i < 2; i++) { const f = () => lut.removeEventListener("dispose", f); abonnements.push(f); lut.addEventListener("dispose", f); }
+    expect(abonnements.every((f) => lut.hasEventListener("dispose", f))).toBe(true);
+    const trouvees = texturesPartagees(renderer, [g]);
+    expect(trouvees).toEqual([lut]);
+    libererTexturesPartagees(trouvees);
+    expect(abonnements.some((f) => lut.hasEventListener("dispose", f))).toBe(false);
+    // Rien de propre au matériau n'est touché.
+    expect(texturesPartagees({ properties: { get: () => ({}) } }, [g])).toEqual([]);
+  });
+});
+

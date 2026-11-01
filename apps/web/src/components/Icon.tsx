@@ -5,6 +5,9 @@
  */
 export type IconName =
   | "home"
+  | "organization"
+  | "map"
+  | "review"
   | "folder"
   | "route"
   | "atelier"
@@ -58,13 +61,18 @@ export type IconName =
   | "studio-snap-intersection"
   | "studio-snap-perpendicular"
   | "studio-snap-tangent"
+  | "studio-snap-parallel"
   | "studio-snap-nearest"
+  | "studio-snap-next"
   | "studio-track-ortho"
   | "studio-track-polar"
   | "studio-track-polar-step"
   | "studio-import-dxf"
   | "studio-export-svg"
   | "studio-export-dxf"
+  | "studio-export-obj"
+  | "studio-export-stl"
+  | "studio-export-step"
   | "studio-export-ifc"
   | "studio-catalog"
   | "studio-palette"
@@ -85,6 +93,17 @@ export type IconName =
   | "studio-solid-prism"
   | "studio-solid-move"
   | "studio-solid-delete"
+  | "studio-solid-push-pull"
+  | "studio-solid-split-face"
+  | "studio-solid-rotate"
+  | "studio-solid-link"
+  | "studio-solid-boolean"
+  | "studio-solid-face-dimension"
+  | "studio-surface-nurbs"
+  | "studio-surface-edit"
+  | "studio-surface-thicken"
+  | "studio-surface-subdivision"
+  | "studio-surface-solidify"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -97,6 +116,11 @@ export type IconName =
   | "studio-opening"
   | "studio-architecture-edit"
   | "studio-architecture-delete"
+  | "studio-ladder"
+  | "studio-level"
+  | "studio-component"
+  | "studio-component-instance"
+  | "studio-structure"
   | "studio-property-set"
   | "console"
   | "studio-property-remove"
@@ -110,6 +134,23 @@ export type IconName =
   | "studio-export-png"
   | "studio-dossier"
   | "studio-exchanges"
+  | "studio-approve"
+  | "studio-merge-variants"
+  | "studio-merge-undo"
+  | "studio-import-ifc"
+  | "studio-external-models"
+  | "studio-illustration"
+  | "studio-agents"
+  | "studio-non-native-keep"
+  | "studio-non-native-remove"
+  | "studio-graphic-add"
+  | "studio-graphic-remove"
+  | "studio-project-frame"
+  | "studio-source-declare"
+  | "studio-block-define"
+  | "studio-block-insert"
+  | "studio-block-explode"
+  | "studio-constraint"
   | "studio-comments";
 
 const PATHS: Record<IconName, string> = {
@@ -118,6 +159,12 @@ const PATHS: Record<IconName, string> = {
   // Administration : silhouette et bouclier (tracé inspiré de Tabler « user-shield », MIT) ; distincte de « people » (Collaboration).
   admin: "M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0M6 21v-2a4 4 0 0 1 4-4h2m10 1c0 4-2.5 6-3.5 6S15 20 15 16c1 0 2.5-.5 3.5-1.5 1 1 2.5 1.5 3.5 1.5Z",
   home: "M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5M10 20v-5h4v5",
+  // Organisation (espace d'organisation, phase 5) : deux immeubles côte à côte, fenêtres en rangées.
+  // Carte pliée en trois volets et repère : entrée GeoData de la barre latérale.
+  map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14",
+  organization: "M3 21h18M5 21V5h8v16M13 9h6v12M8 8h2M8 11h2M8 14h2M16 12h1M16 15h1M8 18h2",
+  // Revue externe (phase 4) : feuille et loupe.
+  review: "M6 3h8l4 4v6M6 3v18h7M14 3v4h4M15.5 19.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 18l3 3",
   folder: "M3 7a1.5 1.5 0 0 1 1.5-1.5H9l2 2h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V7Z",
   route: "M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12-10a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8 17h6.5a3.5 3.5 0 0 0 0-7H10a3 3 0 0 1 0-6h5",
   atelier: "M12 3 3 20h18L12 3Zm0 6v7m-3 1h6",
@@ -173,7 +220,10 @@ const PATHS: Record<IconName, string> = {
   "studio-snap-intersection": "M3 3l18 18M21 3 3 21M9 9h6v6H9Z",
   "studio-snap-perpendicular": "M3 20h18M12 20V4M12 15h5v5",
   "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
+  "studio-snap-parallel": "M4 18 14 6M10 18 20 6",
   "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
+  // Cible d’accrochage suivante (AC-004) : deux repères superposés et une flèche circulaire de passage au suivant.
+  "studio-snap-next": "M4 8h6v6H4ZM8 12h6v6H8ZM16 6a5 5 0 0 1 4 8M20 14l1-3M20 14l-3-1",
   // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
   "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",
   "studio-track-polar": "M4 20h16M4 20 18 6M4 20l8-14M4 20A9 9 0 0 1 13 11",
@@ -184,6 +234,11 @@ const PATHS: Record<IconName, string> = {
   "studio-export-dxf": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6M8 12h3M11 9v6M17 15v6M14 18l3 3 3-3",
   // Fichier, petit volume (cube en perspective) et flèche de téléchargement : export IFC (modèle 3D).
   "studio-export-ifc": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 10l3-2 3 2v4l-3 2-3-2ZM8 10l3 2 3-2M11 12v4M17 15v6M14 18l3 3 3-3",
+  // Exports 3D (E.6-04) : fichier et flèche de téléchargement, avec un maillage triangulé (OBJ), un triangle à facettes
+  // (STL), un solide à arête arrondie (STEP, solide exact).
+  "studio-export-obj": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6v6H8ZM8 15l6-6M8 9l3 6M17 15v6M14 18l3 3 3-3",
+  "studio-export-stl": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M7 16l4-8 4 8ZM11 8v8M9 12h4M17 15v6M14 18l3 3 3-3",
+  "studio-export-step": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h4a2 2 0 0 1 2 2v4H8ZM12 9v2h2M17 15v6M14 18l3 3 3-3",
   "studio-catalog": "M4 4h7v7H4ZM13 4h7v7h-7ZM4 13h7v7H4ZM13 16.5h7M16.5 13v7",
   "studio-palette": "M3 5h18v14H3ZM3 9h18M6 13l3 2-3 2M11 17h5",
   "studio-extrude": "M4 20h11l5-4H9l-5 4ZM9 16V6M12 3 9 6 6 3M15 20V10M20 16V6",
@@ -208,6 +263,26 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-prism": "M4 8h7v4h5v8H4ZM4 8l3-3h7l-3 3M11 12l3-3h5l-3 3M16 20l3-3V9",
   "studio-solid-move": "M3 10l5-3 6 2v7l-5 3-6-2ZM3 10l6 2 5-3M9 12v7M16 6h6M19 3l3 3-3 3",
   "studio-solid-delete": "M3 9l6-3 8 2v8l-6 3-8-2ZM3 9l8 2 6-3M11 11v8M16 16l6 6M22 16l-6 6",
+  // Lot F1 : face supérieure poussée (flèche verticale au-dessus d'un bloc) ; face partagée par un trait médian ;
+  // bloc et flèche circulaire autour d'un axe vertical ; maillons de chaîne (lien au profil source).
+  "studio-solid-push-pull": "M4 14l8-3 8 3-8 3ZM4 14v5l8 3 8-3v-5M12 2v7M9 5l3-3 3 3",
+  "studio-solid-split-face": "M3 7h18v12H3ZM12 7v12M8 4h8M3 7l3-3h12l3 3",
+  "studio-solid-rotate": "M7 9h10v10H7ZM12 2v5M5 5a9 4 0 0 1 14 0M19 5l-1 3",
+  "studio-solid-link": "M9 15l6-6M7 11l-2 2a3 3 0 0 0 4 4l2-2M17 13l2-2a3 3 0 0 0-4-4l-2 2",
+  // Lot F2 : deux blocs qui se recouvrent, la partie commune marquée (booléen exact : union, différence, intersection).
+  "studio-solid-boolean": "M3 7h10v10H3ZM11 11h10v10H11ZM11 11h2v6h-2M15 3v4M13 5h4",
+  // Cote de face 3D (INV-013) : boîte en perspective et cote entre ses faces haute et basse, flèches aux extrémités.
+  "studio-solid-face-dimension": "M4 8l5-3h9v11l-5 3H4ZM4 8h9v11M13 8l5-3M21 5v14M19 7l2-2 2 2M19 17l2 2 2-2",
+  // X.1-05 : nappe NURBS cintrée sur sa grille de pôles (points aux coins et au centre relevé).
+  "studio-surface-nurbs": "M3 17c4-6 14-6 18 0M3 17l3-9M21 17l-3-9M6 8c3-3 9-3 12 0M12 5v1M3 17h.01M21 17h.01M12 11h.01",
+  // Modifier la surface : nappe et pôle déplacé (flèche vers le haut depuis le point de contrôle).
+  "studio-surface-edit": "M3 18c4-5 14-5 18 0M12 14V5M9 8l3-3 3 3M10 14h4",
+  // Épaissir la surface : nappe doublée d'une seconde nappe parallèle, épaisseur fermée aux bords.
+  "studio-surface-thicken": "M3 12c4-5 14-5 18 0M3 17c4-5 14-5 18 0M3 12v5M21 12v5",
+  // Surface de subdivision : maillage de contrôle triangulaire (anguleux) et surface lissée inscrite.
+  "studio-surface-subdivision": "M12 3l9 16H3ZM12 7c4 3 6 7 5 10M12 7c-4 3-6 7-5 10M7 17h10",
+  // Solidifier la subdivision : polyèdre fermé (tétraèdre) plein, flèche de remplissage.
+  "studio-surface-solidify": "M12 3l8 14-8 4-8-4ZM12 3v18M4 17l8-4 8 4M18 4h3M19.5 2.5v3",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés
@@ -225,6 +300,14 @@ const PATHS: Record<IconName, string> = {
   "studio-opening": "M2 8h7v8H2ZM15 8h7v8h-7ZM9 6v12M15 6v12M10.5 12h3",
   "studio-architecture-edit": "M2 13h11v6H2ZM6 13l-4 4M10 13l-6 6M14 14l7-7 2 2-7 7h-2Z",
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
+  // Échelle d’accès (EX-027) : deux montants verticaux et quatre échelons (distincte de la transformation Échelle).
+  "studio-ladder": "M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10",
+  // Lot W3-B : niveau (deux planchers superposés et repère de cote) ; composant (cube et ses arêtes cachées) ;
+  // occurrence de composant (deux cubes, l'un reprenant l'autre) ; élément structurel (poteau et poutre en T).
+  "studio-level": "M3 9h13M3 17h13M19 5v16M17 7l2-2 2 2M17 19l2 2 2-2",
+  "studio-component": "M12 3 20 7.5v9L12 21l-8-4.5v-9ZM4 7.5 12 12l8-4.5M12 12v9",
+  "studio-component-instance": "M3 9 8 6.5 13 9v6l-5 2.5L3 15ZM13 9l5-2.5L23 9v6l-5 2.5-5-2.5M8 12v5.5M18 12v5.5",
+  "studio-structure": "M2 5h20v3H2ZM10 8h4v13h-4ZM6 21h12",
   // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
   "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
   "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",
@@ -243,6 +326,40 @@ const PATHS: Record<IconName, string> = {
   "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
   // Matrice d'échanges (E.6) : grille de trois colonnes traversée par deux flèches opposées (import / export).
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
+  // Approuver (AC-010, lot G2) : feuille de dossier portant un sceau rond et une coche.
+  "studio-approve": "M5 3h10l4 4v14H5ZM15 3v4h4M8 9h6M8 12h4M15 17a3 3 0 1 0 0.01 0M13.6 17l1 1 1.8-2",
+  // Fusionner une variante (lot W3-D) : deux branches qui se rejoignent en une seule, flèche vers le bas.
+  "studio-merge-variants": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v7M9 18l3 3 3-3M6 3a1 1 0 1 0 0.01 0M18 3a1 1 0 1 0 0.01 0",
+  // Annuler la dernière fusion (lot W3-D) : la jonction des deux branches, et une flèche de retour en arc.
+  "studio-merge-undo": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v3M8 21h7a3 3 0 0 0 0-6M8 21l2-2M8 21l2 2",
+  // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
+  "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
+  // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.
+  "studio-external-models": "M3 8l4-2 4 2v5l-4 2-4-2ZM3 8l4 2 4-2M7 10v5M13 8l4-2 4 2v5l-4 2-4-2ZM13 8l4 2 4-2M17 10v5M9 19l2 2 4-4",
+  // Illustration depuis la vue (lot F) : cadre de rendu et pinceau posé en diagonale (image séparée, jamais le modèle).
+  "studio-illustration": "M3 4h13v11H3ZM3 12l3-3 3 3 2-2 3 3M14 21l7-7-2-2-7 7v2ZM17 14l2 2",
+  // Agents (MCP, lot F) : tête de robot à antenne et coche de confirmation (rien n'est écrit sans la personne).
+  "studio-agents": "M5 8h12v9H5ZM11 8V5M9.5 4h3M8 12h1M13 12h1M9 15h4M3 11v3M19 11v3M15 20l2 2 4-4",
+  // Élément non natif conservé : boîte en pointillés tenue par une pince (gardée telle quelle).
+  "studio-non-native-keep": "M4 8h3M10 8h4M17 8h3v3M20 14v3h-3M14 17h-4M7 17H4v-3M4 11V8M9 3h6v5H9ZM12 11v3",
+  // Retirer les éléments non natifs : boîte en pointillés barrée d’une croix.
+  "studio-non-native-remove": "M4 6h3M10 6h4M17 6h3v3M20 12v3h-3M14 15h-4M7 15H4v-3M4 9V6M9 18l4 4M13 18l-4 4M15 19h6",
+  // Créer un graphisme (EX-055) : spline au-dessus d'un carré hachuré, signe plus.
+  "studio-graphic-add": "M3 8c3-6 6-6 9 0s5 4 6 2M3 13h9v8H3ZM3 17l4-4M5 21l7-7M8 21l4-4M18 14v6M15 17h6",
+  // Retirer les graphismes : carré hachuré et spline, croix.
+  "studio-graphic-remove": "M3 7c3-5 6-5 9 0M3 11h9v9H3ZM3 15l4-4M5 20l7-7M15 14l6 6M21 14l-6 6",
+  // Système de projet (EX-023) : axes du document et axes du projet tournés, origine déportée.
+  // Déclarer une source importée (EX-014) : feuille de fichier avec empreinte (dièse) et flèche d'entrée.
+  "studio-source-declare": "M6 2h8l4 4v6M14 2v4h4M6 2v20h7M9 10h2M8 13h4M10 9l-1 5M12 9l-1 5M15 19h7M19 16l3 3-3 3",
+  // Définir un bloc (X.1-01) : carré et cercle groupés dans un cadre en pointillés, signe plus.
+  "studio-block-define": "M3 3h3M9 3h3M15 3h2M3 3v3M3 9v3M3 15v2M5 7h6v6H5ZM14 10a2.5 2.5 0 1 0 5 0 2.5 2.5 0 0 0-5 0M18 16v6M15 19h6",
+  // Insérer un bloc : petit bloc (carré et cercle) posé au bout d'une flèche, tourné.
+  "studio-block-insert": "M14 4l6 2-2 6-6-2ZM15.5 7.5a1 1 0 1 0 2 0 1 1 0 0 0-2 0M3 21l8-8M11 13H6M11 13v5",
+  // Éclater l'insertion : carré dont les côtés s'écartent vers l'extérieur.
+  "studio-block-explode": "M8 4h8M8 20h8M4 8v8M20 8v8M3 3l3 3M21 3l-3 3M3 21l3-3M21 21l-3-3M10 12h4",
+  // Contraindre (X.1-01) : deux traits parallèles et un cadenas d'équerre (relation tenue, résolue sur demande).
+  "studio-constraint": "M3 18L15 6M7 21L19 9M14 14h7v7h-7ZM15.5 14v-2a2 2 0 0 1 4 0v2",
+  "studio-project-frame": "M3 21V9M3 21h12M3 9l-1.5 2M3 9l1.5 2M15 21l-2-1.5M15 21l-2 1.5M12 12l8-6M12 12l5 7M20 6l-2.5.3M20 6l-.8 2.3M9 15l3-3",
   // Bascule du panneau des commentaires (barre de l’espace ; ni outil ni commande).
   "studio-comments": "M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6C4.2 15 3.5 13.3 3.5 11.5 3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5ZM8 10h8M8 13.5h5",
 };

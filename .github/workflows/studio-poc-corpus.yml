@@ -1,0 +1,47 @@
+name: Studio — POC des corpus S1–S7
+
+# G2-03 : les POC autorisés (ADR-STUDIO-PILOTE-01 P-05) sont joués sur les corpus S1–S7 à chaque test du web
+# (npm test). Ce workflow consigne en plus leur rapport daté et reproductible (date en heure suisse, commit, environnement,
+# graines, empreintes, verdicts, durées) comme artefact identifié de l'exécution, sur main et chaque semaine.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/atelier-model/src/studio/**"
+      - "apps/web/src/modules/studio/**"
+      - ".github/workflows/studio-poc-corpus.yml"
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: studio-poc-corpus-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  poc:
+    name: POC G2 sur les corpus S1–S7 — rapport daté
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: POC autorisés sur S1–S7 (apps/web/src/modules/studio/poc/poc-corpus.test.ts) et rapport daté
+        env:
+          STUDIO_POC_SORTIE: atelier-captures/poc-corpus
+          STUDIO_POC_COMMIT: ${{ github.sha }}
+        run: npx --workspace=@fadi/web vitest run src/modules/studio/poc/poc-corpus.test.ts
+      - name: Verdicts du rapport
+        run: node -e "const r=require('./atelier-captures/poc-corpus/poc-corpus.json'); const e=r.resultats.filter(x=>x.verdict!=='conforme'); console.log(r.date, r.commit, r.empreinte, r.resultats.length + ' résultats', e.length + ' écart(s)'); process.exit(e.length?1:0)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-poc-corpus-${{ github.sha }}
+          path: atelier-captures/poc-corpus/
+          retention-days: 90

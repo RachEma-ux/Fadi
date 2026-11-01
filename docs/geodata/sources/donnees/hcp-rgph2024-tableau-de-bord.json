@@ -1,0 +1,1514 @@
+{
+ "pays": "MA",
+ "zone": {
+  "code": "MA",
+  "nom": "Royaume du Maroc"
+ },
+ "blocs": [
+  {
+   "cle": "population-legale",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Population légale",
+   "valeur": {
+    "indicateur": {
+     "famille": "Population légale",
+     "milieu": "ensemble",
+     "sexe": "ensemble"
+    }
+   },
+   "unite": "personnes",
+   "decimales": 0,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "menages",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Nombre de ménages",
+   "valeur": {
+    "indicateur": {
+     "famille": "Ménages",
+     "milieu": "ensemble",
+     "sexe": "ensemble"
+    }
+   },
+   "unite": "ménages",
+   "decimales": 0,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "taux-urbanisation",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Taux d'urbanisation",
+   "valeur": {
+    "ratio": [
+     {
+      "indicateur": {
+       "famille": "Population légale",
+       "milieu": "urbain",
+       "sexe": "ensemble"
+      }
+     },
+     {
+      "indicateur": {
+       "famille": "Population légale",
+       "milieu": "ensemble",
+       "sexe": "ensemble"
+      }
+     }
+    ],
+    "facteur": 100
+   },
+   "unite": "%",
+   "decimales": 1,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)",
+   "note": "Calculé : population légale urbaine ÷ population légale × 100."
+  },
+  {
+   "cle": "taux-analphabetisme",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Taux d'analphabétisme",
+   "valeur": {
+    "indicateur": {
+     "famille": "Taux d'analphabétisme des 10 ans et plus (%)",
+     "milieu": "ensemble",
+     "sexe": "ensemble"
+    }
+   },
+   "unite": "%",
+   "decimales": 1,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)",
+   "note": "Population de 10 ans et plus."
+  },
+  {
+   "cle": "taux-activite",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Taux net d'activité",
+   "valeur": {
+    "indicateur": {
+     "famille": "Taux d'activité des 15 ans et plus (%)",
+     "milieu": "ensemble",
+     "sexe": "ensemble"
+    }
+   },
+   "unite": "%",
+   "decimales": 1,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)",
+   "note": "Population de 15 ans et plus."
+  },
+  {
+   "cle": "prevalence-handicap",
+   "onglet": "chiffres-cles",
+   "type": "chiffre",
+   "titre": "Prévalence du handicap",
+   "valeur": {
+    "indicateur": {
+     "famille": "Taux de prévalence du handicap (%)",
+     "milieu": "ensemble",
+     "sexe": "ensemble"
+    }
+   },
+   "unite": "%",
+   "decimales": 1,
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "population-evolution",
+   "onglet": "chiffres-cles",
+   "titre": "Population légale et accroissement, 1960–2024",
+   "type": "tableau",
+   "enTeteLignes": "Recensement",
+   "colonnes": [
+    "Population légale",
+    "Taux d'accroissement annuel moyen (%)"
+   ],
+   "lignes": [
+    {
+     "libelle": "1960",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1971",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1982",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1994",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2004",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2014",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2024",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Population légale",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      },
+      {
+       "indisponible": "Taux 2014–2024 : population 2014 non chargée en base"
+      }
+     ]
+    }
+   ],
+   "unite": null,
+   "decimales": null,
+   "graphique": "courbe",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "grands-groupes-ages",
+   "onglet": "chiffres-cles",
+   "titre": "Population par grands groupes d'âges (%)",
+   "type": "tableau",
+   "enTeteLignes": "Groupe d'âges",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "Moins de 15 ans",
+     "cellules": [
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "0-4 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "5-9 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "10-14 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "0-4 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "5-9 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "10-14 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "0-4 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "5-9 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "10-14 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "libelle": "15 à 59 ans",
+     "cellules": [
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "15-19 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "20-24 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "25-29 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "30-34 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "35-39 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "40-44 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "45-49 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "50-54 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "55-59 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "15-19 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "20-24 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "25-29 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "30-34 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "35-39 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "40-44 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "45-49 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "50-54 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "55-59 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "15-19 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "20-24 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "25-29 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "30-34 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "35-39 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "40-44 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "45-49 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "50-54 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "55-59 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "libelle": "60 ans et plus",
+     "cellules": [
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "60-64 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "65-69 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "70-74 ans",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "75 ans ou plus",
+         "milieu": "urbain",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "60-64 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "65-69 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "70-74 ans",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "75 ans ou plus",
+         "milieu": "rural",
+         "sexe": "ensemble"
+        }
+       ]
+      },
+      {
+       "somme": [
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "60-64 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "65-69 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "70-74 ans",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        },
+        {
+         "famille": "Âge quinquennal (%)",
+         "modalite": "75 ans ou plus",
+         "milieu": "ensemble",
+         "sexe": "ensemble"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "barres",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)",
+   "note": "Calculé : somme des parts par âge quinquennal publiées par le HCP."
+  },
+  {
+   "cle": "fecondite",
+   "onglet": "chiffres-cles",
+   "titre": "Indice synthétique de fécondité",
+   "type": "tableau",
+   "enTeteLignes": "Milieu",
+   "colonnes": [
+    "Enfants par femme"
+   ],
+   "lignes": [
+    {
+     "libelle": "Urbain",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Indicateur conjoncturel de fécondité",
+        "milieu": "urbain",
+        "sexe": "feminin"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Rural",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Indicateur conjoncturel de fécondité",
+        "milieu": "rural",
+        "sexe": "feminin"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Ensemble",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Indicateur conjoncturel de fécondité",
+        "milieu": "ensemble",
+        "sexe": "feminin"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "enfants par femme",
+   "decimales": 2,
+   "graphique": "barres",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "chomage",
+   "onglet": "chiffres-cles",
+   "titre": "Taux de chômage par milieu et sexe (%)",
+   "type": "tableau",
+   "enTeteLignes": "Sexe",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "Masculin",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "urbain",
+        "sexe": "masculin"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "rural",
+        "sexe": "masculin"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "ensemble",
+        "sexe": "masculin"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Féminin",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "urbain",
+        "sexe": "feminin"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "rural",
+        "sexe": "feminin"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "ensemble",
+        "sexe": "feminin"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Ensemble",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "rural",
+        "sexe": "ensemble"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taux de chômage (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "barres",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "statut-occupation",
+   "onglet": "chiffres-cles",
+   "titre": "Statut d'occupation du logement (%)",
+   "type": "tableau",
+   "enTeteLignes": "Statut",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "Propriétaire",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Propriétaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Propriétaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Propriétaire"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Locataire",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Locataire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Locataire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Locataire"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Autre",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Autre"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Autre"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Statut d'occupation du logement (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Autre"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "barres",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "raccordement",
+   "onglet": "chiffres-cles",
+   "titre": "Raccordement aux réseaux publics (%)",
+   "type": "tableau",
+   "enTeteLignes": "Réseau",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "Eau courante",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Eau courante"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Eau courante"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Eau courante"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Électricité",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Électricité"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Électricité"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Disponibilité des éléments essentiels de confort (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Électricité"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Réseau public d'assainissement",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Mode d’évacuation des eaux usées (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Réseau public d'assainissement"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Mode d’évacuation des eaux usées (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Réseau public d'assainissement"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Mode d’évacuation des eaux usées (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Réseau public d'assainissement"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "barres-horizontales",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "taille-menages",
+   "onglet": "chiffres-cles",
+   "titre": "Taille moyenne des ménages, 2004–2024",
+   "type": "tableau",
+   "enTeteLignes": "Recensement",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "2004",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2014",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      },
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2024",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Taille moyenne des ménages",
+        "milieu": "urbain",
+        "sexe": "ensemble"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taille moyenne des ménages",
+        "milieu": "rural",
+        "sexe": "ensemble"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Taille moyenne des ménages",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "personnes par ménage",
+   "decimales": 1,
+   "graphique": "barres",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "urbanisation-evolution",
+   "onglet": "chiffres-cles",
+   "titre": "Taux d'urbanisation, 1960–2024 (%)",
+   "type": "tableau",
+   "enTeteLignes": "Recensement",
+   "colonnes": [
+    "Taux d'urbanisation"
+   ],
+   "lignes": [
+    {
+     "libelle": "1960",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1971",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1982",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "1994",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2004",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2014",
+     "cellules": [
+      {
+       "indisponible": "Série des recensements 1960–2014 non chargée en base"
+      }
+     ]
+    },
+    {
+     "libelle": "2024",
+     "cellules": [
+      {
+       "ratio": [
+        {
+         "indicateur": {
+          "famille": "Population légale",
+          "milieu": "urbain",
+          "sexe": "ensemble"
+         }
+        },
+        {
+         "indicateur": {
+          "famille": "Population légale",
+          "milieu": "ensemble",
+          "sexe": "ensemble"
+         }
+        }
+       ],
+       "facteur": 100
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "courbe",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)",
+   "note": "2024 calculé : population légale urbaine ÷ population légale × 100."
+  },
+  {
+   "cle": "niveau-etudes",
+   "onglet": "chiffres-cles",
+   "titre": "Niveau d'études dans l'enseignement général (%)",
+   "type": "tableau",
+   "enTeteLignes": "Niveau",
+   "colonnes": [
+    "Urbain",
+    "Rural",
+    "Ensemble"
+   ],
+   "lignes": [
+    {
+     "libelle": "Aucun niveau d'études",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Aucun niveau d'études"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Aucun niveau d'études"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Aucun niveau d'études"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Préscolaire",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Préscolaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Préscolaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Préscolaire"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Primaire",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Primaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Primaire"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Primaire"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Secondaire collégial",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Secondaire collégial"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Secondaire collégial"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Secondaire collégial"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Secondaire qualifiant",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Secondaire qualifiant"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Secondaire qualifiant"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Secondaire qualifiant"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Supérieur",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "urbain",
+        "sexe": "ensemble",
+        "modalite": "Supérieur"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "rural",
+        "sexe": "ensemble",
+        "modalite": "Supérieur"
+       }
+      },
+      {
+       "indicateur": {
+        "famille": "Niveau d'études dans l'enseignement général (%)",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Supérieur"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "%",
+   "decimales": 1,
+   "graphique": "barres-horizontales",
+   "source": "HCP, RGPH 2024 (CC BY 4.0)"
+  },
+  {
+   "cle": "cee-secteur",
+   "onglet": "cee",
+   "type": "tableau",
+   "titre": "Établissements à but lucratif par secteur d'activité",
+   "enTeteLignes": "Secteur d'activité",
+   "colonnes": [
+    "Établissements",
+    "Emplois"
+   ],
+   "lignes": [
+    {
+     "libelle": "Industrie",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par secteur d'activité",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Industrie"
+       }
+      },
+      {
+       "indisponible": "Emplois par secteur non publiés dans le fichier CEE chargé"
+      }
+     ]
+    },
+    {
+     "libelle": "Construction",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par secteur d'activité",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Construction"
+       }
+      },
+      {
+       "indisponible": "Emplois par secteur non publiés dans le fichier CEE chargé"
+      }
+     ]
+    },
+    {
+     "libelle": "Commerce",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par secteur d'activité",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Commerce"
+       }
+      },
+      {
+       "indisponible": "Emplois par secteur non publiés dans le fichier CEE chargé"
+      }
+     ]
+    },
+    {
+     "libelle": "Services",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par secteur d'activité",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "Services"
+       }
+      },
+      {
+       "indisponible": "Emplois par secteur non publiés dans le fichier CEE chargé"
+      }
+     ]
+    }
+   ],
+   "unite": "établissements",
+   "decimales": 0,
+   "graphique": "barres-horizontales",
+   "source": "HCP, CEE 2024"
+  },
+  {
+   "cle": "cee-type",
+   "onglet": "cee",
+   "type": "tableau",
+   "titre": "Établissements par type",
+   "enTeteLignes": "Type d'établissement",
+   "colonnes": [
+    "Établissements"
+   ],
+   "lignes": [
+    {
+     "libelle": "À but lucratif (hors agriculture)",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif (entreprises et leurs établissements hors secteur de l'agriculture)",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Services publics",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements de services publics",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "À but non lucratif (associations)",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but non lucratif (Associations opérant dans des locaux indépendants)",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "Total des établissements géoréférencés",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre total des établissements géoréférencés",
+        "milieu": "ensemble",
+        "sexe": "ensemble"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "établissements",
+   "decimales": 0,
+   "graphique": "barres-horizontales",
+   "source": "HCP, CEE 2024"
+  },
+  {
+   "cle": "cee-classe-emploi",
+   "onglet": "cee",
+   "type": "tableau",
+   "titre": "Établissements à but lucratif par classe d'emploi",
+   "enTeteLignes": "Classe d'emploi",
+   "colonnes": [
+    "Établissements"
+   ],
+   "lignes": [
+    {
+     "libelle": "Un seul employé",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par classe d'emploi",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "un seul employé"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "2 à 3 employés",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par classe d'emploi",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "2 à 3"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "4 à 9 employés",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par classe d'emploi",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "4 à 9"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "10 à 49 employés",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par classe d'emploi",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "10 à 49"
+       }
+      }
+     ]
+    },
+    {
+     "libelle": "50 employés et plus",
+     "cellules": [
+      {
+       "indicateur": {
+        "famille": "Nombre d'établissements à but lucratif : par classe d'emploi",
+        "milieu": "ensemble",
+        "sexe": "ensemble",
+        "modalite": "50 & +"
+       }
+      }
+     ]
+    }
+   ],
+   "unite": "établissements",
+   "decimales": 0,
+   "graphique": "barres",
+   "source": "HCP, CEE 2024",
+   "note": "Emplois permanents occupés par les établissements à but lucratif : voir l'onglet Tableaux (total seulement)."
+  }
+ ]
+}

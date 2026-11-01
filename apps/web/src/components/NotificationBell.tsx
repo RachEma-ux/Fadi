@@ -23,12 +23,19 @@ import { NOTIFICATION_KIND_LABEL as KIND_LABEL } from "./notification-kinds";
 export const NOTIFICATION_PREFERENCES_KEY = ["preferences", "notifications"] as const;
 
 function targetOf(n: NotificationItem): string {
+  // Invitation de projet en attente (phase 3) : le projet n'est pas encore ouvert ; « Invitations reçues » de Mes projets.
+  if (n.invitation) return "/projets#invitations-recues";
+  // Mandat de représentant terminé (reliquat de la phase 5) : l'annuaire du projet, où la participation est à revoir.
+  if (n.mandate) return "/projets/" + n.projectId + "?module=collaboration#collab-organisations";
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
   if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true, domaine: "documentation" });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";
+  if (n.kind === "message" || n.kind === "demande") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "reservation") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "modification" || n.kind === "verrou") return "/projets/" + n.projectId + "?module=atelier";
   if (n.kind === "peremption") return "/projets/" + n.projectId + "?module=documents";
+  // Revue externe (phase 4) : l'espace de revue du paquet, jamais le projet (un destinataire externe n'y a pas accès).
+  if (n.kind === "revue" && n.review) return "/revues/" + n.review.packageId;
   return "/projets/" + n.projectId;
 }
 
@@ -194,7 +201,7 @@ function BellView({
       </section>
       {masquees > 0 && <p className="notification-hidden" data-hidden-count={masquees}>{`${masquees} notification(s) masquée(s) par vos préférences.`}</p>}
       <p className="notification-foot">Les alertes restent affichées jusqu’à la résolution de leur cause. Aucun courriel n’est envoyé.</p>
-      <p className="notification-foot"><Link to="/parametres#settings-notifications" onClick={() => setOpen(false)}>Régler les notifications</Link></p>
+      <p className="notification-foot"><Link to="/boite" onClick={() => setOpen(false)} data-lien-boite>Ma boîte</Link>{" · "}<Link to="/parametres#settings-notifications" onClick={() => setOpen(false)}>Régler les notifications</Link></p>
     </div>}
   </div>;
 }

@@ -10,18 +10,26 @@ import { AccueilPage } from "./routes/AccueilPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { HarmoniePage } from "./routes/HarmoniePage";
 import { ParametresPage } from "./routes/ParametresPage";
+import { BoitePage } from "./routes/BoitePage";
 import { CollaborationPage } from "./routes/CollaborationPage";
 import { AnnulerSuppressionPage, InvitationPage, MotDePasseOubliePage, ReinitialiserPage, VerifierEmailPage } from "./routes/ComptePages";
 
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
 const PageSandbox = lazy(() => import("./modules/sandbox/PageSandbox").then((m) => ({ default: m.PageSandbox })));
+const PageGeoData = lazy(() => import("./modules/geodata/PageGeoData").then((m) => ({ default: m.PageGeoData })));
 const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
 // Administration de la plateforme (comptes) : chargée à la demande, comme le Studio.
+// Espace d'organisation (organisations, phase 5) : chargé à la demande.
+const OrganisationsPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationsPage })));
+const MesRevuesPage = lazy(() => import("./routes/revues/RevuesPage").then((m) => ({ default: m.MesRevuesPage })));
+const RevuePage = lazy(() => import("./routes/revues/RevuesPage").then((m) => ({ default: m.RevuePage })));
+const OrganisationPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationPage })));
 const AdminUsersPage = lazy(() => import("./routes/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
+const AdminJournalPage = lazy(() => import("./routes/admin/AdminJournalPage").then((m) => ({ default: m.AdminJournalPage })));
 const BuildingCasePage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingCasePage })));
 
 const Loading = () => (
@@ -88,7 +96,17 @@ export function App() {
               </Suspense>
             }
           />
+          {/* GeoData : 9ᵉ module, autonome des projets (ADR-GEODATA-01/02) ; la page est la carte elle-même. */}
+          <Route
+            path="/geodata/*"
+            element={
+              <Suspense fallback={<Loading />}>
+                <PageGeoData />
+              </Suspense>
+            }
+          />
           <Route path="/collaboration" element={<CollaborationPage />} />
+          <Route path="/boite" element={<BoitePage />} />
           <Route
             path="/projets/:projectId"
             element={
@@ -116,7 +134,13 @@ export function App() {
             }
           />
           <Route path="/parametres" element={<ParametresPage />} />
+          {/* Revue externe (phase 4) : espace du destinataire, hors du module projet. */}
+          <Route path="/revues" element={<Suspense fallback={<Loading />}><MesRevuesPage /></Suspense>} />
+          <Route path="/revues/:packageId" element={<Suspense fallback={<Loading />}><RevuePage /></Suspense>} />
+          <Route path="/organisations" element={<Suspense fallback={<Loading />}><OrganisationsPage /></Suspense>} />
+          <Route path="/organisations/:orgId" element={<Suspense fallback={<Loading />}><OrganisationPage /></Suspense>} />
           <Route path="/admin/utilisateurs" element={<AdminRoute><Suspense fallback={<Loading />}><AdminUsersPage /></Suspense></AdminRoute>} />
+          <Route path="/admin/journal" element={<AdminRoute><Suspense fallback={<Loading />}><AdminJournalPage /></Suspense></AdminRoute>} />
         </Route>
 
         <Route path="/" element={<Navigate to="/accueil" replace />} />

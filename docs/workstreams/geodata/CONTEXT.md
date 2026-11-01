@@ -2,28 +2,31 @@
 
 ## Objectif
 
-Définir GeoData comme module autonome de données géographiques, avec une page d’entrée cartographique inspirée de Kharita et aucun projet requis.
+GeoData : module autonome de données géographiques (9ᵉ module de Fadi), dont l'entrée `/geodata` ouvre directement une carte inspirée de Kharita, sans aucun projet requis.
 
 ## Périmètre
 
-- Inclus dans ce lot : concept français version 1.0 en Markdown et Word, index des concepts, décision de périmètre et continuité documentaire.
-- Exclus : code applicatif, dépendances, migrations, données de production, déploiement, fusion et paramètres GitHub.
+- Lot documentaire (Issue #243, PR #245, fusionnée) : concept 1.0 MD/DOCX, ADR-GEODATA-01.
+- Lot de réalisation (Issue #299) sous délégation totale (ADR-GEODATA-02) : paquet pur, schéma `geodata_*`, API `/geodata/api`, page `/geodata`, chaîne d'import de référence, cartes, études, import, export, tests et recette.
+- Exclus : mise en production (Release du maître d'ouvrage), paramètres GitHub, secrets, données réelles non qualifiées.
 
 ## Sources canoniques
 
 - `AGENTS.md`, `docs/architecture.md`, `docs/continuity/README.md`.
-- `Fadi Concept/README.md` : nommage, parité, version et procédure de dépôt.
-- [Concept GeoData](../../../Fadi%20Concept/Fadi%20Concept%20-%20GeoData.md).
-- [ADR-GEODATA-01](../../continuity/decisions/ADR-GEODATA-01.md).
-- Issue : https://github.com/RachEma-ux/Fadi/issues/243.
+- [Concept GeoData](../../../Fadi%20Concept/Fadi%20Concept%20-%20GeoData.md), [ADR-GEODATA-01](../../continuity/decisions/ADR-GEODATA-01.md), [ADR-GEODATA-02](../../continuity/decisions/ADR-GEODATA-02.md).
+- [Plan retenu et évaluation du plan fourni](PLAN-IMPLEMENTATION.md) ; [exploitation](../../geodata/README.md).
+- Issues : https://github.com/RachEma-ux/Fadi/issues/243 et https://github.com/RachEma-ux/Fadi/issues/299.
 
 ## Contraintes
 
-- Aucun projet nécessaire pour accéder aux fonctions ou conserver les objets GeoData.
-- Ne pas confondre périmètre demandé, proposition technique, documentation vérifiée et module implémenté.
-- Toute révision doit conserver la parité MD/DOCX et la version interne commune.
-- Le prochain lot applicatif demande une autorisation distincte.
+- Aucun `projectId`, rôle ou contexte de projet dans le noyau (tests d'indépendance API et web, `scripts/frontieres.json`).
+- Une valeur absente n'est jamais zéro ; version publiée immuable ; droits par usage, un droit inconnu bloque.
+- Interface bilingue (D-163) : textes français traduits dans `en.json`.
+- Aucun doublon (remarque du maître d'ouvrage, 30 octobre 2026) : avant d'ajouter une donnée, une couche, une fiche, une
+  tâche ou un document, vérifier ce qui existe déjà et le compléter plutôt que le dupliquer. Une ligne répétée dans une
+  source n'est reprise qu'une fois ; un recouvrement entre sources distinctes est mesuré et signalé, jamais retiré
+  sans décision.
 
 ## Hypothèses et questions ouvertes
 
-Choix du moteur, source des limites, droits de réutilisation, fournisseur de fonds, formats du premier lot, partage, conservation et exploitation restent à confirmer. Les propositions du concept servent au cadrage et ne modifient pas le code existant.
+Population HCP et autres indicateurs officiels : droits de réutilisation à qualifier avant publication. Fonds raster et géocodeur externes : aucun fournisseur qualifié, rien n'est configuré par défaut.

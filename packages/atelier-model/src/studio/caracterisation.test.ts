@@ -308,18 +308,56 @@ const AJOUTS = {
     "studio.propriete.definir", "studio.propriete.retirer",
     // Visualisation (lot E.5, extension additive consignée) : scènes et apparences d'affichage.
     "studio.scene.creer", "studio.scene.modifier", "studio.scene.rappeler", "studio.scene.supprimer", "studio.apparence.definir", "studio.apparence.retirer",
+    // Éléments non natifs (lot F3, extension additive consignée, champ facultatif `nonNatifs` du document).
+    "studio.nonnatif.conserver", "studio.nonnatif.retirer",
+    // Géométrie 3D du lot F1 (extension additive consignée) : édition des faces, rotation, lien des solides à leur profil.
+    "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
+    // Noyau exact du lot F2 (extension additive consignée) : booléen exact, champ facultatif `exacts` du document.
+    "studio.solide.booleen",
+    // Graphismes (EX-055) et système de projet (EX-023), extensions additives consignées (champs facultatifs
+    // `graphismes` et `systemeProjet` du document).
+    "studio.graphisme.creer", "studio.graphisme.retirer", "studio.repere.projet",
+    // Sources importées (EX-014), champ facultatif `sources` du document.
+    "studio.source.declarer",
+    // Lot G2 (extension additive consignée) : échelle d’accès (EX-027), objet `ladder` de `architecture`.
+    "studio.architecture.echelle-acces",
+    // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
+    "studio.solide.cote-face",
+    // X.1-05 (extension additive consignée) : surfaces libres NURBS, champ facultatif `surfaces` du document ; solide
+    // exact par épaississement (variante additive de `exacts`).
+    "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
+    // X.1-05 : surfaces de subdivision (champ facultatif `subdivisions`), solidification (variante additive de `exacts`).
+    "studio.subdivision.creer", "studio.subdivision.solidifier",
+    // Lot W3-B (X.1-04, extension additive consignée) : niveaux, composants 3D et éléments structurels typés.
+    "studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur et contraintes géométriques, champs facultatifs `blocs`,
+    // `insertions` et `contraintes` du document.
+    "studio.bloc.definir", "studio.bloc.inserer", "studio.bloc.eclater", "studio.contrainte.poser",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension", "column", "beam", "slab", "occurrence"]),
   exports: new Set([
+    // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
+    "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
+    "STUDIO_TOLERANCES_GESTES", "studioDansToleranceGeste",
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
     // Architecture (A.4).
     "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
     "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
     "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Inventaire de couverture des types 3D (A.3-08, lot F5, `couverture-3d.ts`).
+    "STUDIO_COUVERTURE_3D", "STUDIO_COUVERTURE_3D_VERSION", "studioControlerCouverture3d", "studioTypes3dNonDisponibles",
     // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
     "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
     "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",
+    // Dépréciation et plan de compatibilité (EX-030, `compatibilite-outils.ts`) ; fiches d'outils et règle prêt / conforme
+    // (AC-011, `fiches-outils.ts`) : extensions additives du lot OUT.
+    "STUDIO_OUTILS_DEPRECIES", "STUDIO_MODULES_DEPRECIES", "statutOutil", "controlerDepreciations", "outilsDuDocument", "compatibiliteTravail",
+    "STUDIO_FICHES_OUTILS", "DESIGNATION_CONFORMITE", "PREUVES_EXECUTION_OUTILS", "evaluerFicheOutil",
+    // Préparation de la désignation du build et du profil de charge de référence (TR-AC-011, lot G5).
+    "APPAREILS_RECETTE", "FORME_BUILD_DESIGNE", "PROFILS_CHARGE_CANDIDATS", "preuveRecevable", "validerDesignation",
+    // Basculement des solides libres autour de leurs axes horizontaux (A.3-03, lot OUT).
+    "estBascule", "studioBasculerPoint", "studioVecteurSolide",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
@@ -342,6 +380,8 @@ const AJOUTS = {
     "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
     // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
     "studioChevauchements", "studioElementsModifies",
+    // Fusion de variantes à trois voies (lot W3-D, X.1-06, `fusion-variantes.ts`, extension additive).
+    "STUDIO_TYPES_CONFLITS_FUSION", "studioAncetreCommun", "studioEmpreinteFusion", "studioFusionnerVariantes",
     // Production documentaire (lot E.3 : vues, feuilles composées, dossier de conception, bilan brut / déductions / net).
     "STUDIO_BILAN_QUANTITES_SCHEMA", "bilanQuantitesStudio", "sousTotauxAvecNet", "studioTexteTronque", "largeurHelvetica","studioSha256", "studioSha256Octets", "studioUtf8", "pdfPages",
     "STUDIO_VUE_DOCUMENTAIRE_SCHEMA", "STUDIO_FEUILLE_COMPOSEE_SCHEMA", "STUDIO_DOSSIER_CONCEPTION_SCHEMA", "STUDIO_NON_EVALUE", "STUDIO_LIMITES_DOSSIER",
@@ -349,6 +389,56 @@ const AJOUTS = {
     "assemblerDossierConception", "pdfDossierConception",
     // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
     "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
+    // Lot F3 : éléments non natifs, import IFC (lecteur STEP propre), comparaison des éléments hors `objects`, modèles externes.
+    "SCHEMA_NON_NATIF", "STUDIO_FORMATS_NON_NATIFS", "STUDIO_LIMITES_NON_NATIFS", "STUDIO_RAISONS_NON_NATIF", "validerNonNatif",
+    "STUDIO_IFC_SCHEMAS_LUS", "lireIfcStudio", "nomIfc", "validerTransformation", "comparerElementsStudio",
+    "STUDIO_ACTIONS_MODELE_EXTERNE", "STUDIO_FORMATS_MODELE_EXTERNE", "STUDIO_LIMITES_MODELE_EXTERNE", "STUDIO_STATUTS_MODELE_EXTERNE", "STUDIO_UNITES_DECLAREES",
+    "comparerModeleExterne", "lireModeleExterne", "passageModeleExterne", "validerMetaModeleExterne",
+    // Délégation d'approbation (EX-085, `delegation-approbation.ts`) et rapprochement des observations (EX-086,
+    // `rapprochement-observations.ts`), lot F4 : extensions additives.
+    "MESSAGES_PROBLEME_DELEGATION", "MESSAGES_REFUS_DELEGATION", "TYPES_PORTEE_DELEGATION", "couvreDelegation", "decisionApprobation", "etatDelegation",
+    "problemesNouvelleDelegation", "verifierDelegation", "SUIVIS_RAPPROCHEMENT", "identitesDuDocument", "rapprocherObservations",
+    // Géométrie 3D du lot F1 : direction d'extrusion, relation des prismes à leur profil source, faces.
+    "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
+    "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",
+    "studioProfilDepuisPolyligne",
+    // Noyau exact du lot F2 : solides exacts, capture, aperçu provisoire, engagement (`objets-3d/exacts.ts`, `booleens-exacts.ts`).
+    "OP_NOYAU", "SCHEMA_RESULTAT_EXACT", "SCHEMA_SOLIDE_EXACT", "STUDIO_LIMITES_EXACTS", "STUDIO_MOTEUR_EXACT", "STUDIO_OPERATIONS_BOOLEENNES",
+    "STUDIO_TOLERANCE_APERCU", "studioApercuBooleen", "studioBoiteEnglobante", "studioCaptureBooleen", "studioCommandeBooleen", "studioComparerApercu",
+    "studioEmpreinteOperandes", "studioIdsOperandes", "studioMaillageExact", "studioOperandeNoyau", "studioVerifierEngagement", "validerResultatExact",
+    "validerSolideExact",
+    // Lot PUB : résultats quantitatifs (IF-008), vues de coupe (EX-075), chaîne documentaire (EX-074 / EX-076),
+    // conclusions normatives (EX-068), repères des exports (EX-080), BCF des observations (IF-010).
+    "STUDIO_BCF_LIMITES", "STUDIO_BCF_LIMITES_EXPORT", "STUDIO_BCF_VERSION", "STUDIO_CONCLUSIONS_NORMATIVES", "STUDIO_HACHURES_COUPE", "STUDIO_LIMITES_VUE_COUPE", "STUDIO_MESSAGES_REFUS_PIECE", "STUDIO_NON_EVALUE_QUANTITE", "STUDIO_PIECES_LIVRABLES_SCHEMA", "STUDIO_PRESENTATIONS_PIECE", "STUDIO_REGLES_METRE", "STUDIO_REPERES_EXPORT", "STUDIO_RESULTAT_QUANTITATIF_SCHEMA", "STUDIO_TRAITS_COUPE", "STUDIO_VUE_COUPE_SCHEMA", "actualiteVueCoupe", "ajusterResultat", "annoterVueCoupe", "chaineDocumentaire", "conclureControle", "conclusionDemande", "controlerPiecesLivrables", "creerVueCoupe", "estConforme", "etatDemandeControle", "executionDe", "fraicheurResultats", "jeuSourcesQuantite", "mentionSolidesOmis", "pageVueCoupe", "piecesDuDossier", "rebaserVueCoupe", "resultatsQuantitatifs", "studioContexteBcf", "studioExporterBcf", "studioGuidBcf", "studioLireBcf", "studioPlanImportBcf", "studioSujetsBcf", "totaliserResultats", "uniteDeGrandeur", "valeurAffichee", "valeurRetenue", "validerVueCoupe", "verifierJustification", "STUDIO_CAPACITES_PAR_SENS", "STUDIO_FORMATS_3D", "STUDIO_SENS_CAPACITE", "controlerCapacitesParSens", "exportStudioObj", "exportStudioStl", "studioBilanExport3d", "studioIdDepuisNom3d", "studioNomEchange3d", "studioPiecesStep",
+    // Graphismes (EX-055, `graphismes/`), repères et système de projet (EX-023, `reperes.ts`), règle des accélérations
+    // (F.1-01, `accelerations.ts`) : extensions additives.
+    "STUDIO_SYMBOLES", "STUDIO_LIMITES_GRAPHISMES", "STUDIO_SEGMENTS_PAR_BEZIER", "STUDIO_TYPES_GRAPHISMES", "studioDefinitionSymbole", "studioAireContour", "studioNombreDroitesHachure", "validerGraphisme", "studioPointBezier", "studioPointsSpline", "studioTraitsHachure", "studioPrimitivesSymbole", "studioPrimitivesGraphisme", "studioPointsGraphisme", "primitiveSvg", "graphismeSvg", "graphismeDxf", "SCHEMA_GRAPHISME",
+    "STUDIO_REPERES", "STUDIO_TOLERANCE_REPERE", "studioPointRepere", "studioTransformationRepere", "studioAppliquerTransformation", "studioInverserTransformation", "studioVerifierTransformation", "studioConvertirPoint", "studioComposerTransformations", "STUDIO_LIMITE_VERSIONS_PROJET", "validerVersionSystemeProjet", "validerSystemeProjet", "studioTransformationProjet", "studioVersProjet", "studioDepuisProjet", "studioTransformationPose",
+    "STUDIO_RAPPORT_ACCELERATION_SCHEMA", "STUDIO_CRITERES_EQUIVALENCE", "STUDIO_MOTEURS", "STUDIO_ACCELERATIONS", "STUDIO_MOTEURS_DE_REFERENCE", "STUDIO_MOTEURS_PAR_DEFAUT", "STUDIO_ACCELERATION_DU_MOTEUR", "studioEvaluerAcceleration", "studioMoteurEffectif", "studioControlerMoteursParDefaut", "STUDIO_RAPPORTS_ACCELERATION",
+    // Sources importées et provenance (EX-014, `sources/sources.ts`).
+    "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioSourceIfcLue", "studioExportProvenance", "studioProvenanceModeleExterne", "SCHEMA_SOURCE",
+    // Lot G2 : échelle d’accès (EX-027, `architecture/echelle.ts`).
+    "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
+    // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
+    "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
+    // X.1-05 : surfaces libres NURBS (`objets-3d/surfaces-libres.ts`) et leur épaississement exact (`surfaces-exactes.ts`).
+    "estBooleenExact", "SCHEMA_SURFACE_LIBRE", "STUDIO_LIMITES_SURFACES", "STUDIO_SENS_EPAISSEUR", "studioAireApprocheeSurface", "studioMaillageSurface",
+    "studioNoeudsUniformes", "studioOperationNurbs", "studioPointSurface", "validerSurfaceLibre",
+    "studioCaptureEpaississement", "studioVerifierEpaississement", "studioCommandeEpaississement",
+    // X.1-05 : surfaces de subdivision (`objets-3d/subdivisions.ts`), solidification (`surfaces-exactes.ts`).
+    "SCHEMA_SURFACE_SUBDIVISION", "STUDIO_LIMITES_SUBDIVISION", "studioAireSubdivision", "studioMaillageSubdivise", "studioMaillageSubdivision", "studioOperationPolyedre",
+    "studioSubdivisionFermee", "studioVolumeSubdivision", "validerSurfaceSubdivision",
+    "studioCaptureSolidification", "studioVerifierSolidification", "studioCommandeSolidification",
+    // Lot W3-B : éléments structurels typés (`architecture/structure.ts`), niveaux et composants 3D (`batiment/`).
+    "STUDIO_TYPES_STRUCTURELS", "estStructurel", "SCHEMA_DALLE", "SCHEMA_ELEMENT_STRUCTUREL", "SCHEMA_POTEAU", "SCHEMA_POUTRE",
+    "axePoutre", "cotesStructurelles", "empriseStructurelle", "metreStructurel", "STUDIO_LIMITES_STRUCTURE", "transformerStructurel", "validerDalle", "validerPoteau", "validerPoutre", "volumeStructurel",
+    "SCHEMA_NIVEAU", "STUDIO_LIMITES_NIVEAUX", "studioNiveauxParCote", "validerNiveau",
+    "SCHEMA_COMPOSANT", "SCHEMA_OCCURRENCE", "STUDIO_LIMITES_COMPOSANTS", "studioCommandesRendreUnique", "studioInstancesComposants", "studioMaillageComposant",
+    "studioMaillageOccurrence", "studioPointOccurrence", "studioVolumeComposant", "validerComposant", "validerOccurrence",
+    "STUDIO_SANS_NIVEAU", "studioMembresNiveau", "studioVueNiveau",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur (`blocs/blocs.ts`) et contraintes géométriques (`contraintes/contraintes.ts`).
+    "STUDIO_LIMITES_BLOCS", "validerDefinitionBloc", "validerInsertionBloc", "studioCleNomBloc", "controlerBlocs", "studioComposerTransformationsPlanes", "studioTransformationInsertion", "studioIdElementInsertion", "studioFormesInsertion", "studioPoseTransformee", "studioPointsInsertion", "studioInsertionsParBloc", "insertionSvg", "studioNomsDxfBlocs", "blocsDxf", "insertionDxf", "SCHEMA_DEFINITION_BLOC", "SCHEMA_INSERTION_BLOC",
+    "STUDIO_TYPES_CONTRAINTES", "STUDIO_POINTS_CONTRAINTE", "STUDIO_MODES_TANGENCE", "STUDIO_LIMITES_CONTRAINTES", "STUDIO_TOLERANCES_CONTRAINTES", "validerContrainte", "studioRefusContrainte", "studioEvaluerContrainte", "studioModeTangence", "studioResoudreContraintes", "studioPointContrainte", "SCHEMA_CONTRAINTE",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -360,7 +450,11 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.surfaces; delete props.subdivisions; delete props.blocs; delete props.insertions; delete props.contraintes; delete props.niveaux; delete props.composants; delete props.occurrences; }
+  // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
+  // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
+  if (props && "base" in props && "height" in props) delete props.direction;
+  if (props && "profile" in props) { delete props.direction; delete props.source; }
   return out;
 }
 

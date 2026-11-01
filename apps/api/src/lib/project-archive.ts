@@ -33,6 +33,7 @@ import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerMod
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
+import { ensureOwnerParticipation } from "./project-access-db.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
@@ -85,7 +86,7 @@ export function manifestePaquet(project: ProjectRow, etat: ModeleAtelier | null)
 }
 
 /** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé, ses pièces jointes (20 Mo cumulés) et sa section Studio (études, révisions, commentaires, observations, liens d'étapes, publications et paquets, droits, préférences d'outils) en un seul JSON. */
-export async function exportProjectArchive(q: Querier, project: ProjectRow, now: string): Promise<ProjectArchive> {
+export async function exportProjectArchive(q: Querier, project: ProjectRow, now: string, options: { teamThreads?: boolean } = {}): Promise<ProjectArchive> {
   const rows = await loadStepRows(q, project.id);
   const [rep] = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, project.id)).limit(1);
   const cases = await q.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(asc(programmeCases.revision));
@@ -95,7 +96,8 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
   const charge = await chargerModele(q, project.id);
   const files = await q.select().from(stepFiles).where(eq(stepFiles.projectId, project.id)).orderBy(asc(stepFiles.addedAt));
   // Studio, droits et fichiers figés des paquets (R.1-02) : lignes telles quelles et manifeste ; absent sans donnée Studio.
-  const studio = await exportStudioArchive(q, project);
+  // Audience (E1) : `teamThreads: false` (exportateur hors de l'équipe) retire les fils réservés à l'équipe.
+  const studio = await exportStudioArchive(q, project, options);
   const warnings: string[] = [];
   const stageAttachments: ArchiveAttachment[] = [];
   let bytes = 0;
@@ -198,6 +200,8 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
     })
     .returning();
   if (!project) throw new Error("project insert returned nothing");
+  // Participation du propriétaire (lot OP-PONT : écrite ici, autrefois par le déclencheur du miroir).
+  await ensureOwnerParticipation(tx, id, ownerId);
 
   await tx.insert(projectSteps).values(archive.steps.map((s) => ({ projectId: id, stepNumber: s.stepNumber, status: s.status, content: { ...s.content } as Record<string, unknown> })));
 

@@ -2,23 +2,95 @@
 
 ## À faire
 
-- [ ] GEO-DOC-04 — Revue du concept détaillé et décision de réception documentaire dans l’Issue #243.
-- [ ] GEO-NEXT-01 — Définir et autoriser le lot de conception suivant avant toute implémentation.
+- [ ] GEO-REC-01 — Recette métier par le maître d'ouvrage sur appareils physiques (GEO 12) et validation d'usage.
+- [x] GEO-OPS-01 — Outils `geodata-role` / `geodata-reference` exécutables dans l'image de production, fiches embarquées, publication d'une version préparée à la relance ; dossier `RELEASE-V1.md`.
+- [ ] GEO-PROD-00 — Phase B du déploiement (`fadi-prod-auto`) ou procédure manuelle de l'exploitant : préalable à toute mise en production (hors délégation).
+- [ ] GEO-PROD-01 — Publication en production : Release GitHub du maître d'ouvrage (hors délégation), puis rôles GeoData et import geoBoundaries sur l'environnement.
+- [x] GEO-DATA-01 — Droits HCP qualifiés (CC BY 4.0, D-GD-17) ; population légale RGPH 2024 publiée sur 3 niveaux (lot A).
+- [x] GEO-HCP-A2 — Indicateurs démographiques et socio-économiques HCP (648 par niveau, dimensions) et arrondissements
+  (41/41 contours OSM niveau 10).
+- [x] GEO-HCP-PRIO — Priorité HCP sur OpenStreetMap (D-GD-18) : villes, catalogue sans doublon, recherche.
+- [x] GEO-HCP-A3 — Logement urbain, mobilité domicile – travail, établissements économiques CEE (D-GD-20).
+- [x] GEO-HCP-B — Navigation par niveaux (fil « Maroc › Région › Province », Retour Alt+↑, descente Alt+↓ ; D-GD-19).
+- [x] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, par couche et Alt+L ; glyphes hébergés ; D-GD-24).
+- [x] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks) (D-GD-25).
+- [x] GEO-DEPLOI-AUTO — Import automatique des données au déploiement, retraits déclarés, quittance `/version/donnees`, Chromium borné en CI (D-GD-23).
+- [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
+- [x] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche (D-GD-26).
+- [x] GEO-HCP-G — Mini-carte de situation et impression directe (D-GD-27).
+- [x] GEO-HCP-H — Navigation territoriale permanente, découpage du pays en base (MA d'abord) (D-GD-28).
+- [x] GEO-UI-BD — Interface et base distinctes ; tous les fichiers de données archivés en base (`geodata_fichiers`) (D-GD-29).
+- [x] GEO-INDICATEURS-1 — Rubrique « Indicateurs » du catalogue, un indicateur actif appliqué à toutes les couches chargées, Afficher / Masquer par couche (D-GD-31, étape 1).
+- [x] GEO-INDICATEURS-2 — Étape 1 consolidée : l'indicateur est une valeur affichée en texte propre, jamais une coloration ; liste « Coloration » réduite aux modes de style ; nom et valeur indépendants (D-GD-32).
+- [x] GEO-CONTOURS-NIVEAUX — Régions et provinces construites par union des communes (codes HCP), topologie partagée simplifiée une seule fois, tuiles sans simplification propre ; rapport `CONTOURS-NIVEAUX.md` (D-GD-33).
+- [x] GEO-CLICS-NIVEAUX — Sélection par nombre de clics, du plus élémentaire au plus global ; carte vierge servie par le découpage en base ; double-clic sans zoom (D-GD-34).
+- [x] GEO-RECHERCHE-MINIBARRE — Recherche de la carte déplacée dans une mini-barre (loupe, Alt+R) sous la barre d'outils ; champ retiré de la barre au-dessus de la carte (D-GD-35).
+- [x] GEO-COLLECTIONS — Mini-barre Enregistrer et Fond, menu ☰ « Cartes » (Mes cartes, Collection, Fournisseurs ; Partager : bientôt), collections ordonnées de références (D-GD-36, `COLLECTIONS.md`).
+- [ ] GEO-PARTAGE-CARTE — « Partager » une carte : aucune fonction existante ; à spécifier par le maître d'ouvrage.
+- [x] GEO-ONGLETS-RGPH — Barre d'onglets et tableau de bord RGPH 2024 : chiffres clés, tableaux, CEE, concepts (D-GD-37, `TABLEAU-DE-BORD.md`).
+- [x] GEO-FIL-MINI-BARRE — Fil de navigation administrative pliable, ≡ dans la mini-barre, un seul panneau à la fois (D-GD-38).
+- [x] GEO-TABLEAU-CROISE — Fiche : tableaux croisés Milieu × Sexe, palette partagée des catégories, contrôle de cohérence (D-GD-39).
+- [ ] GEO-SERIES-RGPH — Séries des recensements 1960–2014, concepts en arabe, emplois CEE par secteur : fiches qualifiées à produire.
+- [x] GEO-INFRA-COMMUNAL — Niveaux infra-communaux sur tout le territoire, découpage en base, import HCP unique sur le serveur, contours de bas en haut, clics selon les niveaux réels (D-GD-42) ; en revue.
+- [ ] GEO-INFRA-COMMUNAL-VPS — Lancer une fois `geodata-reference.js --decoupage MA` sur le VPS après déploiement ; arbitrer la place de la commune de Casablanca (5 niveaux selon le HCP).
+- [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
+- [x] GEO-ANALYSE-FEENWAY — Analyse de la carte FeenWay et pistes d'amélioration classées (`ANALYSE-FEENWAY.md`) ; aucune suite engagée.
+- [x] GEO-EMPRISE — Lot « Lecture de l'emprise » : synthèse de la vue (Alt+V), regroupement des points (Alt+G), état dans l'adresse et copie (Alt+K), zoom affiché (D-GD-40).
+- [x] GEO-ZONE-FILTRE — Zone d'étude qui filtre carte, table et synthèse ; puce, Alt+Z, adresse ; tableau de bord signalé non filtré (D-GD-41).
+- [x] GEO-MTNRA-SERVICES — Administrations et services publics du MTNRA (data.gov.ma, 2022, ODbL) : 12 couches régionales, 17 473 points, doublons de la source écartés ou marqués (D-GD-43).
+- [x] GEO-DOUARS-COMPLEMENTS — Douars : nationalité, état civil, état matrimonial, type de logement, distances aux équipements, deux feuilles jointes par le code ; originaux archivés (D-GD-43).
+- [x] GEO-ALIGNEMENT-CONTOURS — Contours région / province / commune : diagnostic, contours partiels marqués, mention de provenance, alerte de version antérieure, contrôles en CI (D-GD-44, `ALIGNEMENT-CONTOURS.md`).
+- [x] GEO-SERVICES-PUBLICS-FUSION — Base des services publics MTNRA + OSM (administrations, santé, gares) sans doublon : 19 797 objets, 13 couches ; couches OSM d'origine retirées du catalogue, leurs objets tous repris (D-GD-45).
+- [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.
+- [ ] GEO-RAPPROCHEMENT-COMMUNES — Point du MTNRA dans le contour communal contre la commune publiée : attend des contours communaux complets (D-GD-33).
+- [ ] GEO-CONCEPT-PRIX — Indicateurs de contexte (population, logement, services) pour un module « Concept Prix » : module absent du dépôt, spécification attendue.
+- [x] GEO-BARRE-BAS — Barre du bas sur téléphone : Carte, Chercher, Couches, Enregistrer (D-GD-52).
+- [x] GEO-PISTES-EVALUEES — P3-2 sans objet (tout est tuilé), P3-3 sans objet sous D-GD-24 (décision MO pour l'arabe
+  sur la carte), P2-4 bloqué faute de source qualifiée (D-GD-53).
+- [ ] GEO-ARABE-CARTE — Libellés arabes sur la carte (glyphes arabes + greffon RTL) : décision du maître d'ouvrage.
+- [ ] GEO-CHAMP-CONTINU — Couche de qualité de l'air ou autre champ continu : source qualifiée à fournir.
+- [x] GEO-PRIX-PROVISOIRE — Prix des quartiers FeenWay comme source provisoire (préproduction et développement seulement),
+  qualification « provisoire » en base, garde d'environnement, badge (D-GD-54).
+- [x] GEO-PRIX-SOURCES-FUTURES — Schéma commun des prix de quartier, déclaration de source et préparation génériques,
+  procédure de remplacement (D-GD-54).
+- [x] GEO-PRIX-AFFICHAGE — Prix visibles à l'ouverture du thème, coloration selon l'indicateur et légende sur la carte (D-GD-55).
+- [ ] GEO-PRIX-QUALIFIE — Source qualifiée de prix (ANCFCC / DGI / Bank Al-Maghrib, droits à établir) : à choisir par le
+  maître d'ouvrage ; puis retrait de la source FeenWay.
+- [x] GEO-SYNTHESE-ENTITE — Min / moyenne / max de l'indicateur actif sur les subdivisions, dans la fiche (D-GD-50).
+- [x] GEO-FIABILITE — Fiabilité déclarée par la source dans la fiche, « Non évalué » sinon (D-GD-51).
+- [x] GEO-PASTILLES — Pastilles de thème sur la carte, badge, Alt+T (D-GD-48).
+- [x] GEO-PROXIMITE — À proximité dans la fiche : objets des couches de points à moins d'un rayon, le plus proche (D-GD-49).
+- [x] GEO-ETAT-COUCHES — État d'affichage par couche : chargement, objets dessinés, aucun objet dans la vue (D-GD-47).
+- [x] GEO-PLAN-SATELLITE — Bascule Plan / Satellite du fournisseur réglé, mini-barre, Alt+S (D-GD-46).
+- [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours
 
-- Aucune rédaction en cours au checkpoint ; revue documentaire en attente.
+- Aucune au checkpoint (voir HANDOFF).
 
 ## Terminé
 
-- [x] GEO-DOC-01 — Formaliser le périmètre demandé et la décision ADR-GEODATA-01 (Issue #243).
-- [x] GEO-DOC-02 — Rédiger le concept version 1.0 et produire les deux formats de contenu identique. Preuves : `VERIFICATION.md`.
-- [x] GEO-DOC-03 — Déposer la paire et les preuves dans `docs/243-geodata-concept` et ouvrir la [PR #245](https://github.com/RachEma-ux/Fadi/pull/245). Commit vérifié : `022db53547c73ac3b0c6a446c539d8dfcc68d565`.
+- [x] GEO-DOC-01 à 04 — Concept 1.0 et ADR-GEODATA-01 (Issue #243, PR #245 fusionnée).
+- [x] GEO-I1 — Évaluation du plan fourni, plan retenu, ADR-GEODATA-02, paquet `@parcours/geodata-model` (Issue #299).
+- [x] GEO-I2 — Schéma `geodata_*`, API `/geodata/api`, chaîne d'import de référence (GeoJSON/GeoPackage), pilote geoBoundaries.
+- [x] GEO-I3 — Page `/geodata` (MapLibre à la demande), catalogue, couches, légende, recherche, fiche, table, Mes cartes, conflits.
+- [x] GEO-I4 — Import GeoJSON personnel, zones et annotations, mesures, analyse figée, export PNG + fiche de sources.
+- [x] GEO-I5 — Suite API DB-3, audit GEO 04, recette `apps/web/e2e/geodata.mjs` en CI, traductions, documentation.
+- [x] GEO-MERGE — Revue Codex traitée, CI verte, PR #301 fusionnée (`1d92920`).
+- [x] GEO-EXPL-01 — Outils d'exploitation dans l'image et dossier de Release (PR #307 fusionnée).
+- [x] GEO-STYLE-01 — Style « une couleur par entité » (D-GD-11, PR #314 fusionnée).
+- [x] GEO-RASTER-01 — Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM ; USGS MRDS.
+- [x] GEO-UI-02 — Catalogue rangé par catégories gérées, barre d'outils verticale flottante (à droite par défaut), bouton « Données », menu ☰ (D-GD-14).
+- [x] GEO-FONDS-01 — Fournisseurs de fonds réglés dans Paramètres, MapTiler par défaut (D-GD-15).
+- [x] GEO-LIM-01 — Contours colorés et hiérarchie Région → Province → Commune (D-GD-16).
+- [ ] GEO-SRC-02 — Couches sans source d'origine accessible (HCP, élections, « SIG Maroc », ERA5, MODIS…) : téléchargement
+  par le compte du maître d'ouvrage sur le portail tiers (identifiants en secrets d'environnement, ou fichiers déposés).
+- [x] GEO-SRC-01 — Couches de sources ouvertes OpenStreetMap et OurAirports livrées avec leur fiche (D-GD-12).
 
 ## Bloqué
 
-Aucun obstacle à la livraison documentaire. Le développement applicatif est hors mandat actuel ; il ne constitue pas une tâche démarrée ou un blocage technique.
+Rien de bloqué dans la délégation. La production et la recette sur appareils physiques attendent le maître d'ouvrage.
 
 ## Critères de sortie
 
-La paire MD/DOCX doit être présente dans le même commit, référencée dans l’index, vérifiée et soumise par une PR liée à l’Issue #243. La revue et une éventuelle fusion suivent la procédure du dépôt. Aucun déploiement ne découle du présent lot.
+GEO 01–13 prouvés par tests et recette sur le HEAD ; CI verte ; fusion dans `main` ; production par Release du maître d'ouvrage.

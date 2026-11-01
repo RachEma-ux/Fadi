@@ -222,6 +222,11 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      n'accepte que `true` / `false`. Solution retenue parce qu'elle est la plus simple et sûre : la préproduction et la
      production tournent en `NODE_ENV=production` et ne peuvent donc jamais l'activer, même par erreur de fichier
      d'environnement ; aucune liste d'hôtes SMTP « de capture » à maintenir ; les recettes ne changent pas d'adresses.
+- **UM-29 — Écarts graves E1, E2, E3 des règles communes : corrigés (2026-10-24).** Consigné dans le journal du
+  chantier des règles communes ([CR-C1](../collaboration-rules/DECISIONS.md)), la PR #273 étant fusionnée : journal
+  des changements d'accès dans `admin.audit_log` (E3), export explicite des nouveaux lecteurs selon CR-D4 / CR-R2
+  (`project_members.can_export`, E2), audience `equipe` / `projet` des commentaires et fils Studio (E1). PR
+  [#274](https://github.com/RachEma-ux/Fadi/pull/274), non fusionnée.
 - **UM-30 — Langue des courriels : celle de l'interface, jamais celle du navigateur (2026-10-24).** Demande du maître
   d'ouvrage (« Corrige la langue des courriels en français »), relayée par la session d'exploitation du VPS. Constat
   vérifié en préproduction : une invitation créée depuis l'Administration affichée en français est partie en anglais

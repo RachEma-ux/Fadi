@@ -100,6 +100,16 @@ services:
       MAIL_FROM: ${PREPROD_MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${PREPROD_MAIL_DAILY_LIMIT:-50}
       MAIL_RECIPIENT_HOURLY_LIMIT: ${PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT:-5}
+      # Organisations-participation (OP-5) : effacement automatique des contacts sans compte 2 ans après la clôture de
+      # tous leurs projets — réserve d'OP-2 levée par le maître d'ouvrage ; activé en préproduction (données synthétiques).
+      CONTACT_RETENTION_ENABLED: ${PREPROD_CONTACT_RETENTION_ENABLED:-1}
+      # GeoData (D-GD-23, D-GD-29) : au démarrage, les fichiers de données livrés avec le code sont archivés en base et
+      # les fiches importées, publiées, le découpage territorial écrit — sans doublon, par la livraison elle-même (vide :
+      # aucun compte requis) ou au nom de ce compte GeoData s'il est donné. État : GET /version/donnees.
+      GEODATA_IMPORT_AUTO_PAR: ${PREPROD_GEODATA_IMPORT_AUTO_PAR:-}
+      # Sources provisoires (D-GD-54) : admises en préproduction (étape de développement, décision du maître d'ouvrage du
+      # 31 octobre 2026) ; « non » les coupe. Jamais réglé en production : une source provisoire n'y est ni importée ni servie.
+      GEODATA_SOURCES_PROVISOIRES: ${PREPROD_GEODATA_SOURCES_PROVISOIRES:-oui}
     ports:
       - "127.0.0.1:3101:3001"
     networks:
@@ -117,6 +127,11 @@ services:
     build:
       context: ${FADI_SRC:?FADI_SRC manquant}
       dockerfile: deploy/preprod/recette.Dockerfile
+      # Builds copiés de l'image applicative du même commit (FROM ${APP_IMAGE} AS app), construite d'abord par
+      # `fadi-preprod build`. Pas d'additional_contexts « service:app » : chaque `compose run recette` reconstruirait
+      # alors app et écrirait la progression du build sur la sortie standard, avant l'archive des rapports.
+      args:
+        APP_IMAGE: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
     profiles: ["recette"]
     network_mode: "service:app"
     depends_on:

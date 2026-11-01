@@ -13,14 +13,47 @@
  * écrasé en silence).
  */
 import type { QueryClient } from "@tanstack/react-query";
-import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
+import { ApiError, api, comApi, type ComMessageInput, type CommentAudience, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
 import { isNetworkError, reachability } from "./reachability";
+import { localStore } from "./local-store";
 
 export const MUTATION_KEYS = {
   stepPatch: ["step-patch"] as const,
   decide: ["harmonie-decide"] as const,
   comment: ["comment-add"] as const,
+  /** Message de la Communication (COM-6) : rejoué avec le même `clientRequestId`, le serveur n'en garde qu'un. */
+  comMessage: ["com-message"] as const,
 };
+
+export interface ComMessageVars {
+  projectId: string;
+  conversationId: string;
+  /** Porte `clientRequestId` et `capturedAt` fixés à la rédaction : un rejeu après rechargement reste le même envoi. */
+  input: ComMessageInput & { clientRequestId: string; capturedAt: string };
+  /**
+   * Photos gardées sur l'appareil (IndexedDB, `comPhotos`) à téléverser AVANT le message (lot COM-13) : chacune avec son
+   * identifiant de requête ; le message n'est envoyé qu'une fois toutes les photos acceptées par le serveur.
+   */
+  photosLocales?: string[];
+  userId?: string;
+}
+
+/**
+ * Envoi d'un message de la Communication : photos d'abord (rejeu sans doublon par leur identifiant local), puis le
+ * message qui les joint ; les photos locales ne sont oubliées qu'une fois le message accepté. Une photo absente de
+ * l'appareil bloque l'envoi (rien n'est publié sans sa preuve).
+ */
+export async function envoyerMessageCom(v: ComMessageVars) {
+  const pieces: string[] = [...(v.input.pieces ?? [])];
+  for (const idLocal of v.photosLocales ?? []) {
+    const photo = await localStore.comPhotoLire(idLocal, v.userId ?? "");
+    if (!photo) throw new ApiError(422, "photo_absente", "Une photo jointe n’est plus sur cet appareil : retirez-la ou reprenez-la.");
+    pieces.push((await comApi.televerserPiece(v.projectId, v.conversationId, photo.blob, idLocal)).id);
+  }
+  const r = await comApi.envoyer(v.projectId, v.conversationId, { ...v.input, ...(pieces.length ? { pieces } : {}) });
+  if (v.photosLocales?.length) await localStore.comPhotoSupprimer(v.photosLocales);
+  return r;
+}
 
 const REPLAYABLE_KEYS = new Set<string>(Object.values(MUTATION_KEYS).map((key) => key[0]));
 interface ScopedMutation {
@@ -58,6 +91,8 @@ export interface CommentVars {
   stepNumber: number | null;
   /** Réponse en fil : le commentaire d'origine. */
   parentId?: string | null;
+  /** Audience choisie à la rédaction (écart E1) ; absente = défaut du serveur (l'équipe ; « projet » pour un lecteur). */
+  audience?: CommentAudience;
 }
 
 /**
@@ -234,9 +269,17 @@ export function registerMutationDefaults(queryClient: QueryClient) {
       recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · arbitrage ${v.proposalId}`, v.stepNumber, { decision: { proposalId: v.proposalId, input, expectedVersion: expectedVersion ?? null } });
     },
   });
+  queryClient.setMutationDefaults(MUTATION_KEYS.comMessage, {
+    ...RETRY_NETWORK,
+    mutationFn: envoyerMessageCom,
+    onSuccess: (_r: unknown, v: ComMessageVars) => {
+      void queryClient.invalidateQueries({ queryKey: ["com", v.projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["com-boite"] });
+    },
+  });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {
     ...RETRY_NETWORK,
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null, null, v.audience),
     onSuccess: (created: ProjectComment, v: CommentVars) => {
       void adoptComment(queryClient, created, v);
     },

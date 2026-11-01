@@ -44,7 +44,7 @@ import {
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { messageErreur } from "./commun-formes.js";
+import { messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, distanceLocale, echelleDansPlan, enLocal, idsSelectionnables, normaleMonde, pointsDe, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Transition, VueOutil } from "./machine.js";
 import { optionsDans } from "./selection.js";
@@ -180,7 +180,7 @@ function infererAxe(etat: EtatSuivezMoi, ctx: ContexteOutil, ev: { rayon: { orig
     rayon: ev.rayon,
     tolerance: ev.tolerance,
     geometrie: geometrieVisible(ctx.modele),
-    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...axesDeSaisie(ctx),
     ...(etat.axeClique ? { depart: etat.axeClique.a } : {}),
   });
 }

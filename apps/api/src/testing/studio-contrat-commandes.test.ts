@@ -154,6 +154,15 @@ describe("A.5-02 — validation serveur de chaque enveloppe", () => {
     expect((await refus("proprietaire", enveloppe("q1", "r2", [ligne("a", 0)]), { ...scope, variantId: "v2" })).status).toBe(404);
     expect((await refus("proprietaire", enveloppe("q1", "r0", [ligne("a", 0)]), { ...scope, projectId: "autre" })).status).toBe(404);
   });
+  it("EX-003 [−] contexte : un objet soumis sans variante (variantId absent ou vide) est rejeté (404), sans objet orphelin", async () => {
+    for (const variantId of [undefined, "", null]) {
+      const e = await refus("proprietaire", enveloppe("q1", "r0", [ligne("orphelin", 0)]), { ...scope, variantId } as unknown as typeof scope);
+      expect(e.status).toBe(404);
+    }
+    // Rien n'est écrit (contrôlé par `refus`) : aucune révision ne porte l'objet soumis, la tête reste r0.
+    expect(banc.lignes.get(studioRevisions)!.some((r) => JSON.stringify(r.document).includes("orphelin"))).toBe(false);
+    expect(tete()).toBe("r0");
+  });
   it("paramètres : une géométrie invalide est refusée (400 invalid_commands)", async () => {
     const e = await refus("proprietaire", enveloppe("q1", "r0", [{ toolId: "studio.dessin.ligne", params: { id: "a", type: "line", start: { x: 0, y: 0 }, end: { x: 0, y: 0 } } } as StudioCommand]));
     expect(e.status).toBe(400);
@@ -239,5 +248,35 @@ describe("A.5-07 — historique hybride : commandes et delta par révision", () 
     const init = await readStudioRevisionChanges(db as never, scope, "lecteur", "r0");
     expect(init).toMatchObject({ commands: [], requestId: null, changedKeys: [] });
     await expect(readStudioRevisionChanges(db as never, scope, "etranger", r2.revision.id)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("X.1-04 — serveur : niveaux, composants 3D et éléments structurels appliqués par le même réducteur, refus sans écriture", () => {
+  const batiment: StudioCommand[] = [
+    { toolId: "studio.niveau.definir", params: { id: "n1", nom: "Étage 1", cote: 3.2 } },
+    { toolId: "studio.structure.element", params: { id: "p1", type: "column", niveauId: "n1", position: { x: 0, y: 0 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 3.2 } },
+    { toolId: "studio.composant.definir", params: { id: "k1", nom: "Gaine", solides: [{ id: "s", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 0.2, depth: 0.2, height: 3 }] } },
+    { toolId: "studio.composant.placer", params: { id: "q1", type: "occurrence", composantId: "k1", niveauId: "n1", placement: { origin: { x: 1, y: 1, z: 3.2 }, rotation: 0 } } },
+  ];
+  it("X.1-04 serveur : les quatre outils du bâtiment sont acceptés par le schéma de l'API et appliqués par le serveur ; déplacer le niveau translate ses objets dans la révision enregistrée", async () => {
+    const r = await submitStudioCommands(scope, "editeur", enveloppe("b1", "r0", batiment));
+    const doc = r.revision.document;
+    expect(doc.niveaux).toEqual([{ id: "n1", nom: "Étage 1", cote: 3.2 }]);
+    expect(doc.architecture?.[0]).toMatchObject({ type: "column", niveauId: "n1" });
+    expect(doc.occurrences?.[0]).toMatchObject({ composantId: "k1", niveauId: "n1" });
+    const r2 = await submitStudioCommands(scope, "editeur", enveloppe("b2", r.revision.id, [{ toolId: "studio.niveau.definir", params: { id: "n1", nom: "Étage 1", cote: 4 } }]));
+    expect((r2.revision.document.architecture?.[0] as { base: number }).base).toBeCloseTo(4, 12);
+    expect(r2.revision.document.occurrences?.[0]?.placement.origin.z).toBeCloseTo(4, 12);
+  });
+  it("X.1-04 serveur [−] niveau inconnu, définition inconnue, champ métier ajouté : 400, rien n'est écrit", async () => {
+    const refusees = [
+      { toolId: "studio.structure.element", params: { id: "p9", type: "column", niveauId: "absent", position: { x: 0, y: 0 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 0 } },
+      { toolId: "studio.composant.placer", params: { id: "q9", type: "occurrence", composantId: "absente", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 } } },
+      { toolId: "studio.structure.element", params: { id: "p8", type: "column", materiau: "béton", position: { x: 0, y: 0 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 0 } },
+    ];
+    for (const [i, commande] of refusees.entries()) {
+      const e = await refus("editeur", enveloppe(`x${i}`, "r0", [commande as StudioCommand]));
+      expect(e.status).toBe(400);
+    }
   });
 });

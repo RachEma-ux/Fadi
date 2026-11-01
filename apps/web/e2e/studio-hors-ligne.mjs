@@ -16,11 +16,15 @@
  * 6. deux onglets hors ligne sur la même variante : le second ne peut pas écraser le brouillon du premier (conflit
  *    « brouillon modifié dans un autre onglet ») ;
  * 7. changement d'utilisateur : brouillon et enveloppe hors ligne de A, déconnexion, B (membre éditeur) se connecte
- *    sur le même navigateur → aucun brouillon restauré, aucun rejeu, aucune version lue de A conservée.
+ *    sur le même navigateur → aucun brouillon restauré, aucun rejeu, aucune version lue de A conservée ;
+ * 8. reprise de session (EX-049) : un tracé commencé hors ligne puis la page rechargée → « Prévisualisation abandonnée »
+ *    (aucun effet) ; une enveloppe hors ligne refusée au retour du réseau (B devenu lecteur pendant la coupure) →
+ *    « Rejetée », conservée avec son requestId, jamais renvoyée d'office, toujours nommée après rechargement.
  *
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -104,7 +108,8 @@ try {
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
   await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-hors-ligne-${Date.now()}@example.com`);
+  const emailA = `studio-hors-ligne-${Date.now()}@example.com`;
+  await page.fill('input[name="email"]', emailA);
   await page.fill('input[name="password"]', "studio-hors-ligne-ci-123");
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/(accueil|projets)$/);
@@ -154,21 +159,24 @@ try {
   await outils.waitFor();
   await attendreEtat("en-ligne");
   check("en ligne : état « En ligne », aucun brouillon conservé", (await page.locator("[data-studio-connexion]").textContent()) === "En ligne" && (await brouillonLocal(page, cle)) === null);
-  // Cache versionné par build : un seul cache `fadi-shell-<build>`, celui de la page servie ; sa coquille porte le même
-  // identifiant ; aucune réponse de l'API n'y figure.
+  // Caches versionnés par build, un par classe (EX-042) : coquille `fadi-shell-<build>`, profil `fadi-profil-<build>`,
+  // modules facultatifs `fadi-modules-<build>` — ceux de la page servie ; sa coquille porte le même identifiant ; aucune
+  // réponse de l'API n'y figure.
   const cacheSw = await page.evaluate(async () => {
     const build = document.querySelector('meta[name="fadi-build"]')?.getAttribute("content") ?? null;
-    const noms = (await caches.keys()).filter((n) => n.startsWith("fadi-shell-"));
+    const noms = (await caches.keys()).filter((n) => /^fadi-(shell|profil|modules)-/.test(n)).sort();
     const cache = build ? await caches.open(`fadi-shell-${build}`) : null;
     const coquille = cache ? await (await cache.match("/index.html"))?.text() : null;
-    const chemins = cache ? (await cache.keys()).map((r) => new URL(r.url).pathname) : [];
+    const chemins = [];
+    for (const n of noms) chemins.push(...(await (await caches.open(n)).keys()).map((r) => new URL(r.url).pathname));
     return { build, noms, coquilleDuBuild: !!coquille && coquille.includes(`<meta name="fadi-build" content="${build}">`), api: chemins.filter((p) => /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/.test(p)) };
   });
-  check("service worker : un cache par build (celui de la page), coquille du même build, aucune réponse de l'API en cache", !!cacheSw.build && JSON.stringify(cacheSw.noms) === JSON.stringify([`fadi-shell-${cacheSw.build}`]) && cacheSw.coquilleDuBuild && cacheSw.api.length === 0, JSON.stringify(cacheSw));
+  check("service worker : caches de ce build distincts (coquille, profil, modules — EX-042), coquille du même build, aucune réponse de l'API en cache", !!cacheSw.build && JSON.stringify(cacheSw.noms) === JSON.stringify([`fadi-modules-${cacheSw.build}`, `fadi-profil-${cacheSw.build}`, `fadi-shell-${cacheSw.build}`]) && cacheSw.coquilleDuBuild && cacheSw.api.length === 0, JSON.stringify(cacheSw));
   // Mise en cache anticipée manquée (fichier Parcelle non empreint retiré du cache) : réparée à la première lecture
   // réussie, dans le cache de ce build ; une réponse de l'API lue par la page n'y entre toujours pas.
   const reparation = await page.evaluate(async (build) => {
-    const cache = await caches.open(`fadi-shell-${build}`);
+    // Parcelle (fichiers non empreints) : classe des modules facultatifs.
+    const cache = await caches.open(`fadi-modules-${build}`);
     const avant = await cache.delete("/parcelle/parcelle-bridge.js");
     const lu = (await fetch("/parcelle/parcelle-bridge.js")).ok;
     await fetch("/auth/me").catch(() => undefined);
@@ -178,6 +186,12 @@ try {
   }, cacheSw.build);
   check("service worker : fichier non empreint manqué à l'installation réparé à sa lecture (cache du build), API jamais mise en cache", reparation.avant && reparation.lu && reparation.apres && !reparation.api, JSON.stringify(reparation));
   const depart = (await revisions()).length;
+  // TEST-021 : une commande préparée hors ligne n'entraîne aucune publication (ni anticipée au retour du réseau, ni
+  // au conflit) : liste des publications de l'étude relevée avant la coupure, POST vers une URL /publications comptés.
+  const publicationsEtude = async () => (await api("get", `/projects/${projet.id}/studio/studies/${studyId}/publications`)).publications;
+  const publicationsAvant = (await publicationsEtude()).length;
+  const postsPublications = [];
+  page.on("request", (r) => { if (r.method() === "POST" && /\/publications(\/|$)/.test(new URL(r.url()).pathname)) postsPublications.push(new URL(r.url()).pathname); });
 
   // 1. Dessin hors ligne, rechargement hors ligne, enveloppe conservée, retour en ligne.
   await context.setOffline(true);
@@ -211,6 +225,8 @@ try {
   check("même enveloppe renvoyée : rejeu reconnu, aucune révision en double", rejeu.replayed === true && (await revisions()).length === depart + 1);
   const tete1 = await api("get", variantePath);
   check("serveur : le rectangle dessiné hors ligne est dans la tête", tete1.revision.document.objects.length === 1);
+  const publicationsApres = await publicationsEtude();
+  check("TEST-021 : aucune publication anticipée — aucun POST /publications, liste inchangée", postsPublications.length === 0 && publicationsApres.length === publicationsAvant, `${postsPublications.length} POST (${postsPublications.join(" ")}), ${publicationsAvant} → ${publicationsApres.length} publication(s)`);
 
   // 2. Conflit : la tête avance dans la seconde session pendant la coupure.
   await context.setOffline(true);
@@ -241,6 +257,8 @@ try {
   check("report enregistré : nouvelle enveloppe sur la nouvelle tête, rien d'écrasé", tete3.revision.parentRevisionId === tete2.revision.id && envois.length === 1 && envois[0].baseRevisionId === tete2.revision.id && envois[0].requestId !== requestId
     && tete3.revision.document.objects.some((o) => o.id === ligneAutre) && tete3.revision.document.objects.filter((o) => o.type === "rectangle").length === 2);
   check("report enregistré : plus rien de conservé", (await brouillonLocal(page, cle)) === null);
+  const publicationsConflit = await publicationsEtude();
+  check("TEST-021 : conflit serveur puis report enregistré — toujours aucun POST /publications, liste inchangée", postsPublications.length === 0 && publicationsConflit.length === publicationsAvant, `${postsPublications.length} POST (${postsPublications.join(" ")}), ${publicationsAvant} → ${publicationsConflit.length} publication(s)`);
 
   // 3. Conflit non reportable : le même rectangle supprimé hors ligne et dans la seconde session.
   const cible = tete3.revision.document.objects.find((o) => o.type === "rectangle");
@@ -349,8 +367,9 @@ try {
   const emailB = `studio-hors-ligne-b-${Date.now()}@example.com`;
   const inscriptionB = await browser.newContext();
   if (!(await inscriptionB.request.post(`${BASE}/auth/register`, { data: { email: emailB, password: "studio-hors-ligne-ci-123" } })).ok()) throw new Error("inscription de B");
+  // Phase 3 : B accepte l'invitation (aucun ajout direct) avant de quitter sa session d'inscription.
+  if (!(await inviterEtAccepter(appelPlaywright(context.request, BASE), appelPlaywright(inscriptionB.request, BASE), projet.id, emailB, "editeur")).ok) throw new Error("invitation de B");
   await inscriptionB.close();
-  await api("post", `/projects/${projet.id}/members`, { email: emailB, role: "editeur" });
   await context.setOffline(true);
   await attendreEtat("hors-ligne");
   await rectangle(20, 2);
@@ -381,6 +400,64 @@ try {
   check("B : aucun brouillon de A restauré ni rejoué", envois.length === 0 && (await revisions()).length === teteA && (await page.locator("svg [data-studio-objet]").count()) === serveur7.revision.document.objects.length && (await page.locator('[data-studio-conserve="oui"]').count()) === 0);
   const lignesB = await lignesStudio(page);
   check("B : seules ses propres lignes sur l'appareil, aucune version lue de A", lignesB.every((l) => l.userId !== moi.id && !l.cle.startsWith(`${moi.id}|`)) && lignesB.some((l) => l.table === "studioContextes"), JSON.stringify(lignesB));
+
+  // 8. Reprise de session (EX-049) : prévisualisation abandonnée, puis enveloppe rejetée au retour du réseau.
+  const planche = page.getByRole("group", { name: "Planche de dessin 2D", exact: true });
+  // Point libre de la planche visible (proportions du cadre affiché) : le premier clic d'un tracé.
+  const cliquerPlanche = async (fx, fy) => {
+    const b = await planche.boundingBox();
+    await page.mouse.click(b.x + b.width * fx, b.y + b.height * fy);
+  };
+  await context.setOffline(true);
+  await attendreEtat("hors-ligne");
+  await rectangle(24, 2);
+  await page.locator('[data-studio-conserve="oui"]').waitFor();
+  const cleB = `${(await api("get", "/auth/me")).id}|${projet.id}|${studyId}|${variantId}`;
+  const lignesServeur8 = (await api("get", variantePath)).revision.document.objects.filter((o) => o.type === "line").length;
+  await cliquerBouton(outils, "Ligne");
+  await cliquerPlanche(0.85, 0.9);
+  for (let i = 0; i < 50 && !(await brouillonLocal(page, cleB))?.apercu; i++) await page.waitForTimeout(100);
+  const avecApercu = await brouillonLocal(page, cleB);
+  check("EX-049 : un tracé commencé hors ligne est noté avec le brouillon conservé (prévisualisation en cours)", avecApercu?.apercu?.outil === "studio.dessin.ligne" && avecApercu.pas.length === 1, JSON.stringify(avecApercu?.apercu));
+  // Interruption : la page est rechargée (fermeture, coupure) pendant le tracé.
+  await page.reload();
+  await outils.waitFor();
+  await attendreEtat("previsualisation-abandonnee");
+  check("EX-049 : à la reprise, « Prévisualisation abandonnée » est nommée ; le tracé n'a eu aucun effet (brouillon : un seul pas, aucune ligne)",
+    (await page.locator("[data-studio-connexion]").textContent()) === "Prévisualisation abandonnée" && (await page.locator("[data-studio-reprise-apercu]").count()) === 1
+    && (await brouillonLocal(page, cleB))?.pas.length === 1 && (await page.locator('svg [role="button"][aria-label^="Ligne "]').count()) === lignesServeur8);
+  await page.locator("[data-studio-reprise-acquitter]").click();
+  await attendreEtat("hors-ligne");
+  for (let i = 0; i < 50 && (await brouillonLocal(page, cleB))?.apercu; i++) await page.waitForTimeout(100);
+  check("EX-049 : « Compris » retire l'état de reprise (rien d'autre ne change)", (await brouillonLocal(page, cleB))?.apercu === null && (await brouillonLocal(page, cleB))?.pas.length === 1);
+  await enregistrer();
+  await page.locator('[data-studio-hors-ligne="en-attente"][data-studio-en-attente="1"]').waitFor();
+  const requete8 = (await brouillonLocal(page, cleB))?.plan?.requestIds?.[0];
+  const revisions8 = (await revisions()).length;
+  const base8 = (await brouillonLocal(page, cleB))?.plan?.base;
+  // Pendant la coupure, le propriétaire (A, nouvelle session) fait de B un lecteur : l'enveloppe de B sera refusée.
+  const sessionA = await browser.newContext();
+  if (!(await sessionA.request.post(`${BASE}/auth/login`, { data: { email: emailA, password: "studio-hors-ligne-ci-123" } })).ok()) throw new Error("reconnexion de A");
+  const idB = (await api("get", "/auth/me")).id;
+  if (!(await sessionA.request.patch(`${BASE}/projects/${projet.id}/members/${idB}`, { data: { role: "lecteur" } })).ok()) throw new Error("B devient lecteur");
+  envois.length = 0;
+  await context.setOffline(false);
+  await attendreEtat("rejetee");
+  const rejete = await brouillonLocal(page, cleB);
+  check("EX-049 : au retour du réseau, l'enveloppe refusée (B devenu lecteur) est « Rejetée », conservée avec son requestId et sa révision de base",
+    (await page.locator("[data-studio-connexion]").textContent()) === "Rejetée" && (await page.locator("[data-studio-reprise-rejetee]").count()) === 1
+    && rejete?.rejet?.requestIds?.[0] === requete8 && !!base8 && rejete.rejet.baseRevisionId === base8 && rejete.rejet.statut === 403 && rejete.plan === null && envois.length >= 1 && envois.every((e) => e.requestId === requete8),
+    JSON.stringify(rejete?.rejet ? { ...rejete.rejet, lots: rejete.rejet.lots.length } : null));
+  check("EX-049 : rien n'est écrit au serveur pour l'enveloppe rejetée", (await revisions()).length === revisions8);
+  envois.length = 0;
+  await page.reload();
+  await outils.waitFor().catch(() => {});
+  await attendreEtat("rejetee");
+  await page.waitForTimeout(1500);
+  check("EX-049 : après rechargement, l'enveloppe reste « Rejetée » avec le même requestId ; rien n'est renvoyé d'office",
+    (await page.locator("[data-studio-reprise-rejetee]").count()) === 1 && (await brouillonLocal(page, cleB))?.rejet?.requestIds?.[0] === requete8 && envois.length === 0 && (await revisions()).length === revisions8);
+  await page.screenshot({ path: join(OUT, "studio-hors-ligne-rejetee.png") });
+  await sessionA.close();
 
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
   await autre.close();

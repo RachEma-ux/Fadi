@@ -631,7 +631,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -735,6 +735,8 @@ class Travail {
       ...(a.reglages ? { reglages: a.reglages } : {}),
       ...(Object.keys(a.extrusions).length ? { extrusions: Object.freeze({ ...a.extrusions }) } : {}),
       ...(Object.keys(a.pieces).length ? { pieces: Object.freeze({ ...a.pieces }) } : {}),
+      ...(Object.keys(a.reperes).length ? { reperes: Object.freeze({ ...a.reperes }) } : {}),
+      ...(Object.keys(a.correspondances).length ? { correspondances: Object.freeze({ ...a.correspondances }) } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -792,7 +794,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
@@ -2958,6 +2960,47 @@ export function rendreUnique(m: Modele, occurrence: Id): Resultat {
   return { modele, rapport: differences(m, modele) };
 }
 
+/**
+ * (Chantier Axes, AX-4) Redéfinit le repère local de définitions de composants ou de groupes, en UN pas atomique, sans
+ * qu'aucun sommet ne bouge dans le monde. Pour chaque opération, `F` exprime le nouveau repère local dans l'ancien
+ * (colonnes : nouveaux axes, translation : nouvelle origine) : le contenu de la définition reçoit F⁻¹ (sommets, normales,
+ * courbes, occurrences imbriquées) et chaque occurrence de la définition, où qu'elle soit, reçoit M · F. `rendreUnique` :
+ * l'occurrence reçoit d'abord sa propre définition (les autres occurrences ne changent pas). Deux opérations sur la même
+ * définition (après « rendre unique ») ne l'appliquent qu'une fois. `F` doit être inversible ; le contrôle de rigidité et
+ * des cas refusés est fait par l'appelant (`origine-composant.ts`).
+ */
+export function redefinirReperesDefinitions(m: Modele, operations: readonly { readonly occurrence: Id; readonly rendreUnique: boolean; readonly F: Matrice4 }[]): Resultat & { extra: Id[] } {
+  const t = new Travail(m);
+  const faites: Id[] = [];
+  for (const op of operations) {
+    const { occ } = t.occurrence(op.occurrence);
+    if (op.rendreUnique && t.nombreOccurrences(occ.definition) > 1) t.rendreUnique(op.occurrence);
+    const def = t.occurrence(op.occurrence).occ.definition;
+    if (faites.includes(def)) continue;
+    const d = t.definitions.get(def);
+    const Finv = inverserMatrice(op.F);
+    if (!d || !Finv) throw new RangeError("Repère local non inversible : redéfinition refusée.");
+    const c = t.salir(d.contenu);
+    for (const so of c.sommets.values()) c.sommets.set(so.id, { ...so, position: appliquer(Finv, so.position) });
+    for (const f of c.faces.values()) c.faces.set(f.id, { ...f, normale: normalize(transformerNormale(Finv, f.normale)) });
+    for (const k of c.courbes.values()) c.courbes.set(k.id, { ...k, centre: appliquer(Finv, k.centre), normale: normalize(transformerNormale(Finv, k.normale)) });
+    for (const o of c.occurrences.values()) c.occurrences.set(o.id, { ...o, transformation: composer(Finv, o.transformation) });
+    for (const ctx of t.tousContextes()) {
+      if (ctx === c) continue;
+      for (const o of ctx.occurrences.values()) {
+        if (o.definition !== def) continue;
+        t.salir(ctx);
+        ctx.occurrences.set(o.id, { ...o, transformation: composer(o.transformation, op.F) });
+      }
+    }
+    faites.push(def);
+  }
+  actualiserExtrusions(t);
+  actualiserPieces(t);
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele), extra: faites };
+}
+
 // --- Lot 2 : formes ---
 
 /** Données portées par une courbe d'arc (centre, rayon, normale du plan de l'arc). */
@@ -3181,6 +3224,10 @@ export function redimensionner(m: Modele, facteur: number): Resultat {
     for (const tx of Object.values(a.textes)) if (tx.genre === "repere") a.textes[tx.id] = { ...tx, ancre: e(tx.ancre), position: e(tx.position) };
     for (const pc of Object.values(a.plansDeCoupe)) a.plansDeCoupe[pc.id] = { ...pc, origine: e(pc.origine) };
     if (a.repere) a.repere = { ...a.repere, origine: e(a.repere.origine) };
+    // Repères enregistrés : l'origine suit la mise à l'échelle du modèle (les axes unitaires restent unitaires).
+    for (const r of Object.values(a.reperes)) a.reperes[r.id] = { ...r, origine: e(r.origine), revision: r.revision + 1, ...(r.source.mode === "lie" ? { source: { ...r.source, controle: { ...r.source.controle, centre: e(r.source.controle.centre) } } } : {}) };
+    // Scènes qui rappellent un repère : leur instantané suit aussi (la référence de révision reste celle capturée).
+    for (const s of Object.values(a.scenes)) if (s.repere) a.scenes[s.id] = { ...s, repere: { ...s.repere, instantane: { ...s.repere.instantane, origine: e(s.repere.instantane.origine) } } };
   });
 }
 

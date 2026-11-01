@@ -29,7 +29,8 @@ export const STUDIO_ARCHIVE_LEGACY_TABLES_VERSION = "studio-v1/2026-10-19.2";
 /** Version antérieure aux ajustements du métré (E.3-05) et au suivi E.2. */
 export const STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION = "studio-v1/2026-10-19";
 
-/** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet. */
+/** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet (vue de compatibilité
+ * lue à l'export ; restaurée en participations et rôles de partage, lot OP-PONT). */
 export const STUDIO_ARCHIVE_TABLES = [
   "studio_studies",
   "studio_variants",
@@ -138,7 +139,11 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // Marquage d'une étude exemple (exemple, version, empreinte, préfixe, état, rapport de conversion) : aucun compte.
   // Colonne nullable additive : une archive antérieure (sans elle) se restaure en NULL, version des tables inchangée.
   studio_studies: ["example_install"],
-  studio_revisions: ["document", "envelope", "response"],
+  // Provenance d'une copie indépendante (nouvel identifiant d'objet → identifiant source, TR-EX-013) : aucun compte.
+  studio_variants: ["derivation_identities"],
+  // Provenance d'une fusion de variantes (lot W3-D : variantes, révisions, résolutions) : aucun compte. Colonne nullable
+  // additive : une archive antérieure (sans elle) se restaure en NULL, version des tables inchangée.
+  studio_revisions: ["document", "envelope", "response", "fusion"],
   studio_comments: ["object_ids"],
   studio_requirement_checks: ["result"],
   // État de la cible d'un ajustement du métré (objet du document, quantités brutes) : aucun compte.
@@ -146,9 +151,12 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // Définition d'une feuille composée (numéro, titre, format, vue source, auteur saisi en texte) et feuilles d'un
   // dossier (identifiants) : aucun compte (l'auteur du cartouche est un texte saisi, jamais un identifiant de compte).
   studio_sheets: ["definition"],
-  studio_dossiers: ["sheet_ids"],
+  // Vues de coupe d'un dossier (identifiants, lot PUB) : aucun compte.
+  studio_dossiers: ["sheet_ids", "section_view_ids"],
+  // Pièces justificatives (nom, type, taille, empreinte) et références BCF reçues (Guid, contexte) d'une observation (IF-010) : aucun compte.
+  studio_observations: ["pieces", "bcf_refs"],
   studio_publications: ["package", "manifest"],
-  studio_tool_preferences: ["favorites", "personal", "groups"],
+  studio_tool_preferences: ["favorites", "personal", "groups", "shortcuts", "capability_order"],
 });
 
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */
@@ -602,7 +610,7 @@ export function distrustStudioPublications(
     });
     const after: Dimensions = { travail: before.travail === "approuve" ? "en-revue" : before.travail, diffusion: before.diffusion === "diffuse" ? "non-diffuse" : before.diffusion };
     const row: StudioArchiveRow = {
-      ...p, approved_revision_id: null, approved_document_hash: null, approved_manifest_hash: null, approved_by: null, approved_at: null,
+      ...p, approved_revision_id: null, approved_document_hash: null, approved_manifest_hash: null, approved_by: null, approved_at: null, approved_self_control: null,
       work_status: after.travail, diffusion_status: after.diffusion, status: statutCombine(after),
     };
     if (after.travail !== before.travail || after.diffusion !== before.diffusion) {

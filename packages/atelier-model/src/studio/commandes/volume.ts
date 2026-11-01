@@ -6,7 +6,7 @@ import { extrusionValues, fail, idList, record } from "../noyau/validation.js";
 /** Commandes de volume : extrusion déclarée (valeurs saisies seulement) et aplatissement. */
 
 export const extruder: Gestionnaire = (state, params, path) => {
-  const p = record(params, ["ids", "base", "height"], `${path}.params`, ["thickness"]);
+  const p = record(params, ["ids", "base", "height"], `${path}.params`, ["thickness", "direction"]);
   const ids = idList(p.ids, `${path}.params.ids`);
   const values = extrusionValues(p, `${path}.params`, true);
   const index = new Map(state.objects.map((o, i) => [o.id, i]));

@@ -1,36 +1,42 @@
 # Organisations, participation et revue externe — Reprise de session
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## Point de reprise
 
 - Chantier : organisations-participation. Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche / PR : `ccr-266c1e83-7780ml`, PR de cadrage [#263](https://github.com/RachEma-ux/Fadi/pull/263), non fusionnée.
+- Branche : `lot-autocontrole` (repartie de `main` = `a37bc69`, lot OP-PONT et Axes phase A fusionnés). PR #281, #290,
+  #297 et OP-PONT fusionnés.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
-- Plan validé (OP-1). Phase 1 implémentée et vérifiée localement (voir STATUS.md) ; CI de la PR à relever.
+- Toutes les phases du plan implémentées et fusionnées ; CI complète verte sur `866f54d` (PR #290). OP-4 et OP-5
+  fusionnées (PR #297, CI verte sur `739d019`). Lot OP-PONT fusionné (`7eed727`, `d23a880`).
+- Lot OP-AUTOCONTROLE (décision OP-6) implémenté sur la branche, vérifié en local ([lot-autocontrole.md](lot-autocontrole.md)
+  § 5) ; suites DB-3 et CI non exécutées ici.
 
 ## Prochaine action
 
-- Phase 1 sur `feat/op-phase1-participations` (PR à suivre jusqu'au vert) ; attendre la revue 🛑 1 du maître d'ouvrage.
-- Décisions OP-2 du 2026-10-24 consignées (OP-D9 conservation, OP-D12 révisée) ; l'envoi des courriels de préproduction
-  relève de la PR distincte UM-28, pas de ce chantier.
-- Ensuite, phase 2 : API et écran « Équipe et participants », bascule de l'accès vers les six rôles (OP-D3 c), journal des
-  écritures de participation, effacement des contacts sans compte (OP-D9).
+- Ouvrir la PR du lot OP-AUTOCONTROLE, la mener jusqu'à la CI verte (DB-3 comprises : `app.test.ts` § 8,
+  `reviews.test.ts` « auto-contrôle »), puis recueillir l'acceptation du maître d'ouvrage.
+- 🛑 final franchi (OP-5, 2026-10-25). Déploiement : seulement sur accord explicite, selon le runbook (poser
+  `CONTACT_RETENTION_ENABLED=1` ; § 10 pour l'auto-contrôle).
 
 ## Tests et preuves
 
-- `DATABASE_URL=<base locale jetable> node scripts/validation/participations-migration-check.mjs` ;
-  `npx --workspace=@fadi/api vitest run src/lib/participations.test.ts` ; `npm run typecheck` ; `npm test` ; `npm run build`.
+- `npm run typecheck`, `npm test`, `npm run build` ; `scripts/validation/*-migration-check.mjs` (base locale jetable) ;
+  `scripts/validation/organisations-participation-post-deploiement.mjs` (lecture seule) ; recettes `apps/web/e2e/*.mjs`, dont
+  `organisations-participation-final.mjs` et `auto-controle.mjs` (53 contrôles). Les suites DB-3 ne tournent qu'en CI.
 
 ## Risques et blocages
 
-- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet. Prévoir l'annonce et la recette.
-- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant. La phase 4 prévoit une
-  recette dédiée, comme UM-20.
-- Une nouvelle suite de tests DB-3 exige la révision relue de `DB3_PENDING_SUITES`.
+- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet ; à annoncer.
+- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant (`revue-externe.mjs`,
+  recette finale ; l'aperçu `GET /reviews/:id/controle-approbation` ne rend aucune adresse).
+- Auto-contrôle : désactiver l'option d'un compte ferme l'approbation de ses propres dossiers ; à annoncer aux
+  administrateurs avant usage. `revue-externe.mjs` a montré une instabilité de temps préexistante (1 passage sur 2).
+- Réserve juridique d'OP-2 levée par le maître d'ouvrage (OP-5) ; l'effacement automatique reste à activer explicitement en production.
 
 ## Arrêt sûr
 

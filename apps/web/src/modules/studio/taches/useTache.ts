@@ -52,7 +52,7 @@ export function useTache<C, R>(demande: DemandeLiee<C, R> | null, o: { initial?:
     });
     setEtat((v) => (v.etat === p.tache.etat && v.message === null ? v : { ...v, etat: p.tache.etat, message: null }));
     void p.issue.then((i) => {
-      if (actif && i.etat !== "done" && i.etat !== "cancelled") setEtat((v) => ({ ...v, etat: i.etat, message: messageTache(i) }));
+      if (actif && i.etat !== "done" && i.etat !== "cancelled" && i.etat !== "superseded") setEtat((v) => ({ ...v, etat: i.etat, message: messageTache(i) }));
     });
     return () => { actif = false; p.abandonner(); };
   }, [cle, ordonnanceur]);

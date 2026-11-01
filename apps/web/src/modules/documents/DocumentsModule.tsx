@@ -7,6 +7,7 @@
  * Les fichiers sont régénérés à la demande par le serveur ; le téléchargement
  * enregistre la production.
  */
+import { CommunicationPanel } from "../collaboration/communication/CommunicationPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -218,6 +219,17 @@ function StudioPackages({ packages }: { packages: StudioPackageDocument[] }) {
   );
 }
 
+/** Panneau contextuel (Communication, COM) : conversations sur les documents produits du projet. */
+function ConversationsDocuments({ projectId, choix }: { projectId: string; choix: { ref: string; label: string }[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="fold-card biz-card" data-documents-conversations open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Conversations sur les documents</summary>
+      <div className="fold-card-body">{open && <CommunicationPanel projectId={projectId} contexte={{ type: "document", choix }} />}</div>
+    </details>
+  );
+}
+
 export function DocumentsModule({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["documents", projectId], queryFn: () => api.getDocuments(projectId) });
@@ -300,6 +312,7 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
       })}
       {(v.studioPackages?.length ?? 0) > 0 && <StudioPackages packages={v.studioPackages!} />}
       {(v.studioDossiers?.length ?? 0) > 0 && <StudioDossiers dossiers={v.studioDossiers!} />}
+      {produced.length > 0 && <ConversationsDocuments projectId={projectId} choix={produced.map((d) => ({ ref: d.kind, label: d.label }))} />}
       {v.studioDossiersError && (
         <p className="h7-chip warn" role="status" data-studio-dossiers-erreur={v.studioDossiersError}>
           {`Studio — dossiers de conception : ${libelleErreurDossier(v.studioDossiersError)}`}

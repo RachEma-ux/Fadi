@@ -1,6 +1,9 @@
 name: CI
 # Un seul run par commit : les branches de PR passent par `pull_request`, `push` ne couvre que `main`.
-# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`).
+# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`). Sur `main`, le groupe porte le commit :
+# chaque push a sa propre exécution, lancée tout de suite et menée à son terme (un groupe par branche les mettait en
+# file — jusqu'à 13 min d'attente avant le premier job, autant de retard pour la préproduction — et GitHub annulait
+# l'exécution en attente dès qu'un troisième push arrivait).
 on:
   push:
     branches: [main]
@@ -11,7 +14,7 @@ on:
   schedule:
     - cron: "17 3 * * 1"
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '-corpus-lourd' || '' }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}${{ github.ref == 'refs/heads/main' && format('-{0}', github.sha) || '' }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '-corpus-lourd' || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
@@ -85,9 +88,19 @@ jobs:
         run: npm run test:db-guard
       - if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: npm run build
+      # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
       - name: Installer le Chromium attendu par Playwright
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
-        run: npx playwright install --with-deps chromium
+        run: |
+          for essai in 1 2 3; do
+            timeout 600 npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
+          done
+          exit 1
       - name: Profil neuf, recette réelle et redémarrage borné
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: python3 scripts/validation/studio-v1-functional.py
@@ -235,22 +248,50 @@ jobs:
       API_RATE_LIMIT: "5000"
     steps:
       - uses: actions/checkout@v4
+        with:
+          # EX-101 : le contrôle des régressions pertinentes compare le diff de la PR à sa base.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
+      # TR-EX-101 : une modification de Worker / registre / géométrie / projection est rattachée à ses tests pertinents ;
+      # tout affaiblissement d'assertion (skip, only, matcher plus faible, précision abaissée, test retiré) est refusé.
+      - name: Régressions pertinentes (EX-101) — tests rattachés aux Workers / registre / géométrie / projections modifiés, affaiblissement d'assertion refusé
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
       # Gestion des comptes (#253, phase 1) : init.sql rejoué deux fois, défauts des comptes historiques, contraintes
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only
         run: node scripts/validation/users-migration-check.mjs
-      # Organisations, participation et revue externe (#262, phase 1) : reprise de l'existant, miroir des accès par
-      # déclencheurs, contraintes, droits fadi_app — transactions annulées, base du job seulement.
-      - name: Schéma participations — reprise, miroir des accès, contraintes
+      # Organisations, participation et revue externe (#262, phases 1 à 3 et lot OP-PONT) : retrait du pont op_sync_access
+      # sur une base antérieure simulée (reprise sans perte, accès effectifs identiques, vue de compatibilité
+      # `project_members` identique à l'ancienne table, plus aucun déclencheur), vue en lecture seule, contraintes, droits
+      # fadi_app ; vue `project_effective_access` (seule source de l'accès), contact / suspension / fin / sans rôle sans
+      # droit — transactions annulées, base du job seulement.
+      - name: Schéma participations — retrait du pont, reprise sans perte, vue de compatibilité, contraintes, bascule de l'accès
         run: node scripts/validation/participations-migration-check.mjs
+      # Phase 5 (espace d'organisation) : adhésions, groupes, gabarits immuables, mandats, finalité d'invitation
+      # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
+      - name: Schéma organisations — adhésions, groupes, gabarits, mandats, invitations, aucun droit de projet
+        run: node scripts/validation/organisations-migration-check.mjs
+      # Phase 4 (revue externe) : paquets figés au partage (déclencheurs de gel et d'anti-suppression), affectations,
+      # constats immuables, audience `revue` liée à son paquet, finalité `review_package` dans le bloc unique des
+      # finalités, participation « revue seule » sans accès au projet, droits fadi_app — transactions annulées.
+      - name: Schéma revue externe — paquets figés, affectations, constats, invitations review_package, aucun accès au projet
+        run: node scripts/validation/revues-migration-check.mjs
+      # Phase 6 (runbook de déploiement, § 6) : contrôle après déploiement en LECTURE SEULE (transaction READ ONLY, sonde
+      # d'écriture refusée 25006) — reprise sans perte d'accès, pont op_sync_access retiré (lot OP-PONT), accès effectifs
+      # identiques à l'instantané, participations, paquets figés,
+      # organisations, journal sans adresse, droits D-7 ; instantané avant / après comparé sur la base du job.
+      - name: Contrôle après déploiement organisations-participation — lecture seule, aucune perte d'accès
+        run: |
+          node scripts/validation/organisations-participation-post-deploiement.mjs --instantane "$RUNNER_TEMP/op-acces.json"
+          node scripts/validation/organisations-participation-post-deploiement.mjs --reference "$RUNNER_TEMP/op-acces.json"
       - name: Tests des paquets purs et du web
-        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geodata-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
         run: npm run test:db-guard
       # DB-3 (#157, accord du maître d'ouvrage du 22 octobre 2026) : avec la clé de signature (secret
@@ -278,6 +319,9 @@ jobs:
             node scripts/check-api-tests-db3.mjs api-vitest.json
           fi
       - run: npm run build
+      # Licence et provenance du noyau exact (TR-EX-096, D-177) vérifiées sur l'artefact distribué (apps/web/dist).
+      - name: Licence et provenance du noyau exact distribué (TR-EX-096) — binaire non modifié, version, LGPL-2.1, notice, chargement séparé
+        run: node apps/web/scripts/controle-licence-occt.mjs apps/web/dist
       # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
       - name: Découpage des bundles (B.3-06) — carte des morceaux du build
         run: |
@@ -307,9 +351,11 @@ jobs:
   # recette ne tourne que dans sa tranche (`if: matrix.shard == …`), dans l'ordre relatif d'origine. Chaque recette
   # crée son compte et importe elle-même l'exemple P.118 ; la seule dépendance d'état est la sauvegarde / restauration,
   # qui reste dans la tranche du scénario, après lui. Répartition par durées mesurées (run 39159805146, ≈ 7 min par
-  # tranche) : parcours (accueils, scénario, Studio, restauration), complements (atelier-complements seul),
-  # atelier (Atelier P1, interface anglaise, barre), planche (outils et lots Planche), p2 (P2-0 à P2-8, Planche lot 7,
-  # boutons, détachée, barres d'outils). Le job agrégé `e2e` garde le nom du contrôle requis.
+  # tranche) : parcours (accueils, scénario, Studio, restauration), complements (atelier-complements, GeoData),
+  # organisations (comptes, collaboration, organisations-participation, simulation de migration ; séparée de complements
+  # le 25 octobre 2026, qui durait alors 15,7 min, la plus longue de la CI — run 40192137528), atelier (Atelier P1,
+  # interface anglaise, barre), planche (outils et lots Planche), p2 (P2-0 à P2-8, Planche lot 7, boutons, détachée,
+  # barres d'outils). Le job agrégé `e2e` garde le nom du contrôle requis.
   e2e-shard:
     name: e2e (${{ matrix.shard }})
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
@@ -319,7 +365,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [parcours, complements, atelier, planche, p2]
+        shard: [parcours, complements, organisations, atelier, planche, p2]
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -366,11 +412,19 @@ jobs:
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
-      AUTH_RATE_LIMIT: "500"
+      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche organisations enchaîne les recettes
+      # des comptes, du journal, des participants et des organisations, qui dépassaient 500 appels /auth (429). Réglage de
+      # test seulement ; la production garde 20.
+      AUTH_RATE_LIMIT: "3000"
       # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
+      # GeoData (D-GD-29) : au démarrage, l'API importe d'elle-même toutes les fiches livrées ; les recettes posent leurs
+      # propres jeux et contrôlent le catalogue : import automatique coupé ici (l'archive et l'import sont testés à part).
+      GEODATA_IMPORT_AUTO: "non"
       API_RATE_LIMIT: "5000"
       BASE_URL: http://localhost:3001
+      # Temps réel (Issue #283, RT-D5 § 2) : canal et routes des sessions actifs pour les recettes ; la production garde le drapeau absent.
+      FADI_TEMPS_REEL: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -378,7 +432,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
+      # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
+      - name: Installer le Chromium attendu par Playwright
+        run: |
+          for essai in 1 2 3; do
+            timeout 600 npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
+          done
+          exit 1
       - run: npm run db:migrate
       - run: npm run build
       # Clé de signature des archives propre à l'exécution (jamais écrite dans le dépôt, masquée dans les journaux) :
@@ -413,11 +478,25 @@ jobs:
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
       # Studio (D-0/D-A, #166) : schéma créé par db:migrate ; étude, commandes, rejeu, refus et historique par l'API réelle.
-      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/web/e2e/studio-persistance.mjs)
+      # A.1-07 : sauvegarde et réouverture durables — phase initiale, arrêt de l'API, REDÉMARRAGE du service PostgreSQL,
+      # relance de l'API, puis phase de réouverture qui relit tout à l'identique (STUDIO_STATE).
+      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique, puis réouverture après redémarrage de PostgreSQL et de l'API (apps/web/e2e/studio-persistance.mjs, A.1-07)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
           set -o pipefail
-          node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+          PHASE=initial STUDIO_STATE="$RUNNER_TEMP/studio-state.json" node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+          pkill -TERM -f "node apps/api/dist/server.js" || true
+          for i in $(seq 1 30); do pgrep -f "node apps/api/dist/server.js" > /dev/null || break; sleep 1; done
+          pg=$(docker ps -q --filter "ancestor=postgis/postgis:16-3.4")
+          [ -n "$pg" ] || { echo "conteneur PostgreSQL introuvable"; exit 1; }
+          docker restart "$pg"
+          for i in $(seq 1 60); do docker exec "$pg" pg_isready -U fadi > /dev/null 2>&1 && break; sleep 1; done
+          docker exec "$pg" pg_isready -U fadi
+          echo "PostgreSQL redémarré ($(docker inspect -f '{{.State.StartedAt}}' "$pg"))" | tee -a e2e.log
+          nohup node apps/api/dist/server.js >> api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health > /dev/null && break; sleep 1; done
+          curl -sf http://localhost:3001/health
+          PHASE=reopen STUDIO_STATE="$RUNNER_TEMP/studio-state.json" node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
       - name: Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, adresse inconnue (apps/web/e2e/studio-navigation.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -473,6 +552,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs 2>&1 | tee -a e2e.log
+      # X.1-08 : références visuelles des corpus S1–S7 (planche 2D et vue 3D) photographiées dans Chromium, comparées aux
+      # captures versionnées avec leur empreinte (tolérance déclarée, écart signalé).
+      - name: Références visuelles des corpus S1–S7 — planche 2D et vue 3D comparées aux captures versionnées (apps/web/e2e/studio-corpus-references.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-corpus-references node apps/web/e2e/studio-corpus-references.mjs 2>&1 | tee -a e2e.log
       - name: Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et report revalidé, chevauchement confirmé, annulation concurrente, coupure rejouée, refus atomique (apps/web/e2e/studio-conflits.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -483,6 +569,33 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-chargement.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de mémoire Studio — 80 fermetures / réouvertures de la vue 3D, compteurs GPU, écouteurs du document, pente du tas après ramasse-miettes (TEST-037, apps/web/e2e/studio-memoire.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-memoire node apps/web/e2e/studio-memoire.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la géométrie 3D Studio — édition des faces, direction d'extrusion, profil source lié, division d'une face cotée (lot F1, apps/web/e2e/studio-faces.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-faces node apps/web/e2e/studio-faces.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du rendu Studio — dégradation sûre de la vue 3D sous charge, types 3D avancés non disponibles, comparaison SVG / Canvas / GPU sur S1–S3 (lot F5, TR-EX-057, A.3-08, TEST-025, apps/web/e2e/studio-rendu.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-rendu node apps/web/e2e/studio-rendu.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du noyau exact Studio — booléens exacts chargés à la demande, aperçu provisoire, résultat périmé, panne du Worker OCCT, 50 ouvertures sans croissance, licence servie (lot F2, apps/web/e2e/studio-exact.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-exact node apps/web/e2e/studio-exact.mjs 2>&1 | tee -a e2e.log
+      # Lot G4 : vingt outils à froid / chaud comparés à la référence versionnée (verdict), Core Web Vitals (DEC-13),
+      # avant / après optimisation de la vue 3D, réactivité pendant un booléen exact lourd (TR-EX-097, TR-AC-002/005, MES-03).
+      - name: Mesures et qualité Studio (lot G4) — vingt outils froid / chaud comparés à la référence versionnée avec verdict, Core Web Vitals (DEC-13), avant / après optimisation 3D, réactivité pendant un booléen exact lourd (apps/web/e2e/studio-g4.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g4 REPETITIONS=5 node apps/web/e2e/studio-g4.mjs 2>&1 | tee -a e2e.log
       # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
       # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
       # studio-chargement.mjs).
@@ -547,11 +660,18 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      # GeoData (9ᵉ module, ADR-GEODATA-02) : amorçage par la chaîne administrative réelle (rôles GeoData, jeu SYNTHÉTIQUE
+      # publié), puis GEO 01 à GEO 13 dans le navigateur (WebGL logiciel), sans WebGL, au téléphone et en anglais.
+      - name: Recette GeoData — compte sans projet, carte, catalogue, absence ≠ zéro, cartes et conflits, import, études, export, sans WebGL, téléphone, anglais (apps/web/e2e/geodata.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/geodata node apps/web/e2e/geodata.mjs 2>&1 | tee -a e2e.log
       # Gestion des comptes (#253, phases 1 à 4, D-7) : API réelle en fadi_app, courriels par Mailpit, horloge simulée par
       # la base jetable ; politique de mot de passe, sessions, TOTP, admin, accès support, invitations, suspension,
       # mot de passe oublié, export et suppression (anonymisation à 30 jours), garde-fou de quota.
       - name: Recette Gestion des comptes par l'API (apps/web/e2e/comptes-api.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-api.mjs 2>&1 | tee -a e2e.log
@@ -559,20 +679,219 @@ jobs:
       # export. Les courses du dernier administrateur exigent une base vierge : ici déclarées NON EXÉCUTÉES, elles
       # tournent dans app.test.ts (base jetable attestée, DB-3) et en local avec COMPTES_SECURITE_BASE_VIERGE=1.
       - name: Recette sécurité des comptes par l'API — session et double authentification, accès support sans export (apps/web/e2e/comptes-securite.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-securite.mjs 2>&1 | tee -a e2e.log
+      # Règles communes de collaboration (cadrage PR #273) : écarts graves E1 (audience à l'intérieur d'un projet), E2 (export
+      # explicite du lecteur), E3 (journal des changements d'accès), par l'API et l'interface ; journal relu en base.
+      - name: Recette des règles communes — audience équipe / projet, export du lecteur, journal des accès (apps/web/e2e/collaboration-audience.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Organisations, participation (#262, phase 2) : annuaire, contacts sans droit, bascule de l'accès sur les participations,
+      # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
+      # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
+      - name: Recette Équipe et participants — annuaire, bascule de l'accès, effacement, interface (apps/web/e2e/participants.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
+      # Portées étroites (#262, reliquat de la phase 2) : une portée étude / variante / révision / documents seule n'ouvre
+      # rien (404 partout) ; capacité ajoutée dans son périmètre (écriture Studio, approbation, diffusion, recontrôle,
+      # téléchargement), refusée hors périmètre ; aucune régression des rôles de projet ; sélecteur de l'élément et
+      # capacité résultante dans l'onglet Participants, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette Portées étroites — périmètres Studio et Documents, interface d'attribution (apps/web/e2e/portees-etroites.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/portees-etroites.mjs 2>&1 | tee -a e2e.log
+      # Communication (COM, Issue #280) : audiences, mentions et références sans accès, partage d'extraits avec aperçu,
+      # rejeu hors ligne, accusés, demandes de précision, actions liées, révocation avant synchronisation, interface.
+      - name: Recette Communication — audiences, mentions, partages, hors ligne, accusés, demandes, révocation, interface (apps/web/e2e/communication.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/communication node apps/web/e2e/communication.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/comptes node apps/web/e2e/comptes-admin.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation, phase 3 bis (OP-D13 a) : journal d'activité consultable par audience — administration,
+      # Mon historique, historique du projet réservé aux responsables ; axe-core bureau et téléphone, passe anglaise.
+      - name: Recette du journal d'activité et de l'historique — audiences, axe-core bureau et téléphone, anglais (apps/web/e2e/journal-activite.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/journal-activite.mjs 2>&1 | tee -a e2e.log
+      # Organisations (#262, phase 5) : adhésion par invitation acceptée, annuaire interne, groupes et mandats sans droit
+      # de projet, gabarits versionnés, départ, administrateur plateforme sans droit implicite ; axe-core bureau et
+      # téléphone, passe anglaise.
+      - name: Recette de l'espace d'organisation — API, navigateur, axe-core bureau et téléphone, passe anglaise (apps/web/e2e/organisations.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
+      # Revue externe (#262, phase 4, concept partie 4 et v2.2) : revue R03 restreinte pendant que R04 avance, destinataire
+      # sans adhésion ni rôle de projet, lien transféré inopérant, non-fuite (routeurs /projects, historique, archive,
+      # notifications, rapport), accès expiré ou révoqué, constat lié à la révision exacte, relecteur sans approbation ni
+      # diffusion, approbateur nommé par les transitions Studio, nouvelle version et nouveaux contrôles, dossier diffusé
+      # conforme ; espace de revue et panneau de l'équipe : règle d'or, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette de la revue externe — scénario complet, non-fuite, axe-core bureau et téléphone, anglais (apps/web/e2e/revue-externe.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/revue-externe node apps/web/e2e/revue-externe.mjs 2>&1 | tee -a e2e.log
+      # Séparation des responsabilités (#262, lot OP-AUTOCONTROLE, décision OP-6) : option « Auto-contrôle » activée par
+      # défaut, approbation de son propre dossier signalée (avertissement, confirmation, marque, journal), option
+      # désactivée par l'administration → 422 avec les autres approbateurs ; empreintes inchangées ; règle d'or de
+      # l'interrupteur, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette de l'auto-contrôle — option du compte, approbation signalée ou refusée, interface, axe-core, anglais (apps/web/e2e/auto-controle.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/auto-controle.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de visualisation Studio — rendu et export d'image sans commande ni effet sur le BIM ou le métré (E.5-01, E.5-03, E.5-05, apps/web/e2e/studio-visualisation.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-visualisation node apps/web/e2e/studio-visualisation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des exigences Studio — écarts affichés, exigence inchangée (TR-EX-065, apps/web/e2e/studio-exigences.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-exigences node apps/web/e2e/studio-exigences.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe B — profils, catalogue et dépendances, service worker, accrochage (point 2, apps/web/e2e/studio-preuves-b.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-b node apps/web/e2e/studio-preuves-b.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe C — approbation et diffusion hors connexion jamais affichées acquises (EX-043, apps/web/e2e/studio-preuves-c.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-c node apps/web/e2e/studio-preuves-c.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe D1 — intégration Fadi / Studio, plein écran, parcours A, B, C, invitation en attente, mesures PERF (point 2, apps/web/e2e/studio-preuves-d1.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-d1 node apps/web/e2e/studio-preuves-d1.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe D2 — publication diffusée figée par la base, actions hors connexion non confirmées (INV-012, INV-014, apps/web/e2e/studio-preuves-d2.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-d2 node apps/web/e2e/studio-preuves-d2.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe E — étapes intactes, publication figée, corps trop grand (413), réouverture par une seconde API (CAD-04, EX-082, EX-087, J2, EX-089, apps/web/e2e/studio-preuves-e.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          REOPEN_PORT=3007 OUT=atelier-captures/studio-preuves-e node apps/web/e2e/studio-preuves-e.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe A — mise à jour du service worker pendant que des commandes attendent, même requestId, une seule révision (TEST-036, apps/web/e2e/studio-preuves-a.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-a node apps/web/e2e/studio-preuves-a.mjs 2>&1 | tee -a e2e.log
+      - name: Contrats versionnés de l'API Studio — en-tête X-Studio-Contrat, version exacte servie, version incompatible refusée sans écriture (réserve G1 P-11, apps/web/e2e/studio-contrats-api.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-contrats-api node apps/web/e2e/studio-contrats-api.mjs 2>&1 | tee -a e2e.log
+      # Lot DEC (P-12) : copie indépendante de variante (TR-EX-013 / TR-INV-003), tolérance de la ligne (TR-IF-002),
+      # alternatives clavier et focus 2D ⇄ 3D (TR-EX-036), journal d'accès et purge (TR-EX-046), refus sous verrou et sur
+      # le projet de référence (X.2-02), quarantaine locale des montées de version (MIG-COEX-04).
+      - name: Décisions P-12 — copie indépendante, tolérances, alternatives clavier, journal d'accès, refus sous verrou, quarantaine (apps/web/e2e/studio-dec.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-dec node apps/web/e2e/studio-dec.mjs 2>&1 | tee -a e2e.log
+      # Lot F (P-12) : illustration depuis la vue (image séparée, modèle inchangé, transfert externe contrôlé), agents MCP
+      # (proposition sans écriture, confirmation humaine, journal), extensions déclarées sans chargement.
+      - name: Lot F — illustrations depuis la vue, agents MCP sous confirmation humaine, extensions (apps/web/e2e/studio-lot-f.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-lot-f node apps/web/e2e/studio-lot-f.mjs 2>&1 | tee -a e2e.log
+      # Lot CMD : effets des commandes, essais à portée de révision, jobs, journal, migrations studio-document/2, bascule.
+      - name: Lot CMD — effets, essais, jobs, journal, migrations de schéma, bascule Atelier → Studio (apps/web/e2e/studio-cmd.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-cmd node apps/web/e2e/studio-cmd.mjs 2>&1 | tee -a e2e.log
+      # Lot PUB : observations normalisées et bloquantes, manifeste (usage, dossier, contrôles), dossier de conception
+      # publié, vues de coupe, résultats quantitatifs, BCF 2.1 minimal (import et export), conclusions de contrôle.
+      - name: Lot PUB — observations, manifeste, dossier de conception, vues de coupe, quantités, BCF, conclusions (apps/web/e2e/studio-pub.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-pub node apps/web/e2e/studio-pub.mjs 2>&1 | tee -a e2e.log
+      # Lot REND : graphismes (splines, hachures, symboles), repères et système de projet, provenance des sources, moteurs
+      # de rendu qualifiés (règle des accélérations), mesures S1–S7 dans Chromium.
+      - name: Lot REND — graphismes, repères, provenance des sources, moteurs qualifiés, mesures (apps/web/e2e/studio-rend.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-rend node apps/web/e2e/studio-rend.mjs 2>&1 | tee -a e2e.log
+      # Lot OUT : profils d'outils exportés et importés (409, « écarter », 403), basculement et échelle 3D, édition de
+      # groupe annulée d'un seul Ctrl+Z.
+      - name: Lot OUT — profils d'outils, basculement et échelle 3D, édition de groupe (apps/web/e2e/studio-out.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-out node apps/web/e2e/studio-out.mjs 2>&1 | tee -a e2e.log
+      # Lot G1 : parcours d'une petite étude du dessin au dossier publié à travers quatre domaines (TR-EX-002), états
+      # dérivés des contenus (TR-EX-016), association mur / ouverture / cote et copie indépendante (J4, TEST-003/010/011/012).
+      - name: Lot G1 — parcours du dessin au dossier publié, états dérivés des contenus, association mur / cote, copie indépendante (apps/web/e2e/studio-g1.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs 2>&1 | tee -a e2e.log
+      # Lot G2 : échelle d'accès (TR-EX-027), accrochage ambigu résolu (TR-AC-004), cote de face 3D (TR-INV-013),
+      # « Approuver » trouvé et refusé puis accordé selon le rôle (TR-AC-010), enveloppe complète (TR-IF-006).
+      - name: Lot G2 — échelle d'accès, accrochage ambigu, cote de face 3D, Approuver par rôle, enveloppe complète (apps/web/e2e/studio-g2.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g2 node apps/web/e2e/studio-g2.mjs 2>&1 | tee -a e2e.log
+      # X.1-01 : blocs (définition, insertions, redéfinition, éclatement) et contraintes 2D (résolution, sur-contrainte refusée).
+      - name: Lot W3-A — blocs définis par l'utilisateur et contraintes géométriques (apps/web/e2e/studio-w3a.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3a node apps/web/e2e/studio-w3a.mjs 2>&1 | tee -a e2e.log
+      # X.1-04 : niveaux comme objets, composants (définition et occurrences), poteaux / poutres / dalles.
+      - name: Lot W3-B — niveaux, composants 3D et éléments structurels (apps/web/e2e/studio-w3b.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3b node apps/web/e2e/studio-w3b.mjs 2>&1 | tee -a e2e.log
+      # X.1-05 : surfaces NURBS et de subdivision de Loop, conversion explicite en solide recalculée par le serveur.
+      - name: Lot W3-C — surfaces libres NURBS et de subdivision (apps/web/e2e/studio-w3c.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3c node apps/web/e2e/studio-w3c.mjs 2>&1 | tee -a e2e.log
+      # X.1-06 : aperçu, conflits résolus explicitement, application et annulation de la fusion (Mailpit requis).
+      - name: Lot W3-D — fusion de variantes à trois voies (apps/web/e2e/studio-w3d.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3d node apps/web/e2e/studio-w3d.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
+      # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
+      # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
+      # navigateur, axe-core bureau et téléphone, passe anglaise. Courriels lus dans Mailpit, horloge simulée par la base.
+      - name: Recette des invitations acceptées liées à une participation — API, refus v2.2, navigateur, axe-core, anglais (apps/web/e2e/invitations-participation.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/invitations-participation.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
       - name: Simulation de migration — base neuve, jeu synthétique, lecture seule prouvée, rapport JSON + Markdown (scripts/migration/)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         env:
           PGPASSWORD: fadi_ci_password
         run: |
@@ -585,8 +904,25 @@ jobs:
           mkdir -p rapport-migration
           FADI_JEU_SYNTHETIQUE=fadi_mig DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig node scripts/migration/jeu-synthetique.mjs --file-locale rapport-migration/file-locale.json
           MIG_ADMIN_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig MIG_BASE=fadi_mig MIG_SORTIE=rapport-migration npx tsx scripts/migration/recette-simulation.mjs 2>&1 | tee -a e2e.log
+      # Reliquat organisations-participation (#262) : le formulaire « Accès support » ne déborde plus sur téléphone quand un
+      # administrateur au nom long existe (crée un administrateur : en fin de tranche, après les recettes qui les comptent).
+      - name: Recette de l'accès support sur téléphone — aucun défilement horizontal (apps/web/e2e/collaboration-support-telephone.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/collaboration-support-telephone.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation (#262, phase 6) : recette finale de bout en bout du scénario du concept — organisation
+      # et adhésions acceptées, partie propriétaire sans droit, équipe (contact, invitations avec aperçu, portée étroite,
+      # échéance d'accès), revue externe d'un paquet figé (404 hors paquet), boucle de correction et nouvelle version,
+      # approbatrice externe nommée, diffusion par l'équipe, fin de participation, journal par audience sans adresse ;
+      # axe-core bureau et téléphone, passe anglaise. En fin de tranche (crée un administrateur).
+      - name: Recette finale organisations-participation — scénario de bout en bout, audiences du journal, axe-core, anglais (apps/web/e2e/organisations-participation-final.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/organisations-participation-final node apps/web/e2e/organisations-participation-final.mjs 2>&1 | tee -a e2e.log
       - name: Rapports de simulation de migration
-        if: ${{ always() && matrix.shard == 'complements' }}
+        if: ${{ always() && matrix.shard == 'organisations' }}
         uses: actions/upload-artifact@v4
         with:
           name: simulation-migration
@@ -718,6 +1054,56 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-axes node apps/web/e2e/sandbox-axes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères enregistrés du Sandbox — enregistrer, Modifié, mettre à jour, renommer, dupliquer, supprimer avec résolution, scènes avec et sans rappel du repère, triade exclue du PNG par défaut, rechargement (apps/web/e2e/sandbox-reperes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes node apps/web/e2e/sandbox-reperes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Origine du composant du Sandbox — Changer les axes, portée toutes ou cette occurrence, aucun sommet monde déplacé, refus d'un point invalide, lot en un pas (apps/web/e2e/sandbox-origine.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-origine node apps/web/e2e/sandbox-origine.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères liés et coordonnées des exports du Sandbox — santé du lien (à jour, face changée, face supprimée), mise à jour explicite, détacher, export OBJ modèle et repère de travail (apps/web/e2e/sandbox-reperes-lies.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes-lies node apps/web/e2e/sandbox-reperes-lies.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-sessions.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la vue partagée Studio (RTC-2) — deux navigateurs, bandeau de session, suivi du présentateur, pointeur et sélection distants, révision annoncée, règle d'or, axe-core, anglais, téléphone (apps/web/e2e/temps-reel-studio.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-studio.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des annotations en session (RTC-3) — note d'équipe invisible au lecteur, point de vue tagué, rejeu sans doublon, révision source gardée, point de vue reposé, survie à la clôture, observation (apps/web/e2e/temps-reel-annotations.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-annotations.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la revue en direct (RTC-4) — publication figée, révision publiée épinglée, aucune annonce de tête, audiences, hôte sans droit d'approbation, refus d'ouverture (apps/web/e2e/temps-reel-revue.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-revue.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de robustesse du temps réel (RTC-5) — pointeur 3D, réservation d'édition visible, tactile, mouvement réduit, clavier, anglais (apps/web/e2e/temps-reel-robustesse.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-robustesse.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de charge du temps réel (RTC-5) — 10 sessions × 10 participants, rafale de pointeurs bornée, latence, reconnexion en rafale sans resynchronisation (apps/web/e2e/temps-reel-charge.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          SESSIONS=10 PARTICIPANTS=10 DUREE_S=8 node apps/web/e2e/temps-reel-charge.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |
@@ -884,7 +1270,9 @@ jobs:
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci; then
             echo "::error title=image::l'API a démarré avec DATABASE_MIGRATION_URL en production"; exit 1
           fi
-          docker run -d --name fadi --network host -e MIGRATE_ON_START=0 \
+          # GEODATA_IMPORT_AUTO=non : sans ce réglage l'API importe d'elle-même toutes les fiches livrées (D-GD-29) et la
+          # préparation manuelle contrôlée plus bas répondrait « déjà présente ».
+          docker run -d --name fadi --network host -e MIGRATE_ON_START=0 -e GEODATA_IMPORT_AUTO=non \
             -e DATABASE_URL=postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_image \
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
           for i in $(seq 1 60); do
@@ -898,6 +1286,14 @@ jobs:
           curl -sf http://localhost:3001/version | tee /dev/stderr | grep -q '"commit":"${{ github.sha }}"'
           curl -sf http://localhost:3001/version | grep -Eq '"buildDate":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z"'
           curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
+          # GeoData (ADR-GEODATA-02) : les outils d'exploitation sont dans l'image et tournent avec le compte applicatif
+          # (fadi_app, sans DDL), comme `create-admin.mjs` ; les fiches de source qualifiées sont embarquées.
+          docker exec fadi node apps/api/dist/geodata-role.js --email image@example.com --role gestionnaire-donnees | grep -q "attribué"
+          docker exec fadi test -f apps/api/dist/geodata-reference.js
+          docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-regions.json
+          docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-communes.json
+          # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
+          docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
       - name: Journal du conteneur
         if: always()
         run: |

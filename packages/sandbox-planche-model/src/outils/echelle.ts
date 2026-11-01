@@ -18,7 +18,7 @@ import {
   contexteSaisie,
   corrigeable,
   mesures,
-  messageErreur,
+  messageErreur, axesDeSaisie
 } from "./commun-formes.js";
 import {
   type Boite,
@@ -160,7 +160,7 @@ function pointAccroche(e: EtatEchelle, ctx: ContexteOutil, r: Rayon, tolerance: 
   const g = geometrieVisible(ctx.modele);
   const aretes = g.aretes.filter((a) => !(dedans(a.a) && dedans(a.b)));
   if (aretes.length === 0) return { point: libre, inference: null };
-  const inf = inferer({ rayon: r, tolerance, geometrie: { ...g, aretes, faces: [], centres: g.centres }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  const inf = inferer({ rayon: r, tolerance, geometrie: { ...g, aretes, faces: [], centres: g.centres }, ...axesDeSaisie(ctx) });
   const ponctuelle = (RANG_POINTS as readonly string[]).includes(inf.type);
   if (!ponctuelle || dist(inf.point, libre) < TOL) return { point: libre, inference: ponctuelle ? inf : null };
   return { point: inf.point, inference: inf };

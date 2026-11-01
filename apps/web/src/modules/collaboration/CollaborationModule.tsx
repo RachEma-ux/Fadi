@@ -10,12 +10,22 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { accountApi, api, ApiError, canComment, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
+import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type InvitationCreated, type MemberRole, type ProjectComment, type ProjectMember } from "../../lib/api";
 import { useProjectAccess } from "../../lib/access";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
+import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { ParticipantsSection } from "./Participants";
+import { RevuesExternes } from "./RevuesExternes";
+import { HistoriqueProjet } from "./HistoriqueProjet";
+import { InvitationProjet } from "./InvitationProjet";
+import { rolesLisibles } from "./participants-api";
+import { CommunicationPanel } from "./communication/CommunicationPanel";
+import { DemandesPanel, ResponsabilitesPanel } from "./communication/DemandesPanel";
+import { ActivitePanel, RevuesPanel } from "./communication/ActivitePanel";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -30,34 +40,57 @@ const KIND_LABEL: Record<string, string> = {
   commentaire: "Commentaire",
 };
 
-/** Fil de commentaires (projet entier ou une étape) : liste en fils (réponses rattachées à leur commentaire d'origine), ajout, réponse, suppression par l'auteur. */
+/**
+ * Fil de commentaires (projet entier ou une étape) : liste en fils (réponses rattachées à leur commentaire d'origine), ajout, réponse, suppression par l'auteur.
+ * Audience (écart E1) : un nouveau commentaire est réservé à l'équipe (propriétaire et éditeurs) sauf « Visible par les lecteurs » ;
+ * l'auteur ou le propriétaire change l'audience d'un fil. Le serveur filtre ce que chacun reçoit : un lecteur n'a jamais un fil de l'équipe.
+ */
 export function CommentThread({ projectId, stepNumber, comments, compact = false }: { projectId: string; stepNumber: number | null; comments: ProjectComment[]; compact?: boolean }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [visibleToReaders, setVisibleToReaders] = useState(false);
   // Accès support (D-2) : lecture seule, sans commentaire — ni formulaire, ni bouton « Répondre ».
-  const mayComment = canComment(useProjectAccess(projectId).role);
+  const access = useProjectAccess(projectId);
+  const mayComment = canComment(access.role);
+  // Propriétaire et éditeurs choisissent l'audience ; un lecteur écrit toujours pour tout le projet.
+  const inTeam = access.known && (access.role === "proprietaire" || access.role === "editeur");
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
   };
   const add = useMutation({
     mutationKey: MUTATION_KEYS.comment,
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null, null, v.audience),
     onSuccess: (created, v) => {
       // Afficher uniquement le commentaire réellement accepté par l'API, puis relire les fils après l'écriture
       // (une lecture partie avant la publication est annulée, `adoptComment`).
       if (v.parentId) {
         setReplyDraft("");
         setReplyTo(null);
-      } else setDraft("");
+      } else {
+        setDraft("");
+        setVisibleToReaders(false);
+      }
       setError(null);
       void adoptComment(queryClient, created, v);
     },
     onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Le commentaire n’a pas pu être enregistré."),
   });
+  const audience = useMutation({
+    mutationFn: ({ id, next }: { id: string; next: CommentAudience }) => api.setCommentAudience(projectId, id, next),
+    onSuccess: () => {
+      setError(null);
+      refresh();
+    },
+    onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’audience n’a pas pu être modifiée."),
+  });
+  // Audience d'un fil : bouton, icône propre et raccourci (règle d'or, `commandes-collaboration.ts`).
+  const mayToggle = (c: ProjectComment) => !c.parentId && inTeam && (c.mine || access.isOwner);
+  const bascule = (c: ProjectComment): CommandeCollaboration => (c.audience === "projet" ? "reserver-equipe" : "rendre-visible");
+  const toggle = (c: ProjectComment) => { if (!audience.isPending) audience.mutate({ id: c.id, next: c.audience === "projet" ? "equipe" : "projet" }); };
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteComment(projectId, id),
     onSuccess: refresh,
@@ -81,6 +114,29 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
           <Link to={`/projets/${projectId}?module=atelier`}>Atelier, révision {c.atelierRevision}</Link>
         </>
       )}
+      {!c.parentId && (
+        <>
+          {" · "}
+          <span className="h7-chip comment-audience" data-audience={c.audience}>
+            {c.audience === "projet" ? "Visible par les lecteurs" : "Équipe"}
+          </span>
+          {mayToggle(c) && (
+            <button
+              type="button"
+              className="comment-audience-toggle"
+              data-audience-toggle={c.id}
+              disabled={audience.isPending}
+              title={c.audience === "projet" ? "Réserver ce fil au propriétaire et aux éditeurs" : "Rendre ce fil lisible par les lecteurs du projet"}
+              {...propsRaccourci(bascule(c))}
+              onClick={() => toggle(c)}
+            >
+              <IconeCollaboration commande={c.audience === "projet" ? "reserver-equipe" : "rendre-visible"} />
+              {c.audience === "projet" ? "Réserver à l’équipe" : "Rendre visible aux lecteurs"}
+              <RaccourciCollaboration commande={bascule(c)} />
+            </button>
+          )}
+        </>
+      )}
       {c.mine && (
         <button type="button" className="comment-delete" disabled={remove.isPending} onClick={() => remove.mutate(c.id)}>
           Supprimer
@@ -93,7 +149,18 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
       {comments.length ? (
         <ul className="comment-list">
           {roots.map((c) => (
-            <li key={c.id} className="comment" data-comment={c.id}>
+            <li
+              key={c.id}
+              className="comment"
+              data-comment={c.id}
+              onKeyDown={(e) => {
+                // Règle d'or : Alt+Maj+2 bascule l'audience du fil où se trouve le focus (même commande que le bouton).
+                if (mayToggle(c) && declenche(e, bascule(c))) {
+                  e.preventDefault();
+                  toggle(c);
+                }
+              }}
+            >
               {meta(c)}
               <p>{c.body}</p>
               {repliesOf(c.id).length > 0 && (
@@ -140,15 +207,33 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
       )}
       {mayComment ? <form
         className="comment-form"
+        onKeyDown={(e) => {
+          // Règle d'or : Alt+Maj+1 coche ou décoche « Visible par les lecteurs » depuis le formulaire.
+          if (inTeam && declenche(e, "visible-lecteurs")) {
+            e.preventDefault();
+            setVisibleToReaders((v) => !v);
+          }
+        }}
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber });
+          if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber, ...(inTeam ? { audience: visibleToReaders ? "projet" : "equipe" } : {}) });
         }}
       >
         <label>
           {stepNumber !== null ? `Commentaire sur l'étape ${pad2(stepNumber)}` : "Nouveau commentaire"}
           <textarea value={draft} maxLength={4000} rows={compact ? 2 : 3} placeholder="Question, remarque, décision à tracer…" onChange={(e) => setDraft(e.target.value)} />
         </label>
+        {inTeam ? (
+          <label className="comment-audience-choice">
+            <input type="checkbox" checked={visibleToReaders} onChange={(e) => setVisibleToReaders(e.target.checked)} data-comment-audience {...propsRaccourci("visible-lecteurs")} />
+            <IconeCollaboration commande="visible-lecteurs" />
+            Visible par les lecteurs
+            <RaccourciCollaboration commande="visible-lecteurs" />
+            <small className="h7-muted"> — sinon réservé au propriétaire et aux éditeurs</small>
+          </label>
+        ) : (
+          <p className="h7-muted">Votre commentaire sera lisible par tous les membres du projet.</p>
+        )}
         <div className="h7-actions">
           <button type="submit" className="button-primary" disabled={(add.isPending && !add.isPaused) || !draft.trim()}>
             Publier le commentaire
@@ -180,10 +265,6 @@ export function StepComments({ projectId, stepNumber }: { projectId: string; ste
   );
 }
 
-const ROLE_HELP: Record<MemberRole, string> = {
-  lecteur: "lit tout le dossier et commente",
-  editeur: "lit, commente et modifie (saisies, arbitrages, programme, Atelier, sources)",
-};
 
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError && err.serverMessage ? err.serverMessage : fallback);
 
@@ -192,34 +273,30 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const query = useQuery({ queryKey: ["members", projectId], queryFn: () => api.listMembers(projectId) });
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<MemberRole>("lecteur");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["members", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["participants", projectId] });
   };
-  const invite = useMutation({
-    mutationFn: () => api.inviteMember(projectId, email.trim(), role),
-    onSuccess: (m) => {
-      setEmail("");
-      setError(null);
-      if ("invitation" in m) {
-        // Adresse sans compte : invitation nominative (UM-3) ; lien à transmettre si le courriel n'a pas pu partir (D-1).
-        setInviteLink(m.mail.link ?? null);
-        setNotice(m.mail.queued
-          ? `Invitation ${m.resent ? "renvoyée" : "envoyée"} à ${m.invitation.email} : elle pourra rejoindre le projet comme ${m.invitation.projectRole ? ROLE_LABEL[m.invitation.projectRole] : "lecteur"} après avoir créé son compte.`
-          : `Invitation ${m.resent ? "renouvelée" : "créée"} pour ${m.invitation.email}.`);
-      } else {
-        setInviteLink(null);
-        setNotice(`${m.email} a maintenant accès au projet comme ${ROLE_LABEL[m.role]}.`);
-      }
-      refresh();
-    },
-    onError: (err) => setError(errorText(err, "L’invitation n’a pas pu être enregistrée.")),
-  });
+  // Phase 3 (OP-D2 a) : toute adresse reçoit une invitation à accepter, compte existant compris ; un compte déjà membre
+  // voit seulement son rôle changé. Lien à transmettre si le courriel n'a pas pu partir (D-1).
+  const sent = (m: ProjectMember | InvitationCreated) => {
+    setError(null);
+    if ("invitation" in m) {
+      setInviteLink(m.mail.link ?? null);
+      const verb = m.resent ? "renvoyée" : "envoyée";
+      setNotice(m.accountExists
+        ? `Invitation ${verb} à ${m.invitation.email} : ce compte doit l’accepter (lien du courriel ou notification) ; rien n’est accordé avant.`
+        : `Invitation ${verb} à ${m.invitation.email} : la personne rejoindra le projet après avoir créé son compte et accepté.`);
+    } else {
+      setInviteLink(null);
+      setNotice(`${m.email} est déjà membre : son rôle est maintenant ${ROLE_LABEL[m.role]}.`);
+    }
+    refresh();
+  };
   const change = useMutation({
     mutationFn: ({ userId, next }: { userId: string; next: MemberRole }) => api.setMemberRole(projectId, userId, next),
     onSuccess: (m) => {
@@ -228,6 +305,15 @@ export function MembersPanel({ projectId }: { projectId: string }) {
       refresh();
     },
     onError: (err) => setError(errorText(err, "Le rôle n’a pas pu être modifié.")),
+  });
+  const exportRight = useMutation({
+    mutationFn: ({ userId, next }: { userId: string; next: boolean }) => api.setMemberExport(projectId, userId, next),
+    onSuccess: (m) => {
+      setError(null);
+      setNotice(m.canExport ? `${m.email} peut maintenant exporter et télécharger le contenu du projet.` : `${m.email} ne peut plus exporter ni télécharger le contenu du projet.`);
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "Le droit d’export n’a pas pu être modifié.")),
   });
   const transfer = useMutation({
     mutationFn: (userId: string) => api.transferOwnership(projectId, userId),
@@ -264,14 +350,16 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
   const v = query.data;
   const isOwner = v.you.role === "proprietaire";
-  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending;
+  const busy = change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
   return (
     <div className="members-panel">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Membres du projet">
       <table className="programme-table members-table">
         <thead>
           <tr>
             <th>Compte</th>
             <th>Rôle</th>
+            <th>Export</th>
             <th>Depuis</th>
             <th>{isOwner ? "Action" : ""}</th>
           </tr>
@@ -283,11 +371,22 @@ export function MembersPanel({ projectId }: { projectId: string }) {
               {v.owner.userId === v.you.userId ? " (vous)" : ""}
             </td>
             <td>propriétaire</td>
+            <td>oui</td>
             <td>—</td>
             <td />
           </tr>
           {v.members.map((m) => (
-            <tr key={m.userId} data-member={m.email}>
+            <tr
+              key={m.userId}
+              data-member={m.email}
+              onKeyDown={(e) => {
+                // Règle d'or : Alt+Maj+3 accorde ou retire l'export du lecteur de la ligne où se trouve le focus.
+                if (isOwner && m.role === "lecteur" && !busy && declenche(e, "export-lecteur")) {
+                  e.preventDefault();
+                  exportRight.mutate({ userId: m.userId, next: !m.canExport });
+                }
+              }}
+            >
               <td>
                 <span className="collab-email">{m.email}</span>
                 {m.userId === v.you.userId ? " (vous)" : ""}
@@ -303,7 +402,30 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   ROLE_LABEL[m.role]
                 )}
               </td>
-              <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>
+              <td data-member-export={m.canExport ? "oui" : "non"}>
+                {isOwner && m.role === "lecteur" ? (
+                  <label className="member-export">
+                    <input type="checkbox" checked={m.canExport} disabled={busy} aria-label={`Export accordé à ${m.email}`} {...propsRaccourci("export-lecteur")} onChange={(e) => exportRight.mutate({ userId: m.userId, next: e.target.checked })} />
+                    <IconeCollaboration commande="export-lecteur" />
+                    {m.canExport ? "accordé" : "non accordé"}
+                    <RaccourciCollaboration commande="export-lecteur" />
+                  </label>
+                ) : m.role === "editeur" ? (
+                  "oui"
+                ) : m.canExport ? (
+                  "accordé"
+                ) : (
+                  "non"
+                )}
+              </td>
+              <td data-member-acces={m.accessExpired ? "expire" : m.accessExpiresAt ? "echeance" : "permanent"}>
+                {new Date(m.createdAt).toLocaleDateString(LOCALE)}
+                {m.accessExpiresAt && (
+                  <small className={m.accessExpired ? "h7-error" : "h7-muted"}>
+                    {m.accessExpired ? ` · accès expiré le ${new Date(m.accessExpiresAt).toLocaleDateString(LOCALE)}` : ` · accès jusqu’au ${new Date(m.accessExpiresAt).toLocaleDateString(LOCALE)}`}
+                  </small>
+                )}
+              </td>
               <td>
                 {isOwner ? (
                   <>
@@ -332,52 +454,35 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           ))}
           {v.members.length === 0 && (
             <tr>
-              <td colSpan={4} className="h7-muted">
+              <td colSpan={5} className="h7-muted">
                 Aucun membre invité : ce projet n’est visible que par son propriétaire.
               </td>
             </tr>
           )}
         </tbody>
       </table>
-      {isOwner && (
-        <form
-          className="members-invite"
-          onSubmit={(e: FormEvent) => {
-            e.preventDefault();
-            if (email.trim()) invite.mutate();
-          }}
-        >
-          <label>
-            Adresse du compte à inviter
-            <input type="email" value={email} required maxLength={254} placeholder="prenom.nom@exemple.fr" onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <label>
-            Rôle
-            <select value={role} onChange={(e) => setRole(e.target.value as MemberRole)}>
-              <option value="lecteur">lecteur — {ROLE_HELP.lecteur}</option>
-              <option value="editeur">éditeur — {ROLE_HELP.editeur}</option>
-            </select>
-          </label>
-          <button type="submit" className="button-primary" disabled={busy || !email.trim()}>
-            Inviter
-          </button>
-          <p className="h7-muted">Un compte existant reçoit l’accès aussitôt. Une adresse sans compte reçoit une invitation par courriel, valable 7 jours : aucun compte n’est créé tant qu’elle n’est pas acceptée.</p>
-        </form>
-      )}
-      {inviteLink && <CopyLink link={inviteLink} />}
+      </div>
       {isOwner && (v.invitations?.length ?? 0) > 0 && (
         <div className="members-invitations" data-project-invitations>
           <h3>Invitations en attente</h3>
+          <p className="h7-muted">Avant d’inviter, vérifiez ici et dans « Équipe et participants » : une adresse déjà invitée reçoit la même invitation, renvoyée, jamais un doublon.</p>
           <ul className="sessions-list">
             {v.invitations!.map((i) => (
-              <li key={i.id} data-invitation={i.email}>
-                <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""}{` · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}</small></span>
+              <li key={i.id} data-invitation={i.email} data-invitation-etat={i.awaiting ?? "acceptation"}>
+                <span>
+                  <span className="collab-email">{i.email}</span>{" "}
+                  <span className="badge">{i.awaiting === "creation-compte" ? "En attente de création du compte" : "En attente d’acceptation"}</span>
+                  {i.representedOrganizationName ? <small data-invitation-partie>{"représentant de "}<span translate="no">{i.representedOrganizationName}</span></small> : null}
+                  <small>{` · ${i.roles?.length ? rolesLisibles(i.roles) : i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}{i.accessExpiresAt ? ` · accès jusqu’au ${new Date(i.accessExpiresAt).toLocaleDateString(LOCALE)}` : ""}</small>
+                </span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
               </li>
             ))}
           </ul>
         </div>
       )}
+      {isOwner && <InvitationProjet projectId={projectId} onSent={sent} />}
+      {inviteLink && <CopyLink link={inviteLink} />}
       {notice && (
         <p className="h7-muted members-notice" role="status">
           {notice}
@@ -492,7 +597,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <b className="collab-role" data-role={v.access.role}>
               {ROLE_LABEL[v.access.role]}
             </b>
-            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : v.access.role === "support" ? "lecture seule, sans commentaire ni export" : "lecture et commentaires"}</small>
+            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : v.access.role === "support" ? "lecture seule, sans commentaire ni export" : v.access.canExport ? "lecture et commentaires, export accordé" : "lecture et commentaires, sans export"}</small>
           </div>
           <div className="biz-kpi">
             <span>Édition</span>
@@ -527,12 +632,39 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <p className="programme-note">{v.sync.offline.reason}</p>
       </section>
 
+      <section className="biz-card" aria-labelledby="collab-communication">
+        <h2 id="collab-communication">Communication</h2>
+        <p className="biz-sub">Fils sur un élément du projet, conversations directes et de groupe. Chaque conversation a une audience affichée avant l’envoi ; une mention ou un lien n’ouvre aucun accès.</p>
+        <CommunicationPanel projectId={projectId} />
+      </section>
+
+      <section className="biz-card" aria-labelledby="collab-activite">
+        <h2 id="collab-activite">Activité du projet</h2>
+        <p className="biz-sub">Événements que vous êtes autorisé à voir : messages, demandes, observations, tâches, décisions, revues et diffusions. Chaque entrée mène à son enregistrement d’origine, qui reste la référence.</p>
+        <ActivitePanel projectId={projectId} />
+      </section>
+
+      <section className="biz-card" aria-labelledby="collab-demandes">
+        <h2 id="collab-demandes">Demandes et revues</h2>
+        <p className="biz-sub">Question, répondant désigné, échéance, réponse et clôture tracées. La demande est l’enregistrement de référence : une conversation n’en affiche que l’état.</p>
+        <DemandesPanel projectId={projectId} />
+        <RevuesPanel projectId={projectId} />
+      </section>
+
+      <ResponsabilitesPanel projectId={projectId} />
+
       <section className="biz-card" aria-labelledby="collab-members">
         <h2 id="collab-members">Membres du projet</h2>
         <MembersPanel projectId={projectId} />
       </section>
 
+      <ParticipantsSection projectId={projectId} />
+
+      <RevuesExternes projectId={projectId} />
+
       <SupportAccessPanel projectId={projectId} />
+
+      <HistoriqueProjet projectId={projectId} />
 
       <section className="biz-card" aria-labelledby="collab-comments">
         <h2 id="collab-comments">Commentaires ({v.comments.length})</h2>

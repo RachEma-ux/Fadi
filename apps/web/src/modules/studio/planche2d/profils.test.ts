@@ -62,7 +62,7 @@ describe("profils d'outils : visibilité dans les barres seulement", () => {
   it("normalise les préférences relues : profil inconnu → standard, identifiants hors registre et doublons écartés", () => {
     expect(normaliserPreferences(null)).toEqual(PREFERENCES_DEFAUT);
     expect(normaliserPreferences({ profil: "metier:inconnu", favoris: ["studio.dessin.arc", "x", "studio.dessin.arc"], personnel: "non" }))
-      .toEqual({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [], groupes: [] });
+      .toEqual({ ...PREFERENCES_DEFAUT, profil: "standard", favoris: ["studio.dessin.arc"], personnel: [], groupes: [] });
     expect(normaliserPreferences({ profil: "metier:volume", favoris: [], personnel: [] }).profil).toBe("metier:volume");
   });
 });
@@ -190,7 +190,7 @@ describe("regroupements personnels (B.2-02)", () => {
       { id: "MAJ", nom: "id invalide", outils: [] }, { id: "b", nom: "", outils: [] }, "texte",
     ] });
     expect(p.groupes).toEqual([{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }]);
-    expect(corpsPreferences(p)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }] });
+    expect(corpsPreferences(p)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }], raccourcis: {}, ordre: [] });
   });
 
   it("un regroupement ne change pas les barres (visibilité réglée par le profil seul)", () => {
@@ -216,7 +216,7 @@ describe("filtres du catalogue (B.2-01)", () => {
     expect(v3d).toContain("studio.solide.boite");
     expect(v3d).toContain("exporter-png");
     expect(v3d).not.toContain("studio.dessin.ligne");
-    expect(filtrerCatalogue(CATALOGUE, { contexte: "feuille" }, sources).map((e) => e.identifiant)).toEqual(["echanges", "feuille", "dossier", "outils", "palette"]);
+    expect(filtrerCatalogue(CATALOGUE, { contexte: "feuille" }, sources).map((e) => e.identifiant)).toEqual(["agents", "modeles-externes", "echanges", "feuille", "dossier", "approuver", "fusionner-variantes", "annuler-fusion", "outils", "palette"]);
     expect(filtrerCatalogue(CATALOGUE, { nature: "lecture" }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.selection", "studio.scene.rappeler"]);
     // Favoris : outils du registre seulement.
     expect(filtrerCatalogue(CATALOGUE, { favoris: true }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.cote"]);

@@ -30,5 +30,38 @@ export function vider(groupe: THREE.Object3D): void {
   }
 }
 
+/** Accès minimal aux propriétés internes du moteur de rendu (`renderer.properties`, publiques dans three.js). */
+interface ProprietesRendu { properties: { get(objet: object): unknown } }
+
+/**
+ * Textures **partagées entre moteurs de rendu** que l'on trouve dans les uniformes des matériaux de la scène, sans en
+ * être la propriété (ni carte ni texture d'un matériau) : three.js crée au niveau de son module une table DFG
+ * (`DFG_LUT`) pour les matériaux physiques et chaque moteur s'y abonne (« dispose ») sans jamais s'en désabonner. À
+ * relever **avant** de libérer les matériaux (leurs propriétés de rendu disparaissent avec eux).
+ */
+export function texturesPartagees(renderer: ProprietesRendu, racines: readonly THREE.Object3D[]): THREE.Texture[] {
+  const trouvees = new Set<THREE.Texture>();
+  for (const racine of racines) racine.traverse((o) => {
+    const m = (o as THREE.Object3D & { material?: THREE.Material | THREE.Material[] }).material;
+    for (const materiau of Array.isArray(m) ? m : m ? [m] : []) {
+      const propres = new Set(Object.values(materiau).filter((v): v is THREE.Texture => v instanceof THREE.Texture));
+      const proprietes = renderer.properties.get(materiau) as { uniforms?: Record<string, { value?: unknown } | undefined> } | undefined;
+      for (const u of Object.values(proprietes?.uniforms ?? {})) {
+        if (u?.value instanceof THREE.Texture && !propres.has(u.value) && u.value.name === "DFG_LUT") trouvees.add(u.value);
+      }
+    }
+  });
+  return [...trouvees];
+}
+
+/**
+ * Libère les textures partagées relevées par `texturesPartagees` : leur « dispose » désabonne chaque moteur de rendu
+ * qui s'y était abonné (sans quoi chaque fermeture de la vue 3D retiendrait un moteur entier). La texture reste
+ * utilisable : le moteur suivant la renvoie au GPU à son premier rendu.
+ */
+export function libererTexturesPartagees(textures: readonly THREE.Texture[]): void {
+  for (const t of textures) t.dispose();
+}
+
 export interface CompteGpu { geometries: number; textures: number }
 export const compteGpu = (r: { info: { memory: CompteGpu } }): CompteGpu => ({ geometries: r.info.memory.geometries, textures: r.info.memory.textures });

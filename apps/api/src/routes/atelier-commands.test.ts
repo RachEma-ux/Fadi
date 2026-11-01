@@ -4,6 +4,7 @@
  * import typé de P.118 et persistance par différentiel.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { partager, partagerEnBase } from "../test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import request from "supertest";
 import { createApp } from "../app.js";
@@ -17,7 +18,7 @@ const m = (value: number) => ({ value, unit: "m" });
 const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 
 async function resetDb() {
-  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "produced_documents", "project_comments", "project_members", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
+  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "produced_documents", "project_comments", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
 }
 beforeAll(resetDb);
 beforeEach(resetDb);
@@ -91,7 +92,7 @@ describe("POST /projects/:id/atelier/commands", () => {
     const owner = await registerAndLogin("owner-conf@example.com");
     const editor = await registerAndLogin("editor-conf@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-conf@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-conf@example.com", "editeur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("c1", 0, [niveau, mur("m1")]))).status).toBe(200);
     // Les deux lisent la révision 1 ; le propriétaire modifie m1 d'abord.
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("c2", 1, [{ type: "mur.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }], "Épaisseur"))).status).toBe(200);
@@ -119,7 +120,7 @@ describe("POST /projects/:id/atelier/commands", () => {
     const reader = await registerAndLogin("reader-rights@example.com");
     const stranger = await registerAndLogin("stranger-rights@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "reader-rights@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(owner, pid, "reader-rights@example.com", "lecteur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("d1", 0, [niveau]))).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/atelier/model`)).status).toBe(200);
     expect((await reader.post(`/projects/${pid}/atelier/commands`).send(enveloppe("d2", 1, [mur("m1")]))).status).toBe(403);
@@ -127,7 +128,7 @@ describe("POST /projects/:id/atelier/commands", () => {
     expect((await stranger.post(`/projects/${pid}/atelier/commands`).send(enveloppe("d3", 1, [mur("m1")]))).status).toBe(404);
     // Réservation d'édition par le propriétaire : un éditeur est refusé 423.
     const editor = await registerAndLogin("editor-rights@example.com");
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-rights@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-rights@example.com", "editeur")).status).toBe(201);
     expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(200);
     const locked = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("d4", 1, [mur("m1")]));
     expect(locked.status).toBe(423);
@@ -436,7 +437,7 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     expect((await client.post(`/projects/${pid}/atelier/versions/${v.body.id}/restaurer`).send({ requestId: "rest-2", baseRevision: 4 })).body).toMatchObject({ revision: 4, inchange: true });
     // Lecteur : consulter oui, créer non.
     const lecteur = await registerAndLogin("versions-lecteur@example.com");
-    expect((await client.post(`/projects/${pid}/members`).send({ email: "versions-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(client, pid, "versions-lecteur@example.com", "lecteur")).status).toBe(201);
     expect((await lecteur.get(`/projects/${pid}/atelier/versions`)).body.versions).toHaveLength(1);
     expect((await lecteur.post(`/projects/${pid}/atelier/versions`).send({ nom: "X" })).status).toBe(403);
   });
@@ -461,7 +462,7 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     expect(essai.rejeu).toEqual({ ok: true });
     // Un second compte modifie m2 dans le tronc : conflit explicite.
     const editeur = await registerAndLogin("variante-editeur@example.com");
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "variante-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "variante-editeur@example.com", "editeur")).status).toBe(201);
     expect((await envoyer(editeur, pid, "t2", 1, [{ type: "objet.modifier", params: { id: "m2", params: { hauteur: m(3.5) } } }])).status).toBe(200);
     essai = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body;
     expect(essai.conflits).toEqual([{ objetId: "m2", tronc: { label: "t2", revision: 2 }, variante: { label: "var-2", revision: base + 2 } }]);
@@ -562,7 +563,7 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     const pid = await projetVide(owner);
     expect((await envoyer(owner, pid, "l1", 0, [niveau, mur("m1"), mur("m2", 6)])).status).toBe(200);
     const editeur = await registerAndLogin("verrous-editeur@example.com");
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "verrous-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "verrous-editeur@example.com", "editeur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["m1"], motif: "Reprise structurelle" })).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["inconnu"] })).status).toBe(404);
     const refus = await envoyer(editeur, pid, "e1", 1, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }]);
@@ -612,13 +613,13 @@ describe("automatisation et assistant (lot 8, T19)", () => {
     // Mêmes refus : révision périmée (409), niveau verrouillé par autrui (423), lecteur (403), paramètre invalide (400).
     expect((await script(owner, pid, "executer", { parametres: trame, requestId: "trame-2", baseRevision: 1 })).status).toBe(409);
     const editeur = await registerAndLogin("script-editeur@example.com");
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "script-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "script-editeur@example.com", "editeur")).status).toBe(201);
     expect((await editeur.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["niveau:rdc"] })).status).toBe(201);
     const verrou = await script(owner, pid, "executer", { parametres: { ...trame, ox: 30 }, requestId: "trame-3", baseRevision: 2 });
     expect(verrou.status).toBe(423);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("main-3", 2, [{ type: "poteau.creer", params: { niveauId: "rdc", point: pt(40, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3) } }]))).status).toBe(423);
     const lecteur = await registerAndLogin("script-lecteur@example.com");
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "script-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(owner, pid, "script-lecteur@example.com", "lecteur")).status).toBe(201);
     expect((await script(lecteur, pid, "executer", { parametres: trame, requestId: "trame-4", baseRevision: 2 })).status).toBe(403);
     const sansHauteur = await script(owner, pid, "essai", { parametres: { niveauId: "rdc" } });
     expect(sansHauteur.status).toBe(400);
@@ -838,7 +839,10 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     expect(svg.status).toBe(200);
     expect(String(svg.body)).toContain("<line");
     const etrangerB = await registerAndLogin("refext-membre@example.com");
-    expect((await client.post(`/projects/${a}/members`).send({ email: "refext-membre@example.com", role: "lecteur" })).status).toBe(201);
+    const membre = await partager(client, a, "refext-membre@example.com", "lecteur");
+    expect(membre.status).toBe(201);
+    // Écart E2 : un nouveau lecteur n'exporte pas ; le propriétaire lui accorde l'export pour produire la vue.
+    expect((await client.patch(`/projects/${a}/members/${membre.body.userId}`).send({ canExport: true })).status).toBe(200);
     // Un membre de A qui ne lit pas B : la vue se produit, la référence n'est pas dessinée (moins de traits).
     const svgMembre = await brut(etrangerB.get(`/projects/${a}/documents/atelier/vues/va.svg`));
     expect(svgMembre.status).toBe(200);
@@ -867,7 +871,7 @@ describe("notifications ciblées (D-081)", () => {
     const owner = await registerAndLogin("owner-notif@example.com");
     const editor = await registerAndLogin("editor-notif@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-notif@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-notif@example.com", "editeur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n1", 0, [niveau, mur("m1"), mur("m2", 6)]))).status).toBe(200);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n2", 1, [{ type: "mur.modifier", params: { id: "m2", params: { hauteur: m(3) } } }], "Moi"))).status).toBe(200);
     expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n3", 2, [{ type: "mur.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }], "Épaisseur de m1"))).status).toBe(200);
@@ -884,8 +888,8 @@ describe("verrou transmis (D-089)", () => {
     const editor = await registerAndLogin("editor-verrou@example.com");
     await registerAndLogin("lecteur-verrou@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-verrou@example.com", role: "editeur" })).status).toBe(201);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "lecteur-verrou@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-verrou@example.com", "editeur")).status).toBe(201);
+    expect((await partager(owner, pid, "lecteur-verrou@example.com", "lecteur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v1", 0, [niveau, mur("m1")]))).status).toBe(200);
     expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["m1"], motif: "reprise" })).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/verrous/m1/transferer`).send({ email: "lecteur-verrou@example.com" })).status).toBe(422);
@@ -905,7 +909,7 @@ describe("réservation par zone et notifications de prise et de libération (D-1
     const owner = await registerAndLogin("owner-zone@example.com");
     const editor = await registerAndLogin("editor-zone@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-zone@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-zone@example.com", "editeur")).status).toBe(201);
     const zone = { type: "objet.creer", params: { id: "z1", classe: "zone", niveauId: "rdc", params: { contour: [pt(-1, -1), pt(5, -1), pt(5, 1), pt(-1, 1)], trous: [], nom: "Aile nord" } } };
     const loin = { type: "mur.tracer", params: { id: "m2", niveauId: "rdc", a: pt(0, 10), b: pt(4, 10), epaisseur: m(0.2), hauteur: m(3.2) } };
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z0", 0, [niveau, mur("m1"), loin, zone]))).status).toBe(200);
@@ -932,7 +936,7 @@ describe("péremption d'un export (D-110)", () => {
     const owner = await registerAndLogin("owner-perime@example.com");
     const editor = await registerAndLogin("editor-perime@example.com");
     const pid = await projetVide(owner);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-perime@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "editor-perime@example.com", "editeur")).status).toBe(201);
     expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("p1", 0, [niveau, mur("m1")]))).status).toBe(200);
     const ex = await owner.post(`/projects/${pid}/documents/dessins`).set("Content-Type", "application/octet-stream").set("X-File-Name", "quantites.csv").set("X-Export-Kind", "csv").send(Buffer.from("a;b\n"));
     expect(ex.status).toBe(201);
@@ -1004,7 +1008,10 @@ describe("référence protégée : refus serveur (D-016 tranchée, D-194)", () =
     expect((await client.post(`/projects/${ref}/atelier/publications`).send({ nom: "Référence publiée" })).status).toBe(201);
     // Le refus est inconditionnel : un verrou d'édition posé par un autre membre ne le transforme pas en 423.
     const editeur = await registerAndLogin("reference-editeur@example.com");
-    expect((await client.post(`/projects/${ref}/members`).send({ email: "reference-editeur@example.com", role: "editeur" })).status).toBe(201);
+    // X.2-02 (P-12) : la référence ne se partage plus (403) ; un membre antérieur à cette règle (posé en base) peut encore
+    // tenir la réservation d'édition.
+    expect((await partager(client, ref, "reference-editeur@example.com", "editeur")).body).toMatchObject({ motif: "reference-protegee" });
+    await partagerEnBase(ref, (await editeur.get("/auth/me")).body.id as string, "editeur");
     expect((await editeur.put(`/projects/${ref}/lock`).send({})).status).toBe(200);
     const sousVerrou = await client.post(`/projects/${ref}/atelier/commands`).send(lot);
     expect(sousVerrou.status).toBe(403);

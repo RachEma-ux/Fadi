@@ -42,7 +42,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, {
@@ -72,6 +72,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return body as T;
 }
+/** Même appel, pour les modules d'API voisins (journal d'activité, `lib/journal-activite.ts`). */
+export { request as apiRequest };
 
 export interface CurrentUser {
   id: string;
@@ -117,6 +119,8 @@ export interface Project {
   role?: ProjectRole;
   /** Adresse du propriétaire (liste des projets : distingue les projets partagés). */
   ownerEmail?: string;
+  /** Partie propriétaire déclarée (OP-D1 a) : identité seule, aucun droit ; `youAreMember` ouvre le renvoi vers son espace. */
+  owningOrganization?: { id: string; name: string; kind: string | null; status: "active" | "suspendue" | "close"; youAreMember?: boolean } | null;
   /** Réservation d'édition en cours (verrou optionnel « un seul éditeur actif »), null si libre ou expirée. */
   editingLock?: EditingLock | null;
   /** Accès support (rôle `support`) : échéance de l'accès accordé par le propriétaire. */
@@ -155,13 +159,21 @@ export type ProjectPlanningInput = ProjectPlanningStep & { expectedRevision: num
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio" | "message" | "demande" | "revue";
   projectId: string;
   projectCode: string;
   projectName: string;
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4). */
+  review?: { packageId: string };
+  /** Invitation de projet en attente pour vous (phase 3) : à accepter ou décliner. */
+  invitation?: { id: string; role: MemberRole; expiresAt: string };
+  /** Mandat de représentant terminé (reliquat de la phase 5) : participation conservée, à revoir. */
+  mandate?: { mandateId: string; participationId: string };
+  /** Conversation ou demande de précision visée (Communication : `message`, `demande`). */
+  com?: { conversationId?: string; demandeId?: string };
   text: string;
   /** Postérieure à votre dernière consultation. */
   unread: boolean;
@@ -217,16 +229,21 @@ export interface ProjectMember {
   userId: string;
   email: string;
   role: MemberRole;
+  /** Le membre peut exporter : toujours pour un éditeur ; pour un lecteur, si le propriétaire l'a accordé (écart E2). */
+  canExport: boolean;
   invitedBy: string;
   createdAt: string;
+  /** Échéance de l'accès (phase 3) ; `accessExpired` : passée, plus aucun accès. */
+  accessExpiresAt?: string | null;
+  accessExpired?: boolean;
 }
 
 export interface MembersView {
   owner: { userId: string; email: string };
   you: { userId: string; role: ProjectRole };
   members: ProjectMember[];
-  /** Invitations en attente (adresses sans compte) — propriétaire seulement. */
-  invitations?: InvitationView[];
+  /** Invitations en attente — propriétaire seulement ; `awaiting` : acceptation par un compte existant, ou création du compte. */
+  invitations?: (InvitationView & { awaiting?: "acceptation" | "creation-compte" })[];
 }
 
 // --- Gestion des comptes (docs/workstreams/users-management) -------------------------------------------------------
@@ -234,7 +251,7 @@ export interface MembersView {
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 export interface InvitationView {
   id: string;
-  purpose: "platform_account" | "project_participation";
+  purpose: "platform_account" | "project_participation" | "organization_membership" | "review_package";
   email: string;
   status: InvitationStatus;
   expiresAt: string;
@@ -244,11 +261,54 @@ export interface InvitationView {
   projectName: string | null;
   projectRole: MemberRole | null;
   invitedBy: string;
+  /** Finalité `organization_membership` (organisations, phase 5) : organisation, rôle et fonction proposés. */
+  organizationId?: string | null;
+  organizationName?: string | null;
+  organizationRole?: OrganizationRole | null;
+  organizationJobTitle?: string | null;
+  /** Finalité `review_package` (phase 4) : paquet visé, projet, responsabilité — le paquet seul, aucun accès au projet. */
+  reviewPackage?: { id: string; title: string; version: number; projectLabel: string; responsibility: string } | null;
+  /** Finalité `project_participation` (phase 3) : participation visée et rôles proposés par portée. */
+  participationId?: string | null;
+  roles?: ProposedRole[] | null;
+  /** Invitation d'un représentant mandaté (reliquat de la phase 5) : mandat d'origine et organisation représentée. */
+  mandateId?: string | null;
+  representedOrganizationName?: string | null;
+}
+// --- Invitations de projet liées à une participation (Issue #262, phase 3) ----------------------------------------------
+export type RoleScope = "projet" | "etude" | "variante" | "revision" | "documents";
+export interface ProposedRole { role: BusinessRole; scopeType: RoleScope; scopeId: string | null }
+export interface InvitationInput {
+  email: string; roles: { role: BusinessRole; scopeType?: RoleScope; scopeId?: string | null }[]; participationId?: string | null; displayName?: string | null;
+  accessExpiresAt?: string | null; invitationDays?: number;
+}
+/** Invitation d'un représentant mandaté (reliquat de la phase 5) : l'adresse vient de son compte, jamais saisie. */
+export type MandateInvitationInput = Omit<InvitationInput, "email" | "participationId" | "displayName">;
+export interface RepresentativeRef { mandateId: string; name: string | null; organization: { id: string; name: string } }
+export interface InvitationPreview {
+  /** null pour l'invitation d'un représentant mandaté : son adresse n'est pas montrée. */
+  email: string | null; accountExists: boolean;
+  representative?: RepresentativeRef;
+  target: { kind: "membre"; participationId: string | null } | { kind: "participation"; participationId: string; status: "contact" | "active" } | { kind: "nouvelle-fiche" };
+  pendingInvitation: { id: string; expiresAt: string } | null; roles: ProposedRole[]; baseRole: MemberRole;
+  access: { role: "proprietaire" | "editeur" | "lecteur"; canExport: boolean; canApprove: boolean; canPublish: boolean } | null;
+  narrowScopes: ProposedRole[]; invitationExpiresAt: string; accessExpiresAt: string | null; warnings: string[]; blocking: string | null;
+}
+export interface ReceivedInvitation {
+  id: string; projectId: string; projectCode: string; projectName: string; invitedBy: string; baseRole: MemberRole; roles: ProposedRole[];
+  createdAt: string; expiresAt: string; accessExpiresAt: string | null;
+  /** Invitation d'un représentant mandaté : l'organisation que la participation représentera. */
+  representedOrganizationName?: string | null;
+}
+export interface AcceptedInvitation {
+  accepted: boolean; projectId: string | null; organizationId?: string | null; participationId?: string | null;
+  pendingWork?: { openObservations: number; openTasks: number }; replay?: boolean; reviewPackageId?: string | null;
 }
 /** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
 export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
-export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome }
-export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive";
+export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome; accountExists?: boolean; participationId?: string; representative?: RepresentativeRef }
+export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive"
+  | "identity_conflict" | "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid" | "mandate_ended" | "email_unverified";
 export interface InvitationLookup { invitation: InvitationView; accountExists: boolean; signedInAs: string | null; refusal: InvitationRefusal | null; message: string | null }
 export type LoginResult = { mfaRequired: true; expiresAt: string } | (CurrentUser & { mfaRequired?: undefined });
 export interface AccountSession { id: string; current: boolean; createdAt: string; lastSeenAt: string; expiresAt: string; absoluteExpiresAt: string | null; userAgent: string | null; ip: string | null }
@@ -258,6 +318,8 @@ export type AdminStatus = "active" | "suspended" | "closed" | "locked" | "deleti
 export interface AdminUser {
   id: string; email: string; displayName: string | null; platformRole: "user" | "admin"; status: AdminStatus; createdAt: string; lastLoginAt: string | null;
   emailVerified: boolean; mfaEnabled: boolean; deletionRequestedAt: string | null; projectsCount: number;
+  /** OP-6 : option « Auto-contrôle » (activée par défaut : approbation d'un dossier produit permise et marquée). */
+  selfControlAllowed: boolean;
 }
 export interface AdminUsersPage { users: AdminUser[]; total: number; page: number; pageSize: number }
 /** `hideTest` : comptes de test des recettes (domaines réservés) masqués par le serveur (UM-31). */
@@ -282,6 +344,94 @@ export type SupportGrantsView =
   | { you: "support"; grant: SupportGrant };
 
 const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+
+// --- Organisations (phase 5, Issue #262) : espace d'organisation, sans aucun droit de projet ---------------------------
+export type OrganizationRole = "administrateur" | "membre";
+export type OrganizationStatus = "active" | "suspendue" | "close";
+export type MembershipStatus = "active" | "suspendue" | "terminee";
+export type MandateStatus = "propose" | "actif" | "refuse" | "annule" | "termine";
+export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+export type BusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
+export interface Organization { id: string; name: string; kind?: string | null; details?: string | null; status: OrganizationStatus; createdAt?: string; updatedAt?: string }
+export interface MembershipSelf { membershipId: string; role: OrganizationRole; jobTitle: string | null; status: MembershipStatus; startsOn: string; endsOn: string | null }
+export interface OrganizationCapabilities { summary: boolean; read: boolean; manage: boolean; changeStatus: boolean; refusal: string | null }
+export interface OrganizationMandate {
+  id: string; organizationId: string; projectId: string; projectName: string | null; membershipId: string; responsibilities: TeamResponsibility[];
+  status: MandateStatus; startsOn: string | null; endsOn: string | null; endReason: string | null; replacesMandateId: string | null; note: string | null;
+  proposedAt: string; respondedAt: string | null; endedAt: string | null; organizationName?: string; representativeName?: string | null;
+  /**
+   * Onglet Projets, administrateurs seuls (reliquat de la phase 5) : état côté projet du représentant — non invité,
+   * invitation en attente, participation active, terminée. Lecture seule ; null pour les autres membres.
+   */
+  projectSide?: "non_invite" | "invitation_en_attente" | "participation_active" | "terminee" | null;
+}
+export interface OrganizationDetail { organization: Organization; you: MembershipSelf & { can: OrganizationCapabilities }; administrators: { membershipId: string; name: string | null }[] }
+export interface DirectoryMember {
+  membershipId: string; personId: string; name: string | null; email?: string; role: OrganizationRole; jobTitle: string | null; status: MembershipStatus;
+  startsOn: string; endsOn: string | null; endReason: string | null; groups: { id: string; name: string }[]; you: boolean;
+}
+export interface OrganizationGroup { id: string; name: string; description: string | null; status: "active" | "archive"; members: string[] }
+export interface TemplateEntry { label: string; businessRole: string | null; responsibilities: TeamResponsibility[]; proposedRoles: BusinessRole[]; groupId?: string | null }
+export interface TemplateVersion { id: string; version: number; entries: TemplateEntry[]; note: string | null; createdAt: string; applications: { id: string; projectId: string; projectName: string | null; appliedAt: string }[] }
+export interface OrganizationTemplate { id: string; name: string; description: string | null; status: "active" | "archive"; versions: TemplateVersion[] }
+export interface ApplicationLine { index: number; label: string; personId: string | null; outcome: "creer" | "deja-present" | "non-attribue" | "non-eligible"; businessRole: string | null; responsibilities: TeamResponsibility[]; proposedRoles: BusinessRole[]; participationId?: string | null }
+export interface DepartureImpact {
+  groups: { id: string; name: string }[];
+  mandates: { id: string; projectId: string; projectName: string | null; status: MandateStatus; consequence: "termine" | "annule" }[];
+  representations: { participationId: string; projectId: string; projectName: string | null; status: string; consequence: "a-revoir" }[];
+  projectAccessChanged: false;
+}
+export interface OrganizationProjectsView {
+  projects: {
+    projectId: string; name: string | null; owned: boolean; participation: { id: string; status: string; businessRole: string | null } | null;
+    mandates: OrganizationMandate[]; representedBy: { membershipId: string; status: string }[];
+  }[];
+  yourProjects: { projectId: string; name: string; owningOrganizationId: string | null; owningIsThis: boolean }[];
+}
+
+const orgPath = (id: string, rest = "") => `/organizations/${encodeURIComponent(id)}${rest}`;
+const send = (method: string, body?: unknown): RequestInit => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+
+/** Espace d'organisation : 404 sans adhésion, 403 avec motif sinon ; jamais mis en file hors ligne. */
+export const organizationsApi = {
+  mine: () => request<{ memberships: { organization: Organization; membership: MembershipSelf }[]; mandates: OrganizationMandate[] }>("/organizations"),
+  create: (input: { name: string; kind?: string | null; details?: string | null; creationKey: string }) => request<{ organization: Organization; replayed: boolean }>("/organizations", json(input)),
+  get: (id: string) => request<OrganizationDetail>(orgPath(id)),
+  update: (id: string, input: { name?: string; kind?: string | null; details?: string | null }) => request<{ organization: Organization }>(orgPath(id), send("PATCH", input)),
+  setStatus: (id: string, status: OrganizationStatus, confirmName?: string) => request<{ organization: Organization }>(orgPath(id, "/status"), json({ status, ...(confirmName ? { confirmName } : {}) })),
+  directory: (id: string) => request<{ members: DirectoryMember[] }>(orgPath(id, "/directory")),
+  updateMembership: (id: string, membershipId: string, input: { role?: OrganizationRole; jobTitle?: string | null; status?: "active" | "suspendue" }) =>
+    request<{ membership: MembershipSelf }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}`), send("PATCH", input)),
+  departure: (id: string, membershipId: string) => request<{ membershipId: string; status: MembershipStatus; impact: DepartureImpact }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}/departure`)),
+  endMembership: (id: string, membershipId: string) => request<{ ended: boolean; impact: DepartureImpact }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}/end`), json({})),
+  invitations: (id: string) => request<{ invitations: InvitationView[] }>(orgPath(id, "/invitations")),
+  invite: (id: string, input: { email: string; role: OrganizationRole; jobTitle?: string | null }, locale: Langue = LANGUE) =>
+    request<InvitationCreated>(orgPath(id, "/invitations"), json({ ...input, locale })),
+  cancelInvitation: (id: string, invitationId: string) => request<void>(orgPath(id, `/invitations/${encodeURIComponent(invitationId)}`), send("DELETE")),
+  groups: (id: string) => request<{ groups: OrganizationGroup[]; projectAccess: "aucun"; message: string }>(orgPath(id, "/groups")),
+  createGroup: (id: string, input: { name: string; description?: string | null }) => request<{ group: OrganizationGroup }>(orgPath(id, "/groups"), json(input)),
+  updateGroup: (id: string, groupId: string, input: { name?: string; description?: string | null; status?: "active" | "archive" }) => request<{ group: OrganizationGroup }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}`), send("PATCH", input)),
+  addToGroup: (id: string, groupId: string, membershipId: string) => request<{ added: boolean; message: string }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(membershipId)}`), send("PUT")),
+  removeFromGroup: (id: string, groupId: string, membershipId: string) => request<{ removed: boolean; message: string }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(membershipId)}`), send("DELETE")),
+  templates: (id: string) => request<{ templates: OrganizationTemplate[] }>(orgPath(id, "/templates")),
+  createTemplate: (id: string, input: { name: string; description?: string | null; entries: TemplateEntry[]; note?: string | null }) => request<{ template: OrganizationTemplate }>(orgPath(id, "/templates"), json(input)),
+  createVersion: (id: string, templateId: string, input: { entries: TemplateEntry[]; note?: string | null }) => request<{ version: TemplateVersion; retroactive: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions`), json(input)),
+  previewTemplate: (id: string, templateId: string, version: number, input: { projectId: string; assignments: Record<string, string | null> }) =>
+    request<{ version: number; plan: ApplicationLine[]; alreadyApplied: string | null; grantsAccess: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions/${version}/preview`), json(input)),
+  applyTemplate: (id: string, templateId: string, version: number, input: { projectId: string; assignments: Record<string, string | null> }) =>
+    request<{ application: { id: string; plan: ApplicationLine[]; appliedAt: string }; replayed: boolean; grantsAccess: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions/${version}/apply`), json(input)),
+  projects: (id: string) => request<OrganizationProjectsView>(orgPath(id, "/projects")),
+  recordParticipation: (id: string, projectId: string) => request<{ participationId: string; created: boolean }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/participation`), send("PUT", {})),
+  declareOwner: (id: string, projectId: string) => request<{ owningOrganizationId: string | null; accessChanged: false }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/owner`), send("PUT")),
+  clearOwner: (id: string, projectId: string) => request<{ owningOrganizationId: string | null; accessChanged: false }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/owner`), send("DELETE")),
+  proposeMandate: (id: string, input: { projectId: string; membershipId: string; responsibilities?: TeamResponsibility[]; replacesMandateId?: string; note?: string | null }) =>
+    request<{ mandate: OrganizationMandate; grantsAccess: false }>(orgPath(id, "/mandates"), json(input)),
+  cancelMandate: (id: string, mandateId: string) => request<{ status: MandateStatus }>(orgPath(id, `/mandates/${encodeURIComponent(mandateId)}/cancel`), json({})),
+  endMandate: (id: string, mandateId: string) => request<{ status: MandateStatus }>(orgPath(id, `/mandates/${encodeURIComponent(mandateId)}/end`), json({})),
+  acceptMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/accept`, json({})),
+  declineMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/decline`, json({})),
+  resignMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/resign`, json({})),
+};
 /** Langue des courriels déclenchés par l'appel (UM-30) : celle de l'interface, jamais celle du navigateur. */
 const withLocale = <T extends object>(body: T, locale: Langue = LANGUE) => ({ ...body, locale });
 function query(params: Record<string, string | number | undefined>): string {
@@ -305,10 +455,14 @@ export const accountApi = {
   requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", json(withLocale({}))),
   cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
   lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
-  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null }>("/auth/invitations/accept", json({ token })),
+  acceptInvitation: (token: string) => request<AcceptedInvitation>("/auth/invitations/accept", json({ token })),
+  // Invitations de projet reçues, dans l'application (phase 3) : acceptation ou refus depuis la notification.
+  receivedInvitations: () => request<{ invitations: ReceivedInvitation[]; emailVerified: boolean }>("/notifications/invitations"),
+  acceptInvitationById: (id: string) => request<AcceptedInvitation>(`/notifications/invitations/${encodeURIComponent(id)}/accept`, json({})),
+  declineInvitationById: (id: string) => request<{ declined: boolean }>(`/notifications/invitations/${encodeURIComponent(id)}/decline`, json({})),
   declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
   activate: (input: { token: string; password: string; displayName?: string }) =>
-    request<{ user: CurrentUser; projectId: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
+    request<{ user: CurrentUser; projectId: string | null; organizationId?: string | null; reviewPackageId?: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
   changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json(withLocale({ currentPassword, newPassword }))),
   sessions: () => request<{ sessions: AccountSession[] }>("/auth/me/sessions"),
   revokeSession: (id: string) => request<void>(`/auth/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
@@ -324,6 +478,8 @@ export const accountApi = {
   adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize, hideTest: f.hideTest ? "true" : "false" })}`),
   adminUser: (id: string) => request<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}`),
   adminSetRole: (id: string, role: "user" | "admin") => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  /** OP-6 : option « Auto-contrôle » d'un compte. */
+  adminSetSelfControl: (id: string, allowed: boolean) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/self-control`, { method: "PATCH", body: JSON.stringify({ allowed }) }),
   adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, json(withLocale({}))),
   adminReactivate: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
   adminRevokeSessions: (id: string) => request<{ revoked: number }>(`/admin/users/${encodeURIComponent(id)}/revoke-sessions`, { method: "POST" }),
@@ -758,8 +914,8 @@ export interface StudioPackageDocument {
   revisionId: string;
   revisionShort: string;
   status: "diffuse" | "retire";
-  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC) ; absent : complet (serveur antérieur). */
-  contenu?: "complet" | "dessin-2d";
+  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC), ou dossier de conception (lot PUB) ; absent : complet (serveur antérieur). */
+  contenu?: "complet" | "dessin-2d" | "dossier-conception";
   diffusedAt: string | null;
   diffusedBy: string | null;
   withdrawnAt: string | null;
@@ -780,9 +936,14 @@ export interface ProjectComment {
   atelierRevision?: number | null;
   authorEmail: string;
   body: string;
+  /** Audience (écart E1) : `equipe` = propriétaire et éditeurs ; `projet` = tous les membres, lecteurs compris. */
+  audience: CommentAudience;
   createdAt: string;
   mine: boolean;
 }
+
+/** Audience d'un commentaire ou d'une observation à l'intérieur du projet, décidée et filtrée par le serveur. */
+export type CommentAudience = "equipe" | "projet";
 
 export interface RevisionEvent {
   at: string;
@@ -822,7 +983,7 @@ export interface HistoryView {
 }
 
 export interface CollaborationView {
-  access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
+  access: { ownerEmail: string; you: string; role: ProjectRole; canExport: boolean; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
   sync: { modelRevision: number; journalEntries: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
@@ -929,7 +1090,8 @@ export interface StudioContext {
   derivedFrom?: StudioProvenance | null;
 }
 /** Provenance d'une variante dérivée (même étude). */
-export interface StudioProvenance { variantId: string; revisionId: string }
+/** `mode: "copie"` : copie indépendante ; `identites` (nouvel identifiant → source) avec le contexte d'une variante seulement. */
+export interface StudioProvenance { variantId: string; revisionId: string; mode?: "copie"; identites?: Record<string, string> }
 /** Étude de Studio telle que la liste du projet la renvoie. */
 export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase?: StudioPhaseWorkflow | null }
 /** État de l'étude exemple d'un projet issu de l'exemple P.118 (marquage enregistré par le serveur). */
@@ -953,7 +1115,8 @@ export interface StudioStudyDetail {
   canManage: boolean;
 }
 /** Source d'une dérivation : variante de l'étude et révision (tête si absente). */
-export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string }
+/** Dérivation : `mode` `version` (défaut, identifiants conservés) ou `copie` (copie indépendante, nouvelles identités). */
+export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string; mode?: "version" | "copie" }
 /** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
 /** Comparaison de deux révisions d'une étude : côtés résolus (tête explicite) et différence pure du modèle. */
@@ -962,6 +1125,42 @@ export interface StudioComparison {
   to: { variantId: string; revisionId: string };
   difference: StudioDifferenceDocuments;
 }
+/** Fusion de variantes (lot W3-D, X.1-06) : aperçu à trois voies (`studio-fusion/1`), sans le document fusionné. */
+export type StudioCoteFusion = "source" | "cible";
+export interface StudioConflitFusion {
+  id: string;
+  type: "modification-concurrente" | "suppression-modification" | "collision-identifiant" | "combinaison-invalide" | "reference-cassee";
+  cles: string[];
+  propriete: string | null;
+  supprimeDans?: StudioCoteFusion;
+  reference?: { de: string; vers: string; nature: string };
+  etats: { base: string | null; source: string | null; cible: string | null };
+  valeurs?: { base: unknown; source: unknown; cible: unknown };
+  resolution: StudioCoteFusion | null;
+}
+export interface StudioApercuFusion {
+  schema: "studio-fusion/1";
+  changementsSource: { cle: string; etat: "ajoute" | "supprime" | "modifie" }[];
+  changementsCible: { cle: string; etat: "ajoute" | "supprime" | "modifie" }[];
+  appliques: { cle: string; etat: "ajoute" | "supprime" | "modifie"; origine: "source" | "mixte" | "resolution" }[];
+  conflits: StudioConflitFusion[];
+  nonResolus: string[];
+  resolutionsInconnues: string[];
+  provisoire: boolean;
+  valide: boolean;
+  erreur: { path: string; message: string } | null;
+  empreinte: string | null;
+  aFusionner: boolean;
+}
+export interface StudioFusionLue {
+  cible: { variantId: string; revisionId: string };
+  source: { variantId: string; revisionId: string };
+  ancetre: { variantId: string; revisionId: string };
+  canWrite: boolean;
+  apercu: StudioApercuFusion;
+}
+export interface StudioFusionCorps { requestId: string; sourceVariantId: string; sourceRevisionId: string; baseRevisionId: string; empreinte: string; resolutions?: Record<string, StudioCoteFusion> }
+export type StudioFusionEcrite = StudioContext & { replayed: boolean; fusion: { type: "fusion" | "annulation" } & Record<string, unknown> };
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
@@ -970,7 +1169,7 @@ const studioArchives = (archives?: boolean) => (archives ? "?archives=1" : "");
  * Adresse d'export d'une variante (pièce jointe SVG, DXF ou IFC produite par le serveur, même origine : le cookie de session
  * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
  */
-export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc", revisionId?: string | null): string {
+export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step", revisionId?: string | null): string {
   return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
 }
 /** Commentaire d'une variante (règles de la Collaboration : tout membre commente, l'auteur seul supprime). */
@@ -988,10 +1187,12 @@ export interface StudioComment {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
+  /** Audience du fil (écart E1), absente d'un serveur plus ancien (= tout le projet). */
+  audience?: CommentAudience;
   /** Observation issue de ce commentaire (même identifiant), null sinon (absent d'un serveur plus ancien). */
   observation?: StudioObservation | null;
 }
-export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
+export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string; audience?: CommentAudience }
 /** Observation Studio (E.2) : statut, responsable, échéance et journal, relus du serveur qui fait autorité. */
 export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
 export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
@@ -1043,32 +1244,52 @@ export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" 
 /** Dimensions distinctes (lot E.4) : travail, diffusion ; l'actualité est `freshness`. */
 export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
 export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
-export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf"; fileName: string; mime: string; size: number; sha256: string }
+export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf" | "json"; fileName: string; mime: string; size: number; sha256: string }
 /** Manifeste figé multi-sources d'un dossier : sources coordonnées, métadonnées gelées, empreintes des documents. */
 export interface StudioPublicationManifest {
   schema: "studio-publication-manifest/1";
   sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
+  /** Lot PUB (IF-009) : intention / usage déclaré. */
+  usage?: string;
+  /** IF-009 : règles, rapports de contrôle, observations bloquantes et leur résolution. */
+  controles?: {
+    regles: { type: "exigences" | "metre"; id: string; version: string }[];
+    rapports: { controleId: string; variantId: string; revisionId: string; version: number | null; execution: string; conclusion: string | null; documentHash: string }[];
+    observations: { issueId: string; observationId: string; variantId: string; gravite: "bloquante"; statut: string; resolution: "resolue" | "derogee" | "ouverte" }[];
+  };
+  /** EX-074 / EX-076 : dossier de conception publié et ses pièces. */
+  dossier?: {
+    id: string; titre: string; empreinte: string;
+    pieces: { ordre: number; documentId: string; nature: "feuille" | "vue-coupe"; origine: "dessin-2d" | "derive-maquette"; presentation: "document-independant" | "extrait-synchronise"; sources: { variantId: string; revisionId: string; documentHash: string }[]; empreinte: string }[];
+  };
 }
 export type StudioManifestDrift =
   | { type: "source"; role: "principale" | "coordonnee"; variantId: string; revisionFigee: string; revisionCourante: string | null }
   | { type: "meta"; champ: string; figee: string; courante: string }
-  | { type: "documents"; formats: string[] };
+  | { type: "documents"; formats: string[] }
+  | { type: "controles" };
 export interface StudioPublicationEvent {
   id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
   workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;
   author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+  /** Délégation employée par cette décision (EX-085) ; absente ou null : droit propre de l'auteur. */
+  delegationId?: string | null;
+  /** OP-6 : approbation marquée auto-contrôle ; null hors approbation et avant le lot. */
+  selfControl?: boolean | null;
 }
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string; status: StudioPublicationStatus;
-  /** Contenu (E.3-07) : complet, ou dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC). */
-  contenu?: "complet" | "dessin-2d";
+  /** Contenu (E.3-07) : complet, ou dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC), ou dossier de conception (lot PUB). */
+  contenu?: "complet" | "dessin-2d" | "dossier-conception";
   workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
   manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
-  approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null } | null;
+  approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null; delegationId?: string | null } | null;
+  /** OP-6 : approbation marquée auto-contrôle (true), non (false), ou null (avant le lot, ou non approuvée). */
+  approvedSelfControl?: boolean | null;
   diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; manifestHash?: string | null; files: StudioPackageFile[] } | null;
   headRevisionId: string; freshness: "a-jour" | "perimee"; drift: StudioManifestDrift[]; replacedBy: string | null;
   /** Documents régénérés comparés, ou non vérifiés (liste sans régénération en cache) ; l'actualité ne vaut alors que pour les sources et les noms. */
@@ -1076,9 +1297,26 @@ export interface StudioPublication {
   replacement: { publicationId: string; by: { id: string; email: string } | null; at: string | null } | null;
   withdrawal: { by: { id: string; email: string }; at: string; comment: string | null } | null;
   allowed: StudioPublicationTransition[];
+  /** Délégation que le compte, sans droit propre, peut employer pour approuver ou refuser (EX-085) ; le serveur revérifie. */
+  delegation?: { id: string; delegator: { id: string; email: string }; endsAt: string; reason: string } | null;
   events?: StudioPublicationEvent[];
 }
-export interface StudioPublicationTransitionInput { comment?: string; manifestHash?: string; revisionId?: string; documentHash?: string }
+export interface StudioPublicationTransitionInput { comment?: string; manifestHash?: string; revisionId?: string; documentHash?: string; delegationId?: string }
+/** Délégation d'approbation (EX-085) : portée, période (début inclus, fin exclue), délégant, délégué, motif, journal. */
+export type StudioDelegationScopeType = "projet" | "etude" | "variante" | "publication";
+export interface StudioDelegation {
+  id: string; projectId: string; delegator: { id: string; email: string }; delegate: { id: string; email: string };
+  scope: { type: StudioDelegationScopeType; id: string | null }; startsAt: string; endsAt: string; reason: string; createdAt: string;
+  state: "a-venir" | "active" | "expiree" | "revoquee";
+  revocation: { by: { id: string; email: string }; at: string; reason: string } | null;
+  canRevoke: boolean;
+  events: { id: string; action: "creer" | "revoquer" | "employer"; actor: { id: string; email: string }; publicationId: string | null; publicationAction: "approuver" | "refuser" | null; comment: string | null; createdAt: string }[];
+}
+export interface StudioDelegationInput { delegateId: string; scopeType: StudioDelegationScopeType; scopeId?: string; startsAt: string; endsAt: string; reason: string; requestId?: string }
+/** OP-6 : autre approbateur nommé (sans e-mail dans l'espace de revue externe). */
+export interface ApprobateurPossible { name: string | null; role: "proprietaire" | "approbateur" | "approbateur-revue" }
+/** OP-6 : aperçu de l'auto-contrôle (Studio et revue externe) ; `approvers` renseigné quand l'approbation serait refusée. */
+export interface ControleApprobation { autoControle: boolean; revisionsAuteur: number; soumisParLui: boolean; autorise: boolean; approvers: ApprobateurPossible[] }
 const studioPublicationPath = (p: string, s: string, id: string) => `${studioStudyPath(p, s)}/publications/${encodeURIComponent(id)}`;
 /** Fichier figé d'un paquet diffusé (téléchargement direct). */
 export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
@@ -1099,8 +1337,22 @@ export interface StudioSheet {
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
   files: { svg: string; pdf: string };
 }
+/** Vue de coupe enregistrée (EX-075, lot PUB), recalculée par le serveur depuis sa révision épinglée. */
+export interface StudioVueCoupeDefinitionSaisie {
+  nom: string; niveau: { repere: "local-3d"; z: number }; cadrage: { xMin: number; yMin: number; xMax: number; yMax: number }; echelle: number;
+  visibilite?: { calques: string[] }; styles: { trait: "fin" | "moyen" | "fort"; hachure: "aucune" | "diagonale" | "croisee" };
+  annotations: { id: string; type: "texte" | "repere"; position: { x: number; y: number }; texte: string }[];
+}
+export interface StudioSectionView {
+  id: string; studyId: string; variantId: string; revisionId: string; headRevisionId: string; freshness: "a-jour" | "perimee";
+  definition: StudioVueCoupeDefinitionSaisie;
+  vue: { schema: "studio-vue-coupe/1"; empreinteSection: string; empreinte: string; horsCadrage: number; coupe: { segments: unknown[]; sources: { id: string; segments: number }[]; exactsNonCoupes?: string[] } } | null;
+  error: string | null; createdBy: string; createdAt: string; updatedAt: string;
+}
 export interface StudioDossierInput {
   title: string; sheetIds: string[]; quantities?: { variantId: string; revisionId?: string } | null; includeFidelity?: boolean;
+  /** EX-076 (lot PUB) : vues de coupe de la maquette réunies au dossier. */
+  sectionViewIds?: string[];
   /** Modification seulement : réépingle le métré sur la révision envoyée et reprend les ajustements enregistrés depuis. */
   repinQuantities?: boolean;
 }
@@ -1109,14 +1361,27 @@ export interface StudioDossier {
   quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
   /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
   quantitiesAdjustmentSeq: number | null;
+  /** EX-076 (lot PUB) : vues de coupe jointes ; absent d'un serveur antérieur. */
+  sectionViewIds?: string[];
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
   files: { pdf: string; json: string };
 }
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
 export interface StudioGroupeOutilsVue { id: string; nom: string; outils: string[] }
-export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[] }
+export interface StudioToolPreferencesInput {
+  profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[];
+  /** Raccourcis personnels (EX-034) : capacité → combinaison ; absent : inchangés. */
+  raccourcis?: Record<string, string>;
+  /** Ordre des capacités (EX-034) ; absent : inchangé. */
+  ordre?: string[];
+}
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
   groupes: StudioGroupeOutilsVue[];
+  /** Profil persistant (EX-034) : identifiant stable (null tant que rien n'est enregistré), propriétaire, version, provenance. */
+  profileId?: string | null;
+  proprietaire?: string | null;
+  version?: number;
+  importeDe?: string | null;
   /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
   retires: string[];
   /** Version du manifeste du catalogue d'outils du serveur. */
@@ -1124,6 +1389,13 @@ export interface StudioToolPreferences extends StudioToolPreferencesInput {
   updatedAt: string | null;
 }
 /** Catalogue autorisé : droit réel d'exécution de chaque outil pour le compte dans ce projet (B.2-06). */
+/** Fichier de profil d'outils échangé (EX-034, format `fadi-studio-profil/1`). */
+export interface StudioProfilExporte {
+  format: "fadi-studio-profil/1"; profileId: string; proprietaire?: string; version: number; manifeste?: string;
+  profil: string; favoris: string[]; personnel: string[]; groupes: StudioGroupeOutilsVue[]; ordre: string[]; raccourcis: Record<string, string>;
+}
+/** Conflit de raccourci détecté à l'import (EX-034). */
+export interface StudioConflitRaccourci { raccourci: string; capacite: string; type: "doublon" | "registre" | "editeur" | "navigateur"; avec: string }
 export interface StudioCatalogueAutorise {
   manifeste: string;
   role: string;
@@ -1152,6 +1424,10 @@ export const api = {
   studioRevision: (p: string, s: string, v: string, r: string) => request<StudioContext>(`${studioVariantPath(p, s, v)}/revisions/${encodeURIComponent(r)}`),
   /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
   studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
+  /** Fusion de variantes (lot W3-D) : aperçu (lecture), application (révision `variant-merge` de la cible), annulation. */
+  studioFusionApercu: (p: string, s: string, v: string, sourceVariantId: string, resolutions?: Record<string, StudioCoteFusion>) => request<StudioFusionLue>(`${studioVariantPath(p, s, v)}/fusion/apercu`, { method: "POST", body: JSON.stringify({ sourceVariantId, ...(resolutions ? { resolutions } : {}) }) }),
+  studioFusionAppliquer: (p: string, s: string, v: string, corps: StudioFusionCorps) => request<StudioFusionEcrite>(`${studioVariantPath(p, s, v)}/fusion`, { method: "POST", body: JSON.stringify(corps) }),
+  studioFusionAnnuler: (p: string, s: string, v: string, requestId: string, revisionId: string) => request<StudioFusionEcrite>(`${studioVariantPath(p, s, v)}/fusion/annulation`, { method: "POST", body: JSON.stringify({ requestId, revisionId }) }),
   /** Fils de commentaires de la variante, dans l'ordre des fils (origine puis réponses). */
   studioComments: (p: string, s: string, v: string) => request<StudioCommentsView>(`${studioVariantPath(p, s, v)}/comments`),
   /** Promotion d'un commentaire d'origine en observation (auteur ou propriétaire). */
@@ -1161,6 +1437,9 @@ export const api = {
   /** Nouveau commentaire ou réponse ; `requestId` : un renvoi rend le même commentaire, sans doublon. */
   createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
   deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  /** Audience d'un fil Studio (auteur ou propriétaire), journalisée par le serveur. */
+  setStudioCommentAudience: (p: string, s: string, v: string, id: string, audience: CommentAudience) =>
+    request<StudioComment>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ audience }) }),
   studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   /** Étapes du Parcours rattachées à l'étude et étapes du projet proposées (libellés relus du serveur). */
   studioStudySteps: (p: string, s: string) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`),
@@ -1173,9 +1452,15 @@ export const api = {
   /** Détail d'une publication avec son journal. */
   studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
   /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
-  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d"; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d" | "dossier-conception"; dossierId?: string; presentations?: Record<string, "document-independant" | "extrait-synchronise">; usage?: string; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
   /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
+  /** Délégations d'approbation visibles (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué. */
+  studioDelegations: (p: string) => request<{ delegations: StudioDelegation[] }>(`/projects/${encodeURIComponent(p)}/studio/delegations`),
+  createStudioDelegation: (p: string, input: StudioDelegationInput) => request<StudioDelegation & { replayed: boolean }>(`/projects/${encodeURIComponent(p)}/studio/delegations`, { method: "POST", body: JSON.stringify(input) }),
+  revokeStudioDelegation: (p: string, id: string, reason: string) => request<StudioDelegation>(`/projects/${encodeURIComponent(p)}/studio/delegations/${encodeURIComponent(id)}/revoquer`, { method: "POST", body: JSON.stringify({ reason }) }),
+  /** OP-6 : aperçu de l'auto-contrôle de l'utilisateur courant avant d'approuver. */
+  studioApprovalCheck: (p: string, s: string, id: string) => request<ControleApprobation>(`${studioPublicationPath(p, s, id)}/controle-approbation`),
   /** Feuilles composées de l'étude (E.3-02), provenance recalculée par le serveur. */
   studioSheets: (p: string, s: string) => request<{ sheets: StudioSheet[]; canWrite: boolean }>(`${studioStudyPath(p, s)}/sheets`),
   /** Nouvelle feuille sur une révision de la variante (tête par défaut) ; elle ne modifie jamais la planche. */
@@ -1187,6 +1472,12 @@ export const api = {
   studioDossiers: (p: string, s: string) => request<{ dossiers: StudioDossier[] }>(`${studioStudyPath(p, s)}/dossiers`),
   createStudioDossier: (p: string, s: string, input: StudioDossierInput & { requestId?: string }) => request<StudioDossier & { replayed: boolean }>(`${studioStudyPath(p, s)}/dossiers`, { method: "POST", body: JSON.stringify(input) }),
   updateStudioDossier: (p: string, s: string, id: string, input: Partial<StudioDossierInput>) => request<StudioDossier>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  /** Vues de coupe enregistrées de l'étude (EX-075). */
+  studioSectionViews: (p: string, s: string) => request<{ vues: StudioSectionView[] }>(`${studioStudyPath(p, s)}/section-views`),
+  createStudioSectionView: (p: string, s: string, v: string, input: { definition: StudioVueCoupeDefinitionSaisie; revisionId?: string }) => request<StudioSectionView>(`${studioVariantPath(p, s, v)}/section-views`, { method: "POST", body: JSON.stringify(input) }),
+  /** Définition, annotation propre (sans toucher au modèle) ou réépinglage explicite d'une vue de coupe. */
+  updateStudioSectionView: (p: string, s: string, id: string, input: { definition?: StudioVueCoupeDefinitionSaisie; revisionId?: string; annotation?: { op: "ajouter" | "modifier"; annotation: StudioVueCoupeDefinitionSaisie["annotations"][number] } | { op: "retirer"; id: string } }) =>
+    request<StudioSectionView>(`${studioStudyPath(p, s)}/section-views/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
   /** Dossier assemblé (feuilles, métré, fidélité, empreinte), recalculé par le serveur. */
   studioDossier: (p: string, s: string, id: string) => request<StudioDossier & { assembly: StudioDossierConception }>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`),
   /** Paquets diffusés du projet (pour le module Documents). */
@@ -1195,6 +1486,13 @@ export const api = {
   studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
   /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
   setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
+  /** Fichier de profil du compte (EX-034) ; 404 tant qu'aucun profil n'est enregistré. */
+  exportStudioProfil: (p: string) => request<StudioProfilExporte>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/export`),
+  /**
+   * Importe un fichier de profil (EX-033, EX-034) : 403 `permission_non_conferee` (capacité exigeant un droit absent),
+   * 409 `shortcut_conflict` (conflits nommés, rien d'écrit) ; `resolution: "ecarter"` importe sans les raccourcis en conflit.
+   */
+  importStudioProfil: (p: string, profil: unknown, resolution?: "ecarter") => request<StudioToolPreferences & { ecartes: StudioConflitRaccourci[] }>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/import`, { method: "POST", body: JSON.stringify(resolution ? { profil, resolution } : { profil }) }),
   /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
   studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>
@@ -1367,14 +1665,28 @@ export const api = {
   getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),
   getHistory: (projectId?: string, signal?: AbortSignal) => request<HistoryView>(projectId ? `/projects/${encodeURIComponent(projectId)}/history` : "/projects/history", { signal }),
   listComments: (projectId: string, stepNumber: number | null) => request<ProjectComment[]>(`/projects/${projectId}/collaboration/comments${stepNumber === null ? "" : `?step=${stepNumber}`}`),
-  addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null, atelierRevision: number | null = null) =>
-    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId, ...(atelierRevision !== null ? { atelierRevision } : {}) }) }),
+  addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null, atelierRevision: number | null = null, audience?: CommentAudience) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId, ...(atelierRevision !== null ? { atelierRevision } : {}), ...(audience ? { audience } : {}) }) }),
+  /** Audience d'un fil (auteur ou propriétaire), journalisée par le serveur. */
+  setCommentAudience: (projectId: string, commentId: string, audience: CommentAudience) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "PATCH", body: JSON.stringify({ audience }) }),
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
-  /** Compte existant : 201 `ProjectMember` ; adresse sans compte : 202 `InvitationCreated` (UM-3). */
-  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale({ email, role })) }),
+  /** Phase 3 (OP-D2 a) : 202 `InvitationCreated`, à accepter par l'identité visée ; compte déjà membre : 200 `ProjectMember` (rôle changé). */
+  inviteMember: (projectId: string, input: InvitationInput) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale(input)) }),
+  /** Aperçu de l'accès résultant, sans rien écrire (phase 3). */
+  previewInvitation: (projectId: string, input: InvitationInput) => request<{ preview: InvitationPreview }>(`/projects/${projectId}/members/preview`, { method: "POST", body: JSON.stringify(input) }),
+  /** Représentant mandaté d'une organisation partie (reliquat de la phase 5) : aperçu puis invitation, propriétaire seulement. */
+  previewMandateInvitation: (projectId: string, mandateId: string, input: MandateInvitationInput) =>
+    request<{ preview: InvitationPreview }>(`/projects/${projectId}/members/mandates/${encodeURIComponent(mandateId)}/preview`, { method: "POST", body: JSON.stringify(input) }),
+  inviteRepresentative: (projectId: string, mandateId: string, input: MandateInvitationInput) =>
+    request<InvitationCreated>(`/projects/${projectId}/members/mandates/${encodeURIComponent(mandateId)}`, { method: "POST", body: JSON.stringify(withLocale(input)) }),
+  /** Échéance de l'accès d'un membre (null : sans échéance). */
+  setMemberAccessExpiry: (projectId: string, userId: string, accessExpiresAt: string | null) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ accessExpiresAt }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  /** Export accordé ou retiré à un lecteur (propriétaire seulement, journalisé). */
+  setMemberExport: (projectId: string, userId: string, canExport: boolean) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ canExport }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */
   transferOwnership: (projectId: string, userId: string) => request<MembersView>(`/projects/${projectId}/members/${encodeURIComponent(userId)}/propriete`, { method: "POST" }),
@@ -1641,3 +1953,205 @@ export interface ReferenceExterneEtat {
   derniere: { id: string; nom: string; revision: number; empreinte: string; createdAt: string } | null;
   representation: { traits: { a: { x: number; y: number }; b: { x: number; y: number }; coupe: boolean }[]; empreinte: string; niveauSourceNom: string | null } | null;
 }
+
+
+// --- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) ------------------------------------------
+
+export type ComMode = "contexte" | "groupe" | "direct";
+export type ComAudience = "participants" | "equipe" | "projet";
+export type ComRefType = "etape" | "document" | "fichier" | "studio-variante" | "observation-studio" | "message" | "demande" | "revision-atelier";
+export interface ComRef { type: ComRefType; id: string }
+/** Référence résolue pour vous : libellé seulement si l'élément vous est accessible (COM-D8). */
+export interface ComRefResolue extends ComRef { label: string | null; accessible: boolean; statut?: string; lien?: Record<string, string> }
+export interface ComConversation {
+  id: string;
+  mode: ComMode;
+  title: string;
+  audience: ComAudience;
+  /** « Visible par : … », affiché avant l'envoi (COM-R1). */
+  audienceLabel: string;
+  context: { type: string; ref: string | null; revision: string | null; label: string | null; accessible: boolean; lien?: Record<string, string> } | null;
+  steward: { id: string; email: string };
+  destinataires: number;
+  lastMessageAt: string;
+  createdAt: string;
+  nonLus: number;
+  peut: { ecrire: boolean; gerer: boolean };
+}
+export interface ComMembre { id: string; email: string; role: ProjectRole }
+export interface ComMessage {
+  id: string;
+  author: { id: string; email: string; aAcces: boolean };
+  body: string | null;
+  nature: "message" | "partage" | "action";
+  replyToId: string | null;
+  refs: ComRefResolue[];
+  mentions: { id: string; email: string }[];
+  ackRequired: boolean;
+  urgent: boolean;
+  capturedAt: string | null;
+  createdAt: string;
+  editedAt: string | null;
+  withdrawn: boolean;
+  versions: number;
+  mine: boolean;
+  partage: { depuis: string } | null;
+  /** Photos jointes (lot COM-13) : servies par `comApi.urlPiece`, jamais à l'accès support. */
+  pieces: ComPiece[];
+  /** Épingle sur le plan d'une révision exacte (repère local, mètres). */
+  epingle: (ComEpingle & { variante: string | null }) | null;
+  /** Position déclarée par l'auteur (repère geographic, WGS84). */
+  localisation: ComLocalisation | null;
+  moi: { openedAt: string | null; acknowledgedAt: string | null };
+  remise: { destinataires: number; ouverts: number; accuses: number; enAttente: string[] } | null;
+}
+export interface ComConversationDetail extends ComConversation {
+  messages: ComMessage[];
+  /** Messages plus anciens que la fenêtre renvoyée (les plus récents seulement sont lus). */
+  anterieurs: number;
+  participants: { id: string; email: string; addedAt: string; historyFrom: string | null; removedAt: string | null; aAcces: boolean }[];
+  destinatairesListe: string[];
+  journal: { id: number; action: string; acteur: string; at: string; detail: Record<string, unknown> }[];
+}
+export interface ComPiece { id: string; mime: string; width: number; height: number; size: number }
+export interface ComEpingle { type: "studio-variante"; studyId: string; variantId: string; revisionId: string; point: { x: number; y: number }; repere: "local"; objetIds: string[] }
+export interface ComLocalisation { repere: "geographic"; lat: number; lon: number; precisionM: number | null; source: "appareil"; captureeLe: string | null }
+export interface ComPlan { studyId: string; variantId: string; revisionId: string; tete: boolean; variante: string; svg: string; objets: string[] }
+export interface ComMessageInput {
+  body: string;
+  replyToId?: string | null;
+  refs?: ComRef[];
+  mentions?: string[];
+  ackRequired?: boolean;
+  urgent?: boolean;
+  clientRequestId?: string;
+  capturedAt?: string;
+  pieces?: string[];
+  epingle?: { studyId: string; variantId: string; revisionId: string; point: { x: number; y: number }; objetIds?: string[] };
+  localisation?: { lat: number; lon: number; precisionM?: number | null; captureeLe?: string | null };
+}
+export interface ComApercuPartage { cible: { id: string; title: string; audienceLabel: string }; destinataires: string[]; contenu: { id: string; auteur: string; at: string; texte: string; photos: string[] }[]; empreinte: string }
+export type ComActionInput =
+  | { type: "demande"; responderId: string; audience: CommentAudience; echeance?: string | null; question?: string }
+  | { type: "observation-studio"; studyId: string; variantId: string; responsableId: string; audience: CommentAudience; body?: string };
+export interface ComApercuAction { type: string; audienceLabel: string; destinataires: string[]; contenu: string; empreinte: string }
+export type DemandeStatut = "ouverte" | "repondue" | "close";
+export interface Demande {
+  id: string;
+  question: string;
+  refs: ComRefResolue[];
+  requester: { id: string; email: string };
+  responder: { id: string; email: string; aAcces: boolean };
+  echeance: string | null;
+  enRetard: boolean;
+  statut: DemandeStatut;
+  audience: CommentAudience;
+  sourceMessageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  peut: { repondre: boolean; cloturer: boolean; rouvrir: boolean; reattribuer: boolean };
+  journal?: { id: number; action: string; acteur: string; body: string | null; de: string | null; vers: string | null; at: string }[];
+}
+export interface ElementBoite {
+  id: string;
+  kind: "message" | "mention" | "accuse" | "demande-a-repondre" | "demande-repondue";
+  at: string;
+  projectId: string;
+  projectCode: string;
+  conversationId: string | null;
+  demandeId: string | null;
+  titre: string;
+  texte: string;
+  urgent: boolean;
+  enRetard: boolean;
+}
+export interface ResponsabilitesPersonne {
+  userId: string;
+  email: string;
+  aAcces: boolean;
+  role: ProjectRole | null;
+  demandesARepondre: { id: string; question: string; enRetard: boolean }[];
+  demandesOuvertes: { id: string; question: string; statut: string }[];
+  conversationsAnimees: { id: string; title: string }[];
+  accusesAttendus: { messageId: string; conversation: string }[];
+}
+
+export type FamilleActivite = "message" | "demande" | "observation" | "tache" | "decision" | "revue" | "diffusion";
+export type FiltreActivite = "tout" | "a-traiter" | "questions-ouvertes" | "messages" | "demandes" | "observations" | "revues" | "decisions";
+export interface EntreeActivite {
+  id: string;
+  famille: FamilleActivite;
+  libelle: string;
+  at: string;
+  capturedAt: string | null;
+  auteur: { id: string; email: string };
+  titre: string;
+  texte: string;
+  lien: { conversationId?: string; demandeId?: string; studyId?: string; variantId?: string };
+  aTraiter: boolean;
+}
+export interface RevueLiee {
+  id: string; title: string; statut: "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire"; studyId: string; variantId: string; etude: string; variante: string; revisionId: string;
+  preparePar: string; approuvePar: string | null; approuveLe: string | null; diffusePar: string | null; diffuseLe: string | null; majLe: string;
+}
+
+const comBase = (projectId: string) => `/projects/${encodeURIComponent(projectId)}/com`;
+const corpsJson = (body: unknown) => ({ body: JSON.stringify(body) });
+
+export const comApi = {
+  conversations: (projectId: string, contexte?: string) => request<{ conversations: ComConversation[]; membres: ComMembre[] }>(`${comBase(projectId)}/conversations${contexte ? `?contexte=${encodeURIComponent(contexte)}` : ""}`),
+  creer: (projectId: string, input: { mode: ComMode; title?: string; audience?: ComAudience; participantIds?: string[]; context?: { type: string; ref?: string | null; revision?: string | null } }) =>
+    request<ComConversation>(`${comBase(projectId)}/conversations`, { method: "POST", ...corpsJson(input) }),
+  conversation: (projectId: string, id: string) => request<ComConversationDetail>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}`),
+  lu: (projectId: string, id: string) => request<{ lu: string }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/lu`, { method: "POST" }),
+  audience: (projectId: string, id: string, audience: ComAudience) => request<ComConversation>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/audience`, { method: "PATCH", ...corpsJson({ audience }) }),
+  ajouterParticipant: (projectId: string, id: string, userId: string, historique: "tout" | "depuis-ajout") => request<{ ok: true }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/participants`, { method: "POST", ...corpsJson({ userId, historique }) }),
+  retirerParticipant: (projectId: string, id: string, userId: string) => request<void>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/participants/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  animateur: (projectId: string, id: string, userId: string) => request<{ ok: true }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/animateur`, { method: "PUT", ...corpsJson({ userId }) }),
+  envoyer: (projectId: string, id: string, input: ComMessageInput) => request<{ id: string; replayed: boolean; mentionsSansAcces: string[] }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/messages`, { method: "POST", ...corpsJson(input) }),
+  modifier: (projectId: string, messageId: string, body: string) => request<{ ok: true }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}`, { method: "PATCH", ...corpsJson({ body }) }),
+  retirer: (projectId: string, messageId: string) => request<void>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}`, { method: "DELETE" }),
+  versions: (projectId: string, messageId: string) => request<{ replacedAt: string; reason: "modification" | "retrait"; body: string | null }[]>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/versions`),
+  accuser: (projectId: string, messageId: string) => request<{ acknowledgedAt: string }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/accuse`, { method: "POST" }),
+  apercuPartage: (projectId: string, id: string, input: { messageIds: string[]; cibleId: string; note?: string }) => request<ComApercuPartage>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/partages/apercu`, { method: "POST", ...corpsJson(input) }),
+  partager: (projectId: string, id: string, input: { messageIds: string[]; cibleId: string; note?: string; empreinte: string }) => request<{ id: string; conversationId: string }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/partages`, { method: "POST", ...corpsJson(input) }),
+  apercuAction: (projectId: string, messageId: string, input: ComActionInput) => request<ComApercuAction>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions/apercu`, { method: "POST", ...corpsJson(input) }),
+  action: (projectId: string, messageId: string, input: ComActionInput & { empreinte: string }) => request<{ targetType: string; targetId: string; messageId?: string; replayed: boolean }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions`, { method: "POST", ...corpsJson(input) }),
+  responsabilites: (projectId: string) => request<ResponsabilitesPersonne[]>(`${comBase(projectId)}/responsabilites`),
+  boite: () => request<{ items: ElementBoite[] }>("/com/boite"),
+  /** Adresse d'une photo jointe (lue avec le cookie de session ; le serveur relit l'audience à chaque requête). */
+  urlPiece: (projectId: string, pieceId: string) => `${comBase(projectId)}/pieces/${encodeURIComponent(pieceId)}`,
+  /** Téléverse une photo déjà compressée ; `clientRequestId` rend le rejeu sans doublon. */
+  televerserPiece: async (projectId: string, conversationId: string, blob: Blob, clientRequestId: string): Promise<ComPiece & { replayed: boolean }> => {
+    let res: Response;
+    try {
+      res = await fetch(`${comBase(projectId)}/conversations/${encodeURIComponent(conversationId)}/pieces`, {
+        method: "POST", credentials: "include", body: blob, headers: { "Content-Type": blob.type || "image/jpeg", "X-Client-Request-Id": clientRequestId },
+      });
+    } catch (err) {
+      if (isNetworkError(err)) reachability.markUnreachable();
+      throw err;
+    }
+    if (GATEWAY_STATUSES.has(res.status)) { reachability.markUnreachable(); throw new TypeError(`Serveur injoignable (${res.status})`); }
+    reachability.markReachable();
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const o = (body && typeof body === "object" ? body : {}) as { error?: unknown; message?: unknown };
+      throw new ApiError(res.status, typeof o.error === "string" ? o.error : `http_${res.status}`, typeof o.message === "string" ? o.message : null, body);
+    }
+    return body as ComPiece & { replayed: boolean };
+  },
+  plan: (projectId: string, studyId: string, variantId: string, revisionId?: string) =>
+    request<ComPlan>(`${comBase(projectId)}/plan?${new URLSearchParams({ studyId, variantId, ...(revisionId ? { revisionId } : {}) }).toString()}`),
+  activite: (projectId: string, f: { filtre?: FiltreActivite; auteur?: string; depuis?: string; etape?: string } = {}) => {
+    const q = new URLSearchParams(Object.entries(f).filter(([, v]) => !!v) as [string, string][]).toString();
+    return request<{ items: EntreeActivite[]; auteurs: { id: string; email: string }[] }>(`${comBase(projectId)}/activite${q ? `?${q}` : ""}`);
+  },
+  revues: (projectId: string) => request<RevueLiee[]>(`${comBase(projectId)}/revues`),
+  demandes: (projectId: string, aRepondre = false) => request<Demande[]>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes${aRepondre ? "?a-repondre=1" : ""}`),
+  demande: (projectId: string, id: string) => request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}`),
+  creerDemande: (projectId: string, input: { question: string; responderId: string; echeance?: string | null; audience?: CommentAudience; refs?: ComRef[]; clientRequestId?: string }) =>
+    request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes`, { method: "POST", ...corpsJson(input) }),
+  transitionDemande: (projectId: string, id: string, input: { action: "repondre" | "cloturer" | "rouvrir" | "reattribuer"; body?: string; responderId?: string }) =>
+    request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}/transitions`, { method: "POST", ...corpsJson(input) }),
+};

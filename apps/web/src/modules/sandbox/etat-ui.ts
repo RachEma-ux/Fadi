@@ -6,6 +6,7 @@
 import { useSyncExternalStore } from "react";
 import { lireReglagesNavigation } from "./navigation";
 import { lirePosition } from "./panneaux/barre-actions-position";
+import { type PreferencesTriade, lireTriade } from "./planche/triade";
 import { lireBarresOutils, type EtatBarresOutils } from "./planche/barres-outils-disposition";
 
 /** Point du plan (copie locale : Sandbox ne dépend pas du modèle de l'Atelier). */
@@ -106,6 +107,14 @@ export interface EtatUi {
   barreActionsVisible: boolean;
   /** Barres d'opérations flottantes de la Planche (D-198) : affichées et positions, mémorisées sur l'appareil. */
   barresOutils: EtatBarresOutils;
+  /** Barre « Axes et repères » (chantier Axes, AX-2) : affichée et position (coin haut gauche, px), mémorisées sur l'appareil. */
+  barreReperes: { visible: boolean; position: { x: number; y: number } | null };
+  /** Triade d'orientation (chantier Axes, AX-3) : visible, coin, repère représenté, incluse dans l'image exportée. */
+  triade: PreferencesTriade;
+  /** Scènes (AX-3) : capturer le repère de travail avec la caméra (option explicite, décochée par défaut). */
+  rappelerRepereScene: boolean;
+  /** Coordonnées des exports (chantier Axes, AX-5) : modèle (défaut), repère de travail ou d'origine. */
+  coordonneesExport: "modele" | "travail" | "source";
 }
 
 /** Disposition de l'Atelier (D-156) : grille à cinq repères (défaut) ou canevas plein écran à panneaux flottants. */
@@ -139,9 +148,16 @@ export interface EnsembleLocal extends FiltresAffichage {
   niveauId: string | null;
 }
 
+/** Relecture défensive de la barre « Axes et repères » (chantier Axes) : masquée et à sa place par défaut sinon. */
+export function lireBarreReperes(v: unknown): EtatUi["barreReperes"] {
+  if (!v || typeof v !== "object") return { visible: false, position: null };
+  const { visible, position } = v as { visible?: unknown; position?: unknown };
+  return { visible: visible === true, position: lirePosition(position) };
+}
+
 const CLE_PREFS = "fadi.sandbox.prefs";
 
-const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible", "barresOutils"] as const;
+const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible", "barresOutils", "barreReperes", "triade", "rappelerRepereScene", "coordonneesExport"] as const;
 
 function lirePrefs(): Partial<Pick<EtatUi, (typeof CLES_PERSISTEES)[number]>> {
   try {
@@ -196,6 +212,10 @@ let etat: EtatUi = {
   barreActions: lirePosition(prefs.barreActions),
   barreActionsVisible: prefs.barreActionsVisible !== false,
   barresOutils: lireBarresOutils(prefs.barresOutils),
+  barreReperes: lireBarreReperes(prefs.barreReperes),
+  triade: lireTriade(prefs.triade),
+  rappelerRepereScene: prefs.rappelerRepereScene === true,
+  coordonneesExport: prefs.coordonneesExport === "travail" || prefs.coordonneesExport === "source" ? prefs.coordonneesExport : "modele",
 };
 
 const ecouteurs = new Set<() => void>();

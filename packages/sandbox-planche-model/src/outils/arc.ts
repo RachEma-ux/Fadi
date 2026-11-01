@@ -241,7 +241,7 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
           const valeur = r.genre === "longueur" ? r.valeur : r.genre === "rayon" ? r.valeur : null;
           if (valeur === null) return { etat: { ...etat, texte, erreur: "Saisie non reconnue." } };
           if (!(valeur > TOL)) return { etat: { ...etat, texte, erreur: "Le rayon doit être strictement positif." } };
-          const depart = etat.depart ?? axesDuPlan(etat.normale).u;
+          const depart = etat.depart ?? axesDuPlan(etat.normale, ctx.repere).u;
           return { etat: { ...etat, etape: 3, rayon: valeur, depart, balayage: 0, accroche: null, angleBrut: 0, texte } };
         }
         const r = analyserSaisie(texte, contexteSaisie("angle-arc", ctx));

@@ -8,10 +8,11 @@
  * (`STUDIO_MANIFESTE_OUTILS`) pour les outils du registre, et de `MANIFESTE_COMMANDES` (ci-dessous) pour les commandes
  * de l'éditeur, propriété de l'interface Studio. Filtres du catalogue (B.2-01) : `filtrerCatalogue`.
  */
-import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDroitOutil } from "@parcours/atelier-model";
+import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDroitOutil, type StudioIdChargeur } from "@parcours/atelier-model";
 import {
   BARRES_STUDIO, COMMANDES_EDITEUR, libelleRaccourci, type BarreStudio, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry,
 } from "./raccourcis";
+import { termesSupplementaires } from "./etats-outils";
 
 const P2D = ["planche-2d"] as const;
 const V3D = ["vue-3d"] as const;
@@ -25,11 +26,12 @@ export const MANIFESTE_COMMANDES = Object.freeze({
   "terminer-polyligne": P2D, "fermer-polyligne": P2D,
   "zoom-avant": P2D, "zoom-arriere": P2D, cadrer: P2D, "plein-ecran": P2D_V3D, "vue-3d": P2D_V3D, "navigation-3d": V3D, "coupe-3d": V3D,
   "accrochage-sommets": P2D, "accrochage-grille": P2D, "accrochage-milieu": P2D, "accrochage-centre": P2D, "accrochage-quadrant": P2D,
-  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-proche": P2D,
+  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-parallele": P2D, "accrochage-proche": P2D, "accrochage-cible-suivante": P2D,
   "reperage-orthogonal": P2D, "reperage-polaire": P2D, "pas-polaire": P2D,
-  "importer-dxf": P2D, "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, feuille: ["feuille"], "exporter-png": V3D,
+  "importer-dxf": P2D, "importer-ifc": P2D, "modeles-externes": ["planche-2d", "vue-3d", "feuille"], "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, "exporter-obj": ["planche-2d", "vue-3d"], "exporter-stl": ["planche-2d", "vue-3d"], "exporter-step": ["planche-2d", "vue-3d"], feuille: ["feuille"], "exporter-png": V3D, illustration: V3D, agents: ["planche-2d", "vue-3d", "feuille"],
   outils: ["planche-2d", "vue-3d", "feuille"], palette: ["planche-2d", "vue-3d", "feuille"],
-  exigences: P2D, dossier: ["planche-2d", "vue-3d", "feuille"], echanges: ["planche-2d", "vue-3d", "feuille"],
+  exigences: P2D, dossier: ["planche-2d", "vue-3d", "feuille"], echanges: ["planche-2d", "vue-3d", "feuille"], approuver: ["planche-2d", "vue-3d", "feuille"],
+  "fusionner-variantes": ["planche-2d", "vue-3d", "feuille"], "annuler-fusion": ["planche-2d", "vue-3d", "feuille"],
 } as const satisfies Record<IdCommandeEditeur, readonly StudioContexteOutil[]>);
 export const PROPRIETAIRE_EDITEUR = Object.freeze({ id: "studio.editeur", module: "apps/web/src/modules/studio" });
 
@@ -54,6 +56,10 @@ export interface EntreeCatalogue {
   readonly droit: StudioDroitOutil;
   /** Propriétaire du contrat (module du modèle, ou l'interface pour une commande de l'éditeur). */
   readonly proprietaire: string;
+  /** Dépendances lues dans le manifeste léger (EX-026) : chargeur du moteur (null : commande locale de l'éditeur). */
+  readonly chargeur: StudioIdChargeur | null;
+  /** Outils prérequis (manifeste) ; vide pour une commande de l'éditeur. */
+  readonly prerequis: readonly string[];
 }
 
 export const CATALOGUE: readonly EntreeCatalogue[] = Object.freeze([
@@ -62,13 +68,13 @@ export const CATALOGUE: readonly EntreeCatalogue[] = Object.freeze([
     return {
       identifiant: t.toolId, cible: { type: "outil", toolId: t.toolId }, libelleFR: t.libelleFR, raccourcis: [t.raccourci],
       icone: t.iconeSymbolique, barre: t.groupe, nature: t.nature, agentExposure: t.agentExposure, outil: t, commande: null,
-      contextes: m.contextes, droit: m.droit, proprietaire: m.proprietaire.id,
+      contextes: m.contextes, droit: m.droit, proprietaire: m.proprietaire.id, chargeur: m.chargeur, prerequis: m.prerequis,
     };
   }),
   ...COMMANDES_EDITEUR.map((c): EntreeCatalogue => ({
     identifiant: c.id, cible: { type: "commande", id: c.id }, libelleFR: c.libelleFR, raccourcis: [c.raccourci, ...(c.autres ?? [])],
     icone: c.iconeSymbolique, barre: c.groupe, nature: "editeur", agentExposure: null, outil: null, commande: c,
-    contextes: MANIFESTE_COMMANDES[c.id], droit: c.ecrit ? "ecriture" : "lecture", proprietaire: PROPRIETAIRE_EDITEUR.id,
+    contextes: MANIFESTE_COMMANDES[c.id], droit: c.ecrit ? "ecriture" : "lecture", proprietaire: PROPRIETAIRE_EDITEUR.id, chargeur: null, prerequis: [],
   })),
 ]);
 
@@ -109,7 +115,8 @@ export const normaliser = (s: string): string => s.normalize("NFD").replace(/\p{
 
 /**
  * Pertinence d'une entrée pour une recherche (0 = écartée) : nom commençant par la recherche, puis nom, raccourci
- * (forme du registre ou forme affichée, « Maj+C »), identifiant. `autres` : textes affichés en plus (traduction).
+ * (forme du registre ou forme affichée, « Maj+C »), synonyme (EX-029), identifiant, puis famille (barre) et domaine.
+ * `autres` : textes affichés en plus (traduction). Ne lit que des descripteurs : aucun moteur n'est chargé.
  */
 export function pertinence(e: EntreeCatalogue, recherche: string, autres: readonly string[] = []): number {
   const q = normaliser(recherche);
@@ -119,8 +126,13 @@ export function pertinence(e: EntreeCatalogue, recherche: string, autres: readon
   if (noms.some((n) => n.startsWith(q))) return 4;
   if (noms.some((n) => n.includes(q))) return 3;
   if (e.raccourcis.some((r) => normaliser(r) === q || normaliser(libelleRaccourci(r)) === q)) return 3;
+  const t = termesSupplementaires(e, BARRES_STUDIO.find((b) => b.id === e.barre)?.libelleFR ?? e.barre);
+  const synonymes = t.synonymes.map(normaliser);
+  if (synonymes.some((x) => x === q)) return 3;
   if (normaliser(e.identifiant).includes(q)) return 2;
+  if (synonymes.some((x) => x.includes(q))) return 2;
   if (e.raccourcis.some((r) => normaliser(r).includes(q) || normaliser(libelleRaccourci(r)).includes(q))) return 1;
+  if (normaliser(t.famille).includes(q) || t.domaines.some((d) => normaliser(d).includes(q))) return 1;
   return 0;
 }
 

@@ -37,7 +37,58 @@ Journal du chantier. Les décisions héritées de la gestion des comptes (D-1 à
     chantier, dans une PR distincte (UM-28 : transmission SMTP dans `deploy/preprod` et filtre du mailer) ; l'ouverture de la
     revue externe en production exige toujours un envoi de courriels configuré.
 
+- **OP-3 — Exécution du plan de bout en bout (2026-10-24).** Le maître d'ouvrage demande, dans la session Claude Code
+  du 2026-10-24 : « organisations-participation/PLAN.md — Implémente de A à Z, exécute non stop ». La phase 1 étant fusionnée
+  dans `main` (PR #265), cette demande vaut validation 🛑 1 et autorisation d'enchaîner les phases 2, 3, 3 bis, 4, 5 et 6
+  sans attente d'acceptation intermédiaire (même forme que la délégation D-203 de la Planche). Elle ne vaut **ni**
+  déploiement, **ni** production, **ni** fusion sans CI verte ; les 🛑 3 et 4 deviennent des revues a posteriori consignées
+  (comptes rendus de phase), et le 🛑 final de la phase 6 reste au maître d'ouvrage. La phase 5, dont le cadrage détaillé
+  devait être repris au 🛑 4, est cadrée sur la partie 5 du concept (écarts consignés dans `STATUS.md`). « Responsables
+  du projet » (OP-D9, OP-D13) : le propriétaire, ou une participation active portant le rôle `coordinateur` à la portée
+  projet ou la responsabilité `diriger` (`apps/api/src/lib/project-responsables.ts`).
+
+- **OP-4 — Recommandations de la recette appliquées et lot du pont lancé (2026-10-25).** Après la fusion des PR #281 et
+  #290, le maître d'ouvrage demande : « Applique tes recommandations et lance le lot du pont ». Sont donc décidés :
+  - **durée d'accès de revue par défaut : 14 jours** (au lieu de 30), prolongeable, au plus 365 (`DEFAULT_ACCESS_DAYS`) ;
+  - **réserve juridique d'OP-2** : l'effacement automatique des contacts sans compte est **désactivé par défaut** ;
+    il ne s'active que par `CONTACT_RETENTION_ENABLED=1`, à ne poser qu'après l'avis du conseil juridique ; l'effacement
+    sur demande reste disponible ;
+  - **portées étroites** : un rôle de portée `documents` télécharge les documents visés (y compris Lecteur) ; un Concepteur
+    limité à une étude n'exporte pas ;
+  - **acceptation dans l'application réservée aux adresses vérifiées** : conservée ;
+  - **« Mon historique » d'un invité externe** : ses actions et celles qui visent son compte, administrateur anonyme ;
+  - **séparation des responsabilités** (auto-contrôle) : lot ultérieur, non bloquant ;
+  - **lot OP-PONT** : retrait du pont `op_sync_access` lancé, vérifié en CI avant fusion.
+  Restent au maître d'ouvrage : 🛑 final (acceptation, tout déploiement), avis juridique, listes métier OP-D4.
+
+- **OP-5 — Acceptation finale, levée de la réserve juridique, listes métier (2026-10-25).** Le maître d'ouvrage déclare :
+  « j'accepte l'acceptation finale, l'avis juridique sur la conservation des contacts, et les listes métier », précisé
+  dans la session :
+  - **🛑 final franchi : périmètre livré accepté** — phases 1 à 6 et reliquats (PR #265, #281, #290), sur la base de
+    [recette-finale.md](recette-finale.md). Cette acceptation **ne vaut pas ordre de déploiement** : préproduction et
+    production restent soumises à un accord explicite, selon [RUNBOOK-deploiement.md](RUNBOOK-deploiement.md) ;
+  - **réserve juridique d'OP-2 levée par le maître d'ouvrage, sous sa responsabilité** (aucun avis de conseil juridique
+    n'est versé au dossier) : la durée « projet + 2 ans après sa clôture » est retenue ; l'effacement automatique sera
+    activé au déploiement (`CONTACT_RETENTION_ENABLED=1`) — la valeur par défaut du code reste désactivée (OP-4), par
+    sécurité ;
+  - **listes métier OP-D4 : la saisie libre devient la règle définitive** (option b confirmée) — aucun référentiel de rôles
+    de participation ni de types d'organisation n'est imposé.
+  Le lot OP-PONT (retrait du pont) suit son cours sous OP-4.
+
+- **OP-6 — Séparation des responsabilités : auto-contrôle signalé (2026-10-25).** Le maître d'ouvrage lance le lot
+  OP-AUTOCONTROLE (reporté par OP-4) et décide :
+  1. **signaler** quand une même personne produit et approuve un dossier (« auto-contrôle »), **sans bloquer par défaut** ;
+  2. une **option par utilisateur, « Auto-contrôle »**, que **l'administrateur de la plateforme** change dans les
+     autorisations du compte (administration des comptes). **Activée par défaut** : la personne peut approuver un
+     dossier qu'elle a produit, l'approbation est alors marquée « auto-contrôle ». **Désactivée** : l'API refuse cette
+     approbation (422 `self_approval_forbidden`) et nomme les autres approbateurs du projet ;
+  3. choix par défaut retenus : **le diffuseur n'est pas concerné** (seule l'approbation l'est) ; **rien de rétroactif**
+     (les approbations antérieures ne sont pas re-marquées : leur marque reste « non renseignée ») ; **aucune correction
+     automatique** ; **le propriétaire seul sur son projet reste libre d'approuver** (signalé) ; **aucun seuil inventé**
+     (une seule révision produite suffit à signaler).
+  Mise en œuvre et choix techniques (périmètre des révisions, révisions d'initialisation, empreintes inchangées) :
+  [lot-autocontrole.md](lot-autocontrole.md).
+
 ## Décisions en attente
 
-- Avis juridique sur les obligations de conservation des contacts (réserve d'OP-2).
-- 🛑 1 : revue du modèle et de la migration de la phase 1 avant la phase 2.
+- Autorisation explicite d'un déploiement (préproduction, puis production) selon le runbook.

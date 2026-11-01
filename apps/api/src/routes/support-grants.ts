@@ -113,7 +113,7 @@ export async function supportReadOnlyGuard(req: Request, res: Response, next: Ne
   const target = user && user.platformRole === "admin" ? supportTarget(req.path) : null;
   if (!user || !target) { next(); return; }
   const { projectId, sub } = target;
-  const rows = await db.execute(sql`SELECT (owner_id = ${user.id}) AS owner, EXISTS (SELECT 1 FROM project_members m WHERE m.project_id = ${projectId} AND m.user_id = ${user.id}) AS member FROM projects WHERE id = ${projectId}`);
+  const rows = await db.execute(sql`SELECT (owner_id = ${user.id}) AS owner, EXISTS (SELECT 1 FROM project_effective_access a WHERE a.project_id = ${projectId} AND a.user_id = ${user.id}) AS member FROM projects WHERE id = ${projectId}`);
   const row = rows.rows[0] as { owner?: boolean; member?: boolean } | undefined;
   if (!row || row.owner || row.member) { next(); return; }
   const grant = await activeSupportGrant(projectId, user.id);

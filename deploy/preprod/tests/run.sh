@@ -90,6 +90,8 @@ MUT=(
   "réseau de production externe|    name: fadi-preprod-front|    name: app_default${NL}    external: true"
   "image non autorisée|image: postgis/postgis:16-3.4${NL}    restart|image: postgres:16${NL}    restart"
   "SMTP_PASS donné à la recette (UM-28)|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}      SMTP_PASS: \${PREPROD_SMTP_PASS:-}${NL}"
+  "recette sur une image de base étrangère|APP_IMAGE: fadi-preprod-app:|APP_IMAGE: node:22-"
+  "contexte de build supplémentaire|        APP_IMAGE: fadi-preprod-app:|        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT}${NL}      additional_contexts:${NL}        hote: /etc${NL}#"
   "volume de production externe|  fadi-preprod-db:${NL}    name: fadi-preprod-db|  fadi-preprod-db:${NL}    name: app_fadi-db${NL}    external: true"
 )
 # D-7 : refus attendus de la garde elle-même (motif exact), pas d'une configuration invalide.
@@ -104,6 +106,8 @@ declare -A MOTIF=(
   ["migrate sur le réseau front"]="attendu internal seul"
   ["migrate sans MIGRATE_ONLY"]="MIGRATE_ONLY=1 exigé"
   ["SMTP_PASS donné à la recette (UM-28)"]="SMTP_PASS réservé au service app"
+  ["recette sur une image de base étrangère"]="APP_IMAGE"
+  ["contexte de build supplémentaire"]="additional_contexts interdit"
 )
 for m in "${MUT[@]}"; do
   # Découpage sans `read` : les motifs contiennent des sauts de ligne (${NL}), que `read` tronquerait.
@@ -118,15 +122,39 @@ B=$(dispo codes)
 attendu 0  "build réussi" -- fp build
 SHA_CODES=$(git -C "$B/src" rev-parse HEAD); : > "$T/trace-build"
 attendu 0  "build avec version de l'image" -- fpe MOCK_TRACE="$T/trace-build" build
-grep ' build app recette$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
+grep ' build app$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
   && { ok=$((ok + 1)); echo "✓ build : commit complet et date UTC fournis à l'image (GET /version)"; } \
   || { ko=$((ko + 1)); echo "✗ arguments de version absents : $(grep ' build ' "$T/trace-build")"; }
+# La recette reprend les builds de l'image applicative : construite après elle, jamais en parallèle.
+grep -n ' build ' "$T/trace-build" | sed -E 's/^([0-9]+):.* build (.*)$/\1 \2/' | tr '\n' ';' | grep -Eq '^[0-9]+ app;[0-9]+ recette;$' \
+  && { ok=$((ok + 1)); echo "✓ build : app d'abord, puis la recette (builds copiés de l'image applicative)"; } \
+  || { ko=$((ko + 1)); echo "✗ ordre des constructions : $(grep ' build ' "$T/trace-build")"; }
+FADI_SRC=$B/src FADI_COMMIT=0123456789ab PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
+  docker compose -f "$B/src/deploy/preprod/compose.yml" --profile recette config --format json 2>/dev/null \
+  | python3 -I -c 'import json, sys; b = json.load(sys.stdin)["services"]["recette"]["build"]; sys.exit(0 if b["args"] == {"APP_IMAGE": "fadi-preprod-app:0123456789ab"} and not b.get("additional_contexts") else 1)' \
+  && { ok=$((ok + 1)); echo "✓ compose : la recette part de l'image applicative du même commit (APP_IMAGE), sans additional_contexts"; } \
+  || { ko=$((ko + 1)); echo "✗ compose : APP_IMAGE de la recette absent ou faux"; }
 FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$B/src/deploy/preprod/compose.yml" config --format json 2>/dev/null \
   | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["app"]["build"]["args"]; sys.exit(0 if a == {"FADI_COMMIT": sys.argv[1], "FADI_BUILD_DATE": "2026-10-20T00:00:00Z"} else 1)' "$SHA_CODES" \
   && { ok=$((ok + 1)); echo "✓ compose : arguments FADI_COMMIT / FADI_BUILD_DATE transmis au Dockerfile"; } \
   || { ko=$((ko + 1)); echo "✗ compose : arguments de build de l'image absents ou faux"; }
 attendu nz "build en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build
+
+echo "== Nettoyage des images"
+C12=$(git -C "$B/src" rev-parse HEAD | cut -c1-12)
+PREC=1111111111111111111111111111111111111111
+: > "$T/trace-net"
+attendu 0 "nettoyer : anciens commits supprimés" "nettoyage : 4 image(s) supprimée(s)" -- \
+  fpe "MOCK_IMAGES=$C12 111111111111 222222222222 333333333333 latest" MOCK_TRACE="$T/trace-net" nettoyer $PREC
+python3 -I - "$T/trace-net" "$C12" <<'PY' && { ok=$((ok + 1)); echo "✓ nettoyer : commit approuvé et retour arrière gardés, dépôts fadi-preprod seuls, étiquette non-commit ignorée"; } || { ko=$((ko + 1)); echo "✗ nettoyer : suppressions inattendues"; cat "$T/trace-net"; }
+import sys
+rm = sorted(l.split()[-1] for l in open(sys.argv[1]) if " image rm " in l)
+att = sorted(f"{d}:{t}" for d in ("fadi-preprod-app", "fadi-preprod-recette") for t in ("222222222222", "333333333333"))
+sys.exit(0 if rm == att else 1)
+PY
+attendu nz "nettoyer : sha à garder invalide refusé" "sha complet" -- fp nettoyer 1234
+attendu 0 "nettoyer : image en usage conservée sans échec" "conservée (en usage ?)" -- fpe "MOCK_IMAGES=222222222222" MOCK_FAIL=image-rm nettoyer
 attendu 0  "check réussi" -- fp check
 attendu nz "check en échec → code non nul, journal nommé" "journal : check.log" -- fpe MOCK_FAIL=run-check check
 attendu 0  "backup réussi" -- fp backup
@@ -152,8 +180,8 @@ j = next(j for j, x in enumerate(l) if x.endswith("up -d --no-deps --force-recre
 sys.exit(0 if i < j and not any(x.endswith("rm -f -s migrate") for x in l) else 1)
 PY
 attendu nz "up en échec → code non nul" -- fpe MOCK_FAIL=up up
-attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design parcours-scenario
-attendu nz "e2e avec un scénario en échec → code non nul" "échecs : parcours-scenario" -- fpe MOCK_FAIL=e2e-parcours-scenario e2e accueils-design parcours-scenario
+attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design studio-domaines
+attendu nz "e2e avec un scénario en échec → code non nul" "échecs : studio-domaines" -- fpe MOCK_FAIL=e2e-studio-domaines e2e accueils-design studio-domaines
 attendu nz "e2e : scénario inconnu refusé" "scénario inconnu" -- fp e2e inexistant
 attendu nz "e2e : nom de scénario invalide refusé" "scénario invalide" -- fp e2e '../x'
 
@@ -322,14 +350,17 @@ courriel "avec les variables PREPROD_* : SMTP transmis à app seul, SMTP_PASS ja
   PREPROD_MAIL_TRANSPORT=smtp PREPROD_SMTP_USER=noreply@fadimmo.com PREPROD_SMTP_PASS=secret-test "PREPROD_MAIL_FROM=Fadi <noreply@fadimmo.com>" PREPROD_MAIL_DAILY_LIMIT=20
 
 echo "== Liste e2e identique à la CI"
-python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
+python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* ni geodata (base jetable) ni lecture de courriel"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
 import re, sys
 ci = open(sys.argv[1]).read(); order = []
 for m in re.finditer(r'^\s+(?:[A-Z_]+=\S+ )*node apps/web/e2e/([a-z0-9-]+)\.mjs', ci, re.M):
     if m.group(1) not in order: order.append(m.group(1))
-hors = {"comptes-api", "comptes-securite", "comptes-admin"}  # base jetable locale exigée : jamais en préproduction
+hors = {"comptes-api", "comptes-securite", "comptes-admin", "geodata", "studio-preuves-e"}  # base jetable exigée (studio-preuves-e : écritures SQL directes et seconde API) : jamais en préproduction
 assert hors <= set(order), "scénarios exclus absents de la CI"
-order = [s for s in order if s not in hors]
+# Recettes qui lisent les courriels envoyés : impossibles en préproduction (aucun envoi aux domaines réservés, pas de Mailpit).
+racine = sys.argv[1].rsplit("/.github/", 1)[0]
+courriel = lambda s: re.search(r"lib-invitations|MAILPIT|API_LOG", open(f"{racine}/apps/web/e2e/{s}.mjs").read())
+order = [s for s in order if s not in hors and not courriel(s)]
 lst = re.search(r'E2E_DEFAUT="([^"]+)"', open(sys.argv[2]).read()).group(1).split()
 print(f"   CI {len(order)}, préproduction {len(lst)}")
 sys.exit(0 if order == lst else 1)

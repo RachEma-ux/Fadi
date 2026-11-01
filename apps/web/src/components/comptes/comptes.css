@@ -13,9 +13,11 @@
 .mfa-qr { width: 200px; height: 200px; background: #fff; border: 1px solid #c3d3cb; border-radius: 8px; }
 .account-subsection { border-top: 1px solid #dfe8e3; padding-top: 12px; margin-top: 14px; }
 .account-subsection h3 { margin: 0 0 6px; font-size: 1.05rem; }
-.account-form { display: grid; gap: 8px; max-width: 420px; }
+.account-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; max-width: 420px; }
 .account-form label { display: grid; gap: 4px; }
 .account-form input, .account-form select, .account-form textarea { padding: 0.5rem; border: 1px solid #b7c9c0; border-radius: 6px; min-height: 36px; }
+/* Une option longue (nom et adresse d'un administrateur) ne doit pas élargir la grille au-delà de l'écran (téléphone). */
+.account-form label, .account-form input, .account-form select, .account-form textarea { min-width: 0; max-width: 100%; }
 .danger-button { background: #9b2c2c; color: #fff; border: 1px solid #7e2020; border-radius: 6px; padding: 0.45rem 0.9rem; cursor: pointer; min-height: 36px; }
 .danger-button:disabled { opacity: 0.6; cursor: default; }
 .confirm-dialog { width: min(520px, calc(100vw - 32px)); }
@@ -35,7 +37,7 @@
 .admin-status[data-status="suspended"], .admin-status[data-status="closed"] { background: #f6e1e1; color: #7e2020; }
 .admin-status[data-status="locked"], .admin-status[data-status="deletion_pending"] { background: #fdf0d8; color: #6b4206; }
 .admin-pager { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-.admin-detail { display: grid; gap: 14px; margin-top: 16px; }
+.admin-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 16px; overflow-wrap: anywhere; }
 .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .public-account-page dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; }
 .public-account-page dt { font-weight: 600; }
@@ -52,3 +54,10 @@
 .admin-filters .admin-checkbox input { min-height: auto; }
 .admin-invitation-link { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .admin-invitation-link code { overflow-wrap: anywhere; }
+/* Journal d'activité (phase 3 bis) : navigation de l'administration, détails d'une entrée. */
+.admin-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.admin-nav a { padding: 6px 12px; border: 1px solid #b7c9c0; border-radius: 6px; text-decoration: none; color: #1d4a35; min-height: 24px; }
+.admin-nav a.active { background: #1d4a35; color: #fff; border-color: #1d4a35; }
+.journal-details { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.9rem; }
+.journal-details code { overflow-wrap: anywhere; }
+.journal-activite-table td { overflow-wrap: anywhere; }

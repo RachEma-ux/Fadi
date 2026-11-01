@@ -83,7 +83,7 @@ const layerOf = (o: { layerId?: string }): string => o.layerId ?? STUDIO_DEFAULT
 const sameExtrusion = (a: StudioShape["extrusion"], b: StudioShape["extrusion"]): boolean => {
   if (!a || !b) return !a && !b;
   const ta = (a as { thickness?: number }).thickness, tb = (b as { thickness?: number }).thickness;
-  return a.base === b.base && a.height === b.height && ta === tb;
+  return a.base === b.base && a.height === b.height && ta === tb && (a.direction ?? "+z") === (b.direction ?? "+z");
 };
 
 /** Points de la géométrie, dans un ordre fixe par type ; les grandeurs non ponctuelles sont comparées à part. */
@@ -234,4 +234,79 @@ export function comparerDocumentsStudio(a: StudioDocument, b: StudioDocument): S
   const resumeComplet = { ...resume, annotations: count(annotations) };
   const identiques = Object.values(resumeComplet).every((c) => c.ajoute + c.supprime + c.modifie === 0);
   return { objets, calques, cotes, annotations, resume: resumeComplet, identiques };
+}
+
+// ——— Éléments rangés hors de `objects` : architecture, solides libres, éléments non natifs (lot F3) ———
+
+/** Propriétés comparées d'un élément : géométrie (valeurs saisies ou lues), calque, attributs déclarés. */
+export type StudioProprieteElement = "geometrie" | "calque" | "attributs";
+export type StudioFamilleElement = "architecture" | "solides" | "nonNatifs" | "niveaux" | "composants" | "occurrences";
+export interface StudioDifferenceElement {
+  id: string;
+  famille: StudioFamilleElement;
+  etat: StudioEtatDifference;
+  /** Type de l'élément décrit (`wall`, `opening`, `box`, `prism`, `non-native`). */
+  type: string;
+  proprietes: StudioProprieteElement[];
+}
+export interface StudioDifferenceElements {
+  elements: StudioDifferenceElement[];
+  resume: Record<StudioFamilleElement, StudioCompteDifferences>;
+  identiques: boolean;
+}
+
+/** JSON canonique (clés triées) d'une valeur JSON, pour l'égalité exacte des valeurs. */
+const canon = (v: unknown): string => {
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  if (v && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon((v as Record<string, unknown>)[k])}`).join(",")}}`;
+  return JSON.stringify(v) ?? "null";
+};
+/** Attributs déclarés (hors géométrie) par type d'élément ; le reste, hors `id`, `type` et `layerId`, est la géométrie. */
+const ATTRIBUTS: Record<string, readonly string[]> = { opening: ["kind"], "non-native": ["origine", "raison", "detail"], niveau: ["nom"], composant: ["nom"] };
+function partager(o: Record<string, unknown>): { geometrie: string; attributs: string } {
+  const attrs = ATTRIBUTS[String(o.type)] ?? [];
+  const g: Record<string, unknown> = {}, a: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (k === "id" || k === "type" || k === "layerId") continue;
+    (attrs.includes(k) ? a : g)[k] = v;
+  }
+  return { geometrie: canon(g), attributs: canon(a) };
+}
+
+type ElementRange = { id: string; type: string; layerId?: string };
+
+/**
+ * Différence de `a` (avant) vers `b` (après) des familles rangées hors de `objects` : murs et ouvertures, solides libres,
+ * éléments non natifs ; par identifiant, égalité exacte (aucune tolérance), comme `comparerDocumentsStudio`. Un
+ * identifiant réutilisé avec un autre type donne un « supprimé » puis un « ajouté ».
+ */
+export function comparerElementsStudio(a: StudioDocument, b: StudioDocument): StudioDifferenceElements {
+  const elements: StudioDifferenceElement[] = [];
+  const resume = { architecture: emptyCount(), solides: emptyCount(), nonNatifs: emptyCount(), niveaux: emptyCount(), composants: emptyCount(), occurrences: emptyCount() };
+  // Lot W3-B : niveaux et définitions de composants n'ont pas de discriminant de type ; ils sont comparés sous « niveau » et « composant ».
+  const typer = <T extends { id: string }>(xs: readonly T[] | undefined, type: string): ElementRange[] | undefined => xs?.map((x) => ({ ...x, type }));
+  const familles: [StudioFamilleElement, readonly ElementRange[] | undefined, readonly ElementRange[] | undefined][] = [
+    ["architecture", a.architecture, b.architecture], ["solides", a.solides, b.solides], ["nonNatifs", a.nonNatifs, b.nonNatifs],
+    ["niveaux", typer(a.niveaux, "niveau"), typer(b.niveaux, "niveau")], ["composants", typer(a.composants, "composant"), typer(b.composants, "composant")],
+    ["occurrences", a.occurrences, b.occurrences],
+  ];
+  for (const [famille, xa, xb] of familles) {
+    const ma = byId(xa), mb = byId(xb);
+    const liste: StudioDifferenceElement[] = [];
+    for (const id of sortedIds(ma, mb)) {
+      const avant = ma.get(id), apres = mb.get(id);
+      if (avant && (!apres || apres.type !== avant.type)) liste.push({ id, famille, etat: "supprime", type: avant.type, proprietes: [] });
+      if (apres && (!avant || apres.type !== avant.type)) liste.push({ id, famille, etat: "ajoute", type: apres.type, proprietes: [] });
+      if (!avant || !apres || avant.type !== apres.type) continue;
+      const pa = partager(avant as unknown as Record<string, unknown>), pb = partager(apres as unknown as Record<string, unknown>);
+      const proprietes: StudioProprieteElement[] = [];
+      if (pa.geometrie !== pb.geometrie) proprietes.push("geometrie");
+      if (layerOf(avant) !== layerOf(apres)) proprietes.push("calque");
+      if (pa.attributs !== pb.attributs) proprietes.push("attributs");
+      liste.push({ id, famille, etat: proprietes.length ? "modifie" : "identique", type: apres.type, proprietes });
+    }
+    resume[famille] = count(liste);
+    elements.push(...liste);
+  }
+  return { elements, resume, identiques: Object.values(resume).every((c) => c.ajoute + c.supprime + c.modifie === 0) };
 }

@@ -329,6 +329,12 @@ try {
   check("P0 téléphone : barre des domaines compacte (menu) en haut, avant le canevas dans le document et à l'écran", m.menu && m.liensMasques && m.navAvantCanevas && m.menuHaut <= m.plancheHaut && m.ordres === 0, JSON.stringify(m));
   check("téléphone : canevas dans la moitié haute et d'au moins 280 px, aucun débordement", m.plancheHaut < 844 / 2 && m.plancheHauteur >= 280 && !m.debordePage, JSON.stringify(m));
   check("I-5 : téléphone, boutons de planche de 44 px ; échelle dans la barre d'état", m.planches.length === 3 && m.planches.every((h) => h >= 44) && m.echelle, m.planches.join(","));
+  // RISQ-02 : l'ancien mode immersif (qui supprimait la barre latérale) n'est pas réemployé par Studio, au gabarit téléphone.
+  const immersif = await mobile.evaluate(() => {
+    const barre = document.querySelector(".app-sidebar"), r = barre?.getBoundingClientRect();
+    return { immersif: document.body.classList.contains("atelier-immersive"), barre: !!barre && getComputedStyle(barre).display !== "none" && getComputedStyle(barre).visibility !== "hidden" && !!r && r.width > 0 && r.height > 0 };
+  });
+  check("RISQ-02 téléphone : sur la planche de Studio, la barre latérale de Fadi reste affichée, aucun mode immersif", !immersif.immersif && immersif.barre && await mobile.locator(".app-sidebar").isVisible(), JSON.stringify(immersif));
   const menu = mobile.locator("[data-studio-domaines-menu]");
   check("téléphone : le menu nomme le domaine affiché", ((await menu.textContent()) ?? "").includes("Dessin et modélisation") && (await menu.getAttribute("aria-expanded")) === "false");
   await menu.focus();

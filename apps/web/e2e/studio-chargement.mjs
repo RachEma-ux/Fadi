@@ -6,14 +6,17 @@
  *  1. démarrage léger : l'accueil de Studio n'exécute ni la planche, ni three.js, ni un noyau exact, ni un Worker ;
  *  2. ouverture d'une planche : l'éditeur est chargé, three.js toujours pas ; moteurs « planche » initialisés et actifs ;
  *  3. Tool Manager : quatre états distincts par moteur — le rendu 3D est « téléchargé » et « disponible hors connexion »
- *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07 non applicable) ;
+ *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07, booléen exact du lot F2, non mesuré tant
+ *     que l'outil n'a pas servi) ; noyau exact ni chargé ni disponible hors connexion (son .wasm n'est jamais préchargé) ;
  *  4. premier usage de la vue 3D : three.js chargé une fois, moteur initialisé une fois, actif tant que la vue est
  *     ouverte, inactif sans réinitialisation à la réouverture ; le groupe de Workers est partagé puis libérable ;
  *  5. hors connexion véridique : un fichier du rendu 3D retiré du cache → outils 3D annoncés indisponibles, outils 2D
  *     disponibles ; « Préparer le profil hors ligne » le range à nouveau ;
  *  6. file locale incompatible (format futur) : ni envoyée ni effacée, exportée (ligne relue au clic) puis abandonnée
  *     sur confirmation ; une ligne réécrite après l'export n'est pas abandonnée (nouvel export exigé) ;
- *  7. cache du build de la page purgé après avoir été vu : « non » hors connexion et avertissement.
+ *  7. cache du build de la page purgé après avoir été vu : « non » hors connexion et avertissement ;
+ *  8. NAV-008 : moteur de la planche impossible à charger → alerte récupérable, rien d'écrit, navigation de Fadi
+ *     utilisable, « Réessayer » recharge le moteur une fois le réseau rétabli.
  *
  * Les fichiers lourds (three.js, vue 3D, noyau exact, planche) sont désignés par la carte du build (`/chargement.json`),
  * jamais par un nom de fichier supposé. PERF-01 : page ouverte sur la variante → depuis la navigation ; navigation
@@ -86,10 +89,30 @@ try {
   check("démarrage : seule la coquille est initialisée", e0["coquille-studio"].initialise && !e0["planche-2d"].initialise && !e0["rendu-3d"].initialise && !e0.calcul.initialise, JSON.stringify(Object.values(e0).map((e) => [e.id, e.phase])));
 
   // 2. Ouverture d'une planche.
+  const lecturesOuverture = [];
+  const noterLecture = (r) => { const u = new URL(r.url()); if (r.request().method() === "GET" && /\/studio\/(preferences\/(outils|catalogue)|studies\/[^/]+(\/variants\/[^/]+)?)$/.test(u.pathname)) lecturesOuverture.push([u.pathname.replace(/^.*\/studio\//, ""), r.status()]); };
+  page.on("response", noterLecture);
   await page.goto(url);
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
   await outils.waitFor();
   await page.waitForFunction(() => globalThis.__fadiPerf?.mesures("PERF-01").length > 0);
+  // EX-038 (cas positif) : avant toute action, la coquille, l'identité (rôle), le profil d'outils, le contexte d'étude
+  // (étude, variante, révision), le catalogue autorisé (métadonnées du registre) et les commandes essentielles sont là.
+  await page.locator('[data-studio-role="proprietaire"]').waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('[role="toolbar"] [data-studio-outil]').length > 0);
+  await page.waitForTimeout(300);
+  page.off("response", noterLecture);
+  const lu = (motif) => lecturesOuverture.some(([p, s]) => motif.test(p) && s === 200);
+  const fil = await page.locator("nav, header").filter({ hasText: "Étude chargement" }).count();
+  check("démarrage (avant toute action) : coquille Studio, rôle de l'utilisateur et contexte d'étude (étude, variante, révision de tête) affichés (EX-038)",
+    (await page.locator(`section.studio-workspace[aria-label="Studio"][data-studio-variante="${variantId}"]`).count()) === 1 && fil > 0
+      && (await page.locator('[data-studio-role="proprietaire"]').count()) === 1
+      && lu(/^studies\/[^/]+$/) && lu(/^studies\/[^/]+\/variants\/[^/]+$/), JSON.stringify(lecturesOuverture));
+  check("démarrage (avant toute action) : profil d'outils et catalogue autorisé lus du serveur, barres d'outils et commandes essentielles présentes (EX-038)",
+    lu(/^preferences\/outils$/) && lu(/^preferences\/catalogue$/)
+      && (await outils.locator('[data-studio-outil="studio.dessin.selection"][aria-pressed="true"]').count()) === 1 && (await outils.locator("[data-studio-outil]").count()) > 1
+      && (await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).count()) === 1
+      && (await page.locator('[data-studio-commande="enregistrer"]').count()) >= 1, JSON.stringify(lecturesOuverture));
   const aLaPlanche = await scriptsDemandes(page);
   check("planche : l'éditeur est chargé, three.js / vue 3D / noyau exact toujours pas (B.3-03, EX-039)",
     contient(aLaPlanche, PLANCHE) && !Object.values(LOURDS).some((m) => contient(aLaPlanche, m)), aLaPlanche.filter((p) => !/index-/.test(p)).join(" "));
@@ -132,9 +155,11 @@ try {
   check("Tool Manager : rendu 3D précaché — téléchargé et disponible hors connexion, mais ni initialisé ni actif (B.3-08)", r3d.t === "oui" && r3d.h === "oui" && r3d.i === "non" && r3d.a === "non", JSON.stringify(r3d));
   const p2d = await attr("planche-2d");
   check("Tool Manager : planche téléchargée, initialisée, active, disponible hors connexion", p2d.t === "oui" && p2d.i === "oui" && p2d.a === "oui" && p2d.h === "oui", JSON.stringify(p2d));
-  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 non applicable (X.1-09)",
+  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 (booléen exact) non mesuré tant que l'outil n'a pas servi (X.1-09)",
     (await g.locator("[data-studio-perf]").count()) === 10 && Number(await g.locator('[data-studio-perf="PERF-01"]').getAttribute("data-n")) >= 1
-    && /non applicable/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+    && /non mesuré/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+  const exact = await attr("noyau-exact");
+  check("Tool Manager : noyau exact (lot F2) ni initialisé ni actif à l'ouverture, indisponible hors connexion (.wasm jamais préchargé)", exact.i === "non" && exact.a === "non" && exact.h === "non", JSON.stringify(exact));
   check("Tool Manager : file locale et persistance du stockage annoncées (B.3-10)", /^\d+$/.test(await g.locator("[data-studio-file-locale]").getAttribute("data-studio-file-locale")) && !!(await g.locator("[data-studio-persistance]").getAttribute("data-studio-persistance")));
   const releve = page.waitForEvent("download");
   await g.locator("[data-studio-telecharger-releve]").click();
@@ -193,8 +218,10 @@ try {
   const retire = await page.evaluate(async (cible) => {
     if (!cible) return null;
     const build = document.querySelector('meta[name="fadi-build"]').content;
-    const cache = await caches.open(`fadi-shell-${build}`);
-    return (await cache.delete(cible)) ? cible : null;
+    // EX-042 : three.js est un module facultatif, rangé dans le cache des modules de ce build.
+    let retire = false;
+    for (const n of [`fadi-shell-${build}`, `fadi-profil-${build}`, `fadi-modules-${build}`]) retire = (await (await caches.open(n)).delete(cible)) || retire;
+    return retire ? cible : null;
   }, cibleThree);
   check("préparation : three.js retiré du cache du build (simulation d'un fichier absent)", !!retire, String(retire));
   g = await ouvrirGestionnaire();
@@ -245,8 +272,11 @@ try {
   await page.locator("[data-studio-exporter-file-locale]").click();
   const exporte2 = JSON.parse(readFileSync(await (await telechargement2).path(), "utf8"));
   check("nouvel export : la ligne relue au clic (réécrite), pas la copie signalée", exporte2.ligne.stamp === "futur-2" && exporte2.ligne.donnees === reecrite.donnees);
+  // L'abandon recharge la page après une attente asynchrone : on attend CE rechargement (sinon la lecture d'IndexedDB
+  // peut tomber pendant la navigation : « Execution context was destroyed »).
+  const rechargement = page.waitForEvent("load");
   await page.locator("[data-studio-abandonner-file-locale]").click();
-  await page.waitForLoadState("load");
+  await rechargement;
   await outils.waitFor();
   await page.waitForFunction(() => !document.querySelector("[data-studio-file-locale-incompatible]"));
   check("abandon confirmé : file retirée, version serveur rouverte", (await presente()) === null && commandes.length === 0);
@@ -260,6 +290,39 @@ try {
     (await g.locator("[data-studio-cache-purge]").count()) === 1 && (await attr("planche-2d")).h === "non" && (await attr("rendu-3d")).h === "non"
     && (await g.locator('[data-studio-indisponible-hors-ligne="studio.dessin.ligne"]').count()) === 1);
   await fermerGestionnaire();
+
+  // 8. NAV-008 : le moteur de la planche ne se charge pas (fichiers refusés par le réseau, sans service worker ni cache)
+  // → erreur annoncée et récupérable, rien n'est écrit, la navigation de Fadi reste utilisable ; « Réessayer » recharge.
+  const panne = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: "block", storageState: await context.storageState() });
+  const p8 = await panne.newPage();
+  p8.setDefaultTimeout(20000);
+  const erreurs8 = [];
+  p8.on("pageerror", (e) => erreurs8.push(e.message));
+  let bloque = true;
+  const ecritures8 = [];
+  p8.on("request", (r) => { if (r.method() !== "GET" && r.url().includes("/studio/")) ecritures8.push(r.url()); });
+  await p8.route((u) => PLANCHE.has(u.pathname), (route) => (bloque ? route.abort("failed") : route.continue()));
+  await p8.goto(url);
+  const alerte = p8.locator("[data-studio-planche-indisponible]");
+  await alerte.waitFor();
+  check("NAV-008 : moteur de la planche impossible à charger — erreur annoncée (role=alert) avec « Réessayer », aucune planche",
+    (await alerte.getAttribute("role")) === "alert" && (await p8.locator("[data-studio-reessayer-planche]").count()) === 1
+    && (await p8.getByRole("toolbar", { name: "Outils de dessin" }).count()) === 0);
+  check("NAV-008 : la barre de Fadi reste visible, sans mode immersif", (await p8.locator(".app-sidebar").isVisible())
+    && !(await p8.evaluate(() => document.body.classList.contains("atelier-immersive"))));
+  await p8.locator('#workspace-navigation a[aria-label="Accueil"]').click();
+  await p8.waitForURL(/\/accueil$/);
+  check("NAV-008 : la navigation de Fadi n'est pas bloquée (Accueil atteint depuis la barre)", new URL(p8.url()).pathname === "/accueil");
+  await p8.goBack();
+  await alerte.waitFor();
+  bloque = false;
+  await p8.locator("[data-studio-reessayer-planche]").click();
+  await p8.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+  check("NAV-008 : « Réessayer » recharge le moteur une fois le réseau rétabli — planche affichée, alerte retirée",
+    (await alerte.count()) === 0 && (await p8.locator("[data-studio-planche-indisponible]").count()) === 0);
+  check("NAV-008 : rien n'a été écrit pendant la panne (aucune requête d'écriture Studio)", ecritures8.length === 0, ecritures8.join(" "));
+  check("NAV-008 : aucune erreur JavaScript non interceptée pendant la panne et la reprise", erreurs8.length === 0, erreurs8.join(" | "));
+  await panne.close();
 
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
   await context.close();

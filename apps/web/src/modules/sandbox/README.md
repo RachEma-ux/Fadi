@@ -54,6 +54,26 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   au plus, les 5 dernières affichées : `jj.mm.aaaa hh.mm, auteur, description`). L'auteur est « Vous » : le Sandbox ne peut
   pas lire le compte (frontières). Deux entrées identiques à moins d'une minute sont fusionnées.
 
+## Axes et repères (chantier Axes, `docs/workstreams/axes/`)
+
+- **Contexte de travail** (AX-1, décision AX-D3) : repère de travail, plan de travail (XY / XZ / YZ du repère) et verrou,
+  personnels, hors de l'historique Annuler / Rétablir, mémorisés par Planche dans ce navigateur
+  (`planche/contexte-travail.ts`) ; « Repère précédent » parcourt leur historique de session. Changer de repère ne
+  déplace jamais la géométrie ; l'ancien `annotations.repere` d'un document n'est plus écrit, seulement lu comme
+  contexte initial.
+- **Barre « Axes et repères »** (AX-2, `planche/BarreReperes.tsx`, `planche/commandes-reperes.ts`) : compacte et
+  flottante, ouverte par Placer les axes (Maj + Y), Alt + Maj + 1 ou la ligne d'état du pied ; commandes Alt + Maj + 1 à 8
+  et F4 ; inspecteur (origine, orientation, rotation par axe nommé, plan, verrou). Recette `apps/web/e2e/sandbox-axes.mjs`.
+- **Repères enregistrés** (AX-3, `annotations.reperes`, panneau « Repères », `planche/PanneauReperes.tsx`) : mutations du
+  document (Annuler les défait) ; « Modifié » ; suppression d'un repère cité par une scène après résolution explicite ;
+  option de scène « Rappeler le repère » ; triade d'orientation (`planche/triade.ts`), exclue du PNG par défaut.
+  Recette `apps/web/e2e/sandbox-reperes.mjs`.
+- **Origine du composant** (AX-4, `planche/PanneauOrigineComposant.tsx`, Maj + F4, menu « Changer les axes ») : 27 ancrages,
+  point libre, orientation séparée, portée et refus explicites, aucun sommet monde déplacé. Recette `sandbox-origine.mjs`.
+- **Repères liés et coordonnées des exports** (AX-5) : santé du lien explicite, mise à jour seulement depuis la même face ;
+  exports en coordonnées du modèle, du repère de travail ou d'origine (si l'import l'a consignée). Recette
+  `sandbox-reperes-lies.mjs` ; dossier de recette `docs/workstreams/axes/RECETTE.md`.
+
 ## Frontières
 
 - Le Sandbox n'importe ni le Studio, ni l'Atelier, ni `@parcours/atelier-model`, ni `@parcours/planche-model`, ni le

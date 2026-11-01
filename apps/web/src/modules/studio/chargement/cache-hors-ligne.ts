@@ -2,7 +2,9 @@
  * Disponibilité hors connexion véridique et préparation du profil hors ligne (B.3-09, EX-043, PERF-10).
  *
  * Un moteur n'est annoncé « disponible hors connexion » que si **chacun** de ses fichiers (carte du build,
- * `chargement.json`) est dans le cache de CE build (`fadi-shell-<build>`) — lu fichier par fichier, jamais supposé.
+ * `chargement.json`) est dans un cache de CE build — coquille `fadi-shell-<build>`, profil `fadi-profil-<build>` ou
+ * modules facultatifs `fadi-modules-<build>` (EX-042) — lu fichier par fichier, jamais supposé. La présence du build
+ * se lit sur le cache de la coquille.
  * Sans service worker, sans cache de ce build ou sans carte : « non évalué » (null), jamais « disponible ». Un cache de
  * ce build déjà vu par la page puis disparu (purgé) : « non » pour chaque moteur (`cache-purge`).
  * Un outil est disponible hors connexion si tous les moteurs de sa barre le sont (dépendances comprises).
@@ -13,8 +15,8 @@
  *
  * Accès au navigateur injecté (`caches`, `fetch`, identifiant du build) : testable sans navigateur.
  */
-import { FICHIER_CARTE, fermetureMoteurs, MOTEURS, moteursDeBarre, type IdMoteur } from "./moteurs";
-import type { CarteChargement } from "./carte-morceaux";
+import { FICHIER_CARTE, fermetureMoteurs, MOTEURS, moteursDeOutil, type IdMoteur } from "./moteurs";
+import { classesPrecache, type CarteChargement } from "./carte-morceaux";
 
 export interface CacheLike { match(req: string): Promise<unknown>; put(req: string, res: Response): Promise<void> }
 export interface CachesLike { has(nom: string): Promise<boolean>; open(nom: string): Promise<CacheLike> }
@@ -55,6 +57,26 @@ export async function cacheDuBuildPresent(env: EnvCache): Promise<boolean | null
 }
 
 export const PREFIXE_CACHE = "fadi-shell-";
+/** Caches de classe d'un build (EX-042), mêmes noms que le service worker. */
+export const PREFIXES_CLASSES = Object.freeze({ coquille: PREFIXE_CACHE, profil: "fadi-profil-", facultatif: "fadi-modules-" });
+export type ClasseCache = keyof typeof PREFIXES_CLASSES;
+const nomsBuild = (build: string) => (Object.keys(PREFIXES_CLASSES) as ClasseCache[]).map((c) => `${PREFIXES_CLASSES[c]}${build}`);
+
+/** Classe d'un fichier de la carte (même répartition que le précache) : coquille, profil Studio ou module facultatif. */
+export function classeFichier(carte: CarteChargement, fichier: string): ClasseCache {
+  const c = classesPrecache(carte, [fichier]);
+  return c.coquille.length ? "coquille" : c.profil.length ? "profil" : "facultatif";
+}
+
+/** Vue « un seul cache » sur les caches de classe existants d'un build (lecture). */
+async function cachesDuBuild(env: EnvCache & { caches: CachesLike }, build: string): Promise<CacheLike> {
+  const ouverts: CacheLike[] = [];
+  for (const nom of nomsBuild(build)) if (await env.caches.has(nom)) ouverts.push(await env.caches.open(nom));
+  return {
+    match: async (req: string) => { for (const c of ouverts) { const r = await c.match(req); if (r) return r; } return undefined; },
+    put: async () => { throw new Error("lecture seule"); },
+  };
+}
 
 const vide = <T,>(v: T) => Object.fromEntries(MOTEURS.map((m) => [m.id, v])) as Record<IdMoteur, T>;
 const nonEvalue = (raison: VerificationHorsConnexion["raison"]): VerificationHorsConnexion => ({ moteurs: vide(null), manquants: vide([]), coquille: null, raison });
@@ -84,7 +106,7 @@ export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargemen
   const nom = `${PREFIXE_CACHE}${env.build}`;
   // `has` d'abord : ouvrir un cache absent le créerait vide.
   if (!(await env.caches.has(nom))) return nonEvalue("sans-cache-du-build");
-  const cache = await env.caches.open(nom);
+  const cache = await cachesDuBuild(env as EnvCache & { caches: CachesLike }, env.build);
   const absents = async (fichiers: readonly string[]) => {
     const r: string[] = [];
     for (const f of fichiers) if (!(await cache.match(f))) r.push(f);
@@ -110,7 +132,8 @@ export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargemen
 export function outilsHorsConnexion<T extends { toolId: string; groupe: string }>(outils: readonly T[], v: VerificationHorsConnexion): { disponibles: T[]; indisponibles: T[] } | null {
   if (v.raison === "cache-purge") return { disponibles: [], indisponibles: [...outils] };
   if (v.raison !== "evalue") return null;
-  const ok = (t: T) => (moteursDeBarre(t.groupe) ?? []).every((id) => v.moteurs[id] === true) && moteursDeBarre(t.groupe) !== null;
+  // Moteurs de l'outil (barre et moteurs propres, lot F2 : le booléen exact demande aussi le noyau exact).
+  const ok = (t: T) => { const m = moteursDeOutil(t.toolId, t.groupe); return m !== null && m.every((id) => v.moteurs[id] === true); };
   return { disponibles: outils.filter(ok), indisponibles: outils.filter((t) => !ok(t)) };
 }
 
@@ -131,18 +154,19 @@ export async function preparerHorsConnexion(env: EnvCache, carte: CarteChargemen
   if (!carte || carte.build !== env.build) return { ranges: [], echecs: [], raison: "sans-carte" };
   const nom = `${PREFIXE_CACHE}${env.build}`;
   if (!(await env.caches.has(nom))) return { ranges: [], echecs: [], raison: "sans-cache-du-build" };
-  const cache = await env.caches.open(nom);
+  const lecture = await cachesDuBuild(env as EnvCache & { caches: CachesLike }, env.build);
   const voulus = new Set<string>([FICHIER_CARTE, ...carte.initial, ...fermetureMoteurs(ids).flatMap((id) => carte.moteurs[id]?.fichiers ?? [])]);
   const ranges: string[] = [], echecs: string[] = [];
   for (const f of voulus) {
     if (f !== FICHIER_CARTE && !ADMIS.test(f)) continue;
-    if (await cache.match(f)) continue;
+    if (await lecture.match(f)) continue;
     try {
       const r = await env.fetch(f, { cache: f === FICHIER_CARTE ? "reload" : "default" });
       if (!r.ok) { echecs.push(f); continue; }
       // La carte reçue doit être celle de ce build (un déploiement plus récent servirait la sienne) : sinon, échec.
       if (f === FICHIER_CARTE && ((await r.clone().json().catch(() => null)) as { build?: unknown } | null)?.build !== env.build) { echecs.push(f); continue; }
-      await cache.put(f, r);
+      // Rangé dans le cache de sa classe (EX-042) : coquille, profil ou modules facultatifs.
+      await (await env.caches.open(`${PREFIXES_CLASSES[classeFichier(carte, f)]}${env.build}`)).put(f, r);
       ranges.push(f);
     } catch {
       echecs.push(f);

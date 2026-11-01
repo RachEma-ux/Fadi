@@ -26,6 +26,86 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
   pas encore lecteur interne et lecteur externe. La mise en œuvre relève de la PR séparée de correction des écarts E1,
   E2 et E3, pas de cette PR. La recommandation (a) n'est pas retenue.
 
+- **CR-C1 — Correction des écarts graves E1, E2, E3 (2026-10-24).** Demande du maître d'ouvrage (« Corrige » les
+  trois écarts graves de [PLAN.md](PLAN.md) § 3), relayée par la session d'exploitation du VPS. Une PR vers `main`
+  ([#274](https://github.com/RachEma-ux/Fadi/pull/274)), sans fusion ni déploiement ; migration strictement additive.
+  Le code relève de la gestion des comptes (accès projet) et des modules Collaboration et Studio : ce journal consigne
+  la correction parce que la PR #273 est fusionnée ; [UM-29](../users-management/DECISIONS.md) y renvoie.
+  1. **E3 — journal des changements d'accès.** Ajout d'un compte existant, changement de rôle (partage ou PATCH),
+     export accordé / retiré, retrait par le propriétaire, départ du membre et transfert de propriété écrivent chacun
+     une entrée `admin.audit_log` **dans la transaction de l'action** (`project.member.added`, `.role_changed`,
+     `.export_changed`, `.removed`, `.left`, `project.ownership.transferred`) : acteur, projet (cible), membre visé
+     (`memberId`), rôle et export avant → après ; aucune adresse ; rien n'est écrit quand rien ne change ou que l'action
+     est refusée. La ligne du membre est verrouillée (`FOR UPDATE`) pour que deux changements concurrents ne journalisent
+     pas le même « avant ». L'acceptation d'une invitation reste tracée par `invitation.accepted` (inchangé, phase 2
+     d'Organisations).
+  2. **E2 — export du lecteur, selon la décision CR-D4 (CR-R2)** : **aucun nouveau lecteur, interne ou externe,
+     n'exporte sans droit accordé explicitement par le propriétaire ; les lecteurs existants le conservent ;
+     propriétaire et éditeur gardent l'export ; l'accès support jamais** (la recommandation (a) du cadrage gardait
+     l'export à tout lecteur interne ; elle n'est pas retenue). `project_members.can_export` : migration additive — `ADD COLUMN … DEFAULT true` (chaque
+     ligne existante reçoit TRUE : aucun lecteur actuel ne perd l'export) puis `SET DEFAULT false` (nouvelles lignes,
+     invitations acceptées comprises). Propriétaire et éditeur exportent toujours, l'accès support jamais
+     (`accessAllows`, `lib/owned-project.ts`, vérifié par chaque route `export` : documents, archive, téléchargements,
+     copies, sources de référence externe, exports Studio). Le propriétaire accorde / retire l'export d'un lecteur dans
+     l'écran des membres (case « Export », journalisée). Choix du chef de projet, justifiés : un éditeur rétrogradé
+     lecteur redevient un nouveau lecteur (sans export) ; un droit d'export ne se règle pas sur un éditeur (422) ; NULL
+     (ligne restaurée d'une archive antérieure à la colonne) vaut TRUE, comme les lignes migrées.
+  3. **E1 — audience à l'intérieur d'un projet** (correction minimale, sans construire COM ; CR-D3 (a) : audiences fines
+     à COM). Colonne `audience` (`equipe` | `projet`) sur `project_comments` et `studio_comments` ;
+     migration additive : existants = `projet` (aucun changement silencieux), défaut `equipe` ensuite. `equipe` =
+     propriétaire et éditeurs ; `projet` = tous les membres, lecteurs compris ; l'accès support (lecture seule, hors
+     équipe) ne lit que `projet`. Une observation Studio est un commentaire d'origine (même identifiant) : son audience,
+     celle de ses passages, liens, tâches et décisions est celle du commentaire ; une réponse suit son fil. Filtrage
+     **serveur** sur toutes les lectures : listes et fils (étape, révision de l'Atelier), vue Collaboration, journal des
+     révisions et `GET /projects/:id/history`, recherche d'observation par domaine, détail, notifications et leurs
+     extraits, archive exportée par un lecteur (fils de l'équipe retirés avec tout ce qui les suit) ; toute action par
+     identifiant sur un fil de l'équipe rend 404 au lecteur (réponse, changement d'audience, suppression, passages,
+     liens, tâches, décisions). Les caches hors ligne ne reçoivent que ces réponses filtrées. Rédaction : case
+     « Visible par les lecteurs » (Collaboration, plis d'étape, journal de l'Atelier, commentaires et observations
+     Studio). Un lecteur écrit toujours pour tout le projet (une demande `equipe` de sa part : 422). L'audience d'un fil
+     change par son auteur ou le propriétaire (tous deux de l'équipe), journalisée (`comment.audience_changed`) ;
+     refusée vers `equipe` tant qu'un lecteur actuel a écrit dans le fil (409 : son texte lui serait retiré).
+  4. **Limites déclarées au premier passage, levées au § 6** (demande du maître d'ouvrage : « Règle ces problèmes ») :
+     cache local après changement d'audience ou de rôle (E7 / CR-D5), règle d'or des nouvelles commandes, conflit avec
+     la PR #265.
+  5. **Revue Codex de `b619ebb` (P1, retenue).** Une réponse lisait l'audience de son fil hors transaction : un
+     changement d'audience concurrent pouvait laisser une réponse « projet » dans un fil devenu « équipe ». La racine
+     du fil est désormais relue sous verrou partagé (`FOR SHARE`) dans la transaction de l'insertion, et le changement
+     d'audience la verrouille en écriture (`FOR UPDATE`) : les deux se sérialisent (Collaboration et Studio).
+  6. **Limites du § 4 levées (2026-10-24).**
+     - **E7 — copie locale, selon CR-D5 (a).** `lib/project-cache-guard.ts`, branché sur le cache des requêtes
+       (`main.tsx`) : au premier refus **404** du projet en ligne (le serveur répond 404 à qui n'en est plus membre),
+       ou quand la liste relue des projets ne le contient plus, l'appareil **oublie le projet** — ses requêtes du cache
+       persistant (fils, observations, journal, documents…), son modèle de l'Atelier, ses lots, brouillons et contextes
+       Studio (`localStore.oublierProjet`), et relit les notifications ; les autres projets ne sont pas touchés. Un
+       refus 404 d'une lecture à audience (fil devenu « équipe ») retire la copie de cette lecture. Un rôle hors de
+       l'équipe (lecteur, support) relit les éléments à audience à sa première lecture du projet dans la session et à
+       chaque changement de rôle : le fil réservé entre-temps disparaît de la copie. Choix du chef de projet : un 403
+       (rôle insuffisant pour une action, accès conservé) ne purge pas ; une panne réseau non plus (la copie reste
+       lisible hors ligne). Limite qui demeure, déclarée par CR-D5 : un appareil resté **hors ligne** garde sa copie
+       jusqu'à sa prochaine lecture en ligne, et les fichiers déjà téléchargés restent hors de portée.
+     - **Règle d'or étendue aux commandes de collaboration (choix du chef de projet).** `AGENTS.md` la pose pour la
+       Planche ; elle est appliquée ici aussi, sans modifier `AGENTS.md` : `modules/collaboration/commandes-collaboration.ts`
+       donne à chaque commande son icône propre et un raccourci affiché (`<kbd>`) et déclaré (`aria-keyshortcuts`) —
+       Alt+Maj+1 « Visible par les lecteurs » (formulaire de rédaction : Collaboration, journal de l'Atelier,
+       commentaires et observations Studio), Alt+Maj+2 « Rendre visible aux lecteurs » / « Réserver à l'équipe » (fil ;
+       les deux sens d'une même bascule), Alt+Maj+3 « Export accordé » (ligne du membre). Alt+Maj+chiffre : aucun autre
+       raccourci de Fadi ne l'emploie (les Alt+Maj+lettre sont pris par la Planche et l'administration). Contrôlé par
+       `commandes-collaboration.test.ts` (icônes uniques, raccourcis sans collision, chaque écran porte icône,
+       raccourci et gestionnaire) et exercé au clavier par `collaboration-audience.mjs`.
+     - **PR #265.** Le transfert de propriété suit l'ordre d'écriture de #265 (ancien propriétaire ajouté éditeur, puis
+       `owner_id`, puis retrait du nouveau propriétaire des membres : la participation tenue par déclencheurs ne
+       s'interrompt pas), le journal à la suite dans la même transaction. #265 est fusionnée (`f59641c`) ; `main` est
+       fusionné dans la branche, conflit de `members.ts` résolu ainsi, `app.test.ts` et tests `lib` verts (356) sur la
+       combinaison.
+
+- **CR-R3 — Ordre d'ouverture CR-D9 : dérogation pour COM (2026-10-24).** Sur demande explicite du maître d'ouvrage
+  (Issue #280), le chantier COM est ouvert et livré (PR #285, fusionnée `173b9f1`) avant les phases 2 à 4
+  d'Organisations ; dérogation acceptée avec les décisions COM-D1 à COM-D14 ([communication/DECISIONS.md](../communication/DECISIONS.md),
+  COM-A2). CR-D9 reste valable pour l'ordre Organisations → Temps réel. Conséquence : COM s'appuie sur les rôles
+  actuels et basculera sur les affectations avec la phase 2 d'Organisations (TASKS COM-10). La vague 3 de la recette
+  (S3, S4 sur notifications et recherche, S6 côté diffusion) est jouable avec `apps/web/e2e/communication.mjs`.
+
 ## Décisions en attente
 
 - Aucune : CR-D1 à CR-D10 sont répondues (CR-R1, CR-R2).

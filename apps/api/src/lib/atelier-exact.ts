@@ -8,10 +8,12 @@
  */
 import { ErreurExacte, MoteurExact, type OperationExacte, type SolideExact } from "@parcours/geometry-exact";
 import type { Commande } from "@parcours/atelier-model";
+import { surveillanceStudio } from "./studio-surveillance.js";
 
 let moteur: Promise<MoteurExact> | null = null;
 export function moteurExact(): Promise<MoteurExact> {
-  moteur ??= MoteurExact.charger().catch((e) => { moteur = null; throw e; });
+  // Chargement mesuré (R.5-03) : durée, mémoire du processus avant / après, échec compté.
+  moteur ??= surveillanceStudio.mesurerChargement("exact", () => MoteurExact.charger()).catch((e) => { moteur = null; throw e; });
   return moteur;
 }
 
@@ -43,7 +45,7 @@ export async function revaliderSolidesExacts(commandes: Commande[]): Promise<Ref
     if (!entrees) return { status: 400, reponse: { erreur: "invalide", details: [{ chemin: `commands[${i}].params.operation.entrees`, message: "opération exacte absente : le serveur recalcule toute géométrie exacte" }] } };
     let r: SolideExact;
     try {
-      r = M.executer(entrees as OperationExacte);
+      r = surveillanceStudio.mesurer("exact", TYPE_CREER_EXACT, () => M.executer(entrees as OperationExacte));
     } catch (err) {
       if (err instanceof ErreurExacte) return { status: 400, reponse: { erreur: "invalide", details: [{ chemin: `commands[${i}].params.operation.entrees.${err.chemin}`, message: err.message }] } };
       return { status: 400, reponse: { erreur: "invalide", details: [{ chemin: `commands[${i}].params.operation.entrees`, message: `noyau exact : ${err instanceof Error ? err.message : String(err)}` }] } };

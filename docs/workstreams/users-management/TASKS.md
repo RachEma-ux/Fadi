@@ -13,6 +13,12 @@
 
 - Aucune tâche en cours dans ce dossier ; PR ouverte qui le met à jour elle-même : #274 (UM-29).
 
+- [ ] UM-29 — Écarts graves E1 (audience équipe / projet), E2 (export explicite du lecteur, CR-D4), E3 (journal des
+  changements d'accès) du cadrage des règles communes, puis E7 (copie locale, CR-D5) et règle d'or des commandes de
+  collaboration : implémentés, vérifiés en local (STATUS.md) ; PR vers `main`
+  ouverte, **non fusionnée** ; CI du HEAD à vérifier ; fusion et déploiement sur décision du maître d'ouvrage
+  (Issue : #272).
+
 ## Terminé
 
 - [x] UM-30 — Langue des courriels = langue de l'interface, sinon français (`Accept-Language` n'est plus lu) :

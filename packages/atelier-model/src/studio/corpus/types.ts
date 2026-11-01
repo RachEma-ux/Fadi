@@ -24,8 +24,13 @@ export type TailleIllustrative = (typeof TAILLES_ILLUSTRATIVES)[number];
 /** Graines fixes, une par scène (reproductibilité). */
 export const GRAINES_CORPUS: Readonly<Record<SceneCorpus, number>> = Object.freeze({ S1: 101, S2: 202, S3: 303, S4: 404, S5: 505, S6: 606, S7: 707 });
 
-/** Licence d'utilisation (REF-02 §18.2) : non tranchée ici — le corpus est généré dans le dépôt, sans source tierce. */
-export const LICENCE_CORPUS = "Licence à valider par le maître d'ouvrage (corpus synthétique, généré par le dépôt Fadi : géométrie seule, aucune source tierce).";
+/**
+ * Licence d'utilisation (REF-02 §18.2 : « chaque scène a une licence d'utilisation autorisée ») : le corpus est
+ * **synthétique, généré par le code du dépôt**, sans aucune source tierce ; il relève donc de la licence du dépôt Fadi,
+ * établie dans `LICENCE.md` (même dossier) : aucune licence ouverte déclarée, droits réservés au titulaire du dépôt,
+ * usage autorisé dans le dépôt pour les essais, recettes et mesures du projet.
+ */
+export const LICENCE_CORPUS = "Licence du dépôt Fadi (RachEma-ux/Fadi) : corpus synthétique généré par le code du dépôt, aucune source tierce ; aucune licence ouverte déclarée, droits réservés au titulaire du dépôt, usage autorisé dans le dépôt pour les essais, recettes et mesures du projet Fadi (corpus/LICENCE.md).";
 export const AVERTISSEMENT_CORPUS = "Géométrie synthétique de test : aucune donnée de projet réelle ni inventée ; tailles illustratives (X.1-10), non des engagements de capacité.";
 
 /** Ce que la scène de REF-02 §18.2 demande et que le document `studio-document/1` ne peut pas représenter. */

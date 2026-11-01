@@ -1,9 +1,9 @@
-# Fadi — passage de fadi-preprod-auto toutes les 5 minutes (un seul à la fois : service oneshot + verrou du script).
+# Fadi — passage de fadi-preprod-auto toutes les 3 minutes (un seul à la fois : service oneshot + verrou du script).
 [Unit]
-Description=Fadi — préproduction automatique toutes les 5 minutes
+Description=Fadi — préproduction automatique toutes les 3 minutes
 
 [Timer]
-OnCalendar=*:0/5
+OnCalendar=*:0/3
 RandomizedDelaySec=30
 Persistent=false
 Unit=fadi-preprod-auto.service

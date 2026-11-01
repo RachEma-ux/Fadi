@@ -3632,6 +3632,40 @@ button.h7-chip.h7-goto:hover {
 .comment-form .h7-actions {
   margin-top: 8px;
 }
+/* Commandes de collaboration (règle d'or, `modules/collaboration/commandes-collaboration.ts`) : icône propre et raccourci affiché. */
+.collab-icon {
+  flex: 0 0 auto;
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+.collab-raccourci {
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+/* Audience (écart E1) et export du lecteur (E2) : cases à cocher de 24 px au moins (axe-core target-size, WCAG 2.5.8). */
+.comment-audience-choice,
+.member-export,
+.journal-audience {
+  display: inline-flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400 !important;
+}
+.comment-audience-choice input[type="checkbox"],
+.member-export input[type="checkbox"],
+.journal-audience input[type="checkbox"],
+[data-studio-audience] {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  margin: 0;
+  flex: 0 0 auto;
+}
 .journal-table td:nth-child(4) {
   min-width: 260px;
   color: var(--muted);
@@ -3833,6 +3867,233 @@ fieldset.access-fieldset:disabled {
 @media (max-width: 720px) {
   .members-invite {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Invitations acceptées (Issue #262, phase 3) : formulaire avec aperçu, invitations reçues. */
+.members-invite[data-invitation-form] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+.members-invite[data-invitation-form] > .h7-actions,
+.members-invite[data-invitation-form] > .invitation-apercu,
+.members-invite[data-invitation-form] > .invitation-extra-roles,
+.members-invite[data-invitation-form] > [role="alert"] {
+  grid-column: 1 / -1;
+}
+.invitation-extra-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+}
+.invitation-extra-roles legend {
+  font-size: 13px;
+  color: var(--muted);
+}
+.invitation-extra-roles label {
+  flex-direction: row;
+  align-items: center;
+  min-height: 24px;
+}
+.invitation-apercu dl {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-apercu dt {
+  color: var(--muted);
+}
+.invitation-apercu dd {
+  margin: 0;
+}
+.received-invitations .project-list li {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.received-invitations .project-list li > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-recue-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  flex-basis: 100%;
+}
+@media (max-width: 480px) {
+  .invitation-apercu dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Équipe et participants (Issue #262, phase 2) */
+.participants-cloture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0 12px;
+}
+.participants-cloture small {
+  flex-basis: 100%;
+}
+.participants-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+.participants-roles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.participants-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 220px;
+}
+.participants-commande {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+.participants-form fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  grid-column: 1 / -1;
+}
+.participants-form .wide {
+  grid-column: 1 / -1;
+}
+.participants-case {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  font-weight: 400 !important;
+}
+.participants-case input {
+  width: 18px;
+  height: 18px;
+}
+.participants-section .danger-button {
+  color: #fff;
+}
+/* Organisations du projet : partie propriétaire et parties (Issue #262, reliquat de la phase 5) */
+.projet-organisations {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.projet-organisations h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.projet-organisations h4 {
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+.projet-organisations-tete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+}
+.projet-organisations-tete dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.projet-organisations-tete dd {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-note {
+  margin: 6px 0 0;
+}
+.projet-organisations-parties {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.projet-organisations-parties > li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.projet-organisations-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-representants ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
+}
+.projet-organisations-representants li small {
+  margin-left: 6px;
+}
+/* Représentant mandaté → invitation de projet (reliquat de la phase 5) : état, volet d'invitation, mandat terminé. */
+.projet-organisations-representants li .h7-chip {
+  margin-left: 6px;
+}
+.projet-organisations-inviter {
+  margin: 4px 0 6px;
+  min-width: 0;
+}
+.projet-organisations-inviter > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 24px;
+}
+.projet-organisations-inviter .members-invite {
+  margin-top: 6px;
+}
+.project-owner-org {
+  overflow-wrap: anywhere;
+}
+.participants-correspondances {
+  grid-column: 1 / -1;
+  border-left: 3px solid #bd873d;
+  padding: 6px 10px;
+}
+/* Un long libellé d'option (rôle, élément de portée) ne doit jamais élargir le formulaire au-delà de l'écran. */
+.participants-form > *,
+.participants-form label {
+  min-width: 0;
+}
+.participants-form select {
+  max-width: 100%;
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .participants-form {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -4070,3 +4331,48 @@ fieldset.access-fieldset:disabled {
   .notification-popover { max-height: min(70dvh, 600px); width: min(420px, calc(100vw - 75px)); }
   .notification-alert-list li { padding: 10px; }
 }
+
+/* Communication (COM, Issue #280) : liste, fil, rédaction, demandes de précision, boîte. */
+.com-panel, .com-demandes { display: flex; flex-direction: column; gap: 10px; }
+.com-liste, .com-messages, .com-demandes-liste, .com-participants, .com-responsabilites { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.com-liste li { padding: 6px 8px; border: 1px solid #d6e2dc; border-radius: 6px; }
+.com-liste li.com-liste-sel { border-color: #2f6f57; background: #f2f8f5; }
+.com-non-lus { font-weight: 700; color: #2f6f57; }
+.com-conversation-vue { border: 1px solid #c9d8d0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.com-entete h3 { margin: 0 0 4px; }
+.com-audience, .com-audience-envoi, .com-audience-apercu { margin: 0; padding: 4px 8px; border-left: 3px solid #2f6f57; background: #f2f8f5; }
+.com-message { padding: 8px; border: 1px solid #e1e9e5; border-radius: 6px; }
+.com-message:focus-within { outline: 2px solid #2f6f57; }
+.com-nature-partage { background: #f7f9fc; }
+.com-nature-action { background: #fbfaf3; }
+.com-urgent { border-color: #b3261e; }
+.com-urgent-chip, .com-retard { color: #b3261e; }
+.com-corps { white-space: pre-wrap; margin: 6px 0; }
+.com-refs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.com-ref-fermee { opacity: 0.75; font-style: italic; }
+.com-options { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.com-options label { flex-direction: row !important; align-items: center; gap: 6px; font-weight: 400 !important; }
+.com-options input[type="checkbox"], .com-participants-choix input, .com-message input[type="checkbox"] { min-width: 24px; min-height: 24px; }
+.com-commande { display: inline-flex; align-items: center; }
+.com-apercu { border: 1px dashed #2f6f57; border-radius: 6px; padding: 8px; margin-top: 8px; }
+.com-demande { padding: 8px; border: 1px solid #e1e9e5; border-radius: 6px; }
+.com-etat { font-style: italic; }
+.h7-warning { color: #7a4b00; }
+.com-boite li > .h7-chip { display: inline-block; width: auto; margin-right: 6px; }
+
+/* Photos et épingles (lot COM-13). */
+.com-photos { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 6px 0; padding: 0; }
+.com-photos img { max-width: 160px; max-height: 160px; width: auto; height: auto; border-radius: 6px; border: 1px solid #d6e2dc; object-fit: cover; }
+.com-photos-brouillon li { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.com-plan { position: relative; width: 100%; max-width: 420px; border: 1px solid #c9d8d0; border-radius: 6px; background: #fff; }
+.com-plan > img, .com-plan > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.com-plan-pose { cursor: crosshair; }
+.com-epingle summary { cursor: pointer; }
+.com-joints { flex-wrap: wrap; }
+
+/* Paramètres → fournisseurs de fonds de carte (D-GD-15). */
+.settings-fournisseurs { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.settings-fournisseurs > li { border: 1px solid var(--line, #d4e0e2); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+.settings-fournisseurs .h7-actions { align-items: center; }
+.settings-badge { font-size: 12px; border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; margin-left: 6px; }
+.settings-erreurs { margin: 0; padding-left: 18px; color: #9a3412; }

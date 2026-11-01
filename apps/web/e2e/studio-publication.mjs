@@ -12,6 +12,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/studio-publication.mjs
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 let failures = 0;
@@ -54,8 +55,13 @@ check('compte étranger inscrit', (await foreign('POST', '/auth/register', crede
 const project = await owner('POST', '/projects', { code: `PUB_${randomUUID().slice(0, 8)}`, name: 'Studio — publications (recette synthétique)' });
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;
-check('éditeur invité', (await owner('POST', `/projects/${projectId}/members`, { email: accounts.editor.email, role: 'editeur' })).status === 201);
-check('lecteur invité', (await owner('POST', `/projects/${projectId}/members`, { email: accounts.reader.email, role: 'lecteur' })).status === 201);
+check('éditeur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, editor, projectId, accounts.editor.email, 'editeur')).ok);
+const invitedReader = await inviterEtAccepter(owner, reader, projectId, accounts.reader.email, 'lecteur');
+check('lecteur invité, invitation acceptée (phase 3)', invitedReader.ok);
+const readerMe = (await reader('GET', '/auth/me')).body;
+const readerId = readerMe?.user?.id ?? readerMe?.id;
+// CR-D4 (écart E2) : un nouveau lecteur ne télécharge un paquet diffusé qu'avec l'export accordé par le propriétaire.
+check('lecteur : export accordé par le propriétaire', (await owner('PATCH', `/projects/${projectId}/members/${readerId}`, { canExport: true })).body?.canExport === true);
 
 const root = `/projects/${projectId}/studio`;
 const study = await owner('POST', `${root}/studies`, { name: 'Étude publiée' });
@@ -278,6 +284,14 @@ const g5 = (await reader('GET', `${pubs2}/${p5.id}`)).body;
 const docsE4 = (await reader('GET', `/projects/${projectId}/documents`)).body?.studioPackages ?? [];
 check('E.4 : Documents : dossier E listé remplacé, dossier F seul en vigueur', docsE4.find((p) => p.publicationId === p5.id)?.diffusionStatus === 'remplace' && docsE4.filter((p) => p.variantId === vA && p.diffusionStatus === 'diffuse').map((p) => p.publicationId).join() === p6.id, short(docsE4.map((p) => [p.publicationId, p.diffusionStatus])));
 check('E.4 : dossier E remplacé, journalisé, paquet toujours lisible', g5?.diffusionStatus === 'remplace' && g5.replacement?.publicationId === p6.id && g5.events?.at(-1)?.action === 'remplacer' && (await reader('GET', `${pubs2}/${p5.id}/files/pdf`, undefined, true)).status === 200, short(g5));
+// EX-081 [−] : la modification après approbation n'atteint pas la publication historique — contenu identique, octet pour octet.
+const filesE = d5.body?.diffusion?.files ?? [];
+let intactE = filesE.length === 4 && g5?.diffusion?.packageHash === d5.body.diffusion.packageHash && g5.diffusion.manifestHash === p5.manifestHash && g5.manifestHash === p5.manifestHash && g5.revisionId === p5.revisionId;
+for (const f of filesE) {
+  const file = await reader('GET', `${pubs2}/${p5.id}/files/${f.format}`, undefined, true);
+  intactE &&= file.status === 200 && sha(file.bytes) === f.sha256 && file.bytes.length === f.size;
+}
+check('EX-081 [−] dossier E diffusé puis variante modifiée et dossier F diffusé : ses quatre fichiers ont les empreintes de sa diffusion, paquet, manifeste et révision inchangés', intactE, short([g5?.diffusion?.packageHash, d5.body?.diffusion?.packageHash]));
 const j6 = (await owner('GET', `${pubs2}/${p6.id}`)).body?.events ?? [];
 check('E.4 : journal du dossier F (deux approbations, actualisation entre les deux)', JSON.stringify(j6.map((e) => e.action)) === JSON.stringify(['creer', 'soumettre', 'approuver', 'actualiser', 'soumettre', 'approuver', 'diffuser']) && j6[2].manifestHash === p6.manifestHash && j6[5].manifestHash === u6.body.manifestHash, short(j6));
 // Actualité multi-sources : la variante coordonnée change.
@@ -326,6 +340,65 @@ if (chromium && /<div id="root"/.test(shell)) {
       && (await card7.getAttribute('data-actualite')) === 'perimee', JSON.stringify({ seen, dims }));
   await browser.close();
 } else console.log(`– E.4 (interface) : non exécuté (${chromium ? "l'API ne sert pas l'application web" : 'Playwright absent'})`);
+
+// --- EX-085 : délégation contrôlée de l'approbation ------------------------------------------------------------------
+// L'absence de l'approbateur ne vaut pas accord ; une délégation (portée, période, délégant, délégué, motif) permet au
+// délégué d'approuver, auditée ; hors portée ou révoquée, refus nommé.
+{
+  const editorMe = (await editor('GET', '/auth/me')).body;
+  const editorId = editorMe?.user?.id ?? editorMe?.id;
+  const p8 = await prepare('Dossier H délégué');
+  await editor('POST', `${pubs2}/${p8.id}/soumettre`, {});
+  const ensemble = (p) => ({ manifestHash: p.manifestHash, revisionId: p.revisionId, documentHash: p.documentHash });
+  const sans = await editor('POST', `${pubs2}/${p8.id}/approuver`, ensemble(p8));
+  check('EX-085 : éditeur sans délégation ne peut pas approuver (403)', sans.status === 403, short(sans.body));
+  check('EX-085 : sans décision, le dossier reste en revue (l\'absence d\'approbateur ne vaut pas accord)', (await owner('GET', `${pubs2}/${p8.id}`)).body?.workStatus === 'en-revue');
+  const maintenant = Date.now();
+  const dl = await owner('POST', `${root}/delegations`, {
+    delegateId: editorId, scopeType: 'etude', scopeId: s2, startsAt: new Date(maintenant - 60_000).toISOString(), endsAt: new Date(maintenant + 86_400_000).toISOString(),
+    reason: 'Absence du propriétaire (recette)', requestId: `dl-${randomUUID()}`,
+  });
+  check('EX-085 : délégation créée (portée, période, délégant, délégué, motif)', dl.status === 201 && dl.body?.state === 'active' && dl.body.delegator?.email === accounts.owner.email
+    && dl.body.delegate?.email === accounts.editor.email && dl.body.scope?.type === 'etude' && dl.body.reason === 'Absence du propriétaire (recette)', short(dl.body));
+  check('EX-085 : la création n\'approuve rien', (await owner('GET', `${pubs2}/${p8.id}`)).body?.workStatus === 'en-revue');
+  const vue = (await editor('GET', `${pubs2}/${p8.id}`)).body;
+  check('EX-085 : la délégation est proposée au délégué (approuver, refuser ; jamais diffuser)', vue?.delegation?.id === dl.body?.id && vue.allowed.includes('approuver') && !vue.allowed.includes('diffuser'), short(vue?.allowed));
+  const ok = await editor('POST', `${pubs2}/${p8.id}/approuver`, { ...ensemble(p8), delegationId: dl.body?.id, comment: 'Approuvé par délégation' });
+  check('EX-085 : le délégué approuve au titre de la délégation', ok.status === 200 && ok.body?.workStatus === 'approuve' && ok.body.approval?.delegationId === dl.body?.id && ok.body.approval?.by?.email === accounts.editor.email, short(ok.body));
+  check('EX-085 : journal de la publication : approbation portant la délégation', ok.body?.events?.at(-1)?.action === 'approuver' && ok.body.events.at(-1).delegationId === dl.body?.id);
+  check('EX-085 : le délégué ne diffuse pas (403)', (await editor('POST', `${pubs2}/${p8.id}/diffuser`, {})).status === 403);
+  const audit = (await owner('GET', `${root}/delegations`)).body?.delegations?.find((d) => d.id === dl.body?.id);
+  check('EX-085 : audit de la délégation (création, emploi sur la publication)', JSON.stringify(audit?.events?.map((e) => [e.action, e.publicationId ?? null])) === JSON.stringify([['creer', null], ['employer', p8.id]]), short(audit?.events));
+  check('EX-085 : le délégué ne révoque pas (403)', (await editor('POST', `${root}/delegations/${dl.body?.id}/revoquer`, { reason: 'non' })).status === 403);
+  const rv = await owner('POST', `${root}/delegations/${dl.body?.id}/revoquer`, { reason: 'Retour du propriétaire' });
+  check('EX-085 : révocation motivée et journalisée', rv.status === 200 && rv.body?.state === 'revoquee' && rv.body.revocation?.reason === 'Retour du propriétaire' && rv.body.events?.at(-1)?.action === 'revoquer', short(rv.body));
+  const p9 = await prepare('Dossier I après révocation');
+  await editor('POST', `${pubs2}/${p9.id}/soumettre`, {});
+  const apres = await editor('POST', `${pubs2}/${p9.id}/approuver`, { ...ensemble(p9), delegationId: dl.body?.id });
+  check('EX-085 : délégation révoquée : refus nommé, rien n\'est approuvé', apres.status === 403 && apres.body?.code === 'delegation_revoquee' && (await owner('GET', `${pubs2}/${p9.id}`)).body?.workStatus === 'en-revue', short(apres.body));
+  const horsPortee = await owner('POST', `${root}/delegations`, { delegateId: editorId, scopeType: 'publication', scopeId: p8.id, startsAt: new Date(maintenant - 60_000).toISOString(), endsAt: new Date(maintenant + 86_400_000).toISOString(), reason: 'Seulement le dossier H' });
+  const hp = await editor('POST', `${pubs2}/${p9.id}/approuver`, { ...ensemble(p9), delegationId: horsPortee.body?.id });
+  check('EX-085 : hors portée : refus nommé', horsPortee.status === 201 && hp.status === 403 && hp.body?.code === 'delegation_hors_portee', short(hp.body));
+  // Interface : panneau des délégations du propriétaire (commande « Déléguer » : icône, raccourci ; délégation révoquée journalisée).
+  if (chromium && /<div id="root"/.test(shell)) {
+    const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
+    const ctx = await browser.newContext();
+    await ctx.addCookies(owner.cookie().split('; ').filter(Boolean).map((c) => ({ name: c.slice(0, c.indexOf('=')), value: c.slice(c.indexOf('=') + 1), url: BASE })));
+    const page = await ctx.newPage();
+    await page.goto(`${BASE}/studio/projets/${projectId}/etudes/${s2}`);
+    const panneau = page.locator('[data-studio-delegations]');
+    const vu = await panneau.waitFor({ timeout: 30000 }).then(() => true, () => false);
+    const bouton = panneau.locator('[data-studio-delegation-ouvrir]');
+    const ligne = panneau.locator(`[data-studio-delegation="${dl.body?.id}"]`);
+    check('EX-085 (interface) : « Déléguer l\'approbation » avec icône et raccourci ; délégation révoquée affichée avec son journal',
+      vu && (await bouton.getAttribute('aria-keyshortcuts')) === 'Control+Alt+Shift+B' && (await bouton.locator('[data-icone-collaboration="deleguer-approbation"]').count()) === 1
+        && (await ligne.getAttribute('data-etat')) === 'revoquee' && (await ligne.locator('[data-studio-delegation-journal] li').count()) === 3, String(vu));
+    await bouton.click();
+    check('EX-085 (interface) : formulaire de délégation (délégué, portée, période, motif)', (await panneau.locator('[data-studio-delegation-formulaire] [data-studio-delegation-motif]').count()) === 1
+      && (await panneau.locator('[data-studio-delegation-delegue] option').count()) >= 1);
+    await browser.close();
+  } else console.log(`– EX-085 (interface) : non exécuté (${chromium ? "l'API ne sert pas l'application web" : 'Playwright absent'})`);
+}
 
 // --- Jamais de suppression : le projet portant des publications diffusées ou retirées est conservé ----------------
 const del = await owner('DELETE', `/projects/${projectId}`);

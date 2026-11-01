@@ -7,19 +7,20 @@
  * grille, sinon le centimètre ; saisie directe d'une longueur et d'un angle (champ « Mesures »). Les candidats ne sont
  * cherchés que dans la vue, à la tolérance du pointeur. La vue n'est jamais une commande ni une donnée du document.
  */
-import { contoursMurs } from "../architecture/architecture-ui";
+import { contoursEchelles, contoursMurs } from "../architecture/architecture-ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { StudioDocument, StudioPoint } from "@parcours/atelier-model";
 import {
-  appliquerSaisie, basculerAccrochage, basculesActives, BASCULES_INITIALES, direction, indexAccrochage, resoudre,
+  appliquerSaisie, basculerAccrochage, basculesActives, BASCULES_INITIALES, direction, resoudreTrace, suiviAccrochage, type TraceAmbiguite,
   type Boite, type EtatBascules, type PointRepere, type ResultatSaisie,
 } from "../accrochage";
 import { estVisible } from "../calques";
 import type { PointPose, RectangleSelection } from "../Dessin2D";
-import { auCentimetre, CADRE_INITIAL, type Cadre } from "../geometrie-2d";
+import { CADRE_INITIAL, type Cadre } from "../geometrie-2d";
+import { pointPose } from "../accrochage/point-pose";
 import type { IdCommandeEditeur, StudioToolId } from "../raccourcis";
-import { ajouter, modeRectangle, selectionParRectangle } from "../selection";
-import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, surGrille, zoomer, type Rect } from "../vue";
+import { ajouter, designationAuPoint, designationSuivante, modeRectangle, selectionParRectangle } from "../selection";
+import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, zoomer, type Rect } from "../vue";
 import { ecart } from "./type";
 import { mesurerAccrochage, mesurerApercu, mesurerCadrage } from "../../chargement/mesures-studio";
 
@@ -67,10 +68,13 @@ export function useGestesPlanche(o: OptionsGestes) {
   const base = o.base ?? null;
   useEffect(() => { setVerrouAngle(null); }, [base?.x, base?.y, base === null]);
   // Index des objets accrochables affichés, recalculé quand le document change (pas à chaque mouvement du pointeur).
+  // Index incrémental (C.1-05) : d'une révision à l'autre, seules les formes changées y sont insérées ou retirées.
+  const suivi = useRef<ReturnType<typeof suiviAccrochage> | null>(null);
+  suivi.current ??= suiviAccrochage();
   const index = useMemo(() => {
     const d = o.drawing;
     // Murs (A.4) : le contour de leur emprise s'accroche comme une polyligne fermée, sous l'identifiant du mur.
-    return d ? indexAccrochage([...d.objects.filter((x) => estVisible(d, x.layerId)), ...contoursMurs(d, (l) => estVisible(d, l))]) : null;
+    return d ? suivi.current!.indexer([...d.objects.filter((x) => estVisible(d, x.layerId)), ...contoursMurs(d, (l) => estVisible(d, l)), ...contoursEchelles(d, (l) => estVisible(d, l))]) : null;
   }, [o.drawing]);
   const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
   const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);
@@ -132,13 +136,42 @@ export function useGestesPlanche(o: OptionsGestes) {
     const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing || !index) return null;
     const raw = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
     const tol = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
-    const repere = mesurerAccrochage(drawing.objects.length, () => resoudre(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
-      { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire }));
-    if (repere) return { point: repere.ancre ? { ...repere.ancre.point } : { ...repere.point }, accroche: repere.ancre, repere };
-    return { point: o.accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche: null, repere: null };
+    const r = mesurerAccrochage(drawing.objects.length, () => resoudreTrace(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
+      { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire }, choixAmbigu.current));
+    // AC-004 : un cas ambigu est tracé (candidates, règle de départage) ; un autre cas oublie le choix explicite.
+    if (!r.ambiguite || r.ambiguite.cle !== choixAmbigu.current?.cle) choixAmbigu.current = null;
+    derniereAmbiguite.current = r.ambiguite;
+    const p = pointPose(r.repere, raw, o.accrocheGrille ? pas : null);
+    return r.ambiguite ? { ...p, ambiguite: { cle: r.ambiguite.cle, n: r.ambiguite.candidats.length, k: r.choix } } : p;
+  }
+  // ——— Cas ambigus (AC-004) : résolution explicite ———
+  const choixAmbigu = useRef<{ cle: string; rang: number } | null>(null);
+  const derniereAmbiguite = useRef<TraceAmbiguite | null>(null);
+  const dernierPointeur = useRef<{ clientX: number; clientY: number; shiftKey: boolean } | null>(null);
+  const dernierClic = useRef<StudioPoint | null>(null);
+  /**
+   * « Cible d'accrochage suivante » : au survol d'un cas ambigu, la candidate suivante devient le point posé (choix
+   * explicite, gardé tant que le pointeur reste sur ce cas) ; sinon, avec l'outil Sélection, après un clic sur des objets
+   * superposés, l'objet suivant sous le clic est désigné. Faux s'il n'y a aucun cas ambigu à résoudre.
+   */
+  function cibleSuivante(): boolean {
+    const a = derniereAmbiguite.current;
+    if (o.pointsActifs && a && dernierPointeur.current) {
+      const rang = (choixAmbigu.current?.cle === a.cle ? choixAmbigu.current.rang : 0) + 1;
+      choixAmbigu.current = { cle: a.cle, rang };
+      setSurvol(pose(dernierPointeur.current, o.exclureAuSurvol));
+      return true;
+    }
+    if (o.outil === "studio.dessin.selection" && o.drawing && dernierClic.current) {
+      const t = designationAuPoint(o.drawing, dernierClic.current, tolerance());
+      const suivant = designationSuivante(t, o.selectionIds.length === 1 ? o.selectionIds[0] : undefined);
+      if (suivant) { o.select([suivant]); return true; }
+    }
+    return false;
   }
   /** Bascule d'accrochage ou de repérage ; false si `id` n'en est pas une. */
   function commandeAccrochage(id: IdCommandeEditeur): boolean {
+    if (id === "accrochage-cible-suivante") return cibleSuivante();
     const suivant = basculerAccrochage(bascules, id);
     if (!suivant) return false;
     setBascules(suivant);
@@ -156,6 +189,7 @@ export function useGestesPlanche(o: OptionsGestes) {
   }
   function hover(e: PointerEvent<SVGSVGElement>) {
     if (!o.pointsActifs) { if (survol) setSurvol(null); return; }
+    dernierPointeur.current = { clientX: e.clientX, clientY: e.clientY, shiftKey: e.shiftKey };
     setSurvol(pose(e, o.exclureAuSurvol));
     mesurerApercu(e.timeStamp, o.drawing?.objects.length ?? 0);
   }
@@ -172,6 +206,8 @@ export function useGestesPlanche(o: OptionsGestes) {
       demarrerVue(svg); svg.setPointerCapture?.(e.pointerId); e.preventDefault(); return;
     }
     if (e.button !== 0 || o.outil !== "studio.dessin.selection" || !o.drawing) return;
+    // AC-004 : point du clic retenu, pour résoudre explicitement une désignation ambiguë (objets superposés).
+    dernierClic.current = brut(e);
     const cible = (e.target as Element).closest?.("[data-studio-objet]");
     const id = cible?.getAttribute("data-studio-objet");
     const ecran = { x: e.clientX, y: e.clientY };

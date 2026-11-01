@@ -34,7 +34,10 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import request from "supertest";
-import { STUDIO_CONTRACT } from "@parcours/atelier-model";
+import { STUDIO_CONTRACT, studioExporterBcf, studioSujetsBcf } from "@parcours/atelier-model";
+import { studioProvenanceRendu } from "@parcours/atelier-model";
+import { creerJetonAgent, proposerCommandes } from "../lib/studio-agents.js";
+import { ecrirePng } from "../lib/studio-png.js";
 import { studioRouter } from "./studio.js";
 import { ACTEURS, banc, initialiserProjet, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -85,9 +88,65 @@ async function creer(url: string, body: unknown, lireId: (b: Record<string, any>
 }
 const exigence = { id: "e1", libelle: "Exigence e1", metrique: { type: "nombre" }, comparaison: "<=", valeur: 10, unite: "u", source: "Programme saisi (essai)" };
 const publication = async () => ({ pub: await creer(`${V}/publications`, { title: "Dossier d'essai", contenu: "dessin-2d" }) });
-const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur" }) });
+const ESSAI = { contractVersion: STUDIO_CONTRACT, requestId: "essai-1", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "e", type: "line", start: { x: 0, y: 2 }, end: { x: 1, y: 2 } } }] };
+const essai = async () => ({ job: await creer(`${V}/essais`, ESSAI) });
+// Lot W3-D (X.1-06) : variante dérivée de v (r1) avec une ligne de plus, puis aperçu de sa fusion dans v (préparés par le propriétaire).
+const fusionPreparee = async () => {
+  const v2 = await creer(`${S}/studies/s/variants`, { name: "Variante dérivée", fromVariantId: "v", fromRevisionId: "r1" }, (b) => b?.variant?.id);
+  const tete = await creer(`${S}/studies/s/variants/${v2}/commands`, { contractVersion: STUDIO_CONTRACT, requestId: "fu-1", baseRevisionId: await lireTete(v2), commands: [{ toolId: "studio.dessin.ligne", params: { id: "fu", type: "line", start: { x: 0, y: 4 }, end: { x: 1, y: 4 } } }] }, (b) => b?.revision?.id);
+  const a = await comme("proprietaire")(request(app).post(`${V}/fusion/apercu`)).send({ sourceVariantId: v2 });
+  if (a.status !== 200) throw new Error(`préparation aperçu : ${a.status}`);
+  return { v2, sourceRevisionId: tete, baseRevisionId: a.body.cible.revisionId as string, empreinte: a.body.apercu.empreinte as string };
+};
+const lireTete = async (variantId: string): Promise<string> => (await comme("proprietaire")(request(app).get(`${S}/studies/s/variants/${variantId}`))).body.revision.id;
+const corpsFusion = (c: Contexte) => ({ requestId: "fusion-1", sourceVariantId: c["v2"], sourceRevisionId: c["sourceRevisionId"], baseRevisionId: c["baseRevisionId"], empreinte: c["empreinte"] });
+const fusionAppliquee = async () => {
+  const c = await fusionPreparee();
+  return { ...c, fusionne: await creer(`${V}/fusion`, corpsFusion(c), (b) => b?.revision?.id) };
+};
+const migration = async () => ({ mig: await creer(`${S}/studies/s/migrations`, { cible: "studio-document/2" }) });
+const migrationAppliquee = async () => {
+  const { mig } = await migration();
+  for (const passage of ["accorder", "appliquer"]) {
+    const r = await comme("proprietaire")(request(app).post(`${S}/studies/s/migrations/${mig}/${passage}`)).send({});
+    if (r.status !== 200) throw new Error(`préparation ${passage} : ${r.status}`);
+  }
+  return { mig };
+};
+// Audience « projet » (écart E1) : le lecteur voit l'observation, les cellules jugent donc son rôle (403), pas son audience (404).
+const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur", audience: "projet" }) });
+/** Délégation d'approbation (EX-085) du propriétaire à l'éditeur, portée projet, période en cours. */
+const DELEGATION = { delegateId: "editeur", scopeType: "projet", startsAt: new Date(Date.now() - 3_600_000).toISOString(), endsAt: new Date(Date.now() + 30 * 86_400_000).toISOString(), reason: "Absence du propriétaire (essai)" };
+const delegation = async () => ({ dl: await creer(`${S}/delegations`, DELEGATION) });
 const feuille = async () => ({ f: await creer(`${V}/sheets`, { number: "A-01", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" }) });
 const dossier = async () => { const { f } = await feuille(); return { f, d: await creer(`${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f] }) }; };
+/** Modèle externe (lot F3, TR-EX-066) : fixture IFC écrite à la main, reçue par le propriétaire. */
+const IFC_RECETTE = readFileSync(new URL("../../../../packages/atelier-model/src/studio/import-ifc/fixtures/recette-ifc2x3.ifc", import.meta.url), "utf8");
+const receptionModele = { reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette.ifc", contenu: IFC_RECETTE };
+const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, receptionModele) });
+const MX = "/studies/:studyId/variants/:variantId/modeles-externes";
+// Lot F : rendu du modèle portant sa provenance, illustration, jeton et proposition d'agent (préparés par le propriétaire).
+const IL = "/studies/:studyId/variants/:variantId/illustrations";
+const corpsIllustration = () => {
+  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } , auteur: { id: "proprietaire", email: null } });
+  return { requestId: "illu-p", fournisseur: "local-derive", image: ecrirePng({ largeur: 4, hauteur: 4, rgba: new Uint8Array(64).fill(180) }, { "fadi:rendu": JSON.stringify(prov) }).toString("base64"), parametres: { style: "trait", intensite: 0.5 } };
+};
+const illustration = async () => ({ il: await creer(`${V}/illustrations`, corpsIllustration()) });
+const jetonAgent = async () => ({ jt: (await creerJetonAgent("p", "proprietaire", "Agent")).id });
+const propositionAgent = async () => {
+  const j = await creerJetonAgent("p", "proprietaire", "Agent");
+  const r = await proposerCommandes({ projectId: "p", userId: "proprietaire", tokenId: j.id }, { studyId: "s", variantId: "v", requestId: "agent-p", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "ag", type: "line", start: { x: 0, y: 3 }, end: { x: 1, y: 3 } } }] });
+  return { pr: r.proposition.id };
+};
+// Lot PUB : vue de coupe (EX-075), observation avec pièce justificative (IF-010), fichier BCF d'essai.
+const VUE_COUPE = { nom: "Coupe AA", niveau: { repere: "local-3d", z: 1 }, cadrage: { xMin: -1, yMin: -1, xMax: 5, yMax: 5 }, echelle: 50, styles: { trait: "fort", hachure: "diagonale" }, annotations: [] };
+const vueCoupe = async () => ({ vc: await creer(`${V}/section-views`, { definition: VUE_COUPE }) });
+const observationPiece = async () => {
+  const res = await comme("proprietaire")(request(app).post(`${V}/observations`)).send({ body: "Observation avec pièce", responsableId: "editeur", audience: "projet", pieces: [{ name: "releve.png", mime: "image/png", contentBase64: "iVBORw0KGgo=" }] });
+  if (res.status !== 201) throw new Error(`préparation observation : ${res.status}`);
+  return { obs: res.body.id as string, sha: res.body.pieces[0].sha256 as string };
+};
+const BCF = Buffer.from(studioExporterBcf(studioSujetsBcf([{ issueId: "x1", titre: "Sujet", description: "", statut: "Open", categorie: null, gravite: null, creeLe: "2026-10-25T08:00:00.000Z", auteur: "a@x", responsable: null, objets: [], journal: [] }]), { id: "partenaire", nom: "Partenaire" })).toString("base64");
 
 /**
  * Règles d'acteur des observations (`lib/studio-observations.ts`), l'observation étant ouverte par le propriétaire
@@ -134,6 +193,11 @@ export const ROUTES: Route[] = [
     acteurs: { etranger: "404", lecteur: "403", editeur: "admis", "editeur-verrou": "403", proprietaire: "403", "proprietaire-verrou": "403", "proprietaire-reference": "403" },
   },
   {
+    route: `PATCH ${COM}/:commentId`, besoin: "acteur", url: () => `${V}/comments/c1`, body: { audience: "projet" },
+    note: "audience du fil (écart E1) : son auteur (c1 : éditeur) ou le propriétaire, tous deux de l'équipe ; le verrou d'édition ne s'y applique pas",
+    acteurs: { etranger: "404", lecteur: "403", editeur: "admis", "editeur-verrou": "403", proprietaire: "admis", "proprietaire-verrou": "admis", "proprietaire-reference": "admis" },
+  },
+  {
     route: `POST ${COM}/:commentId/observation`, besoin: "acteur", url: () => `${V}/comments/c1/observation`, body: { responsableId: "editeur" },
     note: "auteur du commentaire (c1 : éditeur) ou propriétaire",
     acteurs: { etranger: "404", lecteur: "403", editeur: "admis", "editeur-verrou": "403", proprietaire: "admis", "proprietaire-verrou": "admis", "proprietaire-reference": "admis" },
@@ -148,13 +212,33 @@ export const ROUTES: Route[] = [
   { route: "GET /steps/:stepNumber/studies", besoin: "lecture", url: () => `${S}/steps/1/studies` },
   { route: "GET /preferences/outils", besoin: "lecture", url: () => `${S}/preferences/outils`, note: "préférences du compte : aucune écriture du projet" },
   { route: "PUT /preferences/outils", besoin: "lecture", url: () => `${S}/preferences/outils`, body: { profil: "standard", favoris: ["studio.dessin.ligne"], personnel: [] }, note: "préférences du compte (INV-009) : lecture du projet suffit" },
+  { route: "GET /preferences/outils/export", besoin: "lecture", url: () => `${S}/preferences/outils/export`, note: "profil du compte (EX-034) : 404 tant qu'aucun profil n'est enregistré" },
+  {
+    route: "POST /preferences/outils/import", besoin: "lecture", url: () => `${S}/preferences/outils/import`,
+    body: { profil: { format: "fadi-studio-profil/1", profileId: "p-1", version: 1, profil: "standard", favoris: [], personnel: [], groupes: [], ordre: ["studio.dessin.ligne"], raccourcis: {} } },
+    note: "profil du compte (EX-033, INV-009) : lecture du projet suffit ; une capacité exigeant un droit absent est refusée (403 permission_non_conferee)",
+  },
   { route: "GET /preferences/catalogue", besoin: "lecture", url: () => `${S}/preferences/catalogue` },
   { route: "GET /publications", besoin: "lecture", url: () => `${S}/publications` },
+  { route: "GET /delegations", besoin: "lecture", url: () => `${S}/delegations`, note: "délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué" },
+  {
+    route: "POST /delegations", besoin: "proprietaire", url: () => `${S}/delegations`, body: DELEGATION, acteurs: { "proprietaire-verrou": "admis" },
+    note: "délégation d'approbation (EX-085) : qui détient le droit d'approuver sur la portée ; elle ne modifie aucun contenu, la réservation d'édition ne s'y oppose pas (elle s'oppose à son emploi)",
+  },
+  {
+    route: "POST /delegations/:delegationId/revoquer", besoin: "acteur", preparer: delegation, url: (c) => `${S}/delegations/${c["dl"]}/revoquer`, body: { reason: "Retour du propriétaire" },
+    note: "révocation motivée : le délégant (propriétaire) ou le propriétaire du projet ; le délégué ne révoque pas",
+    acteurs: { etranger: "404", lecteur: "403", editeur: "403", "editeur-verrou": "403", proprietaire: "admis", "proprietaire-verrou": "admis", "proprietaire-reference": "admis" },
+  },
   { route: "GET /studies/:studyId/publications", besoin: "lecture", url: () => `${S}/studies/s/publications` },
   { route: "POST /studies/:studyId/variants/:variantId/publications", besoin: "ecriture", url: () => `${V}/publications`, body: { title: "Dossier", contenu: "dessin-2d" } },
   { route: `GET ${PUB}`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}` },
   { route: `GET ${PUB}/verification`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/verification` },
   { route: `GET ${PUB}/files/:format`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/files/svg` },
+  {
+    route: `GET ${PUB}/controle-approbation`, besoin: "proprietaire", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/controle-approbation`,
+    note: "aperçu de l'auto-contrôle (OP-6) : même accès que l'approbation (rôle, puis réservation d'édition d'un autre compte) ; lecture seule",
+  },
   ...([["soumettre", "ecriture"], ["actualiser", "ecriture"], ["approuver", "proprietaire"], ["refuser", "proprietaire"], ["diffuser", "proprietaire"], ["retirer", "proprietaire"]] as const).map(([action, besoin]): Route => ({
     route: `POST ${PUB}/:action`, besoin, preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/${action}`, body: { comment: "Motif" }, note: `action ${action}`,
   })),
@@ -178,8 +262,8 @@ export const ROUTES: Route[] = [
   { route: "POST /studies/:studyId/exigences", besoin: "modification", url: () => `${S}/studies/s/exigences`, body: { baseVersion: 0, exigences: [exigence] } },
   {
     route: "POST /studies/:studyId/exigences/acceptations", besoin: "proprietaire", url: () => `${S}/studies/s/exigences/acceptations`, body: { baseVersion: 1, exigenceId: "e1" },
-    acteurs: { "proprietaire-verrou": "admis" }, arbitrer: ["proprietaire-verrou", "proprietaire-reference"],
-    note: "à arbitrer (maître d'ouvrage) : l'acceptation n'est refusée ni par le verrou d'édition d'un autre compte ni par la référence protégée (comportement actuel épinglé, non changé)",
+    acteurs: { "proprietaire-reference": "403-reference" },
+    note: "X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul ; refusée sous le verrou d'édition d'un autre compte (423) et sur le projet de référence protégé (403 réf.)",
   },
   { route: "GET /studies/:studyId/variants/:variantId/controles", besoin: "lecture", url: () => `${V}/controles` },
   {
@@ -195,6 +279,11 @@ export const ROUTES: Route[] = [
   { route: `GET ${OBS}`, besoin: "lecture", url: () => `${V}/observations` },
   { route: `POST ${OBS}`, besoin: "commentaire", url: () => `${V}/observations`, body: { body: "Observation", responsableId: "editeur" } },
   { route: `GET ${OBS}/:observationId`, besoin: "lecture", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}` },
+  { route: `GET ${OBS}/rapprochements`, besoin: "lecture", preparer: observation, url: () => `${V}/observations/rapprochements`, note: "rapprochements consignés (EX-086), audience du fil respectée" },
+  {
+    route: `POST ${OBS}/rapprochements`, besoin: "ecriture", preparer: observation, url: () => `${V}/observations/rapprochements`, body: {},
+    note: "rapprochement sur demande avec la tête (EX-086) : propriétaire ou éditeur ; aucun statut d'observation modifié",
+  },
   {
     route: `POST ${OBS}/:observationId/transitions`, besoin: "acteur", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}/transitions`, body: { action: "corriger", revisionId: "r1" },
     note: "corriger : le responsable (éditeur) avec le droit d'écrire, seul", acteurs: RESPONSABLE,
@@ -216,6 +305,15 @@ export const ROUTES: Route[] = [
     route: `POST ${OBS}/:observationId/decisions`, besoin: "acteur", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}/decisions`, body: { nature: "proposition", portee: "autre", texte: "Proposition" },
     note: "proposition : droit d'écrire (rôle ; le verrou d'édition ne s'y applique pas)", acteurs: { etranger: "404", lecteur: "403" },
   },
+  { route: `GET ${OBS}/bcf`, besoin: "lecture", preparer: observation, url: () => `${V}/observations/bcf`, note: "export BCF 2.1 minimal (IF-010), audience du fil respectée" },
+  { route: `POST ${OBS}/bcf`, besoin: "ecriture", url: () => `${V}/observations/bcf`, body: { fichierBase64: BCF }, note: "import BCF : sujets nouveaux dans leur contexte (IF-010)" },
+  { route: `GET ${OBS}/:observationId/pieces/:sha256`, besoin: "lecture", preparer: observationPiece, url: (c) => `${V}/observations/${c["obs"]}/pieces/${c["sha"]}` },
+  { route: "GET /studies/:studyId/variants/:variantId/resultats-quantitatifs", besoin: "lecture", url: () => `${V}/resultats-quantitatifs` },
+  { route: "GET /studies/:studyId/section-views", besoin: "lecture", url: () => `${S}/studies/s/section-views` },
+  { route: "POST /studies/:studyId/variants/:variantId/section-views", besoin: "modification", url: () => `${V}/section-views`, body: { definition: VUE_COUPE } },
+  { route: "GET /studies/:studyId/section-views/:viewId", besoin: "lecture", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
+  { route: "PATCH /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, body: { definition: { ...VUE_COUPE, nom: "Coupe BB" } } },
+  { route: "DELETE /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
   { route: "GET /dossiers", besoin: "lecture", url: () => `${S}/dossiers` },
   { route: "GET /studies/:studyId/sheets", besoin: "lecture", url: () => `${S}/studies/s/sheets` },
   { route: "POST /studies/:studyId/variants/:variantId/sheets", besoin: "modification", url: () => `${V}/sheets`, body: { number: "A-02", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" } },
@@ -227,6 +325,53 @@ export const ROUTES: Route[] = [
   { route: "GET /studies/:studyId/dossiers/:dossierId", besoin: "lecture", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}` },
   { route: "PATCH /studies/:studyId/dossiers/:dossierId", besoin: "modification", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}`, body: { title: "Dossier 2" } },
   { route: "GET /studies/:studyId/dossiers/:dossierId/files/:format", besoin: "lecture", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}/files/json` },
+  // Modèles externes (lot F3, TR-EX-066) : recevoir et comparer (modification), accepter ou refuser (rôle habilité).
+  { route: `GET ${MX}`, besoin: "lecture", url: () => `${V}/modeles-externes` },
+  { route: `POST ${MX}`, besoin: "modification", url: () => `${V}/modeles-externes`, body: receptionModele, note: "fichier relu et comparé par le serveur ; la variante n'est pas modifiée" },
+  { route: `GET ${MX}/:modelId`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}` },
+  { route: `GET ${MX}/:modelId/contenu`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/contenu`, note: "fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support)" },
+  // EX-014 : provenance exportée (déclarations et lectures), droit export comme le fichier reçu.
+  { route: `GET ${MX}/:modelId/provenance`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/provenance`, note: "provenance exportée : droit export (lecteur compris, jamais l'accès support)" },
+  { route: `POST ${MX}/:modelId/:action`, besoin: "modification", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/comparer`, body: {}, note: "action comparer" },
+  ...(["accepter", "refuser"] as const).map((action): Route => ({
+    route: `POST ${MX}/:modelId/:action`, besoin: "proprietaire", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/${action}`, body: { motif: "Motif d'essai" }, note: `action ${action}`,
+  })),
+  // Lot F (décision P-12) : illustrations, agents (MCP) et extensions.
+  { route: `GET ${IL}/fournisseurs`, besoin: "lecture", url: () => `${V}/illustrations/fournisseurs` },
+  { route: `GET ${IL}`, besoin: "lecture", url: () => `${V}/illustrations` },
+  { route: `POST ${IL}`, besoin: "modification", url: () => `${V}/illustrations`, body: corpsIllustration(), note: "image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié" },
+  { route: `GET ${IL}/:illustrationId/image`, besoin: "lecture", preparer: illustration, url: (c) => `${V}/illustrations/${c["il"]}/image`, note: "téléchargement : droit d'export exigé (lecteur sans export et accès support refusés)" },
+  { route: "GET /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, note: "jetons du compte seulement" },
+  { route: "POST /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, body: { nom: "Agent" }, note: "tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel" },
+  { route: "POST /agents/jetons/:tokenId/revoquer", besoin: "acteur", preparer: jetonAgent, url: (c) => `${S}/agents/jetons/${c["jt"]}/revoquer`, note: "titulaire du jeton seulement ; un autre compte : 404" },
+  { route: "GET /agents/propositions", besoin: "lecture", url: () => `${S}/agents/propositions`, note: "propositions du compte seulement" },
+  { route: "POST /agents/propositions/:proposalId/confirmer", besoin: "acteur", preparer: propositionAgent, url: (c) => `${S}/agents/propositions/${c["pr"]}/confirmer`, note: "titulaire seulement (un autre compte : 404) ; l'écriture passe par le point d'entrée commun (droits, verrou, référence)" },
+  { route: "POST /agents/propositions/:proposalId/refuser", besoin: "acteur", preparer: propositionAgent, url: (c) => `${S}/agents/propositions/${c["pr"]}/refuser`, note: "titulaire seulement ; un autre compte : 404" },
+  { route: "GET /agents/journal", besoin: "lecture", url: () => `${S}/agents/journal`, note: "journal du compte seulement" },
+  { route: "GET /extensions", besoin: "lecture", url: () => `${S}/extensions` },
+  { route: "POST /extensions/evaluer", besoin: "lecture", url: () => `${S}/extensions/evaluer`, body: { declaration: { schema: "studio-extension/1", id: "x" } }, note: "évaluation sans écriture ni chargement" },
+  // Lot CMD : contexte d'étude (IF-001), essais (EX-045), jobs (EX-088), journal (IF-011), migrations (EX-091), bascule (MIG-COEX-06).
+  { route: "GET /studies/:studyId/contexte", besoin: "lecture", url: () => `${S}/studies/s/contexte` },
+  { route: "POST /studies/:studyId/variants/:variantId/essais", besoin: "modification", url: () => `${V}/essais`, body: ESSAI, note: "essai à portée de révision : aucune révision écrite" },
+  { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/abandon` },
+  { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/confirmer`, note: "l'enveloppe de l'essai passe par le point d'entrée des écritures" },
+  // Lot W3-D (X.1-06) : fusion de variantes — aperçu en lecture, application et annulation sur la variante cible.
+  { route: "POST /studies/:studyId/variants/:variantId/fusion/apercu", besoin: "lecture", preparer: fusionPreparee, url: () => `${V}/fusion/apercu`, corps: (c) => ({ sourceVariantId: c["v2"] }), note: "aperçu : rien n'est écrit" },
+  { route: "POST /studies/:studyId/variants/:variantId/fusion", besoin: "modification", preparer: fusionPreparee, url: () => `${V}/fusion`, corps: corpsFusion, note: "révision `variant-merge` de la cible ; la source n'est que lue" },
+  { route: "POST /studies/:studyId/variants/:variantId/fusion/annulation", besoin: "modification", preparer: fusionAppliquee, url: () => `${V}/fusion/annulation`, corps: (c) => ({ requestId: "annule-1", revisionId: c["fusionne"] }), note: "révision `variant-merge-undo` (document d'avant la fusion)" },
+  { route: "GET /jobs/:jobId", besoin: "lecture", preparer: essai, url: (c) => `${S}/jobs/${c["job"]}`, note: "résultat de job sous l'autorisation de l'étude source" },
+  { route: "GET /studies/:studyId/variants/:variantId/journal", besoin: "lecture", url: () => `${V}/journal` },
+  { route: "POST /studies/:studyId/migrations", besoin: "modification", url: () => `${S}/studies/s/migrations`, body: { cible: "studio-document/2" }, note: "simulation : rien n'est écrit dans les révisions" },
+  { route: "GET /studies/:studyId/migrations", besoin: "lecture", url: () => `${S}/studies/s/migrations` },
+  { route: "GET /studies/:studyId/migrations/:migrationId", besoin: "lecture", preparer: migration, url: (c) => `${S}/studies/s/migrations/${c["mig"]}` },
+  ...(["accorder", "appliquer", "retour-arriere"] as const).map((passage): Route => ({
+    route: `POST /studies/:studyId/migrations/:migrationId/${passage}`, besoin: "proprietaire", preparer: migration, url: (c) => `${S}/studies/s/migrations/${c["mig"]}/${passage}`,
+    ...(passage === "accorder" ? { note: "procédure d’accord : propriétaire seul, la réservation d’édition d’un autre compte s’y oppose" } : {}),
+  })),
+  { route: "GET /studies/:studyId/migrations/:migrationId/documents/:revisionId", besoin: "lecture", preparer: migrationAppliquee, url: (c) => `${S}/studies/s/migrations/${c["mig"]}/documents/r1` },
+  { route: "GET /bascule", besoin: "lecture", url: () => `${S}/bascule` },
+  { route: "POST /bascule/preparer", besoin: "proprietaire", url: () => `${S}/bascule/preparer`, body: { studyId: "s" }, note: "bascule Atelier → Studio : une seule chaîne d'écriture" },
+  ...(["basculer", "retour-arriere"] as const).map((action): Route => ({ route: `POST /bascule/${action}`, besoin: "proprietaire", url: () => `${S}/bascule/${action}` })),
 ];
 
 /**
@@ -236,11 +381,13 @@ export const ROUTES: Route[] = [
 const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies": "201", "POST /studies/:studyId/variants": "201",
   "POST /exemple": "409 exemple_indisponible",
+  "GET /preferences/outils/export": "404 not_found",
   "POST /studies/:studyId/variants/:variantId/archive": "400 initial_variant",
   "POST /studies/:studyId/variants/:variantId/comments": "201", "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation": "201",
   "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions": "403 forbidden",
   "DELETE /studies/:studyId/variants/:variantId/comments/:commentId": "403 forbidden",
   "POST /studies/:studyId/variants/:variantId/publications": "201",
+  "POST /delegations": "201",
   "GET /studies/:studyId/publications/:publicationId/verification": "404 not_found",
   "GET /studies/:studyId/publications/:publicationId/files/:format": "404 not_found",
   "POST /studies/:studyId/publications/:publicationId/:action actualiser": "409 manifest_current",
@@ -255,6 +402,12 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/taches": "201",
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions": "201",
   "POST /studies/:studyId/variants/:variantId/sheets": "201", "POST /studies/:studyId/dossiers": "201",
+  "POST /studies/:studyId/variants/:variantId/modeles-externes": "201",
+  "POST /studies/:studyId/variants/:variantId/illustrations": "201", "POST /agents/jetons": "201",
+  "POST /studies/:studyId/variants/:variantId/essais": "201", "POST /studies/:studyId/migrations": "201",
+  "POST /studies/:studyId/migrations/:migrationId/appliquer": "409 migration_etat", "POST /studies/:studyId/migrations/:migrationId/retour-arriere": "409 migration_etat",
+  "POST /bascule/basculer": "409 bascule_absente", "POST /bascule/retour-arriere": "409 bascule_absente",
+  "POST /studies/:studyId/variants/:variantId/section-views": "201",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";
@@ -408,10 +561,14 @@ function routesDeclareesDans(dossier: string): string[] {
  * de leur routeur, contrôlés par leurs propres suites, base réelle) — suites DB-3. La liste des fichiers est vérifiée.
  */
 export const HORS_MATRICE: { fichier: string; routes: string; donnees: string }[] = [
+  { fichier: "routes/atelier-commands.ts", routes: "GET /atelier/solides-exacts/:objetId/export.step, POST /atelier/import-step", donnees: "aucune donnée Studio : mesure de la consommation du noyau exact (surveillanceStudio, R.5-03 / OPS-08), compteurs en mémoire du processus" },
   { fichier: "routes/auth.ts", routes: "GET /auth/me/export", donnees: "commentaires Studio rédigés par le compte, dans l'export de ses données personnelles (D-5, gestion des comptes) — lecture de ses propres lignes seulement" },
   { fichier: "routes/examples.ts", routes: "POST /examples/:exampleId/import", donnees: "étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import)" },
+  { fichier: "routes/com.ts", routes: "POST /projects/:projectId/com/messages/:messageId/actions (type observation-studio) ; GET /projects/:projectId/com/plan ; POST …/com/conversations/:conversationId/messages (épingle) ; GET …/com/activite, …/com/revues", donnees: "observation Studio ouverte depuis un message par `openStudioObservation` (mêmes droits et refus que la route Studio d'ouverture directe, révision et objets de l'épingle repris) ; plan SVG et validation d'une épingle par `readStudioContext` (droit `read` de Studio) ; activité et revues relues sans écriture. La Communication ne garde que des liens (COM-R7, Issue #280, lot COM-13)" },
   { fichier: "routes/documents.ts", routes: "GET /projects/:projectId/documents", donnees: "`studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception)" },
   { fichier: "routes/notifications.ts", routes: "GET /notifications", donnees: "commentaires Studio des projets du compte, passages des observations, tâches et décisions" },
+  { fichier: "routes/reviews.ts", routes: "/reviews/* (destinataire), /projects/:projectId/reviews/* (équipe)", donnees: "revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio" },
+  { fichier: "routes/mcp-studio.ts", routes: "POST /mcp/studio (serveur MCP, lot F)", donnees: "lectures de Studio et propositions d'agent par jeton d'agent (jamais la session) : mêmes droits du compte titulaire (`readStudioContext`, `modify`), aucune écriture de révision avant la confirmation humaine par `POST /agents/propositions/:proposalId/confirmer` (matrice ci-dessus) ; `routes/studio-agents.test.ts`" },
   { fichier: "routes/projects.ts", routes: "GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId", donnees: "section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée" },
 ];
 /** Fichiers `routes/*.ts` hors Studio qui citent une table, une bibliothèque ou un routeur Studio. */
@@ -445,10 +602,13 @@ export function matriceMarkdown(): string {
     `|---|---|${ACTEURS.map(() => "---").join("|")}|---|---|`,
   ];
   for (const r of ROUTES) lignes.push(`| \`${r.route}\` | ${r.besoin} | ${ACTEURS.map((a) => symbole(r, a)).join(" | ")} | ${reponseProprietaire(r)} | ${r.note ?? ""} |`);
-  lignes.push(
+  if (ROUTES.some((r) => r.arbitrer?.length)) lignes.push(
     "",
     "« (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de",
     "comportement ; la règle attend une décision du maître d'ouvrage.",
+  );
+  else lignes.push("", "Aucune cellule « à arbitrer » : la dernière (acceptation des exigences) est tranchée par X.2-02, ADR-STUDIO-PILOTE-01 P-12.");
+  lignes.push(
     "",
     "## Routes hors Studio touchant des données Studio — non couvertes par la matrice (suites DB-3)",
     "",

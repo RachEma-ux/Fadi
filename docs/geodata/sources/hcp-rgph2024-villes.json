@@ -1,0 +1,122 @@
+{
+  "cle": "hcp-rgph2024-villes",
+  "titre": "Villes du Maroc — population RGPH 2024",
+  "description": "Villes OpenStreetMap (nœuds place=city ou town, 338 points) ; priorité au HCP (D-GD-18) : 258 villes rattachées à une commune urbaine ou à un centre urbain du HCP portent son nom, son code et ses effectifs RGPH 2024 (l'attribut « population » d'OSM est alors retiré) ; 80 villes sans unité HCP de même nom gardent leurs seules données OSM (8 avec un attribut « population » d'OSM, signalé par « source_population »). Table de correspondance relisible : `correspondances/hcp-rgph2024-villes.csv`. Une valeur HCP absente reste « non appariée », jamais zéro.",
+  "producteur": "Haut-Commissariat au Plan (HCP), RGPH 2024 ; points : contributeurs OpenStreetMap",
+  "theme": "population",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; points OpenStreetMap — extraits du 2026-10-23",
+    "url": null,
+    "fichier": "donnees/hcp-rgph2024-villes.geojson",
+    "empreinte": "cc616475f28a926b9c3cd13b2a87fc26ff0b1fb3861da38050d1ee0671835b9f",
+    "tableau": {
+      "fichier": "donnees/hcp-rgph2024-villes.csv",
+      "empreinte": "6b0e3bc1857e65debdae0cd5591afad96240e460e16900c0e22cc5eddc3b890d"
+    },
+    "periode": "Recensement de septembre 2024 ; Base OpenStreetMap des extraits du 2026-10-23",
+    "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; points : Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; © contributeurs OpenStreetMap (ODbL)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Effectifs officiels repris sans modification ; Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets) ; coordonnées arrondies à 10⁻⁷ degré",
+    "synthetique": false,
+    "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux points OSM). Source : https://www.hcp.ma/file/242341/ (SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca). Points : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Villes du Maroc — population RGPH 2024",
+    "description": "Code = identifiant OSM du point ; code_hcp = code géographique HCP de l'unité rattachée.",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "osm",
+      "nom",
+      "nom_osm",
+      "name:fr",
+      "place",
+      "code_hcp",
+      "unite_hcp",
+      "source_population",
+      "population",
+      "population:date",
+      "appariement"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#984ea3"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "population",
+      "titre": "Population légale",
+      "unite": "personnes",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "HCP, RGPH 2024 — Population légale de la commune urbaine ou du centre urbain rattaché.",
+      "motifSiAbsente": "non-appariee",
+      "theme": "Démographie",
+      "famille": "Population légale",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 0
+    },
+    {
+      "propriete": "menages",
+      "titre": "Ménages",
+      "unite": "ménages",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "HCP, RGPH 2024 — Nombre de ménages de l'unité rattachée.",
+      "motifSiAbsente": "non-appariee",
+      "theme": "Démographie",
+      "famille": "Ménages",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 1
+    },
+    {
+      "propriete": "marocains",
+      "titre": "Population légale selon la nationalité — Marocains",
+      "unite": "personnes",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "HCP, RGPH 2024 — Population légale de nationalité marocaine.",
+      "motifSiAbsente": "non-appariee",
+      "theme": "Démographie",
+      "famille": "Population légale selon la nationalité",
+      "modalite": "Marocains",
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 2
+    },
+    {
+      "propriete": "etrangers",
+      "titre": "Population légale selon la nationalité — Étrangers",
+      "unite": "personnes",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "HCP, RGPH 2024 — Population légale de nationalité étrangère.",
+      "motifSiAbsente": "non-appariee",
+      "theme": "Démographie",
+      "famille": "Population légale selon la nationalité",
+      "modalite": "Étrangers",
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 3
+    }
+  ],
+  "superficie": false
+}

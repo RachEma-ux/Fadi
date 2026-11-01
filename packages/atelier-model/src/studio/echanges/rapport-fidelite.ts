@@ -5,9 +5,20 @@ import type { StudioDocument } from "../composition/types.js";
 import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
+import type { StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
+import type { StudioSurfaceSubdivision } from "../objets-3d/subdivisions.js";
+import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
+import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
+import type { StudioGraphisme } from "../graphismes/graphismes.js";
+import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioNiveau } from "../batiment/niveaux.js";
+import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -41,16 +52,39 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "ouverture-en-lacune",
   // Non couvert
   "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "visualisation-hors-export", "type-sans-capacite",
+  // Élément non natif (lot F3) : conservé tel que l’import l’a lu, écrit dans aucun format.
+  "non-natif-hors-export",
   // Propriétés BIM déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` en IFC ; ni SVG ni DXF ; une propriété
   // sans valeur (« non évaluée ») n'est écrite nulle part.
   "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
+  // Solides exacts (lot F2) : leur brep n'est traduit dans aucun format d'échange de Studio (compté, jamais omis).
+  "solide-exact-hors-ifc",
+  // Surfaces libres NURBS (X.1-05) : nappe 3D, écrite dans aucun format de dessin ni en IFC (OBJ et, épaissie, STEP).
+  "surface-libre-hors-export",
+  // Surfaces de subdivision (X.1-05) : maillage 3D, dans aucun format de dessin ni en IFC (OBJ / STL maillés).
+  "surface-subdivision-hors-export",
+  // Graphismes (EX-055) : spline découpée en DXF R12 (pas de courbe de Bézier), transparence non portée en DXF R12,
+  // graphismes absents de l'IFC (dessin 2D seulement).
+  "spline-decoupee", "transparence-non-portee", "graphisme-hors-ifc",
+  // Sources importées (EX-014) : leur provenance s'exporte à part (`studio-provenance/1`), jamais dans le dessin.
+  "provenance-hors-dessin",
+  // Bâtiment (lot W3-B) : niveau → `IfcBuildingStorey` (nom et cote) en IFC, absent du dessin 2D ; définition de
+  // composant → `IfcBuildingElementProxyType` à représentation partagée ; occurrence → `IfcMappedItem` de cette
+  // représentation (aucune géométrie recopiée).
+  "niveau-en-etage", "niveau-hors-2d", "type-partage", "occurrence-partagee",
+  // Blocs (X.1-01) : définition en BLOCK et insertion en INSERT (DXF), insertion développée en SVG (la définition n'y
+  // est pas réutilisable : chaque insertion porte ses formes, `data-bloc` garde le lien) ; aucun bloc en IFC.
+  "bloc-en-block", "insertion-en-insert", "insertion-developpee", "bloc-developpe", "bloc-hors-ifc",
+  // Contraintes géométriques (X.1-01) : relations du modèle, écrites dans aucun format (la géométrie résolue l'est).
+  "contrainte-hors-export",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "scenes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes", scenes: "scenes" } as const);
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "surfaces" | "subdivisions" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "blocs" | "insertions" | "contraintes" | "niveaux" | "composants" | "occurrences" | "inconnue";
+/** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", surfaces: "surfaces", subdivisions: "subdivisions", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources", blocs: "blocs", insertions: "insertions", contraintes: "contraintes", niveaux: "niveaux", composants: "composants", occurrences: "occurrences" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -101,17 +135,42 @@ function texteDxf(content: string): StudioJugementFidelite {
  *   exactes (valeur, unité et source déclarées, `exigences/ifc.ts`) quand elles ont une valeur ; sans valeur : non
  *   couvertes (`propriete-non-evaluee`) ; SVG et DXF ne les portent pas ;
  * - visualisation (lot E.5) : scènes et apparences d'affichage ne sont écrites dans aucun format (réglages de vue, pas
- *   des données du modèle) : non couvertes.
+ *   des données du modèle) : non couvertes ;
+ * - éléments non natifs (lot F3) : conservés tels que l’import les a lus, écrits dans aucun format : non couverts.
  */
 export const STUDIO_CAPACITES_EXPORT: {
   readonly objets: { readonly [K in StudioShape["type"]]: ParFormat<Extract<StudioShape, { type: K }>> };
   readonly cotes: { readonly dimension: ParFormat<StudioDimension> };
   readonly annotations: { readonly [K in StudioAnnotation["type"]]: ParFormat<Extract<StudioAnnotation, { type: K }>> };
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
+  /** Solides exacts (lot F2) : résultat du noyau exact (brep), absent des trois formats. */
+  readonly exacts: { readonly exact: ParFormat<StudioSolideExact> };
+  /** Surfaces libres NURBS (X.1-05) : absentes des trois formats (OBJ les écrit, STEP les écrit une fois épaissies). */
+  readonly surfaces: { readonly "surface-libre": ParFormat<StudioSurfaceLibre> };
+  /** Surfaces de subdivision (X.1-05) : absentes des trois formats (OBJ et STL maillés). */
+  readonly subdivisions: { readonly "surface-subdivision": ParFormat<StudioSurfaceSubdivision> };
+  /** Cotes de faces 3D (lot G2, INV-013) : annotations du modèle 3D, écrites dans aucun format de dessin ni en IFC. */
+  readonly cotesFaces: { readonly "face-dimension": ParFormat<StudioCoteFace> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
   /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
   readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
   readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
+  readonly nonNatifs: { readonly "non-native": ParFormat<StudioNonNatif> };
+  /** Graphismes (EX-055) : splines, hachures, symboles et leur transparence ; dessin 2D seulement. */
+  readonly graphismes: { readonly [K in StudioGraphisme["type"]]: ParFormat<Extract<StudioGraphisme, { type: K }>> };
+  /** Sources importées (EX-014) : provenance exportée à part, dans aucun format de dessin. */
+  readonly sources: { readonly source: ParFormat<StudioSourceExterne> };
+  /** Niveaux (lot W3-B) : sans discriminant de type, un seul type « niveau ». */
+  readonly niveaux: { readonly niveau: ParFormat<StudioNiveau> };
+  /** Définitions de composants 3D (lot W3-B) : un seul type « composant ». */
+  readonly composants: { readonly composant: ParFormat<StudioComposant> };
+  readonly occurrences: { readonly occurrence: ParFormat<StudioOccurrence> };
+  /** Définitions de blocs (X.1-01). */
+  readonly blocs: { readonly bloc: ParFormat<StudioDefinitionBloc> };
+  /** Insertions de blocs (X.1-01). */
+  readonly insertions: { readonly insertion: ParFormat<StudioInsertionBloc> };
+  /** Contraintes géométriques (X.1-01) : sans discriminant d'élément, un seul type « contrainte ». */
+  readonly contraintes: { readonly contrainte: ParFormat<StudioContrainte> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -135,9 +194,27 @@ export const STUDIO_CAPACITES_EXPORT: {
     box: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("profil-exact") },
     prism: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("profil-exact") },
   },
+  exacts: {
+    exact: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("solide-exact-hors-ifc") },
+  },
+  surfaces: {
+    "surface-libre": { svg: () => nonCouvert("surface-libre-hors-export"), dxf: () => nonCouvert("surface-libre-hors-export"), ifc: () => nonCouvert("surface-libre-hors-export") },
+  },
+  subdivisions: {
+    "surface-subdivision": { svg: () => nonCouvert("surface-subdivision-hors-export"), dxf: () => nonCouvert("surface-subdivision-hors-export"), ifc: () => nonCouvert("surface-subdivision-hors-export") },
+  },
+  cotesFaces: {
+    "face-dimension": { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("cote-hors-ifc") },
+  },
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
+    // EX-027 (lot G2) : échelle d'accès — plan (montants et échelons) sans hauteur en SVG / DXF ; IFC : IfcStair LADDER, montants et échelons extrudés exacts.
+    ladder: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    // Lot W3-B : poteau, poutre, dalle — emprise en plan sans hauteur en SVG / DXF ; IFC : IfcColumn / IfcBeam / IfcSlab extrudés exacts.
+    column: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    beam: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    slab: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
   },
   // Propriétés déclarées : ni le SVG ni le DXF ne les portent ; l'IFC écrit celles qui ont une valeur.
   proprietes: {
@@ -149,6 +226,38 @@ export const STUDIO_CAPACITES_EXPORT: {
   scenes: {
     scene: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
     appearance: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
+  },
+  nonNatifs: {
+    "non-native": { svg: () => nonCouvert("non-natif-hors-export"), dxf: () => nonCouvert("non-natif-hors-export"), ifc: () => nonCouvert("non-natif-hors-export") },
+  },
+  // Graphismes (EX-055) : SVG exact (courbes de Bézier `C`, traits de hachure, symboles, `opacity`) ; DXF R12 sans
+  // courbe de Bézier ni transparence ; aucun en IFC.
+  graphismes: {
+    spline: { svg: () => exact("trace-exact"), dxf: () => approche("spline-decoupee"), ifc: () => nonCouvert("graphisme-hors-ifc") },
+    hachure: { svg: () => exact("trace-exact"), dxf: (g) => (g.opacite === undefined ? exact("trace-exact") : approche("transparence-non-portee")), ifc: () => nonCouvert("graphisme-hors-ifc") },
+    symbole: { svg: () => exact("trace-exact"), dxf: (g) => (g.opacite === undefined ? exact("trace-exact") : approche("transparence-non-portee")), ifc: () => nonCouvert("graphisme-hors-ifc") },
+  },
+  sources: {
+    source: { svg: () => nonCouvert("provenance-hors-dessin"), dxf: () => nonCouvert("provenance-hors-dessin"), ifc: () => nonCouvert("provenance-hors-dessin") },
+  },
+  // Lot W3-B : niveaux en IfcBuildingStorey ; composants et occurrences, 3D seulement, en représentation partagée IFC.
+  niveaux: {
+    niveau: { svg: () => nonCouvert("niveau-hors-2d"), dxf: () => nonCouvert("niveau-hors-2d"), ifc: () => exact("niveau-en-etage") },
+  },
+  composants: {
+    composant: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("type-partage") },
+  },
+  occurrences: {
+    occurrence: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("occurrence-partagee") },
+  },
+  blocs: {
+    bloc: { svg: () => approche("bloc-developpe"), dxf: () => exact("bloc-en-block"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  insertions: {
+    insertion: { svg: () => exact("insertion-developpee"), dxf: () => exact("insertion-en-insert"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  contraintes: {
+    contrainte: { svg: () => nonCouvert("contrainte-hors-export"), dxf: () => nonCouvert("contrainte-hors-export"), ifc: () => nonCouvert("contrainte-hors-export") },
   },
 });
 
@@ -166,10 +275,28 @@ export interface StudioLigneFidelite {
 /** Traitement des calques masqués par le format. */
 export type StudioTraitementCalquesMasques = "contenu-masque" | "calque-eteint";
 
+/**
+ * Unités et repères d'un export (EX-080) : repère source du document (`local-2d`, et `local-3d` dérivé par extrusion
+ * pour l'IFC), repère cible du fichier et conversion appliquée, déclarés pour chaque format — jamais implicites.
+ */
+export interface StudioReperesExport {
+  source: { repere: "local-2d"; unite: "m"; derive3d?: "local-3d" };
+  cible: { repere: string; unite: "m"; declaration: string };
+  conversion: string;
+  georeferencement: "aucun";
+}
+export const STUDIO_REPERES_EXPORT: Readonly<Record<StudioFormatEchange, StudioReperesExport>> = Object.freeze({
+  svg: { source: { repere: "local-2d", unite: "m" }, cible: { repere: "svg-utilisateur", unite: "m", declaration: "viewBox en mètres (1 unité utilisateur = 1 m)" }, conversion: "(x, y) → (x, −y) : axe y retourné, aucune mise à l'échelle", georeferencement: "aucun" },
+  dxf: { source: { repere: "local-2d", unite: "m" }, cible: { repere: "dxf-wcs", unite: "m", declaration: "$INSUNITS = 6 (mètre)" }, conversion: "(x, y) → (x, y, 0) : identité, aucune translation ni rotation", georeferencement: "aucun" },
+  ifc: { source: { repere: "local-2d", unite: "m", derive3d: "local-3d" }, cible: { repere: "ifc-projet", unite: "m", declaration: "IfcUnitAssignment SI (mètre), IfcLocalPlacement relatif au niveau z = 0" }, conversion: "(x, y) → (x, y, z) : z de l'extrusion déclarée, aucune translation ni rotation", georeferencement: "aucun" },
+});
+
 export interface StudioRapportFidelite {
   schema: typeof STUDIO_RAPPORT_FIDELITE_SCHEMA;
   format: StudioFormatEchange;
   documentId: string;
+  /** Unités et repères source / cible de l'export (EX-080). */
+  reperes: StudioReperesExport;
   totaux: { elements: number; exact: number; approche: number; nonCouvert: number };
   lignes: StudioLigneFidelite[];
   calques: {
@@ -220,6 +347,11 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("cotes", doc.dimensions);
   parcourir("annotations", doc.annotations);
   parcourir("solides", doc.solides);
+  parcourir("exacts", doc.exacts);
+  parcourir("surfaces", doc.surfaces);
+  parcourir("subdivisions", doc.subdivisions);
+  // Cotes de faces 3D (lot G2) : comptées sur leur calque, écrites dans aucun format.
+  parcourir("cotesFaces", doc.cotesFaces);
   // Une ouverture n'a pas de calque propre : elle suit celui de son mur hôte.
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));
@@ -228,6 +360,20 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   for (const p of doc.proprietes ?? []) poser("proprietes", "propriete", STUDIO_CAPACITES_EXPORT.proprietes.propriete[format](p), `${p.cibleId}#${p.nom}`);
   // Scènes et apparences : sans calque propre (une apparence de calque ne pose rien sur ce calque).
   for (const s of doc.scenes ?? []) poser("scenes", s.type, STUDIO_CAPACITES_EXPORT.scenes[s.type][format](s as never), s.id);
+  // Éléments non natifs (lot F3) : jamais exportés ; comptés sur leur calque.
+  parcourir("nonNatifs", doc.nonNatifs);
+  // Graphismes (EX-055) : comptés sur leur calque.
+  parcourir("graphismes", doc.graphismes);
+  // Sources importées (EX-014) : sans calque.
+  for (const s of doc.sources ?? []) poser("sources", "source", STUDIO_CAPACITES_EXPORT.sources.source[format](s), s.id);
+  // Bâtiment (lot W3-B) : niveaux et définitions sans calque ; occurrences comptées sur leur calque.
+  for (const n of doc.niveaux ?? []) poser("niveaux", "niveau", STUDIO_CAPACITES_EXPORT.niveaux.niveau[format](n), n.id);
+  for (const c of doc.composants ?? []) poser("composants", "composant", STUDIO_CAPACITES_EXPORT.composants.composant[format](c), c.id);
+  parcourir("occurrences", doc.occurrences);
+  // Blocs (X.1-01) : définitions sans calque, insertions sur le leur ; contraintes sans calque.
+  for (const b of doc.blocs ?? []) poser("blocs", "bloc", STUDIO_CAPACITES_EXPORT.blocs.bloc[format](b), b.id);
+  parcourir("insertions", doc.insertions);
+  for (const c of doc.contraintes ?? []) poser("contraintes", "contrainte", STUDIO_CAPACITES_EXPORT.contraintes.contrainte[format](c), c.id);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;
@@ -251,7 +397,7 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
     ? layers.filter((l) => nomsDxf[l.id] !== undefined && nomsDxf[l.id] !== l.name).map((l) => ({ id: l.id, nom: l.name, nomExporte: nomsDxf[l.id]! }))
     : [];
   return {
-    schema: STUDIO_RAPPORT_FIDELITE_SCHEMA, format, documentId: doc.id, totaux, lignes,
+    schema: STUDIO_RAPPORT_FIDELITE_SCHEMA, format, documentId: doc.id, reperes: STUDIO_REPERES_EXPORT[format], totaux, lignes,
     calques: {
       total: layers.length, masques: masques.size, verrouilles: layers.filter((l) => l.locked).length,
       elementsSurCalquesMasques: surMasques, traitementMasques: TRAITEMENT_MASQUES[format], renommes,

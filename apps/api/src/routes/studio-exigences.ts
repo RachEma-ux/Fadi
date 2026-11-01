@@ -12,7 +12,8 @@
  */
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import type { ExigenceStudio, JeuExigences } from "@parcours/atelier-model";
+import type { ExigenceStudio, JeuExigences, StudioDocument } from "@parcours/atelier-model";
+import { rapprocherVariante } from "../lib/studio-observations-rapprochement.js";
 import { db } from "../db/client.js";
 import { studioRequirementChecks, studioRequirementSets, studioRevisions, studioVariants, users } from "../db/schema.js";
 import type { Tx } from "../lib/atelier-validation.js";
@@ -23,7 +24,10 @@ import { assertAccess, lockedAccess, notFound, studioArchivedRefusal, StudioRequ
 import {
   deciderAcceptation, deciderEdition, empreinte, rejeuAdmis, resultatControle, studioControleSchema, studioExigenceAcceptationSchema,
   studioExigencesEditionSchema, versionExaminee, type Decision,
+  conclusionNormativeControle, normativeDe,
 } from "../lib/studio-exigences.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_EXIGENCES_LIRE, CONTRAT_EXIGENCES_VERSION, CONTRAT_EXIGENCES_ENREGISTRER, CONTRAT_EXIGENCES_ACCEPTER, CONTRAT_CONTROLES_LISTER, CONTRAT_CONTROLE_LIRE, CONTRAT_CONTROLE_EXECUTER } from "../lib/studio-contrats-routes.js";
 
 export const studioExigencesRouter = Router({ mergeParams: true });
 
@@ -62,6 +66,8 @@ function controleDe(row: CheckRow, email: Map<string, string>) {
     id: row.id, studyId: row.studyId, variantId: row.variantId, revisionId: row.revisionId, version: row.setVersion,
     execution: row.execution, conclusion: row.conclusion, documentHash: row.documentHash,
     auteur: row.authorId, auteurEmail: email.get(row.authorId) ?? null, creeLe: row.createdAt.toISOString(), resultat: row.result,
+    // EX-068 (lot PUB) : conclusion normative (conforme, non conforme, non testé, non applicable justifié) ; null hors exécution.
+    conclusionNormative: normativeDe(row.result),
   };
 }
 async function derniere(q: Querier, studyId: string): Promise<SetRow | null> {
@@ -69,7 +75,7 @@ async function derniere(q: Querier, studyId: string): Promise<SetRow | null> {
   return row ?? null;
 }
 
-studioExigencesRouter.get("/studies/:studyId/exigences", endpoint(async (req, res) => {
+studioExigencesRouter.get("/studies/:studyId/exigences", avecContrat(CONTRAT_EXIGENCES_LIRE), endpoint(async (req, res) => {
   const projectId = param(req, "projectId");
   const access = assertAccess(await loadProjectAccess(projectId, req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
@@ -85,7 +91,7 @@ studioExigencesRouter.get("/studies/:studyId/exigences", endpoint(async (req, re
   });
 }));
 
-studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", endpoint(async (req, res) => {
+studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", avecContrat(CONTRAT_EXIGENCES_VERSION), endpoint(async (req, res) => {
   const projectId = param(req, "projectId");
   const access = assertAccess(await loadProjectAccess(projectId, req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
@@ -98,10 +104,11 @@ studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", endpo
 }));
 
 /** Étude du projet sous verrou, droit `need`, étude active ; renvoie l'étude et la dernière version. */
-async function etudeEcrite(tx: Tx, projectId: string, studyId: string, actorId: string, need: "modify" | "owner" | "write") {
+async function etudeEcrite(tx: Tx, projectId: string, studyId: string, actorId: string, need: "modify" | "owner" | "write", aussi: readonly ("modify" | "write")[] = []) {
   const access = await lockedAccess(tx, projectId, actorId);
   const study = await studyOf(tx, projectId, studyId);
   assertAccess(access, actorId, need);
+  for (const n of aussi) assertAccess(access, actorId, n);
   if (study.archivedAt !== null) return studioArchivedRefusal();
   return { study, courante: await derniere(tx, study.id) };
 }
@@ -124,7 +131,7 @@ async function enregistrerVersion(tx: Tx, studyId: string, actorId: string, requ
   return { row: row!, replayed: false };
 }
 
-studioExigencesRouter.post("/studies/:studyId/exigences", endpoint(async (req, res) => {
+studioExigencesRouter.post("/studies/:studyId/exigences", avecContrat(CONTRAT_EXIGENCES_ENREGISTRER), endpoint(async (req, res) => {
   const parsed = studioExigencesEditionSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
@@ -139,13 +146,15 @@ studioExigencesRouter.post("/studies/:studyId/exigences", endpoint(async (req, r
   res.status(201).json(out);
 }));
 
-studioExigencesRouter.post("/studies/:studyId/exigences/acceptations", endpoint(async (req, res) => {
+studioExigencesRouter.post("/studies/:studyId/exigences/acceptations", avecContrat(CONTRAT_EXIGENCES_ACCEPTER), endpoint(async (req, res) => {
   const parsed = studioExigenceAcceptationSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
   const actor = req.user!;
   const out = await db.transaction(async (tx) => {
-    const { study, courante } = await etudeEcrite(tx, param(req, "projectId"), param(req, "studyId"), actor.id, "owner");
+    // X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul, et jamais sous la réservation d'édition d'un autre compte
+    // (423) ni sur le projet de référence protégé (403 reference-protegee) — choix le plus prudent et réversible.
+    const { study, courante } = await etudeEcrite(tx, param(req, "projectId"), param(req, "studyId"), actor.id, "owner", ["modify"]);
     const hash = empreinte({ action: "accepter", baseVersion: input.baseVersion, exigenceId: input.exigenceId });
     const r = await enregistrerVersion(tx, study.id, actor.id, input.requestId, hash, () => unwrap(deciderAcceptation(courante ? { version: courante.version, exigences: courante.requirements } : null, input, actor, new Date())),
       `Acceptation de la référence partenaire de l’exigence ${input.exigenceId}`);
@@ -162,7 +171,7 @@ async function varianteDe(q: Querier, studyId: string, variantId: string) {
   return variant ?? notFound();
 }
 
-studioExigencesRouter.get(controlesPath, endpoint(async (req, res) => {
+studioExigencesRouter.get(controlesPath, avecContrat(CONTRAT_CONTROLES_LISTER), endpoint(async (req, res) => {
   const access = assertAccess(await loadProjectAccess(param(req, "projectId"), req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
   const variant = await varianteDe(db, study.id, param(req, "variantId"));
@@ -173,7 +182,7 @@ studioExigencesRouter.get(controlesPath, endpoint(async (req, res) => {
   res.json({ controles: rows.map((r) => controleDe(r, email)) });
 }));
 
-studioExigencesRouter.get(`${controlesPath}/:checkId`, endpoint(async (req, res) => {
+studioExigencesRouter.get(`${controlesPath}/:checkId`, avecContrat(CONTRAT_CONTROLE_LIRE), endpoint(async (req, res) => {
   const access = assertAccess(await loadProjectAccess(param(req, "projectId"), req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
   const variant = await varianteDe(db, study.id, param(req, "variantId"));
@@ -184,7 +193,7 @@ studioExigencesRouter.get(`${controlesPath}/:checkId`, endpoint(async (req, res)
   res.json(controleDe(row, await emails(db, [row.authorId])));
 }));
 
-studioExigencesRouter.post(controlesPath, endpoint(async (req, res) => {
+studioExigencesRouter.post(controlesPath, avecContrat(CONTRAT_CONTROLE_EXECUTER), endpoint(async (req, res) => {
   const parsed = studioControleSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
@@ -208,12 +217,20 @@ studioExigencesRouter.post(controlesPath, endpoint(async (req, res) => {
     const versions = (await tx.select({ version: studioRequirementSets.version }).from(studioRequirementSets).where(eq(studioRequirementSets.studyId, study.id))).map((r) => r.version);
     const version = unwrap(versionExaminee(versions, input.version));
     const [jeu] = version === null ? [] : await tx.select().from(studioRequirementSets).where(and(eq(studioRequirementSets.studyId, study.id), eq(studioRequirementSets.version, version))).limit(1);
-    const { result, execution, conclusion } = resultatControle(study.id, revision.id, revision.document, jeu ? { version: jeu.version, exigences: jeu.requirements } : null);
+    const jeuExamine = jeu ? { version: jeu.version, exigences: jeu.requirements } : null;
+    const { result, execution, conclusion } = resultatControle(study.id, revision.id, revision.document, jeuExamine);
+    const normative = conclusionNormativeControle(result, jeuExamine, input.nonApplicables ?? [], actorId, new Date());
+    if ("refus" in normative) throw new StudioRequestError(normative.refus.status, normative.refus.body);
     const [row] = await tx.insert(studioRequirementChecks).values({
       id: newId("studio_requirement_check"), studyId: study.id, variantId: variant.id, revisionId: revision.id, setVersion: version,
-      execution, conclusion, result, documentHash: empreinte(revision.document), authorId: actorId, requestId: input.requestId ?? null,
+      execution, conclusion, result: { ...result, normative: normative.ok }, documentHash: empreinte(revision.document), authorId: actorId, requestId: input.requestId ?? null,
     }).returning();
-    return { ...controleDe(row!, await emails(tx, [actorId])), replayed: false };
+    // Réexamen (EX-086) : les observations non clôturées de la variante sont rapprochées de la révision contrôlée, dans
+    // la même transaction ; aucun statut d'observation n'est modifié (objet disparu : marqué, jamais clos).
+    const rapprochements = await rapprocherVariante(tx, {
+      variantId: variant.id, revision: { id: revision.id, document: revision.document as StudioDocument }, controle: { id: row!.id, result }, actorId, at: row!.createdAt,
+    });
+    return { ...controleDe(row!, await emails(tx, [actorId])), rapprochements: rapprochements.map((r) => ({ observationId: r.observationId, suivi: r.suivi, statut: r.statut })), replayed: false };
   });
   res.setHeader("Idempotent-Replayed", String(out.replayed));
   res.status(201).json(out);

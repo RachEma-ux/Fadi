@@ -1,14 +1,25 @@
 /** Handler Studio de l'orchestrateur commun : droits, rejeu, base, révision append-only. */
+import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
+import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioFusionRevision, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
+import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
+import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
+import { exportStudioStep, revaliderBooleensStudio } from "./studio-exact.js";
+import { corpsRefusQuota, quotaCommandesStudio } from "./studio-quotas.js";
+import {
+  STUDIO_MODES_ENVELOPPE, STUDIO_OPERATIONS_COMMANDE, studioCommandeNue, studioControlerCibles, studioControlerPortee, studioEffetsCommande, studioHorsPerimetre,
+  type StudioCommandeMetier, type StudioEffetsCommande, type StudioModeEnveloppe, type StudioPorteeEnveloppe,
+} from "@parcours/atelier-model/studio-cmd";
+import { lireContexteEtude, validerContexteEtude, type StudioContexteDeclare } from "./studio-contexte.js";
+import { consignerEvenementRevision, controlerCheminEcriture, engagerPuisNotifier, lireEvenementRevision, nouvelleTransaction, type EvenementRevision } from "./studio-journal.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -17,19 +28,59 @@ export class StudioRequestError extends Error {
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 /** Règle d'identifiant des requêtes Studio (enveloppes, créations idempotentes, révision exportée). */
 export const studioIdentifierSchema = identifier;
+/**
+ * Enveloppe de transport (IF-006) : `contractVersion`, `requestId`, `baseRevisionId`, `commands[toolId, params]` et,
+ * facultatifs, la portée déclarée `scope` (comparée à l'adresse), le `mode` (`appliquer` par défaut, `essai` : rien
+ * n'est écrit) et, par commande, `targetIds` / `operation` (vérifiés contre les effets réels, `studioControlerCibles`).
+ * L'auteur n'est jamais lu dans le corps (schéma strict : un `actorId` est refusé) : c'est la session du serveur.
+ */
 const envelopeSchema = z.object({
   contractVersion: z.literal(STUDIO_CONTRACT), requestId: identifier, baseRevisionId: identifier,
+  scope: z.object({ projectId: identifier, studyId: identifier, variantId: identifier }).strict().optional(),
+  mode: z.enum(STUDIO_MODES_ENVELOPPE).optional(),
   commands: z.array(z.object({
     toolId: z.enum(STUDIO_COMMAND_TOOL_IDS),
     params: z.record(z.string(), z.unknown()),
+    targetIds: z.array(identifier).min(1).max(500).refine((l) => new Set(l).size === l.length, "Cible citée deux fois").optional(),
+    operation: z.enum(STUDIO_OPERATIONS_COMMANDE).optional(),
   }).strict()).min(1).max(500),
 }).strict();
 
+/** Attributs logiques de la commande métier (IF-006), séparés des commandes que le noyau applique. */
+export interface StudioAttributsEnveloppe {
+  scope?: StudioPorteeEnveloppe;
+  mode: StudioModeEnveloppe;
+  commands: StudioCommandeMetier[];
+}
+
+/** Enveloppe validée : les commandes nues (`toolId`, `params`) que le noyau applique, et les attributs logiques à vérifier. */
+export function parseStudioEnvelopeMetier(value: unknown): { envelope: StudioEnvelope; attributs: StudioAttributsEnveloppe } {
+  const { scope, mode, commands, ...reste } = parseEnveloppeComplete(value);
+  const metier = commands as StudioCommandeMetier[];
+  return {
+    envelope: { ...reste, commands: metier.map(studioCommandeNue) } as StudioEnvelope,
+    attributs: { ...(scope ? { scope } : {}), mode: mode ?? "appliquer", commands: metier },
+  };
+}
+
 export function parseStudioEnvelope(value: unknown): StudioEnvelope {
+  return parseStudioEnvelopeMetier(value).envelope;
+}
+
+function parseEnveloppeComplete(value: unknown): z.infer<typeof envelopeSchema> {
+  // EX-002 : une demande hors du périmètre du Studio (comptabilité, RH, commerce, chantier, exploitation) est refusée
+  // par un motif nommé, avant la validation du contrat (jamais confondue avec un outil inconnu).
+  const commandes = (value as { commands?: unknown } | null)?.commands;
+  if (Array.isArray(commandes)) {
+    for (const [i, c] of commandes.entries()) {
+      const refus = studioHorsPerimetre((c as { toolId?: unknown } | null)?.toolId);
+      if (refus) throw new StudioRequestError(400, { error: "hors_perimetre", code: refus.code, domaine: refus.domaine, path: `commands[${i}].toolId`, message: refus.message });
+    }
+  }
   const parsed = envelopeSchema.safeParse(value);
   if (!parsed.success) throw new StudioRequestError(400, { error: "invalid_input", details: parsed.error.flatten() });
   // Le noyau public valide les paramètres géométriques, sans second schéma concurrent.
-  return structuredClone(parsed.data) as StudioEnvelope;
+  return structuredClone(parsed.data);
 }
 
 /** Canonique JSON seulement : ordre des clés ignoré, contenu et ordre des commandes conservés. */
@@ -52,8 +103,12 @@ export function notFound(): never { throw new StudioRequestError(404, { error: "
 export function studioArchivedRefusal(): never {
   throw new StudioRequestError(409, { error: "archived", message: "Cette étude ou cette variante est archivée : elle reste lisible mais ne peut pas être modifiée." });
 }
-export function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed): AccessibleProject {
-  const refusal = projectAccessRefusal(access, actorId, need);
+/**
+ * `cible` (portées étroites) : la ressource relue en base — étude, variantes du contenu, révision — à laquelle une
+ * attribution de portée étroite peut ajouter la capacité demandée (`owned-project.ts`, `porteeAllows`).
+ */
+export function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed, cible?: CiblePortee): AccessibleProject {
+  const refusal = projectAccessRefusal(access, actorId, need, cible);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
   return access!;
 }
@@ -78,8 +133,8 @@ function refuserPrefixeReserve(requestId: string | undefined, ecriture: StudioEc
   if (ecriture !== "modify" || requestId === undefined || !requestId.toLowerCase().startsWith(STUDIO_PREFIXE_EXEMPLE)) return;
   throw new StudioRequestError(400, { error: "invalid_input", code: "request_id_reserve", message: `Identifiant de requête réservé à l'installation de l'exemple Studio (préfixe « ${STUDIO_PREFIXE_EXEMPLE} »).` });
 }
-function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture): void {
-  if (ecriture === "modify") { assertAccess(access, actorId, "modify"); return; }
+function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture, cible?: CiblePortee): void {
+  if (ecriture === "modify") { assertAccess(access, actorId, "modify", cible); return; }
   assertAccess(access, actorId, "owner");
   assertAccess(access, actorId, "write");
 }
@@ -87,15 +142,16 @@ function assertEcriture(access: AccessibleProject, actorId: string, ecriture: St
 /** Verrouille également le membre : une révocation concurrente ne traverse pas le commit. */
 export async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
   await lockProject(tx, projectId);
-  await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, actorId))).for("share");
+  await lockAccessRows(tx, projectId, actorId);
   return assertAccess(await loadProjectAccess(projectId, actorId, tx), actorId, "read");
 }
 
 /** Lecture d'une variante : `archived` si l'étude ou la variante l'est (alors `canWrite` faux) ; provenance d'une dérivation. */
 export type StudioRead = StudioContext & { archived: boolean; derivedFrom: StudioProvenance | null };
-const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null }): StudioProvenance | null =>
-  row.derivedFromVariantId && row.derivedFromRevisionId ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId } : null;
+const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null; derivationIdentities?: Record<string, string> | null }, identites = false): StudioProvenance | null =>
+  row.derivedFromVariantId && row.derivedFromRevisionId
+    ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId, ...(row.derivationMode === "copie" ? { mode: "copie" as const, ...(identites && row.derivationIdentities ? { identites: row.derivationIdentities } : {}) } : {}) }
+    : null;
 
 export async function readStudioContext(q: Querier, scope: StudioScope, actorId: string, revisionId?: string): Promise<StudioRead> {
   const access = assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "read");
@@ -113,8 +169,8 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
     study: { id: study.id, name: study.name, projectId: study.projectId },
     variant: { id: variant.id, name: variant.name, studyId: study.id, headRevisionId: variant.headRevisionId },
     revision: { id: revision.id, parentRevisionId: revision.parentRevisionId, document: validateStudioDocument(revision.document) },
-    canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify") === null,
-    archived, derivedFrom: provenanceOf(variant),
+    canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
+    archived, derivedFrom: provenanceOf(variant, true),
   };
 }
 
@@ -149,8 +205,9 @@ export async function studyOf(q: Querier, projectId: string, studyId: string) {
 export const studioVariantSummaryColumns = {
   id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt,
   derivedFromVariantId: studioVariants.derivedFromVariantId, derivedFromRevisionId: studioVariants.derivedFromRevisionId,
+  derivationMode: studioVariants.derivationMode,
 };
-type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null };
+type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null };
 export const toVariantSummary = (row: VariantSummaryRow): StudioVariantSummary =>
   ({ id: row.id, name: row.name, headRevisionId: row.headRevisionId, archived: row.archivedAt !== null, derivedFrom: provenanceOf(row) });
 
@@ -166,14 +223,16 @@ async function variantsOf(q: Querier, study: { id: string; initialVariantId: str
 export async function readStudioStudy(q: Querier, projectId: string, studyId: string, actorId: string, includeArchived = false): Promise<StudioStudyRead> {
   const access = assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
   const study = await studyOf(q, projectId, studyId);
+  // `canManage` (archiver, désarchiver) reste au rôle de projet ; `canWrite` admet un Concepteur de l'étude (portée étroite).
   const canManage = projectAccessRefusal(access, actorId, "modify") === null;
+  const canWriteStudy = projectAccessRefusal(access, actorId, "modify", { studyId: study.id }) === null;
   return {
     study: {
       id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString(),
       updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null, workflowPhase: study.workflowPhase ?? null,
     },
     variants: await variantsOf(q, study, includeArchived),
-    canWrite: canManage && study.archivedAt === null, canManage,
+    canWrite: canWriteStudy && study.archivedAt === null, canManage,
   };
 }
 
@@ -213,6 +272,8 @@ export interface StudioRevisionChanges {
   commands: StudioEnvelope["commands"];
   changedKeys: string[];
   summary: StudioDifferenceDocuments["resume"];
+  /** Événement du journal (IF-011) et effets (EX-010) de la révision ; null pour une révision d'initialisation. */
+  event: EvenementRevision | null;
 }
 export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, actorId: string, revisionId: string): Promise<StudioRevisionChanges> {
   const context = await readStudioContext(q, scope, actorId, revisionId);
@@ -231,6 +292,7 @@ export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, 
     revisionId: context.revision.id, parentRevisionId: context.revision.parentRevisionId, source: row.source, authorId: row.authorId,
     createdAt: row.createdAt.toISOString(), requestId: envelope ? row.requestId : null, commands: envelope?.commands ?? [],
     changedKeys: studioElementsModifies(parent, context.revision.document), summary: comparerDocumentsStudio(parent, context.revision.document).resume,
+    event: await lireEvenementRevision(q, context.variant.id, context.revision.id),
   };
 }
 
@@ -255,7 +317,7 @@ async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[
  * Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale,
  * marquage d'étude exemple (`example_install`, écrit dans la même transaction que l'étude).
  */
-export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall }
+export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall; contexte?: StudioContexteDeclare }
 
 export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string, options: StudioCreationOptions = {}): Promise<StudioCreation> {
   refuserPrefixeReserve(requestId, options.ecriture ?? "modify");
@@ -265,8 +327,18 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     if (requestId !== undefined) {
       const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
         .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
-      if (previous) return replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+      if (previous) {
+        const rejeu = await replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+        // IF-001 : un rejeu porte le même contexte déclaré (ou aucun), sinon c'est une autre demande.
+        const stocke = await lireContexteEtude(tx, rejeu.study.id);
+        const declare = (c: { site: { parcelles: { id: string; revision: number }[] }; sources: { id: string }[] } | null | undefined) =>
+          c ? JSON.stringify({ p: c.site.parcelles.map((x) => [x.id, x.revision]), s: c.sources.map((x) => x.id) }) : null;
+        if (declare(stocke) !== declare(options.contexte)) throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contexte d’étude." });
+        return rejeu;
+      }
     }
+    // IF-001 : contexte validé sous le verrou du projet, avant toute insertion (aucune création partielle).
+    const contexte = options.contexte ? await validerContexteEtude(tx, projectId, options.contexte) : null;
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: studyId, name, projectId },
@@ -280,12 +352,16 @@ export async function createStudioStudy(projectId: string, actorId: string, name
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
       source: "study-initialization", authorId: actorId, response,
     });
+    if (contexte) await tx.insert(studioStudyContexts).values({ studyId, projectId, version: contexte.version, context: contexte as unknown as Record<string, unknown>, validatedBy: actorId });
     return { ...response, replayed: false };
   });
 }
 
-/** Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création). */
-export interface StudioDerivationSource { variantId: string; revisionId?: string }
+/**
+ * Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création) ; `mode`
+ * `version` (défaut : identifiants conservés) ou `copie` (copie indépendante, nouvelles identités — TR-EX-013).
+ */
+export interface StudioDerivationSource { variantId: string; revisionId?: string; mode?: StudioModeDerivation }
 
 /**
  * Nouvelle variante d'une étude active : une seule révision initiale, sans parent. Document vide, ou — dérivation —
@@ -298,7 +374,8 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertEcriture(access, actorId, ecriture);
+    // Concepteur de l'étude (portée étroite) : crée et dérive des variantes dans CETTE étude.
+    assertEcriture(access, actorId, ecriture, { studyId: study.id });
     if (requestId !== undefined) {
       const [previous] = await tx.select({ id: studioVariants.id }).from(studioVariants)
         .where(and(eq(studioVariants.studyId, study.id), eq(studioVariants.creationRequestId, requestId))).limit(1);
@@ -306,13 +383,15 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
         return replayCreation(tx, previous.id, ["variant-initialization", "variant-derivation"], actorId, name, (r) => r.variant.name, (r) => {
           const stored = r.derivedFrom ?? null;
           if (!from) return stored === null;
-          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId);
+          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId)
+            && (stored.mode ?? "version") === (from.mode ?? "version");
         });
       }
     }
     if (study.archivedAt !== null) return studioArchivedRefusal();
     let document = newStudioDocument(newId("studio_document"));
     let derivedFrom: StudioProvenance | null = null;
+    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     if (from) {
       const [source] = await tx.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId }).from(studioVariants)
         .where(and(eq(studioVariants.id, from.variantId), eq(studioVariants.studyId, study.id))).limit(1);
@@ -320,10 +399,16 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
       const [revision] = await tx.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
         .where(and(eq(studioRevisions.id, from.revisionId ?? source.headRevisionId), eq(studioRevisions.variantId, source.id))).limit(1);
       if (!revision) return notFound();
-      document = structuredClone(validateStudioDocument(revision.document));
-      derivedFrom = { variantId: source.id, revisionId: revision.id };
+      if (from.mode === "copie") {
+        // Copie indépendante (TR-INV-003) : nouvelles identités, provenance par élément, aucune propagation.
+        const copie = studioCopieIndependante(validateStudioDocument(revision.document), newId("studio_document"), variantId.slice(-8));
+        document = copie.document;
+        derivedFrom = { variantId: source.id, revisionId: revision.id, mode: "copie", identites: copie.identites };
+      } else {
+        document = structuredClone(validateStudioDocument(revision.document));
+        derivedFrom = { variantId: source.id, revisionId: revision.id };
+      }
     }
-    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: study.id, name: study.name, projectId },
       variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
@@ -332,6 +417,7 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
     await tx.insert(studioVariants).values({
       id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null,
       derivedFromVariantId: derivedFrom?.variantId ?? null, derivedFromRevisionId: derivedFrom?.revisionId ?? null,
+      derivationMode: derivedFrom?.mode ?? null, derivationIdentities: derivedFrom?.identites ?? null,
     });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document, envelope: null,
@@ -342,13 +428,95 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
   });
 }
 
-export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
+/** Réponse d'une écriture de fusion ou d'annulation (lot W3-D) : contexte, rejeu, effets, provenance de la fusion. */
+export type StudioFusionEcrite = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string; fusion: StudioFusionRevision };
+
+export type StudioEcritureFusion = { document: StudioDocument; fusion: StudioFusionRevision; source: "variant-merge" | "variant-merge-undo" };
+
+/**
+ * Fusion de variantes (lot W3-D, X.1-06) — écriture d'une révision de fusion (ou d'annulation) dans la variante CIBLE.
+ * Second chemin d'écriture d'une révision, rangé ici avec le premier (A.5-01 : ce module reste le seul à insérer des
+ * révisions et à avancer une tête) et passé par la MÊME orchestration que les lots de commandes : préparation sous les
+ * verrous du projet et de la variante, droit `modify` sur la cible (verrou d'édition d'un autre compte : 423), rejeu par
+ * `requestId`, chemin d'écriture (bascule), refus d'une cible archivée, quota d'invocation, journal et effets dans la
+ * même transaction, notification après l'engagement. Le document écrit est calculé par `calculer` sous ces verrous
+ * (`lib/studio-fusion.ts` : fusion à trois voies validée, ou document d'avant la fusion) ; aucune enveloppe n'est
+ * enregistrée (`envelope` nulle), la provenance de la fusion l'est (`fusion`).
+ */
+export async function ecrireRevisionFusionStudio(scope: StudioScope, actorId: string, requestId: string, payloadHash: string, calculer: (tx: Tx, tete: { revisionId: string; document: StudioDocument }) => Promise<StudioEcritureFusion>): Promise<StudioFusionEcrite> {
+  refuserPrefixeReserve(requestId, "modify");
+  return engagerPuisNotifier(() => db.transaction(async (tx) => {
+    let tete: Awaited<ReturnType<typeof readStudioContext>> | undefined;
+    const transactionId = nouvelleTransaction();
+    return orchestrerCommandesDansTransaction<StudioFusionEcrite>(tx, { kind: "studio", ...scope }, {
+      prepare: async (t) => {
+        const access = await lockedAccess(t, scope.projectId, actorId);
+        const [study] = await t.select({ id: studioStudies.id }).from(studioStudies)
+          .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
+        if (!study) return notFound();
+        const [variant] = await t.select({ id: studioVariants.id }).from(studioVariants)
+          .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
+        if (!variant) return notFound();
+        // Seul un rôle qui peut modifier la CIBLE fusionne (propriétaire, éditeur, Concepteur de l'étude) ; le verrou
+        // d'édition d'un autre compte refuse (423).
+        assertAccess(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] });
+        tete = await readStudioContext(t, scope, actorId);
+      },
+      replay: async (t) => {
+        const [previous] = await t.select().from(studioRevisions)
+          .where(and(eq(studioRevisions.variantId, scope.variantId), eq(studioRevisions.requestId, requestId))).limit(1);
+        if (!previous) return undefined;
+        if (previous.authorId !== actorId || previous.payloadHash !== payloadHash || !previous.fusion) {
+          throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
+        }
+        return { ...structuredClone(previous.response), replayed: true, fusion: previous.fusion };
+      },
+      cheminEcriture: async (t, captured) => {
+        const refus = await controlerCheminEcriture(t, captured);
+        if (refus) throw new StudioRequestError(409, refus);
+      },
+      execute: async (t) => {
+        if (!tete) throw new Error("studio_scope_not_prepared");
+        if (tete.archived) return studioArchivedRefusal();
+        const depasse = quotaCommandesStudio.verifier(actorId);
+        if (depasse) throw new StudioRequestError(429, corpsRefusQuota(depasse));
+        const e = await calculer(t, { revisionId: tete.variant.headRevisionId, document: tete.revision.document });
+        const id = newId("studio_revision");
+        const response: StudioContext = {
+          study: tete.study, variant: { ...tete.variant, headRevisionId: id },
+          revision: { id, parentRevisionId: tete.variant.headRevisionId, document: e.document }, canWrite: true,
+        };
+        await t.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: tete.variant.headRevisionId, document: e.document, envelope: null, requestId, payloadHash, source: e.source, authorId: actorId, response, fusion: e.fusion });
+        await t.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
+        const effects = studioEffetsCommande(tete.revision.document, e.document, [], { revisionBase: tete.variant.headRevisionId, revisionSortie: id, source: e.source, auteurId: actorId, requestId });
+        const eventId = await consignerEvenementRevision(t, {
+          transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: tete.variant.headRevisionId,
+          revisionId: id, authorId: actorId, requestId, effects, jobId: null,
+        });
+        return { ...response, replayed: false, effects, eventId, fusion: e.fusion };
+      },
+    });
+  }), (r) => {
+    if (r.replayed) return;
+    quotaCommandesStudio.consommer(actorId);
+    signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: r.revision.id });
+  });
+}
+
+/** Formats d'export d'une révision : dessin (SVG, DXF), maquette (IFC) et géométrie 3D (OBJ, STL, STEP — E.6-04). */
+export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc", "obj", "stl", "step"] as const;
+/** Formats couverts par le rapport de fidélité (E.6-03) ; les exports 3D ont leur bilan (`studioBilanExport3d`). */
+export const STUDIO_RAPPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
 export type StudioExportFormat = (typeof STUDIO_EXPORT_FORMATS)[number];
 export const STUDIO_EXPORT_CONTENT_TYPES: Readonly<Record<StudioExportFormat, string>> = Object.freeze({
   svg: "image/svg+xml; charset=utf-8",
   dxf: "application/dxf",
   // IFC STEP (ISO 10303-21) : chaînes encodées en ASCII (`\X2\`), aucun charset à déclarer.
   ifc: "application/x-step",
+  // OBJ et STL ASCII : texte ASCII (identifiants échappés `~XXXX~`) ; STEP AP214 écrit par OCCT : ASCII.
+  obj: "model/obj",
+  stl: "model/stl",
+  step: "model/step",
 });
 export interface StudioExportFile { format: StudioExportFormat; contentType: string; filename: string; revisionId: string; body: string }
 
@@ -367,7 +535,16 @@ export async function exportStudioVariant(q: Querier, scope: StudioScope, actorI
   let body: string;
   if (format === "svg") body = exportStudioSvg(doc);
   else if (format === "dxf") body = exportStudioDxf(doc);
-  else {
+  else if (format === "obj") body = exportStudioObj(doc);
+  else if (format === "stl") body = exportStudioStl(doc);
+  else if (format === "step") {
+    const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
+    if (!row) return notFound();
+    const step = await exportStudioStep(doc, row.createdAt.toISOString().slice(0, 19), `${studioFileSegment(context.variant.name, "variante")}.step`);
+    // Aucun solide : refus explicite, jamais un fichier STEP vide.
+    if (step === null) throw new StudioRequestError(422, { error: "nothing_to_export", message: "Aucun solide à écrire en STEP : extrudez un objet, posez un solide ou un mur." });
+    body = step;
+  } else {
     // Horodatage de la révision exportée (reproductible) ; GlobalId dérivés de la variante et des identifiants Studio.
     const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
     if (!row) return notFound();
@@ -441,15 +618,123 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   };
 }
 
-export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
+/**
+ * Application EN MÉMOIRE d'un lot à un document (essai, EX-045) : même modèle, aucune écriture. Le point d'entrée des
+ * écritures reste `submitStudioCommands` ; ce module reste le seul à appliquer des commandes Studio (INV-010).
+ */
+export function essayerCommandesStudio(document: StudioDocument, commands: readonly StudioEnvelope["commands"][number][]): StudioDocument {
+  return applyStudioCommands(document, [...commands]);
+}
+
+/**
+ * IF-006 : cibles et opérations déclarées vérifiées sur le document du serveur (commandes après recalcul des booléens),
+ * puis application du lot. Un écart ou un refus du noyau : 400, rien n'est appliqué.
+ */
+function appliquerEtControler(tete: StudioDocument, envelope: StudioEnvelope, attributs: StudioAttributsEnveloppe): StudioDocument {
+  try {
+    // Le lot entier d'abord (refus et chemins d'erreur inchangés), puis les cibles déclarées, commande par commande.
+    const document = applyStudioCommands(tete, envelope.commands);
+    if (attributs.commands.some((c) => c.targetIds !== undefined || c.operation !== undefined)) {
+      const controle = envelope.commands.map((c, i) => ({ ...c, ...(attributs.commands[i]?.targetIds ? { targetIds: attributs.commands[i]!.targetIds } : {}), ...(attributs.commands[i]?.operation ? { operation: attributs.commands[i]!.operation } : {}) }) as StudioCommandeMetier);
+      const ecart = studioControlerCibles(tete, controle);
+      if (ecart) throw new StudioRequestError(400, { error: ecart.code, path: ecart.path, cible: "cible" in ecart ? ecart.cible : undefined, message: ecart.message });
+    }
+    return document;
+  } catch (error) {
+    if (error instanceof StudioValidationError) throw new StudioRequestError(400, { error: "invalid_commands", code: error.code, path: error.path, message: error.message });
+    throw error;
+  }
+}
+
+/** Réponse d'un essai (IF-006, `mode: "essai"`) : document et effets calculés sur la tête ; rien n'est écrit. */
+export interface StudioEssaiEnveloppe {
+  mode: "essai";
+  written: false;
+  baseRevisionId: string;
+  document: StudioDocument;
+  effects: StudioEffetsCommande;
+}
+
+/**
+ * Essai d'une enveloppe (IF-006, `supportsDryRun`) : mêmes droits, même portée, même base, mêmes contrôles que
+ * l'application (booléens recalculés, cibles vérifiées), mais aucune écriture — ni révision, ni journal, ni quota, ni
+ * `requestId` consommé. Les effets sont ceux qu'aurait le lot sur la tête courante.
+ */
+async function essaiEnveloppe(scope: StudioScope, actorId: string, envelope: StudioEnvelope, attributs: StudioAttributsEnveloppe, ecriture: StudioEcriture): Promise<StudioEssaiEnveloppe> {
+  const access = assertAccess(await loadProjectAccess(scope.projectId, actorId), actorId, "read");
+  const [study] = await db.select({ id: studioStudies.id }).from(studioStudies)
+    .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
+  if (!study) return notFound();
+  const [variant] = await db.select({ id: studioVariants.id }).from(studioVariants)
+    .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).limit(1);
+  if (!variant) return notFound();
+  assertEcriture(access, actorId, ecriture, { studyId: study.id, variantIds: [variant.id] });
+  const current = await readStudioContext(db, scope, actorId);
+  if (current.archived) return studioArchivedRefusal();
+  if (envelope.baseRevisionId !== current.variant.headRevisionId) {
+    throw new StudioRequestError(409, { error: "stale_revision", headRevisionId: current.variant.headRevisionId, baseRevisionId: envelope.baseRevisionId });
+  }
+  const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
+  if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
+  const document = appliquerEtControler(current.revision.document, envelope, attributs);
+  const effects = studioEffetsCommande(current.revision.document, document, envelope.commands, {
+    revisionBase: current.variant.headRevisionId, revisionSortie: "essai", source: "authenticated-session", auteurId: actorId, requestId: envelope.requestId,
+  });
+  return { mode: "essai", written: false, baseRevisionId: current.variant.headRevisionId, document, effects };
+}
+
+/**
+ * Point d'entrée de la route des commandes (IF-006) : `mode: "essai"` → essai sans écriture ; sinon application
+ * (`submitStudioCommands`). La portée déclarée est contrôlée dans les deux cas.
+ */
+export async function soumettreEnveloppeStudio(scope: StudioScope, actorId: string, input: unknown): Promise<StudioSoumission | StudioEssaiEnveloppe> {
+  if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
+  const { envelope, attributs } = parseStudioEnvelopeMetier(input);
+  if (attributs.mode !== "essai") return submitStudioCommands(scope, actorId, input);
+  refuserPrefixeReserve(envelope.requestId, "modify");
+  const ecartPortee = studioControlerPortee(attributs.scope, scope);
+  if (ecartPortee) throw new StudioRequestError(400, { error: ecartPortee.code, path: ecartPortee.path, message: ecartPortee.message });
+  return essaiEnveloppe(scope, actorId, envelope, attributs, "modify");
+}
+
+/** Réponse d'un lot accepté : contexte, rejeu, et (lot neuf) l'événement d'effets engagé avec la révision. */
+export type StudioSoumission = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string };
+/**
+ * Source d'une révision écrite par ce point d'entrée : `authenticated-session` (l'interface, la console, l'exemple) ou
+ * `agent-mcp` (proposition d'un agent confirmée par la personne dans Studio, `lib/studio-agents.ts`, INV-010). Jamais lue
+ * dans le corps de la requête : seul le serveur la fixe.
+ */
+export type StudioSourceEcriture = "authenticated-session" | "agent-mcp";
+/** Options internes (jamais lues du corps) : job d'essai confirmé (relation du journal), contrôle propre à l'appelant. */
+export interface StudioSoumissionOptions {
+  jobId?: string;
+  avantEcriture?: (tx: Tx, tete: StudioRead) => Promise<void>;
+  /** Dans la même transaction, après l'écriture de la révision (décision consignée avec elle, tout ou rien). */
+  apresEcriture?: (tx: Tx, revisionId: string) => Promise<void>;
+  source?: StudioSourceEcriture;
+}
+
+export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify", options: StudioSoumissionOptions = {}): Promise<StudioSoumission> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
-  const envelope = parseStudioEnvelope(input);
+  // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
+  // écriture (sans s'en remettre à la sémantique de NULL de la requête).
+  if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
+  const { envelope, attributs } = parseStudioEnvelopeMetier(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
-  const payloadHash = studioPayloadHash(envelope);
-  return db.transaction(async (tx) => {
+  // IF-006 : la portée déclarée doit être celle de l'adresse (jamais lue comme portée) ; refus avant toute lecture.
+  const ecartPortee = studioControlerPortee(attributs.scope, scope);
+  if (ecartPortee) throw new StudioRequestError(400, { error: ecartPortee.code, path: ecartPortee.path, message: ecartPortee.message });
+  // Empreinte de l'enveloppe complète (attributs logiques compris) ; identique à l'ancienne sans attribut.
+  const payloadHash = studioPayloadHash({ ...envelope, ...(attributs.scope ? { scope: attributs.scope } : {}), ...((input as { mode?: unknown }).mode !== undefined ? { mode: attributs.mode } : {}), commands: attributs.commands } as StudioEnvelope);
+  // Le mode « essai » passe par `soumettreEnveloppeStudio` (route) : ce point d'entrée écrit toujours.
+  if (attributs.mode === "essai") throw new StudioRequestError(400, { error: "invalid_input", path: "mode", message: "Mode « essai » non admis ici." });
+  const source: StudioSourceEcriture = options.source ?? "authenticated-session";
+  // IF-011 : la notification part après l'engagement de la transaction, jamais avant ni après un échec.
+  return engagerPuisNotifier(() => db.transaction(async (tx) => {
     let current: StudioRead | undefined;
-    return orchestrerCommandesDansTransaction<StudioContext & { replayed: boolean }>(tx, { kind: "studio", ...scope }, {
+    const transactionId = nouvelleTransaction();
+    return orchestrerCommandesDansTransaction<StudioSoumission>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
         const access = await lockedAccess(transaction, scope.projectId, actorId);
         const [study] = await transaction.select({ id: studioStudies.id }).from(studioStudies)
@@ -458,7 +743,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         const [variant] = await transaction.select({ id: studioVariants.id }).from(studioVariants)
           .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
         if (!variant) return notFound();
-        assertEcriture(access, actorId, ecriture);
+        assertEcriture(access, actorId, ecriture, { studyId: study.id, variantIds: [variant.id] });
         current = await readStudioContext(transaction, scope, actorId);
       },
       replay: async (transaction) => {
@@ -470,28 +755,52 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         }
         return { ...structuredClone(previous.response), replayed: true };
       },
+      cheminEcriture: async (transaction, captured) => {
+        const refus = await controlerCheminEcriture(transaction, captured);
+        if (refus) throw new StudioRequestError(409, refus);
+      },
       execute: async (transaction) => {
         if (!current) throw new Error("studio_scope_not_prepared");
         // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
         if (current.archived) return studioArchivedRefusal();
+        // EX-028 : quota d'invocation du compte, contrôlé à chaque invocation effective (jamais pour un rejeu ni pour
+        // l'installation d'un exemple) ; un lot refusé ici n'écrit rien et ne consomme rien.
+        if (ecriture === "modify") {
+          const depasse = quotaCommandesStudio.verifier(actorId);
+          if (depasse) throw new StudioRequestError(429, corpsRefusQuota(depasse));
+        }
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
-        let document;
-        try { document = applyStudioCommands(current.revision.document, envelope.commands); }
-        catch (error) {
-          if (error instanceof StudioValidationError) throw new StudioRequestError(400, { error: "invalid_commands", code: error.code, path: error.path, message: error.message });
-          throw error;
-        }
+        // Booléens exacts (lot F2) : recalculés par le noyau du serveur, qui remplace le résultat annoncé (R9).
+        await options.avantEcriture?.(transaction, current);
+        const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
+        if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
+        const document = appliquerEtControler(current.revision.document, envelope, attributs);
         const id = newId("studio_revision");
         const response: StudioContext = {
           study: current.study, variant: { ...current.variant, headRevisionId: id },
           revision: { id, parentRevisionId: current.variant.headRevisionId, document }, canWrite: true,
         };
-        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source: "authenticated-session", authorId: actorId, response });
+        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source, authorId: actorId, response });
         await transaction.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
-        return { ...response, replayed: false };
+        // EX-010 / IF-011 : effets calculés par le serveur et consignés dans la même transaction que la révision.
+        const effects = studioEffetsCommande(current.revision.document, document, envelope.commands, {
+          revisionBase: current.variant.headRevisionId, revisionSortie: id, source: ecriture === "modify" ? source : "installation-exemple", auteurId: actorId, requestId: envelope.requestId,
+        });
+        const eventId = await consignerEvenementRevision(transaction, {
+          transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: current.variant.headRevisionId,
+          revisionId: id, authorId: actorId, requestId: envelope.requestId, effects, jobId: options.jobId ?? null,
+        });
+        await options.apresEcriture?.(transaction, id);
+        return { ...response, replayed: false, effects, eventId };
       },
     });
+  }), (resultat) => {
+    // EX-028 : un lot engagé (ni rejoué, ni installation d'exemple) consomme le quota d'invocation du compte.
+    if (!resultat.replayed && ecriture === "modify") quotaCommandesStudio.consommer(actorId);
+    // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
+    // existe ; elle ne leur est jamais appliquée en silence.
+    if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
   });
 }

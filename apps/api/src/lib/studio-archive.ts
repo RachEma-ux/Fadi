@@ -21,6 +21,8 @@
 import { sql } from "drizzle-orm";
 import { validateStudioDocument } from "@parcours/atelier-model";
 import { newId } from "./ids.js";
+import { archivedShareRole } from "./project-access.js";
+import { grantShare } from "./project-access-db.js";
 import type { Querier, Tx } from "./step-rows.js";
 import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./archive-signature.js";
 import { currentSigningKey, verificationKeys } from "./archive-signing-key.js";
@@ -77,9 +79,43 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   return tables;
 }
 
+/**
+ * Audience (écart E1) : pour un exportateur hors de l'équipe (lecteur à qui l'export est accordé), les fils réservés à
+ * l'équipe sortent de l'archive avec tout ce qui les suit — réponses, observation, passages, liens, tâches et leur
+ * journal, décisions. L'archive reste cohérente (manifeste calculé après) : rien n'y renvoie à un fil absent.
+ */
+export function withoutTeamThreads(tables: ReturnType<typeof emptyStudioTables>): void {
+  withoutThreads(tables, (audience) => audience === "equipe");
+}
+
+/**
+ * Revue externe (phase 4) : les constats (audience `revue`) et leur suivi ne sortent jamais dans l'archive d'un projet —
+ * ils appartiennent au paquet de revue, qui n'est pas archivé (son paquet et ses destinataires n'existeraient pas dans le
+ * projet restauré). Retirés pour tout exportateur, équipe comprise.
+ */
+export function withoutReviewThreads(tables: ReturnType<typeof emptyStudioTables>): void {
+  withoutThreads(tables, (audience) => audience === "revue");
+}
+
+function withoutThreads(tables: ReturnType<typeof emptyStudioTables>, hide: (audience: unknown) => boolean): void {
+  const hidden = new Set(tables.studio_comments.filter((c) => hide(c["audience"]) || (c["parent_id"] && tables.studio_comments.some((r) => r["id"] === c["parent_id"] && hide(r["audience"])))).map((c) => c["id"] as string));
+  if (!hidden.size) return;
+  const kept = (column: string) => (row: StudioArchiveRow) => !hidden.has(row[column] as string);
+  tables.studio_comments = tables.studio_comments.filter(kept("id"));
+  tables.studio_observations = tables.studio_observations.filter(kept("comment_id"));
+  tables.studio_observation_events = tables.studio_observation_events.filter(kept("observation_id"));
+  tables.studio_observation_links = tables.studio_observation_links.filter(kept("observation_id"));
+  tables.studio_observation_tasks = tables.studio_observation_tasks.filter(kept("observation_id"));
+  const tasks = new Set(tables.studio_observation_tasks.map((t) => t["id"] as string));
+  tables.studio_observation_task_events = tables.studio_observation_task_events.filter((e) => tasks.has(e["task_id"] as string));
+  tables.studio_observation_decisions = tables.studio_observation_decisions.filter(kept("observation_id"));
+}
+
 /** Section Studio de l'archive, signée ; `null` quand le projet n'a ni donnée Studio ni membre (archives inchangées). */
-export async function exportStudioArchive(q: Querier, project: { id: string; ownerId: string }): Promise<StudioArchiveSection | null> {
+export async function exportStudioArchive(q: Querier, project: { id: string; ownerId: string }, options: { teamThreads?: boolean } = {}): Promise<StudioArchiveSection | null> {
   const tables = await loadStudioTables(q, project.id, project.ownerId);
+  withoutReviewThreads(tables);
+  if (options.teamThreads === false) withoutTeamThreads(tables);
   const meaningful = STUDIO_ARCHIVE_TABLES.some((t) => t !== "studio_tool_preferences" && tables[t].length > 0);
   if (!meaningful) return null;
   // Comptes des colonnes et des champs JSON (acceptations de référence partenaire) : chacun part avec son adresse.
@@ -228,8 +264,17 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
   // Droits : membres retrouvés par leur adresse, rôle et date conservés ; le compte qui restaure est propriétaire.
   const reassignedIds = new Set(section.accounts.filter((a) => reassigned.includes(a.email || a.id)).map((a) => a.id));
   const retrouve = (row: StudioArchiveRow) => !reassignedIds.has(row["user_id"] as string);
-  const members = remapStudioRows("project_members", section.tables.project_members.filter(retrouve), projectId, map).filter((m) => m["user_id"] !== importerId);
-  await insertRows(tx, "project_members", members, "ignore");
+  const members = remapStudioRows("project_members", section.tables.project_members.filter(retrouve), projectId, map)
+    .filter((m) => m["user_id"] !== importerId && archivedShareRole(m["role"]));
+  // Lot OP-PONT : `project_members` est une vue — chaque membre retrouvé reçoit son partage sur une participation (rôle
+  // `acces`, export de l'archive, NULL antérieur à E2 = TRUE, invitant et date conservés) ; un partage existant n'est
+  // jamais écrasé (comme l'ancien `ON CONFLICT DO NOTHING`).
+  for (const m of members) {
+    await grantShare(tx, {
+      projectId, userId: m["user_id"] as string, role: archivedShareRole(m["role"])!, canExport: (m["can_export"] as boolean | null | undefined) ?? null,
+      invitedBy: String(m["invited_by"] ?? ""), grantedAt: m["created_at"] ? new Date(m["created_at"] as string) : new Date(), grantedBy: null, mode: "if-absent",
+    });
+  }
   const lostMembers = section.tables.project_members.length - members.length;
   if (lostMembers > 0) warnings.push(`Droits : ${lostMembers} membre(s) non repris (compte absent de cette base ou compte qui restaure).`);
   const owner = section.accounts.find((a) => a.id === section.ownerId);

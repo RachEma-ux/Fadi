@@ -2699,3 +2699,269 @@
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
+/* Chantier Axes (AX-2) : barre « Axes et repères » — compacte, flottante, menus et inspecteur sous la rangée. */
+.sandbox-planche .planche-barre-reperes {
+  flex-direction: column;
+  align-items: stretch;
+}
+.sandbox-planche .planche-reperes-rangee {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.sandbox-planche .planche-reperes-op {
+  gap: 0.3rem;
+}
+.sandbox-planche .planche-reperes-nom {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.sandbox-planche .planche-reperes-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+}
+.sandbox-planche .planche-barre-outils .planche-reperes-menu button {
+  justify-content: flex-start;
+  gap: 0.45rem;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  text-align: left;
+}
+.sandbox-planche .planche-reperes-menu button.est-indisponible {
+  opacity: 0.5;
+}
+.sandbox-planche .planche-reperes-raccourci {
+  margin-left: auto;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-inspecteur {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  max-width: min(36rem, calc(100vw - 16px));
+  max-height: 50vh;
+  overflow: auto;
+  padding: 0.4rem 2.2rem 0.5rem 0.5rem;
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+  user-select: text;
+  -webkit-user-select: text;
+}
+.sandbox-planche .planche-reperes-inspecteur fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  margin: 0;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-reperes-inspecteur legend {
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-inspecteur label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+.sandbox-planche .planche-reperes-inspecteur input:not([type="checkbox"]) {
+  width: 5.5rem;
+  min-height: 30px;
+  font: inherit;
+}
+.sandbox-planche .planche-barre-outils .planche-reperes-inspecteur button {
+  min-height: 32px;
+  border-color: var(--atelier-ligne, #dce5df);
+}
+.sandbox-planche .planche-reperes-orientation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.sandbox-planche .planche-reperes-orientation div {
+  display: contents;
+}
+.sandbox-planche .planche-reperes-orientation dd {
+  margin: 0;
+}
+.sandbox-planche .planche-reperes-erreur {
+  flex-basis: 100%;
+  margin: 0;
+  color: #b42318;
+  font-size: 0.82rem;
+}
+.sandbox-planche .planche-barre-outils .planche-reperes-inspecteur-fermer {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  min-width: 30px;
+}
+.sandbox-planche .planche-reperes-etat {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  max-width: 22rem;
+  min-width: 12rem;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+.sandbox-planche .planche-reperes-etat > * {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+}
+.sandbox-planche .planche-reperes-etat-bouton {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.sandbox-planche .planche-reperes-avertissement {
+  color: #b54708;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-reperes-etat {
+    display: none;
+  }
+}
+.sandbox-planche .planche-triade {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.sandbox-planche .planche-triade-fond {
+  fill: rgba(255, 255, 255, 0.72);
+  stroke: rgba(24, 61, 50, 0.18);
+}
+.sandbox-planche .planche-triade-lettre {
+  font: 700 12px/1 system-ui, sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.sandbox-planche .planche-reperes-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-reperes-badge {
+  color: #b54708;
+  font-weight: 600;
+}
+.sandbox-planche .planche-reperes-enregistrer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.4rem;
+}
+.sandbox-planche .planche-reperes-enregistrer label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.sandbox-planche .planche-reperes-portee {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sandbox-planche .planche-reperes-liste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.3rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-reperes-liste li.est-actif {
+  border-color: #1a5fd6;
+}
+.sandbox-planche .planche-reperes-nom-bouton {
+  font-weight: 600;
+}
+.sandbox-planche .planche-reperes-details {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+.sandbox-planche .planche-reperes-confirmation {
+  flex-basis: 100%;
+  padding: 0.35rem;
+  background: #fff7ed;
+  border-radius: 6px;
+}
+.sandbox-planche .planche-reperes-affichage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+/* Chantier Axes (AX-4) : édition de l'origine du composant, flottante, hors de la grille des panneaux. */
+.sandbox-planche .planche-origine {
+  position: fixed;
+  top: 7rem;
+  right: 5.5rem;
+  margin: 0;
+  width: min(24rem, calc(100vw - 7rem));
+  max-height: calc(100vh - 12rem);
+}
+.sandbox-planche .planche-origine fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-origine-ancrage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-origine {
+    top: 4rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}
+.sandbox-planche .planche-reperes-details.est-alerte {
+  color: #b54708;
+}

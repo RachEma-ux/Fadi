@@ -18,19 +18,21 @@
  */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "../../../components/Icon";
-import { api } from "../../../lib/api";
+import { api, ApiError, type StudioConflitRaccourci } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth-context";
 import { lireRouteStudio } from "../routes-studio";
 import { STUDIO_CONTEXTES_OUTILS, STUDIO_MANIFESTE_OUTILS_VERSION, type StudioContexteOutil } from "@parcours/atelier-model";
 import { LIBELLES_RAISON, estRefusDeDroit, type RaisonIndisponible } from "../variante/droits";
 import { CATALOGUE, filtrerCatalogue, groupesCatalogue, rechercher, separerFavoris, type EntreeCatalogue, type FiltresCatalogue } from "./catalogue";
 import {
-  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, corpsPreferences, creerGroupe, filtreBarres, LIMITES_GROUPES, normaliserPreferences,
+  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, conflitsRaccourcisPersonnels, corpsPreferences, creerGroupe, filtreBarres, LIMITES_GROUPES, normaliserPreferences,
   OUTIL_TOUJOURS_VISIBLE, PREFERENCES_DEFAUT, refusNomGroupe, supprimerGroupe,
   type IdProfil, type PreferencesOutils,
 } from "./profils";
 import { ariaRaccourci, BARRES_STUDIO, libelleRaccourci, type BarreStudio, type StudioToolId } from "./raccourcis";
 import { PanneauRessources } from "../chargement/PanneauRessources";
+import { useEtatsRessources } from "../chargement/useRessources";
+import { etatOutilCatalogue, LIBELLES_ETAT_OUTIL, type EtatOutilCatalogue } from "./etats-outils";
 
 export interface CatalogueProps {
   disponible: (e: EntreeCatalogue) => boolean;
@@ -181,6 +183,9 @@ export function useProfilOutils(projectId?: string | null) {
     creerGroupe: (nom: string) => modifier((p) => creerGroupe(p, nom)),
     supprimerGroupe: (id: string) => modifier((p) => supprimerGroupe(p, id)),
     basculerDansGroupe: (id: string, outil: StudioToolId) => modifier((p) => basculerDansGroupe(p, id, outil)),
+    projet,
+    /** Relit les préférences du serveur (après un import de profil). */
+    recharger: () => { if (compte && projet) magasin.charger(compte, projet); },
   };
 }
 
@@ -233,6 +238,91 @@ const ENREGISTREMENT: Record<EtatEnregistrement, string | null> = {
   aucun: null, "en-cours": "Enregistrement des préférences…", enregistre: "Préférences enregistrées.", echec: "Préférences non enregistrées : état du serveur relu.",
 };
 
+const TYPE_CONFLIT: Record<StudioConflitRaccourci["type"], string> = {
+  doublon: "déjà donné à", registre: "raccourci de l’outil", editeur: "raccourci de la commande", navigateur: "réservé au navigateur",
+};
+
+type EtatImport =
+  | { etape: "repos" }
+  | { etape: "conflits"; fichier: Record<string, unknown>; conflits: StudioConflitRaccourci[] }
+  | { etape: "refus"; message: string; capacites: string[] }
+  | { etape: "importe"; ecartes: number };
+
+/**
+ * Exporter / importer le profil du compte (EX-033, EX-034) : un import ne confère aucun droit (refus nommé), et ses
+ * conflits de raccourcis sont montrés avant toute écriture ; « Importer sans les raccourcis en conflit » importe le
+ * reste, sans modifier le fichier choisi.
+ */
+function ImportExportProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> }) {
+  const [etat, setEtat] = useState<EtatImport>({ etape: "repos" });
+  const champ = useRef<HTMLInputElement>(null);
+  const p = profil.preferences;
+  const exporter = async () => {
+    if (!profil.projet) return;
+    const f = await api.exportStudioProfil(profil.projet);
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
+    lien.download = `profil-studio-${f.profileId}-v${f.version}.json`;
+    lien.click();
+    URL.revokeObjectURL(lien.href);
+  };
+  const envoyer = async (fichier: Record<string, unknown>, ecarter: boolean) => {
+    if (!profil.projet) return;
+    // Conflits connus de l'interface seule (commandes de l'éditeur, navigateur) : retirés d'une COPIE du fichier.
+    const raccourcis = { ...((fichier["raccourcis"] as Record<string, string> | undefined) ?? {}) };
+    const locaux = conflitsRaccourcisPersonnels(raccourcis);
+    if (locaux.length && !ecarter) { setEtat({ etape: "conflits", fichier, conflits: locaux }); return; }
+    for (const c of locaux) delete raccourcis[c.capacite];
+    try {
+      const r = await api.importStudioProfil(profil.projet, { ...fichier, raccourcis }, ecarter ? "ecarter" : undefined);
+      setEtat({ etape: "importe", ecartes: r.ecartes.length + locaux.length });
+      profil.recharger();
+    } catch (e) {
+      const corps = e instanceof ApiError ? (e.body as { conflits?: StudioConflitRaccourci[]; capacites?: string[] } | null) : null;
+      if (e instanceof ApiError && e.status === 409 && corps?.conflits) setEtat({ etape: "conflits", fichier, conflits: corps.conflits });
+      else if (e instanceof ApiError && e.status === 403) setEtat({ etape: "refus", message: "Un profil ne confère aucun droit : ce profil place une capacité que votre compte ne peut pas exécuter dans ce projet. Rien n’a été importé.", capacites: corps?.capacites ?? [] });
+      else setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] });
+    }
+  };
+  const choisir = async (f: File | undefined) => {
+    if (!f) return;
+    let fichier: unknown;
+    try { fichier = JSON.parse(await f.text()); } catch { setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] }); return; }
+    if (!fichier || typeof fichier !== "object" || Array.isArray(fichier)) { setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] }); return; }
+    await envoyer(fichier as Record<string, unknown>, false);
+    if (champ.current) champ.current.value = "";
+  };
+  return (
+    <div className="studio-profil-echange" data-studio-profil-echange data-studio-profil-id={p.profileId ?? ""} data-studio-profil-version={p.version}>
+      <p className="studio-dialogue-aide" data-studio-profil-identite>
+        <span>{p.profileId ? `Profil ${p.profileId} · version ${p.version}` : "Aucun profil enregistré pour l’instant."}</span>
+        {p.importeDe && <span>{` · importé depuis ${p.importeDe}`}</span>}
+      </p>
+      {Object.keys(p.raccourcis).length > 0 && (
+        <ul className="studio-profil-raccourcis" data-studio-raccourcis-personnels>
+          {Object.entries(p.raccourcis).map(([capacite, r]) => <li key={capacite} data-studio-raccourci-personnel={capacite}><span translate="no">{capacite}</span> <kbd>{libelleRaccourci(r)}</kbd></li>)}
+        </ul>
+      )}
+      <button type="button" disabled={!profil.modifiable || !p.profileId} onClick={() => void exporter()} data-studio-exporter-profil>Exporter le profil</button>
+      <label className="studio-profil-importer">Importer un profil
+        <input ref={champ} type="file" accept="application/json,.json" disabled={!profil.modifiable} onChange={(e) => void choisir(e.target.files?.[0])} data-studio-importer-profil />
+      </label>
+      {etat.etape === "conflits" && (
+        <div role="alert" data-studio-import-conflits={etat.conflits.length}>
+          <p>Raccourcis en conflit : rien n’a été importé.</p>
+          <ul>{etat.conflits.map((c) => <li key={`${c.capacite}-${c.raccourci}`} data-studio-conflit-raccourci={c.capacite}><kbd>{libelleRaccourci(c.raccourci)}</kbd> <span translate="no">{c.capacite}</span> <span>{TYPE_CONFLIT[c.type]}</span> <span translate="no">{c.avec}</span></li>)}</ul>
+          <button type="button" onClick={() => void envoyer(etat.fichier, true)} data-studio-import-ecarter>Importer sans les raccourcis en conflit</button>
+          <button type="button" onClick={() => setEtat({ etape: "repos" })}>Annuler l’import</button>
+        </div>
+      )}
+      {etat.etape === "refus" && (
+        <p role="alert" data-studio-import-refus={etat.capacites.join(" ")}><span>{etat.message}</span>{etat.capacites.length > 0 && <span translate="no">{` (${etat.capacites.join(", ")})`}</span>}</p>
+      )}
+      {etat.etape === "importe" && <p role="status" data-studio-import-ok={etat.ecartes}>{etat.ecartes ? `Profil importé ; ${etat.ecartes} raccourci(s) en conflit écarté(s).` : "Profil importé."}</p>}
+    </div>
+  );
+}
+
 /** Choix du profil des barres d'outils, avec l'avertissement sur ce qu'il ne change pas. */
 function ChoixProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> }) {
   const enregistrement = ENREGISTREMENT[profil.enregistrement];
@@ -249,6 +339,7 @@ function ChoixProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> })
       <p className="studio-dialogue-aide" role="status" data-studio-preferences-enregistrement={profil.enregistrement}>
         {enregistrement ?? ETAT_PREFERENCES[profil.etat]}
       </p>
+      <ImportExportProfil profil={profil} />
     </fieldset>
   );
 }
@@ -355,6 +446,10 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
   const retenues = new Set(trouvees);
   // Le gestionnaire garde l'ordre du catalogue, rangé par barre ; la recherche et les filtres ne font que filtrer.
   const groupes = groupesCatalogue(CATALOGUE.filter((e) => retenues.has(e)));
+  // EX-029 : état de chaque outil, lu dans le gestionnaire des ressources sans rien charger.
+  const moteurs = useEtatsRessources();
+  const enLigne = typeof navigator === "undefined" || navigator.onLine !== false;
+  const etatDe = (e: EntreeCatalogue, r: RaisonIndisponible | null): EtatOutilCatalogue => etatOutilCatalogue(e, { raison: r, moteurs, enLigne });
   return (
     <Dialogue titre="Outils" id="studio-outils-titre" classe="studio-gestionnaire" surFermer={surFermer}>
       <div data-studio-gestionnaire-outils data-studio-manifeste={STUDIO_MANIFESTE_OUTILS_VERSION}>
@@ -363,7 +458,7 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
         <ChoixProfil profil={profil} />
         <Regroupements profil={profil} compose={groupeCompose?.id ?? null} surComposer={setCompose} />
         <PanneauRessources />
-        <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
+        <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, synonyme, famille, domaine, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
         <FiltresOutils filtres={filtresActifs} surFiltres={setFiltres} groupes={profil.groupes} />
         <p role="status" className="studio-dialogue-aide" data-studio-nombre-entrees={trouvees.length}>{`${trouvees.length} entrée(s)`}</p>
         {!trouvees.length && <p>Aucun outil ne correspond à la recherche.</p>}
@@ -377,9 +472,10 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
                 const outil = e.outil?.toolId ?? null;
                 const favori = outil !== null && profil.favoris.includes(outil);
                 const dansLesBarres = outil === null || profil.visible(outil);
+                const etatOutil = etatDe(e, r);
                 return (
                   <li key={e.identifiant} data-studio-catalogue-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"}
-                    data-studio-autorise={estRefusDeDroit(r) ? "non" : "oui"} data-studio-raison={r ?? undefined}>
+                    data-studio-autorise={estRefusDeDroit(r) ? "non" : "oui"} data-studio-raison={r ?? undefined} data-studio-etat-outil={etatOutil}>
                     <Icon name={e.icone} size={20} />
                     <span className="studio-catalogue-nom" ref={noms.poser(e.identifiant)}>{e.libelleFR}</span>
                     <Raccourcis e={e} />
@@ -387,7 +483,14 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
                     <span className="studio-catalogue-meta">{NATURE[e.nature]}</span>
                     <span className="studio-catalogue-meta" data-studio-contextes={e.contextes.join(" ")}>{e.contextes.map((c) => LIBELLE_CONTEXTE[c]).join(" · ")}</span>
                     <span className="studio-catalogue-meta" data-studio-droit={e.droit}>{e.droit === "ecriture" ? "Droit requis : écriture" : "Droit requis : lecture"}</span>
+                    {e.chargeur !== null && <span className="studio-catalogue-meta" data-studio-chargeur={e.chargeur}>Chargeur : <code translate="no">{e.chargeur}</code></span>}
+                    {e.outil !== null && (
+                      <span className="studio-catalogue-meta" data-studio-prerequis={e.prerequis.join(" ")}>
+                        {e.prerequis.length ? <>Prérequis : <code translate="no">{e.prerequis.join(", ")}</code></> : "Aucun prérequis"}
+                      </span>
+                    )}
                     <span className="studio-catalogue-meta" data-studio-disponibilite>{r === null ? "Disponible" : raison ? LIBELLES_RAISON[r] : "Indisponible"}</span>
+                    <span className="studio-catalogue-meta" data-studio-etat-libelle>{LIBELLES_ETAT_OUTIL[etatOutil]}</span>
                     {e.agentExposure === null
                       ? <span className="studio-catalogue-meta" data-studio-exposition="hors-registre">Hors registre (commande locale)</span>
                       : <span className="studio-catalogue-meta" data-studio-exposition={e.agentExposure}>Exposition aux agents : <code translate="no">{e.agentExposure}</code></span>}

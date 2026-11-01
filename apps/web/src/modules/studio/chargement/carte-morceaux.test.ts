@@ -17,6 +17,10 @@ function sortiesConformes(): SortieBuild[] {
     { type: "chunk", fileName: "assets/Vue3DStudio-e.js", taille: 40, facadeModuleId: `${W}/vue3d/Vue3DStudio.tsx`, moduleIds: [`${W}/vue3d/Vue3DStudio.tsx`], imports: ["assets/three-f.js", "assets/VariantWorkspace-c.js"], dynamicImports: [], css: [] },
     { type: "chunk", fileName: "assets/three-f.js", taille: 700, moduleIds: [`${NM}/three/build/three.module.js`], imports: [], dynamicImports: [], css: [] },
     { type: "asset", fileName: "assets/studio.worker-g.js", taille: 500, nomsOriginaux: [] },
+    // Lot F2 : Worker du noyau exact de Studio et binaire .wasm (fichier séparé, chargé par URL).
+    { type: "asset", fileName: "assets/noyau-exact.worker-h.js", taille: 200, nomsOriginaux: [] },
+    { type: "asset", fileName: "assets/occt-wasm-i.wasm", taille: 21000, nomsOriginaux: [] },
+    { type: "asset", fileName: "assets/manifold-j.wasm", taille: 800, nomsOriginaux: [] },
     { type: "chunk", fileName: "assets/Atelier-z.js", taille: 900, facadeModuleId: "/w/apps/web/src/modules/atelier/nouveau/AtelierNouveau.tsx", moduleIds: ["/w/apps/web/src/modules/atelier/nouveau/AtelierNouveau.tsx", `${NM}/occt-wasm/dist/occt-wasm.js`], imports: ["assets/index-a.js"], dynamicImports: [], css: [] },
   ];
 }
@@ -29,7 +33,7 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
   });
 
   it("famille planche : tout planche2d/, sauf les modules légers partagés avec la coquille (liste explicite)", () => {
-    expect(PLANCHE_PARTAGES_COQUILLE).toEqual(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+    expect(PLANCHE_PARTAGES_COQUILLE).toEqual(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts", "etats-outils.ts"]);
     for (const m of PLANCHE_PARTAGES_COQUILLE) {
       expect(famillesDe([`${W}/planche2d/${m}`]), m).toEqual([]);
       expect(existsSync(new URL(`../planche2d/${m}`, import.meta.url)), m).toBe(true);
@@ -50,6 +54,10 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
     expect(c.moteurs["rendu-3d"].propres).toEqual(["/assets/Vue3DStudio-e.js", "/assets/three-f.js"]);
     expect(c.moteurs["rendu-3d"].taille).toBe(740);
     expect(c.moteurs.calcul.fichiers).toEqual(["/assets/studio.worker-g.js"]);
+    // Lot F2 : le noyau exact (Worker et .wasm annexe) est un moteur à part ; ni l'entrée ni la 3D ne l'atteignent.
+    expect(c.moteurs["noyau-exact"].fichiers).toEqual(["/assets/noyau-exact.worker-h.js", "/assets/occt-wasm-i.wasm"]);
+    expect(c.initial).not.toContain("/assets/occt-wasm-i.wasm");
+    expect(c.moteurs["rendu-3d"].fichiers).not.toContain("/assets/occt-wasm-i.wasm");
     // L'import dynamique n'entre jamais dans la fermeture statique.
     expect(fermetureStatique(c.morceaux, ["/assets/StudioShell-b.js"])).not.toContain("/assets/VariantWorkspace-c.js");
   });
@@ -75,6 +83,8 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
   it("moteur introuvable dans le build : violation", () => {
     const s = sortiesConformes().filter((o) => !o.fileName.startsWith("assets/studio.worker"));
     expect(verifierDecoupage(construireCarte(s, "b1"))).toEqual(["calcul : morceau introuvable dans le build"]);
+    const sansExact = sortiesConformes().filter((o) => !o.fileName.startsWith("assets/noyau-exact.worker"));
+    expect(verifierDecoupage(construireCarte(sansExact, "b1"))).toEqual(["noyau-exact : morceau introuvable dans le build"]);
     const sansPlanche = sortiesConformes().filter((o) => !o.fileName.startsWith("assets/VariantWorkspace"));
     expect(construireCarte(sansPlanche, "b1").verification.violations).toContain("planche-2d : morceau introuvable dans le build");
   });
@@ -82,11 +92,11 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
   it("classes du précache : disjointes, complètes, coquille puis profil puis facultatif (B.3-07)", () => {
     const c = construireCarte(sortiesConformes(), "b1");
     const liste = ["/index.html", "/chargement.json", "/assets/index-a.js", "/assets/index-a.css", "/assets/StudioShell-b.js", "/assets/VariantWorkspace-c.js",
-      "/assets/VariantWorkspace-c.css", "/assets/partage-d.js", "/assets/Vue3DStudio-e.js", "/assets/three-f.js", "/assets/studio.worker-g.js", "/assets/Atelier-z.js", "/parcelle/index.html"];
+      "/assets/VariantWorkspace-c.css", "/assets/partage-d.js", "/assets/Vue3DStudio-e.js", "/assets/three-f.js", "/assets/studio.worker-g.js", "/assets/noyau-exact.worker-h.js", "/assets/Atelier-z.js", "/parcelle/index.html"];
     const k = classesPrecache(c, liste);
     expect(k.coquille).toEqual(["/index.html", "/assets/index-a.js", "/assets/index-a.css"]);
     expect(k.profil).toEqual(["/chargement.json", "/assets/StudioShell-b.js", "/assets/VariantWorkspace-c.js", "/assets/VariantWorkspace-c.css", "/assets/partage-d.js"]);
-    expect(k.facultatif).toEqual(["/assets/Vue3DStudio-e.js", "/assets/three-f.js", "/assets/studio.worker-g.js", "/assets/Atelier-z.js", "/parcelle/index.html"]);
+    expect(k.facultatif).toEqual(["/assets/Vue3DStudio-e.js", "/assets/three-f.js", "/assets/studio.worker-g.js", "/assets/noyau-exact.worker-h.js", "/assets/Atelier-z.js", "/parcelle/index.html"]);
     expect([...k.coquille, ...k.profil, ...k.facultatif].sort()).toEqual([...liste].sort());
   });
 });

@@ -12,15 +12,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
-import { localStore } from "../lib/local-store";
+import { localStore, type QuarantaineEntry } from "../lib/local-store";
 import { QUERY_CACHE_VERSION } from "../lib/query-persister";
 import { forgetMaptilerKey, maptilerKey, MAPTILER_KEY_STORAGE, useMaptilerKey } from "../lib/maptiler";
 import { useOnline } from "../components/SyncIndicator";
 import { ChoixLangue } from "../components/ChoixLangue";
+import { LOCALE } from "../lib/i18n";
 import { api, type NotificationKind, type NotificationPreferencesView } from "../lib/api";
 import { NOTIFICATION_KIND_DESCRIPTION, NOTIFICATION_KIND_LABEL, NOTIFICATION_KINDS } from "../components/notification-kinds";
 import { NOTIFICATION_PREFERENCES_KEY } from "../components/NotificationBell";
 import { MonCompte } from "./MonCompte";
+import { FournisseursCarte } from "./FournisseursCarte";
 
 type KeyState = "absente" | "session" | "locale";
 
@@ -129,12 +131,25 @@ async function readLocalSummary(): Promise<LocalSummary> {
   return { ...base, cachedQueries, pausedMutations };
 }
 
+/** Libellé de la table d'origine d'une donnée en quarantaine (MIG-COEX-04). */
+const ORIGINE_QUARANTAINE: Record<QuarantaineEntry["table"], string> = { lots: "Écriture de l’Atelier", studioBrouillons: "Brouillon Studio", studioContextes: "Version lue d’une variante Studio" };
+
+/** Téléchargement d'un fichier JSON produit sur l'appareil. */
+function telecharger(nom: string, contenu: string) {
+  const url = URL.createObjectURL(new Blob([contenu], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = nom;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function LocalDataSettings() {
   const queryClient = useQueryClient();
   const online = useOnline();
   const [summary, setSummary] = useState<LocalSummary | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const refresh = () => void readLocalSummary().then(setSummary);
+  const [quarantaine, setQuarantaine] = useState<QuarantaineEntry[] | null>(null);
+  const refresh = () => { void readLocalSummary().then(setSummary); void localStore.quarantaineLister().then(setQuarantaine); };
   useEffect(refresh, []);
   return (
     <section className="panel settings-section" aria-labelledby="settings-local">
@@ -172,7 +187,23 @@ function LocalDataSettings() {
           <dt>Écrans mis en cache</dt>
           <dd>{summary ? (summary.available ? `${summary.cachedQueries} lecture(s)` : "stockage local indisponible (navigation privée ou quota)") : "…"}</dd>
         </div>
+        <div data-quarantaine-locale={quarantaine?.length ?? ""}>
+          <dt>Données sans propriétaire en quarantaine</dt>
+          <dd>
+            {quarantaine ? quarantaine.length : "…"}
+            {!!quarantaine?.length && (
+              <ul className="settings-pending" aria-label="Données en quarantaine">
+                {quarantaine.map((e) => (
+                  <li key={e.id} data-quarantaine-entree={e.table}>
+                    <strong>{ORIGINE_QUARANTAINE[e.table]}</strong> <span>sans propriétaire</span> <time dateTime={e.misEnQuarantaineA}>{new Date(e.misEnQuarantaineA).toLocaleString(LOCALE)}</time>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </dd>
+        </div>
       </dl>
+      {!!quarantaine?.length && <p className="panel-sub">Données qu’une mise à jour n’a pu attribuer à aucun compte : conservées sur cet appareil, jamais rejouées ni envoyées. Exportez-les pour les examiner.</p>}
       <div className="h7-actions">
         <button
           type="button"
@@ -187,6 +218,10 @@ function LocalDataSettings() {
           }}
         >
           Vider les caches locaux
+        </button>
+        <button type="button" className="button-secondary" disabled={!quarantaine?.length} data-quarantaine-exporter
+          onClick={async () => { telecharger("fadi-quarantaine-locale.json", await localStore.quarantaineExporter()); setNotice("Quarantaine exportée : rien n’a été retiré de cet appareil."); }}>
+          Exporter la quarantaine (JSON)
         </button>
       </div>
       {notice && (
@@ -394,6 +429,7 @@ export function ParametresPage() {
       </section>
       <NotificationSettings />
       <MaptilerSettings />
+      <FournisseursCarte />
       <LocalDataSettings />
       <AppSettings />
     </main>

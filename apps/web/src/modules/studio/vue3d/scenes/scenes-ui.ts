@@ -26,10 +26,15 @@ export const LIBELLES_FINITION: Readonly<Record<StudioFinitionAffichage, string>
 /** Mode de la vue sans scène rappelée : celui d'avant le lot (surfaces et arêtes). */
 export const MODE_INITIAL: StudioModeAffichage = "shaded-edges";
 
-/** Types de rendu : seul le rendu du modèle existe ; les deux autres sont annoncés indisponibles, sans bouton. */
+/**
+ * Types de rendu : le rendu du modèle, et l'illustration contrainte depuis la vue (lot F, décision P-12 : fournisseur local
+ * déterministe, sans IA, par défaut ; service d'IA externe seulement s'il est configuré par l'administrateur). Une
+ * illustration est une image séparée, « non vérifiée », qui ne modifie jamais le modèle. L'exploration libre reste
+ * annoncée indisponible, sans bouton.
+ */
 export const TYPES_RENDU = Object.freeze([
   { id: "rendu-modele", libelle: "Rendu du modèle", disponible: true, description: "Image de la vue 3D tirée de la géométrie du document, avec sa provenance (étude, variante, révision, scène, date)." },
-  { id: "illustration-ia", libelle: "Illustration IA contrainte", disponible: false, description: "Non disponible : aucune illustration n’est produite, et rien ne modifie le modèle automatiquement." },
+  { id: "illustration-ia", libelle: "Illustration contrainte depuis la vue", disponible: true, description: "Image séparée tirée du rendu de la vue : traitement local sans IA par défaut, service d’IA externe seulement s’il est configuré, avec politique, consentement et coût déclaré. Non vérifiée ; le modèle n’est jamais modifié." },
   { id: "exploration-libre", libelle: "Exploration libre", disponible: false, description: "Non disponible : aucune image n’est inventée hors du modèle." },
 ] as const);
 

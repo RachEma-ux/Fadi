@@ -23,7 +23,7 @@ import { raw, Router, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { atelierCommands, drawingExports, projects } from "../db/schema.js";
 import { lockProject } from "../lib/step-rows.js";
-import { buildingCase, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
+import { buildingCase, cibleDocument, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY } from "../data/parcours.js";
@@ -62,7 +62,7 @@ documentsRouter.get("/", async (req, res) => {
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */
 async function produce(req: Request, res: Response, kind: string, render: (dctx: Awaited<ReturnType<typeof loadDesignContext>>, project: OwnedProject) => { body: string; type: string } | null) {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument(kind) ?? undefined);
   if (!project) return;
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());
@@ -123,7 +123,7 @@ documentsRouter.get("/dossier-exemple", async (req, res) => {
 // --- Documents dérivés du modèle typé (lot 5) : vues, feuilles, tableaux, quantités ----------------------------------
 
 async function produceAtelier(req: Request, res: Response, kind: string) {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument(kind) ?? undefined);
   if (!project) return;
   const now = new Date();
   const charge = await chargerModele(db, project.id);
@@ -235,7 +235,7 @@ documentsRouter.post("/dessins", raw({ type: () => true, limit: DRAWING_LIMIT })
 });
 
 documentsRouter.get("/dessins/:exportId", async (req, res) => {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument(`dessin:${String((req.params as Record<string, string>)["exportId"] ?? "")}`) ?? undefined);
   if (!project) return;
   const id = String((req.params as Record<string, string>)["exportId"] ?? "");
   const row = EXPORT_ID.test(id) ? (await db.select().from(drawingExports).where(and(eq(drawingExports.id, id), eq(drawingExports.projectId, project.id))).limit(1))[0] : undefined;

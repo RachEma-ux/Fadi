@@ -16,6 +16,8 @@ export interface OptionsClavier {
   executer: (cible: CibleRaccourci, verifier: boolean) => void;
   /** Espace tenue (partagée avec les gestes de la planche). */
   espace: MutableRefObject<{ tenu: boolean; panoramique: boolean }>;
+  /** Raccourcis personnels du profil (EX-034), consultés après la table native (jamais une combinaison native). */
+  personnels?: ReadonlyMap<string, CibleRaccourci>;
 }
 
 export function useClavierStudio(o: OptionsClavier) {
@@ -28,7 +30,7 @@ export function useClavierStudio(o: OptionsClavier) {
     if (o.dialogue) { if (c === "Ctrl+S" || c === "Ctrl+K") e.preventDefault(); return; }
     const field = (e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable=true]");
     if (field && !actifDansUnChamp(c)) return;
-    const cible = cibleRaccourci(c);
+    const cible = cibleRaccourci(c) ?? (c ? o.personnels?.get(c) ?? null : null);
     if (!cible || !o.pret) return;
     // Entrée / Maj+Entrée ne sont prises que pendant le tracé d'une polyligne : ailleurs, elles activent le bouton focalisé.
     if (cible.type === "commande" && (cible.id === "terminer-polyligne" || cible.id === "fermer-polyligne")) {

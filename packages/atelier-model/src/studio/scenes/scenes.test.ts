@@ -176,18 +176,31 @@ describe("Apparence d'affichage séparée des propriétés constructives (E.5-02
 describe("Rendu du modèle : provenance et rapport de fidélité (E.5-03)", () => {
   const entree = {
     etude: { id: "e1", nom: "Étude de recette" }, variante: { id: "v1", nom: "Variante B" }, revisionId: "rev-0123456789abcdef",
-    scene: { id: "sc1", nom: "Vue sud-est" }, date: new Date("2026-10-19T08:30:00.000Z"), camera: scene().camera,
+    scene: { id: "sc1", nom: "Vue sud-est" }, date: new Date("2026-10-19T08:30:00.000Z"), camera: scene().camera, auteur: { id: "u_1", email: "a@fadi.test" },
   };
   it("déclare étude, variante, révision, scène, date et « rendu du modèle »", () => {
     const p = studioProvenanceRendu(entree);
     expect(p).toEqual({
       schema: "studio-rendu/1", nature: "rendu du modèle", etude: entree.etude, variante: entree.variante, revisionId: "rev-0123456789abcdef",
-      scene: entree.scene, date: "2026-10-19T08:30:00.000Z", repere: "local-3d", camera: scene().camera,
+      scene: entree.scene, date: "2026-10-19T08:30:00.000Z", repere: "local-3d", camera: scene().camera, auteur: { id: "u_1", email: "a@fadi.test" },
     });
     expect(studioNomFichierRendu(p)).toBe("rendu-Variante-B-Vue-sud-est-89abcdef.png");
     expect(studioNomFichierRendu(studioProvenanceRendu({ ...entree, scene: null }))).toBe("rendu-Variante-B-vue-89abcdef.png");
     expect(refus(() => studioProvenanceRendu({ ...entree, revisionId: "" }))).toMatch(/provenance\.revisionId : texte non vide attendu/);
     expect(refus(() => studioProvenanceRendu({ ...entree, date: new Date("x") }))).toMatch(/date valide attendue/);
+  });
+
+  it("EX-071 [+] le rendu conserve son auteur, ses paramètres et l'empreinte du document quand elle est disponible", () => {
+    const p = studioProvenanceRendu({ ...entree, parametres: { largeurPx: 1600, hauteurPx: 900, qualite: "complète" }, documentHash: "d".repeat(64) });
+    expect(p).toMatchObject({ auteur: { id: "u_1", email: "a@fadi.test" }, parametres: { largeurPx: 1600, hauteurPx: 900, qualite: "complète" }, documentHash: "d".repeat(64), revisionId: "rev-0123456789abcdef", camera: scene().camera });
+    expect(studioProvenanceRendu(entree).documentHash).toBeUndefined();
+  });
+
+  it("EX-071 [−] sans auteur, le rendu est refusé (jamais d'auteur inventé) ; empreinte ou paramètres illisibles refusés", () => {
+    expect(refus(() => studioProvenanceRendu({ ...entree, auteur: null }))).toMatch(/provenance\.auteur : auteur du rendu attendu/);
+    expect(refus(() => studioProvenanceRendu({ ...entree, auteur: { id: " " } }))).toMatch(/provenance\.auteur\.id/);
+    expect(refus(() => studioProvenanceRendu({ ...entree, documentHash: "abc" }))).toMatch(/empreinte SHA-256 attendue/);
+    expect(refus(() => studioProvenanceRendu({ ...entree, parametres: { largeurPx: 0, hauteurPx: 10, qualite: "x" } }))).toMatch(/taille du canevas/);
   });
 
   it("scènes et apparences : non couvertes par SVG, DXF et IFC, raison propre", () => {
