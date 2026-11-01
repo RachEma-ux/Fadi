@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
+import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, Qualification, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -38,6 +38,8 @@ export interface IndicateurRecu {
 export interface VersionRecue {
   id: string; libelle: string; empreinte: string; urlSource: string | null; recupereLe: string | null; periode: string | null; licence: string; attribution: string;
   droits: DroitsVersion; crsSource: string; precision: string | null; transformations: string[]; synthetique: boolean; etat: string; publieeLe: string | null; privee: boolean;
+  /** Qualification de la source (D-GD-54) : « provisoire » signalée partout où la couche paraît. */
+  qualification?: Qualification;
   source: { id: string; titre: string; producteur: string; theme: string; couverture: string; description: string };
 }
 export interface CoucheRecue {

@@ -6,7 +6,7 @@
  * à « Autres ». Chaque modification est journalisée.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { CATEGORIES_CATALOGUE, validerLibelleCategorie } from "@parcours/geodata-model";
+import { CATEGORIES_AJOUTEES, CATEGORIES_CATALOGUE, validerLibelleCategorie } from "@parcours/geodata-model";
 import { capacites, erreur, introuvable, journal, requete, transaction } from "../../lib/geodata/acces.js";
 import { newId } from "../../lib/ids.js";
 
@@ -21,40 +21,28 @@ export async function semerCategories(): Promise<void> {
   if (semees) return;
   await transaction(async (c) => {
     const pose = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ('categories-semees') ON CONFLICT DO NOTHING RETURNING cle`);
-    if (!pose.rowCount) return;
-    for (const [i, k] of CATEGORIES_CATALOGUE.entries()) {
-      await c.query(`INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [k.cle, k.libelle, i * 10, [...k.themes]]);
+    if (pose.rowCount) {
+      for (const [i, k] of CATEGORIES_CATALOGUE.entries()) {
+        await c.query(`INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [k.cle, k.libelle, i * 10, [...k.themes]]);
+      }
     }
-  });
-  await semerCategoriesAjoutees();
-  semees = true;
-}
-
-/**
- * Catégories ajoutées au modèle après le premier semis (bases déjà en service) : chacune est semée une seule fois, sous
- * son propre repère, à la suite des catégories existantes. Rien n'est créé si une catégorie de même identifiant ou de
- * même libellé existe déjà (base neuve : le semis initial l'a déjà posée) ; supprimée ensuite, elle ne revient pas.
- */
-export const CATEGORIES_AJOUTEES: readonly { readonly repere: string; readonly cle: string }[] = [
-  // Prix immobiliers (Concept Prix v1.1, §5 et Plan §7) : la couche FeenWay (thème `prix-immobiliers`) y est rangée.
-  { repere: "categorie-prix-semee", cle: "prix-immobiliers" },
-];
-
-async function semerCategoriesAjoutees(): Promise<void> {
-  for (const a of CATEGORIES_AJOUTEES) {
-    const k = CATEGORIES_CATALOGUE.find((x) => x.cle === a.cle);
-    if (!k) continue;
-    await transaction(async (c) => {
-      const pose = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ($1) ON CONFLICT DO NOTHING RETURNING cle`, [a.repere]);
-      if (!pose.rowCount) return;
+    // Catégories ajoutées après coup (D-GD-54) : semées une fois chacune (repère propre), juste après leur voisine
+    // précédente ; sur une base neuve, déjà présentes (rien n'est fait) ; supprimées ensuite, elles ne reviennent pas.
+    for (const a of CATEGORIES_AJOUTEES) {
+      const i = CATEGORIES_CATALOGUE.findIndex((k) => k.cle === a.cle);
+      const k = CATEGORIES_CATALOGUE[i];
+      if (!k) continue;
+      const repere = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ($1) ON CONFLICT DO NOTHING RETURNING cle`, [`categorie-semee:${a.cle}`]);
+      if (!repere.rowCount) continue;
       await c.query(
         `INSERT INTO geodata_categories (id, libelle, ordre, themes)
-         SELECT $1, $2, coalesce((SELECT max(ordre) FROM geodata_categories), 0) + 10, $3
+         SELECT $1, $2, coalesce((SELECT ordre + 5 FROM geodata_categories WHERE id = $5), $3), $4
           WHERE NOT EXISTS (SELECT 1 FROM geodata_categories WHERE id = $1 OR lower(libelle) = lower($2))`,
-        [k.cle, k.libelle, [...k.themes]],
+        [k.cle, k.libelle, i * 10, [...k.themes], CATEGORIES_CATALOGUE[i - 1]?.cle ?? null],
       );
-    });
-  }
+    }
+  });
+  semees = true;
 }
 
 const organiser = async (req: Request, res: Response, next: NextFunction) => {

@@ -13,7 +13,7 @@ utilisés ; il ne décide rien (décisions : journal du chantier).
 | Versions et immuabilité | `geodata_versions`, déclencheur `geodata_version_immuable` | Une édition d'agrégats publiés = une version ; lignes figées par `geodata_prix_agregats_figes` |
 | Hiérarchie administrative | `geodata_entites_administratives`, `geodata_niveaux_administratifs`, `geodata_decoupage_imports` (D-GD-42) | Candidats et rangs du rattachement ; édition du découpage consignée dans chaque rattachement |
 | Journal | `geodata_journal` | Statuts des sources, imports, constructions, publications, refus, retraits, exports |
-| Réglages | `geodata_reglages` | Repère `categorie-prix-semee` (semis unique de la catégorie sur une base en service) |
+| Réglages | `geodata_reglages` | Repère `categorie-semee:prix-immobiliers` (semis unique de la catégorie sur une base en service, mécanisme commun `CATEGORIES_AJOUTEES`) |
 
 ## Chaîne d'import
 

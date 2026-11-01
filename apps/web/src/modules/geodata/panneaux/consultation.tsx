@@ -4,8 +4,8 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
+import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue, type VersionRecue } from "../client";
 import { entreesCategories, type Categorie } from "../composition-ops";
 import { PanneauPrix } from "./PrixImmobiliers";
 import { THEME_PRIX } from "./prix-ops";
@@ -83,7 +83,7 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
                     return (
                       <li key={c.id} className={`gd-carte-couche${dedans ? " gd-active" : ""}`} data-gd-couche-catalogue={c.id}>
                         {c.niveauAdministratif && <p className="gd-niveau-admin" translate="no" data-gd-niveau-admin={c.niveauAdministratif.code}>{c.niveauAdministratif.pluriel}</p>}
-                        <div className="gd-ligne-titre"><strong translate="no">{c.titre}</strong>{c.version.privee && <span className="gd-badge">Privée</span>}{c.version.synthetique && <span className="gd-badge gd-badge-alerte">Jeu synthétique</span>}</div>
+                        <div className="gd-ligne-titre"><strong translate="no">{c.titre}</strong>{c.version.privee && <span className="gd-badge">Privée</span>}{c.version.synthetique && <span className="gd-badge gd-badge-alerte">Jeu synthétique</span>}<BadgeProvisoire version={c.version} /></div>
                         <p className="gd-discret" translate="no">{c.version.source.producteur}</p>
                         <p className="gd-discret">{c.typeGeometrie === "raster" ? "Couche raster (grille de valeurs)" : `${c.nombreObjets} objets · ${c.indicateurs.length} indicateur(s)`}</p>
                         <div className="gd-actions">
@@ -122,10 +122,20 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
 }
 
 /** Fiche obligatoire d'une version (concept § 7.2) : producteur, licence, attribution, période, système, empreinte, droits. */
+/**
+ * Source provisoire (D-GD-54) : badge visible partout où la couche paraît (catalogue, couches, fiche), avec son motif et
+ * sa décision en infobulle ; rien pour une source qualifiée.
+ */
+export function BadgeProvisoire({ version: v }: { version: VersionRecue }) {
+  if (v.qualification?.etat !== "provisoire") return null;
+  return <span className="gd-badge gd-badge-alerte" title={`Source provisoire, non qualifiée (${v.qualification.decision ?? ""}) : ${v.qualification.motif ?? ""}`} data-gd-provisoire>Source provisoire</span>;
+}
+
 export function FicheVersion({ couche: c }: { couche: CoucheRecue }) {
   const v = c.version;
   return (
     <dl className="gd-fiche-version" data-gd-fiche-version>
+      {v.qualification?.etat === "provisoire" && <><dt>Qualification</dt><dd className="gd-alerte" data-gd-qualification="provisoire"><span>Source provisoire, non qualifiée</span>{" "}<span translate="no">{`(${v.qualification.decision ?? ""}) — ${v.qualification.motif ?? ""}`}</span></dd></>}
       <dt>Source</dt><dd translate="no">{v.source.titre}</dd>
       <dt>Description</dt><dd translate="no">{v.source.description || c.description || "Non renseignée"}</dd>
       <dt>Version</dt><dd translate="no">{v.libelle}</dd>
@@ -259,6 +269,8 @@ export function PanneauCouches(p: {
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void;
   /** Indicateur actif du catalogue (D-GD-31, D-GD-32) : par couche qui le porte ; couches où ses valeurs sont masquées. */
   indicateurs?: ReadonlyMap<string, IndicateurRecu> | undefined; masques?: ReadonlySet<string> | undefined; onAfficherIndicateur?(id: string, afficher: boolean): void;
+  /** Coloration selon l'indicateur actif (D-GD-55) : couches où elle est coupée. */
+  colorationsCoupees?: ReadonlySet<string>; onColorerIndicateur?(id: string, colorer: boolean): void;
 }) {
   if (!p.composition.couches.length) return <p className="gd-etat">Aucune couche active : ajoutez-en depuis le Catalogue.</p>;
   const ordre = [...p.composition.couches].reverse();
@@ -271,7 +283,7 @@ export function PanneauCouches(p: {
         return (
           <li key={k.coucheId} className="gd-carte-couche" data-gd-couche-active={k.coucheId}>
             <div className="gd-ligne-titre">
-              <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>
+              <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>{c && <BadgeProvisoire version={c.version} />}
             </div>
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
             {k.visible && p.etats?.get(k.coucheId) === "chargement" && <p className="gd-discret" role="status" data-gd-etat-couche="chargement">Chargement…</p>}
@@ -297,6 +309,12 @@ export function PanneauCouches(p: {
                 <span className="gd-discret" translate="no">{` — ${p.indicateurs.get(k.coucheId)!.titre}`}</span>
               </label>
             )}
+            {c && p.indicateurs?.get(k.coucheId) && (
+              <label className="gd-case" data-gd-indicateur-couleur={k.coucheId}>
+                <input type="checkbox" checked={!p.colorationsCoupees?.has(k.coucheId)} onChange={(e) => p.onColorerIndicateur?.(k.coucheId, e.target.checked)} />
+                Colorer selon l'indicateur
+              </label>
+            )}
             {c && !c.raster && <ChoixColoration couche={c} style={k.style} onStyle={(st) => p.onStyle(k.coucheId, st)} coucheId={k.coucheId} />}
             {k.style.mode === "simple" && <label className="gd-champ">Couleur<input type="color" value={k.style.couleur} onChange={(e) => p.onStyle(k.coucheId, { mode: "simple", couleur: e.target.value })} /></label>}
             <div className="gd-actions">
@@ -312,13 +330,15 @@ export function PanneauCouches(p: {
   );
 }
 
-export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]> }) {
+export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]>; /** Couches colorées selon l'indicateur actif (D-GD-55). */ colorations?: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }> }) {
   const visibles = [...p.composition.couches].reverse().filter((k) => k.visible);
   if (!visibles.length) return <p className="gd-etat">Aucune couche visible.</p>;
   return (
     <div data-gd-legende>
       {visibles.map((k) => {
         const c = p.couches.get(k.coucheId);
+        const col = p.colorations?.get(k.coucheId);
+        if (col) return <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId}><h3 translate="no">{c?.titre ?? k.coucheId}</h3><EntreesIndicateur indicateur={col.indicateur} entrees={col.entrees} /></section>;
         if (k.style.mode === "simple") return <section key={k.coucheId} className="gd-legende"><h3 translate="no">{c?.titre ?? k.coucheId}</h3><p className="gd-entree"><span className="gd-pastille" style={{ background: k.style.couleur }} />Objets de la couche</p></section>;
         if (k.style.mode === "raster") {
           const r = c?.raster;
@@ -442,3 +462,42 @@ export function FicheValeur(p: { titre: string; etat: "chargement" | "erreur" | 
     </article>
   );
 }
+
+/**
+ * Légende de la coloration selon l'indicateur actif (D-GD-55), sur la carte : indicateur, unité, classes (bornes et nombre
+ * d'entités), valeur absente en gris (jamais zéro), source de la couche et son statut provisoire le cas échéant.
+ */
+export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }>; couches: ReadonlyMap<string, CoucheRecue>; /** Panneau Données ouvert à gauche (bureau). */ decalee?: boolean }) {
+  return (
+    <section className={`gd-legende-indicateur${p.decalee ? " gd-legende-decalee" : ""}`} aria-label="Légende de l'indicateur" data-gd-legende-indicateur>
+      {[...p.colorations].map(([id, c]) => {
+        const couche = p.couches.get(id);
+        return (
+          <div key={id}>
+            <EntreesIndicateur indicateur={c.indicateur} entrees={c.entrees} />
+            {couche && <p className="gd-discret"><span translate="no">{couche.version.attribution}</span>{couche.version.qualification?.etat === "provisoire" && <>{" · "}<span>Source provisoire</span></>}</p>}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+/** Classes de la coloration selon l'indicateur (D-GD-55) : titre, unité, bornes, effectifs, valeur absente. */
+function EntreesIndicateur({ indicateur: i, entrees }: { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }) {
+  return (
+    <>
+      <h3 translate="no">{i.titre}{i.unite ? ` (${i.unite})` : ""}</h3>
+      <ul className="gd-entrees" data-gd-legende-classes>
+        {entrees.map((e) => (
+          <li key={String(e.classe)} className="gd-entree">
+            <span className="gd-pastille" style={{ background: e.couleur }} />
+            {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
+            <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+

@@ -7,7 +7,7 @@
  * réparation est **comptée et consignée** dans les transformations de la version (jamais silencieuse).
  */
 import type { PoolClient } from "pg";
-import type { DefinitionTableauDeBord, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, ObjetImporte, Sexe, StyleCouche } from "@parcours/geodata-model";
+import type { DefinitionTableauDeBord, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, ObjetImporte, Qualification, Sexe, StyleCouche } from "@parcours/geodata-model";
 import { estMilieu, estMotifAbsence, estSexe } from "@parcours/geodata-model";
 import { newId } from "../ids.js";
 import { compresser, type GrilleRaster } from "./raster.js";
@@ -74,6 +74,8 @@ export interface VersionAEcrire {
     readonly transformations: readonly string[];
     readonly controles: Record<string, unknown>;
     readonly synthetique: boolean;
+    /** Qualification de la source (D-GD-54) ; absente = qualifiée. */
+    readonly qualification?: Qualification;
   };
   readonly couche: {
     readonly titre: string;
@@ -150,11 +152,12 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
   const versionId = newId("gdver");
   await client.query(
     `INSERT INTO geodata_versions (id, source_id, espace_id, libelle, empreinte, fichier_nom, fichier_taille, url_source, recupere_le, periode, licence, attribution,
-       droits, crs_source, precision_donnees, transformations, controles, synthetique, preparee_par)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+       droits, crs_source, precision_donnees, transformations, controles, synthetique, preparee_par, qualification, qualification_motif, qualification_decision)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
     [versionId, sourceId, v.espaceId, v.version.libelle, v.version.empreinte, v.version.fichierNom, v.version.fichierTaille, v.version.urlSource, v.version.recupereLe,
       v.version.periode, v.version.licence, v.version.attribution, JSON.stringify(v.version.droits), v.version.crsSource, v.version.precision,
-      JSON.stringify(v.version.transformations), JSON.stringify(v.version.controles), v.version.synthetique, v.preparePar],
+      JSON.stringify(v.version.transformations), JSON.stringify(v.version.controles), v.version.synthetique, v.preparePar,
+      v.version.qualification?.etat ?? "qualifiee", v.version.qualification?.motif ?? null, v.version.qualification?.decision ?? null],
   );
   const coucheId = newId("gdcou");
   await client.query(

@@ -6,7 +6,7 @@ Implement the two property-price layers described in Fadi Concept Prix, version 
 
 ## 1 Execution order and prerequisites
 
-Follow Planner, Builder, Reviewer, Tester and Governance responsibilities in that order for each lot. Under the owner's total delegation of 31 October 2026 (D-GD-54), these roles are held by Claude Code sessions and sub-agents; the Reviewer of a lot is an agent that did not write it. Roles do not imply that separate humans have reviewed the work. Follow the repository cycle Issue, short-lived branch, pull request, evidence, STATUS and HANDOFF, then review. Merging follows the GeoData delegation (ADR-GEODATA-02); production release remains the owner's Release.
+Follow Planner, Builder, Reviewer, Tester and Governance responsibilities in that order for each lot. Under the owner's total delegation of 31 October 2026 (D-GD-56), these roles are held by Claude Code sessions and sub-agents; the Reviewer of a lot is an agent that did not write it. Roles do not imply that separate humans have reviewed the work. Follow the repository cycle Issue, short-lived branch, pull request, evidence, STATUS and HANDOFF, then review. Merging follows the GeoData delegation (ADR-GEODATA-02); production release remains the owner's Release.
 
 Before application work, read AGENTS.md, docs/architecture.md, docs/continuity/README.md and the current GeoData workstream handoff, status, tasks and context. Inspect the issue, pull requests, current code and CI. The price capability is part of the existing GeoData workstream; no competing workstream is created.
 
@@ -29,7 +29,7 @@ The integration inventory (lot P0) is recorded in `docs/workstreams/geodata/PRIX
 
 P2 and deterministic fixtures proceed while a source remains unqualified. A blocked source prevents its own ingestion and publication, not unrelated development. Fixtures remain test-only and visibly synthetic; they are never shipped as live prices.
 
-Go/no-go after P1 (decided 31 October 2026, D-GD-54): no listing source is authorised for row-level observations and no official edition is authorised. Lots P2 to P9 are therefore executed in full, with the Feenway published barometer as the only real data and the official and observation pipelines delivered empty, tested on synthetic fixtures and displaying their blocking reasons.
+Go/no-go after P1 (decided 31 October 2026, D-GD-56): no listing source is authorised for row-level observations and no official edition is authorised. Lots P2 to P9 are therefore executed in full, with the Feenway published barometer as the only real data and the official and observation pipelines delivered empty, tested on synthetic fixtures and displaying their blocking reasons.
 
 ## 3 Source dossiers and blockers
 

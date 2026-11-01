@@ -43,7 +43,7 @@
 - [x] GEO-SERVICES-PUBLICS-FUSION — Base des services publics MTNRA + OSM (administrations, santé, gares) sans doublon : 19 797 objets, 13 couches ; couches OSM d'origine retirées du catalogue, leurs objets tous repris (D-GD-45).
 - [ ] GEO-COMMUNES-SANS-CONTOUR — 16 communes du HCP sans contour (13 provinces, 8 régions partielles) : reprendre à la source.
 - [ ] GEO-RAPPROCHEMENT-COMMUNES — Point du MTNRA dans le contour communal contre la commune publiée : attend des contours communaux complets (D-GD-33).
-- [ ] GEO-PRIX — Prix immobiliers (Concept Prix v1.1, D-GD-54 à D-GD-57), branche `claude/prix-immobiliers-geodata` :
+- [ ] GEO-PRIX — Prix immobiliers (Concept Prix v1.1, D-GD-56 à D-GD-59), branche `claude/prix-immobiliers-geodata` :
   - [x] P0 inventaire (`PRIX-INVENTAIRE.md`) ; P1 dossiers de sources (`PRIX-SOURCES.md`), porte go / no-go décidée.
   - [x] Logique pure `packages/geodata-model/src/prix/` (jeu doré, type 7, dédoublonnage, comparaison).
   - [x] P2–P6 base, import (baromètre FeenWay + registre des sources), chaînes d'observations et officielle, API.
@@ -57,6 +57,13 @@
   sur la carte), P2-4 bloqué faute de source qualifiée (D-GD-53).
 - [ ] GEO-ARABE-CARTE — Libellés arabes sur la carte (glyphes arabes + greffon RTL) : décision du maître d'ouvrage.
 - [ ] GEO-CHAMP-CONTINU — Couche de qualité de l'air ou autre champ continu : source qualifiée à fournir.
+- [x] GEO-PRIX-PROVISOIRE — Prix des quartiers FeenWay comme source provisoire (préproduction et développement seulement),
+  qualification « provisoire » en base, garde d'environnement, badge (D-GD-54).
+- [x] GEO-PRIX-SOURCES-FUTURES — Schéma commun des prix de quartier, déclaration de source et préparation génériques,
+  procédure de remplacement (D-GD-54).
+- [x] GEO-PRIX-AFFICHAGE — Prix visibles à l'ouverture du thème, coloration selon l'indicateur et légende sur la carte (D-GD-55).
+- [ ] GEO-PRIX-QUALIFIE — Source qualifiée de prix (ANCFCC / DGI / Bank Al-Maghrib, droits à établir) : à choisir par le
+  maître d'ouvrage ; puis retrait de la source FeenWay.
 - [x] GEO-SYNTHESE-ENTITE — Min / moyenne / max de l'indicateur actif sur les subdivisions, dans la fiche (D-GD-50).
 - [x] GEO-FIABILITE — Fiabilité déclarée par la source dans la fiche, « Non évalué » sinon (D-GD-51).
 - [x] GEO-PASTILLES — Pastilles de thème sur la carte, badge, Alt+T (D-GD-48).

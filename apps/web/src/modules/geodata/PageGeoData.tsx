@@ -13,17 +13,17 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
-import { basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
+import { colorationIndicateur, basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
-import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
+import { FicheValeur, LegendeIndicateur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
 import { BarreRecherche, type ChoixFond, type PlacementOutils } from "./panneaux/BarreRecherche";
 import { PanneauCollection, useCollection, type ModeCollection } from "./panneaux/collection";
 import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
-import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
+import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche, refusImpressionFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
@@ -76,6 +76,8 @@ export function PageGeoData() {
   // Indicateur actif du catalogue (D-GD-31) : une clé commune à toutes les couches qui le portent ; couches où il est masqué.
   const [indicateurActif, setIndicateurActif] = useState<CleIndicateur | null>(null);
   const [indicateursMasques, setIndicateursMasques] = useState<ReadonlySet<string>>(new Set());
+  /** Couches dont la coloration selon l'indicateur actif est coupée (D-GD-55 ; cochée par défaut). */
+  const [colorationsCoupees, setColorationsCoupees] = useState<ReadonlySet<string>>(new Set());
   const [composition, setComposition] = useState<Composition>(COMPOSITION_INITIALE);
   const [carte, setCarte] = useState<CarteRecue | null>(null);
   const [etatForce, setEtatForce] = useState<EtatEnregistrement | null>(null);
@@ -340,6 +342,19 @@ export function PageGeoData() {
     }
     return m;
   }, [compositionAffichee, indicateursParCouche, indicateursMasques, valeurs]);
+  // Coloration selon l'indicateur actif (D-GD-55) : classes des valeurs lues en base, par couche visible qui le porte.
+  const colorations = useMemo(() => {
+    const m = new Map<string, { indicateur: IndicateurRecu; couleurs: Map<string, string>; entrees: EntreeLegende[] }>();
+    for (const k of compositionAffichee.couches) {
+      const i = indicateursParCouche.get(k.coucheId);
+      const vs = i ? valeurs.get(i.id) : undefined;
+      if (!i || !vs || !k.visible || colorationsCoupees.has(k.coucheId)) continue;
+      const c = colorationIndicateur(vs, i.unite);
+      if (c) m.set(k.coucheId, { indicateur: i, ...c });
+    }
+    return m;
+  }, [compositionAffichee, indicateursParCouche, colorationsCoupees, valeurs]);
+  const couleursIndicateur = useMemo(() => new Map([...colorations].map(([id, c]) => [id, c.couleurs])), [colorations]);
   // Chemin venu du découpage en base (étapes sans coucheId) : il ne s'applique qu'aux couches dont la version forme ce
   // découpage — jamais à une couche d'un autre pays ou d'une autre source aux codes semblables. Chemin lu dans les couches
   // (repli, étapes avec coucheId) : comme au lot B.
@@ -563,8 +578,8 @@ export function PageGeoData() {
   }, [webgl]);
 
   useEffect(() => {
-    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres: filtresAffiches, selection, zones: zonesGeo, attributions, valeursAffichees });
-  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, valeursAffichees, chargementMoteur]);
+    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres: filtresAffiches, selection, zones: zonesGeo, attributions, valeursAffichees, couleursIndicateur });
+  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, valeursAffichees, couleursIndicateur, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
   compositionCourante.current = composition;
@@ -809,7 +824,7 @@ export function PageGeoData() {
   // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
   const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
   raccourcisNiveaux.current = (e) => {
-    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
+    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); const refus = refusImpressionFiche(fiche); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
     const cible = e.target as HTMLElement | null;
     const saisie = !!cible?.closest("input, select, textarea, [contenteditable='true']");
     // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).
@@ -844,7 +859,8 @@ export function PageGeoData() {
     return () => window.removeEventListener("keydown", ecouter);
   }, []);
 
-  const changerStyle = (id: string, s: StyleCouche) => setComposition((c) => definirStyle(c, id, s));
+  // Une coloration choisie à la main l'emporte : la coloration selon l'indicateur de cette couche est coupée (D-GD-55).
+  const changerStyle = (id: string, s: StyleCouche) => { setComposition((c) => definirStyle(c, id, s)); setColorationsCoupees((m) => new Set(m).add(id)); };
   /** Réunion des indicateurs des couches vectorielles du catalogue (rubrique « Indicateurs », D-GD-31). */
   const indicateursCatalogue = useMemo(() => unionIndicateurs((catalogue ?? []).filter((c) => c.typeGeometrie !== "raster")), [catalogue]);
   /**
@@ -858,6 +874,8 @@ export function PageGeoData() {
   };
   /** Case « Afficher l'indicateur » d'une couche : décochée, les valeurs sont masquées, l'indicateur reste mémorisé. */
   const afficherIndicateur = (id: string, afficher: boolean) => setIndicateursMasques((m) => { const n = new Set(m); if (afficher) n.delete(id); else n.add(id); return n; });
+  /** Case « Colorer selon l'indicateur » d'une couche (D-GD-55). */
+  const colorerIndicateur = (id: string, colorer: boolean) => setColorationsCoupees((m) => { const n = new Set(m); if (colorer) n.delete(id); else n.add(id); return n; });
   // Une couche retirée (ou une nouvelle carte) oublie son masquage : rechargée, elle repart avec la case cochée.
   useEffect(() => {
     const presentes = new Set(composition.couches.map((k) => k.coucheId));
@@ -941,6 +959,9 @@ export function PageGeoData() {
       // Valeurs de l'indicateur actif affichées sur la couche (D-GD-32) : la légende exportée nomme ce que sont ces nombres.
       const i = valeursAffichees.has(k.coucheId) ? indicateursParCouche.get(k.coucheId) : undefined;
       const titre = `${c?.titre ?? k.coucheId}${i ? ` — valeurs affichées : ${i.titre} (${i.unite})${i.periode ? `, ${i.periode}` : ""}` : ""}`;
+      // Couche colorée selon l'indicateur actif (D-GD-55) : la légende exportée décrit ces classes, pas le style enregistré.
+      const col = colorations.get(k.coucheId);
+      if (col) return { titre: `${c?.titre ?? k.coucheId} — ${col.indicateur.titre}${col.indicateur.unite ? ` (${col.indicateur.unite})` : ""}`, entrees: col.entrees };
       if (k.style.mode === "simple") return { titre, entrees: null, couleur: k.style.couleur };
       if (k.style.mode === "categories") return { titre, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
       if (k.style.mode === "raster") return { titre: `${c?.titre ?? k.coucheId}${c?.raster ? ` — ${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}` : ""}`, entrees: c?.raster ? entreesRaster(c.raster) : null, sansEffectif: true };
@@ -982,6 +1003,10 @@ export function PageGeoData() {
     const r = basculerTheme(composition, t.couches.map((c) => ({ id: c.id, versionId: c.version.id, style: c.styleDefaut })));
     connaitre(t.couches);
     setComposition(r.composition);
+    // Thème affiché sans indicateur actif (D-GD-55) : son indicateur principal (valeur de la source, premier dans l'ordre
+    // déclaré) devient actif, pour que la carte montre ses valeurs (prix au m² sur chaque quartier, par exemple).
+    const principal = avant !== "affiche" && !indicateurActif ? t.couches.flatMap((c) => c.indicateurs).find((i) => i.nature !== "calcule") : undefined;
+    if (principal) { setIndicateurActif(cleIndicateur(principal)); setIndicateursMasques(new Set()); }
     setAnnonce(avant === "affiche" ? `Thème « ${t.libelle} » masqué` : r.omises ? `Thème « ${t.libelle} » affiché ; ${r.omises} couche(s) non ajoutée(s) : 20 couches au plus par carte.` : `Thème « ${t.libelle} » affiché`);
   };
   const basculerSynthese = () => setSyntheseOuverte((v) => { ecrireLocal("geodata.synthese", v ? null : "1"); setAnnonce(v ? "Synthèse de la vue fermée" : "Synthèse de la vue ouverte"); return !v; });
@@ -1090,11 +1115,11 @@ export function PageGeoData() {
           </div>
           <div id="gd-panneau-contenu" role="tabpanel" aria-labelledby={`gd-onglet-${onglet}`} className="gd-contenu">
               {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} indicateurs={{ liste: indicateursCatalogue, actif: indicateurActif, onChoix: choisirIndicateur }} niveaux={decoupage.niveaux} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
-              {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} etats={etatsCouches} nombres={nombresVus} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur}
+              {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} etats={etatsCouches} nombres={nombresVus} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur} colorationsCoupees={colorationsCoupees} onColorerIndicateur={colorerIndicateur}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))} onRegrouper={(id) => setComposition((c) => basculerRegroupement(c, id))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
-              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} />}
+              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} colorations={colorations} />}
           </div>
         </aside>}
         <main className="gd-carte" aria-label="Carte" data-gd-zoom={composition.camera.zoom.toFixed(2)}>
@@ -1126,6 +1151,7 @@ export function PageGeoData() {
             {zoneEchecs > 0 && <span className="gd-alerte" data-gd-zone-echec><span>— filtre impossible, objets masqués pour</span> <span>{zoneEchecs}</span> <span>couche(s)</span></span>}
             <button type="button" onClick={() => filtrerZone(null)} aria-label="Retirer le filtre de zone (Alt+Z)" title="Retirer le filtre de zone (Alt+Z)" aria-keyshortcuts="Alt+Z" data-gd-retirer-zone>×</button>
           </div>}
+          {!erreurCarte && colorations.size > 0 && <LegendeIndicateur colorations={colorations} couches={couchesConnues} decalee={panneauOuvert} />}
           {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}

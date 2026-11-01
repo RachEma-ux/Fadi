@@ -127,6 +127,9 @@ chaque commande nouvelle.
 - Données de marché immobilier (prix, annonces) **reprises de FeenWay, Mubawab ou Avito** : droits non établis ; si le
   maître d'ouvrage souhaite une couche de prix, elle exige une fiche de source qualifiée (ex. indice des prix des
   actifs immobiliers de Bank Al-Maghrib / ANCFCC, droits à vérifier).
+  **Décision du maître d'ouvrage du 31 octobre 2026 (D-GD-54)** : les prix des quartiers de FeenWay sont repris
+  **provisoirement**, pour l'étape de développement seulement (source marquée provisoire, jamais en production, export
+  refusé), et le circuit est préparé pour une source qualifiée (schéma commun, `scripts/geodata/sources-prix/`).
 
 ## 4. Suite proposée
 

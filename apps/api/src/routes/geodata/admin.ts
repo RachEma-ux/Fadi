@@ -5,8 +5,9 @@
  * droits de consultation et de tuiles autorisés : un droit inconnu bloque la publication (concept § 7.2).
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { estRoleGeoData, lireDroits, verifierUsage, type Capacite } from "@parcours/geodata-model";
+import { estRoleGeoData, lireDroits, lireQualification, qualificationAdmise, verifierUsage, type Capacite } from "@parcours/geodata-model";
 import { capacites, erreur, introuvable, journal, requete } from "../../lib/geodata/acces.js";
+import { sourcesProvisoiresAdmises } from "../../lib/geodata/provisoires.js";
 import { COLONNES_VERSION, lireVersion } from "./consultation.js";
 
 export const adminRouter = Router();
@@ -27,13 +28,16 @@ adminRouter.get("/admin/versions", exiger("preparer-version", "publier-version")
 });
 
 adminRouter.post("/admin/versions/:id/publier", exiger("publier-version"), async (req, res) => {
-  const [v] = await requete(`SELECT id, etat, droits, controles FROM geodata_versions WHERE id = $1 AND espace_id IS NULL`, [String(req.params["id"])]);
+  const [v] = await requete(`SELECT id, etat, droits, controles, qualification, qualification_motif, qualification_decision FROM geodata_versions WHERE id = $1 AND espace_id IS NULL`, [String(req.params["id"])]);
   if (!v) return introuvable(res);
   if (v["etat"] !== "preparation") return erreur(res, 409, "deja_publiee", "Seule une version en préparation se publie.", { etat: v["etat"] });
   const motifs: string[] = [];
   const droits = lireDroits(v["droits"]);
   for (const u of ["consultation", "tuiles"] as const) { const d = verifierUsage(droits, u); if (!d.ok) motifs.push(d.motif); }
   if ((v["controles"] as Record<string, unknown>)?.["ok"] !== true) motifs.push("Contrôles de qualité non réussis.");
+  // Source provisoire (D-GD-54) : publiée seulement sur un environnement qui admet les sources provisoires.
+  const q = qualificationAdmise(lireQualification(v["qualification"], v["qualification_motif"], v["qualification_decision"]), sourcesProvisoiresAdmises());
+  if (!q.ok) motifs.push(q.motif);
   if (motifs.length) {
     await journal(req.user!.id, "version.publication_refusee", String(req.params["id"]), "refus", { motifs });
     return erreur(res, 409, "publication_bloquee", "Publication bloquée.", { motifs });

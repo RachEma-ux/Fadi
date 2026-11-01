@@ -96,6 +96,31 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Sources provisoires et prix des quartiers (D-GD-54)
+
+Une fiche peut déclarer une source **provisoire** (`version.qualification` : `{ "etat": "provisoire", "motif", "decision" }`),
+admise par une décision du maître d'ouvrage pour une étape de développement. Ces fiches vivent dans
+`docs/geodata/sources/provisoires/` et ne sont importées, archivées, publiées et servies que si
+`GEODATA_SOURCES_PROVISOIRES=oui` (préproduction par défaut ; jamais en production : sans ce réglage la chaîne d'import
+les refuse et l'API ne les sert pas, même présentes en base). L'interface les signale partout (badge « Source provisoire »,
+qualification dans la fiche de la couche, avertissement dans la fiche d'information).
+
+Seule source provisoire livrée : **Prix des quartiers (FeenWay, provisoire)** — 1 368 quartiers, 58 villes, prix moyen /
+minimal / maximal au m² (DH/m²) et indice de confiance tels qu'affichés par FeenWay le 31 octobre 2026 ; catégorie
+« Immobilier et foncier » ; export, téléchargement, partage et usage commercial refusés. Import manuel :
+
+```sh
+GEODATA_SOURCES_PROVISOIRES=oui node apps/api/dist/geodata-reference.js --fiche feenway-prix-quartiers --livraison
+```
+
+Afficher : pastille « Immobilier et foncier » — le prix moyen au m² devient l'indicateur actif, écrit sur chaque quartier,
+couches colorées en 5 classes (jaune → rouge) avec leur légende sur la carte (D-GD-55 ; case « Colorer selon
+l'indicateur » dans le panneau Couches).
+
+Sources futures de prix : déclarer la source dans `scripts/geodata/sources-prix/` puis
+`python3 -I scripts/geodata/preparer_prix_quartiers.py --declaration scripts/geodata/sources-prix/<source>.json` (schéma
+commun, mêmes indicateurs : rien à changer dans le code) ; procédure complète dans `scripts/geodata/sources-prix/README.md`.
+
 ## Barre du bas sur téléphone (D-GD-52)
 
 Au téléphone, une barre en bas de l'écran donne Carte (Alt+X), Chercher (Alt+R), Couches (Alt+C) et Enregistrer

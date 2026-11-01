@@ -8,6 +8,7 @@ import type { PoolClient, QueryResultRow } from "pg";
 import { capacitesDe, estRoleGeoData, type RoleGeoData } from "@parcours/geodata-model";
 import { pool } from "../../db/client.js";
 import { newId } from "../ids.js";
+import { sourcesProvisoiresAdmises } from "./provisoires.js";
 
 export type Executeur = Pick<PoolClient, "query">;
 
@@ -89,9 +90,11 @@ export const VERSION_SOURCE_PRIX_AUTORISEE = (alias: string) =>
  * Condition SQL « version consultable par l'espace `$n` » (alias `v`) : version commune publiée dont la consultation est
  * autorisée, ou version privée publiée de l'espace lui-même. Une version retirée ou en préparation n'est pas consultable,
  * ni celle d'une source de prix suspendue (`VERSION_SOURCE_PRIX_AUTORISEE`).
+ * Une version de source provisoire (D-GD-54) n'est servie que sur un environnement qui admet les sources provisoires :
+ * ailleurs (production), elle est absente comme une version retirée, même si elle se trouvait en base.
  */
 export const VERSION_CONSULTABLE = (alias: string, parametreEspace: string) =>
-  `(${alias}.etat = 'publiee' AND ((${alias}.espace_id IS NULL AND ${alias}.droits->>'consultation' = 'autorise') OR ${alias}.espace_id = ${parametreEspace})
+  `(${alias}.etat = 'publiee' AND ((${alias}.espace_id IS NULL AND ${alias}.droits->>'consultation' = 'autorise'${sourcesProvisoiresAdmises() ? "" : ` AND ${alias}.qualification = 'qualifiee'`}) OR ${alias}.espace_id = ${parametreEspace})
     AND ${VERSION_SOURCE_PRIX_AUTORISEE(alias)})`;
 
 /** Fond cartographique déclaré par la configuration (`GEODATA_FONDS`) ; le fond neutre est toujours disponible. */
