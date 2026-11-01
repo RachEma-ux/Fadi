@@ -286,3 +286,5 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      signalé).
   5. *Hors périmètre* : PR #274 (écarts E1-E3, UM-29) et #275 (langue des courriels, UM-30) ouvertes à part ; cette PR
      part de `main` et n'en dépend pas. Aucune migration, aucun déploiement.
+  6. *Fusion* : demandée par le maître d'ouvrage le 2026-10-24 (« Fusionner PR #278 (UM-31) »), après fusion de `main`
+     (`42c13db`) dans la branche et CI verte sur `6bc453b` ; commit de fusion `bf21c4b` (méthode habituelle du dépôt).

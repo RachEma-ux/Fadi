@@ -36,8 +36,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-31 : CI verte sur `287ed62` (run 40120760488, DB-3 actif) ; revérifier le HEAD courant ; fusion et déploiement en préproduction **seulement** sur décision du
-  maître d'ouvrage (aucune migration ajoutée).
+- UM-31 : **fusionnée** (PR #278, commit `bf21c4b`, 2026-10-24, demande du maître d'ouvrage) ; CI verte sur la tête
+  `6bc453b` (run 40123200967). Déploiement en préproduction : sur décision du maître d'ouvrage (aucune migration).
 - UM-29 : revérifier la CI du HEAD de la PR (DB-3 : `app.test.ts` « règles communes », recette
   `collaboration-audience.mjs` dans le lot `complements`) ; fusion et déploiement **seulement** sur décision du maître
   d'ouvrage. La PR #265 est fusionnée dans `main` (f59641c) et `main` l'est dans la branche : conflit de `members.ts`

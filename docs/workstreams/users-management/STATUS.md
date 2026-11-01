@@ -22,7 +22,7 @@ fusionné ([PR #271](https://github.com/RachEma-ux/Fadi/pull/271), `e03fdfc`). `
 déploiement automatique de la préproduction ; son passage effectif n'est pas constaté depuis une session cloud.
 **Mise en service en préproduction (RUNBOOK §3 bis, §5 à §9) : non consignée** — tâche UM-SERVICE. Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
-**UM-31 (2026-10-24) : implémenté, vérifié en local et en CI (`287ed62`), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) vers `main` non fusionnée, aucun déploiement.** « Renvoyer » et
+**UM-31 (2026-10-24) : implémenté, vérifié en local et en CI (`6bc453b`, run CI 40123200967), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) **fusionnée** dans `main` le 2026-10-24 sur demande du maître d'ouvrage (commit `bf21c4b`) ; pas encore déployée en préproduction.** « Renvoyer » et
 « Copier le lien » sur les invitations en attente, filtre « Masquer les comptes de test » appliqué par le serveur — voir
 la section UM-31.
 
