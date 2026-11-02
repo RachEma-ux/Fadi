@@ -34,8 +34,33 @@ jobs:
       - name: Vérifier la cohérence du registre et de ses compteurs
         run: |
           python3 -m unittest discover -s docs/ai-team -p test_tableau_registre.py -v
+          python3 -m unittest scripts/registre/test_completer_preuves.py -v
           python3 docs/ai-team/tableau_registre.py --controle
           python3 scripts/test-apply-main-ruleset.py -v
+      # X.5-02, G2-04, PR-07, PR-08, BLOC-07 : chaque « Vérifié » a une preuve datée, versionnée et étiquetée ; états
+      # et non-applicabilités cohérents (docs/ai-team/controle_preuves.py).
+      - name: Règles de preuve du registre Studio (X.5-02, G2-04, PR-07, PR-08, BLOC-07)
+        run: |
+          node --test scripts/registre/controle-preuves.test.mjs
+          python3 docs/ai-team/controle_preuves.py
+      # ARC-08, SUIVI-02, SUIVI-07 / X.3-02, SUIVI-08, SUIVI-09 (scripts/registre/controles-suivi.mjs) et documents
+      # d'état générés tenus au commit testé (X.3-03, X.4-03, X.5-01 : scripts/registre/etat-studio.mjs).
+      - name: Cohérence du suivi Studio et documents d'état générés (ARC-08, SUIVI-02/07/08/09, X.3-02/03, X.4-03, X.5-01)
+        run: |
+          node --test scripts/registre/controles-suivi.test.mjs
+          node scripts/registre/controles-suivi.mjs
+          echo "Commit testé : $(git rev-parse HEAD)"
+          node scripts/registre/etat-studio.mjs
+      # X.2-04 / BLOC-06 : porte G4 automatisée (scripts/validation/porte-g4.mjs). Signalée sans bloquer les lots en cours
+      # (--avertir) ; la Release exige la porte stricte (sortie 0), voir docs/workstreams/studio/DOSSIER-G4.md.
+      # PR-01 à PR-06, PR-09 : tests du contrôle de PR (pr-protocole.yml les rejoue sur chaque PR) ; ici sur main aussi.
+      - name: Tests du contrôle de PR (PR-01 à PR-06, PR-09)
+        run: node --test scripts/registre/controle-pr.test.mjs
+      - name: Porte G4 Studio — défauts éliminatoires BLOC-01 à BLOC-07 (rapport, non bloquant hors Release)
+        run: |
+          node --test scripts/validation/porte-g4.test.mjs
+          node scripts/validation/porte-g4.mjs --avertir --rapport "$RUNNER_TEMP/porte-g4.json" --markdown "$RUNNER_TEMP/porte-g4.md"
+          cat "$RUNNER_TEMP/porte-g4.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
         if: github.event_name == 'pull_request'
         env:

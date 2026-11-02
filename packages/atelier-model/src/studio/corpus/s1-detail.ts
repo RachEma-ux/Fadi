@@ -1,16 +1,35 @@
 import { aleaMotif, memoMotif } from "./alea.js";
-import { annotation, calque, construireCorpus, cote, coteGrille, nombreMotifs, objet, type Primitive } from "./commun.js";
+import { annotation, calque, construireCorpus, contrainte, cote, coteGrille, graphisme, insertion, nombreMotifs, objet, type Primitive } from "./commun.js";
+import type { StudioDefinitionBloc } from "../blocs/blocs.js";
 import { GRAINES_CORPUS, type CorpusStudio } from "./types.js";
 
 /**
  * S1 — détail 2D (X.1-01). REF-02 §18.2 : « détail 2D isolé avec cotes, textes, hachures, blocs, entités courbes et
- * contraintes ». Motif de 12 primitives, répété sur une grille (pas 12 m × 8 m, décalage tiré au millimètre) :
+ * contraintes ». Motif de 19 primitives (16 jusqu’au lot G3), répété sur une grille (pas 12 m × 8 m, décalage tiré au millimètre) :
  * rectangle, cercle, arc, polyligne fermée à renflements (cercle exact), polyligne ouverte (droite puis demi-cercle),
  * ligne de direction 3-4-5, deux cotes **liées** aux sommets du rectangle, une cote libre sur la ligne, une cote
- * angulaire libre (90°), deux textes. Géométrie synthétique ; dimensions nominales ci-dessous (entrées des oracles).
+ * angulaire libre (90°), deux textes, puis les graphismes (EX-055) : une hachure du rectangle (angle et espacement
+ * saisis, transparence 0,5), deux symboles de la bibliothèque posés comme des blocs (nord, croix ; position, rotation,
+ * échelle) et une spline de deux morceaux de Bézier ; puis (lot W3-A) une **insertion d'un bloc défini par
+ * l'utilisateur** (définition partagée `s1-bloc` : carré, diagonale et cercle, posée par position, rotation, échelle et
+ * symétrie) et deux **contraintes géométriques** satisfaites : le segment droit de la polyligne ouverte horizontal, la
+ * longueur de la ligne de direction fixée. Motif de 19 primitives. Géométrie synthétique ; dimensions nominales
+ * ci-dessous (entrées des oracles).
  */
 
-export const MOTIF_S1 = 12;
+export const MOTIF_S1 = 19;
+
+/** Côté du carré du bloc défini par l'utilisateur (m), rayon de son cercle. */
+export const BLOC_S1 = Object.freeze({ cote: 0.6, rayon: 0.2 });
+/** Définition partagée par toutes les insertions du corpus S1 (repère du bloc, point de base au coin du carré). */
+export const DEFINITION_BLOC_S1: StudioDefinitionBloc = Object.freeze({
+  id: "s1-bloc", type: "bloc", nom: "Repère de détail (synthétique)", base: { x: 0, y: 0 },
+  elements: [
+    { id: "carre", type: "polyline", points: [{ x: 0, y: 0 }, { x: BLOC_S1.cote, y: 0 }, { x: BLOC_S1.cote, y: BLOC_S1.cote }, { x: 0, y: BLOC_S1.cote }], closed: true },
+    { id: "diagonale", type: "line", start: { x: 0, y: 0 }, end: { x: BLOC_S1.cote, y: BLOC_S1.cote } },
+    { id: "cercle", type: "circle", center: { x: BLOC_S1.cote / 2, y: BLOC_S1.cote / 2 }, radius: BLOC_S1.rayon },
+  ],
+}) as StudioDefinitionBloc;
 export const DEFINITION_S1 = "Scène S1 : détail 2D isolé avec cotes, textes, hachures, blocs, entités courbes et contraintes.";
 
 /** Dimensions nominales du motif `j` (mètres, radians) : les seules entrées des oracles. */
@@ -29,6 +48,13 @@ export function parametresS1(j: number) {
     cordeDemiCercle: 0.5,
     /** Ligne de direction (0,6 ; 0,8) : longueur exacte. */
     longueurLigne: 1 + (j % 3),
+    /** Hachure du rectangle : angle (rad) et espacement (m) saisis, aucun motif normalisé. */
+    hachure: { angle: Math.PI / 4, espacement: 0.1 + (j % 3) * 0.05, opacite: 0.5 },
+    /** Symboles posés : échelle et rotation (rad). */
+    nord: { echelle: 0.5 + (j % 2) * 0.5, rotation: (j % 4) * (Math.PI / 2) },
+    croix: { echelle: 0.4 },
+    /** Insertion du bloc défini par l'utilisateur : rotation (rad), échelle, symétrie. */
+    bloc: { rotation: (j % 4) * (Math.PI / 2), echelle: 0.5 + (j % 2) * 0.5, symetrie: j % 3 === 0 },
   };
 }
 
@@ -69,19 +95,42 @@ export function corpusS1(taille: number): CorpusStudio {
         radius: 0.5, links: { first: null, second: null }, toResolve: false,
       });
       case 10: return annotation({ id: id("titre"), type: "text", layerId: "textes", position: { x: o.x, y: o.y + p.hauteur + 2 }, height: 0.2, rotation: 0, content: `Détail synthétique S1 n° ${j}`, justification: "left" });
-      default: return annotation({ id: id("repere"), type: "text", layerId: "textes", position: { x: o.x - 0.5, y: o.y }, height: 0.15, rotation: Math.PI / 2, content: `Repère synthétique ${j}`, justification: "center" });
+      case 11: return annotation({ id: id("repere"), type: "text", layerId: "textes", position: { x: o.x - 0.5, y: o.y }, height: 0.15, rotation: Math.PI / 2, content: `Repère synthétique ${j}`, justification: "center" });
+      case 15: {
+        // Spline de deux morceaux de Bézier cubiques (7 points explicites), sous le détail.
+        const a = { x: o.x + 3, y: o.y - 2 };
+        return graphisme({ id: id("spline"), type: "spline", layerId: "courbes", points: [a, { x: a.x + 0.5, y: a.y + 0.8 }, { x: a.x + 1, y: a.y - 0.8 }, { x: a.x + 1.5, y: a.y }, { x: a.x + 2, y: a.y + 0.8 }, { x: a.x + 2.5, y: a.y - 0.8 }, { x: a.x + 3, y: a.y }] });
+      }
+      case 12: return graphisme({
+        id: id("hachure"), type: "hachure", layerId: "hachures", opacite: p.hachure.opacite, angle: p.hachure.angle, espacement: p.hachure.espacement,
+        contour: [{ x: o.x, y: o.y }, { x: o.x + p.largeur, y: o.y }, { x: o.x + p.largeur, y: o.y + p.hauteur }, { x: o.x, y: o.y + p.hauteur }],
+      });
+      case 13: return graphisme({ id: id("nord"), type: "symbole", layerId: "symboles", symbole: "nord", position: { x: o.x + p.largeur + 6.5, y: o.y + 1.5 }, rotation: p.nord.rotation, echelle: p.nord.echelle });
+      case 14: return graphisme({ id: id("croix"), type: "symbole", layerId: "symboles", symbole: "croix", position: { x: o.x - 1, y: o.y + p.hauteur + 1 }, rotation: 0, echelle: p.croix.echelle });
+      case 16: return insertion({
+        id: id("bloc"), type: "insertion", bloc: DEFINITION_BLOC_S1.id, layerId: "blocs", position: { x: o.x + 5.5, y: o.y + p.hauteur + 2.6 },
+        rotation: p.bloc.rotation, echelle: p.bloc.echelle, ...(p.bloc.symetrie ? { symetrie: true as const } : {}),
+      });
+      // Contraintes satisfaites par construction : segment droit de la polyligne ouverte horizontal, longueur de la ligne fixée.
+      case 17: return contrainte({ id: id("c-horizontale"), type: "horizontal", cibles: [{ objet: id("poly"), segment: 0 }] });
+      case 18: return contrainte({ id: id("c-distance"), type: "distance", cibles: [{ objet: id("ligne") }], valeur: p.longueurLigne });
+      default: throw new RangeError(`rôle S1 inconnu : ${role}`);
     }
   };
   return construireCorpus({
     scene: "S1", definition: DEFINITION_S1, taille, motif: MOTIF_S1, primitive,
-    calques: [calque("contours", "Contours (synthétique)"), calque("courbes", "Courbes (synthétique)"), calque("cotes", "Cotes (synthétique)"), calque("textes", "Textes (synthétique)")],
+    calques: [calque("contours", "Contours (synthétique)"), calque("courbes", "Courbes (synthétique)"), calque("cotes", "Cotes (synthétique)"), calque("textes", "Textes (synthétique)"), calque("hachures", "Hachures (synthétique)"), calque("symboles", "Symboles (synthétique)"), calque("blocs", "Blocs (synthétique)")],
+    blocs: [DEFINITION_BLOC_S1],
     couverture: {
-      representes: ["cotes linéaires (liées et libres)", "cote angulaire", "textes", "entités courbes (cercle, arc, polylignes à renflements)", "liens associatifs cote → sommet (seule forme de contrainte du modèle)"],
-      absents: [
-        { element: "hachures", raison: "aucun type « hachure » dans studio-document/1" },
-        { element: "blocs", raison: "aucun type « bloc » (définition réutilisable) dans studio-document/1" },
-        { element: "contraintes géométriques", raison: "le modèle ne porte que les liens associatifs des cotes ; aucune contrainte (parallélisme, tangence…) n'existe" },
+      representes: [
+        "cotes linéaires (liées et libres)", "cote angulaire", "textes", "entités courbes (cercle, arc, polylignes à renflements)", "liens associatifs cote → sommet (seule forme de contrainte du modèle)",
+        "hachures : contour, angle et espacement saisis, transparence (graphismes, EX-055)",
+        "blocs de bibliothèque : symboles nord et croix posés par position, rotation et échelle (transformation local-objet → local-2d)",
+        "courbes de Bézier exactes : splines de deux morceaux",
+        "blocs définis par l'utilisateur : une définition réutilisable (carré, diagonale, cercle) et une insertion par motif, posée par position, rotation, échelle et symétrie (géométrie dérivée de la définition)",
+        "contraintes géométriques : horizontalité d'un segment de polyligne et distance fixée d'une ligne, satisfaites dans la tolérance déclarée",
       ],
+      absents: [],
     },
   });
 }

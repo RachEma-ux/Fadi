@@ -23,6 +23,7 @@
  * par la recette (par son PID), deux fois (avec puis sans ARCHIVE_SIGNING_KEY).
  */
 import { spawn, execFileSync } from 'node:child_process';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,7 +79,7 @@ check('A : éditeur inscrit', (await editorA('POST', '/auth/register', accounts.
 const project = await ownerA('POST', '/projects', { code: `RST_${randomUUID().slice(0, 8)}`, name: 'Studio — restauration (recette synthétique)' });
 check('A : projet créé', project.status === 201, String(project.status));
 const pA = project.body.id;
-check('A : éditeur invité (droits)', (await ownerA('POST', `/projects/${pA}/members`, { email: accounts.editor.email, role: 'editeur' })).status === 201);
+check('A : éditeur invité, invitation acceptée (droits, phase 3)', (await inviterEtAccepter(ownerA, editorA, pA, accounts.editor.email, 'editeur')).ok);
 check('A : préférences d\'outils du propriétaire', (await ownerA('PUT', `/projects/${pA}/studio/preferences/outils`, { profil: 'metier:cotation', favoris: ['studio.dessin.cote', 'studio.dessin.ligne'], personnel: ['studio.dessin.arc'] })).status === 200);
 
 const root = `/projects/${pA}/studio`;
@@ -163,7 +164,7 @@ check('A : manifeste actualisé (action « actualiser », nouvelle empreinte)', 
 // publication préparée par l'éditeur, approuvée par le propriétaire, diffusée par le propriétaire (lot E.4).
 const project2 = await ownerA('POST', '/projects', { code: `RSF_${randomUUID().slice(0, 8)}`, name: 'Studio — archive falsifiée (recette synthétique)' });
 const p2 = project2.body?.id;
-await ownerA('POST', `/projects/${p2}/members`, { email: accounts.editor.email, role: 'editeur' });
+check('A : éditeur invité au second projet, invitation acceptée', (await inviterEtAccepter(ownerA, editorA, p2, accounts.editor.email, 'editeur')).ok);
 const study2 = await ownerA('POST', `/projects/${p2}/studio/studies`, { name: 'Étude falsifiée' });
 const s2 = study2.body?.study?.id, w2 = study2.body?.variant?.id;
 const v2Path = `/projects/${p2}/studio/studies/${s2}/variants/${w2}`;

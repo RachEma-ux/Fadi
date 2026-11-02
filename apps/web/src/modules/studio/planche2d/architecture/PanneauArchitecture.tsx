@@ -12,7 +12,7 @@ import { LOCALE } from "../../../../lib/i18n";
 import { lireSommets } from "../geometrie-2d";
 import type { StudioToolId } from "../raccourcis";
 import {
-  commandeModifierArchitecture, commandeMur, commandeOuverture, editionDe, elementArchitectural, LIBELLES_JUSTIFICATION, LIBELLES_TYPE_OUVERTURE, mursDu,
+  commandeEchelle, commandeModifierArchitecture, commandeRattacherNiveau, commandeMur, commandeOuverture, echellesDu, editionDe, elementArchitectural, LIBELLES_JUSTIFICATION, LIBELLES_STRUCTURE, LIBELLES_TYPE_OUVERTURE, mursDu,
   type ContexteArchitecture, type EditionArchitecture, type ParametresArchitecture, type ResultatArchitecture,
 } from "./architecture-ui";
 import "../rendus/architecture.css";
@@ -33,6 +33,7 @@ export interface PropsPanneauArchitecture {
 }
 
 const m3 = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m³`;
+const m = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m`;
 
 function Nombre({ nom, libelle, valeur, surValeur }: { nom: string; libelle: string; valeur: number; surValeur: (v: number) => void }) {
   return <label>{libelle}<input type="number" step="any" required name={nom} value={Number.isFinite(valeur) ? valeur : ""} onChange={(e) => surValeur(e.target.value === "" ? Number.NaN : e.target.valueAsNumber)} data-studio-champ-architecture={nom} /></label>;
@@ -53,6 +54,8 @@ function TypeOuverture({ valeur, surValeur }: { valeur: StudioOpeningKind | ""; 
 export function PanneauArchitecture({ doc, outil, selection, modifiable, parametres, surParametres, contexte, surCommandes, surErreur, surSelection }: PropsPanneauArchitecture) {
   const choisi = elementArchitectural(doc, selection);
   const murs = mursDu(doc);
+  const echelles = echellesDu(doc);
+  const [pied, setPied] = useState("");
   const [axe, setAxe] = useState("");
   const [hote, setHote] = useState("");
   const [position, setPosition] = useState(Number.NaN);
@@ -83,6 +86,14 @@ export function PanneauArchitecture({ doc, outil, selection, modifiable, paramet
     const c = contexte();
     let id = "";
     envoyer(commandeOuverture({ ...c, nouvelId: () => (id = c.nouvelId()) }, hote, position, p.ouverture), () => surSelection(id));
+  }
+  function creerEchelle(e: FormEvent) {
+    e.preventDefault();
+    const points = lireSommets(pied);
+    if (!points || points.length !== 1) { surErreur("Pied : saisissez un point « x y », en mètres, ou cliquez-le sur la planche."); return; }
+    const c = contexte();
+    let id = "";
+    envoyer(commandeEchelle({ ...c, nouvelId: () => (id = c.nouvelId()) }, points[0]!, p.echelle), () => surSelection(id));
   }
   function modifier(e: FormEvent) {
     e.preventDefault();
@@ -125,24 +136,73 @@ export function PanneauArchitecture({ doc, outil, selection, modifiable, paramet
       </fieldset>
     </form>}
 
+    {outil === "studio.architecture.echelle-acces" && <form onSubmit={creerEchelle} data-studio-architecture-echelle-formulaire="" aria-labelledby="studio-architecture-echelle">
+      <h3 id="studio-architecture-echelle"><Icon name="studio-ladder" size={18} /> Échelle d’accès</h3>
+      <p className="studio-hint">Cliquez le milieu du pied sur la planche, ou saisissez-le. Aucune dimension n’est proposée : entre-axe, hauteur, échelons et section sont ceux que vous saisissez.</p>
+      <fieldset disabled={!modifiable}>
+        <Nombre nom="echelle-largeur" libelle="Entre-axe des montants (m)" valeur={p.echelle.largeur} surValeur={(largeur) => surParametres({ ...p, echelle: { ...p.echelle, largeur } })} />
+        <Nombre nom="echelle-hauteur" libelle="Hauteur (m)" valeur={p.echelle.hauteur} surValeur={(hauteur) => surParametres({ ...p, echelle: { ...p.echelle, hauteur } })} />
+        <Nombre nom="echelle-base" libelle="Cote du pied z (m)" valeur={p.echelle.base} surValeur={(base) => surParametres({ ...p, echelle: { ...p.echelle, base } })} />
+        <Nombre nom="echelle-echelons" libelle="Nombre d’échelons" valeur={p.echelle.echelons} surValeur={(echelons) => surParametres({ ...p, echelle: { ...p.echelle, echelons } })} />
+        <Nombre nom="echelle-section" libelle="Section des montants et échelons (m)" valeur={p.echelle.section} surValeur={(section) => surParametres({ ...p, echelle: { ...p.echelle, section } })} />
+        <Nombre nom="echelle-orientation" libelle="Orientation (degrés)" valeur={p.echelle.orientation} surValeur={(orientation) => surParametres({ ...p, echelle: { ...p.echelle, orientation } })} />
+        <label>Pied (x y)<input type="text" value={pied} onChange={(e) => setPied(e.target.value)} data-studio-champ-architecture="pied" /></label>
+        <button type="submit" data-studio-creer-echelle><Icon name="studio-ladder" size={18} /> Créer l’échelle</button>
+      </fieldset>
+    </form>}
+
     {(doc.architecture?.length ?? 0) > 0 && <div data-studio-architecture-liste="">
-      <h3>Murs et ouvertures</h3>
+      <h3>Murs, ouvertures, échelles et structure</h3>
       <ul>{(doc.architecture ?? []).map((x) => <li key={x.id}>
         <button type="button" aria-pressed={x.id === selection} onClick={() => surSelection(x.id === selection ? null : x.id)} data-studio-architecture-choisir={x.id} data-studio-type={x.type}>
-          <Icon name={x.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {x.type === "wall" ? `Mur ${murs.findIndex((w) => w.id === x.id) + 1}` : x.kind ? LIBELLES_TYPE_OUVERTURE[x.kind] : "Ouverture"} <span translate="no">{x.id.slice(0, 8)}</span>
+          <Icon name={x.type === "wall" ? "studio-wall" : x.type === "ladder" ? "studio-ladder" : x.type === "opening" ? "studio-opening" : "studio-structure"} size={16} /> {x.type === "wall" ? `Mur ${murs.findIndex((w) => w.id === x.id) + 1}` : x.type === "ladder" ? `Échelle d’accès ${echelles.findIndex((e) => e.id === x.id) + 1}` : x.type === "opening" ? (x.kind ? LIBELLES_TYPE_OUVERTURE[x.kind] : "Ouverture") : LIBELLES_STRUCTURE[x.type]} <span translate="no">{x.id.slice(0, 8)}</span>
         </button>
       </li>)}</ul>
     </div>}
 
     {choisi && edition && <form onSubmit={modifier} data-studio-architecture-choisi={choisi.id} data-studio-type={choisi.type} aria-label="Objet architectural sélectionné">
-      <h3><Icon name="studio-architecture-edit" size={18} /> {choisi.type === "wall" ? "Mur sélectionné" : "Ouverture sélectionnée"}</h3>
+      <h3><Icon name="studio-architecture-edit" size={18} /> {choisi.type === "wall" ? "Mur sélectionné" : choisi.type === "ladder" ? "Échelle d’accès sélectionnée" : choisi.type === "opening" ? "Ouverture sélectionnée" : `${LIBELLES_STRUCTURE[choisi.type]} sélectionné(e)`}</h3>
       {q?.type === "wall" && <dl data-studio-architecture-metre="" data-studio-volume-brut={q.volumeBrut} data-studio-volume-deduit={q.deduction} data-studio-volume-net={q.volumeNet}>
         <dt>Volume brut</dt><dd translate="no">{m3(q.volumeBrut)}</dd>
         <dt>{`Déduction des ouvertures déclarées (${q.ouvertures})`}</dt><dd translate="no">{m3(q.deduction)}</dd>
         <dt>Volume net</dt><dd translate="no">{m3(q.volumeNet)}</dd>
       </dl>}
+      {q?.type === "ladder" && <dl data-studio-architecture-metre="" data-studio-echelons={q.echelons} data-studio-pas={q.pas} data-studio-volume={q.volume}>
+        <dt>Échelons</dt><dd translate="no">{q.echelons}</dd>
+        <dt>Pas des échelons</dt><dd translate="no">{m(q.pas)}</dd>
+        <dt>Longueur des montants et des échelons</dt><dd translate="no">{m(q.longueurMontants + q.longueurEchelons)}</dd>
+        <dt>Volume de matière</dt><dd translate="no">{m3(q.volume)}</dd>
+      </dl>}
+      {choisi.type !== "opening" && <label>Niveau de rattachement<select value={choisi.niveauId ?? ""} disabled={!modifiable} onChange={(e) => envoyer(commandeRattacherNiveau(choisi, e.target.value))} data-studio-rattacher-niveau={choisi.id}>
+        <option value="">Aucun niveau</option>
+        {[...(doc.niveaux ?? [])].sort((a, b) => a.cote - b.cote).map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+      </select></label>}
       <fieldset disabled={!modifiable}>
-        {edition.type === "wall" ? <>
+        {edition.type === "column" ? <>
+          <label>Position (x y)<input type="text" required value={edition.position} onChange={(e) => setEdition({ ...edition, position: e.target.value })} data-studio-champ-architecture="edition-position-poteau" /></label>
+          <Nombre nom="edition-orientation" libelle="Orientation (degrés)" valeur={edition.orientation} surValeur={(orientation) => setEdition({ ...edition, orientation })} />
+          <Nombre nom="edition-largeur" libelle="Largeur de section (m)" valeur={edition.largeur} surValeur={(largeur) => setEdition({ ...edition, largeur })} />
+          <Nombre nom="edition-profondeur" libelle="Profondeur de section (m)" valeur={edition.profondeur} surValeur={(profondeur) => setEdition({ ...edition, profondeur })} />
+          <Nombre nom="edition-hauteur" libelle="Hauteur (m)" valeur={edition.hauteur} surValeur={(hauteur) => setEdition({ ...edition, hauteur })} />
+          <Nombre nom="edition-base" libelle="Cote de base z (m)" valeur={edition.base} surValeur={(base) => setEdition({ ...edition, base })} />
+        </> : edition.type === "beam" ? <>
+          <label>Axe (x y ; x y)<input type="text" required value={edition.axe} onChange={(e) => setEdition({ ...edition, axe: e.target.value })} data-studio-champ-architecture="edition-axe-poutre" /></label>
+          <Nombre nom="edition-largeur" libelle="Largeur de section (m)" valeur={edition.largeur} surValeur={(largeur) => setEdition({ ...edition, largeur })} />
+          <Nombre nom="edition-hauteur" libelle="Hauteur de section (m)" valeur={edition.hauteur} surValeur={(hauteur) => setEdition({ ...edition, hauteur })} />
+          <Nombre nom="edition-base" libelle="Cote de la sous-face z (m)" valeur={edition.base} surValeur={(base) => setEdition({ ...edition, base })} />
+        </> : edition.type === "slab" ? <>
+          <label>Contour (x y ; …)<input type="text" required value={edition.contour} onChange={(e) => setEdition({ ...edition, contour: e.target.value })} data-studio-champ-architecture="edition-contour" /></label>
+          <Nombre nom="edition-epaisseur" libelle="Épaisseur (m)" valeur={edition.epaisseur} surValeur={(epaisseur) => setEdition({ ...edition, epaisseur })} />
+          <Nombre nom="edition-base" libelle="Cote de la sous-face z (m)" valeur={edition.base} surValeur={(base) => setEdition({ ...edition, base })} />
+        </> : edition.type === "ladder" ? <>
+          <label>Pied (x y)<input type="text" required value={edition.pied} onChange={(e) => setEdition({ ...edition, pied: e.target.value })} data-studio-champ-architecture="edition-pied" /></label>
+          <Nombre nom="edition-orientation" libelle="Orientation (degrés)" valeur={edition.orientation} surValeur={(orientation) => setEdition({ ...edition, orientation })} />
+          <Nombre nom="edition-largeur" libelle="Entre-axe des montants (m)" valeur={edition.largeur} surValeur={(largeur) => setEdition({ ...edition, largeur })} />
+          <Nombre nom="edition-hauteur" libelle="Hauteur (m)" valeur={edition.hauteur} surValeur={(hauteur) => setEdition({ ...edition, hauteur })} />
+          <Nombre nom="edition-base" libelle="Cote du pied z (m)" valeur={edition.base} surValeur={(base) => setEdition({ ...edition, base })} />
+          <Nombre nom="edition-echelons" libelle="Nombre d’échelons" valeur={edition.echelons} surValeur={(echelons) => setEdition({ ...edition, echelons })} />
+          <Nombre nom="edition-section" libelle="Section des montants et échelons (m)" valeur={edition.section} surValeur={(section) => setEdition({ ...edition, section })} />
+        </> : edition.type === "wall" ? <>
           <label>Axe (x y ; …)<input type="text" required value={edition.axe} onChange={(e) => setEdition({ ...edition, axe: e.target.value })} data-studio-champ-architecture="edition-axe" /></label>
           <Nombre nom="edition-epaisseur" libelle="Épaisseur (m)" valeur={edition.epaisseur} surValeur={(epaisseur) => setEdition({ ...edition, epaisseur })} />
           <Nombre nom="edition-hauteur" libelle="Hauteur (m)" valeur={edition.hauteur} surValeur={(hauteur) => setEdition({ ...edition, hauteur })} />

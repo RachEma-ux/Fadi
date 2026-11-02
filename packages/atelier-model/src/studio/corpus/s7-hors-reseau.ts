@@ -17,10 +17,10 @@ export const COUVERTURE_S7: CouvertureCorpus = Object.freeze({
     "état de départ de la session hors réseau : plan de niveau synthétique (murs, ouvertures, axes, cotes liées, textes)",
     "session hors réseau puis reconnectée, jouée par la recette studio-corpus-s7.mjs : dessin au clavier, rechargement depuis l'appareil, enregistrement hors ligne, reconnexion",
     "après reconnexion : une seule révision ajoutée, corpus de départ intact à l'octet, ajout hors ligne présent",
+    "écriture concurrente pendant une seconde coupure : un autre appareil ajoute une ligne, la reconnexion signale le conflit sans écraser sa révision, le report garde les deux ajouts",
   ],
   absents: [
     { element: "session dans le document", raison: "studio-document/1 ne porte ni session ni état de connexion : la session est jouée par la recette e2e, le corpus n'en est que l'état de départ" },
-    { element: "écriture concurrente pendant la coupure", raison: "un seul appareil dans S7 : le conflit sans écrasement est couvert par studio-hors-ligne.mjs, pas par ce corpus" },
   ],
 }) as CouvertureCorpus;
 
@@ -33,4 +33,15 @@ export const corpusS7 = (taille: number): CorpusStudio => planDeNiveau("S7", DEF
 export const SESSION_HORS_RESEAU_S7 = Object.freeze({
   rectangle: Object.freeze({ x: -10, y: -10, largeur: 2, hauteur: 1 }),
   revisionsAjoutees: 1,
+  /**
+   * Seconde coupure avec écriture concurrente : hors ligne, l'appareil dessine un second rectangle ; pendant ce temps un
+   * autre appareil (même compte, en ligne) ajoute une ligne. À la reconnexion : conflit, la révision de l'autre appareil
+   * n'est pas écrasée ; le report applique le rectangle sur la nouvelle tête. Attendu : deux révisions de plus (l'autre
+   * appareil, puis le report), les deux ajouts présents.
+   */
+  concurrente: Object.freeze({
+    rectangle: Object.freeze({ x: -10, y: -13, largeur: 1, hauteur: 1 }),
+    ligne: Object.freeze({ id: "s7-autre-appareil-ligne", start: Object.freeze({ x: -10, y: -15 }), end: Object.freeze({ x: -6, y: -15 }) }),
+    revisionsAjoutees: 2,
+  }),
 });

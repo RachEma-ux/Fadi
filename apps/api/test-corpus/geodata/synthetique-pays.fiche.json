@@ -1,0 +1,122 @@
+{
+  "cle": "geodata-synthetique-pays",
+  "titre": "Jeu synthétique de test — pays et tableau de bord",
+  "producteur": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
+  "theme": "test",
+  "couverture": "Territoire fictif (carrés près de 31° N, 8° O)",
+  "description": "Pays fictif (union des deux régions synthétiques), quelques valeurs fabriquées, un concept et une définition de tableau de bord (D-GD-37). Jeu SYNTHÉTIQUE : aucune statistique réelle.",
+  "version": {
+    "libelle": "Jeu synthétique v1",
+    "url": null,
+    "empreinte": "fb3f5d333755761e7d09c7c4cca4060f109604938013b3a500b2232ece8d12b9",
+    "periode": "Sans objet (synthétique)",
+    "licence": "Jeu de test GeoData (aucune restriction)",
+    "attribution": "Jeu synthétique GeoData — aucune donnée réelle",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Sans objet",
+    "synthetique": true,
+    "tableau": {
+      "fichier": "donnees/synthetique-pays.csv",
+      "empreinte": "cf1b1a5ba8e416924649c8488a4caa0a09be308a0fa414d13d1574d422444032",
+      "signes": {}
+    },
+    "annexes": {
+      "concepts": {
+        "fichier": "donnees/synthetique-concepts.json",
+        "empreinte": "606205546e0c4773b2dc3fb39d024f01185233f2bfe417eacb1b49e28e84dba0"
+      },
+      "tableau": {
+        "fichier": "donnees/synthetique-tableau-de-bord.json",
+        "empreinte": "31e8cc32c51bdece05d68c86f7a279fd805f20f1c2b20ec71b2cf66879e3fddb"
+      }
+    },
+    "fichier": "synthetique-pays.geojson"
+  },
+  "couche": {
+    "titre": "Pays synthétique (test)",
+    "description": "Pays fictif.",
+    "niveau": "ADM0",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#7570b3"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "pop_e",
+      "titre": "Population légale",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population légale",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 0
+    },
+    {
+      "propriete": "pop_u",
+      "titre": "Population légale — Urbain",
+      "unite": "personnes",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Population légale",
+      "modalite": null,
+      "milieu": "urbain",
+      "sexe": "ensemble",
+      "ordre": 1
+    },
+    {
+      "propriete": "men_e",
+      "titre": "Ménages",
+      "unite": "ménages",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Démographie",
+      "famille": "Ménages",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 2
+    },
+    {
+      "propriete": "cee_e",
+      "titre": "Établissements (test)",
+      "unite": "établissements",
+      "periode": "Synthétique",
+      "denominateur": null,
+      "description": "Valeur fabriquée (test).",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Établissements économiques",
+      "famille": "Établissements (test)",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 3
+    }
+  ],
+  "superficie": false
+}

@@ -21,6 +21,21 @@ export interface StudioExtrusion {
   base: number;
   height: number;
   thickness?: number;
+  /**
+   * Direction d'extrusion (lot F1, TEST-005 / A.4-07), choisie explicitement : `+z` (vers le haut : de `base` à
+   * `base + height`) ou `-z` (vers le bas : de `base - height` à `base`). `base` reste la cote du plan du profil. Absente :
+   * `+z`, seul sens des documents et commandes antérieurs au lot F1 (comportement historique, aucune valeur nouvelle).
+   */
+  direction?: StudioDirectionExtrusion;
+}
+
+/** Directions d'extrusion d'un objet 2D : normale au plan du profil, vers le haut ou vers le bas. */
+export const STUDIO_DIRECTIONS_EXTRUSION = Object.freeze(["+z", "-z"] as const);
+export type StudioDirectionExtrusion = (typeof STUDIO_DIRECTIONS_EXTRUSION)[number];
+
+/** Cotes inférieure et supérieure d'une extrusion déclarée, selon sa direction (absente : +z). */
+export function studioCotesExtrusion(e: Pick<StudioExtrusion, "base" | "height" | "direction">): { zMin: number; zMax: number } {
+  return e.direction === "-z" ? { zMin: e.base - e.height, zMax: e.base } : { zMin: e.base, zMax: e.base + e.height };
 }
 
 /**

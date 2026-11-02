@@ -118,6 +118,16 @@ export function ProjectShell() {
             {ROLE_LABEL[access.role]}
             {project.role && project.role !== "proprietaire" && project.ownerEmail ? ` · partagé par ${project.ownerEmail}` : ""}
           </span>
+          {project.owningOrganization ? (
+            // Partie propriétaire déclarée (OP-D1 a) : affichée seulement, le droit reste au compte propriétaire.
+            <span className="project-owner-org" data-partie-proprietaire={project.owningOrganization.id} title="Organisation déclarée propriétaire ; les droits restent au compte de la personne propriétaire">
+              {"Partie propriétaire : "}
+              {project.owningOrganization.youAreMember
+                ? <Link to={`/organisations/${encodeURIComponent(project.owningOrganization.id)}`} translate="no">{project.owningOrganization.name}</Link>
+                : <span translate="no">{project.owningOrganization.name}</span>}
+              {project.owningOrganization.status === "suspendue" ? <small> (suspendue)</small> : project.owningOrganization.status === "close" ? <small> (close)</small> : null}
+            </span>
+          ) : null}
           <SyncIndicator projectId={projectId} />
           <EditingLockControl projectId={projectId} onMessage={setLockMessage} />
         </span>

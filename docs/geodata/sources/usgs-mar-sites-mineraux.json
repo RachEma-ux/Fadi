@@ -1,0 +1,57 @@
+{
+  "cle": "usgs-mar-sites-mineraux",
+  "titre": "Sites minéraux historiques du Maroc (USGS MRDS)",
+  "description": "Gisements, indices et sites miniers de la Mineral Resources Data System de l'USGS (https://mrdata.usgs.gov/mrds/mrds-csv.zip, archive SHA-256 31be4baaa86b082787bc74989146183db21badf7157db39b3f0a6fe0b38a5477), restreints au territoire couvert par geoBoundaries MAR ADM1. Base historique (gelée par l'USGS en 2011) : ni exhaustive ni à jour.",
+  "producteur": "U.S. Geological Survey (USGS), Mineral Resources Data System",
+  "theme": "geologie",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "USGS MRDS — mrds-csv.zip téléchargé le 2026-10-25",
+    "url": null,
+    "fichier": "donnees/usgs-mar-sites-mineraux.geojson",
+    "empreinte": "b990d6e0e14c13ae8ac24137925baacaf30d7bec040f1edba0bee6dcb70fbc6d",
+    "periode": "Base MRDS figée en 2011 ; fichier téléchargé le 2026-10-25",
+    "licence": "Domaine public (données produites par l'USGS)",
+    "attribution": "U.S. Geological Survey, Mineral Resources Data System (domaine public)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Positions telles que publiées par l'USGS ; précision variable selon la fiche (score de qualité MRDS)",
+    "synthetique": false,
+    "conditions": "Domaine public : réutilisation libre ; la source est citée par courtoisie et traçabilité."
+  },
+  "couche": {
+    "titre": "Sites minéraux historiques du Maroc (USGS MRDS)",
+    "description": "110 objets ; code = « mrds » + identifiant de dépôt USGS (dep_id).",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "site_name",
+      "dev_stat",
+      "commod1",
+      "commod2",
+      "commod3",
+      "ore",
+      "dep_type",
+      "oper_type",
+      "prod_size",
+      "url"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#a65628"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

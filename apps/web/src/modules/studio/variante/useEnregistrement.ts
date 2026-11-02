@@ -32,11 +32,14 @@ import { isNetworkError } from "../../../lib/reachability";
 import { accuserLot, commandesNonEnvoyees, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "../import/envoi";
 import { appliquerBrouillon, avecPlancher, commandesEnAttente, creerBrouillon, type Brouillon } from "../planche2d/brouillon";
 import { navigateurEnLigne, useConnexion, useRetourEnLigne } from "../hors-ligne/connexion";
-import { cleVariante, identifiantsCites, reporterSurTete, restaurerBrouillon, versHorsLigne, type ConflitHorsLigne } from "../hors-ligne/persistance";
+import { cleVariante, identifiantsCites, reporterSurTete, restaurerBrouillon, versHorsLigne, type ApercuHorsLigne, type ConflitHorsLigne, type RejetHorsLigne } from "../hors-ligne/persistance";
 import { invalidationsApresEngagement, lectureApplicable } from "./revision-courante";
 import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne } from "../hors-ligne/stockage";
+import { MESSAGE_QUOTA } from "../hors-ligne/quota";
 import type { RepriseHorsLigne } from "../hors-ligne/useChargementVariante";
 import { warning } from "./etat-variante";
+import { journalStudio } from "../taches/journal-correlation";
+import { traceGeste } from "../taches/trace-geste";
 
 export interface OptionsEnregistrement {
   projectId: string;
@@ -73,6 +76,12 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   const [depuisCache, setDepuisCache] = useState<string | null>(null);
   const [enAttente, setEnAttente] = useState(0);
   const [rejouer, setRejouer] = useState(0);
+  // EX-049 : enveloppe refusée conservée (« rejetée ») et prévisualisation abandonnée constatée à la reprise.
+  const [rejet, setRejet] = useState<RejetHorsLigne | null>(null);
+  const [apercuAbandonne, setApercuAbandonne] = useState<ApercuHorsLigne | null>(null);
+  /** Tracé en cours (prévisualisation) : écrit avec le brouillon conservé, « abandonné » s'il est relu à la reprise. */
+  const apercuCourant = useRef<ApercuHorsLigne | null>(null);
+  const rejetCourant = useRef<RejetHorsLigne | null>(null);
   const envelope = useRef<PlanEnvoi | null>(null);
   /** Pas du brouillon mis dans `envelope` (les suivants ont été dessinés après, hors ligne). */
   const pasCouverts = useRef(0);
@@ -113,12 +122,14 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   }
   async function conserver(base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, c: ConflitHorsLigne | null): Promise<boolean> {
     if (!cle || !userId || horsJeu.current) return false;
-    const h = versHorsLigne(userId, base, b, plan, pasCouverts.current, c);
+    const h = versHorsLigne(userId, base, b, plan, pasCouverts.current, c, { rejet: rejetCourant.current, apercu: apercuCourant.current });
     return enFile(async () => {
       if (horsJeu.current) return false;
       try {
         const r = await ecrireBrouillonHorsLigne(cle, h, stamp.current);
         if (r.type === "autre-onglet") { signalerAutreOnglet(); return false; }
+        // EX-044 : quota atteint malgré l'éviction des versions lues en cache — annoncé, le brouillon reste en mémoire.
+        if (r.type === "quota") { if (o.alive.current) o.setError(MESSAGE_QUOTA); return false; }
         stamp.current = r.type === "ecrit" ? r.stamp : null;
         local.current = r.type === "ecrit";
         if (o.alive.current) setConserve(local.current);
@@ -153,6 +164,7 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   /** Reprise à l'ouverture (`useChargementVariante`) : enveloppes conservées, conflit, origine des données. */
   function reprendre(r: RepriseHorsLigne) {
     local.current = r.conserve; stamp.current = r.stamp; sauterEcriture.current = r.conserve; setConserve(r.conserve); setDepuisCache(r.depuisCache);
+    rejetCourant.current = r.rejet ?? null; setRejet(r.rejet ?? null); setApercuAbandonne(r.apercuAbandonne ?? null);
     poserPlan(r.plan, r.pasCouverts); dernierAccuse.current = null;
     if (r.plan) setUncertain(true);
     if (r.conflit) {
@@ -190,7 +202,17 @@ export function useEnregistrement(o: OptionsEnregistrement) {
       if (local.current || !navigateurEnLigne()) await conserver(context, brouillon, envelope.current, null);
       if (horsJeu.current) return;
       for (let lot = enveloppeSuivante(envelope.current!); lot; lot = enveloppeSuivante(envelope.current!)) {
-        const accuse = await api.studioCommands(projectId, studyId, variantId, lot);
+        // Journal de corrélation (EX-095) : identifiant du lot et outils seulement, jamais les paramètres (géométrie).
+        const issue = journalStudio.noterCommande(lot);
+        let accuse: Awaited<ReturnType<typeof api.studioCommands>>;
+        try { accuse = await api.studioCommands(projectId, studyId, variantId, lot); }
+        catch (err) {
+          issue(err instanceof ApiError ? "refusee" : "non-confirmee", err instanceof ApiError ? { statut: err.status, code: err.code } : {});
+          throw err;
+        }
+        issue("confirmee", { revision: accuse.revision.id });
+        // EX-008 : mutation canonique accusée par le serveur (la scène sera invalidée pour cette révision).
+        traceGeste.noter("mutation", { revision: accuse.revision.id });
         poserPlan(accuserLot(envelope.current!, accuse.revision.id));
         dernierAccuse.current = accuse;
         if (local.current) await conserver(context, brouillon, envelope.current, null);
@@ -228,6 +250,12 @@ export function useEnregistrement(o: OptionsEnregistrement) {
       if (!alive.current) return;
       if (e instanceof ApiError && e.status < 500 && e.status !== 408) {
         const plan = envelope.current, accuse = dernierAccuse.current;
+        // EX-049 : une enveloppe refusée pour un autre motif qu'une révision périmée est gardée telle quelle, « rejetée »,
+        // avec ses identifiants de déduplication ; elle n'est jamais renvoyée d'elle-même.
+        if (plan && !estConflitRevision(e)) {
+          const r: RejetHorsLigne = { requestIds: plan.requestIds.slice(plan.envoyes), baseRevisionId: accuse?.revision.id ?? plan.base, lots: plan.lots.slice(plan.envoyes).map((l) => [...l]), statut: e.status, code: e.code ?? null, at: new Date().toISOString() };
+          rejetCourant.current = r; setRejet(r);
+        }
         const conserver409 = local.current && e.status === 409;
         setUncertain(false); poserPlan(null); dernierAccuse.current = null;
         if (plan && accuse && envoiPartiel(plan)) {
@@ -322,11 +350,27 @@ export function useEnregistrement(o: OptionsEnregistrement) {
     setInfo(`${commandesEnAttente(r.brouillon).length} commande(s) reportée(s) sur la nouvelle version courante. Vérifiez le dessin, puis enregistrez.`);
   }
 
+  /**
+   * Prévisualisation en cours (`outil` du tracé commencé, null à sa fin) : notée avec le brouillon conservé sur
+   * l'appareil, pour qu'une reprise après interruption la montre « abandonnée » (EX-049).
+   */
+  function noterApercu(outil: string | null) {
+    const avant = apercuCourant.current?.outil ?? null;
+    if (avant === outil) return;
+    apercuCourant.current = outil ? { outil, depuis: new Date().toISOString() } : null;
+    if (local.current && o.context && o.brouillon && !saving.current && !horsJeu.current) void conserver(o.context, o.brouillon, envelope.current, conflit);
+  }
+  /** La reprise a été lue : l'état « rejetée » ou « prévisualisation abandonnée » est retiré par l'utilisateur. */
+  function acquitterReprise() {
+    rejetCourant.current = null; setRejet(null); setApercuAbandonne(null);
+    if (local.current && o.context && o.brouillon) void conserver(o.context, o.brouillon, envelope.current, conflit);
+  }
+
   // Hors ligne, derrière une enveloppe en attente : le dessin reste permis (ses pas couverts ne s'annulent plus).
   const dessinHorsLigne = uncertain && enAttente > 0 && !connecte && !!cle && !blocked && !autreOnglet;
   return {
-    pending, uncertain, blocked, saved, setSaved, save, reprendre, rechargerServeur, reporter, dessinHorsLigne,
-    horsLigne: { enLigne: connecte, enAttente, conflit: !!conflit || autreOnglet, autreOnglet, conserve, depuisCache: !!depuisCache },
+    pending, uncertain, blocked, saved, setSaved, save, reprendre, rechargerServeur, reporter, dessinHorsLigne, noterApercu, acquitterReprise,
+    horsLigne: { enLigne: connecte, enAttente, conflit: !!conflit || autreOnglet, autreOnglet, conserve, depuisCache: !!depuisCache, rejetee: !!rejet, apercuAbandonne: !!apercuAbandonne },
   };
 }
 

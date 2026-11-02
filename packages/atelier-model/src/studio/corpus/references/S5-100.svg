@@ -56,4 +56,6 @@
 <path data-id="s5-16-mur-courbe" data-type="arc" d="M 35 -60 A 3 3 0 0 0 29 -60" vector-effect="non-scaling-stroke"/>
 <path data-id="s5-16-renfle" data-type="polyline" d="M 20 -66 L 21.5 -66 A 0.75 0.75 0 0 0 21.5 -67.5 L 20 -67.5 L 20 -66 Z" vector-effect="non-scaling-stroke"/>
 </g>
+<g data-layer="surfaces" data-name="Surfaces libres NURBS (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+</g>
 </svg>

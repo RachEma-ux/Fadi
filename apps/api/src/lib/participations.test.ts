@@ -23,9 +23,10 @@ describe("participations — règles pures et accord avec init.sql", () => {
     expect(sqlList("project_participations_responsibilities_check")).toEqual([...TEAM_RESPONSIBILITIES]);
   });
 
-  it("décrit le miroir de l'accès comme le déclencheur SQL (lecteur → lecteur, editeur → concepteur)", () => {
+  it("décrit le rôle du partage comme la reprise SQL du retrait du pont (lecteur → lecteur, editeur → concepteur)", () => {
     expect(ACCESS_ROLE_MIRROR).toEqual({ proprietaire: null, editeur: "concepteur", lecteur: "lecteur" });
-    expect(initSql).toContain("v_role := CASE v_access WHEN 'lecteur' THEN 'lecteur' WHEN 'editeur' THEN 'concepteur' END;");
+    expect(initSql).toContain("CASE r.role WHEN 'lecteur' THEN 'lecteur' ELSE 'concepteur' END, 'projet', 'acces'");
+    expect(initSql).toContain("AND ra.role = 'concepteur') THEN 'editeur' ELSE 'lecteur' END AS role");
   });
 
   it("n'autorise que les transitions du cycle de participation ; une participation terminée ne revit pas", () => {

@@ -1,0 +1,48 @@
+{
+  "cle": "worldpop-mar-population-2020",
+  "titre": "Population estimée 2020 au Maroc (WorldPop, 1 km)",
+  "description": "WorldPop, population estimée par cellule de 30 arcsec (≈ 1 km), 2020, non contrainte, rasters pays MAR et ESH. Estimation modélisée : ce n'est pas un recensement.",
+  "producteur": "WorldPop (Université de Southampton)",
+  "theme": "population",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "WorldPop Global 2000–2020 1 km, 2020, MAR et ESH (agrégé)",
+    "url": null,
+    "fichier": "donnees/worldpop-mar-population-2020.tif",
+    "empreinte": "db433825613aeb513e0f7048894574279af284def1a902f24d501fc1c0fe3d23",
+    "periode": "2020",
+    "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "attribution": "WorldPop (www.worldpop.org — School of Geography and Environmental Science, University of Southampton) ; doi:10.5258/SOTON/WP00671",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Modèle à 30 arcsec ; cellule source ≈ cellule Fadi (plus proche voisin, pas de redistribution) ; grille Fadi de 0,01° (≈ 1,1 km), 1625 × 1525 cellules, rééchantillonnage plus proche voisin ; hors territoire geoBoundaries MAR ADM1 : sans donnée",
+    "synthetique": false,
+    "conditions": "CC BY 4.0 : réutilisation libre, y compris commerciale, avec attribution de la source."
+  },
+  "couche": {
+    "titre": "Population estimée 2020 au Maroc (WorldPop, 1 km)",
+    "description": "Population estimée par cellule",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": "habitants/cellule",
+      "grandeur": "Population estimée par cellule",
+      "palette": "population"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

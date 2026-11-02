@@ -1,0 +1,1640 @@
+pays,code,niveau,parent,nom,nom_ar,type,population,menages
+MA,1,region,,Région de Tanger-Tétouan-Al Hoceima,جهة طنجة-تطوان-الحسيمة,Région,4030222,1048860
+MA,10,region,,Région de Guelmim-Oued Noun,جهة كلميم-واد نون,Région,448685,105394
+MA,10071,province,10,Province d'Assa-Zag,إقليم آسا-الزاك,Province,53298,6297
+MA,100710101,commune,10071,Commune d'Assa,جماعة آسا,Commune hors cercle,15601,3476
+MA,100710103,commune,10071,Commune de Zag,جماعة الزاك,Commune hors cercle,4756,1104
+MA,100710301,commune,10071,Commune d'Aouint Lahna,جماعة عوينة لهنا,Commune rattachée à un cercle,2588,476
+MA,100710303,commune,10071,Commune d'Aouint Yghomane,جماعة عوينة يغمان,Commune rattachée à un cercle,3370,677
+MA,100710305,commune,10071,Commune de Touizgui,جماعة تويزكي,Commune rattachée à un cercle,6787,177
+MA,100710501,commune,10071,Commune d'Al Mahbass,جماعة المحبس,Commune rattachée à un cercle,19139,170
+MA,100710503,commune,10071,Commune de Labouirat,جماعة لبويرات,Commune rattachée à un cercle,1057,217
+MA,10261,province,10,Province de Guelmim,إقليم كلميم,Province,196267,47250
+MA,102610101,commune,10261,Commune de Bouizakarne,جماعة بويزكارن,Commune hors cercle,18036,4113
+MA,102610103,commune,10261,Commune de Guelmim,جماعة كلميم,Commune hors cercle,126729,30343
+MA,102610301,commune,10261,Commune d'Aday,جماعة أداي,Commune rattachée à un cercle,2828,783
+MA,102610303,commune,10261,Commune d'Ait Boufoulen,جماعة آيت بوفلن,Commune rattachée à un cercle,941,222
+MA,102610305,commune,10261,Commune d'Amtdi,جماعة أمطضي,Commune rattachée à un cercle,1137,298
+MA,102610307,commune,10261,Commune d'Ifrane Atlas Saghir,جماعة إفران أطلس الصغير,Commune rattachée à un cercle,10375,2639
+MA,102610309,commune,10261,Commune de Tagante,جماعة تكانت,Commune rattachée à un cercle,4455,980
+MA,102610311,commune,10261,Commune de Taghjijt,جماعة تغجيجت,Commune rattachée à un cercle,9059,2332
+MA,102610313,commune,10261,Commune de Timoulay,جماعة تيمولاي,Commune rattachée à un cercle,4873,1197
+MA,102610503,commune,10261,Commune d'Aferkat,جماعة افركط,Commune rattachée à un cercle,978,221
+MA,102610505,commune,10261,Commune d'Asrir,جماعة أسرير,Commune rattachée à un cercle,3217,759
+MA,102610509,commune,10261,Commune de Fask,جماعة فاصك,Commune rattachée à un cercle,3511,862
+MA,102610521,commune,10261,Commune de Tiglit,جماعة تكليت,Commune rattachée à un cercle,798,137
+MA,102610701,commune,10261,Commune d'Abaynou,جماعة أباينو,Commune rattachée à un cercle,3038,722
+MA,102610707,commune,10261,Commune d'Echatea El Abied,جماعة الشاطئ الأبيض,Commune rattachée à un cercle,928,213
+MA,102610711,commune,10261,Commune de Labyar,جماعة لبيار,Commune rattachée à un cercle,433,121
+MA,102610713,commune,10261,Commune de Laqsabi Tagoust,جماعة لقصابي تكوست,Commune rattachée à un cercle,2592,663
+MA,102610715,commune,10261,Commune de Rass Oumlil,جماعة راس أمليل,Commune rattachée à un cercle,839,239
+MA,102610717,commune,10261,Commune de Taliouine Assaka,جماعة تلوين أسكا,Commune rattachée à un cercle,865,245
+MA,102610719,commune,10261,Commune de Targa Wassay,جماعة تركى وساي,Commune rattachée à un cercle,635,161
+MA,10473,province,10,Province de Sidi Ifni,إقليم سيدي إفني,Province,104601,28539
+MA,104730101,commune,10473,Commune de Lakhsas,جماعة الأخصاص,Commune hors cercle,5603,1474
+MA,104730103,commune,10473,Commune de Sidi Ifni,جماعة سيدي إفني,Commune hors cercle,22696,6387
+MA,104730107,commune,10473,Commune de Mirleft,جماعة مير اللفت,Commune hors cercle,9828,2767
+MA,104730501,commune,10473,Commune d'Arbaa Ait Abdellah,جماعة أربعاء آيت عبد الله,Commune rattachée à un cercle,2671,679
+MA,104730503,commune,10473,Commune d'Imi-N'fast,جماعة إمي نفاست,Commune rattachée à un cercle,1962,449
+MA,104730505,commune,10473,Commune de Mesti,جماعة مستي,Commune rattachée à un cercle,2533,731
+MA,104730509,commune,10473,Commune de Sbouya,جماعة اسبويا,Commune rattachée à un cercle,2772,703
+MA,104730511,commune,10473,Commune de Tangarfa,جماعة تنكرفا,Commune rattachée à un cercle,3895,1021
+MA,104730513,commune,10473,Commune de Tioughza,جماعة تيوغزة,Commune rattachée à un cercle,10007,2690
+MA,104730515,commune,10473,Commune de Tnine Amellou,جماعة اثنين أملو,Commune rattachée à un cercle,3247,831
+MA,104730701,commune,10473,Commune d'Ait Erkha,جماعة آيت الرخا,Commune rattachée à un cercle,4490,1166
+MA,104730703,commune,10473,Commune d'Anfeg,جماعة أنفك,Commune rattachée à un cercle,3803,1220
+MA,104730705,commune,10473,Commune de Boutrouch,جماعة بوطروش,Commune rattachée à un cercle,2693,734
+MA,104730707,commune,10473,Commune d'Ibdar,جماعة إبضر,Commune rattachée à un cercle,3323,978
+MA,104730709,commune,10473,Commune de Sebt Ennabour,جماعة سبت النابور,Commune rattachée à un cercle,6047,1512
+MA,104730711,commune,10473,Commune de Sidi Abdellah Ou Belaid,جماعة سيدي عبد الله أو بلعيد,Commune rattachée à un cercle,3524,938
+MA,104730713,commune,10473,Commune de Sidi H'saine Ou Ali,جماعة سيدي احساين أو علي,Commune rattachée à un cercle,4769,1321
+MA,104730715,commune,10473,Commune de Sidi M'bark,جماعة سيدي امبارك,Commune rattachée à un cercle,4898,1324
+MA,104730717,commune,10473,Commune de Tighirt,جماعة تغيرت,Commune rattachée à un cercle,5840,1614
+MA,1051,province,1,Province d'Al Hoceima,إقليم الحسيمة,Province,371527,89181
+MA,10510101,commune,1051,Commune d'Al Hoceima,جماعة الحسيمة,Commune hors cercle,50225,14351
+MA,10510103,commune,1051,Commune de Bni Bouayach,جماعة بني بوعياش,Commune hors cercle,20013,4969
+MA,10510105,commune,1051,Commune d'Imzouren,جماعة امزورن,Commune hors cercle,34848,8677
+MA,10510107,commune,1051,Commune de Targuist,جماعة تارجيست,Commune hors cercle,14638,3756
+MA,10510109,commune,1051,Commune d'Ajdir,جماعة أجدير,Commune hors cercle,5630,1500
+MA,10510301,commune,1051,Commune de Bni Boufrah,جماعة بني بوفراح,Commune rattachée à un cercle,8401,2083
+MA,10510303,commune,1051,Commune de Bni Gmil,جماعة بني اكميل,Commune rattachée à un cercle,7752,1546
+MA,10510305,commune,1051,Commune de Bni Gmil Maksouline,جماعة بني جميل مكصولين,Commune rattachée à un cercle,7214,1481
+MA,10510307,commune,1051,Commune de Senada,جماعة سنادة,Commune rattachée à un cercle,8059,1992
+MA,10510703,commune,1051,Commune de Bni Ahmed Imoukzan,جماعة بني احمد اموكزان,Commune rattachée à un cercle,7580,1617
+MA,10510705,commune,1051,Commune de Bni Ammart,جماعة بني عمارت,Commune rattachée à un cercle,5583,1242
+MA,10510707,commune,1051,Commune de Bni Bchir,جماعة بني ابشير,Commune rattachée à un cercle,5401,1078
+MA,10510711,commune,1051,Commune de Bni Bounsar,جماعة بني بونصار,Commune rattachée à un cercle,6498,1357
+MA,10510719,commune,1051,Commune de Sidi Boutmim,جماعة سيدي بوتميم,Commune rattachée à un cercle,8462,1886
+MA,10510721,commune,1051,Commune de Sidi Bouzineb,جماعة سيدي بوزينب,Commune rattachée à un cercle,2756,598
+MA,10510727,commune,1051,Commune de Zarkt,جماعة زرقت,Commune rattachée à un cercle,5601,1178
+MA,10510901,commune,1051,Commune d'Abdelghaya Souahel,جماعة عبد الغاية السواحل,Commune rattachée à un cercle,24435,5156
+MA,10510909,commune,1051,Commune de Bni Bouchibet,جماعة بني بوشيبت,Commune rattachée à un cercle,8909,1826
+MA,10510913,commune,1051,Commune d'Issaguen,جماعة اساكن,Commune rattachée à un cercle,17834,3903
+MA,10510915,commune,1051,Commune de Ketama,جماعة كتامة,Commune rattachée à un cercle,16690,3699
+MA,10510917,commune,1051,Commune de Moulay Ahmed Cherif,جماعة مولاي احمد الشريف,Commune rattachée à un cercle,9357,1836
+MA,10510923,commune,1051,Commune de Taghzout,جماعة تاغزوت,Commune rattachée à un cercle,4116,993
+MA,10510925,commune,1051,Commune de Tamsaout,جماعة تامساوت,Commune rattachée à un cercle,12856,2761
+MA,10511101,commune,1051,Commune d'Ait Kamra,جماعة آيت قمرة,Commune rattachée à un cercle,8269,1957
+MA,10511107,commune,1051,Commune de Bni Abdellah,جماعة بني عبد الله,Commune rattachée à un cercle,4939,1283
+MA,10511109,commune,1051,Commune de Bni Hadifa,جماعة بني حذيفة,Commune rattachée à un cercle,4723,1236
+MA,10511115,commune,1051,Commune d'Izemmouren,جماعة ازمورن,Commune rattachée à un cercle,6365,1682
+MA,10511121,commune,1051,Commune de Rouadi,جماعة ارواضي,Commune rattachée à un cercle,6858,1741
+MA,10511125,commune,1051,Commune de Zaouiat Sidi Abdelkader,جماعة زاوية سيدي عبد القادر,Commune rattachée à un cercle,4150,1009
+MA,10511303,commune,1051,Commune d'Ait Youssef Ou Ali,جماعة آيت يوسف وعلي,Commune rattachée à un cercle,13830,3451
+MA,10511305,commune,1051,Commune d'Arbaa Taourirt,جماعة اربعاء تاوريرت,Commune rattachée à un cercle,3799,922
+MA,10511311,commune,1051,Commune de Chakrane,جماعة شقران,Commune rattachée à un cercle,3306,773
+MA,10511313,commune,1051,Commune d'Imrabten,جماعة امرابطن,Commune rattachée à un cercle,6983,1836
+MA,10511317,commune,1051,Commune de Louta,جماعة لوطا,Commune rattachée à un cercle,4408,1050
+MA,10511319,commune,1051,Commune de Nekkour,جماعة النكور,Commune rattachée à un cercle,7721,1956
+MA,10511323,commune,1051,Commune de Tifarouine,جماعة تيفروين,Commune rattachée à un cercle,3318,800
+MA,10521,province,10,Province de Tan-Tan,إقليم طانطان,Province,94519,23308
+MA,105210101,commune,10521,Commune de Tan-Tan,جماعة طانطان,Commune hors cercle,76134,18797
+MA,105210103,commune,10521,Commune d'El Ouatia,جماعة الوطية,Commune hors cercle,14258,3717
+MA,105210301,commune,10521,Commune de Msied,جماعة لمسيد,Commune rattachée à un cercle,1501,268
+MA,105210303,commune,10521,Commune de Tilemzoun,جماعة تلمزون,Commune rattachée à un cercle,747,189
+MA,105210501,commune,10521,Commune d'Abteh,جماعة أبطيح,Commune rattachée à un cercle,651,142
+MA,105210503,commune,10521,Commune de Ben Khlil,جماعة بن خليل,Commune rattachée à un cercle,951,102
+MA,105210505,commune,10521,Commune de Chbika,جماعة الشبيكة,Commune rattachée à un cercle,277,93
+MA,11,region,,Région de Laâyoune-Sakia El Hamra,جهة العيون-الساقية الحمراء,Région,451028,106751
+MA,11121,province,11,Province de Boujdour,إقليم بوجدور,Province,65381,14429
+MA,111210101,commune,11121,Commune de Boujdour,جماعة بوجدور,Commune hors cercle,57360,13815
+MA,111210301,commune,11121,Commune de Gueltat Zemmour,جماعة كلتة زمور,Commune rattachée à un cercle,6881,33
+MA,111210303,commune,11121,Commune de Jraifia,جماعة جريفية,Commune rattachée à un cercle,835,385
+MA,111210305,commune,11121,Commune de Lamssid,جماعة لمسيد,Commune rattachée à un cercle,305,196
+MA,11221,province,11,Province d'Es-Semara,إقليم السمارة,Province,73864,14128
+MA,112210101,commune,11221,Commune d'Es-Semara,جماعة السمارة,Commune hors cercle,56607,13730
+MA,112210301,commune,11221,Commune d'Amgala,جماعة امكالة,Commune rattachée à un cercle,4102,83
+MA,112210303,commune,11221,Commune de Haouza,جماعة حوزة,Commune rattachée à un cercle,5197,78
+MA,112210305,commune,11221,Commune de Jdiriya,جماعة الجديرية,Commune rattachée à un cercle,1792,69
+MA,112210307,commune,11221,Commune de Sidi Ahmed Laaroussi,جماعة سيدي احمد لعروسي,Commune rattachée à un cercle,438,130
+MA,112210309,commune,11221,Commune de Tifariti,جماعة تفاريتي,Commune rattachée à un cercle,5728,38
+MA,11321,province,11,Province de Laâyoune,إقليم العيون,Province,295555,73866
+MA,113210101,commune,11321,Commune d'El Marsa,جماعة المرسى,Commune hors cercle,28848,8396
+MA,113210103,commune,11321,Commune de Laâyoune,جماعة العيون,Commune hors cercle,262791,64190
+MA,113210301,commune,11321,Commune de Boukraa,جماعة بوكراع,Commune rattachée à un cercle,1171,396
+MA,113210303,commune,11321,Commune de Dcheira,جماعة الدشيرة,Commune rattachée à un cercle,901,371
+MA,113210305,commune,11321,Commune de Foum El Oued,جماعة فم الواد,Commune rattachée à un cercle,1844,513
+MA,1151,province,1,Province de Chefchaouen,إقليم شفشاون,Province,412713,90956
+MA,11510101,commune,1151,Commune de Chefchaouen,جماعة شفشاون,Commune hors cercle,46168,12474
+MA,11510303,commune,1151,Commune de Bab Berred,جماعة باب برد,Commune rattachée à un cercle,24743,5557
+MA,11510313,commune,1151,Commune d'Iounane,جماعة اونان,Commune rattachée à un cercle,19494,3966
+MA,11510323,commune,1151,Commune de Tamorot,جماعة تمروت,Commune rattachée à un cercle,24258,5304
+MA,11510501,commune,1151,Commune de Bab Taza,جماعة باب تازة,Commune rattachée à un cercle,29895,6246
+MA,11510503,commune,1151,Commune de Bni Darkoul,جماعة بني دركول,Commune rattachée à un cercle,13984,2870
+MA,11510505,commune,1151,Commune de Bni Faghloum,جماعة بني فغلوم,Commune rattachée à un cercle,9260,2165
+MA,11510507,commune,1151,Commune de Bni Salah,جماعة بني صالح,Commune rattachée à un cercle,10535,2057
+MA,11510509,commune,1151,Commune de Derdara,جماعة الدردارة,Commune rattachée à un cercle,11276,2506
+MA,11510511,commune,1151,Commune de Fifi,جماعة فيفي,Commune rattachée à un cercle,6762,1627
+MA,11510513,commune,1151,Commune de Laghdir,جماعة لغدير,Commune rattachée à un cercle,6454,1526
+MA,11510515,commune,1151,Commune de Tanaqoub,جماعة تنقوب,Commune rattachée à un cercle,8097,1808
+MA,11510605,commune,1151,Commune de Bni Ahmed Cherqia,جماعة بني احمد الشرقية,Commune rattachée à un cercle,10800,2668
+MA,11510607,commune,1151,Commune de Bni Ahmed Gharbia,جماعة بني احمد الغربية,Commune rattachée à un cercle,10623,2655
+MA,11510615,commune,1151,Commune de Mansoura,جماعة المنصورة,Commune rattachée à un cercle,13526,2960
+MA,11510621,commune,1151,Commune d'Oued Malha,جماعة واد ملحة,Commune rattachée à un cercle,12075,2638
+MA,11510701,commune,1151,Commune de Bni Bouzra,جماعة بني بوزرة,Commune rattachée à un cercle,15888,3363
+MA,11510707,commune,1151,Commune de Steha,جماعة اسطيحة,Commune rattachée à un cercle,11452,2432
+MA,11510709,commune,1151,Commune de Talambote,جماعة تلمبوط,Commune rattachée à un cercle,8007,1598
+MA,11510711,commune,1151,Commune de Tassift,جماعة تاسيفت,Commune rattachée à un cercle,6924,1459
+MA,11510713,commune,1151,Commune de Tizgane,جماعة تزكان,Commune rattachée à un cercle,12292,2804
+MA,11510901,commune,1151,Commune d'Amtar,جماعة امتار,Commune rattachée à un cercle,8568,1814
+MA,11510909,commune,1151,Commune de Bni Rzine,جماعة بني رزين,Commune rattachée à un cercle,16539,3366
+MA,11510911,commune,1151,Commune de Bni Smih,جماعة بني سميح,Commune rattachée à un cercle,13918,2780
+MA,11510917,commune,1151,Commune de M'tioua,جماعة متيوة,Commune rattachée à un cercle,10336,2430
+MA,11510919,commune,1151,Commune d'Ouaouzgane,جماعة ووزكان,Commune rattachée à un cercle,12766,2771
+MA,11511103,commune,1151,Commune de Bni Mansour,جماعة بني منصور,Commune rattachée à un cercle,16660,3154
+MA,11511105,commune,1151,Commune de Bni Selmane,جماعة بني سلمان,Commune rattachée à un cercle,21413,3958
+MA,11537,province,11,Province de Tarfaya,إقليم طرفاية,Province,16228,4328
+MA,115370105,commune,11537,Commune de Tarfaya,جماعة طرفاية,Commune hors cercle,11030,2722
+MA,115370303,commune,11537,Commune de Daoura,جماعة الدورة,Commune rattachée à un cercle,902,402
+MA,115370305,commune,11537,Commune d'El Hagounia,جماعة الحكونية,Commune rattachée à un cercle,561,129
+MA,115370501,commune,11537,Commune d'Akhfennir,جماعة أخفنير,Commune rattachée à un cercle,2841,822
+MA,115370507,commune,11537,Commune de Tah,جماعة الطاح,Commune rattachée à un cercle,894,253
+MA,12,region,,Région de Dakhla-Oued Ed-Dahab,جهة الداخلة-وادي الذهب,Région,219965,54161
+MA,12066,province,12,Province d'Aousserd,إقليم أوسرد,Province,24498,2421
+MA,120660103,commune,12066,Commune de Lagouira*,جماعة الكويرة*,Commune hors cercle,3127,734
+MA,120660303,commune,12066,Commune d'Aghouinite*,جماعة اغوينيت*,Commune rattachée à un cercle,1006,263
+MA,120660305,commune,12066,Commune d'Aousserd,جماعة أوسرد,Commune rattachée à un cercle,3855,106
+MA,120660307,commune,12066,Commune de Tichla,جماعة تشلا,Commune rattachée à un cercle,6735,41
+MA,120660309,commune,12066,Commune de Zoug*,جماعة الزوك*,Commune rattachée à un cercle,592,155
+MA,120660503,commune,12066,Commune de Bir Gandouz,جماعة بئر كندوز,Commune rattachée à un cercle,9183,1122
+MA,1227,province,1,Province de Fahs-Anjra,إقليم الفحص-أنجرة,Province,100789,25160
+MA,12270305,commune,1227,Commune d'Anjra,جماعة أنجرة,Commune rattachée à un cercle,17251,3992
+MA,12270311,commune,1227,Commune de Jouamaa,جماعة جوامعة,Commune rattachée à un cercle,10039,2416
+MA,12270313,commune,1227,Commune de Ksar El Majaz,جماعة القصر المجاز,Commune rattachée à un cercle,12703,3437
+MA,12270321,commune,1227,Commune de Taghramt,جماعة تغرامت,Commune rattachée à un cercle,9326,2385
+MA,12270501,commune,1227,Commune d'Al Bahraoyine,جماعة البحراويين,Commune rattachée à un cercle,15491,3912
+MA,12270505,commune,1227,Commune de Ksar Sghir,جماعة القصر الصغير,Commune rattachée à un cercle,17125,4391
+MA,12270509,commune,1227,Commune de Malloussa,جماعة ملوسة,Commune rattachée à un cercle,18854,4627
+MA,12391,province,12,Province d'Oued Ed-Dahab,إقليم وادي الذهب,Province,195467,51740
+MA,123910101,commune,12391,Commune de Dakhla,جماعة الداخلة,Commune hors cercle,165463,45401
+MA,123910501,commune,12391,Commune de Bir Anzarane,جماعة بئر أنزران,Commune rattachée à un cercle,2962,925
+MA,123910503,commune,12391,Commune de Gleibat El Foula,جماعة اكليبات الفولة,Commune rattachée à un cercle,7155,20
+MA,123910505,commune,12391,Commune de Mijik*,جماعة ميجيك*,Commune rattachée à un cercle,646,168
+MA,123910507,commune,12391,Commune d'Oum Dreyga,جماعة ام دريكة,Commune rattachée à un cercle,3714,10
+MA,123910901,commune,12391,Commune d'El Argoub,جماعة العركوب,Commune rattachée à un cercle,12182,4177
+MA,123910903,commune,12391,Commune d'Imlili,جماعة امليلي,Commune rattachée à un cercle,3345,1039
+MA,1331,province,1,Province de Larache,إقليم العرائش,Province,510211,124642
+MA,13310101,commune,1331,Commune de Ksar El Kebir,جماعة القصر الكبير,Commune hors cercle,124701,33188
+MA,13310103,commune,1331,Commune de Larache,جماعة العرائش,Commune hors cercle,133731,35818
+MA,13310701,commune,1331,Commune de Boujedyane,جماعة بوجديان,Commune rattachée à un cercle,9624,2639
+MA,13310703,commune,1331,Commune de Ksar Bjir,جماعة قصر بجير,Commune rattachée à un cercle,17182,4028
+MA,13310705,commune,1331,Commune de Laouamra,جماعة العوامرة,Commune rattachée à un cercle,48253,8949
+MA,13310711,commune,1331,Commune de Souk L'qolla,جماعة سوق القلة,Commune rattachée à un cercle,13592,3176
+MA,13310715,commune,1331,Commune de Tatoft,جماعة تطفت,Commune rattachée à un cercle,8657,2317
+MA,13310717,commune,1331,Commune de Zouada,جماعة زوادة,Commune rattachée à un cercle,25289,5050
+MA,13310901,commune,1331,Commune d'Ayacha,جماعة عياشة,Commune rattachée à un cercle,6925,1775
+MA,13310903,commune,1331,Commune de Bni Arouss,جماعة بني عروس,Commune rattachée à un cercle,7337,1971
+MA,13310905,commune,1331,Commune de Bni Garfett,جماعة بني كرفط,Commune rattachée à un cercle,11311,2713
+MA,13310913,commune,1331,Commune de Tazroute,جماعة تازروت,Commune rattachée à un cercle,5449,1354
+MA,13310915,commune,1331,Commune de Zaaroura,جماعة زعرورة,Commune rattachée à un cercle,8615,2226
+MA,13311103,commune,1331,Commune d'Oulad Ouchih,جماعة أولاد اوشيح,Commune rattachée à un cercle,13409,2765
+MA,13311107,commune,1331,Commune de Rissana Chamalia,جماعة ريصانة الشمالية,Commune rattachée à un cercle,12961,2797
+MA,13311109,commune,1331,Commune de Rissana Janoubia,جماعة ريصانة الجنوبية,Commune rattachée à un cercle,19480,3814
+MA,13311111,commune,1331,Commune de Sahel,جماعة الساحل,Commune rattachée à un cercle,18258,4469
+MA,13311112,commune,1331,Commune de Souaken,جماعة السواكن,Commune rattachée à un cercle,12582,2699
+MA,13311113,commune,1331,Commune de Souk Tolba,جماعة سوق الطلبة,Commune rattachée à un cercle,12855,2894
+MA,1405,province,1,Province d'Ouezzane,إقليم وزان,Province,274577,74896
+MA,14050109,commune,1405,Commune d'Ouezzane,جماعة وزان,Commune hors cercle,57737,16266
+MA,14050701,commune,1405,Commune de Bni Quolla,جماعة بني كلة,Commune rattachée à un cercle,13551,3752
+MA,14050705,commune,1405,Commune de Masmouda,جماعة مصمودة,Commune rattachée à un cercle,14594,4006
+MA,14050707,commune,1405,Commune de Mzefroune,جماعة امزفرون,Commune rattachée à un cercle,6226,1798
+MA,14050715,commune,1405,Commune de Sidi Redouane,جماعة سيدي رضوان,Commune rattachée à un cercle,17903,5124
+MA,14050901,commune,1405,Commune d'Ain Beida,جماعة عين بيضاء,Commune rattachée à un cercle,10368,2690
+MA,14050903,commune,1405,Commune d'Asjen,جماعة اسجن,Commune rattachée à un cercle,11479,3048
+MA,14050905,commune,1405,Commune de Brikcha,جماعة ابريكشة,Commune rattachée à un cercle,8777,2508
+MA,14050909,commune,1405,Commune de Moqrissat,جماعة مقريصات,Commune rattachée à un cercle,9413,2585
+MA,14051107,commune,1405,Commune de Kalaat Bouqorra,جماعة قلعة بوقرة,Commune rattachée à un cercle,13999,3767
+MA,14051111,commune,1405,Commune de Zoumi,جماعة زومي,Commune rattachée à un cercle,36573,9762
+MA,14051303,commune,1405,Commune de Lamjaara,جماعة لمجاعرة,Commune rattachée à un cercle,19162,4579
+MA,14051309,commune,1405,Commune d'Ouannana,جماعة ونانة,Commune rattachée à un cercle,12123,3185
+MA,14051311,commune,1405,Commune de Sidi Ahmed Cherif,جماعة سيدي أحمد الشريف,Commune rattachée à un cercle,7913,2171
+MA,14051313,commune,1405,Commune de Sidi Bousber,جماعة سيدي بوصبر,Commune rattachée à un cercle,9671,2696
+MA,14051317,commune,1405,Commune de Teroual,جماعة تروال,Commune rattachée à un cercle,11673,3322
+MA,14051319,commune,1405,Commune de Zghira,جماعة ازغيرة,Commune rattachée à un cercle,13415,3637
+MA,1511,province,1,Préfecture de Tanger-Assilah,عمالة طنجة-أصيلة,Préfecture,1494413,418844
+MA,1511010,commune,1511,Commune de Tanger,جماعة طنجة,Commune hors cercle,1275428,362062
+MA,15110101,commune,1511,Commune d'Assilah,جماعة أصيلة,Commune hors cercle,36039,9745
+MA,15110103,arrondissement,1511010,Arrondissement de Bni Makada,مقاطعة بني مكادة,Arrondissement,567465,150816
+MA,15110105,arrondissement,1511010,Arrondissement de Mghogha,مقاطعة مغوغة,Arrondissement,252656,70679
+MA,15110106,arrondissement,1511010,Arrondissement de Souani,مقاطعة السواني,Arrondissement,111772,33489
+MA,15110107,arrondissement,1511010,Arrondissement de Médina,مقاطعة المدينة,Arrondissement,343535,107078
+MA,15110109,commune,1511,Commune de Gueznaia,جماعة اكزناية,Commune hors cercle,88676,25039
+MA,15110303,commune,1511,Commune d'Aquouass Briech,جماعة اقواس برييش,Commune rattachée à un cercle,4981,1190
+MA,15110311,commune,1511,Commune de Sahel Chamali,جماعة الساحل الشمالي,Commune rattachée à un cercle,5028,1235
+MA,15110313,commune,1511,Commune de Sidi Lyamani,جماعة سيدي اليمني,Commune rattachée à un cercle,10616,2387
+MA,15110315,commune,1511,Commune de Had Al Gharbia,جماعة حد الغربية,Commune rattachée à un cercle,12838,3084
+MA,15110501,commune,1511,Commune d'Al Manzla,جماعة المنزلة,Commune rattachée à un cercle,2680,629
+MA,15110505,commune,1511,Commune de Sebt Azzinate,جماعة سبت الزينات,Commune rattachée à un cercle,7265,1729
+MA,15110507,commune,1511,Commune de Dar Chaoui,جماعة دار الشاوي,Commune rattachée à un cercle,4471,1078
+MA,15110517,commune,1511,Commune de Laaouama,جماعة العوامة,Commune rattachée à un cercle,19187,4618
+MA,15110519,commune,1511,Commune de Hjar Ennhal,جماعة حجر النحل,Commune rattachée à un cercle,27204,6048
+MA,1571,province,1,Province de Tétouan,إقليم تطوان,Province,611928,157384
+MA,15710107,commune,1571,Commune d'Oued Laou,جماعة واد لو,Commune hors cercle,11690,3153
+MA,15710111,commune,1571,Commune de Tétouan,جماعة تطوان,Commune hors cercle,422757,113837
+MA,15710301,commune,1571,Commune d'Ain Lahsan,جماعة عين لحصن,Commune rattachée à un cercle,7450,1888
+MA,15710303,commune,1571,Commune d'Al Kharroub,جماعة الخروب,Commune rattachée à un cercle,2099,509
+MA,15710305,commune,1571,Commune de Bghaghza,جماعة بغاغزة,Commune rattachée à un cercle,6238,1386
+MA,15710307,commune,1571,Commune de Bni Harchen,جماعة بني حرشن,Commune rattachée à un cercle,6423,1511
+MA,15710309,commune,1571,Commune de Jbel Lahbib,جماعة جبل لحبيب,Commune rattachée à un cercle,4126,1109
+MA,15710311,commune,1571,Commune de Bni Idder,جماعة بني يدر,Commune rattachée à un cercle,4659,983
+MA,15710315,commune,1571,Commune de Mallalienne,جماعة الملاليين,Commune rattachée à un cercle,10874,2691
+MA,15710317,commune,1571,Commune de Saddina,جماعة صدينة,Commune rattachée à un cercle,7619,1802
+MA,15710319,commune,1571,Commune de Souk Kdim,جماعة سوق القديم,Commune rattachée à un cercle,8699,1986
+MA,15710321,commune,1571,Commune de Sahtryine,جماعة السحتريين,Commune rattachée à un cercle,8733,1987
+MA,15710501,commune,1571,Commune d'Al Hamra,جماعة الحمراء,Commune rattachée à un cercle,11877,2399
+MA,15710505,commune,1571,Commune d'Al Oued,جماعة الواد,Commune rattachée à un cercle,10875,2238
+MA,15710507,commune,1571,Commune d'Azla,جماعة أزلا,Commune rattachée à un cercle,22985,5553
+MA,15710513,commune,1571,Commune de Bni Leit,جماعة بني ليت,Commune rattachée à un cercle,5004,1004
+MA,15710515,commune,1571,Commune de Bni Said,جماعة بني سعيد,Commune rattachée à un cercle,10465,2358
+MA,15710517,commune,1571,Commune de Dar Bni Karrich,جماعة دار بني قريش,Commune rattachée à un cercle,10115,2493
+MA,15710519,commune,1571,Commune d'Oulad Ali Mansour,جماعة أولاد علي منصور,Commune rattachée à un cercle,4683,850
+MA,15710523,commune,1571,Commune de Zaitoune,جماعة الزيتون,Commune rattachée à un cercle,13492,3192
+MA,15710525,commune,1571,Commune de Zaouiat Sidi Kacem,جماعة زاوية سيدي قاسم,Commune rattachée à un cercle,12851,2729
+MA,15710527,commune,1571,Commune de Zinat,جماعة الزينات,Commune rattachée à un cercle,8214,1726
+MA,1573,province,1,Préfecture de M'diq-Fnideq,عمالة المضيق-الفنيدق,Préfecture,254064,67797
+MA,15730101,commune,1573,Commune de Fnideq,جماعة الفنيدق,Commune hors cercle,77250,20061
+MA,15730103,commune,1573,Commune de Martil,جماعة مرتيل,Commune hors cercle,95896,26886
+MA,15730105,commune,1573,Commune de M'diq,جماعة المضيق,Commune hors cercle,67599,17498
+MA,15730107,commune,1573,Commune d'Allyene,جماعة عليين,Commune hors cercle,8111,2131
+MA,15730109,commune,1573,Commune de Belyounech,جماعة بليونش,Commune hors cercle,5208,1221
+MA,2,region,,Région de l'Oriental,جهة الشرق,Région,2294665,575015
+MA,2113,province,2,Province de Berkane,إقليم بركان,Province,284061,75643
+MA,21130101,commune,2113,Commune d'Ahfir,جماعة أحفير,Commune hors cercle,16310,4612
+MA,21130105,commune,2113,Commune d'Ain Erreggada,جماعة عين الركادة,Commune hors cercle,2391,658
+MA,21130107,commune,2113,Commune d'Aklim,جماعة أكليم,Commune hors cercle,8630,2330
+MA,21130109,commune,2113,Commune de Berkane,جماعة بركان,Commune hors cercle,99069,27454
+MA,21130125,commune,2113,Commune de Saidia,جماعة السعيدية,Commune hors cercle,10514,3220
+MA,21130129,commune,2113,Commune de Sidi Slimane Echcharaa,جماعة سيدي سليمان-الشراعة,Commune hors cercle,31686,7689
+MA,21130301,commune,2113,Commune d'Aghbal,جماعة أغبال,Commune rattachée à un cercle,16113,4288
+MA,21130307,commune,2113,Commune de Fezouane,جماعة فزوان,Commune rattachée à un cercle,5783,1517
+MA,21130309,commune,2113,Commune de Laatamna,جماعة لعثامنة,Commune rattachée à un cercle,14561,3766
+MA,21130311,commune,2113,Commune de Madagh,جماعة مداغ,Commune rattachée à un cercle,14659,3665
+MA,21130503,commune,2113,Commune de Boughriba,جماعة بوغريبة,Commune rattachée à un cercle,19013,4777
+MA,21130505,commune,2113,Commune de Chouihia,جماعة الشويحية,Commune rattachée à un cercle,11249,2893
+MA,21130513,commune,2113,Commune de Rislane,جماعة رسلان,Commune rattachée à un cercle,3783,1015
+MA,21130515,commune,2113,Commune de Sidi Bouhria,جماعة سيدي بوهرية,Commune rattachée à un cercle,4088,1115
+MA,21130517,commune,2113,Commune de Tafoughalt,جماعة تافوغالت,Commune rattachée à un cercle,2366,623
+MA,21130519,commune,2113,Commune de Zegzel,جماعة زكزل,Commune rattachée à un cercle,23846,6021
+MA,2167,province,2,Province de Driouch,إقليم الدريوش,Province,188191,48849
+MA,21670103,commune,2167,Commune de Ben Taieb,جماعة بن الطيب,Commune hors cercle,15002,3877
+MA,21670109,commune,2167,Commune de Driouch,جماعة الدريوش,Commune hors cercle,15661,4168
+MA,21670113,commune,2167,Commune de Midar,جماعة ميضار,Commune hors cercle,15391,3975
+MA,21671105,commune,2167,Commune de Bni Marghnine,جماعة بني مرغنين,Commune rattachée à un cercle,4950,1410
+MA,21671107,commune,2167,Commune de Boudinar,جماعة بودينار,Commune rattachée à un cercle,7996,2161
+MA,21671111,commune,2167,Commune d'Ijermaouas,جماعة اجرمواس,Commune rattachée à un cercle,5303,1351
+MA,21671119,commune,2167,Commune d'Oulad Amghar,جماعة أولاد أمغار,Commune rattachée à un cercle,5755,1422
+MA,21671125,commune,2167,Commune de Temsamane,جماعة تمسمان,Commune rattachée à un cercle,12198,3268
+MA,21671127,commune,2167,Commune de Trougout,جماعة اتروكوت,Commune rattachée à un cercle,11348,2754
+MA,21671301,commune,2167,Commune d'Azlaf,جماعة ازلاف,Commune rattachée à un cercle,4132,1102
+MA,21671309,commune,2167,Commune d'Iferni,جماعة افرني,Commune rattachée à un cercle,4873,1311
+MA,21671315,commune,2167,Commune de M'hajer,جماعة امهاجر,Commune rattachée à un cercle,8008,2062
+MA,21671317,commune,2167,Commune d'Ouardana,جماعة وردانة,Commune rattachée à un cercle,7032,1765
+MA,21671321,commune,2167,Commune de Tafersit,جماعة تفرسيت,Commune rattachée à un cercle,8202,2271
+MA,21671323,commune,2167,Commune de Talilit,جماعة تليليت,Commune rattachée à un cercle,3881,1134
+MA,21671329,commune,2167,Commune de Tsaft,جماعة اتسافت,Commune rattachée à un cercle,8401,2168
+MA,21671503,commune,2167,Commune d'Ait Mait,جماعة آيت مايت,Commune rattachée à un cercle,4721,1254
+MA,21671505,commune,2167,Commune d'Amejjaou,جماعة امجاو,Commune rattachée à un cercle,4177,1087
+MA,21671507,commune,2167,Commune de Dar El Kebdani,جماعة دار الكبداني,Commune rattachée à un cercle,8518,2327
+MA,21671513,commune,2167,Commune de Tazaghine,جماعة تزاغين,Commune rattachée à un cercle,3456,927
+MA,21671701,commune,2167,Commune d'Ain Zohra,جماعة عين الزهرة,Commune rattachée à un cercle,8705,2163
+MA,21671709,commune,2167,Commune de Mtalssa,جماعة امطالسة,Commune rattachée à un cercle,16778,3960
+MA,21671711,commune,2167,Commune d'Oulad Boubker,جماعة أولاد بوبكر,Commune rattachée à un cercle,3703,932
+MA,2251,province,2,Province de Figuig,إقليم فجيج,Province,144451,34105
+MA,22510101,commune,2251,Commune de Bouarfa,جماعة بوعرفة,Commune hors cercle,30068,6715
+MA,22510103,commune,2251,Commune de Figuig,جماعة فجيج,Commune hors cercle,10449,2843
+MA,22510301,commune,2251,Commune d'Ain Chouater,جماعة عين الشواطر,Commune rattachée à un cercle,706,185
+MA,22510303,commune,2251,Commune de Bni Tadjite,جماعة بني تدجيت,Commune rattachée à un cercle,17557,4338
+MA,22510305,commune,2251,Commune de Bouanane,جماعة بوعنان,Commune rattachée à un cercle,11181,2243
+MA,22510313,commune,2251,Commune d'Ain Chair,جماعة عين الشعير,Commune rattachée à un cercle,1501,397
+MA,22510501,commune,2251,Commune d'Abbou Lakhal,جماعة عبو لكحل,Commune rattachée à un cercle,1790,295
+MA,22510503,commune,2251,Commune de Bni Guil,جماعة بني كيل,Commune rattachée à un cercle,8261,1828
+MA,22510505,commune,2251,Commune de Maatarka,جماعة معتركة,Commune rattachée à un cercle,6554,1334
+MA,22510507,commune,2251,Commune de Tendrara,جماعة تندرارة,Commune rattachée à un cercle,14269,3188
+MA,22510707,commune,2251,Commune de Bouchaouene,جماعة بوشاون,Commune rattachée à un cercle,15242,3554
+MA,22510709,commune,2251,Commune de Boumerieme,جماعة بومريم,Commune rattachée à un cercle,8067,2124
+MA,22510711,commune,2251,Commune de Talsint,جماعة تالسينت,Commune rattachée à un cercle,18806,5061
+MA,2265,province,2,Province de Guercif,إقليم جرسيف,Province,215837,47538
+MA,22650103,commune,2265,Commune de Guercif,جماعة جرسيف,Commune hors cercle,80703,18585
+MA,22650501,commune,2265,Commune d'Assebbab,جماعة الصباب,Commune rattachée à un cercle,7144,1382
+MA,22650503,commune,2265,Commune de Barkine,جماعة بركين,Commune rattachée à un cercle,6839,1419
+MA,22650505,commune,2265,Commune de Houara Oulad Raho,جماعة هوارة أولاد رحو,Commune rattachée à un cercle,39947,8400
+MA,22650507,commune,2265,Commune de Lamrija,جماعة لمريجة,Commune rattachée à un cercle,14457,3013
+MA,22650515,commune,2265,Commune de Saka,جماعة صاكة,Commune rattachée à un cercle,20857,4381
+MA,22650709,commune,2265,Commune de Mazguitam,جماعة مزكيتام,Commune rattachée à un cercle,6141,1479
+MA,22650711,commune,2265,Commune d'Oulad Bourima,جماعة اولاد بوريمة,Commune rattachée à un cercle,1117,266
+MA,22650713,commune,2265,Commune de Ras Laksar,جماعة راس القصر,Commune rattachée à un cercle,12092,2712
+MA,22650717,commune,2265,Commune de Taddart,جماعة تادرت,Commune rattachée à un cercle,26540,5901
+MA,2275,province,2,Province de Jerada,إقليم جرادة,Province,103527,23833
+MA,22750103,commune,2275,Commune d'Ain Bni Mathar,جماعة عين بني مطهر,Commune hors cercle,15488,3605
+MA,22750117,commune,2275,Commune de Jerada,جماعة جرادة,Commune hors cercle,41014,10141
+MA,22750135,commune,2275,Commune de Touissit,جماعة تويسيت,Commune hors cercle,3066,808
+MA,22750501,commune,2275,Commune de Bni Mathar,جماعة بني مطهر,Commune rattachée à un cercle,10887,2223
+MA,22750511,commune,2275,Commune de Mrija,جماعة مريجة,Commune rattachée à un cercle,2882,563
+MA,22750513,commune,2275,Commune d'Ouled Ghziyel,جماعة أولاد غزييل,Commune rattachée à un cercle,4656,856
+MA,22750515,commune,2275,Commune d'Ouled Sidi Abdelhakem,جماعة أولاد سيدي عبد الحاكم,Commune rattachée à un cercle,1276,254
+MA,22750703,commune,2275,Commune de Gafait,جماعة كفايت,Commune rattachée à un cercle,2604,621
+MA,22750707,commune,2275,Commune de Laaouinate,جماعة لعوينات,Commune rattachée à un cercle,5467,930
+MA,22750709,commune,2275,Commune de Lebkhata,جماعة لبخاتة,Commune rattachée à un cercle,2541,592
+MA,22750905,commune,2275,Commune de Guenfouda,جماعة كنفودة,Commune rattachée à un cercle,5712,1359
+MA,22750913,commune,2275,Commune de Ras Asfour,جماعة راس عصفور,Commune rattachée à un cercle,1275,312
+MA,22750915,commune,2275,Commune de Sidi Boubker,جماعة سيدي بوبكر,Commune rattachée à un cercle,2354,594
+MA,22750921,commune,2275,Commune de Tiouli,جماعة تيولي,Commune rattachée à un cercle,4305,975
+MA,2381,province,2,Province de Nador,إقليم الناضور,Province,565987,146090
+MA,23810101,commune,2381,Commune d'Al Aaroui,جماعة العروي,Commune hors cercle,46540,11844
+MA,23810103,commune,2381,Commune de Bni Ansar,جماعة بني انصار,Commune hors cercle,50508,13404
+MA,23810105,commune,2381,Commune de Nador,جماعة الناضور,Commune hors cercle,158202,43049
+MA,23810107,commune,2381,Commune de Zaio,جماعة زايو,Commune hors cercle,36766,9646
+MA,23810109,commune,2381,Commune de Zeghanghane,جماعة ازغنغان,Commune hors cercle,31431,8355
+MA,23810115,commune,2381,Commune de Ras-El-Ma,جماعة رأس الماء,Commune hors cercle,7527,2077
+MA,23810119,commune,2381,Commune de Selouane,جماعة سلوان,Commune hors cercle,29628,7568
+MA,23810501,commune,2381,Commune de Bni Bouifrour,جماعة بني بويفرور,Commune rattachée à un cercle,6846,1683
+MA,23810503,commune,2381,Commune de Bni Chiker,جماعة بني شيكر,Commune rattachée à un cercle,22763,5845
+MA,23810505,commune,2381,Commune de Bni Sidel Jbel,جماعة بني سيدال الجبل,Commune rattachée à un cercle,8199,2136
+MA,23810507,commune,2381,Commune de Bni Sidel Louta,جماعة بني سيدال لوطا,Commune rattachée à un cercle,5366,1387
+MA,23810509,commune,2381,Commune de Bouarg,جماعة بوعرك,Commune rattachée à un cercle,44626,10534
+MA,23810513,commune,2381,Commune d'Iaazzanene,جماعة إيعزانن,Commune rattachée à un cercle,12706,2925
+MA,23810515,commune,2381,Commune d'Ihaddadene,جماعة إيحدادن,Commune rattachée à un cercle,15667,3892
+MA,23810517,commune,2381,Commune d'Iksane,جماعة إيكسان,Commune rattachée à un cercle,7731,1967
+MA,23810701,commune,2381,Commune d'Afsou,جماعة افسو,Commune rattachée à un cercle,2020,457
+MA,23810703,commune,2381,Commune d'Al Barkanyene,جماعة البركانيين,Commune rattachée à un cercle,2278,632
+MA,23810705,commune,2381,Commune d'Arekmane,جماعة أركمان,Commune rattachée à un cercle,16477,4424
+MA,23810707,commune,2381,Commune de Bni Oukil Oulad M'hand,جماعة بني وكيل أولاد محاند,Commune rattachée à un cercle,14691,3302
+MA,23810709,commune,2381,Commune de Hassi-Berkane,جماعة حاسي بركان,Commune rattachée à un cercle,7465,1713
+MA,23810711,commune,2381,Commune d'Oulad Daoud Zkhanine,جماعة أولاد داوود ازخانين,Commune rattachée à un cercle,3149,909
+MA,23810713,commune,2381,Commune d'Oulad Settout,جماعة أولاد ستوت,Commune rattachée à un cercle,26052,5981
+MA,23810717,commune,2381,Commune de Tiztoutine,جماعة تزطوطين,Commune rattachée à un cercle,9349,2360
+MA,2411,province,2,Préfecture d'Oujda-Angad,عمالة وجدة-أنجاد,Préfecture,572454,148929
+MA,24110111,commune,2411,Commune de Bni Drar,جماعة بني درار,Commune hors cercle,10907,2595
+MA,24110119,commune,2411,Commune de Naima,جماعة النعيمة,Commune hors cercle,1019,257
+MA,24110123,commune,2411,Commune d'Oujda,جماعة وجدة,Commune hors cercle,506224,134330
+MA,24110301,commune,2411,Commune d'Ahl Angad,جماعة أهل انكاد,Commune rattachée à un cercle,18051,4292
+MA,24110303,commune,2411,Commune d'Ain Sfa,جماعة عين الصفا,Commune rattachée à un cercle,4426,1039
+MA,24110305,commune,2411,Commune de Bni Khaled,جماعة بني خالد,Commune rattachée à un cercle,6239,1456
+MA,24110307,commune,2411,Commune de Bsara,جماعة لبصارة,Commune rattachée à un cercle,1335,325
+MA,24110509,commune,2411,Commune d'Isly,جماعة إسلي,Commune rattachée à un cercle,10256,1831
+MA,24110511,commune,2411,Commune de Mestferki,جماعة مستفركي,Commune rattachée à un cercle,4335,1023
+MA,24110517,commune,2411,Commune de Sidi Boulenouar,جماعة سيدي بولنوار,Commune rattachée à un cercle,3600,776
+MA,24110519,commune,2411,Commune de Sidi Moussa Lemhaya,جماعة سيدي موسى-لمهاية,Commune rattachée à un cercle,6062,1005
+MA,2533,province,2,Province de Taourirt,إقليم تاوريرت,Province,220157,50028
+MA,25330113,commune,2533,Commune de Debdou,جماعة دبدو,Commune hors cercle,4447,1128
+MA,25330115,commune,2533,Commune d'El Aioun Sidi Mellouk,جماعة العيون-سيدي ملوك,Commune hors cercle,40652,9657
+MA,25330133,commune,2533,Commune de Taourirt,جماعة تاوريرت,Commune hors cercle,100402,23633
+MA,25330305,commune,2533,Commune d'El Atef,جماعة العاطف,Commune rattachée à un cercle,933,183
+MA,25330315,commune,2533,Commune d'Ouled M'hamed,جماعة أولاد امحمد,Commune rattachée à un cercle,2316,416
+MA,25330317,commune,2533,Commune de Sidi Ali Bel Quassem,جماعة سيدي علي بلقاسم,Commune rattachée à un cercle,13951,2660
+MA,25330319,commune,2533,Commune de Sidi Lahsen,جماعة سيدي لحسن,Commune rattachée à un cercle,6779,1386
+MA,25330703,commune,2533,Commune d'Ain Lehjer,جماعة عين الحجر,Commune rattachée à un cercle,7692,1751
+MA,25330709,commune,2533,Commune de Mechraa Hammadi,جماعة مشرع حمادي,Commune rattachée à un cercle,4343,1065
+MA,25330713,commune,2533,Commune de Mestegmer,جماعة مستكمر,Commune rattachée à un cercle,5295,1245
+MA,25330721,commune,2533,Commune de Tancherfi,جماعة تنشرفي,Commune rattachée à un cercle,6092,1320
+MA,25330901,commune,2533,Commune d'Ahl Oued Za,جماعة أهل وادزا,Commune rattachée à un cercle,11024,2166
+MA,25330907,commune,2533,Commune de Gteter,جماعة كطيطير,Commune rattachée à un cercle,8222,1632
+MA,25330911,commune,2533,Commune de Melg El Ouidane,جماعة ملك الويدان,Commune rattachée à un cercle,8009,1786
+MA,3,region,,Région de Fès-Meknès,جهة فاس-مكناس,Région,4467911,1135717
+MA,3061,province,3,Préfecture de Meknès,عمالة مكناس,Préfecture,942945,248296
+MA,30610101,commune,3061,Commune de Meknès,جماعة مكناس,Commune hors cercle,551503,154528
+MA,30610103,commune,3061,Commune d'Al Machouar-Stinia,جماعة مشور استينية,Commune hors cercle,5009,1065
+MA,30610105,commune,3061,Commune de Boufakrane,جماعة بوفكران,Commune hors cercle,16892,4093
+MA,30610107,commune,3061,Commune de Toulal,جماعة تولال,Commune hors cercle,26970,7215
+MA,30610109,commune,3061,Commune de My Idriss Zerhoun,جماعة مولاي إدريس زرهون,Commune hors cercle,10038,2947
+MA,30610111,commune,3061,Commune d'Ouislane,جماعة ويسلان,Commune hors cercle,112180,27967
+MA,30610301,commune,3061,Commune d'Ain Jemaa,جماعة عين الجمعة,Commune rattachée à un cercle,14557,2918
+MA,30610302,commune,3061,Commune d'Ain Karma-Oued Rommane,جماعة عين كرمة-واد الرمان,Commune rattachée à un cercle,13986,3254
+MA,30610305,commune,3061,Commune d'Ain Orma,جماعة عين عرمة,Commune rattachée à un cercle,3341,889
+MA,30610307,commune,3061,Commune d'Ait Ouallal,جماعة آيت ولال,Commune rattachée à un cercle,19079,5047
+MA,30610309,commune,3061,Commune de Dar Oum Soltane,جماعة دار أم السلطان,Commune rattachée à un cercle,11609,1496
+MA,30610501,commune,3061,Commune de Dkhissa,جماعة الدخيسة,Commune rattachée à un cercle,28296,6574
+MA,30610503,commune,3061,Commune de Majjate,جماعة مجاط,Commune rattachée à un cercle,20698,4909
+MA,30610505,commune,3061,Commune de M'haya,جماعة المهاية,Commune rattachée à un cercle,30060,6424
+MA,30610507,commune,3061,Commune d'Oued Jdida,جماعة واد الجديدة,Commune rattachée à un cercle,16379,3736
+MA,30610509,commune,3061,Commune de Sidi Slimane Moul Al Kifane,جماعة سيدي سليمان مول الكيفان,Commune rattachée à un cercle,20427,5016
+MA,30610701,commune,3061,Commune de Charqaoua,جماعة شرقاوة,Commune rattachée à un cercle,4727,1141
+MA,30610705,commune,3061,Commune de Mrhassiyine,جماعة المغاصيين,Commune rattachée à un cercle,8355,2175
+MA,30610707,commune,3061,Commune de N'zalat Bni Amar,جماعة نزالة بني عمار,Commune rattachée à un cercle,7672,2062
+MA,30610709,commune,3061,Commune d'Oualili,جماعة وليلي,Commune rattachée à un cercle,9009,2366
+MA,30610711,commune,3061,Commune de Sidi Abdellah Al Khayat,جماعة سيدي عبد الله الخياط,Commune rattachée à un cercle,12158,2474
+MA,3131,province,3,Province de Boulemane,إقليم بولمان,Province,205411,48509
+MA,31310101,commune,3131,Commune de Boulemane,جماعة بولمان,Commune hors cercle,6761,1947
+MA,31310102,commune,3131,Commune d'Imouzzer Marmoucha,جماعة إيموزار مرموشة,Commune hors cercle,4676,1355
+MA,31310103,commune,3131,Commune de Missour,جماعة ميسور,Commune hors cercle,28408,7162
+MA,31310105,commune,3131,Commune d'Outat El Haj,جماعة أوطاط الحاج,Commune hors cercle,20673,4533
+MA,31310309,commune,3131,Commune d'Enjil,جماعة انجيل,Commune rattachée à un cercle,7984,2146
+MA,31310311,commune,3131,Commune de Guigou,جماعة كيكو,Commune rattachée à un cercle,24677,5968
+MA,31310315,commune,3131,Commune de Skoura M'daz,جماعة سكورة-مداز,Commune rattachée à un cercle,8297,2471
+MA,31310501,commune,3131,Commune de Ksabi-Moulouya,جماعة القصابي-ملوية,Commune rattachée à un cercle,10471,2507
+MA,31310503,commune,3131,Commune d'Ouizeght,جماعة ويزغت,Commune rattachée à un cercle,5430,1212
+MA,31310505,commune,3131,Commune de Sidi Boutayeb,جماعة سيدي بوطيب,Commune rattachée à un cercle,9969,2348
+MA,31310701,commune,3131,Commune d'El Orjane,جماعة العرجان,Commune rattachée à un cercle,7706,1608
+MA,31310703,commune,3131,Commune d'Ermila,جماعة الرميلة,Commune rattachée à un cercle,8333,1765
+MA,31310705,commune,3131,Commune de Fritissa,جماعة افريطيسة,Commune rattachée à un cercle,29594,5726
+MA,31310707,commune,3131,Commune d'Oulad Ali Youssef,جماعة أولاد علي يوسف,Commune rattachée à un cercle,3279,740
+MA,31310709,commune,3131,Commune de Tissaf,جماعة تيساف,Commune rattachée à un cercle,11615,2270
+MA,31310901,commune,3131,Commune d'Ait Bazza,جماعة آيت بازة,Commune rattachée à un cercle,2397,637
+MA,31310903,commune,3131,Commune d'Ait El Mane,جماعة آيت المان,Commune rattachée à un cercle,1694,486
+MA,31310905,commune,3131,Commune d'Almis Marmoucha,جماعة الميس مرموشة,Commune rattachée à un cercle,2292,560
+MA,31310907,commune,3131,Commune d'El Mers,جماعة المرس,Commune rattachée à un cercle,4887,1360
+MA,31310913,commune,3131,Commune de Serghina,جماعة سرغينة,Commune rattachée à un cercle,3567,1040
+MA,31310917,commune,3131,Commune de Talzemt,جماعة تالزمت,Commune rattachée à un cercle,2701,668
+MA,3171,province,3,Province d'El Hajeb,إقليم الحاجب,Province,267156,66258
+MA,31710101,commune,3171,Commune d'Agourai,جماعة أكوراي,Commune hors cercle,19158,4819
+MA,31710103,commune,3171,Commune d'Ain Taoujdate,جماعة عين تاوجطات,Commune hors cercle,33055,8342
+MA,31710105,commune,3171,Commune d'El Hajeb,جماعة الحاجب,Commune hors cercle,41359,11069
+MA,31710107,commune,3171,Commune de Sabaa Aiyoun,جماعة سبع عيون,Commune hors cercle,28736,6926
+MA,31710301,commune,3171,Commune d'Ait Ouikhalfen,جماعة آيت ويخلفن,Commune rattachée à un cercle,3261,856
+MA,31710303,commune,3171,Commune d'Ait Yaazem,جماعة آيت يعزم,Commune rattachée à un cercle,16912,4239
+MA,31710305,commune,3171,Commune de Jahjouh,جماعة جحجوح,Commune rattachée à un cercle,7867,1967
+MA,31710307,commune,3171,Commune de Ras Ijerri,جماعة راس إيجيري,Commune rattachée à un cercle,6707,1744
+MA,31710309,commune,3171,Commune de Tamchachate,جماعة تامشاشاط,Commune rattachée à un cercle,3562,806
+MA,31710501,commune,3171,Commune d'Ait Boubidmane,جماعة آيت بوبيدمان,Commune rattachée à un cercle,22780,5674
+MA,31710503,commune,3171,Commune d'Ait Harz Allah,جماعة آيت حرز الله,Commune rattachée à un cercle,13604,3260
+MA,31710505,commune,3171,Commune de Bitit,جماعة بطيط,Commune rattachée à un cercle,15241,3664
+MA,31710507,commune,3171,Commune de Laqsir,جماعة لقصير,Commune rattachée à un cercle,32377,7632
+MA,31710701,commune,3171,Commune d'Ait Bourzouine,جماعة آيت بورزوين,Commune rattachée à un cercle,7906,1785
+MA,31710703,commune,3171,Commune d'Ait Naamane,جماعة آيت نعمان,Commune rattachée à un cercle,5857,1348
+MA,31710705,commune,3171,Commune d'Iqaddar,جماعة إقدار,Commune rattachée à un cercle,8774,2127
+MA,3231,province,3,Préfecture de Fès,عمالة فاس,Préfecture,1256172,329286
+MA,3231010,commune,3231,Commune de Fès,جماعة فاس,Commune hors cercle,1167842,307322
+MA,32310101,arrondissement,3231010,Arrondissement d'Agdal,مقاطعة أكدال,Arrondissement,128030,39373
+MA,32310103,commune,3231,Commune de Méchouar-Fès-El Jadid,جماعة المشور فاس الجديد,Commune hors cercle,15121,4503
+MA,32310105,arrondissement,3231010,Arrondissement de Saiss,مقاطعة سايس,Arrondissement,237242,64927
+MA,32310107,arrondissement,3231010,Arrondissement de Fès-Médina,مقاطعة فاس المدينة,Arrondissement,49775,13730
+MA,32310109,arrondissement,3231010,Arrondissement de Jnan El Ouard,مقاطعة جنان الورد,Arrondissement,187737,45619
+MA,32310111,arrondissement,3231010,Arrondissement d'El Mariniyine,مقاطعة المرينيين,Arrondissement,206427,54509
+MA,32310113,arrondissement,3231010,Arrondissement de Zouagha,مقاطعة زواغة,Arrondissement,358631,89164
+MA,32310115,commune,3231,Commune d'Oulad Tayeb,جماعة أولاد الطيب,Commune hors cercle,56352,13554
+MA,32318103,commune,3231,Commune d'Ain Bida,جماعة عين البيضاء,Commune rattachée à un cercle,11109,2457
+MA,32318105,commune,3231,Commune de Sidi Harazem,جماعة سيدي حرازم,Commune rattachée à un cercle,5748,1450
+MA,3271,province,3,Province d'Ifrane,إقليم إفران,Province,160904,42684
+MA,32710101,commune,3271,Commune d'Azrou,جماعة أزرو,Commune hors cercle,57657,16228
+MA,32710103,commune,3271,Commune d'Ifrane,جماعة إفران,Commune hors cercle,13964,3814
+MA,32710105,commune,3271,Commune de Dayat-Aoua,جماعة ضاية عوا,Commune hors cercle,12050,2818
+MA,32710107,commune,3271,Commune de Tizguite,جماعة تزكيت,Commune hors cercle,12204,2763
+MA,32710301,commune,3271,Commune d'Ain Leuh,جماعة عين اللوح,Commune rattachée à un cercle,8989,2731
+MA,32710303,commune,3271,Commune de Ben Smim,جماعة بن صميم,Commune rattachée à un cercle,7676,1698
+MA,32710305,commune,3271,Commune d'Oued Ifrane,جماعة واد إفران,Commune rattachée à un cercle,10267,2821
+MA,32710307,commune,3271,Commune de Sidi El Makhfi,جماعة سيدي المخفي,Commune rattachée à un cercle,16441,4264
+MA,32710309,commune,3271,Commune de Tigrigra,جماعة تكريكرة,Commune rattachée à un cercle,10085,2543
+MA,32710311,commune,3271,Commune de Timahdite,جماعة تمحضيت,Commune rattachée à un cercle,11571,3004
+MA,3451,province,3,Province de Sefrou,إقليم صفرو,Province,304748,81262
+MA,34510101,commune,3451,Commune de Bhalil,جماعة البهاليل,Commune hors cercle,13727,3982
+MA,34510103,commune,3451,Commune d'El Menzel,جماعة المنزل,Commune hors cercle,11400,3241
+MA,34510105,commune,3451,Commune d'Immouzzer-Kandar,جماعة إيموزار كندر,Commune hors cercle,21943,5942
+MA,34510107,commune,3451,Commune de Ribate El Kheir,جماعة رباط الخير,Commune hors cercle,18469,4958
+MA,34510109,commune,3451,Commune de Sefrou,جماعة صفرو,Commune hors cercle,86903,24625
+MA,34510301,commune,3451,Commune d'Adrej,جماعة أدرج,Commune rattachée à un cercle,1216,374
+MA,34510303,commune,3451,Commune d'Ain Timguenai,جماعة عين تمكناي,Commune rattachée à un cercle,6598,1750
+MA,34510305,commune,3451,Commune de Bir Tam-Tam,جماعة بئر طم طم,Commune rattachée à un cercle,8954,2426
+MA,34510307,commune,3451,Commune de Dar El Hamra,جماعة دار الحمراء,Commune rattachée à un cercle,3540,1026
+MA,34510309,commune,3451,Commune d'Irhzrane,جماعة إغزران,Commune rattachée à un cercle,8498,2271
+MA,34510311,commune,3451,Commune de Mtarnagha,جماعة امطرناغة,Commune rattachée à un cercle,4056,1110
+MA,34510313,commune,3451,Commune d'Oulad Mkoudou,جماعة أولاد امكودو,Commune rattachée à un cercle,5872,1658
+MA,34510315,commune,3451,Commune de Ras Tabouda,جماعة راس تابودة,Commune rattachée à un cercle,6022,1629
+MA,34510317,commune,3451,Commune de Tafajight,جماعة تافجيغت,Commune rattachée à un cercle,1397,326
+MA,34510501,commune,3451,Commune d'Ain Cheggag,جماعة عين الشكاك,Commune rattachée à un cercle,28584,6769
+MA,34510503,commune,3451,Commune d'Ait Sebaa Lajrouf,جماعة آيت السبع لجروف,Commune rattachée à un cercle,18701,4603
+MA,34510701,commune,3451,Commune d'Aghbalou Aqorar,جماعة اغبالو أقورار,Commune rattachée à un cercle,9920,2451
+MA,34510703,commune,3451,Commune d'Ahl Sidi Lahcen,جماعة أهل سيدي لحسن,Commune rattachée à un cercle,3566,964
+MA,34510705,commune,3451,Commune d'Azzaba,جماعة عزابة,Commune rattachée à un cercle,6128,1623
+MA,34510707,commune,3451,Commune de Kandar Sidi Khiar,جماعة كندر سيدي اخيار,Commune rattachée à un cercle,10417,2303
+MA,34510709,commune,3451,Commune de Laanoussar,جماعة العنوصر,Commune rattachée à un cercle,9285,2195
+MA,34510711,commune,3451,Commune de Sidi Youssef Ben Ahmed,جماعة سيدي يوسف بن احمد,Commune rattachée à un cercle,13748,3513
+MA,34510713,commune,3451,Commune de Tazouta,جماعة تازوطة,Commune rattachée à un cercle,5804,1523
+MA,3531,province,3,Province de Taounate,إقليم تاونات,Province,612650,147051
+MA,35310101,commune,3531,Commune de Rhafsai,جماعة غفساي,Commune hors cercle,7117,1894
+MA,35310103,commune,3531,Commune de Karia Ba Mohamed,جماعة قرية با محمد,Commune hors cercle,20859,5112
+MA,35310105,commune,3531,Commune de Taounate,جماعة تاونات,Commune hors cercle,39114,10078
+MA,35310107,commune,3531,Commune de Thar Es-Souk,جماعة طهر السوق,Commune hors cercle,5218,1406
+MA,35310109,commune,3531,Commune de Tissa,جماعة تيسة,Commune hors cercle,12096,2783
+MA,35310301,commune,3531,Commune d'El Bibane,جماعة البيبان,Commune rattachée à un cercle,5853,1623
+MA,35310303,commune,3531,Commune de Galaz,جماعة كلاز,Commune rattachée à un cercle,15201,4132
+MA,35310305,commune,3531,Commune de Kissane,جماعة كيسان,Commune rattachée à un cercle,11763,3260
+MA,35310307,commune,3531,Commune d'Oudka,جماعة ودكة,Commune rattachée à un cercle,7380,2103
+MA,35310309,commune,3531,Commune d'Ourtzarh,جماعة أورتزاغ,Commune rattachée à un cercle,13256,3635
+MA,35310311,commune,3531,Commune de Ratba,جماعة الرتبة,Commune rattachée à un cercle,14944,3848
+MA,35310313,commune,3531,Commune de Sidi Haj M'hamed,جماعة سيدي الحاج امحمد,Commune rattachée à un cercle,7880,2147
+MA,35310315,commune,3531,Commune de Sidi Mokhfi,جماعة سيدي المخفي,Commune rattachée à un cercle,7915,1947
+MA,35310317,commune,3531,Commune de Sidi Yahia Bni Zeroual,جماعة سيدي يحيى بني زروال,Commune rattachée à un cercle,14284,3654
+MA,35310319,commune,3531,Commune de Tabouda,جماعة تبودة,Commune rattachée à un cercle,13635,3422
+MA,35310321,commune,3531,Commune de Tafrant,جماعة تافرانت,Commune rattachée à un cercle,13217,3387
+MA,35310323,commune,3531,Commune de Timezgana,جماعة تمزكانة,Commune rattachée à un cercle,15191,3644
+MA,35310501,commune,3531,Commune de Bni Snous,جماعة بني سنوس,Commune rattachée à un cercle,8479,1896
+MA,35310503,commune,3531,Commune de Bouchabel,جماعة بوشابل,Commune rattachée à un cercle,13767,3028
+MA,35310505,commune,3531,Commune de Rhouazi,جماعة الغوازي,Commune rattachée à un cercle,16405,3669
+MA,35310507,commune,3531,Commune de Jbabra,جماعة اجبابرة,Commune rattachée à un cercle,15904,3294
+MA,35310509,commune,3531,Commune de Loulja,جماعة الولجة,Commune rattachée à un cercle,13679,2904
+MA,35310511,commune,3531,Commune de Mkansa,جماعة المكانسة,Commune rattachée à un cercle,23690,4942
+MA,35310513,commune,3531,Commune de Moulay Abdelkrim,جماعة مولاي عبد الكريم,Commune rattachée à un cercle,6557,1556
+MA,35310515,commune,3531,Commune de Moulay Bouchta,جماعة مولاي بوشتى,Commune rattachée à un cercle,12554,3133
+MA,35310517,commune,3531,Commune de Sidi El Abed,جماعة سيدي العابد,Commune rattachée à un cercle,11240,2096
+MA,35310701,commune,3531,Commune d'Ain Mediouna,جماعة عين مديونة,Commune rattachée à un cercle,15115,3779
+MA,35310703,commune,3531,Commune de Bni Oulid,جماعة بني وليد,Commune rattachée à un cercle,8967,2525
+MA,35310705,commune,3531,Commune de Bni Ounjel Tafraout,جماعة بني ونجل تافراوت,Commune rattachée à un cercle,5993,1456
+MA,35310707,commune,3531,Commune de Bouadel,جماعة بوعادل,Commune rattachée à un cercle,11564,2957
+MA,35310709,commune,3531,Commune de Bouhouda,جماعة بوهودة,Commune rattachée à un cercle,24823,5746
+MA,35310711,commune,3531,Commune de Fennassa Bab El Hit,جماعة فناسة باب الحيط,Commune rattachée à un cercle,10285,2538
+MA,35310713,commune,3531,Commune de Khlalfa,جماعة الخلالفة,Commune rattachée à un cercle,14340,3584
+MA,35310715,commune,3531,Commune de Mezraoua,جماعة مزراوة,Commune rattachée à un cercle,7712,1921
+MA,35310717,commune,3531,Commune de Rghioua,جماعة ارغيوة,Commune rattachée à un cercle,3666,1130
+MA,35310719,commune,3531,Commune de Tamedit,جماعة تمضيت,Commune rattachée à un cercle,12252,3124
+MA,35310721,commune,3531,Commune de Zrizer,جماعة الزريزر,Commune rattachée à un cercle,7539,2106
+MA,35310901,commune,3531,Commune d'Ain Aicha,جماعة عين عائشة,Commune rattachée à un cercle,24723,5192
+MA,35310903,commune,3531,Commune d'Ain Legdah,جماعة عين لكدح,Commune rattachée à un cercle,10598,2601
+MA,35310905,commune,3531,Commune d'Ain Maatouf,جماعة عين معطوف,Commune rattachée à un cercle,8639,2178
+MA,35310907,commune,3531,Commune de Bouarouss,جماعة بوعروس,Commune rattachée à un cercle,16329,3596
+MA,35310909,commune,3531,Commune d'El Bsabsa,جماعة البسابسا,Commune rattachée à un cercle,7485,1608
+MA,35310911,commune,3531,Commune de Messassa,جماعة مساسة,Commune rattachée à un cercle,8195,1750
+MA,35310913,commune,3531,Commune d'Oued Jemaa,جماعة واد الجمعة,Commune rattachée à un cercle,7825,1698
+MA,35310915,commune,3531,Commune d'Oulad Ayyad,جماعة أولاد عياد,Commune rattachée à un cercle,9763,2186
+MA,35310917,commune,3531,Commune d'Oulad Daoud,جماعة أولاد داود,Commune rattachée à un cercle,10800,2391
+MA,35310919,commune,3531,Commune d'Outabouabane,جماعة أوطا بوعبان,Commune rattachée à un cercle,8560,1912
+MA,35310921,commune,3531,Commune de Ras El Oued,جماعة راس الواد,Commune rattachée à un cercle,13299,2995
+MA,35310923,commune,3531,Commune de Sidi M'hamed Ben Lahcen,جماعة سيدي امحمد بن لحسن,Commune rattachée à un cercle,16980,3485
+MA,3561,province,3,Province de Taza,إقليم تازة,Province,500971,126023
+MA,35610101,commune,3561,Commune d'Aknoul,جماعة أكنول,Commune hors cercle,4410,1208
+MA,35610105,commune,3561,Commune d'Ouad Amlil,جماعة واد امليل,Commune hors cercle,10929,2544
+MA,35610107,commune,3561,Commune de Tahla,جماعة تاهلة,Commune hors cercle,28612,7619
+MA,35610111,commune,3561,Commune de Taza,جماعة تازة,Commune hors cercle,150763,40727
+MA,35610301,commune,3561,Commune d'Ajdir,جماعة أجدير,Commune rattachée à un cercle,8640,2288
+MA,35610303,commune,3561,Commune de Bourd,جماعة بورد,Commune rattachée à un cercle,6996,1770
+MA,35610305,commune,3561,Commune de Gzenaya Al Janoubia,جماعة اكزناية الجنوبية,Commune rattachée à un cercle,8125,2081
+MA,35610307,commune,3561,Commune de Jbarna,جماعة اجبارنة,Commune rattachée à un cercle,2328,640
+MA,35610309,commune,3561,Commune de Sidi Ali Bourakba,جماعة سيدي علي بورقبة,Commune rattachée à un cercle,6280,1698
+MA,35610311,commune,3561,Commune de Tizi Ouasli,جماعة تيزي وسلي,Commune rattachée à un cercle,5436,1490
+MA,35610701,commune,3561,Commune de Bni Frassen,جماعة بني فراسن,Commune rattachée à un cercle,19873,4668
+MA,35610703,commune,3561,Commune de Bouchfaa,جماعة بوشفاعة,Commune rattachée à un cercle,10093,2396
+MA,35610705,commune,3561,Commune de Bouhlou,جماعة بوحلو,Commune rattachée à un cercle,8510,2007
+MA,35610707,commune,3561,Commune de Ghiata Al Gharbia,جماعة غياثة الغربية,Commune rattachée à un cercle,22437,4703
+MA,35610709,commune,3561,Commune d'Oulad Zbair,جماعة أولاد ازباير,Commune rattachée à un cercle,17562,3716
+MA,35610711,commune,3561,Commune de Rbaa El Fouki,جماعة الربع الفوقي,Commune rattachée à un cercle,6156,1352
+MA,35610901,commune,3561,Commune d'Ait Saghrouchen,جماعة آيت سغروشن,Commune rattachée à un cercle,15147,4098
+MA,35610903,commune,3561,Commune de Bouyablane,جماعة بويبلان,Commune rattachée à un cercle,1667,363
+MA,35610907,commune,3561,Commune de Matmata,جماعة مطماطة,Commune rattachée à un cercle,11665,2942
+MA,35610909,commune,3561,Commune de Smia,جماعة الصميعة,Commune rattachée à un cercle,7385,1893
+MA,35610911,commune,3561,Commune de Tazarine,جماعة تازارين,Commune rattachée à un cercle,2030,576
+MA,35610913,commune,3561,Commune de Zrarda,جماعة الزراردة,Commune rattachée à un cercle,9343,2512
+MA,35611101,commune,3561,Commune de Bni Ftah,جماعة بني افتح,Commune rattachée à un cercle,9632,2363
+MA,35611103,commune,3561,Commune de Brarha,جماعة برارحة,Commune rattachée à un cercle,6625,1462
+MA,35611105,commune,3561,Commune d'El Gouzate,جماعة الكوزات,Commune rattachée à un cercle,5942,1462
+MA,35611107,commune,3561,Commune de Kaf El Ghar,جماعة كاف الغار,Commune rattachée à un cercle,7060,1846
+MA,35611109,commune,3561,Commune de Msila,جماعة امسيلة,Commune rattachée à un cercle,7800,1957
+MA,35611111,commune,3561,Commune de Taifa,جماعة الطايفة,Commune rattachée à un cercle,6000,1527
+MA,35611113,commune,3561,Commune de Tainaste,جماعة تيناست,Commune rattachée à un cercle,10411,2532
+MA,35611115,commune,3561,Commune de Traiba,جماعة اترايبة,Commune rattachée à un cercle,5773,1494
+MA,35611301,commune,3561,Commune de Bab Boudir,جماعة باب بودر,Commune rattachée à un cercle,4209,1013
+MA,35611303,commune,3561,Commune de Bab Marzouka,جماعة باب مرزوقة,Commune rattachée à un cercle,17323,3995
+MA,35611305,commune,3561,Commune de Bni Lent,جماعة بني لنث,Commune rattachée à un cercle,10801,2638
+MA,35611307,commune,3561,Commune de Galdamane,جماعة كلدمان,Commune rattachée à un cercle,21732,4840
+MA,35611309,commune,3561,Commune de Meknassa Acharqia,جماعة مكناسة الشرقية,Commune rattachée à un cercle,5197,1288
+MA,35611311,commune,3561,Commune de Meknassa Al Gharbia,جماعة مكناسة الغربية,Commune rattachée à un cercle,3422,832
+MA,35611313,commune,3561,Commune d'Oulad Chrif,جماعة أولاد الشريف,Commune rattachée à un cercle,7882,1819
+MA,35611315,commune,3561,Commune de Maghraoua,جماعة مغراوة,Commune rattachée à un cercle,6775,1664
+MA,3591,province,3,Province de Moulay Yacoub,إقليم مولاي يعقوب,Province,216954,46348
+MA,35910101,commune,3591,Commune de Moulay Yacoub,جماعة مولاي يعقوب,Commune hors cercle,4545,1114
+MA,35910103,commune,3591,Commune d'Ain Chkef,جماعة عين الشقف,Commune hors cercle,91541,19657
+MA,35910303,commune,3591,Commune de Mikkes,جماعة ميكس,Commune rattachée à un cercle,6145,1305
+MA,35910305,commune,3591,Commune de Sebaa Rouadi,جماعة سبع رواضي,Commune rattachée à un cercle,26750,5783
+MA,35910307,commune,3591,Commune de Sebt Loudaya,جماعة سبت الأوداية,Commune rattachée à un cercle,11984,2333
+MA,35910501,commune,3591,Commune d'Ain Bou Ali,جماعة عين بوعلي,Commune rattachée à un cercle,12354,2639
+MA,35910502,commune,3591,Commune d'Ain Kansara,جماعة عين قنصرة,Commune rattachée à un cercle,14910,3277
+MA,35910503,commune,3591,Commune de Laajajra,جماعة لعجاجرة,Commune rattachée à un cercle,14715,2985
+MA,35910505,commune,3591,Commune de Louadaine,جماعة الوادين,Commune rattachée à un cercle,11523,2515
+MA,35910507,commune,3591,Commune d'Oulad Mimoun,جماعة أولاد ميمون,Commune rattachée à un cercle,9399,2054
+MA,35910509,commune,3591,Commune de Sidi Daoud,جماعة سيدي داود,Commune rattachée à un cercle,13088,2686
+MA,4,region,,Région de Rabat-Salé-Kénitra,جهة الرباط-سلا-القنيطرة,Région,5132639,1301492
+MA,4281,province,4,Province de Kénitra,إقليم القنيطرة,Province,1284247,300046
+MA,42810101,commune,4281,Commune de Kénitra,جماعة القنيطرة,Commune hors cercle,507736,138708
+MA,42810105,commune,4281,Commune de Mehdya,جماعة مهدية,Commune hors cercle,58558,16071
+MA,42810111,commune,4281,Commune de Souk El Arbaa,جماعة سوق الأربعاء,Commune hors cercle,70894,16401
+MA,42810113,commune,4281,Commune de Sidi Taibi,جماعة سيدي الطيبي,Commune hors cercle,76227,18599
+MA,42810301,commune,4281,Commune d'Ameur Seflia,جماعة عامر السفلية,Commune rattachée à un cercle,37935,7486
+MA,42810305,commune,4281,Commune de Haddada,جماعة الحدادة,Commune rattachée à un cercle,22652,4694
+MA,42810311,commune,4281,Commune d'Ouled Slama,جماعة أولاد سلامة,Commune rattachée à un cercle,23848,4664
+MA,42810503,commune,4281,Commune de Ben Mansour,جماعة بنمنصور,Commune rattachée à un cercle,53545,9027
+MA,42810507,commune,4281,Commune de Mnasra,جماعة المناصرة,Commune rattachée à un cercle,41434,7731
+MA,42810509,commune,4281,Commune de Mograne,جماعة المكرن,Commune rattachée à un cercle,36452,6745
+MA,42810511,commune,4281,Commune de Sidi Mohamed Benmansour,جماعة سيدي محمد بنمنصور,Commune rattachée à un cercle,24703,4303
+MA,42810701,commune,4281,Commune d'Arbaoua,جماعة عرباوة,Commune rattachée à un cercle,35077,7545
+MA,42810703,commune,4281,Commune de Beni Malek,جماعة بني مالك,Commune rattachée à un cercle,28711,5378
+MA,42810705,commune,4281,Commune de Kariat Ben Aouda,جماعة قرية بن عودة,Commune rattachée à un cercle,11238,2273
+MA,42810707,commune,4281,Commune d'Oued El Makhazine,جماعة وادي المخازن,Commune rattachée à un cercle,6264,1650
+MA,42810901,commune,4281,Commune de Bahhara Ouled Ayad,جماعة بحارة أولاد عياد,Commune rattachée à un cercle,38611,7159
+MA,42810909,commune,4281,Commune de Sidi Allal Tazi,جماعة سيدي علال التازي,Commune rattachée à un cercle,22266,4185
+MA,42810913,commune,4281,Commune de Sidi Mohamed Lahmar,جماعة سيدي محمد لحمر,Commune rattachée à un cercle,52679,9739
+MA,42810915,commune,4281,Commune de Souk Tlet El Gharb,جماعة سوق ثلاثاء الغرب,Commune rattachée à un cercle,24190,4832
+MA,42811103,commune,4281,Commune de Chouafaa,جماعة الشوافع,Commune rattachée à un cercle,21374,3872
+MA,42811105,commune,4281,Commune de Lalla Mimouna,جماعة للا ميمونة,Commune rattachée à un cercle,35600,7381
+MA,42811107,commune,4281,Commune de Moulay Bousselham,جماعة مولاي بوسلهام,Commune rattachée à un cercle,32643,7358
+MA,42811111,commune,4281,Commune de Sidi Boubker El Haj,جماعة سيدي بوبكر الحاج,Commune rattachée à un cercle,21610,4245
+MA,4291,province,4,Province de Khémisset,إقليم الخميسات,Province,563036,146516
+MA,42910101,commune,4291,Commune de Khémisset,جماعة الخميسات,Commune hors cercle,125834,34344
+MA,42910103,commune,4291,Commune de Rommani,جماعة الرماني,Commune hors cercle,11117,3037
+MA,42910105,commune,4291,Commune de Tiflet,جماعة تيفلت,Commune hors cercle,103850,26927
+MA,42910117,commune,4291,Commune de Sidi Allal El Bahraoui,جماعة سيدي علال البحراوي,Commune hors cercle,29147,7438
+MA,42910301,commune,4291,Commune d'Ait Mimoune,جماعة آيت ميمون,Commune rattachée à un cercle,7065,1915
+MA,42910303,commune,4291,Commune d'Ait Ouribel,جماعة آيت أوريبل,Commune rattachée à un cercle,9375,2293
+MA,42910305,commune,4291,Commune d'Ait Siberne,جماعة آيت سيبرن,Commune rattachée à un cercle,4676,1211
+MA,42910307,commune,4291,Commune d'Ait Yadine,جماعة آيت يدين,Commune rattachée à un cercle,21007,5227
+MA,42910309,commune,4291,Commune d'El Ganzra,جماعة الكنزرة,Commune rattachée à un cercle,13792,3015
+MA,42910311,commune,4291,Commune de Majmaa Tolba,جماعة مجمع الطلبة,Commune rattachée à un cercle,15447,3925
+MA,42910313,commune,4291,Commune de Sfassif,جماعة الصفاصيف,Commune rattachée à un cercle,7071,1807
+MA,42910315,commune,4291,Commune de Sidi Allal Lamsadder,جماعة سيدي علال المصدر,Commune rattachée à un cercle,6875,1882
+MA,42910317,commune,4291,Commune de Sidi El Rhandour,جماعة سيدي الغندور,Commune rattachée à un cercle,7644,2089
+MA,42910501,commune,4291,Commune d'Ait Ichou,جماعة آيت إيشو,Commune rattachée à un cercle,1454,368
+MA,42910503,commune,4291,Commune d'Ait Ikkou,جماعة آيت إيكو,Commune rattachée à un cercle,8179,2311
+MA,42910505,commune,4291,Commune de Bouqachmir,جماعة بوقشمير,Commune rattachée à un cercle,2877,784
+MA,42910507,commune,4291,Commune de Houderrane,جماعة حودران,Commune rattachée à un cercle,6049,1859
+MA,42910509,commune,4291,Commune de Maaziz,جماعة المعازيز,Commune rattachée à un cercle,10812,3323
+MA,42910511,commune,4291,Commune d'Oulmes,جماعة اولماس,Commune rattachée à un cercle,19579,5562
+MA,42910513,commune,4291,Commune de Tiddas,جماعة تيداس,Commune rattachée à un cercle,9013,2795
+MA,42910701,commune,4291,Commune d'Ain Sbit,جماعة عين السبيت,Commune rattachée à un cercle,10425,2538
+MA,42910705,commune,4291,Commune de Brachoua,جماعة البراشوة,Commune rattachée à un cercle,11851,2941
+MA,42910707,commune,4291,Commune d'Ezzhiliga,جماعة الزحيلكة,Commune rattachée à un cercle,14788,3676
+MA,42910709,commune,4291,Commune de Jemaat Moul Blad,جماعة جمعة مول البلاد,Commune rattachée à un cercle,5051,1363
+MA,42910711,commune,4291,Commune de Laghoualem,جماعة الغوالم,Commune rattachée à un cercle,12051,2889
+MA,42910713,commune,4291,Commune de Marchouch,جماعة مرشوش,Commune rattachée à un cercle,13017,2604
+MA,42910715,commune,4291,Commune de My Driss Aghbal,جماعة مولاي ادريس أغبال,Commune rattachée à un cercle,4583,1133
+MA,42910902,commune,4291,Commune d'Ain Johra-Sidi Boukhalkhal,جماعة عين الجوهرة-سيدي بوخلخال,Commune rattachée à un cercle,16644,4050
+MA,42910903,commune,4291,Commune d'Ait Belkacem,جماعة آيت بلقاسم,Commune rattachée à un cercle,4396,1124
+MA,42910905,commune,4291,Commune d'Ait Bouyahia El Hajjama,جماعة آيت بويحيى الحجامة,Commune rattachée à un cercle,4491,1215
+MA,42910907,commune,4291,Commune d'Ait Malek,جماعة آيت مالك,Commune rattachée à un cercle,3809,927
+MA,42910909,commune,4291,Commune de Khemis Sidi Yahya,جماعة خميس سيدي يحيى,Commune rattachée à un cercle,6837,1819
+MA,42910911,commune,4291,Commune de M'qam Tolba,جماعة مقام الطلبة,Commune rattachée à un cercle,15070,3268
+MA,42910913,commune,4291,Commune de Sidi Abderrazak,جماعة سيدي عبد الرزاق,Commune rattachée à un cercle,14021,3671
+MA,42910919,commune,4291,Commune d'Ait Ali Ou Lahcen,جماعة آيت علي أولحسن,Commune rattachée à un cercle,5139,1186
+MA,4421,province,4,Préfecture de Rabat,عمالة الرباط,Préfecture,515619,157183
+MA,4421010,commune,4421,Commune de Rabat,جماعة الرباط,Commune hors cercle,509916,156398
+MA,44210101,arrondissement,4421010,Arrondissement d'Agdal Riyad,مقاطعة أكدال الرياض,Arrondissement,70435,24248
+MA,44210103,arrondissement,4421010,Arrondissement d'El Youssoufia,مقاطعة اليوسفية,Arrondissement,157587,45900
+MA,44210105,arrondissement,4421010,Arrondissement de Hassan,مقاطعة حسان,Arrondissement,92454,32327
+MA,44210106,arrondissement,4421010,Arrondissement de Souissi,مقاطعة السويسي,Arrondissement,21049,6431
+MA,44210107,commune,4421,Commune de Touarga,جماعة التواركة,Commune hors cercle,5703,785
+MA,44210109,arrondissement,4421010,Arrondissement de Yacoub El Mansour,مقاطعة يعقوب المنصور,Arrondissement,168391,47492
+MA,4441,province,4,Préfecture de Salé,عمالة سلا,Préfecture,1089554,290311
+MA,4441010,commune,4441,Commune de Salé,جماعة سلا,Commune hors cercle,945101,256144
+MA,44410103,arrondissement,4441010,Arrondissement de Bab Lamrissa,مقاطعة باب لمريسة,Arrondissement,167319,48307
+MA,44410105,arrondissement,4441010,Arrondissement de Bettana,مقاطعة بطانة,Arrondissement,76233,21404
+MA,44410106,arrondissement,4441010,Arrondissement de Hssaine,مقاطعة حصين,Arrondissement,234326,63823
+MA,44410107,arrondissement,4441010,Arrondissement de Layayda,مقاطعة العيايدة,Arrondissement,229838,57358
+MA,44410108,commune,4441,Commune de Sidi Bouknadel,جماعة سيدي أبي القنادل,Commune hors cercle,43598,10439
+MA,44410109,arrondissement,4441010,Arrondissement de Tabriquet,مقاطعة تابريكت,Arrondissement,237385,65252
+MA,44410111,commune,4441,Commune de Shoul,جماعة السهول,Commune hors cercle,24913,5188
+MA,44410113,commune,4441,Commune d'Ameur,جماعة عامر,Commune hors cercle,75942,18540
+MA,4481,province,4,Province de Sidi Kacem,إقليم سيدي قاسم,Province,545509,122538
+MA,44810101,commune,4481,Commune de Dar Gueddari,جماعة دار الكداري,Commune hors cercle,7826,1728
+MA,44810103,commune,4481,Commune de Had Kourt,جماعة أحد كورت,Commune hors cercle,8554,2111
+MA,44810105,commune,4481,Commune de Jorf El Melha,جماعة جرف الملحة,Commune hors cercle,31976,7448
+MA,44810107,commune,4481,Commune de Mechraa Bel Ksiri,جماعة مشرع بلقصيري,Commune hors cercle,32615,8166
+MA,44810111,commune,4481,Commune de Sidi Kacem,جماعة سيدي قاسم,Commune hors cercle,75037,20288
+MA,44810301,commune,4481,Commune d'Ain Dfali,جماعة عين الدفالي,Commune rattachée à un cercle,23018,5659
+MA,44810303,commune,4481,Commune de Bni Oual,جماعة بني وال,Commune rattachée à un cercle,6623,1618
+MA,44810309,commune,4481,Commune de Moulay Abdelkader,جماعة مولاي عبد القادر,Commune rattachée à un cercle,7740,1720
+MA,44810313,commune,4481,Commune de Sidi Ahmed Benaissa,جماعة سيدي احمد بنعيسى,Commune rattachée à un cercle,7685,1649
+MA,44810315,commune,4481,Commune de Sidi Ameur Al Hadi,جماعة سيدي اعمر الحاضي,Commune rattachée à un cercle,11703,2352
+MA,44810317,commune,4481,Commune de Sidi Azzouz,جماعة سيدي عزوز,Commune rattachée à un cercle,14484,3188
+MA,44810501,commune,4481,Commune d'Al Haouafate,جماعة الحوافات,Commune rattachée à un cercle,18528,3961
+MA,44810507,commune,4481,Commune de Nouirate,جماعة انويرات,Commune rattachée à un cercle,26833,5603
+MA,44810509,commune,4481,Commune de Sefsaf,جماعة صفصاف,Commune rattachée à un cercle,28106,5201
+MA,44810705,commune,4481,Commune de Khnichet,جماعة الخنيشات,Commune rattachée à un cercle,26246,6193
+MA,44810707,commune,4481,Commune de Lamrabih,جماعة لمرابيح,Commune rattachée à un cercle,20154,4592
+MA,44810711,commune,4481,Commune d'Oulad Nouel,جماعة أولاد نوال,Commune rattachée à un cercle,11578,2670
+MA,44810719,commune,4481,Commune de Sidi M'hamed Chelh,جماعة سيدي امحمد الشلح,Commune rattachée à un cercle,7977,1780
+MA,44810721,commune,4481,Commune de Taoughilt,جماعة توغيلت,Commune rattachée à un cercle,15013,3309
+MA,44810901,commune,4481,Commune de Bab Tiouka,جماعة باب تيوكا,Commune rattachée à un cercle,7626,1647
+MA,44810903,commune,4481,Commune de Bir Taleb,جماعة بير الطالب,Commune rattachée à un cercle,11843,2556
+MA,44810905,commune,4481,Commune de Chbanate,جماعة اشبانات,Commune rattachée à un cercle,10303,2246
+MA,44810907,commune,4481,Commune de Selfat,جماعة سلفات,Commune rattachée à un cercle,10366,2127
+MA,44810909,commune,4481,Commune de Tekna,جماعة ثكنة,Commune rattachée à un cercle,7396,1425
+MA,44810911,commune,4481,Commune de Zaggota,جماعة زكوطة,Commune rattachée à un cercle,10245,2159
+MA,44810913,commune,4481,Commune de Zirara,جماعة زيرارة,Commune rattachée à un cercle,16829,3928
+MA,44811103,commune,4481,Commune de Dar Laaslouji,جماعة دار العسلوجي,Commune rattachée à un cercle,36072,7170
+MA,44811105,commune,4481,Commune de Rmilat,جماعة ارميلات,Commune rattachée à un cercle,19117,3572
+MA,44811111,commune,4481,Commune de Sidi Al Kamel,جماعة سيدي الكامل,Commune rattachée à un cercle,34016,6472
+MA,4491,province,4,Province de Sidi Slimane,إقليم سيدي سليمان,Province,351199,76582
+MA,44910107,commune,4491,Commune de Sidi Slimane,جماعة سيدي سليمان,Commune hors cercle,95114,24198
+MA,44910109,commune,4491,Commune de Sidi Yahia El Gharb,جماعة سيدي يحيى الغرب,Commune hors cercle,39946,8666
+MA,44910307,commune,4491,Commune de Kceibya,جماعة القصيبية,Commune rattachée à un cercle,33007,6099
+MA,44910315,commune,4491,Commune de Sfafaa,جماعة الصفافعة,Commune rattachée à un cercle,24744,4827
+MA,44910317,commune,4491,Commune d'Ameur Chamalia,جماعة عامر الشمالية,Commune rattachée à un cercle,21998,3842
+MA,44910501,commune,4491,Commune d'Azghar,جماعة أزغار,Commune rattachée à un cercle,11707,2329
+MA,44910503,commune,4491,Commune de Boumaiz,جماعة بومعيز,Commune rattachée à un cercle,22693,5153
+MA,44910505,commune,4491,Commune de Dar Bel Amri,جماعة دار بلعامري,Commune rattachée à un cercle,32873,6780
+MA,44910509,commune,4491,Commune de M'saada,جماعة المساعدة,Commune rattachée à un cercle,22399,4584
+MA,44910511,commune,4491,Commune d'Ouled Ben Hammadi,جماعة أولاد بن حمادي,Commune rattachée à un cercle,13491,2896
+MA,44910513,commune,4491,Commune d'Ouled H'cine,جماعة أولاد احسين,Commune rattachée à un cercle,33227,7208
+MA,4501,province,4,Préfecture de Skhirate-Témara,عمالة الصخيرات-تمارة,Préfecture,783475,208316
+MA,45010101,commune,4501,Commune d'Ain El Aouda,جماعة عين العودة,Commune hors cercle,98502,23899
+MA,45010103,commune,4501,Commune de Harhoura,جماعة الهرهورة,Commune hors cercle,20950,7021
+MA,45010105,commune,4501,Commune de Skhirate,جماعة الصخيرات,Commune hors cercle,122705,32031
+MA,45010107,commune,4501,Commune de Témara,جماعة تمارة,Commune hors cercle,297098,82146
+MA,45010109,commune,4501,Commune d'Ain Attig,جماعة عين عتيق,Commune hors cercle,73985,21033
+MA,45010301,commune,4501,Commune d'El Menzeh,جماعة المنزه,Commune rattachée à un cercle,7168,2162
+MA,45010303,commune,4501,Commune d'Oumazza,جماعة أم عزة,Commune rattachée à un cercle,4322,1094
+MA,45010311,commune,4501,Commune de Sidi Yahya Zaer,جماعة سيدي يحيى زعير,Commune rattachée à un cercle,116649,29368
+MA,45010503,commune,4501,Commune de Mers El Kheir,جماعة مرس الخير,Commune rattachée à un cercle,26544,6106
+MA,45010505,commune,4501,Commune de Sabbah,جماعة صباح,Commune rattachée à un cercle,15552,3456
+MA,5,region,,Région de Béni Mellal-Khénifra,جهة بني ملال-خنيفرة,Région,2525801,616566
+MA,5081,province,5,Province d'Azilal,إقليم أزيلال,Province,574112,121842
+MA,50810101,commune,5081,Commune d'Azilal,جماعة أزيلال,Commune hors cercle,48138,11375
+MA,50810103,commune,5081,Commune de Demnate,جماعة دمنات,Commune hors cercle,33635,7903
+MA,50810301,commune,5081,Commune d'Agoudi N'lkhair,جماعة أكودي نلخير,Commune rattachée à un cercle,11964,2228
+MA,50810303,commune,5081,Commune d'Ait Abbas,جماعة آيت عباس,Commune rattachée à un cercle,13548,2235
+MA,50810305,commune,5081,Commune d'Ait Bou Oulli,جماعة آيت بواولي,Commune rattachée à un cercle,11992,1866
+MA,50810307,commune,5081,Commune d'Ait M'hamed,جماعة آيت امحمد,Commune rattachée à un cercle,23531,4183
+MA,50810309,commune,5081,Commune de Tabant,جماعة تبانت,Commune rattachée à un cercle,16401,2910
+MA,50810311,commune,5081,Commune de Tamda Noumercid,جماعة تامدة نومرصيد,Commune rattachée à un cercle,12959,2454
+MA,50810313,commune,5081,Commune de Zaouiat Ahansal,جماعة زاوية أحنصال,Commune rattachée à un cercle,11260,2159
+MA,50810501,commune,5081,Commune d'Ait Taguella,جماعة آيت تكلا,Commune rattachée à un cercle,8662,1956
+MA,50810505,commune,5081,Commune de Bni Hassane,جماعة بني حسان,Commune rattachée à un cercle,12390,2687
+MA,50810507,commune,5081,Commune de Bzou,جماعة بزو,Commune rattachée à un cercle,13602,3563
+MA,50810509,commune,5081,Commune de Foum Jemaa,جماعة فم الجمعة,Commune rattachée à un cercle,9373,2310
+MA,50810511,commune,5081,Commune de Moulay Aissa Ben Driss,جماعة مولاي عيسى بن ادريس,Commune rattachée à un cercle,13409,3099
+MA,50810513,commune,5081,Commune de Rfala,جماعة ارفالة,Commune rattachée à un cercle,9352,2187
+MA,50810515,commune,5081,Commune de Tabia,جماعة تابية,Commune rattachée à un cercle,7354,1639
+MA,50810517,commune,5081,Commune de Tanant,جماعة تنانت,Commune rattachée à un cercle,10891,2466
+MA,50810519,commune,5081,Commune de Taounza,جماعة تاونزة,Commune rattachée à un cercle,10254,2407
+MA,50810521,commune,5081,Commune de Tisqi,جماعة تسقي,Commune rattachée à un cercle,5734,1283
+MA,50810903,commune,5081,Commune d'Ait Mazigh,جماعة آيت مزيغ,Commune rattachée à un cercle,2765,613
+MA,50810907,commune,5081,Commune d'Ait Ouqabli,جماعة آيت أو قبلي,Commune rattachée à un cercle,3405,875
+MA,50810909,commune,5081,Commune d'Anergui,جماعة انركي,Commune rattachée à un cercle,3976,911
+MA,50810911,commune,5081,Commune de Bin El Ouidane,جماعة بين الويدان,Commune rattachée à un cercle,4605,1098
+MA,50810913,commune,5081,Commune d'Isseksi,جماعة اسكسي,Commune rattachée à un cercle,1464,369
+MA,50810915,commune,5081,Commune d'Ouaouizeght,جماعة واويزغت,Commune rattachée à un cercle,13402,3487
+MA,50810917,commune,5081,Commune de Tabaroucht,جماعة تبروشت,Commune rattachée à un cercle,3877,803
+MA,50810919,commune,5081,Commune de Tagleft,جماعة تاكلفت,Commune rattachée à un cercle,16412,3844
+MA,50810921,commune,5081,Commune de Tiffert N'ait Hamza,جماعة تيفرت نايت حمزة,Commune rattachée à un cercle,3784,879
+MA,50810923,commune,5081,Commune de Tilougguite,جماعة تيلوكيت,Commune rattachée à un cercle,11592,2455
+MA,50811101,commune,5081,Commune d'Afourar,جماعة أفورار,Commune rattachée à un cercle,20215,5050
+MA,50811103,commune,5081,Commune de Bni A'yat,جماعة بني عياط,Commune rattachée à un cercle,23675,5318
+MA,50811105,commune,5081,Commune d'Ait Ouaarda,جماعة آيت وعرضى,Commune rattachée à un cercle,1459,279
+MA,50811125,commune,5081,Commune de Timoulilt,جماعة تيموليلت,Commune rattachée à un cercle,6852,1732
+MA,50811305,commune,5081,Commune d'Ait Oumdis,جماعة آيت أومديس,Commune rattachée à un cercle,13908,2449
+MA,50811307,commune,5081,Commune d'Ait Tamlil,جماعة آيت تمليل,Commune rattachée à un cercle,18091,3246
+MA,50811309,commune,5081,Commune d'Anzou,جماعة انزو,Commune rattachée à un cercle,16554,3262
+MA,50811317,commune,5081,Commune de Sidi Yacoub,جماعة سيدي يعقوب,Commune rattachée à un cercle,18868,3549
+MA,50811319,commune,5081,Commune de Tidili Fetouaka,جماعة تدلي فطواكة,Commune rattachée à un cercle,13661,2835
+MA,50811501,commune,5081,Commune d'Ait Blal,جماعة آيت ابلال,Commune rattachée à un cercle,7840,1334
+MA,50811503,commune,5081,Commune d'Ait Majden,جماعة آيت ماجدن,Commune rattachée à un cercle,18538,3851
+MA,50811511,commune,5081,Commune d'Imlil,جماعة امليل,Commune rattachée à un cercle,11175,2608
+MA,50811513,commune,5081,Commune d'Ouaoula,جماعة واولى,Commune rattachée à un cercle,26410,4758
+MA,50811515,commune,5081,Commune de Sidi Boulkhalf,جماعة سيدي بولخلف,Commune rattachée à un cercle,16229,3028
+MA,50811521,commune,5081,Commune de Tifni,جماعة تفني,Commune rattachée à un cercle,10906,2299
+MA,5091,province,5,Province de Béni Mellal,إقليم بني ملال,Province,580327,150397
+MA,50910101,commune,5091,Commune de Béni Mellal,جماعة بني ملال,Commune hors cercle,209594,56987
+MA,50910103,commune,5091,Commune d'El Ksiba,جماعة القصيبة,Commune hors cercle,19964,5922
+MA,50910107,commune,5091,Commune de Kasba Tadla,جماعة قصبة تادلة,Commune hors cercle,48172,13030
+MA,50910113,commune,5091,Commune de Zaouiat Cheikh,جماعة زاوية الشيخ,Commune hors cercle,25088,7304
+MA,50910301,commune,5091,Commune de Foum Oudi,جماعة فم أودي,Commune rattachée à un cercle,16256,3810
+MA,50910303,commune,5091,Commune d'Ouled Gnaou,جماعة أولاد كناو,Commune rattachée à un cercle,13366,3199
+MA,50910305,commune,5091,Commune d'Ouled M'barek,جماعة أولاد امبارك,Commune rattachée à un cercle,21636,5228
+MA,50910307,commune,5091,Commune d'Ouled Yaich,جماعة أولاد إيعيش,Commune rattachée à un cercle,25785,6189
+MA,50910309,commune,5091,Commune de Sidi Jaber,جماعة سيدي جابر,Commune rattachée à un cercle,20455,4306
+MA,50910311,commune,5091,Commune de Foum El Anceur,جماعة فم العنصر,Commune rattachée à un cercle,24232,5809
+MA,50910501,commune,5091,Commune d'Aghbala,جماعة اغبالة,Commune rattachée à un cercle,13373,3622
+MA,50910505,commune,5091,Commune de Boutferda,جماعة بوتفردة,Commune rattachée à un cercle,7952,1581
+MA,50910517,commune,5091,Commune de Tizi N'isly,جماعة تيزي نيسلي,Commune rattachée à un cercle,12547,2956
+MA,50910703,commune,5091,Commune d'Ait Oum El Bekht,جماعة آيت أم البخت,Commune rattachée à un cercle,7863,2072
+MA,50910707,commune,5091,Commune de Dir El Ksiba,جماعة دير القصيبة,Commune rattachée à un cercle,25851,6528
+MA,50910711,commune,5091,Commune de Naour,جماعة ناوور,Commune rattachée à un cercle,5389,1357
+MA,50910713,commune,5091,Commune de Taghzirt,جماعة تاكزيرت,Commune rattachée à un cercle,20023,5346
+MA,50910715,commune,5091,Commune de Tanougha,جماعة تانوغة,Commune rattachée à un cercle,13773,3376
+MA,50911101,commune,5091,Commune de Guettaya,جماعة كطاية,Commune rattachée à un cercle,13153,3135
+MA,50911103,commune,5091,Commune d'Ouled Youssef,جماعة أولاد يوسف,Commune rattachée à un cercle,14247,3290
+MA,50911105,commune,5091,Commune d'Ouled Said Loued,جماعة أولاد سعيد الواد,Commune rattachée à un cercle,13441,3354
+MA,50911107,commune,5091,Commune de Semguet,جماعة سمكت,Commune rattachée à un cercle,8167,1996
+MA,5255,province,5,Province de Fquih Ben Salah,إقليم الفقيه بن صالح,Province,475977,111668
+MA,52550105,commune,5255,Commune de Fquih Ben Salah,جماعة الفقيه بن صالح,Commune hors cercle,97380,25065
+MA,52550109,commune,5255,Commune d'Ouled Ayad,جماعة أولاد عياد,Commune hors cercle,24564,5853
+MA,52550111,commune,5255,Commune de Souk Sebt Ouled Nemma,جماعة سوق السبت أولاد النمة,Commune hors cercle,60293,14168
+MA,52550505,commune,5255,Commune d'Ouled Bourahmoune,جماعة أولاد بورحمون,Commune rattachée à un cercle,14583,3292
+MA,52550509,commune,5255,Commune d'Ouled Zmam,جماعة أولاد زمام,Commune rattachée à un cercle,30039,6547
+MA,52550511,commune,5255,Commune de Sidi Aissa Ben Ali,جماعة سيدي عيسى بن علي,Commune rattachée à un cercle,24503,5558
+MA,52550513,commune,5255,Commune de Sidi Hammadi,جماعة سيدي حمادي,Commune rattachée à un cercle,12981,3083
+MA,52550901,commune,5255,Commune de Khalfia,جماعة خلفية,Commune rattachée à un cercle,13766,3279
+MA,52550903,commune,5255,Commune de Bni Chegdale,جماعة بني شكدال,Commune rattachée à un cercle,10413,2355
+MA,52550905,commune,5255,Commune de Bni Oukil,جماعة بني وكيل,Commune rattachée à un cercle,14097,3158
+MA,52550907,commune,5255,Commune de Bradia,جماعة برادية,Commune rattachée à un cercle,37064,8836
+MA,52550909,commune,5255,Commune de Hel Merbaa,جماعة أهل مربع,Commune rattachée à un cercle,9692,2414
+MA,52550911,commune,5255,Commune de Krifate,جماعة كريفات,Commune rattachée à un cercle,28601,6576
+MA,52551101,commune,5255,Commune de Dar Ould Zidouh,جماعة دار ولد زيدوح,Commune rattachée à un cercle,30114,6663
+MA,52551103,commune,5255,Commune de Had Boumoussa,جماعة أحد بوموسى,Commune rattachée à un cercle,41154,8985
+MA,52551107,commune,5255,Commune d'Ouled Nacer,جماعة أولاد ناصر,Commune rattachée à un cercle,26733,5836
+MA,5301,province,5,Province de Khénifra,إقليم خنيفرة,Province,370240,100159
+MA,53010101,commune,5301,Commune de Khenifra,جماعة خنيفرة,Commune hors cercle,123738,34147
+MA,53010105,commune,5301,Commune de M'rirt,جماعة مريرت,Commune hors cercle,46285,13282
+MA,53010301,commune,5301,Commune d'Ait Ishaq,جماعة آيت إسحاق,Commune rattachée à un cercle,17847,4975
+MA,53010303,commune,5301,Commune d'Ait Saadelli,جماعة آيت سعدلي,Commune rattachée à un cercle,2629,634
+MA,53010305,commune,5301,Commune d'El Kbab,جماعة القباب,Commune rattachée à un cercle,14580,3880
+MA,53010307,commune,5301,Commune de Kerrouchen,جماعة كروشن,Commune rattachée à un cercle,6796,1736
+MA,53010309,commune,5301,Commune d'Ouaoumana,جماعة واو مانة,Commune rattachée à un cercle,8850,2483
+MA,53010311,commune,5301,Commune de Sidi Yahya Ou Saad,جماعة سيدي يحيى أوساعد,Commune rattachée à un cercle,6911,1737
+MA,53010313,commune,5301,Commune de Tighassaline,جماعة تيغسالين,Commune rattachée à un cercle,15788,4399
+MA,53010501,commune,5301,Commune d'Aguelmam Azegza,جماعة أكلمام أزكزا,Commune rattachée à un cercle,6781,1716
+MA,53010505,commune,5301,Commune d'El Borj,جماعة البرج,Commune rattachée à un cercle,3266,844
+MA,53010511,commune,5301,Commune de Lehri,جماعة لهري,Commune rattachée à un cercle,8669,2113
+MA,53010513,commune,5301,Commune de Moha Ou Hammou Zayani,جماعة موحى أوحمو الزياني,Commune rattachée à un cercle,10444,2763
+MA,53010521,commune,5301,Commune de Sidi Amar,جماعة سيدي عمرو,Commune rattachée à un cercle,1625,468
+MA,53010525,commune,5301,Commune de Sidi Lamine,جماعة سيدي لامين,Commune rattachée à un cercle,16501,4279
+MA,53010703,commune,5301,Commune d'Aguelmous,جماعة أكلموس,Commune rattachée à un cercle,36560,9374
+MA,53010707,commune,5301,Commune d'El Hammam,جماعة الحمام,Commune rattachée à un cercle,9697,2567
+MA,53010709,commune,5301,Commune de Had Bouhssoussen,جماعة أحد بوحسوسن,Commune rattachée à un cercle,7303,1879
+MA,53010715,commune,5301,Commune de Moulay Bouazza,جماعة مولاي بوعزة,Commune rattachée à un cercle,7621,2223
+MA,53010717,commune,5301,Commune d'Oum Rabia,جماعة أم الربيع,Commune rattachée à un cercle,7821,1959
+MA,53010719,commune,5301,Commune de Sebt Ait Rahou,جماعة سبت آيت رحو,Commune rattachée à un cercle,8018,2125
+MA,53010723,commune,5301,Commune de Sidi Hcine,جماعة سيدي حسين,Commune rattachée à un cercle,2510,576
+MA,5311,province,5,Province de Khouribga,إقليم خريبكة,Province,525145,132500
+MA,53110101,commune,5311,Commune de Bejaad,جماعة أبي الجعد,Commune hors cercle,47209,13154
+MA,53110103,commune,5311,Commune de Boujniba,جماعة بوجنيبة,Commune hors cercle,14722,3755
+MA,53110105,commune,5311,Commune de Hattane,جماعة حطان,Commune hors cercle,9727,2471
+MA,53110107,commune,5311,Commune de Khouribga,جماعة خريبكة,Commune hors cercle,195931,49840
+MA,53110109,commune,5311,Commune d'Oued Zem,جماعة وادي زم,Commune hors cercle,93776,24423
+MA,53110301,commune,5311,Commune d'Ain Kaicher,جماعة عين قيشر,Commune rattachée à un cercle,3900,1036
+MA,53110303,commune,5311,Commune de Bni Bataou,جماعة بني بتاو,Commune rattachée à un cercle,4191,1040
+MA,53110305,commune,5311,Commune de Bni Zrantel,جماعة بني زرنتل,Commune rattachée à un cercle,5533,1367
+MA,53110307,commune,5311,Commune de Boukhrisse,جماعة بوخريص,Commune rattachée à un cercle,4323,1059
+MA,53110309,commune,5311,Commune de Chougrane,جماعة الشكران,Commune rattachée à un cercle,5591,1357
+MA,53110311,commune,5311,Commune d'Oulad Gouaouch,جماعة أولاد كواوش,Commune rattachée à un cercle,2474,661
+MA,53110313,commune,5311,Commune de Rouached,جماعة الرواشد,Commune rattachée à un cercle,3353,680
+MA,53110315,commune,5311,Commune de Tachraft,جماعة تشرافت,Commune rattachée à un cercle,3082,834
+MA,53110501,commune,5311,Commune de Bir Mezoui,جماعة بئر مزوي,Commune rattachée à un cercle,5617,1404
+MA,53110503,commune,5311,Commune de Bni Ykhlef,جماعة بني يخلف,Commune rattachée à un cercle,8928,2134
+MA,53110505,commune,5311,Commune de Boulanouare,جماعة بولنوار,Commune rattachée à un cercle,15043,3799
+MA,53110507,commune,5311,Commune de Lagfaf,جماعة لكفاف,Commune rattachée à un cercle,8560,2143
+MA,53110509,commune,5311,Commune d'El Foqra,جماعة الفقراء,Commune rattachée à un cercle,2965,715
+MA,53110511,commune,5311,Commune de M'fassis,جماعة المفاسيس,Commune rattachée à un cercle,4937,1192
+MA,53110513,commune,5311,Commune d'Oulad Abdoune,جماعة أولاد عبدون,Commune rattachée à un cercle,15860,3548
+MA,53110515,commune,5311,Commune d'Oulad Azzouz,جماعة أولاد عزوز,Commune rattachée à un cercle,8983,1989
+MA,53110701,commune,5311,Commune d'Ait Ammar,جماعة آيت عمار,Commune rattachée à un cercle,3392,872
+MA,53110703,commune,5311,Commune de Bni Smir,جماعة بني سمير,Commune rattachée à un cercle,6725,1180
+MA,53110705,commune,5311,Commune de Braksa,جماعة البراكسة,Commune rattachée à un cercle,6948,1654
+MA,53110707,commune,5311,Commune de Kasbat Troch,جماعة قصبة الطرش,Commune rattachée à un cercle,8612,1973
+MA,53110709,commune,5311,Commune de Lagnadiz,جماعة لكناديز,Commune rattachée à un cercle,6905,1608
+MA,53110711,commune,5311,Commune de Maadna,جماعة المعادنة,Commune rattachée à un cercle,5595,1302
+MA,53110713,commune,5311,Commune d'Oulad Aissa,جماعة أولاد عيسى,Commune rattachée à un cercle,4652,1081
+MA,53110715,commune,5311,Commune d'Oulad Boughadi,جماعة أولاد بوغادي,Commune rattachée à un cercle,8147,1991
+MA,53110717,commune,5311,Commune d'Oulad Fennane,جماعة أولاد فنان,Commune rattachée à un cercle,6912,1605
+MA,53110719,commune,5311,Commune d'Oulad Ftata,جماعة أولاد فتاتة,Commune rattachée à un cercle,2552,633
+MA,6,region,,Région de Casablanca-Settat,جهة الدار البيضاء-سطات,Région,7688967,2021032
+MA,6111,province,6,Province de Benslimane,إقليم بنسليمان,Province,279517,69353
+MA,61110101,commune,6111,Commune de Benslimane,جماعة بنسليمان,Commune hors cercle,67317,17028
+MA,61110103,commune,6111,Commune de Bouznika,جماعة بوزنيقة,Commune hors cercle,55722,15160
+MA,61110105,commune,6111,Commune d'El Mansouria,جماعة المنصورية,Commune hors cercle,29139,8360
+MA,61110301,commune,6111,Commune d'Ahlaf,جماعة أحلاف,Commune rattachée à un cercle,12116,2742
+MA,61110305,commune,6111,Commune de Fdalate,جماعة فضالات,Commune rattachée à un cercle,12700,3109
+MA,61110307,commune,6111,Commune de Mellila,جماعة مليلة,Commune rattachée à un cercle,15692,3620
+MA,61110311,commune,6111,Commune de Moualine El Oued,جماعة موالين الواد,Commune rattachée à un cercle,9117,2164
+MA,61110313,commune,6111,Commune d'Oulad Ali Toualaa,جماعة أولاد علي الطوالع,Commune rattachée à un cercle,5475,1180
+MA,61110315,commune,6111,Commune d'Oulad Yahya Louta,جماعة أولاد يحيى لوطا,Commune rattachée à un cercle,9612,2201
+MA,61110317,commune,6111,Commune de Rdadna Oulad Malek,جماعة الردادنة أولاد مالك,Commune rattachée à un cercle,4170,1018
+MA,61110319,commune,6111,Commune de Ziaida,جماعة الزيايدة,Commune rattachée à un cercle,14092,3108
+MA,61110501,commune,6111,Commune de Bir Ennasr,جماعة بئر النصر,Commune rattachée à un cercle,4256,857
+MA,61110503,commune,6111,Commune d'Ain Tizgha,جماعة عين تيزغة,Commune rattachée à un cercle,21248,4467
+MA,61110504,commune,6111,Commune de Sidi Bettache,جماعة سيدي بطاش,Commune rattachée à un cercle,7595,1759
+MA,61110505,commune,6111,Commune de Charrate,جماعة شراط,Commune rattachée à un cercle,11266,2580
+MA,6117,province,6,Province de Berrechid,إقليم برشيد,Province,640657,160957
+MA,61170103,commune,6117,Commune de Berrechid,جماعة برشيد,Commune hors cercle,168687,44011
+MA,61170105,commune,6117,Commune de Deroua,جماعة الدروة,Commune hors cercle,96619,25918
+MA,61170107,commune,6117,Commune d'El Gara,جماعة الكارة,Commune hors cercle,20467,5381
+MA,61170109,commune,6117,Commune de Had Soualem,جماعة حد السوالم,Commune hors cercle,74762,19130
+MA,61170111,commune,6117,Commune d'Oulad Abbou,جماعة أولاد عبو,Commune hors cercle,10894,2522
+MA,61170113,commune,6117,Commune de Sidi Rahal Chatai,جماعة سيدي رحال الشاطئ,Commune hors cercle,34431,9604
+MA,61170501,commune,6117,Commune de Ben Maachou,جماعة بن معاشو,Commune rattachée à un cercle,8338,2014
+MA,61170511,commune,6117,Commune de Laghnimyine,جماعة لغنيميين,Commune rattachée à un cercle,18081,3626
+MA,61170513,commune,6117,Commune de Lahsasna,جماعة لحساسنة,Commune rattachée à un cercle,10854,2278
+MA,61170527,commune,6117,Commune de Sidi Abdelkhaleq,جماعة سيدي عبد الخالق,Commune rattachée à un cercle,6141,1174
+MA,61170529,commune,6117,Commune de Sidi El Mekki,جماعة سيدي المكي,Commune rattachée à un cercle,9476,2306
+MA,61170535,commune,6117,Commune de Zaouiat Sidi Ben Hamdoun,جماعة زاوية سيدي بنحمدون,Commune rattachée à un cercle,9315,2083
+MA,61170805,commune,6117,Commune de Foqra Oulad Aameur,جماعة الفقرا أولاد عمرو,Commune rattachée à un cercle,6093,1540
+MA,61170807,commune,6117,Commune de Jaqma,جماعة جاقمة,Commune rattachée à un cercle,10733,2405
+MA,61170809,commune,6117,Commune de Kasbat Ben Mchich,جماعة قصبة بن مشيش,Commune rattachée à un cercle,15374,3140
+MA,61170817,commune,6117,Commune de Lambarkiyne,جماعة لمباركيين,Commune rattachée à un cercle,8863,2105
+MA,61170819,commune,6117,Commune d'Ouled Cebbah,جماعة أولاد صباح,Commune rattachée à un cercle,7489,1808
+MA,61170820,commune,6117,Commune d'Oulad Ziyane,جماعة أولاد زيان,Commune rattachée à un cercle,20004,4530
+MA,61170821,commune,6117,Commune d'Ouled Zidane,جماعة أولاد زيدان,Commune rattachée à un cercle,6554,1525
+MA,61170823,commune,6117,Commune de Riah,جماعة رياح,Commune rattachée à un cercle,8421,1976
+MA,61170925,commune,6117,Commune de Sahel Oulad H'riz,جماعة الساحل أولاد احريز,Commune rattachée à un cercle,43776,9788
+MA,61170933,commune,6117,Commune de Soualem Trifiya,جماعة السوالم الطريفية,Commune rattachée à un cercle,45285,12093
+MA,6141,province,6,Préfecture de Casablanca,عمالة الدار البيضاء,Préfecture,3218036,909829
+MA,6141010,commune,6141,Commune de Casablanca,جماعة الدار البيضاء,Commune hors cercle,3215935,909228
+MA,61410100,prefecture-arrondissements,6141010,Préfecture d'arrondissements de Casablanca-Anfa,عمالة مقاطعات الدار البيضاء-أنفا,Préfecture d'arrondissements,344165,120499
+MA,61410101,arrondissement,61410100,Arrondissement d'Anfa,مقاطعة أنفا,Arrondissement,66202,22331
+MA,61410103,arrondissement,61410100,Arrondissement de Maârif,مقاطعة المعاريف,Arrondissement,139669,51113
+MA,61410107,arrondissement,61410100,Arrondissement de Sidi Belyout,مقاطعة سيدي بليوط,Arrondissement,138294,47055
+MA,61410110,prefecture-arrondissements,6141010,Préfecture d'arrondissements d'Al-Fida-Mers-Sultan,عمالة مقاطعات الفداء-مرس السلطان,Préfecture d'arrondissements,224072,66502
+MA,61410111,arrondissement,61410110,Arrondissement d'Al-Fida,مقاطعة الفداء,Arrondissement,125933,35993
+MA,61410113,arrondissement,61410110,Arrondissement de Mers-Sultan,مقاطعة مرس السلطان,Arrondissement,98139,30509
+MA,61410120,prefecture-arrondissements,6141010,Préfecture d'arrondissements d'Aïn-Sebaâ-Hay Mohammadi,عمالة مقاطعات عين السبع-الحي المحمدي,Préfecture d'arrondissements,364835,101604
+MA,61410121,arrondissement,61410120,Arrondissement d'Aïn-Sebaâ,مقاطعة عين السبع,Arrondissement,155828,40875
+MA,61410123,arrondissement,61410120,Arrondissement d'Asoukhour Assawda,مقاطعة الصخور السوداء,Arrondissement,104775,32260
+MA,61410125,arrondissement,61410120,Arrondissement de Hay-Mohammadi,مقاطعة الحي المحمدي,Arrondissement,104232,28469
+MA,61410130,prefecture-arrondissements,6141010,Préfecture d'arrondissement de Hay-Hassani,عمالة مقاطعة الحي الحسني,Préfecture d'arrondissement,537509,157634
+MA,61410131,arrondissement,61410130,Arrondissement de Hay-Hassani,مقاطعة الحي الحسني,Arrondissement,537509,157634
+MA,61410140,prefecture-arrondissements,6141010,Préfecture d'arrondissement d'Aïn-Chock,عمالة مقاطعة عين الشق,Préfecture d'arrondissement,374707,102598
+MA,61410141,arrondissement,61410140,Arrondissement d'Aïn-Chock,مقاطعة عين الشق,Arrondissement,374707,102598
+MA,61410150,prefecture-arrondissements,6141010,Préfecture d'arrondissements de Sidi Bernoussi,عمالة مقاطعات سيدي البرنوصي,Préfecture d'arrondissements,706362,184646
+MA,61410151,arrondissement,61410150,Arrondissement de Sidi Bernoussi,مقاطعة سيدي البرنوصي,Arrondissement,154919,42626
+MA,61410153,arrondissement,61410150,Arrondissement de Sidi Moumen,مقاطعة سيدي مومن,Arrondissement,551443,142020
+MA,61410160,prefecture-arrondissements,6141010,Préfecture d'arrondissements de Ben M'sick,عمالة مقاطعات ابن مسيك,Préfecture d'arrondissements,207252,56209
+MA,61410161,arrondissement,61410160,Arrondissement de Ben-M'sick,مقاطعة ابن مسيك,Arrondissement,105612,29445
+MA,61410163,arrondissement,61410160,Arrondissement de Sbata,مقاطعة سباتة,Arrondissement,101640,26764
+MA,61410170,prefecture-arrondissements,6141010,Préfecture d'arrondissements de Moulay Rachid,عمالة مقاطعات مولاي رشيد,Préfecture d'arrondissements,457033,119536
+MA,61410171,arrondissement,61410170,Arrondissement de Moulay Rachid,مقاطعة مولاي رشيد,Arrondissement,245139,63294
+MA,61410173,arrondissement,61410170,Arrondissement de Sidi Othmane,مقاطعة سيدي عثمان,Arrondissement,211894,56242
+MA,61410181,commune,6141,Commune de Méchouar de Casablanca,جماعة مشور الدار البيضاء,Commune hors cercle,2101,601
+MA,6181,province,6,Province d'El Jadida,إقليم الجديدة,Province,914367,221678
+MA,61810101,commune,6181,Commune d'Azemmour,جماعة أزمور,Commune hors cercle,42098,11546
+MA,61810103,commune,6181,Commune d'El Jadida,جماعة الجديدة,Commune hors cercle,237464,67491
+MA,61810105,commune,6181,Commune de Lbir Jdid,جماعة لبير الجديد,Commune hors cercle,30247,7435
+MA,61810301,commune,6181,Commune de Chtouka,جماعة شتوكة,Commune rattachée à un cercle,38025,7746
+MA,61810305,commune,6181,Commune de Laghdira,جماعة لغديرة,Commune rattachée à un cercle,26192,5709
+MA,61810307,commune,6181,Commune de Lamharza Essahel,جماعة لمهارزة الساحل,Commune rattachée à un cercle,20929,4645
+MA,61810311,commune,6181,Commune de Sidi Ali Ben Hamdouche,جماعة سيدي علي بن حمدوش,Commune rattachée à un cercle,38169,8795
+MA,61810501,commune,6181,Commune de My Abdellah,جماعة مولاي عبد الله,Commune rattachée à un cercle,103993,26214
+MA,61810503,commune,6181,Commune d'Oulad Aissa,جماعة أولاد عيسى,Commune rattachée à un cercle,25367,5302
+MA,61810505,commune,6181,Commune d'Ouled Ghanem,جماعة أولاد غانم,Commune rattachée à un cercle,27895,5907
+MA,61810507,commune,6181,Commune d'Ouled Hcine,جماعة أولاد احسين,Commune rattachée à un cercle,36018,7501
+MA,61810509,commune,6181,Commune de Sidi Abed,جماعة سيدي عابد,Commune rattachée à un cercle,25935,5736
+MA,61810511,commune,6181,Commune de Sidi M'hamed Akhdim,جماعة سيدي امحمد اخديم,Commune rattachée à un cercle,11038,2481
+MA,61810703,commune,6181,Commune de Haouzia,جماعة حوزية,Commune rattachée à un cercle,35777,8000
+MA,61810709,commune,6181,Commune d'Oulad Rahmoune,جماعة أولاد رحمون,Commune rattachée à un cercle,33380,6585
+MA,61810901,commune,6181,Commune de Boulaouane,جماعة بولعوان,Commune rattachée à un cercle,14740,3256
+MA,61810903,commune,6181,Commune de Chaibate,جماعة شعيبات,Commune rattachée à un cercle,9821,2302
+MA,61810905,commune,6181,Commune de Mettouh,جماعة متوح,Commune rattachée à un cercle,26075,5838
+MA,61810907,commune,6181,Commune de Mogress,جماعة مكرس,Commune rattachée à un cercle,16277,3317
+MA,61810909,commune,6181,Commune d'Oulad Hamdane,جماعة أولاد حمدان,Commune rattachée à un cercle,12130,2714
+MA,61810911,commune,6181,Commune d'Oulad Sidi Ali Ben Youssef,جماعة أولاد سيدي علي بن يوسف,Commune rattachée à un cercle,9641,2057
+MA,61810913,commune,6181,Commune d'Ouled Frej,جماعة أولاد فرج,Commune rattachée à un cercle,20176,4900
+MA,61810915,commune,6181,Commune de Sebt Saiss,جماعة سبت سايس,Commune rattachée à un cercle,11052,2441
+MA,61810917,commune,6181,Commune de Si Hsaien Ben Abderrahmane,جماعة سي احساين بن عبد الرحمان,Commune rattachée à un cercle,6014,1422
+MA,61810919,commune,6181,Commune de Sidi Smail,جماعة سيدي اسماعيل,Commune rattachée à un cercle,32694,7419
+MA,61810921,commune,6181,Commune de Zaouiat Saiss,جماعة زاوية سايس,Commune rattachée à un cercle,11730,2378
+MA,61810923,commune,6181,Commune de Zaouiat Lakouacem,جماعة زاوية لقواسم,Commune rattachée à un cercle,11490,2541
+MA,6355,province,6,Province de Médiouna,إقليم مديونة,Province,345787,88190
+MA,63550101,commune,6355,Commune de Lahraouyine,جماعة لهراويين,Commune hors cercle,87977,23054
+MA,63550103,commune,6355,Commune de Mediouna,جماعة مديونة,Commune hors cercle,29972,7627
+MA,63550105,commune,6355,Commune de Tit Mellil,جماعة تيط مليل,Commune hors cercle,56019,13927
+MA,63550107,commune,6355,Commune d'Almajjatia Oulad Taleb,جماعة المجاطية أولاد الطالب,Commune hors cercle,95457,24555
+MA,63550109,commune,6355,Commune de Sidi Hajjaj Oued Hassar,جماعة سيدي حجاج واد حصار,Commune hors cercle,76362,19027
+MA,6371,province,6,Préfecture de Mohammadia,عمالة المحمدية,Préfecture,514057,137265
+MA,63710101,commune,6371,Commune de Mohammadia,جماعة المحمدية,Commune hors cercle,194358,54738
+MA,63710103,commune,6371,Commune d'Ain Harrouda,جماعة عين حرودة,Commune hors cercle,60804,15533
+MA,63710105,commune,6371,Commune de Bni Yakhlef,جماعة بني يخلف,Commune hors cercle,117653,31669
+MA,63710107,commune,6371,Commune d'Ech-challalate,جماعة الشلالات,Commune hors cercle,98015,24562
+MA,63710305,commune,6371,Commune de Sidi Moussa Ben Ali,جماعة سيدي موسى بن علي,Commune rattachée à un cercle,12973,3149
+MA,63710307,commune,6371,Commune de Sidi Moussa El Majdoub,جماعة سيدي موسى المجذوب,Commune rattachée à un cercle,30254,7614
+MA,6385,province,6,Province de Nouaceur,إقليم النواصر,Province,672324,183539
+MA,63850101,commune,6385,Commune de Bouskoura,جماعة بوسكورة,Commune hors cercle,200359,55578
+MA,63850102,commune,6385,Commune de Dar Bouazza,جماعة دار بوعزة,Commune hors cercle,302970,82747
+MA,63850103,commune,6385,Commune de Nouaceur,جماعة النواصر,Commune hors cercle,36326,9008
+MA,63850105,commune,6385,Commune d'Ouled Salah,جماعة أولاد صالح,Commune hors cercle,51621,13524
+MA,63850107,commune,6385,Commune d'Oulad Azzouz,جماعة أولاد عزوز,Commune hors cercle,81048,22682
+MA,6461,province,6,Province de Settat,إقليم سطات,Province,652292,148224
+MA,64610101,commune,6461,Commune de Ben Ahmed,جماعة بن احمد,Commune hors cercle,33469,8161
+MA,64610105,commune,6461,Commune d'El Borouj,جماعة البروج,Commune hors cercle,19438,4457
+MA,64610109,commune,6461,Commune de Loulad,جماعة لولاد,Commune hors cercle,5772,1350
+MA,64610113,commune,6461,Commune d'Oulad M'rah,جماعة أولاد مراح,Commune hors cercle,8027,1927
+MA,64610115,commune,6461,Commune de Settat,جماعة سطات,Commune hors cercle,171556,45185
+MA,64610701,commune,6461,Commune d'Ain Blal,جماعة عين بلال,Commune rattachée à un cercle,3992,886
+MA,64610703,commune,6461,Commune de Bni Khloug,جماعة بني خلوك,Commune rattachée à un cercle,12092,2646
+MA,64610705,commune,6461,Commune de Dar Chaffai,جماعة دار الشافعي,Commune rattachée à un cercle,17411,3639
+MA,64610707,commune,6461,Commune de Laqraqra,جماعة لقراقرة,Commune rattachée à un cercle,10493,2073
+MA,64610709,commune,6461,Commune de Meskoura,جماعة مسكورة,Commune rattachée à un cercle,6159,1186
+MA,64610711,commune,6461,Commune d'Oulad Amer,جماعة أولاد عامر,Commune rattachée à un cercle,5871,1104
+MA,64610713,commune,6461,Commune d'Oulad Bouali Nouaja,جماعة أولاد بوعلي النواجة,Commune rattachée à un cercle,5393,1160
+MA,64610715,commune,6461,Commune d'Oulad Fares El Halla,جماعة أولاد فارس الحلة,Commune rattachée à un cercle,2521,572
+MA,64610717,commune,6461,Commune d'Oulad Freiha,جماعة أولاد افريحة,Commune rattachée à un cercle,11410,2313
+MA,64610719,commune,6461,Commune de Sidi Ahmed El Khadir,جماعة سيدي احمد الخدير,Commune rattachée à un cercle,9731,1773
+MA,64610721,commune,6461,Commune de Sidi Boumehdi,جماعة سيدي بومهدي,Commune rattachée à un cercle,4150,837
+MA,64611102,commune,6461,Commune d'Ain Dorbane-Lahlaf,جماعة عين الضربان-لحلاف,Commune rattachée à un cercle,9151,1765
+MA,64611103,commune,6461,Commune de Bouguargouh,جماعة بوكركوح,Commune rattachée à un cercle,9718,2017
+MA,64611107,commune,6461,Commune de Lakhzazra,جماعة لخزازرة,Commune rattachée à un cercle,7455,1629
+MA,64611113,commune,6461,Commune de M'garto,جماعة مكارطو,Commune rattachée à un cercle,7508,1764
+MA,64611115,commune,6461,Commune de N'khila,جماعة انخيلة,Commune rattachée à un cercle,12787,2653
+MA,64611123,commune,6461,Commune d'Ouled M'hamed,جماعة أولاد امحمد,Commune rattachée à un cercle,9081,2091
+MA,64611129,commune,6461,Commune de Sidi Abdelkrim,جماعة سيدي عبد الكريم,Commune rattachée à un cercle,13759,2839
+MA,64611131,commune,6461,Commune de Sidi Dahbi,جماعة سيدي الذهبي,Commune rattachée à un cercle,8972,1996
+MA,64611309,commune,6461,Commune de Mniaa,جماعة منيع,Commune rattachée à un cercle,11088,2281
+MA,64611311,commune,6461,Commune de Mrizigue,جماعة مريزيك,Commune rattachée à un cercle,7926,1738
+MA,64611317,commune,6461,Commune d'Oued Naanaa,جماعة واد النعناع,Commune rattachée à un cercle,7075,1506
+MA,64611319,commune,6461,Commune d'Oulad Chbana,جماعة أولاد شبانة,Commune rattachée à un cercle,9513,1964
+MA,64611321,commune,6461,Commune d'Oulad Fares,جماعة أولاد فارس,Commune rattachée à un cercle,12096,2537
+MA,64611325,commune,6461,Commune de Ras El Ain Chaouia,جماعة رأس العين الشاوية,Commune rattachée à un cercle,14244,3134
+MA,64611327,commune,6461,Commune de Sgamna,جماعة السكامنة,Commune rattachée à un cercle,9427,1916
+MA,64611333,commune,6461,Commune de Sidi Hajjaj,جماعة سيدي حجاج,Commune rattachée à un cercle,22360,4566
+MA,64611505,commune,6461,Commune de Gdana,جماعة كدانة,Commune rattachée à un cercle,8462,1906
+MA,64611509,commune,6461,Commune de Khemisset Chaouia,جماعة اخميسات الشاوية,Commune rattachée à un cercle,5104,1182
+MA,64611511,commune,6461,Commune de Lahouaza,جماعة لحوازة,Commune rattachée à un cercle,7018,1515
+MA,64611514,commune,6461,Commune de Mzamza Janoubia,جماعة مزامزة الجنوبية,Commune rattachée à un cercle,22419,4360
+MA,64611515,commune,6461,Commune de Mzoura,جماعة امزورة,Commune rattachée à un cercle,8426,2090
+MA,64611519,commune,6461,Commune d'Oulad Said,جماعة أولاد سعيد,Commune rattachée à un cercle,8745,2027
+MA,64611525,commune,6461,Commune de Sidi El Aidi,جماعة سيدي العايدي,Commune rattachée à un cercle,14165,3062
+MA,64611703,commune,6461,Commune de Bni Yagrine,جماعة بني يكرين,Commune rattachée à un cercle,13099,2361
+MA,64611707,commune,6461,Commune de Guisser,جماعة كيسر,Commune rattachée à un cercle,12189,2835
+MA,64611713,commune,6461,Commune de Machraa Ben Abbou,جماعة مشرع بن عبو,Commune rattachée à un cercle,9331,2106
+MA,64611721,commune,6461,Commune d'Oulad Sghir,جماعة أولاد الصغير,Commune rattachée à un cercle,13153,2748
+MA,64611723,commune,6461,Commune de Rima,جماعة ريما,Commune rattachée à un cercle,8203,1827
+MA,64611727,commune,6461,Commune de Sidi Mohammed Ben Rahal,جماعة سيدي محمد بن رحال,Commune rattachée à un cercle,10511,2223
+MA,64611731,commune,6461,Commune de Toualet,جماعة الثوالث,Commune rattachée à un cercle,11822,2317
+MA,6467,province,6,Province de Sidi Bennour,إقليم سيدي بنور,Province,451930,101997
+MA,64670105,commune,6467,Commune de Loualidia,جماعة الوليدية,Commune hors cercle,21742,5048
+MA,64670107,commune,6467,Commune de Sidi Bennour,جماعة سيدي بنور,Commune hors cercle,56201,13912
+MA,64670109,commune,6467,Commune de Zmamra,جماعة زمامرة,Commune hors cercle,13993,3413
+MA,64670301,commune,6467,Commune de Bni Hilal,جماعة بني هلال,Commune rattachée à un cercle,16767,4000
+MA,64670303,commune,6467,Commune de Bni Tsiriss,جماعة بني تسيريس,Commune rattachée à un cercle,12794,2850
+MA,64670309,commune,6467,Commune de Khmis Ksiba,جماعة خميس القصيبة,Commune rattachée à un cercle,5249,1104
+MA,64670317,commune,6467,Commune de Laamria,جماعة لعامرية,Commune rattachée à un cercle,9957,2181
+MA,64670319,commune,6467,Commune de Laaounate,جماعة لعونات,Commune rattachée à un cercle,17486,4191
+MA,64670325,commune,6467,Commune de Metrane,جماعة مطران,Commune rattachée à un cercle,9201,2127
+MA,64670331,commune,6467,Commune d'Oulad Boussaken,جماعة أولاد بوساكن,Commune rattachée à un cercle,5962,1367
+MA,64670511,commune,6467,Commune de Koudiat Bni Dghough,جماعة كدية بني دغوغ,Commune rattachée à un cercle,15550,3289
+MA,64670513,commune,6467,Commune de Kridid,جماعة كرديد,Commune rattachée à un cercle,14259,3054
+MA,64670515,commune,6467,Commune de Laagagcha,جماعة لعكاكشة,Commune rattachée à un cercle,14059,3220
+MA,64670529,commune,6467,Commune d'Oulad Amrane,جماعة أولاد عمران,Commune rattachée à un cercle,12059,2650
+MA,64670535,commune,6467,Commune de Tamda,جماعة تامدة,Commune rattachée à un cercle,9043,2076
+MA,64670705,commune,6467,Commune de Bouhmame,جماعة بوحمام,Commune rattachée à un cercle,23637,4993
+MA,64670707,commune,6467,Commune de Jabria,جماعة جابرية,Commune rattachée à un cercle,21071,4503
+MA,64670721,commune,6467,Commune de Laatatra,جماعة لعطاطرة,Commune rattachée à un cercle,18928,4040
+MA,64670723,commune,6467,Commune de Lmechrek,جماعة لمشرك,Commune rattachée à un cercle,15770,3450
+MA,64670727,commune,6467,Commune de M'tal,جماعة امطل,Commune rattachée à un cercle,8773,2161
+MA,64670733,commune,6467,Commune d'Oulad Si Bouhya,جماعة أولاد سي بوحيى,Commune rattachée à un cercle,18535,3850
+MA,64671101,commune,6467,Commune de Laghnadra,جماعة الغنادرة,Commune rattachée à un cercle,34680,7654
+MA,64671103,commune,6467,Commune de Lgharbia,جماعة الغربية,Commune rattachée à un cercle,22622,4891
+MA,64671107,commune,6467,Commune d'Oulad Sbaita,جماعة أولاد سبيطة,Commune rattachée à un cercle,25231,5526
+MA,64671109,commune,6467,Commune de Saniat Berguig,جماعة سانية بركيك,Commune rattachée à un cercle,28361,6447
+MA,7,region,,Région de Marrakech-Safi,جهة مراكش-آسفي,Région,4892393,1185865
+MA,7041,province,7,Province d'Al Haouz,إقليم الحوز,Province,642815,147971
+MA,70410101,commune,7041,Commune d'Ait Ourir,جماعة آيت أورير,Commune hors cercle,56954,13312
+MA,70410103,commune,7041,Commune d'Amizmiz,جماعة أمزميز,Commune hors cercle,13840,3664
+MA,70410109,commune,7041,Commune de Tahannaout,جماعة تحناوت,Commune hors cercle,16236,3847
+MA,70410305,commune,7041,Commune d'Ait Faska,جماعة آيت فاسكا,Commune rattachée à un cercle,33076,7528
+MA,70410309,commune,7041,Commune d'Ait Sidi Daoud,جماعة آيت سيدي داود,Commune rattachée à un cercle,21010,4846
+MA,70410311,commune,7041,Commune de Ghmate,جماعة اغمات,Commune rattachée à un cercle,28674,6526
+MA,70410313,commune,7041,Commune d'Iguerferouane,جماعة اكرفروان,Commune rattachée à un cercle,12432,2559
+MA,70410315,commune,7041,Commune de Sidi Abdellah Ghiat,جماعة سيدي عبد الله غيات,Commune rattachée à un cercle,43237,10274
+MA,70410319,commune,7041,Commune de Tamazouzte,جماعة تمازوزت,Commune rattachée à un cercle,16886,3824
+MA,70410323,commune,7041,Commune de Tidili Mesfioua,جماعة تديلي مسفيوة,Commune rattachée à un cercle,20283,4611
+MA,70410501,commune,7041,Commune d'Amghras,جماعة أمغراس,Commune rattachée à un cercle,5966,1492
+MA,70410505,commune,7041,Commune d'Anougal,جماعة انكال,Commune rattachée à un cercle,4006,1016
+MA,70410507,commune,7041,Commune d'Azgour,جماعة ازكور,Commune rattachée à un cercle,6208,1597
+MA,70410509,commune,7041,Commune de Dar Jamaa,جماعة دار الجامع,Commune rattachée à un cercle,6184,1549
+MA,70410511,commune,7041,Commune de Lalla Takarkoust,جماعة للا تكركوست,Commune rattachée à un cercle,8419,2097
+MA,70410513,commune,7041,Commune d'Ouazguita,جماعة وزكيتة,Commune rattachée à un cercle,5270,1254
+MA,70410515,commune,7041,Commune d'Oulad Mtaa,جماعة أولاد امطاع,Commune rattachée à un cercle,6915,1722
+MA,70410517,commune,7041,Commune de Sidi Badhaj,جماعة سيدي بدهاج,Commune rattachée à un cercle,5835,1449
+MA,70410519,commune,7041,Commune de Tizguine,جماعة تزكين,Commune rattachée à un cercle,5185,1433
+MA,70410701,commune,7041,Commune d'Aghbar,جماعة اغبار,Commune rattachée à un cercle,3447,852
+MA,70410703,commune,7041,Commune d'Asni,جماعة اسني,Commune rattachée à un cercle,22637,4966
+MA,70410705,commune,7041,Commune d'Ighil,جماعة اغيل,Commune rattachée à un cercle,4666,1069
+MA,70410707,commune,7041,Commune d'Ijoukak,جماعة اجوكاك,Commune rattachée à un cercle,5633,1415
+MA,70410709,commune,7041,Commune d'Imgdal,جماعة امكدال,Commune rattachée à un cercle,4782,1336
+MA,70410711,commune,7041,Commune d'Ouirgane,جماعة ويركان,Commune rattachée à un cercle,7687,1830
+MA,70410713,commune,7041,Commune de Talat N'yaaqoub,جماعة ثلاث نيعقوب,Commune rattachée à un cercle,7153,1954
+MA,70410901,commune,7041,Commune de Moulay Brahim,جماعة مولاي ابراهيم,Commune rattachée à un cercle,11331,2634
+MA,70410903,commune,7041,Commune d'Oukaimden,جماعة اوكايمدن,Commune rattachée à un cercle,4790,932
+MA,70410905,commune,7041,Commune d'Ourika,جماعة اوريكة,Commune rattachée à un cercle,50558,11574
+MA,70410907,commune,7041,Commune de Sti Fadma,جماعة ستي فاضمة,Commune rattachée à un cercle,24159,5162
+MA,70410911,commune,7041,Commune de Tameslohte,جماعة تمصلوحت,Commune rattachée à un cercle,40283,9911
+MA,70410913,commune,7041,Commune d'Aghouatim,جماعة اغواطيم,Commune rattachée à un cercle,36258,8256
+MA,70411101,commune,7041,Commune d'Abadou,جماعة أبادو,Commune rattachée à un cercle,10484,2157
+MA,70411103,commune,7041,Commune d'Ait Aadel,جماعة آيت عادل,Commune rattachée à un cercle,8724,1603
+MA,70411107,commune,7041,Commune d'Ait Hkim-Ait Yzid,جماعة آيت احكيم-آيت ازيد,Commune rattachée à un cercle,8104,1517
+MA,70411117,commune,7041,Commune de Tamaguert,جماعة تمكرت,Commune rattachée à un cercle,10022,2313
+MA,70411121,commune,7041,Commune de Tazart,جماعة تزارت,Commune rattachée à un cercle,14584,3144
+MA,70411125,commune,7041,Commune de Tighedouine,جماعة تغدوين,Commune rattachée à un cercle,21161,4152
+MA,70411127,commune,7041,Commune de Touama,جماعة التوامة,Commune rattachée à un cercle,11401,2761
+MA,70411129,commune,7041,Commune de Zerkten,جماعة زرقطن,Commune rattachée à un cercle,18335,3833
+MA,7161,province,7,Province de Chichaoua,إقليم شيشاوة,Province,379079,92262
+MA,71610101,commune,7161,Commune de Chichaoua,جماعة شيشاوة,Commune hors cercle,38452,9127
+MA,71610103,commune,7161,Commune d'Imintanoute,جماعة امنتانوت,Commune hors cercle,25049,6367
+MA,71610301,commune,7161,Commune d'Ahdil,جماعة اهديل,Commune rattachée à un cercle,11130,2290
+MA,71610303,commune,7161,Commune d'Ait Hadi,جماعة آيت هادي,Commune rattachée à un cercle,8847,2189
+MA,71610305,commune,7161,Commune de Lamzoudia,جماعة لمزوضية,Commune rattachée à un cercle,27004,5960
+MA,71610307,commune,7161,Commune d'Oulad Moumna,جماعة أولاد مومنة,Commune rattachée à un cercle,7092,1708
+MA,71610309,commune,7161,Commune de Saidate,جماعة السعيدات,Commune rattachée à un cercle,6354,1602
+MA,71610311,commune,7161,Commune de Sid L'mokhtar,جماعة سيدي المختار,Commune rattachée à un cercle,27083,6764
+MA,71610313,commune,7161,Commune de Sidi Bouzid Arragragui,جماعة سيدي بوزيد الركراكي,Commune rattachée à un cercle,8622,2152
+MA,71610315,commune,7161,Commune de Sidi M'hamed Dalil,جماعة سيدي امحمد دليل,Commune rattachée à un cercle,5619,1338
+MA,71610501,commune,7161,Commune d'Afalla Issen,جماعة أفلا إيسن,Commune rattachée à un cercle,7221,1928
+MA,71610503,commune,7161,Commune d'Ain Tazitounte,جماعة عين تزيتونت,Commune rattachée à un cercle,4651,1166
+MA,71610505,commune,7161,Commune d'Ait Haddou Youssef,جماعة آيت حدو يوسف,Commune rattachée à un cercle,5174,1022
+MA,71610507,commune,7161,Commune d'Irohalen,جماعة إروهالن,Commune rattachée à un cercle,5031,1261
+MA,71610509,commune,7161,Commune de Lalla Aaziza,جماعة للا عزيزة,Commune rattachée à un cercle,7534,1656
+MA,71610511,commune,7161,Commune de Nfifa,جماعة نفيفة,Commune rattachée à un cercle,6282,1643
+MA,71610513,commune,7161,Commune d'Ouad L'bour,جماعة واد البور,Commune rattachée à un cercle,4918,1352
+MA,71610515,commune,7161,Commune de Sidi Ghanem,جماعة سيدي غانم,Commune rattachée à un cercle,8397,2073
+MA,71610517,commune,7161,Commune de Timezgadiouine,جماعة تمزكدوين,Commune rattachée à un cercle,6780,1770
+MA,71610701,commune,7161,Commune d'Adassil,جماعة اداسيل,Commune rattachée à un cercle,7078,1702
+MA,71610703,commune,7161,Commune d'Assif El Mal,جماعة أسيف المال,Commune rattachée à un cercle,8002,2024
+MA,71610705,commune,7161,Commune de Douirane,جماعة ادويران,Commune rattachée à un cercle,17256,3993
+MA,71610707,commune,7161,Commune de Gmassa,جماعة كماسة,Commune rattachée à un cercle,10675,2660
+MA,71610709,commune,7161,Commune d'Imindounit,جماعة إمندونيت,Commune rattachée à un cercle,10890,2337
+MA,71610711,commune,7161,Commune de Majjat,جماعة مجاط,Commune rattachée à un cercle,14708,3557
+MA,71610713,commune,7161,Commune de M'zouda,جماعة امزوضة,Commune rattachée à un cercle,25342,6177
+MA,71610715,commune,7161,Commune de Zaouia Annahlia,جماعة الزاوية النحلية,Commune rattachée à un cercle,11722,2490
+MA,71610901,commune,7161,Commune de Bouabout,جماعة بوابوض,Commune rattachée à un cercle,9825,2510
+MA,71610903,commune,7161,Commune de Bouabout Amdlane,جماعة بوابوض امدلان,Commune rattachée à un cercle,6405,1633
+MA,71610905,commune,7161,Commune d'Ichamraren,جماعة اشمرارن,Commune rattachée à un cercle,5707,1537
+MA,71610907,commune,7161,Commune de Kouzemt,جماعة كوزمت,Commune rattachée à un cercle,3371,927
+MA,71610909,commune,7161,Commune de Rahhala,جماعة رحالة,Commune rattachée à un cercle,4859,1344
+MA,71610911,commune,7161,Commune de Sidi Abdelmoumen,جماعة سيدي عبد المومن,Commune rattachée à un cercle,7055,2063
+MA,71610913,commune,7161,Commune de Taouloukoult,جماعة تاولوكلت,Commune rattachée à un cercle,9362,2436
+MA,71610915,commune,7161,Commune de Timlilt,جماعة تمليلت,Commune rattachée à un cercle,5582,1504
+MA,7191,province,7,Province d'El Kelâa Des-Sraghna,إقليم قلعة السراغنة,Province,560273,125161
+MA,71910103,commune,7191,Commune de Kelâat Sraghna,جماعة قلعة السراغنة,Commune hors cercle,106418,26083
+MA,71910105,commune,7191,Commune de Laattaouia,جماعة العطاوية,Commune hors cercle,38405,8610
+MA,71910107,commune,7191,Commune de Sidi Rahal,جماعة سيدي رحال,Commune hors cercle,10276,2340
+MA,71910109,commune,7191,Commune de Tamallalt,جماعة تملالت,Commune hors cercle,20528,4591
+MA,71910503,commune,7191,Commune de Bouya Omar,جماعة بوي عمر,Commune rattachée à un cercle,14701,3344
+MA,71910505,commune,7191,Commune de Choara,جماعة الشعراء,Commune rattachée à un cercle,12249,2569
+MA,71910507,commune,7191,Commune de Dzouz,جماعة ادزوز,Commune rattachée à un cercle,11527,2530
+MA,71910509,commune,7191,Commune de Fraita,جماعة فرايطة,Commune rattachée à un cercle,10721,2543
+MA,71910515,commune,7191,Commune de Laatamna,جماعة العثامنة,Commune rattachée à un cercle,9318,2086
+MA,71910516,commune,7191,Commune de Laattaouia Ech-Chaibia,جماعة العطاوية الشعيبية,Commune rattachée à un cercle,5910,1295
+MA,71910521,commune,7191,Commune d'Ouargui,جماعة واركي,Commune rattachée à un cercle,10788,2395
+MA,71910523,commune,7191,Commune d'Oulad Aarrad,جماعة أولاد عراض,Commune rattachée à un cercle,6065,1455
+MA,71910711,commune,7191,Commune de Jbiel,جماعة اجبيل,Commune rattachée à un cercle,10593,2350
+MA,71910713,commune,7191,Commune de Jouala,جماعة الجوالة,Commune rattachée à un cercle,10283,2274
+MA,71910731,commune,7191,Commune de Zemrane,جماعة زمران,Commune rattachée à un cercle,14995,3189
+MA,71910733,commune,7191,Commune de Zemrane Charqia,جماعة زمران الشرقية,Commune rattachée à un cercle,29569,6284
+MA,71910901,commune,7191,Commune d'Assahrij,جماعة الصهريج,Commune rattachée à un cercle,16313,3425
+MA,71910917,commune,7191,Commune de Louad Lakhdar,جماعة الواد لخضر,Commune rattachée à un cercle,9125,2121
+MA,71910919,commune,7191,Commune de M'zem Sanhaja,جماعة مزم صنهاجة,Commune rattachée à un cercle,10946,2164
+MA,71910925,commune,7191,Commune d'Oulad Khallouf,جماعة أولاد خلوف,Commune rattachée à un cercle,9172,1908
+MA,71910927,commune,7191,Commune de Sidi Aissa Ben Slimane,جماعة سيدي عيسى بن سليمان,Commune rattachée à un cercle,19164,4236
+MA,71910929,commune,7191,Commune de Sour El Aaz,جماعة سور العز,Commune rattachée à un cercle,3755,856
+MA,71911107,commune,7191,Commune d'El Marbouh,جماعة المربوح,Commune rattachée à un cercle,9468,2104
+MA,71911111,commune,7191,Commune de Hiadna,جماعة الهيادنة,Commune rattachée à un cercle,12870,2482
+MA,71911113,commune,7191,Commune de Lounasda,جماعة لوناسدة,Commune rattachée à un cercle,10866,2248
+MA,71911115,commune,7191,Commune de Mayate,جماعة ميات,Commune rattachée à un cercle,11443,2404
+MA,71911121,commune,7191,Commune d'Oulad Cherki,جماعة أولاد الشرقي,Commune rattachée à un cercle,7185,1485
+MA,71911123,commune,7191,Commune d'Oulad El Garne,جماعة أولاد الكرن,Commune rattachée à un cercle,7728,1672
+MA,71911129,commune,7191,Commune d'Oulad Sbih,جماعة أولاد صبيح,Commune rattachée à un cercle,6513,1533
+MA,71911131,commune,7191,Commune d'Oulad Yaacoub,جماعة أولاد يعكوب,Commune rattachée à un cercle,6791,1547
+MA,71911133,commune,7191,Commune d'Oulad Zarrad,جماعة أولاد زراد,Commune rattachée à un cercle,13243,2765
+MA,71911141,commune,7191,Commune de Znada,جماعة ازنادة,Commune rattachée à un cercle,7230,1689
+MA,71911301,commune,7191,Commune de Chtaiba,جماعة الشطيبة,Commune rattachée à un cercle,8491,1881
+MA,71911303,commune,7191,Commune d'Eddachra,جماعة الدشرة,Commune rattachée à un cercle,6939,1642
+MA,71911305,commune,7191,Commune d'El Aamria,جماعة العامرية,Commune rattachée à un cercle,8625,1891
+MA,71911309,commune,7191,Commune d'Errafiaya,جماعة الرافعية,Commune rattachée à un cercle,4903,1098
+MA,71911317,commune,7191,Commune d'Oulad Aamer,جماعة أولاد عمرو,Commune rattachée à un cercle,6996,1451
+MA,71911319,commune,7191,Commune d'Oulad Bouali Loued,جماعة أولاد بوعلي الواد,Commune rattachée à un cercle,6302,1433
+MA,71911325,commune,7191,Commune d'Oulad Massaoud,جماعة أولاد مسعود,Commune rattachée à un cercle,4188,1039
+MA,71911327,commune,7191,Commune d'Oulad Msabbel,جماعة أولاد امسبل,Commune rattachée à un cercle,6216,1243
+MA,71911335,commune,7191,Commune de Sidi El Hattab,جماعة سيدي الحطاب,Commune rattachée à un cercle,9638,1919
+MA,71911337,commune,7191,Commune de Sidi Moussa,جماعة سيدي موسى,Commune rattachée à un cercle,8600,1773
+MA,71911339,commune,7191,Commune de Taouzint,جماعة توزينت,Commune rattachée à un cercle,5217,1214
+MA,7211,province,7,Province d'Essaouira,إقليم الصويرة,Province,426719,111602
+MA,72110101,commune,7211,Commune d'Ait Daoud,جماعة آيت داوود,Commune hors cercle,3653,974
+MA,72110103,commune,7211,Commune d'El Hanchane,جماعة الحنشان,Commune hors cercle,5319,1360
+MA,72110105,commune,7211,Commune d'Essaouira,جماعة الصويرة,Commune hors cercle,82962,24719
+MA,72110107,commune,7211,Commune de Talmest,جماعة تالمست,Commune hors cercle,4638,1322
+MA,72110109,commune,7211,Commune de Tamanar,جماعة تمنار,Commune hors cercle,11617,2934
+MA,72110303,commune,7211,Commune d'Aquermoud,جماعة أقرمود,Commune rattachée à un cercle,15981,3994
+MA,72110305,commune,7211,Commune de Had Dra,جماعة حد الدرا,Commune rattachée à un cercle,9435,2432
+MA,72110321,commune,7211,Commune de Moulay Bouzarqtoune,جماعة مولاي بوزرقطون,Commune rattachée à un cercle,5608,1422
+MA,72110325,commune,7211,Commune de M'khalif,جماعة المخاليف,Commune rattachée à un cercle,5062,1301
+MA,72110331,commune,7211,Commune d'Ounagha,جماعة أوناغة,Commune rattachée à un cercle,13310,3618
+MA,72110333,commune,7211,Commune de Sidi Abdeljalil,جماعة سيدي عبد الجليل,Commune rattachée à un cercle,6056,1685
+MA,72110337,commune,7211,Commune de Sidi Ali El Korati,جماعة سيدي علي الكراتي,Commune rattachée à un cercle,6099,1557
+MA,72110341,commune,7211,Commune de Sidi Ishaq,جماعة سيدي إسحاق,Commune rattachée à un cercle,10055,2434
+MA,72110343,commune,7211,Commune de Sidi Laaroussi,جماعة سيدي لعروسي,Commune rattachée à un cercle,10604,2512
+MA,72110349,commune,7211,Commune de Takate,جماعة تكاط,Commune rattachée à un cercle,9993,2545
+MA,72110351,commune,7211,Commune de Zaouiat Ben Hmida,جماعة زاوية بن احميدة,Commune rattachée à un cercle,7317,1811
+MA,72110505,commune,7211,Commune d'Aguerd,جماعة اكرض,Commune rattachée à un cercle,5370,1453
+MA,72110507,commune,7211,Commune d'Ait Aissa Ihahane,جماعة آيت عيسى اححان,Commune rattachée à un cercle,2563,768
+MA,72110517,commune,7211,Commune d'Ida Ou Aazza,جماعة إيدا وعزا,Commune rattachée à un cercle,7635,1792
+MA,72110519,commune,7211,Commune d'Ida Ou Guelloul,جماعة إيدا وكلول,Commune rattachée à un cercle,5086,1311
+MA,72110521,commune,7211,Commune d'Ida Ou Kazzou,جماعة إيدا وكازو,Commune rattachée à un cercle,3511,951
+MA,72110523,commune,7211,Commune d'Imgrade,جماعة إمكراد,Commune rattachée à un cercle,4817,1243
+MA,72110525,commune,7211,Commune d'Imi-N'tlit,جماعة إيمي نتليت,Commune rattachée à un cercle,7179,1666
+MA,72110527,commune,7211,Commune de Sidi Ahmed Essayeh,جماعة سيدي احمد السايح,Commune rattachée à un cercle,5233,1330
+MA,72110529,commune,7211,Commune de Sidi El Jazouli,جماعة سيدي الجزولي,Commune rattachée à un cercle,5554,1447
+MA,72110533,commune,7211,Commune de Sidi Hmad Ou M'barek,جماعة سيدي أحمد أومبارك,Commune rattachée à un cercle,4726,1294
+MA,72110535,commune,7211,Commune de Sidi H'mad Ou Hamed,جماعة سيدي احمد أوحامد,Commune rattachée à un cercle,3548,985
+MA,72110537,commune,7211,Commune de Sidi Kaouki,جماعة سيدي كاوكي,Commune rattachée à un cercle,4877,1482
+MA,72110539,commune,7211,Commune de Smimou,جماعة سميمو,Commune rattachée à un cercle,8883,2229
+MA,72110541,commune,7211,Commune de Tafedna,جماعة تفضنة,Commune rattachée à un cercle,4999,1265
+MA,72110547,commune,7211,Commune de Targante,جماعة تاركانت,Commune rattachée à un cercle,6392,1542
+MA,72110549,commune,7211,Commune de Tidzi,جماعة تدزي,Commune rattachée à un cercle,3770,984
+MA,72110551,commune,7211,Commune de Timzguida-Ouftas,جماعة تمزكدة أوفتاس,Commune rattachée à un cercle,4952,1233
+MA,72110701,commune,7211,Commune d'Adaghas,جماعة أدغاس,Commune rattachée à un cercle,1656,432
+MA,72110703,commune,7211,Commune d'Aglif,جماعة اكليف,Commune rattachée à un cercle,6499,1712
+MA,72110709,commune,7211,Commune d'Assais,جماعة أسايس,Commune rattachée à un cercle,4442,1207
+MA,72110711,commune,7211,Commune de Bizdad,جماعة بيزضاض,Commune rattachée à un cercle,7077,1742
+MA,72110713,commune,7211,Commune de Bouzemmour,جماعة بوزمور,Commune rattachée à un cercle,3940,1015
+MA,72110715,commune,7211,Commune d'Ezzaouite,جماعة الزاويت,Commune rattachée à un cercle,5818,1470
+MA,72110731,commune,7211,Commune de Sidi Ghaneme,جماعة سيدي غانم,Commune rattachée à un cercle,4161,943
+MA,72110743,commune,7211,Commune de Tahelouante,جماعة تهلوانت,Commune rattachée à un cercle,2910,757
+MA,72110745,commune,7211,Commune de Takoucht,جماعة تاكوشت,Commune rattachée à un cercle,3209,919
+MA,72110901,commune,7211,Commune d'Ait Said,جماعة آيت سعيد,Commune rattachée à un cercle,6027,1557
+MA,72110907,commune,7211,Commune de Kechoula,جماعة كشولة,Commune rattachée à un cercle,5934,1389
+MA,72110909,commune,7211,Commune de Korimate,جماعة الكريمات,Commune rattachée à un cercle,9526,2316
+MA,72110911,commune,7211,Commune de Lagdadra,جماعة لكدادرة,Commune rattachée à un cercle,6699,1701
+MA,72110913,commune,7211,Commune de Lahsinate,جماعة لحسينات,Commune rattachée à un cercle,4932,1262
+MA,72110915,commune,7211,Commune de Mejji,جماعة مجي,Commune rattachée à un cercle,6479,1497
+MA,72110917,commune,7211,Commune de Meskala,جماعة مسكالة,Commune rattachée à un cercle,4378,1065
+MA,72110919,commune,7211,Commune de Mouarid,جماعة المواريد,Commune rattachée à un cercle,5320,1263
+MA,72110923,commune,7211,Commune de Mzilate,جماعة المزيلات,Commune rattachée à un cercle,3573,853
+MA,72110927,commune,7211,Commune de M'ramer,جماعة امرامر,Commune rattachée à un cercle,6488,1557
+MA,72110929,commune,7211,Commune d'Oulad M'rabet,جماعة أولاد امرابط,Commune rattachée à un cercle,3951,936
+MA,72110935,commune,7211,Commune de Sidi Aissa Regragui,جماعة سيدي عيسى الركراكي,Commune rattachée à un cercle,7567,1800
+MA,72110939,commune,7211,Commune de Sidi Boulaalam,جماعة سيدي بولعلام,Commune rattachée à un cercle,7681,1801
+MA,72110945,commune,7211,Commune de Sidi M'hamed Ou Marzouq,جماعة سيدي امحمد أومرزوق,Commune rattachée à un cercle,4306,963
+MA,72110947,commune,7211,Commune de Tafetachte,جماعة تفتاشت,Commune rattachée à un cercle,7342,1850
+MA,7351,province,7,Préfecture de Marrakech,عمالة مراكش,Préfecture,1571580,402389
+MA,7351010,commune,7351,Commune de Marrakech,جماعة مراكش,Commune hors cercle,1002697,268925
+MA,73510101,commune,7351,Commune de Méchouar-Kasba,جماعة مشور– القصبة,Commune hors cercle,12116,3345
+MA,73510103,arrondissement,7351010,Arrondissement d'Annakhil,مقاطعة النخيل,Arrondissement,71506,17531
+MA,73510105,arrondissement,7351010,Arrondissement de Gueliz,مقاطعة جيليز,Arrondissement,219863,68658
+MA,73510107,arrondissement,7351010,Arrondissement de Marrakech-Médina,مقاطعة مراكش المدينة,Arrondissement,81103,21660
+MA,73510109,arrondissement,7351010,Arrondissement de Ménara,مقاطعة المنارة,Arrondissement,522259,135189
+MA,73510111,arrondissement,7351010,Arrondissement de Sidi Youssef Ben Ali,مقاطعة سيدي يوسف بن علي,Arrondissement,107966,25887
+MA,73510113,commune,7351,Commune de Tassoultante,جماعة تسلطانت,Commune hors cercle,106013,26168
+MA,73510201,commune,7351,Commune d'Al Ouidane,جماعة الويدان,Commune rattachée à un cercle,37450,8887
+MA,73510207,commune,7351,Commune d'Ouahat Sidi Brahim,جماعة واحة سيدي ابراهيم,Commune rattachée à un cercle,36493,8393
+MA,73510209,commune,7351,Commune d'Oulad Hassoune,جماعة أولاد حسون,Commune rattachée à un cercle,27314,6333
+MA,73510303,commune,7351,Commune de Harbil,جماعة حربيل,Commune rattachée à un cercle,105790,24609
+MA,73510305,commune,7351,Commune de M'nabha,جماعة المنابهة,Commune rattachée à un cercle,13565,2900
+MA,73510311,commune,7351,Commune d'Ouled Dlim,جماعة أولاد دليم,Commune rattachée à un cercle,14468,2978
+MA,73510501,commune,7351,Commune d'Agafay,جماعة أكفاي,Commune rattachée à un cercle,17771,4213
+MA,73510503,commune,7351,Commune d'Ait Imour,جماعة آيت إيمور,Commune rattachée à un cercle,14603,3358
+MA,73510505,commune,7351,Commune de Loudaya,جماعة الاوداية,Commune rattachée à un cercle,41761,9083
+MA,73510509,commune,7351,Commune de Sid Zouine,جماعة سيد الزوين,Commune rattachée à un cercle,17130,4132
+MA,73510707,commune,7351,Commune de Saada,جماعة سعادة,Commune rattachée à un cercle,91903,21819
+MA,73510711,commune,7351,Commune de Souihla,جماعة السويهلة,Commune rattachée à un cercle,32506,7246
+MA,7427,province,7,Province de Rehamna,إقليم الرحامنة,Province,346108,76166
+MA,74270101,commune,7427,Commune de Ben Guerir,جماعة ابن جرير,Commune hors cercle,114872,27167
+MA,74270117,commune,7427,Commune de Sidi Bou Othmane,جماعة سيدي بوعثمان,Commune hors cercle,12490,2821
+MA,74270701,commune,7427,Commune d'Ait Hammou,جماعة آيت حمو,Commune rattachée à un cercle,7211,1463
+MA,74270703,commune,7427,Commune d'Ait Taleb,جماعة آيت الطالب,Commune rattachée à un cercle,8075,1669
+MA,74270705,commune,7427,Commune de Bouchane,جماعة بوشان,Commune rattachée à un cercle,9610,2109
+MA,74270707,commune,7427,Commune de Jaafra,جماعة الجعافرة,Commune rattachée à un cercle,10689,2200
+MA,74270709,commune,7427,Commune de Labrikiyne,جماعة لبريكيين,Commune rattachée à un cercle,12185,2433
+MA,74270711,commune,7427,Commune d'Oulad Aamer Tizmarine,جماعة أولاد عامر تزمرين,Commune rattachée à un cercle,4533,1025
+MA,74270713,commune,7427,Commune d'Oulad Hassoune Hamri,جماعة أولاد حسون حمري,Commune rattachée à un cercle,7792,1565
+MA,74270715,commune,7427,Commune de Sidi Abdellah,جماعة سيدي عبد الله,Commune rattachée à un cercle,9447,2116
+MA,74270717,commune,7427,Commune de Sidi Ali Labrahla,جماعة سيدي علي لبراحلة,Commune rattachée à un cercle,6718,1422
+MA,74270719,commune,7427,Commune de Sidi Ghanem,جماعة سيدي غانم,Commune rattachée à un cercle,8039,1747
+MA,74270721,commune,7427,Commune de Sidi Mansour,جماعة سيدي منصور,Commune rattachée à un cercle,4766,1022
+MA,74270723,commune,7427,Commune de Skhour Rhamna,جماعة صخور الرحامنة,Commune rattachée à un cercle,15565,3681
+MA,74270725,commune,7427,Commune de Skoura Lhadra,جماعة سكورة الحدرة,Commune rattachée à un cercle,7877,1752
+MA,74270901,commune,7427,Commune d'Akarma,جماعة عكرمة,Commune rattachée à un cercle,4795,899
+MA,74270903,commune,7427,Commune de Bourrous,جماعة بوروس,Commune rattachée à un cercle,6316,1362
+MA,74270905,commune,7427,Commune de Jaidate,جماعة الجعيدات,Commune rattachée à un cercle,13193,2912
+MA,74270906,commune,7427,Commune de Jbilate,جماعة الجبيلات,Commune rattachée à un cercle,11511,2491
+MA,74270907,commune,7427,Commune de Lamharra,جماعة لمحرة,Commune rattachée à un cercle,9476,2056
+MA,74270909,commune,7427,Commune de Nzalat Laadam,جماعة انزالت لعظم,Commune rattachée à un cercle,19635,3460
+MA,74270911,commune,7427,Commune d'Oulad Imloul,جماعة أولاد املول,Commune rattachée à un cercle,9659,2224
+MA,74270913,commune,7427,Commune de Ras Ain Rhamna,جماعة راس عين الرحامنة,Commune rattachée à un cercle,16330,3362
+MA,74270915,commune,7427,Commune de Sidi Boubker,جماعة سيدي بوبكر,Commune rattachée à un cercle,5728,1207
+MA,74270919,commune,7427,Commune de Tlauh,جماعة الطلوح,Commune rattachée à un cercle,9596,2001
+MA,7431,province,7,Province de Safi,إقليم آسفي,Province,719671,175259
+MA,74310103,commune,7431,Commune de Safi,جماعة آسفي,Commune hors cercle,323888,85929
+MA,74310109,commune,7431,Commune de Jamaat Shaim,جماعة جمعة سحيم,Commune hors cercle,11865,2915
+MA,74310111,commune,7431,Commune de Sebt Gzoula,جماعة سبت كزولة,Commune hors cercle,24600,6002
+MA,74310301,commune,7431,Commune de Bouguedra,جماعة بوكدرة,Commune rattachée à un cercle,15707,3592
+MA,74310302,commune,7431,Commune de Chahda,جماعة شهدة,Commune rattachée à un cercle,10449,2346
+MA,74310303,commune,7431,Commune d'El Gouraani,جماعة الكرعاني,Commune rattachée à un cercle,10859,2446
+MA,74310305,commune,7431,Commune de Labkhati,جماعة لبخاتي,Commune rattachée à un cercle,13731,3052
+MA,74310307,commune,7431,Commune de Lahdar,جماعة لحضر,Commune rattachée à un cercle,12809,2974
+MA,74310309,commune,7431,Commune de Lamrasla,جماعة لمراسلة,Commune rattachée à un cercle,17997,3933
+MA,74310311,commune,7431,Commune de Lamsabih,جماعة لمصابح,Commune rattachée à un cercle,10443,2404
+MA,74310313,commune,7431,Commune de Sidi Aissa,جماعة سيدي عيسى,Commune rattachée à un cercle,9528,2241
+MA,74310315,commune,7431,Commune de Sidi Ettiji,جماعة سيدي التيجي,Commune rattachée à un cercle,17197,3650
+MA,74310701,commune,7431,Commune d'Atouabet,جماعة اتوابت,Commune rattachée à un cercle,10378,2393
+MA,74310703,commune,7431,Commune d'El Ghiate,جماعة الغيات,Commune rattachée à un cercle,23109,5300
+MA,74310705,commune,7431,Commune de Khatazakane,جماعة خط ازكان,Commune rattachée à un cercle,16691,4000
+MA,74310707,commune,7431,Commune de Laamamra,جماعة لعمامرة,Commune rattachée à un cercle,12025,2706
+MA,74310709,commune,7431,Commune de Lamaachate,جماعة لمعاشات,Commune rattachée à un cercle,15830,3945
+MA,74310711,commune,7431,Commune de Nagga,جماعة نكا,Commune rattachée à un cercle,21996,4926
+MA,74310713,commune,7431,Commune d'Ouled Salmane,جماعة اولاد سلمان,Commune rattachée à un cercle,16457,3889
+MA,74310901,commune,7431,Commune d'Ayir,جماعة ايير,Commune rattachée à un cercle,30870,6709
+MA,74310903,commune,7431,Commune de Dar Si Aissa,جماعة دار سي عيسى,Commune rattachée à un cercle,11949,2623
+MA,74310905,commune,7431,Commune d'El Beddouza,جماعة البدوزة,Commune rattachée à un cercle,14278,3132
+MA,74310907,commune,7431,Commune de Hrara,جماعة حرارة,Commune rattachée à un cercle,30025,6676
+MA,74310909,commune,7431,Commune de Moul El Bergui,جماعة مول البركي,Commune rattachée à un cercle,18856,3436
+MA,74310915,commune,7431,Commune de Saadla,جماعة اصعادلا,Commune rattachée à un cercle,18134,4040
+MA,7585,province,7,Province de Youssoufia,إقليم اليوسفية,Province,246148,55055
+MA,75850107,commune,7585,Commune d'Echemmaia,جماعة الشماعية,Commune hors cercle,26547,6023
+MA,75850113,commune,7585,Commune de Youssoufia,جماعة اليوسفية,Commune hors cercle,65669,16415
+MA,75850507,commune,7585,Commune d'Ighoud,جماعة إيغود,Commune rattachée à un cercle,22080,4669
+MA,75850509,commune,7585,Commune de Jdour,جماعة جذور,Commune rattachée à un cercle,19390,3897
+MA,75850511,commune,7585,Commune de Jnane Bouih,جماعة اجنان بويه,Commune rattachée à un cercle,19755,4163
+MA,75850517,commune,7585,Commune de Sidi Chiker,جماعة سيدي شيكر,Commune rattachée à un cercle,20291,4192
+MA,75850701,commune,7585,Commune d'Atiamim,جماعة اطياميم,Commune rattachée à un cercle,6774,1486
+MA,75850703,commune,7585,Commune d'El Gantour,جماعة الكنتور,Commune rattachée à un cercle,17270,4192
+MA,75850705,commune,7585,Commune d'Esbiaat,جماعة اسبيعات,Commune rattachée à un cercle,14662,3124
+MA,75850713,commune,7585,Commune de Lakhoualqa,جماعة لخوالقة,Commune rattachée à un cercle,14621,3142
+MA,75850715,commune,7585,Commune de Ras El Ain,جماعة رأس العين,Commune rattachée à un cercle,19089,3752
+MA,8,region,,Région de Drâa-Tafilalet,جهة درعة-تافيلالت,Région,1655623,338977
+MA,8201,province,8,Province d'Errachidia,إقليم الرشيدية,Province,427572,90107
+MA,82010101,commune,8201,Commune d'Arfoud,جماعة أرفود,Commune hors cercle,28912,6309
+MA,82010103,commune,8201,Commune de Boudnib,جماعة بودنيب,Commune hors cercle,13411,2878
+MA,82010105,commune,8201,Commune d'Errachidia,جماعة الرشيدية,Commune hors cercle,97687,22944
+MA,82010109,commune,8201,Commune de Goulmima,جماعة كلميمة,Commune hors cercle,14624,3588
+MA,82010111,commune,8201,Commune de Jorf,جماعة الجرف,Commune hors cercle,11865,2521
+MA,82010113,commune,8201,Commune de Moulay Ali Cherif,جماعة مولاي علي الشريف,Commune hors cercle,22082,4481
+MA,82010115,commune,8201,Commune de Tinejdad,جماعة تنجداد,Commune hors cercle,9528,2023
+MA,82010301,commune,8201,Commune d'Aarab Sebbah Gheris,جماعة اعرب صباح اغريس,Commune rattachée à un cercle,4758,911
+MA,82010303,commune,8201,Commune d'Aarab Sebbah Ziz,جماعة عرب صباح زيز,Commune rattachée à un cercle,20538,3771
+MA,82010307,commune,8201,Commune d'Es-Sifa,جماعة السيفا,Commune rattachée à un cercle,6531,1130
+MA,82010309,commune,8201,Commune de Fezna,جماعة فزنا,Commune rattachée à un cercle,4400,846
+MA,82010701,commune,8201,Commune d'Aoufous,جماعة أوفوس,Commune rattachée à un cercle,8888,1938
+MA,82010703,commune,8201,Commune de Chorfa M'daghra,جماعة شرفاء مدغرة,Commune rattachée à un cercle,18171,3641
+MA,82010705,commune,8201,Commune d'Er-Rteb,جماعة الرتب,Commune rattachée à un cercle,12852,2544
+MA,82010707,commune,8201,Commune de Lkheng,جماعة الخنك,Commune rattachée à un cercle,18381,4011
+MA,82010709,commune,8201,Commune d'Oued Naam,جماعة وادي النعام,Commune rattachée à un cercle,5708,1198
+MA,82011101,commune,8201,Commune de Bni M'hamed-Sijelmassa,جماعة بني امحمد سجلماسة,Commune rattachée à un cercle,11925,2361
+MA,82011103,commune,8201,Commune d'Er-Rissani,جماعة الريصاني,Commune rattachée à un cercle,4353,701
+MA,82011105,commune,8201,Commune d'Es-Sfalat,جماعة السفلات,Commune rattachée à un cercle,8586,1732
+MA,82011107,commune,8201,Commune d'Et-Taous,جماعة الطاوس,Commune rattachée à un cercle,9360,1897
+MA,82011109,commune,8201,Commune de Sidi Ali,جماعة سيدي علي,Commune rattachée à un cercle,1973,336
+MA,82011302,commune,8201,Commune d'Amellagou,جماعة املاكو,Commune rattachée à un cercle,4711,1060
+MA,82011307,commune,8201,Commune de Gheris El Ouloui,جماعة اغريس العلوي,Commune rattachée à un cercle,12193,2450
+MA,82011309,commune,8201,Commune de Gheris Es-Soufli,جماعة اغريس السفلي,Commune rattachée à un cercle,6877,1386
+MA,82011313,commune,8201,Commune de Tadighoust,جماعة تاديغوست,Commune rattachée à un cercle,6018,1453
+MA,82011501,commune,8201,Commune d'Aghbalou-N'kerdous,جماعة اغبالو انكردوس,Commune rattachée à un cercle,10675,1943
+MA,82011503,commune,8201,Commune de Ferkla El Oulia,جماعة فركلة العليا,Commune rattachée à un cercle,23449,4404
+MA,82011505,commune,8201,Commune de Ferkla Es-Soufla,جماعة فركلة السفلى,Commune rattachée à un cercle,11886,2272
+MA,82011511,commune,8201,Commune de Melaab,جماعة ملعب,Commune rattachée à un cercle,17230,3378
+MA,8363,province,8,Province de Midelt,إقليم ميدلت,Province,313769,73708
+MA,83630103,commune,8363,Commune de Midelt,جماعة ميدلت,Commune hors cercle,62648,16225
+MA,83630107,commune,8363,Commune d'Er-Rich,جماعة الريش,Commune hors cercle,28462,6894
+MA,83630115,commune,8363,Commune de Boumia,جماعة بومية,Commune hors cercle,21713,5879
+MA,83630501,commune,8363,Commune d'Aghbalou,جماعة أغبالو,Commune rattachée à un cercle,10296,2606
+MA,83630521,commune,8363,Commune de Sidi Yahia Ou Youssef,جماعة سيدي يحيى أيوسف,Commune rattachée à un cercle,4877,1109
+MA,83630523,commune,8363,Commune de Tanourdi,جماعة تنوردي,Commune rattachée à un cercle,2834,621
+MA,83630525,commune,8363,Commune de Tizi N'ghachou,جماعة تيزي نغشو,Commune rattachée à un cercle,2836,627
+MA,83630705,commune,8363,Commune d'Ait Ayach,جماعة آيت عياش,Commune rattachée à un cercle,12932,2773
+MA,83630707,commune,8363,Commune d'Ait Ben Yacoub,جماعة آيت بن يعقوب,Commune rattachée à un cercle,3743,1044
+MA,83630709,commune,8363,Commune d'Ait Izdeg,جماعة آيت ازدك,Commune rattachée à un cercle,7794,1642
+MA,83630711,commune,8363,Commune d'Amersid,جماعة أمرصيد,Commune rattachée à un cercle,6023,1356
+MA,83630717,commune,8363,Commune d'Itzer,جماعة إيتزر,Commune rattachée à un cercle,10513,2946
+MA,83630719,commune,8363,Commune de Mibladen,جماعة ميبلادن,Commune rattachée à un cercle,3052,739
+MA,83630729,commune,8363,Commune de Zaida,جماعة زايدة,Commune rattachée à un cercle,14454,3696
+MA,83630901,commune,8363,Commune d'En-Nzala,جماعة النزالة,Commune rattachée à un cercle,4873,1012
+MA,83630903,commune,8363,Commune de Gourrama,جماعة كرامة,Commune rattachée à un cercle,15952,3379
+MA,83630905,commune,8363,Commune de Guers Tiaallaline,جماعة كرس تعلالين,Commune rattachée à un cercle,15019,3106
+MA,83630907,commune,8363,Commune de Guir,جماعة كير,Commune rattachée à un cercle,4363,929
+MA,83630909,commune,8363,Commune de M'zizel,جماعة امزيزل,Commune rattachée à un cercle,7502,1561
+MA,83630911,commune,8363,Commune de Sidi Aayad,جماعة سيدي عياد,Commune rattachée à un cercle,11562,2440
+MA,83630913,commune,8363,Commune de Zaouiat Sidi Hamza,جماعة زاوية سيدي حمزة,Commune rattachée à un cercle,5248,934
+MA,83631501,commune,8363,Commune d'Ait Yahya,جماعة آيت يحيى,Commune rattachée à un cercle,4293,763
+MA,83631503,commune,8363,Commune d'Amouguer,جماعة أموكر,Commune rattachée à un cercle,4363,888
+MA,83631505,commune,8363,Commune de Bou-Azmou,جماعة بوازمو,Commune rattachée à un cercle,10100,2026
+MA,83631507,commune,8363,Commune d'Imilchil,جماعة إملشيل,Commune rattachée à un cercle,9164,2056
+MA,83631509,commune,8363,Commune d'Outerbat,جماعة اوتربات,Commune rattachée à un cercle,6763,1372
+MA,83631703,commune,8363,Commune d'Agoudim,جماعة أكديم,Commune rattachée à un cercle,3826,762
+MA,83631713,commune,8363,Commune d'Anemzi,جماعة أنمزي,Commune rattachée à un cercle,5140,1022
+MA,83631727,commune,8363,Commune de Tounfite,جماعة تونفيت,Commune rattachée à un cercle,13424,3301
+MA,8401,province,8,Province d'Ouarzazate,إقليم ورزازات,Province,304932,66420
+MA,84010107,commune,8401,Commune d'Ouarzazate,جماعة ورزازات,Commune hors cercle,79218,18297
+MA,84010109,commune,8401,Commune de Taznakht,جماعة تازناخت,Commune hors cercle,8268,2010
+MA,84010301,commune,8401,Commune d'Ait Zineb,جماعة آيت زينب,Commune rattachée à un cercle,10530,2334
+MA,84010303,commune,8401,Commune d'Amerzgane,جماعة امرزكان,Commune rattachée à un cercle,8765,1985
+MA,84010305,commune,8401,Commune d'Iznaguen,جماعة ازناكن,Commune rattachée à un cercle,11953,2666
+MA,84010307,commune,8401,Commune d'Ighrem N'ougdal,جماعة اغرم نوكدال,Commune rattachée à un cercle,13727,3026
+MA,84010309,commune,8401,Commune de Khouzama,جماعة خزامة,Commune rattachée à un cercle,7401,1672
+MA,84010311,commune,8401,Commune d'Ouisselsate,جماعة وسلسات,Commune rattachée à un cercle,12471,2884
+MA,84010313,commune,8401,Commune de Siroua,جماعة سروا,Commune rattachée à un cercle,8586,2030
+MA,84010315,commune,8401,Commune de Telouet,جماعة تلوات,Commune rattachée à un cercle,12396,2655
+MA,84010317,commune,8401,Commune de Tidili,جماعة تيدلي,Commune rattachée à un cercle,14841,3089
+MA,84010701,commune,8401,Commune de Ghassate,جماعة غسات,Commune rattachée à un cercle,7169,1431
+MA,84010703,commune,8401,Commune d'Idelsane,جماعة ادلسان,Commune rattachée à un cercle,8680,1840
+MA,84010705,commune,8401,Commune d'Imi-N'oulaoune,جماعة إمي نولاون,Commune rattachée à un cercle,19734,3536
+MA,84010707,commune,8401,Commune de Skoura Ahl El Oust,جماعة سكورة اهل الوسط,Commune rattachée à un cercle,24053,4879
+MA,84010709,commune,8401,Commune de Tarmigt,جماعة ترميكت,Commune rattachée à un cercle,46963,10058
+MA,84010711,commune,8401,Commune de Toundoute,جماعة توندوت,Commune rattachée à un cercle,10177,2028
+MA,8577,province,8,Province de Tinghir,إقليم تنغير,Province,323805,62123
+MA,85770103,commune,8577,Commune de Boumalne-Dades,جماعة بومالن دادس,Commune hors cercle,12391,2769
+MA,85770105,commune,8577,Commune de Kalâat M'gouna,جماعة قلعة مكونة,Commune hors cercle,17737,3900
+MA,85770111,commune,8577,Commune de Tinghir,جماعة تنغير,Commune hors cercle,44239,9840
+MA,85770205,commune,8577,Commune d'Alnif,جماعة النيف,Commune rattachée à un cercle,20978,3578
+MA,85770211,commune,8577,Commune de H'ssyia,جماعة حصيا,Commune rattachée à un cercle,11713,1860
+MA,85770221,commune,8577,Commune de M'ssici,جماعة مصيسي,Commune rattachée à un cercle,5455,895
+MA,85770301,commune,8577,Commune d'Ait Hani,جماعة آيت هاني,Commune rattachée à un cercle,11120,2183
+MA,85770305,commune,8577,Commune d'Assoul,جماعة اسول,Commune rattachée à un cercle,6827,1611
+MA,85770505,commune,8577,Commune d'Ait Sedrate Jbel El Oulia,جماعة آيت سدرات الجبل العليا,Commune rattachée à un cercle,4978,904
+MA,85770507,commune,8577,Commune d'Ait Sedrate Jebel Soufla,جماعة آيت سدرات الجبل السفلى,Commune rattachée à un cercle,5228,1099
+MA,85770513,commune,8577,Commune d'Ait Youl,جماعة آيت يول,Commune rattachée à un cercle,4680,842
+MA,85770517,commune,8577,Commune d'Ikniouen,جماعة اكنيون,Commune rattachée à un cercle,17707,2539
+MA,85770521,commune,8577,Commune de M'semrir,جماعة امسمرير,Commune rattachée à un cercle,8686,1487
+MA,85770529,commune,8577,Commune de Tilmi,جماعة تلمي,Commune rattachée à un cercle,11691,2049
+MA,85770701,commune,8577,Commune d'Ait El Farsi,جماعة آيت الفرسي,Commune rattachée à un cercle,5653,1040
+MA,85770719,commune,8577,Commune d'Imider,جماعة اميضر,Commune rattachée à un cercle,4296,763
+MA,85770723,commune,8577,Commune d'Ouaklim,جماعة واكليم,Commune rattachée à un cercle,12050,1976
+MA,85770727,commune,8577,Commune de Taghzoute N'ait Atta,جماعة تغزوت نايت عطى,Commune rattachée à un cercle,15654,3232
+MA,85770731,commune,8577,Commune de Toudgha El Oulia,جماعة تودغى العليا,Commune rattachée à un cercle,5084,1244
+MA,85770733,commune,8577,Commune de Toudgha Essoufla,جماعة تودغى السفلى,Commune rattachée à un cercle,13890,2663
+MA,85770903,commune,8577,Commune d'Ait Ouassif,جماعة آيت واسيف,Commune rattachée à un cercle,8885,1599
+MA,85770909,commune,8577,Commune d'Ait Sedrate Sahl Charkia,جماعة آيت سدرات السهل الشرقية,Commune rattachée à un cercle,15506,2920
+MA,85770911,commune,8577,Commune d'Ait Sedrate Sahl El-Gharbia,جماعة آيت سدرات السهل الغربية,Commune rattachée à un cercle,19985,3988
+MA,85770915,commune,8577,Commune d'Ighil N'oumgoun,جماعة اغيل نومكون,Commune rattachée à un cercle,23218,3734
+MA,85770925,commune,8577,Commune de Souk Lakhmis Dades,جماعة سوق الخميس دادس,Commune rattachée à un cercle,16154,3408
+MA,8587,province,8,Province de Zagora,إقليم زاكورة,Province,285545,46619
+MA,85870101,commune,8587,Commune d'Agdz,جماعة أكدز,Commune hors cercle,11189,2254
+MA,85870113,commune,8587,Commune de Zagora,جماعة زاكورة,Commune hors cercle,42294,7898
+MA,85870301,commune,8587,Commune d'Afella N'dra,جماعة أفلاندرا,Commune rattachée à un cercle,6657,1149
+MA,85870303,commune,8587,Commune d'Afra,جماعة أفرا,Commune rattachée à un cercle,7554,1369
+MA,85870321,commune,8587,Commune de Mezguita,جماعة مزكيطة,Commune rattachée à un cercle,7084,1135
+MA,85870327,commune,8587,Commune d'Oulad Yahia Lagraire,جماعة أولاد يحيى لكراير,Commune rattachée à un cercle,10686,1791
+MA,85870337,commune,8587,Commune de Tamezmoute,جماعة تمزموط,Commune rattachée à un cercle,10953,1787
+MA,85870339,commune,8587,Commune de Tansifte,جماعة تنسيفت,Commune rattachée à un cercle,11389,2040
+MA,85870709,commune,8587,Commune de Bleida,جماعة ابليدة,Commune rattachée à un cercle,4309,616
+MA,85870711,commune,8587,Commune de Bni Zoli,جماعة بني زولي,Commune rattachée à un cercle,16241,2150
+MA,85870713,commune,8587,Commune de Bouzeroual,جماعة بوزروال,Commune rattachée à un cercle,9972,1385
+MA,85870715,commune,8587,Commune d'Errouha,جماعة الروحا,Commune rattachée à un cercle,9521,1432
+MA,85870729,commune,8587,Commune de Taftechna,جماعة تافتشنا,Commune rattachée à un cercle,4661,714
+MA,85870743,commune,8587,Commune de Ternata,جماعة ترناتة,Commune rattachée à un cercle,15911,2266
+MA,85870745,commune,8587,Commune de Tinzouline,جماعة تنزولين,Commune rattachée à un cercle,14652,2109
+MA,85870917,commune,8587,Commune de Fezouata,جماعة فزواطة,Commune rattachée à un cercle,8001,1047
+MA,85870919,commune,8587,Commune de Ktaoua,جماعة كتاوة,Commune rattachée à un cercle,6157,1204
+MA,85870923,commune,8587,Commune de M'hamid El Ghizlane,جماعة امحاميد الغزلان,Commune rattachée à un cercle,6664,1234
+MA,85870933,commune,8587,Commune de Tagounite,جماعة تاكونيت,Commune rattachée à un cercle,15122,2603
+MA,85870935,commune,8587,Commune de Tamegroute,جماعة تامكروت,Commune rattachée à un cercle,19207,2771
+MA,85871105,commune,8587,Commune d'Ait Boudaoud,جماعة آيت بوداود,Commune rattachée à un cercle,4757,779
+MA,85871107,commune,8587,Commune d'Ait Ouallal,جماعة آيت ولال,Commune rattachée à un cercle,11751,1827
+MA,85871125,commune,8587,Commune de N'kob,جماعة النقوب,Commune rattachée à un cercle,7742,1477
+MA,85871131,commune,8587,Commune de Taghbalte,جماعة تغبالت,Commune rattachée à un cercle,9176,1328
+MA,85871141,commune,8587,Commune de Tazarine,جماعة تازارين,Commune rattachée à un cercle,13895,2254
+MA,9,region,,Région de Souss-Massa,جهة سوس-ماسة,Région,3020431,785208
+MA,9001,province,9,Préfecture d'Agadir-Ida-Ou-Tanane,عمالة أكادير-إدا وتنان,Préfecture,721431,197248
+MA,90010101,commune,9001,Commune d'Agadir,جماعة أكادير,Commune hors cercle,504768,143553
+MA,90010501,commune,9001,Commune d'Amskroud,جماعة امسكروض,Commune rattachée à un cercle,9648,2395
+MA,90010509,commune,9001,Commune de Drargua,جماعة الدراركة,Commune rattachée à un cercle,107621,25472
+MA,90010511,commune,9001,Commune d'Idmine,جماعة اضمين,Commune rattachée à un cercle,2715,728
+MA,90010703,commune,9001,Commune d'Aourir,جماعة أورير,Commune rattachée à un cercle,46032,11696
+MA,90010705,commune,9001,Commune d'Aqsri,جماعة اقصري,Commune rattachée à un cercle,3333,914
+MA,90010707,commune,9001,Commune d'Aziar,جماعة ازيار,Commune rattachée à un cercle,2053,618
+MA,90010713,commune,9001,Commune d'Imouzzer,جماعة إيموزار,Commune rattachée à un cercle,4087,1094
+MA,90010715,commune,9001,Commune d'Imsouane,جماعة امسوان,Commune rattachée à un cercle,7246,1910
+MA,90010721,commune,9001,Commune de Tadrart,جماعة تدرارت,Commune rattachée à un cercle,2899,881
+MA,90010723,commune,9001,Commune de Taghazout,جماعة تغازوت,Commune rattachée à un cercle,4861,1393
+MA,90010725,commune,9001,Commune de Tamri,جماعة تامري,Commune rattachée à un cercle,19790,4899
+MA,90010729,commune,9001,Commune de Tiqqi,جماعة تقي,Commune rattachée à un cercle,6378,1695
+MA,9163,province,9,Province de Chtouka-Aït Baha,إقليم اشتوكة-آيت باها,Province,493623,133727
+MA,91630101,commune,9163,Commune d'Ait Amira,جماعة آيت عميرة,Commune hors cercle,113236,30592
+MA,91630103,commune,9163,Commune d'Ait Baha,جماعة آيت باها,Commune hors cercle,6007,1611
+MA,91630111,commune,9163,Commune de Biougra,جماعة بيوكرى,Commune hors cercle,50626,13774
+MA,91630127,commune,9163,Commune de Sidi Bibi,جماعة سيدي بيبي,Commune hors cercle,72929,18972
+MA,91630305,commune,9163,Commune d'Ait Mzal,جماعة آيت مزال,Commune rattachée à un cercle,3305,970
+MA,91630307,commune,9163,Commune d'Ait Ouadrim,جماعة آيت وادريم,Commune rattachée à un cercle,4976,1455
+MA,91630309,commune,9163,Commune d'Aouguenz,جماعة أوكنز,Commune rattachée à un cercle,2941,1050
+MA,91630313,commune,9163,Commune de Hilala,جماعة هلالة,Commune rattachée à un cercle,1858,630
+MA,91630315,commune,9163,Commune d'Ida-Ougnidif,جماعة إدا وكنظيف,Commune rattachée à un cercle,2095,787
+MA,91630325,commune,9163,Commune de Sidi Abdallah El Bouchouari,جماعة سيدي عبد الله البوشواري,Commune rattachée à un cercle,6604,1834
+MA,91630333,commune,9163,Commune de Tanalt,جماعة تنالت,Commune rattachée à un cercle,2138,766
+MA,91630335,commune,9163,Commune de Targua-Ntouchka,جماعة تركا نتوشكا,Commune rattachée à un cercle,3371,1083
+MA,91630337,commune,9163,Commune de Tassegdelt,جماعة تسكدلت,Commune rattachée à un cercle,4046,1260
+MA,91630339,commune,9163,Commune de Tizi Ntakoucht,جماعة تيزي نتكوشت,Commune rattachée à un cercle,1098,417
+MA,91630503,commune,9163,Commune d'Ait Milk,جماعة آيت ميلك,Commune rattachée à un cercle,8706,2523
+MA,91630511,commune,9163,Commune de Belfaâ,جماعة بلفاع,Commune rattachée à un cercle,36774,9935
+MA,91630519,commune,9163,Commune d'Inchaden,جماعة انشادن,Commune rattachée à un cercle,42724,11959
+MA,91630521,commune,9163,Commune de Massa,جماعة ماسة,Commune rattachée à un cercle,17946,4994
+MA,91630531,commune,9163,Commune de Sidi Ouassay,جماعة سيدي وساي,Commune rattachée à un cercle,10050,2748
+MA,91630717,commune,9163,Commune d'Imi-Mqourn,جماعة إمي مقورن,Commune rattachée à un cercle,10365,2783
+MA,91630723,commune,9163,Commune d'Oued Essafa,جماعة واد الصفاء,Commune rattachée à un cercle,83442,21290
+MA,91630729,commune,9163,Commune de Sidi Boushab,جماعة سيدي بوالسحاب,Commune rattachée à un cercle,8386,2294
+MA,9273,province,9,Préfecture d'Inezgane-Aït Melloul,عمالة إنزكان-آيت ملول,Préfecture,636916,161551
+MA,92730105,commune,9273,Commune d'Ait Melloul,جماعة آيت ملول,Commune hors cercle,210870,53781
+MA,92730113,commune,9273,Commune de Dcheira El Jihadia,جماعة الدشيرة الجهادية,Commune hors cercle,113041,30582
+MA,92730115,commune,9273,Commune d'Inezgane,جماعة إنزكان,Commune hors cercle,137512,34902
+MA,92730117,commune,9273,Commune de Lqliaa,جماعة لقليعة,Commune hors cercle,107133,25615
+MA,92730519,commune,9273,Commune d'Oulad Dahou,جماعة أولاد دحو,Commune rattachée à un cercle,15697,3982
+MA,92730527,commune,9273,Commune de Temsia,جماعة تمسية,Commune rattachée à un cercle,52663,12689
+MA,9541,province,9,Province de Taroudannt,إقليم تارودانت,Province,858162,209341
+MA,95410101,commune,9541,Commune d'Ait Iaaza,جماعة آيت إيعزة,Commune hors cercle,17339,4145
+MA,95410102,commune,9541,Commune d'Aoulouz,جماعة أولوز,Commune hors cercle,21502,4605
+MA,95410103,commune,9541,Commune d'El Guerdane,جماعة الكردان,Commune hors cercle,13747,3292
+MA,95410105,commune,9541,Commune d'Irherm,جماعة إيغرم,Commune hors cercle,4127,1310
+MA,95410107,commune,9541,Commune d'Oulad Berhil,جماعة أولاد برحيل,Commune hors cercle,30330,7068
+MA,95410109,commune,9541,Commune d'Oulad Teima,جماعة أولاد تايمة,Commune hors cercle,100284,24494
+MA,95410111,commune,9541,Commune de Taliouine,جماعة تالوين,Commune hors cercle,7040,1753
+MA,95410113,commune,9541,Commune de Taroudannt,جماعة تارودانت,Commune hors cercle,83496,21821
+MA,95410301,commune,9541,Commune d'Adar,جماعة أضار,Commune rattachée à un cercle,3043,1058
+MA,95410303,commune,9541,Commune d'Ait Abdallah,جماعة آيت عبد الله,Commune rattachée à un cercle,1635,643
+MA,95410305,commune,9541,Commune d'Amalou,جماعة أملو,Commune rattachée à un cercle,2188,668
+MA,95410307,commune,9541,Commune d'Azaghar N'irs,جماعة أزغارنيرس,Commune rattachée à un cercle,4009,1161
+MA,95410309,commune,9541,Commune d'Imaouen,جماعة إيماون,Commune rattachée à un cercle,1969,623
+MA,95410311,commune,9541,Commune d'Imi N'tayart,جماعة إمي نتيارت,Commune rattachée à un cercle,973,379
+MA,95410313,commune,9541,Commune de Nihit,جماعة النحيت,Commune rattachée à un cercle,1456,516
+MA,95410315,commune,9541,Commune d'Oualqadi,جماعة والقاضي,Commune rattachée à un cercle,1477,527
+MA,95410317,commune,9541,Commune de Sidi Boaal,جماعة سيدي بوعل,Commune rattachée à un cercle,2180,778
+MA,95410319,commune,9541,Commune de Sidi Mzal,جماعة سيدي مزال,Commune rattachée à un cercle,1373,497
+MA,95410321,commune,9541,Commune de Tabia,جماعة تابيا,Commune rattachée à un cercle,814,353
+MA,95410323,commune,9541,Commune de Tataoute,جماعة تتاوت,Commune rattachée à un cercle,3767,1135
+MA,95410325,commune,9541,Commune de Tindine,جماعة تندين,Commune rattachée à un cercle,1853,640
+MA,95410327,commune,9541,Commune de Tisfane,جماعة تيسفان,Commune rattachée à un cercle,1414,478
+MA,95410329,commune,9541,Commune de Toufelaazt,جماعة توفلعزت,Commune rattachée à un cercle,1061,358
+MA,95410331,commune,9541,Commune de Toumliline,جماعة تومليلين,Commune rattachée à un cercle,1463,530
+MA,95410409,commune,9541,Commune d'Arazane,جماعة أرزن,Commune rattachée à un cercle,7883,1812
+MA,95410413,commune,9541,Commune d'El Faid,جماعة الفيض,Commune rattachée à un cercle,10559,2616
+MA,95410417,commune,9541,Commune d'Ida Ou Gailal,جماعة إدا وكيلال,Commune rattachée à un cercle,6036,1459
+MA,95410421,commune,9541,Commune d'Ida-Ougoummad,جماعة إدا وكماض,Commune rattachée à un cercle,7543,1913
+MA,95410423,commune,9541,Commune d'Igli,جماعة إكلي,Commune rattachée à un cercle,13832,3061
+MA,95410425,commune,9541,Commune d'Igoudar Mnabha,جماعة إيكودار امنابها,Commune rattachée à un cercle,10974,2567
+MA,95410429,commune,9541,Commune de Lamhara,جماعة لمهارة,Commune rattachée à un cercle,11622,2656
+MA,95410433,commune,9541,Commune d'Oulad Aissa,جماعة أولاد عيسى,Commune rattachée à un cercle,11732,2636
+MA,95410435,commune,9541,Commune d'Ouneine,جماعة أوناين,Commune rattachée à un cercle,7042,1783
+MA,95410439,commune,9541,Commune de Sidi Abdellah Ou Said,جماعة سيدي عبد الله أو سعيد,Commune rattachée à un cercle,3003,788
+MA,95410447,commune,9541,Commune de Sidi Ouaaziz,جماعة سيدي واعزيز,Commune rattachée à un cercle,9241,2227
+MA,95410449,commune,9541,Commune de Tafingoult,جماعة تافنكولت,Commune rattachée à un cercle,5670,1442
+MA,95410453,commune,9541,Commune de Talgjount,جماعة تالكجونت,Commune rattachée à un cercle,5234,1280
+MA,95410459,commune,9541,Commune de Tigouga,جماعة تكوكة,Commune rattachée à un cercle,3867,922
+MA,95410461,commune,9541,Commune de Tinzart,جماعة تنزرت,Commune rattachée à un cercle,6127,1391
+MA,95410467,commune,9541,Commune de Tizi N'test,جماعة تيزي نتاست,Commune rattachée à un cercle,3588,956
+MA,95410469,commune,9541,Commune de Toughmart,جماعة توغمرت,Commune rattachée à un cercle,5035,1497
+MA,95410501,commune,9541,Commune d'Ahl Ramel,جماعة أهل الرمل,Commune rattachée à un cercle,7496,1849
+MA,95410505,commune,9541,Commune d'Assads,جماعة أصادص,Commune rattachée à un cercle,3592,1058
+MA,95410511,commune,9541,Commune d'El Koudia El Beida,جماعة الكدية البيضاء,Commune rattachée à un cercle,23666,5582
+MA,95410517,commune,9541,Commune de Lagfifat,جماعة لكفيفات,Commune rattachée à un cercle,19471,4671
+MA,95410519,commune,9541,Commune de Lakhnafif,جماعة الخنافيف,Commune rattachée à un cercle,10706,2470
+MA,95410521,commune,9541,Commune de Lamhadi,جماعة لمهادي,Commune rattachée à un cercle,11927,2768
+MA,95410523,commune,9541,Commune de Machraa El Ain,جماعة مشرع العين,Commune rattachée à un cercle,12243,3021
+MA,95410525,commune,9541,Commune de Sidi Ahmed Ou Amar,جماعة سيدي أحمد أو عمر,Commune rattachée à un cercle,17914,4134
+MA,95410527,commune,9541,Commune de Sidi Boumoussa,جماعة سيدي بوموسى,Commune rattachée à un cercle,23160,5558
+MA,95410533,commune,9541,Commune de Tidsi-Nissendalene,جماعة تدسي نسندالن,Commune rattachée à un cercle,4395,1295
+MA,95410701,commune,9541,Commune d'Agadir Melloul,جماعة أكادير ملول,Commune rattachée à un cercle,7518,1697
+MA,95410703,commune,9541,Commune d'Ahl Tifnoute,جماعة أهل تفنوت,Commune rattachée à un cercle,5196,1114
+MA,95410705,commune,9541,Commune d'Askaouen,جماعة أسكاون,Commune rattachée à un cercle,7046,1553
+MA,95410707,commune,9541,Commune d'Assaisse,جماعة أسايس,Commune rattachée à un cercle,5934,1590
+MA,95410709,commune,9541,Commune d'Assaki,جماعة أساكي,Commune rattachée à un cercle,8048,1886
+MA,95410711,commune,9541,Commune d'Azrar,جماعة أزرار,Commune rattachée à un cercle,4242,1067
+MA,95410713,commune,9541,Commune d'Iguidi,جماعة إكيدي,Commune rattachée à un cercle,7949,1733
+MA,95410715,commune,9541,Commune de Sidi Hsaine,جماعة سيدي احساين,Commune rattachée à un cercle,6716,1675
+MA,95410717,commune,9541,Commune de Taouyalte,جماعة تاويالت,Commune rattachée à un cercle,7097,1576
+MA,95410719,commune,9541,Commune de Tassousfi,جماعة تسوسفي,Commune rattachée à un cercle,5998,1546
+MA,95410721,commune,9541,Commune de Tizgzaouine,جماعة تزكزاوين,Commune rattachée à un cercle,4653,1267
+MA,95410723,commune,9541,Commune de Toubkal,جماعة تبقال,Commune rattachée à un cercle,8538,1834
+MA,95410725,commune,9541,Commune de Zagmouzen,جماعة زاكموزن,Commune rattachée à un cercle,7480,1672
+MA,95410737,commune,9541,Commune d'Ouzioua,جماعة أوزيوة,Commune rattachée à un cercle,8141,1748
+MA,95410765,commune,9541,Commune de Tisrasse,جماعة تيسراس,Commune rattachée à un cercle,5608,1371
+MA,95410903,commune,9541,Commune d'Ait Igas,جماعة آيت اكاس,Commune rattachée à un cercle,10378,2195
+MA,95410905,commune,9541,Commune d'Ait Makhlouf,جماعة آيت مخلوف,Commune rattachée à un cercle,4135,1035
+MA,95410911,commune,9541,Commune de Bounrar,جماعة بونرار,Commune rattachée à un cercle,4995,1302
+MA,95410915,commune,9541,Commune de Freija,جماعة افريجة,Commune rattachée à un cercle,9005,1998
+MA,95410927,commune,9541,Commune d'Imoulass,جماعة إيمولاس,Commune rattachée à un cercle,6889,1757
+MA,95410941,commune,9541,Commune de Sidi Ahmed Ou Abdallah,جماعة سيدي احمد أو عبد الله,Commune rattachée à un cercle,4038,1023
+MA,95410943,commune,9541,Commune de Sidi Borja,جماعة سيدي بورجا,Commune rattachée à un cercle,10736,2541
+MA,95410945,commune,9541,Commune de Sidi Dahmane,جماعة سيدي دحمان,Commune rattachée à un cercle,14878,3423
+MA,95410951,commune,9541,Commune de Tafraouten,جماعة تافراوتن,Commune rattachée à un cercle,7026,1622
+MA,95410955,commune,9541,Commune de Tamaloukte,جماعة تملوكت,Commune rattachée à un cercle,4241,1072
+MA,95410957,commune,9541,Commune de Tazemmourt,جماعة تزمورت,Commune rattachée à un cercle,6856,1699
+MA,95410963,commune,9541,Commune de Tiout,جماعة تيوت,Commune rattachée à un cercle,3017,824
+MA,95411101,commune,9541,Commune d'Ahmar Laglalcha,جماعة احمر لكلالشة,Commune rattachée à un cercle,21659,5069
+MA,95411103,commune,9541,Commune d'Argana,جماعة أركانة,Commune rattachée à un cercle,4123,1023
+MA,95411107,commune,9541,Commune de Bigoudine,جماعة بيكودين,Commune rattachée à un cercle,4174,1056
+MA,95411109,commune,9541,Commune d'Eddir,جماعة الدير,Commune rattachée à un cercle,7781,1732
+MA,95411113,commune,9541,Commune d'Imilmaiss,جماعة إميلمايس,Commune rattachée à un cercle,4967,1186
+MA,95411115,commune,9541,Commune d'Issen,جماعة إسن,Commune rattachée à un cercle,13254,3163
+MA,95411119,commune,9541,Commune d'Ida Ou Moumen,جماعة إدا ومومن,Commune rattachée à un cercle,5833,1432
+MA,95411129,commune,9541,Commune de Sidi Moussa Lhamri,جماعة سيدي موسى الحمري,Commune rattachée à un cercle,17673,3814
+MA,95411131,commune,9541,Commune de Lamnizla,جماعة لمنيزلة,Commune rattachée à un cercle,3427,856
+MA,95411133,commune,9541,Commune de Talmakante,جماعة تالماكانت,Commune rattachée à un cercle,3336,798
+MA,95411171,commune,9541,Commune de Zaouia Sidi Tahar,جماعة زاوية سيدي الطاهر,Commune rattachée à un cercle,13479,3148
+MA,9551,province,9,Province de Tata,إقليم طاطا,Province,111757,25530
+MA,95510101,commune,9551,Commune d'Akka,جماعة أقا,Commune hors cercle,5575,1337
+MA,95510103,commune,9551,Commune de Fam El Hisn,جماعة فم الحصن,Commune hors cercle,5908,1294
+MA,95510105,commune,9551,Commune de Foum Zguid,جماعة فم زكيد,Commune hors cercle,8660,1902
+MA,95510107,commune,9551,Commune de Tata,جماعة طاطا,Commune hors cercle,19544,4218
+MA,95510301,commune,9551,Commune d'Ait Ouabelli,جماعة آيت وابلي,Commune rattachée à un cercle,2140,617
+MA,95510303,commune,9551,Commune de Kasbat Sidi Abdellah Ben M'barek,جماعة قصبة سيدي عبد الله بن مبارك,Commune rattachée à un cercle,6840,1335
+MA,95510305,commune,9551,Commune de Tamanarte,جماعة تمنارت,Commune rattachée à un cercle,4999,1499
+MA,95510307,commune,9551,Commune de Tizounine,جماعة تزونين,Commune rattachée à un cercle,2008,521
+MA,95510501,commune,9551,Commune d'Aguinane,جماعة أكينان,Commune rattachée à un cercle,2396,620
+MA,95510503,commune,9551,Commune d'Akka-Ighane,جماعة أقا إيغان,Commune rattachée à un cercle,6045,1338
+MA,95510505,commune,9551,Commune d'Allougoum,جماعة الوكوم,Commune rattachée à un cercle,8251,1505
+MA,95510507,commune,9551,Commune d'Ibn Yacoub,جماعة إبن يعقوب,Commune rattachée à un cercle,2530,660
+MA,95510509,commune,9551,Commune de Tissint,جماعة تسينت,Commune rattachée à un cercle,8797,1756
+MA,95510511,commune,9551,Commune de Tlite,جماعة تليت,Commune rattachée à un cercle,4166,926
+MA,95510701,commune,9551,Commune d'Adis,جماعة اديس,Commune rattachée à un cercle,6468,1271
+MA,95510703,commune,9551,Commune d'Issafen,جماعة إسافن,Commune rattachée à un cercle,3031,975
+MA,95510705,commune,9551,Commune d'Oum El Guerdane,جماعة أم الكردان,Commune rattachée à un cercle,3143,651
+MA,95510707,commune,9551,Commune de Tagmout,جماعة تكموت,Commune rattachée à un cercle,4300,1219
+MA,95510709,commune,9551,Commune de Tigzmerte,جماعة تكزميرت,Commune rattachée à un cercle,3600,902
+MA,95510711,commune,9551,Commune de Tizaghte,جماعة تزغت,Commune rattachée à un cercle,3356,984
+MA,9581,province,9,Province de Tiznit,إقليم تيزنيت,Province,198542,57811
+MA,95810105,commune,9581,Commune de Tafraout,جماعة تافراوت,Commune hors cercle,6124,1849
+MA,95810107,commune,9581,Commune de Tiznit,جماعة تيزنيت,Commune hors cercle,86595,23860
+MA,95810301,commune,9581,Commune d'Ait Issafen,جماعة آيت إسفن,Commune rattachée à un cercle,2497,813
+MA,95810303,commune,9581,Commune d'Anzi,جماعة أنزي,Commune rattachée à un cercle,6199,1793
+MA,95810305,commune,9581,Commune d'Arbaa Ait Ahmed,جماعة أربعاء آيت أحمد,Commune rattachée à un cercle,3918,1210
+MA,95810307,commune,9581,Commune d'Ida Ou Gougmar,جماعة إدا وكوكمار,Commune rattachée à un cercle,4250,1327
+MA,95810309,commune,9581,Commune de Sidi Ahmed Ou Moussa,جماعة سيدي أحمد أوموسى,Commune rattachée à un cercle,3339,910
+MA,95810311,commune,9581,Commune de Tafraout El Mouloud,جماعة تفراوت المولود,Commune rattachée à un cercle,2014,710
+MA,95810313,commune,9581,Commune de Tighmi,جماعة تيغمي,Commune rattachée à un cercle,5492,1551
+MA,95810315,commune,9581,Commune de Tizoughrane,جماعة تيزغران,Commune rattachée à un cercle,3725,1231
+MA,95810317,commune,9581,Commune de Tnine Aday,جماعة اثنين أداي,Commune rattachée à un cercle,1696,539
+MA,95810901,commune,9581,Commune d'Afella Ighir,جماعة أفلا إغير,Commune rattachée à un cercle,2446,855
+MA,95810903,commune,9581,Commune d'Ait Ouafqa,جماعة آيت وافقا,Commune rattachée à un cercle,3376,1135
+MA,95810905,commune,9581,Commune d'Ammelne,جماعة أملن,Commune rattachée à un cercle,2782,1088
+MA,95810907,commune,9581,Commune d'Irigh N'tahala,جماعة إريغ نتاهلة,Commune rattachée à un cercle,1417,518
+MA,95810909,commune,9581,Commune de Tarsouat,جماعة تارسواط,Commune rattachée à un cercle,2001,741
+MA,95810911,commune,9581,Commune de Tassrirt,جماعة تاسريرت,Commune rattachée à un cercle,1130,464
+MA,95811101,commune,9581,Commune d'Arbaa Rasmouka,جماعة أربعاء رسموكة,Commune rattachée à un cercle,4620,1378
+MA,95811103,commune,9581,Commune d'Arbaa Sahel,جماعة أربعاء الساحل,Commune rattachée à un cercle,8820,2650
+MA,95811105,commune,9581,Commune de Bounaamane,جماعة بونعمان,Commune rattachée à un cercle,8932,2485
+MA,95811107,commune,9581,Commune d'El Maader El Kabir,جماعة المعدر الكبير,Commune rattachée à un cercle,6009,1797
+MA,95811109,commune,9581,Commune d'Ouijjane,جماعة وجان,Commune rattachée à un cercle,4079,1180
+MA,95811111,commune,9581,Commune de Reggada,جماعة الركادة,Commune rattachée à un cercle,12521,3458
+MA,95811113,commune,9581,Commune de Sidi Bouabdelli,جماعة سيدي بو عبد اللي,Commune rattachée à un cercle,4610,1290
+MA,95811115,commune,9581,Commune de Tnine Aglou,جماعة اثنين أكلو,Commune rattachée à un cercle,9950,2979

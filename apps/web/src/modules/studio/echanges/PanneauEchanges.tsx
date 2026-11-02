@@ -7,10 +7,10 @@
  * propre (format, sens, objet) ; ses intertitres sont des `h3` sous le `h2` de la boîte.
  */
 import { useState } from "react";
-import { STUDIO_MATRICE_ECHANGES, type StudioEntreeEchange } from "@parcours/atelier-model";
+import { STUDIO_MATRICE_ECHANGES, STUDIO_SENS_CAPACITE, type StudioEntreeEchange } from "@parcours/atelier-model";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import {
-  entreesFiltrees, FILTRES_STATUT, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_STATUT_ECHANGE, lignesFidelite, nomDetails, resumeMatrice,
+  entreesFiltrees, FILTRES_STATUT, LIBELLES_COUVERTURE_ENTITE, LIBELLES_SENS_CAPACITE, lignesCapacites, LIBELLES_FAMILLE_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_STATUT_ECHANGE, lignesFidelite, nomDetails, resumeMatrice,
   TEXTES_ECHANGES as T, type FiltreStatut,
 } from "./echanges-ui";
 import "./echanges.css";
@@ -37,6 +37,23 @@ export function PanneauEchanges({ surFermer }: { surFermer: () => void }) {
             </table>
           </div>
         )}
+        <h3>{T.capacites}</h3>
+        <p className="studio-dialogue-aide">{T.capacitesAide}</p>
+        <div className="studio-echanges-tableau">
+          <table data-studio-capacites>
+            <thead><tr><th scope="col">{T.colonneFormat}</th>{STUDIO_SENS_CAPACITE.map((s) => <th key={s} scope="col">{LIBELLES_SENS_CAPACITE[s]}</th>)}</tr></thead>
+            <tbody>{lignesCapacites().map((l) => (
+              <tr key={l.id} data-studio-capacite={l.id}>
+                <th scope="row">{l.format}</th>
+                {l.cellules.map((c) => (
+                  <td key={c.sens} data-studio-capacite-sens={c.sens} data-studio-capacite-statut={c.statut}>
+                    <span className={`studio-echanges-statut studio-echanges-statut-${c.statut}`}>{c.libelle}</span> {c.detail}
+                  </td>
+                ))}
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
       </div>
     </Dialogue>
   );

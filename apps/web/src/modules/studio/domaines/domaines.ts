@@ -65,12 +65,20 @@ export const DOMAINES_COMMANDES = Object.freeze({
   "terminer-polyligne": "dessin", "fermer-polyligne": "dessin",
   "zoom-avant": "dessin", "zoom-arriere": "dessin", cadrer: "dessin", "plein-ecran": "dessin", "vue-3d": "dessin", "navigation-3d": "dessin", "coupe-3d": "dessin",
   "accrochage-sommets": "dessin", "accrochage-grille": "dessin", "accrochage-milieu": "dessin", "accrochage-centre": "dessin", "accrochage-quadrant": "dessin",
-  "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-proche": "dessin",
+  "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-parallele": "dessin", "accrochage-proche": "dessin", "accrochage-cible-suivante": "dessin",
   "reperage-orthogonal": "dessin", "reperage-polaire": "dessin", "pas-polaire": "dessin",
-  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
+  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, "exporter-obj": A_DEFINIR, "exporter-stl": A_DEFINIR, "exporter-step": A_DEFINIR, echanges: A_DEFINIR,
   feuille: "documentation", dossier: "documentation",
+  // AC-010 (lot G2) : l'approbation d'une publication (« revues et publications ») : Documentation.
+  approuver: "documentation",
   outils: A_DEFINIR, palette: A_DEFINIR,
+  // Lot F : l’illustration est un rendu (« examiner et présenter » : Visualisation) ; les agents proposent, la personne confirme
+  // (« revues » : Documentation, métrés et collaboration).
+  illustration: "visualisation", agents: "documentation",
   exigences: "bim",
+  // Lot W3-D : la fusion de variantes porte sur l'étude et ses variantes, que REF-01 §02 ne range dans aucun domaine
+  // (À définir, comme les échanges) ; ses boîtes s'ouvrent par-dessus le domaine affiché.
+  "fusionner-variantes": A_DEFINIR, "annuler-fusion": A_DEFINIR,
 } as const satisfies Record<IdCommandeEditeur, DomaineAttribue>);
 
 /**
@@ -81,6 +89,16 @@ export const DOMAINES_COMMANDES = Object.freeze({
 export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   dessin: "dessin", modification: "dessin", calques: "dessin", volume: "dessin", "volume-libre": "dessin", architecture: "dessin",
   proprietes: "bim", visualisation: "visualisation",
+  // Éléments non natifs (lot F3) : la référence ne fixe pas leur domaine (comme l’import) : à définir.
+  "non-natifs": A_DEFINIR,
+  // Graphismes (EX-055) et système de projet (EX-023) : dessin 2D et repères du dessin, Dessin et modélisation.
+  graphismes: "dessin", reperes: "dessin",
+  // Sources importées (EX-014) : nées d'un import, comme lui à définir.
+  sources: A_DEFINIR,
+  // Lot W3-B : niveaux, composants 3D et éléments structurels, modélisation du bâtiment comme l'architecture.
+  batiment: "dessin",
+  // Blocs définis par l'utilisateur et contraintes géométriques (X.1-01) : dessin 2D, Dessin et modélisation.
+  blocs: "dessin", contraintes: "dessin",
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */
@@ -153,7 +171,7 @@ const SANS_BASCULE = (e: { readonly type: "outil" | "commande"; readonly id: str
     || e.id.startsWith("accrochage-") || e.id.startsWith("reperage-") || e.id === "pas-polaire"
     // Boîtes de dialogue (Feuille, Feuilles et dossier) : ouvertes par-dessus le domaine affiché, qui ne change pas — le
     // focus revient à son origine à la fermeture (accessibilité).
-    || e.id === "feuille" || e.id === "dossier");
+    || e.id === "feuille" || e.id === "dossier" || e.id === "approuver" || e.id === "fusionner-variantes" || e.id === "annuler-fusion");
 
 /**
  * Domaine où s'exécute un élément lancé depuis le domaine `actif` (raccourci, palette, Tool Manager) : le domaine actif

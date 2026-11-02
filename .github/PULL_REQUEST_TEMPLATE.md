@@ -4,6 +4,32 @@
 - Chantier : `docs/workstreams/<slug>/` (ou expliquer pourquoi non applicable).
 - Source de vérité / décisions : liens vers `AGENTS.md`, `docs/architecture.md` et cahiers/ADR pertinents.
 
+## Unité de travail (protocole Studio, PR-01 à PR-09)
+
+<!-- Obligatoire pour toute PR qui touche le chantier Studio (Studio/, docs/workstreams/studio/, docs/ai-team/, modules et
+paquets Studio, recettes studio-*) : contrôlé par le workflow « PR — protocole Studio » (scripts/registre/controle-pr.mjs).
+Branche : nommage conseillé feat|fix|chore|docs/<issue>-<sujet> (décision P-13 : un autre nom est signalé, l’Issue propre reste exigée). Renseigner chaque champ ; « Non » ou « Non applicable : raison » sont admis. -->
+
+- **Issue de l’unité de travail** : Refs #NN
+- **Besoin** :
+- **Sources** :
+- **Identifiants d’exigences** :
+- **Périmètre inclus** :
+- **Périmètre exclu** :
+- **Composant** :
+- **Contrats** :
+- **Décisions** :
+- **Migrations** :
+- **Scénarios positifs** :
+- **Scénarios négatifs** :
+- **Preuves attendues** :
+- **Retour arrière** :
+- **Codé** :
+- **Testé** : <!-- tests et recettes exécutés (fichier, commande, exécution de CI) ; une capture d’écran n’est pas une preuve métier -->
+- **Déployé** :
+- **Accepté** :
+- **Revalidation à la reprise** : HEAD de main `<sha>` revalidé ; CI : <URL de l’exécution>
+
 ## Changements proposés
 
 - Modifications réalisées :

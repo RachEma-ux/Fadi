@@ -58,7 +58,8 @@
  *      résolution assistée : versions côte à côte, « Reprendre ma saisie »,
  *      arbitrage réappliqué sur la version courante ; conflit du modèle
  *      (6k) : copie de secours, « Reprendre ma version » ;
- *   6m. partage du projet : invitation d'un compte par son adresse, projet
+ *   6m. partage du projet : invitation d'un compte par son adresse (aperçu de l'accès, acceptation depuis
+ *      « Invitations reçues », phase 3 de l'Issue #262 ; courriels lus par MAILPIT_URL ou API_LOG), projet
  *      partagé listé, notifications dans l'application (accès reçu,
  *      commentaire du lecteur chez le propriétaire ; aucun courriel),
  *      lecteur (lecture, commentaires, formulaires et
@@ -85,6 +86,7 @@
  */
 import { chromium } from "playwright";
 import { allerEnPlan, ouvrirExports, ouvrirFichier } from "./lib-barre.mjs";
+import { jetonDuCourriel } from "./lib-invitations.mjs";
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -1395,15 +1397,39 @@ check("partage : le second compte n'a pas accès au projet (404)", (await page2.
 await page.goto(`${projectUrl}?module=collaboration`);
 await page.waitForSelector(".members-panel");
 check("collaboration : « Votre rôle · propriétaire », aucun membre invité", (await page.locator(".collab-role").textContent()) === "propriétaire" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
-await page.fill('.members-invite input[type="email"]', "personne@example.com");
-await page.locator('.members-invite button:has-text("Inviter")').click();
+// Issue #262, phase 3 (OP-D2 a) : l'aperçu de l'accès précède l'envoi ; toute adresse, compte existant compris, reçoit une
+// invitation à accepter — plus aucun ajout direct.
+const inviterDepuisLeFormulaire = async (adresse) => {
+  await page.fill('.members-invite input[type="email"]', adresse);
+  await page.selectOption('.members-invite label:has-text("Rôle au projet") select', "lecteur");
+  check(`collaboration : « Envoyer l'invitation » inactif avant l'aperçu (${adresse})`, await page.locator('.members-invite button:has-text("Envoyer l’invitation")').isDisabled());
+  await page.locator('.members-invite button:has-text("Aperçu de l’accès")').click();
+  await page.waitForSelector("[data-invitation-apercu]", { timeout: 10000 });
+  const apercu = await page.locator("[data-invitation-apercu]").textContent();
+  await page.locator('.members-invite button:has-text("Envoyer l’invitation")').click();
+  await page.waitForSelector(`[data-project-invitations] li[data-invitation="${adresse}"]`, { timeout: 10000 });
+  return apercu;
+};
+const apercuSansCompte = await inviterDepuisLeFormulaire("personne@example.com");
 // Gestion des comptes (#253, UM-3) : une adresse sans compte reçoit une invitation nominative en attente — aucun compte
 // n'est créé et la personne n'est pas membre tant qu'elle n'a pas accepté.
-await page.waitForSelector('[data-project-invitations] li', { timeout: 10000 });
-check("collaboration : inviter une adresse sans compte → invitation en attente, aucun membre ajouté", /personne@example\.com/.test(await page.locator("[data-project-invitations]").textContent()) && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
-await page.fill('.members-invite input[type="email"]', readerEmail);
-await page.selectOption(".members-invite select", "lecteur");
-await page.locator('.members-invite button:has-text("Inviter")').click();
+check("collaboration : aperçu d'une adresse sans compte (création du compte, nouvelle fiche, lecteur)", /aucun compte/.test(apercuSansCompte) && /nouvelle fiche/.test(apercuSansCompte) && /lecteur · export non/.test(apercuSansCompte), apercuSansCompte);
+check("collaboration : inviter une adresse sans compte → invitation en attente de création du compte, aucun membre ajouté", (await page.locator('[data-project-invitations] li[data-invitation="personne@example.com"]').getAttribute("data-invitation-etat")) === "creation-compte" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
+const apercuCompte = await inviterDepuisLeFormulaire(readerEmail);
+check("collaboration : aperçu d'un compte existant (acceptation requise)", /compte existant/.test(apercuCompte), apercuCompte);
+check("collaboration : compte existant → invitation en attente d'acceptation, toujours aucun membre", (await page.locator(`[data-project-invitations] li[data-invitation="${readerEmail}"]`).getAttribute("data-invitation-etat")) === "acceptation" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
+check("partage : avant l'acceptation, le second compte n'a toujours pas accès (404)", (await page2.request.get(`${BASE}/projects/${testPid}`)).status() === 404);
+// Le second compte vérifie son adresse (lien reçu à l'inscription), puis accepte depuis « Invitations reçues » de Mes projets.
+const jetonVerification = await jetonDuCourriel(readerEmail, "/compte/verifier-email");
+check("partage : lien de vérification reçu par le second compte", !!jetonVerification);
+await page2.request.post(`${BASE}/auth/verify-email/confirm`, { data: { token: jetonVerification } });
+await page2.goto(`${BASE}/projets`);
+await page2.waitForSelector(`[data-invitations-recues] li[data-invitation-recue="P.TEST"]`, { timeout: 15000 });
+check("partage : « Invitations reçues » — P.TEST, accès proposé lecteur", /lecteur/.test(await page2.locator('[data-invitation-recue="P.TEST"]').textContent()));
+await page2.locator('[data-invitation-recue="P.TEST"] button:has-text("Accepter l’invitation")').click();
+await page2.waitForURL(new RegExp(`/projets/${testPid}`), { timeout: 15000 });
+check("partage : après acceptation, entrée dans le projet", page2.url().includes(`/projets/${testPid}`));
+await page.reload();
 await page.waitForSelector(`.members-table tr[data-member="${readerEmail}"]`, { timeout: 10000 });
 check("collaboration : membre invité listé comme lecteur, invité par le propriétaire", (await page.locator(`.members-table tr[data-member="${readerEmail}"] select`).inputValue()) === "lecteur" && new RegExp(`invité par ${email}`).test(await page.locator(`.members-table tr[data-member="${readerEmail}"]`).textContent()));
 await page.waitForFunction(() => /1 membre\(s\)/.test(document.querySelector(".biz-kpis")?.textContent || ""), null, { timeout: 10000 });

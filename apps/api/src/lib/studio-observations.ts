@@ -24,8 +24,11 @@
  * éditrice ou propriétaire ; annuler, réattribuer : créateur éditeur ou propriétaire ; rouvrir : propriétaire),
  * propositions (éditeur ou propriétaire) et décisions (propriétaire). Une observation clôturée n'en reçoit plus.
  */
+import { createHash } from "node:crypto";
+import { z } from "zod";
 import type {
-  StudioObservationAction, StudioObservationDecisionNature, StudioObservationDecisionPortee, StudioObservationDomaine, StudioObservationStatut,
+  StudioObservationAction, StudioObservationBcfRef, StudioObservationCategorie, StudioObservationDecisionNature, StudioObservationDecisionPortee, StudioObservationDomaine,
+  StudioObservationGravite, StudioObservationPiece, StudioObservationStatut,
   StudioObservationTacheAction, StudioObservationTacheStatut, StudioObservationVueMode,
 } from "../db/schema.js";
 
@@ -51,6 +54,11 @@ export interface ActeurObservation {
   estProprietaire: boolean;
   /** Droit `write` actuel (propriétaire ou éditeur). */
   peutEcrire: boolean;
+  /**
+   * Relecteur à une portée étroite qui couvre cette observation (étude, variante, ou révision où elle est ancrée) :
+   * capacité `constater` (`@parcours/domain-model`, portées étroites) — recontrôler et rouvrir, rien d'autre.
+   */
+  estRelecteur?: boolean;
 }
 
 /** Le statut d'arrivée, ou null si le passage n'est pas permis depuis ce statut. */
@@ -67,18 +75,18 @@ export function statutApres(statut: StudioObservationStatut, action: Observation
 export function acteurAutorise(action: ObservationTransition, a: ActeurObservation, _statut?: StudioObservationStatut): boolean {
   switch (action) {
     case "corriger": return a.estResponsable && a.peutEcrire;
-    case "recontroler": return a.estAuteur || a.estProprietaire;
+    case "recontroler": return a.estAuteur || a.estProprietaire || a.estRelecteur === true;
     case "cloturer": return a.estProprietaire;
-    case "rouvrir": return a.estAuteur || a.estProprietaire;
+    case "rouvrir": return a.estAuteur || a.estProprietaire || a.estRelecteur === true;
     case "reattribuer": return a.estProprietaire;
   }
 }
 
 export const REFUS_ACTEUR: Record<ObservationTransition, string> = {
   corriger: "Seul le responsable de l'observation, propriétaire ou éditeur du projet, la déclare corrigée.",
-  recontroler: "Seul l'auteur de l'observation ou le propriétaire du projet la recontrôle.",
+  recontroler: "Seuls l'auteur de l'observation, le propriétaire du projet ou un Relecteur de sa portée la recontrôlent.",
   cloturer: "Seul le propriétaire du projet clôture une observation.",
-  rouvrir: "Seul l'auteur de l'observation ou le propriétaire du projet la rouvre.",
+  rouvrir: "Seuls l'auteur de l'observation, le propriétaire du projet ou un Relecteur de sa portée la rouvrent.",
   reattribuer: "Seul le propriétaire du projet réattribue une observation.",
 };
 
@@ -202,3 +210,91 @@ export function refusDecision(nature: StudioObservationDecisionNature, portee: S
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Contrat d'une observation (IF-010, EX-084 ; lot PUB) et observations bloquantes (IF-009).
+
+/**
+ * Vocabulaires décidés par le lot PUB (aucune règle de gravité n'est fournie par un référentiel) : une catégorie dit de
+ * quel domaine relève le constat ; une gravité `bloquante` empêche la publication tant que l'observation n'est ni
+ * résolue (clôturée) ni dérogée (décision « dérogation » du propriétaire). Absentes : « non évaluée », jamais devinées.
+ */
+export const OBSERVATION_CATEGORIES: readonly StudioObservationCategorie[] = Object.freeze(["coordination", "conformite", "geometrie", "documentation", "metre", "autre"] as const);
+export const OBSERVATION_GRAVITES: readonly StudioObservationGravite[] = Object.freeze(["bloquante", "majeure", "mineure", "information"] as const);
+export const OBSERVATION_PIECES_MAX = 5;
+
+export type ResolutionObservation = "resolue" | "derogee" | "ouverte";
+
+/**
+ * Résolution d'une observation pour une publication : `resolue` si clôturée ; `derogee` si une DÉCISION (pas une
+ * proposition) de portée « dérogation » a été prise et que l'observation n'a pas été rouverte depuis ; sinon `ouverte`.
+ * Une tâche terminée, un commentaire ou une proposition ne résolvent rien (EX-084 : aucune transition implicite).
+ */
+export function resolutionObservation(
+  statut: StudioObservationStatut,
+  decisions: readonly { nature: string; portee: string; at: string }[],
+  journal: readonly { action: string; at: string }[] = [],
+): { resolution: ResolutionObservation; derogation?: { at: string } } {
+  if (statut === "cloturee") return { resolution: "resolue" };
+  const derniere = decisions.filter((d) => d.nature === "decision" && d.portee === "derogation").at(-1);
+  if (!derniere) return { resolution: "ouverte" };
+  const rouverteApres = journal.some((e) => e.action === "rouvrir" && e.at > derniere.at);
+  return rouverteApres ? { resolution: "ouverte" } : { resolution: "derogee", derogation: { at: derniere.at } };
+}
+
+/** Contrat IF-010 d'une observation, relu depuis sa vue (aucun champ inventé : absent = null ou liste vide). */
+export interface ContratObservation {
+  issueId: string;
+  /** Note d'origine (le commentaire promu) : objet distinct, relié (EX-084). */
+  noteId: string;
+  categorie: StudioObservationCategorie | null;
+  /** Contrôles (exigences) d'où procède le constat, par les liens de domaine. */
+  sourcesControle: string[];
+  revisionsExaminees: string[];
+  objets: string[];
+  vue: { mode: string; ref: string | null } | null;
+  auteur: string;
+  gravite: StudioObservationGravite | null;
+  description: string | null;
+  pieces: StudioObservationPiece[];
+  responsable: string;
+  etat: StudioObservationStatut;
+  journalDecisions: { seq: number; nature: string; portee: string; at: string }[];
+  recontroles: string[];
+  conditionCloture: string;
+  referencesBcf: StudioObservationBcfRef[];
+}
+
+export const CONDITION_CLOTURE = "Clôture par le propriétaire, après recontrôle sur une révision descendante de la correction, motivée, sans tâche restant à faire.";
+
+export function contratObservation(v: {
+  id: string; issueId: string; categorie: StudioObservationCategorie | null; gravite: StudioObservationGravite | null; pieces: StudioObservationPiece[]; bcfRefs: StudioObservationBcfRef[];
+  authorId: string; responsableId: string; statut: StudioObservationStatut; vue: { mode: string; ref: string | null } | null;
+  liens: readonly { controleId: string | null; revisionId: string | null }[]; decisions: readonly { seq: number; nature: string; portee: string; at: string }[];
+  journal: readonly { action: string; revisionId: string | null }[];
+}, note: { body: string | null; revisionId: string | null; objectIds: readonly string[] }): ContratObservation {
+  const revisions = new Set<string>();
+  if (note.revisionId) revisions.add(note.revisionId);
+  for (const l of v.liens) if (l.revisionId) revisions.add(l.revisionId);
+  return {
+    issueId: v.issueId, noteId: v.id, categorie: v.categorie, sourcesControle: [...new Set(v.liens.map((l) => l.controleId).filter((x): x is string => !!x))],
+    revisionsExaminees: [...revisions], objets: [...note.objectIds], vue: v.vue, auteur: v.authorId, gravite: v.gravite, description: note.body, pieces: v.pieces,
+    responsable: v.responsableId, etat: v.statut, journalDecisions: v.decisions.map((d) => ({ seq: d.seq, nature: d.nature, portee: d.portee, at: d.at })),
+    recontroles: v.journal.filter((e) => e.action === "recontroler" && e.revisionId).map((e) => e.revisionId!), conditionCloture: CONDITION_CLOTURE, referencesBcf: v.bcfRefs,
+  };
+}
+
+/** IF-010 (lot PUB) : catégorie, gravité et pièces justificatives (PDF, PNG ou JPEG, 2 Mo au plus chacune). */
+export const studioObservationCategorieSchema = z.enum(OBSERVATION_CATEGORIES as [StudioObservationCategorie, ...StudioObservationCategorie[]]);
+export const studioObservationGraviteSchema = z.enum(OBSERVATION_GRAVITES as [StudioObservationGravite, ...StudioObservationGravite[]]);
+export const studioObservationPiecesSchema = z.array(z.object({
+  name: z.string().trim().min(1).max(200), mime: z.enum(["application/pdf", "image/png", "image/jpeg"]), contentBase64: z.string().min(1).max(3_000_000),
+}).strict()).max(OBSERVATION_PIECES_MAX);
+/** Champs IF-010 cités (catégorie, gravité, pièces) : n'entrent dans l'empreinte de rejeu que s'ils sont cités. */
+export function contenuIf010(input: { categorie?: string | undefined; gravite?: string | undefined; pieces?: readonly { name: string; mime: string; contentBase64: string }[] | undefined }): Record<string, unknown> {
+  return {
+    ...(input.categorie ? { categorie: input.categorie } : {}), ...(input.gravite ? { gravite: input.gravite } : {}),
+    ...(input.pieces?.length ? { pieces: input.pieces.map((p) => ({ name: p.name, mime: p.mime, sha256: createHash("sha256").update(Buffer.from(p.contentBase64, "base64")).digest("hex") })) } : {}),
+  };
+}
+

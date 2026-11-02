@@ -23,7 +23,7 @@ import { and, asc, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments, projectMembers, users } from "../db/schema.js";
+import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments, projectEffectiveAccess, users } from "../db/schema.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam } from "../lib/audience.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -395,8 +395,8 @@ collaborationRouter.patch("/comments/:commentId", async (req, res) => {
     if (root.parentId) return { status: 422, body: { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez celle du commentaire d'origine." } };
     const thread = await tx.select({ authorId: projectComments.authorId }).from(projectComments).where(and(eq(projectComments.projectId, project.id), eq(projectComments.parentId, root.id)));
     const authors = [...new Set([root.authorId, ...thread.map((t) => t.authorId)])];
-    const readers = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.role, "lecteur"), inArray(projectMembers.userId, authors)));
+    const readers = await tx.select({ userId: projectEffectiveAccess.userId }).from(projectEffectiveAccess)
+      .where(and(eq(projectEffectiveAccess.projectId, project.id), eq(projectEffectiveAccess.role, "lecteur"), inArray(projectEffectiveAccess.userId, authors)));
     const refusal = audienceChangeRefusal({ role: project.role, isAuthor: root.authorId === req.user!.id }, next, readers.length > 0);
     if (refusal) return { status: refusal.status, body: refusal.body };
     if (root.audience !== next) {

@@ -19,7 +19,7 @@ import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer, tourne
 import { type Inference, type ModeAlt, type Verrou, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, add, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { type Derniere, angleSigne, contexteSaisie, corrigeable, formaterAngle, formaterLongueur, intersectionRayonPlan, mesures, messageErreur, prefixe } from "./commun-formes.js";
+import { type Derniere, angleSigne, contexteSaisie, corrigeable, formaterAngle, formaterLongueur, intersectionRayonPlan, mesures, messageErreur, prefixe, axesDeSaisie } from "./commun-formes.js";
 import {
   type Boite,
   VECTEUR_AXE,
@@ -180,7 +180,7 @@ function inferer3(e: EtatDeplacer, ctx: ContexteOutil, ev: Extract<EvenementOuti
     tolerance: ev.tolerance,
     geometrie: axes.length ? { ...g, aretes: [...g.aretes, ...axes] } : g,
     modeAlt: e.modeAlt,
-    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...axesDeSaisie(ctx),
     ...(e.base ? { depart: e.base } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),

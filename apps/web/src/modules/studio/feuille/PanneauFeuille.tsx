@@ -15,7 +15,9 @@ import {
 import { Icon } from "../../../components/Icon";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import { calculSurFilPrincipal, DELAI_FEUILLE_MS, MESSAGE_REPLI } from "../workers/client-studio";
-import { empreinteDe } from "../taches/empreinte";
+import { empreinteDe, texteEmpreinte } from "../taches/empreinte";
+import { documentSansElement, etatApercuFeuille } from "../taches/etats-contenus";
+import { EtatContenu } from "../taches/EtatContenu";
 import { messageTache } from "../taches/messages";
 import { ordonnanceurStudio } from "../taches/pool-studio";
 import { composerFeuille, MESSAGE_FEUILLE_IMPOSSIBLE, type ResultatFeuille } from "../workers/traitements";
@@ -64,19 +66,23 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
   // Composition (SVG et PDF) hors du fil principal ; sans Worker (rendu serveur, tests), directement au premier rendu.
   const [resultat, setResultat] = useState<ResultatFeuille>(() => (typeof Worker === "undefined" ? composerFeuille(doc, options) : VIDE));
   const [enCours, setEnCours] = useState(false);
+  // EX-016 : clé (document + réglages) de l'aperçu affiché, comparée à celle de la composition demandée.
+  const cleCourante = texteEmpreinte(empreinteDe(doc, options));
+  const [cleAffichee, setCleAffichee] = useState<string | null>(() => (typeof Worker === "undefined" ? cleCourante : null));
   useEffect(() => {
     let actif = true;
+    const cle = texteEmpreinte(empreinteDe(doc, options));
     setEnCours(true);
     // Tâche interactive (aperçu), une seule clé : un réglage plus récent remplace la composition plus ancienne, dont le
     // résultat est périmé, sans arrêter le Worker (une composition est courte ; l'arrêter coûterait un redémarrage).
     const tache = ordonnanceurStudio().soumettre<unknown, ResultatFeuille>({
       cle: "studio.feuille", classe: "interactive", nature: "feuille.composer", charge: { document: doc, options },
       empreinte: empreinteDe(doc, options), delaiMs: DELAI_FEUILLE_MS,
-      surResultat: (r) => { if (actif) { setResultat(r); setEnCours(false); } },
+      surResultat: (r) => { if (actif) { setResultat(r); setCleAffichee(cle); setEnCours(false); } },
     });
     void tache.issue.then((i) => {
       const message = messageTache(i);
-      if (actif && message !== null) { setResultat({ ...VIDE, erreur: message ?? MESSAGE_FEUILLE_IMPOSSIBLE }); setEnCours(false); }
+      if (actif && message !== null) { setResultat({ ...VIDE, erreur: message ?? MESSAGE_FEUILLE_IMPOSSIBLE }); setCleAffichee(cle); setEnCours(false); }
     });
     return () => { actif = false; tache.abandonner(); };
   }, [doc, options]);
@@ -84,6 +90,7 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
   const lienSvg = useAdresseBlob(resultat.svg, "image/svg+xml");
   const lienPdf = useAdresseBlob(pdf, "application/pdf");
   const apercu = resultat.svg ? svgSansProlog(resultat.svg) : "";
+  const fraicheur = etatApercuFeuille({ revisionId: cartouche.revisionId ?? "", courante: cleCourante, affichee: cleAffichee, enCours, erreur: cleAffichee === cleCourante ? resultat.erreur || null : null, sansElement: documentSansElement(doc) });
 
   // Impression : seule la feuille s'imprime (classe posée sur <body> tant que la boîte est ouverte).
   const f = resultat.feuille;
@@ -125,6 +132,7 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
           </fieldset>
         </form>
         <div className="studio-feuille-apercu-zone" aria-busy={enCours || undefined} data-studio-feuille-en-cours={enCours ? "oui" : "non"}>
+          <p className="studio-etat-contenu-ligne"><EtatContenu etat={fraicheur} nom="apercu-feuille" statut /></p>
           {enCours && !f && <p className="studio-dialogue-aide" role="status">Composition de la feuille…</p>}
           {calculSurFilPrincipal() && <p className="studio-dialogue-aide" role="status" data-studio-calcul-repli>{MESSAGE_REPLI}</p>}
           {brouillonNonEnregistre && <p className="studio-info" role="status">La feuille porte sur la révision enregistrée affichée : les modifications non enregistrées n’y figurent pas.</p>}

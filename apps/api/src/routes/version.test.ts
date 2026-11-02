@@ -27,4 +27,11 @@ describe("version construite", () => {
     const dev = await request(express().use("/version", versionRouter({}))).get("/version");
     expect(dev.body).toEqual({ commit: "inconnu", buildDate: "inconnu" });
   });
+
+  it("GET /version/donnees : quittance du serveur (commit et état de l'import automatique des données GeoData)", async () => {
+    const res = await request(express().use("/version", versionRouter({ FADI_COMMIT: SHA }))).get("/version/donnees");
+    expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
+    expect(res.body).toMatchObject({ commit: SHA, geodata: { etat: "desactive" } });
+  });
 });

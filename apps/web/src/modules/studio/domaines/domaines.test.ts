@@ -110,10 +110,10 @@ describe("rattachement exhaustif aux domaines (I-1)", () => {
 
   it("domaines fixés par la lecture de REF-01 ; ce qu'elle ne fixe pas reste « à définir » (exports, import, matrice d'échanges, système d'outils)", () => {
     const aDefinir = COMMANDES_EDITEUR.filter((c) => DOMAINES_COMMANDES[c.id] === A_DEFINIR).map((c) => c.id);
-    expect(aDefinir.sort()).toEqual(["echanges", "exporter-dxf", "exporter-ifc", "exporter-png", "exporter-svg", "importer-dxf", "outils", "palette"]);
-    expect(commandesDuDomaine("documentation")).toEqual(["feuille", "dossier"]);
+    expect(aDefinir.sort()).toEqual(["annuler-fusion", "echanges", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-png", "exporter-step", "exporter-stl", "exporter-svg", "fusionner-variantes", "importer-dxf", "importer-ifc", "modeles-externes", "outils", "palette"]);
+    expect(commandesDuDomaine("documentation")).toEqual(["agents", "feuille", "dossier", "approuver"]);
     expect(commandesDuDomaine("bim")).toEqual(["exigences"]);
-    expect(commandesDuDomaine("visualisation")).toEqual([]);
+    expect(commandesDuDomaine("visualisation")).toEqual(["illustration"]);
     expect(DOMAINES_COMMANDES["vue-3d"]).toBe("dessin");
     expect(DOMAINES_FAMILLES_OUTILS.proprietes).toBe("bim");
     expect(DOMAINES_FAMILLES_OUTILS.visualisation).toBe("visualisation");

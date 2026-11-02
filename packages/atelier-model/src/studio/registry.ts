@@ -9,6 +9,10 @@ import { STUDIO_DOCUMENT_SCHEMA } from "./registre/schemas.js";
 import { OUTILS_VOLUME } from "./registre/volume.js";
 import { OUTILS_VOLUME_LIBRE } from "./registre/volume-libre.js";
 import { OUTILS_SCENES } from "./registre/scenes.js";
+import { OUTILS_NON_NATIFS } from "./registre/non-natifs.js";
+import { OUTILS_GRAPHISMES, OUTILS_REPERES, OUTILS_SOURCES } from "./registre/graphismes.js";
+import { OUTILS_BATIMENT } from "./registre/batiment.js";
+import { OUTILS_BLOCS, OUTILS_CONTRAINTES } from "./registre/blocs.js";
 
 /**
  * Native registry, single source for the toolbar, shortcuts and the API enum. These tools never expose an agent or MCP entry point.
@@ -18,7 +22,17 @@ import { OUTILS_SCENES } from "./registre/scenes.js";
 export { STUDIO_DOCUMENT_SCHEMA } from "./registre/schemas.js";
 export type { StudioToolDescriptor, StudioToolGroup } from "./registre/communs.js";
 
-export const STUDIO_TOOLS = freezeTree([
+/**
+ * Type du registre écrit par références aux familles : sans lui, le type inféré du tableau (déroulé outil par outil)
+ * dépasse la longueur que le compilateur sait sérialiser dans les déclarations (TS7056).
+ */
+type RegistreStudio = readonly [
+  ...typeof OUTILS_DESSIN, ...typeof OUTILS_MODIFICATION, ...typeof OUTILS_CALQUES, ...typeof OUTILS_VOLUME, ...typeof OUTILS_VOLUME_LIBRE,
+  ...typeof OUTILS_ARCHITECTURE, ...typeof OUTILS_PROPRIETES, ...typeof OUTILS_SCENES, ...typeof OUTILS_NON_NATIFS,
+  ...typeof OUTILS_GRAPHISMES, ...typeof OUTILS_REPERES, ...typeof OUTILS_SOURCES, ...typeof OUTILS_BLOCS, ...typeof OUTILS_CONTRAINTES, ...typeof OUTILS_BATIMENT,
+];
+
+export const STUDIO_TOOLS: RegistreStudio = freezeTree([
   ...OUTILS_DESSIN,
   ...OUTILS_MODIFICATION,
   ...OUTILS_CALQUES,
@@ -27,6 +41,13 @@ export const STUDIO_TOOLS = freezeTree([
   ...OUTILS_ARCHITECTURE,
   ...OUTILS_PROPRIETES,
   ...OUTILS_SCENES,
+  ...OUTILS_NON_NATIFS,
+  ...OUTILS_GRAPHISMES,
+  ...OUTILS_REPERES,
+  ...OUTILS_SOURCES,
+  ...OUTILS_BLOCS,
+  ...OUTILS_CONTRAINTES,
+  ...OUTILS_BATIMENT,
 ] as const) satisfies readonly StudioToolDescriptor[];
 
 type ToolIdsOf<T extends readonly { readonly toolId: string }[]> = { readonly [K in keyof T]: T[K] extends { readonly toolId: infer I } ? I : never };

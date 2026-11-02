@@ -23,6 +23,7 @@ import { ancrageSelection, objetsPresents, regrouperFils } from "./fils";
 import { ObservationCommentaire, type ContexteObservation } from "./Observation";
 import { compterFiltres, FILTRE_LIBELLE, FILTRES, filtrerFils, type FiltreObservations } from "./observations";
 import "./commentaires.css";
+import { CommunicationPanel } from "../../collaboration/communication/CommunicationPanel";
 
 export interface PanneauCommentairesProps {
   projectId: string;
@@ -91,7 +92,19 @@ export function PanneauCommentaires(props: PanneauCommentairesProps) {
       <ObservationCommentaire c={f.origine} ctx={contexte(f.origine)} />
       {f.reponses.length > 0 && <ol className="studio-commentaires-reponses">{f.reponses.map((r) => <li key={r.id}><Commentaire {...props} c={r} surChoisir={choisir} surModifie={relire} equipe={deLEquipe(me?.role)} proprietaire={me?.role === "proprietaire"} /></li>)}</ol>}
     </li>)}</ol>}
+    <ConversationsVariante projectId={projectId} variantId={variantId} />
   </section>;
+}
+
+/** Panneau contextuel (Communication, COM) : conversations sur cette variante, audience affichée avant l'envoi. */
+function ConversationsVariante({ projectId, variantId }: { projectId: string; variantId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="studio-conversations" data-studio-conversations={variantId} open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Conversations sur la variante</summary>
+      {open && <CommunicationPanel projectId={projectId} contexte={{ type: "studio-variante", ref: variantId }} />}
+    </details>
+  );
 }
 
 function NouveauCommentaire(props: PanneauCommentairesProps & { parentId?: string; equipe: boolean; surEnvoye: () => void; surFermer?: () => void }) {

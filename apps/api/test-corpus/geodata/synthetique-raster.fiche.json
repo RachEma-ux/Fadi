@@ -1,0 +1,49 @@
+{
+  "cle": "test-raster-synthetique",
+  "titre": "Grille synthétique (test)",
+  "description": "Raster synthétique pour les tests et la recette : valeur = 10 × colonne + ligne ; jamais publié sur un environnement réel.",
+  "producteur": "Fadi (tests)",
+  "theme": "test",
+  "couverture": "Fictive",
+  "version": {
+    "libelle": "synthétique v1",
+    "url": null,
+    "fichier": "synthetique-raster.tif",
+    "empreinte": "ed615bd8e7f48d4fd204c9c0ea27a6e95aa4410228cf8fd2f0b169e1d3809cb8",
+    "periode": null,
+    "licence": "Jeu synthétique de test",
+    "attribution": "Jeu synthétique Fadi (test)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": null,
+    "synthetique": true
+  },
+  "couche": {
+    "titre": "Grille synthétique (test)",
+    "description": "40 × 30 cellules",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": "u",
+      "grandeur": "Valeur synthétique",
+      "palette": "viridis",
+      "min": 0,
+      "max": 420
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

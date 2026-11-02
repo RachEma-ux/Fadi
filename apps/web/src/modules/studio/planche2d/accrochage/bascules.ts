@@ -13,6 +13,7 @@ export const COMMANDE_MODE: Readonly<Partial<Record<ModeAccrochage, IdCommandeEd
   intersection: "accrochage-intersection",
   perpendiculaire: "accrochage-perpendiculaire",
   tangente: "accrochage-tangente",
+  parallele: "accrochage-parallele",
   proche: "accrochage-proche",
 });
 

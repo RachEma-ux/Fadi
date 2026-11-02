@@ -21,24 +21,30 @@
  * éditeurs ; `projet` (« Visible par les lecteurs ») par tous. Chaque lecture et chaque recherche par identifiant passe
  * par `audienceFilter` : pour un lecteur, un fil de l'équipe est introuvable (404), jamais seulement masqué.
  */
-import { and, asc, desc, eq, inArray, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, or, type SQL } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
-  projectMembers, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationLinks, studioObservations, studioObservationTaskEvents,
+  projectEffectiveAccess, projectMembers, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationLinks, studioObservations, studioObservationTaskEvents,
   studioObservationTasks, studioRevisions, studioStudies, studioVariants, users,
   type StudioObservationAction, type StudioObservationDecisionNature, type StudioObservationDecisionPortee, type StudioObservationDomaine, type StudioObservationStatut,
   type StudioObservationTacheAction, type StudioObservationTacheStatut, type StudioObservationVueMode,
+  type StudioObservationBcfRef, type StudioObservationCategorie, type StudioObservationGravite, type StudioObservationPiece, volumes,
 } from "../db/schema.js";
+import { attachmentProblem, safeFileName } from "./review-rules.js";
+export { contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema } from "./studio-observations.js";
 import { newId } from "./ids.js";
 import { audit } from "./audit.js";
-import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience } from "./audience.js";
+import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience, type StudioCommentAudience } from "./audience.js";
 import { loadProjectAccess, projectAccessRefusal, roleAllows, type AccessibleProject, type ProjectNeed, type ProjectRole } from "./owned-project.js";
 import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import type { Tx } from "./atelier-validation.js";
+import { capaciteDansPortee } from "@parcours/domain-model";
 import {
-  acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, peutCreerTache, peutLier, REFUS_ACTEUR, refusCloture, REVISION_EXIGEE, statutApres,
+  acteurAutorise, contratObservation, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, peutCreerTache, peutLier,
+  REFUS_ACTEUR, refusCloture, resolutionObservation, REVISION_EXIGEE, statutApres, type ContratObservation, type ResolutionObservation,
+  contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema,
   TACHE_TRANSITIONS, tacheApres, tacheAutorisee, VUE_MODES, type ActeurObservation, type ObservationTransition, type TacheTransition,
 } from "./studio-observations.js";
 
@@ -82,8 +88,10 @@ export interface StudioCommentView {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
-  /** Audience du fil (E1). */
-  audience: CommentAudience;
+  /** Audience du fil (E1) ; `revue` : constat d'une revue externe (phase 4), lu aussi par les destinataires du paquet. */
+  audience: StudioCommentAudience;
+  /** Paquet de revue d'un fil `revue`, sinon null. */
+  reviewPackageId: string | null;
   /** Observation issue de ce commentaire (même identifiant), null sinon. */
   observation: StudioObservationView | null;
 }
@@ -133,6 +141,17 @@ export interface StudioObservationView {
   decisions: StudioObservationDecisionView[];
   /** Ce que l'utilisateur courant peut écrire maintenant, relu du serveur (rôle, statut, archive). */
   peut: { lier: boolean; creerTache: boolean; proposer: boolean; decider: boolean };
+  /** IF-010 / EX-084 : identité propre de l'observation, distincte de la note d'origine (`id`). */
+  issueId: string;
+  categorie: StudioObservationCategorie | null;
+  gravite: StudioObservationGravite | null;
+  pieces: StudioObservationPiece[];
+  /** Références BCF reçues, dans leur contexte (jamais l'identité interne). */
+  bcfRefs: StudioObservationBcfRef[];
+  /** IF-009 : résolution pour une publication (clôturée, dérogée par décision, ou ouverte). */
+  resolution: ResolutionObservation;
+  /** Contrat IF-010 relu de l'observation et de sa note. */
+  contrat: ContratObservation;
 }
 
 export interface StudioObservationLienView {
@@ -185,7 +204,7 @@ function view(c: Row, actorId: string, observation: StudioObservationView | null
     id: c.id, variantId: c.variantId, parentId: c.parentId, revisionId: c.revisionId,
     objectIds: deleted ? [] : c.objectIds, authorId: c.authorId, authorEmail: c.authorEmail ?? "",
     body: deleted ? null : c.body, createdAt: c.createdAt.toISOString(), deletedAt: c.deletedAt?.toISOString() ?? null,
-    mine: c.authorId === actorId, audience: c.audience ?? "projet", observation,
+    mine: c.authorId === actorId, audience: c.audience ?? "projet", reviewPackageId: c.reviewPackageId ?? null, observation,
   };
 }
 
@@ -205,7 +224,8 @@ export async function scopedVariant(scope: StudioScope, actorId: string, need: P
 const selectRow = () => db.select({
   id: studioComments.id, variantId: studioComments.variantId, revisionId: studioComments.revisionId, objectIds: studioComments.objectIds,
   parentId: studioComments.parentId, authorId: studioComments.authorId, body: studioComments.body, requestId: studioComments.requestId,
-  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, audience: studioComments.audience, authorEmail: users.email,
+  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, audience: studioComments.audience,
+  reviewPackageId: studioComments.reviewPackageId, authorEmail: users.email,
 }).from(studioComments).leftJoin(users, eq(users.id, studioComments.authorId));
 
 /** Fils de la variante : chaque commentaire d'origine (plus ancien d'abord) suivi de ses réponses (plus ancienne d'abord). */
@@ -216,25 +236,45 @@ export async function listStudioComments(scope: StudioScope, actorId: string): P
   for (const r of rows) if (r.parentId) replies.set(r.parentId, [...(replies.get(r.parentId) ?? []), r]);
   const ordered = rows.filter((r) => !r.parentId).flatMap((root) => [root, ...(replies.get(root.id) ?? [])]);
   const archived = variant.archived !== null || variant.studyArchived !== null;
-  const observations = await observationViews(variant.id, null, { actorId, role: variant.access.role, archived });
+  const observations = await observationViews(variant.id, null, { actorId, role: variant.access.role, archived, constater: constaterDans(variant.access, scope.studyId, variant.id) });
   return { comments: ordered.map((r) => view(r, actorId, observations.get(r.id) ?? null)), participants: await participants(variant.access), archived, me: { id: actorId, role: variant.access.role } };
 }
 
 // ---------------------------------------------------------------------------
 // Observations
 
-/** Propriétaire puis membres (ordre d'invitation) ; un membre `editeur` ou le propriétaire peut être responsable. */
+/**
+ * Propriétaire puis comptes ayant accès (ordre d'invitation) ; un `editeur` ou le propriétaire peut être responsable.
+ * Phase 2 (Issue #262) : lu de la seule source de l'accès (`project_effective_access`) — une participation suspendue
+ * ou terminée n'est plus proposée.
+ */
 export async function participants(project: AccessibleProject, executor: Pick<typeof db, "select"> = db): Promise<StudioParticipant[]> {
   const [owner] = await executor.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
-  const members = await executor.select({ id: users.id, email: users.email, role: projectMembers.role }).from(projectMembers)
-    .innerJoin(users, eq(users.id, projectMembers.userId)).where(eq(projectMembers.projectId, project.id))
+  const members = await executor.select({ id: users.id, email: users.email, role: projectEffectiveAccess.role }).from(projectEffectiveAccess)
+    .innerJoin(users, eq(users.id, projectEffectiveAccess.userId))
+    .leftJoin(projectMembers, and(eq(projectMembers.projectId, projectEffectiveAccess.projectId), eq(projectMembers.userId, projectEffectiveAccess.userId)))
+    .where(and(eq(projectEffectiveAccess.projectId, project.id), ne(projectEffectiveAccess.role, "proprietaire")))
     .orderBy(asc(projectMembers.createdAt), asc(users.id));
   const all: StudioParticipant[] = owner ? [{ ...owner, role: "proprietaire", assignable: true }] : [];
-  for (const m of members) if (m.id !== project.ownerId) all.push({ id: m.id, email: m.email, role: m.role, assignable: roleAllows(m.role, "write") });
+  for (const m of members) if (m.id !== project.ownerId && m.role !== "proprietaire") all.push({ id: m.id, email: m.email, role: m.role, assignable: roleAllows(m.role, "write") });
   return all;
 }
 
-export interface Lecteur { actorId: string; role: ProjectRole; archived: boolean }
+export interface Lecteur {
+  actorId: string; role: ProjectRole; archived: boolean;
+  /** Capacité `constater` d'une portée étroite (Relecteur de l'étude, de la variante ou de la révision d'ancrage). */
+  constater?: (revisionId: string | null) => boolean;
+}
+
+/**
+ * Portées étroites : la capacité `constater` de l'acteur sur une observation de cette variante, selon sa révision
+ * d'ancrage. Jamais pour le propriétaire (il a déjà tout) ni pour l'accès support (lecture seule).
+ */
+export function constaterDans(access: Pick<AccessibleProject, "role" | "portees">, studyId: string, variantId: string): (revisionId: string | null) => boolean {
+  const portees = access.role === "support" || access.role === "proprietaire" ? [] : access.portees ?? [];
+  if (!portees.length) return () => false;
+  return (revisionId) => capaciteDansPortee(portees, "constater", { studyId, variantIds: [variantId], revisionId }) !== null;
+}
 
 /**
  * Comme `scopedVariant`, mais dans la transaction d'écriture et sous les verrous des autres écritures Studio : projet
@@ -250,22 +290,23 @@ export async function lockedVariant(tx: Tx, scope: StudioScope, actorId: string,
     .where(and(eq(studioVariants.id, scope.variantId), eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId)))
     .limit(1).for("share", { of: studioVariants });
   if (!variant) return notFound();
-  const lecteur: Lecteur = { actorId, role: access.role, archived: variant.archived !== null || variant.studyArchived !== null };
+  const lecteur: Lecteur = { actorId, role: access.role, archived: variant.archived !== null || variant.studyArchived !== null, constater: constaterDans(access, scope.studyId, variant.id) };
   return { id: variant.id, access, lecteur };
 }
 
 /** Rôle de l'acteur vis-à-vis d'une observation, droit actuel compris (un responsable rétrogradé lecteur ne corrige plus). */
-export function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string): ActeurObservation {
+export function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string, revisionId: string | null = null): ActeurObservation {
   return {
     estResponsable: responsableId === lecteur.actorId, estAuteur: authorId === lecteur.actorId,
     estProprietaire: roleAllows(lecteur.role, "owner"), peutEcrire: roleAllows(lecteur.role, "write"),
+    estRelecteur: lecteur.constater?.(revisionId) ?? false,
   };
 }
 
 /** Observations de la variante (ou d'un seul commentaire), journal compris, avec les passages possibles du lecteur. */
 export async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
   const where = and(eq(studioObservations.variantId, variantId), commentId === null ? undefined : eq(studioObservations.commentId, commentId), audienceFilter(lecteur.role));
-  const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId }).from(studioObservations)
+  const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId, anchorRevisionId: studioComments.revisionId, body: studioComments.body, objectIds: studioComments.objectIds, deletedAt: studioComments.deletedAt }).from(studioObservations)
     .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
     .leftJoin(users, eq(users.id, studioObservations.responsableId)).where(where);
   const result = new Map<string, StudioObservationView>();
@@ -319,10 +360,22 @@ export async function observationViews(variantId: string, commentId: string | nu
       });
     }
   }
-  for (const { o, responsableEmail, authorId } of obs) {
-    const acteur = acteurDe(lecteur, o.responsableId, authorId);
+  for (const { o, responsableEmail, authorId, anchorRevisionId, body, objectIds, deletedAt } of obs) {
+    const acteur = acteurDe(lecteur, o.responsableId, authorId, anchorRevisionId);
     const ouverte = !lecteur.archived && o.statut !== "cloturee";
+    const decs = decisions.get(o.commentId) ?? [];
+    const jour = journal.get(o.commentId) ?? [];
+    const vueCitee = o.vueMode ? { mode: o.vueMode, ref: o.vueRef } : null;
+    const lienRows = liens.get(o.commentId) ?? [];
+    const pieces = o.pieces ?? [];
+    const bcfRefs = o.bcfRefs ?? [];
+    const contrat = contratObservation({
+      id: o.commentId, issueId: o.issueId, categorie: o.categorie ?? null, gravite: o.gravite ?? null, pieces, bcfRefs, authorId, responsableId: o.responsableId, statut: o.statut,
+      vue: vueCitee, liens: lienRows, decisions: decs, journal: jour,
+    }, { body: deletedAt ? null : body, revisionId: anchorRevisionId, objectIds: objectIds ?? [] });
     result.set(o.commentId, {
+      issueId: o.issueId, categorie: o.categorie ?? null, gravite: o.gravite ?? null, pieces, bcfRefs,
+      resolution: resolutionObservation(o.statut, decs, jour).resolution, contrat,
       id: o.commentId, authorId, responsableId: o.responsableId, responsableEmail: responsableEmail ?? "", echeance: o.echeance, statut: o.statut,
       correctionRevisionId: o.correctionRevisionId, recontroleRevisionId: o.recontroleRevisionId, createdBy: o.createdBy,
       createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(), journal: journal.get(o.commentId) ?? [],
@@ -346,6 +399,9 @@ export const studioObservationVueSchema = z.object({
   ref: z.string().trim().min(1).max(256).optional(),
 }).strict();
 export const studioObservationSchema = z.object({
+  categorie: studioObservationCategorieSchema.optional(),
+  gravite: studioObservationGraviteSchema.optional(),
+  pieces: studioObservationPiecesSchema.optional(),
   responsableId: z.string().min(1).max(256),
   echeance: z.string().refine(echeanceValide, "Échéance attendue au format AAAA-MM-JJ.").nullable().optional(),
   note: noteSchema,
@@ -391,7 +447,7 @@ async function observationResult(variantId: string, commentId: string, lecteur: 
  */
 export async function createStudioObservation(scope: StudioScope, actorId: string, commentId: string, input: StudioObservationInput): Promise<StudioObservationView & { replayed: boolean }> {
   // La vue n'entre dans l'empreinte que citée : un rejeu d'une promotion antérieure à ce champ garde son empreinte.
-  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null, ...(input.vue ? { vue: input.vue } : {}) });
+  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null, ...(input.vue ? { vue: input.vue } : {}), ...contenuIf010(input) });
   const { variantId, lecteur, replayed } = await db.transaction(async (tx) => {
     const variant = await lockedVariant(tx, scope, actorId, "comment");
     const lecteur = variant.lecteur;
@@ -415,11 +471,30 @@ export async function createStudioObservation(scope: StudioScope, actorId: strin
   return observationResult(variantId, commentId, lecteur, replayed);
 }
 
+/** Pièces justificatives contrôlées (type, signature, taille) et rangées dans `volumes` (identifiant = SHA-256). */
+export async function enregistrerPieces(tx: Tx, pieces: StudioObservationInput["pieces"]): Promise<StudioObservationPiece[]> {
+  const out: StudioObservationPiece[] = [];
+  for (const p of pieces ?? []) {
+    const bytes = Buffer.from(p.contentBase64, "base64");
+    const probleme = attachmentProblem(p.mime, bytes);
+    if (probleme) throw new StudioRequestError(400, { error: "invalid_input", code: "piece_invalide", name: p.name, message: probleme });
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    await tx.insert(volumes).values({ id: sha256, mime: p.mime, size: bytes.byteLength, content: bytes, createdAt: new Date() }).onConflictDoNothing();
+    out.push({ name: safeFileName(p.name), mime: p.mime, size: bytes.byteLength, sha256 });
+  }
+  return out;
+}
+
 /** Ouverture : ligne d'observation (statut « ouverte », vue citée) et premier passage du journal (`seq` 1). */
-export async function insertObservationRows(tx: Tx, o: { commentId: string; variantId: string; responsableId: string; input: Pick<StudioObservationInput, "echeance" | "note" | "vue" | "requestId">; actorId: string; hash: string }): Promise<void> {
+export async function insertObservationRows(tx: Tx, o: {
+  commentId: string; variantId: string; responsableId: string; input: Pick<StudioObservationInput, "echeance" | "note" | "vue" | "requestId" | "categorie" | "gravite" | "pieces">; actorId: string; hash: string;
+  bcfRefs?: StudioObservationBcfRef[];
+}): Promise<void> {
+  const pieces = await enregistrerPieces(tx, o.input.pieces);
   await tx.insert(studioObservations).values({
     commentId: o.commentId, variantId: o.variantId, responsableId: o.responsableId, echeance: o.input.echeance ?? null, statut: "ouverte", createdBy: o.actorId,
     vueMode: o.input.vue?.mode ?? null, vueRef: o.input.vue?.ref ?? null,
+    issueId: newId("studio_issue"), categorie: o.input.categorie ?? null, gravite: o.input.gravite ?? null, pieces, bcfRefs: o.bcfRefs ?? [],
   });
   await tx.insert(studioObservationEvents).values({
     id: newId("studio_observation_event"), observationId: o.commentId, seq: 1, action: "ouvrir", fromStatut: null, toStatut: "ouverte", actorId: o.actorId,
@@ -453,7 +528,7 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
     const variant = await lockedVariant(tx, scope, actorId, "comment");
     const lecteur = variant.lecteur;
     const done = (replayed: boolean) => ({ variantId: variant.id, lecteur, replayed });
-    const [row] = await tx.select({ o: studioObservations, authorId: studioComments.authorId }).from(studioObservations)
+    const [row] = await tx.select({ o: studioObservations, authorId: studioComments.authorId, anchorRevisionId: studioComments.revisionId }).from(studioObservations)
       .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
       .where(and(eq(studioObservations.variantId, variant.id), eq(studioObservations.commentId, commentId), audienceFilter(variant.lecteur.role))).limit(1).for("update", { of: studioObservations });
     if (!row) return notFound("Ce commentaire n'est pas une observation.");
@@ -461,7 +536,7 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
     if (await replayedEvent(tx, o.commentId, input.requestId, actorId, hash)) return done(true);
     if (lecteur.archived) studioArchivedRefusal();
     // Rôle relu sous le verrou du projet : un responsable rétrogradé lecteur ne déclare plus la correction.
-    const acteur = acteurDe(lecteur, o.responsableId, row.authorId);
+    const acteur = acteurDe(lecteur, o.responsableId, row.authorId, row.anchorRevisionId);
     if (!acteurAutorise(action, acteur, o.statut)) throw new StudioRequestError(403, { error: "forbidden", message: REFUS_ACTEUR[action] });
     const vers = statutApres(o.statut, action);
     if (vers === null) conflict("invalid_transition", "Ce passage n'est pas permis depuis le statut actuel.", { statut: o.statut, action });
@@ -584,22 +659,25 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
     // verrou partagé dans la transaction de l'insertion, `setStudioCommentAudience` la verrouille en écriture.
     const createdId = await db.transaction(async (tx) => {
       let parentId: string | null = null;
-      let threadAudience: CommentAudience | null | undefined;
+      let threadAudience: StudioCommentAudience | null | undefined;
+      let reviewPackageId: string | null = null;
       if (input.parentId !== undefined) {
         const [parent] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt }).from(studioComments)
           .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId), audienceFilter(variant.access.role))).limit(1);
         if (!parent || parent.deletedAt) return notFound("Le commentaire auquel vous répondez n'existe plus.");
         // Répondre à une réponse rattache au commentaire d'origine : sa ligne porte l'audience du fil.
-        const [root] = await tx.select({ id: studioComments.id, audience: studioComments.audience }).from(studioComments)
+        const [root] = await tx.select({ id: studioComments.id, audience: studioComments.audience, reviewPackageId: studioComments.reviewPackageId }).from(studioComments)
           .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, parent.parentId ?? parent.id), audienceFilter(variant.access.role))).limit(1).for("share");
         if (!root) return notFound("Le commentaire auquel vous répondez n'existe plus.");
         parentId = root.id;
         threadAudience = root.audience;
+        // Réponse à un constat de revue externe (phase 4) : elle suit le fil et son paquet (lue par ses destinataires).
+        reviewPackageId = root.reviewPackageId;
       }
       const audience = audienceOrRefuse(() => audienceOfNew(variant.access.role, input.audience, threadAudience));
       const [created] = await tx.insert(studioComments).values({
         id: newId("studio_comment"), variantId: variant.id, revisionId, objectIds, parentId, authorId: actorId, body: input.body,
-        requestId: input.requestId ?? null, payloadHash: hash, audience,
+        requestId: input.requestId ?? null, payloadHash: hash, audience, reviewPackageId,
       }).returning({ id: studioComments.id });
       return created!.id;
     });
@@ -648,10 +726,13 @@ export async function setStudioCommentAudience(scope: StudioScope, actorId: stri
     if (!root) return notFound();
     if (variant.lecteur.archived) studioArchivedRefusal();
     if (root.parentId) throw new StudioRequestError(422, { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez celle du commentaire d'origine." });
+    // Un constat de revue externe (phase 4) garde son audience : la changer le retirerait à ses destinataires, ou
+    // ouvrirait le fil aux lecteurs du projet.
+    if (root.audience === "revue") throw new StudioRequestError(409, { error: "audience_revue", message: "Ce fil est un constat de revue externe : son audience ne change pas." });
     const replies = await tx.select({ authorId: studioComments.authorId }).from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.parentId, root.id)));
     const authors = [...new Set([root.authorId, ...replies.map((r) => r.authorId)])];
-    const readers = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-      .where(and(eq(projectMembers.projectId, scope.projectId), eq(projectMembers.role, "lecteur"), inArray(projectMembers.userId, authors)));
+    const readers = await tx.select({ userId: projectEffectiveAccess.userId }).from(projectEffectiveAccess)
+      .where(and(eq(projectEffectiveAccess.projectId, scope.projectId), eq(projectEffectiveAccess.role, "lecteur"), inArray(projectEffectiveAccess.userId, authors)));
     const refusal = audienceChangeRefusal({ role: variant.lecteur.role, isAuthor: root.authorId === actorId }, next, readers.length > 0);
     if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
     const before = root.audience ?? "projet";

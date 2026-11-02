@@ -1,0 +1,108 @@
+{
+  "cle": "feenway-prix-quartiers",
+  "titre": "Prix des quartiers (FeenWay, provisoire)",
+  "description": "Prix moyen, minimal et maximal au m² et indice de confiance par quartier, tels qu'affichés par la carte de FeenWay (« Prix Quartier »), relevés le 31 octobre 2026. SOURCE PROVISOIRE, NON QUALIFIÉE (D-GD-54) : FeenWay ne déclare ni la provenance de ses prix (annonces, transactions), ni leur date, ni le nombre d'observations, ni sa méthode ; droits de réutilisation non établis. Admise pour l'étape de développement seulement, en attendant une source qualifiée ; jamais en production. 1368 quartiers dans 58 villes.",
+  "producteur": "FeenWay (feenway.com) — provenance des prix non déclarée",
+  "theme": "immobilier",
+  "couverture": "Quartiers des villes du Maroc couvertes par FeenWay",
+  "version": {
+    "libelle": "FeenWay — « Prix Quartier », relevé du 2026-10-31",
+    "url": null,
+    "fichier": "donnees/feenway-prix-quartiers.geojson",
+    "empreinte": "b721f20499c3f31d5e826f17174f220025f0d7cd8dfc67772a287efb292f3015",
+    "periode": "Non déclarée par FeenWay (relevé du 31 octobre 2026)",
+    "licence": "Aucune licence publiée par FeenWay — droits non établis",
+    "attribution": "Prix des quartiers : FeenWay (feenway.com), source provisoire non qualifiée",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "refuse",
+      "partage": "refuse",
+      "telechargement": "refuse",
+      "export": "refuse"
+    },
+    "precision": "Polygones de quartiers dessinés par FeenWay (limites non officielles), coordonnées arrondies à 10⁻⁶ degré ; prix en DH/m² arrondis à l'unité par FeenWay ; provenance et méthode des prix non déclarées",
+    "synthetique": false,
+    "conditions": "Consultation, stockage, calcul et tuiles admis à titre interne et provisoire par décision du maître d'ouvrage (D-GD-54), pour le développement seulement (préproduction, développement) ; usage commercial, partage, téléchargement et export refusés ; aucune diffusion hors de Fadi ; à retirer dès qu'une source qualifiée de prix est livrée.",
+    "origine": {
+      "fichier": "donnees/feenway-prix-quartiers-origine.json",
+      "empreinte": "1a83be4c296c51883493b067c91564aa4ab4311cab81532917269d19939f4d6b",
+      "url": "https://www.feenway.com/api/neighborhoods"
+    },
+    "qualification": {
+      "etat": "provisoire",
+      "motif": "Droits de réutilisation de FeenWay non établis ; prix sans provenance, date, nombre d'observations ni méthode déclarés. Admise par le maître d'ouvrage pour l'étape de développement (31 octobre 2026), en attendant une source qualifiée.",
+      "decision": "D-GD-54"
+    }
+  },
+  "couche": {
+    "titre": "Prix des quartiers (FeenWay, provisoire)",
+    "description": "1368 quartiers ; code = « fw- » + identifiant de la source ; schéma commun des prix de quartier (D-GD-54) ; indice de confiance : de 0 à 5, déclaré par FeenWay sans méthode publiée.",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "ville",
+      "prix_m2",
+      "prix_min_m2",
+      "prix_max_m2",
+      "indice_confiance"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#b15928"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "prix_m2",
+      "titre": "Prix moyen au m²",
+      "unite": "DH/m²",
+      "periode": "Non déclarée par FeenWay (relevé du 31 octobre 2026)",
+      "denominateur": null,
+      "description": "FeenWay, « Prix Quartier » (source provisoire non qualifiée, D-GD-54) — valeur affichée par FeenWay, reprise sans recalcul ; provenance, date et méthode non déclarées. Prix moyen au m² du quartier.",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Immobilier",
+      "famille": "Prix moyen au m²",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 0
+    },
+    {
+      "propriete": "prix_min_m2",
+      "titre": "Prix minimal au m²",
+      "unite": "DH/m²",
+      "periode": "Non déclarée par FeenWay (relevé du 31 octobre 2026)",
+      "denominateur": null,
+      "description": "FeenWay, « Prix Quartier » (source provisoire non qualifiée, D-GD-54) — valeur affichée par FeenWay, reprise sans recalcul ; provenance, date et méthode non déclarées. Prix minimal au m² du quartier.",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Immobilier",
+      "famille": "Prix minimal au m²",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 1
+    },
+    {
+      "propriete": "prix_max_m2",
+      "titre": "Prix maximal au m²",
+      "unite": "DH/m²",
+      "periode": "Non déclarée par FeenWay (relevé du 31 octobre 2026)",
+      "denominateur": null,
+      "description": "FeenWay, « Prix Quartier » (source provisoire non qualifiée, D-GD-54) — valeur affichée par FeenWay, reprise sans recalcul ; provenance, date et méthode non déclarées. Prix maximal au m² du quartier.",
+      "motifSiAbsente": "non-publiee",
+      "theme": "Immobilier",
+      "famille": "Prix maximal au m²",
+      "modalite": null,
+      "milieu": "ensemble",
+      "sexe": "ensemble",
+      "ordre": 2
+    }
+  ],
+  "superficie": true
+}

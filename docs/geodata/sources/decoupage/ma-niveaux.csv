@@ -1,0 +1,6 @@
+pays,code,rang,singulier,pluriel,libelles_source,fiche,contours,correspondance
+MA,region,1,Région,Régions,Région,hcp-rgph2024-population-regions,,correspondances/hcp-rgph2024-regions.csv
+MA,province,2,Province ou préfecture,Provinces et préfectures,Province|Préfecture,hcp-rgph2024-population-provinces,,correspondances/hcp-rgph2024-provinces.csv
+MA,commune,3,Commune,Communes,Commune,hcp-rgph2024-population-communes,osm-mar-communes,correspondances/hcp-rgph2024-communes.csv
+MA,prefecture-arrondissements,4,Préfecture d'arrondissements,Préfectures d'arrondissements,Préfecture d'arrondissements|Préfecture d'arrondissement,hcp-rgph2024-prefectures-arrondissements,,correspondances/hcp-rgph2024-prefectures-arrondissements.csv
+MA,arrondissement,5,Arrondissement,Arrondissements,Arrondissement,hcp-rgph2024-arrondissements,osm-mar-arrondissements,correspondances/hcp-rgph2024-arrondissements.csv

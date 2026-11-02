@@ -1,3 +1,4 @@
+import { COMMANDES_REPERES } from "./commandes-reperes";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/sandbox-planche-model";
@@ -186,9 +187,7 @@ const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9"
   modifier: "L9",
   "adoucir-lisser": "L9",
   "afficher-tout": "L9",
-  "aligner-axes": "L9",
   "aligner-vue": "L9",
-  "changer-axes": "L9",
   coller: "L9",
   coque: "L9",
   effacer: "L9",
@@ -208,7 +207,9 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
     expect(ids.size).toBeGreaterThan(0);
-    const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN].map((c) => c.id));
+    // Chantier Axes : « Aligner les axes » et « Changer les axes » sont les commandes de repère aligner-repere et
+    // origine-composant (icône, barre « Axes et repères », raccourci).
+    const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_REPERES].map((c) => c.id));
     // Lot 6 : « Diviser » du menu lance l'outil Diviser, qui a son icône, sa barre et son raccourci (règle d'or des outils).
     const outils = new Set<string>(["diviser"].filter((id) => OUTILS.some((o) => o.id === id)));
     expect(source).toContain('entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: () => choisirOutil("diviser") });');

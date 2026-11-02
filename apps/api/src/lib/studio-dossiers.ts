@@ -18,8 +18,8 @@
  */
 import { and, asc, desc, eq, inArray, lte, max } from "drizzle-orm";
 import {
-  assemblerDossierConception, composerFeuilleComposee, evaluerAjustementsQuantites, pdfDossierConception, quantitesStudio, studioFeuilleComposeeSvg,
-  studioSheetPdf, StudioValidationError, validateStudioDocument,
+  assemblerDossierConception, composerFeuilleComposee, controlerPiecesLivrables, evaluerAjustementsQuantites, pageVueCoupe, pdfDossierConception, piecesDuDossier, quantitesStudio,
+  studioFeuilleComposeeSvg, studioSheetPdf, StudioValidationError, validateStudioDocument, type StudioPresentationPiece, type StudioVueCoupe,
   type StudioDocument, type StudioDossierConception, type StudioFeuilleComposee, type StudioFeuilleComposeeDefinition, type StudioSourceDocumentaire,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
@@ -36,6 +36,8 @@ import { rejeuAdmis } from "./studio-exigences.js";
 import { sha256 } from "./studio-publication-statuts.js";
 import { studioDocumentHash } from "./studio-publications.js";
 import { ajustementDe, type LigneAjustement } from "./studio-quantites.js";
+import { vuesDeCoupe } from "./studio-vues-coupe.js";
+import type { ManifesteDossier } from "./studio-publication-statuts.js";
 
 export { studioDossierCreateSchema, studioDossierUpdateSchema, studioSheetCreateSchema, studioSheetUpdateSchema } from "./studio-dossiers-regles.js";
 
@@ -64,6 +66,8 @@ export interface StudioSheetView {
 export interface StudioDossierView {
   id: string; studyId: string; title: string; sheetIds: string[];
   quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
+  /** EX-076 : vues de coupe de la maquette réunies au dossier, dans l'ordre. */
+  sectionViewIds: string[];
   /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
   quantitiesAdjustmentSeq: number | null;
   createdBy: Who; createdAt: string; updatedAt: string;
@@ -86,7 +90,7 @@ async function revisionOf(q: Querier, variantId: string, revisionId: string) {
   return r ?? notFound();
 }
 const base = (projectId: string, studyId: string) => `/projects/${projectId}/studio/studies/${encodeURIComponent(studyId)}`;
-const projetDe = (access: AccessibleProject) => ({ projectCode: access.code, projectName: access.name });
+const projetDe = (access: Pick<AccessibleProject, "code" | "name">) => ({ projectCode: access.code, projectName: access.name });
 
 /** Source identifiée d'une révision (empreinte recalculée depuis le document immuable). */
 function sourceDe(study: Study, variant: { id: string; name: string }, revision: { id: string; document: StudioDocument; createdAt: Date }): StudioSourceDocumentaire {
@@ -163,7 +167,7 @@ export async function createStudioSheet(projectId: string, studyId: string, vari
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const variant = await variantOf(tx, study.id, variantId);
     const hash = empreinteSaisie({ ...input, variantId });
     if (input.requestId !== undefined) {
@@ -198,7 +202,7 @@ export async function updateStudioSheet(projectId: string, studyId: string, shee
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const row = await sheetRow(tx, study.id, sheetId);
     const variant = await variantOf(tx, study.id, row.variantId);
     if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
@@ -221,7 +225,7 @@ export async function deleteStudioSheet(projectId: string, studyId: string, shee
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const row = await sheetRow(tx, study.id, sheetId);
     // Étude ou variante archivée : lecture seule (M-3), comme la création et la modification d'une feuille.
     const variant = await variantOf(tx, study.id, row.variantId);
@@ -259,7 +263,7 @@ function dossierView(projectId: string, row: DossierRow, mails: Map<string, stri
   return {
     id: row.id, studyId: row.studyId, title: row.title, sheetIds: row.sheetIds,
     quantities: row.quantitiesVariantId && row.quantitiesRevisionId ? { variantId: row.quantitiesVariantId, revisionId: row.quantitiesRevisionId } : null,
-    includeFidelity: row.includeFidelity, quantitiesAdjustmentSeq: row.quantitiesAdjustmentSeq,
+    includeFidelity: row.includeFidelity, quantitiesAdjustmentSeq: row.quantitiesAdjustmentSeq, sectionViewIds: row.sectionViewIds ?? [],
     createdBy: { id: row.createdBy, email: mails.get(row.createdBy) ?? "" }, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
     files: { pdf: `${href}/pdf`, json: `${href}/json` },
   };
@@ -305,7 +309,7 @@ export async function createStudioDossier(projectId: string, studyId: string, ac
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const hash = empreinteSaisie(input);
     if (input.requestId !== undefined) {
       const [previous] = await tx.select().from(studioDossiers).where(and(eq(studioDossiers.studyId, study.id), eq(studioDossiers.requestId, input.requestId))).limit(1);
@@ -317,10 +321,11 @@ export async function createStudioDossier(projectId: string, studyId: string, ac
     }
     if (study.archivedAt !== null) return studioArchivedRefusal();
     await controlerFeuilles(tx, study.id, input.sheetIds);
+    if (input.sectionViewIds?.length) await vuesDeCoupe(tx, study, input.sectionViewIds);
     const metre = await metreEpingle(tx, study.id, input.quantities, null);
     const now = new Date();
     const [row] = await tx.insert(studioDossiers).values({
-      id: newId("studio_dossier"), studyId: study.id, title: input.title, sheetIds: input.sheetIds,
+      id: newId("studio_dossier"), studyId: study.id, title: input.title, sheetIds: input.sheetIds, sectionViewIds: [...new Set(input.sectionViewIds ?? [])],
       ...metre, includeFidelity: input.includeFidelity ?? true,
       requestId: input.requestId ?? null, payloadHash: hash, createdBy: actorId, createdAt: now, updatedAt: now,
     }).returning();
@@ -332,7 +337,7 @@ export async function updateStudioDossier(projectId: string, studyId: string, do
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const [row] = await tx.select().from(studioDossiers).where(and(eq(studioDossiers.id, dossierId), eq(studioDossiers.studyId, study.id))).for("update");
     if (!row) return notFound();
     if (study.archivedAt !== null) return studioArchivedRefusal();
@@ -342,13 +347,14 @@ export async function updateStudioDossier(projectId: string, studyId: string, do
     // Réépinglage explicite : la borne est reprise comme pour un nouvel épinglage (ajustements ajoutés depuis compris).
     if (input.quantities !== undefined) Object.assign(patch, await metreEpingle(tx, study.id, input.quantities, input.repinQuantities ? null : row));
     if (input.includeFidelity !== undefined) patch.includeFidelity = input.includeFidelity;
+    if (input.sectionViewIds !== undefined) { await vuesDeCoupe(tx, study, input.sectionViewIds); patch.sectionViewIds = [...new Set(input.sectionViewIds)]; }
     const [stored] = await tx.update(studioDossiers).set(patch).where(eq(studioDossiers.id, row.id)).returning();
     return dossierView(projectId, stored!, await emails(tx, [stored!.createdBy]));
   });
 }
 
 /** Dossier assemblé (JSON du modèle et rendus des feuilles), recalculé depuis les révisions immuables. */
-async function assembler(q: Querier, access: AccessibleProject, study: Study, row: DossierRow): Promise<{ dossier: StudioDossierConception; pdf: () => Uint8Array }> {
+async function assembler(q: Querier, access: Pick<AccessibleProject, "code" | "name">, study: Study, row: DossierRow): Promise<{ dossier: StudioDossierConception; pdf: () => Uint8Array; vuesCoupe: StudioVueCoupe[] }> {
   const sheets = row.sheetIds.length ? await q.select().from(studioSheets).where(and(eq(studioSheets.studyId, study.id), inArray(studioSheets.id, row.sheetIds))) : [];
   const byId = new Map(sheets.map((s) => [s.id, s]));
   const manquantes = row.sheetIds.filter((id) => !byId.has(id));
@@ -368,13 +374,19 @@ async function assembler(q: Querier, access: AccessibleProject, study: Study, ro
     const ajustements = evaluerAjustementsQuantites(document, quantitesStudio(document), journalBorne(journal, borne).map((r) => ajustementDe(r, new Map())));
     metre = { document, source: sourceDe(study, variant, revision), ajustements, borneAjustements: borne };
   }
+  // Vues de coupe jointes (EX-076) : recalculées depuis leur révision épinglée ; une vue qui ne se produit plus refuse le dossier.
+  const vuesCoupe: StudioVueCoupe[] = [];
+  for (const v of await vuesDeCoupe(q, study, row.sectionViewIds ?? [])) {
+    if (!v.vue) throw new StudioRequestError(409, { error: "dossier_invalid", message: `Vue de coupe ${v.id} : ${v.error ?? "illisible"}` });
+    vuesCoupe.push(v.vue);
+  }
   try {
     const { dossier, rendus } = assemblerDossierConception({
       titre: row.title, projet: projetDe(access), etude: { id: study.id, nom: study.name },
       feuilles: contexts.map((c) => ({ id: c.row.id, definition: c.row.definition, document: validateStudioDocument(c.revision.document), source: c.source })),
       metre, fidelite: row.includeFidelity,
     });
-    return { dossier, pdf: () => pdfDossierConception(dossier, rendus) };
+    return { dossier, pdf: () => pdfDossierConception(dossier, rendus, vuesCoupe.map(pageVueCoupe)), vuesCoupe };
   } catch (e) {
     if (e instanceof StudioValidationError) throw new StudioRequestError(409, { error: "dossier_invalid", message: e.message });
     throw e;
@@ -398,11 +410,12 @@ export async function readStudioDossier(projectId: string, studyId: string, doss
 /** Fichier du dossier : PDF (sommaire, feuilles, métré, fidélité) ou JSON du dossier assemblé. */
 export async function readStudioDossierFile(projectId: string, studyId: string, dossierId: string, actorId: string, format: string) {
   if (format !== "pdf" && format !== "json") return notFound();
-  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export");
+  // Portée `documents` : la famille `studio-dossier` ou ce dossier (`studio-dossier:<id>`, kind du catalogue Documents).
+  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export", { document: { famille: "studio-dossier", kind: `studio-dossier:${dossierId}` } });
   const study = await studyOf(db, projectId, studyId);
   const row = await dossierRow(db, study.id, dossierId);
-  const { dossier, pdf } = await assembler(db, access, study, row);
-  const body = format === "pdf" ? Buffer.from(pdf()) : Buffer.from(`${JSON.stringify(dossier, null, 2)}\n`, "utf8");
+  const { dossier, pdf, vuesCoupe } = await assembler(db, access, study, row);
+  const body = format === "pdf" ? Buffer.from(pdf()) : jsonDossier(dossier, vuesCoupe);
   const fileName = `${studioFileSegment(study.name, "etude")}-dossier-${studioFileSegment(row.title, "dossier")}.${format}`;
   return { body, fileName, mime: format === "pdf" ? "application/pdf" : "application/json; charset=utf-8", sha256: sha256(body), empreinte: dossier.empreinte };
 }
@@ -433,3 +446,47 @@ export async function listProjectStudioDossiers(projectId: string, actorId: stri
 
 /** Droit d'écriture du compte sur les feuilles et dossiers (indication d'interface ; le serveur revérifie). */
 export const peutComposer = (access: AccessibleProject, actorId: string): boolean => projectAccessRefusal(access, actorId, "modify") === null;
+
+/** JSON d'un dossier : le dossier assemblé, et ses vues de coupe jointes s'il en a (forme historique inchangée sinon). */
+function jsonDossier(dossier: StudioDossierConception, vuesCoupe: readonly StudioVueCoupe[]): Buffer {
+  return Buffer.from(`${JSON.stringify(vuesCoupe.length ? { ...dossier, vuesCoupe } : dossier, null, 2)}\n`, "utf8");
+}
+
+/**
+ * Dossier de conception à publier (EX-074, EX-076) : PDF et JSON recalculés depuis les révisions épinglées, pièces
+ * livrables contrôlées (feuilles, vues de coupe ; présentation déclarée, synchronisation fondée seulement), sources.
+ * Refus 409 `piece_refusee` (codes du modèle) si une pièce est présentée pour ce qu'elle n'est pas.
+ */
+export async function dossierPourPublication(q: Querier, projet: Pick<AccessibleProject, "code" | "name">, study: Study, dossierId: string, presentationsDeclarees: Readonly<Record<string, StudioPresentationPiece>> = {}, options: { reconcilier?: boolean } = {}): Promise<{
+  manifeste: ManifesteDossier; fichiers: { format: "pdf" | "json"; fileName: string; mime: string; body: Buffer }[]; metreJoint: boolean;
+}> {
+  const row = await dossierRow(q, study.id, dossierId);
+  const { dossier, pdf, vuesCoupe } = await assembler(q, projet, study, row);
+  const presente = (id: string) => row.sheetIds.includes(id) || (row.sectionViewIds ?? []).includes(id);
+  // Présentations relues d'un manifeste figé (`reconcilier`) : celles d'une pièce retirée depuis du dossier sont
+  // écartées (la publication reste lisible et s'actualise ; le manifeste recalculé diffère, donc « à actualiser »).
+  // Présentations saisies (création) : une pièce absente du dossier est refusée.
+  const presentations = options.reconcilier
+    ? Object.fromEntries(Object.entries(presentationsDeclarees).filter(([id]) => presente(id))) : presentationsDeclarees;
+  const inconnues = Object.keys(presentations).filter((id) => !presente(id));
+  if (inconnues.length) throw new StudioRequestError(400, { error: "invalid_input", code: "piece_inconnue", pieces: inconnues, message: "Présentation déclarée pour une pièce absente du dossier." });
+  const r = controlerPiecesLivrables(piecesDuDossier(dossier, vuesCoupe, presentations));
+  if ("refus" in r) throw new StudioRequestError(409, { error: "piece_refusee", refus: r.refus, message: "Une pièce du dossier ne peut pas être publiée telle qu'elle est présentée." });
+  const base = `${studioFileSegment(study.name, "etude")}-dossier-${studioFileSegment(row.title, "dossier")}`;
+  return {
+    manifeste: {
+      id: row.id, titre: dossier.titre, empreinte: dossier.empreinte,
+      pieces: r.pieces.map((p) => {
+        // Vue de coupe incomplète : les solides non coupés sont nommés au manifeste (et sur la page), jamais tus.
+        const omis = p.nature === "vue-coupe" ? (vuesCoupe.find((v) => v.id === p.documentId)?.coupe.exactsNonCoupes ?? []) : [];
+        return { ordre: p.ordre, documentId: p.documentId, nature: p.nature, origine: p.origine, presentation: p.presentation, sources: p.sources, empreinte: p.empreinte, ...(omis.length ? { omis: [...omis] } : {}) };
+      }),
+      ...(dossier.metre ? { metre: { variantId: dossier.metre.source.variantId, revisionId: dossier.metre.source.revisionId, documentHash: dossier.metre.source.documentHash } } : {}),
+    },
+    fichiers: [
+      { format: "pdf", fileName: `${base}.pdf`, mime: "application/pdf", body: Buffer.from(pdf()) },
+      { format: "json", fileName: `${base}.json`, mime: "application/json; charset=utf-8", body: jsonDossier(dossier, vuesCoupe) },
+    ],
+    metreJoint: dossier.metre !== null,
+  };
+}

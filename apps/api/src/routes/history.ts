@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierCommands, projectMembers, projects, users } from "../db/schema.js";
+import { atelierCommands, projectEffectiveAccess, projects, users } from "../db/schema.js";
 import { HISTORY_COMMAND_LIMIT, HISTORY_LIMIT, historyEvent, latestHistory, type HistoryEvent } from "../lib/history.js";
 import { projectOr404 } from "../lib/owned-project.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -16,15 +16,17 @@ historyRouter.use(requireAuth);
  * Le filtre d'accès est dans CHAQUE requête ; aucun identifiant fourni par le client n'élargit le périmètre.
  */
 historyRouter.get("/history", async (req, res) => {
-  const memberJoin = and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, req.user!.id));
-  const readable = or(eq(projects.ownerId, req.user!.id), inArray(projectMembers.role, ["lecteur", "editeur"]));
+  // Phase 2 (Issue #262) : lisible = une ligne de la seule source de l'accès (propriétaire ou participation active
+  // portant un rôle de projet).
+  const memberJoin = and(eq(projectEffectiveAccess.projectId, projects.id), eq(projectEffectiveAccess.userId, req.user!.id));
+  const readable = or(eq(projects.ownerId, req.user!.id), inArray(projectEffectiveAccess.role, ["lecteur", "editeur"]));
   const [created, commands] = await Promise.all([
     db.select({ id: projects.id, code: projects.code, name: projects.name, createdAt: projects.createdAt, sourceExampleId: projects.sourceExampleId })
-      .from(projects).leftJoin(projectMembers, memberJoin).where(readable)
+      .from(projects).leftJoin(projectEffectiveAccess, memberJoin).where(readable)
       .orderBy(desc(projects.createdAt), asc(projects.id)).limit(HISTORY_LIMIT + 1),
     db.select({ id: atelierCommands.id, projectId: projects.id, code: projects.code, name: projects.name, label: atelierCommands.label, kind: atelierCommands.kind, revision: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt, authorId: atelierCommands.authorId, authorLabel: users.email })
       .from(atelierCommands).innerJoin(projects, eq(projects.id, atelierCommands.projectId))
-      .leftJoin(projectMembers, memberJoin).leftJoin(users, eq(users.id, atelierCommands.authorId)).where(readable)
+      .leftJoin(projectEffectiveAccess, memberJoin).leftJoin(users, eq(users.id, atelierCommands.authorId)).where(readable)
       .orderBy(desc(atelierCommands.createdAt), asc(atelierCommands.id)).limit(HISTORY_LIMIT + 1),
   ]);
   const events: HistoryEvent[] = [];

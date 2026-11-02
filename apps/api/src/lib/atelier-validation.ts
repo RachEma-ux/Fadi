@@ -14,6 +14,7 @@ import { chargerModele, creerModeleVide, persisterDifferentiel } from "./atelier
 import { controlerRattachements } from "./atelier-refexterne.js";
 import { revaliderSolidesExacts, TYPE_CREER_EXACT } from "./atelier-exact.js";
 import { lockProject } from "./step-rows.js";
+import { controlerCheminEcriture } from "./studio-journal.js";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -26,6 +27,12 @@ export interface ScopedCommandHandler<Result> {
   /** Droits actuels et verrous avant toute réponse de rejeu ou écriture. */
   prepare(tx: Tx, scope: CommandExecutionScope): Promise<void>;
   replay(tx: Tx, scope: CommandExecutionScope): Promise<Result | undefined>;
+  /**
+   * Chemin d'écriture unique (MIG-COEX-06) : refuse, après la recherche de rejeu et avant toute écriture, un lot de la
+   * chaîne qui n'a pas l'autorité d'écriture du projet (`studio-journal.ts`, `controlerCheminEcriture`). Un rejeu d'une
+   * demande déjà confirmée reste rendu (aucune écriture).
+   */
+  cheminEcriture?(tx: Tx, scope: CommandExecutionScope): Promise<void>;
   /** Base/version, réducteur natif, journal et avance du head dans la même transaction. */
   execute(tx: Tx, scope: CommandExecutionScope): Promise<Result>;
 }
@@ -36,6 +43,7 @@ export async function orchestrerCommandesDansTransaction<Result>(tx: Tx, scope: 
   await handler.prepare(tx, capturedScope);
   const replayed = await handler.replay(tx, capturedScope);
   if (replayed !== undefined) return replayed;
+  await handler.cheminEcriture?.(tx, capturedScope);
   return handler.execute(tx, capturedScope);
 }
 
@@ -75,6 +83,10 @@ export async function validerDansTransaction(tx: Tx, projectId: string, auteurId
     replay: async (transaction) => {
       const deja = (await transaction.select().from(atelierCommands).where(and(eq(atelierCommands.projectId, projectId), eq(atelierCommands.requestId, enveloppe.requestId))).limit(1))[0];
       return deja ? { reponse: { ...deja.reponse, rejouee: true }, status: 200, revision: deja.resultRevision, journalId: deja.id } : undefined;
+    },
+    cheminEcriture: async (transaction, scope) => {
+      const refus = await controlerCheminEcriture(transaction, scope);
+      if (refus) throw new EchecLot({ status: 409, revision: -1, reponse: { erreur: "chemin_ecriture", ...refus } });
     },
     execute: (transaction) => appliquerAtelierDansTransaction(transaction, projectId, auteurId, enveloppe, kind, inverseOf, label),
   });

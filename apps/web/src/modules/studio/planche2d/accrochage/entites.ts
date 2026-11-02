@@ -8,7 +8,7 @@ import {
   studioAnchorPoint, studioArcSweep, studioBulgeArc, studioPolylineSegments, studioShapeAnchors, studioShapeBoundPoints,
   type StudioAnchor, type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
-import { indexGrille, SEUIL_INDEX_SPATIAL } from "../index-spatial";
+import { indexGrille, SEUIL_INDEX_SPATIAL, suiviIncremental, type BilanSynchronisation } from "../index-spatial";
 
 export const DEUX_PI = 2 * Math.PI;
 
@@ -126,4 +126,23 @@ export function indexAccrochage(objects: readonly StudioShape[], seuil = SEUIL_I
   const formes = objects.map(indexerFormeMemo);
   const grille = indexGrille(formes, (f) => f.boite);
   return { taille: formes.length, formes: (zone) => grille.chercher(zone) };
+}
+
+/**
+ * Index d'accrochage **incrémental** (C.1-05) : un suivi qui garde son index d'une révision à l'autre. `indexer(objets)`
+ * rend le même `IndexAccrochage` qu'`indexAccrochage(objets, seuil)` (mêmes formes, même ordre, mêmes rangs), mais
+ * au-dessus du seuil l'index n'est pas reconstruit : seules les formes ajoutées, retirées ou modifiées (nouvel objet)
+ * y sont insérées ou retirées. Sous le seuil, le parcours linéaire reste la règle.
+ */
+export function suiviAccrochage(seuil = SEUIL_INDEX_SPATIAL): { indexer(objects: readonly StudioShape[]): IndexAccrochage; readonly dernierBilan: BilanSynchronisation | null } {
+  const suivi = suiviIncremental<StudioShape>((o) => indexerFormeMemo(o, 0).boite);
+  return {
+    get dernierBilan() { return suivi.dernierBilan; },
+    indexer(objects) {
+      if (objects.length < seuil) return indexLineaire(objects);
+      const index = suivi.suivre(objects);
+      if (!index) return indexAccrochage(objects, seuil);
+      return { taille: index.taille, formes: (zone) => index.chercher(zone).map((o) => indexerFormeMemo(o, index.rangDe(o)!)) };
+    },
+  };
 }

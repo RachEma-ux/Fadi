@@ -88,7 +88,7 @@ jobs:
       # Aucune suite ne touche donc la base de démonstration : elle reste vide (schéma seul) pour la personne qui
       # ouvre l'URL.
       - name: Tests des paquets purs et du web
-        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geodata-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
 
       - name: Garde DB-1/2 — tests simulés sans base
         run: npm run test:db-guard

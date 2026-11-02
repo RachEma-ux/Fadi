@@ -1,0 +1,10 @@
+.studio-graphismes-corps{display:flex;flex-direction:column;gap:12px;min-width:min(560px,100%);max-height:70vh;overflow:auto;padding:4px 2px}
+.studio-graphismes-corps select{border:1px solid #b9cbd0;border-radius:7px;padding:9px;font:inherit}
+.studio-graphismes-ligne{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.studio-graphismes-erreur{color:#9a3412;font-size:13px;margin:0}
+.studio-graphismes-ul{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px}
+.studio-graphismes-coche{flex-direction:row!important;align-items:center;gap:8px!important;margin:0!important}
+.studio-graphismes-coche input{width:auto!important}
+.studio-graphismes-table{border-collapse:collapse;font-size:13px}
+.studio-graphismes-table th,.studio-graphismes-table td{border-bottom:1px solid #dde6e8;padding:4px 8px;text-align:left}
+.studio-graphismes-corps h3{font-size:14px;margin:8px 0 4px}

@@ -81,9 +81,13 @@ export function maillageFerme(positions: readonly number[], triangles: readonly 
 export const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => x.triangles.length > 0 && !x.solide && !maillageFerme(x.positions, x.triangles)).length;
 
 /** Wavefront OBJ : sommets `v` (m), faces triangulaires `f` indexées à partir de 1, un `o` par maillage. */
-export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {
+/**
+ * `coordonnees` (chantier Axes, AX-5) : description écrite dans l'en-tête — unité et repère réellement utilisés (défaut :
+ * mètres, repère du modèle). L'en-tête ne ment jamais sur l'unité.
+ */
+export function exporterObj(m: Modele, nom = "Planche", coordonnees = "unités : mètres, Z vers le haut"): ExportMaillage {
   const maillages = maillagesPlanche(m);
-  const lignes: string[] = [`# Fadi — Planche « ${nom} » — unités : mètres, Z vers le haut`, "# OBJ écrit par Fadi (sandbox-planche-model), triangles uniquement"];
+  const lignes: string[] = [`# Fadi — Planche « ${nom} » — ${coordonnees}`, "# OBJ écrit par Fadi (sandbox-planche-model), triangles uniquement"];
   let base = 1;
   let triangles = 0;
   for (const mesh of maillages) {

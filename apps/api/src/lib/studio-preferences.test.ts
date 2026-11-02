@@ -29,9 +29,9 @@ describe("préférences d'outils Studio (validation pure)", () => {
     ]) expect(refus(body)).toMatchObject({ error: "invalid_input" });
   });
   it("relit une ligne absente comme le profil standard, et écarte un outil retiré du registre en le signalant", () => {
-    expect(lireLignePreferences(undefined)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [], retires: [], manifeste: "studio-tool-manifest/1" });
+    expect(lireLignePreferences(undefined)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [], retires: [], manifeste: "studio-tool-manifest/1", raccourcis: {}, ordre: [], profileId: null, proprietaire: null, version: 0, importeDe: null });
     expect(lireLignePreferences({ profile: "metier:cotation", favorites: ["studio.dessin.cote", "retire"], personal: 3 }))
-      .toEqual({ profil: "metier:cotation", favoris: ["studio.dessin.cote"], personnel: [], groupes: [], retires: ["retire"], manifeste: "studio-tool-manifest/1" });
+      .toEqual({ profil: "metier:cotation", favoris: ["studio.dessin.cote"], personnel: [], groupes: [], retires: ["retire"], manifeste: "studio-tool-manifest/1", raccourcis: {}, ordre: [], profileId: null, proprietaire: null, version: 0, importeDe: null });
     expect(lireLignePreferences({ profile: "inconnu", favorites: [], personal: [] }).profil).toBe("standard");
     expect(outilsInconnus({ favoris: [...STUDIO_TOOL_IDS], personnel: [] })).toEqual([]);
   });
@@ -59,7 +59,7 @@ describe("regroupements personnels et manifeste (B.2-02, B.1-04, B.1-06)", () =>
   });
   it("relit les regroupements (forme invalide écartée, outil retiré signalé) et la version du manifeste", () => {
     const lu = lireLignePreferences({ profile: "standard", favorites: [], personal: [], groups: [{ id: "a", nom: "A", outils: ["studio.dessin.arc", "retire"] }, { id: "BAD", nom: "b", outils: [] }, 4] });
-    expect(lu).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "A", outils: ["studio.dessin.arc"] }], retires: ["retire"], manifeste: "studio-tool-manifest/1" });
+    expect(lu).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "A", outils: ["studio.dessin.arc"] }], retires: ["retire"], manifeste: "studio-tool-manifest/1", raccourcis: {}, ordre: [], profileId: null, proprietaire: null, version: 0, importeDe: null });
     expect(lireLignePreferences({ profile: "standard", favorites: [], personal: [], groups: null }).groupes).toEqual([]);
   });
 });

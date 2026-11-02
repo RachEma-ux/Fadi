@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, measureStudioDimension, measureStudioAngularDimension, newStudioDocument, StudioValidationError, validateStudioDocument, type StudioCommand, type StudioDocument } from "./document-2d.js";
-import { applyToStudioHistory, createStudioHistory, undoStudioHistory } from "./history.js";
+import { applyToStudioHistory, createStudioHistory, redoStudioHistory, undoStudioHistory } from "./history.js";
 import { studioChevauchements, studioElementsModifies } from "./concurrence.js";
 import { studioMesh3d } from "./mesh-3d.js";
 import { projectionsAInvalider, studioAssemblerMaillage, studioMaillerObjets, studioMesh3dIncremental, studioVersionProjection, type StudioMorceauMaillage } from "./projections.js";
@@ -103,6 +103,26 @@ describe("INV-004 — une exigence approuvée reste distincte du résultat de co
     expect(refus(() => avec(d, { toolId: "studio.exigence.definir", params: exigence }))).not.toBe("accepté");
     const partenaire = { ...exigence, origine: { reference: "Référence partenaire R-1", acceptation: { par: "client", le: "2026-10-19T08:00:00.000Z" } } };
     expect(preparerVersion([], [partenaire])).toEqual({ refus: "acceptation-forgee", exigenceId: "e1" });
+  });
+});
+
+describe("TEST-027 — surface dessinée et surface programmée : l'exigence reste identique, l'écart est calculé", () => {
+  const rectangle = { id: "r1", type: "rectangle", origin: { x: 0, y: 0 }, width: 2, height: 1 };
+  const exigence: ExigenceStudio = { id: "e2", libelle: "Surface programmée", metrique: { type: "total", grandeur: "surface" }, comparaison: "=", valeur: 2, unite: "m2", source: "Programme saisi (essai)" };
+  it("TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite", () => {
+    const jeu = gele({ version: 1, exigences: [exigence] });
+    const d1 = gele(avec(newStudioDocument("t27"), { toolId: "studio.dessin.rectangle", params: rectangle }));
+    const r1 = controlerExigences("s", "r1", d1, jeu).ecarts[0]!;
+    expect(r1).toMatchObject({ exigenceId: "e2", statut: "satisfaite", mesure: { valeur: expect.closeTo(2, 12), unite: "m2" } });
+    expect(r1.ecart).toBeCloseTo(0, 12);
+    const d2 = avec(d1, { toolId: "studio.dessin.modifier", params: { ...rectangle, width: 3 } });
+    const r2 = controlerExigences("s", "r2", d2, jeu).ecarts[0]!;
+    // L'écart est signé (mesure − valeur programmée) et rendu avec le résultat du contrôle.
+    expect(r2).toMatchObject({ exigenceId: "e2", statut: "non-satisfaite", mesure: { valeur: expect.closeTo(3, 12), unite: "m2" } });
+    expect(r2.ecart).toBeCloseTo(1, 12);
+    // Exigence identique (objets gelés : toute écriture aurait levé une erreur) ; le dessin d'origine est intact.
+    expect(jeu.exigences[0]).toEqual(exigence);
+    expect(d1.objects[0]).toMatchObject({ width: 2 });
   });
 });
 
@@ -217,6 +237,27 @@ describe("INV-010 — une requête IA ou extension passe par les mêmes validati
     expect(refus(() => avec(d, { toolId: "studio.agent.ecrire", params: {} }))).not.toBe("accepté");
     expect(refus(() => avec(d, { ...ligne("a", 0), params: { ...ligne("a", 0).params, auteur: "agent" } }))).not.toBe("accepté");
     expect(refus(() => avec(d, { toolId: "studio.dessin.selection", params: {} }))).not.toBe("accepté");
+  });
+});
+
+describe("TEST-011 — annuler / rétablir l'opération associée : références stables, métré correct", () => {
+  it("TEST-011 [+] annuler puis rétablir la modification d'une baie : mêmes identités, volume net 3,18 puis 3,096 m³, documents identiques", () => {
+    const d1 = murEtBaie();
+    const h = applyToStudioHistory(createStudioHistory(d1), [c({ toolId: "studio.architecture.modifier", params: { ...baie, width: 1.2 } })]);
+    const d2 = h.present;
+    expect(valeur(d2, "m1", "volume-net")).toBeCloseTo(3.096, 12);
+    const annule = undoStudioHistory(h);
+    expect(annule.present.architecture!.map((a) => a.id)).toEqual(["m1", "o1"]);
+    expect(annule.present.architecture![1]).toMatchObject({ hostId: "m1", width: 1 });
+    expect(valeur(annule.present, "m1", "volume-net")).toBeCloseTo(3.18, 12);
+    expect(annule.present).toEqual(d1);
+    const retabli = redoStudioHistory(annule);
+    expect(retabli.present.architecture!.map((a) => a.id)).toEqual(["m1", "o1"]);
+    expect(retabli.present.architecture![1]).toMatchObject({ hostId: "m1", width: 1.2 });
+    expect(valeur(retabli.present, "m1", "volume-net")).toBeCloseTo(3.096, 12);
+    // Rien n'est perdu à l'aller-retour : le document rétabli est celui qui avait été produit, l'historique est rendu.
+    expect(retabli.present).toEqual(d2);
+    expect([retabli.past.length, retabli.future.length]).toEqual([h.past.length, h.future.length]);
   });
 });
 

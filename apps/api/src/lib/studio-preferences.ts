@@ -39,6 +39,10 @@ export interface StudioToolPreferences {
   personnel: string[];
   /** Absent d'un corps PUT : regroupements enregistrés inchangés. Toujours présent à la lecture. */
   groupes?: StudioGroupeOutils[];
+  /** Raccourcis personnels (EX-034 : capacité → combinaison) ; absent d'un PUT : inchangés. */
+  raccourcis?: Record<string, string>;
+  /** Ordre des capacités (EX-034) ; absent d'un PUT : inchangé. */
+  ordre?: string[];
 }
 
 const liste = z.array(z.string().min(1).max(128)).max(MAX_OUTILS).refine((l) => new Set(l).size === l.length, "Outil cité deux fois");
@@ -55,6 +59,8 @@ export const studioToolPreferencesSchema = z.object({
     .refine((l) => new Set(l.map((g) => g.id)).size === l.length, "Regroupement cité deux fois")
     .refine((l) => new Set(l.map((g) => g.nom.toLocaleLowerCase("fr"))).size === l.length, "Deux regroupements portent le même nom")
     .optional(),
+  raccourcis: z.record(z.string().min(1).max(128), z.string().regex(/^(Ctrl\+)?(Shift\+)?([A-Z0-9]|F[1-9]|F1[0-2]|Delete|Escape|Enter|Space|Backspace|Tab|[=\-[\];',./`])$/)).optional(),
+  ordre: z.array(z.string().min(1).max(128)).max(MAX_OUTILS + 100).refine((l) => new Set(l).size === l.length, "Capacité citée deux fois").optional(),
 }).strict();
 
 /** Identifiants absents du registre, dans l'ordre où ils sont cités (sans doublon). */
@@ -70,19 +76,26 @@ export function lireCorpsPreferences(body: unknown): LectureCorps {
   if (!parsed.success) return { ok: false, body: { error: "invalid_input", details: parsed.error.flatten() } };
   const inconnus = outilsInconnus(parsed.data);
   if (inconnus.length) return { ok: false, body: { error: "unknown_tool", message: "Outil absent du registre de Studio.", tools: inconnus } };
-  const { groupes, ...reste } = parsed.data;
-  return { ok: true, preferences: groupes === undefined ? reste : { ...reste, groupes } };
+  const { groupes, raccourcis, ordre, ...reste } = parsed.data;
+  return { ok: true, preferences: { ...reste, ...(groupes === undefined ? {} : { groupes }), ...(raccourcis === undefined ? {} : { raccourcis }), ...(ordre === undefined ? {} : { ordre }) } };
 }
 
-export type LecturePreferences = Required<StudioToolPreferences> & { retires: string[]; manifeste: string };
+export type LecturePreferences = Required<StudioToolPreferences> & {
+  retires: string[]; manifeste: string;
+  /** Profil persistant (EX-034) : identifiant stable (null tant que rien n'est enregistré), propriétaire, version, provenance. */
+  profileId: string | null; proprietaire: string | null; version: number; importeDe: string | null;
+};
 
 /**
  * Ligne relue → préférences : une valeur stockée devenue invalide (outil retiré du registre depuis) est lue sans cet
  * outil, signalé dans `retires`, jamais réécrite à la lecture ; un identifiant renommé suit son alias du manifeste.
  * Pas de ligne : profil standard, aucun favori, aucun regroupement.
  */
-export function lireLignePreferences(row: { profile: string; favorites: unknown; personal: unknown; groups?: unknown } | undefined): LecturePreferences {
-  if (!row) return { profil: "standard", favoris: [], personnel: [], groupes: [], retires: [], manifeste: STUDIO_MANIFESTE_OUTILS_VERSION };
+export function lireLignePreferences(row: {
+  profile: string; favorites: unknown; personal: unknown; groups?: unknown;
+  userId?: string; profileId?: string | null; profileVersion?: number | null; shortcuts?: unknown; capabilityOrder?: unknown; importedFrom?: string | null;
+} | undefined): LecturePreferences {
+  if (!row) return { profil: "standard", favoris: [], personnel: [], groupes: [], raccourcis: {}, ordre: [], retires: [], manifeste: STUDIO_MANIFESTE_OUTILS_VERSION, profileId: null, proprietaire: null, version: 0, importeDe: null };
   const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
   const retires: string[] = [];
   const garder = (l: string[]) => [...new Set(l.flatMap((id) => {
@@ -97,9 +110,12 @@ export function lireLignePreferences(row: { profile: string; favorites: unknown;
     if (typeof id !== "string" || !STUDIO_GROUPE_ID_PATTERN.test(id) || typeof nom !== "string" || !nom.trim()) return [];
     return [{ id, nom, outils: garder(ids(outils)) }];
   });
+  const raccourcis = row.shortcuts && typeof row.shortcuts === "object" && !Array.isArray(row.shortcuts)
+    ? Object.fromEntries(Object.entries(row.shortcuts as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string")) : {};
   return {
     profil: STUDIO_PROFIL_PATTERN.test(row.profile) ? row.profile : "standard",
-    favoris, personnel, groupes, retires: [...new Set(retires)], manifeste: STUDIO_MANIFESTE_OUTILS_VERSION,
+    favoris, personnel, groupes, raccourcis, ordre: ids(row.capabilityOrder), retires: [...new Set(retires)], manifeste: STUDIO_MANIFESTE_OUTILS_VERSION,
+    profileId: row.profileId ?? null, proprietaire: row.profileId ? row.userId ?? null : null, version: row.profileVersion ?? 0, importeDe: row.importedFrom ?? null,
   };
 }
 

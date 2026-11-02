@@ -1,0 +1,96 @@
+{
+  "$commentaire": "Référence de mesure de studio-g4.mjs (AC-002, TEST-016) : médianes d'une mesure réelle sur l'appareil indiqué, jamais saisies à la main. Rétablir : ECRIRE_REFERENCE=1 MOTIF=… node apps/web/e2e/studio-g4.mjs (révision suivante, tolérances et invariants conservés).",
+  "schema": "studio-reference-mesures/1",
+  "revision": 1,
+  "etablieLe": "2026-10-26T03:14:12.933Z",
+  "commit": "ed97675f91d0abda9a0df3a64dbb36164119b5be",
+  "build": "ed97675f91d0-d16df0372fae",
+  "motif": "Première référence (lot G4) : profil de vingt outils, Chromium logiciel, build du commit ed97675f",
+  "appareil": {
+    "classe": "chromium-logiciel",
+    "navigateur": "Chromium 153.0.8010.12",
+    "moteurWebgl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "fenetre": {
+      "largeur": 1280,
+      "hauteur": 900
+    }
+  },
+  "profil": [
+    "studio.dessin.selection",
+    "studio.dessin.ligne",
+    "studio.dessin.rectangle",
+    "studio.dessin.cercle",
+    "studio.dessin.arc",
+    "studio.dessin.polyligne",
+    "studio.dessin.cote",
+    "studio.dessin.cote-angulaire",
+    "studio.dessin.texte",
+    "studio.dessin.deplacer",
+    "studio.dessin.copier",
+    "studio.dessin.rotation",
+    "studio.dessin.symetrie",
+    "studio.dessin.echelle",
+    "studio.dessin.modifier",
+    "studio.dessin.decaler",
+    "studio.architecture.mur",
+    "studio.architecture.ouverture",
+    "studio.dessin.supprimer",
+    "studio.objet.calque"
+  ],
+  "repetitions": 5,
+  "tolerances": {
+    "requetes": {
+      "relative": 0.2,
+      "absolue": 3
+    },
+    "octetsTransferes": {
+      "relative": 0.2,
+      "absolue": 32768
+    },
+    "octetsServeur": {
+      "relative": 0.2,
+      "absolue": 32768
+    },
+    "chunksExecutes": {
+      "relative": 0.2,
+      "absolue": 2
+    },
+    "tasOctets": {
+      "relative": 0.35,
+      "absolue": 2097152
+    }
+  },
+  "froid": {
+    "requetes": 52,
+    "octetsTransferes": 2891451,
+    "octetsServeur": 2891451,
+    "chunksExecutes": 9,
+    "tasOctets": 9751236
+  },
+  "chaud": {
+    "requetes": 49,
+    "octetsTransferes": 47151,
+    "octetsServeur": 47151,
+    "chunksExecutes": 9,
+    "tasOctets": 9726876
+  },
+  "invariants": {
+    "famillesInterdites": [
+      "three",
+      "studio-3d",
+      "atelier",
+      "maplibre",
+      "manifold"
+    ],
+    "moteursAdmis": [
+      "coquille-studio",
+      "planche-2d",
+      "calcul"
+    ],
+    "fichiersInterdits": [
+      "occt-wasm[^/]*\\.wasm$",
+      "noyau-exact\\.worker[^/]*\\.js$",
+      "manifold[^/]*\\.wasm$"
+    ]
+  }
+}

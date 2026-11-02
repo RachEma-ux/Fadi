@@ -14,7 +14,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { conceptAxonometricSvg, declareSiteObservation, designReviewSnapshot, harmonyFullAssessment, HarmonieError, withCenterElevation } from "@parcours/domain-model";
+import { cibleDocument, conceptAxonometricSvg, declareSiteObservation, designReviewSnapshot, harmonyFullAssessment, HarmonieError, withCenterElevation } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -112,7 +112,7 @@ designReviewRouter.post("/review", async (req, res) => {
 });
 
 designReviewRouter.get("/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument("bilan-batiment") ?? undefined);
   if (!project) return;
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());

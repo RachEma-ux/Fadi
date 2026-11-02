@@ -1,0 +1,13 @@
+# Fadi — passage de fadi-prod-auto toutes les 10 minutes (un seul à la fois : service oneshot + verrou du script).
+# 1 appel à l'API publique de GitHub par passage sans nouveauté : 6 par heure, la préproduction garde le reste du budget.
+[Unit]
+Description=Fadi — production automatique toutes les 10 minutes
+
+[Timer]
+OnCalendar=*:0/10
+RandomizedDelaySec=60
+Persistent=false
+Unit=fadi-prod-auto.service
+
+[Install]
+WantedBy=timers.target

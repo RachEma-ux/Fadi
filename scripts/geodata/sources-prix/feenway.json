@@ -1,0 +1,38 @@
+{
+  "cle": "feenway-prix-quartiers",
+  "titre": "Prix des quartiers (FeenWay, provisoire)",
+  "description": "Prix moyen, minimal et maximal au m² et indice de confiance par quartier, tels qu'affichés par la carte de FeenWay (« Prix Quartier »), relevés le 31 octobre 2026. SOURCE PROVISOIRE, NON QUALIFIÉE (D-GD-54) : FeenWay ne déclare ni la provenance de ses prix (annonces, transactions), ni leur date, ni le nombre d'observations, ni sa méthode ; droits de réutilisation non établis. Admise pour l'étape de développement seulement, en attendant une source qualifiée ; jamais en production.",
+  "producteur": "FeenWay (feenway.com) — provenance des prix non déclarée",
+  "couverture": "Quartiers des villes du Maroc couvertes par FeenWay",
+  "dossier": "provisoires",
+  "prefixeCode": "fw-",
+  "unite": "DH/m²",
+  "echelleConfiance": "de 0 à 5, déclaré par FeenWay sans méthode publiée",
+  "descriptionIndicateurs": "FeenWay, « Prix Quartier » (source provisoire non qualifiée, D-GD-54) — valeur affichée par FeenWay, reprise sans recalcul ; provenance, date et méthode non déclarées.",
+  "champs": { "code": "id", "nom": "name", "ville": "city", "prix": "price", "min": "min", "max": "max", "confiance": "confidence" },
+  "origine": { "fichier": "donnees/feenway-prix-quartiers-origine.json", "url": "https://www.feenway.com/api/neighborhoods" },
+  "qualification": {
+    "etat": "provisoire",
+    "motif": "Droits de réutilisation de FeenWay non établis ; prix sans provenance, date, nombre d'observations ni méthode déclarés. Admise par le maître d'ouvrage pour l'étape de développement (31 octobre 2026), en attendant une source qualifiée.",
+    "decision": "D-GD-54"
+  },
+  "version": {
+    "libelle": "FeenWay — « Prix Quartier », relevé du 2026-10-31",
+    "url": null,
+    "periode": "Non déclarée par FeenWay (relevé du 31 octobre 2026)",
+    "licence": "Aucune licence publiée par FeenWay — droits non établis",
+    "attribution": "Prix des quartiers : FeenWay (feenway.com), source provisoire non qualifiée",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "refuse",
+      "partage": "refuse",
+      "telechargement": "refuse",
+      "export": "refuse"
+    },
+    "precision": "Polygones de quartiers dessinés par FeenWay (limites non officielles), coordonnées arrondies à 10⁻⁶ degré ; prix en DH/m² arrondis à l'unité par FeenWay ; provenance et méthode des prix non déclarées",
+    "conditions": "Consultation, stockage, calcul et tuiles admis à titre interne et provisoire par décision du maître d'ouvrage (D-GD-54), pour le développement seulement (préproduction, développement) ; usage commercial, partage, téléchargement et export refusés ; aucune diffusion hors de Fadi ; à retirer dès qu'une source qualifiée de prix est livrée."
+  }
+}

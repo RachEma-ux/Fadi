@@ -5,6 +5,7 @@
  * commande (problèmes rattachés aux objets, jamais corrigés).
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { partager } from "../test-helpers/partage.js";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
@@ -13,7 +14,7 @@ import { pool } from "../db/client.js";
 const app = createApp();
 const CONTRAT = "atelier-commands/3";
 async function resetDb() {
-  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "project_members", "projects", "users", "atelier_scripts", "atelier_propositions"]);
+  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "projects", "users", "atelier_scripts", "atelier_propositions"]);
 }
 beforeAll(resetDb);
 beforeEach(resetDb);
@@ -88,7 +89,7 @@ describe("Lot P2-8 — graphes de génération contrôlée et règles par ontolo
     expect((await client.post(`${base}/graphes/inconnu/proposer`).send({})).status).toBe(404);
     // Droits : un lecteur ne propose pas.
     const lecteur = await registerAndLogin("graphes-lecteur@example.com");
-    expect((await client.post(`/projects/${pid}/members`).send({ email: "graphes-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(client, pid, "graphes-lecteur@example.com", "lecteur")).status).toBe(201);
     expect((await lecteur.post(`${base}/graphes/reperes/proposer`).send({ parametres: { nb: 1 } })).status).toBe(403);
     expect((await lecteur.get(`${base}/graphes`)).status).toBe(200);
   });

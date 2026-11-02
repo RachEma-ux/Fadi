@@ -27,6 +27,7 @@ import {
   type ParcoursStepDefinition,
   type ParcoursStepStatus,
   type SiteObservations,
+  cibleDocument,
 } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projectSteps, projects } from "../db/schema.js";
@@ -63,7 +64,7 @@ parcoursStepsRouter.get("/", async (req, res) => {
  * téléchargeable — `Harmonie_Choix_Parcours_V7.html`.
  */
 parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument("harmonie-synthese") ?? undefined);
   if (!project) return;
   const now = new Date();
   const ctx = await loadStepContext(db, project);
@@ -81,7 +82,7 @@ parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
 
 /** « Rapport de cette étape » (`stage-report`) : `Harmonie_Etape_NN_V7.html`. */
 parcoursStepsRouter.get("/:stepNumber/harmonie/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "export");
+  const project = await projectOr404(req, res, "export", cibleDocument(`harmonie-etape-${String(req.params["stepNumber"] ?? "").padStart(2, "0")}`) ?? undefined);
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;

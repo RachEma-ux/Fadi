@@ -1,0 +1,47 @@
+{
+  "cle": "geoboundaries-mar-adm2",
+  "titre": "Limites administratives du Maroc — provinces et préfectures (ADM2)",
+  "description": "Soixante-quinze provinces et préfectures, découpage geoBoundaries gbOpen (année représentée 2017). Noms d'origine conservés (français et arabe). Les codes sont les identifiants geoBoundaries (shapeID) : la source ne fournit pas de code officiel à ce niveau.",
+  "producteur": "geoBoundaries (William & Mary geoLab), d'après OpenStreetMap et Wambacher",
+  "theme": "limites-administratives",
+  "couverture": "Maroc (gbOpen MAR)",
+  "version": {
+    "libelle": "geoBoundaries gbOpen MAR ADM2 — commit 9469f09",
+    "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MAR/ADM2/geoBoundaries-MAR-ADM2.geojson",
+    "empreinte": "5b3f09cb36fe8a91b7e592ade978d0a8a62476aab86f86ab69184c33efcb1714",
+    "periode": "Année représentée 2017 ; source mise à jour le 2023-01-19",
+    "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "© contributeurs OpenStreetMap (ODbL) ; geoBoundaries, wmgeolab",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Limites OpenStreetMap (Wambacher) ; précision non garantie par le producteur",
+    "synthetique": false,
+    "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Provinces et préfectures du Maroc (ADM2)",
+    "description": "Unités administratives de niveau 2 ; code = identifiant geoBoundaries (shapeID).",
+    "niveau": "ADM2",
+    "champCode": "shapeID",
+    "champNom": "shapeName",
+    "proprietesExposees": [
+      "shapeID",
+      "shapeName",
+      "shapeType"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#74a9cf"
+    }
+  },
+  "indicateurs": [],
+  "superficie": true
+}

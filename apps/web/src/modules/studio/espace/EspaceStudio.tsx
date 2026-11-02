@@ -149,6 +149,8 @@ export interface PropsBarreEtat {
   planche: string;
   sousTitre: string;
   enAttente: number;
+  /** Lots en attente sortis de l'historique local borné (EX-047) : ils ne s'annulent plus ; absent ou 0 : aucun. */
+  horsHistorique?: number;
   etat: string;
   connexion?: ReactNode;
   lectureSeule: boolean;
@@ -169,6 +171,9 @@ export function BarreEtat(p: PropsBarreEtat) {
     <span data-studio-planche-active>{p.planche}</span>
     <span className="studio-masque" data-studio-sous-titre>{p.sousTitre}</span>
     <span data-studio-annuler-portee data-studio-en-attente-nombre={p.enAttente} title="Annuler et Rétablir ne portent que sur les modifications non enregistrées ; une révision enregistrée ne s’annule pas ici.">{`${p.enAttente} commande(s) en attente`}</span>
+    {(p.horsHistorique ?? 0) > 0 && <span role="status" data-studio-historique-borne={p.horsHistorique}
+      title="L’historique local garde un nombre borné d’états : les modifications plus anciennes restent en attente et seront enregistrées, mais ne peuvent plus être annulées ici.">
+      {`Historique local borné : ${p.horsHistorique} modification(s) plus ancienne(s) ne s’annulent plus (toujours à enregistrer)`}</span>}
     {p.lectureSeule && <span role="status" data-studio-lecture-seule>Lecture seule</span>}
     <span role="status" data-studio-etat>{p.etat}</span>
     {p.connexion}

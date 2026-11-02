@@ -1,19 +1,27 @@
 /**
- * Outil Axes (cahier-planche §4.30, relevé mesure-camera-panneaux §1.4) — machine pure.
+ * Outil Axes (cahier-planche §4.30, relevé mesure-camera-panneaux §1.4 ; chantier Axes, lot AX-1) — machine pure.
  *
- * Trois clics : origine, direction de l'axe rouge, direction de l'axe vert (projetée perpendiculairement au rouge) ;
- * le bleu complète le trièdre direct. Un double-clic, à toute étape, pose le repère tel qu'il est orienté (axes
- * courants) à l'origine cliquée. Alt (après le clic d'origine) : autre orientation (le vert est renversé, donc le
- * bleu aussi). Le repère est le REPÈRE DE SAISIE de la Planche (R5, C12) : `Modele.annotations.repere` ; les
- * coordonnées stockées ne changent jamais. Après le dernier clic, l'outil précédent revient ; annulable.
+ * Trois clics : origine, direction de l'axe rouge, côté de l'axe vert (projeté perpendiculairement au rouge) ; le bleu
+ * complète le trièdre direct. Un double-clic, à toute étape, pose les axes courants (orientation conservée) à l'origine
+ * cliquée. Alt (après le clic d'origine) : autre orientation (le vert est renversé, donc le bleu aussi).
+ *
+ * AX-1 (concept Axes 1.0, décisions AX-D3, AX-D5) :
+ * - le repère posé est le **repère de travail** (`Transition.repereTravail`), personnel et hors de l'historique de
+ *   géométrie : l'outil ne modifie plus le document (« Repère précédent » le retrouve, Annuler ne le touche pas) ;
+ * - points confondus ou alignés : refus nommé, l'étape reste ouverte, rien n'est posé — jamais de repli silencieux (AX02) ;
+ * - champ Mesures : à l'étape 1, `[x;y;z]` (absolu, depuis l'origine du repère courant, le long de ses axes) ou
+ *   `<dx;dy;dz>` (décalage dans le repère courant) déplace l'origine seule et pose aussitôt (AX03) ; aux étapes 2 et 3,
+ *   les mêmes formes donnent le point d'axe (relatif : depuis l'origine choisie).
+ * Les coordonnées stockées ne changent jamais.
  */
-import { modifierAnnotations } from "../geometrie-libre.js";
+import type { Repere } from "../annotations.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
-import { type Vec3, AXE_X, AXE_Y, AXE_Z, ORIGINE, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { contexteSaisie, mesures, messageErreur } from "./commun-formes.js";
+import { REPERE_DU_MODELE, deplacerOrigine, repereDepuisDirections } from "../reperes.js";
+import { analyserSaisie } from "../saisie-vcb.js";
+import { type Vec3, add, len, normalize, sub } from "../vecteur.js";
+import { contexteSaisie, mesures, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
-import type { Repere } from "../annotations.js";
 
 export const ID_AXES = "axes";
 
@@ -29,36 +37,36 @@ export interface EtatAxes {
 const initial = (): EtatAxes => ({ etape: 1, origine: null, x: null, alternatif: false, inference: null, erreur: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
-export const REPERE_MODELE: Repere = { origine: ORIGINE, x: AXE_X, y: AXE_Y, z: AXE_Z };
+/** Repère du modèle (conservé pour les appelants du lot 4). */
+export const REPERE_MODELE: Repere = REPERE_DU_MODELE;
 
-function poser(_etat: EtatAxes, ctx: ContexteOutil, repere: Repere): Transition<EtatAxes> {
-  try {
-    const r = modifierAnnotations(ctx.modele, (a) => {
-      a.repere = repere;
-    });
-    return { etat: initial(), modele: r.modele, selection: ctx.selection, operation: "Axes", outilPrecedent: true };
-  } catch (err) {
-    return { etat: { ...initial(), erreur: messageErreur(err) } };
-  }
-}
+/** Pose : le repère devient le repère de travail ; le document n'est pas modifié (AX-D3). */
+const poser = (repere: Repere): Transition<EtatAxes> => ({ etat: initial(), repereTravail: repere, outilPrecedent: true });
 
-/** Repère complété : rouge donné, vert projeté perpendiculairement, bleu = rouge × vert (direct). */
+/**
+ * Repère complété : rouge donné, vert projeté perpendiculairement, bleu = rouge × vert (direct). `null` quand la saisie
+ * ne définit pas de repère (direction nulle, directions alignées) : aucune orientation n'est inventée (AX02).
+ */
 export function repereDepuis(origine: Vec3, x0: Vec3, y0: Vec3, alternatif = false): Repere | null {
-  if (len(x0) < 1e-9) return null;
-  const x = normalize(x0);
-  let y = sub(y0, scale(x, dot(y0, x)));
-  if (len(y) < 1e-9) {
-    // Vert dégénéré : perpendiculaire quelconque dans le plan du sol si possible.
-    y = cross(AXE_Z, x);
-    if (len(y) < 1e-9) y = cross(AXE_X, x);
-  }
-  y = normalize(y);
-  if (alternatif) y = scale(y, -1);
-  const z = normalize(cross(x, y));
-  return { origine, x, y, z };
+  const r = repereDepuisDirections(origine, x0, y0, alternatif);
+  return r.ok ? r.repere : null;
+}
+
+const MESSAGE_ORIGINE_X = "Repère refusé : le point d'axe est confondu avec l'origine. Choisissez un point distinct.";
+
+function etape2(etat: EtatAxes, point: Vec3, i: Inference | null): Transition<EtatAxes> {
+  const x = sub(point, etat.origine as Vec3);
+  if (len(x) < 1e-9) return { etat: { ...etat, inference: i, erreur: MESSAGE_ORIGINE_X } };
+  return { etat: { ...etat, etape: 3, x: normalize(x), inference: i, erreur: null } };
+}
+
+function etape3(etat: EtatAxes, point: Vec3, i: Inference | null): Transition<EtatAxes> {
+  const r = repereDepuisDirections(etat.origine as Vec3, etat.x as Vec3, sub(point, etat.origine as Vec3), etat.alternatif);
+  if (!r.ok) return { etat: { ...etat, inference: i, erreur: r.message } };
+  return poser(r.repere);
 }
 
 export const machineAxes: MachineOutil<EtatAxes> = {
@@ -66,35 +74,40 @@ export const machineAxes: MachineOutil<EtatAxes> = {
   initial,
 
   traiter(etat, ev, ctx): Transition<EtatAxes> {
+    const courant = ctx.repere ?? REPERE_DU_MODELE;
     switch (ev.genre) {
       case "survol":
         return { etat: { ...etat, inference: inferer2(ctx, ev.rayon, ev.tolerance, etat.origine ?? undefined), erreur: null } };
       case "clic": {
         const i = inferer2(ctx, ev.rayon, ev.tolerance, etat.origine ?? undefined);
-        const courant = ctx.repere ?? REPERE_MODELE;
         if (ev.double) {
-          // Axes tels qu'orientés, à l'origine cliquée (ou à l'origine déjà posée).
+          // Axes tels qu'orientés, à l'origine cliquée (ou déjà posée) ; un rouge déjà choisi est gardé.
           const origine = etat.origine ?? i.point;
-          const x = etat.x ?? courant.x;
-          const r = repereDepuis(origine, x, etat.x ? courant.y : courant.y, etat.alternatif);
-          return r ? poser(etat, ctx, r) : { etat: { ...etat, erreur: "Orientation impossible." } };
+          const r = etat.x ? repereDepuisDirections(origine, etat.x, courant.y, etat.alternatif) : deplacerOrigine(courant, origine);
+          return r.ok ? poser(r.repere) : { etat: { ...etat, inference: i, erreur: r.message } };
         }
         if (etat.etape === 1) return { etat: { ...etat, etape: 2, origine: i.point, inference: i, erreur: null } };
-        if (etat.etape === 2) {
-          const x = sub(i.point, etat.origine as Vec3);
-          if (len(x) < 1e-9) return { etat: { ...etat, inference: i, erreur: "Choisissez un point distinct de l'origine pour l'axe rouge." } };
-          return { etat: { ...etat, etape: 3, x: normalize(x), inference: i, erreur: null } };
-        }
-        const r = repereDepuis(etat.origine as Vec3, etat.x as Vec3, sub(i.point, etat.origine as Vec3), etat.alternatif);
-        if (!r) return { etat: { ...etat, inference: i, erreur: "Orientation impossible." } };
-        return poser(etat, ctx, r);
+        if (etat.etape === 2) return etape2(etat, i.point, i);
+        return etape3(etat, i.point, i);
       }
       case "touche":
         if (ev.touche === "Alt" && ev.etat === "enfoncee" && etat.etape > 1) return { etat: { ...etat, alternatif: !etat.alternatif } };
         return { etat };
-      case "saisie":
-        return { etat: { ...etat, erreur: "Le champ Mesures n'est pas utilisé par l'outil Axes." } };
+      case "saisie": {
+        const s = analyserSaisie(ev.texte, contexteSaisie("point", ctx));
+        if (s.genre === "erreur") return { etat: { ...etat, erreur: s.message } };
+        if (s.genre !== "point") return { etat: { ...etat, erreur: "Saisie attendue : un point [x;y;z] ou un décalage <dx;dy;dz>." } };
+        if (etat.etape === 1) {
+          // Origine seule : absolue dans le repère courant, ou décalée depuis son origine ; orientation conservée.
+          const origine = s.reference === "absolue" ? s.point : add(courant.origine, s.point);
+          const r = deplacerOrigine(courant, origine);
+          return r.ok ? poser(r.repere) : { etat: { ...etat, erreur: r.message } };
+        }
+        const point = s.reference === "absolue" ? s.point : add(etat.origine as Vec3, s.point);
+        return etat.etape === 2 ? etape2(etat, point, etat.inference) : etape3(etat, point, etat.inference);
+      }
       case "echap":
+        // Échap annule tout l'aperçu : rien n'est posé, aucun contexte n'est poussé.
         return { etat: initial() };
       case "appui":
       case "glisser":
@@ -109,11 +122,11 @@ export const machineAxes: MachineOutil<EtatAxes> = {
     if (etat.origine && etat.inference) {
       if (etat.etape === 2) lignes.push([etat.origine, etat.inference.point]);
       if (etat.etape === 3 && etat.x) {
-        lignes.push([etat.origine, { x: etat.origine.x + etat.x.x, y: etat.origine.y + etat.x.y, z: etat.origine.z + etat.x.z }]);
+        lignes.push([etat.origine, add(etat.origine, etat.x)]);
         const r = repereDepuis(etat.origine, etat.x, sub(etat.inference.point, etat.origine), etat.alternatif);
-        if (r) lignes.push([etat.origine, { x: etat.origine.x + r.y.x, y: etat.origine.y + r.y.y, z: etat.origine.z + r.y.z }], [etat.origine, { x: etat.origine.x + r.z.x, y: etat.origine.y + r.z.y, z: etat.origine.z + r.z.z }]);
+        if (r) lignes.push([etat.origine, add(etat.origine, r.y)], [etat.origine, add(etat.origine, r.z)]);
       }
     }
-    return vueModif({ consigne, mesures: mesures("Mesures", "", contexteSaisie("aucune", ctx)), inference: etat.inference, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur });
+    return vueModif({ consigne, mesures: mesures("Origine", "", contexteSaisie("point", ctx)), inference: etat.inference, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur });
   },
 };

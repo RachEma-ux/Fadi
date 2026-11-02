@@ -41,6 +41,7 @@ import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type Resu
 import { lireIfc } from "../lib/atelier-ifc.js";
 import { ErreurNuage, lireNuage, MAX_POINTS_ECHANTILLON } from "@parcours/atelier-model";
 import { moteurExact, revaliderSolidesExacts, TYPE_CREER_EXACT } from "../lib/atelier-exact.js";
+import { surveillanceStudio } from "../lib/studio-surveillance.js";
 import { journalDepuis } from "../lib/atelier-versions.js";
 
 export const atelierCommandsRouter = Router({ mergeParams: true });
@@ -409,7 +410,7 @@ atelierCommandsRouter.get("/solides-exacts/:objetId/export.step", async (req, re
     return;
   }
   const M = await moteurExact();
-  const step = M.exporterStep(o.params.brep, { x: o.params.position.x, y: o.params.position.y, angleDeg: o.params.angle.value });
+  const step = surveillanceStudio.mesurer("exact", "export-step", () => M.exporterStep(o.params.brep, { x: o.params.position.x, y: o.params.position.y, angleDeg: o.params.angle.value }));
   const nom = `${project.code}_${o.params.nom ?? o.id}.step`.replace(/[\\/\u0000-\u001f"]/g, "_");
   res.setHeader("Content-Type", "application/step; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${nom.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(nom)}`);
@@ -443,7 +444,8 @@ atelierCommandsRouter.post("/import-step", raw({ type: () => true, limit: LIMITE
   try {
     // Un `solide-exact` par solide du fichier (assemblage ou corps disjoints) : chaque commande désigne son rang ; un
     // fichier sans solide est refusé nommément.
-    const nombre = (await moteurExact()).compterSolidesStep(step);
+    const M = await moteurExact();
+    const nombre = surveillanceStudio.mesurer("exact", "import-step", () => M.compterSolidesStep(step));
     if (!nombre) {
       invalide(res, "Le fichier STEP ne contient aucun solide.", "fichier");
       return;

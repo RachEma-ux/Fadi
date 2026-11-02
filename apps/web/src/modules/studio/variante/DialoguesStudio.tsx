@@ -4,19 +4,29 @@
  * Échap la ferme même si le focus s'est perdu, et le focus revient à l'élément d'origine à la fermeture.
  */
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import type { StudioCommand, StudioDocument, StudioDxfResultat, StudioSheetTitleBlock } from "@parcours/atelier-model";
+import type { StudioCommand, StudioDocument, StudioDxfResultat, StudioIfcResultat, StudioSheetTitleBlock } from "@parcours/atelier-model";
 import type { EntreeCatalogue } from "../planche2d/catalogue";
 import { GestionnaireOutils, PaletteCommandes } from "../planche2d/CatalogueOutils";
 import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
+import { DialogueImportIfc } from "../import/DialogueImportIfc";
+import { PanneauModelesExternes } from "../echanges/PanneauModelesExternes";
 import { PanneauDossier } from "../dossier/PanneauDossier";
 import { PanneauEchanges } from "../echanges/PanneauEchanges";
+import { DialogueApprobation } from "../publication/DialogueApprobation";
+import { DialogueFusion } from "../fusion/DialogueFusion";
 import { DialogueEnregistrerConsole } from "../console/DialogueEnregistrerConsole";
+import { DialogueIllustration, type DialogueIllustrationProps } from "../illustration/DialogueIllustration";
+import { PanneauAgents } from "../illustration/PanneauAgents";
+import { DialogueGraphismes } from "../graphismes/DialogueGraphismes";
+import { DialogueSystemeProjet } from "../graphismes/DialogueSystemeProjet";
+import { DialogueBlocs } from "../blocs/DialogueBlocs";
+import { DialogueContraintes } from "../blocs/DialogueContraintes";
 import type { Cible } from "../console/transfert";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | "echanges" | "enregistrer-console" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "import-ifc" | "modeles-externes" | "dossier" | "echanges" | "enregistrer-console" | "illustration" | "agents" | "graphismes" | "systeme-projet" | "approbation" | "blocs" | "contraintes" | "fusion" | "annulation-fusion" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
@@ -29,6 +39,10 @@ export interface PropsDialoguesStudio {
   modifiable: boolean;
   /** Ajout de l'import au brouillon ; faux si le lot est refusé. */
   surImporter: (cs: StudioCommand[], r: StudioDxfResultat) => boolean;
+  /** Ajout d'un import IFC (lot F3) au brouillon ; faux si le lot est refusé. */
+  surImporterIfc?: (cs: StudioCommand[], r: StudioIfcResultat) => boolean;
+  /** Droit d'écriture du serveur sur la variante affichée (modèles externes) ; faux sur une révision historique. */
+  ecritureServeur?: boolean;
   /** Révision affichée (la feuille la compose, jamais le brouillon). */
   revision: StudioDocument;
   brouillonNonEnregistre: boolean;
@@ -38,6 +52,15 @@ export interface PropsDialoguesStudio {
   portee: { projectId: string; studyId: string; variantId: string; revisionId: string };
   /** Console (aucun projet) : « Enregistrer dans un projet » crée une étude avec ces commandes, puis `surEnregistre`. */
   enregistrementConsole?: { commandes: readonly StudioCommand[]; surEnregistre: (c: Cible) => void };
+  /** Lot F : rendu du modèle capturé par la vue 3D pour la boîte « Illustration depuis la vue ». */
+  captureIllustration?: DialogueIllustrationProps["capture"];
+  /** Graphismes et système de projet (EX-055, EX-023) : commandes ajoutées au brouillon ; faux si le lot est refusé. */
+  surAppliquer?: (cs: StudioCommand[]) => boolean;
+  /** Calque actif (graphisme créé) et sélection de la planche (graphismes cochés). */
+  calqueActif?: string;
+  selection?: readonly string[];
+  /** Fusion de variantes (lot W3-D) : une révision a été écrite dans la variante affichée (fusion ou annulation). */
+  surFusionEcrite?: () => void;
 }
 
 /** Piège du focus de la boîte ouverte ; rend le focus à l'élément d'origine à la fermeture. */
@@ -107,15 +130,27 @@ function usePiegeFocus(dialogue: DialogueStudio, surFermer: () => void) {
   return { zone, tabulation };
 }
 
-export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche, portee, enregistrementConsole }: PropsDialoguesStudio) {
+export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, surImporterIfc, ecritureServeur = false, revision, brouillonNonEnregistre, cartouche, portee, enregistrementConsole, captureIllustration = null, surAppliquer, calqueActif, selection = [], surFusionEcrite }: PropsDialoguesStudio) {
   const { zone, tabulation } = usePiegeFocus(dialogue, surFermer);
   return <div ref={zone} onKeyDown={tabulation} data-studio-dialogues={dialogue ?? undefined}>
     {dialogue === "outils" && <GestionnaireOutils disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
     {dialogue === "palette" && <PaletteCommandes disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
     {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={modifiable} surFermer={surFermer} surAjouter={surImporter} />}
+    {dialogue === "import-ifc" && <DialogueImportIfc doc={drawing} modifiable={modifiable} surFermer={surFermer} surAjouter={surImporterIfc ?? (() => false)} />}
+    {dialogue === "modeles-externes" && <PanneauModelesExternes {...portee} brouillon={drawing} modifiable={modifiable} ecriture={ecritureServeur} brouillonNonEnregistre={brouillonNonEnregistre}
+      surFermer={surFermer} surAjouter={surImporterIfc ?? (() => false)} />}
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
     {dialogue === "dossier" && <PanneauDossier {...portee} revision={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} />}
     {dialogue === "echanges" && <PanneauEchanges surFermer={surFermer} />}
+    {dialogue === "approbation" && <DialogueApprobation projectId={portee.projectId} studyId={portee.studyId} surFermer={surFermer} />}
+    {(dialogue === "fusion" || dialogue === "annulation-fusion") && <DialogueFusion projectId={portee.projectId} studyId={portee.studyId} variantId={portee.variantId} mode={dialogue === "fusion" ? "fusion" : "annulation"}
+      brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} surEcrite={surFusionEcrite ?? (() => window.location.reload())} />}
+    {dialogue === "illustration" && <DialogueIllustration projectId={portee.projectId} studyId={portee.studyId} variantId={portee.variantId} capture={captureIllustration} modifiable={ecritureServeur} surFermer={surFermer} />}
+    {dialogue === "agents" && <PanneauAgents projectId={portee.projectId} surFermer={surFermer} />}
     {dialogue === "enregistrer-console" && enregistrementConsole && <DialogueEnregistrerConsole commandes={enregistrementConsole.commandes} surFermer={surFermer} surEnregistre={enregistrementConsole.surEnregistre} />}
+    {dialogue === "graphismes" && <DialogueGraphismes doc={drawing} modifiable={modifiable && !!surAppliquer} layerId={calqueActif} coches={selection.filter((id) => drawing.graphismes?.some((g) => g.id === id))} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
+    {dialogue === "blocs" && <DialogueBlocs doc={drawing} modifiable={modifiable && !!surAppliquer} layerId={calqueActif} selection={selection} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
+    {dialogue === "contraintes" && <DialogueContraintes doc={drawing} modifiable={modifiable && !!surAppliquer} selection={selection} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
+    {dialogue === "systeme-projet" && <DialogueSystemeProjet doc={drawing} modifiable={modifiable && !!surAppliquer} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
   </div>;
 }

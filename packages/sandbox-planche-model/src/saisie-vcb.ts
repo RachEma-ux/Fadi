@@ -60,6 +60,8 @@ export type AttenduSaisie =
   | "longueur"
   /** Longueur ou point absolu/relatif (Line). */
   | "longueur-ou-point"
+  /** (Chantier Axes, AX-1) Point absolu [x;y;z] ou décalage <dx;dy;dz> seulement (outil Axes : origine, points d'axe). */
+  | "point"
   /** Distance, point absolu/relatif ou réseau linéaire (Move). */
   | "distance-reseau"
   /** Deux composantes « l,w » (Rectangle). */
@@ -181,6 +183,7 @@ type Forme =
 export const FORMES_PAR_ATTENDU: Readonly<Record<AttenduSaisie, readonly Forme[]>> = {
   longueur: ["longueur"],
   "longueur-ou-point": ["point", "longueur"],
+  point: ["point"],
   "distance-reseau": ["point", "reseau", "longueur"],
   dimensions2: ["liste2"],
   dimensions3: ["liste3"],
@@ -536,6 +539,7 @@ function formeChampVision(t: string, loc: Locale): ResultatSaisie | null {
 const MSG_FORME: Readonly<Record<AttenduSaisie, string>> = {
   longueur: "une longueur (ex. 3m, 2.7, 5'6\")",
   "longueur-ou-point": "une longueur ou un point [x, y, z] / <x, y, z>",
+  point: "un point [x, y, z] ou un décalage <x, y, z>",
   "distance-reseau": "une distance, un point [x, y, z] / <x, y, z> ou un réseau (x5, 5x, /5, 5/)",
   dimensions2: "deux dimensions (ex. 4m,3m)",
   dimensions3: "jusqu'à trois dimensions (ex. 1,2,3)",

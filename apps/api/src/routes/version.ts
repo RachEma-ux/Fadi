@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { etatImportAuto } from "../lib/geodata/import-auto.js";
 
 /** Ce qui tourne : commit et date de construction, fournis à la construction de l'image (`FADI_COMMIT`, `FADI_BUILD_DATE`). */
 export interface VersionConstruite {
@@ -34,6 +35,10 @@ export function versionRouter(env: Record<string, string | undefined> = process.
   const router = Router();
   router.get("/", (_req, res) => {
     res.set("Cache-Control", "no-store").json(version);
+  });
+  // Quittance du serveur (D-GD-23) : commit qui tourne et état de l'import automatique des données GeoData.
+  router.get("/donnees", (_req, res) => {
+    res.set("Cache-Control", "no-store").json({ commit: version.commit, geodata: etatImportAuto() });
   });
   return router;
 }

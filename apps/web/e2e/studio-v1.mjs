@@ -3,6 +3,7 @@
  * PHASE=initial|reopen STUDIO_TEST_PROFILE=/private/profile.json STUDIO_PROOF_DIR=/private/proofs node ...
  */
 import assert from 'node:assert/strict';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -171,8 +172,8 @@ try {
     const project2 = await api(owner, 'post', '/projects', { code: `SV2_${suffix.slice(0, 12)}`, name: 'Studio QA other context' });
     assert.equal(project2.status, 201);
     await refused(owner, owner, s, `${variantPath({ ...s, projectId: project2.body.id })}/commands`, envelope(stateAfterCommit.revision.id, [cmd]), 404, 'cross-project mismatched study/variant');
-    const invite = await api(owner, 'post', `/projects/${projectId}/members`, { email: otherCredentials.email, role: 'lecteur' });
-    check('existing API permits reader fixture invitation', () => assert.equal(invite.status, 201));
+    const invite = await inviterEtAccepter((m, p, b) => api(owner, m.toLowerCase(), p, b), (m, p, b) => api(foreign, m.toLowerCase(), p, b), projectId, otherCredentials.email, 'lecteur');
+    check('reader fixture invitation accepted (phase 3)', () => assert.equal(invite.ok, true));
     const readable = await getState(foreign, s);
     check('reader may read but cannot write', () => assert.equal(readable.canWrite, false));
     await refused(foreign, owner, s, path, envelope(stateAfterCommit.revision.id, [cmd]), 403, 'reader mutation');

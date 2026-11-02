@@ -12,7 +12,7 @@ import { modifierAnnotations } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, cross, dot, len, normalize, scale, sub, tourner } from "../vecteur.js";
-import { contexteSaisie, formaterAngle, mesures, messageErreur } from "./commun-formes.js";
+import { contexteSaisie, formaterAngle, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Touche, Transition, VueOutil } from "./machine.js";
 import { couleurPlan } from "./plan-de-coupe.js";
@@ -36,7 +36,7 @@ const initial = (): EtatRapporteur => ({ etape: 1, centre: null, normale: AXE_Z,
 const retour = (e: EtatRapporteur): EtatRapporteur => ({ ...e, etape: 1, centre: null, depart: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
 /** Normale du plan du rapporteur à l'étape 1 : verrou Maj, flèche, face survolée, sinon sol. */

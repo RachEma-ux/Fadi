@@ -16,7 +16,7 @@ import { isNetworkError } from "../../../lib/reachability";
 import { creerBrouillon, type Brouillon } from "../planche2d/brouillon";
 import { refused } from "../variante/etat-variante";
 import { navigateurEnLigne } from "./connexion";
-import { cleVariante, restaurerBrouillon, type BrouillonHorsLigne, type ConflitHorsLigne } from "./persistance";
+import { cleVariante, restaurerBrouillon, type ApercuHorsLigne, type BrouillonHorsLigne, type ConflitHorsLigne, type RejetHorsLigne } from "./persistance";
 import { brouillonBrut, contexteMemorise, ErreurFileLocale, lireBrouillonHorsLigne, memoriserContexte, type BrouillonLu } from "./stockage";
 import { signalerFileBloquee } from "./AvisFileLocale";
 import type { PlanEnvoi } from "../import/envoi";
@@ -33,6 +33,9 @@ export interface RepriseHorsLigne {
   stamp: string | null;
   /** Ouverte depuis l'appareil faute de réseau (date de lecture), sinon null. */
   depuisCache: string | null;
+  /** Enveloppe rejetée conservée et prévisualisation en cours à l'interruption (EX-049). */
+  rejet?: RejetHorsLigne | null;
+  apercuAbandonne?: ApercuHorsLigne | null;
 }
 
 export interface OptionsChargement {
@@ -83,7 +86,7 @@ export function useChargementVariante(o: OptionsChargement): void {
         }
       }
       const h = lu?.brouillon ?? null;
-      const reprise = (r: Omit<RepriseHorsLigne, "plan" | "pasCouverts" | "stamp">) => f().reprendre({ plan: h?.plan ?? null, pasCouverts: h?.pasCouverts ?? 0, stamp: lu?.stamp ?? null, ...r });
+      const reprise = (r: Omit<RepriseHorsLigne, "plan" | "pasCouverts" | "stamp">) => f().reprendre({ plan: h?.plan ?? null, pasCouverts: h?.pasCouverts ?? 0, stamp: lu?.stamp ?? null, rejet: h?.rejet ?? null, apercuAbandonne: h?.apercu ?? null, ...r });
       try {
         const c = await api.studioContext(projectId, studyId, variantId);
         if (!active) return;
@@ -109,6 +112,8 @@ export function useChargementVariante(o: OptionsChargement): void {
         const conflit = h.conflit ?? (!surTete && !h.plan ? { headRevisionId: c.revision.id, at: new Date().toISOString() } : null);
         f().setContext(base); f().setBrouillon(b);
         reprise({ conflit, conserve: true, depuisCache: null });
+        // EX-044 : file écrite avant une mise à jour de l'application, contrats compatibles : conservée, expliquée.
+        if (lu?.autreBuild) f().setError(`Brouillon conservé depuis une version précédente de l’application (${lu.autreBuild}) : il reste valide et sera envoyé à l’enregistrement.`);
       } catch (e) {
         if (!active) return;
         if (!isNetworkError(e) && navigateurEnLigne()) { f().setLoadError(e); f().setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); return; }

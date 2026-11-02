@@ -11,9 +11,15 @@ import type { StudioContext } from "../../../lib/api";
 import { localStore, type StudioBrouillonEntry } from "../../../lib/local-store";
 import { protegerFileLocale } from "../chargement/hors-connexion-studio";
 import { migrerBrouillon, type RaisonIncompatible } from "./contrats";
+import { buildDeLaPage, estErreurQuota, planEviction } from "./quota";
 import { horsLigneVide, lireHorsLigne, type BrouillonHorsLigne } from "./persistance";
 
-export interface BrouillonLu { brouillon: BrouillonHorsLigne; stamp: string; /** Format antérieur migré en mémoire (la ligne reste intacte). */ migreDe?: number }
+export interface BrouillonLu {
+  brouillon: BrouillonHorsLigne; stamp: string;
+  /** Format antérieur migré en mémoire (la ligne reste intacte). */ migreDe?: number;
+  /** File écrite par un autre build (mise à jour de l'application) aux contrats compatibles : conservée et rejouable (EX-044). */
+  autreBuild?: string;
+}
 
 /** File locale conservée mais incompatible avec les contrats de ce build (B.3-11) : rien n'est envoyé ni effacé. */
 export class ErreurFileLocale extends Error {
@@ -33,7 +39,10 @@ export async function lireBrouillonHorsLigne(cle: string, userId: string): Promi
   const m = migrerBrouillon(entree.donnees);
   if (m.type === "incompatible") throw new ErreurFileLocale(m.raison, entree);
   try {
-    return { brouillon: lireHorsLigne(m.json, userId), stamp: entree.stamp, ...(m.type === "migre" ? { migreDe: m.de } : {}) };
+    const brouillon = lireHorsLigne(m.json, userId);
+    const ecritPar = brouillon.contrats?.build ?? null;
+    const courant = buildDeLaPage();
+    return { brouillon, stamp: entree.stamp, ...(m.type === "migre" ? { migreDe: m.de } : {}), ...(ecritPar && courant && ecritPar !== courant ? { autreBuild: ecritPar } : {}) };
   } catch {
     throw new ErreurFileLocale("illisible", entree);
   }
@@ -47,7 +56,7 @@ export async function jetonActuel(cle: string, userId: string): Promise<string |
   return (await localStore.studioBrouillon(cle, userId))?.stamp ?? null;
 }
 
-export type Ecriture = { type: "ecrit"; stamp: string } | { type: "retire" } | { type: "autre-onglet" };
+export type Ecriture = { type: "ecrit"; stamp: string; evinces?: number } | { type: "retire" } | { type: "autre-onglet" } | { type: "quota"; evinces: number };
 
 /**
  * Écrit le brouillon (ou le retire quand il n'y a plus rien à conserver) si la ligne porte encore le jeton `attendu`
@@ -56,9 +65,22 @@ export type Ecriture = { type: "ecrit"; stamp: string } | { type: "retire" } | {
 export async function ecrireBrouillonHorsLigne(cle: string, h: BrouillonHorsLigne, attendu: string | null): Promise<Ecriture> {
   if (horsLigneVide(h)) return (await localStore.studioSupprimerBrouillonSi(cle, attendu)) ? { type: "retire" } : { type: "autre-onglet" };
   const stamp = crypto.randomUUID();
-  const ok = await localStore.studioEcrireBrouillonSi({ cle, userId: h.userId, projectId: h.base.study.projectId, stamp, donnees: JSON.stringify(h), majA: new Date().toISOString() }, attendu);
+  const entree = { cle, userId: h.userId, projectId: h.base.study.projectId, stamp, donnees: JSON.stringify(h), majA: new Date().toISOString() };
+  let ok: boolean;
+  let evinces = 0;
+  try {
+    ok = await localStore.studioEcrireBrouillonSi(entree, attendu);
+  } catch (e) {
+    if (!estErreurQuota(e)) throw e;
+    // EX-044 : quota atteint — seules les versions lues en cache (régénérables) sont évincées, jamais un brouillon ;
+    // la variante ouverte garde la sienne. Un seul nouvel essai ; sinon l'appelant l'annonce (rien n'est purgé).
+    const cles = planEviction(await localStore.studioContextesDe(h.userId), new Set([cle]));
+    for (const c of cles) if (await localStore.studioSupprimerContexte(c)) evinces += 1;
+    try { ok = await localStore.studioEcrireBrouillonSi(entree, attendu); }
+    catch (e2) { if (estErreurQuota(e2)) return { type: "quota", evinces }; throw e2; }
+  }
   if (ok && attendu === null) void protegerFileLocale(h.userId).catch(() => undefined);
-  return ok ? { type: "ecrit", stamp } : { type: "autre-onglet" };
+  return ok ? { type: "ecrit", stamp, ...(evinces ? { evinces } : {}) } : { type: "autre-onglet" };
 }
 
 /** Retrait après un enregistrement confirmé : seulement si aucun autre onglet n'a écrit depuis. */

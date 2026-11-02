@@ -1,15 +1,23 @@
 #!/bin/bash
 # Double de docker pour les tests de fadi-preprod : `compose config` est rendu par le vrai docker (sans démon) ; les
 # autres verbes réussissent ou échouent selon MOCK_FAIL (liste de mots : build up run-check run-backup run-restore
-# run-migrate e2e-<scénario>). MOCK_MIGRATE_LOG remplace la sortie du service migrate, MOCK_FADI_APP_CREATE le droit
-# CREATE de fadi_app relu après migration, MOCK_TAR l'archive des rapports ; MOCK_TRACE reçoit chaque appel (avec les
-# arguments de version de l'image).
+# run-migrate image-rm e2e-<scénario>) ; MOCK_IMAGES liste les étiquettes rendues par `image ls`. MOCK_MIGRATE_LOG
+# remplace la sortie du service migrate, MOCK_FADI_APP_CREATE le droit CREATE de fadi_app relu après migration, MOCK_TAR
+# l'archive des rapports ; MOCK_TRACE reçoit chaque appel (avec les arguments de version de l'image).
 orig=("$@")
 [ -n "${MOCK_TRACE:-}" ] && echo "FADI_BUILD_COMMIT=${FADI_BUILD_COMMIT:-} FADI_BUILD_DATE=${FADI_BUILD_DATE:-} $*" >> "$MOCK_TRACE"
 has() { [[ " ${MOCK_FAIL:-} " == *" $1 "* ]]; }
 fail() { echo "double docker : échec simulé ($1)" >&2; exit 3; }
 if [ "${1:-}" != compose ]; then
-  case "${1:-}" in inspect) echo "${MOCK_HEALTH:-healthy}" ;; ps) echo "prod0001  app-db-1  Up 3 days" ;; esac
+  case "${1:-}" in
+    inspect) echo "${MOCK_HEALTH:-healthy}" ;;
+    ps) echo "prod0001  app-db-1  Up 3 days" ;;
+    image)
+      case "${2:-}" in
+        ls) for t in ${MOCK_IMAGES:-}; do echo "$t"; done ;;
+        rm) has image-rm && fail "image rm" ;;
+      esac ;;
+  esac
   exit 0
 fi
 shift

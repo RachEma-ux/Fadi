@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StudioDocument } from "../document-2d.js";
+import { applyStudioCommands, newStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
 import { exportStudioDxf, exportStudioSvg } from "../export.js";
 import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 import { STUDIO_TYPES_ANNOTATIONS } from "../objets/annotation.js";
@@ -12,7 +12,8 @@ import {
 /** Types déclarés par le schéma d'une liste du document (un `oneOf` de types, ou un type seul). */
 function typesDuSchema(items: unknown): string[] {
   const it = items as { oneOf?: { properties: { type: { const: string } } }[]; properties?: { type: { const: string } } };
-  return it.oneOf ? it.oneOf.map((s) => s.properties.type.const) : [it.properties!.type.const];
+  // Types distincts : un même type peut avoir plusieurs formes (solide exact booléen ou épaissi, X.1-05).
+  return it.oneOf ? [...new Set(it.oneOf.map((s) => s.properties.type.const))] : [it.properties!.type.const];
 }
 
 /** Document qui contient chaque type d'élément, extrudé ou non, sur des calques visibles, masqués et réécrits. */
@@ -60,7 +61,8 @@ describe("Table des capacités : source unique, couvre chaque type du modèle", 
       const categorie = parListe[cle] as keyof typeof STUDIO_CAPACITES_EXPORT;
       const table = STUDIO_CAPACITES_EXPORT[categorie] as Record<string, Record<string, unknown>>;
       // Les propriétés déclarées (E.1-01) n'ont pas de discriminant `type` : un seul type, « propriete ».
-      const types = cle === "proprietes" ? ["propriete"] : typesDuSchema((schema as { items: unknown }).items);
+      // Les contraintes (X.1-01) non plus (leur `type` est la nature de la contrainte) : un seul type, « contrainte ».
+      const types = cle === "proprietes" ? ["propriete"] : cle === "contraintes" ? ["contrainte"] : cle === "niveaux" ? ["niveau"] : cle === "composants" ? ["composant"] : typesDuSchema((schema as { items: unknown }).items);
       expect(Object.keys(table).sort(), cle).toEqual([...types].sort());
       for (const t of types) for (const f of STUDIO_FORMATS_ECHANGE) expect(typeof table[t]![f], `${cle}.${t}.${f}`).toBe("function");
     }
@@ -175,5 +177,21 @@ describe("Architecture (A.4) : murs et ouvertures", () => {
     expect(ligne(ifc.lignes, "wall", "extrusion-exacte")?.statut).toBe("exact");
     expect(ligne(ifc.lignes, "opening", "ouverture-evidee")?.statut).toBe("exact");
     expect(ifc.lignes.some((l) => l.raison === "type-sans-capacite")).toBe(false);
+  });
+});
+
+describe("Lot G2 : échelle d'accès (EX-027) et cotes de face (INV-013) au rapport de fidélité", () => {
+  // Données de test synthétiques (entre-axe 0,5 m, hauteur 3 m, 9 échelons ; boîte 4 × 2 × 3 m).
+  const avec = (...cs: unknown[]) => applyStudioCommands(newStudioDocument("g2"), cs.map((c) => c as StudioCommand));
+  it("EX-027 : échelle d'accès exacte en IFC (extrusion exacte), approchée en SVG (extrusion non portée)", () => {
+    const d = avec({ toolId: "studio.architecture.echelle-acces", params: { id: "e1", type: "ladder", position: { x: 2, y: 1 }, rotation: 0, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 } });
+    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "exact", raison: "extrusion-exacte", nombre: 1, ids: ["e1"] });
+    expect(studioRapportFidelite(d, "svg").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "approche", raison: "extrusion-non-portee", nombre: 1, ids: ["e1"] });
+  });
+  it("INV-013 : les cotes de face sont déclarées non couvertes par l'IFC, jamais exportées en silence", () => {
+    const cote = (id: string, faces: [string, string]) => ({ toolId: "studio.solide.cote-face", params: { id, type: "face-dimension", solidId: "b1", faces, toResolve: false } });
+    const d = avec({ toolId: "studio.solide.boite", params: { id: "b1", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 4, depth: 2, height: 3 } },
+      cote("h", ["base", "sommet"]), cote("l", ["lateral-1", "lateral-3"]), cote("p", ["lateral-0", "lateral-2"]));
+    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual(expect.objectContaining({ categorie: "cotesFaces", type: "face-dimension", statut: "non-couvert", nombre: 3 }));
   });
 });

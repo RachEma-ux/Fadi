@@ -10,6 +10,7 @@
  * Choix Fadi déclaré : échantillonnage du trajet à une distance minimale égale à la tolérance d'accrochage reçue
  * (au moins 1 mm).
  */
+import { axesDeSaisie, contraindreAuPlan, planDeTravailDe } from "./commun-formes.js";
 import { type Modele, ajouterCourbeLibre } from "../geometrie-libre.js";
 import { geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, EPS, TOL, add, dist, dot, lerp, normalize, scale, sub } from "../vecteur.js";
@@ -108,15 +109,19 @@ export const machineMainLevee: MachineOutil<EtatMainLevee> = {
         return { etat };
       }
       case "survol": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
         const f = i.type === "sur-face" ? geometrieVisible(ctx.modele).faces.find((x) => x.id === i.entite) : undefined;
         return { etat: { ...etat, faceSurvolee: f ? normalize(f.normale) : etat.faceSurvolee, ignorerClic: false } };
       }
       case "appui": {
         const geo = geometrieVisible(ctx.modele);
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geo, ...(ctx.repere ? { axes: ctx.repere } : {}) });
-        const face = i.type === "sur-face" ? geo.faces.find((x) => x.id === i.entite) : undefined;
-        const normale = etat.verrou?.normale ?? (face ? normalize(face.normale) : AXE_Z);
+        const pl = planDeTravailDe(ctx);
+        const i0 = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geo, ...axesDeSaisie(ctx) });
+        // Chantier Axes (AX-1) : plan verrouillé → le tracé commence et reste sur le plan de travail ; sinon, hors
+        // face, le plan de travail remplace le sol du monde.
+        const i = pl.verrouille ? contraindreAuPlan(i0, ev.rayon, pl) : i0;
+        const face = !pl.verrouille && i.type === "sur-face" ? geo.faces.find((x) => x.id === i.entite) : undefined;
+        const normale = pl.verrouille ? pl.normale : (etat.verrou?.normale ?? (face ? normalize(face.normale) : pl.normale));
         const plan: PlanDessin = { origine: i.point, normale };
         return {
           etat: { ...etat, points: [i.point], plan, pas: Math.max(ev.tolerance, 0.001), derniere: null, ignorerClic: false },

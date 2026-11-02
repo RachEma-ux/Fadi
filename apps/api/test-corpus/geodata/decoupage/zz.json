@@ -1,0 +1,18 @@
+{
+  "pays": "ZZ",
+  "nomPays": "Pays synthétique (test)",
+  "source": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
+  "periode": "Jeu synthétique v1",
+  "original": {
+    "fichier": "decoupage/originaux/source-synthetique.txt",
+    "empreinte": "2c6befb9ca18f797cafd56ef2e2f45bbf74a8a69c354c4e109052d6c14696290"
+  },
+  "niveaux": {
+    "fichier": "decoupage/zz-niveaux.csv",
+    "empreinte": "62a4e0c818488b26861e658f0768f8170c60ac00addca839a4c37a5f5b1a4657"
+  },
+  "entites": {
+    "fichier": "decoupage/zz-entites.csv",
+    "empreinte": "67019c31cff06ef2d2b25c3a8279634d7af41b999f002902404744ec1bc33afd"
+  }
+}

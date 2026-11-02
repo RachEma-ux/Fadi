@@ -6,7 +6,7 @@
  *   l'allège et le type saisis ; si elle ne tient pas dans le mur, le modèle refuse avec son motif (rien n'est rogné).
  * Pur : ni React ni DOM.
  */
-import { commandeMur, commandeOuverture, PARAMETRES_ARCHITECTURE_VIDES, murSousPoint } from "../architecture/architecture-ui";
+import { commandeEchelle, commandeMur, commandeOuverture, PARAMETRES_ARCHITECTURE_VIDES, murSousPoint } from "../architecture/architecture-ui";
 import { estSelectionnable } from "../calques";
 import { ERREUR_POINTS_CONFONDUS, memePoint, type ActionOutil, type OutilPlanche } from "./type";
 
@@ -35,4 +35,15 @@ export const OUTIL_OUVERTURE: OutilPlanche = {
   },
   clic: () => ({ type: "erreur", message: "Cliquez sur un mur." }),
   aideRepos: () => "Ouverture : cliquez sur un mur ; l’ouverture est centrée sur le point désigné, avec les dimensions saisies dans le panneau Architecture.",
+};
+
+/**
+ * Échelle d'accès (EX-027, Ctrl+Maj+F12) : un clic pose le milieu du pied de l'échelle, avec l'entre-axe, la hauteur,
+ * la cote du pied, le nombre d'échelons, la section et l'orientation saisis dans le panneau « Architecture ».
+ */
+export const OUTIL_ECHELLE: OutilPlanche = {
+  ids: ["studio.architecture.echelle-acces"],
+  premierClic: (p, c) => action(commandeEchelle(c, p.point, (c.architecture ?? PARAMETRES_ARCHITECTURE_VIDES).echelle)),
+  clic: () => ({ type: "erreur", message: "Cliquez le pied de l’échelle." }),
+  aideRepos: () => "Échelle d’accès : cliquez le milieu du pied ; entre-axe, hauteur, cote du pied, échelons, section et orientation se saisissent dans le panneau Architecture.",
 };

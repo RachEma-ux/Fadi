@@ -13,6 +13,10 @@ Usages :
   python3 docs/ai-team/tableau_registre.py --delta D.json   # valider un delta proposé (aucune écriture)
   python3 docs/ai-team/tableau_registre.py --delta D.json --ecrire   # l'intégrer au registre (A0 seulement)
   python3 docs/ai-team/tableau_registre.py --delta D1.json --delta D2.json --ecrire   # plusieurs deltas préparés sur le même registre
+  python3 docs/ai-team/tableau_registre.py --corrections C.json [--ecrire]   # corrections de preuves (corrections-registre-v1)
+
+États (PR-07, `docs/continuity/README.md`) : À définir, À faire, En cours, Implémenté (code produit sans preuve de succès
+suffisante), Bloqué, Vérifié, Accepté. « Implémenté » n'est jamais compté dans P630.
 """
 from __future__ import annotations
 import argparse
@@ -27,11 +31,11 @@ REGISTRE = 'docs/workstreams/studio/task-register.json'
 INDEX_M08 = 'docs/ai-team/reports/reprise-496dcfc/M08-INDEX-A0.json'
 CHECKPOINTS = ('docs/workstreams/ai-team/STATUS.md', 'docs/workstreams/ai-team/HANDOFF.md',
                'docs/workstreams/studio/STATUS.md', 'docs/workstreams/studio/HANDOFF.md')
-STATUTS_OUVERTS = ('À définir', 'À faire', 'En cours')
+STATUTS_OUVERTS = ('À définir', 'À faire', 'En cours', 'Implémenté')
 STATUTS = (*STATUTS_OUVERTS, 'Bloqué', 'Vérifié', 'Accepté')
 # Un delta ne peut ni accepter (décision humaine) ni cocher une case source.
 STATUTS_DELTA = STATUTS[:-1]
-COMPTEURS = re.compile(r'(\d+) À définir / (?:(\d+) À faire / )?(\d+) En cours / (\d+) Bloqué / (\d+) Vérifié[^/]*/ (\d+) Accepté')
+COMPTEURS = re.compile(r'(\d+) À définir / (?:(\d+) À faire / )?(\d+) En cours / (?:(\d+) Implémenté / )?(\d+) Bloqué / (\d+) Vérifié[^/]*/ (\d+) Accepté')
 P630_TEXTE = re.compile(r'P630=(\d+)/630')
 REVUES_M08 = re.compile(r'(\d+)/125 avec revue')
 VERBES_LECTURE = ('Examiner', 'Relever', 'Conserver', 'Requalifier', 'Consigner', 'Documenter', 'Identifier',
@@ -193,18 +197,130 @@ def appliquer_delta(registre: dict, delta: dict) -> dict:
     return registre
 
 
+# Corrections de preuves (X.5-02, G2-04) : n'ajoutent que des champs absents d'une preuve identifiée par son empreinte,
+# ne font que retirer « Vérifié » (jamais promouvoir), et recalculent P630.
+CHAMPS_CORRECTION = ('etiquette', 'commit', 'url_execution', 'date', 'environnement', 'methode', 'trace')
+STATUTS_CORRECTION = ('Implémenté', 'En cours')
+
+
+def empreinte_preuve(p: dict) -> str:
+    return sha256(json.dumps(p, ensure_ascii=False, sort_keys=True).encode('utf-8'))
+
+
+def rang_preuve(t: dict, c: dict) -> int | None:
+    """Rang de la preuve visée : au rang indiqué si son empreinte concorde, sinon l'unique preuve de même empreinte
+    (des preuves ont pu être ajoutées entre-temps) ; None si elle a changé ou est ambiguë."""
+    preuves = t.get('preuves', [])
+    k = c.get('index')
+    if isinstance(k, int) and 0 <= k < len(preuves) and empreinte_preuve(preuves[k]) == c.get('empreinte_preuve'):
+        return k
+    rangs = [j for j, p in enumerate(preuves) if empreinte_preuve(p) == c.get('empreinte_preuve')]
+    return rangs[0] if len(rangs) == 1 else None
+
+
+def valider_corrections(registre: dict, corr: dict, contenu_registre: bytes) -> list[str]:
+    if corr.get('schema') != 'corrections-registre-v1':
+        return ['schema attendu : corrections-registre-v1']
+    # Le registre a pu recevoir d'autres changements depuis la préparation : chaque correction reste contrôlée sur sa
+    # cible (empreinte de la preuve, statut ou état de tests d'avant) ; la base n'est qu'un avertissement (main()).
+    erreurs = []
+    taches = {t['id']: t for t in registre['tasks']}
+    vus = set()
+    for c in corr.get('preuves', []):
+        i, k = c.get('id'), c.get('index')
+        t = taches.get(i)
+        k = rang_preuve(t, c) if t is not None else None
+        if k is None:
+            erreurs.append(f"{i} preuves[{c.get('index')}] : preuve inconnue, ou changée depuis la préparation (empreinte)")
+            continue
+        if (i, k) in vus:
+            erreurs.append(f'{i} preuves[{k}] : corrigée deux fois')
+        vus.add((i, k))
+        p = t['preuves'][k]
+        for cle in c.get('ajouts', {}):
+            if cle not in CHAMPS_CORRECTION:
+                erreurs.append(f'{i} preuves[{k}] : champ {cle!r} non admis par une correction')
+            elif cle in p:
+                erreurs.append(f'{i} preuves[{k}] : {cle!r} existe déjà (une correction ne remplace jamais une valeur)')
+    for c in corr.get('statuts', []):
+        t = taches.get(c.get('id'))
+        if t is None:
+            erreurs.append(f"{c.get('id')} : ID inconnu")
+            continue
+        if c.get('statut_avant') != t['statut']:
+            erreurs.append(f"{t['id']} : statut_avant {c.get('statut_avant')!r} ≠ actuel {t['statut']!r}")
+        if c.get('statut') not in STATUTS_CORRECTION or t['statut'] != 'Vérifié':
+            erreurs.append(f"{t['id']} : une correction ne fait que retirer « Vérifié » (vers {' ou '.join(STATUTS_CORRECTION)})")
+        if not c.get('raison') or not c.get('suite'):
+            erreurs.append(f"{t['id']} : descente sans raison ni suite")
+    for c in corr.get('tests', []):
+        t = taches.get(c.get('id'))
+        if t is None:
+            erreurs.append(f"{c.get('id')} : ID inconnu")
+        elif c.get('tests_avant') != t.get('tests') or not isinstance(c.get('tests'), dict) or not c['tests'].get('portee'):
+            erreurs.append(f"{t['id']} : tests_avant différent de l'état actuel, ou nouvel état sans portée")
+    return erreurs
+
+
+def appliquer_corrections(registre: dict, corr: dict) -> dict:
+    taches = {t['id']: t for t in registre['tasks']}
+    for c in corr.get('preuves', []):
+        t = taches[c['id']]
+        t['preuves'][rang_preuve(t, c)].update(c['ajouts'])
+    for c in corr.get('tests', []):
+        t = taches[c['id']]
+        t['historique'] = t.get('historique', []) + [{'origine': corr.get('origine', 'corrections-registre-v1'),
+                                                      'tests_precedent': t.get('tests'), 'tests': c['tests'], 'limite': c.get('raison', '')}]
+        t['tests'] = c['tests']
+    for c in corr.get('statuts', []):
+        t = taches[c['id']]
+        t['historique'] = t.get('historique', []) + [{
+            'origine': corr.get('origine', 'corrections-registre-v1'), 'statut_precedent': t['statut'], 'statut': c['statut'],
+            'limite': c['raison']}]
+        t['statut'] = c['statut']
+        t['suite'] = c['suite']
+        t.setdefault('cloture', {})['condition_verifiee'] = False
+        if 'tests' in c:
+            t['tests'] = c['tests']
+    p = ids_p630(registre)
+    p630 = registre.setdefault('progress', {}).setdefault('P630', {})
+    p630.update({'V630': len(p), 'pourcentage': pourcentage(len(p)), 'IDs': p})
+    cpt = compteurs(registre)
+    if 'mapping_barre' in p630:
+        p630['mapping_barre'] = {'Vérifié documentaire': cpt['Vérifié'], 'Accepté cadrage documentaire G0': cpt['Accepté']}
+    return registre
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument('--controle', action='store_true')
     parser.add_argument('--candidats', action='store_true')
     parser.add_argument('--delta', type=Path, action='append', help='répétable : deltas appliqués dans l’ordre, tous préparés sur le registre actuel')
-    parser.add_argument('--ecrire', action='store_true', help='avec --delta : écrire le registre (propriétaire A0)')
+    parser.add_argument('--corrections', type=Path, help='corrections de preuves (corrections-registre-v1) à valider, ou à écrire avec --ecrire')
+    parser.add_argument('--ecrire', action='store_true', help='avec --delta ou --corrections : écrire le registre (propriétaire A0)')
     args = parser.parse_args()
     chemin = args.root / REGISTRE
     try:
         contenu = chemin.read_bytes()
         registre = json.loads(contenu.decode('utf-8'))
+        if args.corrections:
+            corr = json.loads(args.corrections.read_text(encoding='utf-8'))
+            if corr.get('base_register_sha256') != sha256(contenu):
+                print('AVERTISSEMENT : registre modifié depuis la préparation des corrections ; chaque correction est contrôlée sur sa cible.', file=sys.stderr)
+            erreurs = valider_corrections(registre, corr, contenu)
+            if erreurs:
+                print(f'CORRECTIONS_REFUSEES ({args.corrections}) :\n- ' + '\n- '.join(erreurs[:200]), file=sys.stderr)
+                return 1
+            appliquer_corrections(registre, corr)
+            n = (len(corr.get('preuves', [])), len(corr.get('statuts', [])), len(corr.get('tests', [])))
+            if not args.ecrire:
+                print(f'CORRECTIONS_VALIDES : {n[0]} preuve(s), {n[1]} statut(s), {n[2]} état(s) de tests ; rien écrit (ajouter --ecrire).')
+                return 0
+            chemin.write_text(json.dumps(registre, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            print(f'CORRECTIONS_APPLIQUEES : {n[0]} preuve(s), {n[1]} statut(s), {n[2]} état(s) de tests. Actualiser `note`, STATUS et HANDOFF puis relancer --controle.')
+            print(resume(registre))
+            return 0
         if args.delta:
             n = 0
             for fichier in args.delta:

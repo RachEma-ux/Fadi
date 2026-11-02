@@ -32,6 +32,11 @@
  * l'équipe ne sont signalés — ni eux, ni leurs extraits — qu'au propriétaire et aux éditeurs ; un lecteur n'en reçoit
  * jamais de notification.
  *
+ * Communication (COM, Issue #280, COM-D13 / COM-R5) : `message` — messages des autres dans les conversations que vous
+ * lisez AUJOURD'HUI et où vous participez, animez, avez écrit, ou qui vous mentionnent ; `demande` — passages des
+ * demandes de précision dont vous êtes demandeur ou répondant. Chaque extrait est soumis à l'audience courante : un
+ * retrait du projet ou d'une conversation retire ses notifications à la lecture suivante.
+ *
  * Rien n'est envoyé hors de l'application : un courriel d'invitation reste un
  * service externe, absent (voir docs/migration/matrix.md).
  */
@@ -39,17 +44,25 @@ import { Router } from "express";
 import { db } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
-  atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
+  collabDemandeEvents, collabDemandes, comConversations, comMessages, comParticipants, atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectEffectiveAccess, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
   studioObservations, studioObservationTaskEvents, studioObservationTasks, studioStudies, studioVariants, users,
 } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
 import { filtrerNotifications, type NotificationKind } from "../lib/notification-preferences.js";
+import { reviewNotifications } from "../lib/reviews-recipient.js";
 import { lirePreferencesNotification } from "./preferences.js";
+import { notificationInvitationsRouter } from "./notification-invitations.js";
+import { pendingProjectInvitationsFor } from "../lib/project-invitations-db.js";
+import { endedMandateNoticesFor } from "../lib/mandate-invitations-db.js";
+import { audienceVisible } from "../lib/audience.js";
+import { extrait, peutLire } from "../lib/com-audience.js";
 
 export const notificationsRouter = Router();
 notificationsRouter.use(requireAuth);
+// Invitations de projet reçues (Issue #262, phase 3) : liste, acceptation et refus depuis la notification.
+notificationsRouter.use("/invitations", notificationInvitationsRouter);
 
 export interface NotificationItem {
   id: string;
@@ -62,6 +75,17 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4) : la notification mène à `/revues/:id`. */
+  review?: { packageId: string };
+  /** Invitation de projet en attente pour vous (phase 3, type `acces`) : à accepter ou décliner depuis la notification. */
+  invitation?: { id: string; role: "lecteur" | "editeur"; expiresAt: string };
+  /**
+   * Mandat de représentant terminé (reliquat de la phase 5, type `acces`, propriétaire du projet) : la participation du
+   * représentant est conservée, à revoir dans Équipe et participants.
+   */
+  mandate?: { mandateId: string; participationId: string };
+  /** Conversation ou demande de précision visée (`message`, `demande`). */
+  com?: { conversationId?: string; demandeId?: string };
   text: string;
   unread: boolean;
 }
@@ -76,12 +100,16 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   const items: NotificationItem[] = [];
 
   // Accès reçus : chaque ligne de membre vous concernant, datée de l'invitation (ou du transfert de propriété qui vous a laissé éditeur).
-  const memberships = await db
-    .select({ project: projects, role: projectMembers.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
-    .from(projectMembers)
-    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
-    .where(eq(projectMembers.userId, userId));
+  // Phase 2 (Issue #262) : projets accessibles d'après la seule source de l'accès (`project_effective_access`) — une
+  // participation suspendue, terminée ou sans rôle de projet n'apparaît plus ; la ligne de partage date l'invitation.
+  const memberships = (await db
+    .select({ project: projects, role: projectEffectiveAccess.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
+    .from(projectEffectiveAccess)
+    .innerJoin(projects, eq(projects.id, projectEffectiveAccess.projectId))
+    .leftJoin(projectMembers, and(eq(projectMembers.projectId, projectEffectiveAccess.projectId), eq(projectMembers.userId, projectEffectiveAccess.userId)))
+    .where(and(eq(projectEffectiveAccess.userId, userId), ne(projectEffectiveAccess.role, "proprietaire"))));
   for (const m of memberships) {
+    if (!m.invitedBy || !m.createdAt) continue;
     items.push({
       id: `acces:${m.project.id}`,
       at: m.createdAt.toISOString(),
@@ -91,6 +119,28 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       projectName: m.project.name,
       stepNumber: null,
       text: `${m.invitedBy} vous a donné accès à ${m.project.code} — ${m.project.name} (${ROLE_LABEL[m.role as ProjectRole]}).`,
+      unread: false,
+    });
+  }
+
+  // Invitations de projet en attente pour votre adresse (Issue #262, phase 3, OP-D2 a) : en plus du courriel, une
+  // notification calculée, tant que l'invitation n'est ni acceptée, ni déclinée, ni annulée, ni échue.
+  for (const inv of await pendingProjectInvitationsFor(email)) {
+    items.push({
+      id: `invitation:${inv.id}`, at: inv.createdAt, kind: "acces", projectId: inv.projectId, projectCode: inv.projectCode, projectName: inv.projectName, stepNumber: null,
+      invitation: { id: inv.id, role: inv.baseRole, expiresAt: inv.expiresAt },
+      text: `${inv.invitedBy} vous invite à rejoindre ${inv.projectCode} — ${inv.projectName} (${ROLE_LABEL[inv.baseRole]}) : acceptez ou déclinez l'invitation.`,
+      unread: false,
+    });
+  }
+
+  // Mandats de représentant terminés (fin, renonciation, remplacement, départ, clôture) sur vos projets, 30 derniers
+  // jours : la participation du représentant n'est pas terminée d'office (règle de la phase 5), vous la revoyez.
+  for (const n of await endedMandateNoticesFor(userId, since)) {
+    items.push({
+      id: `mandat:${n.mandateId}:${n.participationId}`, at: n.endedAt, kind: "acces", projectId: n.projectId, projectCode: n.projectCode, projectName: n.projectName, stepNumber: null,
+      mandate: { mandateId: n.mandateId, participationId: n.participationId },
+      text: `Mandat terminé : ${n.representativeName ?? "le représentant"} ne représente plus ${n.organizationName} dans ${n.projectCode} — ${n.projectName} ; sa participation est conservée, à revoir dans Équipe et participants.`,
       unread: false,
     });
   }
@@ -406,6 +456,58 @@ export async function notificationsFor(userId: string, email: string): Promise<{
         stepNumber: null,
         text: e.kind === "prise" ? `${auteur} a réservé ${e.libelle} dans ${code}${e.expiresAt ? ` jusqu'à ${heure(e.expiresAt)}` : ""}.` : `${auteur} a libéré ${e.libelle} dans ${code}.`,
         unread: false,
+      });
+    }
+  }
+
+  // Revue externe (phase 4) : source distincte, bornée à l'accès de revue (`loadReviewAccess`) ; jamais un fil de
+  // l'équipe ni une note interne. Un destinataire externe n'a aucun projet ci-dessus : il ne reçoit que celle-ci.
+  items.push(...await reviewNotifications(userId, since));
+  // Communication (COM-D13) : rôle courant par projet, audience recalculée pour chaque conversation.
+  if (projectIds.length) {
+    const roleDe = new Map<string, ProjectRole>(memberships.map((m) => [m.project.id, m.role as ProjectRole]));
+    for (const p of owned) roleDe.set(p.id, "proprietaire");
+    const convs = await db.select({ c: comConversations, code: projects.code, name: projects.name }).from(comConversations).innerJoin(projects, eq(projects.id, comConversations.projectId)).where(inArray(comConversations.projectId, projectIds));
+    const parts = convs.length ? await db.select().from(comParticipants).where(and(inArray(comParticipants.conversationId, convs.map((x) => x.c.id)), eq(comParticipants.userId, userId))) : [];
+    const ecrites = new Set((await db.selectDistinct({ id: comMessages.conversationId }).from(comMessages).where(eq(comMessages.authorId, userId))).map((r) => r.id));
+    const lisibles = new Map<string, { c: typeof comConversations.$inferSelect; code: string; name: string; suivie: boolean; debut: Date | null }>();
+    for (const { c, code, name } of convs) {
+      const part = parts.find((x) => x.conversationId === c.id) ?? null;
+      const role = roleDe.get(c.projectId) ?? null;
+      if (!peutLire(c.audience, { userId, role, participation: part ? { historyFrom: part.historyFrom, removedAt: part.removedAt } : null })) continue;
+      lisibles.set(c.id, { c, code, name, suivie: c.audience === "participants" || c.stewardId === userId || ecrites.has(c.id), debut: c.audience === "participants" ? part?.historyFrom ?? null : null });
+    }
+    if (lisibles.size) {
+      const msgs = await db.select({ m: comMessages, email: users.email }).from(comMessages).innerJoin(users, eq(users.id, comMessages.authorId))
+        .where(and(inArray(comMessages.conversationId, [...lisibles.keys()]), ne(comMessages.authorId, userId), isNull(comMessages.withdrawnAt), gt(comMessages.createdAt, since)))
+        .orderBy(desc(comMessages.createdAt)).limit(200);
+      let n = 0;
+      for (const { m, email: auteur } of msgs) {
+        const l = lisibles.get(m.conversationId)!;
+        if (l.debut && m.createdAt < l.debut) continue;
+        const mention = m.mentions.includes(userId);
+        if (!mention && !l.suivie) continue;
+        if (n++ >= LIMIT) break;
+        const verbe = mention ? "vous a mentionné dans" : m.nature === "partage" ? "a partagé un extrait dans" : m.nature === "action" ? "a créé une action liée dans" : "a écrit dans";
+        items.push({
+          id: `message:${m.id}`, at: m.createdAt.toISOString(), kind: "message", projectId: l.c.projectId, projectCode: l.code, projectName: l.name, stepNumber: null,
+          com: { conversationId: m.conversationId },
+          text: `${auteur} ${verbe} « ${l.c.title} » (${l.code})${m.urgent ? " — urgent" : ""}${m.ackRequired ? " — accusé de réception demandé" : ""} : « ${extrait(m.body)} »`,
+          unread: false,
+        });
+      }
+    }
+    const evts = await db.select({ e: collabDemandeEvents, d: collabDemandes, email: users.email, code: projects.code, name: projects.name }).from(collabDemandeEvents)
+      .innerJoin(collabDemandes, eq(collabDemandes.id, collabDemandeEvents.demandeId)).innerJoin(projects, eq(projects.id, collabDemandes.projectId)).innerJoin(users, eq(users.id, collabDemandeEvents.actorId))
+      .where(and(inArray(collabDemandes.projectId, projectIds), ne(collabDemandeEvents.actorId, userId), gt(collabDemandeEvents.at, since), or(eq(collabDemandes.requesterId, userId), eq(collabDemandes.responderId, userId), eq(collabDemandeEvents.toUser, userId))))
+      .orderBy(desc(collabDemandeEvents.at)).limit(LIMIT);
+    const VERBE_DEMANDE: Record<string, string> = { ouvrir: "vous a adressé la demande de précision", repondre: "a répondu à la demande de précision", cloturer: "a clôturé la demande de précision", rouvrir: "a rouvert la demande de précision", reattribuer: "a réattribué la demande de précision" };
+    for (const { e, d, email: auteur, code, name } of evts) {
+      const role = roleDe.get(d.projectId);
+      if (!role || !audienceVisible(role, d.audience)) continue;
+      items.push({
+        id: `demande:${e.id}`, at: e.at.toISOString(), kind: "demande", projectId: d.projectId, projectCode: code, projectName: name, stepNumber: null, com: { demandeId: d.id },
+        text: `${auteur} ${VERBE_DEMANDE[e.action] ?? e.action} « ${extrait(d.question, 80)} » (${code}).`, unread: false,
       });
     }
   }

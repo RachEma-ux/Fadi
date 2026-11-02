@@ -9,16 +9,24 @@
  * une modification ne reconstruit que le lot de l'objet. Chaque lot porte sa table de désignation (`picking.ts`) :
  * triangle du lot → identifiant Studio ; un clic se résout donc toujours vers le bon objet.
  *
+ * Instanciation (C.2-02) : des volumes fusionnables de même aspect et de **même forme** à une translation près (même
+ * nombre de sommets et de triangles, mêmes positions relatives au premier sommet) sont rendus, à partir de
+ * `SEUIL_INSTANCIATION` exemplaires, par un seul `THREE.InstancedMesh` (une matrice de translation par exemplaire). La
+ * table de désignation est conservée : l'exemplaire `i` (`instanceId` du rayon) se résout en l'identifiant Studio de
+ * son objet (`impactDe`), comme un triangle de lot.
+ *
  * Ni React ni DOM : three.js seulement (aucun contexte WebGL requis pour construire ni libérer).
  */
 import * as THREE from "three";
 import type { StudioFinitionAffichage, StudioModeAffichage } from "@parcours/atelier-model";
 import { libererObjet } from "./ressources-gpu";
-import { tablePicking, type TablePicking } from "./picking";
+import { tablePicking, type Impact, type TablePicking } from "./picking";
 import { parametresMateriau } from "./scenes/scenes-ui";
 
 /** Lots par aspect d'affichage : borne de rendu choisie par Fadi (appels de dessin bornés), pas une mesure métier. */
 export const LOTS_PAR_ASPECT = 64;
+/** Exemplaires identiques à partir desquels une forme est instanciée (borne choisie par Fadi, pas une mesure). */
+export const SEUIL_INSTANCIATION = 3;
 
 export interface GeometrieObjet {
   vertices: readonly { x: number; y: number; z: number }[];
@@ -93,13 +101,15 @@ export function objetsVolume(parts: readonly Prepare[], aspect: AspectVolume): {
  * construit seul (`construire`). La `signature` décide de la reconstruction.
  */
 export type EntreeRendu =
-  | { id: string; signature: string; lot: string; geometrie: GeometrieObjet; aspect: AspectVolume }
+  | { id: string; signature: string; lot: string; geometrie: GeometrieObjet; aspect: AspectVolume; /** Admis à l'instanciation (C.2-02). */ instanciable?: true }
   | { id: string; signature: string; lot?: undefined; construire: () => THREE.Object3D[] };
 
 export interface BilanRendu {
   /** Objets reconstruits seuls, lots reconstruits. */
   construits: number;
   lotsConstruits: number;
+  /** Groupes d'exemplaires (InstancedMesh) reconstruits (C.2-02). */
+  instancesConstruites: number;
   /** Objets et lots conservés tels quels. */
   conserves: number;
   /** Objets et lots retirés et libérés. */
@@ -114,8 +124,52 @@ function hacherId(id: string): number {
   return h;
 }
 
-/** Données de désignation portées par la surface d'un lot. */
-export interface DonneesLot { table: TablePicking; famille: string }
+/** Données de désignation portées par la surface d'un lot ; `instances` : la table se lit par `instanceId` (C.2-02). */
+export interface DonneesLot { table: TablePicking; famille: string; instances?: true }
+
+/** Impact d'un rayon three.js : identifiant de l'objet seul, triangle d'un lot, ou exemplaire d'un groupe instancié. */
+export function impactDe(h: THREE.Intersection): Impact {
+  const lot = h.object.userData.lot as DonneesLot | undefined;
+  if (lot) return { distance: h.distance, table: lot.table, triangle: (lot.instances ? h.instanceId : h.faceIndex) ?? null };
+  const id = (h.object.userData.solide ?? h.object.userData.architecture) as string | undefined;
+  return id === undefined ? { distance: h.distance } : { distance: h.distance, id };
+}
+
+/**
+ * Clé de forme invariante par translation (C.2-02) : triangles et positions relatives au premier sommet (arrondies au
+ * nanomètre) ; deux géométries de même clé ne diffèrent que d'une translation, celle de leur premier sommet.
+ */
+export function cleForme(g: GeometrieObjet): string | null {
+  const o = g.vertices[0];
+  if (!o) return null;
+  const r = (x: number) => Math.round(x * 1e9);
+  return `${g.vertices.map((v) => `${r(v.x - o.x)},${r(v.y - o.y)},${r(v.z - o.z)}`).join(";")}|${g.triangles.map((t) => t.join(",")).join(";")}|${g.edges.map((e) => e.join(",")).join(";")}`;
+}
+
+/** Surface instanciée d'une forme : un exemplaire par translation (premier sommet de chaque objet). */
+function objetsInstancies(liste: readonly Extract<EntreeRendu, { lot: string }>[], aspect: AspectVolume): THREE.Object3D[] {
+  const base = liste[0]!.geometrie;
+  const o0 = base.vertices[0]!;
+  const p = preparer(base);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(p.positions, 3));
+  g.setIndex(new THREE.BufferAttribute(p.index, 1));
+  g.computeVertexNormals();
+  const surface = new THREE.InstancedMesh(g, materiauVolume(aspect), liste.length);
+  const m = new THREE.Matrix4();
+  liste.forEach((e, i) => { const v = e.geometrie.vertices[0]!; surface.setMatrixAt(i, m.makeTranslation(v.x - o0.x, v.y - o0.y, v.z - o0.z)); });
+  surface.instanceMatrix.needsUpdate = true;
+  surface.computeBoundingSphere();
+  if (aspect.mode === "shaded") return [surface];
+  const a = new Float32Array(p.aretes.length * liste.length);
+  liste.forEach((e, i) => {
+    const v = e.geometrie.vertices[0]!, dx = v.x - o0.x, dy = v.y - o0.y, dz = v.z - o0.z;
+    for (let k = 0; k < p.aretes.length; k += 3) { a[i * p.aretes.length + k] = p.aretes[k]! + dx; a[i * p.aretes.length + k + 1] = p.aretes[k + 1]! + dy; a[i * p.aretes.length + k + 2] = p.aretes[k + 2]! + dz; }
+  });
+  const ga = new THREE.BufferGeometry();
+  ga.setAttribute("position", new THREE.BufferAttribute(a, 3));
+  return [surface, new THREE.LineSegments(ga, new THREE.LineBasicMaterial({ color: aspect.mode === "wireframe" && aspect.apparence ? aspect.couleur : 0x234f5b }))];
+}
 
 export class SceneRendu {
   private readonly seuls = new Map<string, Tenu>();
@@ -125,11 +179,27 @@ export class SceneRendu {
 
   /** Met la scène à `entrees` (ordre du document) ; `version` : version de la projection, portée par les tables. */
   mettreAJour(entrees: readonly EntreeRendu[], version: string): BilanRendu {
-    const bilan: BilanRendu = { construits: 0, lotsConstruits: 0, conserves: 0, liberes: 0 };
+    const bilan: BilanRendu = { construits: 0, lotsConstruits: 0, instancesConstruites: 0, conserves: 0, liberes: 0 };
     const vus = new Set<string>();
     const membres = new Map<string, Extract<EntreeRendu, { lot: string }>[]>();
+    // C.2-02 : formes répétées (même aspect, même forme à une translation près) → groupes instanciés.
+    const parForme = new Map<string, Extract<EntreeRendu, { lot: string }>[]>();
+    for (const e of entrees) {
+      if (e.lot === undefined || !e.instanciable) continue;
+      const forme = cleForme(e.geometrie);
+      if (forme === null) continue;
+      const cle = `instances:${e.lot}|${cleAspect(e.aspect)}|${forme}`;
+      (parForme.get(cle) ?? parForme.set(cle, []).get(cle)!).push(e);
+    }
+    const instancies = new Set<string>();
+    for (const [cle, liste] of parForme) {
+      if (liste.length < SEUIL_INSTANCIATION) continue;
+      for (const e of liste) instancies.add(e.id);
+      membres.set(cle, liste);
+    }
     for (const e of entrees) {
       if (e.lot !== undefined) {
+        if (instancies.has(e.id)) continue;
         const cle = `${e.lot}|${cleAspect(e.aspect)}#${hacherId(e.id) % this.lotsParAspect}`;
         (membres.get(cle) ?? membres.set(cle, []).get(cle)!).push(e);
         continue;
@@ -149,6 +219,18 @@ export class SceneRendu {
       const tenu = this.lots.get(cle);
       if (tenu?.signature === signature) { bilan.conserves++; continue; }
       if (tenu) this.retirer(tenu);
+      if (cle.startsWith("instances:")) {
+        // Exemplaire i ↔ objet i : la table se lit par `instanceId` (un « triangle » par exemplaire).
+        const table = tablePicking(version, liste.map((e) => ({ id: e.id, triangles: 1 })));
+        const objets = objetsInstancies(liste, liste[0]!.aspect);
+        const donnees: DonneesLot = { table, famille: liste[0]!.lot, instances: true };
+        objets[0]!.userData.lot = donnees;
+        objets[0]!.name = `instances:${liste[0]!.lot}`;
+        for (const o of objets) this.groupe.add(o);
+        this.lots.set(cle, { signature, objets, table });
+        bilan.instancesConstruites++;
+        continue;
+      }
       const parts = liste.map((e) => preparer(e.geometrie));
       const table = tablePicking(version, liste.map((e, i) => ({ id: e.id, triangles: parts[i]!.index.length / 3 })));
       const { surface, aretes } = objetsVolume(parts, liste[0]!.aspect);

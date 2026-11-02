@@ -6,7 +6,7 @@
  * Chemins d'export ou de téléchargement (défense supplémentaire seulement : la frontière est la capacité `export` déclarée
  * par chaque route, voir `lib/owned-project.ts`). Appliqué au chemin décodé, en minuscules, sans barre oblique finale.
  */
-export const EXPORT_PATH = /(\/archive$|\/copies$|\/export(\/|$|\.)|\.(ifc|step|dxf|pdf|zip|svg|json|csv|html)$|^\/files\/[^/]+|\/steps\/[^/]+\/files\/[^/]+$|\/documents\/.+|\/rapport$|\/fichiers\/|\/files\/[^/]+$)/;
+export const EXPORT_PATH = /(\/archive$|\/copies$|\/export(\/|$|\.)|\.(ifc|step|dxf|pdf|zip|svg|json|csv|html)$|^\/files\/[^/]+|\/steps\/[^/]+\/files\/[^/]+$|\/documents\/.+|\/rapport$|\/fichiers\/|\/files\/[^/]+$|\/illustrations\/[^/]+\/image$)/;
 
 /**
  * Le projet visé et le reste du chemin, résolus comme le routeur Express résout `:projectId` (segment décodé par

@@ -1,0 +1,42 @@
+code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
+15110103,Arrondissement de Bni Makada,r3544587,arrondissement de Bni Makada,nom normalisé + inclusion dans la commune,apparie
+15110105,Arrondissement de Mghogha,r3544604,arrondissement de Charf-Mghogha,nom inclus + inclusion dans la commune,apparie
+15110106,Arrondissement de Souani,r3544606,arrondissement de Charf-Souani,nom inclus + inclusion dans la commune,apparie
+15110107,Arrondissement de Médina,r3544619,arrondissement de Tanger-Medina,nom inclus + inclusion dans la commune,apparie
+32310101,Arrondissement d'Agdal,r2799558,Arrondissement d'Agdal,nom normalisé + inclusion dans la commune,apparie
+32310105,Arrondissement de Saiss,r2799559,Arrondissement de Saiss,nom normalisé + inclusion dans la commune,apparie
+32310107,Arrondissement de Fès-Médina,r2799583,Arrondissement de Fès-Médina,nom normalisé + inclusion dans la commune,apparie
+32310109,Arrondissement de Jnan El Ouard,r2799562,Arrondissement de Jnan El Ouard,nom normalisé + inclusion dans la commune,apparie
+32310111,Arrondissement d'El Mariniyine,r2799556,Arrondissement d'El Mariniyine,nom normalisé + inclusion dans la commune,apparie
+32310113,Arrondissement de Zouagha,r2799560,Arrondissement de Zouagha,nom normalisé + inclusion dans la commune,apparie
+44210101,Arrondissement d'Agdal Riyad,r2799211,Arrondissement Agdal-Riyad,nom normalisé + inclusion dans la commune,apparie
+44210103,Arrondissement d'El Youssoufia,r2799204,Arrondissement El Youssoufia,nom normalisé + inclusion dans la commune,apparie
+44210105,Arrondissement de Hassan,r4743369,Arrondissement Hassan,nom normalisé + inclusion dans la commune,apparie
+44210106,Arrondissement de Souissi,r2799203,Arrondissement Souissi,nom normalisé + inclusion dans la commune,apparie
+44210109,Arrondissement de Yacoub El Mansour,r2799212,Yacoub El Mansour,nom normalisé + inclusion dans la commune,apparie
+44410103,Arrondissement de Bab Lamrissa,r2801017,Bab Lamrissa,nom normalisé + inclusion dans la commune,apparie
+44410105,Arrondissement de Bettana,r2801016,Bettana,nom normalisé + inclusion dans la commune,apparie
+44410106,Arrondissement de Hssaine,r2801015,Hssaine,nom normalisé + inclusion dans la commune,apparie
+44410107,Arrondissement de Layayda,r2801067,Layayda,nom normalisé + inclusion dans la commune,apparie
+44410109,Arrondissement de Tabriquet,r2801014,Tabriquet,nom normalisé + inclusion dans la commune,apparie
+61410101,Arrondissement d'Anfa,r2801287,Arrondissement d'Anfa,nom normalisé + inclusion dans la commune,apparie
+61410103,Arrondissement de Maârif,r2801474,Arrondissement du Maârif,nom normalisé + inclusion dans la commune,apparie
+61410107,Arrondissement de Sidi Belyout,r4743250,Arrondissement de Sidi Belyout,nom normalisé + inclusion dans la commune,apparie
+61410111,Arrondissement d'Al-Fida,r2801452,Arrondissement d'Al Fida,nom normalisé + inclusion dans la commune,apparie
+61410113,Arrondissement de Mers-Sultan,r2801453,Arrondissement de Mers Sultan,nom normalisé + inclusion dans la commune,apparie
+61410121,Arrondissement d'Aïn-Sebaâ,r2801460,Arrondissement d'Aïn Sebaâ,nom normalisé + inclusion dans la commune,apparie
+61410123,Arrondissement d'Asoukhour Assawda,r2801457,Arrondissement des Roches noires,nom normalisé + inclusion dans la commune,apparie
+61410125,Arrondissement de Hay-Mohammadi,r2801458,Arrondissement de Hay Mohammadi,nom normalisé + inclusion dans la commune,apparie
+61410131,Arrondissement de Hay-Hassani,r2801343,Arrondissement de Hay Hassani,nom normalisé + inclusion dans la commune,apparie
+61410141,Arrondissement d'Aïn-Chock,r2801442,Arrondissement d'Aïn-Chock,nom normalisé + inclusion dans la commune,apparie
+61410151,Arrondissement de Sidi Bernoussi,r2801461,Arrondissement de Sidi Bernoussi,nom normalisé + inclusion dans la commune,apparie
+61410153,Arrondissement de Sidi Moumen,r2801372,Arrondissement de Sidi Moumen,nom normalisé + inclusion dans la commune,apparie
+61410161,Arrondissement de Ben-M'sick,r2801410,Arrondissement de Ben M'Sick,nom normalisé + inclusion dans la commune,apparie
+61410163,Arrondissement de Sbata,r2801415,Arrondissement de Sbata,nom normalisé + inclusion dans la commune,apparie
+61410171,Arrondissement de Moulay Rachid,r2801402,Arrondissement de Moulay Rachid,nom normalisé + inclusion dans la commune,apparie
+61410173,Arrondissement de Sidi Othmane,r2801406,Arrondissement de Sidi Othmane,nom normalisé + inclusion dans la commune,apparie
+73510103,Arrondissement d'Annakhil,r2799527,Arrondissement d'Annakhil,nom normalisé + inclusion dans la commune,apparie
+73510105,Arrondissement de Gueliz,r2799533,Arrondissement de Gueliz,nom normalisé + inclusion dans la commune,apparie
+73510107,Arrondissement de Marrakech-Médina,r2799534,Arrondissement de Marrakech-Medina,nom normalisé + inclusion dans la commune,apparie
+73510109,Arrondissement de Ménara,r2799537,Arrondissement de Ménara,nom normalisé + inclusion dans la commune,apparie
+73510111,Arrondissement de Sidi Youssef Ben Ali,r2799529,Arrondissement de Sidi Youssef Ben Ali,nom normalisé + inclusion dans la commune,apparie

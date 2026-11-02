@@ -5,7 +5,7 @@
  * `MAX_TRIANGLES_IMPORT` triangles, unité du fichier choisie (OBJ, STL) ou lue (IFC : longueur en mètre, centimètre ou
  * millimètre ; une autre unité est refusée), IFC lu seulement s'il contient des `IfcTriangulatedFaceSet`.
  */
-import { ajouterTriangles, grouper, type Modele } from "./geometrie-libre.js";
+import { ajouterTriangles, grouper, modifierAnnotations, type Modele } from "./geometrie-libre.js";
 import { cross, len, scale, sub, v3, type Vec3 } from "./vecteur.js";
 
 export type FormatImport = "obj" | "stl" | "ifc";
@@ -164,7 +164,7 @@ export interface ResultatImport {
 }
 
 /** Insère les maillages (un groupe chacun) ; `echelle` = mètres par unité du fichier. */
-export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], echelle: number, nomBase = "Import"): ResultatImport {
+export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], echelle: number, nomBase = "Import", consigner?: { readonly format: "obj" | "stl" | "ifc"; readonly fichier: string }): ResultatImport {
   const total = maillages.reduce((n, x) => n + x.triangles.length / 3, 0);
   if (total > MAX_TRIANGLES_IMPORT) throw new ErreurImport("trop-gros", `${total} triangles : au plus ${MAX_TRIANGLES_IMPORT} sont importés (au-delà, la géométrie collante devient trop lente).`);
   let courant = m;
@@ -187,6 +187,13 @@ export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], e
     courant = g.modele;
     objets++;
     triangles += tris.length;
+  }
+  // Chantier Axes (AX-5) : la correspondance d'unité est consignée dans le même pas (export « en coordonnées d'origine »).
+  if (consigner && objets > 0) {
+    courant = modifierAnnotations(courant, (a, id) => {
+      const k = id("i");
+      a.correspondances[k] = { id: k, format: consigner.format, fichier: consigner.fichier, metresParUnite: echelle };
+    }).modele;
   }
   return { modele: courant, objets, triangles, ignores };
 }

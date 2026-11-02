@@ -434,6 +434,9 @@ try {
   const proj = (await apiOf(owner, "post", "/projects", { code: "SUP-01", name: `Projet support ${uid()}` })).body;
   await owner.goto(`${BASE}/projets/${proj.id}?module=collaboration`);
   await owner.locator(".members-invite input[type=email]").fill(email("sans-compte"));
+  // Issue #262, phase 3 : l'aperçu de l'accès précède l'envoi de l'invitation.
+  await owner.locator('.members-invite [data-commande-collaboration="apercu-invitation"]').click();
+  await owner.locator("[data-invitation-apercu]").waitFor();
   await owner.locator(".members-invite button[type=submit]").click();
   await owner.locator("[data-project-invitations] li").first().waitFor();
   check("membres : invitation en attente affichée pour une adresse sans compte", true);

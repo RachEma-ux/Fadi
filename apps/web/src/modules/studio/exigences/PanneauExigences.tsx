@@ -11,9 +11,10 @@
  *   examinées ; l'état d'exécution (exécuté / non exécuté / erreur) est affiché à part de la conclusion. Un aperçu sur le
  *   brouillon (non enregistré) est calculé localement. Rien n'est jamais réécrit dans l'exigence ni dans le dessin.
  */
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { controlerExigences, proprietesDe, type EcartExigence, type ExigenceStudio, type ResultatControle, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { etatDemandeControle, type DemandeControle } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { LIBELLE_GRANDEUR, LIBELLE_NATURE } from "../quantites/quantites-vue";
@@ -160,6 +161,10 @@ function FormulaireExigence({ saisie, setSaisie, surValider, surAnnuler, edition
   </form>;
 }
 
+/** EX-068 : conclusions normatives et états d'exécution d'une demande (jamais « conforme » hors exécution). */
+const LIBELLE_NORMATIVE: Readonly<Record<string, string>> = { conforme: "conforme", "non-conforme": "non conforme", "non-teste": "non testé", "non-applicable-justifie": "non applicable justifié" };
+const DELAI_CONTROLE_MS = 30_000;
+
 function Controle({ c, exigences, ouvert }: { c: ControleLu; exigences: readonly ExigenceStudio[]; ouvert: boolean }) {
   return <li data-studio-controle={c.id} data-studio-controle-version={c.version ?? "aucune"} data-studio-controle-revision={c.revisionId}>
     <details open={ouvert}>
@@ -168,6 +173,10 @@ function Controle({ c, exigences, ouvert }: { c: ControleLu; exigences: readonly
         {c.version === null ? "aucun jeu" : `exigences v${c.version}`}{" · "}{date(c.creeLe)}{c.auteurEmail ? <>{" · "}<span translate="no">{c.auteurEmail}</span></> : null}
       </summary>
       <EtatControle r={c.resultat} />
+      {c.conclusionNormative && <p className="studio-exigences-etat" data-studio-conclusion-normative={c.conclusionNormative.conclusion ?? "aucune"}>
+        {c.conclusionNormative.conclusion ? `Conclusion normative : ${LIBELLE_NORMATIVE[c.conclusionNormative.conclusion]}` : "Aucune conclusion normative (contrôle non exécuté : jamais conforme)"}
+        {c.conclusionNormative.exigences.filter((x) => x.justification).map((x) => <span key={x.exigenceId} data-studio-non-applicable={x.exigenceId}>{" · "}<code translate="no">{x.exigenceId}</code>{" : non applicable — "}<span translate="no">{x.justification!.motif}</span></span>)}
+      </p>}
       <TableEcarts ecarts={c.resultat.ecarts} exigences={exigences} />
     </details>
   </li>;
@@ -183,6 +192,26 @@ export function PanneauExigences(props: PanneauExigencesProps) {
   const [saisie, setSaisie] = useState<SaisieExigence>(SAISIE_EXIGENCE_VIDE);
   const [editee, setEditee] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
+  // EX-068 : demande de contrôle en cours — « en attente » puis « délai dépassé » sans résultat ; jamais une conclusion.
+  const [demande, setDemande] = useState<DemandeControle | null>(null);
+  const [maintenant, setMaintenant] = useState(() => new Date());
+  useEffect(() => {
+    if (!demande) return;
+    const t = setInterval(() => setMaintenant(new Date()), 1000);
+    return () => clearInterval(t);
+  }, [demande]);
+  const etatDemande = demande ? etatDemandeControle(demande, null, maintenant) : null;
+  const [naExigence, setNaExigence] = useState("");
+  const [naMotif, setNaMotif] = useState("");
+  const [nonApplicables, setNonApplicables] = useState<{ exigenceId: string; motif: string }[]>([]);
+  async function controler() {
+    const d: DemandeControle = { id: crypto.randomUUID(), revisionId, demandeLe: new Date().toISOString(), delaiMs: DELAI_CONTROLE_MS };
+    setDemande(d); setMaintenant(new Date());
+    try {
+      await envoyer(() => apiExigences.controler(projectId, studyId, variantId, { revisionId, ...(courante ? { version: courante.version } : {}), ...(nonApplicables.length ? { nonApplicables } : {}), requestId: d.id }), "Contrôle enregistré.");
+      setNonApplicables([]);
+    } finally { setDemande(null); }
+  }
   const [message, setMessage] = useState("");
   const courante = jeu.data?.courante ?? null;
   const exigences = courante?.exigences ?? [];
@@ -260,9 +289,23 @@ export function PanneauExigences(props: PanneauExigencesProps) {
       </div>}
       {ecriture && <div className="studio-exigences-actions">
         <button type="button" className="studio-exigences-bouton" disabled={occupe}
-          onClick={() => void envoyer(() => apiExigences.controler(projectId, studyId, variantId, { revisionId, ...(courante ? { version: courante.version } : {}), requestId: crypto.randomUUID() }), "Contrôle enregistré.")}
+          onClick={() => void controler()}
           data-studio-controler>{`Contrôler la révision affichée${courante ? ` (exigences v${courante.version})` : ""}`}</button>
       </div>}
+      {ecriture && exigences.length > 0 && <div className="studio-exigences-actions" data-studio-non-applicable-saisie>
+        <label>Exigence non applicable<select value={naExigence} onChange={(e) => setNaExigence(e.target.value)}>
+          <option value="">Aucune</option>
+          {exigences.map((x) => <option key={x.id} value={x.id} translate="no">{x.libelle}</option>)}
+        </select></label>
+        <label>Justification<input maxLength={2000} value={naMotif} onChange={(e) => setNaMotif(e.target.value)} /></label>
+        <button type="button" className="studio-exigences-bouton" disabled={!naExigence || !naMotif.trim()}
+          onClick={() => { setNonApplicables([...nonApplicables.filter((x) => x.exigenceId !== naExigence), { exigenceId: naExigence, motif: naMotif.trim() }]); setNaExigence(""); setNaMotif(""); }}
+          data-studio-non-applicable-ajouter>Déclarer non applicable (justifié)</button>
+        {nonApplicables.length > 0 && <p className="studio-exigences-unite">{`${nonApplicables.length} exigence(s) déclarée(s) non applicable(s) pour le prochain contrôle.`}</p>}
+      </div>}
+      {etatDemande && <p role="status" className="studio-exigences-etat" data-studio-demande-controle={etatDemande}>
+        {etatDemande === "delai-depasse" ? "Délai dépassé : aucun résultat reçu, aucune conclusion (jamais conforme)." : "Contrôle en attente : aucune conclusion tant qu’il n’a pas tourné."}
+      </p>}
       {nonEnregistre && <p className="studio-exigences-unite">Le contrôle porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.</p>}
       {message && <p role="status" className="studio-exigences-message">{message}</p>}
       <h4>Contrôles enregistrés</h4>

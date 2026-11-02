@@ -9,7 +9,7 @@ import type { CarteChargement } from "./carte-morceaux";
 import { _reinitialiser, ecouterMisesAJour, lireHorsConnexion, verifier } from "./hors-connexion-studio";
 import { TEXTES_RESSOURCES } from "./textes";
 
-const FICHIERS = ["/index.html", "/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js", "/assets/studio.worker.js"];
+const FICHIERS = ["/index.html", "/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js", "/assets/studio.worker.js", "/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"];
 const carte: CarteChargement = {
   version: 1, build: "b1", entree: "/assets/index-a.js", initial: ["/assets/index-a.js"],
   moteurs: {
@@ -17,6 +17,7 @@ const carte: CarteChargement = {
     "planche-2d": { fichiers: ["/assets/index-a.js", "/assets/shell.js", "/assets/planche.js"], propres: ["/assets/planche.js"], taille: 1 },
     "rendu-3d": { fichiers: ["/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js"], propres: ["/assets/vue3d.js", "/assets/three.js"], taille: 1 },
     calcul: { fichiers: ["/assets/studio.worker.js"], propres: ["/assets/studio.worker.js"], taille: 1 },
+    "noyau-exact": { fichiers: ["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"], propres: ["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"], taille: 1 },
   },
   morceaux: {}, verification: { ok: true, violations: [] },
 };

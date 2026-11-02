@@ -1,0 +1,113 @@
+{
+ "type": "FeatureCollection",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+  }
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "1001",
+    "nom": "Province synthétique N-1"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.0,
+       31.2
+      ],
+      [
+       -7.8,
+       31.2
+      ],
+      [
+       -7.8,
+       31.6
+      ],
+      [
+       -8.0,
+       31.6
+      ],
+      [
+       -8.0,
+       31.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "1002",
+    "nom": "Province synthétique N-2"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -7.8,
+       31.2
+      ],
+      [
+       -7.6,
+       31.2
+      ],
+      [
+       -7.6,
+       31.6
+      ],
+      [
+       -7.8,
+       31.6
+      ],
+      [
+       -7.8,
+       31.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "2001",
+    "nom": "Province synthétique S-1"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.0,
+       30.8
+      ],
+      [
+       -7.6,
+       30.8
+      ],
+      [
+       -7.6,
+       31.2
+      ],
+      [
+       -8.0,
+       31.2
+      ],
+      [
+       -8.0,
+       30.8
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

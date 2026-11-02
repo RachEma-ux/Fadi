@@ -19,8 +19,14 @@
  * - Sans Worker (tests, navigateur ancien) : exécution directe sur le fil principal par la même fonction, mêmes
  *   résultats ; l'annulation et le remplacement écartent alors seulement le résultat.
  *
+ * - Validation applicative (EX-063) : chaque message reçu passe par `lireEnveloppe` (forme de l'enveloppe) puis, pour
+ *   une valeur, par le validateur de sa nature (`valider`, `validation-messages.ts`). Un message mal formé arrête le
+ *   Worker comme une réponse illisible ; une valeur bien formée mais forgée (outil hors registre, indice hors des
+ *   sommets…) rejette ses demandes (`invalide`) et arrête le Worker : elle n'est jamais rendue.
+ *
  * Ni React ni DOM : seulement l'API Worker (injectée par `creer`).
  */
+import { lireEnveloppe } from "./validation-messages";
 
 export interface Progression {
   /** Étape en cours (identifiant stable, traduit par l'interface). */
@@ -42,7 +48,7 @@ export type ReponseWorker =
   | { id: number; valeur: unknown }
   | { id: number; erreur: string };
 
-export type CodeErreurHote = "annulee" | "remplacee" | "delai" | "interrompu" | "illisible" | "indisponible" | "calcul";
+export type CodeErreurHote = "annulee" | "remplacee" | "delai" | "interrompu" | "illisible" | "invalide" | "indisponible" | "calcul";
 
 export class ErreurHote extends Error {
   constructor(readonly code: CodeErreurHote, message: string) {
@@ -68,6 +74,11 @@ export interface OptionsHote {
   direct?: ExecutionDirecte;
   /** Présence de l'API Worker (injectable pour les tests). */
   workerDisponible?: () => boolean;
+  /**
+   * Validation applicative de la valeur rendue par le Worker pour une nature (EX-063) : null = acceptée, sinon motif.
+   * Absente : seule l'enveloppe est validée.
+   */
+  valider?: (nature: string, valeur: unknown) => string | null;
 }
 
 export interface OptionsDemande {
@@ -102,6 +113,7 @@ const MESSAGES: Record<Exclude<CodeErreurHote, "calcul">, string> = {
   delai: "Le calcul n'a pas répondu à temps ; il sera relancé à la prochaine demande.",
   interrompu: "Calcul interrompu ; il sera relancé à la prochaine demande.",
   illisible: "Réponse illisible du calcul ; il sera relancé à la prochaine demande.",
+  invalide: "Réponse du calcul refusée par la validation ; il sera relancé à la prochaine demande.",
   indisponible: "Calcul hors du fil principal indisponible : trois échecs consécutifs ; rechargez la page pour réessayer.",
 };
 const erreur = (code: Exclude<CodeErreurHote, "calcul">) => new ErreurHote(code, MESSAGES[code]);
@@ -115,12 +127,16 @@ export class HoteWorker {
   private readonly canaux = new Map<string, number>();
   /** Nombre de Workers créés (diagnostic et tests). */
   creations = 0;
+  /** Messages refusés par la validation applicative (EX-063), avec leur motif (diagnostic, sans contenu). */
+  readonly refus: string[] = [];
 
   constructor(private readonly options: OptionsHote) {}
 
   /** Demandes en attente d'une réponse. */
   get enCours(): number { return this.enAttente.size; }
   get indisponible(): boolean { return this.fil === null; }
+  /** Un Worker vivant est déjà créé : une demande n'a rien à charger (IF-007 : sinon la tâche passe par `loading`). */
+  get vivant(): boolean { return this.fil !== undefined && this.fil !== null; }
   /** Les calculs se font sur le fil principal (Worker absent ou abandonné après trop d'échecs) alors qu'un repli existe. */
   get repli(): boolean {
     const disponible = this.options.workerDisponible ?? (() => typeof Worker !== "undefined");
@@ -220,7 +236,7 @@ export class HoteWorker {
   }
 
   /** Échec du Worker : toutes les demandes sont rejetées, le Worker est arrêté et recréé à la demande suivante. */
-  private abandonner(code: "delai" | "interrompu" | "illisible"): void {
+  private abandonner(code: "delai" | "interrompu" | "illisible" | "invalide"): void {
     // Échec non compté seulement si toutes les demandes touchées sont des reprises (`compterEchec: false`).
     const touchees = [...this.enAttente.values()];
     const compter = touchees.length === 0 || touchees.some((a) => a.compterEchec);
@@ -243,17 +259,24 @@ export class HoteWorker {
     // Un Worker arrêté ne résout plus rien : chaque écouteur vérifie qu'il est toujours le Worker courant.
     w.addEventListener("message", (e: MessageEvent<ReponseWorker>) => {
       if (this.fil !== w) return;
-      const d = e.data;
-      const a = d && typeof d === "object" ? this.enAttente.get(d.id) : undefined;
+      // EX-063 : l'enveloppe est validée avant toute lecture ; un message mal formé vaut une réponse illisible.
+      const d = lireEnveloppe(e.data);
+      if (!d.ok) { this.refus.push(d.motif); this.abandonner("illisible"); return; }
+      const a = this.enAttente.get(d.id);
       if (!a) return;
-      if ("progression" in d) { a.surProgression?.(d.progression); return; }
+      if (d.type === "progression") { a.surProgression?.(d.progression); return; }
+      if (d.type === "valeur") {
+        const motif = this.options.valider?.(a.nature, d.valeur) ?? null;
+        // Valeur forgée : jamais rendue ; le Worker qui l'a produite est arrêté.
+        if (motif !== null) { this.refus.push(`${a.nature} : ${motif}`); this.abandonner("invalide"); return; }
+      }
       this.enAttente.delete(d.id);
       clearTimeout(a.minuteur);
       a.detacher();
       this.liberer(d.id, a.canal);
       // Une réponse, même une erreur de calcul, prouve que le Worker vit : le compteur d'échecs repart de zéro.
       this.echecs = 0;
-      if ("erreur" in d) a.rejeter(new ErreurHote("calcul", d.erreur));
+      if (d.type === "erreur") a.rejeter(new ErreurHote("calcul", d.erreur));
       else a.resoudre(d.valeur);
     });
     w.addEventListener("error", () => { if (this.fil === w) this.abandonner("interrompu"); });

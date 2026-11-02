@@ -1,0 +1,41 @@
+name: Porte G4 Studio — Release
+
+# X.2-04 / BLOC-06 : à la publication d'une Release (ou sur demande), la porte G4 est jouée en mode STRICT sur le commit
+# de la Release : un défaut éliminatoire BLOC-01 à BLOC-07 non vérifié fait échouer ce workflow (rapport en résumé).
+# Une Release dont ce contrôle est rouge ne satisfait pas G4 (docs/workstreams/studio/DOSSIER-G4.md) et doit être
+# retirée avant que fadi-prod-auto ne la traite ; aucune mesure de performance n'entre dans la décision.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      reference:
+        description: "Commit, étiquette ou branche à contrôler"
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  porte:
+    name: Porte G4 stricte (BLOC-01 à BLOC-07)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.reference }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests de la porte
+        run: node --test scripts/validation/porte-g4.test.mjs
+      - name: Porte G4 stricte sur le commit de la Release
+        run: |
+          echo "Commit contrôlé : $(git rev-parse HEAD)"
+          set +e
+          node scripts/validation/porte-g4.mjs --rapport "$RUNNER_TEMP/porte-g4.json" --markdown "$RUNNER_TEMP/porte-g4.md"
+          code=$?
+          cat "$RUNNER_TEMP/porte-g4.md" >> "$GITHUB_STEP_SUMMARY"
+          exit $code

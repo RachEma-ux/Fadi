@@ -186,6 +186,8 @@ export function raccourciClavier(c: Cle): string {
   // Alt + lettre : sur macOS, Option change le caractère (Alt + Maj + P donne « ∏ ») ; la lettre est alors relue sur la
   // touche physique (`code`). Une lettre lisible dans `key` reste prioritaire (dispositions AZERTY, QWERTZ…).
   else if (c.altKey && !/^[a-z]$/i.test(c.key) && c.code && /^Key[A-Z]$/.test(c.code)) parts.push(c.code.slice(3));
+  // Chantier Axes (AX-D6) : Alt + Maj + chiffre, lu sur la touche physique (AZERTY donne « & », QWERTY « ! » sous Maj).
+  else if (c.altKey && c.code && /^Digit[0-9]$/.test(c.code)) parts.push(c.code.slice(5));
   else if (c.key.length === 1) parts.push(c.key.toUpperCase());
   // Lot 9 : touches de fonction (F2 Renommer) — le registre des commandes les résout comme les autres.
   else if (/^F([1-9]|1[0-2])$/.test(c.key)) parts.push(c.key);

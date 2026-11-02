@@ -62,6 +62,8 @@ export interface BarreOutilsProps {
   largeurInitiale?: number;
   /** Éléments montrés (palette d'un domaine) ; tous par défaut. Les raccourcis restent ceux de la table clavier. */
   filtre?: (e: ElementBarre) => boolean;
+  /** Familles propres au domaine de la palette, rangées juste après la famille active (`disposerBarre`). */
+  prioritaires?: readonly IdFamille[];
   /** Rangée horizontale (défaut) ou palette verticale. */
   orientation?: "horizontale" | "verticale";
   /** Nom accessible de la barre (« Outils de dessin » par défaut). */
@@ -144,7 +146,7 @@ function useModeTactile(): Mode {
 const navigables = (racine: Element | null, attribut: string) =>
   Array.from(racine?.querySelectorAll<HTMLElement>(`[${attribut}]`) ?? []).filter((e) => !(e as HTMLButtonElement).disabled && e.getAttribute("aria-disabled") !== "true" && e.offsetParent !== null);
 
-export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale, filtre, orientation = "horizontale", libelle = "Outils de dessin" }: BarreOutilsProps) {
+export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale, filtre, prioritaires, orientation = "horizontale", libelle = "Outils de dessin" }: BarreOutilsProps) {
   const { visible } = useProfilOutils(projectId);
   const verticale = orientation === "verticale";
   // Palette verticale : icônes seules, quel que soit le pointeur (les noms restent dans les infobulles et les menus).
@@ -172,7 +174,7 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
     menu: mesures.current.get(`${sens}:menu:${f.id}`) ?? (verticale ? HAUTEUR_VERTICALE : LARGEUR_MENU),
     elements: (elements.get(f.id) ?? []).map((e) => largeurDe(cle(e), libelleDe(e))),
   }));
-  const disposition = disposerBarre({ largeur: largeur - 2, familles, active, plus: mesures.current.get(`${sens}:plus`) ?? (verticale ? HAUTEUR_VERTICALE : LARGEUR_PLUS), separateur: SEPARATEUR });
+  const disposition = disposerBarre({ largeur: largeur - 2, familles, active, prioritaires, plus: mesures.current.get(`${sens}:plus`) ?? (verticale ? HAUTEUR_VERTICALE : LARGEUR_PLUS), separateur: SEPARATEUR });
 
   // Largeur disponible suivie en continu.
   useLayoutEffect(() => {

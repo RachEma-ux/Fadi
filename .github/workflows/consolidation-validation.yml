@@ -3,8 +3,15 @@ on:
   pull_request:
     paths:
       - '.github/workflows/consolidation-validation.yml'
-      - 'deploy/preprod/**'
-      - 'deploy/fadifront/**'
+      # Tout l'outillage de déploiement : préproduction, production (fadi-prod-auto), édition statique.
+      - 'deploy/**'
+      # fadi-prod-auto s'appuie sur docker-compose.yml (service migrate, D-7) et sur l'unité de sauvegarde hors VPS.
+      - 'docker-compose.yml'
+      - 'ops/systemd/**'
+      # La liste e2e de la préproduction doit rester celle de la CI (tests/run.sh) : un scénario ajouté à ci.yml sans
+      # elle passait inaperçu (geodata et sandbox-axes… manquaient le 25 octobre 2026).
+      - '.github/workflows/ci.yml'
+      - 'apps/web/e2e/**'
       - 'apps/web/src/FrontApp*'
       - 'apps/web/src/front-*'
       - 'apps/web/vite.front.config.ts'
@@ -30,3 +37,7 @@ jobs:
         run: python3 scripts/test-consolidate-branches-cleanup.py -v
       - name: Test preproduction commands and fadi-preprod-auto with disposable fixtures, Docker / curl / fadi-preprod doubles
         run: bash deploy/preprod/tests/run.sh
+      - name: Test fadi-prod-auto (Release → production) with disposable git fixtures and curl / docker / systemctl doubles
+        run: bash deploy/prod/tests/run.sh
+      - name: Shellcheck fadi-prod-auto, its installer and test doubles
+        run: shellcheck -S warning deploy/prod/fadi-prod-auto deploy/prod/installation/installer-prod-auto.sh deploy/prod/tests/run.sh deploy/prod/tests/doubles/*

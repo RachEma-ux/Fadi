@@ -23,7 +23,8 @@ describe("inventaire des catalogues d'outils (B.1-01)", () => {
 
   it("chaque alias « courant » cite un identifiant présent dans son catalogue source, avec une capacité de même nature", () => {
     const sources = { planche: new Map(OUTILS_PLANCHE.map((o) => [o.id, o.libelle])), atelier: new Map(OUTILS_ATELIER.map((o) => [o.id, o.libelle])) };
-    for (const a of STUDIO_ALIAS_OUTILS.filter((x) => x.periode === "courante" && x.catalogue !== "studio")) {
+    // Le catalogue « referentiel » (lot G2, EX-027) nomme des identifiants d’exemple du Référentiel RT-001, pas un catalogue d’outils.
+    for (const a of STUDIO_ALIAS_OUTILS.filter((x) => x.periode === "courante" && (x.catalogue === "planche" || x.catalogue === "atelier"))) {
       const libelle = sources[a.catalogue as "planche" | "atelier"].get(a.idHistorique);
       expect(libelle, `${a.catalogue}:${a.idHistorique}`).toBeDefined();
     }
@@ -47,6 +48,9 @@ describe("collision historique « echelle » requalifiée au commit courant (B.1
   });
   it("les trois lectures convergent vers la transformation ; l'objet d'accès n'est jamais converti", () => {
     for (const catalogue of ["planche", "atelier"] as const) expect(resoudreAliasOutil("echelle", { catalogue })).toMatchObject({ toolId: "studio.dessin.echelle" });
-    expect(resoudreAliasOutil("echelle-acces", { catalogue: "atelier" }).statut).toBe("hors-studio");
+    // Lot G2 (EX-027) : l’objet d’accès a désormais son équivalent Studio (échelle d’accès) ; il n’est jamais converti
+    // vers la transformation.
+    expect(resoudreAliasOutil("echelle-acces", { catalogue: "atelier" })).toMatchObject({ statut: "alias", toolId: "studio.architecture.echelle-acces" });
+    expect(resoudreAliasOutil("echelle-acces", { catalogue: "atelier" })).not.toMatchObject({ toolId: "studio.dessin.echelle" });
   });
 });

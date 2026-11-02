@@ -1,0 +1,105 @@
+{
+  "cle": "esa-worldcover-mar-occupation-sol",
+  "titre": "Occupation du sol du Maroc (ESA WorldCover 2021)",
+  "description": "ESA WorldCover 10 m v200 (2021), tuiles COG publiques, aperçus réduits puis classe majoritaire par cellule de la grille Fadi.",
+  "producteur": "Agence spatiale européenne (ESA), consortium WorldCover",
+  "theme": "occupation-sol",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "ESA WorldCover 10 m 2021 v200, lu le 2026-10-25",
+    "url": null,
+    "fichier": "donnees/esa-worldcover-mar-occupation-sol.tif",
+    "empreinte": "5d6b59b87fb53d60a7e6b5931ba447f39601b704a37096e6fa71784ff345b799",
+    "periode": "2021",
+    "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "attribution": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Carte à 10 m d'origine (exactitude globale déclarée ≈ 77 %) ; grille Fadi de 0,01° (≈ 1,1 km), 1625 × 1525 cellules, rééchantillonnage classe majoritaire (mode) ; hors territoire geoBoundaries MAR ADM1 : sans donnée",
+    "synthetique": false,
+    "conditions": "CC BY 4.0 : réutilisation libre, y compris commerciale, avec attribution de la source."
+  },
+  "couche": {
+    "titre": "Occupation du sol du Maroc (ESA WorldCover 2021)",
+    "description": "Classe d'occupation du sol",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": null,
+      "grandeur": "Classe d'occupation du sol",
+      "palette": "viridis",
+      "classes": [
+        {
+          "valeur": 10,
+          "libelle": "Couvert arboré",
+          "couleur": "#006400"
+        },
+        {
+          "valeur": 20,
+          "libelle": "Arbustes",
+          "couleur": "#ffbb22"
+        },
+        {
+          "valeur": 30,
+          "libelle": "Prairies",
+          "couleur": "#ffff4c"
+        },
+        {
+          "valeur": 40,
+          "libelle": "Cultures",
+          "couleur": "#f096ff"
+        },
+        {
+          "valeur": 50,
+          "libelle": "Bâti",
+          "couleur": "#fa0000"
+        },
+        {
+          "valeur": 60,
+          "libelle": "Sol nu ou végétation clairsemée",
+          "couleur": "#b4b4b4"
+        },
+        {
+          "valeur": 70,
+          "libelle": "Neige et glace",
+          "couleur": "#f0f0f0"
+        },
+        {
+          "valeur": 80,
+          "libelle": "Eaux permanentes",
+          "couleur": "#0064c8"
+        },
+        {
+          "valeur": 90,
+          "libelle": "Zones humides herbacées",
+          "couleur": "#0096a0"
+        },
+        {
+          "valeur": 95,
+          "libelle": "Mangroves",
+          "couleur": "#00cf75"
+        },
+        {
+          "valeur": 100,
+          "libelle": "Mousses et lichens",
+          "couleur": "#fae6a0"
+        }
+      ]
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

@@ -24,6 +24,8 @@ export interface StudioWall {
   id: string;
   type: "wall";
   layerId?: string;
+  /** Niveau de rattachement (lot W3-B, `StudioDocument.niveaux`) ; absent : aucun. Les cotes restent absolues. */
+  niveauId?: string;
   /** Deux points au moins, consécutifs distincts ; tracé ouvert. */
   axis: StudioPoint[];
   /** Épaisseur strictement positive (m). */
@@ -51,4 +53,80 @@ export interface StudioOpening {
   kind?: StudioOpeningKind;
 }
 
-export type StudioArchitectureItem = StudioWall | StudioOpening;
+/**
+ * Échelle d'accès (EX-027, lot G2) : objet d'accès posé librement (sans hôte), deux montants verticaux de section carrée
+ * et des échelons horizontaux de même section, régulièrement espacés. Toutes les valeurs sont **saisies** : aucune
+ * largeur, hauteur, section ni nombre d'échelons par défaut, aucune valeur normative (pas d'échelons, garde-corps,
+ * crinoline : non portés, jamais supposés).
+ * - `position` : milieu de la ligne de pied (entre les axes des deux montants), repère `local-2d` ;
+ * - `rotation` : direction de la largeur (du montant 1 au montant 2), radians dans [0 ; 2π[ ;
+ * - `width` : entre-axe des montants ; `section` : côté de la section carrée des montants et des échelons ;
+ * - `height` : hauteur des montants au-dessus de `base` (cote du pied, z) ;
+ * - `rungs` : nombre d'échelons, au pas `height / (rungs + 1)` à partir du pied.
+ */
+export interface StudioLadder {
+  id: string;
+  type: "ladder";
+  layerId?: string;
+  niveauId?: string;
+  position: StudioPoint;
+  rotation: number;
+  width: number;
+  height: number;
+  base: number;
+  rungs: number;
+  section: number;
+}
+
+/**
+ * Éléments structurels typés (lot W3-B, X.1-04) : poteau, poutre et dalle, créés **comme tels** par l'utilisateur
+ * (`studio.structure.element`) — jamais déduits d'une boîte ou d'un prisme (A.3-09). **Géométrie seulement** : aucune
+ * vérification structurelle, aucun matériau, aucune constante normative ; chaque section est **saisie** (aucune section
+ * par défaut ni de catalogue). `base` est la cote de la sous-face (m, repère `local-3d`) ; `niveauId` le rattachement
+ * facultatif à un niveau.
+ */
+/** Poteau : section rectangulaire `width` (selon la direction `rotation`) × `depth`, centrée sur `position`, de `base` à `base + height`. */
+export interface StudioColumn {
+  id: string;
+  type: "column";
+  layerId?: string;
+  niveauId?: string;
+  position: StudioPoint;
+  /** Direction de la largeur de la section, radians dans [0 ; 2π[. */
+  rotation: number;
+  width: number;
+  depth: number;
+  height: number;
+  base: number;
+}
+/** Poutre horizontale : axe `start` → `end` (en plan), section `width` (horizontale, centrée sur l'axe) × `height` (verticale) au-dessus de `base`. */
+export interface StudioBeam {
+  id: string;
+  type: "beam";
+  layerId?: string;
+  niveauId?: string;
+  start: StudioPoint;
+  end: StudioPoint;
+  width: number;
+  height: number;
+  base: number;
+}
+/** Dalle : contour fermé simple (en plan, trois sommets au moins), épaisseur `thickness` au-dessus de `base`. */
+export interface StudioSlab {
+  id: string;
+  type: "slab";
+  layerId?: string;
+  niveauId?: string;
+  contour: StudioPoint[];
+  thickness: number;
+  base: number;
+}
+export type StudioStructuralElement = StudioColumn | StudioBeam | StudioSlab;
+export const STUDIO_TYPES_STRUCTURELS: readonly StudioStructuralElement["type"][] = Object.freeze(["column", "beam", "slab"] as const);
+
+export type StudioArchitectureItem = StudioWall | StudioOpening | StudioLadder | StudioStructuralElement;
+
+/** Élément structurel typé (poteau, poutre, dalle) ? */
+export const estStructurel = (x: StudioArchitectureItem): x is StudioStructuralElement => x.type === "column" || x.type === "beam" || x.type === "slab";
+/** Élément rattachable à un niveau (tout sauf l'ouverture, qui suit son mur). */
+export type StudioArchitectureRattachable = Exclude<StudioArchitectureItem, StudioOpening>;

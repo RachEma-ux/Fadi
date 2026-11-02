@@ -1,0 +1,26 @@
+{
+  "$commentaire": "Gabarit de la référence de mesure de la recette studio-g4.mjs (AC-002, TEST-016) : tolérances et invariants décidés (lot G4), aucune valeur mesurée. La référence elle-même (studio-g4-reference.json) n'est jamais saisie : elle est établie par ECRIRE_REFERENCE=1 MOTIF=… node apps/web/e2e/studio-g4.mjs, depuis les médianes d'une mesure réelle, révision suivante.",
+  "schema": "studio-reference-mesures/1",
+  "revision": 0,
+  "etablieLe": "",
+  "commit": "",
+  "build": "",
+  "motif": "",
+  "appareil": null,
+  "profil": [],
+  "repetitions": 0,
+  "tolerances": {
+    "requetes": { "relative": 0.2, "absolue": 3 },
+    "octetsTransferes": { "relative": 0.2, "absolue": 32768 },
+    "octetsServeur": { "relative": 0.2, "absolue": 32768 },
+    "chunksExecutes": { "relative": 0.2, "absolue": 2 },
+    "tasOctets": { "relative": 0.35, "absolue": 2097152 }
+  },
+  "froid": null,
+  "chaud": null,
+  "invariants": {
+    "famillesInterdites": ["three", "studio-3d", "atelier", "maplibre", "manifold"],
+    "moteursAdmis": ["coquille-studio", "planche-2d", "calcul"],
+    "fichiersInterdits": ["occt-wasm[^/]*\\.wasm$", "noyau-exact\\.worker[^/]*\\.js$", "manifold[^/]*\\.wasm$"]
+  }
+}

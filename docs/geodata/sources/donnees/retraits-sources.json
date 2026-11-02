@@ -1,0 +1,86 @@
+[
+  {
+    "cle": "osm-mar-communes",
+    "remplacePar": "hcp-rgph2024-population-communes",
+    "motif": "Remplacée par « RGPH 2024 — communes » (mêmes contours OpenStreetMap, noms et valeurs du HCP : priorité HCP)",
+    "decision": "D-GD-18"
+  },
+  {
+    "cle": "osm-mar-villes",
+    "remplacePar": "hcp-rgph2024-villes",
+    "motif": "Remplacée par « Villes du Maroc — population RGPH 2024 » (points OpenStreetMap, population du HCP : priorité HCP)",
+    "decision": "D-GD-18"
+  },
+  {
+    "cle": "geoboundaries-mar-adm1",
+    "remplacePar": "hcp-rgph2024-population-regions",
+    "motif": "Remplacée par « Limites administratives — régions (RGPH 2024) » : contours construits par union des communes (D-GD-33), noms, codes et valeurs du HCP ; une seule source par niveau",
+    "decision": "D-GD-30"
+  },
+  {
+    "cle": "geoboundaries-mar-adm2",
+    "remplacePar": "hcp-rgph2024-population-provinces",
+    "motif": "Remplacée par « Limites administratives — provinces et préfectures (RGPH 2024) » : contours construits par union des communes (D-GD-33), noms, codes et valeurs du HCP ; une seule source par niveau",
+    "decision": "D-GD-30"
+  },
+  {
+    "cle": "osm-mar-administrations",
+    "remplacePar": [
+      "services-publics-beni-mellal-khenifra",
+      "services-publics-casablanca-settat-autres-provinces",
+      "services-publics-casablanca-settat-casablanca",
+      "services-publics-dakhla-oued-ed-dahab",
+      "services-publics-draa-tafilalet",
+      "services-publics-fes-meknes",
+      "services-publics-guelmim-oued-noun",
+      "services-publics-laayoune-sakia-el-hamra",
+      "services-publics-marrakech-safi",
+      "services-publics-oriental",
+      "services-publics-rabat-sale-kenitra",
+      "services-publics-souss-massa",
+      "services-publics-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : administrations publiques d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
+    "decision": "D-GD-45"
+  },
+  {
+    "cle": "osm-mar-etablissements-sante",
+    "remplacePar": [
+      "services-publics-beni-mellal-khenifra",
+      "services-publics-casablanca-settat-autres-provinces",
+      "services-publics-casablanca-settat-casablanca",
+      "services-publics-dakhla-oued-ed-dahab",
+      "services-publics-draa-tafilalet",
+      "services-publics-fes-meknes",
+      "services-publics-guelmim-oued-noun",
+      "services-publics-laayoune-sakia-el-hamra",
+      "services-publics-marrakech-safi",
+      "services-publics-oriental",
+      "services-publics-rabat-sale-kenitra",
+      "services-publics-souss-massa",
+      "services-publics-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : hôpitaux et cliniques d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
+    "decision": "D-GD-45"
+  },
+  {
+    "cle": "osm-mar-gares",
+    "remplacePar": [
+      "services-publics-beni-mellal-khenifra",
+      "services-publics-casablanca-settat-autres-provinces",
+      "services-publics-casablanca-settat-casablanca",
+      "services-publics-dakhla-oued-ed-dahab",
+      "services-publics-draa-tafilalet",
+      "services-publics-fes-meknes",
+      "services-publics-guelmim-oued-noun",
+      "services-publics-laayoune-sakia-el-hamra",
+      "services-publics-marrakech-safi",
+      "services-publics-oriental",
+      "services-publics-rabat-sale-kenitra",
+      "services-publics-souss-massa",
+      "services-publics-tanger-tetouan-al-hoceima"
+    ],
+    "motif": "Fusionnée dans « Services publics (MTNRA 2022 et OpenStreetMap) » : gares d'OpenStreetMap repris un à un, appariés au MTNRA ou ajoutés, aucun objet en double entre couches",
+    "decision": "D-GD-45"
+  }
+]

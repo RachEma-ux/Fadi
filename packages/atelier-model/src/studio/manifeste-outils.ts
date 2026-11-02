@@ -15,8 +15,8 @@
  * converti en silence : `resoudreAliasOutil` rend alors les alternatives (ex. « echelle » de l'Atelier avant #173).
  *
  * Requalification de la collision « echelle » (B.1-05), constatée au commit de réalisation : voir
- * `docs/ai-team/reports/claude-v8-b1/B1-CATALOGUE-OUTILS.md`. Studio n'a qu'un `studio.dessin.echelle` (transformation) et aucun
- * objet d'accès ; la palette de l'Atelier a séparé `echelle-acces` (objet d'accès) de `echelle` (transformation) au
+ * `docs/ai-team/reports/claude-v8-b1/B1-CATALOGUE-OUTILS.md`. Depuis le lot G2 (EX-027), Studio a deux capacités distinctes :
+ * `studio.dessin.echelle` (transformation) et `studio.architecture.echelle-acces` (objet d'accès) ; la palette de l'Atelier a séparé `echelle-acces` de `echelle` au
  * commit 1a6f9b5 (#173). Pur : ni React, ni DOM, ni base.
  */
 import { STUDIO_TOOLS, STUDIO_TOOL_IDS, type StudioToolGroup, type StudioToolId } from "./registry.js";
@@ -63,6 +63,13 @@ const PROPRIETAIRES: Readonly<Record<StudioToolGroup, StudioProprietaireOutil>> 
   architecture: { id: "studio.architecture", module: "packages/atelier-model/src/studio/architecture" },
   proprietes: { id: "studio.exigences", module: "packages/atelier-model/src/studio/exigences" },
   visualisation: { id: "studio.scenes", module: "packages/atelier-model/src/studio/scenes" },
+  "non-natifs": { id: "studio.non-natifs", module: "packages/atelier-model/src/studio/non-natifs" },
+  graphismes: { id: "studio.graphismes", module: "packages/atelier-model/src/studio/graphismes" },
+  reperes: { id: "studio.reperes", module: "packages/atelier-model/src/studio/reperes.ts" },
+  sources: { id: "studio.sources", module: "packages/atelier-model/src/studio/sources" },
+  batiment: { id: "studio.batiment", module: "packages/atelier-model/src/studio/batiment" },
+  blocs: { id: "studio.blocs", module: "packages/atelier-model/src/studio/blocs" },
+  contraintes: { id: "studio.contraintes", module: "packages/atelier-model/src/studio/contraintes" },
 });
 
 export interface StudioEntreeManifeste {
@@ -115,10 +122,22 @@ const DECLARATIONS = {
   "studio.solide.prisme": { contextes: V3D },
   "studio.solide.deplacer": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
   "studio.solide.supprimer": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.solide.face-decaler": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.solide.face-diviser": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.solide.pivoter": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.solide.resoudre": { contextes: V3D, prerequis: ["studio.solide.prisme"] },
+  "studio.solide.booleen": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.solide.cote-face": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
+  "studio.surface.nurbs": { contextes: V3D },
+  "studio.surface.modifier": { contextes: V3D, prerequis: ["studio.surface.nurbs"] },
+  "studio.surface.epaissir": { contextes: V3D, prerequis: ["studio.surface.nurbs"] },
+  "studio.subdivision.creer": { contextes: V3D },
+  "studio.subdivision.solidifier": { contextes: V3D, prerequis: ["studio.subdivision.creer"] },
   "studio.architecture.mur": { contextes: P2D },
   "studio.architecture.ouverture": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.modifier": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.supprimer": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
+  "studio.architecture.echelle-acces": { contextes: P2D },
   "studio.propriete.definir": { contextes: P2D },
   "studio.propriete.retirer": { contextes: P2D, prerequis: ["studio.propriete.definir"] },
   "studio.scene.creer": { contextes: V3D },
@@ -127,6 +146,21 @@ const DECLARATIONS = {
   "studio.scene.supprimer": { contextes: V3D, prerequis: ["studio.scene.creer"] },
   "studio.apparence.definir": { contextes: V3D },
   "studio.apparence.retirer": { contextes: V3D, prerequis: ["studio.apparence.definir"] },
+  "studio.nonnatif.conserver": { contextes: P2D },
+  "studio.nonnatif.retirer": { contextes: P2D, prerequis: ["studio.nonnatif.conserver"] },
+  "studio.graphisme.creer": { contextes: P2D },
+  "studio.graphisme.retirer": { contextes: P2D, prerequis: ["studio.graphisme.creer"] },
+  "studio.repere.projet": { contextes: P2D },
+  "studio.source.declarer": { contextes: P2D },
+  // Lot W3-B : niveaux, composants 3D et éléments structurels — panneau « Bâtiment » de la planche, rendus en vue 3D.
+  "studio.niveau.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.placer": { contextes: ["planche-2d", "vue-3d"], prerequis: ["studio.composant.definir"] },
+  "studio.structure.element": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.bloc.definir": { contextes: P2D },
+  "studio.bloc.inserer": { contextes: P2D, prerequis: ["studio.bloc.definir"] },
+  "studio.bloc.eclater": { contextes: P2D, prerequis: ["studio.bloc.inserer"] },
+  "studio.contrainte.poser": { contextes: P2D },
 } as const satisfies Record<StudioToolId, Declaration>;
 
 const chargeurDe = (contextes: readonly StudioContexteOutil[]): StudioIdChargeur =>
@@ -160,7 +194,8 @@ export const entreeManifeste = (toolId: string): StudioEntreeManifeste | null =>
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Catalogues dont un identifiant peut être migré vers Studio. */
-export type StudioCatalogueSource = "studio" | "planche" | "atelier";
+/** Catalogues dont un identifiant peut être migré vers Studio ; `referentiel` : identifiants cités par le Référentiel technique (RT-001, EX-027). */
+export type StudioCatalogueSource = "studio" | "planche" | "atelier" | "referentiel";
 /**
  * Règle d'un alias : `equivalent` (même capacité dans un autre catalogue), `renomme` (ancien identifiant Studio),
  * `hors-studio` (capacité sans équivalent Studio : jamais convertie vers un outil voisin).
@@ -199,10 +234,13 @@ export const STUDIO_ALIAS_OUTILS: readonly StudioAliasOutil[] = Object.freeze([
   eq("atelier", "miroir", "studio.dessin.symetrie"), eq("atelier", "echelle", "studio.dessin.echelle"), eq("atelier", "decaler", "studio.dessin.decaler"),
   eq("atelier", "supprimer", "studio.dessin.supprimer"), eq("atelier", "cotation", "studio.dessin.cote"), eq("atelier", "texte", "studio.dessin.texte"),
   eq("atelier", "mur", "studio.architecture.mur"), eq("atelier", "ouverture", "studio.architecture.ouverture"),
-  { catalogue: "atelier", periode: "courante", idHistorique: "echelle-acces", regle: "hors-studio", toolId: null },
+  eq("atelier", "echelle-acces", "studio.architecture.echelle-acces"),
   // Atelier avant 1a6f9b5 (#173) : deux outils portaient « echelle ». Seule la fiche lève l'ambiguïté.
-  { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-07-13", regle: "hors-studio", toolId: null },
+  { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-07-13", regle: "equivalent", toolId: "studio.architecture.echelle-acces" },
   { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-02-05", regle: "equivalent", toolId: "studio.dessin.echelle" },
+  // Référentiel technique RT-001 (EX-027) : identifiants d'exemple du texte source, distincts, résolus vers Studio.
+  eq("referentiel", "studio.draw.line2d", "studio.dessin.ligne"), eq("referentiel", "studio.transform.scale", "studio.dessin.echelle"),
+  eq("referentiel", "studio.arch.ladder", "studio.architecture.echelle-acces"),
 ].map((a) => Object.freeze(a)) as StudioAliasOutil[]);
 
 export type StudioResolutionAlias =

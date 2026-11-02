@@ -1,6 +1,6 @@
 # ADR-STUDIO-NAV-01 — Intégration de Studio dans la navigation de Fadi et coexistence avec l'Atelier
 
-Statut : **Proposé** (Proposé / Accepté / Remplacé).
+Statut : **Accepté**, option A, le 25 octobre 2026 ([ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md), P-03 : décision prise sous délégation du maître d'ouvrage).
 Date : 18 octobre 2026 ; mise à jour du 19 octobre 2026 (espace de travail par domaine, menu « Studio », workflow déclaré).
 Chantier : `studio` (programme [#156](https://github.com/RachEma-ux/Fadi/issues/156)).
 Issue / PR : questions et arbitrages dans [#166](https://github.com/RachEma-ux/Fadi/issues/166) ; ouverture annoncée dans [#166/6251022689](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251022689).
@@ -51,7 +51,7 @@ Paramètres : `?domaine=dessin|bim|visualisation|documentation`, et `planche=2d|
 - Documentation, métrés et collaboration : Feuille, Feuilles et dossier, publications de l'étude, commentaires et observations, historique des révisions, métré.
 - Éléments communs repris dans chaque palette (sélection et vue du canevas) et barre de l'espace commune aux quatre domaines (Annuler, Rétablir, Enregistrer, Outils, palette Ctrl+K) : même commande, même icône, même raccourci, rendue une seule fois.
 
-**Question au maître d'ouvrage — Domaine « à définir ».** REF-01 ne range dans aucun domaine les fonctions suivantes ; leur domaine n'est pas deviné (`A_DEFINIR`) : Importer DXF, Exporter SVG, Exporter DXF, Exporter IFC, Exporter le rendu PNG, Matrice d’échanges — proposées dans la palette de chaque domaine —, ainsi que le système d'outils commun aux domaines (REF-01 §03) : Outils, Palette de commandes — dans la barre de l'espace, commune aux quatre domaines. Leur domaine est à fixer par décision.
+**Question au maître d'ouvrage — Domaine « à définir ».** REF-01 ne range dans aucun domaine les fonctions suivantes ; leur domaine n'est pas deviné (`A_DEFINIR`) : Importer DXF, Importer IFC, Modèles externes (lot F3), Exporter SVG, Exporter DXF, Exporter IFC, Exporter OBJ, Exporter STL, Exporter STEP (E.6-04), Exporter le rendu PNG, Matrice d’échanges, Fusionner une variante, Annuler la dernière fusion (lot W3-D : elles portent sur l'étude et ses variantes) — proposées dans la palette de chaque domaine —, la famille d’outils « Éléments non natifs » (Conserver un élément non natif, Retirer les éléments non natifs ; lot F3), ainsi que le système d'outils commun aux domaines (REF-01 §03) : Outils, Palette de commandes — dans la barre de l'espace, commune aux quatre domaines. Leur domaine est à fixer par décision.
 
 **Question au maître d'ouvrage — Workflow de conception déclaré (REF-01 §06).** Proposition (ajout au modèle de données, au-delà de l'UX) : la phase est **déclarée par étude** (colonne nullable `studio_studies.workflow_phase`, `PATCH …/studies/:id/workflow`, propriétaire ou éditeur ; 400 sur une phase inconnue, 409 sur une étude archivée), jamais déduite ; « non déclarée » par défaut. Une pastille dans la barre de contexte (fil d'Ariane) l'affiche. **À arbitrer** : REF-01 §06 dit que le workflow « s'applique à des révisions ou dossiers identifiés » ; la granularité « étude » retenue ici est donc une proposition. Elle est **retirable sans perte** : colonne nullable additive (aucune autre donnée n'en dépend ; les archives antérieures se restaurent à NULL, la version des tables archivées est inchangée). Les liens « Ouvrir ensuite » (phase → domaines, `SUGGESTIONS_PHASE`) sont une **lecture proposée, à valider** : REF-01 ne relie pas les phases aux domaines. Ce n'est ni un cinquième domaine ni le Parcours, et aucune phase n'a d'effet métier.
 
@@ -159,7 +159,7 @@ Les priorités se confirment au cadrage du pilote (ADR-05).
 
 ## Décision et responsable
 
-**Non décidé.** À compléter après arbitrage, au titre d'ADR-03 : décision déléguée dans #166 pour l'architecture, accord du propriétaire pour les points réservés (R2 et R3 de COEX-06, fusion, production). Jusque-là, le statut reste « Proposé ».
+**Option A acceptée** le 25 octobre 2026, au titre d'ADR-03, par [ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md) (P-03). Le chef de projet a décidé sous la délégation totale du maître d'ouvrage. Le code de `main` réalise déjà cette option (`StudioShell`, routes `/studio`). La fusion relève des PR, CI verte ; la production reste réservée au maître d'ouvrage.
 
 ## Justification
 
@@ -171,7 +171,7 @@ Cette ADR rassemble en un seul document de décision des éléments aujourd'hui 
 - Elle n'en dispense pas : il faut encore G1, G2 et G3, la stabilisation du contrat de contexte M17 et une autorisation de code distincte.
 - Aucun nouveau numéro de DEC n'est créé.
 - Les identifiants R-A … E-D sont locaux à cette ADR.
-- Les chemins de routes restent des propositions jusqu'à ROUTE-09.
+- Les chemins de routes sont finals depuis l'arbitrage ROUTE-09 du 25 octobre 2026 ([ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md), P-09 ; [dossier du pilote](../../workstreams/studio/DOSSIER-PILOTE.md)).
 
 ## Vérifications / références
 

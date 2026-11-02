@@ -40,9 +40,15 @@ export function EtatConnexionStudio({ etat }: { etat: EntreeEtatHorsLigne }) {
   </span>;
 }
 
-export function ChoixConflitStudio({ etat, surRecharger, surReporter }: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void }) {
+export function ChoixConflitStudio({ etat, surRecharger, surReporter, surAcquitter }: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void; surAcquitter?: () => void }) {
   if (etat.autreOnglet) return <div className="studio-connexion studio-connexion-choix" data-studio-conflit-onglet>
     <button type="button" onClick={surRecharger} data-studio-reprendre-onglet>Reprendre le brouillon de l’autre onglet</button>
+  </div>;
+  // EX-049 : à la reprise, une enveloppe rejetée ou une prévisualisation abandonnée est nommée jusqu'à ce qu'on l'acquitte.
+  if (!etat.conflit && (etat.rejetee || etat.apercuAbandonne)) return <div className="studio-connexion studio-connexion-choix" data-studio-reprise={etat.rejetee ? "rejetee" : "previsualisation-abandonnee"}>
+    {etat.rejetee && <span data-studio-reprise-rejetee>Enveloppe rejetée par le serveur, conservée sur cet appareil</span>}
+    {etat.apercuAbandonne && <span data-studio-reprise-apercu>Prévisualisation abandonnée à l’interruption</span>}
+    {surAcquitter && <button type="button" onClick={surAcquitter} data-studio-reprise-acquitter>Compris</button>}
   </div>;
   return etat.conflit ? <div className="studio-connexion studio-connexion-choix" data-studio-conflit-hors-ligne>
     <button type="button" onClick={surReporter} disabled={!etat.enLigne} data-studio-reporter>Reporter les commandes sur la nouvelle version</button>

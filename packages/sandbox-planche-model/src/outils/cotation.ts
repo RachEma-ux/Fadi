@@ -10,7 +10,7 @@
 import { type Id, aretesDeLaCourbe, contexte, modifierAnnotations } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, dist } from "../vecteur.js";
-import { contexteSaisie, formaterLongueur, mesures, messageErreur } from "./commun-formes.js";
+import { contexteSaisie, formaterLongueur, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, sommetEn, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 
@@ -36,7 +36,7 @@ const initial = (): EtatCotation => ({ etape: 1, a: null, b: null, sommets: [und
 const repos = (e: EtatCotation): EtatCotation => ({ ...initial(), inference: e.inference });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
 /** Courbe fermée (cercle, polygone) du contexte à laquelle appartient l'arête `id`, ou null. */

@@ -115,15 +115,45 @@ describe("Studio : document 2D natif", () => {
   });
 });
 
+/** Outils ajoutés par le lot G2 (achèvement Studio), comptés à part des socles déjà caractérisés, dans l’ordre du registre. */
+const OUTILS_LOT_G2_ATTENDUS = [
+  ["studio.solide.cote-face", "Shift+F12", "studio-solid-face-dimension", "volume-libre"],
+  ["studio.architecture.echelle-acces", "Ctrl+Shift+F12", "studio-ladder", "architecture"],
+] as const;
+const OUTILS_LOT_G2: ReadonlySet<string> = new Set(OUTILS_LOT_G2_ATTENDUS.map((t) => t[0]));
+/** Outils ajoutés par le lot W3-C (X.1-05, surfaces libres NURBS), comptés à part, dans l’ordre du registre. */
+const OUTILS_W3C_ATTENDUS = [
+  ["studio.surface.nurbs", "Ctrl+F8", "studio-surface-nurbs", "volume-libre"],
+  ["studio.surface.modifier", "Ctrl+F9", "studio-surface-edit", "volume-libre"],
+  ["studio.surface.epaissir", "Shift+F11", "studio-surface-thicken", "volume-libre"],
+  ["studio.subdivision.creer", "Ctrl+Shift+Home", "studio-surface-subdivision", "volume-libre"],
+  ["studio.subdivision.solidifier", "Ctrl+Shift+End", "studio-surface-solidify", "volume-libre"],
+] as const;
+const OUTILS_W3C: ReadonlySet<string> = new Set(OUTILS_W3C_ATTENDUS.map((t) => t[0]));
+/** Lot W3-A (X.1-01) : blocs définis par l'utilisateur et contraintes géométriques, comptés à part. */
+const OUTILS_LOT_W3A_ATTENDUS = [
+  ["studio.bloc.definir", "Shift+F1", "studio-block-define", "blocs"],
+  ["studio.bloc.inserer", "Shift+F3", "studio-block-insert", "blocs"],
+  ["studio.bloc.eclater", "Ctrl+F12", "studio-block-explode", "blocs"],
+  ["studio.contrainte.poser", "Ctrl+F1", "studio-constraint", "contraintes"],
+] as const;
+const OUTILS_LOT_W3A: ReadonlySet<string> = new Set(OUTILS_LOT_W3A_ATTENDUS.map((t) => t[0]));
+// Lot W3-B (famille « batiment ») : comptée à part (`batiment/batiment.test.ts`), hors des comptes antérieurs.
+const OUTILS_BATIMENT_W3B = STUDIO_TOOLS.filter((t) => t.groupe === "batiment");
+const avantW3A = STUDIO_TOOLS.filter((t) => !OUTILS_LOT_W3A.has(t.toolId) && t.groupe !== "batiment" && !OUTILS_W3C.has(t.toolId));
+
 describe("Registry Studio minimal", () => {
-  it("publie trente-huit identités, icônes et raccourcis propres (volume libre, transformations, annotations, architecture, propriétés et visualisation compris), sans agent", () => {
+  it("publie quarante-cinq identités, icônes et raccourcis propres (volume libre, édition des faces et booléen exact, transformations, annotations, architecture, propriétés, visualisation et éléments non natifs compris), sans agent", () => {
     // Seize outils de base, le volume libre (boîte, prisme, déplacer, supprimer), Copier, Rotation, Symétrie, Échelle,
     // puis la cote angulaire et le texte, l'architecture (mur, ouverture, modifier, supprimer avec cascade), les
     // propriétés BIM déclarées (E.1-01 : déclarer, retirer), enfin la visualisation (E.5 : scène nouvelle, mettre à
-    // jour, rappeler, supprimer ; apparence définir, retirer).
-    expect(STUDIO_TOOLS).toHaveLength(38);
+    // jour, rappeler, supprimer ; apparence définir, retirer) ; lot F1 : pousser / tirer la face, diviser la face,
+    // pivoter le solide, résoudre le lien du solide ; lot F3 : conserver et retirer les éléments non natifs ; lot F2 : booléen exact.
+    // Graphismes et repères (EX-055, EX-023) : comptés à part, test suivant.
+    const socle = avantW3A.filter((t) => t.groupe !== "graphismes" && t.groupe !== "reperes" && t.groupe !== "sources" && !OUTILS_LOT_G2.has(t.toolId));
+    expect(socle).toHaveLength(45);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
-      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(38);
+      expect(new Set(socle.map((tool) => tool[key])).size).toBe(45);
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.agentExposure).toBe("none");
@@ -142,5 +172,30 @@ describe("Registry Studio minimal", () => {
     for (const id of ["", " ", "a\0b", "a\n\0b"]) expect(idPattern.test(id)).toBe(false);
     expect(Object.isFrozen(STUDIO_TOOLS)).toBe(true);
     expect(Object.isFrozen(STUDIO_DOCUMENT_SCHEMA.properties.objects.items.oneOf)).toBe(true);
+  });
+
+  it("publie quarante-neuf identités, icônes et raccourcis propres : graphismes (créer, retirer), système de projet et sources importées compris", () => {
+    expect(avantW3A.filter((t) => !OUTILS_LOT_G2.has(t.toolId))).toHaveLength(49);
+    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(avantW3A.filter((t) => !OUTILS_LOT_G2.has(t.toolId)).map((tool) => tool[key])).size).toBe(49);
+    const ajoutes = STUDIO_TOOLS.filter((t) => t.groupe === "graphismes" || t.groupe === "reperes" || t.groupe === "sources").map((t) => [t.toolId, t.raccourci, t.groupe]);
+    expect(ajoutes).toEqual([["studio.graphisme.creer", "Shift+F6", "graphismes"], ["studio.graphisme.retirer", "Shift+F7", "graphismes"], ["studio.repere.projet", "Ctrl+Shift+F2", "reperes"], ["studio.source.declarer", "Ctrl+Shift+F3", "sources"]]);
+  });
+
+  it("lot G2 : échelle d’accès (EX-027) et cote de face 3D (INV-013), identités, icônes et raccourcis propres ; registre entier sans doublon", () => {
+    const g2 = STUDIO_TOOLS.filter((t) => OUTILS_LOT_G2.has(t.toolId)).map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe]);
+    expect(g2).toEqual([...OUTILS_LOT_G2_ATTENDUS]);
+    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(STUDIO_TOOLS.length);
+    expect(avantW3A).toHaveLength(49 + OUTILS_LOT_G2.size);
+  });
+
+  it("lot W3-A (X.1-01) : blocs (définir, insérer, éclater) et contraintes (contraindre), identités, icônes et raccourcis propres ; registre entier sans doublon", () => {
+    expect(STUDIO_TOOLS.filter((t) => OUTILS_LOT_W3A.has(t.toolId)).map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe])).toEqual([...OUTILS_LOT_W3A_ATTENDUS]);
+    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(STUDIO_TOOLS.length);
+    expect(STUDIO_TOOLS).toHaveLength(49 + OUTILS_LOT_G2.size + OUTILS_LOT_W3A.size + OUTILS_BATIMENT_W3B.length + OUTILS_W3C.size);
+  });
+
+  it("X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre »", () => {
+    expect(STUDIO_TOOLS.filter((t) => OUTILS_W3C.has(t.toolId)).map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe])).toEqual([...OUTILS_W3C_ATTENDUS]);
+    expect(STUDIO_TOOLS.filter((t) => OUTILS_W3C.has(t.toolId)).map((t) => t.libelleFR)).toEqual(["Surface NURBS", "Modifier la surface", "Épaissir la surface", "Surface de subdivision", "Solidifier la subdivision"]);
   });
 });

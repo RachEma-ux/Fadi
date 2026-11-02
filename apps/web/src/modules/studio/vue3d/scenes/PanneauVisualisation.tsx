@@ -130,8 +130,10 @@ export function PanneauVisualisation(p: PanneauVisualisationProps) {
               <strong>{t.libelle}</strong>{" — "}<span>{t.disponible ? "Disponible" : "Non disponible"}</span>
               <p className="studio-hint">{t.description}</p>
               {t.disponible && <>
-                <button type="button" onClick={() => p.surAction("exporter-png")} disabled={!p.rendu.possible} data-studio-exporter-png><Icon name="studio-export-png" size={18} /> Exporter le rendu PNG</button>
-                {p.rendu.raison && <p className="studio-hint" data-studio-rendu-raison>{p.rendu.raison}</p>}
+                {t.id === "illustration-ia"
+                  ? <button type="button" onClick={() => p.surAction("illustration")} disabled={!p.rendu.possible} data-studio-illustrer><Icon name="studio-illustration" size={18} /> Illustration depuis la vue…</button>
+                  : <button type="button" onClick={() => p.surAction("exporter-png")} disabled={!p.rendu.possible} data-studio-exporter-png><Icon name="studio-export-png" size={18} /> Exporter le rendu PNG</button>}
+                {p.rendu.raison && (t.id === "rendu-modele" ? <p className="studio-hint" data-studio-rendu-raison>{p.rendu.raison}</p> : <p className="studio-hint" data-studio-illustration-raison-vue>{p.rendu.raison}</p>)}
               </>}
             </li>
           ))}

@@ -17,7 +17,7 @@ function lire<T extends StudioElementVisualisation["type"]>(params: unknown, typ
 
 const index = (state: Etat, id: string) => state.scenes.findIndex((s) => s.id === id);
 /** Objets qu'une apparence peut habiller : formes, solides libres, murs et ouvertures (ce que la vue 3D rend). */
-const objetsRendus = (state: Etat) => new Set([...state.objects.map((o) => o.id), ...state.solides.map((s) => s.id), ...state.architecture.map((a) => a.id)]);
+const objetsRendus = (state: Etat) => new Set([...state.objects.map((o) => o.id), ...state.solides.map((s) => s.id), ...state.architecture.map((a) => a.id), ...state.occurrences.map((o) => o.id)]);
 
 export const creerScene: Gestionnaire = (state, params, path) => {
   const s: StudioScene = lire(params, "scene", path);

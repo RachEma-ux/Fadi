@@ -13,10 +13,10 @@
  * publier dans une audience qu'il ne lit pas. Une réponse suit l'audience de son fil.
  */
 import { z } from "zod";
-import type { CommentAudience } from "../db/schema.js";
+import type { CommentAudience, StudioCommentAudience } from "../db/schema.js";
 import type { ProjectRole } from "./owned-project.js";
 
-export type { CommentAudience } from "../db/schema.js";
+export type { CommentAudience, StudioCommentAudience } from "../db/schema.js";
 
 export const AUDIENCES = ["equipe", "projet"] as const satisfies readonly CommentAudience[];
 export const audienceSchema = z.enum(AUDIENCES);
@@ -30,7 +30,8 @@ export function seesTeam(role: ProjectRole): boolean {
 }
 
 /** Un élément d'audience `audience` est-il lisible par ce rôle ? NULL (ligne d'archive antérieure) vaut `projet`. */
-export function audienceVisible(role: ProjectRole, audience: CommentAudience | null | undefined): boolean {
+// `revue` (phase 4) : lu par l'équipe seule côté projet (les destinataires passent par `/reviews`).
+export function audienceVisible(role: ProjectRole, audience: StudioCommentAudience | null | undefined): boolean {
   return seesTeam(role) || (audience ?? "projet") === "projet";
 }
 
@@ -44,7 +45,13 @@ export class AudienceError extends Error {
  * Audience d'un nouvel élément écrit par `role` : réponse = audience de son fil (une valeur différente est refusée) ;
  * lecteur = `projet` (refus explicite s'il demande `equipe`) ; sinon le choix transmis, à défaut l'équipe.
  */
-export function audienceOfNew(role: ProjectRole, requested: CommentAudience | undefined, threadAudience: CommentAudience | null | undefined = undefined): CommentAudience {
+export function audienceOfNew(role: ProjectRole, requested: CommentAudience | undefined, threadAudience?: CommentAudience | null): CommentAudience;
+export function audienceOfNew(role: ProjectRole, requested: CommentAudience | undefined, threadAudience: StudioCommentAudience | null | undefined): StudioCommentAudience;
+/**
+ * Un fil `revue` (constat d'une revue externe, phase 4) n'existe que sur Studio : une réponse de l'équipe le suit et reste
+ * lisible par les destinataires du paquet ; il ne se crée jamais par cette voie (`audienceSchema` n'admet pas `revue`).
+ */
+export function audienceOfNew(role: ProjectRole, requested: CommentAudience | undefined, threadAudience: StudioCommentAudience | null | undefined = undefined): StudioCommentAudience {
   if (threadAudience !== undefined) {
     const thread = threadAudience ?? "projet";
     if (requested !== undefined && requested !== thread) throw new AudienceError(422, { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez l'audience du commentaire d'origine." });

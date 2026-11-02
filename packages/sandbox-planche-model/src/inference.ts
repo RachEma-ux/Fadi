@@ -194,6 +194,11 @@ export interface EntreeInference {
   readonly tangenteDepart?: Vec3;
   /** Points marqués (survol prolongé) pour l'inférence « From Point ». */
   readonly pointsReference?: readonly Vec3[];
+  /**
+   * (Chantier Axes, AX-1) Plan du point brut hors face : le plan de travail (origine, normale). Absent = plan XY des
+   * axes (sol du repère de saisie).
+   */
+  readonly sol?: { readonly origine: Vec3; readonly normale: Vec3 };
 }
 
 export interface Inference {
@@ -319,10 +324,10 @@ function pointBrut(e: EntreeInference, axes: AxesModele): Vec3 {
   const f = faceTouchee(e);
   if (f) return f.point;
   const V = normalize(r.direction);
-  const n = normalize(axes.z);
+  const n = normalize(e.sol?.normale ?? axes.z);
   const den = dot(n, V);
   if (Math.abs(den) > EPS) {
-    const t = dot(n, sub(axes.origine, r.origine)) / den;
+    const t = dot(n, sub(e.sol?.origine ?? axes.origine, r.origine)) / den;
     if (t > 0) return add(r.origine, scale(V, t));
   }
   if (e.depart) return add(r.origine, scale(V, Math.max(0, dot(sub(e.depart, r.origine), V))));

@@ -1,0 +1,34 @@
+/* Espace d'organisation (phase 5) : listes et onglets lisibles au téléphone (aucun défilement horizontal). */
+.org-page { display: grid; gap: 14px; }
+.org-page section.panel, .org-page .org-panel > section { min-width: 0; }
+.org-list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.org-list > li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: flex-start; border: 1px solid #dfe8e3; border-radius: 8px; padding: 8px 10px; min-width: 0; overflow-wrap: anywhere; }
+.org-list > li > div { min-width: 0; }
+.org-block { display: block; margin-top: 2px; }
+.org-status[data-status="suspendue"], .org-status[data-status="close"], .org-status[data-status="terminee"], .org-status[data-status="annule"], .org-status[data-status="refuse"], .org-status[data-status="termine"], .org-status[data-status="archive"] { background: #f6e1e1; color: #7e2020; }
+.org-status[data-status="propose"] { background: #fdf0d8; color: #6b4206; }
+.org-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #c3d3cb; }
+.org-tabs [role="tab"] { background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; padding: 0.5rem 0.9rem; min-height: 40px; cursor: pointer; color: #1d3a2f; }
+.org-tabs [role="tab"][aria-selected="true"] { background: #fff; border-color: #c3d3cb; font-weight: 600; margin-bottom: -1px; }
+.org-tabs [role="tab"]:focus-visible { outline: 3px solid #1d5c3f; outline-offset: 2px; }
+.org-panel { padding-top: 6px; }
+.org-dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; }
+.org-dl dt { font-weight: 600; }
+.org-pre { white-space: pre-wrap; }
+.org-chips { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.org-chips li { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #c3d3cb; border-radius: 12px; padding: 1px 8px; }
+.org-chips .link-button { min-height: 24px; min-width: 24px; }
+.org-inline { margin: 0; }
+.org-entries { display: grid; gap: 10px; margin: 8px 0; }
+.org-entry { border: 1px solid #dfe8e3; border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+.org-entry label { display: grid; gap: 4px; }
+.org-entry input, .org-entry select { padding: 0.45rem; border: 1px solid #b7c9c0; border-radius: 6px; min-height: 36px; max-width: 100%; }
+.org-checks { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.org-checks > span { flex-basis: 100%; font-weight: 600; }
+.org-checks .h7-checkbox { display: inline-flex; gap: 4px; align-items: center; }
+.org-template h3 { margin-top: 0; }
+@media (max-width: 700px) {
+  .org-dl { grid-template-columns: 1fr; }
+  .org-list > li { flex-direction: column; }
+}
+.org-page summary { cursor: pointer; padding-block: 6px; min-height: 24px; }

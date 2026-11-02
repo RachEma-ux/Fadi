@@ -64,6 +64,8 @@ Only list **current, verified pairs on the target branch** here. The index below
 | Collaboration Common Rules | [MD](Fadi%20Concept%20-%20Collaboration%20Common%20Rules.md) | [DOCX](Fadi%20Concept%20-%20Collaboration%20Common%20Rules.docx) | 1.0 |
 | Collaboration Concept Map | [MD](Fadi%20Concept%20-%20Collaboration%20Concept%20Map.md) | [DOCX](Fadi%20Concept%20-%20Collaboration%20Concept%20Map.docx) | 1.0 |
 | GeoData | [MD](Fadi%20Concept%20-%20GeoData.md) | [DOCX](Fadi%20Concept%20-%20GeoData.docx) | 1.0 |
+| Prix | [MD](Fadi%20Concept%20-%20Prix.md) | [DOCX](Fadi%20Concept%20-%20Prix.docx) | 1.1 |
+| Prix Plan | [MD](Fadi%20Concept%20-%20Prix%20Plan.md) | [DOCX](Fadi%20Concept%20-%20Prix%20Plan.docx) | 1.1 |
 | Axes | [MD](Fadi%20Concept%20-%20Axes.md) | [DOCX](Fadi%20Concept%20-%20Axes.docx) | 1.0 |
 
 After a pair is added, replace the placeholder with relative links to the corresponding `.md` and `.docx` files and their internal version.

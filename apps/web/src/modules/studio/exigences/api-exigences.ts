@@ -2,7 +2,7 @@
  * Client des routes d'exigences Studio (`/projects/:p/studio/studies/:s/exigences`, `…/variants/:v/controles`). Même
  * origine, cookie de session ; une réponse refusée lève `ErreurExigences` avec le message du serveur.
  */
-import type { ExigenceStudio, JeuExigences, ResultatControle } from "@parcours/atelier-model";
+import type { ConclusionControleNormative, ExigenceStudio, JeuExigences, ResultatControle } from "@parcours/atelier-model";
 
 export interface JeuLu extends JeuExigences { auteurEmail: string | null }
 export interface LectureExigences {
@@ -16,6 +16,8 @@ export interface ControleLu {
   id: string; studyId: string; variantId: string; revisionId: string; version: number | null;
   execution: ResultatControle["execution"]; conclusion: ResultatControle["conclusion"]; documentHash: string;
   auteur: string; auteurEmail: string | null; creeLe: string; resultat: ResultatControle;
+  /** EX-068 (lot PUB) : conclusion normative, absente d'un serveur antérieur. */
+  conclusionNormative?: ConclusionControleNormative;
 }
 
 export class ErreurExigences extends Error {
@@ -41,6 +43,6 @@ export const apiExigences = {
   accepter: (p: string, s: string, corps: { baseVersion: number; exigenceId: string; requestId: string }) =>
     appel<JeuLu & { replayed: boolean }>(`${etude(p, s)}/exigences/acceptations`, { method: "POST", body: JSON.stringify(corps) }),
   controles: (p: string, s: string, v: string) => appel<{ controles: ControleLu[] }>(`${etude(p, s)}/variants/${e(v)}/controles`),
-  controler: (p: string, s: string, v: string, corps: { revisionId: string; version?: number; requestId: string }) =>
+  controler: (p: string, s: string, v: string, corps: { revisionId: string; version?: number; nonApplicables?: { exigenceId: string; motif: string }[]; requestId: string }) =>
     appel<ControleLu & { replayed: boolean }>(`${etude(p, s)}/variants/${e(v)}/controles`, { method: "POST", body: JSON.stringify(corps) }),
 };

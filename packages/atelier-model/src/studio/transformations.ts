@@ -7,6 +7,7 @@ import type { StudioAngularDimension } from "./objets/cote-angulaire.js";
 import type { StudioText } from "./objets/texte.js";
 import type { StudioSolid } from "./objets-3d/solides.js";
 import { studioAnchorPoint } from "./objets/index.js";
+import { fail } from "./noyau/validation.js";
 
 /**
  * Transformations planes de Studio (Copier, Rotation, Symétrie, Échelle) : similitudes du repère `local-2d` (mètres),
@@ -184,15 +185,20 @@ export function studioTransformerCoteAngulaire(o: StudioAngularDimension, t: Stu
  * sauf « volumes aussi » qui multiplie dimensions, profil, hauteur et cote z de l'origine par le facteur.
  */
 export function studioTransformerSolide(s: StudioSolid, t: StudioTransformation, id: string = s.id): StudioSolid {
+  // Solide basculé (A.3-03) : une symétrie changerait l'orientation de ses axes ; refusée, jamais approchée.
+  if (t.miroir && s.placement.basculement) fail(`solides.${s.id}`, "symétrie d’un solide basculé non prise en charge : remettez-le d’aplomb d’abord");
   const k = t.volumes ? t.facteur : 1;
   const { origin, rotation } = s.placement;
   const z = pur(origin.z * k);
   const rot = studioAngleNormal(t.angle(rotation));
   const place = (p: StudioPoint) => { const q = t.point(p); return { x: q.x, y: q.y, z }; };
+  const bascule = s.placement.basculement ? { basculement: { ...s.placement.basculement } } : {};
   if (s.type === "box") {
     const depart = t.miroir ? { x: origin.x - Math.sin(rotation) * s.depth, y: origin.y + Math.cos(rotation) * s.depth } : origin;
-    return { ...s, id, placement: { origin: place(depart), rotation: rot }, width: s.width * k, depth: s.depth * k, height: s.height * k };
+    return { ...s, id, placement: { origin: place(depart), rotation: rot, ...bascule }, width: s.width * k, depth: s.depth * k, height: s.height * k };
   }
   const profile = s.profile.map((p) => P(p.x * k, (t.miroir ? -p.y : p.y) * k));
-  return { ...s, id, placement: { origin: place(origin), rotation: rot }, profile, height: s.height * k };
+  // Direction saisie (lot F1, repère local) : une symétrie la réfléchit comme le profil (y local opposé).
+  const direction = s.direction && t.miroir ? { direction: { ...s.direction, y: s.direction.y === 0 ? 0 : -s.direction.y } } : {};
+  return { ...s, id, placement: { origin: place(origin), rotation: rot, ...bascule }, profile, height: s.height * k, ...direction };
 }

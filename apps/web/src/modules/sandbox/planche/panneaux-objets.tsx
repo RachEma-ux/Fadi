@@ -510,7 +510,10 @@ export function PanneauAffichage({ options, onOptions, onReafficher, onSupprimer
 // ---------------------------------------------------------------------------------------------------------------
 // Scènes
 
-export function PanneauScenes({ modele, lecture, projection, champDeVision, onAjouter, onMettreAJour, onAppliquer, onSupprimer, onVueStandard, onProjection, onChampDeVision }: {
+export function PanneauScenes({ modele, lecture, projection, champDeVision, onAjouter, onMettreAJour, onAppliquer, onSupprimer, onVueStandard, onProjection, onChampDeVision, rappelerRepere = false, onRappelerRepere }: {
+  /** Chantier Axes (AX-3) : capturer le repère de travail avec la caméra (option visible, décochée par défaut). */
+  rappelerRepere?: boolean;
+  onRappelerRepere?: (v: boolean) => void;
   modele: Modele;
   lecture: boolean;
   projection: "perspective" | "parallele";
@@ -531,6 +534,12 @@ export function PanneauScenes({ modele, lecture, projection, champDeVision, onAj
         <button type="button" disabled={lecture} onClick={onAjouter} data-planche-scene-ajouter>{t("planche.scenes.ajouter")}</button>
         <button type="button" disabled={lecture || !active} onClick={() => active && onMettreAJour(active)} data-planche-scene-maj>{t("planche.scenes.mettre-a-jour")}</button>
       </div>
+      {onRappelerRepere && (
+        <label>
+          <input type="checkbox" checked={rappelerRepere} disabled={lecture} onChange={(e) => onRappelerRepere(e.target.checked)} data-planche-scene-repere />
+          {t("planche.scenes.rappeler-repere")}
+        </label>
+      )}
       <h4>{t("planche.scenes.camera")}</h4>
       <label>
         <input type="radio" name="planche-projection" checked={projection === "perspective"} onChange={() => onProjection("perspective")} /> {t("planche.scenes.perspective")}
@@ -562,7 +571,7 @@ export function PanneauScenes({ modele, lecture, projection, champDeVision, onAj
                 onAppliquer(s);
               }}
             >
-              {s.nom} <span className="inspecteur-aide">{s.projection === "parallele" ? t("planche.scenes.parallele") : `${virgule(s.champDeVision, 0)}°`}</span>
+              {s.nom} <span className="inspecteur-aide">{s.projection === "parallele" ? t("planche.scenes.parallele") : `${virgule(s.champDeVision, 0)}°`}{s.repere ? ` · ${t("planche.scenes.repere")}` : ""}</span>
             </button>
             {!lecture && (
               <button type="button" className="canevas-icone" aria-label={t("planche.scenes.supprimer")} title={t("planche.scenes.supprimer")} onClick={() => onSupprimer(s.id)}><IconeSandbox nom="fermer" /></button>

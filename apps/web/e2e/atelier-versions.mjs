@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-versions.mjs
  */
 import { createHash } from "node:crypto";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { allerEnPlan } from "./lib-barre.mjs";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -123,7 +124,7 @@ await autre.post(`${BASE}/auth/register`, { data: { email: `versions-autre-${Dat
 const moi = (await api("get", "/auth/me")).body;
 void moi;
 const emailAutre = (await (await autre.get(`${BASE}/auth/me`)).json()).email;
-check("second compte invité éditeur du tronc", (await api("post", `/projects/${pid}/members`, { email: emailAutre, role: "editeur" })).status === 201);
+check("second compte invité éditeur du tronc", (await inviterEtAccepter(appelPlaywright(page.request, BASE), appelPlaywright(autre, BASE), pid, emailAutre, "editeur")).ok);
 const revTronc = (await modele(pid)).revision;
 check("le second compte modifie le mur B dans le tronc", (await lot(pid, `autre-${Date.now()}`, revTronc, [{ type: "objet.modifier", params: { id: murB.id, params: { hauteur: m(3.4) } } }], autre)).status === 200);
 await ouvrir(vid);

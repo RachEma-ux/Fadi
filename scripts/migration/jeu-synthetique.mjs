@@ -101,9 +101,19 @@ export async function peupler(client, { fileLocale } = {}) {
     await q("INSERT INTO public.studio_tool_preferences (user_id, profile) VALUES ($1, 'standard')", [COMPTES.U1]);
     for (const [id, code] of [[PROJETS.P1, 'SYNTH-1'], [PROJETS.P2, 'SYNTH-2'], [PROJETS.P3, 'SYNTH-3']]) {
       await q('INSERT INTO public.projects (id, owner_id, code, name, model_revision) VALUES ($1, $2, $3, $4, 3)', [id, COMPTES.U1, code, `Projet synthétique ${code}`]);
-      await q("INSERT INTO public.project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'owner', 'synthetique')", [id, COMPTES.U1]);
     }
-    await q("INSERT INTO public.project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'editor', 'synthetique')", [PROJETS.P1, COMPTES.U2]);
+    // Lot OP-PONT (Issue #262) : `project_members` n'est plus qu'une vue de compatibilité, dérivée des participations.
+    // Le propriétaire a sa participation (sans rôle de partage) ; U2 est éditeur de P1 (participation + rôle `acces`
+    // Concepteur) — auparavant des lignes `project_members` de rôles « owner » / « editor », que l'ancien miroir ne
+    // traduisait en aucun accès.
+    for (const [n, userId] of [[1, COMPTES.U1], [2, COMPTES.U2]]) {
+      await q('INSERT INTO public.people (id, user_id) VALUES ($1, $2)', [`synth-per-${n}`, userId]);
+    }
+    for (const [i, id] of [PROJETS.P1, PROJETS.P2, PROJETS.P3].entries()) {
+      await q("INSERT INTO public.project_participations (id, project_id, person_id, status, starts_on) VALUES ($1, $2, 'synth-per-1', 'active', current_date)", [`synth-ppa-${i + 1}`, id]);
+    }
+    await q("INSERT INTO public.project_participations (id, project_id, person_id, status, starts_on, access_granted_by, access_granted_at) VALUES ('synth-ppa-u2', $1, 'synth-per-2', 'active', current_date, 'synthetique', now())", [PROJETS.P1]);
+    await q("INSERT INTO public.project_role_assignments (id, participation_id, role, scope_type, origin) VALUES ('synth-pra-u2', 'synth-ppa-u2', 'concepteur', 'projet', 'acces')");
     const P1 = PROJETS.P1;
     await q("INSERT INTO public.atelier_niveaux (project_id, id, nom, elevation, hauteur, ordre) VALUES ($1, 'rdc', 'RDC', 0, 3, 0), ($1, 'r1', 'R+1', 3, NULL, 1)", [P1]);
     await q("INSERT INTO public.atelier_calques (project_id, id, nom, ordre) VALUES ($1, 'c-murs', 'Murs', 0)", [P1]);

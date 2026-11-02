@@ -113,7 +113,15 @@ export interface StudioIfcSummary {
    */
   annotations?: number;
   /** Objets architecturaux (A.4), présents seulement quand le document en compte : murs, ouvertures, portes, fenêtres. */
-  architecture?: { walls: number; openings: number; doors: number; windows: number };
+  architecture?: {
+    walls: number; openings: number; doors: number; windows: number; /** EX-027 : échelles d’accès (IfcStair .LADDER.), présent seulement s’il y en a. */ ladders?: number;
+    /** Lot W3-B : poteaux, poutres, dalles (IfcColumn, IfcBeam, IfcSlab), présents seulement s’il y en a. */
+    columns?: number; beams?: number; slabs?: number;
+  };
+  /** Lot W3-B : niveaux écrits en `IfcBuildingStorey` (en plus du niveau de référence), présent seulement s’il y en a. */
+  storeys?: number;
+  /** Lot W3-B : définitions de composants (`IfcBuildingElementProxyType`) et occurrences (`IfcMappedItem`). */
+  components?: { types: number; occurrences: number };
   /**
    * Propriétés déclarées (E.1-01), présent seulement quand le document en porte : écrites dans `Fadi_ProprietesDeclarees`
    * (valuées) et non écrites (sans valeur, « non évaluées »).
@@ -126,6 +134,8 @@ export interface IfcConstruit {
   element: number;
   item: number;
   layerId: string;
+  /** Niveau de rattachement (lot W3-B) : l'élément est contenu dans l'`IfcBuildingStorey` de ce niveau. */
+  niveauId?: string;
 }
 
 /**
@@ -142,9 +152,11 @@ export interface IfcContexte {
   pt2(x: number, y: number): number;
   shape(reps: number[]): number;
   placed(x: number, y: number, z: number, ux?: number, uy?: number): number;
+  /** Placement d'orientation quelconque : axe z local (`axe`) et axe x local (`ref`), unitaires et orthogonaux. */
+  placedAxes(x: number, y: number, z: number, axe: { x: number; y: number; z: number }, ref: { x: number; y: number; z: number }): number;
   rectangleSolid(cx: number, cy: number, xDim: number, yDim: number, depth: number): number;
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
-  arbitrarySolid(ring: StudioPoint[], depth: number): number;
+  arbitrarySolid(ring: StudioPoint[], depth: number, direction?: { x: number; y: number; z: number }): number;
   proxy(o: StudioShapeBase, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number): number;
   /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
   stripItem(path: StudioPoint[], h: number): number;

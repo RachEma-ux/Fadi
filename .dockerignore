@@ -5,6 +5,8 @@ node_modules
 .git
 .github
 docs
+# Fiches de source GeoData qualifiées : copiées dans apps/api/dist/geodata-sources par le build de l'API.
+!docs/geodata/sources
 *.log
 .env
 .env.*

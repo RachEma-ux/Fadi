@@ -19,8 +19,10 @@
  */
 import { z } from "zod";
 import {
-  controlerSaisieAjustement, etatCibleQuantite, evaluerAjustementsQuantites, GRANDEURS_QUANTITE, quantitesStudio, STUDIO_LIMITES_AJUSTEMENTS, validateStudioDocument,
-  type AjustementQuantiteEnregistre, type GrandeurQuantite, type RefusAjustementEnregistre, type SaisieAjustementQuantite, type StudioDocument,
+  ajusterResultat, controlerSaisieAjustement, etatCibleQuantite, evaluerAjustementsQuantites, fraicheurResultats, GRANDEURS_QUANTITE, quantitesStudio, resultatsQuantitatifs,
+  STUDIO_LIMITES_AJUSTEMENTS, validateStudioDocument,
+  type AjustementQuantiteEnregistre, type GrandeurQuantite, type RefusAjustementEnregistre, type ResultatQuantitatif, type RevisionSourceQuantite, type SaisieAjustementQuantite,
+  type StudioDocument,
 } from "@parcours/atelier-model";
 import { empreinte, type Decision } from "./studio-exigences.js";
 
@@ -116,4 +118,27 @@ export function deciderAjustement(
       unit: input.unite, derivedValue: e.derivee, targetState: e.etat as Record<string, unknown>, motif: input.motif,
     },
   };
+}
+
+/**
+ * Résultats quantitatifs traçables d'une révision (IF-008, EX-077) : métré recalculé depuis le document immuable, jeu de
+ * sources (la révision et l'empreinte de son document), règle et version, exclusions, actualité par rapport à la tête
+ * courante. Les ajustements manuels EN VIGUEUR sur cette révision (journal évalué par le modèle) sont portés comme
+ * `manualAdjustment` distinct (motif, auteur, date) sur le résultat de leur objet et de leur grandeur ; la valeur
+ * calculée n'est jamais remplacée. Un ajustement « à revoir » n'est pas porté (il reste visible dans le journal).
+ */
+export function resultatsDeRevision(
+  document: unknown, source: RevisionSourceQuantite, headRevisionId: string, journal: readonly AjustementQuantiteEnregistre[], calculeLe: Date,
+): ResultatQuantitatif[] {
+  const doc: StudioDocument = validateStudioDocument(document);
+  const q = quantitesStudio(doc);
+  const enVigueur = evaluerAjustementsQuantites(doc, q, journal).objets;
+  const resultats = fraicheurResultats(resultatsQuantitatifs(doc, source, { calculeLe: calculeLe.toISOString(), metre: q }), new Map([[source.variantId, headRevisionId]]));
+  return resultats.map((r) => {
+    if (r.portee !== "objet") return r;
+    const a = enVigueur.find((x) => x.cible.type === "objet" && x.cible.id === r.sourceObjectIds[0] && x.grandeur === r.grandeur && x.valeur !== null);
+    if (!a) return r;
+    const ajuste = ajusterResultat(r, { valeur: a.valeur!, unit: a.unite, motif: a.motif, auteur: a.auteur, date: a.date });
+    return "ok" in ajuste ? ajuste.ok : r;
+  });
 }

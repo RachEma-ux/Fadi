@@ -245,7 +245,7 @@ export interface StudioPackageDocument {
   revisionShort: string;
   status: "diffuse" | "retire";
   /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC). */
-  contenu: "complet" | "dessin-2d";
+  contenu: "complet" | "dessin-2d" | "dossier-conception";
   /** Diffusion (lot E.4) : un seul paquet `diffuse` en vigueur par variante ; les précédents sont `remplace` ou `retire`. */
   diffusionStatus: "diffuse" | "remplace" | "retire";
   diffusedAt: string | null;

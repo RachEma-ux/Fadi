@@ -8,6 +8,9 @@ import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
+import { startSurveillance } from "./lib/studio-surveillance-db.js";
+import { attacherTempsReel } from "./lib/temps-reel-canal.js";
+import { arreterImportAuto, lancerImportAuto } from "./lib/geodata/import-auto.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 const host = process.env["HOST"];
@@ -90,15 +93,24 @@ Promise.resolve()
     console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}${config.transport === "smtp" ? (config.allowReservedDomains ? " ; domaines réservés envoyés (MAIL_ALLOW_RESERVED_DOMAINS, serveur de capture)" : " ; domaines réservés jamais envoyés") : ""}.`);
     // File de courriels et anonymisation différée (D-5) ; `ACCOUNT_WORKERS=0` les coupe (deuxième processus, outils).
     if (process.env["ACCOUNT_WORKERS"] !== "0") startAccountWorkers();
+    // Surveillance d'exploitation (R.5-03, OPS-08) : règles d'alerte évaluées chaque minute, transitions journalisées.
+    if (process.env["STUDIO_SURVEILLANCE"] !== "0") startSurveillance();
     const app = createApp();
     const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
+      // Données GeoData livrées avec le code (D-GD-23, D-GD-29) : au démarrage, fichiers archivés en base, fiches importées et
+      // publiées par la livraison (ou au nom de GEODATA_IMPORT_AUTO_PAR), découpage territorial écrit ; GEODATA_IMPORT_AUTO=non coupe.
+      lancerImportAuto();
     });
     // Connexions persistantes gardées plus longtemps que celles des relais et des clients (60 s) : un client qui
     // réutilise une connexion au moment où le serveur la ferme recevrait sinon un ECONNRESET.
     server.keepAliveTimeout = 65_000;
     server.headersTimeout = 66_000;
+    // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
+    const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
+    // Arrêt (déploiement) : les clients sont prévenus (1001) puis le processus s'arrête comme avant, sans attendre les connexions.
+    process.once("SIGTERM", () => { arreterTempsReel(); arreterImportAuto(); setTimeout(() => process.exit(0), 200); });
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

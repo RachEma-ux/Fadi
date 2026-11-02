@@ -12,3 +12,7 @@
 .studio-architecture-panneau .studio-architecture-actions{display:flex;flex-wrap:wrap;gap:.35rem}
 .studio-architecture-panneau dl{display:grid;grid-template-columns:auto auto;gap:.15rem .6rem;margin:.3rem 0}
 .studio-architecture-panneau dd{margin:0;text-align:right}
+/* Lot W3-B : poteau (plein), poutre (tiretée), dalle (translucide). */
+.studio-architecture-column polygon{fill:#a9a396;stroke:#3e3a33}
+.studio-architecture-beam polygon{fill:#cfc6b4;fill-opacity:.7;stroke:#3e3a33;stroke-dasharray:.12 .06}
+.studio-architecture-slab polygon{fill:#e8e2d4;fill-opacity:.35;stroke:#6e675a;stroke-width:1px}

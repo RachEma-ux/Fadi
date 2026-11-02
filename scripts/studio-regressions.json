@@ -1,0 +1,51 @@
+{
+  "$commentaire": "EX-101 — gestion des régressions (lot G4) : une modification qui touche une zone (Workers, registre d'outils, géométrie, projections) déclenche les tests pertinents de chaque catégorie exigée (exactitude, historique, permissions, persistance, profils). Lue par apps/api/src/testing/regressions-pertinentes.ts : chaque test listé doit exister, ne porter ni skip, ni only, ni todo, et être exécuté par la CI (test Vitest d'un paquet, ou recette e2e citée par .github/workflows/ci.yml). Tout fichier de Worker (*.worker.ts) et tout fichier du registre doit appartenir à une zone (contrôlé).",
+  "schema": "studio-regressions/1",
+  "categories": ["exactitude", "historique", "permissions", "persistance", "profils"],
+  "zones": {
+    "workers": {
+      "motifs": ["apps/web/src/modules/studio/workers/", "apps/web/src/modules/studio/taches/", "apps/web/src/modules/studio/exact/", "apps/web/src/modules/studio/**/*.worker.ts"],
+      "tests": {
+        "exactitude": ["apps/web/src/modules/studio/workers/equivalence.test.ts", "apps/web/src/modules/studio/workers/chemins-optimises.test.ts", "apps/web/src/modules/studio/exact/booleen-session.test.ts", "apps/web/src/modules/studio/exact/client-exact.test.ts"],
+        "historique": ["packages/atelier-model/src/studio/history.test.ts", "apps/web/src/modules/studio/planche2d/historique-borne.preuves-c.test.ts"],
+        "permissions": ["apps/api/src/routes/studio-permissions.test.ts", "apps/web/src/modules/studio/workers/validation-messages.test.ts"],
+        "persistance": ["apps/web/src/modules/studio/taches/plantage-integrite.preuves-c.test.ts", "apps/web/src/modules/studio/hors-ligne/file-locale.test.ts", "apps/web/e2e/studio-persistance.mjs"],
+        "profils": ["apps/web/src/modules/studio/taches/pool-studio.test.ts", "apps/api/src/routes/studio-profils.preuves-b.test.ts"]
+      }
+    },
+    "registre": {
+      "motifs": ["packages/atelier-model/src/studio/registre/", "packages/atelier-model/src/studio/manifeste-outils.ts", "packages/atelier-model/src/studio/fiches-outils.ts", "packages/atelier-model/src/studio/registry.ts", "packages/atelier-model/src/studio/compatibilite-outils.ts", "apps/web/src/modules/studio/planche2d/alternatives-gestes.ts"],
+      "tests": {
+        "exactitude": ["packages/atelier-model/src/studio/manifeste-outils.test.ts", "packages/atelier-model/src/studio/fiches-outils.test.ts", "packages/atelier-model/src/studio/mesh-3d.test.ts"],
+        "historique": ["packages/atelier-model/src/studio/history.test.ts"],
+        "permissions": ["apps/api/src/routes/studio-permissions.test.ts", "apps/web/e2e/studio-catalogue.mjs"],
+        "persistance": ["apps/web/src/modules/studio/hors-ligne/file-locale.test.ts", "apps/web/e2e/studio-persistance.mjs"],
+        "profils": ["packages/atelier-model/src/studio/compatibilite-outils.test.ts", "apps/api/src/routes/studio-profils.preuves-b.test.ts", "apps/api/src/routes/studio-profils-import.test.ts", "apps/web/src/modules/studio/planche2d/alternatives-gestes.test.ts"]
+      }
+    },
+    "geometrie": {
+      "motifs": ["packages/atelier-model/src/studio/objets-3d/", "packages/atelier-model/src/studio/noyau/", "packages/atelier-model/src/studio/architecture/", "packages/atelier-model/src/studio/mesh-3d.ts", "packages/atelier-model/src/studio/booleens-exacts.ts", "packages/geometry-exact/src/", "packages/core-geometry/src/"],
+      "tests": {
+        "exactitude": ["packages/atelier-model/src/studio/mesh-3d.test.ts", "packages/atelier-model/src/studio/objets-3d/objets-3d.test.ts", "packages/atelier-model/src/studio/f2-booleen.test.ts", "packages/geometry-exact/src/index.test.ts", "apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts"],
+        "historique": ["packages/atelier-model/src/studio/history.test.ts"],
+        "permissions": ["apps/api/src/routes/studio-permissions.test.ts"],
+        "persistance": ["apps/web/e2e/studio-persistance.mjs"],
+        "profils": ["packages/atelier-model/src/studio/compatibilite-outils.test.ts"]
+      }
+    },
+    "projections": {
+      "motifs": ["packages/atelier-model/src/studio/projections.ts", "packages/atelier-model/src/studio/exporteurs/", "packages/atelier-model/src/studio/export.ts", "packages/atelier-model/src/studio/ifc.ts", "apps/web/src/modules/studio/vue3d/scene-rendu.ts", "apps/web/src/modules/studio/vue3d/entrees-scene.ts", "apps/web/src/modules/studio/vue3d/picking.ts"],
+      "tests": {
+        "exactitude": ["packages/atelier-model/src/studio/projections.test.ts", "packages/atelier-model/src/studio/projections.preuves-a.test.ts", "packages/atelier-model/src/studio/export.test.ts", "apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts", "apps/web/src/modules/studio/vue3d/scene-rendu.preuves-b.test.ts", "apps/web/src/modules/studio/workers/chemins-optimises.test.ts"],
+        "historique": ["packages/atelier-model/src/studio/history.test.ts"],
+        "permissions": ["apps/api/src/routes/studio-permissions.test.ts"],
+        "persistance": ["apps/web/e2e/studio-persistance.mjs"],
+        "profils": ["packages/atelier-model/src/studio/compatibilite-outils.test.ts"]
+      }
+    }
+  },
+  "controlesObligatoires": {
+    "$commentaire": "Fichiers que la table doit couvrir : chaque fichier existant qui correspond à l'un de ces motifs appartient à au moins une zone.",
+    "motifs": ["apps/web/src/modules/studio/**/*.worker.ts", "packages/atelier-model/src/studio/registre/"]
+  }
+}

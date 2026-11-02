@@ -43,13 +43,22 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "../../components/Icon";
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, studioVueNiveau, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioLadder, type StudioWall } from "@parcours/atelier-model";
+import { moteurPlanche, texteMoteurPlanche } from "./planche2d/rendus/moteur-canvas";
+import { useNavigate } from "react-router-dom";
+import { BandeauSession } from "./temps-reel/BandeauSession";
+import { Superposition2D } from "./temps-reel/Superposition2D";
+import { estPresentateur, pointeursFrais } from "./temps-reel/etat-session";
+import { useSessionTempsReel } from "./temps-reel/useSessionTempsReel";
+import type { AnnotationSession, PointDeVue } from "./temps-reel/api-temps-reel";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
-import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
+import { useProfilOutils } from "./planche2d/CatalogueOutils";
+import { tableRaccourcisPersonnels } from "./planche2d/profils";
+import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, pasHorsHistorique, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
 import { ListeElements } from "./planche2d/ListeElements";
@@ -60,10 +69,11 @@ import { raisonEntree, type EtatDroit } from "./variante/droits";
 import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
-import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
+import { COMMANDES_EDITEUR, OUTILS_BATIMENT, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
 import { basculer, commandesDeplacement, elements, estForme, selectionValide, toutSelectionnable, type Element2D } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
+import { traceGeste } from "./taches/trace-geste";
 import { CONTENU_INITIAL, formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
 import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
@@ -79,9 +89,12 @@ import { PanneauQuantites } from "./quantites/PanneauQuantites";
 import { PanneauExigences } from "./exigences/PanneauExigences";
 import { cibleSelection } from "./exigences/exigences-ui";
 import { PanneauArchitecture } from "./planche2d/architecture/PanneauArchitecture";
+import { PanneauBatiment } from "./batiment/PanneauBatiment";
+import { choixVueValide, type ChoixVueNiveau } from "./batiment/batiment-ui";
 import { elementArchitectural, PARAMETRES_ARCHITECTURE_VIDES, type ParametresArchitecture } from "./planche2d/architecture/architecture-ui";
 import { CopieDeTravail } from "./variante/CopieDeTravail";
 import { AlerteStudio, BandeauHistorique, ChoixConflitStudio, EtatConnexionStudio, libelleModePlanche, SOUS_TITRE_PLANCHE, TitreEspace } from "./variante/BandeauVariante";
+import { commandeEclater } from "./blocs/blocs-ui";
 import { DialoguesStudio, type DialogueStudio } from "./variante/DialoguesStudio";
 import { refused } from "./variante/etat-variante";
 import { FormulaireValeurs } from "./variante/FormulaireValeurs";
@@ -102,12 +115,14 @@ import { cleVariante } from "./hors-ligne/persistance";
 import { mesurerCommandes } from "./chargement/mesures-studio";
 import { cheminEtudeStudio, cheminOutilConsoleStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
 import { contexteConsole } from "./console/contexte-console";
+import { cibleFocusBascule, deplacerFocusBascule } from "./variante/focus-bascule";
+import { panoramiqueClavier } from "./planche2d/vue-clavier";
 import {
   dansPaletteDuDomaine, definitionDomaine, DOMAINES_STUDIO, domaineDeLAdresse, domaineExecution, montre2d, montre3d, panneauxDuDomaine, PLANCHE_PAR_DEFAUT,
   type DomaineStudio, type FonctionStudio, type ModePlanche,
 } from "./domaines/domaines";
 import { LienPublications, NavigationDomaines, SectionDomaine, SelecteurPlanche, useEcranTelephone } from "./domaines/DomainesStudio";
-import type { ElementBarre } from "./planche2d/barre-compacte";
+import type { ElementBarre, IdFamille } from "./planche2d/barre-compacte";
 import { ActionsEspace, BarreEtat, PanneauLateral } from "./espace/EspaceStudio";
 import { memoriserContexte } from "./accueil/dernier-contexte";
 import "./studio.css";
@@ -140,6 +155,13 @@ const FILTRES_PALETTE: Readonly<Record<DomaineStudio, (e: ElementBarre) => boole
   DOMAINES_STUDIO.map((d) => [d.id, (e: ElementBarre) => dansPaletteDuDomaine(e, d.id)]),
 ) as Record<DomaineStudio, (e: ElementBarre) => boolean>);
 
+/**
+ * Familles propres à la palette d'un domaine, rangées juste après la famille active : « Feuille » et « Feuilles et
+ * dossier » (Présentation) restent en rangée dans Documentation, métrés et collaboration, même quand des commandes
+ * « à définir » (montrées dans toutes les palettes) s'ajoutent à l'Édition.
+ */
+const PRIORITES_PALETTE: Readonly<Partial<Record<DomaineStudio, readonly IdFamille[]>>> = Object.freeze({ documentation: Object.freeze(["presentation"] as const) });
+
 /** Titre du panneau latéral de chaque fonction (les blocs de la référence, `FONCTIONS_STUDIO`). */
 const TITRES_PANNEAUX: Readonly<Partial<Record<FonctionStudio, string>>> = Object.freeze({
   elements: "Éléments", exigences: "Propriétés et exigences", "scenes-rendus": "Scènes, apparence et rendus", publications: "Publications",
@@ -170,7 +192,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents", "approuver", "fusionner-variantes", "annuler-fusion"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -188,12 +210,23 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
+  // Lot F : rendu du modèle capturé par la vue 3D pour l'illustration (ouvre la boîte « Illustration depuis la vue »).
+  const [captureIllustration, setCaptureIllustration] = useState<{ png: Uint8Array; provenance: { revisionId: string; scene: { nom: string } | null } } | null>(null);
   // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
   const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
   // Compteur des lancements d'export : chaque export a son propre rapport (jamais celui d'une révision précédente).
   const [exportsLances, setExportsLances] = useState(0);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
+  // Moteur de la planche (F.1-02) : Canvas seulement avec un rapport de comparaison qualifiant (règle F.1-01) — rapport
+  // versionné du dépôt, ou proposé par une recette (`__fadiStudioRendu.proposer`) ; SVG sinon (DEC-08).
+  const [rapportCanvas, setRapportCanvas] = useState<StudioRapportAcceleration | null>(() => STUDIO_RAPPORTS_ACCELERATION.find((r) => r.acceleration === "rendu-canvas-planche") ?? null);
+  const moteur2d = useMemo(() => moteurPlanche(rapportCanvas), [rapportCanvas]);
+  useEffect(() => {
+    const crochet = { proposer: (r: StudioRapportAcceleration | null) => setRapportCanvas(r), moteur: () => moteur2d };
+    (globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu = crochet;
+    return () => { if ((globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu === crochet) delete (globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu; };
+  }, [moteur2d]);
   const [nomCalque, setNomCalque] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -214,6 +247,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Ce que montre le canevas : la planche choisie en Dessin, la vue 3D en Visualisation, le plan ailleurs. */
   const affichage: ModePlanche = domaineActif === "dessin" ? modePlanche : domaineActif === "visualisation" ? "3d" : "2d";
   const vue3d = montre3d(affichage), plan2d = montre2d(affichage);
+  /** Planche affichée avant une bascule demandée par l'utilisateur (Maj+D, sélecteur de planche) ; null sinon. */
+  const basculeDemandee = useRef<ModePlanche | null>(null);
+  useEffect(() => {
+    const avant = basculeDemandee.current;
+    if (avant === null) return;
+    basculeDemandee.current = null;
+    const cible = cibleFocusBascule(avant, affichage);
+    return cible && shell.current ? deplacerFocusBascule(shell.current, cible) : undefined;
+  }, [affichage]);
   // Vue 3D : navigation (orbite ou plan), coupe horizontale affichée, solide libre sélectionné.
   const [navigation3d, setNavigation3d] = useState<"orbite" | "plan">("orbite");
   const [coupe3d, setCoupe3d] = useState(false);
@@ -227,6 +269,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [hoteVisualisation, setHoteVisualisation] = useState<HTMLElement | null>(null);
   // Colonne des panneaux latéraux : repliable (bureau) ; au téléphone, les panneaux passent sous l'écran de travail.
   const [panneauxOuverts, setPanneauxOuverts] = useState(true);
+  // Vue par niveau (lot W3-B) : la planche et la vue 3D montrent les objets d'un niveau ; les commandes visent le document entier.
+  const [vueNiveau, setVueNiveau] = useState<ChoixVueNiveau>(null);
+  const [masquerLibres, setMasquerLibres] = useState(false);
   const ecran = useRef<HTMLDivElement>(null);
   // Architecture (A.4) : paramètres saisis des outils Mur / Ouverture et objet architectural sélectionné (2D ou 3D).
   const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
@@ -293,6 +338,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Mode des planches de Dessin et modélisation : dans l'adresse si elle porte le domaine, sinon en mémoire locale. */
   function poserPlanche(p: ModePlanche) {
     if (domaineActif !== "dessin") { choisirDomaine("dessin", p); return; }
+    // TR-EX-036 : la bascule demandée déplace le focus, de façon visible, vers la planche qui apparaît.
+    basculeDemandee.current = modePlanche;
     if (adresseSuivie) ecrireAdresse({ domaine: "dessin", planche: p, commentaires: false }, true);
     else setPlancheLocale(p);
   }
@@ -329,11 +376,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const selectionSet = new Set(selectionIds);
   const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
   // Calque d'un élément choisi, murs (A.4) compris : `elements` ne parcourt pas `architecture`.
-  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall => a.id === id && a.type === "wall")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
+  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall | StudioLadder => a.id === id && a.type !== "opening")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
   // Objet du panneau Architecture : l'ouverture ou le mur désigné, ou le seul mur de la sélection.
   const panneauArchi = elementArchitectural(drawing, selectionArchi) ? selectionArchi
-    : selectionIds.length === 1 && elementArchitectural(drawing, selectionIds[0]!)?.type === "wall" ? selectionIds[0]! : null;
+    : selectionIds.length === 1 && (elementArchitectural(drawing, selectionIds[0]!)?.type ?? "opening") !== "opening" ? selectionIds[0]! : null;
   const calques = drawing ? listeCalques(drawing) : [];
   const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
   // Le calque actif a disparu : le premier calque devient réellement actif (il ne reviendra pas seul après un rétablir).
@@ -351,6 +398,75 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     base: suite[suite.length - 1] ?? trace?.point ?? null,
   });
   const { cadre, pas, survol, poserCadre, cadreRef } = gestes;
+  /** TR-EX-036 : la planche 2D ayant le focus, les flèches déplacent la vue (Maj : d'une demi-vue), sans glisser. */
+  function panoramiquePlanche(e: { key: string; shiftKey: boolean; altKey: boolean; ctrlKey: boolean; metaKey: boolean; target: EventTarget; preventDefault: () => void }) {
+    if (e.altKey || e.ctrlKey || e.metaKey || !(e.target instanceof SVGSVGElement)) return;
+    const suivant = panoramiqueClavier(cadreRef.current, e.key, e.shiftKey);
+    if (!suivant) return;
+    e.preventDefault();
+    poserCadre(suivant);
+  }
+
+  // ——— Session en direct (Issue #283, RTC-2) : présence, vue du présentateur, pointeurs et sélections partagés ———
+  const navigate = useNavigate();
+  const tr = useSessionTempsReel(projectId, studyId, variantId, !autonome && !!context);
+  const enDirect = tr.etat.connexion === "connecte";
+  const presenteEnDirect = enDirect && estPresentateur(tr.etat);
+  const [cameraPartagee, setCameraPartagee] = useState<{ camera: StudioCameraScene; n: number } | null>(null);
+  const derniereCamera = useRef<StudioCameraScene | undefined>(undefined);
+  // Suivi : la vue du présentateur est posée (cadre du plan, caméra 3D), jamais la sélection, le brouillon ni la révision.
+  useEffect(() => {
+    const v = tr.etat.vue;
+    if (!enDirect || presenteEnDirect || !tr.suit || !v) return;
+    if (v.plan && plan2d) poserCadre(v.plan);
+    // La caméra posée par le suivi devient la vue courante (point de vue d'une annotation), sans être rediffusée.
+    if (v.camera && vue3d) { derniereCamera.current = v.camera as StudioCameraScene; setCameraPartagee({ camera: v.camera as StudioCameraScene, n: tr.etat.vueN }); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tr.etat.vueN, tr.suit, enDirect, presenteEnDirect]);
+  // Présentateur : sa vue part à chaque changement (le canal regroupe : 10 par seconde au plus).
+  useEffect(() => {
+    if (!presenteEnDirect) return;
+    tr.canal.partagerVue({ affichage, ...(plan2d ? { plan: cadre } : {}), ...(vue3d && derniereCamera.current ? { camera: derniereCamera.current } : {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presenteEnDirect, cadre, affichage]);
+  const partagerCamera = (c: StudioCameraScene) => {
+    derniereCamera.current = c;
+    if (presenteEnDirect) tr.canal.partagerVue({ affichage, camera: c, ...(plan2d ? { plan: cadreRef.current } : {}) });
+  };
+  // Pointeur (planche 2D) de chacun, montré aux autres avec son nom : position écran ramenée au repère `local-2d`.
+  const pointeurSession = (e: { clientX: number; clientY: number; currentTarget: EventTarget } | null) => {
+    if (!enDirect) return;
+    const svg = e && (e.currentTarget as HTMLElement).querySelector<SVGSVGElement>(":scope > svg");
+    const m = svg?.getScreenCTM();
+    if (!e || !m) { tr.canal.pointeur(null); return; }
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    tr.canal.pointeur({ espace: "plan", x: p.x, y: p.y });
+  };
+  useEffect(() => {
+    if (enDirect) tr.canal.selection(selectionIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enDirect, selectionIds.join("\u0000")]);
+  const nomsSession = Object.fromEntries(tr.etat.participants.map((p) => [p.userId, p.nom]));
+  // Pointeurs distants : relus chaque seconde tant qu'il y en a, pour qu'un pointeur périmé (10 s) disparaisse même
+  // sans autre rendu.
+  const [, setHorlogePointeurs] = useState(0);
+  const pointeursEnCours = enDirect && Object.keys(tr.etat.pointeurs).length > 0;
+  useEffect(() => {
+    if (!pointeursEnCours) return;
+    const t = setInterval(() => setHorlogePointeurs((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [pointeursEnCours]);
+  // Annotations (RTC-3) : la vue de cet écran devient le point de vue enregistré ; revoir un point de vue libère du suivi.
+  const vueCourante = (): PointDeVue => ({ affichage, ...(plan2d ? { plan: cadreRef.current } : {}), ...(vue3d && derniereCamera.current ? { camera: derniereCamera.current } : {}) });
+  const [cameraAnnotation, setCameraAnnotation] = useState<{ camera: StudioCameraScene; n: number } | null>(null);
+  // Reprendre le suivi oublie la caméra d'annotation : elle ne doit pas revenir au prochain passage en navigation libre.
+  useEffect(() => { if (tr.suit) setCameraAnnotation(null); }, [tr.suit]);
+  const voirPointDeVue = (a: AnnotationSession) => {
+    if (tr.suit && !presenteEnDirect) tr.actions.suivre(false);
+    const v = a.pointDeVue;
+    if (v.plan && plan2d) poserCadre(v.plan);
+    if (v.camera && vue3d) { derniereCamera.current = v.camera; setCameraAnnotation((c) => ({ camera: v.camera!, n: (c?.n ?? 1_000_000) + 1 })); }
+  };
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {
     if (!drawing || !gestes.apercu) return null;
@@ -385,7 +501,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function choisirArchitecture(id: string, ajouter: boolean) {
     const it = elementArchitectural(drawing, id);
     if (!it) return;
-    if (it.type === "wall") select(ajouter ? basculer(selectionIds, id) : [id]);
+    if (it.type !== "opening") select(ajouter ? basculer(selectionIds, id) : [id]);
     else select([]);
     if (!ajouter) setSelectionArchi(id);
   }
@@ -393,9 +509,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
   function apply(cs: StudioCommand[]): boolean {
     if (!brouillon || !writable) return false;
+    // EX-008 : l'intention (outil du geste) précède la commande appliquée au brouillon par le modèle.
+    traceGeste.noter("intention", { outil: tool ? String(tool) : cs[0]?.toolId });
     try {
       const next = mesurerCommandes(cs, () => appliquerBrouillon(brouillon, cs));
       setBrouillon(next);
+      traceGeste.noter("commande", { outil: cs.map((c) => c.toolId).join(" ") });
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
       const updated = seul ? elements(doc).find(e => e.id === seul) : undefined;
@@ -488,6 +607,37 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       if (b) b.click(); else setInfo("Sélectionnez d’abord un mur, une ouverture ou un objet extrudé.");
       return;
     }
+    // Graphismes (EX-055) et système de projet (EX-023) : saisis dans leur boîte ; un graphisme sélectionné se retire aussitôt.
+    if (toolId === "studio.graphisme.creer") { setDialogue("graphismes"); return; }
+    if (toolId === "studio.repere.projet") { setDialogue("systeme-projet"); return; }
+    // Blocs définis par l'utilisateur et contraintes (X.1-01) : saisis dans leur boîte ; une insertion sélectionnée s'éclate aussitôt.
+    if (toolId === "studio.bloc.definir" || toolId === "studio.bloc.inserer") { setDialogue("blocs"); return; }
+    if (toolId === "studio.contrainte.poser") { setDialogue("contraintes"); return; }
+    if (toolId === "studio.bloc.eclater") {
+      const r = commandeEclater(drawing, selectionIds);
+      if ("erreur" in r) { setInfo(r.erreur); return; }
+      if (apply(r.commandes)) select(selectionIds.filter((id) => !r.commandes.some((c) => (c.params as { ids: string[] }).ids.includes(id))));
+      return;
+    }
+    // Source importée (EX-014) : elle accompagne un import DXF ; le raccourci ouvre « Importer DXF ».
+    if (toolId === "studio.source.declarer") { setDialogue("import-dxf"); setInfo("Une source se déclare avec son import : choisissez le fichier DXF."); return; }
+    if (toolId === "studio.graphisme.retirer") {
+      const ids = selectionIds.filter((id) => drawing.graphismes?.some((g) => g.id === id));
+      if (ids.length) { if (apply([{ toolId: "studio.graphisme.retirer", params: { ids } }])) select(selectionIds.filter((id) => !ids.includes(id))); }
+      else setDialogue("graphismes");
+      return;
+    }
+    if (toolId === "studio.dessin.supprimer" && selectionIds.length && selectionIds.every((id) => drawing.graphismes?.some((g) => g.id === id))) {
+      if (apply([{ toolId: "studio.graphisme.retirer", params: { ids: selectionIds } }])) setSelection([]);
+      return;
+    }
+    // Éléments non natifs (lot F3) : ils naissent d'un import (Importer IFC) ; on les retire depuis « Éléments du dessin ».
+    if (toolId === "studio.nonnatif.conserver") { setDialogue("import-ifc"); setInfo("Un élément non natif naît d’un import : choisissez le fichier IFC."); return; }
+    if (toolId === "studio.nonnatif.retirer") {
+      const b = shell.current?.querySelector<HTMLButtonElement>("[data-studio-nonnatif-retirer]");
+      if (b && !b.disabled) b.click(); else setInfo("Cochez d’abord, dans « Éléments du dessin », l’élément non natif à retirer.");
+      return;
+    }
     if (toolId === "studio.solide.supprimer") {
       if (!solide3d || !drawing.solides?.some(s => s.id === solide3d)) { setInfo("Sélectionnez d’abord, dans la vue 3D, le solide à supprimer."); return; }
       if (apply([{ toolId: "studio.solide.supprimer", params: { ids: [solide3d] } }])) setSolide3d(null);
@@ -552,12 +702,23 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function undo() { if (brouillon && peutAnnuler(brouillon) && writable) { cancelTrace(); setBrouillon(annulerBrouillon(brouillon)); setError(""); } }
   function redo() { if (brouillon && peutRetablir(brouillon) && writable) { cancelTrace(); setBrouillon(retablirBrouillon(brouillon)); setError(""); } }
   function fullscreen() { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }
+  // Plein écran (ADR-STUDIO-NAV-01, E-C ; I.5-03) : tant que l'espace est en plein écran, une sortie reste visible dans
+  // la barre de l'espace (la commande « Plein écran / Quitter » peut être rangée dans un menu replié de la barre d'outils).
+  const [pleinEcran, setPleinEcran] = useState(false);
+  useEffect(() => {
+    const suivre = () => setPleinEcran(!!shell.current && document.fullscreenElement === shell.current);
+    document.addEventListener("fullscreenchange", suivre);
+    return () => document.removeEventListener("fullscreenchange", suivre);
+  }, []);
   // Console : « Enregistrer » crée, dans un projet choisi, une étude avec ce qui a été dessiné (boîte `console/`).
   const canSave = autonome ? commands.length > 0 : !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
   const liens: Partial<Record<IdCommandeEditeur, string>> = autonome ? {} : {
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
     "exporter-ifc": studioExportUrl(projectId, studyId, variantId, "ifc", revisionId),
+    "exporter-obj": studioExportUrl(projectId, studyId, variantId, "obj", revisionId),
+    "exporter-stl": studioExportUrl(projectId, studyId, variantId, "stl", revisionId),
+    "exporter-step": studioExportUrl(projectId, studyId, variantId, "step", revisionId),
   };
   function runCommand(id: CommandeEditeur["id"]) {
     switch (id) {
@@ -584,15 +745,22 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "coupe-3d": ouvrir3d(); return setCoupe3d(v => !(vue3d && v));
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
-      case "exporter-svg": case "exporter-dxf": case "exporter-ifc":
+      case "exporter-svg": case "exporter-dxf": case "exporter-ifc": case "exporter-obj": case "exporter-stl": case "exporter-step":
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
       case "exporter-png": return demander3d("exporter-png");
+      case "illustration": return demander3d("illustration");
+      case "agents": return setDialogue("agents");
       case "importer-dxf": return setDialogue("import-dxf");
+      case "importer-ifc": return setDialogue("import-ifc");
+      case "modeles-externes": return setDialogue("modeles-externes");
       case "feuille": return setDialogue("feuille");
       case "dossier": return setDialogue("dossier");
       case "echanges": return setDialogue("echanges");
+      case "approuver": return setDialogue("approbation");
+      case "fusionner-variantes": return setDialogue("fusion");
+      case "annuler-fusion": return setDialogue("annulation-fusion");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": {
@@ -606,6 +774,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
+    if (id === "exporter-obj" || id === "exporter-stl" || id === "exporter-step") {
+      // Exports 3D (E.6-04) : la géométrie 3D seulement ; leur bilan est dans la matrice d’échanges (rien n’est écarté en silence).
+      setInfo("L’export 3D porte sur la révision enregistrée affichée ; cotes, textes et graphismes, qui ne sont pas des géométries 3D, n’y sont pas écrits (matrice d’échanges).");
+      setExportsLances((n) => n + 1);
+      return;
+    }
     if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
     if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
     setExportsLances((n) => n + 1);
@@ -647,12 +821,24 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     setDialogue(null);
     executer(e.cible, true);
   }
-  useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace });
+  // Raccourcis personnels du profil (EX-034) : appliqués après la table native, jamais une combinaison en conflit.
+  const prefsOutils = useProfilOutils(projectId).preferences;
+  const raccourcisPersonnels = useMemo(() => tableRaccourcisPersonnels(prefsOutils), [prefsOutils]);
+  useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace, personnels: raccourcisPersonnels });
   // Cycle des outils (B.3-01) : moteurs de l'outil chargés au besoin puis actifs ; première planche prête (PERF-01).
   useCycleOutils({ outil: tool, pret: !loading && !!context && !!drawing, objets: drawing?.objects.length ?? 0 });
 
   // L'écran de travail (barre, palette, canevas, panneaux, barre d'état) remplit la hauteur sous l'en-tête de Fadi.
   const hauteur = useHauteurDisponible(ecran, telephone ? 560 : 480, !!context && !!drawing && !document.fullscreenElement);
+  // EX-049 : un tracé commencé est une prévisualisation, notée avec le brouillon conservé (abandonnée si la session s'interrompt).
+  const outilApercu = trace && tool ? String(tool) : null;
+  useEffect(() => { enr.noterApercu(outilApercu); }, [outilApercu]);
+  // Document affiché par la planche et la vue 3D : le document entier, ou sa vue par niveau (dérivée, jamais enregistrée).
+  const choixNiveau = choixVueValide(drawing ?? null, vueNiveau);
+  const docVue = (() => {
+    if (!drawing || choixNiveau === null) return drawing;
+    try { return studioVueNiveau(drawing, choixNiveau, { libres: masquerLibres ? "masquer" : "garder" }); } catch { return drawing; }
+  })();
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
@@ -676,7 +862,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const palette = context && drawing ? <div className="studio-palette" data-studio-palette-outils={domaineActif}>
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={libelleSave}
       basculeActive={basculeActive} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien}
-      filtre={FILTRES_PALETTE[domaineActif]} orientation={telephone ? "horizontale" : "verticale"} libelle={domaineActif === "dessin" ? "Outils de dessin" : `Outils — ${domaine01.libelleFR}`} />
+      filtre={FILTRES_PALETTE[domaineActif]} prioritaires={PRIORITES_PALETTE[domaineActif]} orientation={telephone ? "horizontale" : "verticale"} libelle={domaineActif === "dessin" ? "Outils de dessin" : `Outils — ${domaine01.libelleFR}`} />
   </div> : null;
   /** Bloc d'une fonction de l'espace (`FONCTIONS_STUDIO`), rendu dans un panneau latéral de son domaine. */
   function bloc(f: FonctionStudio): ReactNode {
@@ -684,7 +870,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (autonome && PANNEAUX_D_ETUDE.has(f)) return <p className="studio-info" data-studio-console-indisponible={f}>Ce panneau lit et écrit dans une étude de projet : il n’est pas disponible dans la Console.</p>;
     switch (f) {
       case "outils": case "planches": case "portee-annuler": return null;
-      case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />;
+      case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")}
+        surRetirerNonNatifs={(ids) => apply([{ toolId: "studio.nonnatif.retirer", params: { ids } }])} />;
       case "exigences": return <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}
         modifiable={writable} ecriture={!historical && context.canWrite} nonEnregistre={commands.length > 0} surCommandes={apply} surErreur={setError} />;
       // Scènes, apparence et rendus : les panneaux de la vue 3D (même moteur), rendus ici par un portail.
@@ -701,18 +888,25 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Canevas : Planche 2D, Planche 3D ou les deux (Double vue) ; la vue 3D garde sa place (même moteur d'un domaine à l'autre). */
   const canevas = context && drawing ? <div className="studio-canevas" data-studio-canevas={affichage} data-studio-domaine-canevas={domaineActif}>
     <div className="studio-canevas-vues">
-    {plan2d && <div className="studio-sheet" data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
-      <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
+    {plan2d && <div className="studio-sheet" data-studio-moteur-planche={moteur2d.moteur} onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
+      <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? docVue ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])}
-        architecture={{ selection: new Set([...selectionIds, ...(selectionArchi ? [selectionArchi] : [])]), surSelection: choisirArchitecture, versPlanche: OUTILS_TRACE.has(tool) }} />
+        architecture={{ selection: new Set([...selectionIds, ...(selectionArchi ? [selectionArchi] : [])]), surSelection: choisirArchitecture, versPlanche: OUTILS_TRACE.has(tool) }}
+        superposition={enDirect ? <Superposition2D doc={drawing} cadre={cadre} pointeurs={pointeursFrais(tr.etat, Date.now())} selections={tr.etat.selections} noms={nomsSession} /> : undefined}
+        moteur={moteur2d.moteur} />
+      {moteur2d.verdict && <p className="studio-moteur-planche" role="status" data-studio-moteur-etat={moteur2d.moteur}>{texteMoteurPlanche(moteur2d)}</p>}
     </div>}
-    {vue3d && <div className="studio-canevas-3d"><Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
+    {vue3d && <div className="studio-canevas-3d" data-studio-vue-niveau-active={choixNiveau ?? ""}><Vue3D doc={docVue ?? drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
       demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d} remplir
+      cameraPartagee={enDirect && tr.suit && !presenteEnDirect ? cameraPartagee : cameraAnnotation} surCameraLocale={partagerCamera}
+      surPointeur3d={enDirect ? (p) => tr.canal.pointeur(p ? { espace: "3d", ...p } : null) : undefined}
+      pointeurs3d={enDirect ? pointeursFrais(tr.etat, Date.now()).filter((p) => p.espace === "3d").map((p) => ({ userId: p.userId, nom: p.nom || nomsSession[p.userId] || "", x: p.x, y: p.y, z: p.z ?? 0 })) : undefined}
       hotePanneaux={domaineActif === "visualisation" ? hoteVisualisation : hote3dDessin} visualisation={domaineActif === "visualisation"}
-      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} /></div>}
+      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0, auteur: user ? { id: user.id, email: user.email } : null }}
+      surIllustration={(c) => { setCaptureIllustration(c); setDialogue("illustration"); }} /></div>}
     </div>
     {/* Saisie des mesures et avis : sous les vues (jamais par-dessus le dessin, où ils intercepteraient les clics). */}
     <div className="studio-canevas-avis">
@@ -734,9 +928,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {d.id === "dessin" && <PanneauLateral id="proprietes" titre="Propriétés">
           <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
             surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-            architecture={<PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
-              contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />}
-            formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
+            architecture={<><PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
+              contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />
+              {OUTILS_BATIMENT.has(tool) && <PanneauBatiment doc={drawing} outil={tool} modifiable={writable} contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })}
+                surCommandes={apply} surErreur={setError} vueNiveau={choixNiveau} surVueNiveau={setVueNiveau} masquerLibres={masquerLibres} surMasquerLibres={setMasquerLibres} />}</>}
+            formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !OUTILS_BATIMENT.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
               values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
               sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
             calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} />
@@ -747,8 +943,33 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     </div>
   </aside> : null;
   const barreEtat = context && drawing ? <BarreEtat aide={hint} coordonnees={plan2d ? survol?.point ?? null : null} accrochages={accrochagesActifs} pas={pas} pasAffiche={pasAffiche}
-    planche={libelleModePlanche(affichage)} sousTitre={SOUS_TITRE_PLANCHE[affichage]} enAttente={commands.length} etat={etat} lectureSeule={!context.canWrite} revision={context.revision.id}
+    planche={libelleModePlanche(affichage)} sousTitre={SOUS_TITRE_PLANCHE[affichage]} enAttente={commands.length} horsHistorique={brouillon ? pasHorsHistorique(brouillon) : 0} etat={etat} lectureSeule={!context.canWrite} revision={context.revision.id}
     connexion={!historical && !autonome ? <EtatConnexionStudio etat={enr.horsLigne} /> : undefined} /> : null;
+  /**
+   * Session en direct : afficher la révision qu'elle montre, sur demande explicite. Tête de la variante : relue sur place
+   * (jamais par-dessus un brouillon non enregistré) ; révision antérieure : ouverte en lecture, la session reste rejointe.
+   */
+  async function afficherRevisionSession(r: string) {
+    // Le brouillon n'est jamais remplacé ni déchargé : la protection précède les deux voies (rechargement sur place, ou
+    // navigation qui démonte l'espace de travail sans passer par la garde de navigation) et se relit après la lecture.
+    const brouillonNonVide = () => !!affiche.current.brouillon && commandesEnAttente(affiche.current.brouillon).length > 0;
+    const refuser = () => setInfo("Enregistrez ou abandonnez votre brouillon avant d’afficher la révision de la session : il n’est jamais remplacé.");
+    if (brouillonNonVide()) { refuser(); return; }
+    const depart = affiche.current.context?.revision.id ?? "", brouillonDepart = affiche.current.brouillon;
+    try {
+      const c = await api.studioContext(projectId, studyId, variantId);
+      if (!alive.current) return;
+      // Une saisie ou un enregistrement survenu pendant la lecture la rend caduque (même règle que l'avis de révision).
+      if (brouillonNonVide() || !lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) { refuser(); return; }
+      if (c.revision.id === r && !historical) {
+        setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError("");
+        return;
+      }
+      navigate(cheminVarianteStudio(projectId, studyId, variantId, r === c.variant.headRevisionId ? null : r, adresseDomaine));
+    } catch {
+      setError("Serveur injoignable : réessayez.");
+    }
+  }
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={autonome ? undefined : variantId} data-studio-console-outil={autonome ? "" : undefined} data-studio-revision-vue={historical ? revisionId : undefined}
     data-studio-domaine-affiche={domaineActif} data-studio-affichage={affichage} data-studio-telephone={telephone ? "" : undefined}>
     <TitreEspace context={context} />
@@ -760,9 +981,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {domaineActif === "dessin" && <SelecteurPlanche active={plancheActive} surChoix={choisirPlanche} />}
         <span className="studio-barre-espace-vide" />
         {context && drawing && <ActionsEspace disponible={commandAvailable} raison={(id) => raisonCible({ type: "commande", id })} libelle={libelleSave} surCommande={(id) => executer({ type: "commande", id }, true)} />}
+        {context && drawing && !autonome && <BandeauSession emplacement="barre" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
+          surAfficherRevision={(r) => void afficherRevisionSession(r)} vueCourante={vueCourante} selectionIds={selectionIds} surVoirPointDeVue={voirPointDeVue} />}
+        {pleinEcran && <button type="button" className="studio-bouton-commentaires" aria-label="Quitter le plein écran" title="Quitter le plein écran" aria-keyshortcuts="Control+Shift+F Escape"
+          onClick={() => void document.exitFullscreen()} data-studio-quitter-plein-ecran><Icon name="studio-fullscreen" size={18} /></button>}
         {context && drawing && !autonome && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
       </div>
       <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
+      {context && drawing && !autonome && <BandeauSession emplacement="bandeau" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
+        surAfficherRevision={(r) => void afficherRevisionSession(r)} vueCourante={vueCourante} selectionIds={selectionIds} surVoirPointDeVue={voirPointDeVue} />}
       <AvisFileLocale cle={user && !historical && !autonome ? cleVariante(user.id, projectId, studyId, variantId) : null} />
       {loading && <p role="status">Chargement de la planche…</p>}
       {context && drawing && !historical && !autonome && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
@@ -776,7 +1003,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       {historical && <BandeauHistorique projectId={projectId} studyId={studyId} variantId={variantId} adresse={adresseDomaine} />}
       {/* Exemple protégé : par le mode du projet (un lecteur reçoit le motif « role », mais peut copier — revue #208). */}
       {!historical && !autonome && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
-      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
+      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} surAcquitter={() => enr.acquitterReprise()} />}
       {context && drawing && <div className="studio-corps" data-studio-corps>
         {!telephone && palette}
         {canevas}
@@ -789,10 +1016,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {context && drawing && <>
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} raison={raisonDe} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
+      surImporterIfc={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import IFC ajouté au brouillon : ${r.rapport.entites.total} objet(s) natif(s), ${r.rapport.nonNatifsTotal} élément(s) non natif(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
+      ecritureServeur={!historical && context.canWrite}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
       portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}
-      enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined} />
+      captureIllustration={captureIllustration}
+      enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined}
+      surAppliquer={writable ? (cs) => apply(cs) : undefined} calqueActif={actif?.id} selection={selectionIds} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

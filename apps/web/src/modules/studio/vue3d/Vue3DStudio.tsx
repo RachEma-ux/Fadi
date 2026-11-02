@@ -8,6 +8,16 @@
  * saisies ; Prisme sur profil copie le contour d'une polyligne fermée, posé à la cote saisie ; un clic sur un solide
  * libre (ou la liste des solides) le sélectionne pour le déplacer (dx, dy, dz) ou le supprimer. Chaque geste passe par
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
+ * Lot F1 : le prisme demande sa relation à la polyligne (référence liée, associé, copie indépendante) et sa direction
+ * (+Z, −Z, vecteur) ; le solide sélectionné se modifie par ses faces (pousser / tirer, diviser), pivote autour de son axe
+ * vertical, et son lien au profil (relation, état « à jour » ou « à résoudre ») est affiché et se résout explicitement.
+ * Un solide lié à résoudre n'a pas de volume évalué : sa dernière géométrie reste dessinée, marquée comme telle.
+ * Lot F2 : l'outil « Booléen exact » (`PanneauBooleen`) calcule union, différence ou intersection de deux solides par le
+ * noyau exact (Worker OCCT chargé à l'activation de l'outil) ; les solides exacts sont dessinés depuis le maillage du
+ * noyau conservé dans le document (aucun noyau chargé pour les afficher), désignables et supprimables.
+ * X.1-05 : surfaces libres NURBS (`PanneauSurfaces`) — créer une grille de pôles, modifier un pôle et son poids (liste
+ * ou clic sur son repère), épaissir en solide exact par le noyau (surface conservée) ; nappe dessinée depuis le
+ * maillage d'affichage dérivé, polygone de contrôle et pôles de la surface sélectionnée.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
  * Maillage en tâche de fond (D.1/D.2, `taches/`) : le maillage tourne dans le groupe de Workers ; le maillage
@@ -29,38 +39,56 @@
  * `iTXt` : étude, variante, révision affichée, scène, date, « rendu du modèle »). La barre transmet ses outils
  * `studio.scene.*` / `studio.apparence.*` et la commande `exporter-png` par `demande`.
  */
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mesurerRendu3d } from "../chargement/mesures-studio";
 import {
-  couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
-  studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide,
+  couperStudio, projectionsAInvalider, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
+  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioValeurCoteFace, studioVersionProjection, studioVolumeSolide, type StudioSolid,
   type StudioCacheMaillage, type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioInvalidation, type StudioMesh3d,
   type StudioModeAffichage, type StudioMorceauMaillage, type StudioScene,
 } from "@parcours/atelier-model";
 import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
-import { compteGpu, libererObjet, vider } from "./ressources-gpu";
-import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
-import { designer, type Impact } from "./picking";
+import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
+import { impactDe, SceneRendu } from "./scene-rendu";
+import { entreesArchitecture, entreesContenu, entreesLibres, type Lecture } from "./entrees-scene";
+import { designer } from "./picking";
+import { basculerMembre, commandeDeplacerGroupe, commandeEchelleGroupe, commandePivoterGroupe, commandeSupprimerGroupe, membresGroupe } from "./groupe-3d";
+import {
+  descriptionReduction, ETAT_QUALITE_INITIAL, observerTrame, paliersApplicables, PALIERS_QUALITE, rapportPixels, reglageEffectif, reglageQualite,
+  type CapacitesRendu, type EtatQualite, type ReglageQualite,
+} from "./qualite-rendu";
+import { PresentationSansMsaa } from "./presentation";
+import { CouvertureTypes3d } from "./CouvertureTypes3d";
+import { etatProjection3d, LIBELLES_DOMAINES, type SourceProjection } from "./etat-projection";
+import { traceGeste } from "../taches/trace-geste";
 import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
-  type ValeursBoite, type ValeursDeplacement, type ValeursPrisme,
+  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeCoteFace, commandeDeplacementSolide, commandeDivision, descriptionCoteFace, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  type AxePivot,
+  descriptionLien, descriptionSolide, FACE_VIDE, facesDe, PRISME_VIDE, profilsFermes, RELATIONS_PRISME,
+  type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
 } from "./volume-libre";
 import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
+import { descriptionOperande, PanneauBooleen } from "./PanneauBooleen";
+import { PanneauSurfaces } from "./PanneauSurfaces";
+import { PanneauSubdivisions } from "./PanneauSubdivisions";
+import { descriptionSubdivision } from "./surfaces-ui";
+import { descriptionSurface } from "./surfaces-ui";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
 import {
   calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
-  apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
+  apparenceDe, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
 } from "./scenes/scenes-ui";
 import "./vue3d.css";
+import { choisirMoteur3d, texteMoteur3d, type AccesGpu, type ChoixMoteur3d } from "./moteur-3d";
 
 export type Navigation3d = "orbite" | "plan";
 
@@ -88,7 +116,7 @@ export interface Vue3DStudioProps {
   /** Passage orbite / plan demandé par le rappel d'une scène (perspective / orthographique). */
   surNavigation?: (n: Navigation3d) => void;
   /** Provenance du rendu : étude, variante, révision affichée ; `nonEnregistre` : le brouillon diffère de la révision. */
-  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean };
+  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean; auteur?: { id: string; email: string } | null };
   /**
    * Espace de travail : panneaux de la vue (saisie des solides, solides libres, murs et ouvertures, scènes et rendus,
    * coupe) rendus dans ce conteneur du panneau latéral (portail React : l'état reste celui de la vue). Absent : sous la vue.
@@ -98,6 +126,22 @@ export interface Vue3DStudioProps {
   visualisation?: boolean;
   /** La vue remplit la hauteur de son conteneur (canevas de l'espace de travail) au lieu d'un rapport fixe. */
   remplir?: boolean;
+  /**
+   * Session en direct (Issue #283) : caméra du présentateur à poser (suivi), réappliquée quand `n` change. Une caméra
+   * orthographique demande la navigation « plan », une perspective l'orbite (`surNavigation`).
+   */
+  cameraPartagee?: { camera: StudioCameraScene; n: number } | null;
+  /** Caméra de cette vue déplacée (navigation) : le présentateur la partage. */
+  surCameraLocale?: (c: StudioCameraScene) => void;
+  /** Pointeur de cette vue dans le repère `local-3d` (premier objet touché, sinon le sol z = 0) ; null quand il sort. */
+  surPointeur3d?: (p: { x: number; y: number; z: number } | null) => void;
+  /** Pointeurs des autres participants (session en direct) : marques nommées, jamais une donnée du document. */
+  pointeurs3d?: readonly { userId: string; nom: string; x: number; y: number; z: number }[];
+  /**
+   * Illustration depuis la vue (lot F) : rendu du modèle capturé (PNG portant sa provenance `fadi:rendu`), transmis à
+   * l'espace de travail qui ouvre la boîte « Illustration ». Rien n'est envoyé ni modifié ici.
+   */
+  surIllustration?: (c: { png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu> }) => void;
 }
 
 interface Moteur {
@@ -112,12 +156,34 @@ interface Moteur {
   /** Murs (vides compris) et ouvertures (A.4), désignables. */
   architecture: THREE.Group;
   surimpression: THREE.Group;
+  /** Pointeurs des autres participants (session en direct). */
+  presence: THREE.Group;
   /** Scènes de rendu incrémentales (C.2) des trois groupes. */
   rendus: { contenu: SceneRendu; libres: SceneRendu; architecture: SceneRendu };
+  /** Dégradation sûre sous charge (TR-EX-057) : état de la politique, réglage appliqué, présentation sans MSAA. */
+  qualite: EtatQualite;
+  reglage: ReglageQualite;
+  presentation: PresentationSansMsaa | null;
+  /** Vrai pendant l'export PNG : la qualité complète est tenue, la politique n'observe pas. */
+  qualiteTenue: boolean;
+  /** Charge simulée (ms ajoutées à chaque rendu) : recette seulement (`__fadiVue3d.charge`), nulle sinon. */
+  charge: number;
+  appliquerQualite: (r: ReglageQualite) => void;
   rendre: () => void;
   /** Caméra déplacée (navigation, rappel) : la scène active est réévaluée. */
   surCamera: () => void;
 }
+
+/**
+ * Leviers de la dégradation sûre (TR-EX-057, `qualite-rendu.ts`) : la scène de la vue (lumière hémisphérique et soleil
+ * sans ombre portée) ne calcule aucune ombre — le palier « ombres » est donc sans objet et sauté ; résolution de
+ * présentation (rapport de pixels) et anti-crénelage (`presentation.ts`) sont actionnés.
+ */
+const CAPACITES_RENDU: CapacitesRendu = Object.freeze({ ombres: false, antiCrenelage: true });
+
+/** Teinte d'une personne (même suite que la surimpression 2D) : complète son nom, ne le remplace jamais. */
+const TEINTES_PRESENCE = ["#b4005a", "#005fb4", "#007a3d", "#8a4b00", "#5a2db4", "#00707a"];
+const teintePresence = (userId: string) => TEINTES_PRESENCE[[...userId].reduce((n, c) => n + c.charCodeAt(0), 0) % TEINTES_PRESENCE.length]!;
 
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 
@@ -125,100 +191,6 @@ const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 
 const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
   frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
 }) as StudioMesh3d;
-
-/** Aspect d'un volume : la sélection l'emporte, puis l'apparence d'affichage (objet, sinon calque), puis le défaut. */
-function aspectDe(doc: StudioDocument, mode: StudioModeAffichage, o: { id: string; layerId?: string }, defaut: number, choisi: boolean, double = false): AspectVolume {
-  const a = studioApparenceResolue(doc, o.id, o.layerId);
-  if (choisi) return { couleur: 0xf0b44c, mode, apparence: false, double };
-  return a ? { couleur: couleurEntiere(a.color), ...(a.finish ? { finition: a.finish } : {}), mode, apparence: true, double } : { couleur: defaut, mode, apparence: false, double };
-}
-
-/** Volume construit seul : surface (nommée, données de désignation) et arêtes selon le mode. */
-function volumeSeul(g: GeometrieObjet, aspect: AspectVolume, nom: string, donnees: Record<string, string>): THREE.Object3D[] {
-  const { surface, aretes } = objetsVolume([preparer(g)], aspect);
-  surface.name = nom;
-  const objets: THREE.Object3D[] = aretes ? [surface, aretes] : [surface];
-  for (const o of objets) Object.assign(o.userData, donnees);
-  return objets;
-}
-
-/** Ce que la scène de rendu lit : maillage affiché, clés de contenu de ses morceaux, document et réglages courants. */
-interface Lecture {
-  mesh: StudioMesh3d;
-  /** Clé de projection de chaque morceau affiché (signature de son objet three.js). */
-  cle: (id: string) => string;
-  doc: StudioDocument;
-  mode: StudioModeAffichage;
-  selection: string | null;
-  selectionArchitecture: string | null;
-  /** Objet encore présent dans le document courant (un objet supprimé disparaît sans attendre le maillage suivant). */
-  present: (id: string) => boolean;
-}
-
-/** Volumes des objets 2D extrudés (en lots) et contours plats (seuls). */
-function entreesContenu(l: Lecture): EntreeRendu[] {
-  const out: EntreeRendu[] = [];
-  for (const s of l.mesh.solids) {
-    if (!l.present(s.id)) continue;
-    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
-  }
-  for (const o of l.mesh.outlines) {
-    if (!l.present(o.id)) continue;
-    out.push({
-      id: o.id, signature: l.cle(o.id), construire: () => {
-        const g = new THREE.BufferGeometry().setFromPoints(o.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
-        const mat = new THREE.LineDashedMaterial({ color: 0x8a6a3a, dashSize: 0.15, gapSize: 0.1 });
-        const ligne = o.closed ? new THREE.LineLoop(g, mat) : new THREE.Line(g, mat);
-        ligne.computeLineDistances();
-        return [ligne];
-      },
-    });
-  }
-  return out;
-}
-
-/** Solides libres, construits seuls et désignables. */
-function entreesLibres(l: Lecture): EntreeRendu[] {
-  return (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s) => {
-    const aspect = aspectDe(l.doc, l.mode, s, 0xc9bde3, s.id === l.selection);
-    return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
-  });
-}
-
-/**
- * Murs opaques (en lots, sauf le mur sélectionné, construit seul à sa couleur de sélection) et ouvertures (boîte du
- * vide, translucide, seule) ; chaque objet seul porte l'identifiant de son objet, chaque lot sa table de désignation.
- */
-function entreesArchitecture(l: Lecture): EntreeRendu[] {
-  const out: EntreeRendu[] = [];
-  for (const a of l.mesh.architecture ?? []) {
-    if (!l.present(a.id)) continue;
-    const choisi = a.id === l.selectionArchitecture;
-    if (a.type === "wall") {
-      const aspect = aspectDe(l.doc, l.mode, a, 0xd8d2c4, choisi);
-      out.push(choisi
-        ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
-        : { id: a.id, signature: l.cle(a.id), lot: "mur", geometrie: a, aspect });
-      continue;
-    }
-    // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
-    const propre = studioApparenceResolue(l.doc, a.id, undefined);
-    const teinte = choisi ? 0xf0b44c : propre?.source === "object" ? couleurEntiere(propre.color) : 0x7fb2d6;
-    out.push({
-      id: a.id, signature: `${l.cle(a.id)}|${teinte.toString(16)}|${choisi ? 1 : 0}`, construire: () => {
-        const g = new THREE.BufferGeometry();
-        const p = preparer(a);
-        g.setAttribute("position", new THREE.BufferAttribute(p.positions, 3));
-        g.setIndex(new THREE.BufferAttribute(p.index, 1));
-        const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: teinte, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
-        vide.name = a.id;
-        vide.userData.architecture = a.id;
-        return [vide];
-      },
-    });
-  }
-  return out;
-}
 
 /** Caméra relevée de la vue (repère de rendu = `local-3d`, conversion `cameraScene`). */
 function cameraCourante(m: Moteur): StudioCameraScene {
@@ -312,17 +284,12 @@ interface Assemble { cache: StudioCacheMaillage; mesh: StudioMesh3d; revision: s
 const PLANS_GARDES = 16;
 let sansCle = 0;
 
-/** Impact d'un rayon three.js : identifiant porté par l'objet seul, ou triangle d'un lot et sa table. */
-function impact(h: THREE.Intersection): Impact {
-  const lot = h.object.userData.lot as DonneesLot | undefined;
-  if (lot) return { distance: h.distance, table: lot.table, triangle: h.faceIndex ?? null };
-  const id = (h.object.userData.solide ?? h.object.userData.architecture) as string | undefined;
-  return id === undefined ? { distance: h.distance } : { distance: h.distance, id };
-}
+/** Impact d'un rayon three.js (objet seul, triangle d'un lot, exemplaire instancié — C.2-02) : `impactDe`. */
+const impact = impactDe;
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
-  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
+  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.surfaces ?? []), ...(mesh.subdivisions ?? []), ...(mesh.architecture ?? []), ...(mesh.occurrences ?? [])].find((x) => x.id === id);
   if (!e || !e.vertices.length) return null;
   const b = new THREE.Box3().setFromPoints(e.vertices.map((v) => new THREE.Vector3(v.x, v.y, v.z)));
   const c = b.getCenter(new THREE.Vector3()).project(m.camera);
@@ -336,15 +303,40 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d, surIllustration }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
   const [indisponible, setIndisponible] = useState(false);
+  // Moteur (TR-EX-056) : WebGL2 par défaut ; WebGPU demandé en option, repli WebGL2 déclaré avec sa raison (`moteur-3d.ts`).
+  const [webgpuDemande, setWebgpuDemande] = useState(false);
+  const [choix3d, setChoix3d] = useState<ChoixMoteur3d>({ demande: "webgl2", moteur: "webgl2", repli: null });
+  useEffect(() => {
+    let actif = true;
+    void choisirMoteur3d(webgpuDemande ? "webgpu" : "webgl2", typeof navigator !== "undefined" ? (navigator as Navigator & { gpu?: AccesGpu }).gpu : undefined).then((c) => { if (actif) setChoix3d(c); });
+    return () => { actif = false; };
+  }, [webgpuDemande]);
   const [boite, setBoite] = useState<ValeursBoite>(BOITE_VIDE);
   const [prisme, setPrisme] = useState<ValeursPrisme>(PRISME_VIDE);
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
+  const [face, setFace] = useState<ValeursFace>(FACE_VIDE);
+  const [division, setDivision] = useState<ValeursFace>(FACE_VIDE);
+  // Cote de face 3D (INV-013) : deux faces du solide choisi ; `rattacher` = identifiant d'une cote existante à rattacher.
+  const [coteFaces, setCoteFaces] = useState<{ a: string; b: string; rattacher: string }>({ a: "", b: "", rattacher: "" });
+  const [pivot, setPivot] = useState(Number.NaN);
+  // A.3-03 : axe du pivot (vertical ou axes horizontaux du solide) et échelle 3D (point fixe en plan, facteur).
+  const [axePivot, setAxePivot] = useState<AxePivot>("z");
+  const [echelle3d, setEchelle3d] = useState({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN });
+  // EX-005 : groupe de solides libres édités ensemble (sélection de l'éditeur, jamais une donnée du document).
+  const [groupe, setGroupe] = useState<ReadonlySet<string>>(() => new Set());
+  const [groupeDeplacement, setGroupeDeplacement] = useState(DEPLACEMENT_VIDE);
+  const [groupeRotation, setGroupeRotation] = useState({ x: Number.NaN, y: Number.NaN, angle: Number.NaN });
+  const [groupeEchelle, setGroupeEchelle] = useState({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN });
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
+  // X.1-05 : pôle choisi de la surface sélectionnée (liste du panneau ou clic sur son repère).
+  const [poleSurface, setPoleSurface] = useState<{ i: number; j: number } | null>(null);
+  // Sommet de contrôle choisi de la surface de subdivision sélectionnée.
+  const [sommetSubdivision, setSommetSubdivision] = useState<number | null>(null);
   const [erreur, setErreur] = useState("");
   // Visualisation (lot E.5) : scène choisie, calques montrés par la vue (null : visibilité du dessin), mode, apparence.
   const [sceneChoisie, setSceneChoisie] = useState<string | null>(null);
@@ -356,7 +348,18 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [finition, setFinition] = useState<StudioFinitionAffichage | "">("");
   const [statut, setStatut] = useState("");
   const [cameraVersion, setCameraVersion] = useState(0);
+  // Palier de qualité appliqué (TR-EX-057) : l'indicateur « Qualité d'affichage réduite » le suit.
+  const [palierQualite, setPalierQualite] = useState(0);
   const enAttente = useRef<StudioScene | null>(null);
+  // Session en direct : la dernière fonction de partage, et un garde pendant qu'on pose la caméra suivie (aucun écho).
+  const surCameraLocaleRef = useRef(surCameraLocale);
+  surCameraLocaleRef.current = surCameraLocale;
+  const applicationPartagee = useRef(false);
+  const surPointeur3dRef = useRef(surPointeur3d);
+  surPointeur3dRef.current = surPointeur3d;
+  const pointeurs3dRef = useRef(pointeurs3d);
+  pointeurs3dRef.current = pointeurs3d;
+  const etiquettes = useRef(new Map<string, HTMLElement>());
   // La scène active ne se réévalue au fil de la navigation que lorsqu'une scène est choisie et montrée.
   const suiviCamera = useRef(false);
   // Maillage en tâche de fond (D.2) : avec une scène montrée, le Worker maille le document « tous calques affichés »
@@ -374,9 +377,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const invalidation = projectionsAInvalider(b?.cache.doc ?? null, docMaillage);
     return { doc: docMaillage, base: b?.cache ?? null, invalidation, ids: invalidation.complet ? null : invalidation.ids };
   }, [docMaillage]);
+  // Révision source de chaque plan (EX-051) : révision serveur de la variante au moment de la demande et brouillon.
+  const sourceCourante: SourceProjection = { revisionServeur: provenance?.revisionId ?? "", brouillon: provenance?.nonEnregistre ?? false, revisionSession: empreinte.revision };
+  const sources = useRef(new Map<string, SourceProjection>());
   if (!plans.current.has(empreinte.revision)) {
     plans.current.set(empreinte.revision, plan);
-    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) plans.current.delete(k);
+    sources.current.set(empreinte.revision, sourceCourante);
+    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) { plans.current.delete(k); sources.current.delete(k); }
   }
   const maillage = useTache<{ document: StudioDocument; ids: string[] | null }, StudioMorceauMaillage[]>(
     { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d.objets", charge: { document: docMaillage, ids: plan.ids }, empreinte },
@@ -391,16 +398,37 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }, [maillage.valeur, maillage.revision]);
   dernier.current = assemble;
   useEffect(() => { if (assemble) base.current = assemble; }, [assemble]);
+  // OrbitControls accroche un écouteur au `document` et le retire de la racine de son canevas : à la fermeture, React
+  // détache le DOM avant les nettoyages de `useEffect`, la racine n'est plus le document et l'écouteur resterait,
+  // retenant contrôles et canevas (TEST-037). Le nettoyage d'un effet de mise en page passe avant ce détachement.
+  useLayoutEffect(() => () => { moteur.current?.controls?.disconnect(); }, []);
   const brut = assemble?.mesh ?? MAILLAGE_VIDE;
   const version = useMemo(() => (assemble ? studioVersionProjection(assemble.cache.doc, "maillage-3d", assemble.revision) : null), [assemble]);
   const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
   /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
   const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
+  // État identifié de la projection (EX-051, INV-006, EX-016) : révision source du résultat affiché, état dérivé, domaines
+  // périmés. Un résultat d'une autre révision reste affiché comme « dernière image », jamais comme « à jour ».
+  const sourceAffichee: SourceProjection | null = !assemble ? null : assemble.revision === empreinte.revision ? sourceCourante : sources.current.get(assemble.revision) ?? null;
+  // EX-008 : la scène est invalidée quand sa révision source canonique change (mutation accusée par le serveur).
+  const revisionCanonique = provenance && !provenance.nonEnregistre ? provenance.revisionId : null;
+  useEffect(() => { if (revisionCanonique) traceGeste.noter("scene", { revision: revisionCanonique }); }, [revisionCanonique]);
+  const etatProjection = etatProjection3d({
+    indisponible, echec: maillage.message, tache: maillage.etat, courante: sourceCourante, affichee: sourceAffichee,
+    docCourant: docMaillage, docAffiche: assemble?.cache.doc ?? null,
+  });
   const scenes = studioScenes(doc);
   const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
   const solides = doc.solides ?? [];
+  const exacts = doc.exacts ?? [];
   const choisi = solides.find((s) => s.id === selection) ?? null;
+  const choisiExact = exacts.find((s) => s.id === selection) ?? null;
+  // Lien de chaque solide à sa polyligne source, relu du document courant (jamais stocké) ; volume non évalué à résoudre.
+  const lienDe = (s: StudioSolid) => studioLienSolide(doc, s);
+  const volumeTexte = (s: StudioSolid) => (lienDe(s)?.etat === "a-resoudre" ? "volume non évalué" : `${nombre(studioVolumeSolide(s))} m³`);
+  const lienChoisi = choisi ? lienDe(choisi) : null;
+  const facesChoisi = choisi ? facesDe(choisi) : [];
   const resultatCoupe = useMemo(() => (coupe && Number.isFinite(coteCoupe) ? couperStudio(doc, { z: coteCoupe }) : null), [doc, coupe, coteCoupe]);
   const profils = profilsFermes(doc);
   // Le clic sur la planche lit l'état courant (outil, droits) sans réinstaller les écouteurs.
@@ -415,6 +443,15 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const p = rayon.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
       if (p) { setBoite((v) => ({ ...v, x: auCentimetre(p.x), y: auCentimetre(p.y), z: 0 })); setErreur(""); }
       return;
+    }
+    // X.1-05 : avec « Modifier la surface », un clic sur le repère d'un pôle de la surface sélectionnée le choisit.
+    if (outil === "studio.surface.modifier") {
+      const s = (doc.surfaces ?? []).find((x) => x.id === selection);
+      const h = s ? rayon.intersectObjects(m.libres.children, false).find((x) => x.object.userData.surface === s.id && typeof x.object.userData.pole === "number") : undefined;
+      if (s && h) { const k = h.object.userData.pole as number; setPoleSurface({ i: Math.floor(k / s.colonnes), j: k % s.colonnes }); return; }
+      const sd = (doc.subdivisions ?? []).find((x) => x.id === selection);
+      const hs = sd ? rayon.intersectObjects(m.libres.children, false).find((x) => x.object.userData.subdivision === sd.id && typeof x.object.userData.sommet === "number") : undefined;
+      if (sd && hs) { setSommetSubdivision(hs.object.userData.sommet as number); return; }
     }
     // Désignation (C.2-02, C.2-03) : objet seul par son identifiant, lot par sa table (triangle → identifiant) ; un
     // identifiant absent du document courant (objet supprimé, maillage affiché encore antérieur) laisse passer l'objet
@@ -435,7 +472,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); }
     catch { setIndisponible(true); return; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(rapportPixels(window.devicePixelRatio || 1, PALIERS_QUALITE[0]!));
     renderer.domElement.setAttribute("data-studio-vue3d-canvas", "");
     renderer.domElement.setAttribute("aria-label", "Vue 3D du dessin");
     renderer.domElement.setAttribute("role", "img");
@@ -452,21 +489,62 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const grille = new THREE.GridHelper(40, 40, 0xbfcfd3, 0xdde6e8);
     grille.rotation.x = Math.PI / 2; // plan XY du repère local-3d
     scene.add(grille);
-    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group();
-    scene.add(contenu, libres, architecture, surimpression);
+    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group(), presence = new THREE.Group();
+    scene.add(contenu, libres, architecture, surimpression, presence);
     const m: Moteur = {
-      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
+      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, presence,
       rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
-      rendre: () => {
-        mesurerRendu3d(() => renderer.render(scene, m.camera));
-        // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
-        const c = compteGpu(renderer);
-        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
-        renderer.domElement.dataset.studioGpuTextures = String(c.textures);
+      qualite: ETAT_QUALITE_INITIAL, reglage: PALIERS_QUALITE[0]!, presentation: null, qualiteTenue: false, charge: 0,
+      // Réglages de présentation seulement : ni le document, ni la désignation, ni aucune tolérance ne sont touchés.
+      appliquerQualite: (voulu) => {
+        const r = reglageEffectif(voulu, CAPACITES_RENDU);
+        m.reglage = r;
+        renderer.shadowMap.enabled = CAPACITES_RENDU.ombres && r.ombres;
+        renderer.setPixelRatio(rapportPixels(window.devicePixelRatio || 1, r));
+        if (!r.antiCrenelage && !m.presentation) m.presentation = new PresentationSansMsaa();
+        if (r.antiCrenelage && m.presentation) { m.presentation.liberer(); m.presentation = null; }
+        const d = renderer.domElement.dataset;
+        d.studioQualitePalier = String(paliersApplicables(CAPACITES_RENDU).findIndex((p) => p.ombres === r.ombres && p.resolution === r.resolution && p.antiCrenelage === r.antiCrenelage));
+        d.studioPixelRatio = String(renderer.getPixelRatio());
+        d.studioAntiCrenelage = r.antiCrenelage ? "oui" : "non";
       },
-      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); },
+      rendre: () => {
+        const t0 = performance.now();
+        // Rendu à la demande (TR-EX-056) : aucune boucle d'animation ; chaque trame rendue est comptée (recette).
+        renderer.domElement.dataset.studioRendus = String(Number(renderer.domElement.dataset.studioRendus ?? "0") + 1);
+        mesurerRendu3d(() => {
+          if (m.charge > 0) { const fin = performance.now() + m.charge; while (performance.now() < fin) { /* charge simulée (recette) */ } }
+          if (m.presentation) m.presentation.rendre(renderer, scene, m.camera); else renderer.render(scene, m.camera);
+        });
+        // Dégradation sûre (TR-EX-057) : la durée de la trame nourrit la politique ; un changement de palier est appliqué
+        // à la présentation et annoncé (jamais silencieux), puis vaut pour les trames suivantes.
+        if (!m.qualiteTenue) {
+          const suivant = observerTrame(m.qualite, performance.now() - t0, CAPACITES_RENDU);
+          const change = suivant.palier !== m.qualite.palier;
+          m.qualite = suivant;
+          if (change) { m.appliquerQualite(reglageQualite(suivant, CAPACITES_RENDU)); setPalierQualite(suivant.palier); }
+        }
+        // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
+        // Ressources de la scène : celles de la présentation dégradée (TR-EX-057), temporaires, n'en font pas partie.
+        const c = compteGpu(renderer), p = m.presentation?.ressources ?? { geometries: 0, textures: 0 };
+        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries - p.geometries);
+        renderer.domElement.dataset.studioGpuTextures = String(c.textures - p.textures);
+        // Caméra rendue (recette A.3-05) : position, cible et ouverture relevées à chaque trame ; jamais le document.
+        renderer.domElement.dataset.studioCamera = JSON.stringify(cameraCourante(m));
+        // Étiquettes des pointeurs distants : leur point 3D projeté sur le canevas à chaque rendu.
+        const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+        for (const p of pointeurs3dRef.current ?? []) {
+          const el = etiquettes.current.get(p.userId); if (!el) continue;
+          const v = new THREE.Vector3(p.x, p.y, p.z).project(m.camera);
+          const visible = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
+          el.style.display = visible ? "" : "none";
+          el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px)`;
+        }
+      },
+      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); if (!applicationPartagee.current) surCameraLocaleRef.current?.(cameraCourante(m)); },
     };
     moteur.current = m;
+    m.appliquerQualite(PALIERS_QUALITE[0]!);
     poserControles(m, navigation);
     const taille = () => {
       // Canevas de l'espace : la hauteur du conteneur (fixée par la mise en page, jamais par le canevas lui-même).
@@ -484,6 +562,31 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (bas && e.button === 0 && Math.hypot(e.clientX - bas.x, e.clientY - bas.y) < 5) clic.current(e);
       bas = null;
     };
+    // Pointeur partagé (session en direct) : objet touché, sinon le sol ; rien n'est calculé hors session. Le lancer de
+    // rayon est borné à une image (requestAnimationFrame) : le canal n'envoie de toute façon qu'un pointeur par 100 ms.
+    const rayonPointeur = new THREE.Raycaster(), sol = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), surSol = new THREE.Vector3(), ndcPointeur = new THREE.Vector2();
+    let dernierEvenement: PointerEvent | null = null, imagePrevue = 0;
+    const calculerPointeur = () => {
+      imagePrevue = 0;
+      const e = dernierEvenement, f = surPointeur3dRef.current;
+      if (!e || !f) return;
+      const r = renderer.domElement.getBoundingClientRect();
+      ndcPointeur.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      rayonPointeur.setFromCamera(ndcPointeur, m.camera);
+      const impact = rayonPointeur.intersectObjects([...libres.children, ...architecture.children, ...contenu.children], false).find((x) => x.object instanceof THREE.Mesh);
+      const p = impact?.point ?? rayonPointeur.ray.intersectPlane(sol, surSol);
+      // Un sol vu en rasant donne des coordonnées démesurées : au-delà d'un kilomètre, le pointeur est masqué.
+      const valide = p && [p.x, p.y, p.z].every((v) => Number.isFinite(v) && Math.abs(v) <= 1e6);
+      f(valide ? { x: p.x, y: p.y, z: p.z } : null);
+    };
+    const pointeurBouge = (e: PointerEvent) => {
+      if (!surPointeur3dRef.current) return;
+      dernierEvenement = e;
+      if (!imagePrevue) imagePrevue = requestAnimationFrame(calculerPointeur);
+    };
+    const pointeurSorti = () => { dernierEvenement = null; if (imagePrevue) { cancelAnimationFrame(imagePrevue); imagePrevue = 0; } surPointeur3dRef.current?.(null); };
+    renderer.domElement.addEventListener("pointermove", pointeurBouge);
+    renderer.domElement.addEventListener("pointerleave", pointeurSorti);
     renderer.domElement.addEventListener("pointerdown", pointeurBas);
     renderer.domElement.addEventListener("pointerup", pointeurHaut);
     const obs = typeof ResizeObserver === "function" ? new ResizeObserver(taille) : null;
@@ -491,14 +594,21 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     taille();
     return () => {
       obs?.disconnect();
+      if (imagePrevue) cancelAnimationFrame(imagePrevue);
+      renderer.domElement.removeEventListener("pointermove", pointeurBouge);
+      renderer.domElement.removeEventListener("pointerleave", pointeurSorti);
       renderer.domElement.removeEventListener("pointerdown", pointeurBas);
       renderer.domElement.removeEventListener("pointerup", pointeurHaut);
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
+      // Relevées avant la libération des matériaux (TEST-037 : sans quoi chaque fermeture retient ce moteur de rendu).
+      const partagees = texturesPartagees(renderer, [scene]);
       m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
-      vider(contenu); vider(libres); vider(architecture); vider(surimpression);
+      m.presentation?.liberer(); m.presentation = null;
+      vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence);
       libererObjet(grille);
+      libererTexturesPartagees(partagees);
       renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
@@ -508,6 +618,37 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     // La navigation initiale est posée ici ; ses changements par l'effet suivant.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pointeurs distants (session en direct) : une sphère par personne, nommée par une étiquette HTML (jamais la seule couleur).
+  const clePointeurs = (pointeurs3d ?? []).map((p) => `${p.userId}:${p.x.toFixed(3)}:${p.y.toFixed(3)}:${p.z.toFixed(3)}`).join("|");
+  useEffect(() => {
+    const m = moteur.current; if (!m) return;
+    vider(m.presence);
+    for (const p of pointeurs3d ?? []) {
+      const boule = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), new THREE.MeshBasicMaterial({ color: teintePresence(p.userId) }));
+      boule.position.set(p.x, p.y, p.z);
+      boule.userData["pointeurDe"] = p.userId;
+      m.presence.add(boule);
+    }
+    m.rendre();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clePointeurs]);
+
+  // Suivi du présentateur (session en direct) : sa caméra est posée telle quelle, jamais la sélection ni le brouillon.
+  useEffect(() => {
+    const m = moteur.current;
+    if (!m || !cameraPartagee) return;
+    const voulue: Navigation3d = cameraPartagee.camera.projection === "orthographic" ? "plan" : "orbite";
+    if (voulue !== navigation) {
+      enAttente.current = { camera: cameraPartagee.camera } as StudioScene;
+      surNavigation?.(voulue);
+      return;
+    }
+    applicationPartagee.current = true;
+    try { poserCamera(m, cameraPartagee.camera); } finally { applicationPartagee.current = false; }
+    cadre.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraPartagee?.n]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -524,7 +665,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     const morceaux = assemble?.cache.morceaux;
-    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
+    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.surfaces ?? []).map((o) => o.id), ...(doc.subdivisions ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id), ...(doc.occurrences ?? []).map((o) => o.id)]);
     const l: Lecture = {
       mesh, doc, mode, selection, selectionArchitecture, present: (id) => presents.has(id),
       // Clé de contenu du morceau ; à défaut (jamais pour un maillage assemblé), une clé unique force la reconstruction.
@@ -542,10 +683,23 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
   // Recette (C.2-03) : position à l'écran du centre d'un objet affiché, pour cliquer là où il est (ou était).
   useEffect(() => {
-    const crochet = { ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; } };
+    const crochet = {
+      ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; },
+      // Recette X.1-05 : position à l'écran du pôle k d'une surface libre (pour cliquer sur son repère).
+      pole: (surfaceId: string, k: number) => {
+        const m = moteur.current, p = (doc.surfaces ?? []).find((x) => x.id === surfaceId)?.controle[k] ?? (doc.subdivisions ?? []).find((x) => x.id === surfaceId)?.sommets[k];
+        if (!m || !p) return null;
+        const c = new THREE.Vector3(p.x, p.y, p.z).project(m.camera), r = m.renderer.domElement.getBoundingClientRect();
+        return { x: r.left + ((c.x + 1) / 2) * r.width, y: r.top + ((1 - c.y) / 2) * r.height };
+      },
+      // Recette TR-EX-057 : charge simulée (ms ajoutées à chaque rendu, 0 pour l'ôter) et lecture du réglage appliqué.
+      charge: (ms: number) => { const m = moteur.current; if (m) m.charge = Number.isFinite(ms) && ms > 0 ? ms : 0; },
+      qualite: () => { const m = moteur.current; return m ? { palier: m.qualite.palier, changements: m.qualite.changements, ...m.reglage, pixelRatio: m.renderer.getPixelRatio() } : null; },
+      rendre: (n = 1) => { const m = moteur.current; for (let i = 0; i < n && m; i++) m.rendre(); },
+    };
     (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d = crochet;
     return () => { if ((globalThis as { __fadiVue3d?: unknown }).__fadiVue3d === crochet) delete (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d; };
-  }, [mesh]);
+  }, [mesh, doc]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -582,7 +736,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   function reglages() { return { nom: nomScene.trim() || prochainNomScene(doc), calques: calquesVue, mode }; }
   function visualisation(action: string) {
     const m = moteur.current;
-    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png";
+    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png" && action !== "illustration";
     if (mutation && !modifiable) { setErreur("Lecture seule : les scènes et les apparences ne se modifient pas ici."); return; }
     switch (action) {
       case "studio.scene.creer": {
@@ -612,12 +766,47 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         envoyer(commandeRetraitApparence(doc, cibleApparence), () => setStatut("Apparence d’affichage retirée."));
         return;
       case "exporter-png": void exporterPng(); return;
+      case "illustration": void illustrer(); return;
     }
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
+    : !provenance.auteur ? "Auteur inconnu : le rendu n’est pas exporté (la provenance porte son auteur)."
     : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
     : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
+  /** Rendu du modèle de la vue (qualité complète), PNG portant sa provenance ; null : indisponible (raison affichée). */
+  async function capturerRendu(): Promise<{ png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu>; actif: boolean } | null> {
+    const m = moteur.current;
+    if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return null; }
+    try {
+      const actif = scenes.find((s) => s.id === sceneActive) ?? null;
+      const p = studioProvenanceRendu({
+        etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
+      });
+      const reglage = m.reglage;
+      m.qualiteTenue = true;
+      let blob: Blob | null;
+      try {
+        m.appliquerQualite(PALIERS_QUALITE[0]!);
+        m.rendre();
+        blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      } finally {
+        m.appliquerQualite(reglage);
+        m.qualiteTenue = false;
+        m.rendre();
+      }
+      if (!blob) throw new Error("canevas vide");
+      return { png: insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p)), provenance: p, actif: !!actif };
+    } catch { setErreur("Rendu impossible : le canevas n’a pas pu être lu."); return null; }
+  }
+  async function illustrer() {
+    const c = await capturerRendu();
+    if (!c) return;
+    setErreur("");
+    setStatut("Rendu du modèle capturé pour l’illustration : le modèle n’est pas modifié.");
+    surIllustration?.({ png: c.png, provenance: c.provenance });
+  }
   async function exporterPng() {
     const m = moteur.current;
     if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return; }
@@ -625,10 +814,22 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const actif = scenes.find((s) => s.id === sceneActive) ?? null;
       const p = studioProvenanceRendu({
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
-        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
+        parametres: { largeurPx: m.renderer.domElement.width, hauteurPx: m.renderer.domElement.height, qualite: "complète" },
       });
-      m.rendre();
-      const blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      // Le rendu exporté est toujours en qualité complète (la dégradation ne vaut que pour la présentation à l'écran).
+      const reglage = m.reglage;
+      m.qualiteTenue = true;
+      let blob: Blob | null;
+      try {
+        m.appliquerQualite(PALIERS_QUALITE[0]!);
+        m.rendre();
+        blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      } finally {
+        m.appliquerQualite(reglage);
+        m.qualiteTenue = false;
+        m.rendre();
+      }
       if (!blob) throw new Error("canevas vide");
       const octets = insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p));
       const url = URL.createObjectURL(new Blob([octets as BlobPart], { type: "image/png" }));
@@ -667,28 +868,73 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     e.preventDefault();
     envoyer(commandeDeplacementSolide(choisi?.id ?? null, deplacement), () => setDeplacement(DEPLACEMENT_VIDE));
   }
+  function pousser(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeFace(choisi?.id ?? null, face), () => setFace((v) => ({ ...v, distance: Number.NaN })));
+  }
+  function diviser(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeDivision(choisi?.id ?? null, division), () => setDivision(FACE_VIDE));
+  }
+  function coter(e: FormEvent) {
+    e.preventDefault();
+    const id = coteFaces.rattacher || crypto.randomUUID();
+    const existante = (doc.cotesFaces ?? []).find((c) => c.id === coteFaces.rattacher);
+    envoyer(commandeCoteFace(id, choisi?.id ?? null, coteFaces, existante?.layerId ?? choisi?.layerId), () => setCoteFaces({ a: "", b: "", rattacher: "" }));
+  }
+  function pivoter(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandePivot(choisi?.id ?? null, pivot, axePivot), () => setPivot(Number.NaN));
+  }
+  function mettreAEchelle(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeEchelle3d(choisi ? [choisi.id] : [], { x: echelle3d.x, y: echelle3d.y }, echelle3d.facteur), () => setEchelle3d({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN }));
+  }
+  const membres = membresGroupe(doc, groupe);
+  const editerGroupe = (r: ReturnType<typeof commandeDeplacerGroupe>, apres: () => void) => envoyer(r, apres);
   function supprimer() {
-    if (!choisi) return;
-    envoyer({ commandes: [{ toolId: "studio.solide.supprimer", params: { ids: [choisi.id] } }] }, () => surSelection?.(null));
+    const id = choisi?.id ?? choisiExact?.id;
+    if (!id) return;
+    envoyer({ commandes: [{ toolId: "studio.solide.supprimer", params: { ids: [id] } }] }, () => surSelection?.(null));
   }
 
-  const libres = mesh.freeSolids?.length ?? 0;
+  const libres = (mesh.freeSolids?.length ?? 0) + (mesh.exacts?.length ?? 0);
   const architecture = mesh.architecture ?? [];
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
-      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
-      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
+      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-surfaces-libres={mesh.surfaces?.length ?? 0} data-studio-subdivisions={mesh.subdivisions?.length ?? 0} data-studio-occurrences-3d={mesh.occurrences?.length ?? 0} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}
+      data-studio-source-revision={etatProjection.sourceRevisionId ?? ""} data-studio-revision-serveur-courante={provenance?.revisionId ?? ""} data-studio-etat-derive={etatProjection.etat.etat}
+      data-studio-domaines-perimes={etatProjection.domainesPerimes.join(" ")}>
+      <p className="studio-vue3d-projection" role="status" data-studio-vue3d-projection>
+        <span>Révision source</span>{" : "}{sourceAffichee ? <><span translate="no" data-studio-source-revision-texte>{sourceAffichee.revisionServeur.slice(-8)}</span>{sourceAffichee.brouillon && <>{" "}<span>(brouillon non enregistré)</span></>}</> : <span>aucune</span>}
+        {" · "}<span data-studio-etat-derive-libelle>{etatProjection.libelle}</span>
+        {etatProjection.domainesPerimes.length > 0 && <>{" · "}<span data-studio-perimes><span>Données périmées</span>{" : "}{etatProjection.domainesPerimes.map((d, i) => <span key={d}>{i > 0 ? ", " : ""}<span>{LIBELLES_DOMAINES[d]}</span></span>)}</span></>}
+      </p>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
+        <label className="studio-vue3d-case"><input type="checkbox" checked={webgpuDemande} onChange={(e) => setWebgpuDemande(e.target.checked)} data-studio-webgpu-demande /> WebGPU (essai)</label>
+        <span role="status" data-studio-moteur-3d={choix3d.moteur} data-studio-moteur-3d-repli={choix3d.repli?.raison ?? ""}>{texteMoteur3d(choix3d)}</span>
       </div>
       {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
+      {palierQualite > 0 && (() => {
+        const r = reglageQualite({ palier: palierQualite, trames: [], changements: 0 }, CAPACITES_RENDU);
+        return <p className="studio-info studio-vue3d-qualite" role="status" data-studio-qualite-reduite={palierQualite}>
+          <span>Qualité d’affichage réduite sous charge</span>{" : "}
+          {descriptionReduction(r, CAPACITES_RENDU).map((t, i) => <span key={t}>{i > 0 ? ", " : ""}<span>{t}</span></span>)}
+          {" ; "}<span>accrochage et tolérances inchangés</span>
+        </p>;
+      })()}
       {maillage.valeur === undefined && !maillage.message && <p className="studio-hint" role="status">{MESSAGES_TACHE.enCours}</p>}
       {indisponible && <p className="studio-alert" role="alert" data-studio-vue3d-indisponible>Vue 3D indisponible : WebGL n’est pas pris en charge par ce navigateur.</p>}
       <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} data-studio-remplir={remplir ? "" : undefined}
         title={navigation === "plan"
           ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
-          : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."} />
+          : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}>
+        {(pointeurs3d ?? []).map((p) => <span key={p.userId} className="studio-vue3d-pointeur" data-tr-pointeur-3d={p.userId} aria-hidden="true" translate="no"
+          style={{ color: teintePresence(p.userId), display: "none" }} ref={(el) => { if (el) etiquettes.current.set(p.userId, el); else etiquettes.current.delete(p.userId); }}>{p.nom}</span>)}
+      </div>
       {!remplir && <p className="studio-hint">{navigation === "plan"
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
         : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}</p>}
@@ -720,7 +966,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {outil === "studio.solide.prisme" && <form className="studio-vue3d-formulaire" onSubmit={poserPrisme} data-studio-prisme aria-labelledby="studio-prisme-titre">
         <h3 id="studio-prisme-titre"><Icon name="studio-solid-prism" size={18} /> Prisme sur profil</h3>
-        <p className="studio-hint">Le contour d’une polyligne fermée est copié comme profil ; le solide ne reste pas lié à la polyligne.</p>
+        <p className="studio-hint">Le contour d’une polyligne fermée sert de profil ; choisissez la relation du prisme à cette polyligne et la direction d’extrusion. Rien n’est choisi d’office.</p>
         <fieldset disabled={!modifiable}>
           <legend>Profil, cote et hauteur, en mètres</legend>
           <label>Profil (polyligne fermée)
@@ -733,23 +979,79 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           <Champ nom="prisme-cote" libelle="Cote de base z (m)" valeur={prisme.cote} surValeur={(cote) => setPrisme({ ...prisme, cote })} />
           <Champ nom="prisme-hauteur" libelle="Hauteur (m)" valeur={prisme.hauteur} surValeur={(hauteur) => setPrisme({ ...prisme, hauteur })} />
           <Champ nom="prisme-rotation" libelle="Rotation autour de z (°)" valeur={prisme.rotation} surValeur={(rotation) => setPrisme({ ...prisme, rotation })} />
+          <label>Relation au profil
+            <select name="prisme-relation" required value={prisme.relation} onChange={(e) => setPrisme({ ...prisme, relation: e.target.value as ValeursPrisme["relation"] })} data-studio-prisme-relation>
+              <option value="">Choisir la relation…</option>
+              {RELATIONS_PRISME.map((r) => <option key={r.valeur} value={r.valeur}>{r.libelle}</option>)}
+            </select>
+          </label>
+          {prisme.relation && <p className="studio-hint" data-studio-prisme-relation-aide>{RELATIONS_PRISME.find((r) => r.valeur === prisme.relation)?.aide}</p>}
+          <label>Direction d’extrusion
+            <select name="prisme-direction" required value={prisme.direction} onChange={(e) => setPrisme({ ...prisme, direction: e.target.value as ValeursPrisme["direction"] })} data-studio-prisme-direction>
+              <option value="">Choisir la direction…</option>
+              <option value="+z">Vers le haut (+Z, normale du plan)</option>
+              <option value="-z">Vers le bas (−Z)</option>
+              <option value="vecteur">Vecteur saisi (dx, dy, dz)</option>
+            </select>
+          </label>
+          {prisme.direction === "vecteur" && <>
+            <Champ nom="prisme-dx" libelle="Direction dx" valeur={prisme.dx} surValeur={(dx) => setPrisme({ ...prisme, dx })} />
+            <Champ nom="prisme-dy" libelle="Direction dy" valeur={prisme.dy} surValeur={(dy) => setPrisme({ ...prisme, dy })} />
+            <Champ nom="prisme-dz" libelle="Direction dz" valeur={prisme.dz} surValeur={(dz) => setPrisme({ ...prisme, dz })} />
+          </>}
           <button type="submit" data-studio-poser-prisme>Poser le prisme</button>
         </fieldset>
       </form>}
 
-      {solides.length > 0 && <div className="studio-vue3d-solides" data-studio-solides>
+      {outil === "studio.solide.booleen" && <PanneauBooleen doc={doc} revision={empreinte.revision} modifiable={modifiable} surCommandes={surCommandes} surSelection={surSelection} />}
+
+      <PanneauSurfaces doc={doc} outil={outil} revision={empreinte.revision} modifiable={modifiable} selection={selection} {...(layerId ? { layerId } : {})}
+        pole={poleSurface} surPole={setPoleSurface} {...(surCommandes ? { surCommandes } : {})} {...(surSelection ? { surSelection } : {})} />
+      <PanneauSubdivisions doc={doc} outil={outil} revision={empreinte.revision} modifiable={modifiable} selection={selection} {...(layerId ? { layerId } : {})}
+        sommet={sommetSubdivision} surSommet={setSommetSubdivision} {...(surCommandes ? { surCommandes } : {})} {...(surSelection ? { surSelection } : {})} />
+
+      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
+
+      {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>
         <ul>
-          {solides.map((s) => (
+          {exacts.map((s) => (
             <li key={s.id}>
-              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}>
-                {`${descriptionSolide(s, nombre)} · ${nombre(studioVolumeSolide(s))} m³`}
+              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type="exact" data-studio-solide-operation={s.operation}
+                data-studio-solide-operandes={s.operation === "epaississement" ? s.surface.id : s.operation === "solidification" ? s.subdivision.id : s.operandes.map((o) => o.id).join(" ")}>
+                <Icon name={s.operation === "epaississement" ? "studio-surface-thicken" : s.operation === "solidification" ? "studio-surface-solidify" : "studio-solid-boolean"} size={16} /> {`${descriptionOperande(s)} (noyau exact)`}
               </button>
             </li>
           ))}
+          {solides.map((s) => (
+            <li key={s.id}>
+              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}
+                data-studio-solide-relation={lienDe(s)?.relation ?? ""} data-studio-solide-lien={lienDe(s)?.etat ?? ""} data-studio-solide-bascule={s.placement.basculement ? "oui" : "non"}>
+                {`${descriptionSolide(s, nombre)} · ${volumeTexte(s)}`}
+              </button>
+              <label className="studio-hint"><input type="checkbox" checked={groupe.has(s.id)} onChange={() => setGroupe((g) => basculerMembre(g, s.id))} data-studio-groupe-membre={s.id} />Dans le groupe</label>
+              {lienDe(s) && <span className="studio-hint" data-studio-solide-lien-texte={s.id}>{descriptionLien(lienDe(s)!)}</span>}
+            </li>
+          ))}
         </ul>
+        {choisiExact && <div data-studio-exact-choisi={choisiExact.id} aria-label="Solide exact sélectionné">
+          {choisiExact.operation === "epaississement"
+            ? <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), surface conservée : ${descriptionSurface(choisiExact.surface, nombre)}`}</p>
+            : choisiExact.operation === "solidification"
+            ? <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), surface conservée : ${descriptionSubdivision(choisiExact.subdivision, nombre)}`}</p>
+            : <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), opérandes conservés : ${choisiExact.operandes.map((o) => descriptionOperande(o)).join(" ; ")}`}</p>}
+          <p className="studio-hint">{choisiExact.operation === "epaississement" || choisiExact.operation === "solidification"
+            ? "Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez l’épaississement pour retrouver la surface."
+            : "Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez le booléen pour retrouver ses opérandes."}</p>
+          <fieldset disabled={!modifiable}>
+            <legend>Solide exact</legend>
+            <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>
+          </fieldset>
+        </div>}
         {choisi && <form onSubmit={deplacer} data-studio-solide-choisi={choisi.id} aria-label="Solide sélectionné">
-          <p>{`Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume ${nombre(studioVolumeSolide(choisi))} m³`}</p>
+          <p>{lienChoisi?.etat === "a-resoudre"
+            ? `Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume non évalué`
+            : `Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume ${nombre(studioVolumeSolide(choisi))} m³`}</p>
           <fieldset disabled={!modifiable}>
             <legend>Déplacer le solide, en mètres</legend>
             <Champ nom="solide-dx" libelle="dx (m)" valeur={deplacement.dx} surValeur={(dx) => setDeplacement({ ...deplacement, dx })} />
@@ -759,6 +1061,126 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>
           </fieldset>
         </form>}
+        {choisi && <form onSubmit={pousser} data-studio-face-decaler={choisi.id} aria-label="Pousser / tirer une face">
+          <fieldset disabled={!modifiable}>
+            <legend>Pousser / tirer une face, en mètres</legend>
+            <label>Face
+              <select name="face-decaler" required value={facesChoisi.some((f) => f.valeur === face.face) ? face.face : ""} onChange={(e) => setFace({ ...face, face: e.target.value })} data-studio-face-choix>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <Champ nom="face-distance" libelle="Distance (m, positive vers l’extérieur)" valeur={face.distance} surValeur={(distance) => setFace({ ...face, distance })} />
+            <button type="submit" data-studio-pousser-face><Icon name="studio-solid-push-pull" size={18} /> Pousser / tirer la face</button>
+          </fieldset>
+        </form>}
+        {choisi && <form onSubmit={diviser} data-studio-face-diviser={choisi.id} aria-label="Diviser une face">
+          <fieldset disabled={!modifiable}>
+            <legend>Diviser une face latérale, en mètres</legend>
+            <label>Face latérale
+              <select name="face-diviser" required value={facesChoisi.some((f) => f.valeur === division.face) ? division.face : ""} onChange={(e) => setDivision({ ...division, face: e.target.value })} data-studio-division-choix>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.filter((f) => f.laterale).map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <Champ nom="division-distance" libelle="Distance depuis le début de l’arête (m)" valeur={division.distance} surValeur={(distance) => setDivision({ ...division, distance })} />
+            {lienChoisi?.relation === "reference-liee" && <p className="studio-hint">Prisme en référence liée : l’arête de la polyligne source est divisée ; ses cotes sont réattachées si c’est prouvé, sinon marquées « à résoudre ».</p>}
+            <button type="submit" data-studio-diviser-face><Icon name="studio-solid-split-face" size={18} /> Diviser la face</button>
+          </fieldset>
+        </form>}
+        {choisi && <form onSubmit={coter} data-studio-cote-face={choisi.id} aria-label="Coter deux faces du solide">
+          <fieldset disabled={!modifiable}>
+            <legend>{coteFaces.rattacher ? "Rattacher la cote de face à deux faces" : "Coter deux faces parallèles"}</legend>
+            <label>Première face
+              <select name="cote-face-a" required value={coteFaces.a} onChange={(e) => setCoteFaces({ ...coteFaces, a: e.target.value })} data-studio-cote-face-a>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <label>Seconde face
+              <select name="cote-face-b" required value={coteFaces.b} onChange={(e) => setCoteFaces({ ...coteFaces, b: e.target.value })} data-studio-cote-face-b>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <p className="studio-hint">La cote suit la face poussée, tirée, déplacée ou pivotée. Si la face cotée est divisée, aucune des deux moitiés n’est choisie à votre place : la cote passe « à résoudre » et se rattache ici.</p>
+            <button type="submit" data-studio-coter-faces><Icon name="studio-solid-face-dimension" size={18} /> {coteFaces.rattacher ? "Rattacher la cote" : "Coter les faces"}</button>
+          </fieldset>
+        </form>}
+        {(doc.cotesFaces?.length ?? 0) > 0 && <div data-studio-cotes-faces="">
+          <h4>Cotes de faces 3D</h4>
+          <ul>
+            {(doc.cotesFaces ?? []).map((c) => {
+              const s = solides.find((x) => x.id === c.solidId);
+              return <li key={c.id} data-studio-cote-face-etat={c.toResolve ? "a-resoudre" : "rattachee"} data-studio-cote-face-id={c.id}>
+                <span>{descriptionCoteFace(c, studioValeurCoteFace(solides, c), nombre, s)}</span>
+                <button type="button" disabled={!modifiable || !s} aria-pressed={coteFaces.rattacher === c.id} onClick={() => { if (s) surSelection?.(s.id); setCoteFaces({ a: "", b: "", rattacher: coteFaces.rattacher === c.id ? "" : c.id }); }} data-studio-cote-face-rattacher={c.id}>Rattacher</button>
+              </li>;
+            })}
+          </ul>
+        </div>}
+        {choisi && <form onSubmit={pivoter} data-studio-pivoter={choisi.id} aria-label="Pivoter le solide">
+          <fieldset disabled={!modifiable}>
+            <legend>Pivoter autour d’un axe passant par l’origine</legend>
+            <label>Axe
+              <select name="pivot-axe" value={axePivot} onChange={(e) => setAxePivot(e.target.value as AxePivot)} data-studio-pivot-axe>
+                {AXES_PIVOT.map((a) => <option key={a.valeur} value={a.valeur}>{a.libelle}</option>)}
+              </select>
+            </label>
+            <Champ nom="pivot-angle" libelle="Angle (°, sens trigonométrique)" valeur={pivot} surValeur={setPivot} />
+            <button type="submit" data-studio-pivoter-solide><Icon name="studio-solid-rotate" size={18} /> Pivoter le solide</button>
+          </fieldset>
+        </form>}
+        {choisi && <form onSubmit={mettreAEchelle} data-studio-echelle-3d={choisi.id} aria-label="Mettre le solide à l’échelle">
+          <fieldset disabled={!modifiable}>
+            <legend>Mettre à l’échelle (dimensions et volume)</legend>
+            <Champ nom="echelle-x" libelle="Point fixe x (m)" valeur={echelle3d.x} surValeur={(x) => setEchelle3d({ ...echelle3d, x })} />
+            <Champ nom="echelle-y" libelle="Point fixe y (m)" valeur={echelle3d.y} surValeur={(y) => setEchelle3d({ ...echelle3d, y })} />
+            <Champ nom="echelle-facteur" libelle="Facteur" valeur={echelle3d.facteur} surValeur={(facteur) => setEchelle3d({ ...echelle3d, facteur })} />
+            <button type="submit" data-studio-echelle-3d-appliquer><Icon name="studio-scale" size={18} /> Mettre à l’échelle</button>
+          </fieldset>
+        </form>}
+        {membres.length >= 2 && <div className="studio-vue3d-groupe" data-studio-groupe={membres.join(" ")}>
+          <h4>{`Groupe de ${membres.length} solides`}</h4>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandeDeplacerGroupe(membres, groupeDeplacement), () => setGroupeDeplacement(DEPLACEMENT_VIDE)); }} aria-label="Déplacer le groupe" data-studio-groupe-deplacer>
+            <fieldset disabled={!modifiable}>
+              <legend>Déplacer le groupe, en mètres</legend>
+              <Champ nom="groupe-dx" libelle="dx (m)" valeur={groupeDeplacement.dx} surValeur={(dx) => setGroupeDeplacement({ ...groupeDeplacement, dx })} />
+              <Champ nom="groupe-dy" libelle="dy (m)" valeur={groupeDeplacement.dy} surValeur={(dy) => setGroupeDeplacement({ ...groupeDeplacement, dy })} />
+              <Champ nom="groupe-dz" libelle="dz (m)" valeur={groupeDeplacement.dz} surValeur={(dz) => setGroupeDeplacement({ ...groupeDeplacement, dz })} />
+              <button type="submit" data-studio-groupe-deplacer-appliquer><Icon name="studio-move" size={18} /> Déplacer le groupe</button>
+            </fieldset>
+          </form>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandePivoterGroupe(membres, { x: groupeRotation.x, y: groupeRotation.y }, groupeRotation.angle), () => setGroupeRotation({ x: Number.NaN, y: Number.NaN, angle: Number.NaN })); }} aria-label="Pivoter le groupe" data-studio-groupe-pivoter>
+            <fieldset disabled={!modifiable}>
+              <legend>Pivoter le groupe autour d’un axe vertical</legend>
+              <Champ nom="groupe-cx" libelle="Centre x (m)" valeur={groupeRotation.x} surValeur={(x) => setGroupeRotation({ ...groupeRotation, x })} />
+              <Champ nom="groupe-cy" libelle="Centre y (m)" valeur={groupeRotation.y} surValeur={(y) => setGroupeRotation({ ...groupeRotation, y })} />
+              <Champ nom="groupe-angle" libelle="Angle (°, sens trigonométrique)" valeur={groupeRotation.angle} surValeur={(angle) => setGroupeRotation({ ...groupeRotation, angle })} />
+              <button type="submit" data-studio-groupe-pivoter-appliquer><Icon name="studio-solid-rotate" size={18} /> Pivoter le groupe</button>
+            </fieldset>
+          </form>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandeEchelleGroupe(membres, { x: groupeEchelle.x, y: groupeEchelle.y }, groupeEchelle.facteur), () => setGroupeEchelle({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN })); }} aria-label="Mettre le groupe à l’échelle" data-studio-groupe-echelle>
+            <fieldset disabled={!modifiable}>
+              <legend>Mettre le groupe à l’échelle (volumes compris)</legend>
+              <Champ nom="groupe-ex" libelle="Point fixe x (m)" valeur={groupeEchelle.x} surValeur={(x) => setGroupeEchelle({ ...groupeEchelle, x })} />
+              <Champ nom="groupe-ey" libelle="Point fixe y (m)" valeur={groupeEchelle.y} surValeur={(y) => setGroupeEchelle({ ...groupeEchelle, y })} />
+              <Champ nom="groupe-facteur" libelle="Facteur" valeur={groupeEchelle.facteur} surValeur={(facteur) => setGroupeEchelle({ ...groupeEchelle, facteur })} />
+              <button type="submit" data-studio-groupe-echelle-appliquer><Icon name="studio-scale" size={18} /> Mettre le groupe à l’échelle</button>
+            </fieldset>
+          </form>
+          <button type="button" disabled={!modifiable} onClick={() => editerGroupe(commandeSupprimerGroupe(membres), () => setGroupe(new Set()))} data-studio-groupe-supprimer>Supprimer le groupe</button>
+          <button type="button" onClick={() => setGroupe(new Set())} data-studio-groupe-vider>Vider le groupe</button>
+        </div>}
+        {choisi && lienChoisi && <div className="studio-vue3d-lien" data-studio-lien-solide={choisi.id} data-studio-lien-etat={lienChoisi.etat} data-studio-lien-relation={lienChoisi.relation}>
+          <h4><Icon name="studio-solid-link" size={16} /> Profil source</h4>
+          <p role="status">{descriptionLien(lienChoisi)} <span translate="no">{lienChoisi.objectId.slice(0, 8)}</span></p>
+          {lienChoisi.relation !== "copie-independante" && <fieldset disabled={!modifiable}>
+            <legend>Résoudre le lien du solide</legend>
+            <button type="button" disabled={lienChoisi.etat !== "a-resoudre" || lienChoisi.motif !== "source-modifiee"} onClick={() => envoyer(commandeResolution(choisi.id, "mettre-a-jour"), () => {})} data-studio-lien-mettre-a-jour>Mettre à jour depuis la source</button>
+            <button type="button" onClick={() => envoyer(commandeResolution(choisi.id, "detacher"), () => {})} data-studio-lien-detacher>Détacher (copie indépendante)</button>
+          </fieldset>}
+        </div>}
       </div>}
 
       {architecture.length > 0 && <div className="studio-vue3d-solides" data-studio-architecture-vue3d="">
@@ -768,7 +1190,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {architecture.map((a) => (
             <li key={a.id}>
               <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
-                <Icon name={a.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
+                <Icon name={a.type === "wall" ? "studio-wall" : a.type === "ladder" ? "studio-ladder" : a.type === "opening" ? "studio-opening" : "studio-structure"} size={16} /> {a.type === "wall" ? "Mur" : a.type === "ladder" ? "Échelle d’accès" : a.type === "opening" ? "Ouverture" : a.type === "column" ? "Poteau" : a.type === "beam" ? "Poutre" : "Dalle"} <span translate="no">{a.id.slice(0, 8)}</span>
               </button>
             </li>
           ))}
@@ -777,6 +1199,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {!hotePanneaux && panneauVisualisation}
 
+      <CouvertureTypes3d />
       {coupe && <div className="studio-vue3d-coupe" data-studio-coupe data-studio-coupe-z={Number.isFinite(coteCoupe) ? coteCoupe : ""} data-studio-coupe-segments={resultatCoupe?.segments.length ?? 0}
         data-studio-coupe-sources={resultatCoupe?.sources.map((s) => s.id).join(" ") ?? ""}>
         <h3><Icon name="studio-section-plane" size={18} /> Coupe horizontale</h3>
@@ -787,6 +1210,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         {resultatCoupe && resultatCoupe.sources.length > 0 && <ul data-studio-coupe-provenance>
           {resultatCoupe.sources.map((s) => <li key={s.id} data-studio-coupe-source={s.id}>{`Contour de ${s.segments} segment(s), provenance : solide ${s.id}`}</li>)}
         </ul>}
+        {resultatCoupe && resultatCoupe.exactsNonCoupes.length > 0 && <p role="note" data-studio-coupe-exacts-non-coupes={resultatCoupe.exactsNonCoupes.join(" ")}>
+          {`Section non dérivée pour ${resultatCoupe.exactsNonCoupes.length} solide(s) exact(s) dont une face horizontale est dans le plan de coupe : ${resultatCoupe.exactsNonCoupes.join(", ")}.`}</p>}
       </div>}
       </>; return hotePanneaux ? createPortal(<div className="studio-vue3d-panneaux" data-studio-vue3d-panneaux>{panneaux}</div>, hotePanneaux) : panneaux; })()}
     </section>

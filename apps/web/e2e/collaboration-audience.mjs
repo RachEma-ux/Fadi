@@ -22,6 +22,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
@@ -55,8 +56,8 @@ const ids = { owner: await idOf(owner), editor: await idOf(editor), reader: awai
 const project = await owner("POST", "/projects", { code: `AU_${randomUUID().slice(0, 6)}`, name: "Audience et export (recette synthétique)" });
 const pid = project.body?.id;
 check("projet créé", project.status === 201, String(project.status));
-check("éditeur et lecteur ajoutés", (await owner("POST", `/projects/${pid}/members`, { email: cEditor.email, role: "editeur" })).status === 201
-  && (await owner("POST", `/projects/${pid}/members`, { email: cReader.email, role: "lecteur" })).status === 201);
+check("éditeur et lecteur invités, invitations acceptées (phase 3)", (await inviterEtAccepter(owner, editor, pid, cEditor.email, "editeur")).ok
+  && (await inviterEtAccepter(owner, reader, pid, cReader.email, "lecteur")).ok);
 
 // ---------------------------------------------------------------------------
 // 1. E1 — commentaires du projet.
@@ -199,8 +200,11 @@ if (process.env.DATABASE_URL) {
   const journal = (await sql.query("SELECT action, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 ORDER BY id", [pid])).rows;
   await sql.end();
   const actions = journal.map((e) => e.action);
-  check("E3 journal : deux ajouts, l'export accordé, le changement d'audience et le retrait", JSON.stringify(actions) === JSON.stringify(["project.member.added", "project.member.added", "project.member.export_changed", "comment.audience_changed", "project.member.removed"]), JSON.stringify(actions));
-  check("E3 journal : membre visé et avant → après, sans adresse", journal[2]?.metadata?.memberId === ids.reader && journal[2]?.metadata?.canExportBefore === false && journal[2]?.metadata?.canExportAfter === true && !JSON.stringify(journal).includes("@example.test"));
+  // Phase 3 : chaque arrivée = fiche à l'envoi (participation.created), puis à l'acceptation l'ajout du membre et l'activation.
+  const arrivee = ["participation.created", "project.member.added", "participation.activated"];
+  check("E3 journal : deux arrivées par invitation acceptée, l'export accordé, le changement d'audience et le retrait", JSON.stringify(actions) === JSON.stringify([...arrivee, ...arrivee, "project.member.export_changed", "comment.audience_changed", "project.member.removed"]), JSON.stringify(actions));
+  const exportEntry = journal.find((e) => e.action === "project.member.export_changed");
+  check("E3 journal : membre visé et avant → après, sans adresse", journal.filter((e) => e.action === "project.member.added").every((e) => e.metadata?.via === "invitation") && exportEntry?.metadata?.memberId === ids.reader && exportEntry?.metadata?.canExportBefore === false && exportEntry?.metadata?.canExportAfter === true && !JSON.stringify(journal).includes("@example.test"));
 } else console.log("E3 journal : NON EXÉCUTÉ (DATABASE_URL absente) — couvert par app.test.ts (DB-3).");
 
 console.log(echecs ? `\n${echecs} échec(s).` : "\nRecette des règles communes (E1, E2, E3) : tout est vert.");

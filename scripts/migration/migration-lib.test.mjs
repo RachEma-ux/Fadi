@@ -103,6 +103,24 @@ describe('simulation : classement, hypothèses et identités', () => {
     assert.ok(r.hypotheses.find((h) => h.id === 'repere-local-identite').origine === 'non déclarée');
   });
 
+  it('MIG-05 : un même passage classe des éléments dans les quatre catégories — compatible (projet, membre, étude Studio), convertible, ambigu, non convertible — et chacun dans une seule', () => {
+    const r = simuler(lignes(objets, { studio_studies: [{ id: 'st1', project_id: 'p1' }] }), { hypotheses: H, horodatage: 'fixe' });
+    const els = r.projets.flatMap((p) => p.elements);
+    const statutDe = (ancienne) => els.find((e) => e.ancienne === ancienne)?.statut;
+    assert.equal(statutDe('projet:p1'), 'compatible');
+    assert.equal(els.find((e) => e.ancienne.startsWith('membre:p1/'))?.statut, 'compatible');
+    assert.equal(statutDe('studio_studies:st1'), 'compatible');
+    assert.equal(statutDe('atelier_objets:p1/l1'), 'convertible');
+    assert.equal(statutDe('atelier_objets:p1/r2'), 'ambigu');
+    assert.equal(statutDe('atelier_objets:p1/s1'), 'non-convertible');
+    assert.deepEqual([...new Set(els.map((e) => e.statut))].sort(), [...STATUTS].sort());
+    for (const e of els) assert.ok(STATUTS.includes(e.statut), `${e.ancienne} : ${e.statut}`);
+    // Un élément compatible est repris tel quel (même identité), sans conversion ni hypothèse.
+    const projet = els.find((e) => e.ancienne === 'projet:p1');
+    assert.equal(projet.nouvelle, 'projet:p1');
+    assert.equal(REGLES[projet.regle].statut, 'compatible');
+  });
+
   it('sous hypothèses déclarées : conversions sourcées (arc en radians, rectangle aligné, justification, position)', () => {
     const r = simuler(lignes(objets), { hypotheses: H, horodatage: 'fixe' });
     const st = (id) => element(r, `atelier_objets:p1/${id}`).statut;

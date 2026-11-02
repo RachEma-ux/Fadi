@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, evaluerAjustementsQuantites, newStudioDocument, quantitesStudio, validateStudioDocument } from "@parcours/atelier-model";
-import { ajustementDe, deciderAjustement, empreinteAjustement, studioAjustementSchema, type LigneAjustement, type StudioAjustementSaisi } from "./studio-quantites.js";
+import { ajustementDe, deciderAjustement, empreinteAjustement, resultatsDeRevision, studioAjustementSchema, type LigneAjustement, type StudioAjustementSaisi } from "./studio-quantites.js";
 
 const docA = applyStudioCommands(newStudioDocument("d"), [
   { toolId: "studio.dessin.ligne", params: { id: "l1", type: "line", start: { x: 0, y: 0 }, end: { x: 4, y: 0 } } },
@@ -78,5 +78,32 @@ describe("ajustements du métré Studio — règles du serveur (E.3-05)", () => 
     expect(empreinteAjustement(saisie())).toBe(empreinteAjustement({ ...saisie(), requestId: "autre" }));
     expect(empreinteAjustement(saisie())).not.toBe(empreinteAjustement(saisie({ valeur: 4.3 })));
     expect(empreinteAjustement(saisie())).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("IF-008 — résultats quantitatifs servis par l'API (journal des ajustements compris)", () => {
+  const ligne = (seq: number, revisionId: string, value: number | null, document: unknown): LigneAjustement => {
+    const d = deciderAjustement(saisie({ baseSequence: seq - 1, revisionId, valeur: value }), { derniereSequence: seq - 1, headRevisionId: revisionId, document });
+    if ("refus" in d) throw new Error(JSON.stringify(d.refus));
+    return { id: `aj${seq}`, studyId: "e", variantId: "v", revisionId, ...d.ok, authorId: "u_1", requestId: null, payloadHash: null, createdAt: new Date("2026-10-25T08:00:00Z") };
+  };
+  const source = (revisionId: string) => ({ studyId: "e", variantId: "v", revisionId, documentHash: "a".repeat(64) });
+
+  it("IF-008 [+] l'ajustement en vigueur est porté à part (motif, auteur, date), rawValue intacte, freshnessStatus contre la tête", () => {
+    const journal = [ajustementDe(ligne(1, "rev-a", 4.2, json(docA)), new Map([["u_1", "a@x"]]))];
+    const rs = resultatsDeRevision(json(docA), source("rev-a"), "rev-a", journal, new Date("2026-10-25T09:00:00Z"));
+    const l1 = rs.find((r) => r.portee === "objet" && r.grandeur === "longueur" && r.sourceObjectIds[0] === "l1")!;
+    expect(l1).toMatchObject({ rawValue: 4, ruleId: "studio.metre.longueur", freshnessStatus: "a-jour", manualAdjustment: { valeur: 4.2, unit: "m", motif: "Relevé sur site", auteur: "u_1", date: "2026-10-25T08:00:00.000Z" } });
+    expect(rs.find((r) => r.sourceObjectIds[0] === "r1")?.manualAdjustment).toBeUndefined();
+    const perimes = resultatsDeRevision(json(docA), source("rev-a"), "rev-b", journal, new Date());
+    expect(perimes.every((r) => r.freshnessStatus === "perimee")).toBe(true);
+  });
+
+  it("IF-008 [−] un ajustement dont la cible a changé (à revoir) n'est pas porté comme correction : la valeur calculée seule fait foi", () => {
+    const journal = [ajustementDe(ligne(1, "rev-a", 4.2, json(docA)), new Map())];
+    const rs = resultatsDeRevision(json(docB), source("rev-b"), "rev-b", journal, new Date());
+    const l1 = rs.find((r) => r.portee === "objet" && r.grandeur === "longueur" && r.sourceObjectIds[0] === "l1")!;
+    expect(l1.rawValue).toBe(5);
+    expect(l1.manualAdjustment).toBeUndefined();
   });
 });

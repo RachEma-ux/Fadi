@@ -43,6 +43,8 @@ export const studioDossierCreateSchema = z.object({
   /** Métré joint : variante de l'étude et révision (tête par défaut, épinglée) ; null ou absent : pas de métré. */
   quantities: metre,
   includeFidelity: z.boolean().optional(),
+  /** EX-076 (lot PUB) : vues de coupe de la maquette réunies au dossier, dans l'ordre. */
+  sectionViewIds: z.array(identifier).max(STUDIO_LIMITES_DOSSIER.feuilles).optional(),
   requestId: identifier.optional(),
 }).strict();
 export const studioDossierUpdateSchema = z.object({
@@ -55,6 +57,7 @@ export const studioDossierUpdateSchema = z.object({
    */
   repinQuantities: z.boolean().optional(),
   includeFidelity: z.boolean().optional(),
+  sectionViewIds: z.array(identifier).max(STUDIO_LIMITES_DOSSIER.feuilles).optional(),
 }).strict().refine((v) => Object.keys(v).length > 0, { message: "Au moins un champ attendu." });
 export type StudioSheetCreateInput = z.infer<typeof studioSheetCreateSchema>;
 export type StudioSheetUpdateInput = z.infer<typeof studioSheetUpdateSchema>;

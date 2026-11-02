@@ -13,6 +13,7 @@ import { STUDIO_TOOLS, type StudioDocument } from "@parcours/atelier-model";
 import { Icon, type IconName } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { annonce, deplacer, focusApresSuppression, groupesElements, ordreElements, plage, TYPES_ELEMENT, type ElementListe, type ToucheListe } from "./liste-elements";
+import { LIBELLES_RAISON_NON_NATIF } from "../import/import-ifc-ui";
 import { NOM_CALQUE_DEFAUT } from "./calques";
 import "./liste-elements.css";
 
@@ -24,9 +25,12 @@ export interface PropsListeElements {
   surSelection: (ids: string[]) => void;
   /** Supprime la sélection courante (commande existante de la barre). */
   surSupprimer: () => void;
+  /** Retire les éléments non natifs cochés (`studio.nonnatif.retirer`, lot F3) ; vrai si le modèle l'accepte. */
+  surRetirerNonNatifs?: (ids: string[]) => boolean;
 }
 
 const ICONE_SUPPRIMER = (STUDIO_TOOLS.find((t) => t.toolId === "studio.dessin.supprimer")?.iconeSymbolique ?? "studio-delete") as IconName;
+const ICONE_RETIRER_NON_NATIFS = (STUDIO_TOOLS.find((t) => t.toolId === "studio.nonnatif.retirer")?.iconeSymbolique ?? "studio-non-native-remove") as IconName;
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 const TOUCHES: Record<string, ToucheListe> = { ArrowDown: "suivant", ArrowUp: "precedent", Home: "premier", End: "dernier" };
 
@@ -36,7 +40,7 @@ function texteExtrusion(e: ElementListe): string {
   return `extrudé : hauteur ${nombre(e.extrusion.height)} m, base ${nombre(e.extrusion.base)} m`;
 }
 
-export function ListeElements({ doc, selection, modifiable, surSelection, surSupprimer }: PropsListeElements) {
+export function ListeElements({ doc, selection, modifiable, surSelection, surSupprimer, surRetirerNonNatifs }: PropsListeElements) {
   const groupes = useMemo(() => groupesElements(doc), [doc]);
   const ordre = useMemo(() => ordreElements(groupes), [groupes]);
   const selectionnables = useMemo(() => new Set(groupes.flatMap((g) => g.elements.filter((e) => e.selectionnable).map((e) => e.id))), [groupes]);
@@ -147,7 +151,47 @@ export function ListeElements({ doc, selection, modifiable, surSelection, surSup
           })}
         </div>
       )}
+      <NonNatifs doc={doc} modifiable={modifiable} surRetirer={surRetirerNonNatifs} />
       <p className="sr-only" role="status" aria-live="polite" data-studio-elements-annonce>{message}</p>
+    </section>
+  );
+}
+
+/**
+ * Éléments non natifs (lot F3, TEST-028) : ce qu'un import n'a pas traduit, conservé avec son origine (format, type,
+ * identifiant, nom) et sa raison. Ils ne se sélectionnent pas sur la planche et ne s'éditent pas ; seuls les cases et
+ * « Retirer les éléments non natifs » (Maj+F8) agissent, par la commande `studio.nonnatif.retirer`. Exclus des métrés.
+ */
+export function NonNatifs({ doc, modifiable, surRetirer }: { doc: StudioDocument; modifiable: boolean; surRetirer?: (ids: string[]) => boolean }) {
+  const liste = doc.nonNatifs ?? [];
+  const [coches, setCoches] = useState<string[]>([]);
+  const valides = coches.filter((id) => liste.some((n) => n.id === id));
+  if (!liste.length) return null;
+  const nomCalque = (id: string | undefined) => (id ? doc.layers?.find((l) => l.id === id)?.name ?? null : null);
+  return (
+    <section className="studio-non-natifs" aria-labelledby="studio-non-natifs-titre" data-studio-non-natifs={liste.length}>
+      <h4 id="studio-non-natifs-titre">{`Éléments non natifs (${liste.length})`}</h4>
+      <p className="studio-elements-aide">Importés sans équivalent natif : conservés tels quels, non éditables, exclus des métrés et des exports.</p>
+      <ul className="studio-non-natifs-liste">{liste.map((n) => {
+        const calque = nomCalque(n.layerId);
+        return <li key={n.id} data-studio-non-natif={n.id} data-raison={n.raison} data-format={n.origine.format}>
+          <label>
+            <input type="checkbox" checked={valides.includes(n.id)} disabled={!modifiable} onChange={(e) => setCoches(e.target.checked ? [...valides, n.id] : valides.filter((x) => x !== n.id))} data-studio-non-natif-coche={n.id} />
+            <span className="studio-non-natif-etat" data-studio-etat="non-natif">non natif</span>{" "}
+            <span translate="no">{n.origine.entite}</span>
+            {n.origine.nom && <> — <span translate="no">{n.origine.nom}</span></>}
+          </label>
+          <small>
+            <span>{LIBELLES_RAISON_NON_NATIF[n.raison]}</span>
+            {n.detail && <> (<code translate="no">{n.detail}</code>)</>}
+            {n.origine.identifiant && <> · <span>Identifiant d’origine</span> <code translate="no">{n.origine.identifiant}</code></>}
+            {calque !== null && <> · <span>Calque</span> <span translate="no">{calque}</span></>}
+          </small>
+        </li>;
+      })}</ul>
+      <button type="button" disabled={!modifiable || !valides.length || !surRetirer} onClick={() => { if (surRetirer?.(valides)) setCoches([]); }} data-studio-nonnatif-retirer>
+        <Icon name={ICONE_RETIRER_NON_NATIFS} size={18} /> Retirer les éléments non natifs
+      </button>
     </section>
   );
 }

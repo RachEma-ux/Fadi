@@ -10,6 +10,7 @@ const carte = (build = "b1"): CarteChargement => ({
     "planche-2d": { fichiers: ["/assets/index-a.js", "/assets/shell.js", "/assets/planche.js"], propres: ["/assets/planche.js"], taille: 1 },
     "rendu-3d": { fichiers: ["/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js"], propres: ["/assets/vue3d.js", "/assets/three.js"], taille: 1 },
     calcul: { fichiers: ["/assets/studio.worker.js"], propres: ["/assets/studio.worker.js"], taille: 1 },
+    "noyau-exact": { fichiers: ["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"], propres: ["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"], taille: 1 },
   },
   morceaux: {}, verification: { ok: true, violations: [] },
 });
@@ -28,7 +29,7 @@ function env(fichiers: string[], o: { build?: string | null; cache?: boolean; re
   };
   return { e, ranges, demandes, contenu };
 }
-const tous = ["/index.html", "/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js", "/assets/studio.worker.js"];
+const tous = ["/index.html", "/assets/index-a.js", "/assets/shell.js", "/assets/planche.js", "/assets/vue3d.js", "/assets/three.js", "/assets/studio.worker.js", "/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"];
 
 describe("Disponibilité hors connexion véridique (B.3-09, EX-043)", () => {
   it("sans service worker, sans cache de ce build ou avec la carte d'un autre build : non évalué, jamais disponible", async () => {
@@ -44,8 +45,16 @@ describe("Disponibilité hors connexion véridique (B.3-09, EX-043)", () => {
 
   it("tout en cache : chaque moteur et chaque outil disponibles", async () => {
     const v = await verifierHorsConnexion(env(tous).e, carte());
-    expect(v.moteurs).toEqual({ "coquille-studio": true, "planche-2d": true, "rendu-3d": true, calcul: true });
+    expect(v.moteurs).toEqual({ "coquille-studio": true, "planche-2d": true, "rendu-3d": true, calcul: true, "noyau-exact": true });
     expect(outilsHorsConnexion(STUDIO_TOOLS, v)?.indisponibles).toEqual([]);
+  });
+
+  it("lot F2 : .wasm du noyau exact absent du cache (jamais préchargé) : le seul Booléen exact est indisponible hors connexion, véridiquement", async () => {
+    const v = await verifierHorsConnexion(env(tous.filter((f) => f !== "/assets/occt-wasm.wasm")).e, carte());
+    expect(v.moteurs["noyau-exact"]).toBe(false);
+    expect(v.moteurs["rendu-3d"]).toBe(true);
+    // X.1-05 : l'épaississement d'une surface libre (même noyau exact) l'est aussi.
+    expect(outilsHorsConnexion(STUDIO_TOOLS, v)?.indisponibles.map((t) => t.toolId)).toEqual(["studio.solide.booleen", "studio.surface.epaissir", "studio.subdivision.solidifier"]);
   });
 
   it("three.js absent du cache : rendu 3D indisponible, les outils 3D listés, les outils 2D restent disponibles", async () => {
@@ -102,5 +111,24 @@ describe("Disponibilité hors connexion véridique (B.3-09, EX-043)", () => {
     const c = env([]);
     expect((await preparerHorsConnexion(c.e, carte("autre"), ["planche-2d"])).raison).toBe("sans-carte");
     expect([...b.demandes, ...c.demandes]).toEqual([]);
+  });
+});
+
+describe("TR-EX-042 — caches de classe : coquille, profil, modules facultatifs", () => {
+  it("vérification lue dans les trois caches du build ; préparation : chaque fichier rangé dans le cache de sa classe (le .wasm, téléchargé à la demande, dans les modules)", async () => {
+    const parNom = new Map<string, Set<string>>([["fadi-shell-b1", new Set(["/index.html", "/assets/index-a.js"])], ["fadi-profil-b1", new Set(["/assets/shell.js", "/assets/planche.js"])], ["fadi-modules-b1", new Set(["/assets/vue3d.js", "/assets/three.js", "/assets/studio.worker.js"])]]);
+    const caches: CachesLike = {
+      has: async (n) => parNom.has(n),
+      open: async (n) => { if (!parNom.has(n)) parNom.set(n, new Set()); const s = parNom.get(n)!; return { match: async (f) => (s.has(f) ? {} : undefined), put: async (f) => { s.add(f); } }; },
+    };
+    const e: EnvCache = { caches, build: "b1", fetch: async (u) => new Response(u === "/chargement.json" ? JSON.stringify(carte()) : "x") };
+    const v = await verifierHorsConnexion(e, carte());
+    expect(v.moteurs).toMatchObject({ "coquille-studio": true, "planche-2d": true, "rendu-3d": true, calcul: true, "noyau-exact": false });
+    const r = await preparerHorsConnexion(e, carte(), ["noyau-exact"]);
+    expect([...r.ranges].sort()).toEqual(["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm", "/chargement.json"]);
+    expect([...parNom.get("fadi-modules-b1")!]).toEqual(expect.arrayContaining(["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"]));
+    expect(parNom.get("fadi-profil-b1")!.has("/chargement.json")).toBe(true);
+    expect(parNom.get("fadi-shell-b1")!.has("/assets/occt-wasm.wasm")).toBe(false);
+    expect((await verifierHorsConnexion(e, carte())).moteurs["noyau-exact"]).toBe(true);
   });
 });

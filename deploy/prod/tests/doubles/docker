@@ -1,0 +1,74 @@
+#!/bin/bash
+# Double de docker pour fadi-prod-auto. Images : MOCK_DIR/images/<dépôt:étiquette> contient le commit de l'image ; le
+# conteneur app sert MOCK_DIR/en-ligne (commit), son image est « img-<commit> ». Chaque action marquante est ajoutée à
+# MOCK_DIR/ordre (pg_dump, pg_restore-list, tag, build, migrate, up…) ; chaque appel complet à MOCK_DIR/docker.args.
+# MOCK_FAIL : mots « verbe » ou « verbe#n » (n-ième appel) parmi pg_dump pg_restore build migrate up tag config.
+# MOCK_DUMP_VIDE=1 : pg_dump n'écrit rien ; MOCK_CATALOGUE_VIDE=1 : pg_restore --list sans données de table ;
+# MOCK_MIGRATE_LOG : sortie du service migrate ; MOCK_DB_RECREE=1 : le conteneur db redémarre lors d'un `up`.
+echo "$*" >> "$MOCK_DIR/docker.args"
+ordre() { echo "$*" >> "$MOCK_DIR/ordre"; }
+echec() {  # $1 = verbe
+  local n m; n=$(( $(cat "$MOCK_DIR/n-$1" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$MOCK_DIR/n-$1"
+  for m in ${MOCK_FAIL:-}; do
+    if [ "$m" = "$1" ] || [ "$m" = "$1#$n" ]; then echo "double docker : échec simulé ($1, appel $n)" >&2; exit 3; fi
+  done
+}
+mkdir -p "$MOCK_DIR/images"
+commit_de() {  # image (img-<commit> ou dépôt:étiquette) → commit
+  case "$1" in img-*) echo "${1#img-}" ;; *) cat "$MOCK_DIR/images/$1" 2>/dev/null ;; esac
+}
+case "${1:-}" in
+  compose)
+    shift; fichiers=()
+    while [ $# -gt 0 ]; do case "$1" in
+      -f) fichiers+=("$2"); shift 2 ;; -p|--project-directory|--env-file|--ansi) shift 2 ;; -*) shift ;; *) break ;; esac; done
+    verbe=${1:-}; shift
+    image=; for f in "${fichiers[@]}"; do i=$(sed -n 's/^    image: //p' "$f" 2>/dev/null | head -1); [ -n "$i" ] && image=$i; done
+    case "$verbe" in
+      ps) for s in "$@"; do case "$s" in -*) ;; *) echo "cid-$s" ;; esac; done ;;
+      config) echec config; ordre "config $image" ;;
+      exec)
+        [ "${1:-}" = -T ] && shift
+        case "$1 $2" in
+          "db pg_dump") echec pg_dump; ordre pg_dump; [ -n "${MOCK_DUMP_VIDE:-}" ] || printf 'PGDMP-double\n' ;;
+          "backup pg_restore") echec pg_restore; cat > /dev/null; ordre "pg_restore $3"
+            printf ';\n; Archive created at 2026-10-25\n;\n'
+            [ -n "${MOCK_CATALOGUE_VIDE:-}" ] || printf '4321; 0 16390 TABLE DATA public projects fadi\n4322; 0 16400 TABLE DATA public users fadi\n' ;;
+          *) echo "double docker : exec inattendu $*" >&2; exit 9 ;;
+        esac ;;
+      run)
+        [[ " $* " == *" migrate "* ]] || { echo "double docker : run inattendu $*" >&2; exit 9; }
+        echec migrate; ordre "migrate $image"
+        printf '%s\n' "${MOCK_MIGRATE_LOG-Schema applied (init.sql).
+D-7 : mot de passe appliqué pour fadi_app.
+Migration terminée (MIGRATE_ONLY) : arrêt sans écouter.}" ;;
+      up)
+        echec up; ordre "up ${*: -1} $image"
+        c=$(commit_de "$image"); [ -n "$c" ] || { echo "double docker : image $image inconnue" >&2; exit 4; }
+        echo "$c" > "$MOCK_DIR/en-ligne"
+        [ -n "${MOCK_DB_RECREE:-}" ] && date +%s%N > "$MOCK_DIR/started-cid-db" ;;
+      *) echo "double docker : compose $verbe inattendu" >&2; exit 9 ;;
+    esac ;;
+  inspect)
+    shift; [ "$1" = -f ] || exit 9; format=$2; shift 2
+    if [[ $format == *.Image* ]]; then echo "img-$(cat "$MOCK_DIR/en-ligne")"
+    else for id in "$@"; do echo "/app-${id#cid-}-1 $id $(cat "$MOCK_DIR/started-$id" 2>/dev/null || echo 2026-10-01T00:00:00Z)"; done; fi ;;
+  tag)
+    echec tag; ordre "tag $2 $3"
+    c=$(commit_de "$2"); [ -n "$c" ] || exit 4; echo "$c" > "$MOCK_DIR/images/$3" ;;
+  build)
+    shift; commit=; cible=
+    while [ $# -gt 1 ]; do case "$1" in
+      --build-arg) [[ $2 == FADI_COMMIT=* ]] && commit=${2#FADI_COMMIT=}; shift 2 ;; -t) cible=$2; shift 2 ;; --label) shift 2 ;; *) shift ;; esac; done
+    contexte=$1
+    echec build; ordre "build $cible"
+    (cd "$contexte" && find . -type f | sort) > "$MOCK_DIR/build-contexte"
+    echo "$commit" > "$MOCK_DIR/images/$cible" ;;
+  image)
+    case "${2:-}" in
+      ls) for f in "$MOCK_DIR/images/$3":*; do [ -e "$f" ] && echo "${f##*:}"; done ;;
+      rm) ordre "image-rm $3"; rm -f "$MOCK_DIR/images/$3" ;;
+    esac ;;
+  *) echo "double docker : commande inattendue $*" >&2; exit 9 ;;
+esac
+exit 0

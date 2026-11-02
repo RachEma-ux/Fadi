@@ -1,0 +1,50 @@
+{
+  "cle": "geodata-synthetique-provinces",
+  "titre": "Jeu synthétique de test — trois provinces",
+  "producteur": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
+  "theme": "test",
+  "couverture": "Territoire fictif (carrés près de 31° N, 8° O)",
+  "description": "Trois provinces fictives. Jeu SYNTHÉTIQUE pour la recette de la navigation par niveaux (découpage synthétique en données, `decoupage/zz-entites.csv` : la province 1001 relève de la région 1). Il ne représente aucun territoire ni aucune statistique réelle.",
+  "version": {
+    "libelle": "Jeu synthétique v1",
+    "url": null,
+    "empreinte": "e2c65cf5d00b20eda1665c6dc962694f36eb159eef77f09214014f3f95735cd1",
+    "periode": "Sans objet (synthétique)",
+    "licence": "Jeu de test GeoData (aucune restriction)",
+    "attribution": "Jeu synthétique GeoData — aucune donnée réelle",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Sans objet",
+    "synthetique": true
+  },
+  "couche": {
+    "titre": "Provinces synthétiques (test)",
+    "description": "Trois provinces fictives.",
+    "niveau": "ADM2",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#7570b3"
+    }
+  },
+  "indicateurs": [],
+  "superficie": true,
+  "territoire": {
+    "pays": "ZZ",
+    "nomPays": "Pays synthétique (test)",
+    "niveau": "province"
+  }
+}

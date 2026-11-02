@@ -1,0 +1,50 @@
+{
+  "cle": "osm-mar-vignobles",
+  "titre": "Vignobles du Maroc (OpenStreetMap)",
+  "description": "Objets OpenStreetMap « landuse=vineyard », restreints au territoire couvert par geoBoundaries MAR ADM1. Extraits : morocco.osm.pbf du 2026-10-23 (SHA-256 9fd7ee67e3cf0abd2c7b1b3ac74f48374c097e475c342353d73e632dabeea39c) ; western_sahara.osm.pbf du 2026-10-23 (SHA-256 7875b8da19f2c47690f085d2f4afefc4dee1bf0579ab005806ce7f406c61e1b9). Données collaboratives : exhaustivité et exactitude non garanties ; ce n'est pas un inventaire officiel.",
+  "producteur": "Contributeurs OpenStreetMap",
+  "theme": "agriculture",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "OpenStreetMap — extraits du 2026-10-23",
+    "url": null,
+    "fichier": "donnees/osm-mar-vignobles.geojson",
+    "empreinte": "c7753c33d298963bf59b94de66b8db50ef3f9be5697eba1c3c5b705d9838665c",
+    "periode": "Base OpenStreetMap des extraits du 2026-10-23",
+    "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "© contributeurs OpenStreetMap (ODbL)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Géométries des contributeurs OSM reprises telles quelles (surfaces assemblées par osmium ; voies ouvertes en lignes, nœuds en points) ; coordonnées arrondies à 10⁻⁷ degré",
+    "synthetique": false,
+    "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Vignobles du Maroc (OpenStreetMap)",
+    "description": "123 objets ; code = type et identifiant OSM (n = nœud, w = voie, r = relation).",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "osm",
+      "nom",
+      "name",
+      "crop"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#4daf4a"
+    }
+  },
+  "indicateurs": [],
+  "superficie": true
+}

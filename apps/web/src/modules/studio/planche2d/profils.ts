@@ -18,7 +18,7 @@
  * les barres (outil de repos). Les commandes de l'éditeur (hors registre) ne sont pas filtrées.
  */
 import { STUDIO_TOOLS, toolIdCanonique } from "@parcours/atelier-model";
-import type { StudioToolId } from "./raccourcis";
+import { RACCOURCIS_RESERVES, TABLE_CLAVIER, type CibleRaccourci, type StudioToolId } from "./raccourcis";
 
 export type IdProfilMetier = "esquisse-2d" | "cotation" | "volume";
 export type IdProfil = "standard" | "personnel" | `metier:${string}`;
@@ -35,6 +35,14 @@ export interface PreferencesOutils {
   favoris: readonly StudioToolId[];
   personnel: readonly StudioToolId[];
   groupes: readonly GroupeOutils[];
+  /** Raccourcis personnels (EX-034) : capacité → combinaison au format du registre. */
+  raccourcis: Readonly<Record<string, string>>;
+  /** Ordre des capacités (EX-034). */
+  ordre: readonly string[];
+  /** Profil persistant (EX-034) : identifiant stable (null tant que rien n'est enregistré), version, provenance. */
+  profileId: string | null;
+  version: number;
+  importeDe: string | null;
 }
 
 /** Bornes des regroupements, les mêmes que le serveur (`apps/api/src/lib/studio-preferences.ts`). */
@@ -66,7 +74,7 @@ export const PROFILS_METIER: readonly ProfilMetier[] = Object.freeze([
   },
 ] satisfies ProfilMetier[]);
 
-export const PREFERENCES_DEFAUT: PreferencesOutils = Object.freeze({ profil: "standard", favoris: [], personnel: [], groupes: [] });
+export const PREFERENCES_DEFAUT: PreferencesOutils = Object.freeze({ profil: "standard", favoris: [], personnel: [], groupes: [], raccourcis: {}, ordre: [], profileId: null, version: 0, importeDe: null });
 
 const IDS_REGISTRE: ReadonlySet<string> = new Set(STUDIO_TOOLS.map((t) => t.toolId));
 export const estIdOutil = (id: string): id is StudioToolId => IDS_REGISTRE.has(id);
@@ -87,7 +95,7 @@ export const CHOIX_PROFILS: readonly { id: IdProfil; libelleFR: string }[] = Obj
  * absent du registre écarté (un identifiant renommé suit son alias du manifeste, `toolIdCanonique`) ; doublons
  * retirés (ordre gardé) ; regroupement mal formé ou en double écarté.
  */
-export function normaliserPreferences(brut: { profil?: unknown; favoris?: unknown; personnel?: unknown; groupes?: unknown } | null | undefined): PreferencesOutils {
+export function normaliserPreferences(brut: { profil?: unknown; favoris?: unknown; personnel?: unknown; groupes?: unknown; raccourcis?: unknown; ordre?: unknown; profileId?: unknown; version?: unknown; importeDe?: unknown } | null | undefined): PreferencesOutils {
   const liste = (v: unknown): StudioToolId[] => (Array.isArray(v)
     ? [...new Set(v.flatMap((x) => { const c = typeof x === "string" ? toolIdCanonique(x) : null; return c && estIdOutil(c) ? [c] : []; }))]
     : []);
@@ -101,13 +109,56 @@ export function normaliserPreferences(brut: { profil?: unknown; favoris?: unknow
     vus.add(id);
     return [{ id, nom: nom.trim().slice(0, LIMITES_GROUPES.nom), outils: liste(outils) }];
   }).slice(0, LIMITES_GROUPES.groupes);
-  return { profil, favoris: liste(brut?.favoris), personnel: liste(brut?.personnel), groupes };
+  const r = brut?.raccourcis;
+  const raccourcis = r && typeof r === "object" && !Array.isArray(r)
+    ? Object.fromEntries(Object.entries(r as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string")) : {};
+  const ordre = Array.isArray(brut?.ordre) ? [...new Set((brut.ordre as unknown[]).filter((x): x is string => typeof x === "string"))] : [];
+  return {
+    profil, favoris: liste(brut?.favoris), personnel: liste(brut?.personnel), groupes, raccourcis, ordre,
+    profileId: typeof brut?.profileId === "string" ? brut.profileId : null,
+    version: typeof brut?.version === "number" && Number.isInteger(brut.version) && brut.version >= 0 ? brut.version : 0,
+    importeDe: typeof brut?.importeDe === "string" ? brut.importeDe : null,
+  };
 }
 
 /** Corps complet d'enregistrement (PUT), regroupements compris. */
 export const corpsPreferences = (p: PreferencesOutils) => ({
   profil: p.profil, favoris: [...p.favoris], personnel: [...p.personnel], groupes: p.groupes.map((g) => ({ id: g.id, nom: g.nom, outils: [...g.outils] })),
+  raccourcis: { ...p.raccourcis }, ordre: [...p.ordre],
 });
+
+/** Conflit d'un raccourci personnel (EX-034) : même combinaison deux fois, raccourci natif, commande de l'éditeur ou du navigateur. */
+export interface ConflitRaccourciLocal { raccourci: string; capacite: string; type: "doublon" | "registre" | "editeur" | "navigateur"; avec: string }
+
+/**
+ * Conflits des raccourcis personnels d'un profil, détectés par l'interface qui connaît toute la table du clavier
+ * (outils du registre, commandes de l'éditeur, combinaisons réservées au navigateur) ; le serveur contrôle aussi les
+ * doublons et les raccourcis natifs du registre. Rien n'est modifié : les conflits sont rendus pour être explicités.
+ */
+export function conflitsRaccourcisPersonnels(raccourcis: Readonly<Record<string, string>>): ConflitRaccourciLocal[] {
+  const conflits: ConflitRaccourciLocal[] = [];
+  const pris = new Map<string, string>();
+  for (const [capacite, raccourci] of Object.entries(raccourcis)) {
+    const natif = TABLE_CLAVIER.get(raccourci);
+    if (RACCOURCIS_RESERVES.includes(raccourci)) conflits.push({ raccourci, capacite, type: "navigateur", avec: raccourci });
+    else if (natif && !(natif.type === "outil" && natif.toolId === capacite)) conflits.push({ raccourci, capacite, type: natif.type === "outil" ? "registre" : "editeur", avec: natif.type === "outil" ? natif.toolId : natif.id });
+    else if (pris.has(raccourci)) conflits.push({ raccourci, capacite, type: "doublon", avec: pris.get(raccourci)! });
+    else pris.set(raccourci, capacite);
+  }
+  return conflits;
+}
+
+/**
+ * Table des raccourcis personnels appliqués au clavier : seulement les outils du registre, jamais une combinaison en
+ * conflit (la table native garde toujours la priorité). Une capacité hors registre (Publier) n'a pas de commande
+ * clavier dans la planche : elle n'y figure pas.
+ */
+export function tableRaccourcisPersonnels(prefs: Pick<PreferencesOutils, "raccourcis">): ReadonlyMap<string, CibleRaccourci> {
+  const exclus = new Set(conflitsRaccourcisPersonnels(prefs.raccourcis).map((c) => c.capacite));
+  const table = new Map<string, CibleRaccourci>();
+  for (const [capacite, raccourci] of Object.entries(prefs.raccourcis)) if (!exclus.has(capacite) && estIdOutil(capacite)) table.set(raccourci, { type: "outil", toolId: capacite });
+  return table;
+}
 
 const cleNom = (nom: string) => nom.trim().toLocaleLowerCase("fr");
 

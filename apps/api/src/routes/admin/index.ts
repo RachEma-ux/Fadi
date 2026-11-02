@@ -7,6 +7,7 @@
  *                                            (`true` : comptes de test des recettes masqués, domaines réservés, UM-31)
  *   GET    /admin/users/:id                  fiche : projets (rôles), sessions, accès support, historique d'audit
  *   PATCH  /admin/users/:id/role             { role: "user" | "admin" }
+ *   PATCH  /admin/users/:id/self-control     { allowed: boolean } — option « Auto-contrôle » (OP-6), activée par défaut
  *   POST   /admin/users/:id/suspend          sessions révoquées, réservations d'édition libérées
  *   POST   /admin/users/:id/reactivate
  *   POST   /admin/users/:id/revoke-sessions
@@ -16,6 +17,8 @@
  *   POST   /admin/users/:id/anonymize        { confirmEmail } « Anonymiser maintenant » : compte de la corbeille seulement,
  *                                            même anonymisation que la tâche des 30 jours (`anonymiseAccountIn`), irréversible
  *   POST   /admin/users/invitations          { email } → invitation à créer un compte (UM-3)
+ *   GET    /admin/audit                      journal d'activité en lecture seule (routes/admin/journal.ts, phase 3 bis)
+ *   GET    /admin/surveillance               règles d'alerte et consommation des noyaux (routes/admin/surveillance.ts, R.5-03)
  *   GET    /admin/invitations                filtres `status`, `hideTest` (UM-31) · DELETE /admin/invitations/:id
  *   « Renvoyer » une invitation de compte = POST /admin/users/invitations sur la même adresse : nouveau jeton (seule
  *   son empreinte est stockée), l'ancien lien cesse de fonctionner ; le lien en clair n'est rendu qu'une fois.
@@ -40,11 +43,17 @@ import { cancelScheduledDeletion, deletionMail, scheduleDeletion, sharedOwnedPro
 import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
 import { anonymiseAccountIn } from "../../lib/account-jobs.js";
 import { RESERVED_ADDRESS_PATTERN } from "../../lib/mailer/quota.js";
+import { adminJournalRouter } from "./journal.js";
+import { adminSurveillanceRouter } from "./surveillance.js";
 import { anonymisationAt, anonymiseNowRefusal, deletionRequester, DELETION_GRACE_DAYS, type AnonymiseNowRefusal } from "../../lib/security/deletion.js";
 
 export const adminRouter = Router();
 // Pas de `requireAuth` (401) : une personne anonyme reçoit le même 404 que tout non-administrateur.
 adminRouter.use(requirePlatformRole("admin"));
+// Journal d'activité en lecture seule (phase 3 bis) : GET /admin/audit, derrière la même garde.
+adminRouter.use(adminJournalRouter);
+// Surveillance d'exploitation (R.5-03, OPS-08) : GET /admin/surveillance, lecture seule, derrière la même garde.
+adminRouter.use(adminSurveillanceRouter);
 
 const notFound = (res: Response) => res.status(404).json({ error: "not_found" });
 
@@ -66,6 +75,8 @@ function userView(u: typeof users.$inferSelect, projectsCount: number) {
     id: u.id, email: u.email, displayName: u.displayName, platformRole: u.platformRole, status: displayStatus(u, new Date()),
     createdAt: u.createdAt.toISOString(), lastLoginAt: u.lastLoginAt?.toISOString() ?? null, emailVerified: !!u.emailVerifiedAt,
     mfaEnabled: !!u.totpEnabledAt, deletionRequestedAt: u.deletionRequestedAt?.toISOString() ?? null, projectsCount,
+    /** OP-6 : option « Auto-contrôle » (TRUE par défaut : approbation d'un dossier produit permise et marquée). */
+    selfControlAllowed: u.selfControlAllowed,
   };
 }
 
@@ -148,6 +159,28 @@ adminRouter.patch("/users/:userId/role", async (req, res) => {
   });
   if (outcome === "not_found") return void notFound(res);
   if (outcome === "last_admin") return void lastAdmin(res);
+  res.json({ user: userView(outcome, 0) });
+});
+
+/**
+ * OP-6 (lot OP-AUTOCONTROLE) : option « Auto-contrôle » d'un compte. TRUE : la personne peut approuver un dossier Studio
+ * qu'elle a produit ou soumis (approbation marquée) ; FALSE : l'API refuse cette approbation (422 `self_approval_forbidden`).
+ * Jamais sur soi-même ; rien de rétroactif (les approbations passées gardent leur marque) ; sessions inchangées.
+ */
+adminRouter.patch("/users/:userId/self-control", async (req, res) => {
+  const id = req.params["userId"] as string;
+  const parsed = z.object({ allowed: z.boolean() }).strict().safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "invalid_input" });
+  if (refuseSelf(req, res, id)) return;
+  const outcome = await db.transaction(async (tx) => {
+    const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
+    if (!u || u.status === "closed") return "not_found" as const;
+    if (u.selfControlAllowed === parsed.data.allowed) return u;
+    const [updated] = await tx.update(users).set({ selfControlAllowed: parsed.data.allowed }).where(eq(users.id, id)).returning();
+    await audit(tx, { actorId: req.user!.id, action: "admin.user.self_control_changed", target: { type: "user", id }, metadata: { from: u.selfControlAllowed, to: parsed.data.allowed }, ip: clientIp(req) });
+    return updated!;
+  });
+  if (outcome === "not_found") return void notFound(res);
   res.json({ user: userView(outcome, 0) });
 });
 

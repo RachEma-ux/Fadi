@@ -13,7 +13,7 @@ import { IconeAdmin } from "./IconeAdmin";
 import { commandeAdminDuClavier, RACCOURCIS_ADMIN, type CommandeRaccourcie } from "./raccourcis-admin";
 
 const ECRAN = readFileSync(new URL("../../routes/admin/AdminUsersPage.tsx", import.meta.url), "utf8");
-const COMMANDES: CommandeAdmin[] = ["restaurer", "anonymiser", "renvoyer", "copier-lien", "comptes-test"];
+const COMMANDES: CommandeAdmin[] = ["restaurer", "anonymiser", "renvoyer", "copier-lien", "comptes-test", "auto-controle"];
 const RACCOURCIES = Object.keys(RACCOURCIS_ADMIN) as CommandeRaccourcie[];
 const ligne = (attr: string) => ECRAN.split("\n").find((l) => l.includes(attr)) ?? "";
 
@@ -37,6 +37,13 @@ describe("Règle d'or — icônes des commandes d'administration", () => {
     expect(ligne("data-invitation-copy")).toContain('aria-keyshortcuts={RACCOURCIS_ADMIN["copier-lien"].aria}');
     expect(ligne("data-hide-test")).toContain('aria-keyshortcuts={RACCOURCIS_ADMIN["comptes-test"].aria}');
     expect(ECRAN).toContain('<IconeAdmin commande="comptes-test" />Masquer les comptes de test');
+  });
+  it("OP-6 : l'interrupteur « Auto-contrôle » porte son icône, son raccourci et sa barre (groupe « Autorisations » de la fiche)", () => {
+    expect(ligne("data-self-control ")).toContain('aria-keyshortcuts={RACCOURCIS_ADMIN["auto-controle"].aria}');
+    expect(ligne("data-self-control ")).toContain('role="switch"');
+    expect(ECRAN).toContain('<IconeAdmin commande="auto-controle" />Auto-contrôle');
+    expect(ECRAN).toMatch(/role="group" aria-labelledby="admin-autorisations" data-admin-autorisations/);
+    expect(ECRAN).toContain('commandeAdminDuClavier(e) !== "auto-controle"');
   });
   it("chaque commande UM-31 a un raccourci propre, reconnu au clavier (Alt+Maj, touche physique)", () => {
     const touches = RACCOURCIES.map((c) => RACCOURCIS_ADMIN[c].touche);

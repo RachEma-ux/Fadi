@@ -15,6 +15,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-quantites.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -143,10 +144,10 @@ try {
   const lecteur = client();
   const lc = credentials();
   await lecteur("POST", "/auth/register", lc);
-  const ajout = await api("post", `/projects/${projet.id}/members`, { email: lc.email, role: "lecteur" });
+  const ajout = await inviterEtAccepter((m, p, b) => api(m.toLowerCase(), p, b), lecteur, projet.id, lc.email, "lecteur");
   const lecture = await lecteur("GET", ajustements);
   const ecriture = await lecteur("POST", ajustements, { ...base, motif: "Relevé du lecteur" });
-  check("lecteur : lit le journal (peutAjuster faux), n'ajuste pas (403)", ajout.status === 201 && lecture.status === 200 && lecture.body.ajustements.length === 2 && lecture.body.peutAjuster === false && ecriture.status === 403, `${lecture.status} ${ecriture.status}`);
+  check("lecteur : lit le journal (peutAjuster faux), n'ajuste pas (403)", ajout.ok && lecture.status === 200 && lecture.body.ajustements.length === 2 && lecture.body.peutAjuster === false && ecriture.status === 403, `${lecture.status} ${ecriture.status}`);
   const derivee = (await api("post", `${racine}/${studyId}/variants`, { name: "Variante archivée", fromVariantId: variantId })).body;
   await api("post", `${racine}/${studyId}/variants/${derivee.variant.id}/archive`, {});
   const archivee = await api("post", `${racine}/${studyId}/variants/${derivee.variant.id}/ajustements-quantites`, { ...base, baseSequence: 0, revisionId: derivee.variant.headRevisionId, motif: "Relevé" });

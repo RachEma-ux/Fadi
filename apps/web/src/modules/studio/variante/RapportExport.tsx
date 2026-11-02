@@ -52,6 +52,7 @@ export function RapportExport({ format, urlExport, exportId, surFermer }: { form
           </tr>)}
         </tbody>
       </table>}
+      <p data-studio-rapport-reperes={`${r.reperes.source.repere}>${r.reperes.cible.repere}`}>{`Repères : local-2d (m) → ${r.reperes.cible.repere}, aucun géoréférencement.`} <span translate="no">{`${r.reperes.cible.declaration} · ${r.reperes.conversion}`}</span></p>
       <dl className="studio-rapport-export-calques" data-studio-rapport-calques>
         <div><dt>Calques masqués</dt><dd>{r.calques.masques}</dd></div>
         <div><dt>Éléments sur calques masqués</dt><dd>{r.calques.elementsSurCalquesMasques}</dd></div>

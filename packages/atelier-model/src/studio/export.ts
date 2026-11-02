@@ -6,6 +6,8 @@ import { coteDxf, coteSvg, dessinerCote } from "./objets/cote.js";
 import { typeObjet } from "./objets/index.js";
 import { annotationDxf, annotationPoints, annotationSvg, dessinerAnnotation } from "./objets/annotation.js";
 import { architectureDxf, architecturePoints, architectureSvg, studioPlanArchitecture } from "./architecture/plan.js";
+import { graphismeDxf, graphismeSvg, studioPointsGraphisme } from "./graphismes/graphismes.js";
+import { blocsDxf, insertionDxf, insertionSvg, studioNomsDxfBlocs, studioPointsInsertion } from "./blocs/blocs.js";
 
 export { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./objets/cote.js";
 
@@ -129,6 +131,10 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   for (const g of dims) add(layerKey(g.dimension), [g.a, g.b, g.text, ...g.extensions.flat()]);
   for (const n of notes) add(layerKey(n.annotation), annotationPoints(n));
   if (plan) for (const m of architecturePoints(plan)) add(layerKey(m), m.points);
+  for (const g of doc.graphismes ?? []) add(layerKey(g), studioPointsGraphisme(g));
+  // Blocs (X.1-01) : chaque insertion bornée par les formes posées de sa définition.
+  const defs = new Map((doc.blocs ?? []).map((b) => [b.id, b]));
+  for (const i of doc.insertions ?? []) add(layerKey(i), studioPointsInsertion(defs.get(i.bloc)!, i));
   const pts = shown.length ? shown : all;
   // Document vide : bornes nulles autour de l'origine (la marge seule donne la vue).
   let minX = pts.length ? Infinity : 0, minY = pts.length ? Infinity : 0, maxX = pts.length ? -Infinity : 0, maxY = pts.length ? -Infinity : 0;
@@ -161,6 +167,11 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
       lines.push(...annotationSvg(n, opts.textHeight));
     }
     if (plan) lines.push(...architectureSvg(plan, layer.id, layerKey));
+    // Graphismes (EX-055) : un `<g data-graphisme>` chacun, `opacity` s'il est transparent.
+    for (const g of doc.graphismes ?? []) if (layerKey(g) === layer.id) lines.push(...graphismeSvg(g));
+    // Insertions de blocs (X.1-01) : un `<g data-insertion data-bloc>` chacune, formes de la définition posées
+    // (la définition n'est pas réutilisable dans le fichier : rapport de fidélité « bloc-developpe »).
+    for (const i of doc.insertions ?? []) if (layerKey(i) === layer.id) lines.push(...insertionSvg(defs.get(i.bloc)!, i));
     lines.push("</g>");
   }
   lines.push("</svg>");
@@ -216,6 +227,10 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   }
   w.pair(0, "ENDTAB");
   w.pair(0, "ENDSEC");
+  // Blocs (X.1-01) : section BLOCKS (un BLOCK par définition, nom ASCII dérivé) avant les entités.
+  const blocs = doc.blocs ?? [];
+  const nomsBlocs = studioNomsDxfBlocs(blocs);
+  if (blocs.length) blocsDxf(blocs, nomsBlocs, w);
   w.pair(0, "SECTION");
   w.pair(2, "ENTITIES");
   for (const o of doc.objects) typeObjet(o).dxf(o, nameOf.get(layerKey(o))!, w);
@@ -224,6 +239,13 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   for (const a of doc.annotations ?? []) annotationDxf(dessinerAnnotation(a, opts.locale, opts.textHeight), nameOf.get(layerKey(a))!, opts.textHeight, w);
   // Murs (POLYLINE fermée par partie pleine, interrompue aux ouvertures) et montants des ouvertures (LINE).
   if (doc.architecture?.length) architectureDxf(studioPlanArchitecture(doc.architecture), (o) => nameOf.get(layerKey(o))!, w);
+  // Graphismes (EX-055) : spline → POLYLINE découpée (STUDIO_SEGMENTS_PAR_BEZIER par morceau), hachure → POLYLINE fermée
+  // du contour + LINE par trait, symbole → LINE / CIRCLE / POLYLINE ; transparence déclarée en commentaire 999.
+  for (const g of doc.graphismes ?? []) graphismeDxf(g, nameOf.get(layerKey(g))!, w);
+  // Insertions (X.1-01) : INSERT (position, facteur x négatif pour la symétrie, rotation en degrés).
+  for (const i of doc.insertions ?? []) insertionDxf(i, nomsBlocs.get(i.bloc)!, nameOf.get(layerKey(i))!, w);
+  // Contraintes (X.1-01) : relations non représentables en DXF R12, déclarées (la géométrie résolue est écrite).
+  for (const c of doc.contraintes ?? []) w.pair(999, dxfText(`contrainte ${c.id} (${c.type}) non representable en DXF R12`));
   w.pair(0, "ENDSEC");
   w.pair(0, "EOF");
   return w.out.join("\r\n") + "\r\n";

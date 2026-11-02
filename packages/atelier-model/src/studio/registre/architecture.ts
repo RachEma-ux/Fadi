@@ -1,4 +1,4 @@
-import { SCHEMA_ARCHITECTURE, SCHEMA_MUR, SCHEMA_OUVERTURE } from "../architecture/schemas.js";
+import { SCHEMA_ARCHITECTURE, SCHEMA_ECHELLE, SCHEMA_MUR, SCHEMA_OUVERTURE } from "../architecture/schemas.js";
 import { mutation } from "./communs.js";
 import { ids } from "./schemas.js";
 
@@ -12,4 +12,7 @@ export const OUTILS_ARCHITECTURE = [
   { ...mutation, toolId: "studio.architecture.ouverture", libelleFR: "Ouverture", raccourci: "H", iconeSymbolique: "studio-opening", groupe: "architecture", inputSchema: SCHEMA_OUVERTURE },
   { ...mutation, toolId: "studio.architecture.modifier", libelleFR: "Modifier l’élément architectural", raccourci: "J", iconeSymbolique: "studio-architecture-edit", groupe: "architecture", inputSchema: SCHEMA_ARCHITECTURE },
   { ...mutation, toolId: "studio.architecture.supprimer", libelleFR: "Supprimer le mur et ses ouvertures", raccourci: "Ctrl+Delete", iconeSymbolique: "studio-architecture-delete", groupe: "architecture", inputSchema: { type: "object", additionalProperties: false, required: ["ids", "cascade"], properties: { ids, cascade: { type: "boolean" } } } },
+  // EX-027 (lot G2) : Échelle d'accès — identifiant distinct de la transformation « Échelle » (`studio.dessin.echelle`) :
+  // une collision de noms d'affichage n'autorise pas une collision d'identifiants. Ctrl+Maj+F12, libre et non réservé (F12 seul, outils de développement, l’est ; Ctrl+Maj+F8 est « Exporter STL »).
+  { ...mutation, toolId: "studio.architecture.echelle-acces", libelleFR: "Échelle d’accès", raccourci: "Ctrl+Shift+F12", iconeSymbolique: "studio-ladder", groupe: "architecture", inputSchema: SCHEMA_ECHELLE },
 ] as const;

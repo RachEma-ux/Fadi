@@ -1,0 +1,26 @@
+# Fadi — mise en production automatique d'une Release GitHub (deploy/prod/fadi-prod-auto).
+# Installé par l'administrateur en /etc/systemd/system/, avec /usr/local/sbin/fadi-prod-auto (root, 0755) depuis un
+# commit relu, empreinte vérifiée. Déclenché par fadi-prod-auto.timer ; jamais par GitHub.
+[Unit]
+Description=Fadi — production automatique (Release GitHub validée en préproduction)
+Documentation=https://github.com/RachEma-ux/Fadi/blob/main/docs/deploiement-automatique.md
+Wants=network-online.target
+After=network-online.target docker.service
+RequiresMountsFor=/mnt/data
+ConditionPathIsDirectory=/mnt/data/fadi/app
+ConditionPathIsDirectory=/mnt/data/fadi/deployments
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/fadi-prod-auto
+# Sauvegarde hors VPS (fadi-backup-offsite.service : jusqu'à 3 h), construction et sondes compris ; au-delà, le passage
+# est arrêté et le suivant reprend l'état (retour à l'image précédente si l'application avait été redémarrée).
+TimeoutStartSec=4h
+UMask=0077
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only
+# Seule exception sous /root : l'état du client Docker (buildx y note l'activité du constructeur).
+ReadWritePaths=-/root/.docker

@@ -21,6 +21,12 @@
   listed with the lot that will give it its icon, toolbar and shortcut (O-1, O-2, O-3, L9), so no command can appear
   without being accounted for. On touch screens the shortcut is complemented by a
   visible named button, never replaced by a hidden gesture.
+- Interface and database are always distinct (owner rule of 2026-10-26, D-GD-29), mandatory: wherever there is data,
+  use the pair « UI ↔ dedicated database ». The web app and its tools hold no data (no built-in referential, list of
+  territories, statistics or catalogue in the code or bundle); data lives in dedicated database tables, loaded from
+  qualified sources by the import chain, read by the interface through the API only. Every data file the app uses is
+  also archived as-is in the database (`geodata_fichiers` for GeoData). A UI that has no data in the database says so;
+  it never falls back to embedded data.
 - Run npm run typecheck, npm test and npm run build for relevant code changes. Report checks that could not run.
 - Never commit secrets, node_modules or build outputs.
 

@@ -1,0 +1,1515 @@
+code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
+100710101,Commune d'Assa,r2890965,Assa,nom français + inclusion dans la province,apparie
+100710103,Commune de Zag,r2891021,Zag,nom français + inclusion dans la province,apparie
+100710301,Commune d'Aouint Lahna,r2890962,Aouint Lahna,nom français + inclusion dans la province,apparie
+100710303,Commune d'Aouint Yghomane,r2885953,Aouint Yghomane,nom français + inclusion dans la province,apparie
+100710305,Commune de Touizgui,r2891016,Touizgui,nom français + inclusion dans la province,apparie
+100710501,Commune d'Al Mahbass,r2891023,Al Mahbass,nom français + inclusion dans la province,apparie
+100710503,Commune de Labouirat,r2891028,Labouirat,nom français + inclusion dans la province,apparie
+102610101,Commune de Bouizakarne,r2885863,Bouizakarne,nom français + inclusion dans la province,apparie
+102610103,Commune de Guelmim,r2885914,Guelmim,nom français + inclusion dans la province,apparie
+102610301,Commune d'Aday,r2885852,Aday,nom français + inclusion dans la province,apparie
+102610303,Commune d'Ait Boufoulen,r2885892,Aït Boufoulen,nom français + inclusion dans la province,apparie
+102610305,Commune d'Amtdi,r2885851,Amtdi,nom français + inclusion dans la province,apparie
+102610307,Commune d'Ifrane Atlas Saghir,r2885853,Ifrane Atlas-Saghir ⵉⴼⵔⴰⵏ ⵏ ⴰⵟⵍⴰⵙ ⵎⵥⵥⵉⵏ أيفران الأطلس الصغير,nom français + inclusion dans la province,apparie
+102610309,Commune de Tagante,r2885858,Tagant,nom arabe + inclusion dans la province,apparie
+102610311,Commune de Taghjijt,r2885848,Taghjijt,nom français + inclusion dans la province,apparie
+102610313,Commune de Timoulay,r2885856,Timoulay,nom français + inclusion dans la province,apparie
+102610503,Commune d'Aferkat,r2885950,Aferkat,nom français + inclusion dans la province,apparie
+102610505,Commune d'Asrir,r2885915,Asrir,nom français + inclusion dans la province,apparie
+102610509,Commune de Fask,r2885857,Fask,nom français + inclusion dans la province,apparie
+102610521,Commune de Tiglit,r2885916,Tiglit,nom français + inclusion dans la province,apparie
+102610701,Commune d'Abaynou,r2885907,Abaynou,nom français + inclusion dans la province,apparie
+102610707,Commune d'Echatea El Abied,r2885943,Echatea El Abied,nom français + inclusion dans la province,apparie
+102610711,Commune de Labyar,r2885948,Labyar,nom français + inclusion dans la province,apparie
+102610713,Commune de Laqsabi Tagoust,r2885947,Laqsabi Tagoust,nom français + inclusion dans la province,apparie
+102610715,Commune de Rass Oumlil,r2885951,Rass Oumlil,nom français + inclusion dans la province,apparie
+102610717,Commune de Taliouine Assaka,r2885945,Taliouine Assaka,nom français + inclusion dans la province,apparie
+102610719,Commune de Targa Wassay,r2885944,Targa Wassay,nom français + inclusion dans la province,apparie
+104730101,Commune de Lakhsas,r2886017,Lakhsas,nom français + inclusion dans la province,apparie
+104730103,Commune de Sidi Ifni,r2886004,Sidi Ifni,nom français + inclusion dans la province,apparie
+104730501,Commune d'Arbaa Ait Abdellah,r2886015,Arbaa Aït Abdellah,nom français + inclusion dans la province,apparie
+104730503,Commune d'Imi-N'fast,r2885997,Imi N'Fast,nom français + inclusion dans la province,apparie
+104730505,Commune de Mesti,r2885999,Mesti,nom français + inclusion dans la province,apparie
+104730509,Commune de Sbouya,r2885998,Sbouya,nom français + inclusion dans la province,apparie
+104730511,Commune de Tangarfa,r2886009,Tangarfa,nom français + inclusion dans la province,apparie
+104730513,Commune de Tioughza,r2888225,Tioughza,nom français + inclusion dans la province,apparie
+104730515,Commune de Tnine Amellou,r2886001,Tnine Amellou,nom français + inclusion dans la province,apparie
+104730701,Commune d'Ait Erkha,r2888307,Aït Erkha,nom français + inclusion dans la province,apparie
+104730703,Commune d'Anfeg,r2888756,Anfeg,nom français + inclusion dans la province,apparie
+104730705,Commune de Boutrouch,r2888803,Boutrouch,nom français + inclusion dans la province,apparie
+104730707,Commune d'Ibdar,r2888760,Ibdar,nom français + inclusion dans la province,apparie
+104730709,Commune de Sebt Ennabour,r2888304,Sebt Ennabour,nom français + inclusion dans la province,apparie
+104730711,Commune de Sidi Abdellah Ou Belaid,r2888312,Sidi Abdallah Ou Belaïd,nom arabe + inclusion dans la province,apparie
+104730713,Commune de Sidi H'saine Ou Ali,r2888349,Sidi H'Saïne Ou Ali,nom français + inclusion dans la province,apparie
+104730715,Commune de Sidi M'bark,r2886016,Sidi M'Bark,nom français + inclusion dans la province,apparie
+104730717,Commune de Tighirt,r2888798,Tighirt,nom français + inclusion dans la province,apparie
+10510103,Commune de Bni Bouayach,r2423105,Bni Bouayach,nom français + inclusion dans la province,apparie
+10510105,Commune d'Imzouren,r2423104,Imzouren,nom français + inclusion dans la province,apparie
+10510107,Commune de Targuist,r2470156,Targuist,nom français + inclusion dans la province,apparie
+10510109,Commune d'Ajdir,r5954840,Ajdir,nom français + inclusion dans la province,apparie
+10510301,Commune de Bni Boufrah,r2444642,Bni Boufrah,nom français + inclusion dans la province,apparie
+10510303,Commune de Bni Gmil,r2516841,Bni Gmil,nom français + inclusion dans la province,apparie
+10510305,Commune de Bni Gmil Maksouline,r2516842,Bni Gmil Maksouline,nom français + inclusion dans la province,apparie
+10510307,Commune de Senada,r2444641,Senada,nom français + inclusion dans la province,apparie
+10510703,Commune de Bni Ahmed Imoukzan,r2507408,Bni Ahmed Imoukzan,nom français + inclusion dans la province,apparie
+10510705,Commune de Bni Ammart,r2507410,Bni Ammart,nom français + inclusion dans la province,apparie
+10510707,Commune de Bni Bchir,r2507406,Beni Bechir,nom approché (0.90) + inclusion dans la province,apparie
+10510711,Commune de Bni Bounsar,r2507407,Bni Bounsar,nom français + inclusion dans la province,apparie
+10510719,Commune de Sidi Boutmim,r2470157,Sidi Boutmim,nom français + inclusion dans la province,apparie
+10510721,Commune de Sidi Bouzineb,r2507405,Sidi Bouzineb,nom français + inclusion dans la province,apparie
+10510727,Commune de Zarkt,r2470158,Zarkat,nom arabe + inclusion dans la province,apparie
+10510901,Commune d'Abdelghaya Souahel,r2516840,Abdelghaya Souahel,nom français + inclusion dans la province,apparie
+10510909,Commune de Bni Bouchibet,r3551667,Bni Bouchibet,nom français + inclusion dans la province,apparie
+10510913,Commune d'Issaguen,r2516837,Issaguen,nom français + inclusion dans la province,apparie
+10510915,Commune de Ketama,r2516838,Ketama,nom français + inclusion dans la province,apparie
+10510917,Commune de Moulay Ahmed Cherif,r2516843,Moulay Ahmed Cherif,nom français + inclusion dans la province,apparie
+10510923,Commune de Taghzout,r2507409,Taghzout,nom français + inclusion dans la province,apparie
+10510925,Commune de Tamsaout,r2516839,Tamsaout,nom français + inclusion dans la province,apparie
+10511101,Commune d'Ait Kamra,r2440718,Aït Kamra,nom français + inclusion dans la province,apparie
+10511107,Commune de Bni Abdellah,r2444643,Bni Abdellah,nom français + inclusion dans la province,apparie
+10511109,Commune de Bni Hadifa,r2444640,Bni Hadifa,nom français + inclusion dans la province,apparie
+10511115,Commune d'Izemmouren,r2440716,Izemmouren,nom français + inclusion dans la province,apparie
+10511121,Commune de Rouadi,r2440717,Rouadi,nom français + inclusion dans la province,apparie
+10511125,Commune de Zaouiat Sidi Abdelkader,r2470159,Zouaïat sidi Abdelkader,nom arabe + inclusion dans la province,apparie
+10511303,Commune d'Ait Youssef Ou Ali,r2436238,Aït Youssef ou Ali,nom français + inclusion dans la province,apparie
+10511305,Commune d'Arbaa Taourirt,r2440712,Arbaa Taourirt,nom français + inclusion dans la province,apparie
+10511311,Commune de Chakrane,r2440971,Chakran,nom approché (0.93) + inclusion dans la province,apparie
+10511313,Commune d'Imrabten,r2440970,Imrabten,nom français + inclusion dans la province,apparie
+10511317,Commune de Louta,r2436239,Louta,nom français + inclusion dans la province,apparie
+10511319,Commune de Nekkour,r2440713,Nekkour,nom français + inclusion dans la province,apparie
+10511323,Commune de Tifarouine,r2440969,Tifarouine,nom français + inclusion dans la province,apparie
+105210101,Commune de Tan-Tan,r2890951,Tan-Tan,nom français + inclusion dans la province,apparie
+105210103,Commune d'El Ouatia,r2890949,El Ouatia,nom français + inclusion dans la province,apparie
+105210301,Commune de Msied,r2890950,Msied,nom français + inclusion dans la province,apparie
+105210303,Commune de Tilemzoun,r2890952,Tilemzoun,nom français + inclusion dans la province,apparie
+105210501,Commune d'Abteh,r2890948,Abteh,nom français + inclusion dans la province,apparie
+105210503,Commune de Ben Khlil,r2890947,Ben Khlil,nom français + inclusion dans la province,apparie
+111210101,Commune de Boujdour,r3552424,Boujdour,nom français + inclusion dans la province,apparie
+111210301,Commune de Gueltat Zemmour,r3552440,Gueltat Zemmour,nom français + inclusion dans la province,apparie
+111210303,Commune de Jraifia,r3552447,Jraïfia,nom français + inclusion dans la province,apparie
+111210305,Commune de Lamssid,r3665498,Lamssid,nom français + inclusion dans la province,apparie
+112210101,Commune d'Es-Semara,r3666523,Smara,nom arabe + inclusion dans la province,apparie
+112210301,Commune d'Amgala,r3666591,Amgala,nom français + inclusion dans la province,apparie
+112210303,Commune de Haouza,r3666695,Haouza,nom français + inclusion dans la province,apparie
+112210305,Commune de Jdiriya,r3666707,Jdiriya,nom français + inclusion dans la province,apparie
+112210307,Commune de Sidi Ahmed Laaroussi,r3666522,Sidi Ahmed Laaroussi,nom français + inclusion dans la province,apparie
+112210309,Commune de Tifariti,r6054811,Tifariti,nom français + inclusion dans la province,apparie
+113210103,Commune de Laâyoune,r3409845,Laâyoune,nom français + inclusion dans la province,apparie
+113210301,Commune de Boukraa,r3409841,Boukraa,nom français + inclusion dans la province,apparie
+113210303,Commune de Dcheira,r3409848,Dcheira,nom français + inclusion dans la province,apparie
+11510101,Commune de Chefchaouen,r4666456,Chefchaouen,nom français + inclusion dans la province,apparie
+11510303,Commune de Bab Berred,r2563409,Bab Berred,nom français + inclusion dans la province,apparie
+11510313,Commune d'Iounane,r2563397,Younane,nom approché (0.86) + inclusion dans la province,apparie
+11510323,Commune de Tamorot,r2563402,Tamorot,nom français + inclusion dans la province,apparie
+11510501,Commune de Bab Taza,r2563407,Bab Taza,nom français + inclusion dans la province,apparie
+11510503,Commune de Bni Darkoul,r2563408,Bni Darkoul,nom français + inclusion dans la province,apparie
+11510505,Commune de Bni Faghloum,r3587216,Beni Faghloum,nom arabe + inclusion dans la province,apparie
+11510507,Commune de Bni Salah,r2563391,Bni Salah,nom français + inclusion dans la province,apparie
+11510509,Commune de Derdara,r2563413,Dardara,nom arabe + inclusion dans la province,apparie
+11510511,Commune de Fifi,r2563390,Fifi,nom français + inclusion dans la province,apparie
+11510513,Commune de Laghdir,r2563393,Laghdir,nom français + inclusion dans la province,apparie
+11510515,Commune de Tanaqoub,r2563392,Tanaqoub,nom français + inclusion dans la province,apparie
+11510605,Commune de Bni Ahmed Cherqia,r2563411,Bni Ahmed Charqia,nom arabe + inclusion dans la province,apparie
+11510607,Commune de Bni Ahmed Gharbia,r3587342,Bni Ahmed Gharbia,nom français + inclusion dans la province,apparie
+11510615,Commune de Mansoura,r3587355,Mançoura,nom arabe + inclusion dans la province,apparie
+11510621,Commune d'Oued Malha,r2563410,Oued Malha,nom français + inclusion dans la province,apparie
+11510701,Commune de Bni Bouzra,r2533869,Bni Bouzra,nom français + inclusion dans la province,apparie
+11510707,Commune de Steha,r2533868,Stehat,nom arabe + inclusion dans la province,apparie
+11510709,Commune de Talambote,r2563401,Talambote,nom français + inclusion dans la province,apparie
+11510711,Commune de Tassift,r2563400,Tassift,nom français + inclusion dans la province,apparie
+11510713,Commune de Tizgane,r2533867,Tizgane,nom français + inclusion dans la province,apparie
+11510901,Commune d'Amtar,r2533874,Amtar,nom français + inclusion dans la province,apparie
+11510909,Commune de Bni Rzine,r2563406,Bni Rzine,nom français + inclusion dans la province,apparie
+11510911,Commune de Bni Smih,r2563405,Bni Smih,nom français + inclusion dans la province,apparie
+11510917,Commune de M'tioua,r2563404,M'tioua,nom français + inclusion dans la province,apparie
+11510919,Commune d'Ouaouzgane,r2563403,Ouaouzgane,nom français + inclusion dans la province,apparie
+11511103,Commune de Bni Mansour,r2563398,Beni Mansour,nom arabe + inclusion dans la province,apparie
+11511105,Commune de Bni Selmane,r2563399,Bni Selmane,nom français + inclusion dans la province,apparie
+115370105,Commune de Tarfaya,r3409847,Tarfaya,nom français + inclusion dans la province,apparie
+115370303,Commune de Daoura,r3409842,Daoura,nom français + inclusion dans la province,apparie
+115370305,Commune d'El Hagounia,r3409843,El Hagounia,nom français + inclusion dans la province,apparie
+115370501,Commune d'Akhfennir,r2891051,Akhfennir,nom français + inclusion dans la province,apparie
+115370507,Commune de Tah,r3409846,Tah,nom français + inclusion dans la province,apparie
+120660103,Commune de Lagouira*,r6182716,Lagouira,nom français + inclusion dans la province,apparie
+120660303,Commune d'Aghouinite*,r6054151,Aghouinite,nom français + inclusion dans la province,apparie
+120660305,Commune d'Aousserd,r5199604,Aousserd,nom français + inclusion dans la province,apparie
+120660307,Commune de Tichla,r5199611,Tichla,nom français + inclusion dans la province,apparie
+120660309,Commune de Zoug*,r6054231,Zoug,nom français + inclusion dans la province,apparie
+120660503,Commune de Bir Gandouz,r5199621,Bir Gandouz,nom français + inclusion dans la province,apparie
+12270305,Commune d'Anjra,r2752881,Anjra,nom français + inclusion dans la province,apparie
+12270311,Commune de Jouamaa,r2752879,Jouamaa,nom français + inclusion dans la province,apparie
+12270313,Commune de Ksar El Majaz,r2752878,Ksar al Majaz,nom approché (0.92) + inclusion dans la province,apparie
+12270321,Commune de Taghramt,r2752876,Taghramt,nom français + inclusion dans la province,apparie
+12270501,Commune d'Al Bahraoyine,r2763071,Al Bahraoyine,nom français + inclusion dans la province,apparie
+12270505,Commune de Ksar Sghir,r2752877,Ksar Sghir,nom français + inclusion dans la province,apparie
+12270509,Commune de Malloussa,r2752962,Malloussa,nom français + inclusion dans la province,apparie
+123910101,Commune de Dakhla,r3594851,Dakhla,nom français + inclusion dans la province,apparie
+123910501,Commune de Bir Anzarane,r3594878,Bir Anzarane,nom français + inclusion dans la province,apparie
+123910503,Commune de Gleibat El Foula,r5199595,Gleibat El Foula,nom français + inclusion dans la province,apparie
+123910505,Commune de Mijik*,r6054435,Mijik,nom français + inclusion dans la province,apparie
+123910507,Commune d'Oum Dreyga,r3679557,Oum Dreyga,nom français + inclusion dans la province,apparie
+123910903,Commune d'Imlili,r3679581,Imlili,nom français + inclusion dans la province,apparie
+13310101,Commune de Ksar El Kebir,r2563448,Ksar el Kebir,nom français + inclusion dans la province,apparie
+13310103,Commune de Larache,r2754034,Larache,nom français + inclusion dans la province,apparie
+13310701,Commune de Boujedyane,r2563446,Boujediane,nom arabe + inclusion dans la province,apparie
+13310703,Commune de Ksar Bjir,r2563440,Ksar Bjir,nom français + inclusion dans la province,apparie
+13310705,Commune de Laouamra,r2754180,Aouamra,nom arabe + inclusion dans la province,apparie
+13310711,Commune de Souk L'qolla,r2806008,Souk el Kolla,nom arabe + inclusion dans la province,apparie
+13310715,Commune de Tatoft,r2563445,Tatoufet,nom arabe + inclusion dans la province,apparie
+13310717,Commune de Zouada,r2754181,Zouada,nom français + inclusion dans la province,apparie
+13310901,Commune d'Ayacha,r2563436,Ayacha,nom français + inclusion dans la province,apparie
+13310903,Commune de Bni Arouss,r2753080,Bni Arouss,nom français + inclusion dans la province,apparie
+13310905,Commune de Bni Garfett,r2563435,Bni Garfett,nom français + inclusion dans la province,apparie
+13310913,Commune de Tazroute,r2806009,Tazroute,nom français + inclusion dans la province,apparie
+13310915,Commune de Zaaroura,r2806007,Zaaroura,nom français + inclusion dans la province,apparie
+13311103,Commune d'Oulad Ouchih,r2563441,Oulad Ouchih,nom français + inclusion dans la province,apparie
+13311107,Commune de Rissana Chamalia,r2563444,Rissana Nord,nom arabe + inclusion dans la province,apparie
+13311109,Commune de Rissana Janoubia,r2563443,Rissana Sud,nom arabe + inclusion dans la province,apparie
+13311111,Commune de Sahel,r2754035,Khemis Sahel,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
+13311112,Commune de Souaken,r2563442,Souaken,nom français + inclusion dans la province,apparie
+13311113,Commune de Souk Tolba,r2563447,Souk Tolba,nom français + inclusion dans la province,apparie
+14050109,Commune d'Ouezzane,r2753083,Ouazzane,nom arabe + inclusion dans la province,apparie
+14050701,Commune de Bni Quolla,r2753084,Bni Quolla,nom français + inclusion dans la province,apparie
+14050705,Commune de Masmouda,r2753082,Masmouda,nom français + inclusion dans la province,apparie
+14050707,Commune de Mzefroune,r2753081,Mzefroune,nom français + inclusion dans la province,apparie
+14050715,Commune de Sidi Redouane,r2810039,Sidi Redouane,nom français + inclusion dans la province,apparie
+14050901,Commune d'Ain Beida,r2563394,Aïn Béida,nom français + inclusion dans la province,apparie
+14050903,Commune d'Asjen,r2563396,Asjen,nom français + inclusion dans la province,apparie
+14050905,Commune de Brikcha,r2563395,Brikcha,nom français + inclusion dans la province,apparie
+14050909,Commune de Moqrissat,r2563387,Moqrisset,nom arabe + inclusion dans la province,apparie
+14051107,Commune de Kalaat Bouqorra,r2563389,Kalaat Booqorra,nom arabe + inclusion dans la province,apparie
+14051111,Commune de Zoumi,r2563388,Zoumi,nom français + inclusion dans la province,apparie
+14051303,Commune de Lamjaara,r2753147,Lamjaara,nom français + inclusion dans la province,apparie
+14051309,Commune d'Ouannana,r2810046,Ounnana,nom approché (0.93) + inclusion dans la province,apparie
+14051311,Commune de Sidi Ahmed Cherif,r2753148,Sidi Ahmed Cherif,nom français + inclusion dans la province,apparie
+14051313,Commune de Sidi Bousber,r2753149,Sidi Bousber,nom français + inclusion dans la province,apparie
+14051317,Commune de Teroual,r2810051,Teroual,nom français + inclusion dans la province,apparie
+14051319,Commune de Zghira,r2810053,Zghira,nom français + inclusion dans la province,apparie
+1511010,Commune de Tanger,r2758781,Tanger,nom français + inclusion dans la province,apparie
+15110101,Commune d'Assilah,r2752822,Assilah,nom français + inclusion dans la province,apparie
+15110109,Commune de Gueznaia,r5883675,Gueznaïa,nom français + inclusion dans la province,apparie
+15110303,Commune d'Aquouass Briech,r2752817,Aquouass Briech,nom français + inclusion dans la province,apparie
+15110311,Commune de Sahel Chamali,r2806011,Sahel Chamali,nom français + inclusion dans la province,apparie
+15110313,Commune de Sidi Lyamani,r3544663,Sidi Lyamani,nom français + inclusion dans la province,apparie
+15110315,Commune de Had Al Gharbia,r2752818,Had Al Gharbia,nom français + inclusion dans la province,apparie
+15110501,Commune d'Al Manzla,r2752819,Al Manzla,nom français + inclusion dans la province,apparie
+15110505,Commune de Sebt Azzinate,r2752821,Azzinate,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
+15110507,Commune de Dar Chaoui,r2752820,Dar Chaoui,nom français + inclusion dans la province,apparie
+15110517,Commune de Laaouama,r2752880,Laaouama,nom français + inclusion dans la province,apparie
+15110519,Commune de Hjar Ennhal,r2758747,Hjar Ennhal,nom français + inclusion dans la province,apparie
+15710107,Commune d'Oued Laou,r2480069,Oued Laou,nom français + inclusion dans la province,apparie
+15710111,Commune de Tétouan,r2464649,Tétouan,nom français + inclusion dans la province,apparie
+15710301,Commune d'Ain Lahsan,r2563431,Aïn Lahcen,nom (0.86) + province voisine à moins de 10 km (limites différentes),apparie
+15710303,Commune d'Al Kharroub,r2563434,Al Kharroub,nom français + inclusion dans la province,apparie
+15710305,Commune de Bghaghza,r2563439,Bghaghza,nom français + inclusion dans la province,apparie
+15710307,Commune de Bni Harchen,r2563432,Bni Harchen,nom français + inclusion dans la province,apparie
+15710309,Commune de Jbel Lahbib,r2563433,Jbel Lahbib,nom français + inclusion dans la province,apparie
+15710311,Commune de Bni Idder,r2563438,Bni Idder,nom français + inclusion dans la province,apparie
+15710315,Commune de Mallalienne,r2464648,Mallalienne,nom français + inclusion dans la province,apparie
+15710317,Commune de Saddina,r2752874,Saddina,nom français + inclusion dans la province,apparie
+15710319,Commune de Souk Kdim,r2752875,Souk Kdim,nom français + inclusion dans la province,apparie
+15710321,Commune de Sahtryine,r2826523,Sahtryine,nom français + inclusion dans la province,apparie
+15710501,Commune d'Al Hamra,r2533871,Al Hamra,nom français + inclusion dans la province,apparie
+15710505,Commune d'Al Oued,r2533866,Al Oued,nom français + inclusion dans la province,apparie
+15710507,Commune d'Azla,r2480066,Azla,nom français + inclusion dans la province,apparie
+15710513,Commune de Bni Leit,r2533872,Bni Leit,nom français + inclusion dans la province,apparie
+15710515,Commune de Bni Said,r2533865,Bni Saïd,nom français + inclusion dans la province,apparie
+15710517,Commune de Dar Bni Karrich,r2533870,Bni Karrich,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
+15710519,Commune d'Oulad Ali Mansour,r2533873,Oulad Ali Mansour,nom français + inclusion dans la province,apparie
+15710523,Commune de Zaitoune,r2480068,Zaïtoune,nom français + inclusion dans la province,apparie
+15710525,Commune de Zaouiat Sidi Kacem,r2480067,Zaouiat Sidi Kacem,nom français + inclusion dans la province,apparie
+15710527,Commune de Zinat,r2480070,Zinat,nom français + inclusion dans la province,apparie
+15730101,Commune de Fnideq,r2504445,Fnideq,nom français + inclusion dans la province,apparie
+15730103,Commune de Martil,r2464645,Martil,nom français + inclusion dans la province,apparie
+15730107,Commune d'Allyene,r4778554,Allyène,nom français + inclusion dans la province,apparie
+15730109,Commune de Belyounech,r5926318,Belyounech,nom français + inclusion dans la province,apparie
+21130101,Commune d'Ahfir,r2447391,Ahfir,nom français + inclusion dans la province,apparie
+21130105,Commune d'Ain Erreggada,r2457841,Aïn Reggada,nom approché (0.92) + inclusion dans la province,apparie
+21130107,Commune d'Aklim,r5955547,Aklim,nom français + inclusion dans la province,apparie
+21130109,Commune de Berkane,r2447389,Berkane,nom français + inclusion dans la province,apparie
+21130129,Commune de Sidi Slimane Echcharaa,r2457839,Sidi Slimane Echcharaa,nom français + inclusion dans la province,apparie
+21130301,Commune d'Aghbal,r2447392,Aghbal,nom français + inclusion dans la province,apparie
+21130307,Commune de Fezouane,r2457840,Fezouane,nom français + inclusion dans la province,apparie
+21130309,Commune de Laatamna,r2447390,Laâtamna,nom français + inclusion dans la province,apparie
+21130311,Commune de Madagh,r2447393,Madagh,nom français + inclusion dans la province,apparie
+21130503,Commune de Boughriba,r2457842,Boughriba,nom français + inclusion dans la province,apparie
+21130505,Commune de Chouihia,r2502043,Chouihia,nom français + inclusion dans la province,apparie
+21130513,Commune de Rislane,r2502038,Rislane,nom français + inclusion dans la province,apparie
+21130515,Commune de Sidi Bouhria,r2502037,Sidi Bouhria,nom français + inclusion dans la province,apparie
+21130517,Commune de Tafoughalt,r2502040,Tafoughalt,nom français + inclusion dans la province,apparie
+21130519,Commune de Zegzel,r2457838,Zegzel,nom français + inclusion dans la province,apparie
+21670103,Commune de Ben Taieb,r2427904,Ben Taïeb,nom français + inclusion dans la province,apparie
+21670109,Commune de Driouch,r4765785,Driouch,nom français + inclusion dans la province,apparie
+21670113,Commune de Midar,r2425002,Midar,nom français + inclusion dans la province,apparie
+21671105,Commune de Bni Marghnine,r2428513,Bni Marghnine,nom français + inclusion dans la province,apparie
+21671107,Commune de Boudinar,r2428503,Boudinar,nom français + inclusion dans la province,apparie
+21671111,Commune d'Ijermaouas,r2428506,Ijarmaouas,nom arabe + inclusion dans la province,apparie
+21671119,Commune d'Oulad Amghar,r2428502,Oulad Amghar,nom français + inclusion dans la province,apparie
+21671125,Commune de Temsamane,r2427903,Temsamane,nom français + inclusion dans la province,apparie
+21671127,Commune de Trougout,r2428501,Trougout,nom français + inclusion dans la province,apparie
+21671301,Commune d'Azlaf,r2425001,Tleta Azlef,nom arabe + inclusion dans la province,apparie
+21671309,Commune d'Iferni,r2431913,Ifarni,nom arabe + inclusion dans la province,apparie
+21671315,Commune de M'hajer,r2428511,M'Hajer,nom français + inclusion dans la province,apparie
+21671317,Commune d'Ouardana,r2428509,Ourdana,nom arabe + inclusion dans la province,apparie
+21671321,Commune de Tafersit,r2425003,Tafersit,nom français + inclusion dans la province,apparie
+21671323,Commune de Talilit,r2428512,Talilit,nom français + inclusion dans la province,apparie
+21671329,Commune de Tsaft,r2425000,Tsaft,nom français + inclusion dans la province,apparie
+21671503,Commune d'Ait Mait,r2428510,Aït Maït,nom français + inclusion dans la province,apparie
+21671505,Commune d'Amejjaou,r2428514,Amejjaou,nom français + inclusion dans la province,apparie
+21671507,Commune de Dar El Kebdani,r2428505,Dar el Kebdani,nom français + inclusion dans la province,apparie
+21671513,Commune de Tazaghine,r2428504,Tazaghine,nom français + inclusion dans la province,apparie
+21671701,Commune d'Ain Zohra,r2432167,Aïn Zohra,nom français + inclusion dans la province,apparie
+21671709,Commune de Mtalssa,r2424558,Mtalssa,nom français + inclusion dans la province,apparie
+21671711,Commune d'Oulad Boubker,r2432168,Oulad Boubker,nom français + inclusion dans la province,apparie
+22510101,Commune de Bouarfa,r2527827,Bouarfa,nom français + inclusion dans la province,apparie
+22510103,Commune de Figuig,r2527821,Figuig,nom français + inclusion dans la province,apparie
+22510301,Commune d'Ain Chouater,r2527829,Aïn Chouater,nom français + inclusion dans la province,apparie
+22510303,Commune de Bni Tadjite,r2527831,Bni Tadjite,nom français + inclusion dans la province,apparie
+22510305,Commune de Bouanane,r2527830,Bouanane,nom français + inclusion dans la province,apparie
+22510313,Commune d'Ain Chair,r5955988,Aïn Chaïr,nom français + inclusion dans la province,apparie
+22510501,Commune d'Abbou Lakhal,r2527828,Abou Lakhal,nom arabe + inclusion dans la province,apparie
+22510503,Commune de Bni Guil,r4761855,Bni Guil,nom français + inclusion dans la province,apparie
+22510505,Commune de Maatarka,r2527823,Maatarka,nom français + inclusion dans la province,apparie
+22510507,Commune de Tendrara,r2527822,Tendrara,nom français + inclusion dans la province,apparie
+22510707,Commune de Bouchaouene,r2527826,Bouchaouene,nom français + inclusion dans la province,apparie
+22510709,Commune de Boumerieme,r2527825,Boumerieme,nom français + inclusion dans la province,apparie
+22510711,Commune de Talsint,r2527824,Talsint,nom français + inclusion dans la province,apparie
+22650103,Commune de Guercif,r2759217,Guercif,nom français + inclusion dans la province,apparie
+22650501,Commune d'Assebbab,r2816173,Assebbab,nom français + inclusion dans la province,apparie
+22650503,Commune de Barkine,r2816189,Barkine,nom français + inclusion dans la province,apparie
+22650505,Commune de Houara Oulad Raho,r2816174,Houara Oulad Raho,nom français + inclusion dans la province,apparie
+22650507,Commune de Lamrija,r2759221,Lamrija,nom français + inclusion dans la province,apparie
+22650515,Commune de Saka,r2754004,Saka,nom français + inclusion dans la province,apparie
+22650709,Commune de Mazguitam,r2754006,Mazguitam,nom français + inclusion dans la province,apparie
+22650711,Commune d'Oulad Bourima,r2754000,Oulad Bourima,nom français + inclusion dans la province,apparie
+22650713,Commune de Ras Laksar,r2816193,Ras Laksar,nom français + inclusion dans la province,apparie
+22650717,Commune de Taddart,r2816175,Taddart,nom français + inclusion dans la province,apparie
+22750103,Commune d'Ain Bni Mathar,r2528002,Aïn Bni Mathar,nom français + inclusion dans la province,apparie
+22750117,Commune de Jerada,r2435196,Jerada,nom français + inclusion dans la province,apparie
+22750135,Commune de Touissit,r2528006,Touissit,nom français + inclusion dans la province,apparie
+22750501,Commune de Bni Mathar,r4772795,Bni Mathar,nom français + inclusion dans la province,apparie
+22750511,Commune de Mrija,r2528000,Merija,nom arabe + inclusion dans la province,apparie
+22750513,Commune d'Ouled Ghziyel,r2528001,Ouled Ghziyel,nom français + inclusion dans la province,apparie
+22750515,Commune d'Ouled Sidi Abdelhakem,r2528003,Ouled Sidi Abdelhakem,nom français + inclusion dans la province,apparie
+22750703,Commune de Gafait,r2528009,Guefaït,nom arabe + inclusion dans la province,apparie
+22750707,Commune de Laaouinate,r2528008,Laaouinate,nom français + inclusion dans la province,apparie
+22750709,Commune de Lebkhata,r3551309,Lebkhata,nom français + inclusion dans la province,apparie
+22750905,Commune de Guenfouda,r2528007,Guenfouda,nom français + inclusion dans la province,apparie
+22750913,Commune de Ras Asfour,r2527995,Ras Asfour,nom français + inclusion dans la province,apparie
+22750915,Commune de Sidi Boubker,r2528005,Sidi Boubker,nom français + inclusion dans la province,apparie
+22750921,Commune de Tiouli,r2528004,Tiouli,nom français + inclusion dans la province,apparie
+23810101,Commune d'Al Aaroui,r2443011,Al Aaroui,nom français + inclusion dans la province,apparie
+23810105,Commune de Nador,r2431056,Nador,nom français + inclusion dans la province,apparie
+23810107,Commune de Zaio,r2443012,Zaïo,nom français + inclusion dans la province,apparie
+23810109,Commune de Zeghanghane,r2443013,Zeghanghane,nom français + inclusion dans la province,apparie
+23810115,Commune de Ras-El-Ma,r2443018,Ras El Ma,nom français + inclusion dans la province,apparie
+23810119,Commune de Selouane,r2457863,Selouane,nom français + inclusion dans la province,apparie
+23810501,Commune de Bni Bouifrour,r2443009,Bni Bouifrou,nom arabe + inclusion dans la province,apparie
+23810503,Commune de Bni Chiker,r2426729,Beni Chiker,nom arabe + inclusion dans la province,apparie
+23810505,Commune de Bni Sidel Jbel,r2443014,Bni Sidel Jbel,nom français + inclusion dans la province,apparie
+23810507,Commune de Bni Sidel Louta,r2444883,Bni Sidel Louta,nom français + inclusion dans la province,apparie
+23810509,Commune de Bouarg,r2443017,Bouarg,nom français + inclusion dans la province,apparie
+23810513,Commune d'Iaazzanene,r2443015,Iaazzanène,nom français + inclusion dans la province,apparie
+23810515,Commune d'Ihaddadene,r2457862,Ihaddaden,nom approché (0.95) + inclusion dans la province,apparie
+23810517,Commune d'Iksane,r2443010,Iksane,nom français + inclusion dans la province,apparie
+23810701,Commune d'Afsou,r2444881,Afsou,nom français + inclusion dans la province,apparie
+23810705,Commune d'Arekmane,r2443016,Arekmane,nom français + inclusion dans la province,apparie
+23810707,Commune de Bni Oukil Oulad M'hand,r2444880,Bni Oukil Oulad M'Hand,nom français + inclusion dans la province,apparie
+23810709,Commune de Hassi-Berkane,r2444882,Hassi Berkane,nom français + inclusion dans la province,apparie
+23810711,Commune d'Oulad Daoud Zkhanine,r2457843,Oulad Daoud Zkhanine,nom français + inclusion dans la province,apparie
+23810713,Commune d'Oulad Settout,r2502039,Oulad Settout,nom français + inclusion dans la province,apparie
+23810717,Commune de Tiztoutine,r2444879,Tiztoutine,nom français + inclusion dans la province,apparie
+24110111,Commune de Bni Drar,r2502042,Bni Drar,nom français + inclusion dans la province,apparie
+24110119,Commune de Naima,r2502036,Naïma,nom français + inclusion dans la province,apparie
+24110123,Commune d'Oujda,r2527998,Oujda,nom français + inclusion dans la province,apparie
+24110301,Commune d'Ahl Angad,r2756348,Ahl Angad,nom français + inclusion dans la province,apparie
+24110303,Commune d'Ain Sfa,r2502034,Aïn Sfa,nom français + inclusion dans la province,apparie
+24110307,Commune de Bsara,r2502035,Labsara,table relue à la main (justification consignée),apparie
+24110509,Commune d'Isly,r2527999,Isly,nom français + inclusion dans la province,apparie
+24110511,Commune de Mestferki,r2528016,Mestferki,nom français + inclusion dans la province,apparie
+24110517,Commune de Sidi Boulenouar,r2528325,Sidi Boulenouar,nom français + inclusion dans la province,apparie
+24110519,Commune de Sidi Moussa Lemhaya,r2528324,Sidi Moussa Lamhaya,nom arabe + inclusion dans la province,apparie
+25330113,Commune de Debdou,r2791816,Debdou,nom français + inclusion dans la province,apparie
+25330115,Commune d'El Aioun Sidi Mellouk,r2527996,Al Aïoun,table relue à la main (justification consignée),apparie
+25330133,Commune de Taourirt,r2432236,Taourirt,nom français + inclusion dans la province,apparie
+25330305,Commune d'El Atef,r2814412,El Atef,nom français + inclusion dans la province,apparie
+25330315,Commune d'Ouled M'hamed,r2814413,Oulad M'Hammed,nom arabe + inclusion dans la province,apparie
+25330317,Commune de Sidi Ali Bel Quassem,r2759209,Sidi Ali Belkassem,nom arabe + inclusion dans la province,apparie
+25330319,Commune de Sidi Lahsen,r2814418,Sidi Lahsen,nom français + inclusion dans la province,apparie
+25330703,Commune d'Ain Lehjer,r2528356,Aïn Lehjer,nom français + inclusion dans la province,apparie
+25330709,Commune de Mechraa Hammadi,r2528357,Mechraa Hammadi,nom français + inclusion dans la province,apparie
+25330713,Commune de Mestegmer,r2527997,Mestegmer,nom français + inclusion dans la province,apparie
+25330721,Commune de Tancherfi,r2759202,Tancherfi,nom français + inclusion dans la province,apparie
+25330901,Commune d'Ahl Oued Za,r3551337,Ahl Oued Za,nom français + inclusion dans la province,apparie
+25330907,Commune de Gteter,r2759211,Gteter,nom français + inclusion dans la province,apparie
+25330911,Commune de Melg El Ouidane,r3551315,Melga el Ouidane,nom approché (0.97) + inclusion dans la province,apparie
+30610101,Commune de Meknès,r2561177,Meknès,nom français + inclusion dans la province,apparie
+30610103,Commune d'Al Machouar-Stinia,r2561178,Al Machouar Stinia,nom français + inclusion dans la province,apparie
+30610105,Commune de Boufakrane,r2808073,Bou Fekrane,nom arabe + inclusion dans la province,apparie
+30610107,Commune de Toulal,r2561217,Toulal,nom français + inclusion dans la province,apparie
+30610109,Commune de My Idriss Zerhoun,r2561365,Moulay Idriss Zarhoun,nom arabe + inclusion dans la province,apparie
+30610111,Commune d'Ouislane,r2759268,Ouislane,nom français + inclusion dans la province,apparie
+30610301,Commune d'Ain Jemaa,r2561336,Aïn Jemaa,nom français + inclusion dans la province,apparie
+30610302,Commune d'Ain Karma-Oued Rommane,r2813793,Aïn Karma-Oued Rommane,nom français + inclusion dans la province,apparie
+30610305,Commune d'Ain Orma,r2561337,Aïn Orma,nom français + inclusion dans la province,apparie
+30610307,Commune d'Ait Ouallal,r3551736,Aït Ouallal,nom français + inclusion dans la province,apparie
+30610309,Commune de Dar Oum Soltane,r2561241,Dar Oum Soltane,nom français + inclusion dans la province,apparie
+30610501,Commune de Dkhissa,r2759270,Dkhissa,nom français + inclusion dans la province,apparie
+30610503,Commune de Majjate,r2808056,Majjate,nom français + inclusion dans la province,apparie
+30610505,Commune de M'haya,r2813766,M'Haya,nom français + inclusion dans la province,apparie
+30610507,Commune d'Oued Jdida,r2759252,Oued Jdida,nom français + inclusion dans la province,apparie
+30610509,Commune de Sidi Slimane Moul Al Kifane,r2808055,Sidi Slimane Moul Al Kifane,nom français + inclusion dans la province,apparie
+30610701,Commune de Charqaoua,r2813754,Charqaoua,nom français + inclusion dans la province,apparie
+30610705,Commune de Mrhassiyine,r2813769,Mrhassiyine,nom français + inclusion dans la province,apparie
+30610707,Commune de N'zalat Bni Amar,r2813759,Nzala Bni Ammar,nom arabe + inclusion dans la province,apparie
+30610709,Commune d'Oualili,r2561366,Oualili,nom français + inclusion dans la province,apparie
+30610711,Commune de Sidi Abdellah Al Khayat,r2813773,Sidi Abdallah al Khayat,nom arabe + inclusion dans la province,apparie
+31310101,Commune de Boulemane,r2817776,Boulemane,nom français + inclusion dans la province,apparie
+31310102,Commune d'Imouzzer Marmoucha,r2817708,Imouzzer Marmoucha,nom français + inclusion dans la province,apparie
+31310103,Commune de Missour,r2817783,Missour,nom français + inclusion dans la province,apparie
+31310105,Commune d'Outat El Haj,r2817792,Outat El Haj,nom français + inclusion dans la province,apparie
+31310309,Commune d'Enjil,r2817777,Enjil,nom français + inclusion dans la province,apparie
+31310311,Commune de Guigou,r2817772,Guigou,nom français + inclusion dans la province,apparie
+31310315,Commune de Skoura M'daz,r2817780,Skoura M'Daz,nom français + inclusion dans la province,apparie
+31310501,Commune de Ksabi-Moulouya,r2817786,Ksabi Moulouya,nom français + inclusion dans la province,apparie
+31310503,Commune d'Ouizeght,r2817785,Ouizeght,nom français + inclusion dans la province,apparie
+31310505,Commune de Sidi Boutayeb,r2817784,Sidi Boutayeb,nom français + inclusion dans la province,apparie
+31310701,Commune d'El Orjane,r2817793,El Orjane,nom français + inclusion dans la province,apparie
+31310703,Commune d'Ermila,r2817788,Ermila,nom français + inclusion dans la province,apparie
+31310705,Commune de Fritissa,r2759236,Fritissa,nom français + inclusion dans la province,apparie
+31310707,Commune d'Oulad Ali Youssef,r2817794,Oulad Ali Youssef,nom français + inclusion dans la province,apparie
+31310709,Commune de Tissaf,r2817795,Tissaf,nom français + inclusion dans la province,apparie
+31310901,Commune d'Ait Bazza,r2817716,Aït Bazza,nom français + inclusion dans la province,apparie
+31310903,Commune d'Ait El Mane,r2817709,Aït El Man,nom arabe + inclusion dans la province,apparie
+31310905,Commune d'Almis Marmoucha,r2817781,Almis Marmoucha,nom français + inclusion dans la province,apparie
+31310907,Commune d'El Mers,r2817718,El Mers,nom français + inclusion dans la province,apparie
+31310913,Commune de Serghina,r2817719,Serghina,nom français + inclusion dans la province,apparie
+31310917,Commune de Talzemt,r2817704,Talzemt,nom français + inclusion dans la province,apparie
+31710101,Commune d'Agourai,r2808106,Agouraï,nom français + inclusion dans la province,apparie
+31710103,Commune d'Ain Taoujdate,r2759246,Aïn Taoujdate,nom français + inclusion dans la province,apparie
+31710105,Commune d'El Hajeb,r2827093,El Hajeb,nom français + inclusion dans la province,apparie
+31710107,Commune de Sabaa Aiyoun,r2759251,Sabaa Aïyoun,nom français + inclusion dans la province,apparie
+31710301,Commune d'Ait Ouikhalfen,r3666748,Aït Ouikhalfen,nom français + inclusion dans la province,apparie
+31710303,Commune d'Ait Yaazem,r2808105,Aït Yaazem,nom français + inclusion dans la province,apparie
+31710305,Commune de Jahjouh,r2808107,Jahjouh,nom français + inclusion dans la province,apparie
+31710307,Commune de Ras Ijerri,r2808110,Ras Ijerri,nom français + inclusion dans la province,apparie
+31710309,Commune de Tamchachate,r2819572,Tamchachate,nom français + inclusion dans la province,apparie
+31710501,Commune d'Ait Boubidmane,r2759250,Aït Boubidmane,nom français + inclusion dans la province,apparie
+31710503,Commune d'Ait Harz Allah,r2819548,Aït Harz Allah,nom français + inclusion dans la province,apparie
+31710505,Commune de Bitit,r2808813,Aït Oullal Bitit,nom arabe + inclusion dans la province,apparie
+31710507,Commune de Laqsir,r2759247,Laqsir,nom français + inclusion dans la province,apparie
+31710701,Commune d'Ait Bourzouine,r2819569,Aït Bourzouine,nom français + inclusion dans la province,apparie
+31710703,Commune d'Ait Naamane,r2819554,Aït Naamane,nom français + inclusion dans la province,apparie
+31710705,Commune d'Iqaddar,r2819564,Iqaddar,nom français + inclusion dans la province,apparie
+3231010,Commune de Fès,r2799557,Fès,nom français + inclusion dans la province,apparie
+32310103,Commune de Méchouar-Fès-El Jadid,r2799561,Méchouar Fès Jdid,nom arabe + inclusion dans la province,apparie
+32310115,Commune d'Oulad Tayeb,r2805270,Oulad Tayeb,nom français + inclusion dans la province,apparie
+32318103,Commune d'Ain Bida,r2805269,Aïn Bida,nom français + inclusion dans la province,apparie
+32318105,Commune de Sidi Harazem,r2799593,Sidi Hrazem,nom arabe + inclusion dans la province,apparie
+32710101,Commune d'Azrou,r2819460,Azrou,nom français + inclusion dans la province,apparie
+32710103,Commune d'Ifrane,r2819511,Ifrane,nom français + inclusion dans la province,apparie
+32710105,Commune de Dayat-Aoua,r2819543,Dayat Aoua,nom français + inclusion dans la province,apparie
+32710107,Commune de Tizguite,r2819512,Tizguite,nom français + inclusion dans la province,apparie
+32710301,Commune d'Ain Leuh,r2819478,Aïn Leuh,nom français + inclusion dans la province,apparie
+32710303,Commune de Ben Smim,r2819489,Ben Smim,nom français + inclusion dans la province,apparie
+32710305,Commune d'Oued Ifrane,r2819480,Oued Ifrane,nom français + inclusion dans la province,apparie
+32710307,Commune de Sidi El Makhfi,r2819479,Sidi El Makhfi,nom français + inclusion dans la province,apparie
+32710309,Commune de Tigrigra,r2819461,Tigrigra,nom français + inclusion dans la province,apparie
+32710311,Commune de Timahdite,r2819485,Timhadit,table relue à la main (justification consignée),apparie
+34510101,Commune de Bhalil,r2808833,Bhalil,nom français + inclusion dans la province,apparie
+34510103,Commune d'El Menzel,r2816236,El Menzel,nom français + inclusion dans la province,apparie
+34510105,Commune d'Immouzzer-Kandar,r2808815,Imouzzer Kandar,nom arabe + inclusion dans la province,apparie
+34510107,Commune de Ribate El Kheir,r2816242,Ahermoumou,table relue à la main (justification consignée),apparie
+34510109,Commune de Sefrou,r2808834,Sefrou,nom français + inclusion dans la province,apparie
+34510301,Commune d'Adrej,r2816263,Adrej,nom français + inclusion dans la province,apparie
+34510303,Commune d'Ain Timguenai,r2816235,Aïn Timguenaï,nom français + inclusion dans la province,apparie
+34510305,Commune de Bir Tam-Tam,r2808830,Bir Tamtam,nom arabe + inclusion dans la province,apparie
+34510307,Commune de Dar El Hamra,r2816262,Dar El Hamra,nom français + inclusion dans la province,apparie
+34510309,Commune d'Irhzrane,r2816261,Ighzrane,nom arabe + inclusion dans la province,apparie
+34510311,Commune de Mtarnagha,r2816240,Mtarnagha,nom français + inclusion dans la province,apparie
+34510313,Commune d'Oulad Mkoudou,r2816241,Oulad Mkoudou,nom français + inclusion dans la province,apparie
+34510315,Commune de Ras Tabouda,r2808827,Ras Tabouda,nom français + inclusion dans la province,apparie
+34510317,Commune de Tafajight,r2816264,Tafajight,nom français + inclusion dans la province,apparie
+34510501,Commune d'Ain Cheggag,r2808812,Aïn Cheggag,nom français + inclusion dans la province,apparie
+34510503,Commune d'Ait Sebaa Lajrouf,r2808814,Aït Sebaa Lajrouf,nom français + inclusion dans la province,apparie
+34510701,Commune d'Aghbalou Aqorar,r2808832,Aghbalou Aqorar,nom français + inclusion dans la province,apparie
+34510703,Commune d'Ahl Sidi Lahcen,r2808821,Ahl Sidi Lahcen,nom français + inclusion dans la province,apparie
+34510705,Commune d'Azzaba,r2808820,Azzaba,nom français + inclusion dans la province,apparie
+34510707,Commune de Kandar Sidi Khiar,r2808816,Kandar Sidi Khiar,nom français + inclusion dans la province,apparie
+34510709,Commune de Laanoussar,r2808819,Laanoussar,nom français + inclusion dans la province,apparie
+34510711,Commune de Sidi Youssef Ben Ahmed,r2808835,Sidi Youssef Ben Ahmed,nom français + inclusion dans la province,apparie
+34510713,Commune de Tazouta,r2808838,Tazouta,nom français + inclusion dans la province,apparie
+35310101,Commune de Rhafsai,r2753146,Ghafsaï,nom arabe + inclusion dans la province,apparie
+35310103,Commune de Karia Ba Mohamed,r2755091,Karia Ba Mohamed,nom français + inclusion dans la province,apparie
+35310105,Commune de Taounate,r2753140,Taounate,nom français + inclusion dans la province,apparie
+35310107,Commune de Thar Es-Souk,r2754003,Thar ès Souk,nom français + inclusion dans la province,apparie
+35310109,Commune de Tissa,r2755012,Tissa,nom français + inclusion dans la province,apparie
+35310301,Commune d'El Bibane,r2753138,El Bibane,nom français + inclusion dans la province,apparie
+35310303,Commune de Galaz,r2754983,Galaz,nom français + inclusion dans la province,apparie
+35310305,Commune de Kissane,r2753142,Kissane,nom français + inclusion dans la province,apparie
+35310307,Commune d'Oudka,r2753139,Oudka,nom français + inclusion dans la province,apparie
+35310309,Commune d'Ourtzarh,r3549821,Ourtzagh,nom arabe + inclusion dans la province,apparie
+35310311,Commune de Ratba,r3549850,Ratba,nom français + inclusion dans la province,apparie
+35310313,Commune de Sidi Haj M'hamed,r3658360,Sidi Haj M’hamed,nom arabe + inclusion dans la province,apparie
+35310315,Commune de Sidi Mokhfi,r2754996,Sidi El Mokhfi,nom arabe + inclusion dans la province,apparie
+35310317,Commune de Sidi Yahia Bni Zeroual,r2753145,Sidi Yahia Beni Zeroual,nom arabe + inclusion dans la province,apparie
+35310319,Commune de Tabouda,r2753144,Tabouda,nom français + inclusion dans la province,apparie
+35310321,Commune de Tafrant,r2753143,Tafrant,nom français + inclusion dans la province,apparie
+35310323,Commune de Timezgana,r3549837,Timezgana,nom français + inclusion dans la province,apparie
+35310501,Commune de Bni Snous,r2813636,Bni Snous,nom français + inclusion dans la province,apparie
+35310503,Commune de Bouchabel,r2755088,Bouchabel,nom français + inclusion dans la province,apparie
+35310505,Commune de Rhouazi,r2755114,Ghouazi,nom approché (0.86) + inclusion dans la province,apparie
+35310507,Commune de Jbabra,r2755089,Jbabra,nom français + inclusion dans la province,apparie
+35310509,Commune de Loulja,r2755084,Loulja,nom français + inclusion dans la province,apparie
+35310511,Commune de Mkansa,r2813637,Mkansa,nom français + inclusion dans la province,apparie
+35310513,Commune de Moulay Abdelkrim,r2755092,Moulay Abdelkrim,nom français + inclusion dans la province,apparie
+35310515,Commune de Moulay Bouchta,r2755109,Moulay Bouchta,nom français + inclusion dans la province,apparie
+35310517,Commune de Sidi El Abed,r2755085,Sidi El Abed,nom français + inclusion dans la province,apparie
+35310701,Commune d'Ain Mediouna,r2753141,Aïn Mediouna,nom français + inclusion dans la province,apparie
+35310703,Commune de Bni Oulid,r2755010,Bni Oulid,nom français + inclusion dans la province,apparie
+35310705,Commune de Bni Ounjel Tafraout,r2754007,Bni Ounjel Tafraout,nom français + inclusion dans la province,apparie
+35310707,Commune de Bouadel,r2754985,Bouadel,nom français + inclusion dans la province,apparie
+35310709,Commune de Bouhouda,r2754982,Bouhouda,nom français + inclusion dans la province,apparie
+35310711,Commune de Fennassa Bab El Hit,r2754995,Fennassa Bab El Hit,nom français + inclusion dans la province,apparie
+35310713,Commune de Khlalfa,r2754997,Khlalfa,nom français + inclusion dans la province,apparie
+35310715,Commune de Mezraoua,r3549836,Mezraoua,nom français + inclusion dans la province,apparie
+35310717,Commune de Rghioua,r2754986,Rghioua,nom français + inclusion dans la province,apparie
+35310719,Commune de Tamedit,r2754010,Tamedit,nom français + inclusion dans la province,apparie
+35310721,Commune de Zrizer,r2754984,Zrizer,nom français + inclusion dans la province,apparie
+35310901,Commune d'Ain Aicha,r2755026,Aïn Aïcha,nom français + inclusion dans la province,apparie
+35310903,Commune d'Ain Legdah,r2805313,Aïn Legdah,nom français + inclusion dans la province,apparie
+35310905,Commune d'Ain Maatouf,r2755009,Aïn Maatouf,nom français + inclusion dans la province,apparie
+35310907,Commune de Bouarouss,r2755031,Bouarouss,nom français + inclusion dans la province,apparie
+35310909,Commune d'El Bsabsa,r2755027,El Bsabsa,nom français + inclusion dans la province,apparie
+35310911,Commune de Messassa,r2805311,Messassa,nom français + inclusion dans la province,apparie
+35310913,Commune d'Oued Jemaa,r2805336,Oued Jemaa,nom français + inclusion dans la province,apparie
+35310915,Commune d'Oulad Ayyad,r2805334,Oulad Ayyad,nom français + inclusion dans la province,apparie
+35310917,Commune d'Oulad Daoud,r2755028,Oulad Daoud,nom français + inclusion dans la province,apparie
+35310919,Commune d'Outabouabane,r2805312,Outabouabane,nom français + inclusion dans la province,apparie
+35310921,Commune de Ras El Oued,r2755011,Ras El Oued,nom français + inclusion dans la province,apparie
+35310923,Commune de Sidi M'hamed Ben Lahcen,r2805310,Sidi M'Hamed Ben Lahcen,nom français + inclusion dans la province,apparie
+35610101,Commune d'Aknoul,r2754008,Aknoul,nom français + inclusion dans la province,apparie
+35610105,Commune d'Ouad Amlil,r2758247,Oued Amlil,nom approché (0.90) + inclusion dans la province,apparie
+35610107,Commune de Tahla,r2810069,Tahla,nom français + inclusion dans la province,apparie
+35610111,Commune de Taza,r2758251,Taza,nom français + inclusion dans la province,apparie
+35610301,Commune d'Ajdir,r2754002,Ajdir,nom français + inclusion dans la province,apparie
+35610303,Commune de Bourd,r2754009,Boured,nom arabe + inclusion dans la province,apparie
+35610305,Commune de Gzenaya Al Janoubia,r3551645,Gzenaya Al Janoubia,nom français + inclusion dans la province,apparie
+35610307,Commune de Jbarna,r2754001,Jbarna,nom français + inclusion dans la province,apparie
+35610309,Commune de Sidi Ali Bourakba,r2754005,Sidi Ali Bourakba,nom français + inclusion dans la province,apparie
+35610311,Commune de Tizi Ouasli,r2753999,Tizi Ouzli,nom arabe + inclusion dans la province,apparie
+35610701,Commune de Bni Frassen,r2758242,Bni Frassen,nom français + inclusion dans la province,apparie
+35610703,Commune de Bouchfaa,r2758637,Bouchfaa,nom français + inclusion dans la province,apparie
+35610705,Commune de Bouhlou,r2758654,Bouhlou,nom français + inclusion dans la province,apparie
+35610707,Commune de Ghiata Al Gharbia,r2758248,Ghiata Al Gharbia,nom français + inclusion dans la province,apparie
+35610709,Commune d'Oulad Zbair,r2758246,Oulad Zbaïr,nom français + inclusion dans la province,apparie
+35610711,Commune de Rbaa El Fouki,r2758243,Rbaa El Fouki,nom français + inclusion dans la province,apparie
+35610901,Commune d'Ait Saghrouchen,r2810067,Aït Seghrouchen,nom arabe + inclusion dans la province,apparie
+35610903,Commune de Bouyablane,r2816187,Bouyablane,nom français + inclusion dans la province,apparie
+35610907,Commune de Matmata,r2805330,Matmata,nom français + inclusion dans la province,apparie
+35610909,Commune de Smia,r2810072,Smià,nom français + inclusion dans la province,apparie
+35610911,Commune de Tazarine,r2816185,Tazarine,nom français + inclusion dans la province,apparie
+35610913,Commune de Zrarda,r2810074,Zrarda,nom français + inclusion dans la province,apparie
+35611101,Commune de Bni Ftah,r2758254,Beni Ftah,nom approché (0.94) + inclusion dans la province,apparie
+35611103,Commune de Brarha,r3551462,Brarha,nom français + inclusion dans la province,apparie
+35611105,Commune d'El Gouzate,r2758253,El Gouzate,nom français + inclusion dans la province,apparie
+35611107,Commune de Kaf El Ghar,r2758256,Kaf El Ghar,nom français + inclusion dans la province,apparie
+35611109,Commune de Msila,r2758252,Msila,nom français + inclusion dans la province,apparie
+35611111,Commune de Taifa,r3551375,Taïfa,nom français + inclusion dans la province,apparie
+35611113,Commune de Tainaste,r2758255,Taïnaste,nom français + inclusion dans la province,apparie
+35611115,Commune de Traiba,r3551406,Traïba,nom français + inclusion dans la province,apparie
+35611301,Commune de Bab Boudir,r2758638,Bab Boudir,nom français + inclusion dans la province,apparie
+35611303,Commune de Bab Marzouka,r2758249,Bab Marzouka,nom français + inclusion dans la province,apparie
+35611305,Commune de Bni Lent,r2758245,Bni Lent,nom français + inclusion dans la province,apparie
+35611307,Commune de Galdamane,r2758623,Galdamane,nom français + inclusion dans la province,apparie
+35611309,Commune de Meknassa Acharqia,r2758622,Meknassa Acharqia,nom français + inclusion dans la province,apparie
+35611311,Commune de Meknassa Al Gharbia,r2758250,Meknassa Al Gharbia,nom français + inclusion dans la province,apparie
+35611313,Commune d'Oulad Chrif,r3551347,Oulad Chrif,nom français + inclusion dans la province,apparie
+35611315,Commune de Maghraoua,r2816178,Maghraoua,nom français + inclusion dans la province,apparie
+35910101,Commune de Moulay Yacoub,r2808807,Moulay Yacoub,nom français + inclusion dans la province,apparie
+35910103,Commune d'Ain Chkef,r2808796,Aïn Chkef,nom français + inclusion dans la province,apparie
+35910303,Commune de Mikkes,r2808805,Mikkes,nom français + inclusion dans la province,apparie
+35910305,Commune de Sebaa Rouadi,r2808803,Sebaâ Rouadi,nom français + inclusion dans la province,apparie
+35910307,Commune de Sebt Loudaya,r2808806,Sebt Loudaya,nom français + inclusion dans la province,apparie
+35910501,Commune d'Ain Bou Ali,r2813704,Aïn Bou Ali,nom français + inclusion dans la province,apparie
+35910502,Commune d'Ain Kansara,r2813700,Aïn Kansra,nom arabe + inclusion dans la province,apparie
+35910503,Commune de Laajajra,r2813718,Laajajra,nom français + inclusion dans la province,apparie
+35910505,Commune de Louadaine,r2813692,Louadaïne,nom français + inclusion dans la province,apparie
+35910507,Commune d'Oulad Mimoun,r2813725,Oulad Mimoun,nom français + inclusion dans la province,apparie
+35910509,Commune de Sidi Daoud,r2813736,Sidi Daoud,nom français + inclusion dans la province,apparie
+42810101,Commune de Kénitra,r2804287,Kénitra,nom français + inclusion dans la province,apparie
+42810111,Commune de Souk El Arbaa,r2753078,Souk el Arbaa du Gharb,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
+42810113,Commune de Sidi Taibi,r2804282,Sidi Taïbi,nom français + inclusion dans la province,apparie
+42810301,Commune d'Ameur Seflia,r3549789,Ameur Seflia,nom français + inclusion dans la province,apparie
+42810305,Commune de Haddada,r2804281,Haddada,nom français + inclusion dans la province,apparie
+42810311,Commune d'Ouled Slama,r2804274,Oulad Slama,nom approché (0.91) + inclusion dans la province,apparie
+42810503,Commune de Ben Mansour,r2804269,Ben Mansour,nom français + inclusion dans la province,apparie
+42810507,Commune de Mnasra,r2804271,Mnasra,nom français + inclusion dans la province,apparie
+42810509,Commune de Mograne,r2804270,Mograne,nom français + inclusion dans la province,apparie
+42810701,Commune d'Arbaoua,r2753073,Arbaoua,nom français + inclusion dans la province,apparie
+42810703,Commune de Beni Malek,r2753077,Beni Malek,nom français + inclusion dans la province,apparie
+42810705,Commune de Kariat Ben Aouda,r2753076,Kariat ben Aouda,nom français + inclusion dans la province,apparie
+42810707,Commune d'Oued El Makhazine,r2753072,Oued El Makhazine,nom français + inclusion dans la province,apparie
+42810901,Commune de Bahhara Ouled Ayad,r2804267,Bahhara Oulad Ayad,nom arabe + inclusion dans la province,apparie
+42810909,Commune de Sidi Allal Tazi,r2753069,Sidi Allal Tazi,nom français + inclusion dans la province,apparie
+42810913,Commune de Sidi Mohamed Lahmar,r2753079,Sidi Mohamed Lahmar,nom français + inclusion dans la province,apparie
+42810915,Commune de Souk Tlet El Gharb,r2753068,Souk Tlet El Gharb,nom français + inclusion dans la province,apparie
+42811103,Commune de Chouafaa,r2753065,Chouafaa,nom français + inclusion dans la province,apparie
+42811105,Commune de Lalla Mimouna,r2753070,Lalla Mimouna,nom français + inclusion dans la province,apparie
+42811107,Commune de Moulay Bousselham,r2753074,Moulay Bousselham,nom français + inclusion dans la province,apparie
+42811111,Commune de Sidi Boubker El Haj,r2753071,Sidi Boubker el Haj,nom français + inclusion dans la province,apparie
+42910101,Commune de Khémisset,r2808190,Khémisset,nom français + inclusion dans la province,apparie
+42910103,Commune de Rommani,r2808254,Rommani,nom français + inclusion dans la province,apparie
+42910105,Commune de Tiflet,r2808198,Tiflet,nom français + inclusion dans la province,apparie
+42910117,Commune de Sidi Allal El Bahraoui,r2804290,Sidi Allal El Bahraoui,nom français + inclusion dans la province,apparie
+42910301,Commune d'Ait Mimoune,r2808115,Aït Mimoune,nom français + inclusion dans la province,apparie
+42910303,Commune d'Ait Ouribel,r2808192,Aït Ouribel,nom français + inclusion dans la province,apparie
+42910305,Commune d'Ait Siberne,r2808139,Aït Siberne,nom français + inclusion dans la province,apparie
+42910307,Commune d'Ait Yadine,r2808144,Aït Yadine,nom français + inclusion dans la province,apparie
+42910309,Commune d'El Ganzra,r2808148,El Kansera,table relue à la main (justification consignée),apparie
+42910311,Commune de Majmaa Tolba,r3544656,Majmaa Tolba,nom français + inclusion dans la province,apparie
+42910313,Commune de Sfassif,r2808156,Sfassif,nom français + inclusion dans la province,apparie
+42910315,Commune de Sidi Allal Lamsadder,r2808168,Sidi Allal Lamsadder,nom français + inclusion dans la province,apparie
+42910317,Commune de Sidi El Rhandour,r2808191,Sidi El Ghandour,nom arabe + inclusion dans la province,apparie
+42910501,Commune d'Ait Ichou,r2808315,Aït Ichou,nom français + inclusion dans la province,apparie
+42910503,Commune d'Ait Ikkou,r2808313,Aït Ikkou,nom français + inclusion dans la province,apparie
+42910505,Commune de Bouqachmir,r2808310,Bouqachmir,nom français + inclusion dans la province,apparie
+42910507,Commune de Houderrane,r2808293,Houderrane,nom français + inclusion dans la province,apparie
+42910509,Commune de Maaziz,r2808292,Maaziz,nom français + inclusion dans la province,apparie
+42910511,Commune d'Oulmes,r2808309,Oulmes,nom français + inclusion dans la province,apparie
+42910513,Commune de Tiddas,r2808295,Tiddas,nom français + inclusion dans la province,apparie
+42910701,Commune d'Ain Sbit,r2808253,Aïn Sbit,nom français + inclusion dans la province,apparie
+42910705,Commune de Brachoua,r2808245,Brachoua,nom français + inclusion dans la province,apparie
+42910707,Commune d'Ezzhiliga,r2808267,Ezzhiliga,nom français + inclusion dans la province,apparie
+42910709,Commune de Jemaat Moul Blad,r2808255,Jemaat Moul Blad,nom français + inclusion dans la province,apparie
+42910711,Commune de Laghoualem,r2808268,Laghoualem,nom français + inclusion dans la province,apparie
+42910713,Commune de Marchouch,r2808250,Marchouch,nom français + inclusion dans la province,apparie
+42910715,Commune de My Driss Aghbal,r2808241,Moulay Driss Aghbal,nom arabe + inclusion dans la province,apparie
+42910902,Commune d'Ain Johra-Sidi Boukhalkhal,r2808221,Aïn Johra-Sidi Boukhalkhal,nom français + inclusion dans la province,apparie
+42910903,Commune d'Ait Belkacem,r2808235,Aït Belkacem,nom français + inclusion dans la province,apparie
+42910905,Commune d'Ait Bouyahia El Hajjama,r2808196,Aït Bouyahya El Hajjama,nom arabe + inclusion dans la province,apparie
+42910907,Commune d'Ait Malek,r2808224,Aït Malek,nom français + inclusion dans la province,apparie
+42910909,Commune de Khemis Sidi Yahya,r2808195,Khemis Sidi Yahya,nom français + inclusion dans la province,apparie
+42910911,Commune de M'qam Tolba,r2808212,M'Qam Tolba,nom français + inclusion dans la province,apparie
+42910913,Commune de Sidi Abderrazak,r3544644,Sidi Abderrazak,nom français + inclusion dans la province,apparie
+42910919,Commune d'Ait Ali Ou Lahcen,r5128902,Aït Ali Ou Lahcen,nom français + inclusion dans la province,apparie
+4421010,Commune de Rabat,r2799215,Rabat,nom français + inclusion dans la province,apparie
+44210107,Commune de Touarga,r2799195,Touarga,nom français + inclusion dans la province,apparie
+4441010,Commune de Salé,r2801066,Salé,nom français + inclusion dans la province,apparie
+44410108,Commune de Sidi Bouknadel,r2498879,Sidi Bouknadel,nom français + inclusion dans la province,apparie
+44410111,Commune de Shoul,r2498880,Shoul,nom français + inclusion dans la province,apparie
+44410113,Commune d'Ameur,r5129977,Ameur,nom français + inclusion dans la province,apparie
+44810101,Commune de Dar Gueddari,r2808867,Dar Gueddari,nom français + inclusion dans la province,apparie
+44810103,Commune de Had Kourt,r2753075,Had Kourt,nom français + inclusion dans la province,apparie
+44810105,Commune de Jorf El Melha,r2755140,Jorf El Melha,nom français + inclusion dans la province,apparie
+44810107,Commune de Mechraa Bel Ksiri,r2753066,Mechra Bel Ksiri,nom arabe + inclusion dans la province,apparie
+44810111,Commune de Sidi Kacem,r2813778,Sidi Kacem,nom français + inclusion dans la province,apparie
+44810301,Commune d'Ain Dfali,r2755139,Aïn Defali,nom arabe + inclusion dans la province,apparie
+44810303,Commune de Bni Oual,r2810029,Beni Oual,nom arabe + inclusion dans la province,apparie
+44810309,Commune de Moulay Abdelkader,r2810024,Moulay Abdelkader,nom français + inclusion dans la province,apparie
+44810313,Commune de Sidi Ahmed Benaissa,r2810023,Sidi Ahmed Benaïssa,nom français + inclusion dans la province,apparie
+44810315,Commune de Sidi Ameur Al Hadi,r2810013,Sidi Ameur Al Hadi,nom français + inclusion dans la province,apparie
+44810317,Commune de Sidi Azzouz,r2827070,Sidi Azzouz,nom français + inclusion dans la province,apparie
+44810501,Commune d'Al Haouafate,r2808866,Al Haouafate,nom français + inclusion dans la province,apparie
+44810507,Commune de Nouirate,r2827071,Nouirate,nom français + inclusion dans la province,apparie
+44810509,Commune de Sefsaf,r2753067,Sefsaf,nom français + inclusion dans la province,apparie
+44810705,Commune de Khnichet,r2813812,Khnichet,nom français + inclusion dans la province,apparie
+44810707,Commune de Lamrabih,r2755115,Lamrabih,nom français + inclusion dans la province,apparie
+44810711,Commune d'Oulad Nouel,r2827069,Oulad Nouel,nom français + inclusion dans la province,apparie
+44810719,Commune de Sidi M'hamed Chelh,r2827068,Sidi M'Hamed Chelh,nom français + inclusion dans la province,apparie
+44810721,Commune de Taoughilt,r2813804,Taoughilt,nom français + inclusion dans la province,apparie
+44810901,Commune de Bab Tiouka,r2813792,Bab Tiouka,nom français + inclusion dans la province,apparie
+44810903,Commune de Bir Taleb,r2813791,Bir Taleb,nom français + inclusion dans la province,apparie
+44810905,Commune de Chbanate,r2813784,Chbanate,nom français + inclusion dans la province,apparie
+44810907,Commune de Selfat,r2813756,Selfat,nom français + inclusion dans la province,apparie
+44810909,Commune de Tekna,r2813796,Tekna,nom français + inclusion dans la province,apparie
+44810911,Commune de Zaggota,r2813777,Zaggota,nom français + inclusion dans la province,apparie
+44810913,Commune de Zirara,r2813780,Zirara,nom français + inclusion dans la province,apparie
+44811103,Commune de Dar Laaslouji,r2812413,Dar Laaslouji,nom français + inclusion dans la province,apparie
+44811105,Commune de Rmilat,r2812414,Ermilate,nom arabe + inclusion dans la province,apparie
+44811111,Commune de Sidi Al Kamel,r2812422,Sidi Al Kamel,nom français + inclusion dans la province,apparie
+44910107,Commune de Sidi Slimane,r15791088,Sidi Slimane,nom français + inclusion dans la province,apparie
+44910109,Commune de Sidi Yahia El Gharb,r2804276,Sidi Yahya du Gharb,nom (1.00) + province voisine à moins de 10 km (limites différentes),apparie
+44910307,Commune de Kceibya,r2812418,Kceibya,nom français + inclusion dans la province,apparie
+44910315,Commune de Sfafaa,r2819609,Sfafaa,nom français + inclusion dans la province,apparie
+44910317,Commune d'Ameur Chamalia,r4830108,Ameur Chamalia,nom français + inclusion dans la province,apparie
+44910501,Commune d'Azghar,r2819625,Azghar,nom français + inclusion dans la province,apparie
+44910503,Commune de Boumaiz,r2819619,Boumaïz,nom français + inclusion dans la province,apparie
+44910505,Commune de Dar Bel Amri,r2819622,Dar Bel Amri,nom français + inclusion dans la province,apparie
+44910509,Commune de M'saada,r2813786,M'Saada,nom français + inclusion dans la province,apparie
+44910511,Commune d'Ouled Ben Hammadi,r2819631,Oulad Ben Hammadi,nom arabe + inclusion dans la province,apparie
+44910513,Commune d'Ouled H'cine,r2813788,Oulad H'Cine,nom approché (0.92) + inclusion dans la province,apparie
+45010101,Commune d'Ain El Aouda,r2498871,Aïn El Aouda,nom français + inclusion dans la province,apparie
+45010105,Commune de Skhirate,r2498873,Skhirate,nom français + inclusion dans la province,apparie
+45010107,Commune de Témara,r2498868,Témara,nom français + inclusion dans la province,apparie
+45010109,Commune d'Ain Attig,r2498878,Aïn Attig,nom français + inclusion dans la province,apparie
+45010301,Commune d'El Menzeh,r2498870,El Menzeh,nom français + inclusion dans la province,apparie
+45010303,Commune d'Oumazza,r2800689,Oumazza,nom français + inclusion dans la province,apparie
+45010311,Commune de Sidi Yahya Zaer,r2498869,Sidi Yahya Zaer,nom français + inclusion dans la province,apparie
+45010503,Commune de Mers El Kheir,r2498872,Mers El Kheir,nom français + inclusion dans la province,apparie
+45010505,Commune de Sabbah,r2498876,Sabbah,nom français + inclusion dans la province,apparie
+50810101,Commune d'Azilal,r2887338,Azilal,nom français + inclusion dans la province,apparie
+50810103,Commune de Demnate,r2887276,Demnate,nom français + inclusion dans la province,apparie
+50810301,Commune d'Agoudi N'lkhair,r2887348,Agoudi N'Lkhaïr,nom français + inclusion dans la province,apparie
+50810303,Commune d'Ait Abbas,r2887318,Aït Abbas,nom français + inclusion dans la province,apparie
+50810305,Commune d'Ait Bou Oulli,r2887320,Aït Bou Oulli,nom français + inclusion dans la province,apparie
+50810307,Commune d'Ait M'hamed,r2887315,Aït M'Hamed,nom français + inclusion dans la province,apparie
+50810309,Commune de Tabant,r2887314,Tabant,nom français + inclusion dans la province,apparie
+50810311,Commune de Tamda Noumercid,r2887342,Tamda Noumercid,nom français + inclusion dans la province,apparie
+50810313,Commune de Zaouiat Ahansal,r2887231,Zaouia Ahansal,nom arabe + inclusion dans la province,apparie
+50810501,Commune d'Ait Taguella,r2887335,Aït Taguella,nom français + inclusion dans la province,apparie
+50810505,Commune de Bni Hassane,r2887241,Bni Hassane,nom français + inclusion dans la province,apparie
+50810507,Commune de Bzou,r2887243,Bzou,nom français + inclusion dans la province,apparie
+50810509,Commune de Foum Jemaa,r2887247,Foum Jemaa,nom français + inclusion dans la province,apparie
+50810511,Commune de Moulay Aissa Ben Driss,r2887238,Moulay Aïssa Ben Driss,nom français + inclusion dans la province,apparie
+50810513,Commune de Rfala,r2887235,Rfala,nom français + inclusion dans la province,apparie
+50810515,Commune de Tabia,r2887248,Tabia,nom français + inclusion dans la province,apparie
+50810517,Commune de Tanant,r2887256,Tanant,nom français + inclusion dans la province,apparie
+50810519,Commune de Taounza,r2887215,Taounza,nom français + inclusion dans la province,apparie
+50810521,Commune de Tisqi,r2887239,Tisqi,nom français + inclusion dans la province,apparie
+50810903,Commune d'Ait Mazigh,r2887230,Aït Mazigh,nom français + inclusion dans la province,apparie
+50810907,Commune d'Ait Ouqabli,r2887160,Aït Ouqabli,nom français + inclusion dans la province,apparie
+50810909,Commune d'Anergui,r2887217,Anergui,nom français + inclusion dans la province,apparie
+50810911,Commune de Bin El Ouidane,r2887174,Bin El Ouidane,nom français + inclusion dans la province,apparie
+50810913,Commune d'Isseksi,r2887172,Isseksi,nom français + inclusion dans la province,apparie
+50810915,Commune d'Ouaouizeght,r2887173,Ouaouizaght,nom arabe + inclusion dans la province,apparie
+50810917,Commune de Tabaroucht,r2887227,Tabaroucht,nom français + inclusion dans la province,apparie
+50810919,Commune de Tagleft,r2887161,Tagleft,nom français + inclusion dans la province,apparie
+50810921,Commune de Tiffert N'ait Hamza,r2887159,Tiffert N'Aït Hamza,nom français + inclusion dans la province,apparie
+50810923,Commune de Tilougguite,r2887226,Tilougguite,nom français + inclusion dans la province,apparie
+50811101,Commune d'Afourar,r2887189,Afourar,nom français + inclusion dans la province,apparie
+50811103,Commune de Bni A'yat,r2887214,Bni Ayat,nom arabe + inclusion dans la province,apparie
+50811105,Commune d'Ait Ouaarda,r2887191,Aït Ouaarda,nom français + inclusion dans la province,apparie
+50811125,Commune de Timoulilt,r2887175,Timoulilt,nom français + inclusion dans la province,apparie
+50811305,Commune d'Ait Oumdis,r2887284,Aït Oumdis,nom français + inclusion dans la province,apparie
+50811307,Commune d'Ait Tamlil,r2887285,Aït Tamlil,nom français + inclusion dans la province,apparie
+50811309,Commune d'Anzou,r2887282,Anzou,nom français + inclusion dans la province,apparie
+50811317,Commune de Sidi Yacoub,r2887283,Sidi Yacoub,nom français + inclusion dans la province,apparie
+50811319,Commune de Tidili Fetouaka,r2887281,Tidili Fetouaka,nom français + inclusion dans la province,apparie
+50811501,Commune d'Ait Blal,r2887321,Aït Blal,nom français + inclusion dans la province,apparie
+50811503,Commune d'Ait Majden,r2887266,Aït Majden,nom français + inclusion dans la province,apparie
+50811511,Commune d'Imlil,r2887275,Imlil,nom français + inclusion dans la province,apparie
+50811513,Commune d'Ouaoula,r2887333,Ouaoula,nom français + inclusion dans la province,apparie
+50811515,Commune de Sidi Boulkhalf,r2887326,Sidi Boulkhalf,nom français + inclusion dans la province,apparie
+50811521,Commune de Tifni,r2887290,Tifni,nom français + inclusion dans la province,apparie
+50910101,Commune de Béni Mellal,r2882613,Beni Mellal,nom français + inclusion dans la province,apparie
+50910103,Commune d'El Ksiba,r2882858,El Ksiba,nom français + inclusion dans la province,apparie
+50910107,Commune de Kasba Tadla,r2882860,Kasba Tadla,nom français + inclusion dans la province,apparie
+50910113,Commune de Zaouiat Cheikh,r2882844,Zaouiat Cheikh,nom français + inclusion dans la province,apparie
+50910301,Commune de Foum Oudi,r2882584,Foum Oudi,nom français + inclusion dans la province,apparie
+50910303,Commune d'Ouled Gnaou,r2882578,Oulad Gnaou,nom approché (0.91) + inclusion dans la province,apparie
+50910305,Commune d'Ouled M'barek,r2882581,Oulad M'Barek,nom arabe + inclusion dans la province,apparie
+50910307,Commune d'Ouled Yaich,r2882585,Ouled Yaïch,nom français + inclusion dans la province,apparie
+50910309,Commune de Sidi Jaber,r2882577,Sidi Jaber,nom français + inclusion dans la province,apparie
+50910311,Commune de Foum El Anceur,r2882612,Foum El Anceur,nom français + inclusion dans la province,apparie
+50910501,Commune d'Aghbala,r2882832,Aghbala,nom français + inclusion dans la province,apparie
+50910505,Commune de Boutferda,r2882830,Boutferda,nom français + inclusion dans la province,apparie
+50910517,Commune de Tizi N'isly,r2882831,Tizi N'isly,nom français + inclusion dans la province,apparie
+50910703,Commune d'Ait Oum El Bekht,r2882843,Aït Oum El Bekht,nom français + inclusion dans la province,apparie
+50910707,Commune de Dir El Ksiba,r2882856,Dir El Ksiba,nom français + inclusion dans la province,apparie
+50910711,Commune de Naour,r2882850,Naour,nom français + inclusion dans la province,apparie
+50910713,Commune de Taghzirt,r2882614,Taghzirt,nom français + inclusion dans la province,apparie
+50910715,Commune de Tanougha,r2882618,Tanougha,nom français + inclusion dans la province,apparie
+50911101,Commune de Guettaya,r2882868,Guettaya,nom français + inclusion dans la province,apparie
+50911103,Commune d'Ouled Youssef,r2882586,Ouled Youssef,nom français + inclusion dans la province,apparie
+50911105,Commune d'Ouled Said Loued,r2882589,Oulad Saïd l'Oued,nom arabe + inclusion dans la province,apparie
+50911107,Commune de Semguet,r2882882,Semguet,nom français + inclusion dans la province,apparie
+52550105,Commune de Fquih Ben Salah,r2882500,Fkih Ben Salah,nom arabe + inclusion dans la province,apparie
+52550109,Commune d'Ouled Ayad,r2882512,Oulad Ayad,nom arabe + inclusion dans la province,apparie
+52550111,Commune de Souk Sebt Ouled Nemma,r2882559,Souk Sebt Oulad Nemma,nom arabe + inclusion dans la province,apparie
+52550505,Commune d'Ouled Bourahmoune,r2882562,Ouled Bourahmoune,nom français + inclusion dans la province,apparie
+52550509,Commune d'Ouled Zmam,r2882567,Oulad Zmam,nom arabe + inclusion dans la province,apparie
+52550511,Commune de Sidi Aissa Ben Ali,r2882563,Sidi Aïssa Ben Ali,nom français + inclusion dans la province,apparie
+52550513,Commune de Sidi Hammadi,r2882580,Sidi Hammadi,nom français + inclusion dans la province,apparie
+52550901,Commune de Khalfia,r2882587,Al Khalfia,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
+52550903,Commune de Bni Chegdale,r2882498,Bni Chegdale,nom français + inclusion dans la province,apparie
+52550905,Commune de Bni Oukil,r2879641,Bni Oukil,nom français + inclusion dans la province,apparie
+52550907,Commune de Bradia,r2882576,Had Bradia,nom arabe + inclusion dans la province,apparie
+52550909,Commune de Hel Merbaa,r2882572,Hel Merbaa,nom français + inclusion dans la province,apparie
+52550911,Commune de Krifate,r2882499,Krifate,nom français + inclusion dans la province,apparie
+52551101,Commune de Dar Ould Zidouh,r2882508,Dar Oulad Zidouh,nom approché (0.97) + inclusion dans la province,apparie
+52551103,Commune de Had Boumoussa,r2882503,Had Boumoussa,nom français + inclusion dans la province,apparie
+52551107,Commune d'Ouled Nacer,r2882516,Oulad Nacer,nom arabe + inclusion dans la province,apparie
+53010101,Commune de Khenifra,r2875670,Khenifra,nom français + inclusion dans la province,apparie
+53010105,Commune de M'rirt,r2826623,M'rirt,nom français + inclusion dans la province,apparie
+53010301,Commune d'Ait Ishaq,r2826613,Aït Ishaq,nom français + inclusion dans la province,apparie
+53010303,Commune d'Ait Saadelli,r2826597,Aït Saadelli,nom français + inclusion dans la province,apparie
+53010305,Commune d'El Kbab,r2826610,El Kbab,nom français + inclusion dans la province,apparie
+53010307,Commune de Kerrouchen,r2826596,Kerrouchen,nom français + inclusion dans la province,apparie
+53010309,Commune d'Ouaoumana,r2826614,Ouaoumana,nom français + inclusion dans la province,apparie
+53010311,Commune de Sidi Yahya Ou Saad,r2882836,Sidi Yahya Ou Saad,nom français + inclusion dans la province,apparie
+53010313,Commune de Tighassaline,r2826607,Tighassaline,nom français + inclusion dans la province,apparie
+53010501,Commune d'Aguelmam Azegza,r2875666,Aguelmam Azegza,nom français + inclusion dans la province,apparie
+53010505,Commune d'El Borj,r2875667,El Borj,nom français + inclusion dans la province,apparie
+53010511,Commune de Lehri,r2826612,Lehri,nom français + inclusion dans la province,apparie
+53010513,Commune de Moha Ou Hammou Zayani,r2875669,Moha Ou Hammou Zayani,nom français + inclusion dans la province,apparie
+53010521,Commune de Sidi Amar,r2826616,Sidi Amar,nom français + inclusion dans la province,apparie
+53010525,Commune de Sidi Lamine,r2826615,Sidi Lamine,nom français + inclusion dans la province,apparie
+53010703,Commune d'Aguelmous,r2826617,Aguelmouss,nom arabe + inclusion dans la province,apparie
+53010707,Commune d'El Hammam,r2826630,El Hammam,nom français + inclusion dans la province,apparie
+53010709,Commune de Had Bouhssoussen,r2826620,Had Bouhssoussen,nom français + inclusion dans la province,apparie
+53010715,Commune de Moulay Bouazza,r2826619,Moulay Bouazza,nom français + inclusion dans la province,apparie
+53010717,Commune d'Oum Rabia,r2875668,Oum Rabia,nom français + inclusion dans la province,apparie
+53010719,Commune de Sebt Ait Rahou,r2826618,Sebt Aït Rahou,nom français + inclusion dans la province,apparie
+53010723,Commune de Sidi Hcine,r2826622,Sidi Hcine,nom français + inclusion dans la province,apparie
+53110101,Commune de Bejaad,r2879731,Bejaad,nom français + inclusion dans la province,apparie
+53110103,Commune de Boujniba,r2879650,Boujniba,nom français + inclusion dans la province,apparie
+53110105,Commune de Hattane,r2879646,Hattane,nom français + inclusion dans la province,apparie
+53110107,Commune de Khouribga,r2879633,Khouribga,nom français + inclusion dans la province,apparie
+53110109,Commune d'Oued Zem,r2879699,Oued Zem,nom français + inclusion dans la province,apparie
+53110301,Commune d'Ain Kaicher,r2879709,Aïn Kaïcher,nom français + inclusion dans la province,apparie
+53110303,Commune de Bni Bataou,r2879759,Bni Bataou,nom français + inclusion dans la province,apparie
+53110305,Commune de Bni Zrantel,r2879734,Bni Zrantel,nom français + inclusion dans la province,apparie
+53110307,Commune de Boukhrisse,r2879756,Boukhrisse,nom français + inclusion dans la province,apparie
+53110309,Commune de Chougrane,r2879774,Chougrane,nom français + inclusion dans la province,apparie
+53110311,Commune d'Oulad Gouaouch,r2879730,Oulad Gouaouch,nom français + inclusion dans la province,apparie
+53110313,Commune de Rouached,r2879773,Rouached,nom français + inclusion dans la province,apparie
+53110315,Commune de Tachraft,r2879724,Tachraft,nom français + inclusion dans la province,apparie
+53110501,Commune de Bir Mezoui,r2879644,Bir Mezoui,nom français + inclusion dans la province,apparie
+53110503,Commune de Bni Ykhlef,r2879639,Bni Ykhlef,nom français + inclusion dans la province,apparie
+53110505,Commune de Boulanouare,r2879635,Boulanouare,nom français + inclusion dans la province,apparie
+53110507,Commune de Lagfaf,r2879649,Lagfaf,table relue à la main (justification consignée),apparie
+53110509,Commune d'El Foqra,r2879632,El Foqra,nom français + inclusion dans la province,apparie
+53110511,Commune de M'fassis,r2879643,M'Fassis,nom français + inclusion dans la province,apparie
+53110513,Commune d'Oulad Abdoune,r2879636,Oulad Abdoune,nom français + inclusion dans la province,apparie
+53110515,Commune d'Oulad Azzouz,r2879689,Oulad Azzouz,nom français + inclusion dans la province,apparie
+53110701,Commune d'Ait Ammar,r2879651,Aït Ammar,nom français + inclusion dans la province,apparie
+53110703,Commune de Bni Smir,r2879695,Bni Smir,nom français + inclusion dans la province,apparie
+53110705,Commune de Braksa,r2879800,Braksa,nom français + inclusion dans la province,apparie
+53110707,Commune de Kasbat Troch,r2879653,Kasbat Troch,nom français + inclusion dans la province,apparie
+53110709,Commune de Lagnadiz,r2879638,Lagnadiz,nom français + inclusion dans la province,apparie
+53110711,Commune de Maadna,r2879663,Maadna,nom français + inclusion dans la province,apparie
+53110713,Commune d'Oulad Aissa,r2879816,Oulad Aïssa,nom français + inclusion dans la province,apparie
+53110715,Commune d'Oulad Boughadi,r2879634,Oulad Boughadi,nom français + inclusion dans la province,apparie
+53110717,Commune d'Oulad Fennane,r2879661,Oulad Fennane,nom français + inclusion dans la province,apparie
+53110719,Commune d'Oulad Ftata,r2879637,Oulad Ftata,nom français + inclusion dans la province,apparie
+61110101,Commune de Benslimane,r2522581,Benslimane,nom français + inclusion dans la province,apparie
+61110103,Commune de Bouznika,r2522586,Bouznika,nom français + inclusion dans la province,apparie
+61110105,Commune d'El Mansouria,r2522585,El Mansouria,nom français + inclusion dans la province,apparie
+61110301,Commune d'Ahlaf,r2522579,Ahlaf,nom français + inclusion dans la province,apparie
+61110305,Commune de Fdalate,r2522571,Fdalate,nom français + inclusion dans la province,apparie
+61110307,Commune de Mellila,r2522584,Mellila,nom français + inclusion dans la province,apparie
+61110311,Commune de Moualine El Oued,r2522576,Moualine el Oued,nom français + inclusion dans la province,apparie
+61110313,Commune d'Oulad Ali Toualaa,r2522580,Oulad Ali Toualaa,nom français + inclusion dans la province,apparie
+61110315,Commune d'Oulad Yahya Louta,r2522582,Oulad Yahya Louta,nom français + inclusion dans la province,apparie
+61110317,Commune de Rdadna Oulad Malek,r2522577,Rdadna Oulad Malek,nom français + inclusion dans la province,apparie
+61110319,Commune de Ziaida,r2522583,Ziaïda,nom français + inclusion dans la province,apparie
+61110501,Commune de Bir Ennasr,r2522573,Bir Ennasr,nom français + inclusion dans la province,apparie
+61110503,Commune d'Ain Tizgha,r2522588,Aïn Tizgha,nom français + inclusion dans la province,apparie
+61110504,Commune de Sidi Bettache,r2522572,Sidi Bettache,nom français + inclusion dans la province,apparie
+61110505,Commune de Charrate,r2522587,Cherrat,table relue à la main (justification consignée),apparie
+61170103,Commune de Berrechid,r2522561,Berrechid,nom français + inclusion dans la province,apparie
+61170105,Commune de Deroua,r2522562,Deroua,nom français + inclusion dans la province,apparie
+61170107,Commune d'El Gara,r2522578,El Gara,nom français + inclusion dans la province,apparie
+61170109,Commune de Had Soualem,r2806132,Had Soualem,nom français + inclusion dans la province,apparie
+61170111,Commune d'Oulad Abbou,r2866430,Oulad Abbou,nom français + inclusion dans la province,apparie
+61170113,Commune de Sidi Rahal Chatai,r2806134,Sidi Rahal Chataï,nom français + inclusion dans la province,apparie
+61170501,Commune de Ben Maachou,r2866424,Ben Maachou,nom français + inclusion dans la province,apparie
+61170511,Commune de Laghnimyine,r2866414,Laghnimyine,nom français + inclusion dans la province,apparie
+61170513,Commune de Lahsasna,r2822727,Lahsasna,nom français + inclusion dans la province,apparie
+61170527,Commune de Sidi Abdelkhaleq,r2822994,Sidi Abdelkhaleq,nom français + inclusion dans la province,apparie
+61170529,Commune de Sidi El Mekki,r2821549,Sidi El Mekki,nom français + inclusion dans la province,apparie
+61170535,Commune de Zaouiat Sidi Ben Hamdoun,r2866431,Zaouiat Sidi Ben Hamdoun,nom français + inclusion dans la province,apparie
+61170805,Commune de Foqra Oulad Aameur,r2822741,Foqra Oulad Aameur,nom français + inclusion dans la province,apparie
+61170807,Commune de Jaqma,r2822695,Jaqma,nom français + inclusion dans la province,apparie
+61170809,Commune de Kasbat Ben Mchich,r2822693,Kasbat Ben Mchich,nom français + inclusion dans la province,apparie
+61170817,Commune de Lambarkiyne,r2822744,Lambarkiyine,nom arabe + inclusion dans la province,apparie
+61170819,Commune d'Ouled Cebbah,r2822710,Oulad Cebbah,nom arabe + inclusion dans la province,apparie
+61170820,Commune d'Oulad Ziyane,r5183541,Oulad Ziyane,nom français + inclusion dans la province,apparie
+61170821,Commune d'Ouled Zidane,r2822697,Ouled Zidane,nom français + inclusion dans la province,apparie
+61170823,Commune de Riah,r2822773,Riah,nom français + inclusion dans la province,apparie
+61170925,Commune de Sahel Oulad H'riz,r2866410,Sahel Oulad H'riz,nom français + inclusion dans la province,apparie
+61170933,Commune de Soualem Trifiya,r5183525,Soualem Trifiya,nom français + inclusion dans la province,apparie
+6141010,Commune de Casablanca,r4072985,Casablanca,nom français + inclusion dans la province,apparie
+61410181,Commune de Méchouar de Casablanca,r4748610,Méchouar de Casablanca,nom français + inclusion dans la province,apparie
+61810101,Commune d'Azemmour,r2806100,Azemmour,nom français + inclusion dans la province,apparie
+61810103,Commune d'El Jadida,r2806096,El Jadida,nom français + inclusion dans la province,apparie
+61810105,Commune de Lbir Jdid,r2806138,Bir Jdid,nom approché (0.94) + inclusion dans la province,apparie
+61810301,Commune de Chtouka,r2806140,Chtouka,nom français + inclusion dans la province,apparie
+61810305,Commune de Laghdira,r2866411,Laghdira,nom français + inclusion dans la province,apparie
+61810307,Commune de Lamharza Essahel,r2806139,Lamharza Essahel,nom français + inclusion dans la province,apparie
+61810311,Commune de Sidi Ali Ben Hamdouche,r3549781,Sidi Ali Ben Hamdouche,nom français + inclusion dans la province,apparie
+61810501,Commune de My Abdellah,r2806106,Moulay Abdellah Amghar,nom arabe + inclusion dans la province,apparie
+61810503,Commune d'Oulad Aissa,r2806128,Oulad Aïssa,nom français + inclusion dans la province,apparie
+61810505,Commune d'Ouled Ghanem,r2823055,Ouled Ghanem,nom français + inclusion dans la province,apparie
+61810507,Commune d'Ouled Hcine,r2806125,Oulad Hcine,nom approché (0.91) + inclusion dans la province,apparie
+61810509,Commune de Sidi Abed,r2806124,Sidi Abed,nom français + inclusion dans la province,apparie
+61810511,Commune de Sidi M'hamed Akhdim,r2823053,Sidi M'Hamed Akhdim,nom français + inclusion dans la province,apparie
+61810703,Commune de Haouzia,r2806098,Haouzia,nom français + inclusion dans la province,apparie
+61810709,Commune d'Oulad Rahmoune,r2806099,Oulad Rahmoune,nom français + inclusion dans la province,apparie
+61810901,Commune de Boulaouane,r2823000,Boulaouane,nom français + inclusion dans la province,apparie
+61810903,Commune de Chaibate,r2822969,Chaïbate,nom français + inclusion dans la province,apparie
+61810905,Commune de Mettouh,r2823002,Mettouh,nom français + inclusion dans la province,apparie
+61810907,Commune de Mogress,r2823014,Mogress,nom français + inclusion dans la province,apparie
+61810909,Commune d'Oulad Hamdane,r2806097,Oulad Hamdane,nom français + inclusion dans la province,apparie
+61810911,Commune d'Oulad Sidi Ali Ben Youssef,r2822987,Oulad Sidi Ali Ben Youssef,nom français + inclusion dans la province,apparie
+61810913,Commune d'Ouled Frej,r2822986,Oulad Frej,nom approché (0.90) + inclusion dans la province,apparie
+61810915,Commune de Sebt Saiss,r2823067,Sebt Saïss,nom français + inclusion dans la province,apparie
+61810917,Commune de Si Hsaien Ben Abderrahmane,r2806102,Si Hsaïen Ben Abderrahmane,nom français + inclusion dans la province,apparie
+61810919,Commune de Sidi Smail,r2823019,Sidi Smaïl,nom français + inclusion dans la province,apparie
+61810921,Commune de Zaouiat Saiss,r2823029,Zaouiat Saïss,nom français + inclusion dans la province,apparie
+61810923,Commune de Zaouiat Lakouacem,r2822973,Zaouiat Lakouacem,nom français + inclusion dans la province,apparie
+63550101,Commune de Lahraouyine,r2523591,Lahraouyine,nom français + inclusion dans la province,apparie
+63550103,Commune de Mediouna,r2522569,Médiouna,nom français + inclusion dans la province,apparie
+63550105,Commune de Tit Mellil,r2523590,Tit Mellil,nom français + inclusion dans la province,apparie
+63550107,Commune d'Almajjatia Oulad Taleb,r2522570,El Majjatia Ouled Taleb,nom approché (0.89) + inclusion dans la province,apparie
+63550109,Commune de Sidi Hajjaj Oued Hassar,r2522568,Sidi Hajjaj Oued Hassar,nom français + inclusion dans la province,apparie
+63710101,Commune de Mohammadia,r2523547,Mohammédia,nom arabe + inclusion dans la province,apparie
+63710103,Commune d'Ain Harrouda,r2523556,Aïn Harrouda,nom français + inclusion dans la province,apparie
+63710105,Commune de Bni Yakhlef,r2522574,Bni Yakhlef,nom français + inclusion dans la province,apparie
+63710107,Commune d'Ech-challalate,r2522567,Chellalate,nom arabe + inclusion dans la province,apparie
+63710305,Commune de Sidi Moussa Ben Ali,r2522566,Sidi Moussa Ben Ali,nom français + inclusion dans la province,apparie
+63710307,Commune de Sidi Moussa El Majdoub,r2522575,Sidi Moussa El Majdoub,nom français + inclusion dans la province,apparie
+63850101,Commune de Bouskoura,r2522564,Bouskoura,nom français + inclusion dans la province,apparie
+63850102,Commune de Dar Bouazza,r2522565,Dar Bouazza,nom français + inclusion dans la province,apparie
+63850103,Commune de Nouaceur,r2523534,Nouaceur,nom français + inclusion dans la province,apparie
+63850105,Commune d'Ouled Salah,r2522563,Oulad Salah,nom arabe + inclusion dans la province,apparie
+63850107,Commune d'Oulad Azzouz,r5172318,Oulad Azzouz,nom français + inclusion dans la province,apparie
+64610101,Commune de Ben Ahmed,r17134210,Ben Ahmed,nom français + inclusion dans la province,apparie
+64610105,Commune d'El Borouj,r2879991,El Borouj,nom français + inclusion dans la province,apparie
+64610109,Commune de Loulad,r2880018,Loulad,nom français + inclusion dans la province,apparie
+64610113,Commune d'Oulad M'rah,r2880015,Ouled M'Rah,nom approché (0.91) + inclusion dans la province,apparie
+64610115,Commune de Settat,r2879955,Settat,nom français + inclusion dans la province,apparie
+64610701,Commune d'Ain Blal,r2879968,Aïn Blal,nom français + inclusion dans la province,apparie
+64610703,Commune de Bni Khloug,r2879993,Bni Khloug,nom français + inclusion dans la province,apparie
+64610705,Commune de Dar Chaffai,r2879971,Dar Chaffaï,nom français + inclusion dans la province,apparie
+64610707,Commune de Laqraqra,r2879988,Laqraqra,nom français + inclusion dans la province,apparie
+64610709,Commune de Meskoura,r2879989,Meskoura,nom français + inclusion dans la province,apparie
+64610711,Commune d'Oulad Amer,r2879987,Oulad Amer,nom français + inclusion dans la province,apparie
+64610713,Commune d'Oulad Bouali Nouaja,r2880020,Oulad Bouali Nouaja,nom français + inclusion dans la province,apparie
+64610715,Commune d'Oulad Fares El Halla,r2879990,Oulad Fares El Halla,nom français + inclusion dans la province,apparie
+64610717,Commune d'Oulad Freiha,r2879961,Oulad Freiha,nom français + inclusion dans la province,apparie
+64610719,Commune de Sidi Ahmed El Khadir,r2879974,Sidi Ahmed El Khadir,nom français + inclusion dans la province,apparie
+64610721,Commune de Sidi Boumehdi,r2880000,Sidi Boumehdi,nom français + inclusion dans la province,apparie
+64611102,Commune d'Ain Dorbane-Lahlaf,r2879952,Aïn Dorbane-Lahlaf,nom français + inclusion dans la province,apparie
+64611103,Commune de Bouguargouh,r2822772,Bouguargouh,nom français + inclusion dans la province,apparie
+64611107,Commune de Lakhzazra,r2822805,Lakhzazra,nom français + inclusion dans la province,apparie
+64611113,Commune de M'garto,r2822778,M'Garto,nom français + inclusion dans la province,apparie
+64611115,Commune de N'khila,r2880019,N'khila,nom français + inclusion dans la province,apparie
+64611123,Commune d'Ouled M'hamed,r2822792,Oulad M'Hamed,nom arabe + inclusion dans la province,apparie
+64611129,Commune de Sidi Abdelkrim,r2822776,Sidi Abdelkrim,nom français + inclusion dans la province,apparie
+64611131,Commune de Sidi Dahbi,r2822793,Sidi Eddahbi,nom arabe + inclusion dans la province,apparie
+64611309,Commune de Mniaa,r2880014,Mniaa,nom français + inclusion dans la province,apparie
+64611311,Commune de Mrizigue,r2880005,Mrizigue,nom français + inclusion dans la province,apparie
+64611317,Commune d'Oued Naanaa,r2879953,Oued Naanaa,nom français + inclusion dans la province,apparie
+64611319,Commune d'Oulad Chbana,r2879956,Oulad Chbana,nom français + inclusion dans la province,apparie
+64611321,Commune d'Oulad Fares,r2880003,Oulad Fares,nom français + inclusion dans la province,apparie
+64611325,Commune de Ras El Ain Chaouia,r2879954,Ras Al Aïn,table relue à la main (justification consignée),apparie
+64611327,Commune de Sgamna,r2880002,Sgamna,nom français + inclusion dans la province,apparie
+64611333,Commune de Sidi Hajjaj,r2880012,Sidi Hajjaj,nom français + inclusion dans la province,apparie
+64611505,Commune de Gdana,r2866433,Gdana,nom français + inclusion dans la province,apparie
+64611509,Commune de Khemisset Chaouia,r2879962,Khemisset Chaouia,nom français + inclusion dans la province,apparie
+64611511,Commune de Lahouaza,r2879958,Lahouaza,nom français + inclusion dans la province,apparie
+64611514,Commune de Mzamza Janoubia,r5911518,Mzamza Janoubia,nom français + inclusion dans la province,apparie
+64611515,Commune de Mzoura,r2866436,Mzoura,nom français + inclusion dans la province,apparie
+64611519,Commune d'Oulad Said,r2866435,Oulad Saïd,nom français + inclusion dans la province,apparie
+64611525,Commune de Sidi El Aidi,r2822739,Sidi el Aïdi,nom français + inclusion dans la province,apparie
+64611703,Commune de Bni Yagrine,r2879992,Bni Yagrine,nom français + inclusion dans la province,apparie
+64611707,Commune de Guisser,r2879998,Guisser,nom français + inclusion dans la province,apparie
+64611713,Commune de Machraa Ben Abbou,r2879963,Machraa Ben Abbou,nom français + inclusion dans la province,apparie
+64611721,Commune d'Oulad Sghir,r2879997,Oulad Sghir,nom français + inclusion dans la province,apparie
+64611723,Commune de Rima,r2879999,Rima,nom français + inclusion dans la province,apparie
+64611727,Commune de Sidi Mohammed Ben Rahal,r2879964,Sidi Mohammed Ben Rahal,nom français + inclusion dans la province,apparie
+64611731,Commune de Toualet,r2879995,Toualet,nom français + inclusion dans la province,apparie
+64670107,Commune de Sidi Bennour,r2823035,Sidi Bennour,nom français + inclusion dans la province,apparie
+64670109,Commune de Zmamra,r2823082,Zemamra,nom arabe + inclusion dans la province,apparie
+64670301,Commune de Bni Hilal,r2823033,Bni Hilal,nom français + inclusion dans la province,apparie
+64670303,Commune de Bni Tsiriss,r2823006,Bni Tsiriss,nom français + inclusion dans la province,apparie
+64670309,Commune de Khmis Ksiba,r2846745,Khmis Ksiba,nom français + inclusion dans la province,apparie
+64670317,Commune de Laamria,r2823004,Laamria,nom français + inclusion dans la province,apparie
+64670319,Commune de Laaounate,r2823011,Laaounate,nom français + inclusion dans la province,apparie
+64670325,Commune de Metrane,r2846733,Metrane,nom français + inclusion dans la province,apparie
+64670331,Commune d'Oulad Boussaken,r2846730,Oulad Boussaken,nom français + inclusion dans la province,apparie
+64670511,Commune de Koudiat Bni Dghough,r2823077,Koudiat Bni Dghough,nom français + inclusion dans la province,apparie
+64670513,Commune de Kridid,r2823080,Kridid,nom français + inclusion dans la province,apparie
+64670515,Commune de Laagagcha,r2823081,Laagagcha,nom français + inclusion dans la province,apparie
+64670529,Commune d'Oulad Amrane,r2823078,Oulad Amrane,nom français + inclusion dans la province,apparie
+64670535,Commune de Tamda,r2823075,Tamda,nom français + inclusion dans la province,apparie
+64670705,Commune de Bouhmame,r2823041,Bouhmame,nom français + inclusion dans la province,apparie
+64670707,Commune de Jabria,r2846748,Jabria,nom français + inclusion dans la province,apparie
+64670721,Commune de Laatatra,r2823036,Laatatra,nom français + inclusion dans la province,apparie
+64670723,Commune de Lmechrek,r3549746,Lmechrek,nom français + inclusion dans la province,apparie
+64670727,Commune de M'tal,r2823085,M'Tal,nom français + inclusion dans la province,apparie
+64670733,Commune d'Oulad Si Bouhya,r2823034,Oulad Si Bouhya,nom français + inclusion dans la province,apparie
+64671101,Commune de Laghnadra,r2823084,Laghnadra,nom français + inclusion dans la province,apparie
+64671103,Commune de Lgharbia,r2823064,Lgharbia,nom français + inclusion dans la province,apparie
+64671107,Commune d'Oulad Sbaita,r2823063,Oulad Sbaïta,nom français + inclusion dans la province,apparie
+64671109,Commune de Saniat Berguig,r2823072,Saniat Berguig,nom français + inclusion dans la province,apparie
+70410101,Commune d'Ait Ourir,r3535290,Aït Ourir,nom français + inclusion dans la province,apparie
+70410103,Commune d'Amizmiz,r3534189,Amizmiz,nom français + inclusion dans la province,apparie
+70410109,Commune de Tahannaout,r3534181,Tahannaout,nom français + inclusion dans la province,apparie
+70410305,Commune d'Ait Faska,r3535305,Aït Faska,nom français + inclusion dans la province,apparie
+70410309,Commune d'Ait Sidi Daoud,r3535285,Aït Sidi Daoud,nom français + inclusion dans la province,apparie
+70410311,Commune de Ghmate,r3535313,Ghmate,nom français + inclusion dans la province,apparie
+70410313,Commune d'Iguerferouane,r3535442,Iguerferouane,nom français + inclusion dans la province,apparie
+70410315,Commune de Sidi Abdellah Ghiat,r3535311,Sidi Abdallah Ghiat,nom arabe + inclusion dans la province,apparie
+70410319,Commune de Tamazouzte,r3535308,Tamazouzte,nom français + inclusion dans la province,apparie
+70410323,Commune de Tidili Mesfioua,r3535337,Tidili Mesfioua,nom français + inclusion dans la province,apparie
+70410501,Commune d'Amghras,r3534192,Amghras,nom français + inclusion dans la province,apparie
+70410505,Commune d'Anougal,r3535502,Anougal,nom français + inclusion dans la province,apparie
+70410507,Commune d'Azgour,r3534191,Azgour,nom français + inclusion dans la province,apparie
+70410509,Commune de Dar Jamaa,r3534190,Dar Jamaa,nom français + inclusion dans la province,apparie
+70410511,Commune de Lalla Takarkoust,r3534184,Lalla Takarkoust,nom français + inclusion dans la province,apparie
+70410513,Commune d'Ouazguita,r3549660,Ouazguita,nom français + inclusion dans la province,apparie
+70410515,Commune d'Oulad Mtaa,r3534187,Oulad Mtaa,nom français + inclusion dans la province,apparie
+70410517,Commune de Sidi Badhaj,r3534185,Sidi Badhaj,nom français + inclusion dans la province,apparie
+70410519,Commune de Tizguine,r3534188,Tizguine,nom français + inclusion dans la province,apparie
+70410701,Commune d'Aghbar,r3535483,Aghbar,nom français + inclusion dans la province,apparie
+70410703,Commune d'Asni,r3535453,Asni,nom français + inclusion dans la province,apparie
+70410705,Commune d'Ighil,r3535491,Ighil,nom français + inclusion dans la province,apparie
+70410707,Commune d'Ijoukak,r3535466,Ijoukak,nom français + inclusion dans la province,apparie
+70410709,Commune d'Imgdal,r3535465,Imgdal,nom français + inclusion dans la province,apparie
+70410711,Commune d'Ouirgane,r3535462,Ouirgane,nom français + inclusion dans la province,apparie
+70410713,Commune de Talat N'yaaqoub,r3535489,Talat N'Yaaqoub,nom français + inclusion dans la province,apparie
+70410901,Commune de Moulay Brahim,r3534180,Moulay Brahim,nom français + inclusion dans la province,apparie
+70410903,Commune d'Oukaimden,r3535451,Oukaïmeden,nom arabe + inclusion dans la province,apparie
+70410905,Commune d'Ourika,r3535324,Ourika,nom français + inclusion dans la province,apparie
+70410907,Commune de Sti Fadma,r3535438,Sti Fadma,nom français + inclusion dans la province,apparie
+70410911,Commune de Tameslohte,r3534179,Tameslouht,nom arabe + inclusion dans la province,apparie
+70410913,Commune d'Aghouatim,r5177003,Aghouatim,nom français + inclusion dans la province,apparie
+70411101,Commune d'Abadou,r3535387,Abadou,nom français + inclusion dans la province,apparie
+70411103,Commune d'Ait Aadel,r3535410,Aït Aadel,nom français + inclusion dans la province,apparie
+70411107,Commune d'Ait Hkim-Ait Yzid,r3535398,Aït Hkim - Aït Yzid,nom français + inclusion dans la province,apparie
+70411117,Commune de Tamaguert,r3535361,Tamaguert,nom français + inclusion dans la province,apparie
+70411121,Commune de Tazart,r3535341,Tazart,nom français + inclusion dans la province,apparie
+70411125,Commune de Tighedouine,r3535366,Tighedouine,nom français + inclusion dans la province,apparie
+70411127,Commune de Touama,r3535339,Touama,nom français + inclusion dans la province,apparie
+70411129,Commune de Zerkten,r3535352,Zerkten,nom français + inclusion dans la province,apparie
+71610101,Commune de Chichaoua,r2821119,Chichaoua,nom français + inclusion dans la province,apparie
+71610103,Commune d'Imintanoute,r2830905,Imintanoute,nom français + inclusion dans la province,apparie
+71610301,Commune d'Ahdil,r2821117,Ahdil,nom français + inclusion dans la province,apparie
+71610303,Commune d'Ait Hadi,r2830947,Aït Hadi,nom français + inclusion dans la province,apparie
+71610305,Commune de Lamzoudia,r2821122,Mzoudia,nom (0.93) + province voisine à moins de 10 km (limites différentes),apparie
+71610307,Commune d'Oulad Moumna,r2830881,Oulad Moumna,nom français + inclusion dans la province,apparie
+71610309,Commune de Saidate,r2830945,Saïdate,nom français + inclusion dans la province,apparie
+71610311,Commune de Sid L'mokhtar,r2821115,Sidi El Mokhtar,nom arabe + inclusion dans la province,apparie
+71610313,Commune de Sidi Bouzid Arragragui,r2830960,Sidi Bouzid Arragragui,nom français + inclusion dans la province,apparie
+71610315,Commune de Sidi M'hamed Dalil,r2830948,Sidi M'Hamed Dalil,nom français + inclusion dans la province,apparie
+71610501,Commune d'Afalla Issen,r2830909,Afalla Issen,nom français + inclusion dans la province,apparie
+71610503,Commune d'Ain Tazitounte,r2830907,Aïn Tazitounte,nom français + inclusion dans la province,apparie
+71610505,Commune d'Ait Haddou Youssef,r2830920,Aït Haddou Youssef,nom français + inclusion dans la province,apparie
+71610507,Commune d'Irohalen,r2830912,Irohalen,nom français + inclusion dans la province,apparie
+71610509,Commune de Lalla Aaziza,r2830921,Lalla Aaziza,nom français + inclusion dans la province,apparie
+71610511,Commune de Nfifa,r2830904,Nfifa,nom français + inclusion dans la province,apparie
+71610513,Commune d'Ouad L'bour,r2830902,Oued L'Bour,nom arabe + inclusion dans la province,apparie
+71610515,Commune de Sidi Ghanem,r2830923,Sidi Ghanem,nom français + inclusion dans la province,apparie
+71610517,Commune de Timezgadiouine,r2830852,Timezgadiouine,nom français + inclusion dans la province,apparie
+71610701,Commune d'Adassil,r2830936,Adassil,nom français + inclusion dans la province,apparie
+71610703,Commune d'Assif El Mal,r2830941,Assif El Mal,nom français + inclusion dans la province,apparie
+71610705,Commune de Douirane,r2830933,Douirane,nom français + inclusion dans la province,apparie
+71610707,Commune de Gmassa,r2830962,Gmassa,nom français + inclusion dans la province,apparie
+71610709,Commune d'Imindounit,r2830937,Imindounit,nom français + inclusion dans la province,apparie
+71610711,Commune de Majjat,r2830961,Majjat,nom français + inclusion dans la province,apparie
+71610713,Commune de M'zouda,r2830940,M'Zouda,nom français + inclusion dans la province,apparie
+71610715,Commune de Zaouia Annahlia,r2830943,Zaouia Annahlia,nom français + inclusion dans la province,apparie
+71610901,Commune de Bouabout,r2820955,Bouabout,nom français + inclusion dans la province,apparie
+71610903,Commune de Bouabout Amdlane,r2830876,Bouabout Amdlane,nom français + inclusion dans la province,apparie
+71610905,Commune d'Ichamraren,r2830875,Ichamraren,nom français + inclusion dans la province,apparie
+71610907,Commune de Kouzemt,r2830856,Kouzemt,nom français + inclusion dans la province,apparie
+71610909,Commune de Rahhala,r2830890,Rahhala,nom français + inclusion dans la province,apparie
+71610911,Commune de Sidi Abdelmoumen,r2830891,Sidi Abdelmoumen,nom français + inclusion dans la province,apparie
+71610913,Commune de Taouloukoult,r2820958,Taouloukoult,nom français + inclusion dans la province,apparie
+71610915,Commune de Timlilt,r2830853,Timlilt,nom français + inclusion dans la province,apparie
+71910103,Commune de Kelâat Sraghna,r2881950,El Kelâat Es-Sraghna,nom arabe + inclusion dans la province,apparie
+71910105,Commune de Laattaouia,r2881940,El Attaouia,nom arabe + inclusion dans la province,apparie
+71910107,Commune de Sidi Rahal,r2881877,Sidi Rahhal,nom arabe + inclusion dans la province,apparie
+71910109,Commune de Tamallalt,r2881876,Tamallalt,nom français + inclusion dans la province,apparie
+71910503,Commune de Bouya Omar,r2881885,Bouya Omar,nom français + inclusion dans la province,apparie
+71910505,Commune de Choara,r2881881,Choara,nom français + inclusion dans la province,apparie
+71910507,Commune de Dzouz,r2881936,Dzouz,nom français + inclusion dans la province,apparie
+71910509,Commune de Fraita,r2881935,Fraïta,nom français + inclusion dans la province,apparie
+71910515,Commune de Laatamna,r2881939,Laatamna,nom français + inclusion dans la province,apparie
+71910516,Commune de Laattaouia Ech-Chaibia,r2881941,Laattaouia Ech-Chaybia,nom arabe + inclusion dans la province,apparie
+71910521,Commune d'Ouargui,r2881886,Ouargui,nom français + inclusion dans la province,apparie
+71910523,Commune d'Oulad Aarrad,r5176915,Oulad Aarrad,nom français + inclusion dans la province,apparie
+71910711,Commune de Jbiel,r2881948,Jbiel,nom français + inclusion dans la province,apparie
+71910713,Commune de Jouala,r2881882,Jouala,nom français + inclusion dans la province,apparie
+71910731,Commune de Zemrane,r2881878,Zemrane,nom français + inclusion dans la province,apparie
+71910733,Commune de Zemrane Charqia,r2881879,Zemrane Charqia,nom français + inclusion dans la province,apparie
+71910901,Commune d'Assahrij,r2881888,Assahrij,nom français + inclusion dans la province,apparie
+71910917,Commune de Louad Lakhdar,r2881933,Oued Lakhdar,nom arabe + inclusion dans la province,apparie
+71910919,Commune de M'zem Sanhaja,r2881937,M'Zem Sanhaja,nom français + inclusion dans la province,apparie
+71910925,Commune d'Oulad Khallouf,r2881889,Oulad Khallouf,nom français + inclusion dans la province,apparie
+71910927,Commune de Sidi Aissa Ben Slimane,r2881934,Sidi Aïssa Ben Slimane,nom français + inclusion dans la province,apparie
+71910929,Commune de Sour El Aaz,r2881890,Sour El Aaz,nom français + inclusion dans la province,apparie
+71911107,Commune d'El Marbouh,r2881957,El Marbouh,nom français + inclusion dans la province,apparie
+71911111,Commune de Hiadna,r2881860,Hiadna,nom français + inclusion dans la province,apparie
+71911113,Commune de Lounasda,r2881875,Lounasda,nom français + inclusion dans la province,apparie
+71911115,Commune de Mayate,r2881873,Mayate,nom français + inclusion dans la province,apparie
+71911121,Commune d'Oulad Cherki,r2881874,Oulad Cherki,nom français + inclusion dans la province,apparie
+71911123,Commune d'Oulad El Garne,r2881958,Oulad El Garne,nom français + inclusion dans la province,apparie
+71911129,Commune d'Oulad Sbih,r2881857,Oulad Sbih,nom français + inclusion dans la province,apparie
+71911131,Commune d'Oulad Yaacoub,r2881953,Oulad Yaacoub,nom français + inclusion dans la province,apparie
+71911133,Commune d'Oulad Zarrad,r2881856,Oulad Zarrad,nom français + inclusion dans la province,apparie
+71911141,Commune de Znada,r2881949,Znada,nom français + inclusion dans la province,apparie
+71911301,Commune de Chtaiba,r2881961,Chtaïba,nom français + inclusion dans la province,apparie
+71911303,Commune d'Eddachra,r2881973,Eddachra,nom français + inclusion dans la province,apparie
+71911305,Commune d'El Aamria,r2881967,El Aamria,nom français + inclusion dans la province,apparie
+71911309,Commune d'Errafiaya,r2881959,Errafiaya,nom français + inclusion dans la province,apparie
+71911317,Commune d'Oulad Aamer,r2881938,Oulad Aamer,nom français + inclusion dans la province,apparie
+71911319,Commune d'Oulad Bouali Loued,r2881955,Oulad Bouali Loued,nom français + inclusion dans la province,apparie
+71911325,Commune d'Oulad Massaoud,r2881972,Oulad Massaoud,nom français + inclusion dans la province,apparie
+71911327,Commune d'Oulad Msabbel,r2881964,Oulad Msabbel,nom français + inclusion dans la province,apparie
+71911335,Commune de Sidi El Hattab,r2881963,Sidi El Hattab,nom français + inclusion dans la province,apparie
+71911337,Commune de Sidi Moussa,r2881965,Sidi Moussa,nom français + inclusion dans la province,apparie
+71911339,Commune de Taouzint,r2881954,Taouzint,nom français + inclusion dans la province,apparie
+72110101,Commune d'Ait Daoud,r2820914,Aït Daoud,nom français + inclusion dans la province,apparie
+72110103,Commune d'El Hanchane,r2821032,El Hanchane,nom français + inclusion dans la province,apparie
+72110105,Commune d'Essaouira,r2821038,Essaouira,nom français + inclusion dans la province,apparie
+72110107,Commune de Talmest,r2821067,Talmest,nom français + inclusion dans la province,apparie
+72110109,Commune de Tamanar,r2820900,Tamanar,nom français + inclusion dans la province,apparie
+72110303,Commune d'Aquermoud,r2821062,Aquermoud,nom français + inclusion dans la province,apparie
+72110305,Commune de Had Dra,r2821043,Had Dra,nom français + inclusion dans la province,apparie
+72110321,Commune de Moulay Bouzarqtoune,r2821044,Moulay Bouzarqtoune,nom français + inclusion dans la province,apparie
+72110325,Commune de M'khalif,r2821068,Mkhalif,nom approché (0.93) + inclusion dans la province,apparie
+72110331,Commune d'Ounagha,r2821035,Ounagha,nom français + inclusion dans la province,apparie
+72110333,Commune de Sidi Abdeljalil,r2821066,Sidi Abdeljalil,nom français + inclusion dans la province,apparie
+72110337,Commune de Sidi Ali El Korati,r2821065,Sidi Ali El Korati,nom français + inclusion dans la province,apparie
+72110341,Commune de Sidi Ishaq,r2821064,Sidi Ishaq,nom français + inclusion dans la province,apparie
+72110343,Commune de Sidi Laaroussi,r2821069,Sidi Laaroussi,nom français + inclusion dans la province,apparie
+72110349,Commune de Takate,r2821059,Takate,nom français + inclusion dans la province,apparie
+72110351,Commune de Zaouiat Ben Hmida,r2821100,Zaouiat Ben Hmida,nom français + inclusion dans la province,apparie
+72110505,Commune d'Aguerd,r2820967,Aguerd,nom français + inclusion dans la province,apparie
+72110507,Commune d'Ait Aissa Ihahane,r2820892,Aït Aïssi Ihahane,nom arabe + inclusion dans la province,apparie
+72110517,Commune d'Ida Ou Aazza,r2820905,Ida Ou Aazza,nom français + inclusion dans la province,apparie
+72110519,Commune d'Ida Ou Guelloul,r2820879,Ida Ou Guelloul,nom français + inclusion dans la province,apparie
+72110521,Commune d'Ida Ou Kazzou,r2820889,Ida Ou Kazzou,nom français + inclusion dans la province,apparie
+72110523,Commune d'Imgrade,r2820909,Imgrade,nom français + inclusion dans la province,apparie
+72110525,Commune d'Imi-N'tlit,r2820911,Imi N'Tlit,nom français + inclusion dans la province,apparie
+72110527,Commune de Sidi Ahmed Essayeh,r2821165,Sidi Ahmed Essayeh,nom français + inclusion dans la province,apparie
+72110529,Commune de Sidi El Jazouli,r2820938,Sidi El Jazouli,nom français + inclusion dans la province,apparie
+72110533,Commune de Sidi Hmad Ou M'barek,r2820880,Sidi Hmad Ou M'Barek,nom français + inclusion dans la province,apparie
+72110535,Commune de Sidi H'mad Ou Hamed,r2820944,Sidi H'Mad Ou Hamed,nom français + inclusion dans la province,apparie
+72110537,Commune de Sidi Kaouki,r2820946,Sidi Kaouki,nom français + inclusion dans la province,apparie
+72110539,Commune de Smimou,r2820908,Smimou,nom français + inclusion dans la province,apparie
+72110541,Commune de Tafedna,r2820902,Tafedna,nom français + inclusion dans la province,apparie
+72110547,Commune de Targante,r2820901,Targante,nom français + inclusion dans la province,apparie
+72110549,Commune de Tidzi,r2820942,Tidzi,nom français + inclusion dans la province,apparie
+72110551,Commune de Timzguida-Ouftas,r2820878,Timizguida-Ouftas,nom arabe + inclusion dans la province,apparie
+72110701,Commune d'Adaghas,r2820930,Adaghas,nom français + inclusion dans la province,apparie
+72110703,Commune d'Aglif,r2820913,Aglif,nom français + inclusion dans la province,apparie
+72110709,Commune d'Assais,r2820932,Assaïs,nom français + inclusion dans la province,apparie
+72110711,Commune de Bizdad,r2820936,Bizdad,nom français + inclusion dans la province,apparie
+72110713,Commune de Bouzemmour,r2820934,Bouzemmour,nom français + inclusion dans la province,apparie
+72110715,Commune d'Ezzaouite,r2820948,Ezzaouite,nom français + inclusion dans la province,apparie
+72110731,Commune de Sidi Ghaneme,r2820937,Sidi Ghaneme,nom français + inclusion dans la province,apparie
+72110743,Commune de Tahelouante,r2820935,Tahelouante,nom français + inclusion dans la province,apparie
+72110745,Commune de Takoucht,r2820912,Takoucht,nom français + inclusion dans la province,apparie
+72110901,Commune d'Ait Said,r2820965,Aït Saïd,nom français + inclusion dans la province,apparie
+72110907,Commune de Kechoula,r2820970,Kechoula,nom français + inclusion dans la province,apparie
+72110909,Commune de Korimate,r2820957,Korimate,nom français + inclusion dans la province,apparie
+72110911,Commune de Lagdadra,r2821031,Lagdadra,nom français + inclusion dans la province,apparie
+72110913,Commune de Lahsinate,r2821033,Lahsinate,nom français + inclusion dans la province,apparie
+72110915,Commune de Mejji,r2821028,Mejji,nom français + inclusion dans la province,apparie
+72110917,Commune de Meskala,r2820954,Meskala,nom français + inclusion dans la province,apparie
+72110919,Commune de Mouarid,r2820963,Mouarid,nom français + inclusion dans la province,apparie
+72110923,Commune de Mzilate,r2821088,Mzilate,nom français + inclusion dans la province,apparie
+72110927,Commune de M'ramer,r2821094,M'Ramer,nom français + inclusion dans la province,apparie
+72110929,Commune d'Oulad M'rabet,r2821108,Oulad M'Rabet,nom français + inclusion dans la province,apparie
+72110935,Commune de Sidi Aissa Regragui,r2821097,Sidi Aïssa Regragui,nom français + inclusion dans la province,apparie
+72110939,Commune de Sidi Boulaalam,r2821095,Sidi Boulaalam,nom français + inclusion dans la province,apparie
+72110945,Commune de Sidi M'hamed Ou Marzouq,r2821104,Sidi M'Hamed Ou Marzouq,nom français + inclusion dans la province,apparie
+72110947,Commune de Tafetachte,r2821109,Tafetachte,nom français + inclusion dans la province,apparie
+7351010,Commune de Marrakech,r2799538,Marrakech,nom français + inclusion dans la province,apparie
+73510101,Commune de Méchouar-Kasba,r2799528,Mechouar Kasbah,nom approché (0.97) + inclusion dans la province,apparie
+73510113,Commune de Tassoultante,r2824278,Tasoultante,nom arabe + inclusion dans la province,apparie
+73510201,Commune d'Al Ouidane,r2824270,Al Ouidane,nom français + inclusion dans la province,apparie
+73510207,Commune d'Ouahat Sidi Brahim,r2824271,Ouahat Sidi Brahim,nom français + inclusion dans la province,apparie
+73510209,Commune d'Oulad Hassoune,r2824269,Oulad Hassoun,nom arabe + inclusion dans la province,apparie
+73510303,Commune de Harbil,r2824264,Harbil,nom français + inclusion dans la province,apparie
+73510305,Commune de M'nabha,r2824262,M'Nabha,nom français + inclusion dans la province,apparie
+73510311,Commune d'Ouled Dlim,r2824263,Ouled Dlim,nom français + inclusion dans la province,apparie
+73510501,Commune d'Agafay,r2824275,Agafay,nom français + inclusion dans la province,apparie
+73510503,Commune d'Ait Imour,r2824276,Aït Imour,nom français + inclusion dans la province,apparie
+73510505,Commune de Loudaya,r2824265,Loudaya,nom français + inclusion dans la province,apparie
+73510509,Commune de Sid Zouine,r2824266,Sid Zouine,nom français + inclusion dans la province,apparie
+73510707,Commune de Saada,r2824277,Saâda,nom français + inclusion dans la province,apparie
+73510711,Commune de Souihla,r2824274,Souihla,nom français + inclusion dans la province,apparie
+74270101,Commune de Ben Guerir,r2881872,Ben Guerir,nom français + inclusion dans la province,apparie
+74270117,Commune de Sidi Bou Othmane,r2881813,Sidi Bou Othmane,nom français + inclusion dans la province,apparie
+74270701,Commune d'Ait Hammou,r2881802,Aït Hammou,nom français + inclusion dans la province,apparie
+74270703,Commune d'Ait Taleb,r2881792,Aït Taleb,nom français + inclusion dans la province,apparie
+74270705,Commune de Bouchane,r2881799,Bouchane,nom français + inclusion dans la province,apparie
+74270707,Commune de Jaafra,r2881869,Jaafra,nom français + inclusion dans la province,apparie
+74270709,Commune de Labrikiyne,r2881798,Labrikiyne,nom français + inclusion dans la province,apparie
+74270711,Commune d'Oulad Aamer Tizmarine,r2881800,Oulad Aamer Tizmarine,nom français + inclusion dans la province,apparie
+74270713,Commune d'Oulad Hassoune Hamri,r2881794,Oulad Hassoune Hamri,nom français + inclusion dans la province,apparie
+74270715,Commune de Sidi Abdellah,r2881796,Sidi Abdallah,nom arabe + inclusion dans la province,apparie
+74270717,Commune de Sidi Ali Labrahla,r2881805,Sidi Ali Labrahla,nom français + inclusion dans la province,apparie
+74270719,Commune de Sidi Ghanem,r2881797,Sidi Ghanem,nom français + inclusion dans la province,apparie
+74270721,Commune de Sidi Mansour,r2881793,Sidi Mansour,nom français + inclusion dans la province,apparie
+74270723,Commune de Skhour Rhamna,r2881795,Skhour Rhamna,nom français + inclusion dans la province,apparie
+74270725,Commune de Skoura Lhadra,r2881870,Skoura Lhadra,nom français + inclusion dans la province,apparie
+74270901,Commune d'Akarma,r2881848,Akarma,nom français + inclusion dans la province,apparie
+74270903,Commune de Bourrous,r2881814,Bourrous,nom français + inclusion dans la province,apparie
+74270905,Commune de Jaidate,r2881839,Jaïdate,nom français + inclusion dans la province,apparie
+74270906,Commune de Jbilate,r5175843,Jbilate,nom français + inclusion dans la province,apparie
+74270907,Commune de Lamharra,r2881854,Lamharra,nom français + inclusion dans la province,apparie
+74270909,Commune de Nzalat Laadam,r2881811,Nzalat Laadam,nom français + inclusion dans la province,apparie
+74270911,Commune d'Oulad Imloul,r2881849,Oulad Imloul,nom français + inclusion dans la province,apparie
+74270913,Commune de Ras Ain Rhamna,r2881840,Ras Aïn Rhamna,nom français + inclusion dans la province,apparie
+74270915,Commune de Sidi Boubker,r2881838,Sidi Boubker,nom français + inclusion dans la province,apparie
+74270919,Commune de Tlauh,r2881841,Tlauh,nom français + inclusion dans la province,apparie
+74310103,Commune de Safi,r2827820,Safi,nom français + inclusion dans la province,apparie
+74310109,Commune de Jamaat Shaim,r2827836,Jamaat Shaïm,nom français + inclusion dans la province,apparie
+74310111,Commune de Sebt Gzoula,r2827812,Sebt Gzoula,nom français + inclusion dans la province,apparie
+74310301,Commune de Bouguedra,r2827839,Bouguedra,nom français + inclusion dans la province,apparie
+74310302,Commune de Chahda,r5173348,Chahda,nom français + inclusion dans la province,apparie
+74310303,Commune d'El Gouraani,r2827834,El Gouraani,nom français + inclusion dans la province,apparie
+74310305,Commune de Labkhati,r2827833,Labkhati,nom français + inclusion dans la province,apparie
+74310307,Commune de Lahdar,r2827832,Lahdar,table relue à la main (justification consignée),apparie
+74310309,Commune de Lamrasla,r2827853,Lamrasla,nom français + inclusion dans la province,apparie
+74310311,Commune de Lamsabih,r2827887,Lamsabih,nom français + inclusion dans la province,apparie
+74310313,Commune de Sidi Aissa,r2827831,Sidi Aïssa,nom français + inclusion dans la province,apparie
+74310315,Commune de Sidi Ettiji,r2827852,Sidi Ettiji,nom français + inclusion dans la province,apparie
+74310701,Commune d'Atouabet,r2827798,Atouabet,nom français + inclusion dans la province,apparie
+74310703,Commune d'El Ghiate,r2827802,El Ghiate,nom français + inclusion dans la province,apparie
+74310705,Commune de Khatazakane,r2827813,Khatazakane,nom français + inclusion dans la province,apparie
+74310707,Commune de Laamamra,r2827856,Laamamra,nom français + inclusion dans la province,apparie
+74310709,Commune de Lamaachate,r2827799,Lamaachate,nom français + inclusion dans la province,apparie
+74310711,Commune de Nagga,r2827808,Nagga,nom français + inclusion dans la province,apparie
+74310713,Commune d'Ouled Salmane,r2827797,Oulad Salmane,nom arabe + inclusion dans la province,apparie
+74310901,Commune d'Ayir,r2827826,Ayir,nom français + inclusion dans la province,apparie
+74310903,Commune de Dar Si Aissa,r2827829,Dar Si Aïssa,nom français + inclusion dans la province,apparie
+74310905,Commune d'El Beddouza,r2827823,El Beddouza,nom français + inclusion dans la province,apparie
+74310907,Commune de Hrara,r2827822,Hrara,nom français + inclusion dans la province,apparie
+74310909,Commune de Moul El Bergui,r2827828,Moul El Bergui,nom français + inclusion dans la province,apparie
+74310915,Commune de Saadla,r2827830,Saadla,nom français + inclusion dans la province,apparie
+75850107,Commune d'Echemmaia,r2827869,Echemmaïa,nom français + inclusion dans la province,apparie
+75850113,Commune de Youssoufia,r2827881,Youssoufia,nom français + inclusion dans la province,apparie
+75850507,Commune d'Ighoud,r2827857,Ighoud,nom français + inclusion dans la province,apparie
+75850509,Commune de Jdour,r2827863,Jdour,nom français + inclusion dans la province,apparie
+75850511,Commune de Jnane Bouih,r2827861,Jnane Bouih,nom français + inclusion dans la province,apparie
+75850517,Commune de Sidi Chiker,r2827860,Sidi Chiker,nom français + inclusion dans la province,apparie
+75850701,Commune d'Atiamim,r2827870,Atiamim,nom français + inclusion dans la province,apparie
+75850703,Commune d'El Gantour,r2827886,El Gantour,nom français + inclusion dans la province,apparie
+75850705,Commune d'Esbiaat,r2827882,Esbiaat,nom français + inclusion dans la province,apparie
+75850713,Commune de Lakhoualqa,r2827879,Lakhoualqa,nom français + inclusion dans la province,apparie
+75850715,Commune de Ras El Ain,r2827873,Ras El Aïn,nom français + inclusion dans la province,apparie
+82010101,Commune d'Arfoud,r2884805,Erfoud,nom arabe + inclusion dans la province,apparie
+82010103,Commune de Boudnib,r2827114,Boudnib,nom français + inclusion dans la province,apparie
+82010105,Commune d'Errachidia,r2827224,Errachidia,nom français + inclusion dans la province,apparie
+82010109,Commune de Goulmima,r2884815,Goulmima,nom français + inclusion dans la province,apparie
+82010111,Commune de Jorf,r2884808,Jorf,nom français + inclusion dans la province,apparie
+82010113,Commune de Moulay Ali Cherif,r5150546,Moulay Ali Chérif,nom français + inclusion dans la province,apparie
+82010115,Commune de Tinejdad,r2884853,Tinejdad,nom français + inclusion dans la province,apparie
+82010301,Commune d'Aarab Sebbah Gheris,r2884807,Aarab Sebbah Gheris,nom français + inclusion dans la province,apparie
+82010303,Commune d'Aarab Sebbah Ziz,r2884804,Aarab Sebbah Ziz,nom français + inclusion dans la province,apparie
+82010307,Commune d'Es-Sifa,r2884760,Es-Sifa,nom français + inclusion dans la province,apparie
+82010309,Commune de Fezna,r2884811,Fezna,nom français + inclusion dans la province,apparie
+82010701,Commune d'Aoufous,r2827232,Aoufous,nom français + inclusion dans la province,apparie
+82010703,Commune de Chorfa M'daghra,r2827228,Chorfa M'Daghra,nom français + inclusion dans la province,apparie
+82010705,Commune d'Er-Rteb,r2884802,Er-Rteb,nom français + inclusion dans la province,apparie
+82010707,Commune de Lkheng,r2827219,Lkheng,nom français + inclusion dans la province,apparie
+82010709,Commune d'Oued Naam,r2827115,Oued Naam,nom français + inclusion dans la province,apparie
+82011101,Commune de Bni M'hamed-Sijelmassa,r2884755,Bni M'Hamed Sijelmassa,nom français + inclusion dans la province,apparie
+82011103,Commune d'Er-Rissani,r2884894,Er-Rissani,nom français + inclusion dans la province,apparie
+82011105,Commune d'Es-Sfalat,r2884752,Es-Sfalat,nom français + inclusion dans la province,apparie
+82011107,Commune d'Et-Taous,r2884750,Taouz,nom arabe + inclusion dans la province,apparie
+82011109,Commune de Sidi Ali,r2884744,Sidi Ali,nom français + inclusion dans la province,apparie
+82011302,Commune d'Amellagou,r2827164,Amellagou,nom français + inclusion dans la province,apparie
+82011307,Commune de Gheris El Ouloui,r2884818,Gheris El Ouloui,nom français + inclusion dans la province,apparie
+82011309,Commune de Gheris Es-Soufli,r2884814,Gheris Es-Soufli,nom français + inclusion dans la province,apparie
+82011313,Commune de Tadighoust,r2827212,Tadighoust,nom français + inclusion dans la province,apparie
+82011501,Commune d'Aghbalou-N'kerdous,r2827208,Aghbalou N'Kerdous,nom français + inclusion dans la province,apparie
+82011503,Commune de Ferkla El Oulia,r2884857,Ferkla El Oulia,nom français + inclusion dans la province,apparie
+82011505,Commune de Ferkla Es-Soufla,r2884860,Ferkla Es-Soufla,nom français + inclusion dans la province,apparie
+82011511,Commune de Melaab,r2884852,Melaab,nom français + inclusion dans la province,apparie
+83630103,Commune de Midelt,r2826649,Midelt,nom français + inclusion dans la province,apparie
+83630107,Commune d'Er-Rich,r2827129,Er-Rich,nom français + inclusion dans la province,apparie
+83630115,Commune de Boumia,r2826600,Boumia,nom français + inclusion dans la province,apparie
+83630501,Commune d'Aghbalou,r2826598,Aghbalou,nom français + inclusion dans la province,apparie
+83630521,Commune de Sidi Yahia Ou Youssef,r2826606,Sidi Yahya Ou Youssef,nom approché (0.95) + inclusion dans la province,apparie
+83630523,Commune de Tanourdi,r2826592,Tanourdi,nom français + inclusion dans la province,apparie
+83630525,Commune de Tizi N'ghachou,r2826594,Tizi N'Ghachou,nom français + inclusion dans la province,apparie
+83630705,Commune d'Ait Ayach,r2826601,Aït Ayach,nom français + inclusion dans la province,apparie
+83630707,Commune d'Ait Ben Yacoub,r2826585,Aït Ben Yacoub,nom français + inclusion dans la province,apparie
+83630709,Commune d'Ait Izdeg,r2826647,Aït Izdeg,nom français + inclusion dans la province,apparie
+83630711,Commune d'Amersid,r2826644,Amersid,nom français + inclusion dans la province,apparie
+83630717,Commune d'Itzer,r2826589,Itzer,nom français + inclusion dans la province,apparie
+83630719,Commune de Mibladen,r2826646,Mibladen,nom français + inclusion dans la province,apparie
+83630729,Commune de Zaida,r2826588,Zaïda,nom français + inclusion dans la province,apparie
+83630901,Commune d'En-Nzala,r2827121,En-nzala,nom français + inclusion dans la province,apparie
+83630903,Commune de Gourrama,r2827120,Gourrama,nom français + inclusion dans la province,apparie
+83630905,Commune de Guers Tiaallaline,r2827133,Guers Tiaallaline,nom français + inclusion dans la province,apparie
+83630907,Commune de Guir,r2827116,Guir,nom français + inclusion dans la province,apparie
+83630909,Commune de M'zizel,r2827135,M'Zizel,nom français + inclusion dans la province,apparie
+83630911,Commune de Sidi Aayad,r2827130,Sidi Aayad,nom français + inclusion dans la province,apparie
+83630913,Commune de Zaouiat Sidi Hamza,r2827131,Zaouiat Sidi Hamza,nom français + inclusion dans la province,apparie
+83631501,Commune d'Ait Yahya,r2827199,Aït Yahya,nom français + inclusion dans la province,apparie
+83631503,Commune d'Amouguer,r2827144,Amouguer,nom français + inclusion dans la province,apparie
+83631505,Commune de Bou-Azmou,r2827183,Bou Azmou,nom français + inclusion dans la province,apparie
+83631507,Commune d'Imilchil,r2827179,Imilchil,nom français + inclusion dans la province,apparie
+83631509,Commune d'Outerbat,r2827185,Outerbat,nom français + inclusion dans la province,apparie
+83631703,Commune d'Agoudim,r2826602,Agoudim,nom français + inclusion dans la province,apparie
+83631713,Commune d'Anemzi,r2826605,Anemzi,nom français + inclusion dans la province,apparie
+83631727,Commune de Tounfite,r2826603,Tounfit,nom arabe + inclusion dans la province,apparie
+84010107,Commune d'Ouarzazate,r2887639,Ouarzazate,nom français + inclusion dans la province,apparie
+84010109,Commune de Taznakht,r2887654,Taznakht,nom français + inclusion dans la province,apparie
+84010301,Commune d'Ait Zineb,r2887637,Aït Zineb,nom français + inclusion dans la province,apparie
+84010303,Commune d'Amerzgane,r2887635,Amerzgane,nom français + inclusion dans la province,apparie
+84010305,Commune d'Iznaguen,r2887666,Aznaguen,nom arabe + inclusion dans la province,apparie
+84010307,Commune d'Ighrem N'ougdal,r2887631,Ighrem N'Ougdal,nom français + inclusion dans la province,apparie
+84010309,Commune de Khouzama,r2887673,Khouzama,nom français + inclusion dans la province,apparie
+84010311,Commune d'Ouisselsate,r2887668,Ouisselsate,nom français + inclusion dans la province,apparie
+84010313,Commune de Siroua,r2887671,Siroua,nom français + inclusion dans la province,apparie
+84010315,Commune de Telouet,r2887630,Télouet,nom français + inclusion dans la province,apparie
+84010317,Commune de Tidili,r2887634,Tidli,nom arabe + inclusion dans la province,apparie
+84010701,Commune de Ghassate,r2887628,Ghassate,nom français + inclusion dans la province,apparie
+84010703,Commune d'Idelsane,r2887627,Idelsane,nom français + inclusion dans la province,apparie
+84010705,Commune d'Imi-N'oulaoune,r2887622,Imi N'Oulaoune,nom français + inclusion dans la province,apparie
+84010707,Commune de Skoura Ahl El Oust,r2887625,Skoura Ahl El Oust,nom français + inclusion dans la province,apparie
+84010709,Commune de Tarmigt,r2887649,Tarmigt,nom français + inclusion dans la province,apparie
+84010711,Commune de Toundoute,r2887620,Toundoute,nom français + inclusion dans la province,apparie
+85770103,Commune de Boumalne-Dades,r2887514,Boumalne Dadès,nom français + inclusion dans la province,apparie
+85770105,Commune de Kalâat M'gouna,r2887607,Kalaat M'Gouna,nom français + inclusion dans la province,apparie
+85770111,Commune de Tinghir,r2887568,Tinghir,nom français + inclusion dans la province,apparie
+85770205,Commune d'Alnif,r2884873,Alnif,nom français + inclusion dans la province,apparie
+85770211,Commune de H'ssyia,r2884881,H'Ssyia,nom français + inclusion dans la province,apparie
+85770221,Commune de M'ssici,r2884882,M'Ssici,nom français + inclusion dans la province,apparie
+85770301,Commune d'Ait Hani,r2827209,Aït Hani,nom français + inclusion dans la province,apparie
+85770305,Commune d'Assoul,r2827202,Assoul,nom français + inclusion dans la province,apparie
+85770505,Commune d'Ait Sedrate Jbel El Oulia,r2887493,Aït Sedrate Jbel el Oulia,nom français + inclusion dans la province,apparie
+85770507,Commune d'Ait Sedrate Jebel Soufla,r2887495,Aït Sedrate Jbel El Soufla,nom arabe + inclusion dans la province,apparie
+85770513,Commune d'Ait Youl,r2887500,Aït Youl,nom français + inclusion dans la province,apparie
+85770517,Commune d'Ikniouen,r2887545,Ikniouen,nom français + inclusion dans la province,apparie
+85770521,Commune de M'semrir,r2887482,M'Semrir,nom français + inclusion dans la province,apparie
+85770529,Commune de Tilmi,r2887481,Tilmi,nom français + inclusion dans la province,apparie
+85770701,Commune d'Ait El Farsi,r2887548,Aït Elfarsi,nom arabe + inclusion dans la province,apparie
+85770719,Commune d'Imider,r2887541,Imider,nom français + inclusion dans la province,apparie
+85770723,Commune d'Ouaklim,r2887551,Ouaklim,nom français + inclusion dans la province,apparie
+85770727,Commune de Taghzoute N'ait Atta,r2887602,Taghzoute N'Aït Atta,nom français + inclusion dans la province,apparie
+85770731,Commune de Toudgha El Oulia,r2887567,Toudgha El Oulia,nom français + inclusion dans la province,apparie
+85770733,Commune de Toudgha Essoufla,r2887581,Toudgha Essoufla,nom français + inclusion dans la province,apparie
+85770903,Commune d'Ait Ouassif,r2887609,Aït Ouassif,nom français + inclusion dans la province,apparie
+85770909,Commune d'Ait Sedrate Sahl Charkia,r2887616,Aït Sedrate Sahl Charkia,nom français + inclusion dans la province,apparie
+85770911,Commune d'Ait Sedrate Sahl El-Gharbia,r2887615,Aït Sedrate Sahl El Gharbia,nom français + inclusion dans la province,apparie
+85770915,Commune d'Ighil N'oumgoun,r2887513,Ighil N'Oumgoun,nom français + inclusion dans la province,apparie
+85770925,Commune de Souk Lakhmis Dades,r2887518,Souk Lakhmis Dades,nom français + inclusion dans la province,apparie
+85870101,Commune d'Agdz,r2884947,Agdz,nom français + inclusion dans la province,apparie
+85870113,Commune de Zagora,r2884979,Zagora,nom français + inclusion dans la province,apparie
+85870301,Commune d'Afella N'dra,r2884950,Afella N'Dra,nom français + inclusion dans la province,apparie
+85870303,Commune d'Afra,r2884952,Afra,nom français + inclusion dans la province,apparie
+85870321,Commune de Mezguita,r2884948,Mezguita,nom français + inclusion dans la province,apparie
+85870327,Commune d'Oulad Yahia Lagraire,r2884976,Oulad Yahia Lagraïre,nom français + inclusion dans la province,apparie
+85870337,Commune de Tamezmoute,r2884956,Tamezmoute,nom français + inclusion dans la province,apparie
+85870339,Commune de Tansifte,r2884932,Tansifte,nom français + inclusion dans la province,apparie
+85870709,Commune de Bleida,r2884931,Bleida,table relue à la main (justification consignée),apparie
+85870711,Commune de Bni Zoli,r2884978,Bni Zoli,nom français + inclusion dans la province,apparie
+85870713,Commune de Bouzeroual,r2884986,Bouzeroual,nom français + inclusion dans la province,apparie
+85870715,Commune d'Errouha,r2884987,Errouha,nom français + inclusion dans la province,apparie
+85870729,Commune de Taftechna,r2884959,Taftechna,nom français + inclusion dans la province,apparie
+85870743,Commune de Ternata,r2884984,Ternata,nom français + inclusion dans la province,apparie
+85870745,Commune de Tinzouline,r2884977,Tinzouline,nom français + inclusion dans la province,apparie
+85870917,Commune de Fezouata,r2884988,Fezouata,nom français + inclusion dans la province,apparie
+85870919,Commune de Ktaoua,r2884928,Ktaoua,nom français + inclusion dans la province,apparie
+85870923,Commune de M'hamid El Ghizlane,r2884930,M'Hamid El Ghizlane,nom français + inclusion dans la province,apparie
+85870933,Commune de Tagounite,r2884929,Tagounite,nom français + inclusion dans la province,apparie
+85870935,Commune de Tamegroute,r2884980,Tamegroute,nom français + inclusion dans la province,apparie
+85871105,Commune d'Ait Boudaoud,r2884911,Aït Boudaoud,nom français + inclusion dans la province,apparie
+85871107,Commune d'Ait Ouallal,r2884963,Aït Ouallal,nom français + inclusion dans la province,apparie
+85871125,Commune de N'kob,r2884975,N'Kob,nom français + inclusion dans la province,apparie
+85871131,Commune de Taghbalte,r2884903,Taghbalte,nom français + inclusion dans la province,apparie
+85871141,Commune de Tazarine,r2884900,Tazzarine,nom arabe + inclusion dans la province,apparie
+90010501,Commune d'Amskroud,r2758267,Amskroud,nom français + inclusion dans la province,apparie
+90010509,Commune de Drargua,r2758268,Drargua,nom français + inclusion dans la province,apparie
+90010511,Commune d'Idmine,r2814076,Idmine,nom français + inclusion dans la province,apparie
+90010703,Commune d'Aourir,r2758263,Aourir,nom français + inclusion dans la province,apparie
+90010705,Commune d'Aqsri,r2758272,Aqesri,nom arabe + inclusion dans la province,apparie
+90010707,Commune d'Aziar,r2814091,Aziar,nom français + inclusion dans la province,apparie
+90010713,Commune d'Imouzzer,r2758273,Imouzzer,nom français + inclusion dans la province,apparie
+90010715,Commune d'Imsouane,r2758266,Imsouane,nom français + inclusion dans la province,apparie
+90010721,Commune de Tadrart,r2814089,Tadrart,nom français + inclusion dans la province,apparie
+90010723,Commune de Taghazout,r2758264,Taghazout,nom français + inclusion dans la province,apparie
+90010725,Commune de Tamri,r2758265,Tamri,nom français + inclusion dans la province,apparie
+90010729,Commune de Tiqqi,r2814084,Tiqqi,nom français + inclusion dans la province,apparie
+91630101,Commune d'Ait Amira,r2832937,Aït Amira,nom français + inclusion dans la province,apparie
+91630103,Commune d'Ait Baha,r2832991,Aït Baha,nom français + inclusion dans la province,apparie
+91630111,Commune de Biougra,r2832936,Biougra,nom français + inclusion dans la province,apparie
+91630127,Commune de Sidi Bibi,r2832910,Sidi Bibi,nom français + inclusion dans la province,apparie
+91630305,Commune d'Ait Mzal,r2832997,Aït Mzal,nom français + inclusion dans la province,apparie
+91630307,Commune d'Ait Ouadrim,r2832962,Aït Ouadrim,nom français + inclusion dans la province,apparie
+91630309,Commune d'Aouguenz,r2833005,Aouguenz,nom français + inclusion dans la province,apparie
+91630313,Commune de Hilala,r2832999,Hilala,nom français + inclusion dans la province,apparie
+91630315,Commune d'Ida-Ougnidif,r2833003,Ida Ougnidif,nom français + inclusion dans la province,apparie
+91630325,Commune de Sidi Abdallah El Bouchouari,r2832957,Sidi Abdallah El Bouchouari,nom français + inclusion dans la province,apparie
+91630333,Commune de Tanalt,r2833006,Tanalt,nom français + inclusion dans la province,apparie
+91630335,Commune de Targua-Ntouchka,r2832986,Targua Ntouchka,nom français + inclusion dans la province,apparie
+91630337,Commune de Tassegdelt,r2832998,Tassegdelt,nom français + inclusion dans la province,apparie
+91630339,Commune de Tizi Ntakoucht,r2833007,Tizi Ntakoucht,nom français + inclusion dans la province,apparie
+91630503,Commune d'Ait Milk,r2832955,Aït Milk,nom français + inclusion dans la province,apparie
+91630511,Commune de Belfaâ,r2832952,Belfaa,nom français + inclusion dans la province,apparie
+91630519,Commune d'Inchaden,r2832941,Inchaden,nom français + inclusion dans la province,apparie
+91630521,Commune de Massa,r2832951,Massa,nom français + inclusion dans la province,apparie
+91630531,Commune de Sidi Ouassay,r2832946,Sidi Ouassay,nom français + inclusion dans la province,apparie
+91630717,Commune d'Imi-Mqourn,r2832989,Imi Mqourn,nom français + inclusion dans la province,apparie
+91630723,Commune d'Oued Essafa,r2832934,Ouad Essafa,nom approché (0.91) + inclusion dans la province,apparie
+91630729,Commune de Sidi Boushab,r2832961,Sidi Boushab,nom français + inclusion dans la province,apparie
+92730105,Commune d'Ait Melloul,r2529626,Aït Melloul,nom français + inclusion dans la province,apparie
+92730113,Commune de Dcheira El Jihadia,r5163321,Dcheïra El Jihadia,nom français + inclusion dans la province,apparie
+92730115,Commune d'Inezgane,r2529625,Inezgane,nom français + inclusion dans la province,apparie
+92730117,Commune de Lqliaa,r2758288,Lqliaa,nom français + inclusion dans la province,apparie
+92730519,Commune d'Oulad Dahou,r2758291,Oulad Dahou,nom français + inclusion dans la province,apparie
+92730527,Commune de Temsia,r2758289,Temsia,nom français + inclusion dans la province,apparie
+95410101,Commune d'Ait Iaaza,r2889037,Aït Iaaza,nom français + inclusion dans la province,apparie
+95410102,Commune d'Aoulouz,r2888851,Aoulouz,nom français + inclusion dans la province,apparie
+95410103,Commune d'El Guerdane,r2835901,El Guerdane,nom français + inclusion dans la province,apparie
+95410105,Commune d'Irherm,r2875722,Irherm,nom français + inclusion dans la province,apparie
+95410107,Commune d'Oulad Berhil,r2890483,Oulad Berhil,nom français + inclusion dans la province,apparie
+95410109,Commune d'Oulad Teima,r2835875,Ouled Teima,nom arabe + inclusion dans la province,apparie
+95410111,Commune de Taliouine,r2888831,Taliouine,nom français + inclusion dans la province,apparie
+95410113,Commune de Taroudannt,r2835912,Taroudant,nom arabe + inclusion dans la province,apparie
+95410301,Commune d'Adar,r2888899,Adar,nom français + inclusion dans la province,apparie
+95410303,Commune d'Ait Abdallah,r2875703,Aït Abdellah,nom arabe + inclusion dans la province,apparie
+95410305,Commune d'Amalou,r2889076,Amalou,nom français + inclusion dans la province,apparie
+95410307,Commune d'Azaghar N'irs,r2888903,Azaghar N'Irs,nom français + inclusion dans la province,apparie
+95410309,Commune d'Imaouen,r2875705,Imaouen,nom français + inclusion dans la province,apparie
+95410311,Commune d'Imi N'tayart,r2888923,Imi N'Tayart,nom français + inclusion dans la province,apparie
+95410313,Commune de Nihit,r3541016,Nihit,nom français + inclusion dans la province,apparie
+95410315,Commune d'Oualqadi,r2888913,Oualqadi,nom français + inclusion dans la province,apparie
+95410317,Commune de Sidi Boaal,r2875721,Sidi Boaal,nom français + inclusion dans la province,apparie
+95410319,Commune de Sidi Mzal,r2875702,Sidi Mzal,nom français + inclusion dans la province,apparie
+95410321,Commune de Tabia,r2875690,Tabia,nom français + inclusion dans la province,apparie
+95410323,Commune de Tataoute,r2889092,Tataoute,nom français + inclusion dans la province,apparie
+95410325,Commune de Tindine,r2889086,Tindine,nom français + inclusion dans la province,apparie
+95410327,Commune de Tisfane,r2889090,Tisfane,nom français + inclusion dans la province,apparie
+95410329,Commune de Toufelaazt,r2875683,Toufelaazt,nom français + inclusion dans la province,apparie
+95410331,Commune de Toumliline,r2875704,Toumliline,nom français + inclusion dans la province,apparie
+95410409,Commune d'Arazane,r2889064,Arazane,nom français + inclusion dans la province,apparie
+95410413,Commune d'El Faid,r2890502,El Faïd,nom français + inclusion dans la province,apparie
+95410417,Commune d'Ida Ou Gailal,r2889026,Ida Ou Gaïlal,nom français + inclusion dans la province,apparie
+95410421,Commune d'Ida-Ougoummad,r2888880,Ida Ougoummad,nom français + inclusion dans la province,apparie
+95410423,Commune d'Igli,r2889063,Igli,nom français + inclusion dans la province,apparie
+95410425,Commune d'Igoudar Mnabha,r2890489,Igoudar Mnabha,nom français + inclusion dans la province,apparie
+95410429,Commune de Lamhara,r2890497,Lamhara,nom français + inclusion dans la province,apparie
+95410433,Commune d'Oulad Aissa,r2889065,Ouled Aïssa,nom arabe + inclusion dans la province,apparie
+95410435,Commune d'Ouneine,r2890517,Ouneine,nom français + inclusion dans la province,apparie
+95410439,Commune de Sidi Abdellah Ou Said,r2888993,Sidi Abdellah Ou Saïd,nom français + inclusion dans la province,apparie
+95410447,Commune de Sidi Ouaaziz,r2890501,Sidi Ouaaziz,nom français + inclusion dans la province,apparie
+95410449,Commune de Tafingoult,r2890482,Tafingoult,nom français + inclusion dans la province,apparie
+95410453,Commune de Talgjount,r2889025,Talgjount,nom français + inclusion dans la province,apparie
+95410459,Commune de Tigouga,r2889012,Tigouga,nom français + inclusion dans la province,apparie
+95410461,Commune de Tinzart,r2890506,Tinzart,nom français + inclusion dans la province,apparie
+95410467,Commune de Tizi N'test,r2890481,Tizi N'Test,nom français + inclusion dans la province,apparie
+95410469,Commune de Toughmart,r2888929,Toughmart,nom français + inclusion dans la province,apparie
+95410501,Commune d'Ahl Ramel,r2835895,Ahl Ramel,nom français + inclusion dans la province,apparie
+95410505,Commune d'Assads,r2875684,Assads,nom français + inclusion dans la province,apparie
+95410511,Commune d'El Koudia El Beida,r2835877,El Koudia El Beida,nom français + inclusion dans la province,apparie
+95410517,Commune de Lagfifat,r2835879,Lagfifat,nom français + inclusion dans la province,apparie
+95410519,Commune de Lakhnafif,r2835897,Lakhnafif,nom français + inclusion dans la province,apparie
+95410521,Commune de Lamhadi,r2875680,Lamhadi,nom français + inclusion dans la province,apparie
+95410523,Commune de Machraa El Ain,r2835922,Machraa El Aïn,nom français + inclusion dans la province,apparie
+95410525,Commune de Sidi Ahmed Ou Amar,r2835876,Sidi Ahmed Ou Amar,nom français + inclusion dans la province,apparie
+95410527,Commune de Sidi Boumoussa,r2835873,Sidi Boumoussa,nom français + inclusion dans la province,apparie
+95410533,Commune de Tidsi-Nissendalene,r2835896,Tidsi Nissendalene,nom français + inclusion dans la province,apparie
+95410701,Commune d'Agadir Melloul,r2888949,Agadir Melloul,nom français + inclusion dans la province,apparie
+95410703,Commune d'Ahl Tifnoute,r2888815,Ahl Tifnoute,nom français + inclusion dans la province,apparie
+95410705,Commune d'Askaouen,r2888821,Askaouen,nom français + inclusion dans la province,apparie
+95410707,Commune d'Assaisse,r2888822,Assaïsse,nom français + inclusion dans la province,apparie
+95410709,Commune d'Assaki,r2888846,Assaki,nom français + inclusion dans la province,apparie
+95410711,Commune d'Azrar,r2888973,Azrar,nom français + inclusion dans la province,apparie
+95410713,Commune d'Iguidi,r2888818,Iguidi,nom français + inclusion dans la province,apparie
+95410715,Commune de Sidi Hsaine,r2888828,Sidi Hsaïne,nom français + inclusion dans la province,apparie
+95410717,Commune de Taouyalte,r2888819,Taouyalte,nom français + inclusion dans la province,apparie
+95410719,Commune de Tassousfi,r2888830,Tassousfi,nom français + inclusion dans la province,apparie
+95410721,Commune de Tizgzaouine,r2888939,Tizgzaouine,nom français + inclusion dans la province,apparie
+95410723,Commune de Toubkal,r2888816,Toubkal,nom français + inclusion dans la province,apparie
+95410725,Commune de Zagmouzen,r2888845,Zagmouzen,nom français + inclusion dans la province,apparie
+95410737,Commune d'Ouzioua,r2888848,Ouzioua,nom français + inclusion dans la province,apparie
+95410765,Commune de Tisrasse,r2890516,Tisrasse,nom français + inclusion dans la province,apparie
+95410903,Commune d'Ait Igas,r2889035,Aït Igas,nom français + inclusion dans la province,apparie
+95410905,Commune d'Ait Makhlouf,r2882914,Aït Makhlouf,nom français + inclusion dans la province,apparie
+95410911,Commune de Bounrar,r2889077,Bounrar,nom français + inclusion dans la province,apparie
+95410915,Commune de Freija,r2889050,Freija,nom français + inclusion dans la province,apparie
+95410927,Commune d'Imoulass,r2888984,Imoulass,nom français + inclusion dans la province,apparie
+95410941,Commune de Sidi Ahmed Ou Abdallah,r3541026,Sidi Ahmed Ou Abdellah,nom arabe + inclusion dans la province,apparie
+95410943,Commune de Sidi Borja,r2835924,Sidi Borja,nom français + inclusion dans la province,apparie
+95410945,Commune de Sidi Dahmane,r2889046,Sidi Dahmane,nom français + inclusion dans la province,apparie
+95410951,Commune de Tafraouten,r2882915,Tafraouten,nom français + inclusion dans la province,apparie
+95410955,Commune de Tamaloukte,r2882901,Tamaloukte,nom français + inclusion dans la province,apparie
+95410957,Commune de Tazemmourt,r2835931,Tazemmourt,nom français + inclusion dans la province,apparie
+95410963,Commune de Tiout,r2889051,Tiout,nom français + inclusion dans la province,apparie
+95411101,Commune d'Ahmar Laglalcha,r2835916,Ahmar Laglalcha,nom français + inclusion dans la province,apparie
+95411103,Commune d'Argana,r2835856,Argana,nom français + inclusion dans la province,apparie
+95411107,Commune de Bigoudine,r2835854,Bigoudine,nom français + inclusion dans la province,apparie
+95411109,Commune d'Eddir,r2835860,Eddir,nom français + inclusion dans la province,apparie
+95411113,Commune d'Imilmaiss,r2888992,Imilmaïss,nom français + inclusion dans la province,apparie
+95411115,Commune d'Issen,r2835864,Issen,nom français + inclusion dans la province,apparie
+95411119,Commune d'Ida Ou Moumen,r2882900,Ida Ou Moumen,nom français + inclusion dans la province,apparie
+95411129,Commune de Sidi Moussa Lhamri,r2835862,Sidi Moussa Lhamri,nom français + inclusion dans la province,apparie
+95411131,Commune de Lamnizla,r2835858,Lamnizla,nom français + inclusion dans la province,apparie
+95411133,Commune de Talmakante,r2882922,Talmakante,nom français + inclusion dans la province,apparie
+95411171,Commune de Zaouia Sidi Tahar,r2882899,Zaouia Sidi Tahar,nom français + inclusion dans la province,apparie
+95510101,Commune d'Akka,r2885797,Akka,nom français + inclusion dans la province,apparie
+95510103,Commune de Fam El Hisn,r2885844,Fam El Hisn,nom français + inclusion dans la province,apparie
+95510105,Commune de Foum Zguid,r2885774,Foum Zguid,nom français + inclusion dans la province,apparie
+95510107,Commune de Tata,r2885790,Tata,nom français + inclusion dans la province,apparie
+95510301,Commune d'Ait Ouabelli,r2885839,Aït Ouabelli,nom français + inclusion dans la province,apparie
+95510303,Commune de Kasbat Sidi Abdellah Ben M'barek,r2885796,Kasbat Sidi Abdellah Ben M'Barek,nom français + inclusion dans la province,apparie
+95510305,Commune de Tamanarte,r2885846,Tamanarte,nom français + inclusion dans la province,apparie
+95510307,Commune de Tizounine,r2885803,Tizounine,nom français + inclusion dans la province,apparie
+95510501,Commune d'Aguinane,r3549670,Aguinane,nom français + inclusion dans la province,apparie
+95510503,Commune d'Akka-Ighane,r2885777,Akka Ighane,nom français + inclusion dans la province,apparie
+95510505,Commune d'Allougoum,r2885772,Allougoum,nom français + inclusion dans la province,apparie
+95510507,Commune d'Ibn Yacoub,r2885778,Ibn Yacoub,nom français + inclusion dans la province,apparie
+95510509,Commune de Tissint,r2885776,Tissint,nom français + inclusion dans la province,apparie
+95510511,Commune de Tlite,r2885773,Tlite,nom français + inclusion dans la province,apparie
+95510701,Commune d'Adis,r2885799,Adis,nom français + inclusion dans la province,apparie
+95510703,Commune d'Issafen,r2885791,Issafen,nom français + inclusion dans la province,apparie
+95510705,Commune d'Oum El Guerdane,r2885801,Oum El Guerdane,nom français + inclusion dans la province,apparie
+95510707,Commune de Tagmout,r2885788,Tagmout,nom français + inclusion dans la province,apparie
+95510709,Commune de Tigzmerte,r2885789,Tigzmerte,nom français + inclusion dans la province,apparie
+95510711,Commune de Tizaghte,r2885792,Tizaghte,nom français + inclusion dans la province,apparie
+95810105,Commune de Tafraout,r2888732,Tafraout,nom français + inclusion dans la province,apparie
+95810107,Commune de Tiznit,r2888247,Tiznit,nom français + inclusion dans la province,apparie
+95810301,Commune d'Ait Issafen,r2888769,Aït Issafen,nom français + inclusion dans la province,apparie
+95810303,Commune d'Anzi,r2888706,Anezi,nom arabe + inclusion dans la province,apparie
+95810305,Commune d'Arbaa Ait Ahmed,r2888707,Arbaa Aït Ahmed,nom français + inclusion dans la province,apparie
+95810307,Commune d'Ida Ou Gougmar,r2888774,Ida Ou Gougmar,nom français + inclusion dans la province,apparie
+95810309,Commune de Sidi Ahmed Ou Moussa,r2888791,Sidi Ahmed Ou Moussa,nom français + inclusion dans la province,apparie
+95810311,Commune de Tafraout El Mouloud,r2888731,Tafraout El Mouloud,nom français + inclusion dans la province,apparie
+95810313,Commune de Tighmi,r2888704,Tighmi,nom français + inclusion dans la province,apparie
+95810315,Commune de Tizoughrane,r2888728,Tizoughrane,nom français + inclusion dans la province,apparie
+95810317,Commune de Tnine Aday,r2888705,Tnine Aday,nom français + inclusion dans la province,apparie
+95810901,Commune d'Afella Ighir,r2888750,Afella Ighir,nom français + inclusion dans la province,apparie
+95810903,Commune d'Ait Ouafqa,r2888754,Aït Ouafqa,nom français + inclusion dans la province,apparie
+95810905,Commune d'Ammelne,r2888730,Ammelne,nom français + inclusion dans la province,apparie
+95810907,Commune d'Irigh N'tahala,r2888729,Irigh N'Tahala,nom français + inclusion dans la province,apparie
+95810909,Commune de Tarsouat,r2888735,Tarsouat,nom français + inclusion dans la province,apparie
+95810911,Commune de Tassrirt,r2888734,Tassrirt,nom français + inclusion dans la province,apparie
+95811101,Commune d'Arbaa Rasmouka,r2888250,Arbaa Rasmouka,nom français + inclusion dans la province,apparie
+95811103,Commune d'Arbaa Sahel,r2888223,Arbaa Sahel,nom français + inclusion dans la province,apparie
+95811105,Commune de Bounaamane,r2888241,Bounaamane,nom français + inclusion dans la province,apparie
+95811107,Commune d'El Maader El Kabir,r2888249,El Maader El Kabir,nom français + inclusion dans la province,apparie
+95811109,Commune d'Ouijjane,r2888256,Ouijjane,nom français + inclusion dans la province,apparie
+95811111,Commune de Reggada,r2888245,Reggada,nom français + inclusion dans la province,apparie
+95811113,Commune de Sidi Bouabdelli,r2888240,Sidi Bouabdelli,nom français + inclusion dans la province,apparie
+95811115,Commune de Tnine Aglou,r2888244,Tnine Aglou,nom français + inclusion dans la province,apparie
+,,w1338748400,,aucune,non apparie
+,,w183919379,,aucune,non apparie
+,,w189229517,,aucune,non apparie
+,,w191547315,,aucune,non apparie
+,,w193804981,,aucune,non apparie
+,,w207633044,,aucune,non apparie
+,,w208360487,,aucune,non apparie
+,,w217660503,,aucune,non apparie
+,,w303649959,Blida,commune déjà rattachée par la table relue à la main,non apparie
+,,w336734081,,aucune,non apparie
+,,w336764990,,aucune,non apparie
+104730107,Commune de Mirleft,,,,sans contour
+10510101,Commune d'Al Hoceima,,,,sans contour
+105210505,Commune de Chbika,,,,sans contour
+113210101,Commune d'El Marsa,,,,sans contour
+113210305,Commune de Foum El Oued,,,,sans contour
+123910901,Commune d'El Argoub,,,,sans contour
+15730105,Commune de M'diq,,,,sans contour
+21130125,Commune de Saidia,,,,sans contour
+23810103,Commune de Bni Ansar,,,,sans contour
+23810703,Commune d'Al Barkanyene,,,,sans contour
+24110305,Commune de Bni Khaled,,,,sans contour
+42810105,Commune de Mehdya,,,,sans contour
+42810511,Commune de Sidi Mohamed Benmansour,,,,sans contour
+45010103,Commune de Harhoura,,,,sans contour
+64670105,Commune de Loualidia,,,,sans contour
+90010101,Commune d'Agadir,,,,sans contour

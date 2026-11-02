@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-automatisation.mjs
  */
 import { createRequire } from "node:module";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -114,7 +115,7 @@ check("journal : « Assistant : … » puis « Script « Trame de poteaux » v1 
 const second = await browser.newContext();
 await second.request.post(`${BASE}/auth/register`, { data: { email: `auto-autre-${Date.now()}@example.com`, password: "automatisation-456" } });
 const emailAutre = (await (await second.request.get(`${BASE}/auth/me`)).json()).email;
-await api("post", `/projects/${pid}/members`, { email: emailAutre, role: "editeur" });
+check("second compte invité éditeur, invitation acceptée (phase 3)", (await inviterEtAccepter(appelPlaywright(page.request, BASE), appelPlaywright(second.request, BASE), pid, emailAutre, "editeur")).ok);
 check("le second compte verrouille le RDC", (await api("post", `/projects/${pid}/atelier/verrous`, { cles: ["niveau:rdc"], minutes: 5 }, second.request)).status === 201);
 await page.locator('[data-parametre="ox"]').fill("260");
 await page.locator('.auto-script button:has-text("Essayer")').click();

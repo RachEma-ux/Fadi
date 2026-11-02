@@ -209,7 +209,7 @@ export function creerMachineCirculaire(o: OptionsCirculaire): MachineOutil<EtatC
           if (r.genre === "erreur") return { etat: { ...etat, texte, erreur: r.message } };
           if (r.genre === "segments") return { etat: { ...etat, cotes: r.nombre, texte } };
           if (r.genre !== "rayon") return { etat: { ...etat, texte, erreur: "Saisie non reconnue." } };
-          const direction = etat.direction ?? axesDuPlan(etat.normale).u;
+          const direction = etat.direction ?? axesDuPlan(etat.normale, ctx.repere).u;
           return creer(etat, ctx, { centre: etat.centre as Vec3, normale: etat.normale, direction, valeur: r.valeur, mode: etat.mode, cotes: etat.cotes }, texte, null);
         }
         if (corrigeable(etat.derniere, ctx)) {

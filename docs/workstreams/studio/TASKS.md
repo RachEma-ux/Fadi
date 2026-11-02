@@ -1,5 +1,45 @@
 # Tâches — Studio, programme156
 
+## Rapprochement complet et compléments — 25 octobre 2026
+
+- Fait :
+  - les 523 obligations ouvertes rapprochées, puis contre-vérifiées (153 verdicts confirmés, promus) ;
+  - décisions P-08 à P-10 ;
+  - deux fuites de mémoire corrigées, recette `studio-memoire` ajoutée ;
+  - 12 scénarios TEST complétés, dont 8 vérifiés ;
+  - dossier du pilote, dossier G4 et recette déléguée rédigés.
+- À faire, par lots de produit (le manque exact est dans la `suite` de chaque obligation) :
+  - édition de faces, profil lié, direction d'extrusion, division de face ;
+  - noyau exact dans Studio, import IFC ;
+  - opérations booléennes, extensions (DEC-15).
+- À faire, côté exploitation : phase B de production, recette sur appareil réel, recensement sur une copie réelle (accord du maître d'ouvrage), portes G1 à G4.
+
+## Pilote Studio — décisions déléguées et recette — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Décisions : [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md). Rapport : [RECETTE-PILOTE-2026-10-25.md](recettes/RECETTE-PILOTE-2026-10-25.md).
+
+- Fait :
+  - RESP-01 à 05, CAD-DEC-02/03, ADR-03, DEC-01 à 18, G2-02, G3-01 et G3-04 acceptés sous délégation ;
+  - 21 recettes Studio rejouées (1 435 contrôles, 0 échec) ;
+  - 27 obligations vérifiées par recette ;
+  - 189 obligations requalifiées de « Bloqué » à « À faire » ;
+  - NAV-008 recetté après correction de « Réessayer » ; F.2-03 et F.3-01 acceptés (P-06).
+- À faire, par ordre :
+  1. compléter les 19 scénarios TEST partiels (le manque est noté dans la `suite` de chaque ID) ;
+  2. écrire TEST-025 et TEST-037 ;
+  3. instruire G1 à G4 sur leurs critères ;
+  4. faire la recette utilisateur sur appareil réel (DEC-13).
+- Maître d'ouvrage : jouer la [recette utilisateur](recettes/RECETTE-UTILISATEUR-PILOTE.md), puis publier la Release après G4 (9 obligations R).
+- Bloqués hors pilote : TEST-032 et TEST-033 (fonctions IA et MCP absentes).
+
+## Dépôt du plan Axes — 25 octobre 2026
+
+Tâche documentaire [#294](https://github.com/RachEma-ux/Fadi/issues/294), branche `docs/294-axes-implementation-plan`, base `0ff0638c3f6781bb94fce9b22c82c69c7ed7083e`. Le [plan d’implémentation Axes v1.0](Fadi-Concept-Axes%20Pan.md) est ajouté avec le nom demandé et le contenu du fichier remis à l’utilisateur : 12 lots AXE-00 à AXE-11, quatre phases et 20 scénarios AX01–AX20. Il complète la paire de concepts sans la remplacer.
+
+- Vérifié documentairement : plan complet et liens de reprise ; contenu source conservé.
+- À faire : revue du plan et, lorsque demandé, cadrage AXE-00.
+- Lots AXE-00 à AXE-11 : planifiés, non exécutés par cette publication. Aucun état des 630 obligations n’est modifié.
+
 ## Complément documentaire Axes — 23 octobre 2026
 
 Tâche bornée [#260](https://github.com/RachEma-ux/Fadi/issues/260), branche `docs/260-axes-concept`, base vérifiée `516e2f747c15d84f8c589e5271c015e929dc37e4`. Le concept Axes v1.0 est proposé pour validation dans [la paire MD/DOCX](../../../Fadi%20Concept/README.md). Il formalise la barre d’outils, les repères et plans de travail, les origines de composants, la persistance, les limites de recherche et 20 scénarios de recette futurs.

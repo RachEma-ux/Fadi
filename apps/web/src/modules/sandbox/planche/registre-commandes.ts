@@ -9,6 +9,7 @@
 import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox, type Pictogramme } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
 import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
+import { COMMANDES_REPERES } from "./commandes-reperes";
 import { type Cle, raccourciClavier } from "./outils-planche";
 
 export type FamilleCommande = FamilleCommandeSandbox;
@@ -24,7 +25,7 @@ export interface EntreeRegistre {
 
 /** Libellé de chaque commande livrée, par identifiant. */
 const LIBELLES: ReadonlyMap<string, CleMessage> = new Map(
-  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE].map((c) => [c.id, c.libelle] as const),
+  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES].map((c) => [c.id, c.libelle] as const),
 );
 
 export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = entreesSandbox("commande").map((e) => {
@@ -45,4 +46,4 @@ export function commandeDuClavier(c: Cle): EntreeRegistre | null {
  * nues (G Créer un composant) et Échap / Origine (Fermer) gardent leur garde propre dans la Planche (saisie en cours,
  * outil Sélection).
  */
-export const routeeParLeRegistre = (e: EntreeRegistre): boolean => /^F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z]$/.test(e.raccourci);
+export const routeeParLeRegistre = (e: EntreeRegistre): boolean => /^(Maj\+)?F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z0-9]$/.test(e.raccourci);

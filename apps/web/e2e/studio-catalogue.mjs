@@ -16,6 +16,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-catalogue.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -46,7 +47,7 @@ const ownerCredentials = credentials(), readerCredentials = credentials();
 check("comptes créés", (await owner("POST", "/auth/register", ownerCredentials)).status === 201 && (await reader("POST", "/auth/register", readerCredentials)).status === 201);
 const project = await owner("POST", "/projects", { code: "P.STU.CATALOGUE", name: "Studio — catalogue d'outils" });
 const projectId = project.body.id;
-check("lecteur ajouté au projet", (await owner("POST", `/projects/${projectId}/members`, { email: readerCredentials.email, role: "lecteur" })).status === 201);
+check("lecteur invité, invitation acceptée (phase 3)", (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, "lecteur")).ok);
 const study = await owner("POST", `/projects/${projectId}/studio/studies`, { name: "Catalogue" });
 check("étude créée", study.status === 201, String(study.status));
 const variantPath = `/projects/${projectId}/studio/studies/${study.body.study.id}/variants/${study.body.variant.id}`;
@@ -112,6 +113,30 @@ async function ouvrir(creds) {
   };
   return { context, page, outils, ouvrirGestionnaire, fermer };
 }
+// EX-035 : un outil interdit ou incompatible avec le contexte se trouve par la recherche de la palette, mais n'est pas
+// offert comme action exécutable : ni Entrée ni clic ne le lancent, aucune commande ne part.
+async function paletteSansEffet(o, id, raisonAttendue, qui) {
+  const envois = [];
+  const espion = (r) => { if (r.method() === "POST" && /\/commands$/.test(new URL(r.url()).pathname)) envois.push(r.url()); };
+  o.page.on("request", espion);
+  await o.page.evaluate(() => document.activeElement?.blur());
+  await o.page.keyboard.press("Control+k");
+  const pal = o.page.locator("[data-studio-palette]");
+  await pal.waitFor();
+  await pal.locator("[data-studio-recherche-palette]").fill(id);
+  const e = pal.locator(`[data-studio-palette-entree="${id}"]`);
+  check(`${qui} : « ${id} » trouvé par la recherche de la palette, non exécutable, raison « ${raisonAttendue} »`,
+    (await e.count()) === 1 && (await e.getAttribute("data-studio-disponible")) === "non" && (await e.getAttribute("aria-disabled")) === "true" && (await e.getAttribute("data-studio-raison")) === raisonAttendue);
+  await pal.locator("[data-studio-recherche-palette]").press("Enter");
+  await e.click({ force: true, timeout: 3000 }).catch(() => {}); // clic réel de la souris, malgré aria-disabled (entrée déjà partie : relevé ci-dessous)
+  await o.page.waitForTimeout(300);
+  const selection = o.outils.locator('[data-studio-outil="studio.dessin.selection"]');
+  check(`${qui} : Entrée puis clic sur « ${id} » ne lancent rien (palette ouverte, Sélection toujours active, aucune commande envoyée)`,
+    (await pal.count()) === 1 && (await selection.getAttribute("aria-pressed")) === "true" && (await o.outils.locator(`[data-studio-outil="${id}"][aria-pressed="true"]`).count()) === 0 && envois.length === 0, JSON.stringify(envois));
+  await o.page.keyboard.press("Escape");
+  await pal.waitFor({ state: "detached" });
+  o.page.off("request", espion);
+}
 const enregistre = (page) => page.waitForResponse((r) => r.request().method() === "PUT" && new URL(r.url()).pathname === prefsPath);
 const ids = async (g) => g.locator("[data-studio-catalogue-entree]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-catalogue-entree")));
 
@@ -169,6 +194,7 @@ try {
   check("regroupement supprimé", (await g.locator('[data-studio-groupe="murs"]').count()) === 0 && (await owner("GET", prefsPath)).body.groupes.length === 0);
   check("propriétaire : la Ligne est autorisée", (await g.locator('[data-studio-catalogue-entree="studio.dessin.ligne"]').getAttribute("data-studio-autorise")) === "oui");
   await p.fermer();
+  await paletteSansEffet(p, "studio.dessin.supprimer", "contexte", "propriétaire");
   await p.context.close();
 
   // Lecteur : visible mais non autorisé → désactivé avec sa raison.
@@ -191,6 +217,8 @@ try {
   await palette.waitFor();
   check("lecteur : la palette dit pourquoi", (await palette.locator('[data-studio-palette-entree="studio.dessin.ligne"]').getAttribute("data-studio-raison")) === "droit-role");
   await l.page.keyboard.press("Escape");
+  await palette.waitFor({ state: "detached" });
+  await paletteSansEffet(l, "studio.dessin.ligne", "droit-role", "lecteur");
   await l.context.close();
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
 } finally {

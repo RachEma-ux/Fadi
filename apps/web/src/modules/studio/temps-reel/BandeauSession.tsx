@@ -1,0 +1,281 @@
+/**
+ * Temps réel — bandeau de session en direct dans l'espace de travail du Studio (RTC-2, Issue #283). Toujours affichés
+ * (PLAN.md § 2) : la portée (variante), la révision montrée par la session, qui la voit, le suivi ou la navigation libre
+ * et l'état de la connexion. Un changement de révision est proposé, jamais appliqué en silence ; suivre le présentateur
+ * ne déplace que la vue, jamais la sélection ni le saisie. Règle d'or : chaque commande a son icône, sa barre (ce
+ * bandeau, ou la ligne d'un participant) et un raccourci Ctrl+Alt+Maj+lettre, branché ici.
+ */
+import { useEffect, useState } from "react";
+import "./temps-reel.css";
+import { LOCALE } from "../../../lib/i18n";
+import { COMMANDES_TEMPS_REEL, declenche, propsRaccourci, type CommandeTempsReel } from "../../collaboration/commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/IconeCollaboration";
+import { estHote, estPresentateur, nomPresentateur, type EtatConnexion, type Participant } from "./etat-session";
+import type { AnnotationSession, PointDeVue } from "./api-temps-reel";
+import type { SessionTempsReel } from "./useSessionTempsReel";
+
+const LIBELLE_CONNEXION: Record<EtatConnexion, string> = {
+  "hors-session": "Hors session",
+  connexion: "Connexion…",
+  connecte: "Connecté",
+  reconnexion: "Reconnexion…",
+  "acces-retire": "Votre accès à ce projet a changé : la session est fermée pour vous.",
+  "non-connecte": "Votre connexion à Fadi a expiré : reconnectez-vous pour revenir dans la session.",
+  "session-close": "La session est close.",
+  indisponible: "Trop de connexions ouvertes : fermez un autre onglet de session.",
+};
+
+const ROLE: Record<Participant["roles"][number], string> = { hote: "Hôte", presentateur: "Présentateur", participant: "Participant" };
+const court = (id: string) => id.slice(-8);
+
+export interface BandeauSessionProps {
+  tr: SessionTempsReel;
+  /** Révision affichée par cet écran (sa variante) et tête de la variante. */
+  revisionAffichee: string;
+  teteVariante: string;
+  nomVariante: string;
+  /** Affichage du présentateur différent du sien : l'écran le signale, sans changer de domaine ni de planche. */
+  affichageLocal: "2d" | "3d" | "double";
+  surAfficherRevision: (revisionId: string) => void;
+  /**
+   * Où ce bandeau s'affiche : `barre` (hors session) — une entrée compacte « En direct » dans la barre de l'espace, qui
+   * ouvre le panneau des sessions par-dessus le canevas sans lui prendre de hauteur ; `bandeau` (en session) — le
+   * bandeau complet sous la barre. Chaque emplacement ne répond qu'aux raccourcis de son état.
+   */
+  emplacement: "barre" | "bandeau";
+  /** Vue courante de cet écran (cadre plan, caméra 3D), enregistrée comme point de vue d'une annotation (RTC-3). */
+  vueCourante: () => PointDeVue;
+  /** Objets sélectionnés ici, cités par l'annotation si la case est cochée. */
+  selectionIds: readonly string[];
+  /** Pose le point de vue d'une annotation (la navigation devient libre : le suivi ne l'écrase pas). */
+  surVoirPointDeVue: (a: AnnotationSession) => void;
+}
+
+/**
+ * Saisie d'une annotation. Au premier envoi, son contenu (texte, point de vue, objets cités, audience) est figé : un
+ * nouvel envoi après une réponse perdue renvoie exactement le même contenu avec le même identifiant, donc retrouve la
+ * même annotation au lieu d'un refus 409.
+ */
+interface ContenuAnnotation { body: string; vue: PointDeVue; objectIds?: string[]; audience?: "projet" }
+interface SaisieEnCours { texte: string; lecteurs: boolean; citer: boolean; requestId: string; figee?: ContenuAnnotation }
+const nouvelleSaisie = (): SaisieEnCours => ({ texte: "", lecteurs: false, citer: true, requestId: `tr-annot-${crypto.randomUUID()}` });
+const POINT_DE_VUE_ENREGISTRE: Record<PointDeVue["affichage"], string> = {
+  "2d": "Point de vue enregistré : planche 2D, révision {0} (repère local, mètres).",
+  "3d": "Point de vue enregistré : vue 3D, révision {0} (repère local, mètres).",
+  double: "Point de vue enregistré : planche 2D et vue 3D, révision {0} (repère local, mètres).",
+};
+const AFFICHAGE: Record<PointDeVue["affichage"], string> = { "2d": "planche 2D", "3d": "vue 3D", double: "planche 2D et vue 3D" };
+
+export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante, affichageLocal, surAfficherRevision, vueCourante, selectionIds, surVoirPointDeVue, emplacement }: BandeauSessionProps) {
+  const { etat, sessions, actions, erreur, enCours } = tr;
+  const [participantsOuverts, setParticipantsOuverts] = useState(false);
+  const [saisie, setSaisie] = useState<SaisieEnCours | null>(null);
+  const [annotationsOuvertes, setAnnotationsOuvertes] = useState(false);
+  const [entreeOuverte, setEntreeOuverte] = useState(false);
+  const enSessionMaintenant = etat.connexion !== "hors-session";
+  // Entrer dans une session referme le panneau d'entrée : en la quittant, on retrouve l'entrée compacte.
+  useEffect(() => { if (enSessionMaintenant) setEntreeOuverte(false); }, [enSessionMaintenant]);
+  const [publicationChoisie, setPublicationChoisie] = useState<string>("");
+  const revue = tr.publicationsFigees.find((p) => p.id === publicationChoisie) ?? tr.publicationsFigees[0];
+  const enSession = etat.connexion !== "hors-session";
+  const s = etat.session;
+  const hote = estHote(etat), presente = estPresentateur(etat), suit = tr.suit;
+  const hoteAbsent = !!s && etat.connexion === "connecte" && !etat.participants.some((p) => p.userId === s.hoteId);
+  const revisionDifferente = !!s && s.revisionId !== revisionAffichee;
+  const nouvelleRevision = etat.revisionDisponible ?? (s && s.portee === "studio-revision" && teteVariante !== s.revisionId ? teteVariante : null);
+  const derniere = tr.annotations.at(-1);
+  const enregistrer = async () => {
+    if (!saisie || !saisie.texte.trim() || (revisionDifferente && !saisie.figee)) return;
+    const contenu: ContenuAnnotation = saisie.figee ?? {
+      body: saisie.texte.trim(), vue: vueCourante(),
+      ...(saisie.lecteurs ? { audience: "projet" as const } : {}),
+      ...(saisie.citer && selectionIds.length ? { objectIds: [...selectionIds] } : {}),
+    };
+    setSaisie((b) => b && { ...b, figee: contenu });
+    const ok = await actions.annoter({ ...contenu, requestId: saisie.requestId });
+    if (ok) { setSaisie(null); setAnnotationsOuvertes(true); }
+  };
+  const vueAilleurs = !!etat.vue && !presente && suit && etat.vue.affichage !== affichageLocal && affichageLocal !== "double";
+
+  /** Commandes disponibles maintenant (le raccourci n'agit que sur celles-ci). */
+  const actif = emplacement === "barre" ? !enSession && tr.disponible : enSession;
+  const disponibles: Partial<Record<CommandeTempsReel, () => void>> = !actif ? {} : !enSession
+    ? {
+        "ouvrir-session": () => void actions.ouvrir(revisionAffichee),
+        ...(sessions[0] ? { "rejoindre-session": () => actions.rejoindre(sessions[0]!.id) } : {}),
+        ...(revue ? { "ouvrir-revue": () => void actions.ouvrirRevue(revue.id) } : {}),
+      }
+    : {
+        "quitter-session": () => actions.quitter(),
+        ...(etat.connexion === "connecte" && !presente ? { [suit ? "naviguer-librement" : "suivre-presentateur"]: () => actions.suivre(!suit) } : {}),
+        ...(hote && !presente ? { presenter: () => void actions.presenter(etat.moi) } : {}),
+        ...(hoteAbsent ? { "reprendre-animation": () => void actions.reprendre() } : {}),
+        ...(revisionDifferente && s ? { "afficher-revision-session": () => surAfficherRevision(s.revisionId) } : {}),
+        ...(hote && nouvelleRevision ? { "passer-revision": () => void actions.passerRevision(nouvelleRevision) } : {}),
+        ...(hote && s?.statut === "ouverte" ? { "clore-session": () => void actions.clore() } : {}),
+        // Annoter n'a de sens que sur la révision de la session (l'annotation y est ancrée) : sinon, l'écran doit d'abord
+        // l'afficher. Un envoi déjà figé reste renvoyable (rejeu).
+        ...(etat.connexion === "connecte" && (!revisionDifferente || saisie) ? { annoter: () => setSaisie((b) => (b ? null : nouvelleSaisie())) } : {}),
+        ...(etat.connexion === "connecte" && saisie?.texte.trim() && (!revisionDifferente || saisie.figee) ? { "enregistrer-annotation": () => void enregistrer() } : {}),
+        ...(saisie && !saisie.figee && selectionIds.length > 0 ? { "citer-selection": () => setSaisie((b) => b && { ...b, citer: !b.citer }) } : {}),
+        ...(etat.connexion !== "hors-session" ? { "afficher-participants": () => setParticipantsOuverts((o) => !o), "afficher-annotations": () => setAnnotationsOuvertes((o) => !o) } : {}),
+        ...(derniere ? { "voir-point-de-vue": () => surVoirPointDeVue(derniere) } : {}),
+      };
+
+  useEffect(() => {
+    const touche = (e: KeyboardEvent) => {
+      for (const c of COMMANDES_TEMPS_REEL) {
+        const f = disponibles[c];
+        if (f && declenche(e, c)) { e.preventDefault(); f(); return; }
+      }
+    };
+    window.addEventListener("keydown", touche);
+    return () => window.removeEventListener("keydown", touche);
+  });
+
+  if (!actif) return null;
+  const bouton = (c: CommandeTempsReel, libelle?: string, primaire = false) => {
+    const f = disponibles[c];
+    return <BoutonSession commande={c} libelle={libelle} onClick={f ?? (() => {})} disabled={!f || enCours} primaire={primaire} />;
+  };
+
+  if (!enSession) {
+    return (
+      <span className="tr-entree" data-tr-entree onKeyDown={(e) => { if (e.key === "Escape" && entreeOuverte) { e.preventDefault(); setEntreeOuverte(false); } }}>
+        <button type="button" className="tr-entree-bouton" aria-expanded={entreeOuverte} aria-controls="tr-sessions-direct" onClick={() => setEntreeOuverte((o) => !o)} data-tr-entree-bouton>
+          <span className="tr-direct" aria-hidden="true" />{sessions.length ? `En direct (${sessions.length})` : "En direct"}
+        </button>
+        {entreeOuverte && <section id="tr-sessions-direct" className="tr-bandeau tr-flottant" aria-label="Sessions en direct" data-tr-bandeau="hors-session">
+          <span className="tr-titre">Sessions en direct</span>
+          {sessions.length
+            ? sessions.slice(0, 3).map((x) => (
+              <span key={x.id} className="tr-session-dispo" data-tr-session={x.id}>
+                <span translate="no">{x.titre}</span>
+                <span className="tr-detail">{`${x.connectes.length} connecté(s) · hôte : ${x.hote.nom}`}</span>
+                <BoutonSession commande="rejoindre-session" onClick={() => actions.rejoindre(x.id)} disabled={enCours} primaire />
+              </span>
+            ))
+            : <span className="tr-detail">Aucune session ouverte sur cette variante.</span>}
+          {bouton("ouvrir-session")}
+          {tr.publicationsFigees.length > 0 && <span className="tr-revue" data-tr-revue>
+            {tr.publicationsFigees.length > 1
+              ? <label className="tr-case"><span>Publication</span>
+                <select value={revue?.id ?? ""} onChange={(e) => setPublicationChoisie(e.target.value)} data-tr-revue-publication>
+                  {tr.publicationsFigees.map((p) => <option key={p.id} value={p.id} translate="no">{p.title}</option>)}
+                </select></label>
+              : <span className="tr-detail">{`Publication figée : ${revue?.title ?? ""}`}</span>}
+            {bouton("ouvrir-revue")}
+          </span>}
+          {erreur && <p className="studio-alert" role="alert">{erreur}</p>}
+        </section>}
+      </span>
+    );
+  }
+
+  const fin = etat.connexion === "acces-retire" || etat.connexion === "non-connecte" || etat.connexion === "session-close" || etat.connexion === "indisponible";
+  return (
+    <section className="tr-bandeau" aria-label="Session en direct" data-tr-bandeau={etat.connexion} data-tr-session={s?.id}>
+      <span className="tr-titre"><span className="tr-direct" aria-hidden="true" />En direct</span>
+      {s && <span className="tr-portee" data-tr-portee>
+        <span translate="no">{s.titre}</span>
+        <span className="tr-detail">{`Variante « ${nomVariante} » · révision ${court(s.revisionId)}${s.portee === "paquet-revue" ? " (revue figée)" : ""}`}</span>
+        <span className="tr-detail">Visible par : les participants de la session, membres du projet</span>
+        {s.portee === "paquet-revue" && sessions.find((x) => x.id === s.id)?.publicationChangee && <span className="studio-info" role="status" data-tr-publication-changee>La publication a changé depuis l’ouverture (actualisée, retirée ou remplacée) : la revue reste sur la révision examinée ; ouvrez une nouvelle revue pour la version actuelle.</span>}
+        {s.portee === "paquet-revue" && <span className="tr-detail" data-tr-revue-figee>Revue figée : la session reste sur la révision publiée ; ni export ni approbation depuis la session.</span>}
+      </span>}
+      <span className="tr-etat" role="status" data-tr-connexion={etat.connexion}>{LIBELLE_CONNEXION[etat.connexion]}</span>
+      {!fin && s && <span className="tr-detail" data-tr-suivi={presente ? "presentateur" : suit ? "suit" : "libre"}>
+        {presente ? "Vous présentez : votre vue est partagée." : suit ? `Vous suivez ${nomPresentateur(etat) || "le présentateur"}.` : "Navigation libre."}
+      </span>}
+      <span className="tr-commandes">
+        {!fin && !presente && bouton(suit ? "naviguer-librement" : "suivre-presentateur")}
+        {!fin && hote && !presente && bouton("presenter")}
+        {!fin && hoteAbsent && bouton("reprendre-animation")}
+        {!fin && hote && nouvelleRevision && bouton("passer-revision")}
+        {!fin && hote && bouton("clore-session")}
+        {!fin && bouton("annoter")}
+        {!fin && revisionDifferente && !saisie && <span className="tr-detail" data-tr-annoter-revision>Pour annoter, affichez la révision de la session.</span>}
+        {bouton("quitter-session")}
+        {!fin && <BoutonSession commande="afficher-participants" libelle={`Participants (${etat.participants.length})`} onClick={() => setParticipantsOuverts((o) => !o)} expanded={participantsOuverts} data="participants" />}
+        {!fin && <BoutonSession commande="afficher-annotations" libelle={`Annotations (${tr.annotations.length})`} onClick={() => setAnnotationsOuvertes((o) => !o)} expanded={annotationsOuvertes} data="annotations" />}
+      </span>
+      {!fin && revisionDifferente && s && <p className="studio-info" role="status" data-tr-revision-differente>
+        {`La session montre la révision ${court(s.revisionId)} ; cet écran montre la révision ${court(revisionAffichee)}.`} {bouton("afficher-revision-session")}
+      </p>}
+      {!fin && nouvelleRevision && <p className="studio-info" role="status" data-tr-revision-disponible={nouvelleRevision}>
+        {`Une révision plus récente existe (${court(nouvelleRevision)}) : la session reste sur sa révision tant que l’hôte ne la change pas.`}
+      </p>}
+      {vueAilleurs && <p className="studio-info" role="status" data-tr-vue-ailleurs>{etat.vue!.affichage === "3d" ? "Le présentateur montre la vue 3D." : "Le présentateur montre la planche 2D."}</p>}
+      {tr.reservation && !fin && <p className="studio-info" role="status" data-tr-reservation={tr.reservation.userId}>
+        {`Édition du projet réservée par ${tr.reservation.email} jusqu’à ${new Date(tr.reservation.expiresAt).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" })} : la session ne la transmet jamais ; son titulaire la rend ou le propriétaire la libère.`}
+      </p>}
+      {hoteAbsent && !fin && <p className="studio-info" role="status" data-tr-hote-absent>L’hôte n’est plus connecté : le propriétaire ou un responsable du projet peut reprendre l’animation après deux minutes.</p>}
+      {etat.resynchronise && !fin && <p className="studio-info" role="status" data-tr-resynchronise>Reconnecté : l’état de la session a été relu.</p>}
+      {(erreur ?? etat.erreur) && <p className="studio-alert" role="alert" data-tr-erreur>{erreur ?? etat.erreur}</p>}
+      {saisie && !fin && <form className="tr-annotation" aria-label="Nouvelle annotation" data-tr-annotation-form
+        onSubmit={(e) => { e.preventDefault(); void enregistrer(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") { e.preventDefault(); setSaisie(null); return; }
+          if (declenche(e, "visible-lecteurs")) { e.preventDefault(); setSaisie((b) => b && !b.figee ? { ...b, lecteurs: !b.lecteurs } : b); }
+        }}>
+        <label className="tr-annotation-texte">
+          <span>Annotation</span>
+          <textarea value={saisie.texte} maxLength={4000} rows={3} autoFocus readOnly={!!saisie.figee} data-tr-annotation-texte
+            onChange={(e) => { const texte = e.target.value; setSaisie((b) => b && { ...b, texte }); }} />
+        </label>
+        <label className="tr-case" {...propsRaccourci("visible-lecteurs")}>
+          <input type="checkbox" checked={saisie.lecteurs} disabled={!!saisie.figee} onChange={(e) => { const lecteurs = e.target.checked; setSaisie((b) => b && { ...b, lecteurs }); }} data-tr-annotation-lecteurs />
+          <IconeCollaboration commande="visible-lecteurs" />Visible par les lecteurs<RaccourciCollaboration commande="visible-lecteurs" />
+        </label>
+        {selectionIds.length > 0 && <label className="tr-case" {...propsRaccourci("citer-selection")}>
+          <input type="checkbox" checked={saisie.citer} disabled={!!saisie.figee} onChange={(e) => { const citer = e.target.checked; setSaisie((b) => b && { ...b, citer }); }} data-tr-annotation-citer />
+          <IconeCollaboration commande="citer-selection" />{`Citer la sélection (${selectionIds.length} objet(s))`}<RaccourciCollaboration commande="citer-selection" />
+        </label>}
+        <p className="tr-detail" data-tr-annotation-vue>{POINT_DE_VUE_ENREGISTRE[vueCourante().affichage].replace("{0}", s ? court(s.revisionId) : "")}</p>
+        {!saisie.lecteurs && <p className="tr-detail">Sans case cochée, l’annotation est réservée à l’équipe ; un lecteur écrit toujours pour tout le projet.</p>}
+        {saisie.figee && <p className="tr-detail" role="status" data-tr-annotation-figee>Contenu figé au premier envoi : un nouvel envoi retrouve la même annotation. Échap abandonne la saisie.</p>}
+        {bouton("enregistrer-annotation", undefined, true)}
+      </form>}
+      {annotationsOuvertes && !fin && <ul className="tr-annotations" aria-label="Annotations de la session" data-tr-annotations>
+        {tr.annotations.length === 0 && <li className="tr-detail">Aucune annotation dans cette session.</li>}
+        {tr.annotations.map((a) => <li key={a.commentId} data-tr-annotation={a.commentId}>
+          <span translate="no">{a.auteur}</span>
+          {a.body === null ? <span className="tr-detail">Annotation supprimée par son auteur.</span> : <span translate="no">{a.body}</span>}
+          <span className="tr-detail">{[a.audience === "projet" ? "Visible par les lecteurs" : "Réservée à l’équipe", `révision ${court(a.sourceRevisionId)}`, AFFICHAGE[a.pointDeVue.affichage], ...(a.objectIds.length ? [`${a.objectIds.length} objet(s) cité(s)`] : []), ...(a.observation ? ["observation"] : [])].join(" · ")}</span>
+          <BoutonSession commande="voir-point-de-vue" onClick={() => surVoirPointDeVue(a)} disabled={false} />
+        </li>)}
+      </ul>}
+      {participantsOuverts && !fin && <ul className="tr-participants" aria-label="Participants de la session" data-tr-participants>
+        {etat.participants.map((p) => <li key={p.userId} data-tr-participant={p.userId}>
+          <span translate="no">{p.nom}</span>
+          <span className="tr-detail">{[...p.roles.map((r) => ROLE[r]), ...(p.roles.includes("presentateur") ? [] : [p.suit ? "suit le présentateur" : "navigation libre"])].join(" · ")}</span>
+          {hote && p.userId !== etat.moi && <>
+            <BoutonSession commande="designer-presentateur" onClick={() => void actions.presenter(p.userId)} disabled={enCours || s?.presentateurId === p.userId} />
+            <BoutonSession commande="transmettre-hote" onClick={() => void actions.transmettre(p.userId)} disabled={enCours} />
+          </>}
+        </li>)}
+      </ul>}
+    </section>
+  );
+}
+
+/** Bouton d'une commande de session : icône propre, libellé, raccourci affiché et déclaré (`aria-keyshortcuts`). */
+function BoutonSession({ commande, libelle, onClick, disabled, primaire = false, expanded, data }: { commande: CommandeTempsReel; libelle?: string | undefined; onClick: () => void; disabled?: boolean; primaire?: boolean; expanded?: boolean; data?: string }) {
+  return (
+    <button type="button" className={primaire ? "button-primary tr-commande" : "button-secondary tr-commande"} disabled={disabled} onClick={onClick} {...propsRaccourci(commande)}
+      {...(expanded !== undefined ? { "aria-expanded": expanded } : {})} {...(data ? { [`data-tr-${data}-bouton`]: "" } : {})}>
+      <IconeCollaboration commande={commande} />
+      {libelle ?? LIBELLES[commande]}
+      <RaccourciCollaboration commande={commande} />
+    </button>
+  );
+}
+
+const LIBELLES: Record<CommandeTempsReel, string> = {
+  "ouvrir-session": "Ouvrir une session en direct", "rejoindre-session": "Rejoindre", "quitter-session": "Quitter la session",
+  "suivre-presentateur": "Suivre le présentateur", "naviguer-librement": "Naviguer librement", presenter: "Présenter",
+  "designer-presentateur": "Désigner comme présentateur", "transmettre-hote": "Transmettre l’animation", "reprendre-animation": "Reprendre l’animation",
+  "afficher-revision-session": "Afficher la révision de la session", "passer-revision": "Passer la session à la nouvelle révision", "clore-session": "Clore la session",
+  "ouvrir-revue": "Ouvrir une revue en direct", "afficher-participants": "Participants", "afficher-annotations": "Annotations", "citer-selection": "Citer la sélection",
+  annoter: "Annoter", "enregistrer-annotation": "Enregistrer l’annotation", "voir-point-de-vue": "Voir le point de vue",
+};

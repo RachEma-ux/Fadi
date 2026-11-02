@@ -22,6 +22,8 @@
  *   (API lancée avec FADI_ADMIN_ENABLED=true, FADI_ENCRYPTION_KEY, MAIL_TRANSPORT=console ou smtp)
  */
 import { createHmac, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
+import { partagerEnBase, retirerPartagesEnBase } from './lib-partage-sql.mjs';
 import { execFileSync } from 'node:child_process';
 import pg from 'pg';
 
@@ -286,7 +288,10 @@ const support = globalThis.__survivor ?? { acct: boss, client: await mfaLogin(bo
 const owner = await register('proprio');
 const imported = await owner.a.call('POST', '/examples/p118-exemple-complet/import');
 check('propriétaire : exemple importé', imported.status === 201, imported.status);
-const pid = imported.body.id;
+// X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : la référence protégée de l'exemple refuse toute invitation ; le scénario travaille
+// donc dans sa copie de travail (même modèle, mêmes documents), où le lecteur peut être invité.
+check('X.2-02 : invitation refusée sur le projet de référence (403 reference-protegee)', (await owner.a.call('POST', `/projects/${imported.body.id}/members`, { email: `ref-${randomUUID().slice(0, 8)}@example.com`, role: 'lecteur' })).body?.motif === 'reference-protegee');
+const pid = (await owner.a.call('POST', `/projects/${imported.body.id}/copies`, { name: 'P.118 · support' })).body.id;
 const upload = await owner.a.call('POST', `/projects/${pid}/steps/1/files`, Buffer.from('contenu confidentiel'), { 'content-type': 'text/plain', 'x-file-name': 'note.txt', 'x-file-type': 'text/plain' });
 check('propriétaire : pièce jointe déposée', upload.status === 201, upload.status);
 const fileId = upload.body?.file?.id;
@@ -294,7 +299,7 @@ const model = await owner.a.call('GET', `/projects/${pid}/atelier/model`);
 const levels = (await owner.a.call('GET', `/projects/${pid}/documents`)).body?.documents?.filter((d) => /^plan-lecture-/.test(d.kind)).map((d) => d.kind.replace('plan-lecture-', '')) ?? [];
 check('propriétaire : modèle et plans de niveau disponibles', model.status === 200 && levels.length > 0, { model: model.status, levels });
 const reader = await register('lecteur');
-check('propriétaire : lecteur invité', (await owner.a.call('POST', `/projects/${pid}/members`, { email: reader.email, role: 'lecteur' })).status < 300);
+check('propriétaire : lecteur invité, invitation acceptée (phase 3)', (await inviterEtAccepter((m, p, b) => owner.a.call(m, p, b), (m, p, b) => reader.a.call(m, p, b), pid, reader.email, 'lecteur')).ok);
 // Écart E2 : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde (le support, lui, ne l'a jamais).
 check('lecteur : sans export par défaut (403)', (await reader.a.call('GET', `/projects/${pid}/documents/surfaces`)).status === 403);
 check('propriétaire : export accordé au lecteur', (await owner.a.call('PATCH', `/projects/${pid}/members/${reader.id}`, { canExport: true })).status === 200);
@@ -422,11 +427,11 @@ const sharer = await register('corbeille-partage');
 const sharedProject = (await sharer.a.call('POST', '/projects', { code: `SH-${uid().slice(0, 4)}`, name: 'Projet partagé' })).body;
 await sharer.a.call('DELETE', '/auth/me', { password: sharer.password, confirm: 'SUPPRIMER' });
 // Partage apparu pendant le délai (horloge et données simulées sur la base jetable) : bloque l'anonymisation.
-await sql.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'recette')", [sharedProject.id, anyone.id]);
+await partagerEnBase(sql, sharedProject.id, anyone.id, 'lecteur'); // lot OP-PONT : participation + rôle `acces`
 check('corbeille : projets partagés signalés', (await trashOf(sharer.id))?.sharedProjects === 1);
 const blocked = await K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email });
 check('projets partagés possédés : 409, rien n’est anonymisé', blocked.status === 409 && blocked.body?.error === 'owns_shared_projects' && blocked.body.projects?.some((p) => p.id === sharedProject.id) && (await userRow(sharer.id)).status === 'active', blocked);
-await sql.query('DELETE FROM project_members WHERE project_id = $1', [sharedProject.id]);
+await retirerPartagesEnBase(sql, sharedProject.id);
 
 // Appels simultanés : un seul aboutit (verrou d'éligibilité puis verrou de ligne), un seul journal.
 const twice = await Promise.all([1, 2].map(() => K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email })));

@@ -11,8 +11,11 @@ import { cpus, platform, release, totalmem } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES } from "@parcours/atelier-model/studio-corpus";
-import { mesurerCorpus, rapportMarkdown, statistiques, type MesureCorpus } from "./mesure-spatiale";
+import { alea, genererCorpus, SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES } from "@parcours/atelier-model/studio-corpus";
+import { MODES_ACCROCHAGE, boiteEntite, indexAccrochage, indexLineaire, rangRepere, resoudre, type ReglagesAccrochage, type Repere } from "./accrochage";
+import { contoursMurs } from "./architecture/architecture-ui";
+import { estVisible } from "./calques";
+import { documentDeMesure, mesurerCorpus, rapportMarkdown, statistiques, type MesureCorpus } from "./mesure-spatiale";
 
 const horloge = () => performance.now();
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
@@ -43,6 +46,33 @@ describe("Mesure des recherches spatiales : contrôle du script", () => {
         expect(m.selection.lineaire.n).toBe(30);
         expect(m.cheminActuel.seuil).toBeGreaterThan(0);
       }
+    }
+  });
+  it("TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire", () => {
+    // Même règle que l'éditeur (`outils/gestes.ts`) : objets visibles et contours des murs visibles ; tous les modes.
+    const reglages: ReglagesAccrochage = { objets: true, modes: new Set(MODES_ACCROCHAGE), orthogonal: false, polaire: false, pasPolaire: 45 };
+    const resume = (x: Repere | null) => x && { point: x.point, genre: x.genre, objets: x.objets, ancre: x.ancre, priorite: rangRepere(x.genre) };
+    for (const scene of ["S1", "S2", "S3"] as const) {
+      const doc = documentDeMesure(genererCorpus(scene, 1000).documents);
+      const formes = [...doc.objects.filter((x) => estVisible(doc, x.layerId)), ...contoursMurs(doc, (l) => estVisible(doc, l))];
+      const lin = indexLineaire(formes), idx = indexAccrochage(formes, 0);
+      const boites = lin.formes({ min: { x: -Infinity, y: -Infinity }, max: { x: Infinity, y: Infinity } }).flatMap((f) => f.entites.map(boiteEntite));
+      expect(boites.length, `${scene} entités`).toBeGreaterThan(0);
+      // 100 requêtes reproductibles : pointeur près d'une entité tirée (coin de sa boîte, décalé), un sur deux avec un dernier point.
+      const r = alea(22);
+      let trouves = 0;
+      for (let i = 0; i < 100; i++) {
+        const b = boites[Math.floor(r.reel() * boites.length)]!;
+        const coin = r.reel() < 0.5 ? b.min : b.max;
+        const curseur = { x: coin.x + (r.reel() - 0.5) * 0.4, y: coin.y + (r.reel() - 0.5) * 0.4 };
+        const base = i % 2 === 0 ? null : { x: curseur.x + (r.reel() - 0.5) * 6, y: curseur.y + (r.reel() - 0.5) * 6 };
+        const q = { curseur, tolerance: 0.1 + r.reel() * 0.2, base };
+        const attendu = resoudre(lin, q, reglages);
+        expect(resume(resoudre(idx, q, reglages)), `${scene} requête ${i}`).toEqual(resume(attendu));
+        if (attendu) trouves++;
+      }
+      // Les requêtes accrochent effectivement (le contrôle ne compare pas que des absences de repère).
+      expect(trouves, `${scene} repères trouvés`).toBeGreaterThan(20);
     }
   });
   it("sortie forcée sous <racine>/atelier-captures/ : STUDIO_MESURE_OUT hors de ce dossier refusé", () => {

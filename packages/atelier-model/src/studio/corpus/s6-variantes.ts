@@ -10,7 +10,11 @@ import { AVERTISSEMENT_CORPUS, GRAINES_CORPUS, LICENCE_CORPUS, type CouvertureCo
  *   fenêtre de 0,6 × 0,7 m au mur `s6-0-mur-h` (REC-A-03 : net 3,180 m³ puis 3,096 m³) ; A3 déplace un texte ;
  * - variante B, dérivée de A **à la révision A1** : B1 supprime le mur `s6-1-mur-v` avec son ouverture (cascade) ; B2
  *   ajoute une ligne ;
- * - variante C, dérivée de la **tête** de A (après A3) : C1 ajoute deux lignes ;
+ * - variante C, dérivée de la **tête** de A (après A3) : C1 ajoute deux lignes ; C2 ajoute une ligne `s6-b-ligne` (même
+ *   identifiant que la ligne de B2, autre tracé) ;
+ * - fusion F1 (lot W3-D) : B fusionnée dans C depuis leur ancêtre commun A1 — la suppression du mur `s6-1-mur-v` (et de
+ *   sa fenêtre) par B est reprise, la ligne `s6-b-ligne` ajoutée des deux côtés est un conflit « collision-identifiant »
+ *   tranché explicitement (version de la source gardée) ;
  * - une feuille et un dossier de conception sur la tête de A ; trois exigences de **recette** (nombre de murs, volume net
  *   des murs, volume net du mur `s6-0-mur-h` ; valeurs exigées = celles de A selon l'oracle, source déclarée
  *   synthétique, sans valeur réglementaire) contrôlées sur chaque variante.
@@ -54,6 +58,18 @@ export interface PlanS6 {
   dossier: { title: string };
   /** Exigences de **recette** (source déclarée synthétique) ; leurs valeurs exigées viennent de l'oracle (`oracleS6().exigences`). */
   exigences: ExigenceS6[];
+  /** Fusions de variantes (lot W3-D), après les étapes et les contrôles ; leurs attendus viennent de l'oracle (`oracleS6().fusions`). */
+  fusions: FusionS6[];
+}
+
+export interface FusionS6 {
+  cle: string;
+  libelle: string;
+  /** Variante fusionnée (lue seulement) et variante qui reçoit la fusion (une révision). */
+  source: CleVarianteS6;
+  cible: CleVarianteS6;
+  /** Choix explicites des conflits (identifiant → côté gardé). */
+  resolutions: Record<string, "source" | "cible">;
 }
 
 export interface ExigenceS6 {
@@ -81,10 +97,10 @@ export function planS6(taille = 100): PlanS6 {
         "dossier : une feuille et un dossier de conception sur la tête de A",
         "contrôles : trois exigences de recette contrôlées sur chaque tête, statuts et conclusions attendus",
         "comparaison de révisions entre variantes (A ↔ B)",
+        "fusion de variantes : B fusionnée dans C depuis leur ancêtre commun (A1), conflit de collision d'identifiant tranché explicitement, annulation (lot W3-D)",
       ],
       absents: [
         { element: "exigences réglementaires", raison: "aucune valeur réglementaire n'est inventée : exigences de recette synthétiques, source déclarée" },
-        { element: "fusion de variantes", raison: "le plan dérive et compare des variantes ; il n'en fusionne aucune" },
       ],
     },
     etude: "Étude synthétique S6 (corpus de qualification)", base: doc,
@@ -100,6 +116,7 @@ export function planS6(taille = 100): PlanS6 {
       { variante: "B", cle: "B1", libelle: "mur s6-1-mur-v supprimé avec sa fenêtre", commandes: [{ toolId: "studio.architecture.supprimer", params: { ids: ["s6-1-mur-v"], cascade: true } }] },
       { variante: "B", cle: "B2", libelle: "ligne ajoutée", commandes: [ligne("s6-b-ligne", -2)] },
       { variante: "C", cle: "C1", libelle: "deux lignes ajoutées", commandes: [ligne("s6-c-ligne-1", -2), ligne("s6-c-ligne-2", -4)] },
+      { variante: "C", cle: "C2", libelle: "ligne s6-b-ligne ajoutée (autre tracé que dans B)", commandes: [ligne("s6-b-ligne", -6)] },
     ],
     feuille: { variante: "A", number: "F-01", title: "Plan synthétique S6", format: "A4", orientation: "portrait", scale: 100 },
     dossier: { title: "Dossier synthétique S6" },
@@ -107,6 +124,9 @@ export function planS6(taille = 100): PlanS6 {
       { id: "s6-nombre-murs", libelle: "Nombre de murs (recette du corpus S6)", metrique: { type: "nombre", nature: "mur-architectural" }, comparaison: "=", unite: "u", source: SOURCE_EXIGENCE },
       { id: "s6-volume-net", libelle: "Volume net des murs (recette du corpus S6)", metrique: { type: "total", grandeur: "volume-net" }, comparaison: "=", tolerance: 1e-6, unite: "m3", source: SOURCE_EXIGENCE },
       { id: "s6-mur-0", libelle: "Volume net du mur s6-0-mur-h (recette REC-A-03)", metrique: { type: "objet", objetId: "s6-0-mur-h", grandeur: "volume-net" }, comparaison: "=", tolerance: 1e-9, unite: "m3", source: SOURCE_EXIGENCE },
+    ],
+    fusions: [
+      { cle: "F1", libelle: "B fusionnée dans C (ancêtre A1)", source: "B", cible: "C", resolutions: { "collision:objects:s6-b-ligne": "source" } },
     ],
   };
 }

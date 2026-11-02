@@ -19,14 +19,14 @@ import { contoursMurs } from "./architecture/architecture-ui";
 import { estVisible } from "./calques";
 import { elements, murs, segments, selectionParRectangle, selectionParRectangleLineaire } from "./selection";
 
-export interface Statistiques { n: number; min: number; p50: number; p95: number; p99: number; max: number; moyenne: number }
+export interface Statistiques { n: number; min: number; p50: number; p75: number; p95: number; p99: number; max: number; moyenne: number }
 
 export function statistiques(valeurs: readonly number[]): Statistiques {
   const t = [...valeurs].sort((a, b) => a - b), n = t.length;
-  if (!n) return { n: 0, min: 0, p50: 0, p95: 0, p99: 0, max: 0, moyenne: 0 };
+  if (!n) return { n: 0, min: 0, p50: 0, p75: 0, p95: 0, p99: 0, max: 0, moyenne: 0 };
   // Rang le plus proche (nearest-rank) : une valeur effectivement mesurée.
   const q = (p: number) => t[Math.min(n - 1, Math.max(0, Math.ceil(p * n) - 1))]!;
-  return { n, min: t[0]!, p50: q(0.5), p95: q(0.95), p99: q(0.99), max: t[n - 1]!, moyenne: t.reduce((s, v) => s + v, 0) / n };
+  return { n, min: t[0]!, p50: q(0.5), p75: q(0.75), p95: q(0.95), p99: q(0.99), max: t[n - 1]!, moyenne: t.reduce((s, v) => s + v, 0) / n };
 }
 
 /** Réunit les feuillets d'un corpus en un document de mesure (non validé au-delà de la borne). */
@@ -62,6 +62,11 @@ export interface OptionsMesure {
   graine: number;
   /** Horloge en millisecondes (`performance.now`). */
   maintenant: () => number;
+  /**
+   * Durée minimale chronométrée par requête (ms) : la requête est rejouée jusqu'à l'atteindre et la durée est divisée
+   * par le nombre d'exécutions (horloge du navigateur à 0,1 ms de résolution). 0 ou absent : une exécution.
+   */
+  dureeMinimaleMs?: number;
 }
 
 export interface MesureOperation {
@@ -94,10 +99,14 @@ export interface MesureCorpus {
 function mesurer<T>(opts: OptionsMesure, requetes: readonly T[], f: (q: T) => unknown): { temps: number[]; resultats: unknown[] } {
   for (let i = 0; i < Math.min(opts.echauffement, requetes.length); i++) f(requetes[i]!);
   const temps: number[] = [], resultats: unknown[] = [];
+  const min = opts.dureeMinimaleMs ?? 0;
   for (const q of requetes) {
     const t0 = opts.maintenant();
     const r = f(q);
-    temps.push(opts.maintenant() - t0);
+    let n = 1, t = opts.maintenant() - t0;
+    // Requête rejouée (même entrée, résultat identique) jusqu'à la durée minimale chronométrable.
+    while (t < min && n < 1_000_000) { f(q); n++; t = opts.maintenant() - t0; }
+    temps.push(t / n);
     resultats.push(r);
   }
   return { temps, resultats };
@@ -182,4 +191,68 @@ export function rapportMarkdown(mesures: readonly MesureCorpus[], environnement:
     out.push("");
   }
   return out.join("\n");
+}
+
+// ——— Choix de l'index (C.1-02, DEC-09) et cible d'interface (TR-EX-052, DEC-13) ———
+
+export type OperationSpatiale = "selection" | "accrochage";
+
+export interface AnalyseChoixIndex {
+  /** Seuil en vigueur (DEC-09) : parcours linéaire en dessous, grille au-delà. */
+  seuil: number;
+  /** Plus petite taille mesurée à partir de laquelle l'index est plus rapide (p50) que le parcours linéaire sur toutes les scènes ; null : jamais. */
+  croisement: Record<OperationSpatiale, number | null>;
+  /** Tailles mesurées sous le seuil où le linéaire est au moins aussi rapide, et au-dessus où l'index l'est strictement. */
+  sousLeSeuilLineaireAdmis: boolean;
+  auDessusIndexPlusRapide: boolean;
+  /** Divergences index / linéaire (exactitude, EX-098) : 0 exigé. */
+  divergences: number;
+  /** Le seuil DEC-09 est cohérent avec la mesure ET les résultats sont exacts. */
+  coherent: boolean;
+}
+
+/**
+ * C.1-02 : choix de l'index et de l'algorithme rapproché de la mesure. Le seuil de DEC-09 est **cohérent** si, sous le
+ * seuil, le parcours linéaire n'est jamais plus lent que l'index de plus de la construction de l'index (p50, construction
+ * incluse à la première requête) — le balayage simple reste admissible (EX-052) — et si, au-dessus, l'index est
+ * strictement plus rapide (p50) sur chaque scène, avec zéro divergence. Aucun seuil nouveau n'est inventé.
+ */
+export function analyserChoixIndex(mesures: readonly MesureCorpus[], seuil = SEUIL_INDEX_SPATIAL): AnalyseChoixIndex {
+  const ops: OperationSpatiale[] = ["selection", "accrochage"];
+  const tailles = [...new Set(mesures.map((m) => m.taille))].sort((a, b) => a - b);
+  const croisement = Object.fromEntries(ops.map((op) => {
+    const t = tailles.find((taille) => mesures.filter((m) => m.taille === taille).every((m) => m[op].indexe.p50 < m[op].lineaire.p50));
+    return [op, t ?? null];
+  })) as Record<OperationSpatiale, number | null>;
+  const nb = (m: MesureCorpus, op: OperationSpatiale) => (op === "selection" ? m.elementsPlanche : m.formesAccrochables);
+  const sous = mesures.flatMap((m) => ops.filter((op) => nb(m, op) < seuil).map((op) => m[op].lineaire.p50 <= m[op].indexe.p50 + m[op].constructionIndexMs));
+  const dessus = mesures.flatMap((m) => ops.filter((op) => nb(m, op) >= seuil).map((op) => m[op].indexe.p50 < m[op].lineaire.p50));
+  const divergences = mesures.reduce((n, m) => n + m.selection.divergences + m.accrochage.divergences, 0);
+  const sousLeSeuilLineaireAdmis = sous.every(Boolean), auDessusIndexPlusRapide = dessus.length > 0 && dessus.every(Boolean);
+  return { seuil, croisement, sousLeSeuilLineaireAdmis, auDessusIndexPlusRapide, divergences, coherent: sousLeSeuilLineaireAdmis && auDessusIndexPlusRapide && divergences === 0 };
+}
+
+/** Cible d'interface retenue par DEC-13 : INP ≤ 200 ms au 75e centile (Core Web Vitals, web.dev). */
+export const BUDGET_INP_P75_MS = 200;
+
+export interface ComparaisonCible {
+  scene: string; taille: number; operation: OperationSpatiale; chemin: "lineaire" | "index";
+  /** p75 du chemin effectivement pris à cette taille (ms). */
+  p75: number;
+  /** Part du budget INP consommée par la seule requête. */
+  partBudget: number;
+  dansLaCible: boolean;
+}
+
+/**
+ * TR-EX-052 : chaque recherche, par le chemin pris aujourd'hui à cette taille, comparée à la cible DEC-13 (INP p75 ≤
+ * 200 ms). La requête n'est qu'une partie d'une interaction : « dans la cible » dit seulement qu'elle ne la consomme pas
+ * à elle seule ; l'appareil est celui de la mesure (déclaré dans le rapport).
+ */
+export function comparerALaCible(mesures: readonly MesureCorpus[], budget = BUDGET_INP_P75_MS): ComparaisonCible[] {
+  return mesures.flatMap((m) => (["selection", "accrochage"] as const).map((op) => {
+    const chemin = m.cheminActuel[op];
+    const p75 = chemin === "index" ? m[op].indexe.p75 : m[op].lineaire.p75;
+    return { scene: m.scene, taille: m.taille, operation: op, chemin, p75, partBudget: p75 / budget, dansLaCible: p75 <= budget };
+  }));
 }

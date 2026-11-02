@@ -1,0 +1,719 @@
+{
+ "schema": "studio-poc-corpus/1",
+ "date": "2026-10-26T00:43:12+01:00",
+ "commit": "4d991ead5abb66cf72642e63600107e66c07100e",
+ "environnement": {
+  "node": "22.22.0",
+  "icu": "77.1",
+  "plateforme": "linux 6.18.44-fc-v153 (x64)",
+  "processeur": "Intel(R) Xeon(R) Processor @ 2.30GHz × 4",
+  "memoire": "16 Gio",
+  "execution": "poste local"
+ },
+ "autorisation": "ADR-STUDIO-PILOTE-01 P-05 (G2-02) : contexte, 2D, association, chargement, index, conflit, reprise, publication",
+ "graines": {
+  "S1": 101,
+  "S2": 202,
+  "S3": 303,
+  "S4": 404,
+  "S5": 505,
+  "S6": 606,
+  "S7": 707
+ },
+ "tailles": [
+  100,
+  10000
+ ],
+ "empreinte": "90598e7f265d70a594c61e386decd53d49e2ea6a1b3fe4441df93984203265b5",
+ "commande": "STUDIO_POC_SORTIE=atelier-captures/poc-corpus npx --workspace=@fadi/web vitest run src/modules/studio/poc/poc-corpus.test.ts",
+ "horsCorpus": [
+  {
+   "poc": "contexte",
+   "raison": "ouvrir Studio dans un projet sans le Parcours ne dépend d'aucun corpus : recettes apps/web/e2e/studio-navigation.mjs (NAV-002 à NAV-004) et studio-preuves-d1.mjs (parcours A, B, C)"
+  }
+ ],
+ "resultats": [
+  {
+   "poc": "2d",
+   "scene": "S1",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "278a4499afbe19757761fdc4a538556e3390d5132ed876cee54563b03a71fda0",
+    "svg": "c0d63fa2780896f703794710196e63fc0ba177760f2255dc845bc225e0ff9ffa"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 5.081372999999985,
+    "validationMs": 1.4111990000001242
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S2",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "b529af2eae3616fd89312d8847d5e640e040af0655307e36c8039d1fb89b0712",
+    "svg": "7c10fab3d61e97f2667d05c3ffe90b8e8484547bed8ce0af3f1a7879318c9fe9"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 4.9481559999994715,
+    "validationMs": 0.920245999999679
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S3",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "e926abbb166a34909f15a2e9be98d8e0ed429200ecfc99c7b78be19382c3b1e1",
+    "svg": "d3f710ae1c9561dc02e8d447ad68ea58a8871a21c49c5b97bf036ea237300bf8"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 1.0215739999994184,
+    "validationMs": 0.48803700000007666
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S7",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "023960d66b42e6e115f16a02c010ec7fc51d88a11c2bf8bbc59c152ee806df97",
+    "svg": "52a529a830ae9f02f30000bc9925e8250d7aee990ac09ed70441cac47d90d4cb"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 0.8630239999993137,
+    "validationMs": 1.6819250000007742
+   }
+  },
+  {
+   "poc": "3d",
+   "scene": "S4",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "maillage": "53b8f4ef9deb6ca0",
+    "volumeSolides": 2.7
+   },
+   "ecarts": [],
+   "durees": {
+    "maillageMs": 26.4527479999997
+   }
+  },
+  {
+   "poc": "3d",
+   "scene": "S5",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "maillage": "9f8799ef9acf6900",
+    "volumeSolides": 274.417750358
+   },
+   "ecarts": [],
+   "durees": {
+    "maillageMs": 144.53750199999922
+   }
+  },
+  {
+   "poc": "association",
+   "scene": "S1",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "liees": 16,
+    "libres": 8,
+    "sommeMesures": 49
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "association",
+   "scene": "S2",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "liees": 12,
+    "libres": 0,
+    "sommeMesures": 72
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "chargement",
+   "scene": "S1",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 104,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 6.694728999999825
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S2",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 104,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 1.3980820000006133
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S3",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 102,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 1.3571689999998853
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S4",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 105,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 1.2359720000004017
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S5",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 102,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 17.304505000000063
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S7",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 104,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 1.0384370000001582
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S1",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 100,
+    "formes": 52,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.0028250000004845788,
+    "selectionLineaireP50": 0.49942399999963527,
+    "accrochageIndexP50": 0.001330000000052678
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S2",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 74,
+    "formes": 50,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.0026619999998729327,
+    "selectionLineaireP50": 0.05605500000001484,
+    "accrochageIndexP50": 0.0012860000006185146
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S3",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 100,
+    "formes": 100,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.0020489999997153063,
+    "selectionLineaireP50": 0.13534400000025926,
+    "accrochageIndexP50": 0.0009470000004512258
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S4",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 70,
+    "formes": 60,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.00565199999982724,
+    "selectionLineaireP50": 0.0991970000004585,
+    "accrochageIndexP50": 0.0025729999997565756
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S5",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 50,
+    "formes": 50,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.0019789999996646657,
+    "selectionLineaireP50": 0.2902930000000197,
+    "accrochageIndexP50": 0.0010099999999511056
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S7",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 74,
+    "formes": 50,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.002470999999786727,
+    "selectionLineaireP50": 0.04739999999947031,
+    "accrochageIndexP50": 0.0012200000001030276
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S1",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "bebb02711a6b068cf3c5185421b8119ae59b4c031cbd813d0fe4b485e871d926"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 77.92973699999948,
+    "validationMs": 91.674849
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S2",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "d7f165a9490f71721f43339432e128bacbd1409ceead121c72c1a360b87427a9"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 120.8572009999998,
+    "validationMs": 54.58567799999946
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S3",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "daa2f9e0281558d4adab770fc602012fbf5b5ba077f5d3cd60a13e0c1f659c2b"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 46.0836019999997,
+    "validationMs": 43.79697599999963
+   }
+  },
+  {
+   "poc": "2d",
+   "scene": "S7",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "feuillets": 1,
+    "empreinte": "384a23a53491be4dd30f8ef69fe6116cec5913394ad6197741b5504899f5194b"
+   },
+   "ecarts": [],
+   "durees": {
+    "generationMs": 70.19524300000012,
+    "validationMs": 43.767611000000215
+   }
+  },
+  {
+   "poc": "3d",
+   "scene": "S4",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "maillage": "80dc0249ec8de2ce",
+    "volumeSolides": 270
+   },
+   "ecarts": [],
+   "durees": {
+    "maillageMs": 1055.1102439999995
+   }
+  },
+  {
+   "poc": "3d",
+   "scene": "S5",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "maillage": "b7d8da20ccdfb895",
+    "volumeSolides": 28922.876760254
+   },
+   "ecarts": [],
+   "durees": {
+    "maillageMs": 4888.727634000001
+   }
+  },
+  {
+   "poc": "association",
+   "scene": "S1",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "liees": 1666,
+    "libres": 833,
+    "sommeMesures": 5411.5
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "association",
+   "scene": "S2",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "liees": 1250,
+    "libres": 0,
+    "sommeMesures": 7500
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "chargement",
+   "scene": "S1",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10004,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 1646.5493349999997
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S2",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10004,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 526.8396599999996
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S3",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10002,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 78.10567800000172
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S4",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10034,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 274.98531100000037
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S5",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10002,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 704.4588280000025
+   }
+  },
+  {
+   "poc": "chargement",
+   "scene": "S7",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "commandes": 10004,
+    "feuillets": 1
+   },
+   "ecarts": [],
+   "durees": {
+    "rejeuMs": 608.8900500000018
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S1",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 10000,
+    "formes": 5002,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.05243300000074669,
+    "selectionLineaireP50": 41.35357400000066,
+    "accrochageIndexP50": 0.0030879999976605177
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S2",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 7500,
+    "formes": 5000,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.03458599999794387,
+    "selectionLineaireP50": 3.5391100000015285,
+    "accrochageIndexP50": 0.003678000000945758
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S3",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 10000,
+    "formes": 10000,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.0428780000002007,
+    "selectionLineaireP50": 14.372031999999308,
+    "accrochageIndexP50": 0.009925999998813495
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S4",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 7000,
+    "formes": 6000,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.22371100000236765,
+    "selectionLineaireP50": 8.069192999999359,
+    "accrochageIndexP50": 0.09247099999993225
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S5",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 5000,
+    "formes": 5000,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.046409000002313405,
+    "selectionLineaireP50": 16.70746599999984,
+    "accrochageIndexP50": 0.0029410000024654437
+   }
+  },
+  {
+   "poc": "index",
+   "scene": "S7",
+   "taille": 10000,
+   "verdict": "conforme",
+   "valeurs": {
+    "elements": 7500,
+    "formes": 5000,
+    "divergencesSelection": 0,
+    "divergencesAccrochage": 0
+   },
+   "ecarts": [],
+   "durees": {
+    "selectionIndexP50": 0.021176999998715473,
+    "selectionLineaireP50": 4.366698000001634,
+    "accrochageIndexP50": 0.003832999998849118
+   }
+  },
+  {
+   "poc": "association",
+   "scene": "S6",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "netA1": 3.18,
+    "netA2": 3.096
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "conflit",
+   "scene": "S2",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "chevauchementMemeMur": "architecture:s2-0-mur-h",
+    "chevauchementAutreMur": 0,
+    "memeResultat": 0
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "conflit",
+   "scene": "S7",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "chevauchementMemeMur": "architecture:s7-0-mur-h",
+    "chevauchementAutreMur": 0,
+    "memeResultat": 0
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "reprise",
+   "scene": "S7",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "objetsAvant": 24,
+    "objetsApres": 25,
+    "empreinteApres": "e6d401f36efdbc7f592b4a8f4ece15e73f6f9b0789809550abbfb575d72e7504"
+   },
+   "ecarts": [],
+   "durees": {}
+  },
+  {
+   "poc": "publication",
+   "scene": "S6",
+   "taille": 100,
+   "verdict": "conforme",
+   "valeurs": {
+    "conclusions": "A:satisfaite,B:non-satisfaite,C:satisfaite",
+    "empreinteDossier": "24551285033b38e96bebd2e1592b97b84be64977772f99a8aeb7306af9b67e16",
+    "empreintePdf": "2471b76486f9e1e9ead86e4a74e80283bbb9e2e87275b39864bab15449e69686"
+   },
+   "ecarts": [],
+   "durees": {
+    "dossierMs": 16.75449799999842
+   }
+  }
+ ]
+}

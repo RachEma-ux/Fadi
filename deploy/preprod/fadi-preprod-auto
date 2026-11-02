@@ -2,25 +2,28 @@
 # fadi-preprod-auto — déploiement automatique de `main` en préproduction (docs/deploiement-automatique.md, phase A).
 #
 # Installé par l'administrateur, propriété de root (0755), en /usr/local/sbin/fadi-preprod-auto, lancé toutes les
-# 5 minutes par fadi-preprod-auto.timer (deploy/preprod/systemd/). Le VPS tire : seule l'API publique de GitHub est
+# 3 minutes par fadi-preprod-auto.timer (deploy/preprod/systemd/). Le VPS tire : seule l'API publique de GitHub est
 # lue (aucun jeton, aucun secret dans GitHub, aucune connexion entrante).
 #
 # Un passage :
 #   1. lit le dernier commit de `main` (1 appel) ; déjà essayé (succès ou échec) → rien à faire ; essai interrompu
 #      (« en-cours » sans passage actif) → retour à la version en ligne, comme un échec ;
 #   2. exige les jobs validate, e2e et image verts dans l'exécution de ci.yml déclenchée par le push de ce commit sur
-#      main (les contrôles d'une PR ne comptent pas ; en cours → on attend le passage suivant ; rouge → refus consigné) ;
+#      main (les contrôles d'une PR ne comptent pas ; en cours → on attend le passage suivant, l'exécution trouvée est
+#      retenue dans l'état et seuls ses jobs sont relus ; rouge → refus consigné, revu au plus tous les REFUS_DELAI
+#      secondes, pour voir une relance de la CI sans épuiser le budget) ;
 #   3. exige que le commit appartienne à l'historique de `main` (comparaison) ;
 #   4. fadi-preprod sync <sha>, build, migrate, up, smoke, /version = <sha>, puis un jeu court de scénarios (la CI a
-#      déjà joué tous les scénarios).
+#      déjà joué tous les scénarios) ; enfin `fadi-preprod nettoyer <précédent>` (images des anciens commits).
 # Échec : une construction ratée ne remplace rien (le code approuvé revient au commit en ligne) ; un échec après la
 # construction revient à l'image du commit précédent (images étiquetées par commit, conservées) : sync, up, smoke.
 # La base de préproduction ne contient que des données synthétiques ; elle n'est jamais restaurée ici.
 #
 # État : /opt/fadi-preprod/etat.json (commit, heure, étape, résultat, message, commit en ligne, dernier essai), lu par
 # `fadi-preprod status` et `fadi-preprod show`. Journal d'un déploiement : /opt/fadi-preprod/out/<run>-auto/journal.log.
-# Verrou : un seul passage à la fois (flock). Budget de l'API publique (60 appels / heure) : 1 appel par passage sans
-# nouveauté, 4 au plus sinon ; aucun appel si la réserve annoncée par GitHub tombe sous BUDGET_MIN.
+# Verrou : un seul passage à la fois (flock). Budget de l'API publique (60 appels / heure, 304 compris sans jeton) :
+# 1 appel par passage sans nouveauté (20 / heure), 2 pendant l'attente de la CI (exécution retenue), 4 au plus pour un
+# déploiement ; un refus n'est revu qu'après REFUS_DELAI ; aucun appel si la réserve annoncée tombe sous BUDGET_MIN.
 # Notification : Healthchecks (succès → ping, échec → /fail, avec un résumé) ; l'adresse est lue dans
 # /etc/fadi-preprod-auto/healthchecks-url (root, 0600, jamais dans le dépôt), passée à curl par l'entrée standard pour
 # ne jamais paraître dans la liste des processus. Absente : déploiement inchangé, notification non envoyée (journalisé).
@@ -36,9 +39,12 @@ umask 077
 
 REPO_API=https://api.github.com/repos/RachEma-ux/Fadi
 CONTROLES_REQUIS="validate e2e image"
-E2E_COURT="sandbox-module parcours-scenario"
+# Jeu court : recettes sans lecture de courriel (la préproduction n'envoie jamais aux domaines réservés des comptes de
+# recette ; parcours-scenario lit le lien de vérification depuis c6818eb et échouait à chaque déploiement).
+E2E_COURT="sandbox-module accueils-design studio-exemple-p118"
 APP_URL=http://127.0.0.1:3101
 BUDGET_MIN=10
+REFUS_DELAI=900
 if [ "$(id -u)" -eq 0 ]; then
   BASE=/opt/fadi-preprod
   CONF=/etc/fadi-preprod-auto
@@ -265,6 +271,9 @@ deployer() {  # $1 = commit
   etat_ecrire etape=fin resultat=succes "message=$msg" "en_ligne=$sha"
   echo "✓ $msg" | tee -a "$JOURNAL"
   notifier succes "fadi-preprod-auto : $msg"
+  # Images des anciens commits : le commit en ligne et le précédent (retour arrière) sont gardés. Un échec ne change
+  # pas le résultat du déploiement.
+  fp nettoyer ${prec:+"$prec"} || log "⚠ nettoyage des anciennes images en échec (déploiement inchangé)" | tee -a "$JOURNAL"
 }
 
 # ── passage ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -291,8 +300,21 @@ if [ "$sha" = "$(etat_lire dernier_essai)" ]; then
   log "main = $sha, déjà essayé ($(etat_lire resultat)) : rien à faire"; exit 0
 fi
 
-api "actions/runs?head_sha=$sha&event=push&branch=main&per_page=20" application/vnd.github+json "$TMP/executions"
-execution=$(execution_ci_main "$TMP/executions" "$sha")
+# Refus récent du même commit (CI rouge) : revu seulement après REFUS_DELAI (une relance de la CI finit par être vue).
+if [ "$(etat_lire commit)" = "$sha" ] && [ "$(etat_lire resultat)" = refus ] && [ "$(etat_lire etape)" = controles ]; then
+  depuis=$(etat_lire controle_epoch); [[ $depuis =~ ^[0-9]+$ ]] || depuis=0
+  if [ $(( $(date +%s) - depuis )) -lt "$REFUS_DELAI" ]; then
+    log "CI non verte sur $sha, revue au plus tous les $((REFUS_DELAI / 60)) min : passage suivant"; exit 0
+  fi
+fi
+
+# Exécution CI déjà trouvée pour ce commit (attente) : ses jobs seulement, sans relister les exécutions.
+execution=
+if [ "$(etat_lire ci_sha)" = "$sha" ] && [[ $(etat_lire ci_run) =~ ^[0-9]+$ ]]; then execution=run:$(etat_lire ci_run); fi
+if [ -z "$execution" ]; then
+  api "actions/runs?head_sha=$sha&event=push&branch=main&per_page=20" application/vnd.github+json "$TMP/executions"
+  execution=$(execution_ci_main "$TMP/executions" "$sha")
+fi
 case "$execution" in
   run:*) api "actions/runs/${execution#run:}/jobs?filter=latest&per_page=100" application/vnd.github+json "$TMP/controles"
     verdict=$(verdict_controles "$TMP/controles") ;;
@@ -300,9 +322,12 @@ case "$execution" in
 esac
 case "$verdict" in
   vert) log "contrôles $CONTROLES_REQUIS verts sur $sha" ;;
-  en-cours*) etat_ecrire "commit=$sha" etape=controles resultat=attente "message=CI en cours (${verdict#en-cours:})"
+  en-cours*) etat_ecrire "commit=$sha" etape=controles resultat=attente "message=CI en cours (${verdict#en-cours:})" \
+      "ci_sha=$sha" "ci_run=$([[ $execution == run:* ]] && echo "${execution#run:}")"
     log "CI en cours sur $sha (${verdict#en-cours:}) : passage suivant"; exit 0 ;;
-  *) etat_ecrire "commit=$sha" etape=controles resultat=refus "message=CI non verte (${verdict#rouge:})"
+  *) # L'exécution retenue est oubliée : une exécution recréée sera trouvée à la revue suivante.
+    etat_ecrire "commit=$sha" etape=controles resultat=refus "message=CI non verte (${verdict#rouge:})" \
+      "controle_epoch=$(date +%s)" ci_sha= ci_run=
     log "CI non verte sur $sha (${verdict#rouge:}) : rien n'est déployé"; exit 0 ;;
 esac
 

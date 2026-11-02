@@ -174,4 +174,139 @@ describe("validation des entrées et outils", () => {
   });
 });
 
+describe("lot F2 — booléens des solides libres de Studio, instance unique (IF-003, TR-EX-062)", () => {
+  it("union, soustraction, intersection de deux extrusions (boîtes Studio 2 × 2 × 2 décalées de 1 m) : 12, 4, 4 m³ ; empreinte reproductible", () => {
+    const a = { extrusion: { profil: carre(2), z0: 0, hauteur: 2 } }, b = { extrusion: { profil: carre(2, 1, 0), z0: 0, hauteur: 2 } };
+    const u = M.executer({ type: "booleen", op: "union", a, b });
+    expect(u.volume).toBeCloseTo(12, 9);
+    expect(u.solides).toBe(1);
+    expect(M.executer({ type: "booleen", op: "union", a, b }).empreinte).toBe(u.empreinte);
+    expect(M.executer({ type: "booleen", op: "soustraction", a, b }).volume).toBeCloseTo(4, 9);
+    expect(M.executer({ type: "booleen", op: "intersection", a, b }).volume).toBeCloseTo(4, 9);
+    // Chaîne : le résultat exact sert d'opérande (son brep) à un second booléen.
+    expect(M.executer({ type: "booleen", op: "soustraction", a: { brep: u.brep }, b: { extrusion: { profil: carre(1, 0, 0), z0: 0, hauteur: 2 } } }).volume).toBeCloseTo(10, 9);
+  });
+
+  it("intersection vide refusée (aucun solide), jamais un résultat vide engagé", () => {
+    expect(() => M.executer({ type: "booleen", op: "intersection", a: { extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }, b: { extrusion: { profil: carre(1, 5, 5), z0: 0, hauteur: 1 } } })).toThrow(/aucun solide|vide/);
+  });
+
+  it("TR-EX-062 : allocations WebAssembly mesurées — mémoire linéaire du noyau relevée après chaque calcul, croissante, jamais nulle", async () => {
+    const avant = MoteurExact.memoireWasmOctets();
+    expect(avant).toBeGreaterThan(0);
+    const releves: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      M.executer({ type: "booleen", op: "union", a: { extrusion: { profil: carre(2), z0: 0, hauteur: 2 } }, b: { extrusion: { profil: carre(2, 1 + i * 0.1, 0), z0: 0, hauteur: 2 } } });
+      releves.push(MoteurExact.memoireWasmOctets()!);
+    }
+    // Multiple de la page WebAssembly (64 Kio) et jamais en baisse : c'est la mémoire linéaire réelle, pas une estimation.
+    expect(releves.every((n, i) => n % 65536 === 0 && n >= (i === 0 ? avant! : releves[i - 1]!))).toBe(true);
+  });
+
+  it("instance unique : charger deux fois rend le même noyau, une seule instance compilée dans ce processus", async () => {
+    const a = await MoteurExact.charger(), b = await MoteurExact.charger();
+    expect(a).toBe(b);
+    expect(MoteurExact.instancesCreees).toBe(1);
+  });
+});
+
+describe("noyau exact — STEP nommé (E.6-04)", () => {
+  const H = { horodatage: "2026-10-26T10:00:00", nomFichier: "studio-essai.step" };
+  const pieces = () => [
+    { nom: "boite-1", solides: [{ extrusion: { profil: carre(2), z0: 0, hauteur: 3 } }] },
+    // Deux morceaux juxtaposés (mur avec vide) : un produit, deux solides, volume additionné.
+    { nom: "mur-1", solides: [{ extrusion: { profil: carre(1, 5, 0), z0: 0, hauteur: 1 } }, { extrusion: { profil: carre(1, 5, 0), z0: 2, hauteur: 1 } }] },
+    // Prisme oblique : lissage réglé entre deux carrés décalés (volume = aire × hauteur).
+    { nom: "oblique~00E9~", solides: [{ lissage: [carre(1, 10, 0).map((p) => ({ ...p, z: 0 })), carre(1, 10.5, 0).map((p) => ({ ...p, z: 2 }))] as [{ x: number; y: number; z: number }[], { x: number; y: number; z: number }[]] }] },
+  ];
+
+  it("E.6-04 STEP : un produit nommé par pièce, unité millimètre déclarée et géométrie × 1 000, relu en mètres à l'identique", () => {
+    const step = M.exporterStepPieces(pieces(), H);
+    expect(step.startsWith("ISO-10303-21;")).toBe(true);
+    expect(step).toMatch(/FILE_SCHEMA\(\('AUTOMOTIVE_DESIGN/);
+    expect(step).toMatch(/SI_UNIT\(\.MILLI\.,\.METRE\.\)/);
+    expect(step).toContain("FILE_NAME('studio-essai.step','2026-10-26T10:00:00'");
+    expect(step).toContain("PRODUCT('boite-1','boite-1'");
+    const lues = M.lireStepPieces(step);
+    expect(lues.map((p) => p.nom)).toEqual(["boite-1", "mur-1", "oblique~00E9~"]);
+    expect(lues.map((p) => p.solides)).toEqual([1, 2, 1]);
+    expect(lues[0]!.volume).toBeCloseTo(12, 6);
+    expect(lues[1]!.volume).toBeCloseTo(2, 6);
+    expect(lues[2]!.volume).toBeCloseTo(2, 6);
+    // Boîte de la première pièce : 2 × 2 × 3 m, pas 2 × 2 × 3 mm (l'unité n'est jamais supposée).
+    const b = lues[0]!.boite!;
+    expect(b.max.x - b.min.x).toBeCloseTo(2, 4);
+    expect(b.max.z - b.min.z).toBeCloseTo(3, 4);
+    expect(lues[2]!.boite!.max.x).toBeCloseTo(11.5, 4);
+  });
+
+  it("E.6-04 STEP : reproductible (horodatage de la révision), entrées mal formées refusées", () => {
+    expect(M.exporterStepPieces(pieces(), H)).toBe(M.exporterStepPieces(pieces(), H));
+    expect(() => M.exporterStepPieces([], H)).toThrow(/pièces/);
+    expect(() => M.exporterStepPieces([{ nom: "l'apostrophe", solides: [{ extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }] }], H)).toThrow(/nom ASCII/);
+    expect(() => M.exporterStepPieces([{ nom: "é", solides: [{ extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }] }], H)).toThrow(/nom ASCII/);
+    expect(() => M.exporterStepPieces([{ nom: "x", solides: [] }], H)).toThrow(/solides/);
+    expect(() => M.exporterStepPieces([{ nom: "x", solides: [{ lissage: [carre(1).map((p) => ({ ...p, z: 0 })), [{ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 1 }, { x: 1, y: 1, z: 1 }]] }] }], H)).toThrow(/même nombre/);
+    expect(() => M.exporterStepPieces(pieces(), { ...H, horodatage: "maintenant" })).toThrow(/horodatage/);
+  });
+});
+
+describe("surface NURBS épaissie (Studio, X.1-05)", () => {
+  /** Quart de cylindre de rayon R et de longueur L : arc rationnel quadratique (poids 1, √2/2, 1) × segment de degré 1. */
+  const quartCylindre = (R: number, L: number) => {
+    const arc = [{ x: R, y: 0 }, { x: R, y: R }, { x: 0, y: R }], w = [1, Math.SQRT1_2, 1];
+    const controle: { x: number; y: number; z: number }[] = [], poids: number[] = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { controle.push({ x: arc[i]!.x, y: arc[i]!.y, z: j * L }); poids.push(w[i]!); }
+    return { degreU: 2, degreV: 1, lignes: 3, colonnes: 2, controle, poids };
+  };
+
+  it("NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L", () => {
+    const ext = M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: 0.1 });
+    expect(ext.solides).toBe(1);
+    expect(Math.abs(ext.volume - (Math.PI / 4) * (2.1 ** 2 - 4) * 3) / ext.volume).toBeLessThan(1e-6);
+    const int = M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: -0.1 });
+    expect(Math.abs(int.volume - (Math.PI / 4) * (4 - 1.9 ** 2) * 3) / int.volume).toBeLessThan(1e-6);
+    // Reproductible : même brep, même empreinte (le serveur recalcule).
+    expect(M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: 0.1 }).empreinte).toBe(ext.empreinte);
+  });
+
+  it("NURBS : les pôles ne sont pas des points de passage — plaque bilinéaire 2 × 3 épaissie de 0,1 m : volume 0,6 ; poids changés : autre surface", () => {
+    const plaque = { degreU: 1, degreV: 1, lignes: 2, colonnes: 2, controle: [{ x: 0, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 0, y: 3, z: 0 }, { x: 2, y: 3, z: 0 }] };
+    expect(M.executer({ type: "nurbs", nurbs: plaque, epaisseur: 0.1 }).volume).toBeCloseTo(0.6, 9);
+    // Bosse de degré 2 × 2 sur une grille 3 × 3 : le pôle central relevé de 1 m ne relève le centre que de 0,25 m (Bézier), pas de 1 m.
+    const bosse = (w: number) => ({ degreU: 2, degreV: 2, lignes: 3, colonnes: 3, controle: Array.from({ length: 9 }, (_, k) => ({ x: k % 3, y: Math.floor(k / 3), z: k === 4 ? 1 : 0 })), poids: Array.from({ length: 9 }, (_, k) => (k === 4 ? w : 1)) });
+    const a = M.executer({ type: "nurbs", nurbs: bosse(1), epaisseur: 0.01 }), b = M.executer({ type: "nurbs", nurbs: bosse(3), epaisseur: 0.01 });
+    const zMax = (r: SolideExact) => Math.max(...r.maillage.positions.filter((_, i) => i % 3 === 2));
+    // Normale ∂S/∂u × ∂S/∂v vers le bas ici (u le long de y, v le long de x) : l'épaisseur est sous la nappe.
+    expect(zMax(a)).toBeGreaterThan(0.2); expect(zMax(a)).toBeLessThanOrEqual(0.25 + 1e-6);
+    expect(zMax(b)).toBeGreaterThan(zMax(a) + 0.1);
+    expect(a.empreinte).not.toBe(b.empreinte);
+  });
+
+  it("NURBS : entrées refusées — degré > lignes − 1, pôles en nombre faux, poids nul, épaisseur nulle, bord réduit à un point", () => {
+    const q = quartCylindre(2, 3);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, degreU: 3 }, epaisseur: 0.1 })).toThrow(/degreU/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, controle: q.controle.slice(1) }, epaisseur: 0.1 })).toThrow(/6 pôles/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, poids: q.poids.map((w, i) => (i ? w : 0)) }, epaisseur: 0.1 })).toThrow(/strictement positif/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: q, epaisseur: 0 })).toThrow(/non nulle/);
+    const cone = { ...q, controle: q.controle.map((p, k) => (k % 2 === 1 ? { x: 0, y: 0, z: 3 } : p)) };
+    expect(() => validerOperation({ type: "nurbs", nurbs: cone, epaisseur: 0.1 })).toThrow(/réduit à un point/);
+  });
+});
+
+describe("polyèdre fermé (Studio, X.1-05 : surface de subdivision solidifiée)", () => {
+  const tetra = { sommets: [{ x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -1 }, { x: -1, y: 1, z: -1 }, { x: -1, y: -1, z: 1 }], triangles: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]] };
+  it("polyèdre : tétraèdre régulier d'arête 2√2 cousu en solide — volume 8/3, 4 faces, un solide ; reproductible", () => {
+    const r = M.executer({ type: "polyedre", ...tetra });
+    expect(r.volume).toBeCloseTo(8 / 3, 9);
+    expect([r.faces, r.solides]).toEqual([4, 1]);
+    expect(M.executer({ type: "polyedre", ...tetra }).empreinte).toBe(r.empreinte);
+  });
+  it("polyèdre : non fermé, indice hors sommets, triangle dégénéré — refusés avant le noyau", () => {
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [0, 1, 2]] })).toThrow(/non fermé/);
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [1, 3, 9]] })).toThrow(/indices de sommet/);
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [1, 1, 2]] })).toThrow(/dégénéré/);
+  });
+});
+
 export type _S = SolideExact;

@@ -1,0 +1,11 @@
+code_contour,code_hcp,justification
+r2502035,24110307,"Labsara (OSM, ar بسارأ) = Bsara (HCP, ar لبصارة) : même nom en arabe, même secteur ; limites de province différentes"
+r2522587,61110505,"Cherrat (OSM, ar الشراط) = Charrate (HCP, ar شراط) : même nom en arabe"
+r2527996,25330115,"Al Aïoun (OSM, ar العيون) = El Aioun Sidi Mellouk (HCP, ar العيون-سيدي ملوك) : nom officiel complet côté HCP"
+r2808148,42910309,"El Kansera (OSM, ar القنصرة) = El Ganzra (HCP, ar الكنزرة) : même nom, translittérations voisines"
+r2816242,34510107,"Ahermoumou (OSM) = Ribate El Kheir (HCP) : ancien nom de la commune, renommée Ribate El Kheir"
+r2819485,32710311,"Timhadit (OSM, ar تمهديت) = Timahdite (HCP, ar تمحضيت) : même nom, translittérations voisines"
+r2827832,74310307,"Lahdar (OSM, ar لحدار) = Lahdar (HCP, ar لحضر) : même nom ; point du contour à plus de 10 km de la province geoBoundaries"
+r2879649,53110507,"Lagfaf (OSM, ar لڭفاف) = Lagfaf (HCP, ar لكفاف) : même nom ; limites de province différentes"
+r2879954,64611325,"Ras Al Aïn (OSM, ar رأس العين) = Ras El Ain Chaouia (HCP, ar رأس العين الشاوية) : nom officiel complet côté HCP"
+r2884931,85870709,"Bleida (OSM relation, ar ابليدة) = Bleida (HCP, ar ابليدة) : nom arabe identique ; le contour w303649959 « Blida » (البليدة, autre objet Wikidata) reste non rattaché"

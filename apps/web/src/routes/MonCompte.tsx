@@ -1,6 +1,6 @@
 /**
  * « Mon compte » (Paramètres, gestion des comptes, phase 5) : mot de passe, double authentification (TOTP, codes de
- * secours), sessions ouvertes, vérification de l'adresse, export des données personnelles et suppression du compte
+ * secours), sessions ouvertes, « Mon historique » (journal filtré, phase 3 bis), vérification de l'adresse, export des données personnelles et suppression du compte
  * (30 jours de grâce, D-5). Chaque action exige le réseau : rien n'est mis en file hors ligne.
  */
 import { useState, type FormEvent } from "react";
@@ -12,6 +12,7 @@ import { LOCALE } from "../lib/i18n";
 import { useOnline } from "../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink, PasswordField } from "../components/comptes/ComptesUI";
 import { PASSWORD_MIN } from "../lib/password-strength";
+import { MonHistorique } from "./MonHistorique";
 
 const OFFLINE = "Hors connexion : cette action exige le réseau.";
 const when = (iso: string) => new Date(iso).toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" });
@@ -258,6 +259,7 @@ export function MonCompte() {
       <PasswordChange />
       <MfaSection />
       <SessionsSection />
+      <MonHistorique />
       <EmailAndExport />
       <DeleteAccount />
     </section>

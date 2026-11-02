@@ -41,6 +41,7 @@ export const IMMUTABILITY_TRIGGERS = Object.freeze([
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_update' },
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_delete' },
   { table: 'studio_publications', trigger: 'studio_publications_no_delete' },
+  { table: 'studio_publications', trigger: 'studio_publications_package_frozen' },
   { table: 'studio_requirement_sets', trigger: 'studio_requirement_sets_no_update' },
   { table: 'studio_requirement_checks', trigger: 'studio_requirement_checks_no_update' },
   { table: 'studio_quantity_adjustments', trigger: 'studio_quantity_adjustments_no_update' },

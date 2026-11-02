@@ -10,7 +10,7 @@ import { LOCALE } from "../../../lib/i18n";
 import { cheminComparaisonStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "../routes-studio";
 import { refused } from "./etat-variante";
 
-const SOURCES: Record<string, string> = { "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante", "variant-derivation": "Dérivation d’une variante", "authenticated-session": "Enregistrement" };
+const SOURCES: Record<string, string> = { "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante", "variant-derivation": "Dérivation d’une variante", "authenticated-session": "Enregistrement", "agent-mcp": "Proposition d’agent (MCP) confirmée", "variant-merge": "Fusion d’une variante", "variant-merge-undo": "Annulation d’une fusion" };
 
 export function RevisionsPanel({ projectId, studyId, variantId, headRevisionId, shownRevisionId, adresse = {} }: { projectId: string; studyId: string; variantId: string; headRevisionId: string; shownRevisionId: string; adresse?: OptionsDomaineVariante }) {
   const { user } = useAuth();

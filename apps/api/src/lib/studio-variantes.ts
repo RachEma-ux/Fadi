@@ -18,11 +18,15 @@ import {
 /** Corps d'un renommage : nom épuré, 1 à 200 caractères, aucun autre champ. */
 export const studioRenameSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
 
-/** Étude du projet, accès verrouillé et droit `modify` (404 avant 403, comme la création de variante). */
-async function managedStudy(tx: Tx, projectId: string, studyId: string, actorId: string) {
+/**
+ * Étude du projet, accès verrouillé et droit `modify` (404 avant 403, comme la création de variante). `contenu` : le
+ * renommage et la phase déclarée sont du contenu de l'étude, ouvert aussi à un Concepteur de CETTE étude (portée étroite) ;
+ * l'archivage reste au rôle de projet.
+ */
+async function managedStudy(tx: Tx, projectId: string, studyId: string, actorId: string, contenu = false) {
   const access = await lockedAccess(tx, projectId, actorId);
   const study = await studyOf(tx, projectId, studyId);
-  assertAccess(access, actorId, "modify");
+  assertAccess(access, actorId, "modify", contenu ? { studyId: study.id } : undefined);
   return study;
 }
 
@@ -35,7 +39,7 @@ async function managedVariant(tx: Tx, studyId: string, variantId: string) {
 
 export async function renameStudioStudy(projectId: string, studyId: string, actorId: string, name: string): Promise<StudioStudyRead> {
   return db.transaction(async (tx) => {
-    const study = await managedStudy(tx, projectId, studyId, actorId);
+    const study = await managedStudy(tx, projectId, studyId, actorId, true);
     if (study.archivedAt !== null) return studioArchivedRefusal();
     if (study.name !== name) await tx.update(studioStudies).set({ name, updatedAt: new Date() }).where(eq(studioStudies.id, study.id));
     return readStudioStudy(tx, projectId, study.id, actorId);
@@ -59,7 +63,7 @@ export const studioWorkflowSchema = z.object({
  */
 export async function setStudioStudyWorkflowPhase(projectId: string, studyId: string, actorId: string, phase: StudioPhaseWorkflow | null): Promise<StudioStudyRead> {
   return db.transaction(async (tx) => {
-    const study = await managedStudy(tx, projectId, studyId, actorId);
+    const study = await managedStudy(tx, projectId, studyId, actorId, true);
     if (study.archivedAt !== null) return studioArchivedRefusal();
     if ((study.workflowPhase ?? null) !== phase) await tx.update(studioStudies).set({ workflowPhase: phase, updatedAt: new Date() }).where(eq(studioStudies.id, study.id));
     return readStudioStudy(tx, projectId, study.id, actorId);
@@ -87,7 +91,7 @@ export interface StudioVariantLifecycle { variant: StudioVariantSummary; studyAr
 
 export async function renameStudioVariant(projectId: string, studyId: string, variantId: string, actorId: string, name: string): Promise<StudioVariantLifecycle> {
   return db.transaction(async (tx) => {
-    const study = await managedStudy(tx, projectId, studyId, actorId);
+    const study = await managedStudy(tx, projectId, studyId, actorId, true);
     const variant = await managedVariant(tx, study.id, variantId);
     if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
     if (variant.name === name) return { variant: toVariantSummary(variant), studyArchived: false };

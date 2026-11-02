@@ -45,7 +45,7 @@ export function refusSaisie(s: SaisieFeuilleUi): string | null {
 export function calquesProposes(doc: StudioDocument): { id: string; nom: string; visible: boolean }[] {
   const declares = (doc.layers ?? []).map((l) => ({ id: l.id, nom: l.name, visible: l.visible }));
   if (declares.some((l) => l.id === STUDIO_DEFAULT_LAYER_ID)) return declares;
-  const occupe = [...doc.objects, ...(doc.dimensions ?? []), ...(doc.annotations ?? []), ...(doc.architecture ?? []).filter((x) => x.type === "wall")]
+  const occupe = [...doc.objects, ...(doc.dimensions ?? []), ...(doc.annotations ?? []), ...(doc.architecture ?? []).filter((x) => x.type !== "opening")]
     .some((o) => ((o as { layerId?: string }).layerId ?? STUDIO_DEFAULT_LAYER_ID) === STUDIO_DEFAULT_LAYER_ID);
   return occupe ? [{ id: STUDIO_DEFAULT_LAYER_ID, nom: "0", visible: true }, ...declares] : declares;
 }

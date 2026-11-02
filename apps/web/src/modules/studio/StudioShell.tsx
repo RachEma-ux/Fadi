@@ -16,7 +16,8 @@ import { Component, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { StudioPhaseWorkflow } from "@parcours/atelier-model";
-import { api, ApiError, ROLE_LABEL, type StudioVariantSummary } from "../../lib/api";
+import { api, ApiError, type StudioVariantSummary } from "../../lib/api";
+import { estRefusStudio, libelleRoleStudio, relancerSaufRefus, useProjetStudio } from "./contexte/facade-contexte";
 import type { DomaineStudio } from "./domaines/definitions";
 import { LOCALE } from "../../lib/i18n";
 import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminSandboxStudio, cheminVarianteStudio, estRouteConsole, lireRouteStudio, type RouteConsoleStudio } from "./routes-studio";
@@ -37,8 +38,9 @@ function demandeId(demande: { current: { nom: string; id: string } | null }, nom
   return demande.current.id;
 }
 
-const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
-const retry = (n: number, e: unknown) => !refused(e) && n < 1;
+// Authentification et projet : par la façade publique de Studio seulement (ARC-03, contexte/facade-contexte.ts).
+const refused = estRefusStudio;
+const retry = relancerSaufRefus;
 
 /** Limite d'erreur de Studio (ADR R-C) : changer d'adresse efface l'erreur de l'écran précédent. */
 class StudioErrorBoundary extends Component<{ cle: string; children: ReactNode }, { erreur: boolean; cle: string }> {
@@ -115,7 +117,6 @@ function FilConsole({ route }: { route: RouteConsoleStudio }) {
   return <span data-studio-fil-console> / {suite === null ? <span aria-current="page" translate="no">Console</span> : <><Link to={cheminConsoleStudio()} translate="no">Console</Link> / <span aria-current="page">{suite}</span></>}</span>;
 }
 
-const useProjet = (projectId: string) => useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry });
 // Fil d'Ariane : archives comprises, pour nommer aussi une variante archivée ouverte par son adresse.
 const useEtude = (projectId: string, studyId: string) => useQuery({ queryKey: ["studio-study", projectId, studyId, { archives: true }], queryFn: () => api.studioStudy(projectId, studyId, true), staleTime: 30_000, retry });
 
@@ -124,18 +125,18 @@ const useEtude = (projectId: string, studyId: string) => useQuery({ queryKey: ["
  * doublon) ; le code reste dans le nom accessible du lien, une fois l'accès confirmé.
  */
 function FilProjet({ projectId, lien }: { projectId: string; lien: boolean }) {
-  const projet = useProjet(projectId);
-  const code = projet.data && !refused(projet.error) ? projet.data.code : null;
+  const projet = useProjetStudio(projectId);
+  const code = projet.projet?.code ?? null;
   const texte = <span data-studio-fil-projet>Études</span>;
   return <span> / {lien ? <Link to={cheminProjetStudio(projectId)} title={code ? `Études du projet ${code}` : undefined}>{texte}</Link> : <span aria-current="page">{texte}</span>}</span>;
 }
 
 /** Rôle de l'utilisateur sur le projet, tel que le serveur le renvoie avec le projet (jamais déduit côté client). */
 function BadgeRole({ projectId }: { projectId: string }) {
-  const projet = useProjet(projectId);
-  if (!projet.data || refused(projet.error)) return null;
-  const role = projet.data.role ?? "proprietaire";
-  return <span className="studio-revision-tag studio-role" style={{ marginLeft: "auto" }} data-studio-role={role}>{`Votre rôle : ${ROLE_LABEL[role]}`}</span>;
+  const { projet } = useProjetStudio(projectId);
+  if (!projet) return null;
+  const role = projet.role;
+  return <span className="studio-revision-tag studio-role" style={{ marginLeft: "auto" }} data-studio-role={role}>{`Votre rôle : ${libelleRoleStudio(role)}`}</span>;
 }
 
 function FilEtude({ projectId, studyId, lien }: { projectId: string; studyId: string; lien: boolean }) {
@@ -243,9 +244,9 @@ const carte = { display: "flex", flexDirection: "column", gap: 8 } as const;
 const actions = { display: "flex", flexWrap: "wrap", gap: 6 } as const;
 
 function StudioProjet({ projectId, archives }: { projectId: string; archives: boolean }) {
-  const projet = useProjet(projectId);
+  const projet = useProjetStudio(projectId);
   const [creation, setCreation] = useState(false);
-  const accessible = !!projet.data && !refused(projet.error);
+  const accessible = projet.etat === "pret";
   const client = useQueryClient();
   const etudes = useQuery({ queryKey: ["studio-studies", projectId, { archives }], queryFn: () => api.studioStudies(projectId, archives), enabled: accessible, retry,
     // Basculer les archives garde la liste affichée pendant la relecture (même projet seulement).
@@ -254,10 +255,10 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
     client.invalidateQueries({ queryKey: ["studio-studies", projectId] }),
     client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] }),
   ]);
-  if (projet.isPending) return <p role="status">Chargement du projet…</p>;
-  if (!accessible) return projet.isError && !refused(projet.error) ? <p role="alert">Projet indisponible. <button type="button" onClick={() => void projet.refetch()}>Réessayer</button></p> : <StudioRefus quoi="projet" />;
-  const p = projet.data!;
-  const lecteur = p.role === "lecteur" || p.role === "support";
+  if (projet.etat === "chargement") return <p role="status">Chargement du projet…</p>;
+  if (!projet.projet) return projet.etat === "indisponible" ? <p role="alert">Projet indisponible. <button type="button" onClick={projet.relire}>Réessayer</button></p> : <StudioRefus quoi="projet" />;
+  const p = projet.projet;
+  const lecteur = p.lecteur;
   return (
     <section className="studio-welcome studio-page" data-studio-projet={p.id}>
       <header className="studio-page-entete">
@@ -373,13 +374,13 @@ function ChargerExempleP118({ projectId, etat }: { projectId: string; etat: "abs
 }
 
 function StudioEtude({ projectId, studyId, archives }: { projectId: string; studyId: string; archives: boolean }) {
-  const projet = useProjet(projectId);
+  const projet = useProjetStudio(projectId);
   const etude = useQuery({ queryKey: ["studio-study", projectId, studyId, { archives }], queryFn: () => api.studioStudy(projectId, studyId, archives), staleTime: 30_000, retry,
     placeholderData: (prev) => (prev?.study.id === studyId && prev.study.projectId === projectId ? prev : undefined) });
   const client = useQueryClient();
   const [derivee, setDerivee] = useState<string | null>(null);
-  if (projet.isPending || etude.isPending) return <p role="status">Chargement de l’étude…</p>;
-  if (!projet.data || refused(projet.error)) return projet.isError && !refused(projet.error) ? <p role="alert">Projet indisponible. <button type="button" onClick={() => void projet.refetch()}>Réessayer</button></p> : <StudioRefus quoi="projet" />;
+  if (projet.etat === "chargement" || etude.isPending) return <p role="status">Chargement de l’étude…</p>;
+  if (!projet.projet) return projet.etat === "indisponible" ? <p role="alert">Projet indisponible. <button type="button" onClick={projet.relire}>Réessayer</button></p> : <StudioRefus quoi="projet" />;
   if (!etude.data || refused(etude.error)) return etude.isError && !refused(etude.error) ? <p role="alert">Étude indisponible. <button type="button" onClick={() => void etude.refetch()}>Réessayer</button></p> : <StudioRefus quoi="etude" />;
   const { study, variants, canWrite, canManage } = etude.data;
   const relire = () => Promise.all([
@@ -391,7 +392,7 @@ function StudioEtude({ projectId, studyId, archives }: { projectId: string; stud
     <section className="studio-welcome" data-studio-etude={study.id} data-studio-archivee={study.archived || undefined}>
       <p className="studio-eyebrow">FADI / STUDIO</p>
       <h1><span translate="no">{study.name}</span>{study.archived && <> <BadgeArchive /></>}</h1>
-      <p>Projet : <span translate="no">{projet.data.code} — {projet.data.name}</span></p>
+      <p>Projet : <span translate="no">{projet.projet.code} — {projet.projet.name}</span></p>
       {study.archived && <p role="status" data-studio-etude-archivee>Étude archivée : lecture seule. Rien n’a été supprimé.</p>}
       {canManage && (
         <div style={actions}>
@@ -413,7 +414,7 @@ function StudioEtude({ projectId, studyId, archives }: { projectId: string; stud
                 <Link to={cheminVarianteStudio(projectId, study.id, v.id)}>
                   <strong translate="no">{v.name}</strong>
                   {initiale && <small>Variante initiale</small>}
-                  {v.derivedFrom && <small data-studio-provenance={v.derivedFrom.variantId}>Dérivée de : <span translate="no">{`${nomVariante(v.derivedFrom.variantId) ?? v.derivedFrom.variantId.slice(-8)} · ${v.derivedFrom.revisionId.slice(-8)}`}</span></small>}
+                  {v.derivedFrom && <small data-studio-provenance={v.derivedFrom.variantId} data-studio-provenance-mode={v.derivedFrom.mode ?? "version"}>{v.derivedFrom.mode === "copie" ? "Copie indépendante de : " : "Dérivée de : "}<span translate="no">{`${nomVariante(v.derivedFrom.variantId) ?? v.derivedFrom.variantId.slice(-8)} · ${v.derivedFrom.revisionId.slice(-8)}`}</span></small>}
                   {v.archived && <BadgeArchive />}
                   <span>Ouvrir la planche →</span>
                 </Link>
@@ -447,16 +448,19 @@ function StudioEtude({ projectId, studyId, archives }: { projectId: string; stud
 
 const SOURCES_REVISION: Record<string, string> = {
   "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante",
-  "variant-derivation": "Dérivation", "authenticated-session": "Enregistrement",
+  "variant-derivation": "Dérivation", "authenticated-session": "Enregistrement", "agent-mcp": "Proposition d’agent (MCP) confirmée", "variant-merge": "Fusion", "variant-merge-undo": "Annulation d’une fusion",
 };
 
 /**
  * Dériver une variante : son document initial est la copie, faite par le serveur, d'une révision de `source` — la tête
  * par défaut (lue au moment de la création), ou une révision choisie dans l'historique. Création rejouable sans doublon.
+ * Mode (TR-EX-013) : « version » (défaut : mêmes identifiants d'objets, comparaison entre variantes) ou « copie
+ * indépendante » (nouvelles identités, provenance par élément, aucune propagation vers la source).
  */
 function DeriverVariante({ projectId, studyId, source }: { projectId: string; studyId: string; source: StudioVariantSummary }) {
   const [name, setName] = useState("");
   const [revision, setRevision] = useState("");
+  const [mode, setMode] = useState<"version" | "copie">("version");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const enCours = useRef(false);
@@ -471,7 +475,7 @@ function DeriverVariante({ projectId, studyId, source }: { projectId: string; st
     if (!nom || enCours.current) return;
     enCours.current = true; setCreating(true); setError("");
     try {
-      const c = await api.createStudioVariant(projectId, studyId, nom, demandeId(demande, `${nom}\u0000${source.id}\u0000${revision}`), { fromVariantId: source.id, ...(revision ? { fromRevisionId: revision } : {}) });
+      const c = await api.createStudioVariant(projectId, studyId, nom, demandeId(demande, `${nom}\u0000${source.id}\u0000${revision}\u0000${mode}`), { fromVariantId: source.id, ...(revision ? { fromRevisionId: revision } : {}), ...(mode === "copie" ? { mode } : {}) });
       demande.current = null;
       navigate(cheminVarianteStudio(projectId, studyId, c.variant.id));
     } catch (err) {
@@ -494,6 +498,11 @@ function DeriverVariante({ projectId, studyId, source }: { projectId: string; st
         ))}
       </select>
       {historique.isError && <p role="alert">Historique indisponible : seule la tête peut être choisie.</p>}
+      <fieldset className="studio-deriver-mode" data-studio-deriver-mode={mode}>
+        <legend>Mode de dérivation</legend>
+        <label><input type="radio" name={`studio-deriver-mode-${source.id}`} value="version" checked={mode === "version"} onChange={() => setMode("version")} /> Version : mêmes identifiants d’objets (comparaison entre variantes)</label>
+        <label><input type="radio" name={`studio-deriver-mode-${source.id}`} value="copie" checked={mode === "copie"} onChange={() => setMode("copie")} data-studio-deriver-copie /> Copie indépendante : nouvelles identités, sans lien de mise à jour avec la source</label>
+      </fieldset>
       <label htmlFor={`studio-deriver-nom-${source.id}`}>Nom de la variante dérivée</label>
       <input id={`studio-deriver-nom-${source.id}`} required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
       {error && <p role="alert">{error}</p>}

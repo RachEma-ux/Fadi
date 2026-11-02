@@ -1,0 +1,3 @@
+pays,code,rang,singulier,pluriel,libelles_source,fiche
+ZZ,region,1,Région,Régions,,geodata-synthetique-regions
+ZZ,province,2,Province,Provinces,,geodata-synthetique-provinces

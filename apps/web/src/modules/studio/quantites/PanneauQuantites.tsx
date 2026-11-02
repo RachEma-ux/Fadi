@@ -18,6 +18,8 @@ import {
 import { empreinteDe } from "../taches/empreinte";
 import { MESSAGES_TACHE } from "../taches/messages";
 import { useTache } from "../taches/useTache";
+import { etatMetre } from "../taches/etats-contenus";
+import { EtatContenu } from "../taches/EtatContenu";
 import { LOCALE } from "../../../lib/i18n";
 import { useAuth } from "../../../lib/auth-context";
 import { apiQuantites, ErreurQuantites } from "./api-quantites";
@@ -112,6 +114,8 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
     documentId: doc.id, unites: "m", repere: "local-2d", deductions: "non-declarees", calques: [], objets: [], totaux: [], cotesExclues: 0, nonPrisEnCharge: 0,
   }, [metre.valeur, doc.id]);
   const aJour = metre.valeur !== undefined && metre.revision === empreinte.revision;
+  // EX-016 : l'un des cinq états du contenu dérivé (le métré précédent reste affiché pendant le calcul suivant).
+  const fraicheur = etatMetre({ revisionId, nonEnregistre, courante: empreinte.revision, affichee: metre.valeur === undefined ? null : metre.revision, tache: metre.etat, message: metre.message, objets: brut.objets.length });
   // Statuts évalués sur le document dont le métré est issu : pendant un calcul, l'évaluation précédente reste affichée.
   const derniere = useRef<EvaluationAjustementsQuantites>(EVALUATION_VIDE);
   const evaluation = useMemo(() => {
@@ -167,12 +171,14 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
 
   return <section className="studio-quantites" aria-labelledby="studio-quantites-titre" data-studio-quantites={doc.id} data-studio-quantites-etat={metre.etat}>
     <h2 id="studio-quantites-titre">Quantités</h2>
+    <p className="studio-etat-contenu-ligne"><EtatContenu etat={fraicheur} nom="metre" statut /></p>
     <p>Quantités brutes dérivées du dessin, en mètres (repère local). Arrondi à l’affichage seulement.</p>
     {metre.message && <p role="alert" data-studio-quantites-erreur>{metre.message}</p>}
     {metre.valeur === undefined ? <p role="status">{MESSAGES_TACHE.enCours}</p> : brut.deductions === "ouvertures-declarees"
       ? <p data-studio-quantites-deductions="ouvertures-declarees"><strong>Déductions : ouvertures déclarées seulement</strong> — chaque mur architectural déduit les ouvertures créées dans ce mur (volume net) ; rien n’est déduit d’un recouvrement.</p>
       : <p data-studio-quantites-deductions><strong>Déductions : non déclarées</strong> — aucune ouverture n’est déduite d’un recouvrement ; les quantités nettes ne sont pas évaluées.</p>}
     {brut.cotesExclues > 0 && <p>{`${brut.cotesExclues} cote(s) exclue(s) du métré.`}</p>}
+    {(brut.nonNatifsExclus ?? 0) > 0 && <p data-studio-metre-non-natifs={brut.nonNatifsExclus}>{`${brut.nonNatifsExclus} élément(s) non natif(s) exclu(s) du métré (importés sans équivalent natif).`}</p>}
     {brut.nonPrisEnCharge > 0 && <p role="note" data-studio-quantites-inconnus>{`${brut.nonPrisEnCharge} objet(s) d’un type non pris en charge : non évalué(s).`}</p>}
     {evaluation.aRevoir.length > 0 && <p role="note" className="studio-quantites-revoir" data-studio-quantites-a-revoir={evaluation.aRevoir.length}>
       {`${evaluation.aRevoir.length} ajustement(s) à revoir : leur cible a changé depuis leur révision ; ils ne sont pas appliqués.`}

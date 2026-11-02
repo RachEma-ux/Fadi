@@ -2,6 +2,7 @@ import { GRANDEURS_QUANTITE, GRANDEUR_CUMULABLE, UNITE_GRANDEUR, type GrandeurQu
 import { studioArcSweep, studioBulgeArc, studioPolylinePath, studioPolylineSegments, studioRingSimple, studioSignedArea } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type StudioPoint } from "./document-2d.js";
 import { studioQuantitesArchitecture } from "./architecture/quantites.js";
+import { studioVolumeComposant } from "./batiment/composants.js";
 
 /**
  * Métré du document 2D Studio (E.3-04 / E.3-05). Pur : ni React, ni DOM, ni stockage.
@@ -94,6 +95,8 @@ export interface QuantitesStudio {
   cotesExclues: number;
   /** Objets d'un type inconnu de ce métré (rapportés, jamais ignorés). */
   nonPrisEnCharge: number;
+  /** Éléments non natifs du document (lot F3) : exclus du métré, avec mention ; absent quand il n'y en a aucun. */
+  nonNatifsExclus?: number;
 }
 
 const val = (grandeur: GrandeurQuantite, valeur: number | null, motif?: MotifNonEvalue): ValeurQuantite => {
@@ -251,7 +254,9 @@ export function totaliserQuantites(objets: readonly QuantitesObjet[]): TotalQuan
     for (const o of objets) {
       const v = o.valeurs.find((x) => x.grandeur === grandeur);
       if (!v) continue;
-      if (v.valeur === null) nonEvalues++;
+      // Valeur non évaluée, ou portée dans une autre unité que celle de sa grandeur (EX-078) : jamais additionnée, le total
+      // est déclaré partiel.
+      if (v.valeur === null || v.unite !== UNITE_GRANDEUR[grandeur]) nonEvalues++;
       else { somme += v.valeur; evalues++; }
     }
     if (evalues === 0 && nonEvalues === 0) continue;
@@ -283,10 +288,23 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
   try { lus = studioQuantitesArchitecture(architecture); } catch { lus = null; }
   architecture.forEach((it, i) => {
     const l = lus?.[i];
-    const calqueId = (it.type === "wall" ? it.layerId : l?.layerId) ?? STUDIO_DEFAULT_LAYER_ID;
+    const calqueId = (it.type !== "opening" ? it.layerId : l?.layerId) ?? STUDIO_DEFAULT_LAYER_ID;
     if (!infos.has(calqueId)) infos.set(calqueId, { nom: calqueId, masque: false, implicite: false });
     const base = { objetId: it.id, type: it.type, calqueId, calqueMasque: infos.get(calqueId)!.masque };
-    const q: QuantitesObjet = it.type === "wall"
+    // Échelle d'accès (EX-027) : longueur cumulée des montants et des échelons, hauteur, volume de matière.
+    // Lot W3-B : poteau (hauteur, volume), poutre (longueur, volume), dalle (périmètre, surface, volume) — saisies seulement.
+    const s = l && (l.type === "column" || l.type === "beam" || l.type === "slab") ? l : null;
+    const q: QuantitesObjet = it.type === "column"
+      ? { ...base, nature: "poteau", valeurs: s ? [val("hauteur", s.hauteur), val("volume", s.volume)] : [val("hauteur", null), val("volume", null)] }
+      : it.type === "beam"
+      ? { ...base, nature: "poutre", valeurs: s ? [val("longueur", s.longueur ?? null), val("volume", s.volume)] : [val("longueur", null), val("volume", null)] }
+      : it.type === "slab"
+      ? { ...base, nature: "dalle", valeurs: s ? [val("perimetre", s.perimetre ?? null), val("surface", s.surface ?? null), val("hauteur", s.hauteur), val("volume", s.volume)] : [val("perimetre", null), val("surface", null), val("hauteur", null), val("volume", null)] }
+      : it.type === "ladder"
+      ? { ...base, nature: "echelle-acces", valeurs: l?.type === "ladder"
+        ? [val("longueur", l.longueurMontants + l.longueurEchelons), val("hauteur", l.hauteur), val("volume", l.volume)]
+        : [val("longueur", null), val("hauteur", null), val("volume", null)] }
+      : it.type === "wall"
       ? { ...base, nature: "mur-architectural", valeurs: l?.type === "wall"
         ? [val("longueur", l.longueur), val("hauteur", l.hauteur), val("volume", l.volumeBrut), val("volume-deduit", l.deduction), val("volume-net", l.volumeNet)]
         : [val("longueur", null), val("hauteur", null), val("volume", null), val("volume-deduit", null), val("volume-net", null)] }
@@ -294,6 +312,16 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
     objets.push(q);
     parCalque.set(calqueId, [...(parCalque.get(calqueId) ?? []), q]);
   });
+  // Occurrences de composants 3D (lot W3-B) : volume géométrique de la définition (somme de ses solides), sans matériau.
+  const definitions = new Map((doc.composants ?? []).map((c) => [c.id, c]));
+  for (const o of doc.occurrences ?? []) {
+    const calqueId = o.layerId ?? STUDIO_DEFAULT_LAYER_ID;
+    if (!infos.has(calqueId)) infos.set(calqueId, { nom: calqueId, masque: false, implicite: false });
+    const c = definitions.get(o.composantId);
+    const q: QuantitesObjet = { objetId: o.id, type: "occurrence", nature: "occurrence-composant", calqueId, calqueMasque: infos.get(calqueId)!.masque, valeurs: [val("volume", c ? studioVolumeComposant(c) : null)] };
+    objets.push(q);
+    parCalque.set(calqueId, [...(parCalque.get(calqueId) ?? []), q]);
+  }
   const ordre = [STUDIO_DEFAULT_LAYER_ID, ...declares.map((l) => l.id).filter((id) => id !== STUDIO_DEFAULT_LAYER_ID), ...[...parCalque.keys()].filter((id) => id !== STUDIO_DEFAULT_LAYER_ID && !declares.some((l) => l.id === id))];
   const calques: QuantitesCalque[] = [];
   for (const id of ordre) {
@@ -308,6 +336,7 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
     calques, objets, totaux: totaliserQuantites(objets),
     cotesExclues: doc.dimensions?.length ?? 0,
     nonPrisEnCharge: objets.filter((o) => o.nature === "non-pris-en-charge").length,
+    ...(doc.nonNatifs?.length ? { nonNatifsExclus: doc.nonNatifs.length } : {}),
   };
 }
 

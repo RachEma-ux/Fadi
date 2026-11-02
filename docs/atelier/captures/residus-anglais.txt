@@ -17,7 +17,6 @@ Série i de 0 à nx - 1	atelier,atelier-instructeur,atelier-outliner,atelier-aff
 Série j de 0 à ny - 1	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
 { "id": "mon-script", "nom": "…", "parametres": [], "pour": [], "commandes": [] }	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
 Baseline schedule · Exemple illustratif sur 12 semaines	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
-Terminé	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
 Bloqué	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
 Ouvrir la feuille de route	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
 Légende de l’avancement	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
@@ -33,6 +32,7 @@ Conserver une arrivée dégagée côté B.265–B.266 ; protéger un espace ext�
 Façade computed from the model; source north and declination / magnetic measurement not confirmed. Ba Zhai remains a scenario reading, not a validation of sectors.	analyses
 Épaisseur BET non définie ; 0.25 m conservé uniquement pour la représentation	analyses
 Revue de conception conservée	collaboration
+Études et variantes —	studio
 niveauId : niveau	atelier
 i de 0 à nx - 1	atelier
 j de 0 à ny - 1	atelier

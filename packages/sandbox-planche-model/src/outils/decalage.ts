@@ -22,7 +22,7 @@ import {
   formaterLongueur,
   intersectionRayonPlan,
   mesures,
-  messageErreur,
+  messageErreur, axesDeSaisie
 } from "./commun-formes.js";
 import { consigneDe, idsSelectionnables, libelleMesuresDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
@@ -122,7 +122,7 @@ function pointAccroche(e: EtatDecalage, ctx: ContexteOutil, rayon: Rayon, tolera
   const surContour = (q: Vec3) => e.contour.some((c) => dist(c, q) <= 1e-6);
   const g = geometrieVisible(ctx.modele);
   const aretes = g.aretes.filter((a) => !e.aretes.includes(a.id) && !(e.face && surContour(a.a) && surContour(a.b)));
-  const inf = inferer({ rayon, tolerance, geometrie: { ...g, aretes, faces: [] }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  const inf = inferer({ rayon, tolerance, geometrie: { ...g, aretes, faces: [] }, ...axesDeSaisie(ctx) });
   if (inf.type === "aucune" || inf.type === "sur-face") return { point: libre, inference: null };
   const q = e.planLibre ? inf.point : sub(inf.point, scale(n, dot(sub(inf.point, o), n)));
   return { point: q, inference: inf };
@@ -231,7 +231,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
         if (etat.etape !== 2) {
           // Avant le choix de la face ou des arêtes : le curseur montre déjà les inférences de la géométrie visée.
           const g = geometrieVisible(ctx.modele);
-          const inf = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: { ...g, faces: [] }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+          const inf = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: { ...g, faces: [] }, ...axesDeSaisie(ctx) });
           return { etat: { ...etat, inference: inf.type === "aucune" ? null : inf, texte: null, erreur: null } };
         }
         const { point: p, inference } = pointAccroche(etat, ctx, ev.rayon, ev.tolerance);

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Double de systemctl pour la sauvegarde hors VPS de fadi-prod-auto (fadi-backup-offsite.service).
+# MOCK_SAUVEGARDE : ok (défaut) | echec (start en échec, Result=exit-code) | condition (service sauté :
+# ConditionResult=no, aucune exécution) | muet (start réussit mais aucune exécution nouvelle n'est constatée).
+etat=$MOCK_DIR/systemctl
+[ -f "$etat" ] || printf 'ts=1000\nres=success\ncode=0\ncond=yes\n' > "$etat"
+lire() { sed -n "s/^$1=//p" "$etat"; }
+case "${1:-}" in
+  start)
+    echo "systemctl-start $2" >> "$MOCK_DIR/ordre"
+    case "${MOCK_SAUVEGARDE:-ok}" in
+      ok) printf 'ts=%s\nres=success\ncode=0\ncond=yes\n' "$(( $(lire ts) + 1 ))" > "$etat" ;;
+      echec) printf 'ts=%s\nres=exit-code\ncode=1\ncond=yes\n' "$(( $(lire ts) + 1 ))" > "$etat"
+        echo "Job for $2 failed because the control process exited with error code." >&2; exit 1 ;;
+      condition) printf 'ts=%s\nres=success\ncode=0\ncond=no\n' "$(lire ts)" > "$etat" ;;
+      muet) ;;
+    esac ;;
+  show)
+    # show -p <Propriété> --value <unité>
+    case "$3" in
+      ExecMainExitTimestampMonotonic) lire ts ;; Result) lire res ;; ExecMainStatus) lire code ;; ConditionResult) lire cond ;;
+      *) exit 1 ;;
+    esac ;;
+  *) echo "double systemctl : $* inattendu" >&2; exit 9 ;;
+esac

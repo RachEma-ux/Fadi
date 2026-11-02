@@ -12,6 +12,7 @@
  * l'inférence courante (le segment « Alt = … » disparaît de la consigne) ; Alt = cycle des inférences linéaires,
  * appliqué au RELÂCHEMENT. Échap : annule le segment en cours, vide Mesures, l'outil reste actif.
  */
+import { axesDeSaisie, contraindreAuPlan, planDeTravailDe } from "./commun-formes.js";
 import { type Modele, ajouterSegment } from "../geometrie-libre.js";
 import {
   type Inference,
@@ -100,7 +101,7 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
     return { point: e.depart, type: "parallele", couleur: COULEURS.parallele, libelle: LIBELLE_LIGNE_CONTRAINTE, verrouillee: true };
   }
   const v = verrouCourant(e);
-  return inferer({
+  const i = inferer({
     rayon: r,
     tolerance,
     geometrie: geometrieVisible(ctx.modele),
@@ -109,8 +110,11 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
     ...(e.etape === 2 && e.depart && e.acquis.length > 0 ? { pointsReference: e.acquis.filter((p) => dist(p, e.depart as Vec3) > TOL) } : {}),
-      ...(ctx.repere ? { axes: ctx.repere } : {}),
+      ...axesDeSaisie(ctx),
   });
+  // Chantier Axes (AX-1) : plan de travail verrouillé — le point reste sur le plan (§ 5.3).
+  const plan = planDeTravailDe(ctx);
+  return plan.verrouille ? contraindreAuPlan(i, r, plan) : i;
 }
 
 /** Mémorise la dernière arête survolée (référence de ↓). */
