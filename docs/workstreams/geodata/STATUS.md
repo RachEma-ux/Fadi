@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-11-01 (UTC).
+Mis à jour : 2026-11-02 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,6 +9,11 @@ Mis à jour : 2026-11-01 (UTC).
 
 ## Faits vérifiés
 
+- Terrain haute résolution (plan v1.0, Issue #381, branche `docs/381-terrain-haute-resolution`) : **implémenté
+  (document)**, non accepté. Plan déposé tel quel (`terrain/PLAN.md`, SHA-256 `01423199…c569` identique à celui déclaré),
+  audit TER-00 au commit `79f7a38` (`terrain/TER-00-AUDIT.md`), décisions TER-D1 à TER-D15 soumises
+  (`terrain/DECISIONS.md`), cahier d'acquisition à compléter (`terrain/TER-01-CAHIER-ACQUISITION.md`). Licence Lucerne
+  vérifiée (Open-By, usage commercial permis, attribution obligatoire) ; aucun fichier téléchargé, aucun code.
 - Prix immobiliers (GEO-PRIX, D-GD-56 à D-GD-59, PR #374, branche `claude/prix-immobiliers-geodata`) : **vérifié**
   (CI entièrement verte sur `1cacb2b`, 31 octobre 2026 : `validate` avec la suite DB-3 `geodata-prix.test.ts` sur base
   jetable attestée, e2e des six tranches dont `complements` qui joue la recette GeoData) ; **non accepté**, non fusionné
