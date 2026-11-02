@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1 à BD-3, BD-4 (en partie) et la part dépôt de BD-5 / BD-6 **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes`, `ops/bd-5-6-exploitation-rgpd` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1 à BD-3, BD-4 (en partie), la part dépôt de BD-5 / BD-6, BD-7 (en partie) et BD-8 (en partie) **implémentés** sur les branches locales empilées `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes`, `ops/bd-5-6-exploitation-rgpd`, `feat/bd-7-navigateur`, `feat/bd-8-geodata` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -124,11 +124,46 @@ Mis à jour : 2026-11-02 (UTC).
   existantes après restauration, à décider), BD-6.6 (révisions Studio sans double stockage : non-régression du rejeu
   à construire avec l'équipe Studio).
 
+## BD-7 — stockage navigateur (implémenté le 2026-11-02, non poussé)
+
+- BD-7.2 `apps/web/src/lib/persistance-stockage.ts` : `navigator.storage.persist()` demandé une fois (échec toléré) pour
+  les lots de l'Atelier, les photos COM et les mutations en pause.
+- BD-7.4 : un 401 `authentication_required` reçu en cours de session déclenche `forgetDevice` (`ecouterSessionPerdue`).
+- BD-7.5 : `oublierProjet` efface aussi le brouillon Planche du projet.
+- BD-7.6 : préfixes d'API du service worker égaux à `API_PREFIX` du serveur (`prefixes-api.test.ts`).
+- BD-7.7 : gestionnaires Dexie `versionchange` / `blocked` ; échecs signalés sans contenu (`signalerEchecLocal`).
+- **BD-7.1 bloqué** : vider ou borner la quarantaine contredit MIG-COEX-04 / ADR-STUDIO-PILOTE-01 (« ne jamais
+  supprimer ») ; changement retiré, test d'origine `local-store-migration.test.ts` rétabli ; décision **D-BD-12**.
+- **BD-7.3 reporté** : `project_comments` n'a pas de `client_request_id` (API + migration nécessaires).
+
+## BD-8 — GeoData (implémenté en partie le 2026-11-02, non poussé)
+
+- BD-8.1 : recherche de version identique, écriture, publication et journal dans une transaction sous
+  `pg_advisory_xact_lock` ; import automatique exclusif (`--exclusif`) ; migration `0006` (unique partiel
+  `geodata_versions (source_id, empreinte) WHERE espace_id IS NULL`).
+- BD-8.2 : archive des fichiers en une transaction sous verrou ; `--prix-sources` corrigé.
+- BD-8.5 : migrations `0007` (`pg_trgm`), `0008` (GIN trigrammes `lower(nom)`, B-tree `lower(code)`), `0009` (GiST
+  `geom::geography`) ; requête de proximité mesurée sur base jetable : 2 070 ms → moins de 28 ms ; espace personnel lu
+  avant toute écriture.
+- BD-8.4 partiel : ETag des tuiles et réponse 304 après contrôle d'accès (`lib/geodata/cache-tuiles.ts`).
+- BD-8.7 partiel (D-GD-29) : rangement des catégories obligatoire ; l'interface affiche « Catégories non chargées » au lieu
+  du repli sur un catalogue codé en dur (traduction `en.json`).
+- **Reportés** : BD-8.3 (rôle `fadi_geodata`), BD-8.6, BD-8.8, GiST `(couche_id, geom)`, douars et FeenWay de BD-8.7.
+
+## Contrôles sur l'empilement complet (2026-11-02)
+
+- `npm run typecheck` vert ; `npm run build` vert.
+- Web : 205 fichiers, 1 369 tests verts, 2 ignorés ; `geodata-model` : 212 tests verts.
+- API : 1 176 tests purs verts ; 19 fichiers sur base non exécutables ici (`TARGET_REQUIRED`, garde DB-3, comme la
+  référence) — **à faire tourner en CI**.
+- Base neuve PostgreSQL 16 jetable : base de départ + migrations `0001` à `0009` appliquées, second passage sans effet,
+  aucun index invalide.
+
 ## Points ouverts
 
 - Ouvrir l'Issue du chantier et reporter son numéro dans `CONTEXT.md` et l'index.
 - Mesures de production (BD-0.2) : volumétrie, contraintes, doublons d'e-mail, `atelier_store`, Healthchecks.
-- Décisions D-BD-1 à D-BD-10 (`PLAN.md` § 2).
+- Décisions D-BD-1 à D-BD-12 (`PLAN.md` § 2).
 
 ## Liens de suivi
 

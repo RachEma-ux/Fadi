@@ -12,8 +12,8 @@ D-BD-n sont listées dans `PLAN.md` § 2.
 - [ ] BD-4 — **Implémenté en partie localement (4.1, 4.2, 4.3 session, 4.4, 4.5, 4.7, 4.9) ; 4.6 et 4.8 reportés ; CI à faire** — Performance des requêtes : cloche, temps réel, projections, N+1, courses, flux de fichiers, outbox en bail, verrou Studio (D-BD-7), statiques. Dépend de BD-1.2 et BD-3.5.
 - [ ] BD-5 — **Part dépôt implémentée localement ; installation sur l'hôte et décisions D-BD-1 à 3 à faire** — Sauvegardes, PITR et exploitation : pgBackRest, exercice mensuel, rétention restic, rôles de production, supervision, réglages. Dépend de D-BD-1 à D-BD-3.
 - [ ] BD-6 — **6.1 (désactivé sans D-BD-11), 6.3, 6.4 implémentés localement ; 6.2, 6.5, 6.6 en attente** — Cycle de vie et RGPD : tâche de rétention, contacts (D-BD-4), volumes après anonymisation, `transmis_par`, clé de signature, révisions Studio.
-- [ ] BD-7 — Stockage navigateur : quarantaine, persistance, idempotence des commentaires, purge sur 401, brouillon Planche, préfixes, Dexie.
-- [ ] BD-8 — GeoData : import atomique, archive transactionnelle, rôle dédié, tuiles, index spatiaux et trigramme, contours, D-GD-29, Merchich.
+- [ ] BD-7 — **Implémenté localement (7.2, 7.4, 7.5, 7.6, 7.7) ; 7.1 bloqué par D-BD-12 ; 7.3 demande API + migration ; CI à faire** — Stockage navigateur : quarantaine, persistance, idempotence des commentaires, purge sur 401, brouillon Planche, préfixes, Dexie.
+- [ ] BD-8 — **Implémenté en partie localement (8.1, 8.2, 8.5, 8.7 catégories, 8.4 ETag) ; 8.3, 8.6, 8.8, reste de 8.4 et 8.7 reportés ; CI à faire** — GeoData : import atomique, archive transactionnelle, rôle dédié, tuiles, index spatiaux et trigramme, contours, D-GD-29, Merchich.
 - [ ] BD-9 — Évolutions structurelles, chacune sur sa décision : stockage objet (D-BD-8), PostgreSQL 18 (D-BD-9), standby (D-BD-10), tables 1-1, RLS (D-BD-5), catalogues en base (D-BD-6), révisions en deltas.
 
 ## En cours

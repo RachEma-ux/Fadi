@@ -41,6 +41,7 @@ Effort : environ 40 jours-personne pour BD-0 à BD-8 (8 à 10 semaines pour une 
 | D-BD-9 | Montée de version PostgreSQL et fenêtre | PostgreSQL 18, fenêtre annoncée | BD-9.2 |
 | D-BD-10 | Haute disponibilité | Standby en streaming sur une seconde machine | BD-9.3 |
 | D-BD-11 | Durées de conservation des sessions expirées, jetons de compte et courriels traités (registre de traitement) | À fixer ; la purge reste désactivée sans elles | BD-6.1 |
+| D-BD-12 | Quarantaine Dexie : vider à l'oubli de l'appareil et borner à 30 jours, ou conserver (MIG-COEX-04, ADR-STUDIO-PILOTE-01 « ne jamais supprimer ») | Maître d'ouvrage ; quarantaine laissée intacte d'ici là | BD-7.1 |
 
 Une décision manquante ne bloque que les tâches qui en dépendent.
 
