@@ -26,7 +26,7 @@ import { lockProject } from "../lib/step-rows.js";
 import { buildingCase, cibleDocument, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { BUILDING_LIBRARY } from "../data/parcours.js";
+import { catalogue } from "../lib/catalogues-db.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { envoyerFichier, rangerFichier } from "../lib/stockage-objet/index.js";
 import { documentCatalogue, documentDescriptors, recordProducedDocument, studioDossierDocuments, studioPackageDocuments } from "../lib/documents.js";
@@ -98,11 +98,12 @@ documentsRouter.get("/surfaces", async (req, res) => {
 });
 
 documentsRouter.get("/programme", async (req, res) => {
+  const bibliotheque = await catalogue("bibliotheque-batiments");
   await produce(req, res, "programme-csv", (dctx) => {
     const a = dctx.steps.programmeCase;
     if (!a) return null;
     // Les colonnes Cas / Type / Sous-type viennent du cas de la bibliothèque quand il existe, sinon du cas appliqué lui-même (cas importé).
-    const c = buildingCase(BUILDING_LIBRARY, a.caseId) ?? { title: a.title, type: a.type, subtype: a.subtype };
+    const c = buildingCase(bibliotheque, a.caseId) ?? { title: a.title, type: a.type, subtype: a.subtype };
     return { body: programmeCsv(c, { label: a.scenarioLabel ?? "", spaces: a.spaces as LibrarySpace[] }), type: "text/csv; charset=utf-8" };
   });
 });

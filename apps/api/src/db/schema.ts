@@ -294,7 +294,7 @@ export const projectPlanBaselines = pgTable("project_plan_baselines", {
  * bâtiment, surface de référence, position dans la fourchette et ratios
  * forcés — `programmeRepartition` du prototype, une ligne par projet,
  * créée à la première modification (les valeurs par défaut viennent de
- * `data/programme-repartition.json`, pas de la base). `components` porte
+ * catalogue « programme-repartition » publié en base, table `catalogues`). `components` porte
  * les composantes déclarées d'un bâtiment mixte (profil Harmonie).
  */
 export const programmeRepartitions = pgTable("programme_repartitions", {
@@ -340,6 +340,36 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 });
 
 /**
+ * BD-9.6 (D-BD-6, D-GD-29) : catalogues de données du Parcours (bibliothèque des bâtiments, profils et moteur Harmonie,
+ * répartition programmatique), chargés depuis les fichiers qualifiés du dépôt par `db/catalogues-charger.ts` et lus par
+ * l'API (`lib/catalogues.ts`). Versions immuables (déclencheur), fichier archivé tel quel ; `fadi_app` lit seulement.
+ * CHECK, clé étrangère composée de la version publiée et déclencheur : migrations/0013_catalogues_donnees.sql.
+ */
+export const catalogues = pgTable("catalogues", {
+  cle: text("cle").primaryKey(),
+  titre: text("titre").notNull(),
+  versionPublieeId: bigint("version_publiee_id", { mode: "number" }),
+  creeLe: timestamp("cree_le", { withTimezone: true }).defaultNow().notNull(),
+  publieLe: timestamp("publie_le", { withTimezone: true }),
+});
+
+export const catalogueVersions = pgTable("catalogue_versions", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  catalogueCle: text("catalogue_cle").notNull().references(() => catalogues.cle),
+  numero: integer("numero").notNull(),
+  fichierNom: text("fichier_nom").notNull(),
+  source: text("source").notNull(),
+  typeMedia: text("type_media").notNull().default("application/json"),
+  taille: bigint("taille", { mode: "number" }).notNull(),
+  empreinte: text("empreinte").notNull(),
+  fichier: bytea("fichier").notNull(),
+  contenu: jsonb("contenu").notNull(),
+  chargeLe: timestamp("charge_le", { withTimezone: true }).defaultNow().notNull(),
+  chargePar: text("charge_par").notNull(),
+}, (t) => [uniqueIndex("catalogue_versions_numero_uq").on(t.catalogueCle, t.numero), uniqueIndex("catalogue_versions_empreinte_uq").on(t.catalogueCle, t.empreinte)]);
+
+
+/**
  * Sources de l'étape (module Projets et sources) : les fichiers rattachés à
  * une étape d'un projet — `FILE_DB` (IndexedDB) du prototype, ici sur le
  * serveur, propriété du projet. Le contenu est conservé tel quel ; le type
@@ -366,7 +396,7 @@ export const stepFiles = pgTable("step_files", {
  * `Parcours.ProgrammeCase`) : une ligne par révision, la révision courante
  * est la plus haute ; les précédentes sont l'historique des variantes
  * appliquées (`programmeHistory` du prototype, borné à 12 par le routeur).
- * Les cas sources restent immuables dans `data/building-library.json`.
+ * Les cas sources restent immuables dans le catalogue « bibliotheque-batiments » (table `catalogue_versions`).
  */
 export const programmeCases = pgTable("programme_cases", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),

@@ -51,6 +51,17 @@ Mise à jour : faire d'abord une sauvegarde à la demande (section suivante), pu
 transaction longue tient un verrou (`lock_timeout` de 3 s, quatre essais espacés : BD-1.1) ; dans ce cas, relancer la mise à
 jour. Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`) fait lui-même ce dump préalable.
 
+Catalogues de données (BD-9.6, D-BD-6, D-GD-29) : la bibliothèque des bâtiments, les profils et le moteur Harmonie et la
+répartition programmatique sont lus par l'API **en base** (tables `catalogues`, `catalogue_versions`), jamais depuis les
+fichiers de l'image. Le service `migrate` les charge juste après les migrations, depuis les fichiers qualifiés livrés
+(`dist/data/*.json`, extraits de `apps/api/src/data/`) : chaque fichier est archivé tel quel (octets, taille, empreinte
+SHA-256), en version immuable, puis publié ; une empreinte déjà publiée ne change rien (journal
+« Catalogues : … inchangée »). Recharger sans migrer : `docker compose --env-file .env.deploy run --rm migrate`, ou
+`node apps/api/dist/catalogues-charger.js` avec `DATABASE_MIGRATION_URL` (`npm run db:catalogues:charger` en
+développement ; `npm run db:migrate` le fait aussi). Sans catalogue en base, les écrans concernés affichent « Catalogue
+de référence non chargé en base de données » (API : 503 `catalogue_non_charge`), sans repli sur une copie embarquée.
+`fadi_app` n'a que la lecture sur ces tables.
+
 ## Sauvegardes
 
 - Le service `backup` écrit chaque jour `fadi-<horodatage>.dump` dans le volume `fadi-backups` et garde

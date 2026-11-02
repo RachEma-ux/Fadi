@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
 import { api, ApiError, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
+import { estCatalogueNonCharge, MESSAGE_CATALOGUE_NON_CHARGE } from "../../lib/catalogues";
 import { ProgrammeCaseEditor, ProgrammeTransmission, appliedCase } from "./ProgrammeCase";
 import { LOCALE } from "../../lib/i18n";
 
@@ -143,7 +144,7 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
   const [areaDraft, setAreaDraft] = useState<string | null>(null);
 
   if (query.isLoading) return <p role="status">Chargement de la répartition…</p>;
-  if (!query.data) return <p role="alert">Impossible de charger la répartition programmatique.</p>;
+  if (!query.data) return <p role="alert">{estCatalogueNonCharge(query.error) ? MESSAGE_CATALOGUE_NON_CHARGE : "Impossible de charger la répartition programmatique."}</p>;
   const view = query.data;
   if (view.programmeCase && (view.resolvedExample || view.programmeCase.readOnly)) return <CaseSummary projectId={projectId} view={view} />;
   if (appliedCase(view)) return <ProgrammeCaseEditor projectId={projectId} view={view} />;

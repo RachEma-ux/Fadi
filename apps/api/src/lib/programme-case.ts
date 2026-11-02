@@ -38,7 +38,8 @@ import {
 } from "@parcours/domain-model";
 import type { db } from "../db/client.js";
 import { programmeCases, programmeRepartitions, projects } from "../db/schema.js";
-import { BUILDING_LIBRARY, EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
+import { catalogue } from "./catalogues-db.js";
 import { loadStepRows, upsertStep } from "./step-rows.js";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -136,19 +137,20 @@ export async function applyProgrammeCase(
   input: ApplyInput,
   now: string,
 ): Promise<{ programmeCase: ProgrammeCase; conflicts: ProgrammeFieldConflict[] }> {
-  const c = buildingCase(BUILDING_LIBRARY, input.caseId);
+  const bibliotheque = await catalogue("bibliotheque-batiments");
+  const c = buildingCase(bibliotheque, input.caseId);
   if (!c) throw new Error("Cas inconnu");
   const s = buildingScenario(c, input.scenarioId);
   if (!s) throw new Error("Variante inconnue");
   const prev = await loadActiveProgrammeCase(tx, project.id);
-  const a = buildProgrammeCase(BUILDING_LIBRARY, c, s, input.jurisdiction, prev, now);
+  const a = buildProgrammeCase(bibliotheque, c, s, input.jurisdiction, prev, now);
   await storeCase(tx, project.id, a);
 
   const rows = await loadStepRows(tx, project.id);
   const business: Record<number, Record<string, ParcoursFieldValue>> = {};
   for (const def of PARCOURS_STEPS) business[def.number] = { ...(rows.get(def.number)?.content.fields ?? {}) };
   const state = programmeStateOf(project);
-  const merged = mergeGeneratedTexts(business, state.generated, draftProgrammeTexts(BUILDING_LIBRARY, c, s, input.jurisdiction, now), input.replaceText, isTextField);
+  const merged = mergeGeneratedTexts(business, state.generated, draftProgrammeTexts(bibliotheque, c, s, input.jurisdiction, now), input.replaceText, isTextField);
   await writeStepTexts(tx, project.id, merged.business, rows);
 
   // Type du profil Harmonie : composantes d'un cas mixte.
@@ -220,12 +222,13 @@ export async function editProgrammeCaseSpace(
   await tx.delete(programmeCases).where(and(eq(programmeCases.projectId, project.id), eq(programmeCases.revision, prev.revision)));
   await storeCase(tx, project.id, a);
 
-  const c = buildingCase(BUILDING_LIBRARY, a.caseId);
+  const bibliotheque = await catalogue("bibliotheque-batiments");
+  const c = buildingCase(bibliotheque, a.caseId);
   const rows = await loadStepRows(tx, project.id);
   let state = programmeStateOf(project);
   if (c) {
     const scenario: BuildingScenario = { ...(buildingScenario(c, a.scenarioId) ?? c.scenarios[0]!), label: a.scenarioLabel, spaces: a.spaces };
-    const fresh = draftProgrammeTexts(BUILDING_LIBRARY, c, scenario, a.jurisdiction, now);
+    const fresh = draftProgrammeTexts(bibliotheque, c, scenario, a.jurisdiction, now);
     const business: Record<number, Record<string, ParcoursFieldValue>> = {};
     const generated = { ...state.generated };
     for (const [idStr, values] of Object.entries(fresh)) {

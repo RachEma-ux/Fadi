@@ -49,7 +49,8 @@ await build({
 // tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
 await build({
   // BD-9.1 : reprise des fichiers vers le stockage objet (`node apps/api/dist/fichiers-vers-objet.js`), @aws-sdk externe.
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts") },
+  // BD-9.6 : chargement des catalogues de données (`node apps/api/dist/catalogues-charger.js`).
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts"), "catalogues-charger": join(root, "src/db/catalogues-charger.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",
@@ -57,7 +58,7 @@ await build({
   target: "node22",
   sourcemap: true,
   external,
-  alias: { "@parcours/geodata-model": join(root, "../../packages/geodata-model/src/index.ts") },
+  alias: { "@parcours/geodata-model": join(root, "../../packages/geodata-model/src/index.ts"), "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts") },
   logLevel: "info",
 });
 

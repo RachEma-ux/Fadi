@@ -18,7 +18,7 @@ import { cibleDocument, conceptAxonometricSvg, declareSiteObservation, designRev
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { DESIGN_REPORT_CSS, HARMONY_ENGINE } from "../data/parcours.js";
+import { DESIGN_REPORT_CSS } from "../data/parcours.js";
 import { designReportFor, designReviewView, loadDesignContext } from "../lib/design-context.js";
 import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { designReportHash, recordProducedDocument } from "../lib/documents.js";
@@ -102,7 +102,7 @@ designReviewRouter.post("/review", async (req, res) => {
   const result = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
     const ctx = await loadDesignContext(tx, project, now);
-    const assessment = harmonyFullAssessment(HARMONY_ENGINE, ctx.harmony, ctx.input.programmeCase?.type ? { type: ctx.input.programmeCase.type } : null, ctx.input.example, ctx.analysis.nativeHash);
+    const assessment = harmonyFullAssessment(ctx.input.engine, ctx.harmony, ctx.input.programmeCase?.type ? { type: ctx.input.programmeCase.type } : null, ctx.input.example, ctx.analysis.nativeHash);
     const snap = designReviewSnapshot(ctx.harmony, ctx.analysis, now, false, assessment);
     const harmony = { ...ctx.harmony, ...snap, updated: now } as unknown as Record<string, unknown>;
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));

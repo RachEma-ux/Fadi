@@ -62,7 +62,9 @@ Jamais de contraction dans la même Release que le code qui en a besoin. Chaque 
 - Nommage : `<table>_<colonnes>_<suffixe>` (`_pkey`, `_fk`, `_uq`, `_ck`, `_idx`), en snake_case.
 - Journal en ajout seul : déclencheur `*_no_update` et `REVOKE DELETE … FROM fadi_app` dans la même migration.
 - Données : jamais de référentiel, de liste territoriale, de statistique ni de catalogue dans une migration
-  (D-GD-29) ; les données passent par la chaîne d'import et sont archivées.
+  (D-GD-29) ; les données passent par la chaîne d'import et sont archivées. Catalogues du Parcours (BD-9.6) :
+  `db/catalogues-chargement.ts`, lancé par `migrate.ts` / le service `migrate` après les migrations, et par
+  `npm run db:catalogues:charger`.
 
 ## Outils associés
 

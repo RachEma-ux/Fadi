@@ -7,6 +7,7 @@ import { pool } from "./db/client.js";
 import { migrer } from "./db/schema-migrations.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
+import { chargerCatalogues, ligneBilanCatalogues } from "./db/catalogues-chargement.js";
 import { mailRuntime } from "./lib/mailer/index.js";
 import { initialiserStockageFichiers } from "./lib/stockage-objet/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
@@ -40,6 +41,9 @@ async function migrateOnStart(): Promise<void> {
     const rapport = await migrer(migrationPool, { baseSql: sql, dossier: new URL("./db/migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
     console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
+    // BD-9.6 (D-GD-29) : catalogues de données du Parcours chargés en base depuis les fichiers livrés (dist/data, idempotent).
+    // eslint-disable-next-line no-console
+    console.log(ligneBilanCatalogues(await chargerCatalogues(migrationPool)));
     const roles = await applyRolePasswords(migrationPool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

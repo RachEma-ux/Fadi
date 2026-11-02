@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif } from "@parcours/atelier-model";
 import { remplacerModele } from "../lib/atelier-modele.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { catalogue } from "../lib/catalogues-db.js";
 import { newId } from "../lib/ids.js";
 import { ensureOwnerParticipation } from "../lib/project-access-db.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
@@ -16,7 +17,6 @@ import { applyExampleDecisions } from "../lib/example-decisions.js";
 import { estProjetExempleP118, installerExempleStudio } from "../lib/studio-exemple.js";
 import {
   PARCOURS_STEPS,
-  PROGRAMME_REPARTITION,
   exampleAttachment,
   exampleBaseDocumentContent,
   exampleBaseDocuments,
@@ -102,13 +102,14 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       const rep = repartitionFromCase(pc);
       await tx.insert(programmeRepartitions).values({ projectId: id, type: rep.type, baseArea: rep.baseArea, mode: rep.mode, custom: rep.custom, components: buildingType?.components ?? [] });
     } else if (buildingType) {
+      const referentiel = await catalogue("programme-repartition");
       // Type et composantes déclarés par l'exemple : c'est d'eux que dépend le
       // profil Harmonie (« Formation & bureaux ») et la répartition par type.
       await tx.insert(programmeRepartitions).values({
         projectId: id,
         type: buildingType.type,
-        baseArea: PROGRAMME_REPARTITION.defaults.baseArea,
-        mode: PROGRAMME_REPARTITION.defaults.mode,
+        baseArea: referentiel.defaults.baseArea,
+        mode: referentiel.defaults.mode,
         custom: {},
         components: buildingType.components,
       });

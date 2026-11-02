@@ -15,6 +15,7 @@
     "dev:api": "npm run dev --workspace=@fadi/api",
     "build": "npm run build --workspace=@fadi/web --workspace=@fadi/api",
     "db:migrate": "npm run db:migrate --workspace=@fadi/api",
+    "db:catalogues:charger": "npm run db:catalogues:charger --workspace=@fadi/api",
     "db:validate-constraints": "npm run db:validate-constraints --workspace=@fadi/api --",
     "db:volumes-gc": "npm run db:volumes-gc --workspace=@fadi/api --",
     "db:fichiers-vers-objet": "npm run db:fichiers-vers-objet --workspace=@fadi/api --",

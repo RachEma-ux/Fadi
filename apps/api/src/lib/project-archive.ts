@@ -32,7 +32,7 @@ import { contenuFichier, rangerFichier } from "./stockage-objet/index.js";
 import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, projectPlans, projectPlanBaselines, stepFiles } from "../db/schema.js";
 import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
-import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
 import { ensureOwnerParticipation } from "./project-access-db.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
@@ -165,7 +165,7 @@ export async function stampStepFingerprints(tx: Tx, project: StepContextProject)
     if (!row) continue;
     const fingerprint = ctx.dependencies.get(def.number)?.fingerprint ?? null;
     const decisions: Record<string, HarmonieProposalDecision> = { ...row.content.harmonie.proposals };
-    for (const q of buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number), fingerprint)) {
+    for (const q of buildHarmonieProposals(ctx.harmonieProfils, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number), fingerprint)) {
       const d = decisions[q.id];
       if (q.retained && d) decisions[q.id] = { ...d, acceptedHash: fingerprint, snapshot: q.orphaned && d.snapshot ? d.snapshot : proposalSnapshot(q) };
     }

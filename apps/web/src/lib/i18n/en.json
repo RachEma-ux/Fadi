@@ -14580,5 +14580,7 @@
 "Immobilier et foncier": "Real estate and land",
 "Impression refusée : la source de cette fiche n'autorise pas l'export de ses données.": "Printing refused: the source of this record does not allow its data to be exported.",
 "Colorer selon l'indicateur": "Colour by the indicator",
-"Légende de l'indicateur": "Indicator legend"
+"Légende de l'indicateur": "Indicator legend",
+"Catalogue de référence non chargé en base de données : l’exploitant doit lancer le chargement des catalogues. Aucune donnée de remplacement n’est affichée.": "Reference catalogue not loaded in the database: the operator must run the catalogue loading. No substitute data is shown.",
+"Impossible de charger la bibliothèque des bâtiments.": "Unable to load the building library."
 }

@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { migrer } from "./schema-migrations.js";
 import { basculerAncienMoteur } from "./bascule.js";
 import { applyRolePasswords } from "./role-passwords.js";
+import { chargerCatalogues, ligneBilanCatalogues } from "./catalogues-chargement.js";
 
 // D-7 : la migration (DDL) se fait avec le rôle `fadi_migrator` (`DATABASE_MIGRATION_URL`) ; l'API n'a aucun droit DDL.
 // Sans `DATABASE_MIGRATION_URL` (développement local, base d'un seul rôle), `DATABASE_URL` est utilisé.
@@ -22,6 +23,9 @@ async function main() {
     const rapport = await migrer(pool, { baseSql: sql, dossier: new URL("./migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
     console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
+    // BD-9.6 (D-GD-29) : catalogues de données du Parcours chargés en base depuis les fichiers livrés (idempotent).
+    // eslint-disable-next-line no-console
+    console.log(ligneBilanCatalogues(await chargerCatalogues(pool)));
     const roles = await applyRolePasswords(pool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:db-guard": "vitest run --config vitest.guard.config.ts",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:catalogues:charger": "tsx src/db/catalogues-charger.ts",
     "db:validate-constraints": "tsx src/db/valider-contraintes.ts",
     "db:volumes-gc": "tsx src/db/volumes-gc.ts",
     "db:fichiers-vers-objet": "tsx src/db/fichiers-vers-objet.ts",

@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { estCatalogueNonCharge } from "./lib/catalogues.js";
 import rateLimit from "express-rate-limit";
 import { attachUser } from "./middleware/require-auth.js";
 import { pool } from "./db/client.js";
@@ -147,6 +148,13 @@ export function createApp() {
     // (EX-087 : taille d'entrée contrôlée ; rien n'a été lu ni écrit).
     if ((err as { type?: string } | null)?.type === "entity.too.large") {
       res.status(413).json({ error: "payload_too_large", message: "Le corps de la requête dépasse la taille admise." });
+      return;
+    }
+    // BD-9.6 (D-GD-29) : catalogue de données absent de la base — état explicite, jamais de repli sur une copie embarquée.
+    if (estCatalogueNonCharge(err)) {
+      // eslint-disable-next-line no-console
+      console.error(JSON.stringify({ level: "error", message: err.message, catalogue: err.cle }));
+      res.status(503).json({ error: "catalogue_non_charge", catalogue: err.cle, message: err.message });
       return;
     }
     // eslint-disable-next-line no-console

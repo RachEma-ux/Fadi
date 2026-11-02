@@ -13,7 +13,7 @@
  * prototype est reprise telle quelle.
  */
 import { buildHarmonieProposals, EMPTY_HARMONIE_DECISION, type HarmonieProposalDecision } from "@parcours/domain-model";
-import { exampleDecisionSources, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
+import { exampleDecisionSources, PARCOURS_STEPS } from "../data/parcours.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Tx } from "./step-rows.js";
 
@@ -34,7 +34,7 @@ export async function applyExampleDecisions(tx: Tx, project: StepContextProject,
     const link = `EX-P118-${pad2(def.number)}`;
     const base: HarmonieProposalDecision = { ...EMPTY_HARMONIE_DECISION, owner: v.owner ?? "", proof: v.proof ?? "", link, decisionVersion: 1, updatedAt: EXAMPLE_DECISION_AT, history: [] };
     const decisions: Record<string, HarmonieProposalDecision> = {};
-    for (const q of buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number))) {
+    for (const q of buildHarmonieProposals(ctx.harmonieProfils, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number))) {
       if (q.group === "parti") {
         if (v.choice && q.key === v.choice) {
           const decision = v.decision ?? "";
