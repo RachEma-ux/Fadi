@@ -18,6 +18,7 @@ x-logging: &logging
 services:
   db:
     image: postgis/postgis:16-3.4
+    restart: unless-stopped
     # BD-6 (chantier bases-de-donnees) : statistiques des requêtes (pg_stat_statements, extension créée par la migration)
     # et journal des instructions de plus d'une seconde, sans les valeurs des paramètres (aucune donnée personnelle).
     command:
@@ -30,7 +31,6 @@ services:
       - log_min_duration_statement=1000
       - -c
       - log_parameter_max_length=0
-    restart: unless-stopped
     environment:
       POSTGRES_USER: fadi
       POSTGRES_PASSWORD: ${PREPROD_POSTGRES_PASSWORD:?PREPROD_POSTGRES_PASSWORD manquant}

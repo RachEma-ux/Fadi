@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS project_steps (
   PRIMARY KEY (project_id, step_number)
 );
 -- BD-2 : index redondant retiré (la clé primaire (project_id, step_number) sert déjà les recherches par projet).
-DROP INDEX IF EXISTS project_steps_project_id_idx;
+DO $$ BEGIN DROP INDEX IF EXISTS project_steps_project_id_idx; END $$;
 
 -- R2 · Planning métier par projet : champs indépendants du Parcours et version CAS.
 CREATE TABLE IF NOT EXISTS project_plans (
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS project_plan_baselines (
   PRIMARY KEY (project_id, version)
 );
 -- BD-2 : doublon exact de la clé primaire (project_id, version), retiré.
-DROP INDEX IF EXISTS project_plan_baselines_project_idx;
+DO $$ BEGIN DROP INDEX IF EXISTS project_plan_baselines_project_idx; END $$;
 
 -- Répartition programmatique (module Programmation), une ligne par projet,
 -- créée à la première modification ; voir schema.ts.
