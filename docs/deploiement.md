@@ -8,7 +8,7 @@ démonstration : 5 à 30 minutes, base jetable — à garder pour les démonstra
 
 | Élément | Rôle |
 |---|---|
-| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué au démarrage (`MIGRATE_ON_START=1`). |
+| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué par le service de migration à usage unique `migrate` (`MIGRATE_ONLY=1`) avant le démarrage de l'application, qui tourne avec `MIGRATE_ON_START=0` (D-7) ; garde-fous de la migration : chantier [bases-de-donnees](workstreams/bases-de-donnees/PLAN.md), BD-5. |
 | `docker-compose.yml` | Application + base PostgreSQL/PostGIS persistante (volume `fadi-db`) + relais HTTPS automatique (Caddy, Let's Encrypt) + service de **sauvegarde quotidienne** (`pg_dump` format custom, 14 jours conservés, volume `fadi-backups`). |
 | `.env.deploy.example` | Les deux réglages à fournir : `FADI_DOMAIN`, `POSTGRES_PASSWORD`. |
 | `scripts/backup.sh` | Sauvegarde horodatée + rotation. |
@@ -45,8 +45,9 @@ Première connexion : créer un compte (`/inscription`), importer l'exemple P.11
 archive JSON (« Importer ») exportée d'une instance précédente — y compris d'une instance temporaire Builder Deploy
 avant sa fin (« Outils du projet » → « Sauvegarder projet JSON »).
 
-Mise à jour : `git pull && docker compose --env-file .env.deploy up -d --build` (le schéma est appliqué au démarrage ;
-les migrations sont idempotentes, `apps/api/src/db/init.sql`).
+Mise à jour : `git pull && docker compose --env-file .env.deploy up -d --build` (le service `migrate` applique le schéma
+idempotent `apps/api/src/db/init.sql` avant l'application ; en production, la mise à jour automatique d'une Release
+passe par `deploy/prod/fadi-prod-auto`).
 
 ## Sauvegardes
 

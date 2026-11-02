@@ -2,6 +2,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+import { appliquerSchema } from "./appliquer-schema.js";
 import { basculerAncienMoteur } from "./bascule.js";
 import { applyRolePasswords } from "./role-passwords.js";
 
@@ -17,9 +18,11 @@ async function main() {
   const sql = readFileSync(sqlPath, "utf8");
   const pool = new Pool({ connectionString });
   try {
-    await pool.query(sql);
+    const r = await appliquerSchema(pool, sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
+    // eslint-disable-next-line no-console
+    console.log(`Migration : ${r.dureeMs} ms, ${r.tentatives} essai(s), statistiques des requêtes ${r.pgStatStatements}.`);
     const roles = await applyRolePasswords(pool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

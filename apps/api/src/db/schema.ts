@@ -254,7 +254,6 @@ export const projectSteps = pgTable("project_steps", {
   content: jsonb("content").notNull().$type<Record<string, unknown>>(),
 }, (t) => [
   uniqueIndex("project_steps_project_id_step_number_unique").on(t.projectId, t.stepNumber),
-  index("project_steps_project_id_idx").on(t.projectId),
 ]);
 
 /** R2 : données de pilotage séparées des 21 statuts de Parcours. */
@@ -286,7 +285,6 @@ export const projectPlanBaselines = pgTable("project_plan_baselines", {
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.version] }),
-  index("project_plan_baselines_project_idx").on(t.projectId, t.version),
 ]);
 
 /**
