@@ -1,7 +1,8 @@
 #!/bin/sh
 # BD-5.2 (chantier base-donnees, constat M12) : exercice de restauration, à lancer chaque mois (timer de l'hôte).
 # Restaure une sauvegarde dans une base JETABLE (jamais la base de production), rejoue la migration (droits D-7),
-# compte les lignes des tables principales et mesure la durée totale (RTO de la restauration logique).
+# compte les lignes des tables principales et mesure la durée totale (RTO de la restauration logique), comparée au RTO
+# de 2 h (D-BD-1 ; FADI_RTO_S pour un autre seuil).
 #
 #   DRILL_ADMIN_URL=postgresql://<superutilisateur>@<hote-jetable>:5432/postgres \
 #   sh ops/restore-drill.sh <fichier.dump>            # ou, sans fichier : dernier snapshot restic (RESTIC_REPOSITORY)
@@ -36,5 +37,11 @@ if [ -f apps/api/dist/db/migrate.js ] || [ -f apps/api/src/db/migrate.ts ]; then
 fi
 COMPTES=$(psql "$URL_BASE" -tA -c "SELECT json_build_object('users', (SELECT count(*) FROM users), 'projects', (SELECT count(*) FROM projects), 'studio_revisions', (SELECT count(*) FROM studio_revisions), 'migrations', (SELECT count(*) FROM schema_migrations))")
 DUREE=$(( $(date +%s) - DEBUT ))
-echo "{\"exercice\":\"reussi\",\"sauvegarde\":\"$(basename "$DUMP")\",\"duree_s\":$DUREE,\"comptes\":$COMPTES}"
+# D-BD-1 (maître d'ouvrage, 2 novembre 2026) : RTO de 2 h. Un exercice plus long est un échec signalé (code 4).
+RTO_S="${FADI_RTO_S:-7200}"
+if [ "$DUREE" -gt "$RTO_S" ]; then
+  echo "{\"exercice\":\"rto-depasse\",\"sauvegarde\":\"$(basename "$DUMP")\",\"duree_s\":$DUREE,\"rto_s\":$RTO_S,\"comptes\":$COMPTES}"
+  exit 4
+fi
+echo "{\"exercice\":\"reussi\",\"sauvegarde\":\"$(basename "$DUMP")\",\"duree_s\":$DUREE,\"rto_s\":$RTO_S,\"comptes\":$COMPTES}"
 ping_hc ""

@@ -106,6 +106,8 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `NODE_ENV` | `production` : cookie de session `secure` (HTTPS obligatoire). |
 | `PORT` | 3001 par défaut. |
 | `PG_POOL_MAX`, `PG_CONNECTION_TIMEOUT_MS`, `PG_STATEMENT_TIMEOUT_MS`, `PG_IDLE_IN_TRANSACTION_MS`, `PG_POOL_IDLE_MS`, `PG_APP_NAME` | Pool PostgreSQL de l'API (BD-1.2) : 10 connexions, 10 s pour obtenir une connexion, 60 s par instruction, 60 s pour une transaction inactive, nom `fadi-api` dans `pg_stat_activity`. `0` = pas de délai (retour arrière sans nouvelle image). |
+| `CONTACT_RETENTION_ENABLED` | Effacement des contacts sans compte 2 ans après la clôture de leurs projets (OP-2). Activé en production par `docker-compose.yml` (D-BD-4) ; `0` le coupe. |
+| `FADI_RETENTION_SESSIONS_JOURS`, `FADI_RETENTION_JETONS_JOURS`, `FADI_RETENTION_COURRIELS_JOURS` | Purge horaire des sessions expirées ou révoquées, des jetons de compte expirés ou utilisés et des courriels traités (BD-6.1). Vide : 30 jours (D-BD-11) ; un entier change la durée (2 jours au moins pour les courriels) ; `desactive` coupe la catégorie. |
 | `AUTH_RATE_LIMIT`, `API_RATE_LIMIT` | Ne servent qu'aux tests ; ne pas définir en production (20 / 15 min et 300 / min). |
 
 ## Ce que l'instance temporaire ne fait pas

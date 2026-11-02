@@ -1,0 +1,22 @@
+[Unit]
+Description=Fadi - rétention du dépôt restic distant (D-BD-2 / D-BD-3 : 14 j, 8 sem., 12 mois)
+Wants=network-online.target
+After=network-online.target fadi-backup-offsite.service
+RequiresMountsFor=/mnt/data
+ConditionPathExists=/etc/fadi/restic.env
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/mnt/data/fadi/app
+EnvironmentFile=/etc/fadi/restic.env
+Environment=RESTIC_CACHE_DIR=/mnt/data/fadi/restic-cache
+# D-BD-3 : forget / prune autorisés par le maître d'ouvrage (2 novembre 2026). L'essai à blanc passe d'abord et reste
+# dans le journal (journalctl -u fadi-backup-retention) : c'est l'inventaire de ce qui est retiré.
+Environment=FADI_RETENTION_VALIDEE=oui
+ExecStartPre=/bin/sh ops/backup/restic-retention.sh
+ExecStart=/bin/sh ops/backup/restic-retention.sh --appliquer
+TimeoutStartSec=3h
+NoNewPrivileges=true

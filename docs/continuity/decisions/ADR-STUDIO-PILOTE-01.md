@@ -219,11 +219,31 @@ Décisions courantes, **à implémenter et tester** dans les lots d'achèvement.
 | TR-EX-036 | Chaque geste a une alternative au clavier ou par saisie numérique. La bascule entre planche 2D et vue 3D déplace le focus de façon visible. | Accessibilité WCAG 2.2 visée par Fadi. | Contrôle automatisé des alternatives. |
 | TR-EX-046 | Les événements sensibles du serveur (journal d'accès Studio) sont conservés 12 mois, puis purgés par une tâche datée. Les journaux d'audit des publications restent immuables. | Minimisation ; politique réversible et paramétrable. | Purge testée sur base jetable ; durée configurable. |
 | X.2-02 | Une invitation est refusée sous verrou de projet et sur un projet de référence. | Choix le plus prudent et réversible. | Scénarios positifs et négatifs ajoutés. |
-| MIG-COEX-04 | Les données locales sans propriétaire ne seront plus vidées : elles seront mises en quarantaine, consultables et exportables. | Règle « ne jamais supprimer ». | **À implémenter** : jusqu'à la livraison de la migration locale modifiée et de ses tests, les migrations v6 et v7 vident encore ces données, et MIG-COEX-04 reste ouverte. |
+| MIG-COEX-04 | Les données locales sans propriétaire ne seront plus vidées : elles seront mises en quarantaine, consultables et exportables. | Règle « ne jamais supprimer », amendée en P-13 (actions de maintenance déclarées). | **À implémenter** : jusqu'à la livraison de la migration locale modifiée et de ses tests, les migrations v6 et v7 vident encore ces données, et MIG-COEX-04 reste ouverte. |
 | MIG-COEX-07 | La règle COEX-06 est ratifiée : supprimer d'anciens écrans, routes ou stockages est un lot ultérieur, explicitement autorisé. | Réversibilité. | Aucune suppression dans le présent achèvement. |
 | REC-I-03 | Le lot I est accepté **pleinement**, et non comme simple intégration technique, puisque l'édition et la sauvegarde métier sont livrées et recettées (`studio-preuves-d1`, parcours A, B et C). | Les conditions du critère sont remplies. | REC-I-03 est inscrit « Accepté ». |
 | REC-A-01 | Le corpus de migration est l'ensemble des documents `studio-document/1` du dépôt, migrés vers la version suivante du schéma, avec aller-retour testé. | DEC-03 exclut la migration des projets existants, pas celle du schéma. | Corpus et rapport de migration livrés. |
 | X.2-04 / BLOC-06 | La porte G4 est un contrôle automatisé : il refuse la livraison si un défaut éliminatoire n'est pas vérifié, en nommant le défaut, sa preuve et son propriétaire. | Le blocage ne doit pas dépendre d'une lecture humaine. | Script de porte joué en CI. |
+
+### P-13 — Amendement de MIG-COEX-04 : actions de maintenance autorisées — 2 novembre 2026
+
+Décision du **maître d'ouvrage** (session Claude Code du 2 novembre 2026, 22 h 24 heure suisse, chantier
+`base-donnees`, décision D-BD-12) : « oui, et change la règle « ne jamais supprimer » pour permettre les actions de
+maintenance ».
+
+La règle « ne jamais supprimer » de MIG-COEX-04 devient : **aucune montée de version, aucune bascule ni aucun oubli
+de projet ne supprime une donnée locale sans propriétaire ; seules des actions de maintenance déclarées peuvent en
+retirer**. Les actions de maintenance autorisées à ce jour :
+
+| Action | Déclencheur | Effet | Code |
+|---|---|---|---|
+| Vidage à l'oubli de l'appareil | `forgetDevice` (déconnexion, session perdue, changement de compte) | Vide la table `quarantaine`, et elle seule : les lignes d'un propriétaire inconnu ne sont ni lues ni exportées par le compte suivant. | `localStore.quarantaineVider` |
+| Élagage par âge | Ouverture de la base locale | Retire les lignes mises en quarantaine depuis plus de 30 jours. | `elaguerQuarantaine`, `DUREE_QUARANTAINE_MS` |
+
+Toute autre action de maintenance qui supprime une donnée locale est une décision nouvelle, consignée ici avec son
+test. Les commandes locales pendantes **avec** propriétaire restent régies par MIG-COEX-04 (synchronisées, migrées ou
+mises en résolution avant bascule, jamais supprimées). Tests : `local-store-bd7.test.ts`,
+`local-store-migration.test.ts`, `local-store-quarantaine.test.ts`, `auth-purge.test.ts`.
 
 Restent des actes humains réels, qui ne sont pas délégués :
 - la recette sur appareil physique (DEC-13, R.3-01) ;

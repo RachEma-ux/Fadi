@@ -13,6 +13,7 @@ vi.mock("./local-store", () => ({
     removeValue: async (k: string) => { calls.push(`remove:${k}`); },
     studioOublierTout: async () => { calls.push("studio"); },
     oublierTout: async () => { calls.push("tout"); },
+    quarantaineVider: async () => { calls.push("quarantaine"); },
   },
 }));
 vi.mock("./mutations", () => ({ conflictsStore: { clearAll: () => calls.push("conflicts") } }));
@@ -31,7 +32,7 @@ describe("purge de l'appareil", () => {
     await forgetDevice(qc);
     expect(qc.getQueryData(["project", "p1"])).toBeUndefined();
     expect(readLastUser()).toBeNull();
-    expect(calls).toEqual(expect.arrayContaining(["conflicts", "owner:null", "remove:fadi-queries-1", "studio", "tout"]));
+    expect(calls).toEqual(expect.arrayContaining(["conflicts", "owner:null", "remove:fadi-queries-1", "studio", "tout", "quarantaine"]));
   });
   it("seul un 401 du serveur vaut fin de session (une panne n'efface rien)", () => {
     expect(forgetsSession(new ApiError(401, "authentication_required"))).toBe(true);

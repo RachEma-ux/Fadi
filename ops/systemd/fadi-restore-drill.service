@@ -1,0 +1,22 @@
+[Unit]
+Description=Fadi - exercice de restauration mensuel sur serveur jetable (RTO 2 h, D-BD-1)
+Wants=network-online.target
+After=network-online.target docker.service
+RequiresMountsFor=/mnt/data
+ConditionPathExists=/etc/fadi/restic.env
+ConditionPathExists=/etc/fadi/exercice.env
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/mnt/data/fadi/app
+EnvironmentFile=/etc/fadi/restic.env
+# /etc/fadi/exercice.env (0600) : DRILL_ADMIN_URL (serveur PostgreSQL/PostGIS d'exercice, jamais la production),
+# DRILL_HEALTHCHECKS_FICHIER ; FADI_RTO_S facultatif (7200 par défaut).
+EnvironmentFile=/etc/fadi/exercice.env
+Environment=RESTIC_CACHE_DIR=/mnt/data/fadi/restic-cache
+ExecStart=/bin/sh ops/restore-drill.sh
+TimeoutStartSec=3h
+NoNewPrivileges=true

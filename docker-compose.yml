@@ -65,6 +65,14 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-150}
+      # D-BD-4 (maître d'ouvrage, 2 novembre 2026) : effacement automatique des contacts sans compte 2 ans après la
+      # clôture de leurs projets, activé en production ; 0 le coupe.
+      CONTACT_RETENTION_ENABLED: ${CONTACT_RETENTION_ENABLED:-1}
+      # D-BD-11 (maître d'ouvrage, 2 novembre 2026) : sessions, jetons de compte et courriels traités purgés après
+      # 30 jours (défaut du code) ; un nombre de jours change la durée, « desactive » coupe la catégorie.
+      FADI_RETENTION_SESSIONS_JOURS: ${FADI_RETENTION_SESSIONS_JOURS:-}
+      FADI_RETENTION_JETONS_JOURS: ${FADI_RETENTION_JETONS_JOURS:-}
+      FADI_RETENTION_COURRIELS_JOURS: ${FADI_RETENTION_COURRIELS_JOURS:-}
     expose:
       - "3001"
 

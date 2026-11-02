@@ -4,8 +4,9 @@
  * Sans cette tâche, rien n'effaçait les sessions expirées ou révoquées (adresse IP et navigateur compris), les jetons de
  * compte expirés ou utilisés, ni les lignes de la file de courriels déjà traitées (adresse du destinataire).
  *
- * Les durées de conservation relèvent du registre de traitement (décision D-BD-11) : elles ne sont pas inventées ici.
- * Chaque purge reste **désactivée** tant que sa durée n'est pas fournie :
+ * Durée de conservation : **30 jours** pour les trois catégories, décision du maître d'ouvrage D-BD-11 (2 novembre 2026,
+ * à reporter au registre de traitement). Chaque durée peut être changée par variable d'environnement, ou la purge
+ * désactivée par la valeur `desactive` :
  *   FADI_RETENTION_SESSIONS_JOURS   jours après l'expiration (ou la révocation) d'une session
  *   FADI_RETENTION_JETONS_JOURS     jours après l'expiration (ou l'usage) d'un jeton de compte
  *   FADI_RETENTION_COURRIELS_JOURS  jours après la création d'un courriel envoyé, échoué ou non envoyé (2 au minimum :
@@ -20,9 +21,13 @@ export interface ConfigRetention {
   courrielsJours: number | null;
 }
 
+/** D-BD-11 : durée de conservation par défaut, en jours. */
+export const DUREE_RETENTION_JOURS = 30;
+
 function jours(env: NodeJS.ProcessEnv, nom: string, minimum: number): number | null {
   const brut = env[nom];
-  if (brut === undefined || brut.trim() === "") return null;
+  if (brut === undefined || brut.trim() === "") return DUREE_RETENTION_JOURS;
+  if (brut.trim() === "desactive") return null;
   const n = Number(brut);
   if (!Number.isInteger(n) || n < minimum) throw new Error(`${nom} doit être un nombre entier de jours, au moins ${minimum} (reçu : ${brut}).`);
   return n;

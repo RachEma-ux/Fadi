@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - rétention restic hebdomadaire, distincte de la sauvegarde (activation manuelle requise, D-BD-3)
+
+[Timer]
+OnCalendar=Sun *-*-* 05:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=fadi-backup-retention.service
+
+[Install]
+WantedBy=timers.target

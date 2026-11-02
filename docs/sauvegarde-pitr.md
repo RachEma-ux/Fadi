@@ -9,9 +9,9 @@ d'ouvrage pour la production.
 
 | Élément | Avant (audit du 2026-11-02) | Livré dans le dépôt | Reste à faire sur l'hôte |
 | --- | --- | --- | --- |
-| Perte maximale (RPO) | ≈ 24 h (dump quotidien) | Archivage WAL continu avec pgBackRest : modèles et essai | Installer, régler, consigner le RPO mesuré (D-BD-1) |
-| Restauration | Procédure de production incomplète | `docs/deploiement.md` corrigée (BD-1.5) ; exercice `ops/restore-drill.sh` | Timer mensuel, RTO consigné |
-| Rétention distante | Illimitée | `ops/backup/restic-retention.sh` (essai à blanc par défaut) | Décisions D-BD-2 / D-BD-3, puis timer |
+| Perte maximale (RPO) | ≈ 24 h (dump quotidien) | Objectif **15 min** (D-BD-1, 2 novembre 2026) : archivage WAL continu avec pgBackRest (`archive_timeout=60`), sonde à 900 s | Installer, régler, consigner le RPO mesuré |
+| Restauration | Procédure de production incomplète | Objectif **RTO 2 h** (D-BD-1) : `docs/deploiement.md` corrigée (BD-1.5) ; exercice `ops/restore-drill.sh` (échec au-delà de 2 h) et timer mensuel `ops/systemd/fadi-restore-drill.*` | Activer le timer, consigner le RTO mesuré |
+| Rétention distante | Illimitée | 14 quotidiennes, 8 hebdomadaires, 12 mensuelles (D-BD-2) ; `ops/backup/restic-retention.sh` et timer hebdomadaire distinct `ops/systemd/fadi-backup-retention.*` (D-BD-3) | Inventaire et essai à blanc manuels, puis activer le timer |
 | Supervision | Contradictoire, aucune sonde de la base | `ops/surveillance/sonde-base.sh`, sonde du conteneur `backup` (BD-1.6) | Brancher sur Healthchecks |
 | Rôles | Super-utilisateur pour migrer et sauvegarder | — | BD-5.4 ci-dessous |
 
@@ -55,12 +55,26 @@ Consigner chaque mois la durée affichée : c'est le RTO de la restauration logi
 
 ## 3. Rétention du dépôt restic — `ops/backup/restic-retention.sh`
 
-Sans `--appliquer`, essai à blanc (`restic forget --dry-run`) : rien n'est supprimé. L'application exige
-`--appliquer` **et** `FADI_RETENTION_VALIDEE=oui`, après les décisions D-BD-2 (politique, durée au registre RGPD) et
-D-BD-3 (autorisation). Politique sans valeur par défaut : `RESTIC_KEEP_DAILY`, `RESTIC_KEEP_WEEKLY`,
-`RESTIC_KEEP_MONTHLY` (proposition : 14, 8, 12). Purge des dumps de déploiement : `FADI_DUMPS_DEPLOIEMENT_DOSSIER` et
-`FADI_DUMPS_DEPLOIEMENT_JOURS`. Essayé sur un dépôt restic local (refus sans politique, essai à blanc, refus sans
-validation, application). Les secrets de `.env.deploy` sont à sauvegarder dans un dépôt séparé, chiffré (age ou sops).
+Décisions du maître d'ouvrage du 2 novembre 2026 : **D-BD-2** — 14 sauvegardes quotidiennes, 8 hebdomadaires,
+12 mensuelles, soit 12 mois au plus (à reporter au registre RGPD) ; **D-BD-3** — `restic forget` / `prune` autorisés
+après inventaire et essai à blanc, par un timer distinct de la sauvegarde.
+
+Sans `--appliquer`, le script fait un essai à blanc (`restic forget --dry-run`) : rien n'est supprimé. L'application
+exige `--appliquer` **et** `FADI_RETENTION_VALIDEE=oui`, puis lance `prune` et `check`. Politique par défaut 14 / 8 / 12,
+modifiable par `RESTIC_KEEP_DAILY`, `RESTIC_KEEP_WEEKLY`, `RESTIC_KEEP_MONTHLY`. Purge des dumps de déploiement :
+`FADI_DUMPS_DEPLOIEMENT_DOSSIER` et `FADI_DUMPS_DEPLOIEMENT_JOURS`. Essayé sur un dépôt restic local (politique invalide
+refusée, essai à blanc, refus sans validation, application).
+
+Mise en service (administrateur) :
+
+1. Inventaire : `restic snapshots` ; essai à blanc à la main : `sh ops/backup/restic-retention.sh` ; vérifier la liste.
+2. Copier `ops/systemd/fadi-backup-retention.service` et `.timer` dans `/etc/systemd/system/`, puis
+   `systemctl daemon-reload && systemctl enable --now fadi-backup-retention.timer` (dimanche 05 h 15, heure du VPS).
+   Chaque passage rejoue l'essai à blanc avant d'appliquer ; les deux restent dans `journalctl -u fadi-backup-retention`.
+3. Exercice de restauration : `/etc/fadi/exercice.env` (`DRILL_ADMIN_URL` d'un serveur jetable,
+   `DRILL_HEALTHCHECKS_FICHIER`), puis `systemctl enable --now fadi-restore-drill.timer` (premier dimanche du mois).
+
+Les secrets de `.env.deploy` sont à sauvegarder dans un dépôt séparé, chiffré (age ou sops).
 
 ## 4. Supervision — `ops/surveillance/sonde-base.sh`
 

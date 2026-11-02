@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Pool } from "pg";
-import { configRetention, PURGES, retentionActive, runRetentionTechnique } from "./retention-technique.js";
+import { configRetention, DUREE_RETENTION_JOURS, PURGES, retentionActive, runRetentionTechnique } from "./retention-technique.js";
 
 describe("BD-6.1 — purge des données techniques", () => {
-  it("désactivée tant qu'aucune durée n'est fournie (registre de traitement, D-BD-11)", async () => {
-    const c = configRetention({});
+  it("30 jours par défaut (D-BD-11) ; « desactive » coupe une catégorie, toutes coupées = aucune connexion", async () => {
+    expect(DUREE_RETENTION_JOURS).toBe(30);
+    expect(configRetention({})).toEqual({ sessionsJours: 30, jetonsJours: 30, courrielsJours: 30 });
+    expect(configRetention({ FADI_RETENTION_JETONS_JOURS: "desactive" })).toEqual({ sessionsJours: 30, jetonsJours: null, courrielsJours: 30 });
+    const c = configRetention({ FADI_RETENTION_SESSIONS_JOURS: "desactive", FADI_RETENTION_JETONS_JOURS: "desactive", FADI_RETENTION_COURRIELS_JOURS: "desactive" });
     expect(c).toEqual({ sessionsJours: null, jetonsJours: null, courrielsJours: null });
     expect(retentionActive(c)).toBe(false);
     const pool = { connect: vi.fn() } as unknown as Pool;
@@ -16,7 +19,7 @@ describe("BD-6.1 — purge des données techniques", () => {
     expect(() => configRetention({ FADI_RETENTION_SESSIONS_JOURS: "0" })).toThrow(/FADI_RETENTION_SESSIONS_JOURS/);
     expect(() => configRetention({ FADI_RETENTION_COURRIELS_JOURS: "1" })).toThrow(/au moins 2/);
     expect(() => configRetention({ FADI_RETENTION_JETONS_JOURS: "trente" })).toThrow(/FADI_RETENTION_JETONS_JOURS/);
-    expect(configRetention({ FADI_RETENTION_SESSIONS_JOURS: "30" })).toMatchObject({ sessionsJours: 30, jetonsJours: null });
+    expect(configRetention({ FADI_RETENTION_SESSIONS_JOURS: "45" })).toMatchObject({ sessionsJours: 45, jetonsJours: 30 });
   });
 
   it("par lots, seulement les catégories configurées, sous verrou consultatif ; verrou occupé = rien", async () => {
