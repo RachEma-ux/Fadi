@@ -8,6 +8,7 @@ import type { Point2 } from "@parcours/atelier-model";
 import { lireReglagesNavigation } from "./navigation";
 import { lirePosition } from "./panneaux/barre-actions-position";
 import { lireBarresOutils, type EtatBarresOutils } from "./planche/barres-outils-disposition";
+import { EVENEMENT_OUBLI_COMPTE } from "../../../lib/purge-stockage-compte";
 
 export type NiveauAffichage = "essentiel" | "contextuel" | "complet";
 /** Plan, 3D, documents dérivés (vues, feuilles, tableaux — lot 5), ou Planche (géométrie libre, cahier-planche MO-1). */
@@ -222,6 +223,12 @@ export const etatUi = {
     etatUi.set((e) => ({ favoris: e.favoris.includes(outil) ? e.favoris.filter((f) => f !== outil) : [...e.favoris, outil] }));
   },
 };
+
+// BD-1.7 : à l'oubli de l'appareil (déconnexion, autre compte), les ensembles personnels du compte précédent quittent
+// aussi la mémoire, pour ne jamais être fusionnés puis envoyés au compte suivant (sync-ensembles.ts).
+if (typeof window !== "undefined") {
+  window.addEventListener(EVENEMENT_OUBLI_COMPTE, () => { etat = { ...etat, ensembles: [] }; for (const fn of ecouteurs) fn(); });
+}
 
 export function useEtatUi(): EtatUi {
   return useSyncExternalStore(etatUi.subscribe, etatUi.get, etatUi.get);

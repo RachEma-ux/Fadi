@@ -5,6 +5,7 @@ import { localStore } from "./local-store";
 import { QUERY_CACHE_VERSION } from "./query-persister";
 import { conflictsStore } from "./mutations";
 import { oublierBrouillons } from "./com-brouillons";
+import { oublierStockageCompte } from "./purge-stockage-compte";
 
 interface AuthState {
   user: CurrentUser | null;
@@ -64,6 +65,8 @@ export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient
   await localStore.removeValue(QUERY_CACHE_VERSION);
   await localStore.studioOublierTout().catch(() => undefined);
   await localStore.oublierTout();
+  // BD-1.7 : presse-papiers et préférences de l'Atelier, état GeoData, clé MapTiler… (purge-stockage-compte.ts).
+  oublierStockageCompte();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

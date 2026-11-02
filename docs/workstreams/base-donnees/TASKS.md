@@ -6,7 +6,7 @@ D-BD-n sont listées dans `PLAN.md` § 2.
 ## À faire
 
 - [ ] BD-0 — Cadrage et mesures : Issue, mesures en lecture seule, `pg_stat_statements`, décisions D-BD-1 à D-BD-4 (Issue : à ouvrir).
-- [ ] BD-1 — Garde-fous immédiats (P0) : BD-1.1 `lock_timeout` de migration ; BD-1.2 pool et délais ; BD-1.3 ramasse-miettes hors requête ; BD-1.4 droits de `fadi_app` ; BD-1.5 procédure de restauration ; BD-1.6 supervision des sauvegardes ; BD-1.7 purge `localStorage` ; BD-1.8 garde de `bascule.ts`.
+- [ ] BD-1 — **Implémenté localement, CI à faire** — Garde-fous immédiats (P0) : BD-1.1 `lock_timeout` de migration ; BD-1.2 pool et délais ; BD-1.3 ramasse-miettes hors requête ; BD-1.4 droits de `fadi_app` ; BD-1.5 procédure de restauration ; BD-1.6 supervision des sauvegardes ; BD-1.7 purge `localStorage` ; BD-1.8 garde de `bascule.ts`.
 - [ ] BD-2 — Migrations versionnées : exécuteur et `schema_migrations`, `R__grants.sql`, `VALIDATE`, reprises, squawk et ESLint, job de montée de version, écart `schema.ts`, guide expand/contract. Dépend de BD-1.1.
 - [ ] BD-3 — Index, contraintes et droits : 26 index de cascade, e-mail insensible à la casse, index redondants, index réalignés, index de la cloche, verrou d'édition typé, `search_path`, PK. Dépend de BD-2.1.
 - [ ] BD-4 — Performance des requêtes : cloche, temps réel, projections, N+1, courses, flux de fichiers, outbox en bail, verrou Studio (D-BD-7), statiques. Dépend de BD-1.2 et BD-3.5.
@@ -18,7 +18,7 @@ D-BD-n sont listées dans `PLAN.md` § 2.
 
 ## En cours
 
-- Aucune tâche engagée : le plan est établi, aucune Issue ni branche n'est ouverte.
+- BD-1 : implémenté sur `fix/bd-1-garde-fous` (local) ; reste la CI DB-3, la revue et le constat Healthchecks sur le VPS.
 
 ## Terminé
 

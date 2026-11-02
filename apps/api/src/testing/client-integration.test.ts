@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const driver = vi.hoisted(() => ({ construct: vi.fn(), query: vi.fn(), connect: vi.fn(), end: vi.fn() }));
+const driver = vi.hoisted(() => ({ construct: vi.fn(), query: vi.fn(), connect: vi.fn(), end: vi.fn(), on: vi.fn() }));
 vi.mock("pg", () => ({
   Pool: class Pool {
     query = driver.query;
     connect = driver.connect;
     end = driver.end;
+    on = driver.on;
     constructor(options: unknown) { driver.construct(options); }
   },
 }));
@@ -34,12 +35,18 @@ describe("application DB seam, completely mocked driver", () => {
     vi.stubEnv("DATABASE_URL", "postgresql://synthetic:sentinel@192.0.2.1:5432/production");
     await expect(import("../db/client.js")).rejects.toThrow("TARGET_REQUIRED"); expect(driver.construct).not.toHaveBeenCalled();
   });
-  it("normal production configuration remains unchanged, verified with a constructor double only", async () => {
+  it("normal production configuration: DATABASE_URL plus bounded timeouts (BD-1.2), verified with a constructor double only", async () => {
     vi.stubEnv("VITEST", "false"); vi.stubEnv("NODE_ENV", "production");
     const connectionString = "postgresql://synthetic:sentinel@192.0.2.1:5432/never_connected";
     vi.stubEnv("DATABASE_URL", connectionString);
+    for (const k of ["PG_POOL_MAX", "PG_POOL_IDLE_MS", "PG_CONNECTION_TIMEOUT_MS", "PG_STATEMENT_TIMEOUT_MS", "PG_IDLE_IN_TRANSACTION_MS", "PG_APP_NAME"]) vi.stubEnv(k, "");
     const { pool, db } = await import("../db/client.js");
-    expect(driver.construct).toHaveBeenCalledExactlyOnceWith({ connectionString });
+    expect(driver.construct).toHaveBeenCalledExactlyOnceWith({
+      connectionString, max: 10, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000,
+      statement_timeout: 60_000, idle_in_transaction_session_timeout: 60_000, application_name: "fadi-api",
+    });
+    // An idle-client error is logged instead of crashing the process.
+    expect(driver.on).toHaveBeenCalledExactlyOnceWith("error", expect.any(Function));
     expect(pool).toBeDefined(); expect(db).toEqual({ simulated: true });
     expect(driver.connect).not.toHaveBeenCalled(); expect(driver.query).not.toHaveBeenCalled();
   });

@@ -44,6 +44,11 @@ export async function basculerAncienMoteur(
         "SELECT DISTINCT s.project_id, p.model_revision, p.owner_id FROM atelier_store s JOIN projects p ON p.id = s.project_id WHERE NOT EXISTS (SELECT 1 FROM atelier_site a WHERE a.project_id = s.project_id)",
       );
       let convertis = 0;
+      // BD-1.8 (constat M3) : un projet du magasin sans projet actif lisible ne peut pas être converti. Avant, il était
+      // sauté puis `atelier_store` était supprimé, ce qui perdait son contenu sans trace. Désormais la bascule s'annule
+      // (rien n'est supprimé) et nomme les projets ; `FADI_BASCULE_IGNORER_SANS_ACTIF=1` accepte explicitement de les
+      // abandonner après examen, et les journalise.
+      const sautes: string[] = [];
       for (const row of sansModele.rows) {
         const lignes = (
           await client.query<{ key: string; value: unknown }>(
@@ -54,7 +59,7 @@ export async function basculerAncienMoteur(
         const valeur = (cle: string) =>
           lignes.find((l) => l.key === cle)?.value;
         const actif = valeur(`${PREFIXE_V14}activeProject`);
-        if (typeof actif !== "string") continue;
+        if (typeof actif !== "string") { sautes.push(row.project_id); continue; }
         const domaine = (d: string) =>
           valeur(`${PREFIXE_V14}project.${actif}.${d}`);
         const registres = valeur(`${PREFIXE_V14}registry`);
@@ -111,6 +116,14 @@ export async function basculerAncienMoteur(
           [row.project_id, revision],
         );
         convertis += 1;
+      }
+      if (sautes.length) {
+        const liste = sautes.join(", ");
+        if (process.env["FADI_BASCULE_IGNORER_SANS_ACTIF"] !== "1") {
+          throw new Error(`Bascule de l'Atelier annulée : ${sautes.length} projet(s) du magasin sans projet actif lisible (${liste}). Rien n'a été supprimé. Examiner ces projets, puis relancer avec FADI_BASCULE_IGNORER_SANS_ACTIF=1 pour les abandonner.`);
+        }
+        // eslint-disable-next-line no-console
+        console.warn(JSON.stringify({ level: "warn", message: "bascule : projets du magasin abandonnés sur décision explicite", projets: sautes }));
       }
       await client.query("DROP TABLE IF EXISTS architectural_objects");
       await client.query("DROP TABLE IF EXISTS levels");

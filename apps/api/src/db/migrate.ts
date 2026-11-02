@@ -2,6 +2,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+import { applySchema } from "./apply-schema.js";
 import { basculerAncienMoteur } from "./bascule.js";
 import { applyRolePasswords } from "./role-passwords.js";
 
@@ -15,9 +16,9 @@ if (!connectionString) {
 async function main() {
   const sqlPath = fileURLToPath(new URL("./init.sql", import.meta.url));
   const sql = readFileSync(sqlPath, "utf8");
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ connectionString, max: 1, application_name: "fadi-migrate" });
   try {
-    await pool.query(sql);
+    await applySchema(pool, sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
     const roles = await applyRolePasswords(pool);

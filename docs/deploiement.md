@@ -8,7 +8,7 @@ démonstration : 5 à 30 minutes, base jetable — à garder pour les démonstra
 
 | Élément | Rôle |
 |---|---|
-| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué au démarrage (`MIGRATE_ON_START=1`). |
+| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué par le service à usage unique `migrate` (`MIGRATE_ONLY=1`, D-7), jamais par l'API. |
 | `docker-compose.yml` | Application + base PostgreSQL/PostGIS persistante (volume `fadi-db`) + relais HTTPS automatique (Caddy, Let's Encrypt) + service de **sauvegarde quotidienne** (`pg_dump` format custom, 14 jours conservés, volume `fadi-backups`). |
 | `.env.deploy.example` | Les deux réglages à fournir : `FADI_DOMAIN`, `POSTGRES_PASSWORD`. |
 | `scripts/backup.sh` | Sauvegarde horodatée + rotation. |
@@ -45,8 +45,11 @@ Première connexion : créer un compte (`/inscription`), importer l'exemple P.11
 archive JSON (« Importer ») exportée d'une instance précédente — y compris d'une instance temporaire Builder Deploy
 avant sa fin (« Outils du projet » → « Sauvegarder projet JSON »).
 
-Mise à jour : `git pull && docker compose --env-file .env.deploy up -d --build` (le schéma est appliqué au démarrage ;
-les migrations sont idempotentes, `apps/api/src/db/init.sql`).
+Mise à jour : faire d'abord une sauvegarde à la demande (section suivante), puis
+`git pull && docker compose --env-file .env.deploy up -d --build`. Le service `migrate` applique le schéma
+(`apps/api/src/db/init.sql`, idempotent) avant le démarrage de `app`. Il échoue vite plutôt que de bloquer le trafic si une
+transaction longue tient un verrou (`lock_timeout` de 3 s, quatre essais espacés : BD-1.1) ; dans ce cas, relancer la mise à
+jour. Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`) fait lui-même ce dump préalable.
 
 ## Sauvegardes
 
@@ -62,14 +65,29 @@ les migrations sont idempotentes, `apps/api/src/db/init.sql`).
 
 ## Restauration (procédure)
 
-1. Arrêter l'application : `docker compose --env-file .env.deploy stop app`.
+La restauration se fait **d'abord dans une base de contrôle**, jamais directement dans la base courante, puis la migration
+est rejouée : `pg_restore --no-privileges` recrée les tables sans les droits des rôles D-7, et l'application échouerait
+sinon sur « permission denied » (`fadi_app`). Corrigé le 2026-11-02 (chantier base-donnees, BD-1.5).
+
+1. **Garder l'état actuel**, même cassé (il peut servir à comprendre l'incident) :
+   `docker compose --env-file .env.deploy exec backup fadi-backup db fadi fadi /backups`.
 2. Choisir la sauvegarde : `docker compose --env-file .env.deploy exec backup ls -l /backups`.
-3. Restaurer dans la base courante (les tables sont recréées) :
-   `docker compose --env-file .env.deploy exec backup sh -c 'PGPASSWORD=$PGPASSWORD pg_restore -h db -U fadi -d fadi --clean --if-exists --no-owner --no-privileges --exit-on-error /backups/fadi-<horodatage>.dump'`
-   (ou, hors Docker : `PGPASSWORD=… sh scripts/restore.sh <hôte> fadi fadi <fichier.dump>` ; le rôle doit pouvoir créer
+3. **Restaurer dans une base de contrôle** `fadi_restore` :
+   `docker compose --env-file .env.deploy exec backup sh -c 'PGPASSWORD=$PGPASSWORD dropdb -h db -U fadi --if-exists fadi_restore && PGPASSWORD=$PGPASSWORD createdb -h db -U fadi fadi_restore && PGPASSWORD=$PGPASSWORD pg_restore -h db -U fadi -d fadi_restore --no-owner --no-privileges --exit-on-error /backups/fadi-<horodatage>.dump'`
+   (hors Docker : `PGPASSWORD=… sh scripts/restore.sh <hôte> fadi fadi_restore <fichier.dump>` ; le rôle doit pouvoir créer
    l'extension PostGIS, ou l'extension doit déjà exister dans la base cible).
-4. Redémarrer : `docker compose --env-file .env.deploy start app`, puis `curl -s https://$FADI_DOMAIN/health`.
-5. Vérifier : se connecter, ouvrir un projet, l'Atelier (révision du modèle, empreinte dans l'en-tête du projet).
+4. **Contrôler** la base restaurée : nombre de projets et d'utilisateurs, date de la dernière révision Studio, par exemple
+   `psql -h db -U fadi -d fadi_restore -c "SELECT count(*) FROM projects; SELECT max(created_at) FROM studio_revisions;"`.
+5. **Basculer** : arrêter l'application (`docker compose --env-file .env.deploy stop app`), puis renommer les bases depuis
+   la base `postgres` (aucune connexion ouverte sur `fadi`) :
+   `psql -h db -U fadi -d postgres -c "ALTER DATABASE fadi RENAME TO fadi_avant_restauration; ALTER DATABASE fadi_restore RENAME TO fadi;"`.
+6. **Rejouer la migration** (propriété `fadi_owner` et droits D-7 rétablis) :
+   `docker compose --env-file .env.deploy run --rm migrate`.
+7. Redémarrer : `docker compose --env-file .env.deploy start app`, puis `curl -s https://$FADI_DOMAIN/health`.
+8. Vérifier : se connecter, ouvrir un projet, l'Atelier (révision du modèle, empreinte dans l'en-tête du projet).
+   Supprimer `fadi_avant_restauration` seulement une fois la reprise acceptée.
+
+Noter l'heure de début et de fin de la procédure : c'est le temps de remise en service (RTO) réellement mesuré.
 
 Pour **répéter la vérification** sans toucher à la base courante (restauration dans une base de contrôle, comparaison
 ligne à ligne et par empreintes) :
@@ -87,6 +105,7 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `TRUST_PROXY` | `1` derrière un relais TLS (adresse du client, cookie `secure`). |
 | `NODE_ENV` | `production` : cookie de session `secure` (HTTPS obligatoire). |
 | `PORT` | 3001 par défaut. |
+| `PG_POOL_MAX`, `PG_CONNECTION_TIMEOUT_MS`, `PG_STATEMENT_TIMEOUT_MS`, `PG_IDLE_IN_TRANSACTION_MS`, `PG_POOL_IDLE_MS`, `PG_APP_NAME` | Pool PostgreSQL de l'API (BD-1.2) : 10 connexions, 10 s pour obtenir une connexion, 60 s par instruction, 60 s pour une transaction inactive, nom `fadi-api` dans `pg_stat_activity`. `0` = pas de délai (retour arrière sans nouvelle image). |
 | `AUTH_RATE_LIMIT`, `API_RATE_LIMIT` | Ne servent qu'aux tests ; ne pas définir en production (20 / 15 min et 300 / min). |
 
 ## Ce que l'instance temporaire ne fait pas

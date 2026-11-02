@@ -22,6 +22,9 @@ export async function transaction<T>(f: (client: PoolClient) => Promise<T>): Pro
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    // BD-1.2 : le pool borne chaque instruction à 60 s ; les imports et publications GeoData (gros fichiers, milliers de
+    // lignes) relèvent ce délai pour leur seule transaction.
+    await client.query("SET LOCAL statement_timeout = '10min'");
     const r = await f(client);
     await client.query("COMMIT");
     return r;

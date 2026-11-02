@@ -96,6 +96,14 @@ services:
       - fadi-backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/fadi-backup:ro
     entrypoint: ["sh", "-c", "while true; do fadi-backup db fadi fadi /backups; sleep 86400; done"]
+    # BD-1.6 (constat M13) : le conteneur passe « unhealthy » si aucun dump n'a été écrit depuis 26 h (sauvegarde arrêtée
+    # en silence) ; `docker compose ps` et la supervision de l'hôte le voient. Le premier dump part au démarrage.
+    healthcheck:
+      test: ["CMD-SHELL", "find /backups -name 'fadi-*.dump' -mmin -1560 | grep -q ."]
+      interval: 30m
+      timeout: 10s
+      retries: 1
+      start_period: 20m
 
 volumes:
   fadi-db:

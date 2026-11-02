@@ -4,6 +4,7 @@ import { Pool } from "pg";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
+import { applySchema } from "./db/apply-schema.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
@@ -32,9 +33,9 @@ async function migrateOnStart(): Promise<void> {
   const sql = readFileSync(fileURLToPath(new URL("./db/init.sql", import.meta.url)), "utf8");
   // D-7 : DDL avec le rôle migrateur quand il est fourni ; l'API elle-même n'a aucun droit DDL.
   const migrationUrl = process.env["DATABASE_MIGRATION_URL"];
-  const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1 }) : pool;
+  const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1, application_name: "fadi-migrate" }) : pool;
   try {
-    await migrationPool.query(sql);
+    await applySchema(migrationPool, sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
     const roles = await applyRolePasswords(migrationPool);
@@ -109,8 +110,25 @@ Promise.resolve()
     server.headersTimeout = 66_000;
     // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
     const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
-    // Arrêt (déploiement) : les clients sont prévenus (1001) puis le processus s'arrête comme avant, sans attendre les connexions.
-    process.once("SIGTERM", () => { arreterTempsReel(); arreterImportAuto(); setTimeout(() => process.exit(0), 200); });
+    // Arrêt (déploiement) : les clients temps réel sont prévenus (1001), le serveur cesse d'accepter des connexions et
+    // laisse finir les requêtes en cours, puis le pool est fermé (BD-1.2). Au-delà de 10 s, arrêt forcé.
+    let arretEnCours = false;
+    const arreter = (signal: string) => {
+      if (arretEnCours) return;
+      arretEnCours = true;
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({ level: "info", message: "arrêt demandé", signal }));
+      arreterTempsReel();
+      arreterImportAuto();
+      setTimeout(() => process.exit(1), 10_000).unref();
+      server.close(() => {
+        void pool.end().catch(() => undefined).finally(() => process.exit(0));
+      });
+      // Les connexions persistantes inactives ne retiennent pas l'arrêt.
+      server.closeIdleConnections();
+    };
+    process.once("SIGTERM", () => arreter("SIGTERM"));
+    process.once("SIGINT", () => arreter("SIGINT"));
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

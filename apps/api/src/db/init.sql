@@ -6,6 +6,12 @@
 -- versionnées — à l'échelle de l'équipe, Drizzle Kit (ou équivalent) devra
 -- prendre le relais dès que le schéma évolue après le premier déploiement.
 
+-- BD-1.1 (chantier base-donnees) : le fichier s'exécute en une seule transaction et reprend des verrous exclusifs sur
+-- des tables chaudes. Un verrou non obtenu en 3 s fait échouer la migration (code 55P03, tout est annulé) au lieu de
+-- bloquer le trafic derrière elle ; `applySchema` (db/apply-schema.ts) relance alors après une attente.
+SET lock_timeout = '3s';
+SET statement_timeout = '10min';
+
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- D-7 (docs/workstreams/users-management/AMENDEMENT-D7.md) : rôles au moindre privilège et schémas `auth` / `admin`.
@@ -4024,6 +4030,9 @@ BEGIN
     GRANT USAGE, CREATE ON SCHEMA public TO fadi_owner;
     ALTER ROLE fadi_app SET search_path = public, auth, admin;
     ALTER ROLE fadi_migrator SET search_path = public, auth, admin;
+    -- BD-1.2 : filet de sécurité côté serveur, quel que soit le client (API, import GeoData, script) : une transaction
+    -- laissée ouverte sans activité est fermée au bout de 10 minutes au lieu de garder ses verrous indéfiniment.
+    ALTER ROLE fadi_app SET idle_in_transaction_session_timeout = '10min';
   ELSIF NOT pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
     RAISE NOTICE 'D-7 : % n''est ni super-utilisateur ni membre de fadi_owner, droits inchangés', current_user;
     RETURN;
@@ -4035,6 +4044,20 @@ BEGIN
   REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_app;
   -- Lot OP-PONT : `project_members` est une vue de compatibilité en LECTURE ; le partage s'écrit dans les participations.
   REVOKE INSERT, UPDATE, DELETE ON public.project_members FROM fadi_app;
+  -- BD-1.4 (constat S2) : journaux en ajout seul pour l'application. Leurs déclencheurs `*_no_update` refusent déjà la
+  -- modification (et gardent leur message d'erreur) ; la suppression directe est retirée ici. Les suppressions en cascade
+  -- depuis le parent restent possibles : elles s'exécutent avec les droits du propriétaire de la table.
+  -- `studio_access_events` garde DELETE : sa purge de rétention (12 mois, `runStudioAccessRetentionJob`) passe par
+  -- l'application et est elle-même journalisée (`studio_access_purges`).
+  REVOKE DELETE ON public.studio_agent_events, public.studio_revision_events, public.studio_observation_events,
+    public.studio_observation_task_events, public.studio_external_model_events, public.studio_approval_delegation_events,
+    public.com_events, public.com_message_versions, public.collab_demande_events, public.rt_session_events FROM fadi_app;
+  -- Sans déclencheur : ni modification ni suppression directe.
+  REVOKE UPDATE, DELETE ON public.geodata_journal, public.atelier_lock_events FROM fadi_app;
+  -- Table des systèmes de coordonnées de PostGIS : jamais écrite par l'application (une ligne altérée fausserait toutes
+  -- les reprojections). Clé de signature des archives : créée une fois (INSERT … ON CONFLICT DO NOTHING), puis lue.
+  REVOKE INSERT, UPDATE, DELETE ON public.spatial_ref_sys FROM fadi_app;
+  REVOKE UPDATE, DELETE ON public.archive_signing_keys FROM fadi_app;
   REVOKE ALL ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_retention;
   GRANT SELECT ON admin.audit_log TO fadi_retention;
   GRANT UPDATE (actor_id, ip, metadata) ON admin.audit_log TO fadi_retention;
@@ -4044,3 +4067,8 @@ BEGIN
   ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT USAGE, SELECT ON SEQUENCES TO fadi_app;
   ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT SELECT ON TABLES TO fadi_backup;
 END $$;
+
+-- BD-1.1 : délais de migration rendus à la valeur de la session (paramètres de connexion), pour qu'une connexion de pool
+-- réutilisée après la migration ne garde pas un `statement_timeout` de 10 minutes.
+RESET lock_timeout;
+RESET statement_timeout;

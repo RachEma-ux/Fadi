@@ -3,7 +3,7 @@ import { supportGrantsRouter, supportReadOnlyGuard } from "./support-grants.js";
 import { and, asc, eq, gt, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
-import { db, pool } from "../db/client.js";
+import { db } from "../db/client.js";
 import { projectEffectiveAccess, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
@@ -39,7 +39,7 @@ import { studioRouter } from "./studio.js";
 import { tempsReelRouter } from "./temps-reel.js";
 import { lockProject } from "../lib/step-rows.js";
 import { PUBLICATIONS_DIFFUSEES_MESSAGE, projectHasIssuedStudioPublications } from "../lib/studio-publications.js";
-import { nettoyerVolumes } from "../lib/volumes-gc.js";
+import { nettoyageVolumes } from "../lib/volumes-gc-app.js";
 import { projectHasSharedReviewPackages, REVUES_PARTAGEES_MESSAGE } from "../lib/reviews-core.js";
 import { owningOrganizationOf } from "../lib/project-organizations.js";
 
@@ -288,12 +288,8 @@ projectsRouter.delete("/:projectId", async (req, res) => {
   });
   if (refused === "publications_diffusees") { res.status(409).json({ error: "publications_diffusees", message: PUBLICATIONS_DIFFUSEES_MESSAGE }); return; }
   if (refused) { res.status(409).json({ error: "revues_partagees", message: REVUES_PARTAGEES_MESSAGE }); return; }
-  // Volumes des publications parties avec le projet : nettoyés après validation, dans leur propre transaction. Un échec
-  // (verrou occupé, référence inconnue) ne supprime rien et n'annule pas la suppression ; `npm run db:volumes-gc` reprend.
-  try { await nettoyerVolumes(pool); }
-  catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ level: "warn", message: `volumes-gc : ${error instanceof Error ? error.message : String(error)}` }));
-  }
+  // Volumes des publications parties avec le projet : nettoyés peu après, hors de la requête (BD-1.3), dans leur propre
+  // transaction. Un échec ne supprime rien et n'annule pas la suppression ; la boucle horaire et `npm run db:volumes-gc` reprennent.
+  nettoyageVolumes.demander();
   res.status(204).end();
 });

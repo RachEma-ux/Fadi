@@ -289,6 +289,23 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     // Idempotente : une seconde passe ne fait rien.
     expect(await basculerAncienMoteur(pool)).toEqual({ convertis: 0, supprimees: false });
   });
+
+  it("BD-1.8 : un projet du magasin sans projet actif lisible annule la bascule (rien n'est supprimé), sauf abandon explicite", async () => {
+    const client = await registerAndLogin("bascule-sans-actif@example.com");
+    const pid = (await client.post("/projects").send({ code: "P.ORPH", name: "Magasin sans projet actif" })).body.id as string;
+    await pool.query("CREATE TABLE IF NOT EXISTS atelier_store (project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE, key text NOT NULL, value jsonb NOT NULL, revision integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (project_id, key))");
+    await pool.query("INSERT INTO atelier_store (project_id, key, value) VALUES ($1, 'design.v13.registry', '[]')", [pid]);
+    await expect(basculerAncienMoteur(pool)).rejects.toThrow(/Bascule de l'Atelier annulée : 1 projet\(s\)/);
+    expect((await pool.query("SELECT to_regclass('public.atelier_store') AS t")).rows[0].t).toBe("atelier_store");
+    expect((await pool.query("SELECT count(*)::int AS n FROM atelier_store WHERE project_id = $1", [pid])).rows[0].n).toBe(1);
+    process.env["FADI_BASCULE_IGNORER_SANS_ACTIF"] = "1";
+    try {
+      expect(await basculerAncienMoteur(pool)).toEqual({ convertis: 0, supprimees: true });
+    } finally {
+      delete process.env["FADI_BASCULE_IGNORER_SANS_ACTIF"];
+    }
+    expect((await pool.query("SELECT to_regclass('public.atelier_store') AS t")).rows[0].t).toBeNull();
+  });
 });
 
 describe("documents dérivés de l'Atelier au catalogue (lot 5)", () => {

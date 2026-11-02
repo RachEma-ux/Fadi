@@ -19,6 +19,7 @@ import { contactRetentionEnabled } from "./participants.js";
 import { relabelShareInviter, revokeSharesOfUser } from "./project-access-db.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
+import { nettoyageVolumes } from "./volumes-gc-app.js";
 import { surveillanceStudio, type SurveillanceStudio } from "./studio-surveillance.js";
 import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
 import type { Tx } from "./admin-eligibility.js";
@@ -101,6 +102,9 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
       s.workerReussi("account_deletion_job");
       if (r.anonymised || r.blocked) log(JSON.stringify({ level: "info", message: "account_deletion_job", ...r }));
     } catch (err) { s.workerEchoue("account_deletion_job", err); log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
+    // Volumes (BD-1.3, BD-6.3) : passage horaire du ramasse-miettes, hors requête ; il reprend aussi les volumes des
+    // projets supprimés par l'anonymisation. Un échec est journalisé par le planificateur et ne supprime rien.
+    await nettoyageVolumes.executerMaintenant();
     // Journal d'accès Studio (TR-EX-046) : événements au-delà de la durée de conservation (12 mois par défaut) purgés,
     // chaque purge datée dans `studio_access_purges` ; le journal des publications n'est jamais touché.
     try {
@@ -120,5 +124,5 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
   const daily = setInterval(deletion, PERIODE_HORAIRE_MS);
   void deletion();
   mail.unref(); daily.unref();
-  return () => { clearInterval(mail); clearInterval(daily); };
+  return () => { clearInterval(mail); clearInterval(daily); nettoyageVolumes.arreter(); };
 }

@@ -26,8 +26,21 @@ const site = (row: typeof atelierSite.$inferSelect): ModeleAtelier["site"] => ({
   structure: (row.structure as ModeleAtelier["site"]["structure"]) ?? null,
 });
 
-/** `null` quand le projet n'a pas de modèle typé (pas de ligne `atelier_site`). */
+/**
+ * `null` quand le projet n'a pas de modèle typé (pas de ligne `atelier_site`).
+ *
+ * BD-1.2 (constat Q1) : appelé hors transaction, le chargement ouvrait jusqu'à 8 connexions du pool à la fois (lectures
+ * en parallèle). Il passe désormais par une transaction en lecture seule : une seule connexion, et un instantané
+ * cohérent des neuf tables. Dans une transaction de l'appelant, rien ne change.
+ */
 export async function chargerModele(q: Querier, projectId: string): Promise<ModeleCharge | null> {
+  if (!("rollback" in q)) {
+    return q.transaction((tx) => chargerModeleDans(tx, projectId), { isolationLevel: "repeatable read", accessMode: "read only" });
+  }
+  return chargerModeleDans(q, projectId);
+}
+
+async function chargerModeleDans(q: Querier, projectId: string): Promise<ModeleCharge | null> {
   const siteRow = (await q.select().from(atelierSite).where(eq(atelierSite.projectId, projectId)).limit(1))[0];
   if (!siteRow) return null;
   // Ordre stable par identifiant : sans ORDER BY, Postgres peut renvoyer les lignes dans un ordre différent d'une lecture à
