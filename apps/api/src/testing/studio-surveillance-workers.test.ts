@@ -34,6 +34,8 @@ describe("R.5-03 — boucles de fond déclarées et comptées par la surveillanc
     const declares = s.observer().workers;
     expect(declares.map((w) => [w.nom, w.periodeMs])).toEqual([
       ["mail_outbox", PERIODE_COURRIELS_MS], ["account_deletion_job", PERIODE_HORAIRE_MS], ["studio_access_retention_job", PERIODE_HORAIRE_MS],
+      // D-BD-11 : purge technique active par défaut (30 jours).
+      ["retention_technique_job", PERIODE_HORAIRE_MS],
     ]);
     await vi.advanceTimersByTimeAsync(PERIODE_COURRIELS_MS);
     let o = s.observer();

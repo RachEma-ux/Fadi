@@ -26,9 +26,13 @@ GeoData (BD-8) en parallèle ; architecture (BD-9) sur décision.
 
 Effort : environ 40 jours-personne pour BD-0 à BD-8 (8 à 10 semaines pour une personne), environ 20 jours pour BD-9.
 
-## 2. Décisions attendues du maître d'ouvrage
+## 2. Décisions du maître d'ouvrage
 
-| Réf. | Décision | Proposition | Bloque |
+Toutes tranchées le 2 novembre 2026 (22 h 24 heure suisse) : D-BD-12 « oui », avec la règle « ne jamais supprimer »
+amendée pour les actions de maintenance (ADR-STUDIO-PILOTE-01 P-13) ; D-BD-11 « 30 jours » ; D-BD-1 à D-BD-10 « exécute
+tes recommandations » (colonne Proposition retenue telle quelle).
+
+| Réf. | Décision | Proposition (retenue) | Tâches |
 | --- | --- | --- | --- |
 | D-BD-1 | RPO et RTO | RPO 15 min, RTO 2 h | BD-5.1, BD-5.4 |
 | D-BD-2 | Rétention des sauvegardes distantes, durée au registre RGPD | 14 quotidiennes, 8 hebdomadaires, 12 mensuelles ; 12 mois au plus | BD-5.3 |
@@ -40,10 +44,11 @@ Effort : environ 40 jours-personne pour BD-0 à BD-8 (8 à 10 semaines pour une 
 | D-BD-8 | Fichiers `bytea` : en base ou stockage objet, hébergeur | Stockage objet S3 en Suisse ; `geodata_fichiers` reste en base | BD-9.1 |
 | D-BD-9 | Montée de version PostgreSQL et fenêtre | PostgreSQL 18, fenêtre annoncée | BD-9.2 |
 | D-BD-10 | Haute disponibilité | Standby en streaming sur une seconde machine | BD-9.3 |
-| D-BD-11 | Durées de conservation des sessions expirées, jetons de compte et courriels traités (registre de traitement) | À fixer ; la purge reste désactivée sans elles | BD-6.1 |
-| D-BD-12 | Quarantaine Dexie : vider à l'oubli de l'appareil et borner à 30 jours, ou conserver (MIG-COEX-04, ADR-STUDIO-PILOTE-01 « ne jamais supprimer ») | Maître d'ouvrage ; quarantaine laissée intacte d'ici là | BD-7.1 |
+| D-BD-11 | Durées de conservation des sessions expirées, jetons de compte et courriels traités (registre de traitement) | **30 jours** (décidé) | BD-6.1 |
+| D-BD-12 | Quarantaine Dexie : vider à l'oubli de l'appareil et borner à 30 jours, ou conserver (MIG-COEX-04, ADR-STUDIO-PILOTE-01 « ne jamais supprimer ») | **Oui** ; règle MIG-COEX-04 amendée (P-13) | BD-7.1 |
 
-Une décision manquante ne bloque que les tâches qui en dépendent.
+D-BD-7 : la confirmation métier par l'équipe Studio reste souhaitable (aucune règle de sérialisation par projet trouvée
+dans le code ni la documentation Studio).
 
 ## 3. Lots
 

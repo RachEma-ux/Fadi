@@ -6,7 +6,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 - Chantier : base-donnees
 - Issue : à ouvrir (« Base de données : fiabilité et performance »).
-- Branche / PR actives : branches locales empilées `docs/base-donnees-plan` → `fix/bd-1-garde-fous` → `feat/bd-2-migrations` → `feat/bd-3-index` → `perf/bd-4-requetes` → `ops/bd-5-6-exploitation-rgpd` → `feat/bd-7-navigateur` → `feat/bd-8-geodata` (non poussées) ; à vérifier sur GitHub.
+- Branche / PR actives : branches locales empilées `docs/base-donnees-plan` → `fix/bd-1-garde-fous` → `feat/bd-2-migrations` → `feat/bd-3-index` → `perf/bd-4-requetes` → `ops/bd-5-6-exploitation-rgpd` → `feat/bd-7-navigateur` → `feat/bd-8-geodata` → `feat/bd-decisions-proprietaire` (non poussées) ; à vérifier sur GitHub.
 - Dernier commit vérifié : `b9d9897` pour l'audit ; relever le HEAD de `main` en début de session, ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -24,7 +24,9 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## Risques et blocages
 
-- D-BD-12 (quarantaine navigateur) et D-BD-11 (durées de conservation) attendent le maître d'ouvrage.
+- Décisions D-BD-1 à D-BD-12 prises le 2026-11-02 et mises en œuvre (STATUS). À faire par l'administrateur : hébergeur
+  S3 suisse, timers de sauvegarde, répétition de la montée PostgreSQL 18 en préproduction, seconde machine du standby.
+- Objets S3 orphelins : seul un balayage manuel les retire (planification à décider, RGPD).
 
 - Les coûts de requêtes sont estimés, pas mesurés : BD-0.3 (`pg_stat_statements`) avant BD-4.
 - `CREATE INDEX CONCURRENTLY` impossible dans `init.sql` tant que BD-2 n'est pas livré.

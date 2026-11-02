@@ -343,7 +343,7 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
  * BD-9.6 (D-BD-6, D-GD-29) : catalogues de données du Parcours (bibliothèque des bâtiments, profils et moteur Harmonie,
  * répartition programmatique), chargés depuis les fichiers qualifiés du dépôt par `db/catalogues-charger.ts` et lus par
  * l'API (`lib/catalogues.ts`). Versions immuables (déclencheur), fichier archivé tel quel ; `fadi_app` lit seulement.
- * CHECK, clé étrangère composée de la version publiée et déclencheur : migrations/0013_catalogues_donnees.sql.
+ * CHECK, clé étrangère composée de la version publiée et déclencheur : migrations/0011_catalogues_donnees.sql.
  */
 export const catalogues = pgTable("catalogues", {
   cle: text("cle").primaryKey(),

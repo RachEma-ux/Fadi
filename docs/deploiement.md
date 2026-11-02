@@ -134,7 +134,7 @@ objet compatible S3 hébergé en Suisse ; le dépôt fournit le mécanisme, pas 
 Tables concernées : `step_files`, `drawing_exports`, `volumes`, `com_pieces`. **Jamais** `geodata_fichiers` (archivage
 en base exigé, D-GD-29) ni `geodata_rasters`. Une ligne porte soit son contenu, soit une clé d'objet
 (`objet_cle`, adressée par le contenu : `<table>/<2 caractères>/<sha256>`), avec l'empreinte SHA-256 et la taille en
-base (migration `0011_fichiers_stockage_objet.sql`). La lecture suit l'emplacement réel : l'API sert un objet en flux
+base (migration `0010_fichiers_stockage_objet.sql`). La lecture suit l'emplacement réel : l'API sert un objet en flux
 (sans le garder en mémoire), vérifié contre la taille et l'empreinte de la base ; un écart interrompt la réponse.
 
 Mise en service, d'abord en préproduction avec un compartiment qui lui est propre :

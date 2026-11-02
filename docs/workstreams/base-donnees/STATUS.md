@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1 à BD-3, BD-4 (en partie), la part dépôt de BD-5 / BD-6, BD-7 (en partie) et BD-8 (en partie) **implémentés** sur les branches locales empilées `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes`, `ops/bd-5-6-exploitation-rgpd`, `feat/bd-7-navigateur`, `feat/bd-8-geodata` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1 à BD-3, BD-4 (en partie), la part dépôt de BD-5 / BD-6, BD-7 (en partie) et BD-8 (en partie) **implémentés** sur les branches locales empilées `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes`, `ops/bd-5-6-exploitation-rgpd`, `feat/bd-7-navigateur`, `feat/bd-8-geodata`, puis `feat/bd-decisions-proprietaire` (décisions D-BD-1 à D-BD-12, BD-4.8, BD-9.1, 9.2, 9.3, 9.5, 9.6) (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -132,8 +132,7 @@ Mis à jour : 2026-11-02 (UTC).
 - BD-7.5 : `oublierProjet` efface aussi le brouillon Planche du projet.
 - BD-7.6 : préfixes d'API du service worker égaux à `API_PREFIX` du serveur (`prefixes-api.test.ts`).
 - BD-7.7 : gestionnaires Dexie `versionchange` / `blocked` ; échecs signalés sans contenu (`signalerEchecLocal`).
-- **BD-7.1 bloqué** : vider ou borner la quarantaine contredit MIG-COEX-04 / ADR-STUDIO-PILOTE-01 (« ne jamais
-  supprimer ») ; changement retiré, test d'origine `local-store-migration.test.ts` rétabli ; décision **D-BD-12**.
+- BD-7.1 : d'abord retiré (contraire à MIG-COEX-04), puis rétabli après **D-BD-12** (voir ci-dessous).
 - **BD-7.3 reporté** : `project_comments` n'a pas de `client_request_id` (API + migration nécessaires).
 
 ## BD-8 — GeoData (implémenté en partie le 2026-11-02, non poussé)
@@ -159,11 +158,53 @@ Mis à jour : 2026-11-02 (UTC).
 - Base neuve PostgreSQL 16 jetable : base de départ + migrations `0001` à `0009` appliquées, second passage sans effet,
   aucun index invalide.
 
+## Décisions du maître d'ouvrage (2026-11-02, 22 h 24 heure suisse) et mise en œuvre
+
+- **D-BD-12** : quarantaine vidée par `forgetDevice` et élaguée au-delà de 30 jours (BD-7.1 rétabli) ; règle « ne jamais
+  supprimer » amendée : ADR-STUDIO-PILOTE-01 **P-13** (actions de maintenance déclarées) ; checklist Studio et libellés du
+  registre `docs/workstreams/studio/task-register.json` alignés.
+- **D-BD-11** : purge des sessions, jetons et courriels traités à **30 jours** par défaut (`desactive` coupe une catégorie).
+- **D-BD-4** : `CONTACT_RETENTION_ENABLED=1` dans `docker-compose.yml` (production).
+- **D-BD-1** : RPO 15 min (archivage WAL, sonde 900 s) ; RTO 2 h contrôlé par `ops/restore-drill.sh` (code 4 au-delà) et
+  timer mensuel `ops/systemd/fadi-restore-drill.*`.
+- **D-BD-2 / D-BD-3** : rétention restic 14 / 8 / 12 par défaut, timer hebdomadaire distinct
+  `ops/systemd/fadi-backup-retention.*` (essai à blanc puis application) ; essayé sur un dépôt restic local.
+- **D-BD-5** : `docs/continuity/decisions/ADR-BD-01.md` (isolation applicative, RLS reportée).
+- **D-BD-6** (BD-9.6) : migration `0011_catalogues_donnees.sql` ; bibliothèque, profils et moteur Harmonie, répartition
+  chargés en base (fichier archivé tel quel, empreinte, versions immuables, `fadi_app` en lecture seule) à chaque
+  `db:migrate` ; API sans repli (503 `catalogue_non_charge`), état « non chargé » dans l'interface ; étapes et formulaires
+  restent de la configuration. Vérifié sur base jetable : chargement idempotent, droits, API servie en `fadi_app`.
+- **D-BD-7** (BD-4.8) : une commande Studio verrouille sa variante (`FOR UPDATE`) et le projet en `FOR SHARE` ; deux
+  variantes du même projet en parallèle (1,66 s contre 3,24 s avant, mesuré sur base jetable), même variante sérialisée ;
+  autres écritures Studio et fusion gardent le verrou du projet.
+- **D-BD-8** (BD-9.1) : stockage objet S3 pour `step_files`, `drawing_exports`, `volumes`, `com_pieces` (migration
+  `0010_fichiers_stockage_objet.sql`, expand) ; `FADI_STOCKAGE=base` par défaut ; reprise `db:fichiers-vers-objet`
+  (essai par défaut, relecture de chaque objet) et balayage des orphelins ; `@aws-sdk/client-s3` 3.1152.0. Essayé avec un
+  émulateur S3 (`s3rver`) sur PostgreSQL 16 ; **hébergeur suisse non choisi**, aucun vrai service essayé.
+  `geodata_fichiers` et `geodata_rasters` restent en base.
+- **D-BD-9** (BD-9.2) : `docs/montee-postgresql-18.md`, `ops/pg18/` (image `postgis/postgis:18-3.6`, `montee.sh`,
+  `verifier.sh`) ; mécanique éprouvée en 16 → 16 seulement : **montée 16 → 18 non répétée** (paquets PostgreSQL 18 et
+  Docker Hub inaccessibles depuis la session). `docker-compose.yml` reste en 16.
+- **D-BD-10** (BD-9.3) : `docs/haute-disponibilite.md`, `ops/standby/`, sonde primaire / standby (retard 600 s) ; répété
+  sur deux clusters PostgreSQL 16 : amorçage, retard 0,2–0,3 s, promotion < 0,5 s, `pg_rewind` (avec archive WAL) et
+  retour de l'ancien primaire en standby.
+
+## Contrôles sur l'empilement final (2026-11-02)
+
+- `npm run typecheck` et `npm run build` verts ; `check-continuity` vert ; `test:scripts` 24/24 ; `test:db-guard` 253/253.
+- Web : 205 fichiers, 1 372 tests verts ; `geodata-model` : 212 verts.
+- API : 1 207 tests purs verts (délai porté à 120 s : `app-statique.test.ts` dépasse 20 s sur ce banc chargé, aussi sans
+  ces changements) ; 19 fichiers sur base non exécutables ici (`TARGET_REQUIRED`) — **à faire tourner en CI**.
+- Base neuve PostgreSQL 16 : base de départ + migrations `0001` à `0011`, catalogues chargés ; second passage sans
+  effet ; aucun index invalide ; 91 contraintes `NOT VALID` validées sans violation.
+- Montée depuis le commit audité `b9d9897` (`migration-montee-version.mjs`) : quatre contrôles réussis.
+
 ## Points ouverts
 
 - Ouvrir l'Issue du chantier et reporter son numéro dans `CONTEXT.md` et l'index.
 - Mesures de production (BD-0.2) : volumétrie, contraintes, doublons d'e-mail, `atelier_store`, Healthchecks.
-- Décisions D-BD-1 à D-BD-12 (`PLAN.md` § 2).
+- Décisions D-BD-1 à D-BD-12 prises ; restent : hébergeur S3 suisse, répétition de la montée 18 en préproduction,
+  seconde machine, balayage des objets orphelins (planification à décider, RGPD), confirmation métier de D-BD-7.
 
 ## Liens de suivi
 

@@ -63547,7 +63547,7 @@
           "controles": [
             "MIG-COEX-04 [+] montée v5 → v6 : les brouillons et contextes Studio sans propriétaire passent en quarantaine, intacts, au lieu d'être vidés",
             "MIG-COEX-04 [+] montée v6 → v7 : les lots de l'Atelier sans propriétaire passent en quarantaine ; la quarantaine se consulte et s'exporte",
-            "MIG-COEX-04 [−] aucune montée de version ne vide plus une table de données sans passer par la quarantaine, qui n'est jamais vidée"
+            "MIG-COEX-04 [−] aucune montée de version ne vide plus une table de données sans passer par la quarantaine (vidée seulement par les actions de maintenance de P-13)"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
@@ -63562,7 +63562,7 @@
           "etiquette": "scénario exécuté",
           "fichier": "apps/web/src/lib/local-store-migration.test.ts",
           "controles": [
-            "MIG-COEX-04 [+] les lignes sans propriétaire passent en quarantaine (v6 : Studio ; v7 : lots), présente dès la v6 et jamais vidée"
+            "MIG-COEX-04 [+] les lignes sans propriétaire passent en quarantaine (v6 : Studio ; v7 : lots), présente dès la v6, jamais vidée par une montée ni par l'oubli d'un projet"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
