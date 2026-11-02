@@ -25,7 +25,8 @@ jobs:
   studio-v1-validation:
     name: Studio V1 — API, navigateur et réouverture sur PostGIS neuf
     if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.repository == 'RachEma-ux/Fadi' }}
-    runs-on: ubuntu-latest
+    # Playwright 1.56 ne prend pas en charge ubuntu-26.04 (nouvelle image de ubuntu-latest) : image fixée.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -360,7 +361,8 @@ jobs:
     name: e2e (${{ matrix.shard }})
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
     if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
-    runs-on: ubuntu-latest
+    # Playwright 1.56 ne prend pas en charge ubuntu-26.04 (nouvelle image de ubuntu-latest) : image fixée.
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
       fail-fast: false
