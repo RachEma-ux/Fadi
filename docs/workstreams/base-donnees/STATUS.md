@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1 à BD-3 et BD-4 (en partie) **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1 à BD-3, BD-4 (en partie) et la part dépôt de BD-5 / BD-6 **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes`, `ops/bd-5-6-exploitation-rgpd` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -101,6 +101,28 @@ Mis à jour : 2026-11-02 (UTC).
 - **Reportés** : BD-4.6 (flux pour l'export d'archive, à traiter avec BD-9.1), BD-4.8 (attend D-BD-7).
 - Contrôles : typecheck vert ; 1 166 tests API purs verts ; les suites sur base (dont `notifications`, `com`, `lock`,
   `atelier-versions`) ne tournent qu'en CI.
+
+## BD-5 / BD-6 — exploitation et RGPD, part dépôt (implémenté le 2026-11-02, non poussé)
+
+- BD-5.1 PITR : `scripts/validation/pitr-essai.sh` **réussi** sur cluster jetable (pgBackRest 2.50 local, PostgreSQL
+  16.15) — la ligne écrite après l'instant cible n'est pas restaurée ; modèles `ops/pgbackrest/` (configuration S3
+  chiffrée, image avec pgBackRest PGDG, surcharge Compose : **non construits ni éprouvés en conteneur**) ; guide
+  `docs/sauvegarde-pitr.md`. Production : pgBackRest ≥ 2.59.3.
+- BD-5.2 `ops/restore-drill.sh` : essayé sur un dump de base jetable (restauration, migration, comptes, 5 s, base
+  d'exercice supprimée).
+- BD-5.3 `ops/backup/restic-retention.sh` : essayé sur un dépôt restic local (refus sans politique ; essai à blanc sans
+  suppression ; refus d'appliquer sans `FADI_RETENTION_VALIDEE=oui` ; application : 3 instantanés → 1).
+- BD-5.5 `ops/surveillance/sonde-base.sh` : codes 0 / 1 / 2 vérifiés (base saine, archivage à jour, base injoignable).
+- BD-5.4 (rôles de production) et BD-5.6 (réglages, limites) : décrits dans `docs/sauvegarde-pitr.md` § 5, **à faire
+  par l'administrateur** ; aucune valeur mémoire inventée.
+- BD-6.1 `lib/retention-technique.ts` : purge par lots des sessions, jetons et courriels traités, sous verrou
+  consultatif, branchée sur la boucle horaire ; **désactivée tant que les durées ne sont pas fournies** (nouvelle
+  décision D-BD-11 ; aucune durée de conservation n'existe dans le dépôt). SQL vérifié sur base jetable.
+- BD-6.3 : couvert par le passage horaire du ramasse-miettes (BD-1.3).
+- BD-6.4 `lib/account-jobs.ts` : l'anonymisation remplace aussi `atelier_locks.transmis_par`.
+- **Reportés** : BD-6.2 (attend D-BD-4), BD-6.5 (chiffrer la clé de signature : effet sur la vérification des archives
+  existantes après restauration, à décider), BD-6.6 (révisions Studio sans double stockage : non-régression du rejeu
+  à construire avec l'équipe Studio).
 
 ## Points ouverts
 

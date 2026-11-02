@@ -1,0 +1,29 @@
+# BD-5.1 (chantier base-donnees) : surcharge Compose pour l'archivage WAL continu (PITR) avec pgBackRest — MODÈLE NON
+# ÉPROUVÉ en conteneur (à essayer d'abord en préproduction, docs/sauvegarde-pitr.md). Usage :
+#   docker compose --env-file .env.deploy -f docker-compose.yml -f ops/pgbackrest/compose.pitr.yml up -d --build db
+# /etc/pgbackrest/pgbackrest.conf (modèle : ops/pgbackrest/pgbackrest.conf.example) est fourni par l'hôte, hors dépôt.
+services:
+  db:
+    build:
+      context: .
+      dockerfile: ops/pgbackrest/postgres-pgbackrest.Dockerfile
+    image: fadi-db-pgbackrest:16-3.4
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=pgbackrest --stanza=fadi archive-push %p
+      - -c
+      - archive_timeout=60
+      - -c
+      - max_wal_senders=5
+    volumes:
+      - /etc/pgbackrest:/etc/pgbackrest:ro
+      - fadi-pgbackrest-spool:/var/spool/pgbackrest
+      - fadi-pgbackrest-log:/var/log/pgbackrest
+volumes:
+  fadi-pgbackrest-spool:
+  fadi-pgbackrest-log:

@@ -1,0 +1,32 @@
+# BD-5.1 (chantier base-donnees) : configuration pgBackRest de la production — MODÈLE, valeurs à fournir par
+# l'administrateur hors dépôt (/etc/pgbackrest/pgbackrest.conf, root:postgres 0640). Version 2.59.3 au minimum
+# (avis de sécurité du 2026-10-04 : sous-clés de chiffrement faibles avant 2.59.3) — dépôt PGDG, pas le paquet Ubuntu.
+#
+# Rétention : selon la décision D-BD-2 (proposition : 4 complètes hebdomadaires ≈ 1 mois de PITR) ; les dumps logiques
+# restic continuent en parallèle pour la conservation longue (14 j / 8 sem. / 12 mois proposés).
+
+[global]
+# Dépôt distant compatible S3 (Swiss Backup ou autre stockage en Suisse) : point d'accès, compartiment et région fournis
+# par l'hébergeur. Identifiants dans /etc/pgbackrest/pgbackrest.conf seulement, jamais dans Git.
+repo1-type=s3
+repo1-s3-endpoint=<point-d-acces-s3>
+repo1-s3-bucket=<compartiment>
+repo1-s3-region=<region>
+repo1-s3-key=<cle-d-acces>
+repo1-s3-key-secret=<secret>
+repo1-path=/fadi
+repo1-retention-full=4
+# Chiffrement côté client : phrase de passe longue, conservée hors du serveur (coffre de l'administrateur).
+repo1-cipher-type=aes-256-cbc
+repo1-cipher-pass=<phrase-de-passe>
+compress-type=zst
+process-max=2
+start-fast=y
+archive-async=y
+spool-path=/var/spool/pgbackrest
+log-level-console=info
+log-level-file=detail
+
+[fadi]
+pg1-path=/var/lib/postgresql/data
+pg1-user=postgres

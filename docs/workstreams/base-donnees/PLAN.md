@@ -40,6 +40,7 @@ Effort : environ 40 jours-personne pour BD-0 à BD-8 (8 à 10 semaines pour une 
 | D-BD-8 | Fichiers `bytea` : en base ou stockage objet, hébergeur | Stockage objet S3 en Suisse ; `geodata_fichiers` reste en base | BD-9.1 |
 | D-BD-9 | Montée de version PostgreSQL et fenêtre | PostgreSQL 18, fenêtre annoncée | BD-9.2 |
 | D-BD-10 | Haute disponibilité | Standby en streaming sur une seconde machine | BD-9.3 |
+| D-BD-11 | Durées de conservation des sessions expirées, jetons de compte et courriels traités (registre de traitement) | À fixer ; la purge reste désactivée sans elles | BD-6.1 |
 
 Une décision manquante ne bloque que les tâches qui en dépendent.
 
