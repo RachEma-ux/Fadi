@@ -213,6 +213,18 @@ emprise, nodata, traitement, politique d'accès), `geodata_terrain_rapports_qual
 incertitude, méthode, biais, RMSEz, P95, effectifs, lacunes, réviseur, décision), `geodata_terrain_traitements`.
 Retour arrière : pointeur de version publiée + drapeau `GEODATA_TERRAIN_ENABLED`, originaux jamais effacés.
 
+## 4 bis. Courbes de niveau (demande du 2 novembre 2026)
+
+| Lot | Contenu | Point d'intégration constaté |
+| --- | --- | --- |
+| TER-03 | Calcul dans le travailleur (`gdal_contour`, version épinglée) depuis la version numérique choisie (MNT par défaut, MNS sur choix), sur l'emprise exacte de couverture, NoData exclu ; courbes stockées en PostGIS (`geodata_terrain_courbes` : version, produit, équidistance, altitude, maîtresse oui / non, géométrie en EPSG:4326 telle que calculée, aucun lissage) ; clé d'idempotence = version + produit + équidistance + emprise ; contrôle d'équidistance (TER-D17) avant tout calcul | Aucune file existante (§ 2.6) : même table de traitements que les autres dérivés |
+| TER-04 | Service en **tuiles vectorielles MVT**, sur le modèle de `GET /geodata/api/tuiles/:coucheId/:z/:x/:y` (`consultation.ts` l. 147, `ST_AsMVT`, cache `private`), clé de cache incluant version, équidistance et périmètre d'autorisation ; GeoJSON borné (nombre de sommets) pour une emprise ; export GeoJSON et DXF (TER-D18) avec CRS, référence verticale, source, version, équidistance, licence | MVT déjà servi par PostGIS ; aucun export DXF dans GeoData ; l'écrivain DXF de l'Atelier est hors frontière |
+| TER-05 | Commande « Courbes de niveau » dans le contrôle Terrain : équidistance (valeurs sous le seuil refusées avec message), opacité, panneau « Sources et précision » ; maîtresses épaisses et cotées (altitude en m + référence verticale), intermédiaires fines, lissage seulement au rendu ; icône et raccourci propres (règle d'or, `barre-outils.test.ts`) ; textes FR + `en.json` | Couches vectorielles de `moteur-maplibre.ts` (lignes, étiquettes) |
+
+Tests imposés (en plus du § 5) : plan incliné synthétique connu (courbes droites, espacement exact = équidistance / pente),
+cuvette (courbes fermées), NoData au milieu (courbes interrompues), deux sources adjacentes (aucun raccord silencieux,
+transition marquée), équidistance refusée sous le seuil de précision.
+
 ## 5. Répartition des tests obligatoires du plan
 
 | Test du plan | Lot | Niveau |

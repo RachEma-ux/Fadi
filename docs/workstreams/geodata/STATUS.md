@@ -18,7 +18,8 @@ Mis à jour : 2026-11-02 (UTC).
   (EGM2008 déclaré) ; référence verticale de GEDTM30 non déclarée ; comparaison sur ≈ 1 km² à Benslimane : centres
   220,1 / 219,7 m, écart quadratique entre modèles 3,78 m (`terrain/MODELES-REGIONAUX.md`, constat, pas une précision).
   TER-D16 décidé (2 novembre 2026) : catalogue d'altitudes multi-résolution (mondial / LiDAR officiel 0,25–2 m / levé
-  local 1–5 cm), MNS et MNT séparés, règle de priorité consignée dans `terrain/DECISIONS.md`.
+  local 1–5 cm), MNS et MNT séparés, règle de priorité consignée dans `terrain/DECISIONS.md`. Courbes de niveau (demande du 2 novembre 2026) intégrées
+  au plan (`TER-00-AUDIT.md` § 4 bis), décisions TER-D17 (équidistance) et TER-D18 (DXF) soumises.
 - Prix immobiliers (GEO-PRIX, D-GD-56 à D-GD-59, PR #374, branche `claude/prix-immobiliers-geodata`) : **vérifié**
   (CI entièrement verte sur `1cacb2b`, 31 octobre 2026 : `validate` avec la suite DB-3 `geodata-prix.test.ts` sur base
   jetable attestée, e2e des six tranches dont `complements` qui joue la recette GeoData) ; **non accepté**, non fusionné
