@@ -84,6 +84,7 @@ describe("BD-2.5 — contrôle des migrations (règles de sécurité)", () => {
     expect(regles("0001_x.sql", "TRUNCATE projects;")).toEqual(["destruction"]);
     expect(regles("0001_x.sql", "UPDATE projects SET code = 'x';")).toEqual(["reprise"]);
     expect(regles("0001_x.sql", "BEGIN;\nSELECT 1;\nCOMMIT;")).toEqual(["transaction"]);
+    expect(regles("0001_x.sql", "DO $$\nBEGIN\n  PERFORM 1;\nEND $$;")).toEqual([]);
     expect(regles("0001_x.sql", "CREATE INDEX CONCURRENTLY p_idx ON projects (code);")).toContain("concurrent");
     expect(regles("0002_x.concurrent.sql", "ALTER TABLE projects ADD COLUMN a text;")).toEqual(["concurrent"]);
   });

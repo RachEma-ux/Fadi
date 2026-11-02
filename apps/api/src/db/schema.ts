@@ -254,7 +254,7 @@ export const projectSteps = pgTable("project_steps", {
   content: jsonb("content").notNull().$type<Record<string, unknown>>(),
 }, (t) => [
   uniqueIndex("project_steps_project_id_step_number_unique").on(t.projectId, t.stepNumber),
-  index("project_steps_project_id_idx").on(t.projectId),
+  // BD-3.3 : project_steps_project_id_idx retiré (préfixe de la clé primaire).
 ]);
 
 /** R2 : données de pilotage séparées des 21 statuts de Parcours. */
@@ -286,7 +286,7 @@ export const projectPlanBaselines = pgTable("project_plan_baselines", {
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.version] }),
-  index("project_plan_baselines_project_idx").on(t.projectId, t.version),
+  // BD-3.3 : project_plan_baselines_project_idx retiré (doublon de la clé primaire).
 ]);
 
 /**
@@ -852,7 +852,8 @@ export const atelierOutbox = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
     attempts: integer("attempts").notNull().default(0),
   },
-  (t) => [index("atelier_outbox_pending_idx").on(t.projectId, t.processedAt)],
+  // BD-3.4 : index partiel des lignes à traiter (migration 0002).
+  (t) => [index("atelier_outbox_unprocessed_idx").on(t.projectId, t.createdAt).where(sql`processed_at IS NULL`)],
 );
 
 /** Version nommée (lot 7) : instantané immuable du modèle à une révision, avec son empreinte. */
@@ -1129,7 +1130,7 @@ export const studioObservations = pgTable("studio_observations", {
   gravite: text("gravite").$type<StudioObservationGravite | null>(),
   pieces: jsonb("pieces").$type<(StudioObservationPiece & { sha256: string })[]>().notNull().default([]),
   bcfRefs: jsonb("bcf_refs").$type<StudioObservationBcfRef[]>().notNull().default([]),
-}, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+}, (t) => [index("studio_observations_responsable_idx").on(t.responsableId)]);
 
 /** Catégories d'une observation (IF-010, vocabulaire du lot PUB). */
 export type StudioObservationCategorie = "coordination" | "conformite" | "geometrie" | "documentation" | "metre" | "autre";
@@ -1255,7 +1256,8 @@ export const studioStudySteps = pgTable("studio_study_steps", {
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
-  uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
+  // BD-3.7 : la clé primaire (study_id, step_number) remplace la contrainte d'unicité (migration 0004).
+  primaryKey({ columns: [t.studyId, t.stepNumber], name: "studio_study_steps_pkey" }),
   index("studio_study_steps_step_idx").on(t.stepNumber),
 ]);
 

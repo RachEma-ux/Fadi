@@ -27,7 +27,8 @@ export function controlerMigration(fichier: string, sql: string): Probleme[] {
   const concurrent = fichier.endsWith(".concurrent.sql");
   const creees = tablesCreees(code);
 
-  if (/^\s*(BEGIN|COMMIT|ROLLBACK)\b/im.test(code)) ajouter("transaction", "pas de BEGIN / COMMIT / ROLLBACK : l'exécuteur gère la transaction.");
+  // Instruction de transaction (`BEGIN;`, `COMMIT;`…) ; le `BEGIN` d'un bloc PL/pgSQL (`DO $$ … BEGIN … END $$`) n'est pas visé.
+  if (/^\s*(BEGIN|START\s+TRANSACTION|COMMIT|ROLLBACK)(\s+(WORK|TRANSACTION))?\s*;/im.test(code)) ajouter("transaction", "pas de BEGIN / COMMIT / ROLLBACK : l'exécuteur gère la transaction.");
 
   if (concurrent) {
     for (const instr of code.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean)) {

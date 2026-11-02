@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1 et BD-2 **implémentés** sur les branches locales `fix/bd-1-garde-fous` et `feat/bd-2-migrations` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1, BD-2 et BD-3 **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -60,6 +60,25 @@ Mis à jour : 2026-11-02 (UTC).
 - BD-2.8 guide `apps/api/src/db/migrations/README.md`. Écart : pas de `R__grants.sql` (les droits des nouvelles tables
   viennent des privilèges par défaut de `fadi_owner` ; les `REVOKE` vont dans la migration de la table).
 - Contrôles : typecheck vert ; 1 160 tests API purs verts ; build vert (migrations copiées dans `dist/db/migrations`).
+
+## BD-3 — index, contraintes et droits (implémenté le 2026-11-02, non poussé)
+
+- Migrations `0001_index_cascades.concurrent.sql` (28 index de cascade), `0002_index_requetes.concurrent.sql` (cloche
+  des notifications, `atelier_outbox` partiel, `studio_revisions` ordonné, `sessions (expires_at)`, unicité
+  `lower(email)`, index d'expression `geodata_versions.droits->>'consultation'`, future clé primaire),
+  `0003_index_redondants.concurrent.sql` (4 index retirés), `0004_fonctions_et_cle_primaire.sql` (`search_path` des
+  fonctions de déclencheur, clé primaire de `studio_study_steps`), `0005_index_cascades_complement.concurrent.sql`
+  (11 index : prix, territoires, agents, invitations).
+- Vérifié sur base neuve et base existante : 5 migrations appliquées, 0 index invalide, plus aucune fonction de
+  déclencheur sans `search_path`, clé primaire posée, index redondants absents ; cascades non indexées hors `users`
+  passées de 70 à 41 (le reste : clés composites servies par un index sur `variant_id`, petites tables
+  d'organisation). `schema.ts` aligné (index retirés ou remplacés, clé primaire).
+- Écarts au plan : BD-3.6 (verrou d'édition en colonnes typées) **reporté**, il exige un changement applicatif en
+  expand/contract avec la route de verrou ; colonne générée `consultation` remplacée par un index d'expression (sans
+  réécriture) ; `CHECK` de normalisation de l'e-mail non posé (un chemin d'insertion non normalisé serait refusé) ;
+  `REVOKE TEMP` non appliqué (tables temporaires utilisées par des tests).
+- Risque connu : `users_email_lower_unique` échoue si deux comptes ne diffèrent que par la casse ; l'index reste
+  invalide, la migration échoue et le déploiement s'arrête avant l'application (requête de repérage dans le fichier).
 
 ## Points ouverts
 
