@@ -26,6 +26,7 @@ import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type
 import { assignable, audienceFilter, constaterDans, hashOf, insertObservationRows, lockedVariant, notFound, observationViews, scopedVariant, type Lecteur } from "./studio-commentaires.js";
 import { OBSERVATION_CATEGORIES, OBSERVATION_GRAVITES } from "./studio-observations.js";
 import { inflateBcfBorne } from "./studio-bcf-inflate.js";
+import { contenuVolume } from "./stockage-objet/index.js";
 
 export const studioBcfImportSchema = z.object({
   /** Fichier `.bcfzip` encodé en base64 (8 Mo au plus une fois décodé). */
@@ -116,6 +117,7 @@ export async function lirePieceObservation(scope: StudioScope, actorId: string, 
   const piece = o?.pieces?.find((p) => p.sha256 === sha256);
   if (!piece) return notFound();
   const [v] = await db.select().from(volumes).where(eq(volumes.id, piece.sha256)).limit(1);
-  if (!v || sha(v.content) !== piece.sha256) throw new Error("studio_observation_piece_corrupt");
-  return { body: Buffer.from(v.content), mime: piece.mime, name: piece.name, sha256: piece.sha256 };
+  const contenu = await contenuVolume(v);
+  if (!contenu || sha(contenu) !== piece.sha256) throw new Error("studio_observation_piece_corrupt");
+  return { body: Buffer.from(contenu), mime: piece.mime, name: piece.name, sha256: piece.sha256 };
 }

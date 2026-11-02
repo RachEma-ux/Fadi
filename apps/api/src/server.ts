@@ -8,6 +8,7 @@ import { migrer } from "./db/schema-migrations.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
+import { initialiserStockageFichiers } from "./lib/stockage-objet/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
 import { startSurveillance } from "./lib/studio-surveillance-db.js";
 import { attacherTempsReel } from "./lib/temps-reel-canal.js";
@@ -93,6 +94,9 @@ Promise.resolve()
     const { config } = mailRuntime();
     // eslint-disable-next-line no-console
     console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}${config.transport === "smtp" ? (config.allowReservedDomains ? " ; domaines réservés envoyés (MAIL_ALLOW_RESERVED_DOMAINS, serveur de capture)" : " ; domaines réservés jamais envoyés") : ""}.`);
+    // Stockage des fichiers (BD-9.1, D-BD-8) : configuration FADI_STOCKAGE / FADI_S3_* invalide = refus de démarrer.
+    // eslint-disable-next-line no-console
+    console.log(initialiserStockageFichiers());
     // File de courriels et anonymisation différée (D-5) ; `ACCOUNT_WORKERS=0` les coupe (deuxième processus, outils).
     if (process.env["ACCOUNT_WORKERS"] !== "0") startAccountWorkers();
     // Surveillance d'exploitation (R.5-03, OPS-08) : règles d'alerte évaluées chaque minute, transitions journalisées.

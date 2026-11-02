@@ -22,6 +22,8 @@ const ACCEPTE: Record<string, number> = {
   "lib/geodata/prix/sauvegarde.ts": 1,
   "lib/organizations.ts": 1,
   "lib/project-access-db.ts": 1,
+  // BD-9.1 : noms de tables de la liste blanche `TABLES_FICHIERS` (quatre tables de fichiers fixes), jamais une saisie.
+  "lib/stockage-objet/reprise.ts": 3,
   "lib/studio-archive.ts": 2,
   "lib/volumes-gc.ts": 1,
   "routes/geodata/admin.ts": 1,

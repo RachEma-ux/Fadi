@@ -73,6 +73,15 @@ services:
       FADI_RETENTION_SESSIONS_JOURS: ${FADI_RETENTION_SESSIONS_JOURS:-}
       FADI_RETENTION_JETONS_JOURS: ${FADI_RETENTION_JETONS_JOURS:-}
       FADI_RETENTION_COURRIELS_JOURS: ${FADI_RETENTION_COURRIELS_JOURS:-}
+      # Stockage des fichiers (BD-9.1, D-BD-8) : `base` par défaut (bytea) ; `s3` = stockage objet compatible S3, dont
+      # l'hébergeur et les identifiants sont à fournir (docs/deploiement.md, « Stockage des fichiers »).
+      FADI_STOCKAGE: ${FADI_STOCKAGE:-base}
+      FADI_S3_ENDPOINT: ${FADI_S3_ENDPOINT:-}
+      FADI_S3_REGION: ${FADI_S3_REGION:-}
+      FADI_S3_BUCKET: ${FADI_S3_BUCKET:-}
+      FADI_S3_ACCESS_KEY_ID: ${FADI_S3_ACCESS_KEY_ID:-}
+      FADI_S3_SECRET_ACCESS_KEY: ${FADI_S3_SECRET_ACCESS_KEY:-}
+      FADI_S3_FORCE_PATH_STYLE: ${FADI_S3_FORCE_PATH_STYLE:-1}
     expose:
       - "3001"
 

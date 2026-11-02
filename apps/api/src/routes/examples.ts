@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { rangerFichier } from "../lib/stockage-objet/index.js";
 import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
 import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
 import { repartitionFromCase, type ProgrammeCase } from "@parcours/domain-model";
@@ -154,7 +155,8 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       const addedAt = new Date();
       for (const doc of base.files) {
         const content = exampleBaseDocumentContent(doc);
-        await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: doc.stepNumber, name: doc.name, type: doc.type, size: content.length, content, addedAt });
+        const range = await rangerFichier("step_files", content, doc.type);
+        await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: doc.stepNumber, name: doc.name, type: doc.type, size: content.length, content: range.content, objetCle: range.objetCle, empreinte: range.sha256, addedAt });
       }
     }
 

@@ -53,6 +53,7 @@ import { db } from "../db/client.js";
 import { reviewFindings, reviewPackages, volumes } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { sha256 } from "../lib/studio-publication-statuts.js";
+import { contenuVolume } from "../lib/stockage-objet/index.js";
 
 type Handler = (req: Request, res: Response) => Promise<void>;
 const endpoint = (fn: Handler) => async (req: Request, res: Response) => {
@@ -149,9 +150,10 @@ reviewsTeamRouter.get("/:packageId/findings/:observationId/attachments/:digest",
     .where(and(eq(reviewFindings.observationId, finding!.id), eq(reviewPackages.projectId, pid(req)))).limit(1) : [];
   if (!att || !row) { res.status(404).json({ error: "not_found" }); return; }
   const [volume] = await db.select().from(volumes).where(eq(volumes.id, att.sha256)).limit(1);
-  if (!volume || sha256(volume.content) !== att.sha256) throw new Error("review_attachment_volume_corrupt");
+  const contenu = await contenuVolume(volume);
+  if (!contenu || sha256(contenu) !== att.sha256) throw new Error("review_attachment_volume_corrupt");
   safeContentHeaders(res, att.mime, "attachment", att.name, att.sha256);
-  res.status(200).send(Buffer.from(volume.content));
+  res.status(200).send(Buffer.from(contenu));
 }));
 
 // ---------------------------------------------------------------------------------------------------------------------

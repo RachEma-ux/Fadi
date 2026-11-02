@@ -64,6 +64,7 @@ import {
 import { dossierPourPublication } from "./studio-dossiers.js";
 import { resolutionObservation } from "./studio-observations.js";
 import { normativeDe } from "./studio-exigences.js";
+import { colonnesVolume, contenuVolume } from "./stockage-objet/index.js";
 
 export { canonicalJson, STUDIO_PUBLICATION_ACTIONS, type StudioPublicationTransition };
 export const STUDIO_PACKAGE_FORMATS: readonly StudioPackageFormat[] = ["svg", "dxf", "ifc", "pdf"];
@@ -725,7 +726,7 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
       const files: StudioPackageFile[] = [];
       for (const file of current.files) {
         const id = sha256(file.body);
-        await tx.insert(volumes).values({ id, mime: file.mime, size: file.body.byteLength, content: file.body, createdAt: now }).onConflictDoNothing();
+        await tx.insert(volumes).values({ id, mime: file.mime, size: file.body.byteLength, ...(await colonnesVolume(file.body, file.mime)), createdAt: now }).onConflictDoNothing();
         files.push({ format: file.format, fileName: file.fileName, mime: file.mime, size: file.body.byteLength, sha256: id });
       }
       const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", ...(current.manifest.contenu ? { contenu: current.manifest.contenu } : {}), revisionId: row.revisionId, documentHash: actualHash, meta: current.meta, files, manifestHash: current.manifestHash };
@@ -837,8 +838,9 @@ export async function readStudioPackageFile(projectId: string, studyId: string, 
   const file = pkg.files.find((f) => f.format === format);
   if (!file) return notFound();
   const [volume] = await db.select().from(volumes).where(eq(volumes.id, file.sha256)).limit(1);
-  if (!volume || sha256(volume.content) !== file.sha256) throw new Error("studio_package_volume_corrupt");
-  return { file, content: volume.content, status: row.status, diffusionStatus: dimensionsDe(row).diffusion, packageHash: row.packageHash! };
+  const contenu = await contenuVolume(volume);
+  if (!contenu || sha256(contenu) !== file.sha256) throw new Error("studio_package_volume_corrupt");
+  return { file, content: contenu, status: row.status, diffusionStatus: dimensionsDe(row).diffusion, packageHash: row.packageHash! };
 }
 
 /** Recalcule les exports depuis la révision et les métadonnées gelées : mêmes empreintes = paquet reproductible. */

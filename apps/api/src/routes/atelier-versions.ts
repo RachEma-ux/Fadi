@@ -53,6 +53,7 @@ import { loadProjectAccess, projectOr404, roleAllows, type AccessibleProject } f
 import { exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { lockProject } from "../lib/step-rows.js";
 import { etatReferences, modelesPourMiseAJour } from "../lib/atelier-refexterne.js";
+import { envoyerFichier } from "../lib/stockage-objet/index.js";
 
 export const atelierVersionsRouter = Router({ mergeParams: true });
 atelierVersionsRouter.use(requireAuth);
@@ -495,7 +496,8 @@ atelierVersionsRouter.get("/publications/:publicationId/fichiers/:volumeId", asy
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Model-Revision", String(pub.revision));
   res.setHeader("X-Volume-Sha256", v.id);
-  res.send(v.content);
+  // BD-9.1 : volume en base ou dans le stockage objet (flux vérifié contre son identifiant SHA-256).
+  await envoyerFichier(res, v, { sha256: v.id, taille: v.size }, (b) => void res.send(b));
 });
 
 atelierVersionsRouter.post("/publications/:publicationId/restaurer", async (req, res) => {

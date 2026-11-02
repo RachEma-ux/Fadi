@@ -329,7 +329,10 @@ export const parcels = pgTable(
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
 
-/** Contenu binaire tel quel (bytea) : pièces jointes des étapes. */
+/**
+ * Contenu binaire tel quel (bytea). BD-9.1 : la colonne `content` des fichiers devient facultative ; une ligne porte
+ * soit son contenu, soit une clé d'objet (`objet_cle`, stockage objet S3) — voir `lib/stockage-objet/`.
+ */
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType() {
     return "bytea";
@@ -350,7 +353,11 @@ export const stepFiles = pgTable("step_files", {
   name: text("name").notNull(),
   type: text("type").notNull(),
   size: integer("size").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
+  /** BD-9.1 : SHA-256 du contenu (hexadécimal) ; renseigné pour les lignes écrites ou déplacées depuis BD-9.1. */
+  empreinte: text("empreinte"),
   addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("step_files_project_step_idx").on(t.projectId, t.stepNumber)]);
 
@@ -390,7 +397,11 @@ export const drawingExports = pgTable("drawing_exports", {
   kind: text("kind").notNull(),
   fileName: text("file_name").notNull(),
   mime: text("mime").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
+  /** BD-9.1 : SHA-256 du contenu (hexadécimal). */
+  empreinte: text("empreinte"),
   size: integer("size").notNull(),
   levelId: text("level_id"),
   levelName: text("level_name"),
@@ -893,7 +904,9 @@ export const volumes = pgTable("volumes", {
   id: text("id").primaryKey(),
   mime: text("mime").notNull(),
   size: integer("size").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet (l'identifiant reste le SHA-256). */
+  objetCle: text("objet_cle"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -1954,7 +1967,9 @@ export const comPieces = pgTable("com_pieces", {
   width: integer("width").notNull(),
   height: integer("height").notNull(),
   empreinte: text("empreinte").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
   clientRequestId: text("client_request_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("com_pieces_message_idx").on(t.messageId)]);

@@ -93,3 +93,26 @@ Montée en PostgreSQL 18 (BD-9.2) : `docs/montee-postgresql-18.md`.
 - Réglages mémoire (`shared_buffers`, `effective_cache_size`, `work_mem`) : dimensionnés sur la RAM réellement allouée
   au conteneur, mesurée sur l'hôte ; repère usuel : `shared_buffers` ≈ 25 % de cette RAM. Limites de ressources et
   rotation des journaux Docker comme en préproduction. Sauvegardes locales sur un autre disque que les données.
+
+## 6. Fichiers dans le stockage objet (BD-9.1, D-BD-8)
+
+Avec `FADI_STOCKAGE=s3`, ou après la reprise `npm run db:fichiers-vers-objet -- --appliquer`, le contenu des pièces des
+étapes (`step_files`), des exports de l'Atelier (`drawing_exports`), des volumes figés (`volumes`) et des photos de la
+messagerie (`com_pieces`) n'est **plus dans la base** : la base ne garde que la clé de l'objet, son empreinte SHA-256 et
+sa taille. `geodata_fichiers` (et les grilles `geodata_rasters`) restent en base.
+
+Conséquences pour les sauvegardes :
+
+- un dump (`pg_dump`, service `backup`) ou une restauration pgBackRest **ne contient plus ces fichiers** : sans le
+  compartiment, une base restaurée cite des objets introuvables ;
+- le compartiment doit donc avoir **sa propre protection**, réglée chez l'hébergeur choisi (non choisi à ce jour : rien
+  n'est fixé ici) : versionnement des objets, copie (réplication) vers un second site ou un second compartiment, et
+  durée de conservation des versions **au moins égale** à celle des sauvegardes de la base (D-BD-2), pour qu'une base
+  restaurée à un instant donné retrouve les objets qu'elle cite ;
+- les objets sont adressés par leur contenu (`<table>/<2 caractères>/<sha256>`) et jamais réécrits avec un autre
+  contenu : une version d'objet correspond toujours à la même empreinte ;
+- le balayage des orphelins (`npm run db:fichiers-vers-objet -- --orphelins --appliquer`) supprime des objets que la
+  base ne cite plus : avec le versionnement, la suppression laisse une version récupérable pendant la durée de
+  conservation ; sans versionnement, ne pas lancer le balayage avec un âge minimal inférieur à la fenêtre de PITR ;
+- contrôle après restauration : pour chaque ligne restaurée qui a une `objet_cle`, l'objet doit exister avec la même
+  taille (`size`) ; un échantillon peut être relu et comparé à son empreinte (`empreinte`, ou `id` pour `volumes`).

@@ -31,6 +31,7 @@ import {
   buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioExportAccountIds,
   type StudioArchiveRow, type StudioArchiveSection, type StudioArchiveTable,
 } from "./studio-archive-manifest.js";
+import { contenuFichier } from "./stockage-objet/index.js";
 
 /** Section Studio refusée à la relecture : la transaction d'import est annulée, rien n'est créé. */
 export class StudioArchiveError extends Error {
@@ -72,6 +73,17 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   tables.studio_publication_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publication_events t WHERE publication_id IN (SELECT id FROM studio_publications WHERE project_id = ${projectId}) ORDER BY id`);
   const volumeIds = packageVolumeIds(tables.studio_publications);
   tables.volumes = volumeIds.length ? await rows(q, sql`SELECT to_jsonb(t) AS row FROM volumes t WHERE id IN (${sql.join(volumeIds.map((id) => sql`${id}`), sql`, `)}) ORDER BY id`) : [];
+  // BD-9.1 : l'archive reste autonome et au format d'avant — un volume rangé dans le stockage objet y est réintégré
+  // (contenu en hexadécimal, comme `to_jsonb` l'écrit pour un bytea) et la clé d'objet, propre à ce serveur, n'est pas
+  // exportée. À l'import, le volume revient en base ; la reprise le déplacera de nouveau.
+  for (const r of tables.volumes) {
+    const cle = r["objet_cle"];
+    if (typeof cle === "string" && (r["content"] === null || r["content"] === undefined)) {
+      const octets = await contenuFichier({ content: null, objetCle: cle }, { sha256: r["id"] as string, taille: r["size"] as number });
+      r["content"] = `\\x${octets.toString("hex")}`;
+    }
+    delete r["objet_cle"];
+  }
   tables.project_members = await rows(q, sql`SELECT to_jsonb(t) AS row FROM project_members t WHERE project_id = ${projectId} ORDER BY user_id`);
   // Préférences d'outils des comptes du projet (propriétaire et membres) : visibilité seulement, jamais un droit.
   const accountsOfProject = [ownerId, ...tables.project_members.map((m) => m["user_id"] as string)];

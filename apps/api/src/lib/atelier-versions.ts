@@ -29,6 +29,7 @@ import { traitsExternesPour } from "./atelier-refexterne.js";
 import type { OwnedProject } from "./owned-project.js";
 import { APPLICATION_VERSION } from "./project-archive.js";
 import type { Querier } from "./step-rows.js";
+import { colonnesVolume } from "./stockage-objet/index.js";
 
 export interface EntreeJournalComplete extends EntreeJournalLue {
   id: string;
@@ -86,7 +87,7 @@ export async function creerVersion(q: Querier, projectId: string, auteurId: stri
 /** Range un contenu dans les volumes immuables (idempotent) ; renvoie son identifiant SHA-256. */
 export async function rangerVolume(q: Querier, contenu: Buffer, mime: string): Promise<string> {
   const id = createHash("sha256").update(contenu).digest("hex");
-  await q.insert(volumes).values({ id, mime, size: contenu.byteLength, content: contenu, createdAt: new Date() }).onConflictDoNothing();
+  await q.insert(volumes).values({ id, mime, size: contenu.byteLength, ...(await colonnesVolume(contenu, mime)), createdAt: new Date() }).onConflictDoNothing();
   return id;
 }
 

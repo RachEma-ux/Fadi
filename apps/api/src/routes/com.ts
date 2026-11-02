@@ -59,6 +59,7 @@ import { loadProjectAccess, projectOr404, type AccessibleProject } from "../lib/
 import { readStudioContext, StudioRequestError } from "../lib/studio-commands.js";
 import { nettoyerPhoto, PhotoRefusee, positionValide } from "../lib/com-images.js";
 import { openStudioObservation } from "../lib/studio-observations-suivi.js";
+import { envoyerFichier, rangerFichier } from "../lib/stockage-objet/index.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
 export const comRouter = Router({ mergeParams: true });
@@ -549,8 +550,10 @@ comRouter.post("/conversations/:conversationId/pieces", lirePhoto, endpoint(asyn
     }
   }
   const id = newId("com_piece");
+  // BD-9.1 : photo en base ou dans le stockage objet (FADI_STOCKAGE) ; l'empreinte reste celle du contenu nettoyé.
+  const range = await rangerFichier("com_pieces", photo.content, photo.mime);
   try {
-    await db.insert(comPieces).values({ id, projectId: c.access.id, conversationId: c.conv.id, authorId: userId, mime: photo.mime, size: photo.content.length, width: photo.width, height: photo.height, empreinte: photo.sha256, content: photo.content, clientRequestId: requete });
+    await db.insert(comPieces).values({ id, projectId: c.access.id, conversationId: c.conv.id, authorId: userId, mime: photo.mime, size: photo.content.length, width: photo.width, height: photo.height, empreinte: photo.sha256, content: range.content, objetCle: range.objetCle, clientRequestId: requete });
   } catch (e) {
     // Envoi concurrent du même identifiant : la première écriture l'emporte, le rejeu la relit.
     const [prev] = requete ? await db.select().from(comPieces).where(and(eq(comPieces.authorId, userId), eq(comPieces.clientRequestId, requete))).limit(1) : [];
@@ -573,11 +576,11 @@ comRouter.get("/pieces/:pieceId", endpoint(async (req, res) => {
     if (!m || m.withdrawnAt || (debut && m.createdAt < debut)) return introuvable();
   }
   res.setHeader("Content-Type", ph.mime);
-  res.setHeader("Content-Length", String(ph.content.length));
+  res.setHeader("Content-Length", String(ph.size));
   res.setHeader("Content-Disposition", "inline");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Cache-Control", "private, no-store");
-  res.end(ph.content);
+  await envoyerFichier(res, ph, { sha256: ph.empreinte, taille: ph.size });
 }));
 
 /** Plan d'une révision exacte d'une variante Studio (SVG, mètres, y inversé) : support de pose et d'affichage des épingles. */
@@ -644,7 +647,7 @@ comRouter.post("/conversations/:conversationId/partages", endpoint(async (req, r
     if (aCopier.length) {
       const sources = await tx.select().from(comPieces).where(inArray(comPieces.id, aCopier)).orderBy(asc(comPieces.createdAt));
       for (const ph of sources) {
-        await tx.insert(comPieces).values({ id: newId("com_piece"), projectId: ph.projectId, conversationId: p.cible.conv.id, messageId: id, authorId: userId, mime: ph.mime, size: ph.size, width: ph.width, height: ph.height, empreinte: ph.empreinte, content: ph.content, createdAt: now });
+        await tx.insert(comPieces).values({ id: newId("com_piece"), projectId: ph.projectId, conversationId: p.cible.conv.id, messageId: id, authorId: userId, mime: ph.mime, size: ph.size, width: ph.width, height: ph.height, empreinte: ph.empreinte, content: ph.content, objetCle: ph.objetCle, createdAt: now });
       }
     }
     await tx.update(comConversations).set({ lastMessageAt: now }).where(eq(comConversations.id, p.cible.conv.id));

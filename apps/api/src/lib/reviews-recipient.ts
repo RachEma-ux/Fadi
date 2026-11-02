@@ -31,6 +31,7 @@ import { apercuControleApprobation, decideStudioPublicationByReview, publication
 import type { ResultatAutoControle } from "./auto-controle.js";
 import { sha256 } from "./studio-publication-statuts.js";
 import type { Querier } from "./step-rows.js";
+import { colonnesVolume, contenuVolume } from "./stockage-objet/index.js";
 
 const STUDIO_OBJECT_ID = z.string().min(1).max(128);
 export const reviewFindingSchema = z.object({
@@ -140,8 +141,9 @@ export async function readReviewFile(packageId: string, userId: string, format: 
   const delivery = fileDelivery(format, wantsDownload, actionsOf(access, await decisionContext(access)));
   if (!delivery.ok) refuse(403, "download_not_granted", "Le téléchargement de ce document ne vous a pas été accordé : consultez-le en ligne (SVG, PDF).");
   const [volume] = await db.select().from(volumes).where(eq(volumes.id, file.sha256)).limit(1);
-  if (!volume || sha256(volume.content) !== file.sha256) throw new Error("review_package_volume_corrupt");
-  return { file, content: volume.content, disposition: delivery.ok ? delivery.disposition : "attachment", packageStatus: access.pkg.status, version: access.pkg.version };
+  const contenu = await contenuVolume(volume);
+  if (!contenu || sha256(contenu) !== file.sha256) throw new Error("review_package_volume_corrupt");
+  return { file, content: contenu, disposition: delivery.ok ? delivery.disposition : "attachment", packageStatus: access.pkg.status, version: access.pkg.version };
 }
 
 /** Pièce jointe d'un constat de la lignée du paquet. */
@@ -152,8 +154,9 @@ export async function readFindingAttachment(packageId: string, userId: string, o
   const att = finding?.attachments.find((a) => a.sha256 === digest);
   if (!att) return reviewNotFound();
   const [volume] = await db.select().from(volumes).where(eq(volumes.id, att.sha256)).limit(1);
-  if (!volume || sha256(volume.content) !== att.sha256) throw new Error("review_attachment_volume_corrupt");
-  return { attachment: att, content: volume.content };
+  const contenu = await contenuVolume(volume);
+  if (!contenu || sha256(contenu) !== att.sha256) throw new Error("review_attachment_volume_corrupt");
+  return { attachment: att, content: contenu };
 }
 
 /** Passage en cours d'une affectation attendue dès la première écriture du destinataire. */
@@ -194,7 +197,7 @@ export async function createFinding(packageId: string, userId: string, input: z.
       const problem = attachmentProblem(att.mime, bytes);
       if (problem) refuse(400, "invalid_input", problem, { code: "attachment_invalid", name: att.name });
       const digest = sha256(bytes);
-      await tx.insert(volumes).values({ id: digest, mime: att.mime, size: bytes.byteLength, content: bytes, createdAt: new Date() }).onConflictDoNothing();
+      await tx.insert(volumes).values({ id: digest, mime: att.mime, size: bytes.byteLength, ...(await colonnesVolume(bytes, att.mime)), createdAt: new Date() }).onConflictDoNothing();
       attachments.push({ name: safeFileName(att.name), mime: att.mime, size: bytes.byteLength, sha256: digest });
     }
     const id = newId("studio_comment");

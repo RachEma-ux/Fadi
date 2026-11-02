@@ -61,7 +61,9 @@ jour. Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`
   (ou `rsync` vers une autre machine). Vérifier régulièrement que la copie contient le fichier du jour.
 - Sauvegarde à la demande : `docker compose --env-file .env.deploy exec backup fadi-backup db fadi fadi /backups`.
 - Les pièces jointes des étapes et les fichiers de l'outil Parcelle sont **dans la base** (`step_files`, `parcels`) :
-  une sauvegarde de la base est complète.
+  une sauvegarde de la base est complète — **tant que** `FADI_STOCKAGE` vaut `base` et qu'aucune reprise vers le stockage
+  objet n'a été faite. Sinon, le compartiment S3 est sauvegardé à part (section « Stockage des fichiers » ci-dessous et
+  `docs/sauvegarde-pitr.md`, § 6).
 
 ## Restauration (procédure)
 
@@ -108,7 +110,56 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `PG_POOL_MAX`, `PG_CONNECTION_TIMEOUT_MS`, `PG_STATEMENT_TIMEOUT_MS`, `PG_IDLE_IN_TRANSACTION_MS`, `PG_POOL_IDLE_MS`, `PG_APP_NAME` | Pool PostgreSQL de l'API (BD-1.2) : 10 connexions, 10 s pour obtenir une connexion, 60 s par instruction, 60 s pour une transaction inactive, nom `fadi-api` dans `pg_stat_activity`. `0` = pas de délai (retour arrière sans nouvelle image). |
 | `CONTACT_RETENTION_ENABLED` | Effacement des contacts sans compte 2 ans après la clôture de leurs projets (OP-2). Activé en production par `docker-compose.yml` (D-BD-4) ; `0` le coupe. |
 | `FADI_RETENTION_SESSIONS_JOURS`, `FADI_RETENTION_JETONS_JOURS`, `FADI_RETENTION_COURRIELS_JOURS` | Purge horaire des sessions expirées ou révoquées, des jetons de compte expirés ou utilisés et des courriels traités (BD-6.1). Vide : 30 jours (D-BD-11) ; un entier change la durée (2 jours au moins pour les courriels) ; `desactive` coupe la catégorie. |
+| `FADI_STOCKAGE` | Où sont écrits les nouveaux fichiers (pièces des étapes, exports de l'Atelier, volumes figés, photos de la messagerie) : `base` (défaut, colonne bytea) ou `s3` (stockage objet). Toute autre valeur : refus de démarrer. |
+| `FADI_S3_ENDPOINT`, `FADI_S3_REGION`, `FADI_S3_BUCKET`, `FADI_S3_ACCESS_KEY_ID`, `FADI_S3_SECRET_ACCESS_KEY` | Service compatible S3 (BD-9.1, D-BD-8 : hébergé en Suisse ; hébergeur non choisi, aucune valeur dans le dépôt). Tout ou rien : obligatoires avec `FADI_STOCKAGE=s3`, et à garder renseignées tant que des fichiers sont dans le compartiment, même revenu à `base`. `https://` exigé en production. |
+| `FADI_S3_FORCE_PATH_STYLE` | `1` (défaut) : adressage `https://hote/compartiment/cle` ; `0` : sous-domaine du compartiment, si l'hébergeur l'exige. |
 | `AUTH_RATE_LIMIT`, `API_RATE_LIMIT` | Ne servent qu'aux tests ; ne pas définir en production (20 / 15 min et 300 / min). |
+
+## Stockage des fichiers (BD-9.1, D-BD-8)
+
+Par défaut, les fichiers restent dans la base (`bytea`). La décision D-BD-8 du maître d'ouvrage prévoit un stockage
+objet compatible S3 hébergé en Suisse ; le dépôt fournit le mécanisme, pas l'hébergeur ni ses identifiants.
+
+Tables concernées : `step_files`, `drawing_exports`, `volumes`, `com_pieces`. **Jamais** `geodata_fichiers` (archivage
+en base exigé, D-GD-29) ni `geodata_rasters`. Une ligne porte soit son contenu, soit une clé d'objet
+(`objet_cle`, adressée par le contenu : `<table>/<2 caractères>/<sha256>`), avec l'empreinte SHA-256 et la taille en
+base (migration `0011_fichiers_stockage_objet.sql`). La lecture suit l'emplacement réel : l'API sert un objet en flux
+(sans le garder en mémoire), vérifié contre la taille et l'empreinte de la base ; un écart interrompt la réponse.
+
+Mise en service, d'abord en préproduction avec un compartiment qui lui est propre :
+
+1. Créer le compartiment chez l'hébergeur retenu, avec **versionnement et réplication** (`docs/sauvegarde-pitr.md`, § 6),
+   et une clé d'accès limitée à ce compartiment (lecture, écriture, liste, suppression).
+2. Renseigner les cinq variables `FADI_S3_*` (et `FADI_S3_FORCE_PATH_STYLE` si besoin) dans `.env.deploy`
+   (préproduction : `PREPROD_FADI_S3_*` dans le fichier d'environnement de l'hôte), laisser `FADI_STOCKAGE=base`, redéployer :
+   l'API valide la configuration au démarrage (message explicite et refus de démarrer sinon) et l'affiche dans son journal.
+3. Essai de la reprise (rien n'est écrit ; vérifie aussi l'accès au compartiment) :
+   `docker compose --env-file .env.deploy exec app node apps/api/dist/fichiers-vers-objet.js`
+   (développement : `npm run db:fichiers-vers-objet`).
+4. Passer `FADI_STOCKAGE=s3` et redéployer : les nouveaux fichiers vont dans le compartiment.
+5. Reprise des fichiers existants, hors pic, par lots : `… fichiers-vers-objet.js --appliquer [--lot 50] [--max N]
+   [--table step_files]`. Chaque objet déposé est relu en entier (taille et SHA-256) avant que le bytea soit vidé, par un
+   `UPDATE` conditionné au même contenu ; une ligne incohérente est signalée et laissée en base. Relançable à volonté.
+6. Valider les contraintes posées `NOT VALID` par la migration : `npm run db:validate-constraints`.
+7. Périodiquement : `… fichiers-vers-objet.js --orphelins` (essai), puis `--orphelins --appliquer` pour supprimer les
+   objets qu'aucune ligne ne cite plus (fichiers supprimés, projets effacés, volumes nettoyés) et plus anciens que
+   `--age-heures` (24 par défaut). Les objets ne sont jamais supprimés avec leur ligne, car deux lignes au même contenu
+   partagent un objet. Tant que ce balayage n'a pas tourné, un fichier effacé dans l'application reste dans le compartiment.
+
+Retour arrière :
+
+- Revenir à `FADI_STOCKAGE=base` (sans nouvelle image) : les nouveaux fichiers retournent en base ; les fichiers déjà
+  déplacés restent lus dans le compartiment, d'où l'obligation de garder les variables `FADI_S3_*`.
+- Revenir à une **image antérieure à BD-9.1** n'est possible que si aucune ligne n'a de clé d'objet
+  (`SELECT count(*) FROM step_files WHERE objet_cle IS NOT NULL`, idem pour les trois autres tables) : l'ancien code
+  attend `content` partout. Il n'existe pas encore d'outil de rapatriement (objet → bytea) : à écrire avant d'en avoir
+  besoin si ce retour doit rester possible.
+
+Limites connues : l'export d'archive d'un projet (pièces des étapes, volumes Studio) relit les objets et les intègre à
+l'archive (format inchangé, toujours en mémoire, constat Q6 non traité ici) ; à l'import, ces fichiers sont écrits selon
+`FADI_STOCKAGE` (volumes Studio : toujours en base, la reprise les déplace ensuite). Les outils de comparaison
+`scripts/migration/migration-lib.mjs` et `scripts/validation/studio-compare-restore.mjs` lisent `content` et ne
+connaissent pas encore les fichiers déplacés.
 
 ## Ce que l'instance temporaire ne fait pas
 

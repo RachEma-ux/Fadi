@@ -48,7 +48,8 @@ await build({
 // comme `create-admin.mjs` (`node apps/api/dist/geodata-role.js …`, `node apps/api/dist/geodata-reference.js …`), sans
 // tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
 await build({
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts") },
+  // BD-9.1 : reprise des fichiers vers le stockage objet (`node apps/api/dist/fichiers-vers-objet.js`), @aws-sdk externe.
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",
