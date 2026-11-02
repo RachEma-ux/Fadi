@@ -14,6 +14,9 @@ Mis à jour : 2026-11-02 (UTC).
   audit TER-00 au commit `79f7a38` (`terrain/TER-00-AUDIT.md`), décisions TER-D1 à TER-D15 soumises
   (`terrain/DECISIONS.md`), cahier d'acquisition à compléter (`terrain/TER-01-CAHIER-ACQUISITION.md`). Licence Lucerne
   vérifiée (Open-By, usage commercial permis, attribution obligatoire) ; aucun fichier téléchargé, aucun code.
+  TER-D4 décidé par le maître d'ouvrage (2 novembre 2026) : GEDTM30 v1.2 (CC BY 4.0 vérifiée) + MNS Copernicus GLO-30
+  (EGM2008 déclaré) ; référence verticale de GEDTM30 non déclarée ; comparaison sur ≈ 1 km² à Benslimane : centres
+  220,1 / 219,7 m, écart quadratique entre modèles 3,78 m (`terrain/MODELES-REGIONAUX.md`, constat, pas une précision).
 - Prix immobiliers (GEO-PRIX, D-GD-56 à D-GD-59, PR #374, branche `claude/prix-immobiliers-geodata`) : **vérifié**
   (CI entièrement verte sur `1cacb2b`, 31 octobre 2026 : `validate` avec la suite DB-3 `geodata-prix.test.ts` sur base
   jetable attestée, e2e des six tranches dont `complements` qui joue la recette GeoData) ; **non accepté**, non fusionné

@@ -72,6 +72,9 @@ racine des données Docker) n'ont **pas** été vérifiés par cette session : i
   compris, moyenné à 0,01° ≈ 1,1 km) et `copernicus-dem-mar-pente` (pente calculée sur cette grille lissée). Ce n'est **ni
   un MNT, ni un modèle à ~30 m** : il ne peut être présenté comme repli « terrain nu » (TER-D4). TessaDEM n'est pas au
   dépôt ; sa licence n'est pas qualifiée.
+- Décision TER-D4 du 2 novembre 2026 : repli régional = **GEDTM30** (MNT, CC BY 4.0) et MNS distinct **Copernicus
+  GLO-30** ; licences vérifiées et première comparaison dans [`MODELES-REGIONAUX.md`](MODELES-REGIONAUX.md). Les deux sont
+  des COG en EPSG:4326 au pas de 1″ : lecture par fenêtres (`geotiff`, déjà présent) de l'emprise utile seulement.
 
 ### 2.4 Droits et portée (A4)
 
