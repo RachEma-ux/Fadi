@@ -263,6 +263,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
+      # Chantier bases-de-donnees (BD-5) : seconde application (verrou consultatif, journal admin.schema_applications), puis
+      # contrôle des contraintes NOT VALID sur les lignes présentes, en transactions annulées (rien n'est modifié).
+      - name: Base — seconde migration journalisée et contraintes NOT VALID respectées
+        run: |
+          npm run db:migrate
+          npm run db:verifier-contraintes -w apps/api
       # Gestion des comptes (#253, phase 1) : init.sql rejoué deux fois, défauts des comptes historiques, contraintes
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only

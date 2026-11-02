@@ -4,6 +4,7 @@ import { Pool } from "pg";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
+import { appliquerSchema } from "./db/appliquer-schema.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
@@ -34,9 +35,11 @@ async function migrateOnStart(): Promise<void> {
   const migrationUrl = process.env["DATABASE_MIGRATION_URL"];
   const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1 }) : pool;
   try {
-    await migrationPool.query(sql);
+    const r = await appliquerSchema(migrationPool, sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
+    // eslint-disable-next-line no-console
+    console.log(`Migration : ${r.dureeMs} ms, ${r.tentatives} essai(s), statistiques des requêtes ${r.pgStatStatements}.`);
     const roles = await applyRolePasswords(migrationPool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);
@@ -109,8 +112,20 @@ Promise.resolve()
     server.headersTimeout = 66_000;
     // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
     const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
-    // Arrêt (déploiement) : les clients sont prévenus (1001) puis le processus s'arrête comme avant, sans attendre les connexions.
-    process.once("SIGTERM", () => { arreterTempsReel(); arreterImportAuto(); setTimeout(() => process.exit(0), 200); });
+    // Arrêt (déploiement) : les clients du temps réel sont prévenus (1001), le serveur cesse d'accepter des requêtes et
+    // termine celles en cours, puis les connexions à la base sont rendues (BD-1) ; au plus ARRET_DELAI_MS (8 s, sous les
+    // 10 s laissés par Docker avant l'arrêt forcé).
+    process.once("SIGTERM", () => {
+      arreterTempsReel();
+      arreterImportAuto();
+      const delai = Number(process.env["ARRET_DELAI_MS"] ?? 8000);
+      const fin = setTimeout(() => process.exit(0), Number.isFinite(delai) && delai >= 0 ? delai : 8000);
+      fin.unref();
+      server.close(() => {
+        pool.end().catch(() => undefined).finally(() => process.exit(0));
+      });
+      server.closeIdleConnections();
+    });
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

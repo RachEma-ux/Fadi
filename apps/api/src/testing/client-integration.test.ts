@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const driver = vi.hoisted(() => ({ construct: vi.fn(), query: vi.fn(), connect: vi.fn(), end: vi.fn() }));
+const driver = vi.hoisted(() => ({ construct: vi.fn(), query: vi.fn(), connect: vi.fn(), end: vi.fn(), on: vi.fn() }));
 vi.mock("pg", () => ({
   Pool: class Pool {
     query = driver.query;
     connect = driver.connect;
     end = driver.end;
+    on = driver.on;
     constructor(options: unknown) { driver.construct(options); }
   },
 }));
@@ -39,7 +40,12 @@ describe("application DB seam, completely mocked driver", () => {
     const connectionString = "postgresql://synthetic:sentinel@192.0.2.1:5432/never_connected";
     vi.stubEnv("DATABASE_URL", connectionString);
     const { pool, db } = await import("../db/client.js");
-    expect(driver.construct).toHaveBeenCalledExactlyOnceWith({ connectionString });
+    // BD-1 (chantier bases-de-donnees) : délais et taille du pool explicites, écouteur d'erreur des connexions inactives.
+    expect(driver.construct).toHaveBeenCalledExactlyOnceWith({
+      connectionString, application_name: "fadi-api", max: 10, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000,
+      statement_timeout: 120_000, idle_in_transaction_session_timeout: 120_000,
+    });
+    expect(driver.on).toHaveBeenCalledExactlyOnceWith("error", expect.any(Function));
     expect(pool).toBeDefined(); expect(db).toEqual({ simulated: true });
     expect(driver.connect).not.toHaveBeenCalled(); expect(driver.query).not.toHaveBeenCalled();
   });
