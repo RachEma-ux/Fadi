@@ -81,6 +81,9 @@ Les secrets de `.env.deploy` sont à sauvegarder dans un dépôt séparé, chiff
 Lecture seule ; une ligne JSON ; code 0 (sain), 1 (seuil dépassé : connexions, transaction longue, verrous en attente,
 archivage en retard, index invalides), 2 (base injoignable). À lancer toutes les 5 minutes par un timer qui transmet le
 code à Healthchecks. Le conteneur `backup` passe « unhealthy » sans dump depuis 26 h (BD-1.6).
+Depuis BD-9.3, la sonde reconnaît aussi un standby et surveille la réplication (`replication-en-retard` à 600 s,
+`standby-absent` avec `SONDE_STANDBYS`, `reception-wal-arretee`, `slot-inactif`) : `docs/haute-disponibilite.md`.
+Montée en PostgreSQL 18 (BD-9.2) : `docs/montee-postgresql-18.md`.
 
 ## 5. Rôles et réglages (BD-5.4, BD-5.6)
 

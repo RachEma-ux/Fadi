@@ -1,0 +1,63 @@
+# BD-9.3 (chantier base-donnees, D-BD-10 « standby en streaming sur une seconde machine ») : surcharge Compose pour la
+# SECONDE MACHINE. Même dépôt, même .env.deploy que la production (secrets copiés hors Git par l'administrateur) ; seule
+# la base y tourne, en standby (lecture seule, rejeu en continu des WAL du primaire). L'application, la migration, le
+# relais HTTPS et la sauvegarde n'y démarrent qu'à la bascule (profil « bascule », docs/haute-disponibilite.md).
+# Prérequis : la production est déjà en PostgreSQL 18 (BD-9.2) — primaire et standby ont la même version majeure.
+# MODÈLE NON ÉPROUVÉ en conteneur (la répétition du chantier est faite sur des clusters locaux) : préproduction d'abord.
+#
+#   F="-f docker-compose.yml -f ops/pg18/compose.pg18.yml -f ops/standby/compose.standby.yml"
+#   docker compose --env-file .env.deploy $F run --rm amorcage   # copie initiale (pg_basebackup -R, slot), une fois
+#   docker compose --env-file .env.deploy $F up -d db             # standby
+#   # bascule : SELECT pg_promote(); puis
+#   docker compose --env-file .env.deploy $F --profile bascule up -d
+#
+# /etc/fadi/replication (hôte, root:999 0750, fichiers 0600 propriétaires uid 999 = postgres de l'image) :
+#   pgpass   « <hôte-primaire>:5432:*:fadi_replication:<mot de passe> » (le mot de passe n'est jamais écrit ailleurs ;
+#            pg_basebackup -R n'enregistre que le chemin du fichier, vérifié en répétition)
+#   ca.crt   autorité qui a signé le certificat du primaire (sslmode verify-full), si TLS
+x-bascule: &bascule
+  profiles: ["bascule"]
+
+services:
+  amorcage:
+    image: postgis/postgis:18-3.6
+    profiles: ["amorcage"]
+    restart: "no"
+    user: postgres
+    environment:
+      PGDATA: /var/lib/postgresql/18/docker
+      PGPASSFILE: /etc/fadi/replication/pgpass
+      FADI_PRIMAIRE_HOTE: ${FADI_PRIMAIRE_HOTE:-}
+      FADI_PRIMAIRE_PORT: ${FADI_PRIMAIRE_PORT:-5432}
+      FADI_REPLICATION_SSLMODE: ${FADI_REPLICATION_SSLMODE:-verify-full}
+      FADI_SLOT: ${FADI_SLOT:-fadi_standby}
+    volumes:
+      - fadi-db18:/var/lib/postgresql
+      - /etc/fadi/replication:/etc/fadi/replication:ro
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        : "$${FADI_PRIMAIRE_HOTE:?FADI_PRIMAIRE_HOTE manquant (adresse privée du primaire)}"
+        if [ -s "$$PGDATA/PG_VERSION" ]; then echo "volume déjà initialisé : amorçage refusé (vider fadi-db18 d'abord)"; exit 3; fi
+        install -d -m 0700 "$$PGDATA"
+        pg_basebackup -D "$$PGDATA" -R -X stream -c fast -P -S "$$FADI_SLOT" \
+          -d "host=$$FADI_PRIMAIRE_HOTE port=$$FADI_PRIMAIRE_PORT user=fadi_replication sslmode=$$FADI_REPLICATION_SSLMODE sslrootcert=/etc/fadi/replication/ca.crt application_name=$$FADI_SLOT"
+        test -f "$$PGDATA/standby.signal"
+        echo "AMORCAGE_OK : démarrer le service db"
+
+  db:
+    # Aucun réglage propre au standby sur la ligne de commande : ceux du primaire (ALTER SYSTEM, postgresql.auto.conf) sont
+    # recopiés par pg_basebackup, avec primary_conninfo, primary_slot_name et standby.signal écrits par -R. Avec
+    # l'archivage (ops/pgbackrest/compose.pitr.yml empilé ici aussi), archive_mode=on n'archive rien tant que le serveur
+    # est standby et prend le relais dès la promotion.
+    volumes:
+      - /etc/fadi/replication:/etc/fadi/replication:ro
+    # Exposée sur l'adresse privée seulement, pour que l'ancien primaire puisse s'y rattacher après une bascule.
+    ports:
+      - "${FADI_REPLICATION_ECOUTE:?FADI_REPLICATION_ECOUTE manquant (adresse privée:port, ex. réseau WireGuard)}:5432"
+
+  migrate: *bascule
+  app: *bascule
+  proxy: *bascule
+  backup: *bascule

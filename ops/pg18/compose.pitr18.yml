@@ -1,0 +1,10 @@
+# BD-9.2 : image pgBackRest de la base sur PostgreSQL 18, à empiler APRÈS ops/pgbackrest/compose.pitr.yml :
+#   -f docker-compose.yml -f ops/pg18/compose.pg18.yml -f ops/pgbackrest/compose.pitr.yml -f ops/pg18/compose.pitr18.yml
+# Dans /etc/pgbackrest/pgbackrest.conf, pg1-path devient /var/lib/postgresql/18/docker, puis
+# `pgbackrest --stanza=fadi stanza-upgrade` (docs/montee-postgresql-18.md, étape 7). MODÈLE NON ÉPROUVÉ en conteneur.
+services:
+  db:
+    build:
+      args:
+        IMAGE_BASE: postgis/postgis:18-3.6
+    image: fadi-db-pgbackrest:18-3.6

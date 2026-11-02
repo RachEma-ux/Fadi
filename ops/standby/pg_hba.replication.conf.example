@@ -1,0 +1,16 @@
+# BD-9.3 (D-BD-10) : lignes à AJOUTER au pg_hba.conf du primaire (dans le volume : $PGDATA/pg_hba.conf). En fin de fichier
+# convient : la ligne générale « host all all all scram-sha-256 » de l'image ne couvre pas la pseudo-base replication. Le fichier vit dans PGDATA : pg_basebackup et pg_rewind le
+# recopient, donc les deux machines ont les mêmes règles et la bascule ne demande pas de le réécrire.
+# <ip-primaire> / <ip-standby> : adresses PRIVÉES des deux machines (réseau WireGuard ou privé de l'hébergeur), /32.
+# hostssl : la réplication transporte toute la base ; sans TLS, seulement à l'intérieur d'un tunnel chiffré (WireGuard),
+# en remplaçant hostssl par host — choix de l'administrateur, consigné dans docs/haute-disponibilite.md.
+#
+#   docker compose ... exec db sh -c 'cat >> "$PGDATA/pg_hba.conf"' < pg_hba.replication.conf   # fichier rempli
+#   docker compose ... exec db psql -U fadi -d postgres -c 'SELECT pg_reload_conf()' -c 'TABLE pg_hba_file_rules'
+
+# Flux de réplication (pg_basebackup, standby) dans les deux sens : l'ancien primaire devient standby après bascule.
+hostssl  replication  fadi_replication  <ip-standby>/32   scram-sha-256
+hostssl  replication  fadi_replication  <ip-primaire>/32  scram-sha-256
+# pg_rewind (connexion ordinaire à la base « postgres », fonctions accordées par ops/standby/role-replication.sql).
+hostssl  postgres     fadi_replication  <ip-standby>/32   scram-sha-256
+hostssl  postgres     fadi_replication  <ip-primaire>/32  scram-sha-256
