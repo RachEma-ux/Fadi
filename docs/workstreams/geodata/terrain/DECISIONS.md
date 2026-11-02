@@ -3,9 +3,10 @@
 Date : 2 novembre 2026 (heure suisse). Issue : https://github.com/RachEma-ux/Fadi/issues/381. Audit :
 [`TER-00-AUDIT.md`](TER-00-AUDIT.md) (commit audité `79f7a38`).
 
-**Aucune de ces décisions n'est prise.** Chaque ligne donne la recommandation de la session ; l'état reste
-« À définir » jusqu'à la réponse écrite du maître d'ouvrage. **TER-02 n'est pas engagé** tant que les décisions marquées
-« bloquante TER-02 » n'ont pas de réponse.
+**État : toutes décidées.** TER-D4 et TER-D16 ont été tranchées par le maître d'ouvrage en propre ; pour toutes les autres
+(TER-D1 à TER-D3, D5 à D15, D17, D18), le maître d'ouvrage a retenu **la recommandation** de la session (décision écrite du
+2 novembre 2026 dans la session, « Recommandations retenues pour toutes les décisions TER-Dx »). La colonne
+« Recommandation » vaut donc décision pour ces lignes.
 
 Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : …`, etc.
 
@@ -39,6 +40,19 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 | 2026-11-02 | TER-D16 | Catalogue d'altitudes multi-résolution, « la meilleure source vérifiée pour chaque zone » : (1) fond mondial Copernicus GLO-30 (MNS) ou GEDTM30 (MNT estimé), choisis selon l'usage (surface ou terrain nu), produits distincts jamais fusionnés ; (2) MNT LiDAR **officiel** de 0,25 à 2 m (licence vérifiée, producteur, date, datum, précision déclarée) qui remplace le fond mondial **sur son emprise exacte** — aucune couverture présumée : Maroc aucun jeu confirmé (ANCFCC à vérifier, TER-01), Lucerne = démonstration étiquetée ; (3) levé local réel de 1 à 5 cm, MNS et MNT en couches séparées, la finesse de grille ne valant jamais précision (précision mesurée = rapport de contrôle indépendant, TER-06) ; (4) couche colorée générée **uniquement** depuis ces rasters numériques (jamais de tuiles RVB d'un tiers), avec à côté de la carte et de chaque valeur : source, date du levé ou de la version, pas natif, précision déclarée (et mesurée si elle existe), référence verticale, état de validation ; frontières de couverture visibles, transitions de source signalées dans les profils. | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | Règle de priorité consignée ci-dessous ; architecture de l'audit (§ 4) complétée ; mise en œuvre TER-02 (catalogue : niveau, produit, emprise exacte), TER-03 / TER-04 (sélection), TER-05 (affichage). |
 
 | 2026-11-02 | Courbes de niveau | « Implémente les lignes de relief » : courbes calculées seulement depuis les rasters numériques du catalogue (outil épinglé dans le travailleur), MNT par défaut, MNS seulement sur choix explicite et étiqueté ; équidistance liée à la précision (TER-D17) ; maîtresses épaisses et cotées (m, référence verticale), intermédiaires fines ; lissage seulement graphique ; courbes coupées aux limites de couverture et aux NoData, jamais raccordées entre sources sans marque ; calcul en tâche de fond, cache par version + équidistance + emprise + périmètre d'autorisation ; tuiles vectorielles ou GeoJSON borné ; commande « Courbes de niveau » du contrôle Terrain (équidistance, opacité, « Sources et précision », FR + en.json, icône et raccourci propres) ; export GeoJSON / DXF avec métadonnées (TER-D18) ; tests imposés. | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | Intégré au plan : `TER-00-AUDIT.md` § 4 bis ; réalisation TER-03 (calcul), TER-04 (tuiles, GeoJSON, export), TER-05 (interface), un lot à la fois. Décisions TER-D17 et TER-D18 soumises. |
+
+| 2026-11-02 | TER-D1 à D3, D5 à D15, D17, D18 | « Recommandations retenues pour toutes les décisions TER-Dx. » | Maître d'ouvrage, dans la session | TER-02 engagé (`TER-02.md`). Reste à constater sur le VPS : racine des données Docker et espace libre réel (TER-D7). |
+
+### Questions ouvertes par TER-02 (levées de quarantaine, TER-D13)
+
+Les quatre jeux réels importés sont en quarantaine (`TER-02.md`). La session ne lève aucune quarantaine : il faut une
+décision d'un responsable de publication, **avec la source** qui établit la référence ou la valeur.
+
+| ID | Jeu | Question | Recommandation de la session |
+| --- | --- | --- | --- |
+| Q-TER-02-1 | Lucerne MNT et MNS 2024 | Quelle référence altimétrique ? Le producteur écrit seulement « Höhe über Meer » ; aucune clé dans le fichier. | Demander par écrit au producteur (rawi, Kanton Luzern, geoportal.lu.ch) la référence altimétrique des produits DTM24025 / DOM24025, puis lever avec cette réponse comme source. Rien n'est supposé d'ici là (jeu de démonstration : seule la mécanique logicielle en dépend). |
+| Q-TER-02-2 | GEDTM30 v1.2 | Quelle référence verticale ? Le nom de fichier porte « 4326.3855 » (EGM2008), sans déclaration. | Demander à OpenGeoHub (dépôt Codeberg, question publique) une déclaration écrite ; ou lire l'article PeerJ 13:e19673 (refusé à la lecture automatique) et citer le passage. Levée avec cette source seulement. |
+| Q-TER-02-3 | Copernicus GLO-30 N33 W008 | Quelle valeur signifie « sans mesure » ? Aucune NoData déclarée ; 4 337 602 cellules valent exactement 0 (océan). | Lire le « Copernicus DEM Product Handbook » (ESA) sur le traitement des surfaces d'eau et des vides, puis lever avec cette source et un masque décidé en TER-03 ; d'ici là, aucune altitude 0 n'est servie comme mesure. |
 
 ### Règle de priorité des sources d'altitude (TER-D16, à implémenter en TER-03 / TER-04)
 

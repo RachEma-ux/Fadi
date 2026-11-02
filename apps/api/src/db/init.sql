@@ -3987,6 +3987,116 @@ $$;
 CREATE OR REPLACE TRIGGER geodata_prix_decisions_rattachement_ajout_seul BEFORE UPDATE OR DELETE ON geodata_prix_decisions_rattachement
   FOR EACH ROW EXECUTE FUNCTION geodata_prix_decision_ajout_seul();
 
+-- Terrain haute résolution (plan v1.0, lot TER-02, Issue #381, décisions TER-D5, D9, D10, D12 du 2 novembre 2026).
+-- Catalogue des versions d'altitudes : fiche déclarée, empreinte de l'original, en-tête lu, état du cycle de vie du plan
+-- (déposé → validation → rejeté | quarantaine | traitement → revue → accepté → publié → remplacé | retiré), motifs.
+-- Les fichiers eux-mêmes vivent dans le volume terrain, adressés par empreinte (dérogation D-GD-29 décidée, TER-D5) ;
+-- la base garde l'empreinte, la taille, la clé de stockage et la fiche. Aucune FK vers les projets (TER-D9, GEO 04).
+CREATE TABLE IF NOT EXISTS geodata_terrain_versions (
+  id text PRIMARY KEY,
+  cle text NOT NULL CHECK (cle ~ '^[a-z0-9][a-z0-9-]{2,79}$'),
+  niveau text NOT NULL CHECK (niveau IN ('mondial', 'regional-officiel', 'leve-local')),
+  produit text NOT NULL CHECK (produit IN ('MNT', 'MNS')),
+  etat text NOT NULL CHECK (etat IN ('depose', 'validation', 'rejete', 'quarantaine', 'traitement', 'revue', 'accepte', 'publie', 'remplace', 'retire')),
+  motifs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  declaration jsonb NOT NULL,
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  taille bigint NOT NULL CHECK (taille > 0),
+  entete jsonb,
+  crs_horizontal text,
+  reference_verticale jsonb NOT NULL,
+  nodata double precision,
+  cellules bigint,
+  synthetique boolean NOT NULL,
+  demonstration boolean NOT NULL,
+  etiquette text,
+  depose_par text REFERENCES users (id) ON DELETE SET NULL,
+  depose_le timestamptz NOT NULL DEFAULT now(),
+  etat_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_terrain_versions_uniq UNIQUE (cle, empreinte),
+  CONSTRAINT geodata_terrain_versions_etiquette CHECK ((NOT synthetique AND NOT demonstration) OR etiquette IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_versions_cle_idx ON geodata_terrain_versions (cle, produit, etat);
+-- Une seule version publiée par jeu : un import raté ou une nouvelle version ne remplace jamais en silence la publiée.
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_terrain_versions_publiee_uniq ON geodata_terrain_versions (cle) WHERE etat = 'publie';
+-- Contenu figé : seuls l'état, ses motifs, sa date et la référence verticale (levée de quarantaine consignée) changent ;
+-- l'état ne suit que les transitions du plan ; une version ne s'efface pas.
+CREATE OR REPLACE FUNCTION geodata_terrain_version_controle() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'geodata_terrain_version_non_effacable'; END IF;
+  IF (NEW.id, NEW.cle, NEW.niveau, NEW.produit, NEW.declaration, NEW.empreinte, NEW.taille, NEW.entete, NEW.crs_horizontal, NEW.nodata, NEW.cellules, NEW.synthetique, NEW.demonstration, NEW.etiquette, NEW.depose_le)
+     IS DISTINCT FROM (OLD.id, OLD.cle, OLD.niveau, OLD.produit, OLD.declaration, OLD.empreinte, OLD.taille, OLD.entete, OLD.crs_horizontal, OLD.nodata, OLD.cellules, OLD.synthetique, OLD.demonstration, OLD.etiquette, OLD.depose_le) THEN
+    RAISE EXCEPTION 'geodata_terrain_version_figee';
+  END IF;
+  IF NEW.etat IS DISTINCT FROM OLD.etat AND NOT (
+    (OLD.etat = 'depose' AND NEW.etat = 'validation') OR
+    (OLD.etat = 'validation' AND NEW.etat IN ('rejete', 'quarantaine', 'traitement')) OR
+    (OLD.etat = 'quarantaine' AND NEW.etat IN ('traitement', 'retire')) OR
+    (OLD.etat = 'traitement' AND NEW.etat IN ('revue', 'quarantaine', 'rejete')) OR
+    (OLD.etat = 'revue' AND NEW.etat IN ('accepte', 'quarantaine', 'retire')) OR
+    (OLD.etat = 'accepte' AND NEW.etat IN ('publie', 'retire')) OR
+    (OLD.etat = 'publie' AND NEW.etat IN ('remplace', 'retire'))) THEN
+    RAISE EXCEPTION 'geodata_terrain_transition_refusee % -> %', OLD.etat, NEW.etat;
+  END IF;
+  IF NEW.reference_verticale IS DISTINCT FROM OLD.reference_verticale AND NOT (OLD.etat = 'quarantaine' AND NEW.etat = 'traitement') THEN
+    RAISE EXCEPTION 'geodata_terrain_reference_verticale_figee';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_terrain_versions_controle BEFORE UPDATE OR DELETE ON geodata_terrain_versions FOR EACH ROW EXECUTE FUNCTION geodata_terrain_version_controle();
+-- Événements du cycle de vie, en ajout seul : transition, motif, décision (levée de quarantaine), acteur.
+CREATE TABLE IF NOT EXISTS geodata_terrain_evenements (
+  id bigserial PRIMARY KEY,
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  de text,
+  vers text NOT NULL,
+  motif text,
+  decision jsonb,
+  acteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_evenements_version_idx ON geodata_terrain_evenements (terrain_version_id, le);
+-- Fichiers d'une version : l'original tel que reçu (immuable), puis les dérivés (TER-03). Clé de stockage relative au
+-- volume terrain, jamais un chemin de l'hôte.
+CREATE TABLE IF NOT EXISTS geodata_terrain_fichiers (
+  id text PRIMARY KEY,
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  role text NOT NULL CHECK (role IN ('original', 'derive')),
+  cle_stockage text NOT NULL CHECK (cle_stockage ~ '^(originaux|derives)/[A-Za-z0-9._/-]{1,200}$' AND position('..' in cle_stockage) = 0),
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  taille bigint NOT NULL CHECK (taille > 0),
+  format text NOT NULL,
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_terrain_fichiers_original_uniq ON geodata_terrain_fichiers (terrain_version_id) WHERE role = 'original';
+CREATE OR REPLACE FUNCTION geodata_terrain_ajout_seul() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'geodata_terrain_ajout_seul %', TG_TABLE_NAME;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_terrain_fichiers_immuables BEFORE UPDATE OR DELETE ON geodata_terrain_fichiers FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+CREATE OR REPLACE TRIGGER geodata_terrain_evenements_immuables BEFORE UPDATE OR DELETE ON geodata_terrain_evenements FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+-- Traitements (import, puis calculs de TER-03) : idempotents par empreinte(s) d'entrée + configuration, reprenables,
+-- observables (état, progression, tentatives, versions logicielles, sorties, motif d'échec).
+CREATE TABLE IF NOT EXISTS geodata_terrain_traitements (
+  id text PRIMARY KEY,
+  cle_idempotence text NOT NULL UNIQUE CHECK (cle_idempotence ~ '^[0-9a-f]{64}$'),
+  type text NOT NULL CHECK (type IN ('import')),
+  entrees jsonb NOT NULL,
+  parametres jsonb NOT NULL,
+  logiciels jsonb NOT NULL DEFAULT '{}'::jsonb,
+  etat text NOT NULL CHECK (etat IN ('en_cours', 'termine', 'echec')),
+  progression integer NOT NULL DEFAULT 0 CHECK (progression BETWEEN 0 AND 100),
+  tentatives integer NOT NULL DEFAULT 1 CHECK (tentatives >= 1),
+  sorties jsonb NOT NULL DEFAULT '{}'::jsonb,
+  motif_echec text,
+  demande_par text REFERENCES users (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  maj_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_terrain_traitements_echec CHECK (etat <> 'echec' OR motif_echec IS NOT NULL)
+);
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non

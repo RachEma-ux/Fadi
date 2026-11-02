@@ -48,7 +48,7 @@ await build({
 // comme `create-admin.mjs` (`node apps/api/dist/geodata-role.js …`, `node apps/api/dist/geodata-reference.js …`), sans
 // tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
 await build({
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts") },
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "geodata-terrain": join(root, "src/db/geodata-terrain.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",
@@ -68,6 +68,8 @@ for (const [from, to] of [
   ["src/data", "dist/data"],
   // Fiches de source GeoData qualifiées (adresse, empreinte, licence, droits) : lues par dist/geodata-reference.js.
   ["../../docs/geodata/sources", "dist/geodata-sources"],
+  // Fiches des jeux d'altitudes (terrain haute résolution, TER-02) : lues par dist/geodata-terrain.js.
+  ["../../docs/geodata/terrain", "dist/geodata-terrain"],
 ]) {
   const src = join(root, from);
   if (!existsSync(src)) {
