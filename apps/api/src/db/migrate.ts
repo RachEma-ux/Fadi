@@ -2,7 +2,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
-import { applySchema } from "./apply-schema.js";
+import { migrer } from "./schema-migrations.js";
 import { basculerAncienMoteur } from "./bascule.js";
 import { applyRolePasswords } from "./role-passwords.js";
 
@@ -18,9 +18,10 @@ async function main() {
   const sql = readFileSync(sqlPath, "utf8");
   const pool = new Pool({ connectionString, max: 1, application_name: "fadi-migrate" });
   try {
-    await applySchema(pool, sql);
+    // BD-2 : base de départ (init.sql) si nouvelle ou modifiée, puis migrations numérotées manquantes (db/migrations).
+    const rapport = await migrer(pool, { baseSql: sql, dossier: new URL("./migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
-    console.log("Schema applied (init.sql).");
+    console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
     const roles = await applyRolePasswords(pool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

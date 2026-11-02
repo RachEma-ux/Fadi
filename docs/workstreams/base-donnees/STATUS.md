@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1 **implémenté** sur la branche locale `fix/bd-1-garde-fous` (non poussée, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1 et BD-2 **implémentés** sur les branches locales `fix/bd-1-garde-fous` et `feat/bd-2-migrations` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -37,6 +37,29 @@ Mis à jour : 2026-11-02 (UTC).
 - Contrôles locaux : `npm run typecheck` vert ; web 1 357 tests verts ; API 1 152 tests purs verts, 18 fichiers de tests
   sur base non exécutables ici (`TARGET_REQUIRED`, identique à la référence `b9d9897`) ; build de l'API vert ;
   `init.sql` appliqué deux fois sur base jetable (8,3 s puis 3,1 s avec démarrage de tsx).
+
+## BD-2 — migrations versionnées (implémenté le 2026-11-02, non poussé)
+
+- `db/schema-migrations.ts` : `init.sql` = base de départ gelée (version `0000`, empreinte `migrations/init.sql.sha256`,
+  test de gel), fichiers numérotés `db/migrations/NNNN_nom[.concurrent].sql` appliqués une fois, verrou consultatif,
+  relances sur 55P03, exécution en `fadi_owner`, index invalide repris, migration appliquée puis modifiée refusée ;
+  table `schema_migrations` (lecture seule pour `fadi_app`). `migrate.ts`, `server.ts` et le build branchés ; le journal
+  garde « Schema applied (init.sql). » (contrôle de la préproduction).
+- Vérifié sur PostgreSQL 16.15 jetable : base neuve puis base existante (second passage : rien de rejoué) ; fichier
+  transactionnel appliqué et possédé par `fadi_owner` ; index unique échoué (doublons) laissé invalide puis repris après
+  correction ; fichier modifié refusé ; montée depuis le schéma de `b9d9897` réussie.
+- BD-2.3 `npm run db:validate-constraints` : 83 contraintes validées sur base jetable, puis `migrate` ne les défait plus
+  (avant BD-2, chaque déploiement les recréait `NOT VALID`). Volontairement hors du déploiement (données historiques).
+- BD-2.5 contrôle maison des migrations (`db/migrations-lint.ts`, rôle de squawk, sans dépendance) et garde des
+  interpolations SQL (`testing/sql-interpolation-garde.test.ts`, relevé figé de l'audit). Écart : pas de squawk ni
+  d'ESLint (aucun ESLint dans le dépôt ; éviter un binaire tiers installé par script).
+- BD-2.6 `scripts/validation/migration-montee-version.mjs` + étape CI après `db:migrate` (non exécutée en CI d'ici).
+- BD-2.7 `db/schema-ecart.test.ts` (suite sur base, CI) ; `studio_revision_events.xact_id` aligné ; relevé : aucune
+  colonne Drizzle absente, 48 tables propres au SQL figées. Écart : `project_members` reste déclarée comme table (vue en
+  base), contrôlée comme vue par le test.
+- BD-2.8 guide `apps/api/src/db/migrations/README.md`. Écart : pas de `R__grants.sql` (les droits des nouvelles tables
+  viennent des privilèges par défaut de `fadi_owner` ; les `REVOKE` vont dans la migration de la table).
+- Contrôles : typecheck vert ; 1 160 tests API purs verts ; build vert (migrations copiées dans `dist/db/migrations`).
 
 ## Points ouverts
 

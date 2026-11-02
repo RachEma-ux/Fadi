@@ -262,6 +262,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
+      # BD-2 (chantier base-donnees) : montée de version du schéma — schéma de la branche cible, puis migrations du HEAD
+      # deux fois (la seconde n'applique rien), schema_migrations complet, aucun index invalide. Base jetable du job.
+      - name: Migrations versionnées — montée de version depuis la branche cible
+        env:
+          MIGRATION_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+        run: node scripts/validation/migration-montee-version.mjs
       # Gestion des comptes (#253, phase 1) : init.sql rejoué deux fois, défauts des comptes historiques, contraintes
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only

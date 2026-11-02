@@ -65,6 +65,8 @@ await build({
 // `src/runtime-paths.ts` attend (dist/db/init.sql, dist/data/**).
 for (const [from, to] of [
   ["src/db/init.sql", "dist/db/init.sql"],
+  // BD-2 : migrations numérotées appliquées après la base de départ (db/schema-migrations.ts).
+  ["src/db/migrations", "dist/db/migrations"],
   ["src/data", "dist/data"],
   // Fiches de source GeoData qualifiées (adresse, empreinte, licence, droits) : lues par dist/geodata-reference.js.
   ["../../docs/geodata/sources", "dist/geodata-sources"],

@@ -1737,7 +1737,8 @@ export const studioRevisionEvents = pgTable("studio_revision_events", {
   baseRevisionId: text("base_revision_id"),
   transactionId: text("transaction_id").notNull(),
   // Défaut SQL `txid_current()::text` : jamais écrit par l'application.
-  xactId: text("xact_id"),
+  // BD-2.7 : aligné sur init.sql (NOT NULL, transaction PostgreSQL par défaut).
+  xactId: text("xact_id").notNull().default(sql`(txid_current()::text)`),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   requestId: text("request_id"),
   effects: jsonb("effects").$type<unknown>().notNull(),

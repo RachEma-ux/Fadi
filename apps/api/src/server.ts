@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
-import { applySchema } from "./db/apply-schema.js";
+import { migrer } from "./db/schema-migrations.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
@@ -35,9 +35,10 @@ async function migrateOnStart(): Promise<void> {
   const migrationUrl = process.env["DATABASE_MIGRATION_URL"];
   const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1, application_name: "fadi-migrate" }) : pool;
   try {
-    await applySchema(migrationPool, sql);
+    // BD-2 : base de départ (init.sql) si nouvelle ou modifiée, puis migrations numérotées manquantes (dist/db/migrations).
+    const rapport = await migrer(migrationPool, { baseSql: sql, dossier: new URL("./db/migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
-    console.log("Schema applied (init.sql).");
+    console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
     const roles = await applyRolePasswords(migrationPool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

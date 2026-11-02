@@ -1,5 +1,8 @@
 import type { Pool } from "pg";
 
+/** Un pool ou un client (`PoolClient`) : seule `query` sert. */
+export type Requeteur = Pick<Pool, "query">;
+
 /**
  * BD-1.1 (chantier base-donnees, constats S1 / M2) : application d'`init.sql` sans geler le trafic.
  *
@@ -33,7 +36,7 @@ export function isLockTimeout(err: unknown): boolean {
 }
 
 /** Transactions ouvertes depuis plus de `seconds` sur la base courante (hors la session qui pose la question). */
-export async function longTransactions(pool: Pool, seconds: number): Promise<number> {
+export async function longTransactions(pool: Requeteur, seconds: number): Promise<number> {
   const { rows } = await pool.query<{ n: string }>(
     `SELECT count(*)::text AS n FROM pg_stat_activity
       WHERE datname = current_database() AND pid <> pg_backend_pid()
@@ -43,7 +46,7 @@ export async function longTransactions(pool: Pool, seconds: number): Promise<num
   return Number(rows[0]?.n ?? 0);
 }
 
-export async function applySchema(pool: Pool, sql: string, options: ApplySchemaOptions = {}): Promise<{ attempts: number }> {
+export async function applySchema(pool: Requeteur, sql: string, options: ApplySchemaOptions = {}): Promise<{ attempts: number }> {
   const attempts = Math.max(1, options.attempts ?? 4);
   const backoff = options.backoffMs ?? ((n: number) => 5_000 * 2 ** (n - 1));
   const log = options.log ?? defaultLog;
