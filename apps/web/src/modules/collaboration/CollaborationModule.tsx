@@ -16,6 +16,7 @@ import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
+import { cheminVarianteStudio } from "../studio/routes-studio";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 import { ParticipantsSection } from "./Participants";
@@ -336,7 +337,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
         void navigate("/projets", { state: { notice: "Vous avez quitté le projet partagé." } });
         return;
       }
-      setNotice("Accès retiré.");
+      setNotice("Accès retiré. Sa réservation d’édition et ses verrous ont été libérés ; ses observations et tâches ouvertes restent à réattribuer.");
       refresh();
     },
     onError: (err) => setError(errorText(err, "Le retrait n’a pas pu être enregistré.")),
@@ -476,6 +477,23 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   <small>{` · ${i.roles?.length ? rolesLisibles(i.roles) : i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}{i.accessExpiresAt ? ` · accès jusqu’au ${new Date(i.accessExpiresAt).toLocaleDateString(LOCALE)}` : ""}</small>
                 </span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {isOwner && (v.aReattribuer?.length ?? 0) > 0 && (
+        <div className="members-invitations" data-a-reattribuer>
+          <h3>Responsabilités à réattribuer</h3>
+          <p className="h7-muted">Ces observations et tâches Studio sont encore confiées à une personne qui n’a plus accès au projet. Rien n’est réattribué d’office : ouvrez la variante et réattribuez-les ; leur auteur et leur historique restent inchangés.</p>
+          <ul className="sessions-list">
+            {v.aReattribuer!.map((r) => (
+              <li key={`${r.nature}-${r.id}`} data-responsabilite={r.nature}>
+                <span>
+                  <b>{r.nature === "observation" ? "Observation" : "Tâche"}</b> <span translate="no">« {r.libelle.length > 80 ? `${r.libelle.slice(0, 79)}…` : r.libelle} »</span>{" "}
+                  <small>· <span className="collab-email">{r.responsable.email}</span></small>
+                </span>
+                <Link className="button-secondary" to={cheminVarianteStudio(projectId, r.studyId, r.variantId)}>Ouvrir dans Studio</Link>
               </li>
             ))}
           </ul>

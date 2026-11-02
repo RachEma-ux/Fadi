@@ -18,6 +18,7 @@ import {
 } from "../db/schema.js";
 import { audit } from "./audit.js";
 import type { Tx } from "./step-rows.js";
+import { libererReservations } from "./fin-participation.js";
 import {
   contactDetailsFor, contactRetentionDue, ERASED_CONTACT_NAME, normalizeEmail, participationImpact,
   type DerivedAccess, type Impact, type StatusChange,
@@ -175,23 +176,23 @@ export async function impactOf(q: Querier, projectId: string, participationId: s
  * terminer retire aussi le partage (la participation terminée sort de la vue `project_members`) et annule les invitations en attente pour
  * ses adresses. Réactiver rend l'accès des rôles toujours portés. Renvoie le nombre d'invitations annulées.
  */
-export async function applyStatusChange(tx: Tx, input: { projectId: string; participationId: string; userId: string | null; accountEmail: string | null; workEmail: string | null; to: ParticipationStatus; endsOn?: string | null }): Promise<{ invitationsCancelled: number }> {
+export async function applyStatusChange(tx: Tx, input: { projectId: string; participationId: string; userId: string | null; accountEmail: string | null; workEmail: string | null; to: ParticipationStatus; endsOn?: string | null; actorId?: string | null }): Promise<{ invitationsCancelled: number; released: { reservationEdition: boolean; verrous: number } }> {
   if (input.to === "terminee") {
     await tx.update(projectParticipations).set({ status: "terminee", endsOn: sql`greatest(coalesce(${input.endsOn ?? null}::date, current_date), coalesce(${projectParticipations.startsOn}, current_date))` , updatedAt: new Date() })
       .where(eq(projectParticipations.id, input.participationId));
   } else {
     await tx.update(projectParticipations).set({ status: input.to, updatedAt: new Date() }).where(eq(projectParticipations.id, input.participationId));
   }
-  if (input.to !== "active" && input.userId) {
-    await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE id = ${input.projectId} AND editing_lock->>'userId' = ${input.userId}`);
-  }
+  // Suspension ou fin (écart E6) : réservation d'édition et verrous fins de l'Atelier du membre libérés, journalisés.
+  let released = { reservationEdition: false, verrous: 0 };
+  if (input.to !== "active" && input.userId) released = await libererReservations(tx, input.projectId, input.userId, input.actorId ?? input.userId);
   let invitationsCancelled = 0;
   if (input.to === "terminee") {
     const ids = await pendingInvitationIds(tx, input.projectId, [input.accountEmail, input.workEmail]);
     if (ids.length) await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() }).where(inArray(invitations.id, ids));
     invitationsCancelled = ids.length;
   }
-  return { invitationsCancelled };
+  return { invitationsCancelled, released };
 }
 
 export type ErasedBy = { actorId: string; via: "demande"; ip: string | null } | { actorId: null; via: "conservation"; ip: null };

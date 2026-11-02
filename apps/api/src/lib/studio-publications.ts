@@ -43,7 +43,7 @@ import {
   projects, studioObservationDecisions, studioObservationEvents, studioObservations, studioPublicationEvents, studioPublications, studioRequirementChecks, studioRequirementSets,
   studioRevisions, studioStudies, studioVariants, users, volumes,
   type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
-  type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
+  type StudioPublicationAuthority, type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
@@ -57,7 +57,7 @@ import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchive
 import { delegationEmployable, delegationsUtilisables, journalDelegation } from "./studio-delegations.js";
 import {
   ACTIONS_BLOQUEES_PAR_OBSERVATION, controlerObservationsBloquantes, perimetreControle, type ManifesteControles, type ManifesteDossier,
-  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, baseAutorite, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, memeContenu, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
@@ -159,6 +159,8 @@ export interface StudioPublicationEventView {
   delegationId: string | null;
   /** OP-6 : approbation marquée auto-contrôle (true) ou non (false) ; null hors approbation et avant le lot. */
   selfControl: boolean | null;
+  /** Base d'autorité de la transition (E5, CR-D6) ; null pour une entrée antérieure. */
+  authority: StudioPublicationAuthority | null;
 }
 export interface StudioPublicationView {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
@@ -346,7 +348,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
       view.events = own.map((e) => ({
         id: e.id, action: e.action, fromStatus: e.fromStatus, toStatus: e.toStatus, workStatus: e.workStatus, diffusionStatus: e.diffusionStatus,
         author: who(e.authorId)!, comment: e.comment, revisionId: e.revisionId, documentHash: e.documentHash, manifestHash: e.manifestHash,
-        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(), selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null,
+        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(), selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null, authority: e.authority ?? null,
       }));
     }
     return view;
@@ -469,13 +471,15 @@ interface JournalEntry {
   authorId: string; comment: string | undefined | null; headRevisionId: string; at: Date; related?: string | null; delegationId?: string | null;
   /** OP-6 : marque d'un évènement `approuver`. */
   selfControl?: boolean | null;
+  /** Base d'autorité (E5, CR-D6) : celle de la transition qui écrit l'entrée (création : rôle de projet). */
+  authority: StudioPublicationAuthority;
 }
 async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "documentHash" | "manifestHash">, e: JournalEntry) {
   await tx.insert(studioPublicationEvents).values({
     id: newId("studio_publication_event"), publicationId: row.id, action: e.action, fromStatus: e.from, toStatus: e.to,
     workStatus: e.dims.travail, diffusionStatus: e.dims.diffusion, authorId: e.authorId, comment: e.comment ?? null,
     revisionId: row.revisionId, documentHash: row.documentHash, manifestHash: row.manifestHash, headRevisionId: e.headRevisionId,
-    relatedPublicationId: e.related ?? null, selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null, createdAt: e.at,
+    relatedPublicationId: e.related ?? null, selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null, authority: e.authority, createdAt: e.at,
   });
 }
 
@@ -570,7 +574,7 @@ export async function createStudioPublication(projectId: string, studyId: string
       requestId: input.requestId ?? null, createdBy: actorId, createdAt: now, updatedAt: now,
     };
     await tx.insert(studioPublications).values(row);
-    await journal(tx, row, { action: "creer", from: null, to: row.status, dims, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
+    await journal(tx, row, { action: "creer", from: null, to: row.status, dims, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, authority: { base: "role-projet", role: access.role === "proprietaire" ? "proprietaire" : "editeur" } });
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return { ...(await views(tx, access, actorId, [stored!], true))[0]!, replayed: false };
   });
@@ -598,11 +602,11 @@ export async function transitionStudioPublication(projectId: string, studyId: st
       const now = new Date();
       const delegation = await delegationEmployable(tx, access, row, actorId, input.delegationId, now);
       delegationId = delegation.id;
-      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio", delegation.id));
+      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio", baseAutorite(action, access, delegation.id), delegation.id));
       await journalDelegation(tx, delegation.id, "employer", actorId, now, { publicationId: row.id, publicationAction: action, comment: input.comment ?? null });
     } else {
       assertAccess(access, actorId, besoinTransition(action), ciblePublication(row));
-      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio"));
+      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio", baseAutorite(action, access)));
     }
     if (controle) {
       // OP-6 : approbation Studio journalisée avec sa marque (historique de la participation : famille `review.`).
@@ -660,7 +664,7 @@ export async function controleApprobationStudio(projectId: string, studyId: stri
  * projet ; revue externe : affectation d'approbation nominative, `lib/reviews.ts`) : statuts de départ, manifeste
  * courant recalculé, empreinte relue de la révision immuable, ensemble examiné, journal append-only.
  */
-async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row: PublicationRow, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput, voie: VoieApprobation, delegationId: string | null = null): Promise<{ controle: ResultatAutoControle | null }> {
+async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row: PublicationRow, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput, voie: VoieApprobation, authority: StudioPublicationAuthority, delegationId: string | null = null): Promise<{ controle: ResultatAutoControle | null }> {
   let controle: ResultatAutoControle | null = null;
   {
     const variant = await variantOf(tx, study.id, row.variantId);
@@ -741,11 +745,11 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
           status: statutCombine(replaced), workStatus: replaced.travail, diffusionStatus: replaced.diffusion,
           replacedByPublicationId: row.id, replacedBy: actorId, replacedAt: now, updatedAt: now,
         }).where(eq(studioPublications.id, old.id));
-        await journal(tx, old, { action: "remplacer", from: old.status, to: statutCombine(replaced), dims: replaced, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, related: row.id });
+        await journal(tx, old, { action: "remplacer", from: old.status, to: statutCombine(replaced), dims: replaced, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, related: row.id, authority });
       }
     }
     await tx.update(studioPublications).set(patch).where(eq(studioPublications.id, row.id));
-    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, selfControl: controle?.autoControle ?? null, delegationId });
+    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, selfControl: controle?.autoControle ?? null, delegationId, authority });
   }
   return { controle };
 }
@@ -810,7 +814,7 @@ export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNom
   const [row] = await tx.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, project.id))).for("update");
   if (!row) return notFound();
   const study = await studyOf(tx, project.id, row.studyId);
-  const { controle } = await appliquerTransition(tx, project, study, row, actorId, action, input, "revue");
+  const { controle } = await appliquerTransition(tx, project, study, row, actorId, action, input, "revue", { base: "revue-externe" });
   const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
   return { row: stored!, controle };
 }

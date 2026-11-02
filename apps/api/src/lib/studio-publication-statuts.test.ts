@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, baseAutorite, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
   dimensionsDe, ecartsManifeste, empreinteManifeste, memeContenu, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type EtatPublication, type ManifesteMeta, type ManifesteSource,
 } from "./studio-publication-statuts.js";
@@ -81,6 +81,22 @@ describe("Publications Studio — droits distincts (E.4-02)", () => {
     for (const c of ["revue", "approbation", "publication"] as const) expect(ROLES_CAPACITE[c]).not.toContain("lecteur");
     expect(ROLES_CAPACITE.approbation).toEqual(["proprietaire"]);
     expect(Object.keys(REGLES_TRANSITION).sort()).toEqual([...STUDIO_PUBLICATION_ACTIONS].sort());
+  });
+});
+
+describe("Publications Studio — base d'autorité de chaque transition (CR-D6 a, CR-C2)", () => {
+  it("le propriétaire agit toujours au titre de son rôle de projet", () => {
+    for (const a of STUDIO_PUBLICATION_ACTIONS) expect(baseAutorite(a, { role: "proprietaire", canApprove: true, canPublish: true })).toEqual({ base: "role-projet", role: "proprietaire" });
+  });
+  it("la revue se fait au titre d'éditeur ; approuver au titre d'approbateur ; diffuser au titre de diffuseur, avec sa portée", () => {
+    expect(baseAutorite("soumettre", { role: "editeur" })).toEqual({ base: "role-projet", role: "editeur" });
+    expect(baseAutorite("approuver", { role: "lecteur", canApprove: true })).toEqual({ base: "role-metier", role: "approbateur", portee: "projet" });
+    expect(baseAutorite("refuser", { role: "editeur", canApprove: false })).toEqual({ base: "role-metier", role: "approbateur", portee: "etroite" });
+    expect(baseAutorite("diffuser", { role: "lecteur", canPublish: true })).toEqual({ base: "role-metier", role: "diffuseur", portee: "projet" });
+    expect(baseAutorite("retirer", { role: "lecteur" })).toEqual({ base: "role-metier", role: "diffuseur", portee: "etroite" });
+  });
+  it("une délégation d'approbation prime et se nomme", () => {
+    expect(baseAutorite("approuver", { role: "proprietaire" }, "dlg_1")).toEqual({ base: "delegation", delegationId: "dlg_1" });
   });
 });
 

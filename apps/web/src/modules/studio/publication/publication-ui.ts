@@ -4,7 +4,7 @@
  * Trois dimensions distinctes (lot E.4) : travail, diffusion, actualité des contenus dérivés.
  */
 import type {
-  StudioManifestDrift, StudioPublication, StudioPublicationDiffusionStatus, StudioPublicationStatus, StudioPublicationTransition, StudioPublicationWorkStatus,
+  StudioManifestDrift, StudioPublication, StudioPublicationAuthority, StudioPublicationDiffusionStatus, StudioPublicationStatus, StudioPublicationTransition, StudioPublicationWorkStatus,
 } from "../../../lib/api";
 
 export const LIBELLE_STATUT: Readonly<Record<StudioPublicationStatus, string>> = Object.freeze({
@@ -138,4 +138,16 @@ export function publicationsAApprouver<P extends Pick<StudioPublication, "workSt
 export function messageRefusApprobation(status: number, body: unknown): string {
   if (status === 403) return "Approbation refusée par le serveur : vous ne détenez pas le droit d’approuver dans ce projet. Ni vos préférences, ni un profil importé, ni un rôle d’administration technique ne le donnent.";
   return messageRefus(status, body);
+}
+
+/** Base d'autorité d'une transition (écart E5, CR-D6) : au titre de quoi elle a été permise, pour le journal. */
+export function libelleAutorite(a: StudioPublicationAuthority | null | undefined): string | null {
+  if (!a) return null;
+  if (a.base === "role-projet") return a.role === "proprietaire" ? "au titre du propriétaire" : "au titre d’éditeur";
+  if (a.base === "role-metier") {
+    const role = a.role === "approbateur" ? "d’approbateur" : "de diffuseur";
+    return a.portee === "projet" ? `au titre ${role} du projet` : `au titre ${role} de ce périmètre`;
+  }
+  if (a.base === "delegation") return "au titre d’une délégation";
+  return "au titre d’approbateur externe";
 }

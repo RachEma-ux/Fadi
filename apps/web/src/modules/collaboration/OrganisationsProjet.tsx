@@ -21,7 +21,7 @@ import { InvitationProjet } from "./InvitationProjet";
 import type { MandateProjectSide, OrganizationIdentity, OrganizationStatus, ProjectOrganizations, Responsibility } from "./participants-api";
 
 const ORG_STATUS_LABEL: Record<OrganizationStatus, string> = { active: "Active", suspendue: "Suspendue", close: "Close" };
-const RESP_LABEL: Record<Responsibility, string> = { diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser" };
+const RESP_LABEL: Record<Responsibility, string> = { diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser", garder: "Garder le contenu" };
 /** État côté projet d'un représentant (propriétaire seul). */
 export const SIDE_LABEL: Record<MandateProjectSide, string> = {
   non_invite: "Non invité au projet", invitation_en_attente: "Invitation en attente", participation_active: "Participation active", terminee: "Participation terminée",

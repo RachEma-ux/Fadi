@@ -54,7 +54,7 @@ participantsRouter.use(signalerAccesApresEcriture);
 
 const trimmed = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => trimmed(max).nullable().optional().transform((v) => (v === undefined ? undefined : v ? v : null));
-const responsibilitiesSchema = z.array(z.enum(TEAM_RESPONSIBILITIES as [string, ...string[]])).max(6).transform((v) => [...new Set(v)] as typeof TEAM_RESPONSIBILITIES[number][]);
+const responsibilitiesSchema = z.array(z.enum(TEAM_RESPONSIBILITIES as [string, ...string[]])).max(TEAM_RESPONSIBILITIES.length).transform((v) => [...new Set(v)] as typeof TEAM_RESPONSIBILITIES[number][]);
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date AAAA-MM-JJ").nullable().optional();
 
 const contactSchema = z.discriminatedUnion("kind", [
@@ -403,10 +403,10 @@ participantsRouter.post("/:participationId/status", (req, res) => write(res, asy
     if (refusal) fail(409, "invalid_transition", refusal, { status: r.p.status });
     if (parsed.data!.endsOn && r.p.startsOn && parsed.data!.endsOn < r.p.startsOn) fail(422, "period_rule", "La fin précède le début de la participation.");
     const impact = await impactOf(tx, project.id, r.p.id, change);
-    const { invitationsCancelled } = await applyStatusChange(tx, { projectId: project.id, participationId: r.p.id, userId: r.userId, accountEmail: r.accountEmail, workEmail: r.pe?.workEmail ?? null, to, endsOn: parsed.data!.endsOn ?? null });
+    const { invitationsCancelled, released } = await applyStatusChange(tx, { projectId: project.id, participationId: r.p.id, userId: r.userId, accountEmail: r.accountEmail, workEmail: r.pe?.workEmail ?? null, to, endsOn: parsed.data!.endsOn ?? null, actorId: req.user!.id });
     await audit(tx, {
       actorId: req.user!.id, action: "participation.status_changed", target: { type: "project", id: project.id },
-      metadata: { participationId: r.p.id, personId: r.p.personId, organizationId: r.p.organizationId, memberId: r.userId, from: r.p.status, to, accessWithdrawn: impact?.accessWithdrawn ?? false, invitationsCancelled },
+      metadata: { participationId: r.p.id, personId: r.p.personId, organizationId: r.p.organizationId, memberId: r.userId, from: r.p.status, to, accessWithdrawn: impact?.accessWithdrawn ?? false, invitationsCancelled, releasedEditingLock: released.reservationEdition, releasedFineLocks: released.verrous },
       ip: clientIp(req),
     });
     return { body: { id: r.p.id, status: to, invitationsCancelled } };

@@ -14,7 +14,7 @@ import { api, ApiError, studioPackageFileUrl, type StudioPublication, type Studi
 import { LOCALE } from "../../../lib/i18n";
 import {
   COMMENTAIRE_REQUIS, corpsTransition, court, empreinteCourte, LIBELLE_ACTION, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_TRAVAIL,
-  libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
+  libelleActualite, libelleAutorite, libelleEcart, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
 import { PanneauDelegations } from "./PanneauDelegations";
 import "./publication.css";
@@ -45,7 +45,7 @@ export function PanneauPublications({ projectId, studyId, variants, canWrite }: 
   return (
     <section className="studio-publications" aria-labelledby="studio-publications-titre" data-studio-publications>
       <h2 id="studio-publications-titre">Publications</h2>
-      <p className="studio-publications-sub">Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire approuve, refuse, diffuse et retire ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.</p>
+      <p className="studio-publications-sub">Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire et les approbateurs désignés approuvent ou refusent ; le propriétaire et les diffuseurs désignés diffusent et retirent ; un lecteur consulte. Le journal dit au titre de quoi chaque étape a été permise. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.</p>
       {canWrite && variants.length > 0 && <PreparerPublication projectId={projectId} studyId={studyId} variants={variants.filter((v) => !v.archived)} surCree={relire} />}
       {liste.isPending && <p role="status">Chargement des publications…</p>}
       {liste.isError && <p role="alert">Publications indisponibles. <button type="button" onClick={() => void liste.refetch()}>Réessayer</button></p>}
@@ -269,6 +269,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
               <span translate="no">{`${ev.author.email} · ${date(ev.createdAt)} · ${court(ev.revisionId)}`}</span>
               {ev.relatedPublicationId && <span translate="no">{` → ${court(ev.relatedPublicationId)}`}</span>}
               {ev.delegationId && <span data-studio-publication-journal-delegation> (par délégation)</span>}
+              {libelleAutorite(ev.authority) && <small data-studio-publication-autorite={ev.authority!.base === "role-projet" || ev.authority!.base === "role-metier" ? ev.authority!.role : ev.authority!.base}>{` · ${libelleAutorite(ev.authority)}`}</small>}
               {ev.comment && <q translate="no">{ev.comment}</q>}
             </li>
           ))}

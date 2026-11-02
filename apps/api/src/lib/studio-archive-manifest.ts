@@ -156,6 +156,9 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // Pièces justificatives (nom, type, taille, empreinte) et références BCF reçues (Guid, contexte) d'une observation (IF-010) : aucun compte.
   studio_observations: ["pieces", "bcf_refs"],
   studio_publications: ["package", "manifest"],
+  // Base d'autorité d'une transition (écart E5) : rôle de projet, rôle métier et sa portée, ou identifiant de délégation ;
+  // aucun compte. Colonne nullable additive : une archive antérieure se restaure en NULL.
+  studio_publication_events: ["authority"],
   studio_tool_preferences: ["favorites", "personal", "groups", "shortcuts", "capability_order"],
 });
 
