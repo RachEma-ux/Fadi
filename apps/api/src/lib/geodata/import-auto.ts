@@ -8,6 +8,8 @@
  * aucune donnée, la base les reçoit toutes au premier démarrage). `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même
  * chose au nom de ce compte GeoData (rôles « gestionnaire-donnees » et « responsable-publication »).
  * `GEODATA_IMPORT_AUTO=non` ne lance rien (recettes de la CI, tests). L'état est lu par `GET /version/donnees`.
+ * Une seule instance importe à la fois (`--exclusif`, verrou consultatif de session dans la chaîne d'import, BD-8.1) ;
+ * chaque fiche est ensuite importée et publiée en une transaction, sous un verrou par source.
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -36,8 +38,17 @@ export function arreterImportAuto(): void {
 
 const COURRIEL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/**
+ * Ligne écrite par `geodata-reference.js --exclusif` quand une autre instance tient déjà le verrou de session de l'import
+ * automatique (`pg_try_advisory_lock`, BD-8.1) ; même texte que `IMPORT_DEJA_EN_COURS` de la chaîne d'import (non
+ * importée ici : ce module ne charge pas l'outil d'import).
+ */
+export const IMPORT_DEJA_EN_COURS = "Import automatique déjà en cours sur cette base (autre instance) : rien n'est fait.";
+
 /** Bilan d'une sortie de `geodata-reference.js --fiche toutes` (lignes de journal de la chaîne d'import). */
 export function bilanImport(sortie: string): string {
+  // Verrou de l'import automatique pris par une autre instance (BD-8.1) : cette instance n'importe rien.
+  if (sortie.includes(IMPORT_DEJA_EN_COURS)) return IMPORT_DEJA_EN_COURS;
   const n = (re: RegExp) => (sortie.match(re) ?? []).length;
   const archive = sortie.match(/^Archive des fichiers : .*$/m)?.[0];
   return `${archive ? `${archive} ` : ""}${n(/^Version préparée/gm)} version(s) préparée(s), ${n(/^Version \S+ publiée/gm)} publiée(s), ${n(/^Retrait :/gm)} retirée(s), ${n(/^Version déjà présente/gm)} fiche(s) déjà en base.`;
@@ -54,7 +65,8 @@ export function lancerImportAuto(env: Record<string, string | undefined> = proce
   const compte = par && COURRIEL.test(par) ? par : null;
   const note = par && !compte ? " GEODATA_IMPORT_AUTO_PAR ignoré (pas une adresse de courriel) : import par la livraison." : "";
   const acteur = compte ? ["--preparateur", compte, "--publier-par", compte] : ["--livraison"];
-  executer(script, ["--archiver", "--fiche", "toutes", ...acteur], env, debut, `Archive des fichiers et import des fiches livrées en cours (${compte ? `par ${compte}` : "par la livraison"}).${note}`, note);
+  // `--exclusif` : un seul import automatique à la fois sur la base (plusieurs instances, redéploiements qui se chevauchent).
+  executer(script, ["--exclusif", "--archiver", "--fiche", "toutes", ...acteur], env, debut, `Archive des fichiers et import des fiches livrées en cours (${compte ? `par ${compte}` : "par la livraison"}).${note}`, note);
 }
 
 function executer(script: string, args: string[], env: Record<string, string | undefined>, debut: string, enCours: string, note = ""): void {

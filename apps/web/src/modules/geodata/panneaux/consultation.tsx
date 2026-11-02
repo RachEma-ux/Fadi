@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, typeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue, type VersionRecue } from "../client";
 import { entreesCategories, type Categorie } from "../composition-ops";
 import { PanneauPrix } from "./PrixImmobiliers";
@@ -26,6 +26,13 @@ export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, un
  */
 export interface NiveauCatalogue { readonly code: string; readonly rang: number; readonly pluriel: string; readonly coucheId: string | null }
 
+/** Catégories non chargées : toutes les couches du type en un seul groupe, par titre (aucune catégorie supposée). */
+const SANS_RANGEMENT = { cle: "sans-rangement", libelle: "Couches (sans rangement)", themes: [] as readonly string[] };
+function listeSansRangement<T extends CoucheRecue>(couches: readonly T[], type: TypeCatalogue, actives: ReadonlySet<string>) {
+  const cs = couches.filter((c) => typeCatalogue(c.typeGeometrie) === type).sort((a, b) => a.titre.localeCompare(b.titre, "fr"));
+  return cs.length ? [{ categorie: SANS_RANGEMENT, couches: cs, actives: cs.filter((c) => actives.has(c.id)).length }] : [];
+}
+
 export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void; indicateurs?: RubriqueIndicateurs | undefined; niveaux?: readonly NiveauCatalogue[] | undefined }) {
   const [filtre, setFiltre] = useState("");
   const [details, setDetails] = useState<string | null>(null);
@@ -34,9 +41,12 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
   if (p.erreur) return <div role="alert" className="gd-etat"><p>{p.erreur}</p><button type="button" onClick={p.onRecharger}>Réessayer</button></div>;
   if (!p.couches) return <p role="status" className="gd-etat">Chargement du catalogue…</p>;
   const f = filtre.trim().toLowerCase();
-  const liste = p.couches.filter((c) => !f || `${c.titre} ${c.version.source.titre} ${c.version.source.theme} ${categorieDe(c, p.rangement).libelle}`.toLowerCase().includes(f));
+  const r = p.rangement;
+  const liste = p.couches.filter((c) => !f || `${c.titre} ${c.version.source.titre} ${c.version.source.theme} ${r ? categorieDe(c, r).libelle : ""}`.toLowerCase().includes(f));
   const actives = new Set(p.composition.couches.map((k) => k.coucheId));
-  const groupes = regrouperCatalogue(liste, type, actives, p.rangement);
+  // D-GD-29 (BD-8.7) : sans les catégories lues en base, aucun repli sur des catégories embarquées — une liste unique,
+  // sans rangement, et un état qui le dit.
+  const groupes = r ? regrouperCatalogue(liste, type, actives, r) : listeSansRangement(liste, type, actives);
   const nombres = compterParType(p.couches);
   const basculer = (cle: string) => setOuvertes((o) => { const n = new Set(o); if (n.has(cle)) n.delete(cle); else n.add(cle); return n; });
   // Prix immobiliers (lot P7) : panneau d'état des deux couches dans la catégorie qui range la couche des prix affichés ;
@@ -49,6 +59,7 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
         {(["vecteurs", "imagerie"] as const).map((t) => <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)} data-gd-type={t}>{`${t === "vecteurs" ? "Vecteurs" : "Imagerie"} (${nombres[t]})`}</button>)}
       </div>
       <label className="gd-champ">Filtrer le catalogue<input type="search" value={filtre} onChange={(e) => setFiltre(e.target.value)} data-gd-filtre-catalogue /></label>
+      {!r && <p role="status" className="gd-etat" data-gd-categories-non-chargees>Catégories non chargées : les couches sont listées sans rangement.</p>}
       {p.couches.length === 0 && <p className="gd-etat">Catalogue vide : aucune couche n'est encore publiée ni importée pour ce compte.</p>}
       {p.couches.length > 0 && groupes.length === 0 && <p className="gd-etat">{f ? "Aucune couche de ce type ne correspond au filtre." : "Aucune couche de ce type au catalogue."}</p>}
       <ul className="gd-categories">

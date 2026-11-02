@@ -8,7 +8,8 @@
  * rôle `import-prix` : fichier d'observations reçu par l'API des prix (jamais livré avec le code, donc jamais marqué
  * retiré par cette archive). L'interface et ses
  * outils ne gardent aucune donnée : les données vivent en base. Un fichier inchangé (même empreinte) n'est pas réécrit ;
- * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool.
+ * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool :
+ * il emprunte une connexion à celui qu'on lui donne, le temps d'une transaction (BD-8.2).
  */
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -94,11 +95,38 @@ export function inventaireFichiers(dossier: string, options: { provisoires?: boo
   });
 }
 
-/** Copie en base chaque fichier livré dont l'empreinte a changé ; marque retirés ceux qui ne sont plus livrés. */
-export async function archiverFichiers(ex: Executeur, dossier: string, options: { provisoires?: boolean } = {}): Promise<BilanArchive> {
+/** Source de connexions (pool de l'appelant) : l'archive prend la sienne pour sa transaction. */
+export interface SourceConnexions { connect(): Promise<PoolClient> }
+
+/** Verrou consultatif de l'archive : deux archivages simultanés (deux démarrages) s'exécutent l'un après l'autre. */
+export const VERROU_ARCHIVE = "geodata_fichiers";
+
+/**
+ * Copie en base chaque fichier livré dont l'empreinte a changé ; marque retirés ceux qui ne sont plus livrés. Le tout en
+ * une transaction, sous verrou consultatif (BD-8.2, constat B6) : un arrêt en cours de route ne laisse jamais une archive
+ * partielle, et deux exécutions concurrentes ne se croisent pas (la seconde relit l'archive validée par la première).
+ */
+export async function archiverFichiers(source: SourceConnexions, dossier: string, options: { provisoires?: boolean } = {}): Promise<BilanArchive> {
+  // Inventaire (lecture du disque) avant la transaction : elle ne dure que le temps des écritures.
+  const livres = inventaireFichiers(dossier, options);
+  const client = await source.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [VERROU_ARCHIVE]);
+    const bilan = await archiverDans(client, dossier, livres);
+    await client.query("COMMIT");
+    return bilan;
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+async function archiverDans(ex: Executeur, dossier: string, livres: readonly FichierLivre[]): Promise<BilanArchive> {
   const enBase = new Map((await ex.query<{ chemin: string; empreinte: string; retire: boolean }>("SELECT chemin, empreinte, retire_le IS NOT NULL AS retire FROM geodata_fichiers")).rows.map((r) => [r.chemin, r]));
   let ajoutes = 0, modifies = 0, inchanges = 0, octets = 0;
-  const livres = inventaireFichiers(dossier, options);
   for (const f of livres) {
     const contenu = readFileSync(join(dossier, f.chemin));
     const empreinte = createHash("sha256").update(contenu).digest("hex");

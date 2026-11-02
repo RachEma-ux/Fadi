@@ -13166,6 +13166,8 @@
 "Ajouter une couche à cette catégorie": "Add a layer to this category",
 "Choisir une couche…": "Choose a layer…",
 "Chargement des catégories…": "Loading categories…",
+"Catégories non chargées : les couches sont listées sans rangement.": "Categories not loaded: layers are listed without grouping.",
+"Couches (sans rangement)": "Layers (no grouping)",
 "Rôle GeoData « gestionnaire de données » requis pour organiser les catégories.": "GeoData “data manager” role required to organise categories.",
 "Le libellé compte de 2 à 80 caractères.": "The label has 2 to 80 characters.",
 "Une catégorie porte déjà ce libellé.": "A category already has this label.",

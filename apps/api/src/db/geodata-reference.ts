@@ -23,6 +23,10 @@
  * retéléchargée : l'empreinte attendue se lit dans la fiche), puis applique, avec `--publier-par`, les retraits déclarés
  * dans `donnees/retraits-sources.json` (D-GD-23 : import automatique au déploiement, `lib/geodata/import-auto.ts`).
  *
+ * `--exclusif` (import automatique, BD-8.1) : rien n'est fait si un autre import automatique tient le verrou de session de
+ * la base. Chaque fiche est importée en une transaction (recherche de la version identique, écriture, publication et
+ * journal) sous un verrou consultatif par source ; l'archive des fichiers aussi (BD-8.2).
+ *
  * `--fiche` accepte un chemin, ou le nom d'une fiche qualifiée du dépôt (`docs/geodata/sources/<nom>.json`, copiées à
  * côté du bundle dans `dist/geodata-sources/`). Relancée sur une version déjà préparée (même source, même empreinte),
  * la commande ne crée rien ; avec `--publier-par`, elle publie cette version si elle est encore en préparation, aux
@@ -40,7 +44,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
-import { Pool, type PoolClient } from "pg";
+import { Client, Pool, type PoolClient } from "pg";
 import { validerDefinitionTableauDeBord, type DefinitionTableauDeBord, validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, validerQualification, lireQualification, qualificationAdmise, type Qualification, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
@@ -366,7 +370,35 @@ const LIVRAISON = process.argv.includes("--livraison");
 /** Publication demandée : par un compte (`--publier-par`) ou par la livraison. */
 const publicationDemandee = () => LIVRAISON || argument("publier-par") !== undefined;
 
+/**
+ * `--exclusif` (import automatique, BD-8.1) : un seul import automatique à la fois sur la base, toutes instances de l'API
+ * confondues. Verrou consultatif de **session** pris sur une connexion dédiée, gardée jusqu'à la fin du processus (un
+ * arrêt brutal ferme la connexion et libère le verrou). Déjà pris : rien n'est fait, la ligne `IMPORT_DEJA_EN_COURS`
+ * le dit (bilan de `lib/geodata/import-auto.ts`).
+ */
+export const VERROU_IMPORT_AUTO = "geodata_import_auto";
+export const IMPORT_DEJA_EN_COURS = "Import automatique déjà en cours sur cette base (autre instance) : rien n'est fait.";
+
+async function verrouExclusif(): Promise<Client | null> {
+  const c = new Client({ connectionString: process.env["DATABASE_URL"], application_name: "fadi-geodata-import" });
+  await c.connect();
+  const ok = (await c.query<{ ok: boolean }>("SELECT pg_try_advisory_lock(hashtext($1)) AS ok", [VERROU_IMPORT_AUTO])).rows[0]?.ok === true;
+  if (ok) return c;
+  await c.end();
+  return null;
+}
+
 async function main() {
+  if (process.argv.includes("--exclusif")) {
+    const verrou = await verrouExclusif();
+    if (!verrou) { console.log(IMPORT_DEJA_EN_COURS); return; }
+    try { await executer(); } finally { await verrou.query("SELECT pg_advisory_unlock(hashtext($1))", [VERROU_IMPORT_AUTO]).catch(() => undefined); await verrou.end().catch(() => undefined); }
+    return;
+  }
+  await executer();
+}
+
+async function executer() {
   const argFiche = argument("fiche");
   const preparateur = argument("preparateur") ?? null;
   if (process.argv.includes("--decoupage")) {
@@ -379,10 +411,12 @@ async function main() {
     await archiver();
     if (!argFiche) return;
   } else if (process.argv.includes("--prix-sources")) {
-    // `--prix-sources` : archive des fichiers livrés puis registre des sources de prix seulement.
+    // `--prix-sources` : archive des fichiers livrés puis registre des sources de prix seulement. Même périmètre que
+    // `--archiver` (BD-8.2, constat B6) : sans l'option, les fichiers `provisoires/…` d'un environnement qui les admet
+    // n'étaient pas inventoriés et l'archive les marquait retirés, puis `--archiver` les rétablissait.
     const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
     try {
-      console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches())));
+      console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches(), { provisoires: PROVISOIRES })));
       await registrePrix(pool);
     } finally {
       await pool.end();
@@ -523,11 +557,11 @@ async function importer(chemin: string, preparateur: string | null) {
   const client = await pool.connect();
   try {
     const role = async (email: string, r: string) => (await client.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = $2 WHERE lower(u.email) = lower($1)", [email, r])).rows[0]?.id as string | undefined;
-    const [deja] = (await client.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinte])).rows;
     const publierPar = argument("publier-par") ?? null;
     // Publication : droits et contrôles relus dans la version ENREGISTRÉE (jamais ceux de la fiche courante), comme la
     // route POST /geodata/api/admin/versions/:id/publier ; une version publiée est immuable, rien n'est corrigé après coup.
     // Par un compte (`--publier-par`, rôle « responsable-publication »), ou par la livraison (`--livraison`, acteur nul).
+    // Appelée dans la transaction de l'import (BD-8.1) : changement d'état et journal sont validés ensemble.
     const publier = async (versionId: string) => {
       const publieurId = publierPar === null ? null : await role(publierPar, "responsable-publication");
       if (publieurId === undefined) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : version ${versionId} laissée en préparation.`);
@@ -540,42 +574,69 @@ async function importer(chemin: string, preparateur: string | null) {
       if (bloque.length || v.ok !== true) throw new Error(`Publication bloquée (droits enregistrés ou contrôles) : version ${versionId} laissée en préparation.`);
       await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_par = $2, publiee_le = now() WHERE id = $1 AND etat = 'preparation'", [versionId, publieurId]);
       await client.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'version.publiee', $2, 'succes', $3)", [publieurId, versionId, JSON.stringify(publieurId ? {} : { par: "livraison" })]);
-      console.log(`Version ${versionId} publiée par ${publierPar ?? "la livraison"}.`);
     };
+    /**
+     * Publication dans la transaction en cours, sous un point de reprise : un refus (rôle, droits, contrôles) annule la
+     * seule publication, la version préparée est validée et reste en préparation (comportement de la chaîne en deux
+     * temps), puis l'erreur est remontée.
+     */
+    const publierOuGarder = async (versionId: string): Promise<Error | null> => {
+      await client.query("SAVEPOINT publication");
+      try {
+        await publier(versionId);
+        await client.query("RELEASE SAVEPOINT publication");
+        return null;
+      } catch (e) {
+        await client.query("ROLLBACK TO SAVEPOINT publication");
+        return e instanceof Error ? e : new Error(String(e));
+      }
+    };
+    // BD-8.1 (B1) : recherche de la version identique, écriture et publication dans UNE transaction, sous un verrou par
+    // source. Deux imports simultanés de la même fiche (démarrages qui se chevauchent, import manuel pendant l'import
+    // automatique) s'attendent : le second voit la version validée par le premier et ne la recrée pas. L'index unique
+    // `geodata_versions_source_empreinte_uq` (migration 0006) garantit la règle même hors de cette chaîne.
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`geodata_import:${fiche.cle}`]);
+    const [deja] = (await client.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinte])).rows;
+    let versionId: string;
+    let refus: Error | null = null;
     if (deja) {
       console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
       await assurerSource(client, fiche);
-      if (publicationDemandee() && deja.etat === "preparation") {
-        // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
-        await publier(deja.id);
-      }
-      await assurerTerritoires(client, fiche, empreinte);
-      return;
+      versionId = deja.id as string;
+      // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
+      if (publicationDemandee() && deja.etat === "preparation") refus = await publierOuGarder(versionId);
+      await client.query("COMMIT");
+    } else {
+      const prepareParId = preparateur === null ? null : await role(preparateur, "gestionnaire-donnees");
+      if (prepareParId === undefined) throw new Error(`${preparateur} n'a pas le rôle GeoData « gestionnaire-donnees ».`);
+      const ecrite = await ecrireVersion(client, {
+        source: { cle: fiche.cle, titre: fiche.titre, producteur: fiche.producteur, theme: fiche.theme, couverture: fiche.couverture, description: fiche.description },
+        espaceId: null,
+        version: {
+          libelle: fiche.version.libelle, empreinte, fichierNom: nomFichier, fichierTaille: fichier ? statSync(fichier).size : octets.length, urlSource: fiche.version.url,
+          recupereLe: new Date().toISOString(), periode: fiche.version.periode, licence: fiche.version.licence,
+          attribution: fiche.version.attribution, droits: lireDroits(fiche.version.droits), crsSource, precision: fiche.version.precision,
+          transformations: [`Lecture ${lecture}`, ...(fiche.version.conditions ? [`Conditions : ${fiche.version.conditions}`] : [])],
+          controles, synthetique: fiche.version.synthetique, qualification,
+        },
+        couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
+        objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
+        ...(douars ? { douars: douars.lignes } : {}),
+        ...(listeConcepts ? { concepts: listeConcepts } : {}),
+        ...(definitionBord ? { tableauDeBord: definitionBord } : {}),
+        ...(lignesPrix.length ? { prixPublies: lignesPrix } : {}),
+        ...(raster ? { raster } : {}),
+      });
+      versionId = ecrite.versionId;
+      if (publicationDemandee()) refus = await publierOuGarder(versionId);
+      await client.query("COMMIT");
+      console.log(`Version préparée : ${ecrite.versionId} (couche ${ecrite.coucheId}, ${ecrite.objets} objets, ${ecrite.reparees} géométrie(s) réparée(s), ${ecrite.indicateurs.length} indicateur(s)).`);
     }
-    const prepareParId = preparateur === null ? null : await role(preparateur, "gestionnaire-donnees");
-    if (prepareParId === undefined) throw new Error(`${preparateur} n'a pas le rôle GeoData « gestionnaire-donnees ».`);
-    await client.query("BEGIN");
-    const ecrite = await ecrireVersion(client, {
-      source: { cle: fiche.cle, titre: fiche.titre, producteur: fiche.producteur, theme: fiche.theme, couverture: fiche.couverture, description: fiche.description },
-      espaceId: null,
-      version: {
-        libelle: fiche.version.libelle, empreinte, fichierNom: nomFichier, fichierTaille: fichier ? statSync(fichier).size : octets.length, urlSource: fiche.version.url,
-        recupereLe: new Date().toISOString(), periode: fiche.version.periode, licence: fiche.version.licence,
-        attribution: fiche.version.attribution, droits: lireDroits(fiche.version.droits), crsSource, precision: fiche.version.precision,
-        transformations: [`Lecture ${lecture}`, ...(fiche.version.conditions ? [`Conditions : ${fiche.version.conditions}`] : [])],
-        controles, synthetique: fiche.version.synthetique, qualification,
-      },
-      couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
-      objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
-      ...(douars ? { douars: douars.lignes } : {}),
-      ...(listeConcepts ? { concepts: listeConcepts } : {}),
-      ...(definitionBord ? { tableauDeBord: definitionBord } : {}),
-      ...(lignesPrix.length ? { prixPublies: lignesPrix } : {}),
-      ...(raster ? { raster } : {}),
-    });
-    await client.query("COMMIT");
-    console.log(`Version préparée : ${ecrite.versionId} (couche ${ecrite.coucheId}, ${ecrite.objets} objets, ${ecrite.reparees} géométrie(s) réparée(s), ${ecrite.indicateurs.length} indicateur(s)).`);
-    if (publicationDemandee()) { await publier(ecrite.versionId); await assurerTerritoires(client, fiche, empreinte); }
+    if (refus) throw refus;
+    if (publicationDemandee() && (!deja || deja.etat === "preparation")) console.log(`Version ${versionId} publiée par ${publierPar ?? "la livraison"}.`);
+    // Découpage territorial : sa propre transaction, après la validation de la version publiée.
+    if (deja || publicationDemandee()) await assurerTerritoires(client, fiche, empreinte);
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw e;

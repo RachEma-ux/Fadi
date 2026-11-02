@@ -53,13 +53,18 @@ export interface Espace {
 /**
  * Espace personnel du compte, créé au premier appel. Idempotent, y compris pour deux premières requêtes simultanées :
  * l'index unique partiel `geodata_espaces_personnel_uniq` arbitre et la relecture renvoie la ligne gagnante.
+ * BD-8.5 (constat F-12) : lecture d'abord — appelé à chaque requête GeoData, tuiles comprises, il n'écrit plus que pour
+ * le premier appel d'un compte (aucune écriture tentée par tuile, aucun identifiant gaspillé).
  */
 export async function espacePersonnel(userId: string, ex: Executeur = pool): Promise<Espace> {
+  const LIRE = "SELECT id, type, cree_le FROM geodata_espaces WHERE proprietaire_id = $1 AND type = 'personnel'";
+  const [existant] = await requete<Espace>(LIRE, [userId], ex);
+  if (existant) return existant;
   await ex.query(
     "INSERT INTO geodata_espaces (id, type, proprietaire_id) VALUES ($1, 'personnel', $2) ON CONFLICT (proprietaire_id) WHERE type = 'personnel' DO NOTHING",
     [newId("gdesp"), userId],
   );
-  const [e] = await requete<Espace>("SELECT id, type, cree_le FROM geodata_espaces WHERE proprietaire_id = $1 AND type = 'personnel'", [userId], ex);
+  const [e] = await requete<Espace>(LIRE, [userId], ex);
   return e!;
 }
 

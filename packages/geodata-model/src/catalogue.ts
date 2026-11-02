@@ -12,7 +12,10 @@ export interface CategorieCatalogue { readonly cle: string; readonly libelle: st
 /** Catégories gérées et affectations explicites (identifiant de source → clé de catégorie). */
 export interface RangementCatalogue { readonly categories: readonly CategorieCatalogue[]; readonly affectations: ReadonlyMap<string, string> }
 
-/** Catégories initiales (semées une fois en base, puis gérées), dans l'ordre d'affichage ; un thème par catégorie. */
+/**
+ * Catégories initiales : **semis** écrit une fois en base par le serveur, puis gérées en base ; dans l'ordre d'affichage,
+ * un thème par catégorie. Jamais lues par l'interface (D-GD-29).
+ */
 export const CATEGORIES_CATALOGUE: readonly CategorieCatalogue[] = [
   { cle: "limites", libelle: "Limites administratives", themes: ["limites-administratives"] },
   { cle: "population", libelle: "Population et démographie", themes: ["population"] },
@@ -44,14 +47,18 @@ export const CATEGORIES_AJOUTEES: readonly { readonly cle: string; readonly deci
 ];
 export const CATEGORIE_AUTRES: CategorieCatalogue = { cle: "autres", libelle: "Autres", themes: [] };
 
-export const RANGEMENT_PAR_DEFAUT: RangementCatalogue = { categories: CATEGORIES_CATALOGUE, affectations: new Map() };
+/*
+ * BD-8.7 (constat B7, D-GD-29) : `CATEGORIES_CATALOGUE` n'est que le semis initial écrit en base par le serveur
+ * (`routes/geodata/categories.ts`). Les fonctions de rangement exigent le rangement lu en base (`GET /rangement`) :
+ * aucune valeur par défaut, l'interface ne se replie jamais sur ces catégories embarquées.
+ */
 
-/** Catégorie d'un thème de fiche (première catégorie qui le déclare, « Autres » sinon). */
-export const categorieDuTheme = (theme: string, categories: readonly CategorieCatalogue[] = CATEGORIES_CATALOGUE): CategorieCatalogue =>
+/** Catégorie d'un thème de fiche parmi les catégories données (première qui le déclare, « Autres » sinon). */
+export const categorieDuTheme = (theme: string, categories: readonly CategorieCatalogue[]): CategorieCatalogue =>
   categories.find((c) => c.themes.includes(theme)) ?? CATEGORIE_AUTRES;
 
 /** Catégorie d'une couche : affectation explicite de sa source, sinon thème, sinon « Autres ». */
-export function categorieDe(c: CoucheRangeable, r: RangementCatalogue = RANGEMENT_PAR_DEFAUT): CategorieCatalogue {
+export function categorieDe(c: CoucheRangeable, r: RangementCatalogue): CategorieCatalogue {
   const affectee = c.version.source.id ? r.affectations.get(c.version.source.id) : undefined;
   return (affectee && r.categories.find((k) => k.cle === affectee)) || categorieDuTheme(c.version.source.theme, r.categories);
 }
@@ -81,7 +88,7 @@ export interface GroupeCatalogue<T> { readonly categorie: CategorieCatalogue; re
  * niveau administratif d'abord, dans l'ordre de la table des niveaux (du plus global au plus fin), puis les autres par
  * titre ; `actives` compte celles déjà présentes sur la carte. Les catégories vides ne sont pas rendues.
  */
-export function regrouperCatalogue<T extends CoucheRangeable>(couches: readonly T[], type: TypeCatalogue, actives: ReadonlySet<string>, r: RangementCatalogue = RANGEMENT_PAR_DEFAUT): GroupeCatalogue<T>[] {
+export function regrouperCatalogue<T extends CoucheRangeable>(couches: readonly T[], type: TypeCatalogue, actives: ReadonlySet<string>, r: RangementCatalogue): GroupeCatalogue<T>[] {
   const groupes = new Map<string, T[]>();
   for (const c of couches) {
     if (typeCatalogue(c.typeGeometrie) !== type) continue;

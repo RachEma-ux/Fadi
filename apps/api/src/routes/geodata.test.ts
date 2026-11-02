@@ -46,7 +46,9 @@ async function publierReference(opts: { cle?: string; libelle?: string; droits?:
     const e = await ecrireVersion(client, {
       source: { cle: opts.cle ?? "test-unites", titre: "Unités de test", producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
       espaceId: null,
-      version: { libelle: opts.libelle ?? "v1", empreinte: "a".repeat(64), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution de test", droits: opts.droits ?? TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true, ...(opts.qualification ? { qualification: opts.qualification } : {}) },
+      // Empreinte du contenu (comme la chaîne d'import) : une même source n'a jamais deux versions de même empreinte
+      // (index unique geodata_versions_source_empreinte_uq, BD-8.1).
+      version: { libelle: opts.libelle ?? "v1", empreinte: createHash("sha256").update(JSON.stringify([opts.cle ?? "test-unites", opts.libelle ?? "v1", valeurs])).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution de test", droits: opts.droits ?? TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true, ...(opts.qualification ? { qualification: opts.qualification } : {}) },
       couche: { titre: "Unités", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom", "effectif"], styleDefaut: { mode: "simple", couleur: "#123456" } },
       objets: v.objets, indicateurs: [{ propriete: "effectif", titre: "Effectif", unite: "u", periode: null, denominateur: null, description: "", motifSiAbsente: "secret-statistique" }], superficie: true, preparePar: null,
     });
@@ -838,5 +840,43 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     const [csv] = (await pool.query("SELECT convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers WHERE chemin = 'donnees/zz-test.csv'")).rows;
     expect(csv).toEqual({ texte: "code;valeur\n1;2\n" });
     await pool.query("DELETE FROM geodata_fichiers");
+  });
+});
+
+describe("BD-8 — import et consultation GeoData (constats B1, B2, F-12)", () => {
+  it("une source commune n'a jamais deux versions de même empreinte, même concurrentes (index unique)", async () => {
+    const ref = await publierReference({ cle: "bd8-unique" });
+    const [v] = (await pool.query("SELECT source_id, empreinte FROM geodata_versions WHERE id = $1", [ref.versionId])).rows;
+    await expect(pool.query(
+      "INSERT INTO geodata_versions (id, source_id, libelle, empreinte, licence, attribution, droits, crs_source) VALUES ('gdver_bd8_doublon', $1, 'v', $2, 'T', 'T', '{}', 'CRS84')",
+      [v.source_id, v.empreinte],
+    )).rejects.toThrow();
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_versions WHERE source_id = $1", [v.source_id])).rows[0].n).toBe(1);
+  });
+  it("tuiles d'une version commune publiée : ETag stable, 304 sans recalcul après le contrôle d'accès ; tiers sans accès : 404", async () => {
+    const alice = await compte("gd-etag@example.com");
+    const ref = await publierReference({ cle: "bd8-etag" });
+    const t = await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103`);
+    expect(t.status).toBe(200);
+    expect(t.headers["cache-control"]).toBe("private, max-age=300");
+    const etag = t.headers["etag"] as string;
+    expect(etag).toMatch(/^"[A-Za-z0-9_-]{32}"$/);
+    expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103`)).headers["etag"]).toBe(etag);
+    expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103`).set("If-None-Match", etag)).status).toBe(304);
+    expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103?regrouper=1`)).headers["etag"]).not.toBe(etag);
+    const etq = await alice.client.get(`${API}/etiquettes/${ref.coucheId}/8/123/103`);
+    expect(etq.headers["etag"]).not.toBe(etag);
+    expect((await alice.client.get(`${API}/etiquettes/${ref.coucheId}/8/123/103`).set("If-None-Match", etq.headers["etag"] as string)).status).toBe(304);
+    // Retirée : plus servie, même avec l'ETag d'avant (le contrôle d'accès précède la validation).
+    await pool.query("UPDATE geodata_versions SET etat = 'retiree', retiree_le = now(), motif_retrait = 'Retrait (test)' WHERE id = $1", [ref.versionId]);
+    expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103`).set("If-None-Match", etag)).status).toBe(404);
+  });
+  it("espace personnel : créé une fois, puis seulement relu (aucune écriture par tuile)", async () => {
+    const alice = await compte("gd-espace-lu@example.com");
+    const e1 = (await alice.client.get(`${API}/espace`)).body;
+    const ref = await publierReference({ cle: "bd8-espace" });
+    for (let i = 0; i < 3; i++) expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/123/103`)).status).toBe(200);
+    expect((await alice.client.get(`${API}/espace`)).body).toEqual(e1);
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_espaces WHERE proprietaire_id = $1", [alice.id])).rows[0].n).toBe(1);
   });
 });
