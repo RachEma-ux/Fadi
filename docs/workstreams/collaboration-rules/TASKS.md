@@ -17,6 +17,9 @@
 
 ## Terminé
 
+- [x] CR-6 — Écarts E6, E9, E10 et base d'autorité portés sur le modèle d'Organisations phase 2 ; E5 tenu par `main`
+  (CR-R4, CR-C2 ; PR #282) (Issue : #272).
+
 - [x] CR-INIT — Issue #272, dossier de continuité, matrice (36 énoncés), plan, décisions ouvertes (Issue : #272).
 
 ## Bloqué

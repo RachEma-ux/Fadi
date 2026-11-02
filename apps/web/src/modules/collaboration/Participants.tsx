@@ -34,7 +34,7 @@ const ROLE_HELP: Record<BusinessRole, string> = {
   coordinateur: "organiser observations et responsabilités", approbateur: "approuver ou refuser les dossiers Studio", diffuseur: "diffuser les dossiers approuvés",
 };
 const SCOPE_LABEL: Record<RoleScope, string> = { projet: "Projet", etude: "Étude", variante: "Variante", revision: "Révision", documents: "Documents" };
-const RESP_LABEL: Record<Responsibility, string> = { diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser" };
+const RESP_LABEL: Record<Responsibility, string> = { diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser", garder: "Garder le contenu" };
 const ACCESS_LABEL = { proprietaire: "propriétaire", editeur: "modification", lecteur: "lecture et commentaires" } as const;
 
 const fmtDate = (d: string | null) => (d ? new Date(d.length === 10 ? `${d}T12:00:00Z` : d).toLocaleDateString(LOCALE) : "—");

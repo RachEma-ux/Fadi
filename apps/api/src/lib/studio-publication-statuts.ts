@@ -27,7 +27,8 @@
  * supprimé.
  */
 import { createHash } from "node:crypto";
-import type { ProjectNeed } from "./owned-project.js";
+import type { StudioPublicationAuthority } from "../db/schema.js";
+import type { ProjectNeed, ProjectRole } from "./owned-project.js";
 
 export type StatutTravail = "brouillon" | "en-revue" | "approuve" | "refuse";
 export type StatutDiffusion = "non-diffuse" | "diffuse" | "retire" | "remplace";
@@ -70,6 +71,26 @@ export const REGLES_TRANSITION: Readonly<Record<StudioPublicationTransition, Reg
   retirer: { capacite: "publication", travail: ["brouillon", "en-revue", "approuve", "refuse"], diffusion: ["non-diffuse", "diffuse", "remplace"], commentaire: "requis", manifesteAJour: false },
 });
 export const besoinTransition = (action: StudioPublicationTransition): ProjectNeed => BESOIN_CAPACITE[REGLES_TRANSITION[action].capacite];
+
+/**
+ * Base d'autorité d'une transition déjà autorisée (écart E5, CR-D6 (a)) : au titre de quoi elle a été permise, pour le
+ * journal de la publication. Délégation employée d'abord (EX-085) ; puis le rôle de projet (propriétaire ; éditeur pour
+ * la revue) ; sinon le rôle métier qui ouvre la capacité — Approbateur ou Diffuseur de portée projet (`canApprove`,
+ * `canPublish` de l'accès), à défaut d'une portée étroite (étude, variante, révision : le contrôle d'accès l'a admis).
+ * Pur : aucun droit n'est décidé ici, l'accès est vérifié avant.
+ */
+export function baseAutorite(
+  action: StudioPublicationTransition,
+  access: { role: ProjectRole; canApprove?: boolean; canPublish?: boolean },
+  delegationId: string | null = null,
+): StudioPublicationAuthority {
+  if (delegationId) return { base: "delegation", delegationId };
+  if (access.role === "proprietaire") return { base: "role-projet", role: "proprietaire" };
+  const capacite = REGLES_TRANSITION[action].capacite;
+  if (capacite === "revue") return { base: "role-projet", role: "editeur" };
+  if (capacite === "approbation") return { base: "role-metier", role: "approbateur", portee: access.canApprove ? "projet" : "etroite" };
+  return { base: "role-metier", role: "diffuseur", portee: access.canPublish ? "projet" : "etroite" };
+}
 
 export interface Dimensions { travail: StatutTravail; diffusion: StatutDiffusion }
 export interface EtatPublication extends Dimensions {

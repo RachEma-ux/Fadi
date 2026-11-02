@@ -12,7 +12,11 @@ import type { ParticipationStatus, ProjectBusinessRole, RoleScopeType, TeamRespo
 export const BUSINESS_ROLES: readonly ProjectBusinessRole[] = ["lecteur", "concepteur", "relecteur", "coordinateur", "approbateur", "diffuseur"];
 export const ROLE_SCOPES: readonly RoleScopeType[] = ["projet", "etude", "variante", "revision", "documents"];
 /** Le concept : qui dirige, produit, coordonne, vérifie, approuve et diffuse. */
-export const TEAM_RESPONSIBILITIES: readonly TeamResponsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser"];
+/**
+ * `garder` = gardien du contenu (écart E10), distinct du gardien du projet (le propriétaire). Une responsabilité est
+ * déclarée : elle n'ouvre aucun droit (concept, partie 2) — les droits viennent des rôles par portée.
+ */
+export const TEAM_RESPONSIBILITIES: readonly TeamResponsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser", "garder"];
 export const PARTICIPATION_STATUSES: readonly ParticipationStatus[] = ["contact", "active", "suspendue", "terminee"];
 
 /** Rôle de partage → rôle métier (portée projet, origine `acces`) ; le propriétaire n'a pas de rôle de partage. */

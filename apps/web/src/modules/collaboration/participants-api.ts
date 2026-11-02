@@ -7,12 +7,12 @@ import { request } from "../../lib/api";
 export type ParticipationStatus = "contact" | "active" | "suspendue" | "terminee";
 export type BusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
 export type RoleScope = "projet" | "etude" | "variante" | "revision" | "documents";
-export type Responsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+export type Responsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser" | "garder";
 export type StatusChange = "suspendre" | "reactiver" | "terminer";
 
 export const BUSINESS_ROLES: readonly BusinessRole[] = ["lecteur", "concepteur", "relecteur", "coordinateur", "approbateur", "diffuseur"];
 export const ROLE_SCOPES: readonly RoleScope[] = ["projet", "etude", "variante", "revision", "documents"];
-export const RESPONSIBILITIES: readonly Responsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser"];
+export const RESPONSIBILITIES: readonly Responsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser", "garder"];
 /** Libellés des rôles métier et des portées (phase 3 : formulaire d'invitation, invitations reçues). */
 export const BUSINESS_ROLE_LABEL: Readonly<Record<BusinessRole, string>> = { lecteur: "Lecteur", concepteur: "Concepteur", relecteur: "Relecteur", coordinateur: "Coordinateur", approbateur: "Approbateur", diffuseur: "Diffuseur" };
 export const SCOPE_LABEL: Readonly<Record<RoleScope, string>> = { projet: "Projet", etude: "Étude", variante: "Variante", revision: "Révision", documents: "Documents" };

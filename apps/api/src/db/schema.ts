@@ -519,7 +519,8 @@ export const organizations = pgTable("organizations", {
 });
 
 export type ParticipationStatus = "contact" | "active" | "suspendue" | "terminee";
-export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+/** `garder` : gardien du contenu (écart E10), responsabilité déclarée sans droit implicite. */
+export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser" | "garder";
 
 /** Participation d'une personne OU d'une organisation à un projet, pour une période. */
 export const projectParticipations = pgTable("project_participations", {
@@ -1326,6 +1327,18 @@ export const studioPublications = pgTable("studio_publications", {
   index("studio_publications_study_idx").on(t.studyId, t.createdAt),
 ]);
 
+/**
+ * Au titre de quoi une transition de publication a été permise (écart E5, CR-D6) : le rôle de projet (propriétaire ;
+ * éditeur pour la revue), le rôle métier Approbateur ou Diffuseur (portée projet, ou portée étroite étude / variante /
+ * révision, phase 2 d'Organisations), une délégation d'approbation (EX-085) ou l'affectation d'un approbateur externe.
+ */
+export type StudioPublicationAuthority =
+  | { base: "role-projet"; role: "proprietaire" | "editeur" }
+  | { base: "role-metier"; role: "approbateur" | "diffuseur"; portee: "projet" | "etroite" }
+  | { base: "delegation"; delegationId: string }
+  /** Approbation ou refus par un approbateur externe nommé (revue externe, OP-D7 a). */
+  | { base: "revue-externe" };
+
 /** Journal append-only des transitions d'une publication (UPDATE refusée par déclencheur, init.sql). */
 export const studioPublicationEvents = pgTable("studio_publication_events", {
   id: text("id").primaryKey(),
@@ -1346,6 +1359,8 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   delegationId: text("delegation_id"),
   /** OP-6 : marque de l'évènement `approuver` (auto-contrôle ou non) ; null pour les autres actions et avant le lot. */
   selfControl: boolean("self_control"),
+  /** Base d'autorité de la transition (écart E5, CR-D6) ; null pour une entrée antérieure. */
+  authority: jsonb("authority").$type<StudioPublicationAuthority | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
 

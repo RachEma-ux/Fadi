@@ -1487,6 +1487,10 @@ CREATE OR REPLACE TRIGGER studio_approval_delegation_events_no_update BEFORE UPD
   FOR EACH ROW EXECUTE FUNCTION studio_publication_event_immutable();
 ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS delegation_id text;
 ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_delegation_id text;
+-- Base d'autorité de la transition (écart E5, CR-D6 (a)) : au titre de quoi elle a été permise —
+-- `{"base":"role-projet","role":"proprietaire"|"editeur"}`, `{"base":"role-metier","role":"approbateur"|"diffuseur","portee":"projet"|"etroite"}`
+-- ou `{"base":"delegation","delegationId":…}` ; NULL pour une entrée antérieure (aucune reprise rétroactive).
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS authority jsonb;
 -- Rapprochement des observations avec une nouvelle révision (EX-086, lib/studio-observations-rapprochement.ts) : un
 -- résultat par observation et par contrôle, en ajout seul ; le statut de l'observation n'est jamais modifié ici.
 CREATE TABLE IF NOT EXISTS studio_observation_reconciliations (
@@ -1850,7 +1854,7 @@ CREATE TABLE IF NOT EXISTS project_participations (
   represented_organization_id text REFERENCES organizations (id) ON DELETE SET NULL,
   -- Rôle métier déclaré (« ingénieur structure »…), saisie libre tant que les listes manquent (OP-D4).
   business_role text,
-  -- Responsabilités d'équipe du concept : diriger, produire, coordonner, vérifier, approuver, diffuser.
+  -- Responsabilités d'équipe du concept : diriger, produire, coordonner, vérifier, approuver, diffuser, garder le contenu (E10).
   responsibilities text[] NOT NULL DEFAULT '{}',
   status text NOT NULL,
   starts_on date,
@@ -1863,8 +1867,19 @@ CREATE TABLE IF NOT EXISTS project_participations (
   CONSTRAINT project_participations_period_check CHECK (ends_on IS NULL OR starts_on IS NULL OR ends_on >= starts_on),
   CONSTRAINT project_participations_ended_check CHECK ((status = 'terminee') = (ends_on IS NOT NULL)),
   CONSTRAINT project_participations_responsibilities_check
-    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser']::text[])
+    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser', 'garder']::text[])
 );
+-- Écart E10 : `garder` = gardien du contenu, responsabilité déclarée, sans aucun droit implicite. Contrainte élargie sur une
+-- base antérieure (aucune ligne existante n'est touchée), une seule fois.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'project_participations_responsibilities_check'
+                  AND pg_get_constraintdef(oid) LIKE '%garder%') THEN
+    ALTER TABLE project_participations DROP CONSTRAINT IF EXISTS project_participations_responsibilities_check;
+    ALTER TABLE project_participations ADD CONSTRAINT project_participations_responsibilities_check
+      CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser', 'garder']::text[]);
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_person ON project_participations (project_id, person_id)
   WHERE person_id IS NOT NULL AND status <> 'terminee';
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_participations (project_id, organization_id)

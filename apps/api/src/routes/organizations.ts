@@ -91,7 +91,7 @@ function invalid(res: Response, details: unknown, message = "Saisie invalide.") 
 
 const text = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => text(max).optional().nullable().transform((v) => (v ? v : null));
-const responsibilitiesSchema = z.array(z.enum(TEAM_RESPONSIBILITIES as [TeamResponsibility, ...TeamResponsibility[]])).max(6);
+const responsibilitiesSchema = z.array(z.enum(TEAM_RESPONSIBILITIES as [TeamResponsibility, ...TeamResponsibility[]])).max(TEAM_RESPONSIBILITIES.length);
 const today = () => new Date().toISOString().slice(0, 10);
 const shownName = (u: { displayName: string | null } | null, p: { displayName: string | null } | null) => u?.displayName || p?.displayName || null;
 

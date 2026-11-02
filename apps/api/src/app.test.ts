@@ -3026,9 +3026,9 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     expect((await editor.a.delete(`/projects/${pid}/members/${owner.id}`)).status).toBe(204);
     log = await auditOf(pid);
     expect(log.slice(6).map((e) => [e.action, e.actor_id, e.metadata])).toEqual([
-      ["project.member.left", reader.id, { memberId: reader.id, roleBefore: "lecteur", canExportBefore: false }],
+      ["project.member.left", reader.id, { memberId: reader.id, roleBefore: "lecteur", canExportBefore: false, releasedEditingLock: false, releasedFineLocks: 0 }],
       ["project.ownership.transferred", owner.id, { memberId: editor.id, fromOwnerId: owner.id, toOwnerId: editor.id, roleBefore: "editeur", roleAfter: "proprietaire", previousOwnerRoleAfter: "editeur" }],
-      ["project.member.removed", editor.id, { memberId: owner.id, roleBefore: "editeur", canExportBefore: true }],
+      ["project.member.removed", editor.id, { memberId: owner.id, roleBefore: "editeur", canExportBefore: true, releasedEditingLock: false, releasedFineLocks: 0 }],
     ]);
     // Jamais d'adresse dans le journal.
     expect(JSON.stringify(log)).not.toContain("@example.com");
@@ -3476,5 +3476,113 @@ describe("Invitations acceptées liées à une participation — fin de l'ajout 
       expect(log.some((r) => r.action === a), a).toBe(true);
     }
     expect(log.every((r) => !r.m.includes("@"))).toBe(true);
+  });
+});
+
+describe("règles communes — E6 fin de participation, E10 gardien du contenu, base d'autorité (CR-C2)", () => {
+  type Who = { a: ReturnType<typeof agent>; id: string };
+  // Identifiant lu en base, sans appel supplémentaire à /auth (limite d'appels partagée par tout le fichier).
+  async function who(email: string): Promise<Who> {
+    const a = await registerAndLogin(email);
+    return { a, id: (await pool.query("SELECT id FROM users WHERE lower(email) = lower($1)", [email])).rows[0].id as string };
+  }
+  const participationOf = async (pid: string, userId: string) =>
+    (await pool.query("SELECT pp.id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status <> 'terminee'", [pid, userId])).rows[0]?.id as string;
+  const auditOf = async (projectId: string, action: string) =>
+    (await pool.query("SELECT actor_id, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 AND action = $2 ORDER BY id", [projectId, action])).rows as { actor_id: string; metadata: Record<string, unknown> }[];
+  async function team(tag: string) {
+    const owner = await who(`cr2-${tag}-owner@example.com`);
+    const editor = await who(`cr2-${tag}-editor@example.com`);
+    const reader = await who(`cr2-${tag}-reader@example.com`);
+    const pid = (await owner.a.post("/projects").send({ code: `CR2.${tag}`, name: "Règles communes CR-C2" })).body.id as string;
+    expect((await partager(owner.a, pid, `cr2-${tag}-editor@example.com`, "editeur")).status).toBe(201);
+    expect((await partager(owner.a, pid, `cr2-${tag}-reader@example.com`, "lecteur")).status).toBe(201);
+    const created = await owner.a.post(`/projects/${pid}/studio/studies`).send({ name: "Étude CR-C2" });
+    expect(created.status).toBe(201);
+    const study = created.body.study.id as string;
+    const variant = created.body.variant.id as string;
+    return { owner, editor, reader, pid, vp: `/projects/${pid}/studio/studies/${study}/variants/${variant}`, sp: `/projects/${pid}/studio/studies/${study}/publications` };
+  }
+  const examine = (v: Record<string, unknown>) => ({ manifestHash: v["manifestHash"], revisionId: v["revisionId"], documentHash: v["documentHash"] });
+
+  it("base d'autorité : chaque transition de publication enregistre au titre de quoi elle a été permise", async () => {
+    const { owner, editor, reader, pid, vp, sp } = await team("auth");
+    const pub = await editor.a.post(`${vp}/publications`).send({ title: "Dossier R03" });
+    expect(pub.status).toBe(201);
+    const soumis = await editor.a.post(`${sp}/${pub.body.id}/soumettre`).send({});
+    expect(soumis.status).toBe(200);
+    // Le lecteur reçoit le rôle Approbateur (portée projet), l'éditeur le rôle Diffuseur (portée projet).
+    expect((await owner.a.post(`/projects/${pid}/participants/${await participationOf(pid, reader.id)}/roles`).send({ role: "approbateur", scopeType: "projet" })).status).toBe(201);
+    expect((await owner.a.post(`/projects/${pid}/participants/${await participationOf(pid, editor.id)}/roles`).send({ role: "diffuseur", scopeType: "projet" })).status).toBe(201);
+    expect((await reader.a.post(`${sp}/${pub.body.id}/approuver`).send(examine(soumis.body))).status).toBe(200);
+    expect((await editor.a.post(`${sp}/${pub.body.id}/diffuser`).send({})).status).toBe(200);
+    const journal = (await owner.a.get(`${sp}/${pub.body.id}`)).body.events as { action: string; authority: Record<string, unknown> | null }[];
+    expect(journal.map((e) => [e.action, e.authority])).toEqual([
+      ["creer", { base: "role-projet", role: "editeur" }],
+      ["soumettre", { base: "role-projet", role: "editeur" }],
+      ["approuver", { base: "role-metier", role: "approbateur", portee: "projet" }],
+      ["diffuser", { base: "role-metier", role: "diffuseur", portee: "projet" }],
+    ]);
+    // Le propriétaire retire au titre de son rôle de projet ; la base est écrite en base, append-only.
+    expect((await owner.a.post(`${sp}/${pub.body.id}/retirer`).send({ comment: "Remplacé" })).status).toBe(200);
+    const enBase = await pool.query("SELECT authority FROM studio_publication_events WHERE publication_id = $1 AND action = 'retirer'", [pub.body.id]);
+    expect(enBase.rows[0].authority).toEqual({ base: "role-projet", role: "proprietaire" });
+  });
+
+  it("E10 : la responsabilité « garder » se déclare sur la participation, sans aucun droit", async () => {
+    const { owner, reader, pid, vp, sp } = await team("e10");
+    const rp = await participationOf(pid, reader.id);
+    expect((await owner.a.patch(`/projects/${pid}/participants/${rp}`).send({ responsibilities: ["garder"] })).status).toBe(200);
+    expect((await pool.query("SELECT responsibilities FROM project_participations WHERE id = $1", [rp])).rows[0].responsibilities).toEqual(["garder"]);
+    // Aucun droit : ni écriture, ni export, ni approbation ; l'accès effectif est inchangé.
+    expect((await pool.query("SELECT role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = $1 AND user_id = $2", [pid, reader.id])).rows[0]).toEqual({ role: "lecteur", can_export: false, can_approve: false, can_publish: false });
+    expect((await reader.a.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "x" } })).status).toBe(403);
+    expect((await reader.a.get(`/projects/${pid}/archive`)).status).toBe(403);
+    const pub = await owner.a.post(`${vp}/publications`).send({ title: "Dossier" });
+    const soumis = await owner.a.post(`${sp}/${pub.body.id}/soumettre`).send({});
+    expect((await reader.a.post(`${sp}/${pub.body.id}/approuver`).send(examine(soumis.body))).status).toBe(403);
+  });
+
+  it("E6 : le retrait libère réservation et verrous dans la transaction ; observations et tâches restent à réattribuer", async () => {
+    const { owner, editor, reader, pid, vp } = await team("e6");
+    expect((await editor.a.put(`/projects/${pid}/lock`)).status).toBe(200);
+    await pool.query("INSERT INTO atelier_locks (project_id, cle, author_id, expires_at) VALUES ($1, 'objet-1', $2, now() + interval '20 minutes'), ($1, 'niveau:n0', $2, now() - interval '1 minute')", [pid, editor.id]);
+    const obs = await owner.a.post(`${vp}/observations`).send({ body: "Reprendre l'acrotère", responsableId: editor.id });
+    expect(obs.status).toBe(201);
+    expect((await owner.a.post(`${vp}/observations/${obs.body.id}/taches`).send({ libelle: "Coter l'acrotère", assigneeId: editor.id })).status).toBe(201);
+    const tacheId = (await pool.query("SELECT id FROM studio_observation_tasks WHERE observation_id = $1", [obs.body.id])).rows[0].id as string;
+    expect((await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer).toEqual([]);
+    // Pendant la réservation, le propriétaire est bloqué (423) ; le retrait de l'éditeur la libère.
+    expect((await owner.a.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "x" } })).status).toBe(423);
+    expect((await owner.a.delete(`/projects/${pid}/members/${editor.id}`)).status).toBe(204);
+    expect((await owner.a.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "y" } })).status).toBe(200);
+    expect((await pool.query("SELECT count(*)::int AS n FROM atelier_locks WHERE project_id = $1", [pid])).rows[0].n).toBe(0);
+    // Le verrou actif libéré est journalisé comme une libération ordinaire ; le verrou déjà expiré ne l'est pas.
+    expect((await pool.query("SELECT cle, kind, author_id FROM atelier_lock_events WHERE project_id = $1", [pid])).rows).toEqual([{ cle: "objet-1", kind: "liberation", author_id: owner.id }]);
+    expect((await auditOf(pid, "project.member.removed")).map((e) => e.metadata)).toEqual([
+      { memberId: editor.id, roleBefore: "editeur", canExportBefore: true, releasedEditingLock: true, releasedFineLocks: 1 },
+    ]);
+    // Responsabilités : toujours confiées à l'ancien membre (rien n'est réécrit), listées au seul propriétaire.
+    const liste = (await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer as { nature: string; id: string; responsable: { id: string } }[];
+    expect(liste.map((r) => [r.nature, r.id, r.responsable.id])).toEqual([["observation", obs.body.id, editor.id], ["tache", tacheId, editor.id]]);
+    expect((await reader.a.get(`/projects/${pid}/members`)).body.aReattribuer).toBeUndefined();
+    expect((await pool.query("SELECT responsable_id FROM studio_observations WHERE comment_id = $1", [obs.body.id])).rows[0].responsable_id).toBe(editor.id);
+    // Réattribution explicite de la tâche au propriétaire : elle quitte la liste.
+    const re = await owner.a.post(`${vp}/observations/${obs.body.id}/taches/${tacheId}/transitions`).send({ action: "reattribuer", assigneeId: owner.id });
+    expect(re.status).toBe(200);
+    expect(((await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer as { nature: string }[]).map((r) => r.nature)).toEqual(["observation"]);
+  });
+
+  it("E6 : suspendre une participation libère aussi les verrous fins, journalisés", async () => {
+    const { owner, editor, pid } = await team("e6s");
+    expect((await editor.a.put(`/projects/${pid}/lock`)).status).toBe(200);
+    await pool.query("INSERT INTO atelier_locks (project_id, cle, author_id, expires_at) VALUES ($1, 'objet-2', $2, now() + interval '20 minutes')", [pid, editor.id]);
+    const ep = await participationOf(pid, editor.id);
+    expect((await owner.a.post(`/projects/${pid}/participants/${ep}/status`).send({ change: "suspendre" })).status).toBe(200);
+    expect((await pool.query("SELECT editing_lock FROM projects WHERE id = $1", [pid])).rows[0].editing_lock).toBeNull();
+    expect((await pool.query("SELECT count(*)::int AS n FROM atelier_locks WHERE project_id = $1", [pid])).rows[0].n).toBe(0);
+    expect((await auditOf(pid, "participation.status_changed")).map((e) => e.metadata)).toEqual([
+      expect.objectContaining({ participationId: ep, to: "suspendue", releasedEditingLock: true, releasedFineLocks: 1 }),
+    ]);
   });
 });

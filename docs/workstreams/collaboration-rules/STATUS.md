@@ -1,6 +1,6 @@
 # Règles communes de collaboration — Statut
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
@@ -38,6 +38,12 @@ CR-D9 (CR-R3).** Aucun déploiement consigné ici.
 
 - 2026-10-24 : dans CR-R3, la réponse du maître d'ouvrage côté Communication est citée COM-A2 (renommée depuis COM-R2
   pour ne pas la confondre avec les critères COM-R1 à COM-R7 de ce chantier) ; aucun contenu de décision modifié.
+
+- 2026-11-02 : PR #282 reprise sur `main` (CR-R4, CR-C2) — E5 tenu par les rôles par portée d'Organisations phase 2 ;
+  E6 (réservation et verrous fins libérés au retrait, au départ, à la suspension et à la fin d'une participation ;
+  liste « Responsabilités à réattribuer »), E9 ([GLOSSAIRE.md](GLOSSAIRE.md)), E10 (responsabilité `garder`) et base
+  d'autorité de chaque transition de publication Studio. Preuves : tests `lib` (`baseAutorite`), `app.test.ts` (DB-3,
+  CI), typecheck, build ; CI du HEAD à relever sur la PR.
 
 ## Points ouverts
 

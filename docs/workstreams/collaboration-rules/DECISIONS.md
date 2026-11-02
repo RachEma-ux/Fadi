@@ -106,6 +106,43 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
   actuels et basculera sur les affectations avec la phase 2 d'Organisations (TASKS COM-10). La vague 3 de la recette
   (S3, S4 sur notifications et recherche, S6 côté diffusion) est jouable avec `apps/web/e2e/communication.mjs`.
 
+- **CR-R4 — Demande de résoudre les écarts restants, puis fusion sur `main` (2026-10-24, 2026-11-02).** Demande du
+  maître d'ouvrage du 24 octobre : « Résous les points en suspens » (écarts E5, E6, E9, E10 et report CR-1), livrée sur
+  la PR #282. Le 2 novembre, demande « Fusionne #282 » ; `main` avait entre-temps livré la phase 2 d'Organisations
+  (accès par participations, rôles Approbateur / Diffuseur par portée, délégations d'approbation EX-085, revue
+  externe). Réponse du maître d'ouvrage : **« Garder E5 de main, porter le reste »** — les affectations de la PR #282
+  (cases de l'écran des membres, `PATCH …/members/:userId { approbateur, diffuseur }`, Alt+Maj+4/5/6) sont abandonnées
+  au profit du modèle de `main` ; E6, E9, E10 et la base d'autorité sont portés sur ce modèle.
+
+- **CR-C2 — Écarts E6, E9, E10 et base d'autorité, portés sur le modèle d'Organisations phase 2 (2026-11-02).**
+  Migration strictement additive (colonne `studio_publication_events.authority`, contrainte des responsabilités
+  élargie à `garder`). Choix du chef de projet :
+  1. **E5 — tenu par `main`.** Approuver / refuser : propriétaire, Approbateur (rôle par portée) ou délégation ;
+     diffuser / retirer : propriétaire ou Diffuseur ; préparer et soumettre : propriétaire et éditeurs. Rien n'est
+     ajouté au contrôle d'accès.
+  2. **Base d'autorité (CR-D6 a).** Chaque nouvelle entrée du journal de publication Studio porte la base qui l'a
+     permise : `{ base: "role-projet", role: "proprietaire" | "editeur" }`, `{ base: "role-metier", role:
+     "approbateur" | "diffuseur", portee: "projet" | "etroite" }` (portée projet ou périmètre plus étroit : étude,
+     variante, révision), `{ base: "delegation", delegationId }` ou `{ base: "revue-externe" }` ; calcul pur
+     `baseAutorite` (`studio-publication-statuts.ts`), affichée « au titre de … » dans le journal du panneau ; les
+     entrées antérieures restent sans base (aucune reprise rétroactive). Archive Studio : colonne JSON déclarée.
+  3. **E6 — Fin de participation (CR-D7 a).** Le retrait par le propriétaire, le départ du membre, et la suspension ou
+     la fin d'une participation (écran « Équipe et participants ») libèrent dans la même transaction la réservation
+     d'édition du projet **et** les verrous fins de l'Atelier du compte (`lib/fin-participation.ts`, chaque verrou actif
+     libéré journalisé comme une libération ordinaire) ; le journal le note (`releasedEditingLock`,
+     `releasedFineLocks`). Le retrait verrouille d'abord le projet (`lockProject`), même ordre que Studio. Les
+     observations ouvertes et tâches à faire de la personne **restent à elle** (auteur et responsable jamais réécrits)
+     et sont listées au seul propriétaire (`aReattribuer` de `GET …/members`, section « Responsabilités à
+     réattribuer » avec lien vers la variante) pour une réattribution explicite par Studio.
+  4. **E9 — Vocabulaire (CR-D8 a).** [GLOSSAIRE.md](GLOSSAIRE.md), adapté aux rôles par portée de `main` ;
+     identifiants de code et libellés déjà livrés de l'Atelier inchangés. Le texte d'introduction des publications
+     Studio dit désormais qui soumet, approuve, diffuse, et que le journal donne la base de chaque étape.
+  5. **E10 — Gardien du contenu (A03).** Responsabilité d'équipe `garder` (« Garder le contenu ») de la participation,
+     choisie dans l'écran « Équipe et participants » comme les autres responsabilités, **sans aucun droit**. Le gardien
+     du projet reste le propriétaire.
+  6. **CR-1 non reporté ici** : les phases 2 à 4 d'Organisations sont livrées sur `main` ; reporter l'annexe A dans un
+     plan déjà exécuté demande une relecture critère par critère, laissée à la tâche CR-1.
+
 ## Décisions en attente
 
 - Aucune : CR-D1 à CR-D10 sont répondues (CR-R1, CR-R2).

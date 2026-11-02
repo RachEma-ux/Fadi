@@ -6,7 +6,7 @@ export const STATUT_ORGANISATION: Record<OrganizationStatus, string> = { active:
 export const STATUT_ADHESION: Record<MembershipStatus, string> = { active: "Active", suspendue: "Suspendue", terminee: "Terminée" };
 export const STATUT_MANDAT: Record<MandateStatus, string> = { propose: "Proposé", actif: "Actif", refuse: "Refusé", annule: "Annulé", termine: "Terminé" };
 export const RESPONSABILITE: Record<TeamResponsibility, string> = {
-  diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser",
+  diriger: "Diriger", produire: "Produire", coordonner: "Coordonner", verifier: "Vérifier", approuver: "Approuver", diffuser: "Diffuser", garder: "Garder le contenu",
 };
 export const RESPONSABILITES = Object.keys(RESPONSABILITE) as TeamResponsibility[];
 export const ROLE_METIER: Record<BusinessRole, string> = {

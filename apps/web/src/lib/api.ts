@@ -238,12 +238,26 @@ export interface ProjectMember {
   accessExpired?: boolean;
 }
 
+/** Observation ou tâche Studio dont le responsable n'a plus accès au projet (écart E6), à réattribuer explicitement. */
+export interface ResponsabiliteOrpheline {
+  nature: "observation" | "tache";
+  id: string;
+  libelle: string;
+  responsable: { id: string; email: string };
+  statut: string;
+  studyId: string;
+  variantId: string;
+  observationId: string;
+}
+
 export interface MembersView {
   owner: { userId: string; email: string };
   you: { userId: string; role: ProjectRole };
   members: ProjectMember[];
   /** Invitations en attente — propriétaire seulement ; `awaiting` : acceptation par un compte existant, ou création du compte. */
   invitations?: (InvitationView & { awaiting?: "acceptation" | "creation-compte" })[];
+  /** Responsabilités d'anciens participants à réattribuer (E6) — propriétaire seulement. */
+  aReattribuer?: ResponsabiliteOrpheline[];
 }
 
 // --- Gestion des comptes (docs/workstreams/users-management) -------------------------------------------------------
@@ -350,7 +364,8 @@ export type OrganizationRole = "administrateur" | "membre";
 export type OrganizationStatus = "active" | "suspendue" | "close";
 export type MembershipStatus = "active" | "suspendue" | "terminee";
 export type MandateStatus = "propose" | "actif" | "refuse" | "annule" | "termine";
-export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+/** `garder` : gardien du contenu (écart E10), responsabilité déclarée sans droit. */
+export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser" | "garder";
 export type BusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
 export interface Organization { id: string; name: string; kind?: string | null; details?: string | null; status: OrganizationStatus; createdAt?: string; updatedAt?: string }
 export interface MembershipSelf { membershipId: string; role: OrganizationRole; jobTitle: string | null; status: MembershipStatus; startsOn: string; endsOn: string | null }
@@ -1278,7 +1293,15 @@ export interface StudioPublicationEvent {
   delegationId?: string | null;
   /** OP-6 : approbation marquée auto-contrôle ; null hors approbation et avant le lot. */
   selfControl?: boolean | null;
+  /** Base d'autorité de la transition (écart E5, CR-D6) ; null pour une entrée antérieure. */
+  authority?: StudioPublicationAuthority | null;
 }
+/** Au titre de quoi une transition de publication a été permise (écart E5). */
+export type StudioPublicationAuthority =
+  | { base: "role-projet"; role: "proprietaire" | "editeur" }
+  | { base: "role-metier"; role: "approbateur" | "diffuseur"; portee: "projet" | "etroite" }
+  | { base: "delegation"; delegationId: string }
+  | { base: "revue-externe" };
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string; status: StudioPublicationStatus;

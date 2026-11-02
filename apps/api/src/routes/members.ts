@@ -75,6 +75,7 @@ function refusInvitation(res: Response, project: AccessibleProject, userId: stri
   return true;
 }
 import { lockProject } from "../lib/step-rows.js";
+import { aReattribuer, libererReservations } from "../lib/fin-participation.js";
 import { mandateInvitationTarget } from "../lib/mandate-invitations-db.js";
 import { signalerAccesApresEcriture } from "../lib/temps-reel-signaux.js";
 
@@ -172,7 +173,8 @@ membersRouter.get("/", async (req, res) => {
   if (!project) return;
   res.json({
     owner: { userId: project.ownerId, email: await ownerEmailOf(project.ownerId) }, you: { userId: req.user!.id, role: project.role }, members: await listMembers(project.id),
-    ...(project.role === "proprietaire" ? { invitations: await pendingInvitations(project.id) } : {}),
+    // Responsabilités Studio à réattribuer (écart E6) : celles de personnes qui n'ont plus accès, pour le propriétaire.
+    ...(project.role === "proprietaire" ? { invitations: await pendingInvitations(project.id), aReattribuer: await aReattribuer(db, project.id) } : {}),
   });
 });
 
@@ -442,13 +444,18 @@ membersRouter.delete("/:userId", async (req, res) => {
   const project = await projectOr404(req, res, userId === req.user!.id ? "read" : "owner");
   if (!project) return;
   const deleted = await db.transaction(async (tx) => {
+    // Ordre des verrous des écritures Studio (le projet, puis la ligne du membre) : le projet d'abord, sinon la libération
+    // de la réservation (UPDATE projects) pourrait s'interbloquer avec une écriture concurrente du membre.
+    await lockProject(tx, project.id);
     // Retrait ou départ : la participation qui porte le partage est terminée et datée (lot OP-PONT, ancien miroir).
     const gone = await revokeShare(tx, project.id, userId);
     const rows = gone ? [gone] : [];
     if (gone) {
+      // Fin de participation (écart E6) : réservation d'édition et verrous fins libérés dans la même transaction.
+      const released = await libererReservations(tx, project.id, userId, req.user!.id);
       await audit(tx, {
         actorId: req.user!.id, action: userId === req.user!.id ? "project.member.left" : "project.member.removed", target: { type: "project", id: project.id },
-        metadata: { memberId: userId, roleBefore: gone.role, canExportBefore: memberExports(gone.role, gone.canExport) }, ip: clientIp(req),
+        metadata: { memberId: userId, roleBefore: gone.role, canExportBefore: memberExports(gone.role, gone.canExport), releasedEditingLock: released.reservationEdition, releasedFineLocks: released.verrous }, ip: clientIp(req),
       });
     }
     return rows;
