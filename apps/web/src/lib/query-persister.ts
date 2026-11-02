@@ -9,6 +9,7 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 import { dehydrate, type QueryClient } from "@tanstack/react-query";
 import type { PersistQueryClientOptions } from "@tanstack/react-query-persist-client";
 import { localStore } from "./local-store";
+import { demanderPersistanceStockage } from "./persistance-stockage";
 
 export const QUERY_CACHE_VERSION = "fadi-queries-1";
 
@@ -37,6 +38,9 @@ async function writeQueryCacheValue(key: string, value: string): Promise<void> {
   publishPersistence({ saving: true });
   try {
     await localStore.setValueChecked(key, value);
+    // BD-7.2 (chantier base-donnees, constat A3) : des mutations en pause (saisies, arbitrages, commentaires, messages)
+    // sont désormais sur le disque : persistance du stockage demandée (une fois, échec toléré).
+    if (projects.length) void demanderPersistanceStockage();
     savedProjects = projects;
     publishPersistence({ failedProjects: [], error: null });
   } catch (error) {

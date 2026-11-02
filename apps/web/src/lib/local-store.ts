@@ -24,13 +24,16 @@
  *   montée de version ne peut attribuer à aucun propriétaire (brouillons et contextes Studio v5, lots de l'Atelier
  *   antérieurs à la v7) n'y sont plus vidées : elles sont copiées telles quelles en quarantaine, puis retirées de leur
  *   table d'origine (jamais relues, comptées ni rejouées). La quarantaine se consulte et s'exporte (Paramètres, « Données
- *   conservées par ce navigateur ») ; aucune tâche ne la vide, ni la déconnexion, ni l'oubli d'un projet.
+ *   conservées par ce navigateur ») ; l'oubli d'un projet n'y touche pas. BD-7.1 (chantier base-donnees, constat A2) : elle
+ *   est vidée par `forgetDevice` (déconnexion, session perdue, autre compte : ses lignes, de propriétaire inconnu, ne
+ *   doivent pas être lues par le compte suivant) et bornée dans le temps (`DUREE_QUARANTAINE_MS`, élaguée à l'ouverture).
  *
  * Les caches de lecture restent facultatifs. La file d'écriture, elle,
  * expose tout échec : le brouillon reste en mémoire et peut être enregistré
  * à nouveau, sans annoncer une sauvegarde durable avant la réponse d'IndexedDB.
  */
 import Dexie, { type EntityTable } from "dexie";
+import { demanderPersistanceStockage } from "./persistance-stockage";
 
 /** Un cache clé / valeur générique : le cache des requêtes TanStack Query déshydraté (`query-persister`). */
 export interface KeyValueEntry {
@@ -106,6 +109,9 @@ export interface StudioContexteEntry {
   luA: string;
 }
 
+/** Clé du brouillon local de la Planche d'un projet (table `keyValue`, `modules/atelier/nouveau/planche/brouillon.ts`). */
+export const cleBrouillonPlanche = (projectId: string): string => `planche-brouillon:${projectId}`;
+
 /** Donnée locale sans propriétaire mise en quarantaine par une montée de version (MIG-COEX-04). */
 export interface QuarantaineEntry {
   /** `${table}|${version}|${clé d'origine}` */
@@ -120,6 +126,70 @@ export interface QuarantaineEntry {
   misEnQuarantaineA: string;
 }
 export const SCHEMA_QUARANTAINE = "id, table, misEnQuarantaineA";
+
+/**
+ * BD-7.1 (chantier base-donnees, constat A2) : durée de conservation de la quarantaine, 30 jours. Justification
+ * technique : ses lignes (brouillons Studio v5, lots de l'Atelier antérieurs à la v7) ne sont jamais rejouées — un lot
+ * s'appuie sur une révision du modèle que le serveur a dépassée depuis (409) — ; elles ne servent qu'à l'examen manuel
+ * après export. 30 jours, soit plus du double des 14 jours du cache des requêtes (`query-persister.ts`, `maxAge`),
+ * laissent le temps d'ouvrir Paramètres et d'exporter, sans garder indéfiniment du contenu de projet d'un propriétaire
+ * inconnu. Seule la table `quarantaine` est élaguée : aucune autre donnée n'est touchée.
+ */
+export const DUREE_QUARANTAINE_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Table minimale élaguée (Dexie) : clés des lignes plus anciennes qu'une date ISO, puis suppression par clé. */
+export interface TableQuarantaineElagable {
+  where(index: "misEnQuarantaineA"): { below(limite: string): { primaryKeys(): Promise<string[]> } };
+  bulkDelete(cles: string[]): Promise<unknown>;
+}
+
+/** Retire de la quarantaine les lignes plus anciennes que `DUREE_QUARANTAINE_MS` ; rend le nombre de lignes retirées. */
+export async function elaguerQuarantaine(table: TableQuarantaineElagable, maintenant = Date.now()): Promise<number> {
+  const limite = new Date(maintenant - DUREE_QUARANTAINE_MS).toISOString();
+  const cles = await table.where("misEnQuarantaineA").below(limite).primaryKeys();
+  if (cles.length) await table.bulkDelete(cles);
+  return cles.length;
+}
+
+/**
+ * BD-7.7 (chantier base-donnees, constat A8) : un échec de lecture locale avalé par `safe()` (valeur par défaut rendue)
+ * est signalé dans la console, de façon structurée et sans contenu (opération et nom de l'erreur seulement) : « absent »
+ * et « illisible » ne se confondent plus en silence. Aucun parcours de l'interface ne change.
+ */
+export function signalerEchecLocal(operation: string, cause: unknown): void {
+  const nom = cause instanceof Error ? cause.name : typeof cause;
+  try { console.warn("[fadi-local] lecture ou écriture locale en échec", { operation, erreur: nom }); } catch { /* console indisponible */ }
+}
+
+/** Événement émis quand la connexion IndexedDB est fermée (autre onglet plus récent) ou bloquée (BD-7.7). */
+export const EVENEMENT_STOCKAGE_LOCAL = "fadi-stockage-local";
+export type EtatConnexionLocale = "fermee-version" | "bloquee";
+
+/** Cible minimale des gestionnaires de cycle de vie (Dexie : `db.on(...)`, `db.close()`). */
+export interface ConnexionSurveillable {
+  on(evenement: "versionchange" | "blocked", gestionnaire: () => unknown): void;
+  close(): void;
+}
+
+/**
+ * BD-7.7 (chantier base-donnees, constat A8) : un autre onglet monte le schéma (`versionchange`) : la connexion de cet
+ * onglet est fermée et oubliée (la prochaine opération en rouvre une, ou échoue et le signale) au lieu de bloquer la
+ * montée de l'autre onglet ; `blocked` : notre ouverture attend qu'un ancien onglet se ferme. Les deux cas sont annoncés
+ * (console et événement `EVENEMENT_STOCKAGE_LOCAL`) ; l'interface n'en dépend pas.
+ */
+export function surveillerConnexion(d: ConnexionSurveillable, oublier: () => void): void {
+  const annoncer = (etat: EtatConnexionLocale) => {
+    try { console.warn("[fadi-local] connexion IndexedDB", { etat }); } catch { /* console indisponible */ }
+    try { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(EVENEMENT_STOCKAGE_LOCAL, { detail: { etat } })); } catch { /* sans DOM */ }
+  };
+  d.on("versionchange", () => {
+    try { d.close(); } catch { /* déjà fermée */ }
+    oublier();
+    annoncer("fermee-version");
+    return false;
+  });
+  d.on("blocked", () => { annoncer("bloquee"); });
+}
 
 /** Transaction minimale d'une montée de version (Dexie) : lecture, ajout et vidage d'une table. */
 export interface TransactionMontee {
@@ -202,19 +272,27 @@ function open(): FadiLocalDb | null {
   if (db) return db;
   try {
     if (typeof indexedDB === "undefined") return null;
-    db = new FadiLocalDb();
-    return db;
+    const d = new FadiLocalDb();
+    db = d;
+    // BD-7.7 : gestionnaires de cycle de vie ; leur absence (Dexie simulée des tests) n'empêche pas l'ouverture.
+    try { surveillerConnexion(d, () => { if (db === d) db = null; }); } catch { /* sans gestionnaires */ }
+    // BD-7.1 : quarantaine élaguée une fois par ouverture ; un échec ne bloque rien et est signalé.
+    try { void elaguerQuarantaine(d.quarantaine).catch((cause: unknown) => signalerEchecLocal("quarantaine.elaguer", cause)); }
+    catch (cause) { signalerEchecLocal("quarantaine.elaguer", cause); }
+    return d;
   } catch {
     return null;
   }
 }
 
-async function safe<T>(fn: (d: FadiLocalDb) => Promise<T>, fallback: T): Promise<T> {
+async function safe<T>(fn: (d: FadiLocalDb) => Promise<T>, fallback: T, operation = "local-store"): Promise<T> {
   const d = open();
   if (!d) return fallback;
   try {
     return await fn(d);
-  } catch {
+  } catch (cause) {
+    // BD-7.7 : la valeur par défaut reste rendue (comportement inchangé), mais l'échec est signalé.
+    signalerEchecLocal(operation, cause);
     return fallback;
   }
 }
@@ -292,6 +370,8 @@ async function putLot(input: LotEntry): Promise<void> {
   queueChanged(entry.projectId, { saving: queuePersistenceStore.get(entry.projectId).saving + 1 });
   try {
     await checked((d) => d.lots.put(entry).then(() => undefined));
+    // BD-7.2 : une file d'écriture en attente existe : la persistance du stockage est demandée (une fois, échec toléré).
+    void demanderPersistanceStockage();
     if (dirtyLots.get(entry.id) === entry) dirtyLots.delete(entry.id);
     queueChanged(entry.projectId);
     if (queuePersistenceStore.get(entry.projectId).unsaved === 0 && queuePersistenceStore.get(entry.projectId).read !== "error") queueChanged(entry.projectId, { error: null });
@@ -349,22 +429,28 @@ export const localStore = {
     for (const [id, entry] of [...dirtyLots]) if (entry.projectId === projectId) dirtyLots.delete(id);
     for (const [id, entry] of [...removedLots]) if (entry.projectId === projectId) removedLots.delete(id);
     for (const listener of queueListeners) listener();
-    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.studioBrouillons, d.studioContextes, d.comPhotos], async () => {
+    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.keyValue, d.studioBrouillons, d.studioContextes, d.comPhotos], async () => {
+      // BD-7.5 (chantier base-donnees, constat A6) : le brouillon local de la Planche de CE projet (géométrie) aussi.
+      await d.keyValue.bulkDelete([cleBrouillonPlanche(projectId)]);
       await d.comPhotos.bulkDelete(await d.comPhotos.where("projectId").equals(projectId).primaryKeys());
       // Lignes de CE projet seulement, par leurs clés (la base elle-même n'est jamais supprimée : OPS-05).
       await d.lots.bulkDelete(await d.lots.where("projectId").equals(projectId).primaryKeys());
       await d.modelCache.bulkDelete([projectId]);
       await d.studioBrouillons.bulkDelete(await d.studioBrouillons.where("projectId").equals(projectId).primaryKeys());
       await d.studioContextes.bulkDelete(await d.studioContextes.where("projectId").equals(projectId).primaryKeys());
-    }), undefined);
+    }), undefined, "oublierProjet");
   },
   /** Photos COM en attente : écriture vérifiée (une photo non conservée ne doit pas paraître enregistrée). */
-  comPhotoEcrire: (entry: ComPhotoEntry) => checked((d) => d.comPhotos.put(entry).then(() => undefined)),
+  comPhotoEcrire: async (entry: ComPhotoEntry) => {
+    await checked((d) => d.comPhotos.put(entry).then(() => undefined));
+    // BD-7.2 : photo en attente d'envoi : persistance du stockage demandée (une fois, échec toléré).
+    void demanderPersistanceStockage();
+  },
   /** La photo de CE compte, ou null (jamais celle d'un autre compte du même appareil). */
-  comPhotoLire: (id: string, userId: string) => safe((d) => d.comPhotos.get(id).then((v) => (v && v.userId === userId ? v : null)), null as ComPhotoEntry | null),
+  comPhotoLire: (id: string, userId: string) => safe((d) => d.comPhotos.get(id).then((v) => (v && v.userId === userId ? v : null)), null as ComPhotoEntry | null, "comPhotoLire"),
   comPhotoSupprimer: (ids: readonly string[]) => safe((d) => d.comPhotos.bulkDelete([...ids]), undefined),
   /** Clé / valeur (cache des requêtes) : `null` quand absent ou indisponible. */
-  getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null),
+  getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null, "getValue"),
   getValueChecked: (key: string) => checked((d) => d.keyValue.get(key).then((v) => v?.value ?? null)),
   setValue: (key: string, value: string) => safe((d) => d.keyValue.put({ key, value, updatedAt: new Date().toISOString() }).then(() => undefined), undefined),
   /** Pour les écritures rejouables : l'appelant doit exposer un échec. */
@@ -372,7 +458,7 @@ export const localStore = {
   removeValue: (key: string) => safe((d) => d.keyValue.delete(key), undefined),
   /** Modèle typé mis en cache (ouverture de l'Atelier sans réseau). */
   cacheModel: (entry: ModelCacheEntry) => safe((d) => d.modelCache.put(entry).then(() => undefined), undefined),
-  readModelCache: (projectId: string) => safe((d) => d.modelCache.get(projectId).then((v) => v ?? null), null as ModelCacheEntry | null),
+  readModelCache: (projectId: string) => safe((d) => d.modelCache.get(projectId).then((v) => v ?? null), null as ModelCacheEntry | null, "readModelCache"),
   /** Page Paramètres : ce que ce navigateur conserve (lots de l'Atelier en attente, tous projets ; modèles mis en cache). */
   summary: async () => {
     const stored = await safe(
@@ -390,8 +476,14 @@ export const localStore = {
   },
   /** « Vider les caches locaux » : les modèles mis en cache ; les lots en attente ne sont jamais supprimés (ils repartent au retour du réseau). */
   clearModelCache: () => safe((d) => d.modelCache.clear(), undefined),
-  /** Quarantaine (MIG-COEX-04) : consultation, la plus récente d'abord ; jamais vidée par l'application. */
-  quarantaineLister: () => safe(async (d) => (await d.quarantaine.toArray()).sort((a, b) => b.misEnQuarantaineA.localeCompare(a.misEnQuarantaineA) || a.id.localeCompare(b.id)), [] as QuarantaineEntry[]),
+  /** Quarantaine (MIG-COEX-04) : consultation, la plus récente d'abord ; vidée seulement par `quarantaineVider` (BD-7.1). */
+  quarantaineLister: () => safe(async (d) => (await d.quarantaine.toArray()).sort((a, b) => b.misEnQuarantaineA.localeCompare(a.misEnQuarantaineA) || a.id.localeCompare(b.id)), [] as QuarantaineEntry[], "quarantaineLister"),
+  /**
+   * BD-7.1 (chantier base-donnees, constat A2) : `forgetDevice` (déconnexion, session perdue, autre compte) vide la
+   * quarantaine : des lignes d'un propriétaire inconnu ne sont ni lues ni exportées par le compte suivant. Seule cette
+   * table est vidée.
+   */
+  quarantaineVider: () => safe((d) => d.quarantaine.clear().then(() => undefined), undefined, "quarantaineVider"),
   /** Quarantaine exportée en JSON (lignes d'origine restituées). */
   quarantaineExporter: async () => exportQuarantaine(await localStore.quarantaineLister()),
   // --- Lots de commandes de l'Atelier typé ---
@@ -422,7 +514,7 @@ export const localStore = {
   })),
   /** Brouillons Studio non synchronisés conservés pour ce compte (B.3-10) ; null si le stockage est illisible. */
   studioCompterBrouillons: (userId: string) => safe((d) => d.studioBrouillons.where("userId").equals(userId).count(), null as number | null),
-  studioContexte: (cle: string, userId: string) => safe((d) => d.studioContextes.get(cle).then((v) => (v && v.userId === userId ? v : null)), null as StudioContexteEntry | null),
+  studioContexte: (cle: string, userId: string) => safe((d) => d.studioContextes.get(cle).then((v) => (v && v.userId === userId ? v : null)), null as StudioContexteEntry | null, "studioContexte"),
   studioMemoriserContexte: (entry: StudioContexteEntry) => safe((d) => d.studioContextes.put(entry).then(() => undefined), undefined),
   /** Versions lues d'un compte (clé, date de lecture) : seules évincables sur un dépassement de quota (EX-044). */
   studioContextesDe: (userId: string) => safe((d) => d.studioContextes.where("userId").equals(userId).toArray().then((l) => l.map((e) => ({ cle: e.cle, luA: e.luA }))), [] as { cle: string; luA: string }[]),

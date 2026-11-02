@@ -5,11 +5,12 @@
  * tolérante : un brouillon illisible est ignoré (jamais une erreur bloquante).
  */
 import { lireModelePlanche, type Modele } from "@parcours/planche-model";
-import { localStore } from "../../../../lib/local-store";
+import { cleBrouillonPlanche, localStore } from "../../../../lib/local-store";
 
 export const FORMAT_BROUILLON = "planche-brouillon/1";
 
-export const cleBrouillon = (projectId: string): string => `planche-brouillon:${projectId}`;
+/** Clé partagée avec `localStore.oublierProjet` (BD-7.5), qui l'efface quand l'accès au projet est perdu. */
+export const cleBrouillon = cleBrouillonPlanche;
 
 export function serialiserBrouillon(modele: Modele, maintenant = new Date()): string {
   return JSON.stringify({ format: FORMAT_BROUILLON, enregistreA: maintenant.toISOString(), modele });

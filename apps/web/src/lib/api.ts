@@ -42,6 +42,21 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * BD-7.4 (chantier base-donnees, constat A5) : un 401 `authentication_required` reçu en cours de session (session
+ * expirée, révoquée, mot de passe changé, compte suspendu) est signalé ici, quel que soit l'appelant (requêtes,
+ * mutations, file de l'Atelier) ; `auth-context` purge alors l'appareil comme à la déconnexion. Les autres 401
+ * (`invalid_credentials`, `invalid_code`, `mfa_session_expired` : échecs de connexion) ne disent pas « session perdue ».
+ */
+const ecouteursSessionPerdue = new Set<(err: ApiError) => void>();
+export function ecouterSessionPerdue(f: (err: ApiError) => void): () => void {
+  ecouteursSessionPerdue.add(f);
+  return () => { ecouteursSessionPerdue.delete(f); };
+}
+export function estSessionPerdue(err: unknown): err is ApiError {
+  return err instanceof ApiError && err.status === 401 && err.code === "authentication_required";
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -68,7 +83,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
     const message = body && typeof body === "object" && "message" in body ? String((body as { message: unknown }).message) : null;
-    throw new ApiError(res.status, code, message, body);
+    const err = new ApiError(res.status, code, message, body);
+    if (estSessionPerdue(err)) for (const f of [...ecouteursSessionPerdue]) { try { f(err); } catch { /* un écouteur ne bloque pas l'erreur */ } }
+    throw err;
   }
   return body as T;
 }
