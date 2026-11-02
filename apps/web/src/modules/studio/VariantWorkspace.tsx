@@ -363,7 +363,16 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     : cheminVarianteStudio(projectId, studyId, variantId, revisionId, { commentaires, domaine: id, planche: id === "dessin" ? plancheActive : null });
   // Fil d'Ariane (NAV-006) : la révision nommée suit la révision affichée — l'étude est relue à chaque nouvelle tête.
   const client = useQueryClient();
-  useEffect(() => { if (context && !autonome) void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] }); }, [context?.revision.id]);
+  // La première révision reçue est celle que l'étude vient d'être lue avec : seule une tête suivante la relit (sinon le
+  // montage relançait aussitôt la lecture de l'étude déjà chargée).
+  const revisionVue = useRef<string | null>(null);
+  useEffect(() => {
+    const id = context?.revision.id ?? null;
+    if (!id || autonome) return;
+    const precedente = revisionVue.current;
+    revisionVue.current = id;
+    if (precedente !== null && precedente !== id) void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
+  }, [context?.revision.id]);
   // Dernier contexte personnel (suggestion de reprise de l'accueil, vérifiée par le serveur à la reprise).
   const { user: compte } = useAuth();
   useEffect(() => {

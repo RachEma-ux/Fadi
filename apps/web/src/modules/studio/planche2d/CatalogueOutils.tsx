@@ -73,6 +73,9 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 /** État montré à un compte : celui du magasin s'il lui appartient, sinon l'état vierge (jamais celui d'un autre). */
 export const etatPourCompte = (etat: EtatPreferences, compte: string | null): EtatPreferences => (etat.compte === compte ? etat : etatVierge(compte));
 
+/** Fenêtre de déduplication des lectures (alignée sur le `staleTime` par défaut des requêtes, `main.tsx`). */
+export const FENETRE_DEDUPLICATION_MS = 2_000;
+
 /** Magasin des préférences d'outils, rattaché à un compte ; `api` injectée (essais). */
 export function creerMagasinPreferences(source: ApiPreferencesOutils) {
   let etat = etatVierge(null);
@@ -81,6 +84,8 @@ export function creerMagasinPreferences(source: ApiPreferencesOutils) {
   /** Enregistrements en cours : une relecture du serveur n'écrase pas un changement pas encore enregistré. */
   let enVol = 0;
   let file: Promise<unknown> = Promise.resolve();
+  /** Dernière lecture réussie (projet, instant) : plusieurs composants montés ensemble ne relisent pas le serveur. */
+  let derniereLecture: { projectId: string; at: number } | null = null;
   const abonnes = new Set<() => void>();
   const publier = (suivant: Partial<EtatPreferences>) => { etat = { ...etat, ...suivant }; for (const f of abonnes) f(); };
 
@@ -90,17 +95,28 @@ export function creerMagasinPreferences(source: ApiPreferencesOutils) {
     generation += 1;
     enVol = 0;
     file = Promise.resolve();
+    derniereLecture = null;
     etat = etatVierge(compte);
     for (const f of abonnes) f();
   }
 
-  function charger(compte: string, projectId: string) {
+  /**
+   * Lit les préférences du serveur. Sans `forcer`, une lecture réussie du même projet il y a moins de 2 s suffit (même
+   * fenêtre de déduplication que les requêtes de l'application) : chaque barre ou palette montée en même temps ne
+   * relance pas le même appel. `forcer` : relecture demandée (import de profil, échec d'enregistrement).
+   */
+  function charger(compte: string, projectId: string, forcer = false) {
     adopterCompte(compte);
     if (etat.etat === "chargement" || enVol > 0) return;
+    if (!forcer && etat.etat === "pret" && derniereLecture?.projectId === projectId && Date.now() - derniereLecture.at < FENETRE_DEDUPLICATION_MS) return;
     const g = generation;
     if (etat.etat !== "pret") publier({ etat: "chargement" });
     source.studioToolPreferences(projectId)
-      .then((r) => { if (g === generation && enVol === 0) publier({ prefs: normaliserPreferences(r as Parameters<typeof normaliserPreferences>[0]), etat: "pret", erreur: null }); })
+      .then((r) => {
+        if (g !== generation || enVol !== 0) return;
+        derniereLecture = { projectId, at: Date.now() };
+        publier({ prefs: normaliserPreferences(r as Parameters<typeof normaliserPreferences>[0]), etat: "pret", erreur: null });
+      })
       .catch((e: unknown) => { if (g === generation) publier(etat.etat === "pret" ? { erreur: message(e) } : { etat: "erreur", erreur: message(e) }); });
   }
 
@@ -122,7 +138,7 @@ export function creerMagasinPreferences(source: ApiPreferencesOutils) {
         enVol -= 1;
         // Refus ou réseau : relire l'état du serveur plutôt que de garder une préférence non enregistrée.
         publier({ enregistrement: "echec", erreur: message(e) });
-        if (enVol === 0) charger(compte, projectId);
+        if (enVol === 0) charger(compte, projectId, true);
       });
   }
 
@@ -185,7 +201,7 @@ export function useProfilOutils(projectId?: string | null) {
     basculerDansGroupe: (id: string, outil: StudioToolId) => modifier((p) => basculerDansGroupe(p, id, outil)),
     projet,
     /** Relit les préférences du serveur (après un import de profil). */
-    recharger: () => { if (compte && projet) magasin.charger(compte, projet); },
+    recharger: () => { if (compte && projet) magasin.charger(compte, projet, true); },
   };
 }
 

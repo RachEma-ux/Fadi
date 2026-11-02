@@ -690,6 +690,13 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Aucun appel API en double au chargement de chaque écran (même méthode, même adresse) ; exception déclarée : les
+      # parcelles, lues aussi par l'outil Parcelle intégré.
+      - name: Recette aucun appel API en double (apps/web/e2e/appels-doublons.mjs)
+        if: ${{ matrix.shard == 'organisations' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/appels-doublons.mjs 2>&1 | tee -a e2e.log
       # Organisations, participation (#262, phase 2) : annuaire, contacts sans droit, bascule de l'accès sur les participations,
       # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
       # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
