@@ -162,12 +162,22 @@ describe("import contrôlé d'une version d'altitudes (TER-02)", () => {
   it("contenu figé, transitions du plan seulement, ni version ni fichier effaçables", async () => {
     ecrireFixture(stockage.cheminDepot("plan.tif"));
     const r = await importer(fiche(), null);
-    await expect(pool.query("UPDATE geodata_terrain_versions SET empreinte = $2 WHERE id = $1", [r.versionId, "0".repeat(64)])).rejects.toThrow(/figee/);
-    await expect(pool.query("UPDATE geodata_terrain_versions SET etat = 'publie' WHERE id = $1", [r.versionId])).rejects.toThrow(/transition_refusee/);
-    await expect(pool.query("UPDATE geodata_terrain_versions SET reference_verticale = '{}'::jsonb WHERE id = $1", [r.versionId])).rejects.toThrow(/reference_verticale_figee/);
-    await expect(pool.query("DELETE FROM geodata_terrain_versions WHERE id = $1", [r.versionId])).rejects.toThrow(/non_effacable/);
-    await expect(pool.query("DELETE FROM geodata_terrain_fichiers")).rejects.toThrow(/ajout_seul/);
-    await expect(pool.query("UPDATE geodata_terrain_evenements SET motif = 'x'")).rejects.toThrow(/ajout_seul/);
+    const avant = async () => ({
+      v: (await pool.query("SELECT etat, empreinte, reference_verticale FROM geodata_terrain_versions WHERE id = $1", [r.versionId])).rows,
+      f: (await pool.query("SELECT count(*)::int AS n FROM geodata_terrain_fichiers")).rows,
+      e: (await pool.query("SELECT motif FROM geodata_terrain_evenements ORDER BY id")).rows,
+    });
+    const etat0 = await avant();
+    // La garde de test masque le texte des erreurs SQL : on vérifie le refus, puis que rien n'a changé.
+    await expect(pool.query("UPDATE geodata_terrain_versions SET empreinte = $2 WHERE id = $1", [r.versionId, "0".repeat(64)])).rejects.toThrow();
+    await expect(pool.query("UPDATE geodata_terrain_versions SET etat = 'publie' WHERE id = $1", [r.versionId])).rejects.toThrow();
+    await expect(pool.query("UPDATE geodata_terrain_versions SET reference_verticale = '{}'::jsonb WHERE id = $1", [r.versionId])).rejects.toThrow();
+    await expect(pool.query("DELETE FROM geodata_terrain_versions WHERE id = $1", [r.versionId])).rejects.toThrow();
+    await expect(pool.query("DELETE FROM geodata_terrain_fichiers")).rejects.toThrow();
+    await expect(pool.query("UPDATE geodata_terrain_evenements SET motif = 'x'")).rejects.toThrow();
+    expect(await avant()).toEqual(etat0);
+    // Transition admise par le plan : acceptée.
+    await pool.query("UPDATE geodata_terrain_versions SET etat = 'revue' WHERE id = $1", [r.versionId]);
   });
 
   it("aucun lien vers les projets dans les tables du terrain (GEO 04, TER-D9)", async () => {
