@@ -24,9 +24,7 @@
  *   montée de version ne peut attribuer à aucun propriétaire (brouillons et contextes Studio v5, lots de l'Atelier
  *   antérieurs à la v7) n'y sont plus vidées : elles sont copiées telles quelles en quarantaine, puis retirées de leur
  *   table d'origine (jamais relues, comptées ni rejouées). La quarantaine se consulte et s'exporte (Paramètres, « Données
- *   conservées par ce navigateur ») ; l'oubli d'un projet n'y touche pas. BD-7.1 (chantier base-donnees, constat A2) : elle
- *   est vidée par `forgetDevice` (déconnexion, session perdue, autre compte : ses lignes, de propriétaire inconnu, ne
- *   doivent pas être lues par le compte suivant) et bornée dans le temps (`DUREE_QUARANTAINE_MS`, élaguée à l'ouverture).
+ *   conservées par ce navigateur ») ; l'oubli d'un projet n'y touche pas.
  *
  * Les caches de lecture restent facultatifs. La file d'écriture, elle,
  * expose tout échec : le brouillon reste en mémoire et peut être enregistré
@@ -126,30 +124,6 @@ export interface QuarantaineEntry {
   misEnQuarantaineA: string;
 }
 export const SCHEMA_QUARANTAINE = "id, table, misEnQuarantaineA";
-
-/**
- * BD-7.1 (chantier base-donnees, constat A2) : durée de conservation de la quarantaine, 30 jours. Justification
- * technique : ses lignes (brouillons Studio v5, lots de l'Atelier antérieurs à la v7) ne sont jamais rejouées — un lot
- * s'appuie sur une révision du modèle que le serveur a dépassée depuis (409) — ; elles ne servent qu'à l'examen manuel
- * après export. 30 jours, soit plus du double des 14 jours du cache des requêtes (`query-persister.ts`, `maxAge`),
- * laissent le temps d'ouvrir Paramètres et d'exporter, sans garder indéfiniment du contenu de projet d'un propriétaire
- * inconnu. Seule la table `quarantaine` est élaguée : aucune autre donnée n'est touchée.
- */
-export const DUREE_QUARANTAINE_MS = 30 * 24 * 60 * 60 * 1000;
-
-/** Table minimale élaguée (Dexie) : clés des lignes plus anciennes qu'une date ISO, puis suppression par clé. */
-export interface TableQuarantaineElagable {
-  where(index: "misEnQuarantaineA"): { below(limite: string): { primaryKeys(): Promise<string[]> } };
-  bulkDelete(cles: string[]): Promise<unknown>;
-}
-
-/** Retire de la quarantaine les lignes plus anciennes que `DUREE_QUARANTAINE_MS` ; rend le nombre de lignes retirées. */
-export async function elaguerQuarantaine(table: TableQuarantaineElagable, maintenant = Date.now()): Promise<number> {
-  const limite = new Date(maintenant - DUREE_QUARANTAINE_MS).toISOString();
-  const cles = await table.where("misEnQuarantaineA").below(limite).primaryKeys();
-  if (cles.length) await table.bulkDelete(cles);
-  return cles.length;
-}
 
 /**
  * BD-7.7 (chantier base-donnees, constat A8) : un échec de lecture locale avalé par `safe()` (valeur par défaut rendue)
@@ -276,9 +250,6 @@ function open(): FadiLocalDb | null {
     db = d;
     // BD-7.7 : gestionnaires de cycle de vie ; leur absence (Dexie simulée des tests) n'empêche pas l'ouverture.
     try { surveillerConnexion(d, () => { if (db === d) db = null; }); } catch { /* sans gestionnaires */ }
-    // BD-7.1 : quarantaine élaguée une fois par ouverture ; un échec ne bloque rien et est signalé.
-    try { void elaguerQuarantaine(d.quarantaine).catch((cause: unknown) => signalerEchecLocal("quarantaine.elaguer", cause)); }
-    catch (cause) { signalerEchecLocal("quarantaine.elaguer", cause); }
     return d;
   } catch {
     return null;
@@ -476,14 +447,8 @@ export const localStore = {
   },
   /** « Vider les caches locaux » : les modèles mis en cache ; les lots en attente ne sont jamais supprimés (ils repartent au retour du réseau). */
   clearModelCache: () => safe((d) => d.modelCache.clear(), undefined),
-  /** Quarantaine (MIG-COEX-04) : consultation, la plus récente d'abord ; vidée seulement par `quarantaineVider` (BD-7.1). */
+  /** Quarantaine (MIG-COEX-04) : consultation, la plus récente d'abord ; jamais vidée. */
   quarantaineLister: () => safe(async (d) => (await d.quarantaine.toArray()).sort((a, b) => b.misEnQuarantaineA.localeCompare(a.misEnQuarantaineA) || a.id.localeCompare(b.id)), [] as QuarantaineEntry[], "quarantaineLister"),
-  /**
-   * BD-7.1 (chantier base-donnees, constat A2) : `forgetDevice` (déconnexion, session perdue, autre compte) vide la
-   * quarantaine : des lignes d'un propriétaire inconnu ne sont ni lues ni exportées par le compte suivant. Seule cette
-   * table est vidée.
-   */
-  quarantaineVider: () => safe((d) => d.quarantaine.clear().then(() => undefined), undefined, "quarantaineVider"),
   /** Quarantaine exportée en JSON (lignes d'origine restituées). */
   quarantaineExporter: async () => exportQuarantaine(await localStore.quarantaineLister()),
   // --- Lots de commandes de l'Atelier typé ---

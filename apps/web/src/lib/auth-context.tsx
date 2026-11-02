@@ -65,8 +65,6 @@ export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient
   await localStore.removeValue(QUERY_CACHE_VERSION);
   await localStore.studioOublierTout().catch(() => undefined);
   await localStore.oublierTout();
-  // BD-7.1 (constat A2) : la quarantaine (lignes sans propriétaire) n'est ni lue ni exportée par le compte suivant.
-  await localStore.quarantaineVider();
   // BD-1.7 : presse-papiers et préférences de l'Atelier, état GeoData, clé MapTiler… (purge-stockage-compte.ts).
   oublierStockageCompte();
 }

@@ -1,5 +1,5 @@
 /**
- * BD-7 (chantier base-donnees) : quarantaine bornée et vidée à l'oubli de l'appareil (BD-7.1, constat A2), persistance
+ * BD-7 (chantier base-donnees) : quarantaine laissée intacte (BD-7.1 non livré, MIG-COEX-04), persistance
  * demandée pour la file de l'Atelier et les photos COM (BD-7.2, A3), cycle de vie de la connexion IndexedDB et échecs de
  * lecture signalés (BD-7.7, A8). Dexie simulée en mémoire.
  */
@@ -49,29 +49,14 @@ beforeAll(() => {
 afterAll(() => { (globalThis as { indexedDB?: unknown }).indexedDB = avant; });
 afterEach(() => { vi.restoreAllMocks(); disque.failGet = false; });
 
-describe("BD-7.1 — quarantaine bornée et vidée", () => {
-  it("à l'ouverture, les lignes de plus de 30 jours sont retirées, les autres gardées", async () => {
+// BD-7.1 (vider ou borner la quarantaine) n'est pas livré : il contredit MIG-COEX-04 (ADR-STUDIO-PILOTE-01, « ne jamais
+// supprimer ») ; décision D-BD-12 du maître d'ouvrage attendue. Ce test vérifie que l'ouverture ne touche pas à la
+// quarantaine.
+describe("BD-7.1 — quarantaine intacte (MIG-COEX-04)", () => {
+  it("l'ouverture de la base ne retire aucune ligne de la quarantaine, même ancienne", async () => {
     const { localStore } = await import("./local-store");
-    await localStore.getValue("x"); // ouvre la base
-    await vi.waitFor(() => expect([...disque.quarantaine.keys()]).toEqual(["recente"]));
-  });
-  it("elaguerQuarantaine ne retire que les lignes antérieures à la borne", async () => {
-    const { elaguerQuarantaine, DUREE_QUARANTAINE_MS } = await import("./local-store");
-    expect(DUREE_QUARANTAINE_MS).toBe(30 * 86_400_000);
-    const supprimees: string[] = [];
-    const n = await elaguerQuarantaine({
-      where: () => ({ below: (limite: string) => ({ primaryKeys: async () => [iso(40), iso(29)].filter((d) => d < limite) }) }),
-      bulkDelete: async (c: string[]) => { supprimees.push(...c); },
-    }, maintenant);
-    expect(n).toBe(1);
-    expect(supprimees).toEqual([iso(40)]);
-  });
-  it("quarantaineVider vide la quarantaine, et seulement elle", async () => {
-    const { localStore } = await import("./local-store");
-    disque.keyValue.set("garde", { key: "garde", value: "v" });
-    await localStore.quarantaineVider();
-    expect(disque.quarantaine.size).toBe(0);
-    expect(disque.keyValue.has("garde")).toBe(true);
+    await localStore.quarantaineLister();
+    expect([...disque.quarantaine.keys()].sort()).toEqual(["ancienne", "recente"]);
   });
 });
 
