@@ -21,7 +21,11 @@ const queryClient = new QueryClient({
     // obsolète silencieusement affichée. Le cache persistant (IndexedDB) ne
     // sert qu'à relire sans réseau ce qui a déjà été lu : il est réhydraté
     // périmé et relu dès que le serveur répond.
-    queries: { staleTime: 0, retry: 1, gcTime: 1000 * 60 * 60 * 24 },
+    // Fenêtre de déduplication de 2 s : un écran monte souvent plusieurs observateurs de la même clé à quelques
+    // millisecondes d'écart (coquille du projet, accès, module) ; sans elle, chaque observateur monté après la première
+    // réponse relançait le même appel. Les données restent relues à chaque nouvel écran, à chaque invalidation et au
+    // retour du focus au-delà de 2 s ; aucune lecture n'est conservée plus longtemps.
+    queries: { staleTime: 2_000, retry: 1, gcTime: 1000 * 60 * 60 * 24 },
   },
 });
 
