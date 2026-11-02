@@ -66,6 +66,22 @@ interface Salle {
 
 const message = (m: Record<string, unknown>) => JSON.stringify({ v: 1, ...m });
 
+/** Lectures simultanées au plus par cycle de revalidation (BD-4.2). */
+export const REVALIDATIONS_SIMULTANEES = 4;
+
+interface CycleRevalidation {
+  comptes: Map<string, Promise<{ userId: string; sessionCompteId: string } | null>>;
+  acces: Map<string, Promise<ProjectRole | null>>;
+}
+
+/** Une seule lecture par clé et par cycle ; sans cycle (relecture isolée), lecture directe. */
+function memo<T>(cache: Map<string, Promise<T>> | undefined, cle: string, lire: () => Promise<T>): Promise<T> {
+  if (!cache) return lire();
+  let p = cache.get(cle);
+  if (!p) { p = lire(); cache.set(cle, p); }
+  return p;
+}
+
 export class HubTempsReel {
   private readonly connexions = new Set<Connexion>();
   private readonly salles = new Map<string, Salle>();
@@ -141,9 +157,20 @@ export class HubTempsReel {
 
   pong(c: Connexion): void { c.vivant = true; }
 
-  /** Relecture des droits de toutes les connexions (ou de celles désignées) ; échec de lecture = refus. */
+  /**
+   * Relecture des droits de toutes les connexions (ou de celles désignées) ; échec de lecture = refus.
+   * BD-4.2 (chantier base-donnees, constat Q2) : dans un même cycle, une seule lecture par jeton de session et par couple
+   * (projet, compte) — un compte peut tenir jusqu'à 20 connexions, une salle 50 participants — et au plus
+   * `REVALIDATIONS_SIMULTANEES` lectures à la fois, pour ne pas occuper tout le pool de la base toutes les 2 s. Le délai
+   * de 2 s (RT-D5) et la règle « échec de lecture = refus » sont inchangés.
+   */
   async revalider(filtre: (c: Connexion) => boolean = () => true): Promise<void> {
-    await Promise.all([...this.connexions].filter(filtre).map((c) => this.revaliderUne(c)));
+    const cycle: CycleRevalidation = { comptes: new Map(), acces: new Map() };
+    const file = [...this.connexions].filter(filtre);
+    const travailleur = async () => {
+      for (let c = file.shift(); c; c = file.shift()) await this.revaliderUne(c, cycle);
+    };
+    await Promise.all(Array.from({ length: Math.min(REVALIDATIONS_SIMULTANEES, file.length) }, travailleur));
   }
 
   /** Signal d'une route après validation (`temps-reel-signaux.ts`). */
@@ -241,14 +268,15 @@ export class HubTempsReel {
 
   // --- interne ---
 
-  private async revaliderUne(c: Connexion): Promise<void> {
+  private async revaliderUne(c: Connexion, cycle?: CycleRevalidation): Promise<void> {
     if (c.revalidation) return c.revalidation;
     c.revalidation = (async () => {
       try {
-        const compte = await this.d.verifierCompte(c.jeton);
+        const compte = await memo(cycle?.comptes, c.jeton, () => this.d.verifierCompte(c.jeton));
         if (!compte || compte.userId !== c.userId) return this.fermer(c, FERMETURE.nonAuthentifie, "session-expiree");
         if (c.salle) {
-          const role = await this.d.verifierAcces(c.salle.session.projectId, c.userId);
+          const projectId = c.salle.session.projectId;
+          const role = await memo(cycle?.acces, `${projectId}\u0000${c.userId}`, () => this.d.verifierAcces(projectId, c.userId));
           if (!role) return this.fermer(c, FERMETURE.accesRetire, "acces-retire");
           c.role = role;
         }

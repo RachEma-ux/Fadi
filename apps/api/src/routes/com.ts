@@ -924,19 +924,49 @@ async function mesProjets(userId: string): Promise<AccessibleProject[]> {
 export async function boiteDe(userId: string): Promise<ElementBoite[]> {
   const items: ElementBoite[] = [];
   const jour = aujourdHui();
-  for (const access of await mesProjets(userId)) {
-    const convs = await db.select().from(comConversations).where(eq(comConversations.projectId, access.id));
-    for (const conv of convs) {
-      const parts = await participationsDe(conv.id);
-      const moi = lecteur(userId, access.role, parts);
+  // BD-4.4 (chantier base-donnees, constat Q4) : conversations, participants, dates de lecture et accusés de réception de
+  // toute la boîte chargés en une requête chacun (avant : quatre requêtes par conversation, en série). Les messages
+  // restent lus par conversation (borne de 200, début d'historique propre à chaque lecteur). Résultat inchangé.
+  const acces = await mesProjets(userId);
+  const projetIds = acces.map((a) => a.id);
+  const toutesConvs = projetIds.length ? await db.select().from(comConversations).where(inArray(comConversations.projectId, projetIds)) : [];
+  const convIds = toutesConvs.map((c) => c.id);
+  const participations = new Map<string, Map<string, { historyFrom: Date | null; removedAt: Date | null; addedAt: Date }>>();
+  if (convIds.length) {
+    for (const r of await db.select().from(comParticipants).where(inArray(comParticipants.conversationId, convIds))) {
+      const m = participations.get(r.conversationId) ?? new Map();
+      m.set(r.userId, { historyFrom: r.historyFrom, removedAt: r.removedAt, addedAt: r.addedAt });
+      participations.set(r.conversationId, m);
+    }
+  }
+  const lectures = new Map<string, Date>();
+  if (convIds.length) {
+    for (const r of await db.select({ conversationId: comReads.conversationId, at: comReads.lastReadAt }).from(comReads).where(and(inArray(comReads.conversationId, convIds), eq(comReads.userId, userId)))) lectures.set(r.conversationId, r.at);
+  }
+  // Première passe : messages lisibles de chaque conversation (même filtre qu'avant), dans l'ordre des projets.
+  type Lu = { conv: (typeof toutesConvs)[number]; access: AccessibleProject; debut: Date | null; msgs: { m: typeof comMessages.$inferSelect; email: string }[] };
+  const parProjet = new Map<string, Lu[]>();
+  for (const access of acces) {
+    const lus: Lu[] = [];
+    for (const conv of toutesConvs.filter((c) => c.projectId === access.id)) {
+      const moi = lecteur(userId, access.role, participations.get(conv.id) ?? new Map());
       if (!peutLire(conv.audience, moi)) continue;
       const debut = debutHistorique(conv.audience, moi);
-      const [lu] = await db.select({ at: comReads.lastReadAt }).from(comReads).where(and(eq(comReads.conversationId, conv.id), eq(comReads.userId, userId)));
-      const borne = [lu?.at, debut].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
       const msgs = await db.select({ m: comMessages, email: users.email }).from(comMessages).innerJoin(users, eq(users.id, comMessages.authorId))
         .where(and(eq(comMessages.conversationId, conv.id), ne(comMessages.authorId, userId), isNull(comMessages.withdrawnAt), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : [])))
         .orderBy(desc(comMessages.createdAt)).limit(200);
-      const recus = msgs.length ? await db.select().from(comReceipts).where(and(inArray(comReceipts.messageId, msgs.map((x) => x.m.id)), eq(comReceipts.userId, userId))) : [];
+      lus.push({ conv, access, debut, msgs });
+    }
+    parProjet.set(access.id, lus);
+  }
+  const messageIds = [...parProjet.values()].flat().flatMap((l) => l.msgs.map((x) => x.m.id));
+  const recusTous = messageIds.length ? await db.select().from(comReceipts).where(and(inArray(comReceipts.messageId, messageIds), eq(comReceipts.userId, userId))) : [];
+  // Seconde passe : mêmes éléments, dans le même ordre qu'avant.
+  for (const access of acces) {
+    for (const { conv, debut, msgs } of parProjet.get(access.id) ?? []) {
+      const lu = lectures.get(conv.id);
+      const borne = [lu, debut].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
+      const recus = recusTous.filter((r) => msgs.some((x) => x.m.id === r.messageId));
       const nonLus = msgs.filter(({ m }) => !borne || m.createdAt > borne);
       for (const { m, email } of msgs) {
         const base = { at: m.createdAt.toISOString(), projectId: access.id, projectCode: access.code, conversationId: conv.id, demandeId: null, titre: conv.title, urgent: m.urgent, enRetard: false };

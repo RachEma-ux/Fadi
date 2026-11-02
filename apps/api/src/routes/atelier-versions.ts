@@ -567,7 +567,12 @@ atelierVersionsRouter.delete("/verrous/:cle", async (req, res) => {
   if (!row) return void res.status(404).json({ erreur: "verrou-inconnu" });
   const expire = row.expiresAt.getTime() <= Date.now();
   if (row.authorId !== req.user!.id && project.role !== "proprietaire" && !expire) return void res.status(403).json({ erreur: "interdit", message: "Seul l'auteur du verrou ou le propriétaire du projet peut le lever." });
-  await db.delete(atelierLocks).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle)));
+  // BD-4.5 (constat Q11) : on ne supprime que le verrou examiné (même auteur, même échéance). S'il a été repris ou
+  // transmis entre la lecture et la suppression, rien n'est supprimé : 409, le client relit.
+  const supprimes = await db.delete(atelierLocks)
+    .where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle), eq(atelierLocks.authorId, row.authorId), sql`date_trunc('milliseconds', ${atelierLocks.expiresAt}) = ${row.expiresAt}`))
+    .returning({ cle: atelierLocks.cle });
+  if (!supprimes.length) return void res.status(409).json({ erreur: "verrou-modifie", message: "Le verrou a changé entre-temps ; recharger." });
   // Libération notifiée aux autres membres (D-143), sauf pour un verrou déjà échu.
   if (!expire) {
     const charge = await chargerModele(db, project.id);
@@ -594,7 +599,11 @@ atelierVersionsRouter.post("/verrous/:cle/transferer", async (req, res) => {
   const acces = dest ? await loadProjectAccess(project.id, dest.id) : null;
   if (!dest || !acces || !roleAllows(acces.role, "write")) return void res.status(422).json({ erreur: "destinataire", message: "Le destinataire doit être un membre du projet qui peut modifier (éditeur ou propriétaire)." });
   if (dest.id === row.authorId) return void res.status(422).json({ erreur: "destinataire", message: "Ce verrou lui appartient déjà." });
-  await db.update(atelierLocks).set({ authorId: dest.id, transmisPar: req.user!.email, createdAt: new Date() }).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle)));
+  // BD-4.5 (constat Q11) : transmission conditionnée au verrou examiné (même auteur, même échéance, toujours en cours).
+  const transmis = await db.update(atelierLocks).set({ authorId: dest.id, transmisPar: req.user!.email, createdAt: new Date() })
+    .where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle), eq(atelierLocks.authorId, row.authorId), sql`date_trunc('milliseconds', ${atelierLocks.expiresAt}) = ${row.expiresAt}`, gt(atelierLocks.expiresAt, new Date())))
+    .returning({ cle: atelierLocks.cle });
+  if (!transmis.length) return void res.status(409).json({ erreur: "verrou-modifie", message: "Le verrou a changé entre-temps ; recharger." });
   res.json({ cle, auteur: dest.email, expiresAt: row.expiresAt.toISOString() });
 });
 

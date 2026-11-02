@@ -4,7 +4,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## État
 
-**En cours** — BD-1, BD-2 et BD-3 **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
+**En cours** — BD-1 à BD-3 et BD-4 (en partie) **implémentés** sur les branches locales `fix/bd-1-garde-fous`, `feat/bd-2-migrations`, `feat/bd-3-index`, `perf/bd-4-requetes` (non poussées, sans Issue ni PR) ; suites API sur base non exécutées ici (garde DB-3, CI seulement). Ne pas assimiler à un travail accepté.
 
 ## Faits vérifiés
 
@@ -79,6 +79,28 @@ Mis à jour : 2026-11-02 (UTC).
   `REVOKE TEMP` non appliqué (tables temporaires utilisées par des tests).
 - Risque connu : `users_email_lower_unique` échoue si deux comptes ne diffèrent que par la casse ; l'index reste
   invalide, la migration échoue et le déploiement s'arrête avant l'application (requête de repérage dans le fichier).
+
+## BD-4 — performance des requêtes (partiellement implémenté le 2026-11-02, non poussé)
+
+- BD-4.1 `routes/notifications.ts` : colonnes projetées pour les projets partagés ; péremption des exports en une
+  requête `LATERAL` (plan vérifié sur base jetable) au lieu d'une par export. Index de la cloche : BD-3 (0002).
+  **Non fait** : borner dans le temps l'historique « mes objets » (changement de comportement, à décider).
+- BD-4.2 `lib/temps-reel-hub.ts` : par cycle, une lecture par jeton et par couple (projet, compte), au plus 4 lectures
+  simultanées ; test `temps-reel-revalidation.test.ts` (12 connexions d'un compte : 1 lecture au lieu de 12 ; 30 comptes :
+  jamais plus de 4 en parallèle). L'intervalle de 2 s (RT-D5) est **conservé** : c'est une exigence de sécurité acceptée.
+- BD-4.3 `lib/auth.ts` : la session lue à chaque requête ne charge plus que 8 colonnes du compte (plus les jsonb ni les
+  secrets). **Non fait** : projection de `loadProjectAccess` et pagination de `GET /projects` (contrat des routes et du
+  client à relever route par route).
+- BD-4.4 `routes/com.ts` (`/com/boite`) : conversations, participants, lectures et accusés en une requête chacun pour
+  toute la boîte, au lieu de quatre par conversation ; messages toujours lus par conversation ; ordre et contenu inchangés.
+- BD-4.5 `routes/lock.ts`, `routes/atelier-versions.ts` : libération de la réservation sous verrou de ligne ; suppression
+  et transmission d'un verrou fin conditionnées au verrou examiné (409 sinon), comparaison à la milliseconde.
+- BD-4.7 `lib/mailer/outbox.ts` : bail de 5 min, envoi SMTP hors transaction ; test pur `outbox-traitement.test.ts`.
+- BD-4.9 `app.ts` : fichiers du build servis avant la lecture de session ; test `app-statique.test.ts` (échoue sur
+  l'ancien code : 500, la base simulée étant sollicitée).
+- **Reportés** : BD-4.6 (flux pour l'export d'archive, à traiter avec BD-9.1), BD-4.8 (attend D-BD-7).
+- Contrôles : typecheck vert ; 1 166 tests API purs verts ; les suites sur base (dont `notifications`, `com`, `lock`,
+  `atelier-versions`) ne tournent qu'en CI.
 
 ## Points ouverts
 

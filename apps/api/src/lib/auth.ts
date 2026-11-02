@@ -146,7 +146,31 @@ async function loadSession(token: string): Promise<{ session: SessionRow; user: 
   return rows[0] ?? null;
 }
 
-export function toSessionUser(user: UserRow, sessionId: string, session: { mfaVerifiedAt: Date | null } | null = null): SessionUser {
+/** Colonnes du compte utiles à la session (BD-4.3) : pas les jsonb de préférences ni les secrets. */
+type UserSession = Pick<UserRow, "id" | "email" | "displayName" | "platformRole" | "status" | "totpEnabledAt" | "emailVerifiedAt" | "deletionRequestedAt">;
+
+/**
+ * BD-4.3 (chantier base-donnees, constat Q5) : lecture de session à chaque requête, limitée aux colonnes utiles. La
+ * ligne `users` entière portait les ensembles de l'Atelier et les préférences de notification (jsonb), le hachage du
+ * mot de passe et le secret TOTP chiffré, relus pour rien à chaque appel.
+ */
+async function loadSessionCourte(token: string): Promise<{ session: SessionRow; user: UserSession } | null> {
+  const rows = await db
+    .select({
+      session: sessions,
+      user: {
+        id: users.id, email: users.email, displayName: users.displayName, platformRole: users.platformRole, status: users.status,
+        totpEnabledAt: users.totpEnabledAt, emailVerifiedAt: users.emailVerifiedAt, deletionRequestedAt: users.deletionRequestedAt,
+      },
+    })
+    .from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .where(eq(sessions.tokenHash, sha256Hex(token)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export function toSessionUser(user: Omit<UserSession, "deletionRequestedAt">, sessionId: string, session: { mfaVerifiedAt: Date | null } | null = null): SessionUser {
   return {
     id: user.id,
     email: user.email,
@@ -166,7 +190,7 @@ export function toSessionUser(user: UserRow, sessionId: string, session: { mfaVe
  */
 export async function resolveSession(token: string | undefined): Promise<SessionUser | null> {
   if (!token) return null;
-  const row = await loadSession(token);
+  const row = await loadSessionCourte(token);
   if (!row || row.session.mfaPending) return null;
   const { session, user } = row;
   const now = new Date();

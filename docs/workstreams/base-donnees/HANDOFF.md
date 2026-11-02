@@ -6,12 +6,12 @@ Mis à jour : 2026-11-02 (UTC).
 
 - Chantier : base-donnees
 - Issue : à ouvrir (« Base de données : fiabilité et performance »).
-- Branche / PR actives : branches locales empilées `docs/base-donnees-plan` → `fix/bd-1-garde-fous` → `feat/bd-2-migrations` → `feat/bd-3-index` (non poussées) ; à vérifier sur GitHub.
+- Branche / PR actives : branches locales empilées `docs/base-donnees-plan` → `fix/bd-1-garde-fous` → `feat/bd-2-migrations` → `feat/bd-3-index` → `perf/bd-4-requetes` (non poussées) ; à vérifier sur GitHub.
 - Dernier commit vérifié : `b9d9897` pour l'audit ; relever le HEAD de `main` en début de session, ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
-- Audit terminé (`audit/`), plan établi (`PLAN.md`) ; BD-1 à BD-3 implémentés localement (voir `STATUS.md`). `init.sql` est gelé : toute évolution passe par `db/migrations/`.
+- Audit terminé (`audit/`), plan établi (`PLAN.md`) ; BD-1 à BD-3 et BD-4 (sauf 4.3 partiel, 4.6, 4.8) implémentés localement (voir `STATUS.md`). `init.sql` est gelé : toute évolution passe par `db/migrations/`.
 
 ## Prochaine action
 
