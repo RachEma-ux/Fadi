@@ -1,5 +1,13 @@
 # Reprise — Studio
 
+## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
+
+- PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de
+  `studio_publication_events` porte sa base d'autorité (`authority`, colonne additive), affichée « au titre de … » ;
+  introduction du panneau des publications reformulée. Aucun statut du registre Studio changé.
+- `REVUE-G1-03.md` régénéré par son test (`revue-g1.test.ts`) : la preuve citée pour deux routes de tâches est
+  désormais le test E6 de `app.test.ts`. Compteurs du registre inchangés.
+
 ## Checkpoint 2026-10-26 (heure suisse 11:30) — vague 3 promue, bilan et demande unique d'interventions
 
 - PR #336 (vague 3) fusionnée (`main@02c0dc2b`), CI verte sur `main`. Promotion : X.1-01, X.1-04, X.1-05, X.1-06 Vérifiées.
