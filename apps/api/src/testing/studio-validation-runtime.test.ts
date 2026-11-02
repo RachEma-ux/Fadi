@@ -15,6 +15,8 @@ vi.mock("../db/client.js", async () => {
     if (table === schema.projectMembers) return [{ userId: "u" }];
     // Verrou des participations du compte (Issue #262, phase 2, `access-locks.ts`) : aucune ligne dans ce banc.
     if (table === schema.projectParticipations) return [];
+    // BD-4.8 (D-BD-7) : le lot verrouille la ligne du projet en FOR SHARE (puis sa variante en FOR UPDATE).
+    if (table === schema.projects) return [{ id: "p" }];
     if (table === schema.studioStudies) return [{ id: "s", name: "Étude", projectId: "p", archivedAt: null }];
     if (table === schema.studioVariants) return verrou ? [{ id: "v" }] : [{ id: "v", name: "Variante", headRevisionId: "r0", archivedAt: null, derivedFromVariantId: null, derivedFromRevisionId: null }];
     if (table === schema.studioRevisions) return requeteRejeu ? [] : [{ id: "r0", parentRevisionId: null, document: etat.document }];
