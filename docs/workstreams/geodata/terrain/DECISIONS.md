@@ -26,12 +26,30 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 | TER-D13 | Qui accepte une version (revue → accepté) | **A** un compte `responsable-publication` désigné par le maître d'ouvrage, décision consignée dans le rapport qualité ; pour une donnée levée, en plus un réviseur géomètre indépendant | **A**. La session ne prononce jamais l'acceptation d'une version : elle prépare et la laisse « en attente de revue ». | TER-03 |
 | TER-D14 | Limites d'exploitation (proposées, à mesurer ensuite) | — | Import ≤ 4 Go par fichier ; profil ≤ 10 000 échantillons (au-delà : traitement de fond) ; statistiques d'AOI ≤ 50 M cellules en direct ; export ≤ 25 M pixels, lien autorisé expirant après 24 h ; travailleur 3 Go / 2 CPU. Budgets de performance du plan (p95 point < 1 s en cache, vue < 3 s) mesurés et consignés avec leurs conditions, jamais affirmés. | TER-04 |
 | TER-D15 | Droit `calcul` sur la route de valeur raster existante | **A** l'exiger aussi pour les rasters existants (petit correctif hors terrain) ; **B** seulement pour le terrain | **B** dans TER-04, **A** proposé comme correctif séparé (constat de l'audit § 2.3). | non |
+| TER-D16 | Catalogue d'altitudes multi-résolution et règle de priorité | — | **DÉCIDÉ par le maître d'ouvrage le 2 novembre 2026** (relayé par la session VPS) : trois niveaux — fond mondial (GLO-30 MNS ou GEDTM30 MNT, choisis explicitement, jamais fusionnés), MNT LiDAR officiel de 0,25 à 2 m sur son emprise exacte, levé local de 1 à 5 cm (MNS et MNT séparés). Règle de priorité ci-dessous, à implémenter en TER-03 / TER-04. | — |
 
 ## Décisions reçues
 
 | Date | ID | Décision | Canal | Suite donnée |
 | --- | --- | --- | --- | --- |
 | 2026-11-02 | TER-D4 | GEDTM30 (MNT régional) remplace TessaDEM ; Copernicus GLO-30 = MNS distinct ; FABDEM exclu ; SRTM / NASADEM en comparaison. Exigences : licence vérifiée sur la page Zenodo de la version retenue (arrêt si autre que CC BY 4.0), référence verticale enregistrée telle que lue (jamais présentée comme le nivellement général du Maroc, aucune conversion sans transformation approuvée), mention « GEDTM30 © OpenGeoHub, CC-BY 4.0 » et attribution Copernicus à l'écran et dans chaque export, emprise utile seulement, « modèle régional, précision de plusieurs mètres » à côté de chaque altitude, comparaison GEDTM30 / GLO-30 / SRTM autour de Benslimane. | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | Licences vérifiées : GEDTM30 v1.2 = CC BY 4.0 (conforme, aucun arrêt ; réserve du producteur « testing purposes only » signalée) ; référence verticale de GEDTM30 **non déclarée** (seul le nom de fichier porte 4326.3855) ; GLO-30 en EGM2008 déclaré. Comparaison faite (`MODELES-REGIONAUX.md` § 2). Catalogue et affichage : TER-02 à TER-05. |
+
+| 2026-11-02 | TER-D16 | Catalogue d'altitudes multi-résolution, « la meilleure source vérifiée pour chaque zone » : (1) fond mondial Copernicus GLO-30 (MNS) ou GEDTM30 (MNT estimé), choisis selon l'usage (surface ou terrain nu), produits distincts jamais fusionnés ; (2) MNT LiDAR **officiel** de 0,25 à 2 m (licence vérifiée, producteur, date, datum, précision déclarée) qui remplace le fond mondial **sur son emprise exacte** — aucune couverture présumée : Maroc aucun jeu confirmé (ANCFCC à vérifier, TER-01), Lucerne = démonstration étiquetée ; (3) levé local réel de 1 à 5 cm, MNS et MNT en couches séparées, la finesse de grille ne valant jamais précision (précision mesurée = rapport de contrôle indépendant, TER-06) ; (4) couche colorée générée **uniquement** depuis ces rasters numériques (jamais de tuiles RVB d'un tiers), avec à côté de la carte et de chaque valeur : source, date du levé ou de la version, pas natif, précision déclarée (et mesurée si elle existe), référence verticale, état de validation ; frontières de couverture visibles, transitions de source signalées dans les profils. | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | Règle de priorité consignée ci-dessous ; architecture de l'audit (§ 4) complétée ; mise en œuvre TER-02 (catalogue : niveau, produit, emprise exacte), TER-03 / TER-04 (sélection), TER-05 (affichage). |
+
+### Règle de priorité des sources d'altitude (TER-D16, à implémenter en TER-03 / TER-04)
+
+1. Produit d'abord : l'usage choisit **MNT** (terrain nu) ou **MNS** (surface) ; un produit ne remplace jamais l'autre.
+2. Seules les versions **acceptées** (état « publié », droits `calcul` / `tuiles` autorisés) sont candidates ; une version
+   en quarantaine, en revue ou retirée ne l'est jamais.
+3. Par point ou cellule, parmi les candidates dont l'**emprise exacte** (polygone de couverture valide, pas le rectangle
+   englobant, NoData exclu) contient le point : la source la **plus fine adaptée à l'usage** (pas natif), puis la
+   **meilleure qualité** (précision mesurée si elle existe, sinon déclarée ; « non évaluée » vient en dernier), puis la
+   **date** la plus récente (levé, sinon version).
+4. Aucun mélange de références verticales incompatibles : une source dont le datum diffère de celui retenu pour le résultat
+   n'est utilisée que par une transformation approuvée, sinon elle est écartée et l'écart est signalé.
+5. Hors de toute couverture : résultat « indisponible », jamais une valeur inventée ni un zéro.
+6. Chaque résultat renvoie la source choisie (version, pas natif, précision, datum, état) ; un profil marque chaque
+   transition de source et chaque lacune ; la carte montre les frontières de couverture.
 
 Décisions déjà fixées par la demande (rappel, non soumises) : un lot à la fois ; une PR par lot ; aucune fusion sans accord
 écrit du maître d'ouvrage ; aucun déploiement ; RMSEz, biais et P95 calculés exactement comme au plan ; aucune valeur

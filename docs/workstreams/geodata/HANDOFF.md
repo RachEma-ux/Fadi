@@ -16,7 +16,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 ## Dernier checkpoint
 
 - Terrain haute résolution (plan v1.0 du 2 novembre 2026, Issue #381) : étape 0 livrée en PR documentaire
-  (`docs/workstreams/geodata/terrain/`). TER-D4 décidé (GEDTM30 + GLO-30, `terrain/MODELES-REGIONAUX.md`). **En attente** des réponses du maître d'ouvrage aux
+  (`docs/workstreams/geodata/terrain/`). TER-D4 décidé (GEDTM30 + GLO-30, `terrain/MODELES-REGIONAUX.md`) ; TER-D16 décidé (catalogue
+  multi-résolution, règle de priorité dans `terrain/DECISIONS.md`). **En attente** des réponses du maître d'ouvrage aux
   décisions bloquantes TER-D1, D3, D5, D7, D9, D10, D12 avant d'engager TER-02 ; constat à faire par la session VPS : racine des données Docker et
   espace réellement libre sur `/mnt/data`. Ensuite TER-02 → TER-05, une PR par lot. Hors portée : TER-01 (contacts,
   achats), TER-06 / TER-07, TER-08.

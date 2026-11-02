@@ -200,6 +200,12 @@ apps/web/src/modules/geodata/panneaux/Terrain*.tsx  contrôles, légende verroui
                                       panneau « Sources et précision », profil ; icône + Alt+… par commande (règle d'or)
 ```
 
+Catalogue multi-résolution (TER-D16) : chaque version de terrain porte son **niveau** (`mondial`, `regional-officiel`,
+`leve-local`), son **produit** (`MNT` ou `MNS`), son emprise exacte de couverture valide (polygone PostGIS, NoData exclu)
+et ses précisions déclarée et mesurée séparées ; la sélection de source suit la règle de priorité de
+[`DECISIONS.md`](DECISIONS.md) (module pur `packages/geodata-model/src/terrain/`, appliquée par l'API) ; la couche colorée et
+l'ombrage sont calculés **seulement** depuis les rasters numériques du catalogue, jamais depuis des tuiles RVB tierces.
+
 Tables proposées (préfixe `geodata_`, aucune FK vers les projets) : `geodata_terrain_jeux` (lié à `geodata_sources`),
 `geodata_terrain_versions` (lié à `geodata_versions` : type MNT / MNS, date de levé, pas source et livré, unités, CRS
 horizontal, datum vertical, état du cycle de vie du plan), `geodata_terrain_fichiers` (clé de stockage, empreinte, format,
