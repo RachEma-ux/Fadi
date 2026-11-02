@@ -3481,9 +3481,10 @@ describe("Invitations acceptées liées à une participation — fin de l'ajout 
 
 describe("règles communes — E6 fin de participation, E10 gardien du contenu, base d'autorité (CR-C2)", () => {
   type Who = { a: ReturnType<typeof agent>; id: string };
+  // Identifiant lu en base, sans appel supplémentaire à /auth (limite d'appels partagée par tout le fichier).
   async function who(email: string): Promise<Who> {
     const a = await registerAndLogin(email);
-    return { a, id: (await a.get("/auth/me")).body.id as string };
+    return { a, id: (await pool.query("SELECT id FROM users WHERE lower(email) = lower($1)", [email])).rows[0].id as string };
   }
   const participationOf = async (pid: string, userId: string) =>
     (await pool.query("SELECT pp.id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status <> 'terminee'", [pid, userId])).rows[0]?.id as string;
