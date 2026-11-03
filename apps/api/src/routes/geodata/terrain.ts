@@ -14,10 +14,11 @@ import { pool } from "../../db/client.js";
 import { capacites, erreur, journal } from "../../lib/geodata/acces.js";
 import { StockageTerrain } from "../../lib/geodata/terrain/stockage.js";
 import {
-  altitudePoint, exigerUsage, metadonnees, profilTerrain, publierVersion, ServiceRefuse, sourcePubliee, sourcesPubliees, statistiquesTerrain, terrainActive,
-  tuileTerrain, type StyleTuile,
+  altitudePoint, exigerUsage, metadonnees, plageVersion, profilTerrain, publierVersion, ServiceRefuse, sourcePubliee, sourcesPubliees, statistiquesTerrain, terrainActive,
+  tuileTerrain, type SourceTerrain, type StyleTuile,
 } from "../../lib/geodata/terrain/services.js";
 import { demanderExport, equidistanceAdmise, baseCourbes, exportDuDemandeur } from "../../lib/geodata/terrain/exports.js";
+import { equidistanceExigeeVersion } from "../../lib/geodata/terrain/traitement.js";
 
 export const terrainRouter = Router();
 
@@ -62,8 +63,26 @@ terrainRouter.get("/terrain/jeux", service(async (req, res) => {
   const sources = await sourcesPubliees(pool, produit);
   const filtrees = e.every((v) => v !== null) ? sources.filter((s) => s.emprise[0] <= e[2]! && s.emprise[2] >= e[0]! && s.emprise[1] <= e[3]! && s.emprise[3] >= e[1]!) : sources;
   const couvertures = new Map((await pool.query<{ id: string; g: string }>("SELECT terrain_version_id AS id, ST_AsGeoJSON(geom, 7) AS g FROM geodata_terrain_couvertures WHERE terrain_version_id = ANY($1)", [filtrees.map((s) => s.id)])).rows.map((r) => [r.id, JSON.parse(r.g)]));
+  const calculees = new Map<string, number[]>();
+  for (const r of (await pool.query<{ id: string; e: number }>("SELECT DISTINCT terrain_version_id AS id, equidistance AS e FROM geodata_terrain_courbes WHERE terrain_version_id = ANY($1) ORDER BY 2", [filtrees.map((s) => s.id)])).rows) {
+    calculees.set(r.id, [...(calculees.get(r.id) ?? []), Number(r.e)]);
+  }
+  // Interface (TER-05) : légende verrouillée sur la plage de la version (celle des tuiles sans portée), équidistance
+  // minimale exigée par la précision (TER-D17) et équidistances calculées ; une plage illisible reste « non évaluée » (null).
+  const plage = async (s: SourceTerrain): Promise<[number, number] | null> => {
+    const st = StockageTerrain.depuisEnvironnement();
+    if (!st) return null;
+    try { return await plageVersion(st, s); } catch { return null; }
+  };
+  const jeux = [];
+  for (const s of filtrees) {
+    jeux.push({
+      ...metadonnees(s), couverture: couvertures.get(s.id) ?? null, droits: s.droits, plageAltitude: await plage(s),
+      courbes: { equidistanceMinimale: await equidistanceExigeeVersion(pool as unknown as import("pg").PoolClient, s.id), calculees: calculees.get(s.id) ?? [] },
+    });
+  }
   res.setHeader("Cache-Control", "private, no-store");
-  res.json({ jeux: filtrees.map((s) => ({ ...metadonnees(s), couverture: couvertures.get(s.id) ?? null, droits: s.droits })) });
+  res.json({ jeux });
 }));
 
 terrainRouter.get("/terrain/point", service(async (req, res) => {

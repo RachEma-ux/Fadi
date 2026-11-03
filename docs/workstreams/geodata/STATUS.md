@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-11-02 (UTC).
+Mis à jour : 2026-11-03 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,6 +9,13 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## Faits vérifiés
 
+- Terrain TER-05 (interface, Issue #381, branche `feat/381-ter-05-interface`) : **implémenté et vérifié**, non accepté.
+  Panneau Terrain (Alt+H) : MNT / MNS, jeux publiés et couvertures, altitude / pente / ombrage avec opacité, légende
+  verrouillée ou adaptée (portée dite : vue ou zone d'étude), courbes jamais sous le seuil TER-D17, Altitude au point (Alt+O,
+  arrondie à la précision de la source), Profil du terrain (Alt+U : raccords, lacunes, interpolation), « Sources et
+  précision », étiquette des jeux partout. Tests web 66/66, recette navigateur `geodata-terrain.mjs` 28/0 (services du
+  terrain interceptés, jeu synthétique « test seulement »), recette `geodata.mjs` relancée en local (`terrain/TER-05.md`).
+  Q-TER-05-1 (rattachement au projet) soumise.
 - Terrain TER-04 (services, tuiles, droits, publication, export ; Issue #381, branche `feat/381-ter-04-services`) :
   **implémenté et vérifié**, non accepté. Routes `/geodata/api/terrain` (jeux, point, profil, statistiques, tuiles, courbes
   MVT, exports, publication / retour arrière), droits par usage, drapeau `GEODATA_TERRAIN_ENABLED`. Tests : 253 du paquet,

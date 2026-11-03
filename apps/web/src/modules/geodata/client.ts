@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, Qualification, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
+import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, EtatQualite, NiveauTerrain, ProduitTerrain, ReferenceVerticale, Milieu, MotifAbsence, PaysTerritorial, Qualification, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -162,6 +162,37 @@ export interface UniteTerritorialeRecue extends UniteTerritoriale {
 export interface TableauDeBordRecu { pays: string; versionId: string; attribution: string; zone: { code: string; nom: string; coucheId: string }; definition: unknown; concepts: Record<string, number> }
 export interface ConceptsRecus { langue: "fr" | "ar"; source: string | null; concepts: { titre: string; texte: string }[] }
 
+// ——— Terrain haute résolution (plan v1.0, lot TER-05) ———
+/** Métadonnées obligatoires de tout résultat du terrain (source, version, pas, référence verticale, qualité, étiquette). */
+export interface SourceTerrainRecue {
+  versionId: string; cle: string; titre: string; produit: ProduitTerrain; niveau: NiveauTerrain; etiquette: string | null;
+  pas: { metres: number; declare: { valeur: number; unite: string } }; referenceVerticale: ReferenceVerticale; unite: "m";
+  qualite: { etat: EtatQualite; rmsez: number | null; p95: number | null; n: number };
+  precisionDeclaree: { texte: string; verticaleM: number | null; source: string } | null;
+  date: string | null; publieeLe: string; attribution: string; licence: { nom: string; url: string | null };
+}
+export interface JeuTerrainRecu extends SourceTerrainRecue {
+  couverture: { type: string; coordinates: unknown } | null;
+  droits: DroitsVersion;
+  /** Plage d'altitude de la version (légende verrouillée) ; null = non évaluée. */
+  plageAltitude: [number, number] | null;
+  courbes: { equidistanceMinimale: number; calculees: number[] };
+}
+export type AltitudeRecue =
+  | { disponible: true; lon: number; lat: number; altitude: number; echantillonnage: string; source: SourceTerrainRecue }
+  | { disponible: false; lon: number; lat: number; altitude: null; motif: string };
+export interface ProfilRecu {
+  points: { chainage: number; lon: number; lat: number; altitude: number | null; source: string | null; interpolee: boolean }[];
+  transitions: { chainage: number; de: string | null; vers: string | null }[];
+  lacunes: { debut: number; fin: number }[];
+  sources: SourceTerrainRecue[];
+  referencesEcartees: string[];
+  chainage: string;
+}
+export type StatistiquesTerrainRecues =
+  | { statistiques: { cellulesZone: number; cellulesValides: number; min: number | null; max: number | null; moyenne: number | null; ecartType: number | null }; surfaceZoneM2: number; surfaceValideM2: number; couvertureValide: number; source: SourceTerrainRecue }
+  | { indisponible: true; motif: string };
+
 export const api = {
   /** Découpage territorial en base (lot H, D-GD-28) : pays chargés, unités d'un niveau, une unité. */
   territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
@@ -232,6 +263,13 @@ export const api = {
   prixCellules: () => appeler<CellulesPrixRecues>("/prix/cellules"),
   prixComparaison: (code: string, type: string, transaction: string) =>
     appeler<ComparaisonPrixRecue>(`/prix/comparaison?${new URLSearchParams({ code, type, transaction })}`),
+  // Terrain haute résolution (TER-05) : catalogue par emprise, altitude au point, profil, statistiques (portée de légende).
+  terrainJeux: (produit: ProduitTerrain, emprise: readonly [number, number, number, number] | null) =>
+    appeler<{ jeux: JeuTerrainRecu[] }>(`/terrain/jeux?${new URLSearchParams({ produit, ...(emprise ? { ouest: emprise[0].toFixed(6), sud: emprise[1].toFixed(6), est: emprise[2].toFixed(6), nord: emprise[3].toFixed(6) } : {}) })}`),
+  terrainPoint: (lon: number, lat: number, produit: ProduitTerrain) => appeler<AltitudeRecue>(`/terrain/point?${new URLSearchParams({ lon: lon.toFixed(7), lat: lat.toFixed(7), produit })}`),
+  terrainProfil: (ligne: readonly (readonly [number, number])[], pas: number, produit: ProduitTerrain) => envoyer<ProfilRecu>("/terrain/profil", "POST", { ligne, pas, produit }),
+  terrainStatistiques: (zone: { type: "Polygon"; coordinates: [number, number][][] }, produit: ProduitTerrain, versionId: string) =>
+    envoyer<StatistiquesTerrainRecues>("/terrain/statistiques", "POST", { zone, produit, versionId }),
 };
 
 /** Adresse du téléchargement CSV d'une édition d'agrégat publié (attribution incluse par le serveur). */
@@ -248,3 +286,10 @@ export const adresseGlyphes = () => `${window.location.origin}/geodata/glyphes/{
 
 /** Adresse des tuiles d'image d'une couche raster (D-GD-13). */
 export const adresseRaster = (coucheId: string) => `${window.location.origin}${RACINE_API}/raster/${encodeURIComponent(coucheId)}/{z}/{x}/{y}.png`;
+
+/** Tuiles d'image du terrain (altitude, pente, ombrage) ; `plage` = légende adaptative (portée explicite), sinon verrouillée. */
+export const adresseTuilesTerrain = (versionId: string, style: "altitude" | "pente" | "ombrage", plage: readonly [number, number] | null = null) =>
+  `${window.location.origin}${RACINE_API}/terrain/tuiles/${encodeURIComponent(versionId)}/${style}/{z}/{x}/{y}${plage ? `?min=${plage[0].toFixed(2)}&max=${plage[1].toFixed(2)}` : ""}`;
+
+/** Courbes de niveau en tuiles vectorielles (couche « courbes ») à l'équidistance demandée (jamais sous le seuil, TER-D17). */
+export const adresseCourbes = (versionId: string, equidistance: number) => `${window.location.origin}${RACINE_API}/terrain/courbes/${encodeURIComponent(versionId)}/{z}/{x}/{y}?equidistance=${equidistance}`;

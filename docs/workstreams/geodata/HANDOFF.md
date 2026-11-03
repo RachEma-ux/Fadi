@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-11-02 (UTC).
+Mis à jour : 2026-11-03 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,6 +15,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Terrain TER-05 (Issue #381) : PR sur `feat/381-ter-05-interface` (compte rendu `terrain/TER-05.md`). Dernier lot de la
+  portée de la session (TER-02 → TER-05). Après fusion et déploiement : ouvrir GeoData › Terrain (Alt+H) ; rien ne
+  s'affiche tant qu'aucune version n'est publiée (Q-TER-02-1 à 3). Restent au maître d'ouvrage : TER-D19, Q-TER-05-1,
+  TER-01, TER-06 / TER-07 (porte G2), porte G3 en préproduction, TER-08.
 - Terrain TER-04 (Issue #381) : PR sur `feat/381-ter-04-services` (compte rendu `terrain/TER-04.md`). Après fusion et
   déploiement : `GEODATA_TERRAIN_ENABLED` (vrai par défaut), travailleur `--continu` pour les exports ; mesurer les budgets
   en préproduction (porte G3). Les versions réelles restent en quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-05.

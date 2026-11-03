@@ -60,6 +60,12 @@ décision d'un responsable de publication, **avec la source** qui établit la r�
 | Q-TER-02-2 | GEDTM30 v1.2 | Quelle référence verticale ? Le nom de fichier porte « 4326.3855 » (EGM2008), sans déclaration. | Demander à OpenGeoHub (dépôt Codeberg, question publique) une déclaration écrite ; ou lire l'article PeerJ 13:e19673 (refusé à la lecture automatique) et citer le passage. Levée avec cette source seulement. |
 | Q-TER-02-3 | Copernicus GLO-30 N33 W008 | Quelle valeur signifie « sans mesure » ? Aucune NoData déclarée ; 4 337 602 cellules valent exactement 0 (océan). | Lire le « Copernicus DEM Product Handbook » (ESA) sur le traitement des surfaces d'eau et des vides, puis lever avec cette source et un masque décidé en TER-03 ; d'ici là, aucune altitude 0 n'est servie comme mesure. |
 
+### Question ouverte par TER-05 (rattachement au projet)
+
+| Question | Objet | Constat | Recommandation |
+| --- | --- | --- | --- |
+| Q-TER-05-1 | Plan § TER-05 : « attacher la version de terrain approuvée au projet » (parcours parcellaire) et « référence de terrain versionnée » dans l'Atelier, sans remplacement silencieux | GeoData est autonome des projets (aucun `projectId`, tests d'indépendance, ADR-GEODATA-01/02) ; le rattachement touche le Parcours et l'Atelier, hors délégation GeoData | Lot distinct décidé par le maître d'ouvrage : le projet garde une **référence figée** (identifiant de version publiée, unités, repère, transformation) lue par l'API du terrain ; une version plus récente est **proposée**, jamais substituée. Rien n'est engagé d'ici là. |
+
 ### Règle de priorité des sources d'altitude (TER-D16, à implémenter en TER-03 / TER-04)
 
 1. Produit d'abord : l'usage choisit **MNT** (terrain nu) ou **MNS** (surface) ; un produit ne remplace jamais l'autre.

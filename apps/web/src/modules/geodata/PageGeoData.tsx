@@ -29,12 +29,13 @@ import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
 import { PastillesThemes, type PastilleTheme } from "./panneaux/PastillesThemes";
 import { BarreBas } from "./panneaux/BarreBas";
+import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
 
 type Onglet = "catalogue" | "couches" | "legende";
-type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export";
+type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain";
 
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -96,6 +97,10 @@ export function PageGeoData() {
   const [panneauOuvert, setPanneauOuvert] = useState(() => !estTelephone());
   const [volet, setVolet] = useState<Volet | null>(null);
   const [outil, setOutil] = useState<OutilCarte>("navigation");
+  // Terrain haute résolution (TER-05) : état gardé par la page, les couches restent affichées panneau fermé.
+  const terrain = useTerrain(() => moteur.current?.emprise() ?? null);
+  const terrainRef = useRef(terrain);
+  terrainRef.current = terrain;
   const [trace, setTrace] = useState<TraceEnCours | null>(null);
   const [tracePret, setTracePret] = useState<TraceEnCours | null>(null);
   const [zones, setZones] = useState<ZoneRecue[]>([]);
@@ -561,7 +566,11 @@ export function PageGeoData() {
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
-          surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
+          surTraceTermine: (o, s) => {
+            // Outils du terrain (TER-05) : le résultat s'affiche dans le panneau Terrain, aucun tracé n'est gardé ici.
+            if (o === "altitude" || o === "profil") { setTrace(null); terrainRef.current.surTrace(o, s); return; }
+            setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] });
+          },
           surErreur: (m) => setErreurCarte(m),
           surErreurFond: (m) => setAvisFond(m),
         });
@@ -581,6 +590,7 @@ export function PageGeoData() {
     moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres: filtresAffiches, selection, zones: zonesGeo, attributions, valeursAffichees, couleursIndicateur });
   }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, valeursAffichees, couleursIndicateur, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
+  useEffect(() => { moteur.current?.afficherTerrain(terrain.affichage); }, [terrain.affichage, chargementMoteur]);
 
   compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
@@ -848,6 +858,10 @@ export function PageGeoData() {
     if (e.altKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && !saisie && !erreurCarte) { e.preventDefault(); basculerPlanSatellite(); return; }
     // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
     if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
+    // Terrain haute résolution (TER-05) : Alt+H panneau Terrain, Alt+O altitude au point, Alt+U profil du terrain.
+    if (e.altKey && (e.key === "h" || e.key === "H" || e.code === "KeyH") && !saisie) { e.preventDefault(); basculerTerrain(); return; }
+    if (e.altKey && (e.key === "o" || e.key === "O" || e.code === "KeyO") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("altitude"); return; }
+    if (e.altKey && (e.key === "u" || e.key === "U" || e.code === "KeyU") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("profil"); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
     if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
@@ -895,7 +909,10 @@ export function PageGeoData() {
   const afficherCarteSeule = () => { setPanneauOuvert(false); setVolet(null); basculerRecherche(false); };
   const basculerCouches = () => { if (panneauOuvert && onglet === "couches") setPanneauOuvert(false); else ouvrirOnglet("couches"); };
   const basculerLegende = () => { if (panneauOuvert && onglet === "legende") setPanneauOuvert(false); else ouvrirOnglet("legende"); };
-  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setVolet("etudes"); if (estTelephone()) setPanneauOuvert(false); } };
+  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
+  /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
+  const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outil === "altitude" || outil === "profil") setOutil("navigation"); } else afficherVolet("terrain"); };
+  const basculerOutilTerrain = (o: "altitude" | "profil") => choisirOutil(outil === o ? "navigation" : o);
   const localiser = () => {
     if (!navigator.geolocation) return setAnnonce("Localisation indisponible dans ce navigateur.");
     navigator.geolocation.getCurrentPosition((pos) => moteur.current?.allerA({ lon: pos.coords.longitude, lat: pos.coords.latitude, zoom: 13 }), () => setAnnonce("Localisation refusée ou indisponible."), { timeout: 10_000 });
@@ -1042,7 +1059,7 @@ export function PageGeoData() {
       else if (panneauMini) setPanneauMini(null);
       else if (volet && estTelephone()) setVolet(null);
     }
-    if (e.key === "Enter" && outil !== "navigation" && outil !== "annotation" && (e.target as HTMLElement).classList.contains("maplibregl-canvas")) moteur.current?.terminerTrace();
+    if (e.key === "Enter" && outil !== "navigation" && outil !== "annotation" && outil !== "altitude" && (e.target as HTMLElement).classList.contains("maplibregl-canvas")) moteur.current?.terminerTrace();
   };
 
   // Zone des onglets du tableau de bord : l'entité sélectionnée sur la carte, sinon le niveau courant de la barre
@@ -1128,6 +1145,7 @@ export function PageGeoData() {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg>
             <span>Données</span>
           </button>
+          <BoutonTerrain ouvert={volet === "terrain"} onBasculer={basculerTerrain} />
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             etiquettes={composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId)) ? etiquettesToutesAffichees(composition, vectorielles) : null} onEtiquettes={basculerLibelles}
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
@@ -1156,14 +1174,14 @@ export function PageGeoData() {
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}
-          {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : ""}</p>}
+          {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : outil === "profil" ? "Double-clic ou Entrée pour tracer le profil." : ""}</p>}
         </main>
         <BarreBas carteSeule={!panneauOuvert && !volet} rechercheOuverte={rechercheOuverte} couchesOuvertes={panneauOuvert && onglet === "couches"}
           enregistrementImpossible={enregistrementImpossible} enregistrementLibelle="Enregistrer"
           onCarte={afficherCarteSeule} onChercher={() => basculerRecherche(!rechercheOuverte)} onCouches={basculerCouches} onEnregistrer={() => void enregistrer()} />
         {volet && (
-          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
-            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter", terrain: "Terrain" })[volet]} data-gd-volet-ouvert={volet}>
+            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter", terrain: "Terrain haute résolution" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
             {volet === "fiche" && <FicheObjet indicateurActif={indicateurActif} proximite={composition.couches.filter((k) => k.visible && couchesPoints.has(k.coucheId)).map((k) => ({ id: k.coucheId, titre: couchesConnues.get(k.coucheId)?.titre ?? k.coucheId }))} subdivisions={fiche ? subdivisionsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
@@ -1175,6 +1193,8 @@ export function PageGeoData() {
               onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}
               onCentrer={(g) => { const e = empriseGeometrie(g); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "import" && <Import onCoucheImportee={async (id) => { const c = await api.couche(id); connaitre([c]); chargerCatalogue(); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); const e = empriseDe(c.emprise?.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "terrain" && <PanneauTerrain t={terrain} outil={outil} onOutil={choisirOutil} onCentrer={(e) => moteur.current?.allerA({ emprise: e })}
+              vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} />}
             {volet === "export" && <Export carte={carte} enregistree={etat.etat === "enregistree"} analyses={analysesIds} onExporter={exporter} />}
           </aside>
         )}

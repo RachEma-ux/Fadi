@@ -9,7 +9,25 @@ import type { Fond } from "../client";
 /** État d'affichage d'une couche dans la vue (P3-4). */
 export type EtatCouche = "chargement" | "vide" | "ok";
 
-export type OutilCarte = "navigation" | "distance" | "surface" | "zone" | "annotation";
+/** Outils de la carte ; `altitude` (un clic) et `profil` (une ligne) interrogent le terrain haute résolution (TER-05). */
+export type OutilCarte = "navigation" | "distance" | "surface" | "zone" | "annotation" | "altitude" | "profil";
+
+/**
+ * Affichage du terrain haute résolution (TER-05) : couches d'image d'une version publiée (altitude, pente, ombrage) avec
+ * leur opacité, courbes de niveau à une équidistance admise, contours des couvertures disponibles, point interrogé et
+ * ligne du profil. `plage` : légende adaptative (portée explicite) ; null = légende verrouillée sur la version.
+ */
+export interface AffichageTerrain {
+  readonly versionId: string | null;
+  readonly altitude: { readonly visible: boolean; readonly opacite: number; readonly plage: readonly [number, number] | null };
+  readonly pente: { readonly visible: boolean; readonly opacite: number };
+  readonly ombrage: { readonly visible: boolean; readonly opacite: number };
+  readonly courbes: { readonly visible: boolean; readonly equidistance: number | null };
+  readonly couvertures: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] } | null;
+  readonly repere: readonly [number, number] | null;
+  readonly profil: readonly (readonly [number, number])[] | null;
+  readonly attribution: string | null;
+}
 
 export interface ObjetDesigne { readonly coucheId: string; readonly code: string }
 
@@ -93,6 +111,8 @@ export interface MoteurCarte {
   afficherTerritoire(contour: unknown | null): void;
   /** Entité sélectionnée par clic sans couche chargée (D-GD-34) : contour et mise en évidence, ou rien. */
   afficherEntite(contour: unknown | null): void;
+  /** Terrain haute résolution (TER-05) ; null : tout retiré. */
+  afficherTerrain(t: AffichageTerrain | null): void;
   /** Masque (ou rétablit) le contour territorial le temps d'une capture ; résolu une fois la carte redessinée. */
   masquerTerritoire(masque: boolean): Promise<void>;
   /** Image de la mini-carte (impression), ou null si elle n'est pas affichée. */

@@ -104,6 +104,14 @@ describe("services numériques du terrain (TER-04)", () => {
     expect(jeux[0]).toMatchObject({ versionId: a, produit: "MNT", etiquette: "Données synthétiques — test seulement", unite: "m", qualite: { etat: "non-evaluee" } });
     expect(jeux[0].referenceVerticale).toMatchObject({ statut: "declaree", code: "EPSG:5728" });
     expect(jeux[0].couverture.type).toBe("MultiPolygon");
+    // Interface (TER-05) : plage de la légende verrouillée (celle des tuiles sans portée), équidistances minimale et calculées.
+    const [pmin, pmax] = jeux[0].plageAltitude as [number, number];
+    expect(pmin).toBeGreaterThanOrEqual(499.9);
+    expect(pmax).toBeLessThanOrEqual(539.6);
+    expect(pmin).toBeLessThan(pmax);
+    expect(jeux[0].courbes.equidistanceMinimale).toBeGreaterThan(0);
+    expect(jeux[0].courbes.calculees.length).toBeGreaterThan(0);
+    expect(jeux[0].courbes.calculees.every((e: number) => e >= jeux[0].courbes.equidistanceMinimale - 1e-9 || e > 0)).toBe(true);
     const [lon, lat] = await lonLat(2662507.3, 1210492.1);
     const p = (await u.get(`${API}/point`).query({ lon, lat })).body;
     expect(p.disponible).toBe(true);
