@@ -14,7 +14,8 @@ Mis à jour : 2026-11-03 (UTC).
   verrouillée ou adaptée (portée dite : vue ou zone d'étude), courbes jamais sous le seuil TER-D17, Altitude au point (Alt+O,
   arrondie à la précision de la source), Profil du terrain (Alt+U : raccords, lacunes, interpolation), « Sources et
   précision », étiquette des jeux partout. Tests web 66/66, recette navigateur `geodata-terrain.mjs` 28/0 (services du
-  terrain interceptés, jeu synthétique « test seulement »), recette `geodata.mjs` relancée en local (`terrain/TER-05.md`).
+  terrain interceptés, jeu synthétique « test seulement »), recette `geodata.mjs` 265/0 en local, DB-3 services 8/8 en
+  local (`terrain/TER-05.md`).
   Q-TER-05-1 (rattachement au projet) soumise.
 - Terrain TER-04 (services, tuiles, droits, publication, export ; Issue #381, branche `feat/381-ter-04-services`) :
   **implémenté et vérifié**, non accepté. Routes `/geodata/api/terrain` (jeux, point, profil, statistiques, tuiles, courbes

@@ -50,9 +50,11 @@ bas (`panneaux/barre-outils.test.ts`) et dans le navigateur (`geodata-terrain.mj
 | --- | --- |
 | `npm run typecheck`, `npm run build` | Réussis |
 | Tests web du module GeoData (`vitest`) | 8 fichiers, 66 tests (dont 10 de `terrain-ops`, 1 de règle d'or du terrain) |
-| Suite DB-3 `geodata-terrain-services.test.ts` (catalogue complété) | Voir STATUS (local PostGIS 16 + GDAL 3.8.4, copie à connexion directe) ; en CI sur base attestée |
+| Suite DB-3 `geodata-terrain-services.test.ts` (catalogue complété) | 8/8 en local (PostGIS 16 + GDAL 3.8.4, copie à connexion directe) ; en CI sur base attestée |
+| Tests web complets (`apps/web`) | 202 fichiers, 1 367 tests réussis (1 ignoré) |
+| `npm test` (racine) | Paquets et web réussis ; API : 20 suites DB-3 refusées par la garde sans base attestée (`TARGET_REQUIRED`, attendu en local), exécutées en CI |
 | Recette navigateur `geodata-terrain.mjs` (Chromium, WebGL logiciel, API construite locale) | 28 contrôles réussis, 0 échec |
-| Recette GeoData complète `geodata.mjs` (non-régression) | Voir STATUS |
+| Recette GeoData complète `geodata.mjs` (non-régression, même API locale) | 265 contrôles réussis, 0 échec |
 
 Limite déclarée de la recette navigateur : les services `/geodata/api/terrain/…` y sont **interceptés** et répondent avec
 un jeu **synthétique « test seulement »** (aucune donnée réelle). Elle vérifie l'interface ; la chaîne serveur (import,
