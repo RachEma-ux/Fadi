@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-11-02 (UTC).
+Mis à jour : 2026-11-03 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,6 +15,14 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Préproduction terrain (TER-D7 révisée, 3 novembre 2026) : PR #386 sur `fix/terrain-preprod-garde-commande`, **non
+  fusionnée** (fusion seulement sur accord écrit du maître d'ouvrage), aucun déploiement. Constat VPS fait : racine Docker
+  `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production → quota terrain
+  **30 Go**. Garde étendue au profil `terrain` ; `terrain-import` ne se lance plus que par `sudo fadi-preprod terrain …`
+  (`--etat` opérateur ; `--telecharger` / `--importer` / `--lever` administrateur). **Prochaine action** après fusion : le
+  maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` (sha256 dans la PR), puis lance
+  `sudo fadi-preprod terrain --telecharger|--importer` des 4 fiches (`docs/geodata/README.md` § Terrain) — l'ancienne
+  procédure `docker compose … run terrain-import` ci-dessous est caduque. Compte rendu : `terrain/TER-02.md` § Correctif.
 - Terrain TER-02 (Issue #381) : PR #383 sur `feat/381-ter-02-catalogue-import`, fusion accordée par le maître d'ouvrage le
   3 novembre 2026 (après correction des deux remarques de la revue Codex) (compte rendu `terrain/TER-02.md`). Après fusion
   et déploiement : la session VPS constate `/mnt/data` et la racine Docker (TER-D7), puis lance `terrain-import`
