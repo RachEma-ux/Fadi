@@ -6,6 +6,12 @@
  *   npm run geodata:terrain -- --lever <id> --par <courriel> --motif "…"  lève une quarantaine (rôle responsable-publication)
  *        [--reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]]
  *   npm run geodata:terrain -- --etat                                     liste les versions et leur état
+ *   npm run geodata:terrain -- --traiter [<id>] [--par <courriel>]        dérivés et courbes (travailleur GDAL, TER-03)
+ *   npm run geodata:terrain -- --controler <id> --points <csv> --methode "…" --par <courriel>
+ *        [--cible-rmsez 0.10 --cible-p95 0.20 [--cible-classe sol-nu]]     rapport qualité (rôle gestionnaire-donnees)
+ *   npm run geodata:terrain -- --decider <id> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
+ *                                                                         revue (rôle responsable-publication)
+ *   npm run geodata:terrain -- --essai-gdal                              essai du travailleur sur une fixture « test seulement »
  *   (image : node apps/api/dist/geodata-terrain.js …)
  *
  * Fiches : `docs/geodata/terrain/<cle>.json` (copiées dans `dist/geodata-terrain/`). `--telecharger` n'accepte qu'une fiche
@@ -21,6 +27,12 @@ import { LIBELLES_ETATS_TERRAIN, LIMITES_TERRAIN, validerDeclarationTerrain, typ
 import { StockageTerrain } from "../lib/geodata/terrain/stockage.js";
 import { importerTerrain, leverQuarantaine } from "../lib/geodata/terrain/import.js";
 import { acquerir } from "../lib/geodata/terrain/acquisition.js";
+import { controlerQualite, deciderRevue, traiterVersion, versionsATraiter } from "../lib/geodata/terrain/traitement.js";
+import { calculerDerives } from "../lib/geodata/terrain/derives.js";
+import { ecrireFixture } from "../lib/geodata/terrain/fixtures-synthetiques.js";
+import { lirePointsControle } from "@parcours/geodata-model";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 function argument(nom: string): string | undefined {
   const i = process.argv.indexOf(`--${nom}`);
@@ -70,6 +82,18 @@ async function compte(pool: Pool, email: string | undefined, role: string): Prom
 }
 
 async function principal(): Promise<void> {
+  if (process.argv.includes("--essai-gdal")) {
+    // Essai du travailleur, sans base : fixture synthétique « test seulement », COG vérifié, pente, ombrage, courbes.
+    const d = mkdtempSync(join(tmpdir(), "terrain-essai-"));
+    try {
+      ecrireFixture(join(d, "plan.tif"), { valeur: (c) => 500 + c });
+      const r = await calculerDerives(join(d, "plan.tif"), join(d, "derives"), { geographique: false, nodata: -9999, equidistance: 10 });
+      console.log(`Essai GDAL réussi (${r.logiciels.gdal}) : ${r.fichiers.map((f) => f.nature).join(", ")} ; ${r.courbes.length} niveau(x) de courbes ; ${r.cellulesValides} cellules valides.`);
+    } finally {
+      rmSync(d, { recursive: true, force: true });
+    }
+    return;
+  }
   if (argument("telecharger")) {
     const d = lireFiche(argument("telecharger")!, true);
     const r = await acquerir(stockage(), d);
@@ -106,6 +130,58 @@ async function principal(): Promise<void> {
       }
       return;
     }
+    if (process.argv.includes("--traiter")) {
+      const par = argument("par") ? await compte(pool, argument("par"), "gestionnaire-donnees") : null;
+      const client = await pool.connect();
+      try {
+        const cible = argument("traiter");
+        const ids = cible && !cible.startsWith("--") ? [cible] : await versionsATraiter(client);
+        if (!ids.length) console.log("Aucune version prête au traitement.");
+        let echecs = 0;
+        for (const id of ids) {
+          try {
+            const r = await traiterVersion(client, stockage(), id, par);
+            console.log(`${r.deja ? "Déjà traitée" : "Traitée"} : ${id} — en attente de revue ; courbes à ${r.equidistance} m (${r.courbes} lignes) ; couverture ${Math.round(r.surfaceM2)} m².`);
+          } catch (e) {
+            echecs++;
+            console.error(`Échec : ${id} — ${(e as Error).message}`);
+          }
+        }
+        if (echecs) process.exitCode = 1;
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (argument("controler")) {
+      const par = await compte(pool, argument("par"), "gestionnaire-donnees");
+      const fichier = argument("points");
+      if (!fichier) throw new Error("--points <fichier CSV> requis (id;x;y;z;classe;incertitude, repère natif de la version).");
+      const rm = argument("cible-rmsez"), p95 = argument("cible-p95");
+      const cibles = rm && p95 ? { rmsez: Number(rm), p95: Number(p95), classe: argument("cible-classe") ?? null } : null;
+      const client = await pool.connect();
+      try {
+        const r = await controlerQualite(client, stockage(), argument("controler")!, { points: lirePointsControle(readFileSync(fichier, "utf8")), methode: argument("methode") ?? "", cibles, par });
+        const g = r.rapport.global;
+        console.log(`Rapport qualité : ${r.etat}${g ? ` — n ${g.n}, biais ${g.biais.toFixed(3)} m, RMSEz ${g.rmsez.toFixed(3)} m, P95 ${g.p95.toFixed(3)} m` : ""} ; ${r.rapport.exclus.length} point(s) exclu(s).`);
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (argument("decider")) {
+      const par = await compte(pool, argument("par"), "responsable-publication");
+      const decision = argument("decision");
+      if (decision !== "accepte" && decision !== "quarantaine" && decision !== "retire") throw new Error("--decision accepte | quarantaine | retire");
+      const client = await pool.connect();
+      try {
+        const q = await deciderRevue(client, argument("decider")!, decision, argument("motif") ?? "", par);
+        console.log(`Décision consignée : ${argument("decider")} → ${LIBELLES_ETATS_TERRAIN[decision]} (qualité : ${q}).`);
+      } finally {
+        client.release();
+      }
+      return;
+    }
     if (process.argv.includes("--etat")) {
       const lignes = (await pool.query<{ id: string; cle: string; produit: string; etat: EtatTerrain; motifs: { code: string }[]; etiquette: string | null }>(
         "SELECT id, cle, produit, etat, motifs, etiquette FROM geodata_terrain_versions ORDER BY depose_le")).rows;
@@ -114,7 +190,7 @@ async function principal(): Promise<void> {
       return;
     }
     const fiches = existsSync(dossierFiches()) ? readdirSync(dossierFiches()).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5)) : [];
-    console.log("Usage : --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | --etat");
+    console.log("Usage : --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | --traiter [<id>] | --controler <id> --points <csv> --methode … --par <courriel> | --decider <id> --decision … --motif … --par <courriel> | --etat | --essai-gdal");
     console.log(`Fiches livrées : ${fiches.join(", ") || "aucune"}`);
   } finally {
     await pool.end();

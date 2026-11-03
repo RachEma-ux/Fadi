@@ -9,6 +9,11 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## Faits vérifiés
 
+- Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
+  vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur
+  GDAL (COG vérifié cellule à cellule, dérivés à géoréférence recopiée), couverture WGS 84, courbes, rapports qualité,
+  décision de revue ; image `terrain-worker` (GDAL 3.6.2 épinglé). Tests : 246 du paquet, 9 sans base, DB-3 16/16 local,
+  préproduction 107/0. Essais réels locaux : Lucerne 71 s, GEDTM30 1,6 s, GLO-30 ≈ 90 s (`terrain/TER-03.md`).
 - Terrain TER-02 (catalogue et import contrôlé, Issue #381, branche `feat/381-ter-02-catalogue-import`) : **implémenté et
   vérifié**, non accepté. Toutes les décisions TER-Dx décidées (recommandations retenues le 2 novembre 2026). Modèle pur
   (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (13, exécutée aussi sur PostGIS 16

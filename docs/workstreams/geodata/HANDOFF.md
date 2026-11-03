@@ -15,6 +15,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Terrain TER-03 (Issue #381) : PR sur `feat/381-ter-03-traitement-qualite` (compte rendu `terrain/TER-03.md`). Après fusion
+  et déploiement : construire et essayer le travailleur (`terrain-worker --essai-gdal`), puis `--traiter` dès qu'une version
+  sort de quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-04.
 - Terrain TER-02 (Issue #381) : PR #383 sur `feat/381-ter-02-catalogue-import`, fusion accordée par le maître d'ouvrage le
   3 novembre 2026 (après correction des deux remarques de la revue Codex) (compte rendu `terrain/TER-02.md`). Après fusion
   et déploiement : la session VPS constate `/mnt/data` et la racine Docker (TER-D7), puis lance `terrain-import`

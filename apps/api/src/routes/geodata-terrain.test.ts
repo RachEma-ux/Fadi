@@ -4,7 +4,7 @@
  * quarantaine, contenu figé, et import raté préservant la version publiée. Fixtures synthétiques « test seulement ».
  */
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { validerDeclarationTerrain, type DeclarationTerrain } from "@parcours/geodata-model";
@@ -13,6 +13,7 @@ import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { StockageTerrain } from "../lib/geodata/terrain/stockage.js";
 import { ImportRefuse, importerTerrain, leverQuarantaine } from "../lib/geodata/terrain/import.js";
 import { ecrireFixture, ficheSynthetique } from "../lib/geodata/terrain/fixtures-synthetiques.js";
+import { controlerQualite, deciderRevue, traiterVersion } from "../lib/geodata/terrain/traitement.js";
 import { newId } from "../lib/ids.js";
 
 let racine: string;
@@ -220,5 +221,84 @@ describe("import contrôlé d'une version d'altitudes (TER-02)", () => {
     const cols = (await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name LIKE 'geodata_terrain_%'")).rows.map((r) => r.column_name as string);
     expect(cols.length).toBeGreaterThan(20);
     expect(cols.filter((c) => /project/i.test(c))).toEqual([]);
+  });
+});
+
+describe("traitement et porte qualité (TER-03)", () => {
+  /** Plan z = 500 + 0,5 × colonne (pas 0,25 m), trou NoData de 9 × 9 cellules : relief de 40 m, courbes à 10 m. */
+  async function versionPrete(cle = "test-plan-incline") {
+    ecrireFixture(stockage.cheminDepot("plan.tif"), { largeur: 80, hauteur: 60, valeur: (c, l) => (l > 25 && l < 35 && c > 30 && c < 40 ? -9999 : 500 + c * 0.5) });
+    const r = await importer(fiche({ cle }), null);
+    expect(r.etat).toBe("traitement");
+    return r.versionId;
+  }
+
+  it("dérivés, couverture exacte (trou exclu), courbes, rapport « non évaluée », puis en attente de revue ; idempotent", async () => {
+    const id = await versionPrete();
+    const c = await pool.connect();
+    try {
+      const r = await traiterVersion(c, stockage, id);
+      expect(r).toMatchObject({ deja: false, equidistance: 10 });
+      expect(r.surfaceM2).toBeCloseTo((80 * 60 - 81) * 0.0625, 6);
+      const r2 = await traiterVersion(c, stockage, id);
+      expect(r2.deja).toBe(true);
+    } finally { c.release(); }
+    const [v] = (await pool.query("SELECT etat FROM geodata_terrain_versions WHERE id = $1", [id])).rows;
+    expect(v.etat).toBe("revue");
+    const derives = (await pool.query("SELECT nature, cle_stockage FROM geodata_terrain_fichiers WHERE terrain_version_id = $1 AND role = 'derive' ORDER BY nature", [id])).rows;
+    expect(derives.map((d) => d.nature)).toEqual(["altitude", "ombrage", "pente"]);
+    for (const d of derives) expect(existsSync(stockage.chemin(d.cle_stockage))).toBe(true);
+    const [couv] = (await pool.query("SELECT cellules_valides::int AS v, cellules_total::int AS t, ST_SRID(geom) AS srid, srid_natif FROM geodata_terrain_couvertures WHERE terrain_version_id = $1", [id])).rows;
+    expect(couv).toEqual({ v: 4800 - 81, t: 4800, srid: 4326, srid_natif: 2056 });
+    const courbes = (await pool.query("SELECT altitude, maitresse, equidistance FROM geodata_terrain_courbes WHERE terrain_version_id = $1 ORDER BY altitude", [id])).rows;
+    expect(courbes.map((k) => k.altitude)).toEqual([510, 520, 530]);
+    expect(courbes.every((k) => k.equidistance === 10 && k.maitresse === false)).toBe(true);
+    const [q] = (await pool.query("SELECT etat_qualite, echantillonnage FROM geodata_terrain_rapports_qualite WHERE terrain_version_id = $1", [id])).rows;
+    expect(q).toEqual({ etat_qualite: "non-evaluee", echantillonnage: "aucun" });
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_terrain_traitements WHERE type = 'derives'")).rows[0].n).toBe(1);
+  });
+
+  it("refuse une version qui n'est pas prête, et un original altéré (rien n'est traité)", async () => {
+    ecrireFixture(stockage.cheminDepot("plan.tif"));
+    const q = await importer(fiche({ referenceVerticale: { statut: "non-declaree", indice: null } }), null);
+    const id = await versionPrete("test-original-altere");
+    const [f] = (await pool.query("SELECT cle_stockage FROM geodata_terrain_fichiers WHERE terrain_version_id = $1", [id])).rows;
+    chmodSync(stockage.chemin(f.cle_stockage), 0o644);
+    writeFileSync(stockage.chemin(f.cle_stockage), "altéré");
+    const c = await pool.connect();
+    try {
+      await expect(traiterVersion(c, stockage, q.versionId)).rejects.toThrow(/quarantaine|prête au traitement/);
+      await expect(traiterVersion(c, stockage, id)).rejects.toThrow(/altéré/);
+    } finally { c.release(); }
+    expect((await pool.query("SELECT etat FROM geodata_terrain_versions WHERE id = $1", [id])).rows[0].etat).toBe("traitement");
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_terrain_couvertures")).rows[0].n).toBe(0);
+  });
+
+  it("rapport qualité exactement comme au plan, point hors couverture exclu et listé ; revue par un responsable", async () => {
+    const pub = await compte("pub@example.test", "responsable-publication");
+    const gest = await compte("gest@example.test", "gestionnaire-donnees");
+    const id = await versionPrete();
+    const c = await pool.connect();
+    try {
+      await expect(deciderRevue(c, id, "accepte", "Trop tôt : pas encore traitée", pub)).rejects.toThrow(/attente de revue/);
+      await traiterVersion(c, stockage, id);
+      // Centre de la cellule (colonne 10, ligne 10) : z modèle = 505 ; points levés à 505,1 et 504,9 ; un point hors grille.
+      const x = 2662500 + 10.5 * 0.25, y = 1210500 - 10.5 * 0.25;
+      const r = await controlerQualite(c, stockage, id, {
+        points: [{ id: "p1", x, y, z: 505.1, classe: "sol-nu", incertitude: 0.01 }, { id: "p2", x, y, z: 504.9, classe: "sol-nu", incertitude: 0.01 }, { id: "p3", x: 0, y: 0, z: 1, classe: "sol-nu", incertitude: null }],
+        methode: "Points synthétiques de test, aucune mesure réelle", cibles: { rmsez: 0.2, p95: 0.2, classe: null }, par: gest,
+      });
+      expect(r.rapport.global!.n).toBe(2);
+      expect(r.rapport.global!.biais).toBeCloseTo(0, 4);
+      expect(r.rapport.global!.rmsez).toBeCloseTo(0.1, 4);
+      expect(r.rapport.global!.p95).toBeCloseTo(0.1, 4);
+      expect(r.rapport.exclus.map((e) => e.id)).toEqual(["p3"]);
+      expect(r.etat).toBe("conforme");
+      await expect(deciderRevue(c, id, "accepte", "court", pub)).rejects.toThrow(/Motif/);
+      expect(await deciderRevue(c, id, "accepte", "Usage exploratoire, contrôle de test conforme", pub)).toBe("conforme");
+    } finally { c.release(); }
+    const [ev] = (await pool.query("SELECT vers, decision FROM geodata_terrain_evenements WHERE terrain_version_id = $1 ORDER BY id DESC LIMIT 1", [id])).rows;
+    expect(ev.vers).toBe("accepte");
+    expect(ev.decision.etatQualite).toBe("conforme");
   });
 });

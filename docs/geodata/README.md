@@ -59,6 +59,23 @@ $DC --lever <id> --par <responsable-publication> --motif "…" \
     --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
 ```
 
+Traitement et porte qualité (TER-03, TER-D6) : le service `terrain-worker` (image applicative + GDAL 3.6.2 épinglé,
+profil `terrain`) calcule pour chaque version prête au traitement le COG d'altitude (relu et comparé cellule à cellule à
+l'original), la pente et l'ombrage en COG, la couverture exacte en WGS 84 et les courbes de niveau à l'équidistance permise
+(TER-D17) ; la version passe en attente de revue avec un rapport « non évaluée ».
+
+```sh
+DW="docker compose -p fadi-preprod -f deploy/preprod/compose.yml --profile terrain run --rm terrain-worker"
+$DW --essai-gdal                                               # essai du travailleur (fixture « test seulement »)
+$DW --traiter [<id>] [--par <gestionnaire-donnees>]            # dérivés, couverture, courbes → en attente de revue
+$DW --controler <id> --points <csv> --methode "…" --par <gestionnaire-donnees> [--cible-rmsez 0.10 --cible-p95 0.20]
+$DW --decider <id> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
+```
+
+Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
+de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est
+exclu et listé. La publication (accepté → publié) vient avec le lot TER-04.
+
 Cycle de vie (TER-D12) : déposé → validation → rejeté | quarantaine | prêt au traitement → revue → accepté → publié →
 remplacé | retiré. Une référence verticale inconnue, un datum incompatible, un NoData inconnu ou un écart avec la fiche
 mettent la version en quarantaine ; un fichier mal formé est rejeté (jamais archivé). Rien n'est deviné ni corrigé.
