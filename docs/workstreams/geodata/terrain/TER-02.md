@@ -77,8 +77,10 @@ les sauvegardes de la production.
 | Services | Liste fermée dans la garde : `db`, `migrate`, `app`, `recette`, `terrain-import`, `terrain-worker` ; tout autre service est refusé. `terrain-worker` (TER-03, PR #387, non fusionnée) : facultatif ; s'il est présent, image `fadi-preprod-app:<commit>-terrain` construite par `deploy/preprod/terrain-worker.Dockerfile` sur `fadi-preprod-app:<commit>`, volume terrain seul, réseau `internal` seul, aucun port, `fadi_app`, ni `DATABASE_MIGRATION_URL` ni `SMTP_PASS`, `restart: "no"` ; commande `fadi-preprod terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par …]` (administrateur). Le bloc `terrain-worker` de la PR #387 (tête `7a786af`) passe la garde tel quel ; la PR #387 devra encore aligner son quota (60 → 30), remplacer son `docker compose … run terrain-worker` par cette commande et reprendre `lib/geodata/terrain/fiches.ts` |
 | Liste fermée | `apps/api/src/lib/geodata/terrain/fiches.ts` (extrait de la commande, sans changement de comportement sauf : `--importer` n'accepte plus de chemin en production) ; test `fiches.test.ts` : exactement les 4 fiches, adresses refusées |
 
-Contrôles (3 novembre 2026, compte non privilégié) : `bash deploy/preprod/tests/run.sh` 176 réussis, 0 échec (dont 18
-mutations de `terrain-import` et de la liste fermée, 12 de `terrain-worker`, 34 cas de la commande `terrain`), `run-auto.sh` 85 réussis, 0 échec ; `fiches.test.ts`
+Contrôles (3 novembre 2026, compte non privilégié) : `bash deploy/preprod/tests/run.sh` 181 réussis, 0 échec après fusion de `main` (TER-03, PR #387) : 18
+mutations de `terrain-import` et de la liste fermée, 12 de `terrain-worker` (bloc réel de `compose.yml`), 39 cas de la
+commande `terrain` dont `worker --essai-gdal | --traiter | --decider` ; `--controler` non exposé (chemin de CSV), quota du
+travailleur aligné sur 30 Go, `run-auto.sh` 85 réussis, 0 échec ; `fiches.test.ts`
 4 tests réussis ; typecheck, test et build : voir la PR. Aucun déploiement ; la nouvelle commande est à réinstaller par le
 maître d'ouvrage.
 

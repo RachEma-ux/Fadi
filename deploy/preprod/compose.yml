@@ -201,6 +201,34 @@ services:
     cpus: 1
     logging: *logging
 
+  # Travailleur terrain (TER-03, TER-D6) : image applicative + GDAL épinglé ; calcule les dérivés (COG, pente, ombrage),
+  # la couverture et les courbes des versions prêtes au traitement. À la demande, par `fadi-preprod terrain worker …`
+  # seulement (garde comprise, voir docs/geodata/README.md), jamais par un `docker compose` direct.
+  terrain-worker:
+    image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}-terrain
+    build:
+      context: ${FADI_SRC:?FADI_SRC manquant}
+      dockerfile: deploy/preprod/terrain-worker.Dockerfile
+      args:
+        APP_IMAGE: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
+    profiles: ["terrain"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fadi_app:${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi
+      NODE_ENV: production
+      GEODATA_TERRAIN_DIR: /data/terrain
+      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
+    volumes:
+      - fadi-preprod-terrain:/data/terrain
+    networks:
+      - internal
+    mem_limit: 3g
+    cpus: 2
+    logging: *logging
+
 volumes:
   fadi-preprod-db:
     name: fadi-preprod-db

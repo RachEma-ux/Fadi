@@ -61,15 +61,33 @@ sudo fadi-preprod terrain --telecharger gedtm30-v1-2-benslimane      # original 
 sudo fadi-preprod terrain --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
 sudo fadi-preprod terrain --lever <gdtv_…> --par <responsable-publication> --motif "…" \
     --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
-# Travailleur GDAL (TER-03, service terrain-worker, dès que le commit approuvé le contient ; administrateur) :
-sudo fadi-preprod terrain worker --essai-gdal
-sudo fadi-preprod terrain worker --traiter [<gdtv_…>] [--par <gestionnaire-donnees>]
+# Travailleur GDAL (terrain-worker, TER-03) : voir « Traitement et porte qualité » ci-dessous.
 ```
 
 La garde tient une **liste fermée** des services (`db`, `migrate`, `app`, `recette`, `terrain-import`, `terrain-worker`) :
 tout autre service, quel que soit son profil, est refusé.
 
 Hors préproduction (développement) : `npm run geodata:terrain -- --etat` etc., mêmes options.
+
+Traitement et porte qualité (TER-03, TER-D6) : le service `terrain-worker` (image applicative + GDAL 3.6.2 épinglé,
+profil `terrain`) calcule pour chaque version prête au traitement le COG d'altitude (relu et comparé cellule à cellule à
+l'original), la pente et l'ombrage en COG, la couverture exacte en WGS 84 et les courbes de niveau à l'équidistance permise
+(TER-D17) ; la version passe en attente de revue avec un rapport « non évaluée ».
+
+```sh
+# Préproduction : par fadi-preprod seulement (garde, rôles, copie figée) ; administrateur.
+sudo fadi-preprod terrain worker --essai-gdal                    # essai du travailleur (fixture « test seulement »)
+sudo fadi-preprod terrain worker --traiter [<gdtv_…>] [--par <gestionnaire-donnees>]   # dérivés, couverture, courbes → revue
+sudo fadi-preprod terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
+```
+
+`--controler` (points de contrôle CSV) n'est **pas** exposé par `fadi-preprod` : il lit un fichier désigné par un chemin, et
+aucune adresse ni chemin libre n'est admis ; l'emplacement fermé du CSV (p. ex. `depot/` du volume terrain) reste à décider.
+Hors préproduction (développement) : `npm run geodata:terrain -- --controler <id> --points <csv> --methode "…" --par …`.
+
+Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
+de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est
+exclu et listé. La publication (accepté → publié) vient avec le lot TER-04.
 
 Cycle de vie (TER-D12) : déposé → validation → rejeté | quarantaine | prêt au traitement → revue → accepté → publié →
 remplacé | retiré. Une référence verticale inconnue, un datum incompatible, un NoData inconnu ou un écart avec la fiche

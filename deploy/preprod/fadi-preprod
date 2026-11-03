@@ -105,6 +105,8 @@ Administrateur — terrain haute résolution (service terrain-import, fiches de 
   terrain --lever <gdtv_…> --par <courriel> --motif "…" [--reference-libelle "…" --reference-source "…"
           [--reference-code EPSG:nnnn]]         levée de quarantaine consignée (rôle responsable-publication, TER-D13)
   terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]   travailleur GDAL (TER-03, service terrain-worker)
+  terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
+                                                revue d'une version (rôle responsable-publication, TER-D13)
 EOF
 }
 
@@ -620,7 +622,8 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     service=terrain-import
     if [ "$1" = worker ]; then
       service=terrain-worker; shift
-      case "${1:-}" in --essai-gdal|--traiter) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]" ;; esac
+      # --controler n'est pas exposé : il lit un CSV désigné par un chemin (aucun chemin libre admis).
+      case "${1:-}" in --essai-gdal|--traiter|--decider) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>] | --decider <gdtv_…> --decision … --motif … --par <courriel>" ;; esac
     fi
     action=$1; shift; args=("$action")
     case "$service:$action" in
@@ -635,7 +638,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
         fiche=$SRC/docs/geodata/terrain/$f.json
         [ -f "$fiche" ] && [ ! -L "$fiche" ] || die "fiche inconnue : $f (liste fermée du commit approuvé : $(cd "$SRC/docs/geodata/terrain" 2>/dev/null && ls -1 -- *.json 2>/dev/null | sed 's/\.json$//' | tr '\n' ' '))"
         args+=("$f") ;;
-      terrain-import:--lever)
+      terrain-import:--lever|terrain-worker:--decider)
         v=${1:-}; [ $# -gt 0 ] && shift
         [[ $v =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $v » (gdtv_<uuid>, voir terrain --etat)"
         args+=("$v") ;;
@@ -644,7 +647,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     while [ $# -gt 0 ]; do
       o=$1; val=${2-}
       case "$action:$o" in
-        --importer:--par|--traiter:--par|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
+        --importer:--par|--traiter:--par|--decider:--par|--decider:--decision|--decider:--motif|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
         *) die "option refusée pour terrain $action : $o" ;;
       esac
       [ $# -ge 2 ] || die "valeur manquante : $o"
@@ -652,6 +655,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
       case "$o" in
         --par) [[ $val =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || die "courriel invalide : « $val »" ;;
         --reference-code) [[ $val =~ ^EPSG:[0-9]{4,6}$ ]] || die "code de référence invalide : « $val » (EPSG:nnnn)" ;;
+        --decision) [[ $val =~ ^(accepte|quarantaine|retire)$ ]] || die "décision invalide : « $val » (accepte | quarantaine | retire)" ;;
         *) [[ -n $val && ${#val} -le 500 && $val != -* && ! $val =~ [[:cntrl:]] ]] || die "texte invalide pour $o (1 à 500 caractères, sans contrôle ni tiret initial)" ;;
       esac
       args+=("$o" "$val"); shift 2
@@ -659,6 +663,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     case "$action" in
       --importer) [ -n "${vu[--par]:-}" ] || die "--par <courriel> requis (rôle GeoData gestionnaire-donnees)" ;;
       --lever) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--par <courriel> et --motif \"…\" requis (rôle GeoData responsable-publication)" ;;
+      --decider) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] && [ -n "${vu[--decision]:-}" ] || die "--decision, --motif \"…\" et --par <courriel> requis (rôle GeoData responsable-publication)" ;;
     esac
     nouveau_run terrain; garde
     dc --profile terrain config --services | grep -qx "$service" \

@@ -15,7 +15,13 @@ Mis à jour : 2026-11-03 (UTC).
   liste fermée des 4 fiches testée (`apps/api/src/lib/geodata/terrain/fiches.test.ts`, 4 tests). Preuves au commit
   `7c9f78a` : `deploy/preprod/tests/run.sh` 152/0 (16 mutations `terrain-import`), `run-auto.sh` 85/0, typecheck et build
   verts, CI de la PR (validate, e2e, image) verte. Complément (demande VPS) : liste fermée des services et règles
-  `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` : `run.sh` 176/0. En attente : réinstallation du script par le maître d'ouvrage.
+  `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` ; après fusion de `main` (#387) : `run.sh` 181/0,
+  quota du travailleur aligné sur 30 Go, `--decider` exposé, `--controler` non exposé (chemin de CSV). En attente : réinstallation du script par le maître d'ouvrage.
+- Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
+  vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur
+  GDAL (COG vérifié cellule à cellule, dérivés à géoréférence recopiée), couverture WGS 84, courbes, rapports qualité,
+  décision de revue ; image `terrain-worker` (GDAL 3.6.2 épinglé). Tests : 246 du paquet, 9 sans base, DB-3 18/18 local,
+  préproduction 107/0. Essais réels locaux : Lucerne 71 s, GEDTM30 1,6 s, GLO-30 ≈ 90 s (`terrain/TER-03.md`).
 - Terrain TER-02 (catalogue et import contrôlé, Issue #381, branche `feat/381-ter-02-catalogue-import`) : **implémenté et
   vérifié**, non accepté. Toutes les décisions TER-Dx décidées (recommandations retenues le 2 novembre 2026). Modèle pur
   (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (13, exécutée aussi sur PostGIS 16
