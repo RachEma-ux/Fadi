@@ -15,7 +15,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## Prochaine action
 
-- Suivre la CI de la PR de la branche `feat/384-base-donnees` (suites DB-3, montée de version) et corriger ; après fusion : constater en préproduction `schema_migrations` (0001–0011) et `admin.schema_applications` ; BD-0.2 (mesures) ; Healthchecks sur le VPS.
+- PR #385 : CI verte sur `d68883d` (2026-11-03). Attendre l'acceptation et la fusion par le maître d'ouvrage ; si `main` avance, refusionner et relancer la CI. Après fusion : constater en préproduction `schema_migrations` (0001–0011), `admin.schema_applications` et les catalogues ; BD-0.2 (mesures, dont doublons d'e-mail à la casse près) ; Healthchecks sur le VPS.
 
 ## Tests et preuves
 

@@ -230,6 +230,10 @@ migration. Fusion de `origin/main` (`0810325`) dans la branche, un seul mécanis
   reprise dans le bloc D-7 d'`init.sql`, droits identiques vérifiés après rejeu) ; recette MIG-COEX-04 (la quarantaine
   n'est vidée par `forgetDevice` que si un compte était connu de l'appareil, P-13 précisé) ; profil Studio V1 (base de
   départ inscrite avant l'exécuteur, aucun rôle `fadi_owner` requis ; répété sur un cluster sans rôles Fadi).
+- **Troisième exécution (`d68883d`, 2026-11-03) : CI entièrement verte** — `validate` (126 fichiers API dont les 19 suites
+  sur base, montée de version, contraintes), e2e parcours / atelier / p2 / planche / organisations / compléments, Studio V1,
+  image, continuité, protocole Studio, Codex, architecture, sécurité ; trois jobs sautés par conception (corpus lourd, DB1/2,
+  mission 004). Non déployé ; acceptation et fusion : maître d'ouvrage.
 
 ## Points ouverts
 
