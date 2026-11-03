@@ -5,7 +5,7 @@ Mis à jour : 2026-11-02 (UTC).
 ## Point de reprise
 
 - Chantier : base-donnees
-- Issue : à ouvrir (« Base de données : fiabilité et performance »).
+- Issue : [#384](https://github.com/RachEma-ux/Fadi/issues/384).
 - Branche / PR actives : branches locales empilées `docs/base-donnees-plan` → `fix/bd-1-garde-fous` → `feat/bd-2-migrations` → `feat/bd-3-index` → `perf/bd-4-requetes` → `ops/bd-5-6-exploitation-rgpd` → `feat/bd-7-navigateur` → `feat/bd-8-geodata` → `feat/bd-decisions-proprietaire` (non poussées) ; à vérifier sur GitHub.
 - Dernier commit vérifié : `b9d9897` pour l'audit ; relever le HEAD de `main` en début de session, ne pas réutiliser un SHA périmé.
 
@@ -15,7 +15,7 @@ Mis à jour : 2026-11-02 (UTC).
 
 ## Prochaine action
 
-- Ouvrir l'Issue, pousser les branches, ouvrir la PR de BD-1 et faire tourner la CI (suites DB-3) ; BD-0.2 (mesures) en préproduction ; constater Healthchecks sur le VPS.
+- Suivre la CI de la PR de la branche `feat/384-base-donnees` (suites DB-3, montée de version) et corriger ; après fusion : constater en préproduction `schema_migrations` (0001–0011) et `admin.schema_applications` ; BD-0.2 (mesures) ; Healthchecks sur le VPS.
 
 ## Tests et preuves
 

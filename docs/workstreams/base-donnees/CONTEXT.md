@@ -20,7 +20,7 @@ de vie des données (RGPD), fiabiliser le stockage navigateur et GeoData, et app
 ## Sources canoniques
 
 - `AGENTS.md` ; `CLAUDE.md` ; `docs/architecture.md` ; `docs/continuity/README.md`
-- Issue : à ouvrir (« Base de données : fiabilité et performance ») ; numéro à reporter ici et dans l'index des chantiers.
+- Issue : [#384](https://github.com/RachEma-ux/Fadi/issues/384) (« Base de données : fiabilité et performance ») ; complète #379 / #380.
 - Références métier spécifiques :
   - audit détaillé : `audit/01-schema-index.md`, `audit/02-requetes.md`, `audit/03-migrations-exploitation.md`,
     `audit/04-local-geodata.md` (preuves `fichier:ligne`, SQL et EXPLAIN par constat) ;

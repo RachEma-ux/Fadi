@@ -5,7 +5,7 @@ D-BD-n sont listées dans `PLAN.md` § 2.
 
 ## À faire
 
-- [ ] BD-0 — Cadrage et mesures : Issue, mesures en lecture seule, `pg_stat_statements`, décisions D-BD-1 à D-BD-4 (Issue : à ouvrir).
+- [ ] BD-0 — Cadrage et mesures : Issue, mesures en lecture seule, `pg_stat_statements`, décisions D-BD-1 à D-BD-4 (Issue : [#384](https://github.com/RachEma-ux/Fadi/issues/384)).
 - [ ] BD-1 — **Implémenté localement, CI à faire** — Garde-fous immédiats (P0) : BD-1.1 `lock_timeout` de migration ; BD-1.2 pool et délais ; BD-1.3 ramasse-miettes hors requête ; BD-1.4 droits de `fadi_app` ; BD-1.5 procédure de restauration ; BD-1.6 supervision des sauvegardes ; BD-1.7 purge `localStorage` ; BD-1.8 garde de `bascule.ts`.
 - [ ] BD-2 — **Implémenté localement, CI à faire** — Migrations versionnées : exécuteur et `schema_migrations`, `R__grants.sql`, `VALIDATE`, reprises, squawk et ESLint, job de montée de version, écart `schema.ts`, guide expand/contract. Dépend de BD-1.1.
 - [ ] BD-3 — **Implémenté localement (sauf BD-3.6 reporté), CI à faire** — Index, contraintes et droits : 26 index de cascade, e-mail insensible à la casse, index redondants, index réalignés, index de la cloche, verrou d'édition typé, `search_path`, PK. Dépend de BD-2.1.

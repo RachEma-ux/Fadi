@@ -225,8 +225,8 @@ migration. Fusion de `origin/main` (`0810325`) dans la branche, un seul mécanis
 
 ## Liens de suivi
 
-- Issue : à ouvrir.
-- Branche de tâche : à ouvrir après l'Issue (première : BD-1).
+- Issue : [#384](https://github.com/RachEma-ux/Fadi/issues/384).
+- Branche de tâche : `feat/384-base-donnees` (poussée le 2026-11-03).
 - Pull Request : aucune au moment de la création.
 
 ## Préconditions de clôture
