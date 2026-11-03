@@ -78,11 +78,17 @@ l'original), la pente et l'ombrage en COG, la couverture exacte en WGS 84 et les
 # Préproduction : par fadi-preprod seulement (garde, rôles, copie figée) ; administrateur.
 sudo fadi-preprod terrain worker --essai-gdal                    # essai du travailleur (fixture « test seulement »)
 sudo fadi-preprod terrain worker --traiter [<gdtv_…>] [--par <gestionnaire-donnees>]   # dérivés, couverture, courbes → revue
+sudo fadi-preprod terrain worker --controler <gdtv_…> --points <nom> --methode "…" --par <gestionnaire-donnees> \
+    [--cible-rmsez 0.10 --cible-p95 0.20 [--cible-classe sol-nu]]   # rapport qualité depuis /opt/fadi-preprod/controles/<nom>.csv
 sudo fadi-preprod terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
 ```
 
-`--controler` (points de contrôle CSV) n'est **pas** exposé par `fadi-preprod` : il lit un fichier désigné par un chemin, et
-aucune adresse ni chemin libre n'est admis ; l'emplacement fermé du CSV (p. ex. `depot/` du volume terrain) reste à décider.
+Points de contrôle en préproduction (emplacement fermé, TER-D19) : l'administrateur dépose le CSV sur le VPS dans
+`/opt/fadi-preprod/controles/<nom>.csv` (dossier `root` 0700, fichier `root` 0600, ≤ 10 Mo), par exemple
+`sudo install -d -m 0700 /opt/fadi-preprod/controles && sudo install -m 0600 releve.csv /opt/fadi-preprod/controles/releve-gnss.csv`.
+`--points` ne prend que `<nom>` (jamais un chemin) ; `fadi-preprod` refuse un lien, un fichier modifiable par d'autres ou
+trop gros, journalise l'empreinte SHA-256 du CSV et le transmet au conteneur sur l'entrée standard (`--points /dev/stdin`) :
+aucun montage de l'hôte, aucun chemin dans le conteneur.
 Hors préproduction (développement) : `npm run geodata:terrain -- --controler <id> --points <csv> --methode "…" --par …`.
 
 Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus

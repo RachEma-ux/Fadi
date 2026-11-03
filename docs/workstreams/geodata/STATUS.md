@@ -16,7 +16,8 @@ Mis à jour : 2026-11-03 (UTC).
   `7c9f78a` : `deploy/preprod/tests/run.sh` 152/0 (16 mutations `terrain-import`), `run-auto.sh` 85/0, typecheck et build
   verts, CI de la PR (validate, e2e, image) verte. Complément (demande VPS) : liste fermée des services et règles
   `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` ; après fusion de `main` (#387) : `run.sh` 181/0,
-  quota du travailleur aligné sur 30 Go, `--decider` exposé, `--controler` non exposé (chemin de CSV). En attente : réinstallation du script par le maître d'ouvrage.
+  quota du travailleur aligné sur 30 Go, `--decider` exposé ; `--controler` exposé depuis l'emplacement fermé
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D19, entrée standard) : `run.sh` 193/0. En attente : réinstallation du script par le maître d'ouvrage.
 - Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
   vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur
   GDAL (COG vérifié cellule à cellule, dérivés à géoréférence recopiée), couverture WGS 84, courbes, rapports qualité,

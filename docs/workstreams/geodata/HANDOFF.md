@@ -25,7 +25,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   procédure `docker compose … run terrain-import` ci-dessous est caduque. Compte rendu : `terrain/TER-02.md` § Correctif.
   La garde refuse tout service hors liste fermée et couvre `terrain-worker` (#387, fusionnée) : `main` fusionné dans la
   branche, conflits résolus, quota du travailleur aligné sur 30 Go, `sudo fadi-preprod terrain worker --essai-gdal |
-  --traiter | --decider` remplace le `docker compose … run terrain-worker` ; `--controler` attend un emplacement fermé du CSV.
+  --traiter | --controler | --decider` remplace le `docker compose … run terrain-worker` ; points de contrôle dans
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D19).
 - Terrain TER-03 (Issue #381) : PR sur `feat/381-ter-03-traitement-qualite` (compte rendu `terrain/TER-03.md`). Après fusion
   et déploiement : construire et essayer le travailleur (`terrain-worker --essai-gdal`), puis `--traiter` dès qu'une version
   sort de quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-04.

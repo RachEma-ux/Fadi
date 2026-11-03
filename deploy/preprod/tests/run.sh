@@ -403,7 +403,28 @@ attendu nz "terrain worker --essai-gdal : argument refusé" "option refusée pou
 attendu nz "terrain worker --traiter : option inconnue" "option refusée pour terrain --traiter : --url" -- fpa terrain worker --traiter --url https://exemple.test
 attendu nz "terrain worker --decider : décision inconnue" "décision invalide" -- fpa terrain worker --decider $V --decision publie --motif m --par resp@example.test
 attendu nz "terrain worker --decider sans --motif" "--decision, --motif" -- fpa terrain worker --decider $V --decision accepte --par resp@example.test
-attendu nz "terrain worker --controler non exposé (chemin de CSV)" "terrain worker --essai-gdal |" -- fpa terrain worker --controler $V --points /etc/passwd
+# --controler : points de contrôle seulement depuis $BASE/controles/<nom>.csv, transmis sur l'entrée standard.
+attendu nz "terrain worker --controler : chemin au lieu d'un nom" "points de contrôle invalides" -- fpa terrain worker --controler $V --points /etc/passwd --methode m --par g@example.test
+attendu nz "terrain worker --controler : dossier controles absent" "controles absent" -- fpa terrain worker --controler $V --points releve-gnss --methode m --par g@example.test
+mkdir -m 0700 "$B/controles"; printf 'id;x;y;z;classe;incertitude\np1;1;2;3;sol-nu;0.02\n' > "$B/controles/releve-gnss.csv"; chmod 0600 "$B/controles/releve-gnss.csv"
+attendu nz "terrain worker --controler : fichier inconnu" "points de contrôle inconnus" -- fpa terrain worker --controler $V --points autre-releve --methode m --par g@example.test
+: > "$T/trace-ctl"
+attendu 0 "administrateur : terrain worker --controler (CSV de controles/ sur l'entrée standard)" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-ctl" terrain worker --controler $V --points releve-gnss --methode "GNSS RTK, points indépendants" --par g@example.test --cible-rmsez 0.10 --cible-p95 0.20 --cible-classe sol-nu
+grep -qF -- "-T terrain-worker --controler $V --points /dev/stdin --methode GNSS RTK, points indépendants --par g@example.test --cible-rmsez 0.10 --cible-p95 0.20 --cible-classe sol-nu" "$T/trace-ctl" \
+  && grep -qx "stdin=$B/controles/releve-gnss.csv" "$T/trace-ctl" \
+  && { ok=$((ok + 1)); echo "✓ terrain worker --controler : --points /dev/stdin, entrée = controles/releve-gnss.csv, aucun chemin transmis"; } \
+  || { ko=$((ko + 1)); echo "✗ terrain worker --controler : appels"; sed 's/^/    /' "$T/trace-ctl"; }
+attendu 0 "terrain worker --controler : empreinte du CSV journalisée" "$(sha256sum "$B/controles/releve-gnss.csv" | cut -d' ' -f1)" -- fpa terrain worker --controler $V --points releve-gnss --methode m --par g@example.test
+attendu nz "terrain worker --controler : cible incomplète" "--cible-rmsez et --cible-p95 vont ensemble" -- fpa terrain worker --controler $V --points releve-gnss --methode m --par g@example.test --cible-rmsez 0.10
+attendu nz "terrain worker --controler : cible non numérique" "valeur invalide pour --cible-p95" -- fpa terrain worker --controler $V --points releve-gnss --methode m --par g@example.test --cible-rmsez 0.10 --cible-p95 'x;y'
+attendu nz "terrain worker --controler sans --methode" "--points <nom>, --methode" -- fpa terrain worker --controler $V --points releve-gnss --par g@example.test
+ln -s /etc/passwd "$B/controles/lien.csv"
+attendu nz "terrain worker --controler : lien symbolique refusé" "lien symbolique" -- fpa terrain worker --controler $V --points lien --methode m --par g@example.test
+cp "$B/controles/releve-gnss.csv" "$B/controles/ouvert.csv"; chmod 0666 "$B/controles/ouvert.csv"
+attendu nz "terrain worker --controler : CSV modifiable par d'autres refusé" "modifiable par le groupe ou les autres" -- fpa terrain worker --controler $V --points ouvert --methode m --par g@example.test
+head -c 10000001 /dev/zero > "$B/controles/gros.csv"
+attendu nz "terrain worker --controler : CSV > 10 Mo refusé" "trop volumineux" -- fpa terrain worker --controler $V --points gros --methode m --par g@example.test
+attendu nz "opérateur : terrain worker --controler refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --controler $V --points releve-gnss --methode m --par g@example.test
 attendu nz "opérateur : terrain worker --decider refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --decider $V --decision accepte --motif m --par resp@example.test
 attendu nz "terrain en échec → code non nul, journal nommé" "journal : terrain.log" -- fpe MOCK_FAIL=run-terrain terrain --etat
 B=$(dispo terrain-garde)

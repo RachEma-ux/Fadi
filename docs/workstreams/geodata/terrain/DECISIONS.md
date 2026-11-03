@@ -43,6 +43,8 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 
 | 2026-11-02 | TER-D1 à D3, D5 à D15, D17, D18 | « Recommandations retenues pour toutes les décisions TER-Dx. » | Maître d'ouvrage, dans la session | TER-02 engagé (`TER-02.md`). Reste à constater sur le VPS : racine des données Docker et espace libre réel (TER-D7). |
 
+| 2026-11-03 | TER-D19 | Emplacement fermé des points de contrôle de `terrain worker --controler` : `/opt/fadi-preprod/controles/<nom>.csv` sur le VPS (root 0700 / 0600, ≤ 10 Mo), désigné par son nom seulement, empreinte journalisée, transmis sur l'entrée standard (aucun montage de l'hôte, aucun chemin libre). Écartés : `depot/` du volume terrain (aucun moyen d'y déposer sans conteneur ni montage) et un montage en lecture seule (contraire à la garde : aucun montage de l'hôte). | Maître d'ouvrage, dans la session (« choisis un emplacement fermé ») ; choix de la session | PR #386 ; `docs/geodata/README.md` § Terrain. |
+
 | 2026-11-03 | TER-D7 (révisée) | « Exécute tes recommandations » : constat VPS (data-root Docker = `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production) ; quota terrain ramené à **30 Go** ; garde de préproduction étendue au profil `terrain` ; `terrain-import` lancé seulement par `sudo fadi-preprod terrain …` (plus de `docker compose` brut). | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | `TER-02.md` § « Correctif d'exploitation du 3 novembre 2026 ». Le maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` après fusion (empreinte dans la PR). |
 
 ### Questions ouvertes par TER-02 (levées de quarantaine, TER-D13)
