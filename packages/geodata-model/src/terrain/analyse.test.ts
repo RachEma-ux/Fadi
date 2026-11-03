@@ -101,6 +101,11 @@ describe("équidistance liée à la précision (TER-D17)", () => {
     expect(equidistanceMinimale({ niveau: "leve-local", rmsezMesuree: 0.08, verticaleDeclaree: null })).toBe(0.25);
     expect(equidistanceMinimale({ niveau: "leve-local", rmsezMesuree: 0.3, verticaleDeclaree: 0.05 })).toBe(1);
     expect(equidistanceMinimale({ niveau: "regional-officiel", rmsezMesuree: null, verticaleDeclaree: null })).toBe(EQUIDISTANCE_MIN_MONDIALE);
+    // Au-delà de la plus grande valeur proposée : jamais sous le seuil (RMSEz 80 m → 160 m exigés → 200 m).
+    const grande = equidistanceMinimale({ niveau: "leve-local", rmsezMesuree: 80, verticaleDeclaree: null });
+    expect(grande).toBe(200);
+    expect(verifierEquidistance(100, grande).ok).toBe(false);
+    expect(equidistanceMinimale({ niveau: "mondial", rmsezMesuree: 50, verticaleDeclaree: null })).toBe(100);
   });
   it("équidistance sous le seuil refusée avec un message explicite", () => {
     const v = verifierEquidistance(1, 10);

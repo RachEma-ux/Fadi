@@ -92,6 +92,39 @@ async function ecrireDerive(original: string, valeurs: Float32Array | Uint8Array
   return `${base}.vrt`;
 }
 
+type GrilleLue = Awaited<ReturnType<typeof lireGrille>>;
+
+/** Grille du paquet pur (pas en mètres) et passage coordonnées de grille → repère natif (coin nord-ouest). */
+function preparer(g: GrilleLue, nodata: number | null, geographique: boolean) {
+  const [rx, ry] = g.resolution as [number, number];
+  // Origine au coin nord-ouest de la première cellule : un raster « PixelIsPoint » (GTRasterTypeGeoKey = 2) déclare le
+  // centre de la cellule, décalé d'un demi-pas.
+  const pointe = g.cles["GTRasterTypeGeoKey"] === 2;
+  const ox = (g.origine[0] as number) - (pointe ? rx / 2 : 0);
+  const oy = (g.origine[1] as number) - (pointe ? ry / 2 : 0);
+  const grille: GrilleAltitudes = {
+    largeur: g.largeur, hauteur: g.hauteur, valeurs: g.valeurs, nodata,
+    pasX: geographique ? (l: number) => espacementMetrique(oy + (l + 0.5) * ry, Math.abs(rx), Math.abs(ry)).pasX : Math.abs(rx),
+    pasY: geographique ? espacementMetrique(oy + (g.hauteur / 2) * ry, Math.abs(rx), Math.abs(ry)).pasY : Math.abs(ry),
+  };
+  const versRepere = (c: number, l: number): [number, number] => [ox + c * rx, oy + l * ry];
+  return { grille, versRepere };
+}
+
+function courbesRepere(grille: GrilleAltitudes, versRepere: (c: number, l: number) => [number, number], equidistance: number) {
+  return courbesDeNiveau(grille, equidistance).map((k: Courbe) => ({ altitude: k.altitude, maitresse: k.maitresse, lignes: k.lignes.map((ligne) => ligne.map(([c, l]) => versRepere(c, l))) }));
+}
+
+/**
+ * Courbes de niveau seules, à une autre équidistance (précision mesurée plus faible que prévu, TER-D17), sur la grille
+ * numérique d'origine, en coordonnées du repère natif. Ne touche à aucun fichier.
+ */
+export async function calculerCourbes(original: string, o: { readonly geographique: boolean; readonly nodata: number | null; readonly equidistance: number }): Promise<ResultatDerives["courbes"]> {
+  const g = await lireGrille(original);
+  const { grille, versRepere } = preparer(g, g.nodata ?? o.nodata, o.geographique);
+  return courbesRepere(grille, versRepere, o.equidistance);
+}
+
 /**
  * Calcule les dérivés de l'original dans `dossier` (créé, vidé s'il existait : un traitement repris repart de zéro).
  * `geographique` : grille en degrés (pas ramené en mètres sur l'ellipsoïde WGS 84).
@@ -116,17 +149,7 @@ export async function calculerDerives(original: string, dossier: string, o: { re
   if (relu.origine.some((v, i) => v !== g.origine[i]) || relu.resolution.some((v, i) => v !== g.resolution[i])) throw new ErreurTraitement("COG : géoréférence différente de l'original.");
 
   // 2. Pente et ombrage (paquet pur), pas en mètres.
-  const [rx, ry] = g.resolution as [number, number];
-  // Origine au coin nord-ouest de la première cellule : un raster « PixelIsPoint » (GTRasterTypeGeoKey = 2) déclare le
-  // centre de la cellule, décalé d'un demi-pas.
-  const pointe = g.cles["GTRasterTypeGeoKey"] === 2;
-  const ox = (g.origine[0] as number) - (pointe ? rx / 2 : 0);
-  const oy = (g.origine[1] as number) - (pointe ? ry / 2 : 0);
-  const grille: GrilleAltitudes = {
-    largeur: g.largeur, hauteur: g.hauteur, valeurs: g.valeurs, nodata,
-    pasX: o.geographique ? (l: number) => espacementMetrique(oy + (l + 0.5) * ry, Math.abs(rx), Math.abs(ry)).pasX : Math.abs(rx),
-    pasY: o.geographique ? espacementMetrique(oy + (g.hauteur / 2) * ry, Math.abs(rx), Math.abs(ry)).pasY : Math.abs(ry),
-  };
+  const { grille, versRepere } = preparer(g, nodata, o.geographique);
   const fichiers: FichierDerive[] = [];
   const p = pente(grille);
   for (let i = 0; i < p.length; i++) if (Number.isNaN(p[i]!)) p[i] = -9999;
@@ -141,8 +164,7 @@ export async function calculerDerives(original: string, dossier: string, o: { re
     fichiers.push({ nature, chemin, ...(await empreinteFichier(chemin)) });
   }
 
-  // 3. Couverture valide (repère natif) ; 4. courbes de niveau (repère natif). Coordonnées de grille → repère : coin.
-  const versRepere = (c: number, l: number): [number, number] => [ox + c * rx, oy + l * ry];
+  // 3. Couverture valide (repère natif) ; 4. courbes de niveau (repère natif).
   const rects = rectanglesValides(grille).map(([c0, l0, c1, l1]) => {
     const [xa, ya] = versRepere(c0, l0);
     const [xb, yb] = versRepere(c1, l1);
@@ -150,7 +172,7 @@ export async function calculerDerives(original: string, dossier: string, o: { re
   });
   let valides = 0;
   for (let i = 0; i < g.largeur * g.hauteur; i++) if (!sansValeur(g.valeurs[i]!, nodata)) valides++;
-  const courbes = courbesDeNiveau(grille, o.equidistance).map((k: Courbe) => ({ altitude: k.altitude, maitresse: k.maitresse, lignes: k.lignes.map((ligne) => ligne.map(([c, l]) => versRepere(c, l))) }));
+  const courbes = courbesRepere(grille, versRepere, o.equidistance);
 
   return {
     fichiers, rectangles: rects, cellulesValides: valides, cellulesTotal: g.largeur * g.hauteur, courbes,

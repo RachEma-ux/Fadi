@@ -220,12 +220,13 @@ export const EQUIDISTANCE_MIN_MONDIALE = 10;
 /**
  * Équidistance minimale permise (TER-D17) : au moins 2 × RMSEz mesurée, à défaut 2 × précision verticale déclarée ;
  * précision « non évaluée » → seulement l'équidistance du fond mondial ; un jeu mondial jamais sous 10 m. Arrondie à la
- * valeur proposée immédiatement supérieure.
+ * valeur proposée immédiatement supérieure, au-delà de 100 m à la centaine supérieure (jamais sous le seuil).
  */
 export function equidistanceMinimale(p: { readonly niveau: "mondial" | "regional-officiel" | "leve-local"; readonly rmsezMesuree: number | null; readonly verticaleDeclaree: number | null }): number {
   const base = p.rmsezMesuree !== null ? 2 * p.rmsezMesuree : p.verticaleDeclaree !== null ? 2 * p.verticaleDeclaree : EQUIDISTANCE_MIN_MONDIALE;
   const brute = p.niveau === "mondial" ? Math.max(EQUIDISTANCE_MIN_MONDIALE, base) : base;
-  return EQUIDISTANCES.find((e) => e >= brute - 1e-12) ?? EQUIDISTANCES[EQUIDISTANCES.length - 1]!;
+  // Au-delà de la plus grande valeur proposée : la centaine de mètres supérieure, jamais une valeur sous le seuil.
+  return EQUIDISTANCES.find((e) => e >= brute - 1e-12) ?? Math.ceil(brute / 100 - 1e-12) * 100;
 }
 
 export type VerdictEquidistance = { readonly ok: true } | { readonly ok: false; readonly minimum: number; readonly message: string };

@@ -19,7 +19,7 @@ import {
   type CiblesQualite, type DeclarationTerrain, type EnTeteRaster, type EtatQualite, type EtatTerrain, type RapportQualite,
 } from "@parcours/geodata-model";
 import { newId } from "../../ids.js";
-import { calculerDerives, versionGdal } from "./derives.js";
+import { calculerCourbes, calculerDerives, versionGdal } from "./derives.js";
 import { empreinteFichier, type StockageTerrain } from "./stockage.js";
 
 export class TraitementRefuse extends Error {}
@@ -70,6 +70,61 @@ async function rmsezMesuree(c: PoolClient, id: string): Promise<number | null> {
   return r?.rapport.global?.rmsez ?? null;
 }
 
+/** Équidistance exigée maintenant (TER-D17) : dernière RMSEz mesurée, sinon précision déclarée, sinon mondiale. */
+async function equidistanceExigee(c: PoolClient, v: VersionLue): Promise<number> {
+  return equidistanceMinimale({ niveau: v.declaration.niveau, rmsezMesuree: await rmsezMesuree(c, v.id), verticaleDeclaree: v.declaration.precisionDeclaree?.verticaleM ?? null });
+}
+
+/** Plus grande équidistance de courbes déjà calculée pour la version (traitements terminés), ou null. */
+async function equidistanceCalculee(c: PoolClient, id: string): Promise<number | null> {
+  const [r] = (await c.query<{ e: number | null }>(
+    `SELECT max((sorties->>'equidistance')::float8) AS e FROM geodata_terrain_traitements
+      WHERE etat = 'termine' AND type IN ('derives', 'courbes') AND sorties->>'versionId' = $1`, [id])).rows;
+  return r?.e ?? null;
+}
+
+async function insererCourbes(c: PoolClient, versionId: string, equidistance: number, srid: number, courbes: Awaited<ReturnType<typeof calculerCourbes>>): Promise<number> {
+  let n = 0;
+  for (const k of courbes) {
+    await c.query(
+      `INSERT INTO geodata_terrain_courbes (terrain_version_id, equidistance, altitude, maitresse, geom)
+       VALUES ($1, $2, $3, $4, ST_Multi(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($5), $6), 4326)))`,
+      [versionId, equidistance, k.altitude, k.maitresse, JSON.stringify({ type: "MultiLineString", coordinates: k.lignes }), srid]);
+    n += k.lignes.length;
+  }
+  return n;
+}
+
+/**
+ * Courbes à l'équidistance donnée, calculées sur la grille d'origine et ajoutées si elles n'existent pas encore (traitement
+ * « courbes » idempotent). Utilisé quand la précision mesurée exige une équidistance plus grande que celle déjà calculée.
+ */
+async function assurerCourbes(c: PoolClient, stockage: StockageTerrain, v: VersionLue, equidistance: number, demandePar: string | null): Promise<number> {
+  if (!v.cle_stockage || !v.entete?.crsHorizontal) throw new TraitementRefuse("Original ou géoréférence absents.");
+  const srid = Number(v.entete.crsHorizontal.replace(/^EPSG:/, ""));
+  const cle = sha256(texteIdempotence("courbes", [v.empreinte], { versionId: v.id, equidistance }));
+  const [fait] = (await c.query<{ etat: string; sorties: { courbes?: number } }>("SELECT etat, sorties FROM geodata_terrain_traitements WHERE cle_idempotence = $1", [cle])).rows;
+  if (fait?.etat === "termine") return fait.sorties.courbes ?? 0;
+  const [{ id: traitementId }] = (await c.query<{ id: string }>(
+    `INSERT INTO geodata_terrain_traitements (id, cle_idempotence, type, entrees, parametres, logiciels, etat, demande_par)
+     VALUES ($1, $2, 'courbes', $3, $4, '{}'::jsonb, 'en_cours', $5)
+     ON CONFLICT (cle_idempotence) DO UPDATE SET etat = 'en_cours', tentatives = geodata_terrain_traitements.tentatives + 1, progression = 0, motif_echec = NULL, maj_le = now()
+     RETURNING id`,
+    [newId("gdtt"), cle, JSON.stringify([{ versionId: v.id, empreinte: v.empreinte }]), JSON.stringify({ equidistance }), demandePar])).rows as [{ id: string }];
+  try {
+    const courbes = await calculerCourbes(stockage.chemin(v.cle_stockage), { geographique: v.entete.geographique, nodata: v.nodata, equidistance });
+    return await transaction(c, async () => {
+      const n = await insererCourbes(c, v.id, equidistance, srid, courbes);
+      await c.query("UPDATE geodata_terrain_traitements SET etat = 'termine', progression = 100, sorties = $2, maj_le = now() WHERE id = $1",
+        [traitementId, JSON.stringify({ versionId: v.id, equidistance, courbes: n })]);
+      return n;
+    });
+  } catch (e) {
+    await c.query("UPDATE geodata_terrain_traitements SET etat = 'echec', motif_echec = $2, maj_le = now() WHERE id = $1", [traitementId, ((e as Error).message || String(e)).slice(0, 2000)]).catch(() => undefined);
+    throw e;
+  }
+}
+
 export interface ResultatTraitement { readonly versionId: string; readonly deja: boolean; readonly equidistance: number; readonly courbes: number; readonly surfaceM2: number }
 
 /** Versions prêtes au traitement, des plus anciennes aux plus récentes. */
@@ -84,12 +139,25 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
     const v = await lireVersion(c, versionId);
     const gdal = await versionGdal();
     if (!gdal) throw new TraitementRefuse("GDAL absent : lancer le traitement dans le travailleur terrain (TER-D6).");
-    const equidistance = equidistanceMinimale({ niveau: v.declaration.niveau, rmsezMesuree: await rmsezMesuree(c, versionId), verticaleDeclaree: v.declaration.precisionDeclaree?.verticaleM ?? null });
+    const equidistance = await equidistanceExigee(c, v);
     const parametres = { methodePente: "horn", ombrage: [315, 45], equidistance, cog: "DEFLATE PREDICTOR=YES BLOCKSIZE=512 AVERAGE" };
     const cle = sha256(texteIdempotence("derives", [v.empreinte], { versionId, parametres, gdal }));
     const [fait] = (await c.query<{ id: string; etat: string; sorties: { courbes?: number; surfaceM2?: number } }>("SELECT id, etat, sorties FROM geodata_terrain_traitements WHERE cle_idempotence = $1", [cle])).rows;
-    if (fait?.etat === "termine") return { versionId, deja: true, equidistance, courbes: fait.sorties.courbes ?? 0, surfaceM2: fait.sorties.surfaceM2 ?? 0 };
+    if (fait?.etat === "termine") {
+      // Dérivés déjà calculés avec les mêmes paramètres : une version revenue « prête au traitement » (après une remise en
+      // quarantaine levée) repasse en attente de revue sans nouveau calcul.
+      if (v.etat === "traitement") await transaction(c, () => evenement(c, versionId, "traitement", "revue", demandePar, "Dérivés déjà calculés avec les mêmes paramètres : repris sans nouveau calcul."));
+      return { versionId, deja: true, equidistance, courbes: fait.sorties.courbes ?? 0, surfaceM2: fait.sorties.surfaceM2 ?? 0 };
+    }
     if (v.etat !== "traitement") throw new TraitementRefuse(`Version en état « ${v.etat} » : seule une version prête au traitement est traitée.`);
+    // Dérivés déjà présents (seule l'équidistance exigée a changé) : courbes seules, puis en attente de revue.
+    const [{ n: derivesExistants }] = (await c.query<{ n: number }>("SELECT count(*)::int AS n FROM geodata_terrain_fichiers WHERE terrain_version_id = $1 AND role = 'derive'", [versionId])).rows as [{ n: number }];
+    if (derivesExistants > 0) {
+      const n = await assurerCourbes(c, stockage, v, equidistance, demandePar);
+      await transaction(c, () => evenement(c, versionId, "traitement", "revue", demandePar, `Dérivés existants repris ; courbes à ${equidistance} m.`));
+      const [couv] = (await c.query<{ s: number }>("SELECT surface_m2 AS s FROM geodata_terrain_couvertures WHERE terrain_version_id = $1", [versionId])).rows;
+      return { versionId, deja: true, equidistance, courbes: n, surfaceM2: couv?.s ?? 0 };
+    }
     if (!v.cle_stockage || !v.entete?.crsHorizontal) throw new TraitementRefuse("Original ou géoréférence absents : rien n'est traité.");
     // L'original doit être présent et intact (empreinte relue) avant tout calcul.
     const relu = await empreinteFichier(stockage.chemin(v.cle_stockage)).catch(() => null);
@@ -128,14 +196,7 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
            RETURNING surface_m2 AS surface`,
           [versionId, srid, JSON.stringify(rects), r.cellulesValides, r.cellulesTotal, transformation])).rows;
         if (!couv) throw new TraitementRefuse("Aucune cellule valide : la version n'a pas de couverture.");
-        let n = 0;
-        for (const k of r.courbes) {
-          await c.query(
-            `INSERT INTO geodata_terrain_courbes (terrain_version_id, equidistance, altitude, maitresse, geom)
-             VALUES ($1, $2, $3, $4, ST_Multi(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($5), $6), 4326)))`,
-            [versionId, equidistance, k.altitude, k.maitresse, JSON.stringify({ type: "MultiLineString", coordinates: k.lignes }), srid]);
-          n += k.lignes.length;
-        }
+        const n = await insererCourbes(c, versionId, equidistance, srid, r.courbes);
         const initial = rapportQualite([]);
         await c.query(
           `INSERT INTO geodata_terrain_rapports_qualite (id, terrain_version_id, methode, echantillonnage, points, rapport, cibles, etat_qualite, auteur_id)
@@ -168,7 +229,7 @@ export interface PointLeve { readonly id: string; readonly x: number; readonly y
 export async function controlerQualite(
   c: PoolClient, stockage: StockageTerrain, versionId: string,
   o: { readonly points: readonly PointLeve[]; readonly methode: string; readonly cibles: CiblesQualite | null; readonly par: string },
-): Promise<{ rapport: RapportQualite; etat: EtatQualite }> {
+): Promise<{ rapport: RapportQualite; etat: EtatQualite; equidistance: number }> {
   const v = await lireVersion(c, versionId);
   if (!["revue", "accepte", "publie"].includes(v.etat)) throw new TraitementRefuse(`Version en état « ${v.etat} » : le contrôle suit le traitement.`);
   if (!v.cle_stockage) throw new TraitementRefuse("Original absent.");
@@ -207,7 +268,12 @@ export async function controlerQualite(
     [newId("gdtq"), versionId, o.methode, JSON.stringify(o.points), JSON.stringify(rapport), o.cibles ? JSON.stringify(o.cibles) : null, etat, o.par]);
   await c.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'terrain.qualite', $2, 'succes', $3)",
     [o.par, versionId, JSON.stringify({ n: rapport.global?.n ?? 0, etat })]);
-  return { rapport, etat };
+  // TER-D17 : une erreur mesurée plus grande que prévu exige des courbes plus espacées ; elles sont calculées maintenant
+  // (les plus fines restent en base, jamais servies sous le seuil).
+  const exigee = await equidistanceExigee(c, v);
+  const calculee = await equidistanceCalculee(c, versionId);
+  if (calculee === null || calculee < exigee) await assurerCourbes(c, stockage, v, exigee, o.par);
+  return { rapport, etat, equidistance: exigee };
 }
 
 /** Décision de revue (TER-D13) : accepter, remettre en quarantaine ou retirer ; motif écrit, état de qualité consigné. */
@@ -219,6 +285,11 @@ export async function deciderRevue(c: PoolClient, versionId: string, decision: "
     if (v.etat !== "revue") throw new TraitementRefuse(`Version en état « ${v.etat} » : seule une version en attente de revue se décide.`);
     const [q] = (await c.query<{ etat_qualite: EtatQualite; id: string }>("SELECT id, etat_qualite FROM geodata_terrain_rapports_qualite WHERE terrain_version_id = $1 ORDER BY cree_le DESC, id DESC LIMIT 1", [versionId])).rows;
     if (!q) throw new TraitementRefuse("Aucun rapport qualité : la version n'a pas été traitée.");
+    if (decision === "accepte") {
+      const exigee = await equidistanceExigee(c, await lireVersion(c, versionId));
+      const calculee = await equidistanceCalculee(c, versionId);
+      if (calculee === null || calculee < exigee) throw new TraitementRefuse(`Courbes calculées à ${calculee ?? "—"} m, plus fines que les ${exigee} m permis par la précision (TER-D17) : contrôler la qualité ou relancer le traitement avant d'accepter.`);
+    }
     await evenement(c, versionId, "revue", decision, par, motif, { decision, motif, etatQualite: q.etat_qualite, rapport: q.id });
     await c.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'terrain.revue', $2, 'succes', $3)",
       [par, versionId, JSON.stringify({ decision, etatQualite: q.etat_qualite })]);

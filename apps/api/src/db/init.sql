@@ -4103,7 +4103,7 @@ CREATE TABLE IF NOT EXISTS geodata_terrain_traitements (
 -- Terrain haute résolution, lot TER-03 (traitement et porte qualité, Issue #381) : dérivés (COG d'altitude, pente,
 -- ombrage) dans le volume, couverture exacte en WGS 84, courbes de niveau, rapports qualité ; tout en ajout seul.
 ALTER TABLE geodata_terrain_traitements DROP CONSTRAINT IF EXISTS geodata_terrain_traitements_type_check;
-ALTER TABLE geodata_terrain_traitements ADD CONSTRAINT geodata_terrain_traitements_type_check CHECK (type IN ('import', 'derives'));
+ALTER TABLE geodata_terrain_traitements ADD CONSTRAINT geodata_terrain_traitements_type_check CHECK (type IN ('import', 'derives', 'courbes'));
 ALTER TABLE geodata_terrain_fichiers ADD COLUMN IF NOT EXISTS nature text;
 ALTER TABLE geodata_terrain_fichiers DROP CONSTRAINT IF EXISTS geodata_terrain_fichiers_nature_check;
 ALTER TABLE geodata_terrain_fichiers ADD CONSTRAINT geodata_terrain_fichiers_nature_check

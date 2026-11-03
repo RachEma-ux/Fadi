@@ -30,7 +30,7 @@ droits servis (TER-04) ; interface (TER-05) ; nuages de points LAS / LAZ et PDAL
 | --- | --- |
 | `packages/geodata-model` | 32 fichiers, 246 tests réussis (dont 35 du terrain TER-02 / TER-03) |
 | `apps/api/src/lib/geodata/terrain/` sans base (GDAL 3.8.4 local) | 9 tests réussis, dont le travailleur sur un plan synthétique connu |
-| Suite DB-3 `src/routes/geodata-terrain.test.ts` | 16 tests ; exécutés localement sur PostGIS 16 par une copie à connexion directe : 16/16 ; en CI sur base attestée |
+| Suite DB-3 `src/routes/geodata-terrain.test.ts` | 18 tests ; exécutés localement sur PostGIS 16 par une copie à connexion directe : 18/18 ; en CI sur base attestée |
 | Commande empaquetée `dist/geodata-terrain.js --essai-gdal` | Réussi |
 | `bash deploy/preprod/tests/run.sh` (compte non privilégié) | 107 réussis, 0 échec |
 | Garde de préproduction (profils `terrain`, `recette`) | Conforme : 6 services, 4 volumes |
@@ -38,6 +38,14 @@ droits servis (TER-04) ; interface (TER-05) ; nuages de points LAS / LAZ et PDAL
 Tests du plan couverts : plan synthétique connu pour la pente (exacte à 10⁻³ °, valeurs Float32) et les profils ; NoData
 (pente, ombrage, courbes interrompues, couverture qui exclut le trou) ; couture entre deux jeux (transition marquée) ;
 cuvette (courbes fermées) ; équidistance refusée sous le seuil ; statistiques de contrôle exactement comme au plan.
+
+## Revue Codex de la PR #387 (corrigée)
+
+- Une version remise en quarantaine puis levée repasse en revue en reprenant ses dérivés (aucun cycle bloqué).
+- Une erreur mesurée plus grande que la précision déclarée fait calculer les courbes à l'équidistance exigée (TER-D17) ;
+  l'acceptation est refusée tant que seules des courbes plus fines existent (les plus fines restent en base, jamais servies
+  sous le seuil — à respecter par TER-04).
+- Au-delà de 100 m, l'équidistance exigée est la centaine supérieure (jamais une valeur sous le seuil).
 
 ## Essais sur les données réelles (base et volume locaux jetables)
 

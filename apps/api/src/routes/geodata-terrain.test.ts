@@ -274,6 +274,44 @@ describe("traitement et porte qualité (TER-03)", () => {
     expect((await pool.query("SELECT count(*)::int AS n FROM geodata_terrain_couvertures")).rows[0].n).toBe(0);
   });
 
+  it("remise en quarantaine puis levée : la version repasse en revue en reprenant ses dérivés, puis s'accepte", async () => {
+    const pub = await compte("pub@example.test", "responsable-publication");
+    const id = await versionPrete();
+    const c = await pool.connect();
+    try {
+      await traiterVersion(c, stockage, id);
+      await deciderRevue(c, id, "quarantaine", "Vérification complémentaire demandée", pub);
+      await leverQuarantaine(c, id, { referenceVerticale: null, motif: "Vérification complémentaire faite" }, pub);
+      const r = await traiterVersion(c, stockage, id);
+      expect(r.deja).toBe(true);
+      expect((await pool.query("SELECT etat FROM geodata_terrain_versions WHERE id = $1", [id])).rows[0].etat).toBe("revue");
+      expect(await deciderRevue(c, id, "accepte", "Usage exploratoire après vérification", pub)).toBe("non-evaluee");
+    } finally { c.release(); }
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_terrain_couvertures WHERE terrain_version_id = $1", [id])).rows[0].n).toBe(1);
+  });
+
+  it("erreur mesurée plus grande que la précision déclarée : courbes recalculées à l'équidistance exigée (TER-D17)", async () => {
+    const pub = await compte("pub@example.test", "responsable-publication");
+    const gest = await compte("gest@example.test", "gestionnaire-donnees");
+    ecrireFixture(stockage.cheminDepot("plan.tif"), { largeur: 80, hauteur: 60, valeur: (col) => 500 + col * 0.5 });
+    const { versionId: id } = await importer(fiche({ precisionDeclaree: { texte: "± 0,1 m (déclaration de test)", verticaleM: 0.1, source: "fixture de test" } }), null);
+    const c = await pool.connect();
+    try {
+      expect((await traiterVersion(c, stockage, id)).equidistance).toBe(0.25);
+      // Garde : un rapport mesurant une erreur de 3 m, inscrit sans recalcul, interdit l'acceptation des courbes à 0,25 m.
+      await pool.query(`INSERT INTO geodata_terrain_rapports_qualite (id, terrain_version_id, methode, echantillonnage, points, rapport, etat_qualite)
+        VALUES ('gdtq_test', $1, 'test', 'bilineaire', '[]', $2, 'sans-cible')`, [id, JSON.stringify({ methodePercentile: "rang-le-plus-proche", global: { n: 1, biais: 3, rmsez: 3, p95: 3, maxAbs: 3 }, parClasse: {}, exclus: [] })]);
+      await expect(deciderRevue(c, id, "accepte", "Acceptation malgré l'erreur mesurée", pub)).rejects.toThrow(/plus fines/);
+      // Contrôle réel : l'erreur de 3 m exige 10 m ; les courbes à 10 m sont calculées, l'acceptation devient possible.
+      const x = 2662500 + 10.5 * 0.25, y = 1210500 - 10.5 * 0.25;
+      const q = await controlerQualite(c, stockage, id, { points: [{ id: "p1", x, y, z: 505 - 3, classe: "sol-nu", incertitude: 0.01 }], methode: "Point synthétique de test, aucune mesure réelle", cibles: null, par: gest });
+      expect(q.equidistance).toBe(10);
+      expect(await deciderRevue(c, id, "accepte", "Usage exploratoire, courbes à 10 m", pub)).toBe("sans-cible");
+    } finally { c.release(); }
+    const eq = (await pool.query("SELECT DISTINCT equidistance FROM geodata_terrain_courbes WHERE terrain_version_id = $1 ORDER BY equidistance", [id])).rows.map((r) => r.equidistance);
+    expect(eq).toEqual([0.25, 10]);
+  });
+
   it("rapport qualité exactement comme au plan, point hors couverture exclu et listé ; revue par un responsable", async () => {
     const pub = await compte("pub@example.test", "responsable-publication");
     const gest = await compte("gest@example.test", "gestionnaire-donnees");
