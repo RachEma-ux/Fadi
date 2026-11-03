@@ -12,7 +12,7 @@ Mis à jour : 2026-11-02 (UTC).
 - Terrain TER-04 (services, tuiles, droits, publication, export ; Issue #381, branche `feat/381-ter-04-services`) :
   **implémenté et vérifié**, non accepté. Routes `/geodata/api/terrain` (jeux, point, profil, statistiques, tuiles, courbes
   MVT, exports, publication / retour arrière), droits par usage, drapeau `GEODATA_TERRAIN_ENABLED`. Tests : 253 du paquet,
-  DB-3 7/7 (services) et 18/18 (terrain) en local, travailleur 9/9. Performances locales sur Lucerne (essai) : point
+  DB-3 8/8 (services) et 18/18 (terrain) en local, remarques Codex corrigées, travailleur 9/9. Performances locales sur Lucerne (essai) : point
   p95 ≈ 30 ms, profil 1 152 points 0,57 s, vue 5 × 3 tuiles ≤ 1,2 s (`terrain/TER-04.md`). TER-D19 (retour arrière) soumise.
 - Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
   vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur

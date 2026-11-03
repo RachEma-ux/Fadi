@@ -5,7 +5,7 @@ import {
   verifierEquidistance, type GrilleAltitudes,
 } from "./analyse.js";
 import { etatQualite, lirePointsControle, percentileRangProche, rapportQualite, statistiques } from "./qualite.js";
-import { altitudeAuPoint, ordonnerSources, profil, type SourceAltitude } from "./priorite.js";
+import { altitudeAuPoint, dateDeDonnees, ordonnerSources, profil, type SourceAltitude } from "./priorite.js";
 
 /** Plan incliné connu : z = 100 + a·x + b·y (x vers l'est, y vers le nord, mètres ; centres de cellules). */
 function plan(L: number, H: number, pas: number, a: number, b: number, nodata: number | null = null, trous: (c: number, l: number) => boolean = () => false): GrilleAltitudes {
@@ -192,5 +192,15 @@ describe("couverture valide en rectangles", () => {
     expect(aire).toBe(L * H - 4);
     expect(r).toHaveLength(4);
     expect(rectanglesValides({ largeur: 3, hauteur: 2, valeurs: [Number.NaN, Number.NaN, Number.NaN, Number.NaN, Number.NaN, Number.NaN], nodata: null })).toEqual([]);
+  });
+});
+
+describe("date des données pour la priorité (TER-D16)", () => {
+  it("la plus récente des dates citées, jamais la publication", () => {
+    expect(dateDeDonnees("Produit « 2024 » ; données mises à jour le 28.02.2025 (fiche du produit)")).toBe("2025-02-28");
+    expect(dateDeDonnees("Acquisitions TanDEM-X 2011–2015")).toBe("2015-12-31");
+    expect(dateDeDonnees("Modèle 2006–2015 (nom de fichier) ; version du 2026-03-06")).toBe("2026-03-06");
+    expect(dateDeDonnees("version sans date")).toBeNull();
+    expect(dateDeDonnees(null)).toBeNull();
   });
 });

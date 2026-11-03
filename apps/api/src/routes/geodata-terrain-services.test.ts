@@ -117,6 +117,22 @@ describe("services numériques du terrain (TER-04)", () => {
     expect((await u.get(`${API}/point`).query({ lon: 500, lat })).status).toBe(400);
   });
 
+  it("point : une source plus fine sans valeur au point n'écarte pas une source plus grossière d'une autre référence qui le couvre", async () => {
+    const u = await compte("lecteur@example.test");
+    const fine = await jeu("test-fine-trouee", { ...A, valeur: (c) => (c < 40 ? -9999 : 500 + 0.5 * c) });
+    const grossiere = await jeu("test-grossiere", { largeur: 30, hauteur: 20, pas: 1, origine: [2662495, 1210502], valeur: () => 321 }, {
+      fiche: { referenceVerticale: { statut: "declaree", code: "EPSG:3855", libelle: "Autre référence fictive de test", origine: "documentation", source: "fixture de test" } },
+    });
+    const [lon, lat] = await lonLat(2662503.1, 1210492.1);
+    const p = (await u.get(`${API}/point`).query({ lon, lat })).body;
+    expect(p.disponible).toBe(true);
+    expect(p.source.versionId).toBe(grossiere);
+    expect(p.altitude).toBe(321);
+    expect(p.source.referenceVerticale.code).toBe("EPSG:3855");
+    const [lon2, lat2] = await lonLat(2662515.1, 1210492.1);
+    expect((await u.get(`${API}/point`).query({ lon: lon2, lat: lat2 })).body.source.versionId).toBe(fine);
+  });
+
   it("profil : couture entre deux jeux marquée, le plus fin d'abord, lacune hors couverture, points interpolés signalés", async () => {
     const u = await compte("lecteur@example.test");
     const a = await jeu("test-a", A);

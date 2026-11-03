@@ -197,9 +197,9 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
                 u AS (SELECT ST_Multi(ST_CollectionExtract(ST_UnaryUnion(ST_Collect(g)), 3)) AS g FROM r)
            INSERT INTO geodata_terrain_couvertures (terrain_version_id, geom, srid_natif, cellules_valides, cellules_total, surface_m2, transformation)
            SELECT $1, ST_Multi(ST_Transform(u.g, 4326)), $2, $4, $5,
-                  CASE WHEN $2 = 4326 THEN ST_Area(u.g::geography) ELSE ST_Area(u.g) END, $6 FROM u WHERE u.g IS NOT NULL
+                  CASE WHEN $7 THEN ST_Area(ST_Transform(u.g, 4326)::geography) ELSE ST_Area(u.g) END, $6 FROM u WHERE u.g IS NOT NULL
            RETURNING surface_m2 AS surface`,
-          [versionId, srid, JSON.stringify(rects), r.cellulesValides, r.cellulesTotal, transformation])).rows;
+          [versionId, srid, JSON.stringify(rects), r.cellulesValides, r.cellulesTotal, transformation, v.entete?.geographique === true])).rows;
         if (!couv) throw new TraitementRefuse("Aucune cellule valide : la version n'a pas de couverture.");
         const n = await insererCourbes(c, versionId, equidistance, srid, r.courbes);
         const initial = rapportQualite([]);

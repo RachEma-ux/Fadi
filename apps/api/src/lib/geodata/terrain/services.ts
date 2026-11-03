@@ -13,7 +13,7 @@
 import type { PoolClient } from "pg";
 import { fromFile, type GeoTIFF } from "geotiff";
 import {
-  couleurContinue, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
+  couleurContinue, dateDeDonnees, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
   profil, sansValeur, statistiquesZone, valeurBilineaire, valeurCellule,
   type DeclarationTerrain, type DroitsVersion, type EnTeteRaster, type EtatQualite, type ProduitTerrain, type Profil, type RapportQualite,
   type ReferenceVerticale, type SourceAltitude, type StatistiquesZone,
@@ -234,7 +234,9 @@ export async function valeursNatives(stockage: StockageTerrain, s: SourceTerrain
 // ——— Point, profil, statistiques ———
 
 export async function altitudePoint(ex: Executeur, stockage: StockageTerrain, lon: number, lat: number, produit: ProduitTerrain) {
-  const sources = ordonnerSourcesTerrain((await sourcesPubliees(ex, produit)).filter((s) => s.droits.calcul === "autorise" && lon >= s.emprise[0] && lon <= s.emprise[2] && lat >= s.emprise[1] && lat <= s.emprise[3]), produit);
+  // Un point n'a qu'une source : la référence verticale est celle de la première source qui a une valeur au point (aucun
+  // mélange possible), jamais celle d'une source qui ne fait que recouvrir le point par son rectangle englobant.
+  const sources = ordonnerSourcesTerrain((await sourcesPubliees(ex, produit)).filter((s) => s.droits.calcul === "autorise" && lon >= s.emprise[0] && lon <= s.emprise[2] && lat >= s.emprise[1] && lat <= s.emprise[3]), produit, false);
   for (const s of sources) {
     const [p] = await transformer(ex, [[lon, lat]], 4326, s.srid);
     const [v] = await valeursNatives(stockage, s, [p!]);
@@ -243,14 +245,18 @@ export async function altitudePoint(ex: Executeur, stockage: StockageTerrain, lo
   return { disponible: false as const, lon, lat, altitude: null, motif: "Aucune version publiée ne couvre ce point : altitude indisponible (jamais estimée)." };
 }
 
-/** Ordre TER-D16 sur les sources du terrain (même référence verticale pour toutes : la première retenue fixe le datum). */
-function ordonnerSourcesTerrain(sources: readonly SourceTerrain[], produit: ProduitTerrain): SourceTerrain[] {
+/**
+ * Ordre TER-D16 sur les sources du terrain (plus fin, qualité, date des **données**). Avec `uneReference` (profils,
+ * plusieurs sources combinées), seules les sources de la référence verticale de la meilleure sont gardées : aucun
+ * mélange de références.
+ */
+function ordonnerSourcesTerrain(sources: readonly SourceTerrain[], produit: ProduitTerrain, uneReference = true): SourceTerrain[] {
   const adapt = (s: SourceTerrain): SourceAltitude => ({
     id: s.id, produit: s.produit, publiee: true, pas: s.pas, precisionMesuree: s.precisionMesuree, precisionDeclaree: s.precisionDeclaree?.verticaleM ?? null,
-    date: s.publieeLe, referenceVerticale: refCode(s), valeur: () => null,
+    date: dateDeDonnees(s.date), referenceVerticale: refCode(s), valeur: () => null,
   });
   const ordre = ordonnerSources(sources.map(adapt), produit, null).map((a) => sources.find((s) => s.id === a.id)!);
-  // Aucun mélange de références verticales : seules les sources de la référence de la meilleure source sont gardées.
+  if (!uneReference) return ordre;
   const ref = ordre[0] ? refCode(ordre[0]) : null;
   return ordre.filter((s) => refCode(s) === ref);
 }
@@ -278,7 +284,7 @@ export async function profilTerrain(ex: Executeur, stockage: StockageTerrain, li
     valeurs.set(s.id, m);
   }
   const sourcesAlt: SourceAltitude[] = ordre.map((s) => ({
-    id: s.id, produit: s.produit, publiee: true, pas: s.pas, precisionMesuree: s.precisionMesuree, precisionDeclaree: s.precisionDeclaree?.verticaleM ?? null, date: s.publieeLe, referenceVerticale: refCode(s),
+    id: s.id, produit: s.produit, publiee: true, pas: s.pas, precisionMesuree: s.precisionMesuree, precisionDeclaree: s.precisionDeclaree?.verticaleM ?? null, date: dateDeDonnees(s.date), referenceVerticale: refCode(s),
     valeur: (x, y) => valeurs.get(s.id)!.get(`${x},${y}`) ?? null,
   }));
   return { profil: profil(locale, pas, sourcesAlt, LIMITES_SERVICES.pointsProfil), lonLat, sources: ordre.map(metadonnees), referencesEcartees: ecartees };
@@ -295,8 +301,9 @@ export async function statistiquesTerrain(ex: Executeur, stockage: StockageTerra
   }
   if (!s) return { indisponible: true, motif: "Aucune version publiée ne recoupe la zone : statistiques indisponibles." };
   const [natif] = (await ex.query<{ g: string; aire: number }>(
-    `SELECT ST_AsGeoJSON(t) AS g, CASE WHEN $2 = 4326 THEN ST_Area(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)::geography) ELSE ST_Area(t) END AS aire
-       FROM (SELECT ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326), $2::int) AS t) x`, [geo, s.srid])).rows;
+    // Surface en m² : géodésique (WGS 84) pour tout repère géographique, plane dans un repère projeté métrique.
+    `SELECT ST_AsGeoJSON(t) AS g, CASE WHEN $3 THEN ST_Area(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)::geography) ELSE ST_Area(t) END AS aire
+       FROM (SELECT ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326), $2::int) AS t) x`, [geo, s.srid, s.geographique])).rows;
   const anneauxNatifs = (JSON.parse(natif!.g) as { coordinates: [number, number][][] }).coordinates;
   const t = await ouvrir(stockage.chemin(s.altitude));
   const g = await georef(t, 0);

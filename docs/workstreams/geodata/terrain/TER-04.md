@@ -30,7 +30,7 @@ Précision du cycle de vie (TER-D12) : le plan exige un retour arrière vers la 
 | Contrôle | Résultat |
 | --- | --- |
 | `packages/geodata-model` | 33 fichiers, 253 tests réussis |
-| Suite DB-3 `geodata-terrain-services.test.ts` (nouvelle) | 7 tests ; exécutés localement sur PostGIS 16 + GDAL 3.8.4 par une copie à connexion directe : 7/7 ; en CI sur base attestée |
+| Suite DB-3 `geodata-terrain-services.test.ts` (nouvelle) | 8 tests ; exécutés localement sur PostGIS 16 + GDAL 3.8.4 par une copie à connexion directe : 8/8 ; en CI sur base attestée |
 | Suite DB-3 `geodata-terrain.test.ts` | 18/18 (local) |
 | Tests sans base du travailleur | 9/9 |
 | Garde de préproduction | Conforme (6 services, 4 volumes) |
@@ -44,6 +44,15 @@ l'aller-retour de transformation PROJ), retour arrière (republication).
 Deux défauts trouvés et corrigés pendant le lot : la projection locale du profil sans datum (`+ellps` seul : ≈ 170 m
 d'écart vers CH1903+, corrigé par `+datum=WGS84`) ; transformation point par point par PostGIS (≈ 7 ms par point depuis une
 chaîne PROJ : un seul `ST_Transform` par multipoint).
+
+## Revue Codex de la PR #389 (corrigée)
+
+- Altitude au point : la référence verticale est celle de la première source qui a une **valeur** au point ; une source
+  plus fine sans valeur (NoData) n'écarte plus une source plus grossière d'une autre référence (un point n'a qu'une source,
+  aucun mélange). Les profils, qui combinent plusieurs sources, gardent une seule référence.
+- Priorité à pas et qualité égaux : date des **données** (levé, sinon version) lue dans la fiche (`dateDeDonnees`), jamais
+  la date de publication dans Fadi (une republication ne rend pas une mesure plus récente).
+- Surfaces en m² pour **tout** repère géographique (pas seulement EPSG:4326) : statistiques de zone et couverture (TER-03).
 
 ## Performances mesurées (budgets du plan)
 

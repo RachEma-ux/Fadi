@@ -26,6 +26,20 @@ export interface SourceAltitude {
   valeur(x: number, y: number): { readonly valeur: number; readonly interpolee: boolean } | null;
 }
 
+/**
+ * Date triable des données (TER-D16 : date du levé, sinon de la version) lue dans le texte déclaré par la fiche : la plus
+ * récente des dates qu'il cite (AAAA-MM-JJ, JJ.MM.AAAA ou année seule, 1900 à 2199), au format ISO ; null si aucune.
+ * Jamais la date de publication dans Fadi : une republication ne rend pas une mesure plus récente.
+ */
+export function dateDeDonnees(texte: string | null): string | null {
+  if (!texte) return null;
+  const dates: string[] = [];
+  for (const m of texte.matchAll(/\b(19\d\d|2[01]\d\d)-(\d\d)-(\d\d)\b/g)) dates.push(`${m[1]}-${m[2]}-${m[3]}`);
+  for (const m of texte.matchAll(/\b(\d\d)\.(\d\d)\.(19\d\d|2[01]\d\d)\b/g)) dates.push(`${m[3]}-${m[2]}-${m[1]}`);
+  for (const m of texte.replace(/\b\d\d\.\d\d\.\d{4}\b|\b\d{4}-\d\d-\d\d\b/g, " ").matchAll(/\b(19\d\d|2[01]\d\d)\b/g)) dates.push(`${m[1]}-12-31`);
+  return dates.length ? dates.sort().at(-1)! : null;
+}
+
 const qualite = (s: SourceAltitude) => s.precisionMesuree ?? s.precisionDeclaree ?? Number.POSITIVE_INFINITY;
 
 /** Ordre de priorité de sources candidates pour un produit (sans tenir compte de la couverture du point). */
