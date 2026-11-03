@@ -424,6 +424,32 @@ cp "$B/controles/releve-gnss.csv" "$B/controles/ouvert.csv"; chmod 0666 "$B/cont
 attendu nz "terrain worker --controler : CSV modifiable par d'autres refusé" "modifiable par le groupe ou les autres" -- fpa terrain worker --controler $V --points ouvert --methode m --par g@example.test
 head -c 10000001 /dev/zero > "$B/controles/gros.csv"
 attendu nz "terrain worker --controler : CSV > 10 Mo refusé" "trop volumineux" -- fpa terrain worker --controler $V --points gros --methode m --par g@example.test
+# TER-04 : publication, exports, mode continu (conteneur détaché unique, restart "no").
+: > "$T/trace-t4"
+attendu 0 "administrateur : terrain worker --publier" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-t4" terrain worker --publier $V --motif "Revue acceptée" --par resp@example.test
+attendu nz "terrain worker --publier sans --motif" "--motif" -- fpa terrain worker --publier $V --par resp@example.test
+attendu nz "terrain worker --publier : identifiant invalide" "identifiant de version invalide" -- fpa terrain worker --publier x --motif m --par resp@example.test
+attendu 0 "administrateur : terrain worker --exports" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-t4" terrain worker --exports
+attendu nz "terrain worker --exports : argument refusé" "option refusée pour terrain --exports" -- fpa terrain worker --exports --url https://exemple.test
+attendu 0 "administrateur : terrain worker --continu 30" "travailleur continu lancé (fadi-preprod-terrain-continu, pause 30 s)" -- fpa MOCK_TRACE="$T/trace-t4" terrain worker --continu 30
+grep -qF -- "--profile terrain run --rm --no-deps -T terrain-worker --publier $V --motif Revue acceptée --par resp@example.test" "$T/trace-t4" \
+  && grep -q -- "--profile terrain run --rm --no-deps -T terrain-worker --exports$" "$T/trace-t4" \
+  && grep -q -- "--profile terrain run -d --rm --no-deps -T --name fadi-preprod-terrain-continu terrain-worker --continu 30$" "$T/trace-t4" \
+  && { ok=$((ok + 1)); echo "✓ terrain worker TER-04 : --publier, --exports, --continu (détaché, nommé, --rm)"; } \
+  || { ko=$((ko + 1)); echo "✗ terrain worker TER-04 : appels"; sed 's/^/    /' "$T/trace-t4"; }
+attendu nz "terrain worker --continu : déjà en marche" "déjà en marche" -- fpa MOCK_CONTINU=1 terrain worker --continu 30
+for s in 4 3601 abc '30;x' ''; do
+  attendu nz "terrain worker --continu « $s » refusé" "pause invalide" -- fpa terrain worker --continu "$s"
+done
+attendu nz "terrain worker --continu : argument en trop" "option refusée pour terrain --continu" -- fpa terrain worker --continu 30 --par a@example.test
+: > "$T/trace-arret"
+attendu 0 "administrateur : terrain worker --arreter" "travailleur continu arrêté" -- fpa MOCK_CONTINU=1 MOCK_TRACE="$T/trace-arret" terrain worker --arreter
+grep -q ' stop fadi-preprod-terrain-continu$' "$T/trace-arret" && ! grep -q ' compose ' "$T/trace-arret" \
+  && { ok=$((ok + 1)); echo "✓ terrain worker --arreter : docker stop du seul conteneur continu, aucune action compose"; } \
+  || { ko=$((ko + 1)); echo "✗ terrain worker --arreter : $(cat "$T/trace-arret")"; }
+attendu 0 "terrain worker --arreter sans conteneur en marche" "aucun travailleur continu en marche" -- fpa terrain worker --arreter
+attendu nz "opérateur : terrain worker --continu refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --continu 30
+attendu nz "opérateur : terrain worker --arreter refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --arreter
 attendu nz "opérateur : terrain worker --controler refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --controler $V --points releve-gnss --methode m --par g@example.test
 attendu nz "opérateur : terrain worker --decider refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --decider $V --decision accepte --motif m --par resp@example.test
 attendu nz "terrain en échec → code non nul, journal nommé" "journal : terrain.log" -- fpe MOCK_FAIL=run-terrain terrain --etat

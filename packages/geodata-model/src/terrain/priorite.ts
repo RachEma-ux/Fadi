@@ -8,6 +8,7 @@
  *  5. aucune source : « indisponible », jamais une valeur inventée.
  */
 import type { ProduitTerrain } from "./catalogue.js";
+import { pointsLigne } from "./services.js";
 
 export interface SourceAltitude {
   readonly id: string;
@@ -23,6 +24,20 @@ export interface SourceAltitude {
   readonly referenceVerticale: string | null;
   /** Valeur au point (coordonnées dans un repère commun choisi par l'appelant), null hors couverture ou NoData. */
   valeur(x: number, y: number): { readonly valeur: number; readonly interpolee: boolean } | null;
+}
+
+/**
+ * Date triable des données (TER-D16 : date du levé, sinon de la version) lue dans le texte déclaré par la fiche : la plus
+ * récente des dates qu'il cite (AAAA-MM-JJ, JJ.MM.AAAA ou année seule, 1900 à 2199), au format ISO ; null si aucune.
+ * Jamais la date de publication dans Fadi : une republication ne rend pas une mesure plus récente.
+ */
+export function dateDeDonnees(texte: string | null): string | null {
+  if (!texte) return null;
+  const dates: string[] = [];
+  for (const m of texte.matchAll(/\b(19\d\d|2[01]\d\d)-(\d\d)-(\d\d)\b/g)) dates.push(`${m[1]}-${m[2]}-${m[3]}`);
+  for (const m of texte.matchAll(/\b(\d\d)\.(\d\d)\.(19\d\d|2[01]\d\d)\b/g)) dates.push(`${m[3]}-${m[2]}-${m[1]}`);
+  for (const m of texte.replace(/\b\d\d\.\d\d\.\d{4}\b|\b\d{4}-\d\d-\d\d\b/g, " ").matchAll(/\b(19\d\d|2[01]\d\d)\b/g)) dates.push(`${m[1]}-12-31`);
+  return dates.length ? dates.sort().at(-1)! : null;
 }
 
 const qualite = (s: SourceAltitude) => s.precisionMesuree ?? s.precisionDeclaree ?? Number.POSITIVE_INFINITY;
@@ -61,28 +76,11 @@ export interface Profil {
  * est une lacune.
  */
 export function profil(ligne: readonly (readonly [number, number])[], pas: number, ordonnees: readonly SourceAltitude[], maxPoints = 10_000): Profil {
-  if (ligne.length < 2) throw new Error("Une ligne de profil a au moins deux sommets.");
-  if (!(pas > 0)) throw new Error("Pas d'échantillonnage strictement positif requis.");
-  const points: PointProfil[] = [];
-  let chainage = 0;
-  const ajouter = (x: number, y: number, ch: number) => {
-    if (points.length >= maxPoints) throw new Error(`Profil limité à ${maxPoints} points : traitement de fond requis.`);
+  const points: PointProfil[] = pointsLigne(ligne, pas, maxPoints).map(({ chainage, x, y }) => {
     const v = altitudeAuPoint(ordonnees, x, y);
     const src = v ? ordonnees.find((s) => s.id === v.source)! : null;
-    points.push({ chainage: ch, x, y, altitude: v?.valeur ?? null, source: v?.source ?? null, interpolee: v ? v.interpolee || pas < src!.pas : false });
-  };
-  for (let i = 0; i < ligne.length - 1; i++) {
-    const [x0, y0] = ligne[i]!;
-    const [x1, y1] = ligne[i + 1]!;
-    const long = Math.hypot(x1 - x0, y1 - y0);
-    const n = Math.max(1, Math.ceil(long / pas - 1e-9));
-    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
-      const t = Math.min(1, (k * pas) / long);
-      if (k === n) ajouter(x1, y1, chainage + long);
-      else ajouter(x0 + t * (x1 - x0), y0 + t * (y1 - y0), chainage + k * pas);
-    }
-    chainage += long;
-  }
+    return { chainage, x, y, altitude: v?.valeur ?? null, source: v?.source ?? null, interpolee: v ? v.interpolee || pas < src!.pas : false };
+  });
   const transitions: { chainage: number; de: string | null; vers: string | null }[] = [];
   const lacunes: { debut: number; fin: number }[] = [];
   let debutLacune: number | null = null;

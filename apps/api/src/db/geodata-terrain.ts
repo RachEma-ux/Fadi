@@ -11,6 +11,9 @@
  *        [--cible-rmsez 0.10 --cible-p95 0.20 [--cible-classe sol-nu]]     rapport qualité (rôle gestionnaire-donnees)
  *   npm run geodata:terrain -- --decider <id> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
  *                                                                         revue (rôle responsable-publication)
+ *   npm run geodata:terrain -- --publier <id> --motif "…" --par <courriel>  publication ou retour arrière (TER-04)
+ *   npm run geodata:terrain -- --exports                                  prépare les exports en attente, efface les expirés
+ *   npm run geodata:terrain -- --continu [secondes]                       travailleur : traitements et exports en boucle
  *   npm run geodata:terrain -- --essai-gdal                              essai du travailleur sur une fixture « test seulement »
  *   (image : node apps/api/dist/geodata-terrain.js …)
  *
@@ -29,6 +32,8 @@ import { StockageTerrain } from "../lib/geodata/terrain/stockage.js";
 import { importerTerrain, leverQuarantaine } from "../lib/geodata/terrain/import.js";
 import { acquerir } from "../lib/geodata/terrain/acquisition.js";
 import { controlerQualite, deciderRevue, traiterVersion, versionsATraiter } from "../lib/geodata/terrain/traitement.js";
+import { expirerExports, traiterUnExport } from "../lib/geodata/terrain/exports.js";
+import { publierVersion } from "../lib/geodata/terrain/services.js";
 import { calculerDerives } from "../lib/geodata/terrain/derives.js";
 import { ecrireFixture } from "../lib/geodata/terrain/fixtures-synthetiques.js";
 import { lirePointsControle } from "@parcours/geodata-model";
@@ -145,6 +150,37 @@ async function principal(): Promise<void> {
         const r = await controlerQualite(client, stockage(), argument("controler")!, { points: lirePointsControle(readFileSync(fichier, "utf8")), methode: argument("methode") ?? "", cibles, par });
         const g = r.rapport.global;
         console.log(`Rapport qualité : ${r.etat}${g ? ` — n ${g.n}, biais ${g.biais.toFixed(3)} m, RMSEz ${g.rmsez.toFixed(3)} m, P95 ${g.p95.toFixed(3)} m` : ""} ; ${r.rapport.exclus.length} point(s) exclu(s).`);
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (argument("publier")) {
+      const par = await compte(pool, argument("par"), "responsable-publication");
+      const client = await pool.connect();
+      try {
+        const r = await publierVersion(client, argument("publier")!, par, argument("motif") ?? "");
+        console.log(`Publiée : ${argument("publier")}${r.remplacee ? ` (remplace ${r.remplacee})` : ""}.`);
+      } finally {
+        client.release();
+      }
+      return;
+    }
+    if (process.argv.includes("--exports") || process.argv.includes("--continu")) {
+      const pause = Number(argument("continu") ?? 30);
+      const continu = process.argv.includes("--continu");
+      const client = await pool.connect();
+      try {
+        do {
+          let n = 0;
+          if (continu) for (const id of await versionsATraiter(client)) {
+            try { await traiterVersion(client, stockage(), id, null); console.log(`Traitée : ${id}`); } catch (e) { console.error(`Échec du traitement ${id} : ${(e as Error).message}`); }
+          }
+          while (await traiterUnExport(client, stockage())) n++;
+          const expires = await expirerExports(client, stockage());
+          if (n || expires) console.log(`Exports préparés : ${n} ; expirés effacés : ${expires}.`);
+          if (continu) await new Promise((r) => setTimeout(r, Math.max(5, Number.isFinite(pause) ? pause : 30) * 1000));
+        } while (continu);
       } finally {
         client.release();
       }

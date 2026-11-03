@@ -108,6 +108,10 @@ Administrateur — terrain haute résolution (service terrain-import, fiches de 
   terrain --lever <gdtv_…> --par <courriel> --motif "…" [--reference-libelle "…" --reference-source "…"
           [--reference-code EPSG:nnnn]]         levée de quarantaine consignée (rôle responsable-publication, TER-D13)
   terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]   travailleur GDAL (TER-03, service terrain-worker)
+  terrain worker --publier <gdtv_…> --motif "…" --par <courriel>   publication / retour arrière (TER-04, responsable-publication)
+  terrain worker --exports                      prépare les exports en attente, une fois (TER-04)
+  terrain worker --continu <secondes> | --arreter   traitements et exports en boucle (5 à 3600 s) dans un conteneur détaché
+                                                unique (fadi-preprod-terrain-continu, restart "no") | son arrêt
   terrain worker --controler <gdtv_…> --points <nom> --methode "…" --par <courriel> [--cible-rmsez <m> --cible-p95 <m>
           [--cible-classe <classe>]]            rapport qualité ; <nom> = /opt/fadi-preprod/controles/<nom>.csv
   terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
@@ -627,10 +631,14 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     service=terrain-import
     if [ "$1" = worker ]; then
       service=terrain-worker; shift
-      case "${1:-}" in --essai-gdal|--traiter|--controler|--decider) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>] | --controler <gdtv_…> --points <nom> --methode … --par <courriel> | --decider <gdtv_…> --decision … --motif … --par <courriel>" ;; esac
+      case "${1:-}" in --essai-gdal|--traiter|--controler|--decider|--publier|--exports|--continu|--arreter) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>] | --controler <gdtv_…> --points <nom> --methode … --par <courriel> | --decider <gdtv_…> --decision … --motif … --par <courriel> | --publier <gdtv_…> --motif … --par <courriel> | --exports | --continu <secondes> | --arreter" ;; esac
     fi
     action=$1; shift; args=("$action")
     case "$service:$action" in
+      terrain-worker:--continu)
+        s=${1:-}; [ $# -gt 0 ] && shift
+        [[ $s =~ ^[0-9]{1,4}$ ]] && [ "$s" -ge 5 ] && [ "$s" -le 3600 ] || die "pause invalide : « $s » (secondes, de 5 à 3600)"
+        args+=("$s") ;;
       terrain-worker:--traiter)
         if [ $# -gt 0 ] && [[ $1 != --* ]]; then
           [[ $1 =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $1 » (gdtv_<uuid>, voir terrain --etat)"
@@ -642,7 +650,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
         fiche=$SRC/docs/geodata/terrain/$f.json
         [ -f "$fiche" ] && [ ! -L "$fiche" ] || die "fiche inconnue : $f (liste fermée du commit approuvé : $(cd "$SRC/docs/geodata/terrain" 2>/dev/null && ls -1 -- *.json 2>/dev/null | sed 's/\.json$//' | tr '\n' ' '))"
         args+=("$f") ;;
-      terrain-import:--lever|terrain-worker:--decider|terrain-worker:--controler)
+      terrain-import:--lever|terrain-worker:--decider|terrain-worker:--controler|terrain-worker:--publier)
         v=${1:-}; [ $# -gt 0 ] && shift
         [[ $v =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $v » (gdtv_<uuid>, voir terrain --etat)"
         args+=("$v") ;;
@@ -652,7 +660,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     while [ $# -gt 0 ]; do
       o=$1; val=${2-}
       case "$action:$o" in
-        --importer:--par|--traiter:--par|--controler:--par|--controler:--points|--controler:--methode|--controler:--cible-rmsez|--controler:--cible-p95|--controler:--cible-classe|--decider:--par|--decider:--decision|--decider:--motif|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
+        --importer:--par|--traiter:--par|--controler:--par|--controler:--points|--controler:--methode|--controler:--cible-rmsez|--controler:--cible-p95|--controler:--cible-classe|--decider:--par|--decider:--decision|--decider:--motif|--publier:--par|--publier:--motif|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
         *) die "option refusée pour terrain $action : $o" ;;
       esac
       [ $# -ge 2 ] || die "valeur manquante : $o"
@@ -683,15 +691,34 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
       --importer) [ -n "${vu[--par]:-}" ] || die "--par <courriel> requis (rôle GeoData gestionnaire-donnees)" ;;
       --lever) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--par <courriel> et --motif \"…\" requis (rôle GeoData responsable-publication)" ;;
       --decider) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] && [ -n "${vu[--decision]:-}" ] || die "--decision, --motif \"…\" et --par <courriel> requis (rôle GeoData responsable-publication)" ;;
+      --publier) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--motif \"…\" et --par <courriel> requis (rôle GeoData responsable-publication)" ;;
       --controler)
         [ -n "${vu[--par]:-}" ] && [ -n "${vu[--points]:-}" ] && [ -n "${vu[--methode]:-}" ] || die "--points <nom>, --methode \"…\" et --par <courriel> requis (rôle GeoData gestionnaire-donnees)"
         { [ -n "${vu[--cible-rmsez]:-}" ] && [ -n "${vu[--cible-p95]:-}" ]; } || { [ -z "${vu[--cible-rmsez]:-}" ] && [ -z "${vu[--cible-p95]:-}" ] && [ -z "${vu[--cible-classe]:-}" ]; } \
           || die "--cible-rmsez et --cible-p95 vont ensemble (--cible-classe seulement avec elles)" ;;
     esac
+    # Mode continu (TER-04, TER-D20) : un seul conteneur détaché nommé, lancé et arrêté par l'administrateur ; restart "no"
+    # (garde) — un échec l'arrête au lieu de boucler sans surveillance sur un disque partagé avec la production, et il ne
+    # repart pas seul après un redémarrage du VPS (relance explicite).
+    CONTINU=fadi-preprod-terrain-continu
+    continu_actif() { [ -n "$(docker ps -q --filter "name=^${CONTINU}\$")" ]; }
+    if [ "$action" = --arreter ]; then
+      if continu_actif; then docker stop "$CONTINU" > /dev/null; log "travailleur continu arrêté ($CONTINU)"
+      else log "aucun travailleur continu en marche"; fi
+      exit 0
+    fi
     nouveau_run terrain; garde
     dc --profile terrain config --services | grep -qx "$service" \
       || die "service $service absent de la configuration du commit approuvé (TER-03 non livré ?)"
+    if [ "$action" = --continu ]; then
+      continu_actif && die "un travailleur continu est déjà en marche ($CONTINU) : terrain worker --arreter d'abord"
+    fi
     dc up -d db; attendre_sante db 120
     log "$service ${args[*]:0:2} (rôle $(role), commit $(commit | cut -c1-12))"
-    journal terrain.log dc --profile terrain run --rm --no-deps -T "$service" "${args[@]}" < "$ENTREE" ;;
+    if [ "$action" = --continu ]; then
+      journal terrain.log dc --profile terrain run -d --rm --no-deps -T --name "$CONTINU" "$service" "${args[@]}" < /dev/null
+      log "travailleur continu lancé ($CONTINU, pause ${args[1]} s) ; journal : docker logs $CONTINU ; arrêt : fadi-preprod terrain worker --arreter"
+    else
+      journal terrain.log dc --profile terrain run --rm --no-deps -T "$service" "${args[@]}" < "$ENTREE"
+    fi ;;
 esac

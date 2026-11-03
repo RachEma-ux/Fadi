@@ -80,7 +80,7 @@ les sauvegardes de la production.
 Contrôles (3 novembre 2026, compte non privilégié) : `bash deploy/preprod/tests/run.sh` 181 réussis, 0 échec après fusion de `main` (TER-03, PR #387) : 18
 mutations de `terrain-import` et de la liste fermée, 12 de `terrain-worker` (bloc réel de `compose.yml`), 39 cas de la
 commande `terrain` dont `worker --essai-gdal | --traiter | --decider`, quota du travailleur aligné sur 30 Go ; puis
-`worker --controler` depuis l'emplacement fermé `/opt/fadi-preprod/controles/<nom>.csv` (TER-D19) : 193 réussis, 0 échec, `run-auto.sh` 85 réussis, 0 échec ; `fiches.test.ts`
+`worker --controler` depuis l'emplacement fermé `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20) : 193 réussis, 0 échec, `run-auto.sh` 85 réussis, 0 échec ; `fiches.test.ts`
 4 tests réussis ; typecheck, test et build : voir la PR. Aucun déploiement ; la nouvelle commande est à réinstaller par le
 maître d'ouvrage.
 

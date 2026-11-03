@@ -127,6 +127,8 @@ services:
       # /mnt/data, racine des données Docker, porte aussi la base et les sauvegardes de la production).
       GEODATA_TERRAIN_DIR: /data/terrain
       GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
+      # Drapeau de retour arrière du terrain (TER-04) : « false » ferme les services /geodata/api/terrain (404).
+      GEODATA_TERRAIN_ENABLED: ${PREPROD_GEODATA_TERRAIN_ENABLED:-true}
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
     ports:
@@ -202,8 +204,9 @@ services:
     logging: *logging
 
   # Travailleur terrain (TER-03, TER-D6) : image applicative + GDAL épinglé ; calcule les dérivés (COG, pente, ombrage),
-  # la couverture et les courbes des versions prêtes au traitement. À la demande, par `fadi-preprod terrain worker …`
-  # seulement (garde comprise, voir docs/geodata/README.md), jamais par un `docker compose` direct.
+  # la couverture et les courbes des versions prêtes au traitement, et prépare les exports (TER-04). Lancé seulement par
+  # `fadi-preprod terrain worker …` (garde comprise, voir docs/geodata/README.md), jamais par un `docker compose` direct ;
+  # mode continu : `fadi-preprod terrain worker --continu <secondes>` (conteneur détaché unique, restart "no", TER-D20).
   terrain-worker:
     image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}-terrain
     build:

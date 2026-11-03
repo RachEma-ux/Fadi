@@ -41,14 +41,15 @@ const ENTETE: EnTeteRaster = {
 };
 
 describe("cycle de vie d'une version de terrain (TER-D12)", () => {
-  it("ne revient jamais en arrière ; rejeté, remplacé et retiré sont terminaux", () => {
+  it("ne revient jamais en arrière (sauf republication d'une version remplacée) ; rejeté et retiré sont terminaux", () => {
     expect(transitionAdmise("depose", "validation")).toBe(true);
     expect(transitionAdmise("validation", "quarantaine")).toBe(true);
     expect(transitionAdmise("quarantaine", "traitement")).toBe(true);
     expect(transitionAdmise("publie", "remplace")).toBe(true);
     expect(transitionAdmise("publie", "traitement")).toBe(false);
     expect(transitionAdmise("validation", "publie")).toBe(false);
-    for (const e of ["rejete", "remplace", "retire"] as const) expect(TRANSITIONS_TERRAIN[e]).toEqual([]);
+    for (const e of ["rejete", "retire"] as const) expect(TRANSITIONS_TERRAIN[e]).toEqual([]);
+    expect(TRANSITIONS_TERRAIN.remplace).toEqual(["publie", "retire"]);
     for (const e of ETATS_TERRAIN) for (const v of TRANSITIONS_TERRAIN[e]) expect(ETATS_TERRAIN).toContain(v);
   });
 });

@@ -83,13 +83,19 @@ sudo fadi-preprod terrain worker --controler <gdtv_…> --points <nom> --methode
 sudo fadi-preprod terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
 ```
 
-Points de contrôle en préproduction (emplacement fermé, TER-D19) : l'administrateur dépose le CSV sur le VPS dans
+Points de contrôle en préproduction (emplacement fermé, TER-D20) : l'administrateur dépose le CSV sur le VPS dans
 `/opt/fadi-preprod/controles/<nom>.csv` (dossier `root` 0700, fichier `root` 0600, ≤ 10 Mo), par exemple
 `sudo install -d -m 0700 /opt/fadi-preprod/controles && sudo install -m 0600 releve.csv /opt/fadi-preprod/controles/releve-gnss.csv`.
 `--points` ne prend que `<nom>` (jamais un chemin) ; `fadi-preprod` refuse un lien, un fichier modifiable par d'autres ou
 trop gros, journalise l'empreinte SHA-256 du CSV et le transmet au conteneur sur l'entrée standard (`--points /dev/stdin`) :
 aucun montage de l'hôte, aucun chemin dans le conteneur.
 Hors préproduction (développement) : `npm run geodata:terrain -- --controler <id> --points <csv> --methode "…" --par …`.
+Services (TER-04, `docs/workstreams/geodata/terrain/TER-04.md`) sous `/geodata/api/terrain` : `jeux`, `point`, `profil`,
+`statistiques`, `tuiles/:version/:style/:z/:x/:y`, `courbes/:version/:z/:x/:y` (MVT), `exports` ; seules les versions
+publiées sont servies. Publication et retour arrière : `sudo fadi-preprod terrain worker --publier <gdtv_…> --motif "…" --par <responsable-publication>` (ou
+`POST /geodata/api/terrain/versions/:id/publier`). Exports préparés par le travailleur : `sudo fadi-preprod terrain worker --exports`, ou
+`sudo fadi-preprod terrain worker --continu 30` (traitements et exports en boucle, conteneur détaché unique arrêté par
+`sudo fadi-preprod terrain worker --arreter`, TER-D20). Drapeau : `GEODATA_TERRAIN_ENABLED=false` ferme les services.
 
 Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
 de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est

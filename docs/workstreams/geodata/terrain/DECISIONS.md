@@ -43,9 +43,17 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 
 | 2026-11-02 | TER-D1 à D3, D5 à D15, D17, D18 | « Recommandations retenues pour toutes les décisions TER-Dx. » | Maître d'ouvrage, dans la session | TER-02 engagé (`TER-02.md`). Reste à constater sur le VPS : racine des données Docker et espace libre réel (TER-D7). |
 
-| 2026-11-03 | TER-D19 | Emplacement fermé des points de contrôle de `terrain worker --controler` : `/opt/fadi-preprod/controles/<nom>.csv` sur le VPS (root 0700 / 0600, ≤ 10 Mo), désigné par son nom seulement, empreinte journalisée, transmis sur l'entrée standard (aucun montage de l'hôte, aucun chemin libre). Écartés : `depot/` du volume terrain (aucun moyen d'y déposer sans conteneur ni montage) et un montage en lecture seule (contraire à la garde : aucun montage de l'hôte). | Maître d'ouvrage, dans la session (« choisis un emplacement fermé ») ; choix de la session | PR #386 ; `docs/geodata/README.md` § Terrain. |
+| 2026-11-03 | TER-D21 | Mode continu du travailleur (TER-04, `--continu <s>`) en préproduction : **pas de service permanent** ; `fadi-preprod terrain worker --continu <5–3600>` lance un conteneur détaché unique `fadi-preprod-terrain-continu` (`run -d --rm`, même service, donc mêmes règles de garde : volume terrain seul, réseau `internal` seul, `fadi_app`, `restart: "no"`), refusé s'il tourne déjà ; `--arreter` l'arrête. Motif : un échec l'arrête au lieu de boucler sans surveillance sur le disque partagé avec la production ; aucun redémarrage automatique après un redémarrage du VPS (relance explicite, administrateur seul). | Demande de la session VPS ; choix de la session | PR #386. Réexaminer si les exports doivent survivre aux redémarrages (service dédié à `restart` borné, garde à étendre). |
+
+| 2026-11-03 | TER-D20 | Emplacement fermé des points de contrôle de `terrain worker --controler` : `/opt/fadi-preprod/controles/<nom>.csv` sur le VPS (root 0700 / 0600, ≤ 10 Mo), désigné par son nom seulement, empreinte journalisée, transmis sur l'entrée standard (aucun montage de l'hôte, aucun chemin libre). Écartés : `depot/` du volume terrain (aucun moyen d'y déposer sans conteneur ni montage) et un montage en lecture seule (contraire à la garde : aucun montage de l'hôte). | Maître d'ouvrage, dans la session (« choisis un emplacement fermé ») ; choix de la session | PR #386 ; `docs/geodata/README.md` § Terrain. |
 
 | 2026-11-03 | TER-D7 (révisée) | « Exécute tes recommandations » : constat VPS (data-root Docker = `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production) ; quota terrain ramené à **30 Go** ; garde de préproduction étendue au profil `terrain` ; `terrain-import` lancé seulement par `sudo fadi-preprod terrain …` (plus de `docker compose` brut). | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | `TER-02.md` § « Correctif d'exploitation du 3 novembre 2026 ». Le maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` après fusion (empreinte dans la PR). |
+
+### Précision soumise par TER-04
+
+| ID | Question | Recommandation | Bloque |
+| --- | --- | --- | --- |
+| TER-D19 | Retour arrière : le plan exige de rebasculer la version publiée vers la version acceptée précédente sans rien effacer ; le cycle TER-D12 rendait « remplacée » terminal | Ajouter la transition **remplacée → publiée** (republication d'une version remplacée ; l'actuelle devient remplacée), implémentée en TER-04 (modèle pur et déclencheur SQL), tracée par événement et journal (`terrain.retour-arriere`) | non (implémentée, à confirmer) |
 
 ### Questions ouvertes par TER-02 (levées de quarantaine, TER-D13)
 

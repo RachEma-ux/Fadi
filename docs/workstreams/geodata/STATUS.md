@@ -17,7 +17,14 @@ Mis à jour : 2026-11-03 (UTC).
   verts, CI de la PR (validate, e2e, image) verte. Complément (demande VPS) : liste fermée des services et règles
   `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` ; après fusion de `main` (#387) : `run.sh` 181/0,
   quota du travailleur aligné sur 30 Go, `--decider` exposé ; `--controler` exposé depuis l'emplacement fermé
-  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D19, entrée standard) : `run.sh` 193/0. En attente : réinstallation du script par le maître d'ouvrage.
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20, entrée standard) : `run.sh` 193/0 ; après fusion de `main` (TER-04, #389) :
+  `worker --publier | --exports | --continu <s> | --arreter` (TER-D21, conteneur détaché unique, restart "no"), quota 30 Go
+  conservé, `GEODATA_TERRAIN_ENABLED` repris : `run.sh` 212/0. En attente : réinstallation du script par le maître d'ouvrage.
+- Terrain TER-04 (services, tuiles, droits, publication, export ; Issue #381, branche `feat/381-ter-04-services`) :
+  **implémenté et vérifié**, non accepté. Routes `/geodata/api/terrain` (jeux, point, profil, statistiques, tuiles, courbes
+  MVT, exports, publication / retour arrière), droits par usage, drapeau `GEODATA_TERRAIN_ENABLED`. Tests : 253 du paquet,
+  DB-3 8/8 (services) et 18/18 (terrain) en local, remarques Codex corrigées, travailleur 9/9. Performances locales sur Lucerne (essai) : point
+  p95 ≈ 30 ms, profil 1 152 points 0,57 s, vue 5 × 3 tuiles ≤ 1,2 s (`terrain/TER-04.md`). TER-D19 (retour arrière) soumise.
 - Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
   vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur
   GDAL (COG vérifié cellule à cellule, dérivés à géoréférence recopiée), couverture WGS 84, courbes, rapports qualité,

@@ -26,7 +26,11 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   La garde refuse tout service hors liste fermée et couvre `terrain-worker` (#387, fusionnée) : `main` fusionné dans la
   branche, conflits résolus, quota du travailleur aligné sur 30 Go, `sudo fadi-preprod terrain worker --essai-gdal |
   --traiter | --controler | --decider` remplace le `docker compose … run terrain-worker` ; points de contrôle dans
-  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D19).
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20). TER-04 couvert : `worker --publier | --exports | --continu <s> |
+  --arreter` (TER-D21). La PR #390 (TER-05) n'ajoute que le scénario `geodata-terrain` à `E2E_DEFAUT` (conflit trivial).
+- Terrain TER-04 (Issue #381) : PR sur `feat/381-ter-04-services` (compte rendu `terrain/TER-04.md`). Après fusion et
+  déploiement : `GEODATA_TERRAIN_ENABLED` (vrai par défaut), travailleur `--continu` pour les exports ; mesurer les budgets
+  en préproduction (porte G3). Les versions réelles restent en quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-05.
 - Terrain TER-03 (Issue #381) : PR sur `feat/381-ter-03-traitement-qualite` (compte rendu `terrain/TER-03.md`). Après fusion
   et déploiement : construire et essayer le travailleur (`terrain-worker --essai-gdal`), puis `--traiter` dès qu'une version
   sort de quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-04.

@@ -18,6 +18,7 @@ import { importsRouter } from "./imports.js";
 import { prixRouter } from "./prix.js";
 import { tableauDeBordRouter } from "./tableau-de-bord.js";
 import { territoiresRouter } from "./territoires.js";
+import { terrainRouter } from "./terrain.js";
 
 export const geodataRouter = Router();
 
@@ -50,4 +51,6 @@ geodataRouter.use(importsRouter);
 geodataRouter.use(exportsRouter);
 // Prix immobiliers (Concept Prix v1.1) : /prix/… — registre, couches, agrégats publiés, cellules, imports, publications.
 geodataRouter.use(prixRouter);
+// Terrain haute résolution (plan v1.0, TER-04) : /terrain/… — catalogue, point, profil, statistiques, tuiles, courbes, exports.
+geodataRouter.use(terrainRouter);
 geodataRouter.use(adminRouter);
