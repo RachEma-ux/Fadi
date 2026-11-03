@@ -44,11 +44,12 @@ await build({
   logLevel: "info",
 });
 
-// Outils d'exploitation GeoData (ADR-GEODATA-02) et contrôle des contraintes NOT VALID (BD-5, `node apps/api/dist/verifier-contraintes.js`) : bundles à côté du serveur, exécutables dans l'image de production
+// Outils d'exploitation GeoData (ADR-GEODATA-02) contrôle des contraintes NOT VALID (BD-5, `node apps/api/dist/verifier-contraintes.js`) et rapport du verrou de
+// l'Atelier (BD-9, `node apps/api/dist/atelier-mesures.js`) : bundles à côté du serveur, exécutables dans l'image de production
 // comme `create-admin.mjs` (`node apps/api/dist/geodata-role.js …`, `node apps/api/dist/geodata-reference.js …`), sans
 // tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
 await build({
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "geodata-terrain": join(root, "src/db/geodata-terrain.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts") },
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "geodata-terrain": join(root, "src/db/geodata-terrain.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts"), "atelier-mesures": join(root, "src/db/atelier-mesures.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",

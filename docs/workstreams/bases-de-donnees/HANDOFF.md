@@ -1,6 +1,6 @@
 # Bases de données — Reprise de session
 
-Mis à jour : 2026-11-02 (UTC).
+Mis à jour : 2026-11-03 (UTC).
 
 ## Point de reprise
 
@@ -11,6 +11,10 @@ Mis à jour : 2026-11-02 (UTC).
 - PR implémentée et vérifiée en local (voir STATUS.md) ; CI de la PR à constater.
 
 ## Prochaine action
+
+- BD-7 : après la Release, l'administrateur lance `sudo bash installer-bases.sh <commit>` ; lire ensuite
+  `/mnt/data/fadi/pitr/derniere-verification.json` (durée de remise en service mesurée).
+- BD-9 : relever `node apps/api/dist/atelier-mesures.js 28` dans le conteneur de l'application après 2 à 4 semaines.
 
 - BD-3b et BD-4b après mesure. Après déploiement : `SELECT * FROM admin.schema_applications ORDER BY id DESC LIMIT 5` et
   `node apps/api/dist/verifier-contraintes.js` (rôle propriétaire) en préproduction.

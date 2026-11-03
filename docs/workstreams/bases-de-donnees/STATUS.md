@@ -1,6 +1,6 @@
 # Bases de données — Statut
 
-Mis à jour : 2026-11-02 (UTC).
+Mis à jour : 2026-11-03 (UTC).
 
 ## État
 
@@ -17,9 +17,19 @@ Base locale PostgreSQL 16.15 / PostGIS 3.4.2 avec les données GeoData réelles 
 - `npm run typecheck` et `npm run build` verts ; `pool-options.test.ts` 3/3, `client-integration.test.ts` 17/17 ; les
   suites de routes qui exigent la base de test attestée ne tournent qu'en CI (refus `TARGET_REQUIRED` en local).
 
+## Faits vérifiés le 2026-11-03 (BD-7, BD-8, BD-9, base locale)
+
+- Migration sous `fadi_migrator` : base existante « rôle fadi_migrator », aucun objet hors `fadi_owner` ; base neuve :
+  repli administrateur signalé puis `fadi_migrator` au passage suivant.
+- `pg_dump --role=fadi_backup` de la base complète (155 Mo) : réussi.
+- `ops/pitr/tests/run.sh` : 27 réussis, 0 échec (archivage, base, rétention locale, restauration complète et à un instant).
+- Outils de production (`deploy/prod/tests/run.sh`, hors root) : 123 réussis, 0 échec.
+- Mesure du verrou : deux écritures d'essai consignées (valide, refusée), rapport relu.
+
 ## Points ouverts
 
-- Préproduction et production non vérifiées (aucun accès depuis la session) ; BD-7 à BD-9 bloqués (voir TASKS.md).
+- Préproduction et production non vérifiées (aucun accès depuis la session) ; mise en service BD-7 par l'administrateur
+  (installer-bases.sh) ; envoi vers Swiss Backup et restauration depuis ce dépôt non essayés hors du VPS.
 
 ## Liens de suivi
 

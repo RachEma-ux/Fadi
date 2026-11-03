@@ -4,6 +4,11 @@
 # (PGPASSWORD dans l'environnement). Utilisé par le service `backup` de docker-compose.yml et à la main.
 set -eu
 HOST="$1"; USER="$2"; DB="$3"; DIR="$4"
+# BD-8 (D-7) : socket de la base partagé (FADI_BACKUP_SOCKET) → rôle de sauvegarde FADI_BACKUP_ROLE, sans mot de passe, à la
+# place de l'hôte et du rôle passés en arguments (appels existants inchangés).
+if [ -n "${FADI_BACKUP_SOCKET:-}" ] && [ -S "$FADI_BACKUP_SOCKET/.s.PGSQL.5432" ]; then
+  HOST="$FADI_BACKUP_SOCKET"; USER="${FADI_BACKUP_ROLE:-fadi_backup}"
+fi
 KEEP="${BACKUP_KEEP_DAYS:-14}"
 mkdir -p "$DIR"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"

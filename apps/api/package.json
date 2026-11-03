@@ -12,6 +12,7 @@
     "test:db-guard": "vitest run --config vitest.guard.config.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:verifier-contraintes": "tsx src/db/verifier-contraintes.ts",
+    "atelier:mesures": "tsx src/db/atelier-mesures.ts",
     "db:volumes-gc": "tsx src/db/volumes-gc.ts",
     "db:account-jobs": "tsx src/db/account-jobs.ts",
     "geodata:import-reference": "tsx src/db/geodata-reference.ts",
