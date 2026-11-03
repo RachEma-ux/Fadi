@@ -48,7 +48,7 @@ import { EchecLot, validerDansTransaction } from "../lib/atelier-validation.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue } from "../lib/documents.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
-import { lockProject } from "../lib/step-rows.js";
+import { sousVerrouProjet } from "../lib/atelier-mesures.js";
 
 export const atelierAutomatisationRouter = Router({ mergeParams: true });
 atelierAutomatisationRouter.use(requireAuth);
@@ -105,8 +105,7 @@ atelierAutomatisationRouter.post("/scripts", async (req, res) => {
     throw err;
   }
   if (SCRIPTS_INTEGRES.some((s) => s.id === script.id)) return void res.status(409).json({ erreur: "conflit", details: [{ chemin: "id", message: "identifiant réservé à un script intégré" }] });
-  const cree = await db.transaction(async (tx) => {
-    await lockProject(tx, project.id);
+  const cree = await sousVerrouProjet(project.id, "script-enregistre", 0, async (tx) => {
     const dernier = (await tx.select({ v: atelierScripts.version }).from(atelierScripts).where(and(eq(atelierScripts.projectId, project.id), eq(atelierScripts.scriptId, script.id))).orderBy(desc(atelierScripts.version)).limit(1))[0];
     const version = (dernier?.v ?? 0) + 1;
     const contenu = { ...script, version };
@@ -168,10 +167,8 @@ atelierAutomatisationRouter.post("/scripts/:scriptId/executer", async (req, res)
   const label = `Script « ${d.script.nom} » v${d.script.version}`.slice(0, 200);
   const enveloppe: Enveloppe = { requestId: e.data.requestId, baseRevision: e.data.baseRevision, contract: CONTRAT_COMMANDES, label, commands: d.commandes };
   try {
-    const r = await db.transaction(async (tx) => {
-      await lockProject(tx, project.id);
-      return validerDansTransaction(tx, project.id, req.user!.id, enveloppe, "commande", null, label);
-    });
+    const r = await sousVerrouProjet(project.id, "script", enveloppe.commands.length,
+      (tx) => validerDansTransaction(tx, project.id, req.user!.id, enveloppe, "commande", null, label), (e) => e instanceof EchecLot);
     if (r.status === 200) void traiterEvenements(project.id).catch(() => undefined);
     res.status(r.status).json({ ...r.reponse, script: { id: d.script.id, nom: d.script.nom, version: d.script.version } });
   } catch (err) {
@@ -316,12 +313,11 @@ atelierAutomatisationRouter.post("/assistant/propositions/:propositionId/accepte
   const label = `Assistant : ${prop.intention}`.slice(0, 200);
   const enveloppe: Enveloppe = { requestId: e.data.requestId, baseRevision: e.data.baseRevision, contract: CONTRAT_COMMANDES, label, commands: prop.commandes as Commande[] };
   try {
-    const r = await db.transaction(async (tx) => {
-      await lockProject(tx, project.id);
+    const r = await sousVerrouProjet(project.id, "assistant", enveloppe.commands.length, async (tx) => {
       const v = await validerDansTransaction(tx, project.id, req.user!.id, enveloppe, "commande", null, label);
       if (v.status === 200) await tx.update(atelierPropositions).set({ statut: "acceptee", revisionResultat: v.revision, decidedAt: new Date() }).where(eq(atelierPropositions.id, prop.id));
       return v;
-    });
+    }, (e) => e instanceof EchecLot);
     if (r.status === 200) void traiterEvenements(project.id).catch(() => undefined);
     res.status(r.status).json({ ...r.reponse, proposition: prop.id });
   } catch (err) {

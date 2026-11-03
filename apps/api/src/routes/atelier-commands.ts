@@ -36,7 +36,7 @@ import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue } from "../lib/documents.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
-import { lockProject } from "../lib/step-rows.js";
+import { sousVerrouProjet } from "../lib/atelier-mesures.js";
 import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
 import { ErreurNuage, lireNuage, MAX_POINTS_ECHANTILLON } from "@parcours/atelier-model";
@@ -91,10 +91,9 @@ async function validerLot(project: AccessibleProject, auteurId: string, envelopp
 }
 
 async function validerLotTx(project: AccessibleProject, auteurId: string, enveloppe: Enveloppe, kind: JournalKind, inverseOf: string | null, label: string): Promise<ResultatValidation> {
-  return db.transaction(async (tx) => {
-    await lockProject(tx, project.id);
-    return validerDansTransaction(tx, project.id, auteurId, enveloppe, kind, inverseOf, label);
-  });
+  // BD-9 : même transaction sous le verrou du projet, durée d'attente et de tenue du verrou mesurées.
+  return sousVerrouProjet(project.id, "commande", enveloppe.commands.length,
+    (tx) => validerDansTransaction(tx, project.id, auteurId, enveloppe, kind, inverseOf, label), (e) => e instanceof EchecLot);
 }
 
 async function repondre(res: Response, projectId: string, r: ResultatValidation): Promise<void> {
@@ -337,12 +336,11 @@ atelierCommandsRouter.post("/nuages", raw({ type: () => true, limit: LIMITE_IFC 
   try { nom = decodeURIComponent(req.get("X-Nuage-Nom") ?? "").slice(0, 80) || nom; } catch { /* nom par défaut */ }
   const points = lecture.points.map((q) => ({ x: Math.round((q.x - origine.x) * 1000) / 1000, y: Math.round((q.y - origine.y) * 1000) / 1000, z: Math.round((q.z - origine.z) * 1000) / 1000 }));
   try {
-    const sortie = await db.transaction(async (tx) => {
-      await lockProject(tx, project.id);
+    const sortie = await sousVerrouProjet(project.id, "import-nuage", 1, async (tx) => {
       if (!(await chargerModele(tx, project.id))) await creerModeleVide(tx, project.id, `fadi-${project.id}`);
       const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, [{ type: "nuageDePoints.creer", params: { niveauId, nom, source, format: lecture.format, nombrePoints: lecture.nombrePoints, pas: lecture.pas, points, origine, coupeZ } }], `Nuage de points ${nom}`);
       return r;
-    });
+    }, (e) => e instanceof EchecLot);
     void traiterEvenements(project.id).catch(() => undefined);
     res.json({ source, revision: sortie.revision, lecture: { format: lecture.format, version: lecture.version, nombrePoints: lecture.nombrePoints, retenus: points.length, pas: lecture.pas, bornes: lecture.bornes, avertissements: lecture.avertissements } });
   } catch (err) {
@@ -374,15 +372,14 @@ atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_
     return;
   }
   try {
-    const sortie = await db.transaction(async (tx) => {
-      await lockProject(tx, project.id);
+    const sortie = await sousVerrouProjet(project.id, "import-ifc", 0, async (tx) => {
       const charge = (await chargerModele(tx, project.id)) ?? (await creerModeleVide(tx, project.id, `fadi-${project.id}`));
       const { lots, rapport } = commandesImportIfc(charge.etat, lecture, { source });
       if (lots.length > LOTS_IMPORT_MAX) throw new EchecLot({ status: 413, revision: project.modelRevision, reponse: { erreur: "trop-volumineux", message: `Import trop volumineux (${lots.length} lots de 500 commandes ; ${LOTS_IMPORT_MAX} au plus).` } });
       let derniere: ResultatValidation | null = null;
       for (const l of lots) derniere = await appliquerCommandesInternes(tx, project.id, req.user!.id, l.commands, l.label);
       return { rapport, lots: lots.length, revision: derniere?.revision ?? project.modelRevision };
-    });
+    }, (e) => e instanceof EchecLot);
     if (sortie.lots) void traiterEvenements(project.id).catch(() => undefined);
     res.json({ source, revision: sortie.revision, lots: sortie.lots, rapport: sortie.rapport });
   } catch (err) {
@@ -451,12 +448,11 @@ atelierCommandsRouter.post("/import-step", raw({ type: () => true, limit: LIMITE
       return;
     }
     const nom = source.replace(/\.(step|stp)$/i, "");
-    const sortie = await db.transaction(async (tx) => {
-      await lockProject(tx, project.id);
+    const sortie = await sousVerrouProjet(project.id, "import-step", nombre, async (tx) => {
       const commandes = Array.from({ length: nombre }, (_, i) => ({ type: TYPE_CREER_EXACT, params: { niveauId, nom: nombre === 1 ? nom : `${nom} (${i + 1}/${nombre})`, operation: { type: "import-step", sources: [], libelle: `Import STEP ${source}${nombre === 1 ? "" : ` — solide ${i + 1}/${nombre}`}`, entrees: { type: "import-step", step, solide: i } } } }));
       const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, commandes, `Import STEP ${source}`);
       return { revision: r.revision, reponse: r.reponse };
-    });
+    }, (e) => e instanceof EchecLot);
     void traiterEvenements(project.id).catch(() => undefined);
     res.json({ source, solides: nombre, revision: sortie.revision, effets: (sortie.reponse as { effets?: unknown }).effets ?? null });
   } catch (err) {

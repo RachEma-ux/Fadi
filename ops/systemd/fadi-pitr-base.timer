@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - sauvegarde de base quotidienne et fenêtre de 14 jours (BD-7) (minuteur)
+
+[Timer]
+OnCalendar=*-*-* 02:40:00
+RandomizedDelaySec=10m
+Persistent=true
+Unit=fadi-pitr-base.service
+
+[Install]
+WantedBy=timers.target

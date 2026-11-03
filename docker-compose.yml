@@ -20,12 +20,28 @@ services:
       - log_min_duration_statement=1000
       - -c
       - log_parameter_max_length=0
+      # BD-7 : sauvegarde continue — chaque segment du journal de transactions est copié dans le volume fadi-pitr (au plus
+      # 5 minutes d'attente, archive_timeout), puis envoyé hors du VPS toutes les 10 minutes (fadi-pitr envoi) ;
+      # perte de données maximale visée : 15 minutes. Sans effet tant que le conteneur n'est pas recréé
+      # (deploy/prod/installation/installer-bases.sh).
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=/opt/fadi-pitr/archiver-wal.sh %p %f
+      - -c
+      - archive_timeout=300
+    # Prépare le volume /pitr (utilisateur postgres) puis démarre l'image comme d'habitude (docker-entrypoint.sh).
+    entrypoint: ["/opt/fadi-pitr/entrypoint.sh"]
     environment:
       POSTGRES_USER: fadi
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant (.env.deploy)}
       POSTGRES_DB: fadi
     volumes:
       - fadi-db:/var/lib/postgresql/data
+      - fadi-pitr:/pitr
+      - ./ops/pitr:/opt/fadi-pitr:ro
+      # BD-8 : socket partagé avec le service backup, qui sauvegarde avec le rôle fadi_backup (lecture seule) sans mot de passe.
+      - fadi-db-socket:/var/run/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fadi -d fadi"]
       interval: 10s
@@ -107,15 +123,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # BD-8 (D-7) : la sauvegarde ne détient plus le mot de passe du super-utilisateur ; elle se connecte par le socket de la
+    # base avec le rôle fadi_backup (lecture seule), quels que soient l'hôte et le rôle passés à fadi-backup.
     environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
+      FADI_BACKUP_SOCKET: /var/run/postgresql
+      FADI_BACKUP_ROLE: fadi_backup
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
       - fadi-backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/fadi-backup:ro
+      - fadi-db-socket:/var/run/postgresql
     entrypoint: ["sh", "-c", "while true; do fadi-backup db fadi fadi /backups; sleep 86400; done"]
 
 volumes:
   fadi-db:
   fadi-backups:
+  fadi-pitr:
+  fadi-db-socket:
   fadi-caddy:

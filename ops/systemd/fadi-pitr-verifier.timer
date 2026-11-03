@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - restauration de contrôle mensuelle depuis le dépôt hors VPS (BD-7) (minuteur)
+
+[Timer]
+OnCalendar=*-*-01 04:20:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=fadi-pitr-verifier.service
+
+[Install]
+WantedBy=timers.target

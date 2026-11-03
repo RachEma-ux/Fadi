@@ -46,3 +46,25 @@ clés étrangères, 247 contraintes CHECK, ~40 déclencheurs d'immuabilité, rô
 - BD-5 : `MIGRATION_LOCK_TIMEOUT=0` (attente illimitée, comportement antérieur) ; la table `admin.schema_applications` est
   un simple journal.
 - BD-6 : retirer `command:` du service `db` et redémarrer le conteneur.
+
+## Décisions du 3 novembre 2026 et mise en œuvre (BD-7, BD-8, BD-9)
+
+Le maître d'ouvrage a accepté les recommandations (« Ok excut ») :
+
+- **BD-7 Sauvegardes** : perte maximale 15 minutes, remise en service 4 heures, fenêtre de 14 jours, rétention réelle
+  5 / 14 / 8 / 12, restauration de contrôle mensuelle. Mise en œuvre sans nouvel outil ni nouveau secret : archivage
+  du journal dans le volume `fadi-pitr`, envoi restic toutes les 10 minutes vers le dépôt Swiss Backup existant, base
+  nocturne `pg_basebackup`, `fadi-backup-retention` hebdomadaire. Détail : [sauvegarde continue](../../sauvegarde-continue.md).
+  L'outil WAL-G envisagé dans la recommandation n'est pas retenu : restic, déjà installé et chiffré, atteint les mêmes
+  objectifs sans binaire supplémentaire dans l'image de la base ni nouvelle clé.
+- **BD-8 Rôles** : aucun mot de passe nouveau n'est nécessaire. La migration applique le schéma sous `fadi_migrator`
+  (`SET ROLE`) et n'utilise l'administrateur que pour l'amorçage ; la sauvegarde passe par le socket de la base avec
+  `fadi_backup`. Les outils du VPS (`fadi-prod-auto`, sauvegarde hors VPS) gardent l'administrateur local : ils
+  tournent déjà en root sur le serveur, le changer n'apporterait aucune protection.
+- **BD-9 Atelier** : mesure seulement (`lib/atelier-mesures.ts`, table `admin.atelier_mesures_verrou`, rapport
+  `node apps/api/dist/atelier-mesures.js`). Critère proposé : agir si plus de 5 % des écritures tiennent le verrou plus
+  de 250 ms ; décision au maître d'ouvrage après 2 à 4 semaines de mesure.
+
+Correction d'une recommandation : « votre seule action : publier la Release » n'était pas exact pour BD-7. Les outils
+du VPS ne s'installent que par l'administrateur (empreintes relues) et le déploiement automatique ne redémarre jamais la
+base : un geste unique, `sudo bash installer-bases.sh <commit>`, est nécessaire après la Release.

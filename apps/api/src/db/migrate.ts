@@ -22,7 +22,7 @@ async function main() {
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
     // eslint-disable-next-line no-console
-    console.log(`Migration : ${r.dureeMs} ms, ${r.tentatives} essai(s), statistiques des requêtes ${r.pgStatStatements}.`);
+    console.log(`Migration : ${r.dureeMs} ms, ${r.tentatives} essai(s), rôle ${r.role}, statistiques des requêtes ${r.pgStatStatements}.`);
     const roles = await applyRolePasswords(pool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);

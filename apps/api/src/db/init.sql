@@ -4184,6 +4184,20 @@ CREATE TABLE IF NOT EXISTS admin.schema_applications (
   role text NOT NULL
 );
 CREATE INDEX IF NOT EXISTS schema_applications_le_idx ON admin.schema_applications (appliquee_le);
+-- BD-9 : mesure du verrou de projet de l'Atelier (lib/atelier-mesures.ts) — attente et tenue du verrou par écriture ;
+-- projet, nature et nombre de commandes seulement (aucune donnée personnelle, aucun contenu), retirée après 90 jours.
+CREATE TABLE IF NOT EXISTS admin.atelier_mesures_verrou (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  project_id text NOT NULL,
+  nature text NOT NULL CONSTRAINT atelier_mesures_verrou_nature_ck
+    CHECK (nature IN ('commande', 'import-ifc', 'import-nuage', 'import-step', 'script', 'assistant', 'script-enregistre')),
+  commandes integer NOT NULL CONSTRAINT atelier_mesures_verrou_commandes_ck CHECK (commandes >= 0),
+  attente_ms integer NOT NULL CONSTRAINT atelier_mesures_verrou_attente_ck CHECK (attente_ms >= 0),
+  tenue_ms integer NOT NULL CONSTRAINT atelier_mesures_verrou_tenue_ck CHECK (tenue_ms >= 0),
+  resultat text NOT NULL CONSTRAINT atelier_mesures_verrou_resultat_ck CHECK (resultat IN ('valide', 'refuse', 'erreur')),
+  mesure_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS atelier_mesures_verrou_le_idx ON admin.atelier_mesures_verrou (mesure_le);
 DO $$
 DECLARE
   r record;

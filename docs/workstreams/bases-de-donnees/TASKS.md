@@ -16,15 +16,19 @@
 
 ## Terminé
 
+- BD-7 (code) : archivage du journal, envoi toutes les 10 minutes, base nocturne, rétention réelle, restauration de
+  contrôle mensuelle, installeur ; essais `ops/pitr/tests/run.sh` 27/27.
+- BD-8 : migration sous `fadi_migrator` (SET ROLE), amorçage administrateur, sauvegarde par `fadi_backup` sans mot de
+  passe (socket).
+- BD-9 (mesure) : verrou de projet de l'Atelier mesuré, rapport.
+
 - BD-0 : analyse, plan, Issue #379, dossier de chantier.
 
 ## Bloqué
 
-- BD-7 : restauration à un instant donné, conservation appliquée, test mensuel — objectifs RPO / RTO et accord de
-  suppression d'anciennes copies : maître d'ouvrage.
-- BD-8 : migration avec `fadi_migrator`, sauvegarde avec `fadi_backup` — mots de passe à poser dans `.env.deploy` :
-  maître d'ouvrage.
-- BD-9 : Atelier, verrou de projet et import IFC — décision section 10.1 : maître d'ouvrage.
+- BD-7 : mise en service sur le VPS — geste unique de l'administrateur après la Release :
+  `sudo bash installer-bases.sh <commit>` (docs/sauvegarde-continue.md).
+- BD-9 (suite) : décision de modifier l'Atelier — après 2 à 4 semaines de mesure, critère proposé 5 % au-delà de 250 ms.
 - BD-11 : outil de migrations versionnées, index couvrant `geodata_valeurs`, `pg_trgm` — à définir après mesures en
   production.
 
