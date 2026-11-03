@@ -3,7 +3,8 @@
 # autres verbes réussissent ou échouent selon MOCK_FAIL (liste de mots : build up run-check run-backup run-restore
 # run-migrate image-rm e2e-<scénario>) ; MOCK_IMAGES liste les étiquettes rendues par `image ls`. MOCK_MIGRATE_LOG
 # remplace la sortie du service migrate, MOCK_FADI_APP_CREATE le droit CREATE de fadi_app relu après migration, MOCK_TAR
-# l'archive des rapports ; MOCK_TRACE reçoit chaque appel (avec les arguments de version de l'image).
+# l'archive des rapports ; MOCK_TRACE reçoit chaque appel (avec les arguments de version de l'image) ; pour terrain-import
+# (MOCK_FAIL run-terrain), l'entrée standard reçue est tracée (« stdin=… »).
 orig=("$@")
 [ -n "${MOCK_TRACE:-}" ] && echo "FADI_BUILD_COMMIT=${FADI_BUILD_COMMIT:-} FADI_BUILD_DATE=${FADI_BUILD_DATE:-} $*" >> "$MOCK_TRACE"
 has() { [[ " ${MOCK_FAIL:-} " == *" $1 "* ]]; }
@@ -34,6 +35,10 @@ case "$verb" in
   run)
     if [[ $cmdline == *"tar --null"* ]]; then
       if [ -n "${MOCK_TAR:-}" ]; then cat "$MOCK_TAR"; else tar -cf - -T /dev/null; fi; exit 0
+    fi
+    if [[ $cmdline == *" terrain-import "* ]]; then
+      [ -n "${MOCK_TRACE:-}" ] && echo "stdin=$(readlink /proc/self/fd/0)" >> "$MOCK_TRACE"
+      has run-terrain && fail terrain; echo "terrain-import ok"; exit 0
     fi
     if [[ $cmdline =~ \ migrate$ ]]; then
       has run-migrate && { echo "Schema applied (init.sql)."; fail migrate; }

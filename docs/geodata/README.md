@@ -46,18 +46,24 @@ Plan et décisions : `docs/workstreams/geodata/terrain/` (`PLAN.md`, `DECISIONS.
 vivent dans le volume nommé `fadi-preprod-terrain` (dérogation D-GD-29 décidée, TER-D5) : `depot/`, `travail/`,
 `originaux/<sha256>` (lecture seule), `derives/` ; la base garde fiche, empreinte, en-tête lu, état et événements
 (`geodata_terrain_*`). L'API monte le volume en lecture seule ; seul le service à usage unique `terrain-import` (profil
-`terrain`) y écrit. Quota : `GEODATA_TERRAIN_QUOTA_GO` (60 par défaut, TER-D7).
+`terrain`) y écrit. Quota : `GEODATA_TERRAIN_QUOTA_GO` — en préproduction `PREPROD_GEODATA_TERRAIN_QUOTA_GO`, **30 Go**
+par défaut (TER-D7 révisée le 3 novembre 2026 : `/mnt/data`, racine des données Docker, porte aussi la base et les
+sauvegardes de la production) ; 60 Go hors préproduction si la variable est absente.
+
+En préproduction, `terrain-import` ne se lance **que** par `fadi-preprod` (garde d'isolation, rôles, copie figée du commit
+approuvé, fichier d'environnement existant, journal `fadi-preprod show <run> terrain.log`) — jamais par un `docker compose`
+direct. Fiches : noms de la liste fermée `docs/geodata/terrain/*.json` du commit approuvé ; aucune adresse ni chemin.
 
 ```sh
-# Préproduction, depuis la copie figée de fadi-preprod (mêmes variables que fadi-preprod : FADI_COMMIT, mots de passe).
-DC="docker compose -p fadi-preprod -f deploy/preprod/compose.yml --profile terrain run --rm terrain-import"
-$DC                                                            # fiches livrées (docs/geodata/terrain)
-$DC --telecharger gedtm30-v1-2-benslimane                       # original d'une fiche livrée → depot/ (empreinte contrôlée)
-$DC --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
-$DC --etat                                                     # versions, états, motifs, étiquettes
-$DC --lever <id> --par <responsable-publication> --motif "…" \
+sudo fadi-preprod terrain --etat                                     # versions, états, motifs, étiquettes (opérateur admis)
+# Administrateur seulement (écritures : sortie vers la source, disque partagé avec la production, décision de publication) :
+sudo fadi-preprod terrain --telecharger gedtm30-v1-2-benslimane      # original d'une fiche livrée → depot/ (empreinte contrôlée)
+sudo fadi-preprod terrain --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
+sudo fadi-preprod terrain --lever <gdtv_…> --par <responsable-publication> --motif "…" \
     --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
 ```
+
+Hors préproduction (développement) : `npm run geodata:terrain -- --etat` etc., mêmes options.
 
 Cycle de vie (TER-D12) : déposé → validation → rejeté | quarantaine | prêt au traitement → revue → accepté → publié →
 remplacé | retiré. Une référence verticale inconnue, un datum incompatible, un NoData inconnu ou un écart avec la fiche

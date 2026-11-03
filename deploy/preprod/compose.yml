@@ -123,9 +123,10 @@ services:
       # 31 octobre 2026) ; « non » les coupe. Jamais réglé en production : une source provisoire n'y est ni importée ni servie.
       GEODATA_SOURCES_PROVISOIRES: ${PREPROD_GEODATA_SOURCES_PROVISOIRES:-oui}
       # Terrain haute résolution (TER-02, TER-D5, TER-D7) : volume nommé, lu par l'API en lecture seule ; écrit seulement
-      # par le service `terrain-import` (profil terrain). Quota du volume : 60 Go par défaut.
+      # par le service `terrain-import` (profil terrain). Quota du volume : 30 Go par défaut (TER-D7 révisée : le disque
+      # /mnt/data, racine des données Docker, porte aussi la base et les sauvegardes de la production).
       GEODATA_TERRAIN_DIR: /data/terrain
-      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-60}
+      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
     ports:
@@ -175,8 +176,8 @@ services:
     logging: *logging
 
   # Terrain haute résolution (TER-02, TER-D10) : commande d'administration à usage unique, seule à écrire dans le volume
-  # terrain (dépôt, originaux par empreinte). Même image que `app`, compte fadi_app ; lancée à
-  # la demande : `docker compose … --profile terrain run --rm terrain-import --etat` (voir docs/geodata/README.md).
+  # terrain (dépôt, originaux par empreinte). Même image que `app`, compte fadi_app ; lancée seulement par
+  # `fadi-preprod terrain …` (garde comprise, voir docs/geodata/README.md), jamais par un `docker compose` direct.
   terrain-import:
     image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
     profiles: ["terrain"]
@@ -189,7 +190,7 @@ services:
       DATABASE_URL: postgresql://fadi_app:${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi
       NODE_ENV: production
       GEODATA_TERRAIN_DIR: /data/terrain
-      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-60}
+      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
     volumes:
       - fadi-preprod-terrain:/data/terrain
     # `front` : sortie vers les seules adresses des fiches livrées (`--telecharger`) ; aucun port publié.
