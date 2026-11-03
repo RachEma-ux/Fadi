@@ -36,9 +36,9 @@ case "$verb" in
     if [[ $cmdline == *"tar --null"* ]]; then
       if [ -n "${MOCK_TAR:-}" ]; then cat "$MOCK_TAR"; else tar -cf - -T /dev/null; fi; exit 0
     fi
-    if [[ $cmdline == *" terrain-import "* ]]; then
+    if [[ $cmdline =~ \ (terrain-import|terrain-worker)\  ]]; then
       [ -n "${MOCK_TRACE:-}" ] && echo "stdin=$(readlink /proc/self/fd/0)" >> "$MOCK_TRACE"
-      has run-terrain && fail terrain; echo "terrain-import ok"; exit 0
+      has run-terrain && fail terrain; echo "${BASH_REMATCH[1]} ok"; exit 0
     fi
     if [[ $cmdline =~ \ migrate$ ]]; then
       has run-migrate && { echo "Schema applied (init.sql)."; fail migrate; }

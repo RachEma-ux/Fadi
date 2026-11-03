@@ -104,6 +104,7 @@ Administrateur — terrain haute résolution (service terrain-import, fiches de 
   terrain --importer <fiche> --par <courriel>   import de depot/ (rôle GeoData gestionnaire-donnees)
   terrain --lever <gdtv_…> --par <courriel> --motif "…" [--reference-libelle "…" --reference-source "…"
           [--reference-code EPSG:nnnn]]         levée de quarantaine consignée (rôle responsable-publication, TER-D13)
+  terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]   travailleur GDAL (TER-03, service terrain-worker)
 EOF
 }
 
@@ -285,6 +286,33 @@ else:
     if not str(mig.get("image", "")).startswith("fadi-preprod-app:"): err(f"service migrate : image {mig.get('image')!r}")
     if mig.get("ports"): err("service migrate : aucun port publié")
     if sorted(mig.get("networks") or {}) != ["internal"]: err(f"service migrate : réseaux {sorted(mig.get('networks') or {})} (attendu internal seul)")
+# Liste fermée des services : tout service inconnu (quel que soit son profil) est refusé, jamais admis par défaut.
+CONNUS = {"db", "migrate", "app", "recette", "terrain-import", "terrain-worker"}
+for name in svcs:
+    if name not in CONNUS: err(f"service {name!r} inconnu (liste fermée : {', '.join(sorted(CONNUS))})")
+# TER-03 (PR #387) : terrain-worker, image propre <commit>-terrain construite depuis l'image applicative du même commit,
+# réseau internal seul (aucune sortie), volume terrain seul. Facultatif tant que TER-03 n'est pas livré.
+tw = svcs.get("terrain-worker")
+if tw:
+    p = "service terrain-worker"
+    env = tw.get("environment") or {}
+    if tw.get("image") != f"fadi-preprod-app:{c12}-terrain": err(f"{p} : image {tw.get('image')!r} (attendu fadi-preprod-app:{c12}-terrain)")
+    b = tw.get("build") or {}
+    if b and (b.get("context") != src or b.get("dockerfile") != "deploy/preprod/terrain-worker.Dockerfile"
+              or (b.get("args") or {}) != {"APP_IMAGE": f"fadi-preprod-app:{c12}"} or b.get("additional_contexts")):
+        err(f"{p} : build hors de deploy/preprod/terrain-worker.Dockerfile sur l'image fadi-preprod-app:{c12}")
+    vols = tw.get("volumes") or []
+    for v in vols:
+        if not (v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain"):
+            err(f"{p} : volume {v.get('source')!r} interdit (fadi-preprod-terrain seul)")
+    if sorted(tw.get("networks") or {}) != ["internal"]: err(f"{p} : réseaux {sorted(tw.get('networks') or {})} (attendu internal seul)")
+    if tw.get("network_mode"): err(f"{p} : network_mode interdit")
+    if tw.get("ports"): err(f"{p} : aucun port publié")
+    db = str(env.get("DATABASE_URL") or "")
+    if not (db.startswith("postgresql://fadi_app:") and "@db:5432/" in db): err(f"{p} : DATABASE_URL doit utiliser le rôle fadi_app sur @db:5432 (jamais le superutilisateur)")
+    for k in ("DATABASE_MIGRATION_URL", "SMTP_PASS", "MIGRATE_ONLY"):
+        if k in env: err(f"{p} : {k} interdit")
+    if str(tw.get("restart")) != "no": err(f"{p} : restart {tw.get('restart')!r} (attendu \"no\")")
 # TER-02 : terrain-import, seul à écrire dans le volume terrain et à sortir vers les adresses des fiches livrées.
 ti = svcs.get("terrain-import")
 if not ti: err("service terrain-import absent (profil terrain)")
@@ -402,6 +430,7 @@ case "$cmd" in
     case "${1:-}" in
       --etat) ;;
       --telecharger|--importer|--lever) admin_seulement "terrain $1" ;;
+      worker) admin_seulement "terrain worker" ;;   # traitements : écritures dans le volume et la base
       *) usage; die "terrain --etat | --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif …" ;;
     esac ;;
   *) usage; die "commande inconnue : $cmd" ;;
@@ -588,15 +617,25 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     # Arguments fermés : action, nom de fiche de la liste du commit approuvé (docs/geodata/terrain/<nom>.json), identifiant
     # de version, courriel, textes sans contrôle ni tiret initial (jamais pris pour une option) ; aucune adresse ni chemin.
     verifier_disposition
+    service=terrain-import
+    if [ "$1" = worker ]; then
+      service=terrain-worker; shift
+      case "${1:-}" in --essai-gdal|--traiter) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]" ;; esac
+    fi
     action=$1; shift; args=("$action")
-    case "$action" in
-      --telecharger|--importer)
+    case "$service:$action" in
+      terrain-worker:--traiter)
+        if [ $# -gt 0 ] && [[ $1 != --* ]]; then
+          [[ $1 =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $1 » (gdtv_<uuid>, voir terrain --etat)"
+          args+=("$1"); shift
+        fi ;;
+      terrain-import:--telecharger|terrain-import:--importer)
         f=${1:-}; [ $# -gt 0 ] && shift
         [[ $f =~ ^[a-z0-9][a-z0-9-]{2,79}$ ]] || die "fiche invalide : « $f » (nom d'une fiche livrée, jamais une adresse ni un chemin)"
         fiche=$SRC/docs/geodata/terrain/$f.json
         [ -f "$fiche" ] && [ ! -L "$fiche" ] || die "fiche inconnue : $f (liste fermée du commit approuvé : $(cd "$SRC/docs/geodata/terrain" 2>/dev/null && ls -1 -- *.json 2>/dev/null | sed 's/\.json$//' | tr '\n' ' '))"
         args+=("$f") ;;
-      --lever)
+      terrain-import:--lever)
         v=${1:-}; [ $# -gt 0 ] && shift
         [[ $v =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $v » (gdtv_<uuid>, voir terrain --etat)"
         args+=("$v") ;;
@@ -605,7 +644,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     while [ $# -gt 0 ]; do
       o=$1; val=${2-}
       case "$action:$o" in
-        --importer:--par|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
+        --importer:--par|--traiter:--par|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
         *) die "option refusée pour terrain $action : $o" ;;
       esac
       [ $# -ge 2 ] || die "valeur manquante : $o"
@@ -622,7 +661,9 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
       --lever) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--par <courriel> et --motif \"…\" requis (rôle GeoData responsable-publication)" ;;
     esac
     nouveau_run terrain; garde
+    dc --profile terrain config --services | grep -qx "$service" \
+      || die "service $service absent de la configuration du commit approuvé (TER-03 non livré ?)"
     dc up -d db; attendre_sante db 120
-    log "terrain-import ${args[*]:0:2} (rôle $(role), commit $(commit | cut -c1-12))"
-    journal terrain.log dc --profile terrain run --rm --no-deps -T terrain-import "${args[@]}" < /dev/null ;;
+    log "$service ${args[*]:0:2} (rôle $(role), commit $(commit | cut -c1-12))"
+    journal terrain.log dc --profile terrain run --rm --no-deps -T "$service" "${args[@]}" < /dev/null ;;
 esac

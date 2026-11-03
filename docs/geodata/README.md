@@ -61,7 +61,13 @@ sudo fadi-preprod terrain --telecharger gedtm30-v1-2-benslimane      # original 
 sudo fadi-preprod terrain --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
 sudo fadi-preprod terrain --lever <gdtv_…> --par <responsable-publication> --motif "…" \
     --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
+# Travailleur GDAL (TER-03, service terrain-worker, dès que le commit approuvé le contient ; administrateur) :
+sudo fadi-preprod terrain worker --essai-gdal
+sudo fadi-preprod terrain worker --traiter [<gdtv_…>] [--par <gestionnaire-donnees>]
 ```
+
+La garde tient une **liste fermée** des services (`db`, `migrate`, `app`, `recette`, `terrain-import`, `terrain-worker`) :
+tout autre service, quel que soit son profil, est refusé.
 
 Hors préproduction (développement) : `npm run geodata:terrain -- --etat` etc., mêmes options.
 

@@ -23,6 +23,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` (sha256 dans la PR), puis lance
   `sudo fadi-preprod terrain --telecharger|--importer` des 4 fiches (`docs/geodata/README.md` § Terrain) — l'ancienne
   procédure `docker compose … run terrain-import` ci-dessous est caduque. Compte rendu : `terrain/TER-02.md` § Correctif.
+  La garde refuse tout service hors liste fermée et couvre déjà `terrain-worker` (PR #387) : la #387 doit aligner son quota
+  (30 Go), remplacer son `docker compose … run terrain-worker` par `sudo fadi-preprod terrain worker …` et reprendre
+  `lib/geodata/terrain/fiches.ts` (conflit attendu dans `apps/api/src/db/geodata-terrain.ts`).
 - Terrain TER-02 (Issue #381) : PR #383 sur `feat/381-ter-02-catalogue-import`, fusion accordée par le maître d'ouvrage le
   3 novembre 2026 (après correction des deux remarques de la revue Codex) (compte rendu `terrain/TER-02.md`). Après fusion
   et déploiement : la session VPS constate `/mnt/data` et la racine Docker (TER-D7), puis lance `terrain-import`

@@ -14,7 +14,8 @@ Mis à jour : 2026-11-03 (UTC).
   `terrain-import` ; sous-commande `fadi-preprod terrain` (rôles, arguments fermés, `< /dev/null`) ; quota par défaut 30 Go ;
   liste fermée des 4 fiches testée (`apps/api/src/lib/geodata/terrain/fiches.test.ts`, 4 tests). Preuves au commit
   `7c9f78a` : `deploy/preprod/tests/run.sh` 152/0 (16 mutations `terrain-import`), `run-auto.sh` 85/0, typecheck et build
-  verts, CI de la PR (validate, e2e, image) verte. En attente : réinstallation du script par le maître d'ouvrage.
+  verts, CI de la PR (validate, e2e, image) verte. Complément (demande VPS) : liste fermée des services et règles
+  `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` : `run.sh` 176/0. En attente : réinstallation du script par le maître d'ouvrage.
 - Terrain TER-02 (catalogue et import contrôlé, Issue #381, branche `feat/381-ter-02-catalogue-import`) : **implémenté et
   vérifié**, non accepté. Toutes les décisions TER-Dx décidées (recommandations retenues le 2 novembre 2026). Modèle pur
   (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (13, exécutée aussi sur PostGIS 16

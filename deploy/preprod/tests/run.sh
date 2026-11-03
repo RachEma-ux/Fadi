@@ -175,6 +175,50 @@ terrain_mut "image d'un autre commit" "service terrain-import : image 'fadi-prep
   "$TI_IMG" "image: fadi-preprod-app:0123456789ab${NL}    profiles: [\"terrain\"]"
 terrain_mut "service hors du profil contrôlé" "service terrain-import absent" \
   "$TI_PROF" "    profiles: [\"autre\"]${NL}    restart: \"no\""
+terrain_mut "service inconnu du profil terrain (liste fermée)" "service 'terrain-extra' inconnu (liste fermée" \
+  "$VOLS" "  terrain-extra:${NL}    image: fadi-preprod-app:\${FADI_COMMIT}${NL}    profiles: [\"terrain\"]${NL}    restart: \"no\"${NL}    networks:${NL}      - internal${NL}${NL}${VOLS}"
+terrain_mut "service inconnu sans profil (liste fermée)" "service 'outil' inconnu (liste fermée" \
+  "$VOLS" "  outil:${NL}    image: fadi-preprod-app:\${FADI_COMMIT}${NL}    restart: \"no\"${NL}    networks:${NL}      - internal${NL}${NL}${VOLS}"
+
+echo "== Garde : service terrain-worker (TER-03, PR #387, forme de la PR)"
+# Bloc de la PR #387 (tête 7a786af), quota aligné sur 30 Go : inséré dans compose.yml de la disposition.
+TW_NETS="    networks:${NL}      - internal${NL}    mem_limit: 3g"
+TW_IMG="    image: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}-terrain"
+TW_DF="      dockerfile: deploy/preprod/terrain-worker.Dockerfile"
+TW_REST="    profiles: [\"terrain\"]${NL}    restart: \"no\"${NL}    depends_on:${NL}      db:${NL}        condition: service_healthy${NL}    environment:${NL}      DATABASE_URL: postgresql://fadi_app:"
+TW_ENV="      NODE_ENV: production${NL}      GEODATA_TERRAIN_DIR: /data/terrain${NL}      GEODATA_TERRAIN_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}${NL}    volumes:${NL}      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}"
+WORKER="  terrain-worker:${NL}${TW_IMG}${NL}    build:${NL}      context: \${FADI_SRC:?FADI_SRC manquant}${NL}${TW_DF}${NL}      args:${NL}        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}${NL}${TW_REST}\${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi${NL}${TW_ENV}${NL}    mem_limit: 3g${NL}    cpus: 2${NL}    logging: *logging${NL}${NL}${VOLS}"
+WORKER=${WORKER/${TW_NETS}${NL}    mem_limit: 3g/${TW_NETS}}
+B=$(dispo garde-worker); muter "$VOLS" "$WORKER"
+attendu 0 "garde : terrain-worker de la PR #387 admis" "terrain-import borné" -- fp garde
+worker_mut() {  # comme terrain_mut, sur une disposition où terrain-worker est présent
+  local lib=$1 motif=$2; shift 2
+  B=$(dispo "tw-$RANDOM$RANDOM")
+  if muter "$VOLS" "$WORKER" "$@"; then attendu nz "garde refuse (terrain-worker) : $lib" "$motif" -- fp garde
+  else ko=$((ko + 1)); echo "✗ mutation non appliquée : $lib"; fi
+}
+worker_mut "sortie vers l'extérieur (réseau front)" "service terrain-worker : réseaux ['front', 'internal'] (attendu internal seul)" \
+  "$TW_NETS" "    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 3g"
+worker_mut "port publié" "service terrain-worker : aucun port publié" \
+  "$TW_NETS" "    ports:${NL}      - \"127.0.0.1:3103:3001\"${NL}${TW_NETS}"
+worker_mut "montage de l'hôte" "service terrain-worker : volume '/mnt/data' interdit" \
+  "      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}" "      - fadi-preprod-terrain:/data/terrain${NL}      - /mnt/data:/hote${NL}${TW_NETS}"
+worker_mut "volume des sauvegardes" "service terrain-worker : volume 'fadi-preprod-backups' interdit" \
+  "      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}" "      - fadi-preprod-terrain:/data/terrain${NL}      - fadi-preprod-backups:/b${NL}${TW_NETS}"
+worker_mut "rôle superutilisateur" "service terrain-worker : DATABASE_URL doit utiliser le rôle fadi_app" \
+  "${TW_REST}\${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}" "${TW_REST%fadi_app:}fadi:\${PREPROD_POSTGRES_PASSWORD}"
+worker_mut "SMTP_PASS" "service terrain-worker : SMTP_PASS interdit" \
+  "$TW_ENV" "      SMTP_PASS: x${NL}${TW_ENV}"
+worker_mut "identifiant de migration" "service terrain-worker : DATABASE_MIGRATION_URL interdit" \
+  "$TW_ENV" "      DATABASE_MIGRATION_URL: postgresql://fadi:x@db:5432/fadi${NL}${TW_ENV}"
+worker_mut "relancé en boucle" "service terrain-worker : restart 'unless-stopped'" \
+  "$TW_REST" "${TW_REST/restart: \"no\"/restart: unless-stopped}"
+worker_mut "image de l'application (sans -terrain)" "service terrain-worker : image 'fadi-preprod-app:" \
+  "$TW_IMG" "    image: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}"
+worker_mut "Dockerfile étranger" "service terrain-worker : build hors de deploy/preprod/terrain-worker.Dockerfile" \
+  "$TW_DF" "      dockerfile: Dockerfile"
+worker_mut "image de base étrangère" "service terrain-worker : build hors de deploy/preprod/terrain-worker.Dockerfile" \
+  "        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}${NL}${TW_REST}" "        APP_IMAGE: osgeo/gdal:latest${NL}${TW_REST}"
 
 echo "== Propagation des échecs"
 B=$(dispo codes)
@@ -336,6 +380,23 @@ attendu nz "terrain --lever : identifiant invalide" "identifiant de version inva
 attendu nz "terrain --lever sans --motif" "--motif" -- fpa terrain --lever $V --par resp@example.test
 attendu nz "terrain --lever : motif pris pour une option" "texte invalide pour --motif" -- fpa terrain --lever $V --par resp@example.test --motif --telecharger
 attendu nz "terrain --lever : code de référence invalide" "code de référence invalide" -- fpa terrain --lever $V --par resp@example.test --motif m --reference-code 'EPSG:1;x'
+attendu nz "terrain worker : service absent du commit approuvé → refus" "service terrain-worker absent" -- fpa terrain worker --essai-gdal
+attendu nz "opérateur : terrain worker refusé" "« terrain worker » est réservée à l'administrateur" -- fp terrain worker --essai-gdal
+attendu nz "terrain worker : action inconnue" "terrain worker --essai-gdal |" -- fpa terrain worker --sql
+B=$(dispo terrain-worker); muter "$VOLS" "$WORKER"; : > "$T/trace-worker"
+attendu 0 "administrateur : terrain worker --essai-gdal" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-worker" terrain worker --essai-gdal
+attendu 0 "administrateur : terrain worker --traiter <version> --par" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-worker" terrain worker --traiter $V --par gestion@example.test
+attendu 0 "administrateur : terrain worker --traiter (toutes les versions prêtes)" "terrain-worker ok" -- fpa MOCK_TRACE="$T/trace-worker" terrain worker --traiter
+python3 -I - "$T/trace-worker" "$V" <<'PY' && { ok=$((ok + 1)); echo "✓ terrain worker : run --rm --no-deps -T terrain-worker, arguments fermés, entrée /dev/null"; } || { ko=$((ko + 1)); echo "✗ terrain worker : appels"; sed 's/^/    /' "$T/trace-worker"; }
+import sys
+l = open(sys.argv[1]).read().splitlines(); v = sys.argv[2]
+r = [x.split("-T terrain-worker ", 1)[1] for x in l if "--profile terrain run --rm --no-deps -T terrain-worker " in x]
+s = [x for x in l if x.startswith("stdin=")]
+sys.exit(0 if r == ["--essai-gdal", f"--traiter {v} --par gestion@example.test", "--traiter"] and s == ["stdin=/dev/null"] * 3 else 1)
+PY
+attendu nz "terrain worker --traiter : identifiant invalide" "identifiant de version invalide" -- fpa terrain worker --traiter ../x
+attendu nz "terrain worker --essai-gdal : argument refusé" "option refusée pour terrain --essai-gdal" -- fpa terrain worker --essai-gdal --par a@example.test
+attendu nz "terrain worker --traiter : option inconnue" "option refusée pour terrain --traiter : --url" -- fpa terrain worker --traiter --url https://exemple.test
 attendu nz "terrain en échec → code non nul, journal nommé" "journal : terrain.log" -- fpe MOCK_FAIL=run-terrain terrain --etat
 B=$(dispo terrain-garde)
 muter "$TI_PROF" "${TI_PROF}${NL}    ports:${NL}      - \"127.0.0.1:3102:3001\""; : > "$T/trace-terrain-g"
