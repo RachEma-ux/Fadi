@@ -1315,6 +1315,12 @@ jobs:
           docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-communes.json
           # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
           docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
+          # Terrain haute résolution (TER-02) : commande et fiches dans l'image ; le dossier du volume terrain appartient au
+          # compte applicatif (un volume nommé vide en hérite) ; sans GEODATA_TERRAIN_DIR, la commande refuse explicitement.
+          docker exec fadi test -f apps/api/dist/geodata-terrain.js
+          docker exec fadi test -f apps/api/dist/geodata-terrain/gedtm30-v1-2-benslimane.json
+          test "$(docker exec fadi stat -c %U /data/terrain)" = "node"
+          { docker exec fadi node apps/api/dist/geodata-terrain.js --importer gedtm30-v1-2-benslimane --par image@example.com 2>&1 || true; } | tee /dev/stderr | grep -q "GEODATA_TERRAIN_DIR absent"
       - name: Journal du conteneur
         if: always()
         run: |

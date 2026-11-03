@@ -50,7 +50,7 @@ await build({
 await build({
   // BD-9.1 : reprise des fichiers vers le stockage objet (`node apps/api/dist/fichiers-vers-objet.js`), @aws-sdk externe.
   // BD-9.6 : chargement des catalogues de données (`node apps/api/dist/catalogues-charger.js`).
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts"), "catalogues-charger": join(root, "src/db/catalogues-charger.ts") },
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "geodata-terrain": join(root, "src/db/geodata-terrain.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts"), "catalogues-charger": join(root, "src/db/catalogues-charger.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",
@@ -72,6 +72,8 @@ for (const [from, to] of [
   ["src/data", "dist/data"],
   // Fiches de source GeoData qualifiées (adresse, empreinte, licence, droits) : lues par dist/geodata-reference.js.
   ["../../docs/geodata/sources", "dist/geodata-sources"],
+  // Fiches des jeux d'altitudes (terrain haute résolution, TER-02) : lues par dist/geodata-terrain.js.
+  ["../../docs/geodata/terrain", "dist/geodata-terrain"],
 ]) {
   const src = join(root, from);
   if (!existsSync(src)) {

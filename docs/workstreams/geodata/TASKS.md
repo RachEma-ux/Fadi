@@ -72,8 +72,10 @@
 - [x] GEO-PLAN-SATELLITE — Bascule Plan / Satellite du fournisseur réglé, mini-barre, Alt+S (D-GD-46).
 - [ ] GEO-TERRAIN — Terrain haute résolution (plan v1.0, Issue #381, `terrain/`) :
   - [x] Étape 0 : plan déposé, audit TER-00, décisions TER-Dx, cahier TER-01 à compléter (PR documentaire).
-  - [ ] Réponses du maître d'ouvrage aux décisions bloquantes (TER-D1, D3, D5, D7, D9, D10, D12).
-  - [ ] TER-02 catalogue et import contrôlé ; TER-03 traitement et porte qualité ; TER-04 services numériques et tuiles ;
+  - [x] Décisions TER-Dx : toutes décidées (recommandations retenues le 2 novembre 2026).
+  - [x] TER-02 catalogue et import contrôlé (`terrain/TER-02.md`), en revue.
+  - [ ] Levées de quarantaine Q-TER-02-1 à 3 (responsable de publication, avec source).
+  - [ ] TER-03 traitement et porte qualité ; TER-04 services numériques et tuiles ;
     TER-05 interface — un lot à la fois, une PR par lot.
   - Hors portée de la session : TER-01 (contacts, achats), TER-06 / TER-07 (levé et contrôle indépendant, porte G2),
     TER-08 (Release du maître d'ouvrage).

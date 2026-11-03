@@ -19,7 +19,8 @@
     "db:account-jobs": "tsx src/db/account-jobs.ts",
     "geodata:import-reference": "tsx src/db/geodata-reference.ts",
     "geodata:import-decoupage": "tsx src/db/geodata-reference.ts --decoupage",
-    "geodata:role": "tsx src/db/geodata-role.ts"
+    "geodata:role": "tsx src/db/geodata-role.ts",
+    "geodata:terrain": "tsx src/db/geodata-terrain.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1152.0",

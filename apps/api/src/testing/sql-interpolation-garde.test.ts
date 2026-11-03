@@ -22,6 +22,8 @@ const ACCEPTE: Record<string, number> = {
   "db/valider-contraintes.ts": 1,
   "lib/fin-participation.ts": 1,
   "lib/geodata/prix/sauvegarde.ts": 1,
+  // TER-02 (#383) : fragments fixes (colonnes et numéros de paramètres), aucune valeur interpolée.
+  "lib/geodata/terrain/import.ts": 1,
   "lib/organizations.ts": 1,
   "lib/project-access-db.ts": 1,
   // BD-9.1 : noms de tables de la liste blanche `TABLES_FICHIERS` (quatre tables de fichiers fixes), jamais une saisie.

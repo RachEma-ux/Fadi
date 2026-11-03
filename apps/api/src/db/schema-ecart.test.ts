@@ -30,6 +30,8 @@ const TABLES_SQL_SEULEMENT = [
   "public.geodata_versions", "public.geodata_zones", "public.schema_migrations",
   // #379 (BD-5) : journal des applications de la base de départ, écrit par la migration seulement.
   "admin.schema_applications",
+  // GeoData terrain (TER-02, #383).
+  "public.geodata_terrain_evenements", "public.geodata_terrain_fichiers", "public.geodata_terrain_traitements", "public.geodata_terrain_versions",
 ];
 
 /** Tables de l'ancien moteur de l'Atelier, recréées un instant par le test de la bascule (atelier-commands.test.ts). */
