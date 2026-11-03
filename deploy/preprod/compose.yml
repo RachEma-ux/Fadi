@@ -126,6 +126,8 @@ services:
       # par le service `terrain-import` (profil terrain). Quota du volume : 60 Go par défaut.
       GEODATA_TERRAIN_DIR: /data/terrain
       GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-60}
+      # Drapeau de retour arrière du terrain (TER-04) : « false » ferme les services /geodata/api/terrain (404).
+      GEODATA_TERRAIN_ENABLED: ${PREPROD_GEODATA_TERRAIN_ENABLED:-true}
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
     ports:
@@ -201,8 +203,9 @@ services:
     logging: *logging
 
   # Travailleur terrain (TER-03, TER-D6) : image applicative + GDAL épinglé ; calcule les dérivés (COG, pente, ombrage),
-  # la couverture et les courbes des versions prêtes au traitement. À la demande :
-  # `docker compose … --profile terrain run --rm terrain-worker --traiter` (voir docs/geodata/README.md).
+  # la couverture et les courbes des versions prêtes au traitement, et prépare les exports (TER-04). À la demande :
+  # `docker compose … --profile terrain run --rm terrain-worker --traiter`, ou en continu :
+  # `docker compose … --profile terrain run -d terrain-worker --continu 30` (voir docs/geodata/README.md).
   terrain-worker:
     image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}-terrain
     build:

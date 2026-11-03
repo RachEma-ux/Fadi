@@ -133,16 +133,20 @@ export async function transformer(ex: Executeur, points: readonly (readonly [num
   const srid = (v: number) => { if (!Number.isInteger(v) || v <= 0) throw new Error("SRID invalide."); return v; };
   const params: unknown[] = [points.map((p) => p[0]), points.map((p) => p[1])];
   const texte = (v: string) => { params.push(v); return `$${params.length}::text`; };
-  const source = typeof de === "number" ? `ST_SetSRID(ST_MakePoint(x, y), ${srid(de)})` : "ST_MakePoint(x, y)";
+  // Un seul ST_Transform sur un multipoint : l'opération PROJ est construite une fois, pas à chaque point.
+  const multi = "ST_Collect(ST_MakePoint(x, y) ORDER BY n)";
+  const source = typeof de === "number" ? `ST_SetSRID(${multi}, ${srid(de)})` : multi;
   const expr = typeof de === "number"
     ? (typeof vers === "number" ? `ST_Transform(${source}, ${srid(vers)})` : `ST_Transform(${source}, ${texte(vers)})`)
     : (typeof vers === "number" ? `ST_Transform(${source}, ${texte(de)}, ${srid(vers)})` : `ST_Transform(${source}, ${texte(de)}, ${texte(vers)})`);
-  const r = await ex.query<{ x: number; y: number }>(`SELECT ST_X(t) AS x, ST_Y(t) AS y FROM (SELECT ${expr} AS t, n FROM unnest($1::float8[], $2::float8[]) WITH ORDINALITY AS u(x, y, n)) s ORDER BY n`, params);
+  const r = await ex.query<{ x: number; y: number }>(
+    `SELECT ST_X(d.geom) AS x, ST_Y(d.geom) AS y FROM (SELECT ${expr} AS m FROM unnest($1::float8[], $2::float8[]) WITH ORDINALITY AS u(x, y, n)) s, ST_Dump(s.m) d ORDER BY d.path[1]`, params);
+  if (r.rows.length !== points.length) throw new Error("Transformation : nombre de points inattendu.");
   return r.rows.map((p) => [p.x, p.y]);
 }
 
 /** Projection transverse de Mercator locale (WGS 84) centrée sur un point : repère métrique d'un profil. */
-export const projectionLocale = (lon: number, lat: number) => `+proj=tmerc +lat_0=${lat} +lon_0=${lon} +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs`;
+export const projectionLocale = (lon: number, lat: number) => `+proj=tmerc +lat_0=${lat} +lon_0=${lon} +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs`;
 
 // ——— Lecture des COG ———
 
@@ -188,23 +192,43 @@ async function lireFenetre(t: GeoTIFF, i: number, c0: number, l0: number, c1: nu
   return { c0: a, l0: b, largeur: c - a, hauteur: d - b, valeurs };
 }
 
-/** Valeurs d'altitude aux points (repère natif) : bilinéaire si possible, sinon la cellule ; null hors couverture. */
+/**
+ * Valeurs d'altitude aux points (repère natif) : bilinéaire si possible, sinon la cellule ; null hors couverture. Les
+ * points sont lus par paquets dont la fenêtre reste petite (≤ 1 M cellules) : un profil ne lit jamais tout le rectangle
+ * englobant de la ligne.
+ */
 export async function valeursNatives(stockage: StockageTerrain, s: SourceTerrain, pts: readonly (readonly [number, number])[]): Promise<({ valeur: number; methode: "bilineaire" | "cellule" } | null)[]> {
   if (!pts.length) return [];
   const t = await ouvrir(stockage.chemin(s.altitude));
   const g = await georef(t, 0);
   const pix = pts.map(([x, y]) => [(x - g.ox) / g.rx, (y - g.oy) / g.ry] as const);
-  const cs = pix.map((p) => p[0]), ls = pix.map((p) => p[1]);
-  const f = await lireFenetre(t, 0, Math.min(...cs) - 1, Math.min(...ls) - 1, Math.max(...cs) + 2, Math.max(...ls) + 2);
-  if (!f) return pts.map(() => null);
-  const grille = { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata: s.nodata, pasX: 1, pasY: 1 };
-  return pix.map(([c, l]) => {
-    if (c < 0 || l < 0 || c >= g.largeur || l >= g.hauteur) return null;
-    const b = valeurBilineaire(grille, c - f.c0, l - f.l0);
-    if (b !== null) return { valeur: b, methode: "bilineaire" as const };
-    const v = valeurCellule(grille, c - f.c0, l - f.l0);
-    return v === null ? null : { valeur: v, methode: "cellule" as const };
-  });
+  const sortie: ({ valeur: number; methode: "bilineaire" | "cellule" } | null)[] = pts.map(() => null);
+  const MAX = 1_000_000;
+  let debut = 0;
+  while (debut < pix.length) {
+    let fin = debut, c0 = Infinity, l0 = Infinity, c1 = -Infinity, l1 = -Infinity;
+    while (fin < pix.length) {
+      const [c, l] = pix[fin]!;
+      const n0 = Math.min(c0, c - 1), m0 = Math.min(l0, l - 1), n1 = Math.max(c1, c + 2), m1 = Math.max(l1, l + 2);
+      if (fin > debut && (n1 - n0) * (m1 - m0) > MAX) break;
+      [c0, l0, c1, l1] = [n0, m0, n1, m1];
+      fin++;
+    }
+    const f = await lireFenetre(t, 0, c0, l0, c1, l1);
+    if (f) {
+      const grille = { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata: s.nodata, pasX: 1, pasY: 1 };
+      for (let i = debut; i < fin; i++) {
+        const [c, l] = pix[i]!;
+        if (c < 0 || l < 0 || c >= g.largeur || l >= g.hauteur) continue;
+        const b = valeurBilineaire(grille, c - f.c0, l - f.l0);
+        if (b !== null) { sortie[i] = { valeur: b, methode: "bilineaire" }; continue; }
+        const v = valeurCellule(grille, c - f.c0, l - f.l0);
+        if (v !== null) sortie[i] = { valeur: v, methode: "cellule" };
+      }
+    }
+    debut = fin;
+  }
+  return sortie;
 }
 
 // ——— Point, profil, statistiques ———

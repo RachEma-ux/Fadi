@@ -120,7 +120,7 @@ export async function traiterUnExport(c: PoolClient, stockage: StockageTerrain):
         FADI_LICENCE: s.licence.nom, FADI_ATTRIBUTION: s.attribution, FADI_ETIQUETTE: s.etiquette ?? "",
       };
       await executer("gdal_translate", [
-        "-q", "-of", "GTiff", "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=YES", "-projwin", String(x0), String(y1), String(x1), String(y0),
+        "-q", "-of", "GTiff", "-co", "COMPRESS=DEFLATE", "-projwin", String(x0), String(y1), String(x1), String(y0),
         ...(vertical ? ["-a_srs", `EPSG:${s.srid}+${vertical}`] : []),
         ...Object.entries(mo).flatMap(([k, v]) => ["-mo", `${k}=${v}`]),
         stockage.chemin(original), stockage.chemin(`${dossier}/${nom}`),
