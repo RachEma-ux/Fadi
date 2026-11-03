@@ -4,7 +4,8 @@
  *   depot/      fichiers déposés par l'exploitant ou par la commande de téléchargement (TER-D10), en attente d'import ;
  *   travail/    copies temporaires (écriture puis renommage atomique) ;
  *   originaux/  originaux adressés par leur empreinte SHA-256 (`originaux/<sha256>`), en lecture seule, jamais réécrits ;
- *   derives/    produits du traitement (TER-03).
+ *   derives/    produits du traitement (TER-03) ;
+ *   exports/    exports demandés (TER-04), effacés à expiration (24 h).
  * La base garde l'empreinte, la taille et la clé de stockage ; chaque archivage relit l'empreinte. Aucune URL n'est lue ici.
  */
 import { createHash } from "node:crypto";
@@ -12,9 +13,9 @@ import { createReadStream } from "node:fs";
 import { chmod, copyFile, mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 
-export const DOSSIERS_TERRAIN = ["depot", "travail", "originaux", "derives"] as const;
+export const DOSSIERS_TERRAIN = ["depot", "travail", "originaux", "derives", "exports"] as const;
 const NOM_DEPOT = /^[A-Za-z0-9][A-Za-z0-9._-]{0,150}$/;
-const CLE_STOCKAGE = /^(originaux|derives)\/[A-Za-z0-9._/-]{1,200}$/;
+const CLE_STOCKAGE = /^(originaux|derives|exports)\/[A-Za-z0-9._/-]{1,200}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 
 export class ErreurStockage extends Error {}

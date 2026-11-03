@@ -70,6 +70,11 @@ async function rmsezMesuree(c: PoolClient, id: string): Promise<number | null> {
   return r?.rapport.global?.rmsez ?? null;
 }
 
+/** Équidistance exigée maintenant pour une version (TER-D17), lue en base. */
+export async function equidistanceExigeeVersion(c: PoolClient, id: string): Promise<number> {
+  return equidistanceExigee(c, await lireVersion(c, id));
+}
+
 /** Équidistance exigée maintenant (TER-D17) : dernière RMSEz mesurée, sinon précision déclarée, sinon mondiale. */
 async function equidistanceExigee(c: PoolClient, v: VersionLue): Promise<number> {
   return equidistanceMinimale({ niveau: v.declaration.niveau, rmsezMesuree: await rmsezMesuree(c, v.id), verticaleDeclaree: v.declaration.precisionDeclaree?.verticaleM ?? null });

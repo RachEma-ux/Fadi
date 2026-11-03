@@ -8,6 +8,7 @@
  *  5. aucune source : « indisponible », jamais une valeur inventée.
  */
 import type { ProduitTerrain } from "./catalogue.js";
+import { pointsLigne } from "./services.js";
 
 export interface SourceAltitude {
   readonly id: string;
@@ -61,28 +62,11 @@ export interface Profil {
  * est une lacune.
  */
 export function profil(ligne: readonly (readonly [number, number])[], pas: number, ordonnees: readonly SourceAltitude[], maxPoints = 10_000): Profil {
-  if (ligne.length < 2) throw new Error("Une ligne de profil a au moins deux sommets.");
-  if (!(pas > 0)) throw new Error("Pas d'échantillonnage strictement positif requis.");
-  const points: PointProfil[] = [];
-  let chainage = 0;
-  const ajouter = (x: number, y: number, ch: number) => {
-    if (points.length >= maxPoints) throw new Error(`Profil limité à ${maxPoints} points : traitement de fond requis.`);
+  const points: PointProfil[] = pointsLigne(ligne, pas, maxPoints).map(({ chainage, x, y }) => {
     const v = altitudeAuPoint(ordonnees, x, y);
     const src = v ? ordonnees.find((s) => s.id === v.source)! : null;
-    points.push({ chainage: ch, x, y, altitude: v?.valeur ?? null, source: v?.source ?? null, interpolee: v ? v.interpolee || pas < src!.pas : false });
-  };
-  for (let i = 0; i < ligne.length - 1; i++) {
-    const [x0, y0] = ligne[i]!;
-    const [x1, y1] = ligne[i + 1]!;
-    const long = Math.hypot(x1 - x0, y1 - y0);
-    const n = Math.max(1, Math.ceil(long / pas - 1e-9));
-    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
-      const t = Math.min(1, (k * pas) / long);
-      if (k === n) ajouter(x1, y1, chainage + long);
-      else ajouter(x0 + t * (x1 - x0), y0 + t * (y1 - y0), chainage + k * pas);
-    }
-    chainage += long;
-  }
+    return { chainage, x, y, altitude: v?.valeur ?? null, source: v?.source ?? null, interpolee: v ? v.interpolee || pas < src!.pas : false };
+  });
   const transitions: { chainage: number; de: string | null; vers: string | null }[] = [];
   const lacunes: { debut: number; fin: number }[] = [];
   let debutLacune: number | null = null;
