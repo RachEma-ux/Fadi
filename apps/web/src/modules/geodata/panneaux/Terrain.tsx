@@ -12,9 +12,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PALETTE_ALTITUDE, PALETTE_PENTE, type ProduitTerrain } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type AltitudeRecue, type JeuTerrainRecu, type ProfilRecu, type SourceTerrainRecue } from "../client";
-import type { AffichageTerrain, OutilCarte } from "../carte/moteur";
+import type { AffichageTerrain, EtatTuilesTerrain, OutilCarte } from "../carte/moteur";
 import {
-  degrade, distanceFr, empriseGeometrie, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, messageCouverture, nombreFr,
+  degrade, distanceFr, empriseGeometrie, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, jeuPourVue, lignesSource, longueurApprochee, messageCouverture, nombreFr,
   pasProfil, polygoneEmprise, porteeLegende, traceProfil, type ModeLegende,
 } from "../terrain-ops";
 
@@ -69,7 +69,10 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
   const [point, setPoint] = useState<Etat<AltitudeRecue> | null>(null);
   const [profil, setProfil] = useState<(Etat<ProfilRecu> & { ligne: [number, number][] }) | null>(null);
   const [survol, setSurvol] = useState<[number, number] | null>(null);
+  const [tuiles, setTuiles] = useState<EtatTuilesTerrain>({ chargement: false, indisponibles: 0 });
   const actif = useRef(false);
+  /** Jeu choisi à la main : il n'est plus remplacé quand la vue se déplace (TER-09) ; changer de produit l'oublie. */
+  const choixManuel = useRef(false);
   /**
    * Générations des requêtes : un changement de produit invalide tout ce qui est en vol (catalogue, point, profil,
    * adaptation) ; une nouvelle requête d'un même type invalide la précédente. Une réponse périmée est ignorée : le MNT ne
@@ -92,7 +95,11 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
       if (!courant()) return;
       const tries = [...r.jeux].sort((a, b) => a.pas.metres - b.pas.metres || a.titre.localeCompare(b.titre));
       setJeux(tries);
-      setVersionId((v) => (v && tries.some((j) => j.versionId === v) ? v : (tries[0]?.versionId ?? null)));
+      // Jeu de la vue (le plus fin qui en contient le centre : levé local, sinon fond mondial), sinon le plus fin publié.
+      setVersionId((v) => {
+        const garde = v && tries.some((j) => j.versionId === v) ? v : null;
+        return (choixManuel.current && garde) || jeuPourVue(tries, lireEmprise(), garde) || (tries[0]?.versionId ?? null);
+      });
     } catch (e) {
       if (!courant()) return;
       setJeux([]);
@@ -104,6 +111,7 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
   const changerProduit = (p: ProduitTerrain) => {
     // Le MNT et le MNS ne se remplacent jamais : changer de produit efface les résultats de l'autre.
     generation.current.produit += 1;
+    choixManuel.current = false;
     setProduit(p); setJeux(null); setVersionId(null); setPoint(null); setProfil(null); setSurvol(null); setPlageVue(null); setAdaptation(null); setModeLegende("verrouillee");
     actif.current = true;
     void charger(p);
@@ -152,7 +160,17 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
   const interroger = async (lon: number, lat: number) => {
     const courant = jeton("point");
     setPoint({ etat: "chargement" });
-    try { const recu = await api.terrainPoint(lon, lat, produit); if (courant()) setPoint({ etat: "ok", recu }); } catch (e) { if (courant()) setPoint({ etat: "erreur", message: message(e) }); }
+    try {
+      // Fond mondial (TER-09) : une lecture distante plus longue que le délai répond « chargement » ; le cache se remplit
+      // pendant ce temps, la demande est refaite (trois fois au plus), jamais remplacée par une valeur estimée.
+      let recu = await api.terrainPoint(lon, lat, produit);
+      for (let essai = 1; !recu.disponible && recu.etat === "chargement" && essai <= 3 && courant(); essai++) {
+        await new Promise((r) => setTimeout(r, 2000 * essai));
+        if (!courant()) return;
+        recu = await api.terrainPoint(lon, lat, produit);
+      }
+      if (courant()) setPoint({ etat: "ok", recu });
+    } catch (e) { if (courant()) setPoint({ etat: "erreur", message: message(e) }); }
   };
   const tracerProfil = async (ligne: [number, number][]) => {
     const courant = jeton("profil");
@@ -172,17 +190,26 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
     if (!jeux) return null;
     const couv = couvertures ? { type: "FeatureCollection" as const, features: jeux.filter((j) => j.couverture).map((j) => ({ type: "Feature", properties: { versionId: j.versionId }, geometry: j.couverture })) } : null;
     const repere = survol ?? (point?.etat === "ok" ? [point.recu.lon, point.recu.lat] as const : null);
+    const plageAlt = portee.mode === "adaptee" && plageAdaptee ? plageAdaptee.plage : null;
     return {
       versionId: jeu && jeu.droits.tuiles === "autorise" ? jeu.versionId : null,
-      altitude: { ...altitude, plage: portee.mode === "adaptee" && plageAdaptee ? plageAdaptee.plage : null },
+      // Sans plage de version (fond mondial en dalles, jamais lu en entier) : l'altitude attend une légende adaptée.
+      altitude: { ...altitude, visible: altitude.visible && (plageAlt !== null || jeu?.plageAltitude != null), plage: plageAlt },
+      zoomMinimal: jeu?.fondMondial?.zoomMinimal ?? null, zoomMinimalCourbes: jeu?.fondMondial?.zoomMinimalCourbes ?? null,
       pente, ombrage, courbes, couvertures: couv, repere, profil: profil?.ligne ?? null,
       // L'étiquette du jeu accompagne son attribution sur la carte : une démonstration n'est jamais lue comme un site réel.
       attribution: jeu ? (jeu.etiquette ? `${jeu.attribution} — ${jeu.etiquette}` : jeu.attribution) : null,
     };
   }, [jeux, jeu, altitude, pente, ombrage, courbes, couvertures, survol, point, profil, portee.mode, plageAdaptee]);
 
+  /** La vue a bougé : le jeu affiché suit le centre de la vue, sauf choix manuel (TER-09). */
+  const suivreVue = useCallback((vue: Emprise | null) => {
+    if (choixManuel.current || !jeux) return;
+    setVersionId((v) => jeuPourVue(jeux, vue, v));
+  }, [jeux]);
   return {
-    produit, changerProduit, jeux, erreur, jeu, versionId, setVersionId, ouvrir, recharger: () => void charger(produit),
+    produit, changerProduit, jeux, erreur, jeu, versionId, ouvrir, recharger: () => void charger(produit),
+    setVersionId: (v: string) => { choixManuel.current = true; setVersionId(v); }, suivreVue, tuiles, setTuiles,
     altitude, setAltitude, pente, setPente, ombrage, setOmbrage, modeLegende, setModeLegende, adapter, adaptation, portee,
     courbes, setCourbes, equidistances, couvertures, setCouvertures, point, profil, survol, setSurvol, surTrace, affichage,
     effacerResultats: () => { setPoint(null); setProfil(null); setSurvol(null); },
@@ -265,8 +292,10 @@ function GraphiqueProfil({ recu, onSurvol }: { recu: ProfilRecu; onSurvol(p: [nu
   );
 }
 
-export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude }: {
+export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, zoom }: {
   t: EtatTerrain; outil: OutilCarte; onOutil(o: OutilCarte): void; onCentrer(e: Emprise): void;
+  /** Zoom courant de la carte (fond mondial : zoom minimal d'affichage). */
+  zoom?: number | null;
   /** Emprise de la vue courante (message de couverture). */
   vue: Emprise | null;
   /** Zone d'étude active (filtre de zone) : portée possible de la légende adaptée. */
@@ -305,6 +334,7 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude }:
                   <label className="gd-case"><input type="radio" name="gd-terrain-jeu" checked={t.versionId === x.versionId} onChange={() => t.setVersionId(x.versionId)} /><span translate="no">{x.titre}</span></label>
                   <span className="gd-discret"><span>Pas</span> <span translate="no">{`${nombreFr(x.pas.metres, x.pas.metres < 1 ? 2 : 1)} m`}</span></span>
                   <Etiquette s={x} />
+                  {x.acces === "a-la-demande" && <span className="gd-discret" data-gd-terrain-a-la-demande>Fond mondial lu à la demande : emprise affichée seulement</span>}
                   {empriseGeometrie(x.couverture) && <button type="button" onClick={() => onCentrer(empriseGeometrie(x.couverture)!)} data-gd-terrain-centrer={x.versionId}>Centrer sur la couverture</button>}
                 </li>
               ))}
@@ -312,6 +342,17 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude }:
             <label className="gd-case"><input type="checkbox" checked={t.couvertures} onChange={() => t.setCouvertures(!t.couvertures)} data-gd-terrain-couvertures />Couverture disponible (contours)</label>
           </fieldset>
           {(() => { const m = messageCouverture(t.jeux, vue); return m && <p className="gd-alerte" role="status" data-gd-terrain-couverture-vue>{m}</p>; })()}
+          {j?.fondMondial && zoom != null && zoom < j.fondMondial.zoomMinimal && (
+            <p className="gd-alerte" role="status" data-gd-terrain-zoom-minimal>{`Zoomez davantage : le fond mondial s'affiche à partir du niveau de zoom ${j.fondMondial.zoomMinimal} (lecture à la demande).`}</p>
+          )}
+          {j?.fondMondial && t.courbes.visible && zoom != null && zoom >= j.fondMondial.zoomMinimal && zoom < j.fondMondial.zoomMinimalCourbes && (
+            <p className="gd-discret" role="status" data-gd-terrain-zoom-courbes>{`Courbes du fond mondial à partir du niveau de zoom ${j.fondMondial.zoomMinimalCourbes} (calculées sur la grille numérique).`}</p>
+          )}
+          {t.tuiles.chargement && <p className="gd-discret" role="status" data-gd-terrain-chargement>{j?.fondMondial ? "Chargement du fond mondial (lecture à la demande)…" : "Chargement du terrain…"}</p>}
+          {t.tuiles.indisponibles > 0 && <p className="gd-alerte" role="status" data-gd-terrain-tuiles-indisponibles>Une partie du terrain est indisponible pour l'instant (source distante injoignable ou lecture trop longue) : aucune valeur n'est estimée.</p>}
+          {j && j.plageAltitude === null && t.altitude.visible && t.modeLegende !== "adaptee" && (
+            <p className="gd-discret" data-gd-terrain-plage-absente>Plage d'altitude de ce jeu non lue en entier : « Adapter à la vue » pour afficher l'altitude.</p>
+          )}
           {j && (
             <>
               {j.droits.tuiles !== "autorise" && <p className="gd-alerte" data-gd-terrain-droits>Affichage en tuiles non autorisé par les droits de cette version.</p>}

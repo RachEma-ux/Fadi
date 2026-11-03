@@ -78,11 +78,34 @@ export interface PrecisionDeclaree {
   readonly source: string;
 }
 
-/** Comment l'original arrive dans le dépôt : fichier téléchargé tel quel, extrait de fenêtre d'un COG, ou dépôt manuel. */
+/**
+ * Source lue **à la demande** (fond mondial, TER-09) : jamais copiée en entier ; le serveur lit par plages HTTP, dans
+ * l'emprise demandée seulement, l'adresse unique (`dalles: null`) ou la dalle 1° × 1° qui contient le point (`dalles:
+ * "1deg"`, modèle avec `{lat}` = N33 / S12 et `{lon}` = W008 / E123). L'hôte est déclaré à part et doit être celui du
+ * modèle : la liste fermée des hôtes et des motifs d'adresse est celle des fiches livrées (aucune adresse libre).
+ */
+export interface AcquisitionDistante {
+  readonly methode: "distant";
+  readonly hote: string;
+  readonly modele: string;
+  readonly dalles: "1deg" | null;
+  /** Dalle lue à l'import pour contrôler l'en-tête (modèle à dalles seulement), p. ex. « N33W008 ». */
+  readonly dalleReference: string | null;
+  /** Emprise déclarée de la source (WGS 84) ; hors de cette emprise : « indisponible ». */
+  readonly emprise: { readonly ouest: number; readonly sud: number; readonly est: number; readonly nord: number };
+  /** Conditions d'accès lues chez le producteur (texte et source), affichées avec la fiche. */
+  readonly conditions: { readonly texte: string; readonly source: string };
+}
+
+/** Comment l'original arrive dans le dépôt : fichier téléchargé tel quel, extrait de fenêtre d'un COG, dépôt manuel, ou source distante lue à la demande. */
 export type Acquisition =
   | { readonly methode: "telechargement"; readonly url: string; readonly empreinte: string }
   | { readonly methode: "fenetre"; readonly url: string; readonly fenetre: { readonly ouest: number; readonly sud: number; readonly est: number; readonly nord: number }; readonly empreinte: string | null }
-  | { readonly methode: "depot" };
+  | { readonly methode: "depot" }
+  | AcquisitionDistante;
+
+/** Une dalle 1° × 1° : « N33W008 » (coin sud-ouest, latitude puis longitude). */
+export const DALLE = /^([NS])(\d{2})([EW])(\d{3})$/;
 
 /** Fiche d'un jeu d'altitudes (une version d'un produit), relue avant tout import. */
 export interface DeclarationTerrain {
@@ -158,7 +181,32 @@ function lireAcquisition(x: unknown, erreurs: string[]): Acquisition | null {
     if (!nul(o["empreinte"], (y): y is string => typeof y === "string" && SHA256.test(y))) erreurs.push("acquisition.empreinte : SHA-256 ou null");
     return { methode: "fenetre", url: String(o["url"]), fenetre: { ouest: w as number, sud: s as number, est: e as number, nord: n as number }, empreinte: (o["empreinte"] as string | null) ?? null };
   }
-  erreurs.push("acquisition.methode : « telechargement », « fenetre » ou « depot »");
+  if (o["methode"] === "distant") {
+    const hote = o["hote"];
+    if (typeof hote !== "string" || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z][a-z0-9-]*[a-z0-9]$/.test(hote)) erreurs.push("acquisition.hote : nom d'hôte DNS en minuscules (aucun port, aucune adresse IP)");
+    const dalles = o["dalles"] === undefined ? null : o["dalles"];
+    if (dalles !== null && dalles !== "1deg") erreurs.push("acquisition.dalles : « 1deg » ou null");
+    const modele = typeof o["modele"] === "string" ? o["modele"] : "";
+    const echantillon = modele.replaceAll("{lat}", "N00").replaceAll("{lon}", "E000");
+    let u: URL | null = null;
+    try { u = new URL(echantillon); } catch { /* refusé ci-dessous */ }
+    if (!u || u.protocol !== "https:" || u.username || u.password || u.port || u.search || u.hash || u.hostname !== hote) erreurs.push("acquisition.modele : adresse https sur l'hôte déclaré, sans port, identifiant, requête ni fragment");
+    const marques = modele.match(/\{[^}]*\}/g) ?? [];
+    if (dalles === "1deg" && !(modele.includes("{lat}") && modele.includes("{lon}") && marques.every((m) => m === "{lat}" || m === "{lon}"))) erreurs.push("acquisition.modele : {lat} et {lon} requis (et seuls admis) pour des dalles 1°");
+    if (dalles === null && marques.length) erreurs.push("acquisition.modele : aucune marque {…} pour une adresse unique");
+    const dr = o["dalleReference"] === undefined ? null : o["dalleReference"];
+    if (dalles === "1deg" ? !(typeof dr === "string" && DALLE.test(dr)) : dr !== null) erreurs.push("acquisition.dalleReference : dalle « N33W008 » requise pour des dalles 1°, null sinon");
+    const f = o["emprise"] && typeof o["emprise"] === "object" ? (o["emprise"] as Record<string, unknown>) : {};
+    const [w, s, e, n] = [f["ouest"], f["sud"], f["est"], f["nord"]];
+    if (![w, s, e, n].every(nombre) || !((e as number) > (w as number) && (n as number) > (s as number)) || (w as number) < -180 || (e as number) > 180 || (s as number) < -90 || (n as number) > 90) erreurs.push("acquisition.emprise : ouest < est et sud < nord, en degrés WGS 84");
+    const cond = o["conditions"] && typeof o["conditions"] === "object" ? (o["conditions"] as Record<string, unknown>) : {};
+    if (!texte(cond["texte"], 5, 2000) || !texte(cond["source"], 5)) erreurs.push("acquisition.conditions : { texte, source } des conditions d'accès lues chez le producteur");
+    return {
+      methode: "distant", hote: String(hote ?? ""), modele, dalles: dalles as "1deg" | null, dalleReference: (dr as string | null) ?? null,
+      emprise: { ouest: w as number, sud: s as number, est: e as number, nord: n as number }, conditions: { texte: String(cond["texte"] ?? ""), source: String(cond["source"] ?? "") },
+    };
+  }
+  erreurs.push("acquisition.methode : « telechargement », « fenetre », « depot » ou « distant »");
   return null;
 }
 
@@ -194,6 +242,8 @@ export function validerDeclarationTerrain(x: unknown): ResultatDeclaration {
   if (typeof f["nom"] !== "string" || !NOM_FICHIER.test(f["nom"])) erreurs.push("fichier.nom : nom simple en .tif / .tiff (aucun chemin)");
   if (f["format"] !== "GeoTIFF") erreurs.push("fichier.format : GeoTIFF (seul format de ce lot)");
   if (typeof o["crsHorizontal"] !== "string" || !CRS.test(o["crsHorizontal"])) erreurs.push("crsHorizontal : EPSG:nnnn");
+  if (acquisition?.methode === "distant" && o["crsHorizontal"] !== "EPSG:4326") erreurs.push("crsHorizontal : une source distante est lue en EPSG:4326 seulement (aucune reprojection à la demande)");
+  if (acquisition?.methode === "distant" && o["niveau"] !== "mondial") erreurs.push("niveau : une source distante lue à la demande est un fond mondial");
   const referenceVerticale = lireReference(o["referenceVerticale"], erreurs);
   if (o["uniteVerticale"] !== "m") erreurs.push("uniteVerticale : m (toute autre unité est refusée, aucune conversion)");
   const p = o["pasNatif"] && typeof o["pasNatif"] === "object" ? (o["pasNatif"] as Record<string, unknown>) : {};

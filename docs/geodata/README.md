@@ -97,6 +97,22 @@ publiées sont servies. Publication et retour arrière : `sudo fadi-preprod terr
 `sudo fadi-preprod terrain worker --continu 30` (traitements et exports en boucle, conteneur détaché unique arrêté par
 `sudo fadi-preprod terrain worker --arreter`, TER-D20). Drapeau : `GEODATA_TERRAIN_ENABLED=false` ferme les services.
 
+Fond mondial à la demande (TER-09, `docs/workstreams/geodata/terrain/TER-09.md`) : fiches **distantes**
+`gedtm30-v1-2-mondial` (MNT) et `copernicus-glo30-mondial` (MNS, dalles 1° × 1°), lues par plages HTTP dans l'emprise
+affichée seulement, par le seul service `terrain-distant` (réseaux `front` + `internal`, aucune base, cache
+`cache-distant/` du volume borné par `PREPROD_GEODATA_TERRAIN_CACHE_QUOTA_GO`, éviction LRU, budget
+`PREPROD_GEODATA_TERRAIN_DISTANT_*`). Liste fermée des services de la garde : `db`, `migrate`, `app`, `recette`,
+`terrain-import`, `terrain-worker`, `terrain-distant`.
+
+```sh
+sudo fadi-preprod terrain distant --demarrer | --arreter | --vider   # administrateur (conteneur fadi-preprod-terrain-distant)
+sudo fadi-preprod terrain distant --etat                             # opérateur admis : cache, budget, compteurs
+sudo fadi-preprod terrain --importer gedtm30-v1-2-mondial --par <gestionnaire-donnees>   # en-tête lu à la source, rien de déposé
+```
+
+Ensuite même cycle que toute version (levée consignée, `worker --traiter`, `--decider`, `--publier`) ; procédure complète
+dans `TER-09.md`. Service arrêté ou source injoignable : « indisponible », jamais une valeur.
+
 Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
 de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est
 exclu et listé. La publication (accepté → publié) vient avec le lot TER-04.

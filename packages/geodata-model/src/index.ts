@@ -29,3 +29,4 @@ export * from "./terrain/analyse.js";
 export * from "./terrain/qualite.js";
 export * from "./terrain/priorite.js";
 export * from "./terrain/services.js";
+export * from "./terrain/distant.js";

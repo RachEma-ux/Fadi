@@ -1327,6 +1327,11 @@ jobs:
           docker exec fadi test -f apps/api/dist/geodata-terrain/gedtm30-v1-2-benslimane.json
           test "$(docker exec fadi stat -c %U /data/terrain)" = "node"
           { docker exec fadi node apps/api/dist/geodata-terrain.js --importer gedtm30-v1-2-benslimane --par image@example.com 2>&1 || true; } | tee /dev/stderr | grep -q "GEODATA_TERRAIN_DIR absent"
+          # Fond mondial à la demande (TER-09) : fiches distantes dans l'image ; le service terrain-distant démarre (aucune base,
+          # aucune lecture distante au démarrage) avec la liste fermée des deux sources mondiales.
+          docker exec fadi test -f apps/api/dist/geodata-terrain/gedtm30-v1-2-mondial.json
+          docker exec fadi test -f apps/api/dist/geodata-terrain/copernicus-glo30-mondial.json
+          { docker exec -e GEODATA_TERRAIN_DIR=/tmp/terrain-essai -e GEODATA_TERRAIN_QUOTA_GO=30 fadi timeout 8 node apps/api/dist/geodata-terrain.js --distant-serveur 2>&1 || true; } | tee /dev/stderr | grep -q "terrain-distant : port 3002 ; sources copernicus-glo30-mondial, gedtm30-v1-2-mondial"
           # Travailleur terrain (TER-03) : image applicative + GDAL épinglé ; essai complet sur une fixture « test seulement ».
           DOCKER_BUILDKIT=1 docker build -f deploy/preprod/terrain-worker.Dockerfile --build-arg APP_IMAGE=fadi:ci -t fadi-terrain:ci .
           docker run --rm --entrypoint gdalinfo fadi-terrain:ci --version | tee /dev/stderr | grep -q "GDAL 3.6.2"

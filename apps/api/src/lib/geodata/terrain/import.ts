@@ -19,7 +19,10 @@ import {
 } from "@parcours/geodata-model";
 import { newId } from "../../ids.js";
 import { empreinteFichier, type StockageTerrain } from "./stockage.js";
-import { FichierIllisible, lireEnTete } from "./entete.js";
+import { enTeteDe, FichierIllisible, lireEnTete } from "./entete.js";
+import { fromCustomClient } from "geotiff";
+import { adresseDistante, CompteurBudget, empriseDalle } from "@parcours/geodata-model";
+import { BUDGET_DISTANT_DEFAUT, ClientOrigine, ErreurDistante, sourcesDistantes, type Transport } from "./distant.js";
 
 export class ImportRefuse extends Error {}
 
@@ -83,15 +86,17 @@ export async function importerTerrain(
   const st = await stat(chemin).catch(() => null);
   if (!st?.isFile()) {
     // Relance après un import réussi : le fichier a quitté le dépôt ; l'empreinte attendue (fiche) retrouve le traitement.
-    const attendue = d.acquisition.methode !== "depot" ? d.acquisition.empreinte : null;
+    const attendue = d.acquisition.methode === "telechargement" || d.acquisition.methode === "fenetre" ? d.acquisition.empreinte : null;
     const deja = attendue ? await dejaImporte(c, sha256(texteIdempotence("import", [attendue], d)), attendue) : null;
     if (deja) return deja;
     throw new ImportRefuse(`Fichier absent du dépôt : depot/${d.fichier.nom}.`);
   }
+  if (d.acquisition.methode === "distant") throw new ImportRefuse("Fiche « distant » : importer par importerTerrainDistant (en-tête lu à la source, aucun fichier déposé).");
   if (st.size > limites.octetsFichier) throw new ImportRefuse(`Fichier de ${st.size} octets : au-delà de la limite de ${limites.octetsFichier}.`);
   const { empreinte, taille } = await empreinteFichier(chemin);
-  if (d.acquisition.methode !== "depot" && d.acquisition.empreinte && d.acquisition.empreinte !== empreinte) {
-    throw new ImportRefuse(`Empreinte du fichier ${empreinte} différente de celle de la fiche ${d.acquisition.empreinte} : rien n'est importé.`);
+  const attendueFiche = d.acquisition.methode === "telechargement" || d.acquisition.methode === "fenetre" ? d.acquisition.empreinte : null;
+  if (attendueFiche && attendueFiche !== empreinte) {
+    throw new ImportRefuse(`Empreinte du fichier ${empreinte} différente de celle de la fiche ${attendueFiche} : rien n'est importé.`);
   }
 
   // Traitement idempotent : même fichier et même fiche → même traitement, jamais une seconde version. Les imports d'une
@@ -205,4 +210,83 @@ export async function leverQuarantaine(c: PoolClient, versionId: string, decisio
       [par, versionId, JSON.stringify({ motifs: v.motifs.map((m) => m.code) })]);
     return reference;
   });
+}
+
+/**
+ * Import d'une version **distante** (fond mondial, TER-09) : rien n'est téléchargé ni déposé. L'en-tête de la source (adresse
+ * unique, ou dalle de référence d'un modèle à dalles) est lu **à la source** par plages HTTP (liste fermée de la fiche,
+ * aucune redirection, budget), contrôlé contre la fiche comme un fichier déposé (repère, pas, NoData, référence verticale :
+ * quarantaine si inconnue), et l'épinglage (ETag, Last-Modified, taille, empreinte du premier bloc) devient l'empreinte de
+ * la version. Même cycle de vie ensuite : levée de quarantaine, traitement, revue, publication, retour arrière.
+ */
+export async function importerTerrainDistant(
+  c: PoolClient, d: DeclarationTerrain, opts: { readonly deposePar: string | null; readonly transport?: Transport | undefined },
+): Promise<ResultatImport> {
+  const a = d.acquisition;
+  if (a.methode !== "distant") throw new ImportRefuse("Fiche non distante : importer le fichier déposé.");
+  const url = adresseDistante(a, a.dalleReference);
+  if (!url) throw new ImportRefuse("Adresse de référence hors de l'emprise déclarée.");
+  const client = new ClientOrigine(url, sourcesDistantes([d]), new CompteurBudget(BUDGET_DISTANT_DEFAUT), opts.transport);
+  let entete: EnTeteRaster;
+  try {
+    const tiff = await fromCustomClient(client, { blockSize: 256 * 1024, cacheSize: 16 } as Parameters<typeof fromCustomClient>[1]);
+    entete = await enTeteDe(tiff);
+  } catch (e) {
+    throw new ImportRefuse(`En-tête distant illisible : ${e instanceof ErreurDistante ? e.message : (e as Error).message}. Rien n'est importé.`);
+  }
+  if (!client.epinglage || !client.premierBloc) throw new ImportRefuse("Source distante sans épinglage (ETag, taille) : rien n'est importé.");
+  const ep = client.epinglage;
+  const empreinte = createHash("sha256").update(JSON.stringify({ url, etag: ep.etag, lastModified: ep.lastModified, taille: ep.taille, premierBloc: createHash("sha256").update(client.premierBloc).digest("hex") })).digest("hex");
+  // Un modèle à dalles couvre l'emprise déclarée : l'en-tête garde le pas et les clés de la dalle de référence.
+  const enteteVersion: EnTeteRaster = a.dalles === null ? entete : {
+    ...entete, bornes: [a.emprise.ouest, a.emprise.sud, a.emprise.est, a.emprise.nord],
+    largeur: Math.round((a.emprise.est - a.emprise.ouest) / entete.pas[0]), hauteur: Math.round((a.emprise.nord - a.emprise.sud) / entete.pas[1]),
+  };
+  if (a.dalles !== null) {
+    const [o, s, e, n] = empriseDalle(a.dalleReference!);
+    if (Math.abs(entete.bornes[0] - o) > entete.pas[0] || Math.abs(entete.bornes[3] - n) > entete.pas[1] || Math.abs(entete.bornes[2] - e) > entete.pas[0] || Math.abs(entete.bornes[1] - s) > entete.pas[1]) {
+      throw new ImportRefuse(`Dalle de référence ${a.dalleReference} : emprise lue ${entete.bornes.join(", ")} différente de la dalle attendue. Rien n'est importé.`);
+    }
+  }
+  // Aucune grille n'est importée : la limite de cellules d'un fichier déposé ne s'applique pas (lecture à la demande bornée).
+  const verdict = controlerTerrain(enteteVersion, d, { cellules: Number.MAX_SAFE_INTEGER });
+  const cle = sha256(texteIdempotence("import-distant", [empreinte], d));
+  const deja = await dejaImporte(c, cle, empreinte);
+  if (deja) return deja;
+  const verrou = BigInt.asIntN(64, BigInt(`0x${cle.slice(0, 16)}`)).toString();
+  await c.query("SELECT pg_advisory_lock($1::bigint)", [verrou]);
+  try {
+    const encore = await dejaImporte(c, cle, empreinte);
+    if (encore) return encore;
+    const [{ id: traitementId }] = (await c.query<{ id: string }>(
+      `INSERT INTO geodata_terrain_traitements (id, cle_idempotence, type, entrees, parametres, logiciels, etat, demande_par)
+       VALUES ($1, $2, 'import', $3, $4, $5, 'en_cours', $6)
+       ON CONFLICT (cle_idempotence) DO UPDATE SET etat = 'en_cours', tentatives = geodata_terrain_traitements.tentatives + 1, progression = 0, motif_echec = NULL, maj_le = now()
+       RETURNING id`,
+      [newId("gdtt"), cle, JSON.stringify([{ url, ...ep }]), JSON.stringify({ fiche: d.cle, version: d.version.libelle, distant: true }), JSON.stringify({ node: process.version, lecteur: "geotiff (plages HTTP)" }), opts.deposePar],
+    )).rows as [{ id: string }];
+    const versionId = newId("gdtv");
+    await transaction(c, async () => {
+      await c.query(
+        `INSERT INTO geodata_terrain_versions (id, cle, niveau, produit, etat, declaration, empreinte, taille, entete, crs_horizontal,
+           reference_verticale, nodata, cellules, synthetique, demonstration, etiquette, depose_par, cle_idempotence)
+         VALUES ($1, $2, $3, $4, 'depose', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        [versionId, d.cle, d.niveau, d.produit, JSON.stringify(d), empreinte, ep.taille, JSON.stringify(enteteVersion), enteteVersion.crsHorizontal,
+          JSON.stringify(verdict.referenceVerticale), verdict.nodata, verdict.cellules, d.synthetique, d.demonstration, d.etiquette, opts.deposePar, cle],
+      );
+      await evenement(c, versionId, null, "depose", opts.deposePar, `Source distante lue à la demande : ${url} (ETag ${ep.etag ?? "absent"}, ${ep.taille} octets) ; aucun fichier copié.`);
+      await changerEtat(c, versionId, "depose", "validation", opts.deposePar, null);
+      await changerEtat(c, versionId, "validation", verdict.etat, opts.deposePar, verdict.motifs, verdict.motifs.map((m) => m.message).join(" ") || null);
+      await c.query(
+        `INSERT INTO geodata_terrain_sources_distantes (terrain_version_id, url, dalle, etag, last_modified, taille, empreinte_entete) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [versionId, url, a.dalleReference, ep.etag, ep.lastModified, ep.taille, createHash("sha256").update(client.premierBloc!).digest("hex")]);
+      await c.query("UPDATE geodata_terrain_traitements SET etat = 'termine', progression = 100, sorties = $2, maj_le = now() WHERE id = $1",
+        [traitementId, JSON.stringify({ versionId, etat: verdict.etat, distant: true })]);
+      await c.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'terrain.import', $2, $3, $4)",
+        [opts.deposePar, versionId, verdict.etat === "rejete" ? "refus" : "succes", JSON.stringify({ cle: d.cle, etat: verdict.etat, distant: true, motifs: verdict.motifs.map((m) => m.code) })]);
+    });
+    return { versionId, etat: verdict.etat, motifs: verdict.motifs, empreinte, deja: false, traitementId };
+  } finally {
+    await c.query("SELECT pg_advisory_unlock($1::bigint)", [verrou]).catch(() => undefined);
+  }
 }

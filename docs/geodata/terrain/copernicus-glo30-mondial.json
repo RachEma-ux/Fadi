@@ -1,0 +1,71 @@
+{
+  "cle": "copernicus-glo30-mondial",
+  "titre": "Copernicus DEM GLO-30 — MNS, fond mondial lu à la demande (dalles 1° × 1°)",
+  "producteur": "ESA, programme Copernicus (WorldDEM : DLR, Airbus Defence and Space)",
+  "niveau": "mondial",
+  "produit": "MNS",
+  "etiquette": "Modèle régional, précision de plusieurs mètres — jamais un levé local. Modèle de surface (bâti et végétation compris).",
+  "demonstration": false,
+  "synthetique": false,
+  "licence": {
+    "nom": "Licence Copernicus DEM GLO-30 Public : gratuite, attribution obligatoire",
+    "url": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+  },
+  "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. Produced using Copernicus WorldDEM-30. Copernicus Digital Elevation Model (DEM) accessed from https://registry.opendata.aws/copernicus-dem.",
+  "droits": {
+    "consultation": "autorise",
+    "stockage": "autorise",
+    "calcul": "autorise",
+    "tuiles": "autorise",
+    "commercial": "autorise",
+    "partage": "autorise",
+    "telechargement": "autorise",
+    "export": "autorise"
+  },
+  "version": {
+    "libelle": "GLO-30 Public (COG AWS Open Data, release 2021), dalles Copernicus_DSM_COG_10_<lat>_00_<lon>_00_DEM",
+    "doi": "10.5270/ESA-c5d3d65",
+    "date": "Acquisitions TanDEM-X 2011–2015",
+    "url": "https://registry.opendata.aws/copernicus-dem/"
+  },
+  "acquisition": {
+    "methode": "distant",
+    "hote": "copernicus-dem-30m.s3.amazonaws.com",
+    "modele": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_{lat}_00_{lon}_00_DEM/Copernicus_DSM_COG_10_{lat}_00_{lon}_00_DEM.tif",
+    "dalles": "1deg",
+    "dalleReference": "N33W008",
+    "emprise": {
+      "ouest": -180,
+      "sud": -90,
+      "est": 180,
+      "nord": 90
+    },
+    "conditions": {
+      "texte": "Licence Copernicus DEM GLO-30 Public : gratuite pour le grand public, attribution obligatoire (registre AWS Open Data, lu le 3 novembre 2026). Une dalle par cellule de 1° × 1° ; les océans n'ont pas de dalle et certaines dalles ne sont pas publiées : là, Fadi répond « indisponible » (jamais 0, même si le registre écrit qu'on peut supposer 0 sur l'océan). Au-delà de 50° de latitude, le pas en longitude des dalles est plus large (spécification Copernicus).",
+      "source": "https://registry.opendata.aws/copernicus-dem/"
+    }
+  },
+  "fichier": {
+    "nom": "Copernicus_DSM_COG_10_N33_00_W008_00_DEM.tif",
+    "format": "GeoTIFF"
+  },
+  "crsHorizontal": "EPSG:4326",
+  "referenceVerticale": {
+    "statut": "declaree",
+    "code": "EPSG:3855",
+    "libelle": "EGM2008",
+    "origine": "documentation",
+    "source": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM (lu le 2 novembre 2026)"
+  },
+  "uniteVerticale": "m",
+  "pasNatif": {
+    "valeur": 1,
+    "unite": "arcsec"
+  },
+  "nodata": null,
+  "precisionDeclaree": {
+    "texte": "Absolue verticale < 4 m (LE90) ; relative < 2 m (pente ≤ 20 %), < 4 m au-delà ; horizontale < 6 m (CE90)",
+    "verticaleM": 4,
+    "source": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM (lu le 2 novembre 2026)"
+  }
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProfilRecu, SourceTerrainRecue } from "./client";
 import {
-  decimalesPour, empriseGeometrie, messageCouverture, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, nombreFr,
+  decimalesPour, empriseGeometrie, jeuPourVue, messageCouverture, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, nombreFr,
   pasProfil, porteeLegende, precisionSupportee, texteReference, traceProfil,
 } from "./terrain-ops";
 
@@ -101,5 +101,25 @@ describe("terrain : couverture de la vue (TER-05)", () => {
     expect(messageCouverture([{ couverture: couv(0), niveau: "mondial" }, { couverture: couv(5), niveau: "leve-local" }], [0.2, 0.2, 0.8, 0.8])).toContain("Seul un modèle régional");
     expect(messageCouverture([{ couverture: couv(0), niveau: "leve-local" }], [0.2, 0.2, 0.8, 0.8])).toBeNull();
     expect(messageCouverture([], null)).toBeNull();
+  });
+});
+
+describe("terrain : fond mondial à la demande (TER-09)", () => {
+  const carre = (o: number, s: number, e: number, n: number) => ({ type: "Polygon", coordinates: [[[o, s], [e, s], [e, n], [o, n], [o, s]]] });
+  const mondial = { versionId: "mondial", couverture: carre(-180, -65, 180, 85), pas: { metres: 30.9, declare: { valeur: 1, unite: "arcsec" } } };
+  const lucerne = { versionId: "lucerne", couverture: carre(8.2, 47.0, 8.3, 47.1), pas: { metres: 0.25, declare: { valeur: 0.25, unite: "m" } } };
+  it("le jeu affiché suit le centre de la vue : levé local sur son emprise, fond mondial partout ailleurs", () => {
+    expect(jeuPourVue([mondial, lucerne], [8.24, 47.04, 8.26, 47.06], "mondial")).toBe("lucerne");
+    expect(jeuPourVue([mondial, lucerne], [-7.2, 33.4, -7.0, 33.6], "lucerne")).toBe("mondial");
+    expect(jeuPourVue([mondial, lucerne], [2.2, 48.8, 2.4, 48.9], null)).toBe("mondial");
+    // Aucun jeu ne contient le centre (hors de l'emprise du fond) : le jeu courant reste.
+    expect(jeuPourVue([mondial], [10, 86, 11, 87], "mondial")).toBe("mondial");
+    expect(jeuPourVue([mondial], null, null)).toBeNull();
+  });
+  it("Sources et précision : DOI et accès « à la demande » affichés avec les métadonnées habituelles", () => {
+    const l = lignesSource(source({ doi: "10.5281/zenodo.18887460", acces: "a-la-demande" }));
+    expect(l).toContainEqual(["DOI", "10.5281/zenodo.18887460"]);
+    expect(l).toContainEqual(["Accès", "fond mondial lu à la demande (emprise affichée seulement)"]);
+    expect(l.map((x) => x[0])).toEqual(expect.arrayContaining(["Jeu", "Pas de la grille", "Référence verticale", "Qualité mesurée", "Attribution", "Licence"]));
   });
 });

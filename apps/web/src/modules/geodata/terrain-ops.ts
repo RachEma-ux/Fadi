@@ -71,6 +71,8 @@ export function lignesSource(s: SourceTerrainRecue): [string, string][] {
     ["Publiée le", s.publieeLe.slice(0, 10)],
     ["Attribution", s.attribution],
     ["Licence", s.licence.nom],
+    ...(s.doi ? [["DOI", s.doi] as [string, string]] : []),
+    ...(s.acces === "a-la-demande" ? [["Accès", "fond mondial lu à la demande (emprise affichée seulement)"] as [string, string]] : []),
   ];
 }
 
@@ -221,4 +223,19 @@ export function messageCouverture(jeux: readonly Pick<JeuTerrainRecu, "couvertur
   if (!dansVue.length) return "Aucun jeu publié ne couvre la vue : centrez la carte sur une couverture disponible.";
   if (!dansVue.some((j) => j.niveau === "leve-local")) return "Seul un modèle régional ou mondial couvre la vue : aucun levé local ici (précision limitée).";
   return null;
+}
+
+/**
+ * Jeu à afficher pour une vue (TER-09, « comme une carte normale ») : parmi les jeux dont la couverture contient le centre
+ * de la vue, le plus fin (le levé local sur son emprise, sinon le fond mondial) ; le jeu courant est gardé s'il est aussi
+ * fin. Un seul jeu est affiché à la fois : le jeu courant reste si aucun ne contient le centre.
+ */
+export function jeuPourVue(jeux: readonly Pick<JeuTerrainRecu, "versionId" | "couverture" | "pas">[], vue: readonly [number, number, number, number] | null, courant: string | null): string | null {
+  if (!vue) return courant;
+  const [lon, lat] = [(vue[0] + vue[2]) / 2, (vue[1] + vue[3]) / 2];
+  const dans = jeux.filter((j) => { const e = empriseGeometrie(j.couverture); return !!e && lon >= e[0] && lon <= e[2] && lat >= e[1] && lat <= e[3]; });
+  if (!dans.length) return courant;
+  const fin = Math.min(...dans.map((j) => j.pas.metres));
+  const meilleurs = dans.filter((j) => j.pas.metres === fin);
+  return meilleurs.some((j) => j.versionId === courant) ? courant : meilleurs[0]!.versionId;
 }

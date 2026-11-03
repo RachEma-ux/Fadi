@@ -13,13 +13,16 @@
 import type { PoolClient } from "pg";
 import { fromFile, type GeoTIFF } from "geotiff";
 import {
-  couleurContinue, dateDeDonnees, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
+  couleurContinue, dateDeDonnees, LIMITES_FOND_MONDIAL, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
   profil, sansValeur, statistiquesZone, valeurBilineaire, valeurCellule,
-  type DeclarationTerrain, type DroitsVersion, type EnTeteRaster, type EtatQualite, type ProduitTerrain, type Profil, type RapportQualite,
+  type AcquisitionDistante, type DeclarationTerrain, type DroitsVersion, type EnTeteRaster, type EtatQualite, type ProduitTerrain, type Profil, type RapportQualite,
   type ReferenceVerticale, type SourceAltitude, type StatistiquesZone,
 } from "@parcours/geodata-model";
 import { encoderPng, pngTransparent } from "../raster.js";
 import type { StockageTerrain } from "./stockage.js";
+import {
+  avecDelai, courbesDistantes, ErreurDistante, oublierDistants, plageDistante, statistiquesDistantes, tuileDistante, valeursDistantes,
+} from "./fond-mondial.js";
 
 export type Executeur = Pick<PoolClient, "query">;
 export class ServiceRefuse extends Error {
@@ -54,17 +57,21 @@ export interface SourceTerrain {
   readonly qualite: { readonly etat: EtatQualite; readonly rmsez: number | null; readonly p95: number | null; readonly n: number };
   readonly date: string | null;
   readonly publieeLe: string;
-  readonly altitude: string;
+  readonly doi: string | null;
+  /** COG d'altitude du volume (null pour une version distante, lue à la demande). */
+  readonly altitude: string | null;
   readonly pente: string | null;
   readonly ombrage: string | null;
   readonly nodata: number | null;
   readonly emprise: readonly [number, number, number, number];
+  /** Source distante lue à la demande (fond mondial, TER-09), ou null (version locale du volume). */
+  readonly distant: AcquisitionDistante | null;
 }
 
 interface LigneSource {
   id: string; cle: string; produit: ProduitTerrain; niveau: DeclarationTerrain["niveau"]; etat: string; declaration: DeclarationTerrain; entete: EnTeteRaster;
   reference_verticale: ReferenceVerticale; nodata: number | null; etiquette: string | null; etat_le: string; srid_natif: number;
-  altitude: string; pente: string | null; ombrage: string | null; rapport: RapportQualite | null; etat_qualite: EtatQualite | null;
+  altitude: string | null; pente: string | null; ombrage: string | null; rapport: RapportQualite | null; etat_qualite: EtatQualite | null;
   ouest: number; sud: number; est: number; nord: number; lat: number;
 }
 
@@ -75,10 +82,12 @@ const SELECT_SOURCES = `
          ST_XMin(c.geom) AS ouest, ST_YMin(c.geom) AS sud, ST_XMax(c.geom) AS est, ST_YMax(c.geom) AS nord, ST_Y(ST_Centroid(c.geom)) AS lat
     FROM geodata_terrain_versions v
     JOIN geodata_terrain_couvertures c ON c.terrain_version_id = v.id
-    JOIN geodata_terrain_fichiers fa ON fa.terrain_version_id = v.id AND fa.role = 'derive' AND fa.nature = 'altitude'
+    LEFT JOIN geodata_terrain_fichiers fa ON fa.terrain_version_id = v.id AND fa.role = 'derive' AND fa.nature = 'altitude'
     LEFT JOIN geodata_terrain_fichiers fp ON fp.terrain_version_id = v.id AND fp.role = 'derive' AND fp.nature = 'pente'
     LEFT JOIN geodata_terrain_fichiers fo ON fo.terrain_version_id = v.id AND fo.role = 'derive' AND fo.nature = 'ombrage'
     LEFT JOIN LATERAL (SELECT rapport, etat_qualite FROM geodata_terrain_rapports_qualite r WHERE r.terrain_version_id = v.id ORDER BY r.cree_le DESC, r.id DESC LIMIT 1) q ON true`;
+/** Une version servie a son COG d'altitude dans le volume, ou est une source distante lue à la demande (TER-09). */
+const SERVIE = `(fa.cle_stockage IS NOT NULL OR v.declaration->'acquisition'->>'methode' = 'distant')`;
 
 function versSource(l: LigneSource): SourceTerrain {
   const d = l.declaration;
@@ -89,20 +98,20 @@ function versSource(l: LigneSource): SourceTerrain {
     droits: d.droits, srid: l.srid_natif, geographique: l.entete.geographique, pas: pasM, pasDeclare: d.pasNatif, referenceVerticale: l.reference_verticale,
     precisionDeclaree: d.precisionDeclaree, precisionMesuree: g?.rmsez ?? null,
     qualite: { etat: l.etat_qualite ?? "non-evaluee", rmsez: g?.rmsez ?? null, p95: g?.p95 ?? null, n: g?.n ?? 0 },
-    date: d.version.date, publieeLe: new Date(l.etat_le).toISOString(), altitude: l.altitude, pente: l.pente, ombrage: l.ombrage, nodata: l.nodata,
-    emprise: [l.ouest, l.sud, l.est, l.nord],
+    date: d.version.date, publieeLe: new Date(l.etat_le).toISOString(), doi: d.version.doi, altitude: l.altitude, pente: l.pente, ombrage: l.ombrage, nodata: l.nodata,
+    emprise: [l.ouest, l.sud, l.est, l.nord], distant: d.acquisition.methode === "distant" ? d.acquisition : null,
   };
 }
 
 /** Versions publiées dont la consultation est autorisée (catalogue commun du terrain), éventuellement d'un produit. */
 export async function sourcesPubliees(ex: Executeur, produit?: ProduitTerrain): Promise<SourceTerrain[]> {
-  const r = await ex.query<LigneSource>(`${SELECT_SOURCES} WHERE v.etat = 'publie' AND v.declaration->'droits'->>'consultation' = 'autorise'${produit ? " AND v.produit = $1" : ""}`, produit ? [produit] : []);
+  const r = await ex.query<LigneSource>(`${SELECT_SOURCES} WHERE v.etat = 'publie' AND ${SERVIE} AND v.declaration->'droits'->>'consultation' = 'autorise'${produit ? " AND v.produit = $1" : ""}`, produit ? [produit] : []);
   return r.rows.map(versSource);
 }
 
 /** Une version publiée et consultable, ou 404 (une version non publiée n'est jamais révélée). */
 export async function sourcePubliee(ex: Executeur, id: string): Promise<SourceTerrain> {
-  const [l] = (await ex.query<LigneSource>(`${SELECT_SOURCES} WHERE v.id = $1 AND v.etat = 'publie' AND v.declaration->'droits'->>'consultation' = 'autorise'`, [id])).rows;
+  const [l] = (await ex.query<LigneSource>(`${SELECT_SOURCES} WHERE v.id = $1 AND v.etat = 'publie' AND ${SERVIE} AND v.declaration->'droits'->>'consultation' = 'autorise'`, [id])).rows;
   if (!l) throw new ServiceRefuse(404, "not_found", "Version de terrain introuvable.");
   return versSource(l);
 }
@@ -119,6 +128,7 @@ export function metadonnees(s: SourceTerrain) {
     versionId: s.id, cle: s.cle, titre: s.titre, produit: s.produit, niveau: s.niveau, etiquette: s.etiquette,
     pas: { metres: s.pas, declare: s.pasDeclare }, referenceVerticale: s.referenceVerticale, unite: "m",
     qualite: s.qualite, precisionDeclaree: s.precisionDeclaree, date: s.date, publieeLe: s.publieeLe, attribution: s.attribution, licence: s.licence,
+    doi: s.doi, acces: s.distant ? ("a-la-demande" as const) : ("local" as const),
   };
 }
 
@@ -166,10 +176,10 @@ async function ouvrir(chemin: string): Promise<GeoTIFF> {
   return t;
 }
 
-interface Georef { readonly ox: number; readonly oy: number; readonly rx: number; readonly ry: number; readonly largeur: number; readonly hauteur: number }
+export interface Georef { readonly ox: number; readonly oy: number; readonly rx: number; readonly ry: number; readonly largeur: number; readonly hauteur: number }
 
 /** Géoréférence de l'image `i` (0 = pleine résolution), origine au coin nord-ouest (« PixelIsPoint » corrigé). */
-async function georef(t: GeoTIFF, i = 0): Promise<Georef & { image: Awaited<ReturnType<GeoTIFF["getImage"]>> }> {
+export async function georef(t: GeoTIFF, i = 0): Promise<Georef & { image: Awaited<ReturnType<GeoTIFF["getImage"]>> }> {
   const base = await t.getImage(0);
   const image = await t.getImage(i);
   const [rx0, ry0] = base.getResolution() as [number, number];
@@ -180,9 +190,9 @@ async function georef(t: GeoTIFF, i = 0): Promise<Georef & { image: Awaited<Retu
   return { image, ox: ox0 - (pointe ? rx0 / 2 : 0), oy: oy0 - (pointe ? ry0 / 2 : 0), rx: rx0 * f, ry: ry0 * fy, largeur: image.getWidth(), hauteur: image.getHeight() };
 }
 
-interface Fenetre { readonly c0: number; readonly l0: number; readonly largeur: number; readonly hauteur: number; readonly valeurs: ArrayLike<number> }
+export interface Fenetre { readonly c0: number; readonly l0: number; readonly largeur: number; readonly hauteur: number; readonly valeurs: ArrayLike<number> }
 
-async function lireFenetre(t: GeoTIFF, i: number, c0: number, l0: number, c1: number, l1: number, budget: number = LIMITES_SERVICES.cellulesFenetre): Promise<Fenetre | null> {
+export async function lireFenetre(t: GeoTIFF, i: number, c0: number, l0: number, c1: number, l1: number, budget: number = LIMITES_SERVICES.cellulesFenetre): Promise<Fenetre | null> {
   const g = await georef(t, i);
   const a = Math.max(0, Math.floor(c0)), b = Math.max(0, Math.floor(l0));
   const c = Math.min(g.largeur, Math.ceil(c1)), d = Math.min(g.hauteur, Math.ceil(l1));
@@ -193,13 +203,67 @@ async function lireFenetre(t: GeoTIFF, i: number, c0: number, l0: number, c1: nu
 }
 
 /**
+ * Fenêtre lue par tuiles internes décodées et gardées en mémoire (fond mondial, TER-09) : un COG distant a des tuiles
+ * internes de 1 024 à 2 048 cellules de côté, décodées en entier à chaque lecture ; les garder (au plus ~256 Mo, éviction
+ * du moins récent) évite de redécoder la même tuile pour chaque tuile de carte, chaque point et chaque courbe. Mêmes
+ * valeurs que `lireFenetre`, rien n'est rééchantillonné.
+ */
+const tuilesDecodees = new Map<string, { valeurs: Float32Array | ArrayLike<number>; largeur: number; hauteur: number; octets: number }>();
+let octetsDecodes = 0;
+const OCTETS_DECODES_MAX = 256 * 1024 * 1024;
+export function oublierTuilesDecodees(): void { tuilesDecodees.clear(); octetsDecodes = 0; }
+export async function lireFenetreTuilee(t: GeoTIFF, cle: string, i: number, c0: number, l0: number, c1: number, l1: number, budget: number = LIMITES_SERVICES.cellulesFenetre): Promise<Fenetre | null> {
+  const g = await georef(t, i);
+  const a = Math.max(0, Math.floor(c0)), b = Math.max(0, Math.floor(l0));
+  const c = Math.min(g.largeur, Math.ceil(c1)), d = Math.min(g.hauteur, Math.ceil(l1));
+  if (c <= a || d <= b) return null;
+  if ((c - a) * (d - b) > budget) throw new ServiceRefuse(413, "trop_grand", `Zone de ${(c - a) * (d - b)} cellules : au-delà de la limite de ${budget} (traitement de fond requis).`);
+  const tw = g.image.getTileWidth(), th = g.image.getTileHeight();
+  if (!(tw > 0 && th > 0) || tw * th > 4_194_304) return lireFenetre(t, i, c0, l0, c1, l1, budget);
+  const sortie = new Float32Array((c - a) * (d - b));
+  for (let ty = Math.floor(b / th); ty <= Math.floor((d - 1) / th); ty++) {
+    for (let tx = Math.floor(a / tw); tx <= Math.floor((c - 1) / tw); tx++) {
+      const k = `${cle}|${i}|${tx}|${ty}`;
+      let tuile = tuilesDecodees.get(k);
+      if (tuile) { tuilesDecodees.delete(k); tuilesDecodees.set(k, tuile); }
+      else {
+        const x0 = tx * tw, y0 = ty * th, x1 = Math.min(g.largeur, x0 + tw), y1 = Math.min(g.hauteur, y0 + th);
+        const [v] = (await g.image.readRasters({ window: [x0, y0, x1, y1], samples: [0] })) as unknown as [ArrayLike<number>];
+        tuile = { valeurs: v, largeur: x1 - x0, hauteur: y1 - y0, octets: (x1 - x0) * (y1 - y0) * 4 };
+        tuilesDecodees.set(k, tuile);
+        octetsDecodes += tuile.octets;
+        while (octetsDecodes > OCTETS_DECODES_MAX && tuilesDecodees.size > 1) {
+          const [premiere, p] = tuilesDecodees.entries().next().value as [string, { octets: number }];
+          tuilesDecodees.delete(premiere);
+          octetsDecodes -= p.octets;
+        }
+      }
+      const x0 = tx * tw, y0 = ty * th;
+      for (let l = Math.max(b, y0); l < Math.min(d, y0 + tuile.hauteur); l++) {
+        for (let col = Math.max(a, x0); col < Math.min(c, x0 + tuile.largeur); col++) sortie[(l - b) * (c - a) + (col - a)] = tuile.valeurs[(l - y0) * tuile.largeur + (col - x0)]!;
+      }
+    }
+  }
+  return { c0: a, l0: b, largeur: c - a, hauteur: d - b, valeurs: sortie };
+}
+
+/**
  * Valeurs d'altitude aux points (repère natif) : bilinéaire si possible, sinon la cellule ; null hors couverture. Les
  * points sont lus par paquets dont la fenêtre reste petite (≤ 1 M cellules) : un profil ne lit jamais tout le rectangle
  * englobant de la ligne.
  */
-export async function valeursNatives(stockage: StockageTerrain, s: SourceTerrain, pts: readonly (readonly [number, number])[]): Promise<({ valeur: number; methode: "bilineaire" | "cellule" } | null)[]> {
+export async function valeursNatives(stockage: StockageTerrain | null, s: SourceTerrain, pts: readonly (readonly [number, number])[], ex?: Executeur): Promise<({ valeur: number; methode: "bilineaire" | "cellule" } | null)[]> {
   if (!pts.length) return [];
-  const t = await ouvrir(stockage.chemin(s.altitude));
+  if (s.distant) {
+    if (!ex) throw new Error("Connexion requise pour une source distante.");
+    return valeursDistantes(ex, s, pts);
+  }
+  if (!stockage || !s.altitude) throw new ServiceRefuse(503, "terrain_indisponible", "Aucun volume terrain configuré sur ce serveur.");
+  return valeursDansTiff(await ouvrir(stockage.chemin(s.altitude)), s.nodata, pts);
+}
+
+/** Valeurs aux points (repère du COG) d'un GeoTIFF ouvert, par paquets de fenêtres ≤ 1 M cellules. */
+export async function valeursDansTiff(t: GeoTIFF, nodata: number | null, pts: readonly (readonly [number, number])[], cleTuilee?: string): Promise<({ valeur: number; methode: "bilineaire" | "cellule" } | null)[]> {
   const g = await georef(t, 0);
   const pix = pts.map(([x, y]) => [(x - g.ox) / g.rx, (y - g.oy) / g.ry] as const);
   const sortie: ({ valeur: number; methode: "bilineaire" | "cellule" } | null)[] = pts.map(() => null);
@@ -214,9 +278,9 @@ export async function valeursNatives(stockage: StockageTerrain, s: SourceTerrain
       [c0, l0, c1, l1] = [n0, m0, n1, m1];
       fin++;
     }
-    const f = await lireFenetre(t, 0, c0, l0, c1, l1);
+    const f = cleTuilee ? await lireFenetreTuilee(t, cleTuilee, 0, c0, l0, c1, l1) : await lireFenetre(t, 0, c0, l0, c1, l1);
     if (f) {
-      const grille = { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata: s.nodata, pasX: 1, pasY: 1 };
+      const grille = { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata, pasX: 1, pasY: 1 };
       for (let i = debut; i < fin; i++) {
         const [c, l] = pix[i]!;
         if (c < 0 || l < 0 || c >= g.largeur || l >= g.hauteur) continue;
@@ -233,16 +297,27 @@ export async function valeursNatives(stockage: StockageTerrain, s: SourceTerrain
 
 // ——— Point, profil, statistiques ———
 
-export async function altitudePoint(ex: Executeur, stockage: StockageTerrain, lon: number, lat: number, produit: ProduitTerrain) {
+export async function altitudePoint(ex: Executeur, stockage: StockageTerrain | null, lon: number, lat: number, produit: ProduitTerrain) {
   // Un point n'a qu'une source : la référence verticale est celle de la première source qui a une valeur au point (aucun
   // mélange possible), jamais celle d'une source qui ne fait que recouvrir le point par son rectangle englobant.
   const sources = ordonnerSourcesTerrain((await sourcesPubliees(ex, produit)).filter((s) => s.droits.calcul === "autorise" && lon >= s.emprise[0] && lon <= s.emprise[2] && lat >= s.emprise[1] && lat <= s.emprise[3]), produit, false);
+  // Fond mondial (TER-09) : une source distante injoignable n'écarte pas une source plus grossière ; si aucune autre n'a
+  // de valeur, l'altitude est « indisponible » (ou « chargement » si la lecture dépasse le délai), jamais estimée.
+  let distante: { etat: "indisponible" | "chargement"; motif: string } | null = null;
   for (const s of sources) {
-    const [p] = await transformer(ex, [[lon, lat]], 4326, s.srid);
-    const [v] = await valeursNatives(stockage, s, [p!]);
+    const [p] = s.srid === 4326 ? [[lon, lat] as [number, number]] : await transformer(ex, [[lon, lat]], 4326, s.srid);
+    let v: { valeur: number; methode: "bilineaire" | "cellule" } | null | undefined;
+    try {
+      [v] = s.distant ? await avecDelai(valeursNatives(stockage, s, [p!], ex), LIMITES_FOND_MONDIAL.delaiPointMs) : await valeursNatives(stockage, s, [p!], ex);
+    } catch (e) {
+      if (e instanceof ErreurDistante) { distante ??= { etat: "indisponible", motif: `${s.titre} : ${e.message}` }; continue; }
+      if (e instanceof ServiceRefuse && e.code === "chargement") { distante = { etat: "chargement", motif: `${s.titre} : ${e.message}` }; continue; }
+      throw e;
+    }
     if (v) return { disponible: true as const, lon, lat, altitude: v.valeur, echantillonnage: v.methode, source: metadonnees(s) };
   }
-  return { disponible: false as const, lon, lat, altitude: null, motif: "Aucune version publiée ne couvre ce point : altitude indisponible (jamais estimée)." };
+  if (distante) return { disponible: false as const, lon, lat, altitude: null, etat: distante.etat, motif: `Altitude indisponible (jamais estimée) — ${distante.motif}` };
+  return { disponible: false as const, lon, lat, altitude: null, etat: "hors-couverture" as const, motif: "Aucune version publiée ne couvre ce point : altitude indisponible (jamais estimée)." };
 }
 
 /**
@@ -262,7 +337,7 @@ function ordonnerSourcesTerrain(sources: readonly SourceTerrain[], produit: Prod
 }
 const refCode = (s: SourceTerrain) => (s.referenceVerticale.statut === "declaree" ? s.referenceVerticale.code ?? s.referenceVerticale.libelle : "non-declaree");
 
-export async function profilTerrain(ex: Executeur, stockage: StockageTerrain, ligne: readonly (readonly [number, number])[], pas: number, produit: ProduitTerrain): Promise<{ profil: Profil; lonLat: [number, number][]; sources: ReturnType<typeof metadonnees>[]; referencesEcartees: string[] }> {
+export async function profilTerrain(ex: Executeur, stockage: StockageTerrain | null, ligne: readonly (readonly [number, number])[], pas: number, produit: ProduitTerrain): Promise<{ profil: Profil; lonLat: [number, number][]; sources: ReturnType<typeof metadonnees>[]; referencesEcartees: string[] }> {
   if (ligne.length < 2 || ligne.length > 500) throw new ServiceRefuse(400, "invalid_input", "Ligne de 2 à 500 sommets attendue.");
   if (!(pas >= 0.05 && pas <= 10_000)) throw new ServiceRefuse(400, "invalid_input", "Pas d'échantillonnage entre 0,05 m et 10 km.");
   const [lon0, lat0] = ligne[0]!;
@@ -278,7 +353,7 @@ export async function profilTerrain(ex: Executeur, stockage: StockageTerrain, li
   const valeurs = new Map<string, Map<string, { valeur: number; interpolee: boolean }>>();
   for (const s of ordre) {
     const natifs = await transformer(ex, pts.map((p) => [p.x, p.y] as const), proj, s.srid);
-    const v = await valeursNatives(stockage, s, natifs);
+    const v = s.distant ? await avecDelai(valeursNatives(stockage, s, natifs, ex), LIMITES_FOND_MONDIAL.delaiCalculMs).catch(versRefus) : await valeursNatives(stockage, s, natifs, ex);
     const m = new Map<string, { valeur: number; interpolee: boolean }>();
     pts.forEach((p, i) => { const x = v[i]; if (x) m.set(`${p.x},${p.y}`, { valeur: x.valeur, interpolee: x.methode === "bilineaire" }); });
     valeurs.set(s.id, m);
@@ -291,7 +366,7 @@ export async function profilTerrain(ex: Executeur, stockage: StockageTerrain, li
 }
 
 /** Statistiques d'altitude dans un polygone WGS 84 (anneaux : extérieur puis trous), sur la version choisie ou la meilleure. */
-export async function statistiquesTerrain(ex: Executeur, stockage: StockageTerrain, anneaux: readonly (readonly (readonly [number, number])[])[], produit: ProduitTerrain, versionId: string | null): Promise<{ statistiques: StatistiquesZone; surfaceZoneM2: number; surfaceValideM2: number; couvertureValide: number; source: ReturnType<typeof metadonnees> } | { indisponible: true; motif: string }> {
+export async function statistiquesTerrain(ex: Executeur, stockage: StockageTerrain | null, anneaux: readonly (readonly (readonly [number, number])[])[], produit: ProduitTerrain, versionId: string | null): Promise<{ statistiques: StatistiquesZone; surfaceZoneM2: number; surfaceValideM2: number; couvertureValide: number; source: ReturnType<typeof metadonnees> } | { indisponible: true; motif: string }> {
   const geo = JSON.stringify({ type: "Polygon", coordinates: anneaux });
   let s: SourceTerrain | undefined;
   if (versionId) { s = await sourcePubliee(ex, versionId); exigerUsage(s, "calcul"); }
@@ -305,6 +380,13 @@ export async function statistiquesTerrain(ex: Executeur, stockage: StockageTerra
     `SELECT ST_AsGeoJSON(t) AS g, CASE WHEN $3 THEN ST_Area(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)::geography) ELSE ST_Area(t) END AS aire
        FROM (SELECT ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326), $2::int) AS t) x`, [geo, s.srid, s.geographique])).rows;
   const anneauxNatifs = (JSON.parse(natif!.g) as { coordinates: [number, number][][] }).coordinates;
+  if (s.distant) {
+    // Fond mondial (TER-09) : grille native de chaque dalle, dans le polygone réel, budget de cellules lues à la demande.
+    const r = await avecDelai(statistiquesDistantes(ex, s, anneauxNatifs), LIMITES_FOND_MONDIAL.delaiCalculMs).catch(versRefus);
+    const surfaceValide = r.statistiques.cellulesValides * r.aireCellule;
+    return { statistiques: r.statistiques, surfaceZoneM2: natif!.aire, surfaceValideM2: surfaceValide, couvertureValide: natif!.aire > 0 ? Math.min(1, surfaceValide / natif!.aire) : 0, source: metadonnees(s) };
+  }
+  if (!stockage || !s.altitude) throw new ServiceRefuse(503, "terrain_indisponible", "Aucun volume terrain configuré sur ce serveur.");
   const t = await ouvrir(stockage.chemin(s.altitude));
   const g = await georef(t, 0);
   const pix = anneauxNatifs.map((a) => a.map(([x, y]) => [(x - g.ox) / g.rx, (y - g.oy) / g.ry] as [number, number]));
@@ -324,9 +406,16 @@ const plages = new Map<string, [number, number]>();
 const cacheTuiles = new Map<string, Buffer>();
 
 /** Plage verrouillée de la légende d'altitude : min et max du plus petit aperçu (portée : la version entière). */
-export async function plageVersion(stockage: StockageTerrain, s: SourceTerrain): Promise<[number, number]> {
+export async function plageVersion(stockage: StockageTerrain | null, s: SourceTerrain, ex?: Executeur): Promise<[number, number] | null> {
   const deja = plages.get(s.id);
   if (deja) return deja;
+  if (s.distant) {
+    if (!ex) return null;
+    const p = await plageDistante(ex, s);
+    if (p) plages.set(s.id, p);
+    return p;
+  }
+  if (!stockage || !s.altitude) return null;
   const t = await ouvrir(stockage.chemin(s.altitude));
   const n = await t.getImageCount();
   const image = await t.getImage(n - 1);
@@ -339,14 +428,25 @@ export async function plageVersion(stockage: StockageTerrain, s: SourceTerrain):
 }
 
 /** Tuile PNG 256 × 256 (Web Mercator) d'une version : altitude (palette sans bleu), pente ou ombrage ; transparente hors couverture. */
-export async function tuileTerrain(ex: Executeur, stockage: StockageTerrain, s: SourceTerrain, style: StyleTuile, z: number, x: number, y: number, plage: [number, number] | null): Promise<Buffer> {
+export async function tuileTerrain(ex: Executeur, stockage: StockageTerrain | null, s: SourceTerrain, style: StyleTuile, z: number, x: number, y: number, plage: [number, number] | null): Promise<Buffer> {
   const [o, n] = lonLatTuile(z, x, y, 0, 0);
   const [e, sud] = lonLatTuile(z, x, y, 256, 256);
   if (e < s.emprise[0] || o > s.emprise[2] || n < s.emprise[1] || sud > s.emprise[3]) return pngTransparent();
-  const plageEff = style === "altitude" ? plage ?? (await plageVersion(stockage, s)) : style === "pente" ? ([0, 45] as [number, number]) : ([1, 255] as [number, number]);
+  if (s.distant && z < LIMITES_FOND_MONDIAL.zoomMinTuiles) return pngTransparent();
+  const lue = style === "altitude" && !plage ? await plageVersion(stockage, s, ex) : null;
+  if (style === "altitude" && !plage && !lue) throw new ServiceRefuse(422, "plage_requise", "Plage d'altitude de la version non évaluée (source mondiale en dalles) : légende adaptée à la vue ou à une zone requise.");
+  const plageEff = style === "altitude" ? (plage ?? lue)! : style === "pente" ? ([0, 45] as [number, number]) : ([1, 255] as [number, number]);
   const cle = `${s.id}|${style}|${plageEff.join(",")}|${z}/${x}/${y}`;
   const deja = cacheTuiles.get(cle);
   if (deja) return deja;
+  if (s.distant) {
+    const rgba = await avecDelai(tuileDistante(ex, s, style, z, x, y, (px, py) => lonLatTuile(z, x, y, px, py), plageEff), LIMITES_FOND_MONDIAL.delaiTuileMs).catch(versRefus);
+    const png = rgba ? encoderPng(rgba, 256, 256) : pngTransparent();
+    if (cacheTuiles.size >= 512) cacheTuiles.delete(cacheTuiles.keys().next().value!);
+    cacheTuiles.set(cle, png);
+    return png;
+  }
+  if (!stockage) throw new ServiceRefuse(503, "terrain_indisponible", "Aucun volume terrain configuré sur ce serveur.");
   const fichier = style === "altitude" ? s.altitude : style === "pente" ? s.pente : s.ombrage;
   if (!fichier) throw new ServiceRefuse(404, "not_found", "Dérivé absent pour cette version.");
   // Grille de contrôle 9 × 9 transformée par PostGIS, interpolée bilinéairement dans la tuile.
@@ -394,6 +494,43 @@ export async function tuileTerrain(ex: Executeur, stockage: StockageTerrain, s: 
 export function invaliderCaches(): void {
   plages.clear();
   cacheTuiles.clear();
+  courbesMondiales.clear();
+  oublierTuilesDecodees();
+  oublierDistants();
+}
+
+/** Une `ErreurDistante` devient une réponse motivée (503 « indisponible », 404 hors couverture jamais : null). */
+export function versRefus(e: unknown): never {
+  if (e instanceof ErreurDistante) throw new ServiceRefuse(e.etat === "budget" ? 429 : 503, e.etat === "budget" ? "budget_distant" : "source_distante_indisponible", e.message);
+  throw e;
+}
+
+// ——— Courbes du fond mondial (calculées à la demande, TER-09) ———
+
+const courbesMondiales = new Map<string, Buffer>();
+
+/** Tuile vectorielle (MVT, couche « courbes ») d'une version distante, calculée sur la grille native, encodée par PostGIS. */
+export async function tuileCourbesDistante(ex: Executeur, s: SourceTerrain, z: number, x: number, y: number, equidistance: number, reference: string): Promise<Buffer> {
+  const cle = `${s.id}|${equidistance}|${z}/${x}/${y}`;
+  const deja = courbesMondiales.get(cle);
+  if (deja) return deja;
+  const [o, n] = lonLatTuile(z, x, y, -16, -16);
+  const [e, sud] = lonLatTuile(z, x, y, 272, 272);
+  const courbes = await avecDelai(courbesDistantes(ex, s, z, [o, sud, e, n], equidistance), LIMITES_FOND_MONDIAL.delaiTuileMs).catch(versRefus);
+  let mvt: Buffer = Buffer.alloc(0);
+  if (courbes.length) {
+    const [r] = (await ex.query<{ mvt: Buffer }>(
+      `WITH b AS (SELECT ST_TileEnvelope($1, $2, $3) AS e),
+            m AS (SELECT ST_AsMVTGeom(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(f->>'g'), 4326), 3857), b.e, 4096, 64, true) AS geom,
+                         (f->>'a')::float8 AS altitude, (f->>'m')::boolean AS maitresse, $5::float8 AS equidistance, $6::text AS reference
+                    FROM jsonb_array_elements($4::jsonb) f, b)
+       SELECT ST_AsMVT(m.*, 'courbes', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
+      [z, x, y, JSON.stringify(courbes.map((k) => ({ a: k.altitude, m: k.maitresse, g: { type: "MultiLineString", coordinates: k.lignes } }))), equidistance, reference])).rows;
+    mvt = r?.mvt ?? Buffer.alloc(0);
+  }
+  if (courbesMondiales.size >= 512) courbesMondiales.delete(courbesMondiales.keys().next().value!);
+  courbesMondiales.set(cle, mvt);
+  return mvt;
 }
 
 // ——— Publication et retour arrière ———

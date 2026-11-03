@@ -170,6 +170,9 @@ export interface SourceTerrainRecue {
   qualite: { etat: EtatQualite; rmsez: number | null; p95: number | null; n: number };
   precisionDeclaree: { texte: string; verticaleM: number | null; source: string } | null;
   date: string | null; publieeLe: string; attribution: string; licence: { nom: string; url: string | null };
+  /** DOI de la version (null s'il n'y en a pas) ; accès : jeu du volume (« local ») ou fond mondial lu à la demande (TER-09). */
+  doi?: string | null;
+  acces?: "local" | "a-la-demande";
 }
 export interface JeuTerrainRecu extends SourceTerrainRecue {
   couverture: { type: string; coordinates: unknown } | null;
@@ -177,10 +180,12 @@ export interface JeuTerrainRecu extends SourceTerrainRecue {
   /** Plage d'altitude de la version (légende verrouillée) ; null = non évaluée. */
   plageAltitude: [number, number] | null;
   courbes: { equidistanceMinimale: number; calculees: number[] };
+  /** Fond mondial lu à la demande (TER-09) : zooms minimaux, couverture déclarée (lacunes « indisponibles ») ; null sinon. */
+  fondMondial?: { zoomMinimal: number; zoomMinimalCourbes: number; couverture: "declaree" } | null;
 }
 export type AltitudeRecue =
   | { disponible: true; lon: number; lat: number; altitude: number; echantillonnage: string; source: SourceTerrainRecue }
-  | { disponible: false; lon: number; lat: number; altitude: null; motif: string };
+  | { disponible: false; lon: number; lat: number; altitude: null; motif: string; etat?: "hors-couverture" | "indisponible" | "chargement" };
 export interface ProfilRecu {
   points: { chainage: number; lon: number; lat: number; altitude: number | null; source: string | null; interpolee: boolean }[];
   transitions: { chainage: number; de: string | null; vers: string | null }[];

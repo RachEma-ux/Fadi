@@ -435,6 +435,9 @@ export function PageGeoData() {
     return () => window.clearTimeout(minuterie);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese, versionEmprise]);
+  // Terrain (TER-09, « comme une carte normale ») : le jeu affiché suit le centre de la vue (levé local sur son emprise,
+  // sinon fond mondial), tant qu'aucun jeu n'a été choisi à la main.
+  useEffect(() => { terrainRef.current.suivreVue(moteur.current?.emprise() ?? null); }, [composition.camera, versionEmprise]);
   const lignesSynthese = useMemo<LigneSynthese[]>(() => couchesSynthese.map((k) => {
     const titre = couchesConnues.get(k.coucheId)?.titre ?? k.coucheId;
     const v = vues.get(k.coucheId);
@@ -563,6 +566,8 @@ export function PageGeoData() {
         moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
           surEmprise: () => setVersionEmprise((n) => n + 1),
           surEtatsCouches: (e, n) => { setEtatsCouches(new Map(e)); setNombresVus(new Map(n)); },
+          // Terrain (TER-09) : tuiles en chargement ou indisponibles, dites dans le panneau Terrain.
+          surEtatTerrain: (e) => terrainRef.current.setTuiles(e),
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
@@ -1194,7 +1199,7 @@ export function PageGeoData() {
               onCentrer={(g) => { const e = empriseGeometrie(g); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "import" && <Import onCoucheImportee={async (id) => { const c = await api.couche(id); connaitre([c]); chargerCatalogue(); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); const e = empriseDe(c.emprise?.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "terrain" && <PanneauTerrain t={terrain} outil={outil} onOutil={choisirOutil} onCentrer={(e) => moteur.current?.allerA({ emprise: e })}
-              vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} />}
+              vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} zoom={composition.camera.zoom} />}
             {volet === "export" && <Export carte={carte} enregistree={etat.etat === "enregistree"} analyses={analysesIds} onExporter={exporter} />}
           </aside>
         )}

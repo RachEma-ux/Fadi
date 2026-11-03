@@ -52,6 +52,18 @@ function png1x1() {
 }
 const PNG = png1x1();
 
+// Fond mondial à la demande (TER-09) : version « mondiale » synthétique (couverture déclarée du monde entier, lue à la
+// demande) et levé local synthétique près de 8,25° E / 47,05° N — test seulement, aucune donnée réelle.
+const JEU_M = {
+  ...source("ter-test-mondial", "Fond mondial synthétique", 30.9), niveau: "mondial", acces: "a-la-demande", doi: "10.0000/test.seulement",
+  couverture: { type: "MultiPolygon", coordinates: [[[[-180, -65], [180, -65], [180, 85], [-180, 85], [-180, -65]]]] }, droits: JEU_A.droits, plageAltitude: [0, 4000],
+  courbes: { equidistanceMinimale: 10, calculees: [10, 20, 25, 50, 100] }, fondMondial: { zoomMinimal: 8, zoomMinimalCourbes: 12, couverture: "declaree" },
+};
+const JEU_L = { ...source("ter-test-local", "Levé local synthétique", 0.25), couverture: { type: "MultiPolygon", coordinates: [[[[8.24, 47.04], [8.26, 47.04], [8.26, 47.06], [8.24, 47.06], [8.24, 47.04]]]] }, droits: JEU_A.droits, plageAltitude: [430, 470], courbes: { equidistanceMinimale: 0.5, calculees: [0.5] } };
+let modeMondial = false;
+let pointsChargement = 0;
+let tuilesMondialEnPanne = false;
+
 const appels = [];
 let terrainActif = true;
 /** Réponse du catalogue MNT retardée (réponse périmée après un changement de produit) ; statistiques indisponibles. */
@@ -66,7 +78,14 @@ async function intercepter(ctx) {
     if (!terrainActif) return json({ error: "not_found", message: "Le terrain haute résolution n'est pas activé sur ce serveur." }, 404);
     const p = u.pathname.replace(/^\/geodata\/api\/terrain/, "");
     if (p === "/jeux" && u.searchParams.get("produit") !== "MNS" && retardMNT) await new Promise((r) => setTimeout(r, retardMNT));
-    if (p === "/jeux") return json({ jeux: u.searchParams.get("produit") === "MNS" ? [] : [JEU_B, JEU_A] });
+    if (p === "/jeux") return json({ jeux: u.searchParams.get("produit") === "MNS" ? [] : modeMondial ? [JEU_M, JEU_L] : [JEU_B, JEU_A] });
+    if (modeMondial && p === "/point") {
+      const lon = Number(u.searchParams.get("lon")), lat = Number(u.searchParams.get("lat"));
+      // Première réponse « chargement » (lecture distante plus longue que le délai) : l'interface redemande, jamais une valeur.
+      if (pointsChargement > 0) { pointsChargement--; return json({ disponible: false, lon, lat, altitude: null, etat: "chargement", motif: "Altitude indisponible (jamais estimée) — Fond mondial synthétique : Lecture de la source distante en cours : réessayer dans un instant." }); }
+      return json({ disponible: true, lon, lat, altitude: 221.37, echantillonnage: "bilineaire", source: { ...source("ter-test-mondial", "Fond mondial synthétique", 30.9), niveau: "mondial", acces: "a-la-demande", doi: "10.0000/test.seulement", qualite: { etat: "non-evaluee", rmsez: null, p95: null, n: 0 }, precisionDeclaree: null } });
+    }
+    if (modeMondial && tuilesMondialEnPanne && p.startsWith("/tuiles/ter-test-mondial/")) return route.fulfill({ status: 503, contentType: "application/json", headers: { "Retry-After": "3", "X-Terrain-Etat": "indisponible" }, body: JSON.stringify({ error: "source_distante_indisponible", message: "Source distante en erreur (HTTP 500)." }) });
     if (p === "/point") {
       const lon = Number(u.searchParams.get("lon")), lat = Number(u.searchParams.get("lat"));
       if (lon < 6.99 || lon > 7.03 || lat < 46.99 || lat > 47.01) return json({ disponible: false, lon, lat, altitude: null, motif: "Aucune version publiée ne couvre ce point : altitude indisponible (jamais estimée)." });
@@ -227,6 +246,55 @@ check("terrain désactivé : message du serveur, aucune valeur", /pas activé/.t
 await p2.close();
 terrainActif = true;
 
+// ——— Fond mondial à la demande (TER-09) : toute zone affichée, levé local prioritaire sur son emprise ———
+modeMondial = true;
+const pm = await ctx.newPage();
+pm.on("pageerror", (e) => erreurs.push(e.message));
+await pm.goto(`${BASE}/geodata#v=-7.106,33.53,13,0`);
+await pm.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+await pm.waitForTimeout(1000);
+await pm.locator("[data-gd-terrain-bouton]").click();
+await pm.locator("[data-gd-terrain-jeu='ter-test-mondial']").waitFor();
+await pm.waitForTimeout(1500);
+check("fond mondial : hors de tout levé (Benslimane, zoom 13), le fond mondial est choisi et ses tuiles demandées", (await pm.locator("[data-gd-terrain-jeu='ter-test-mondial'] input").isChecked()) && appels.some((a) => /\/tuiles\/ter-test-mondial\/altitude\/1[34]\//.test(a)), appels.filter((a) => a.includes("mondial")).slice(0, 2).join(" "));
+check("fond mondial : « lu à la demande » dit avec le jeu", (await pm.locator("[data-gd-terrain-a-la-demande]").count()) === 1);
+// Altitude au point : « chargement » d'abord, puis la valeur (nouvelle demande automatique), avec DOI et accès.
+pointsChargement = 1;
+await pm.evaluate(() => document.activeElement?.blur());
+await pm.keyboard.press("Alt+o");
+const cm = await pm.locator(".maplibregl-canvas").boundingBox();
+const avantPoint = appels.filter((a) => a.includes("/terrain/point")).length;
+await pm.mouse.click(cm.x + cm.width / 2, cm.y + cm.height / 2);
+await pm.locator("[data-gd-terrain-altitude]").waitFor({ timeout: 15_000 });
+check("altitude au point du fond mondial : « chargement » puis valeur, redemandée automatiquement", appels.filter((a) => a.includes("/terrain/point")).length - avantPoint === 2 && /221/.test(await pm.locator("[data-gd-terrain-altitude]").textContent()));
+check("Sources et précision du fond mondial : DOI et accès « à la demande »", /10\.0000\/test\.seulement/.test(await pm.locator("[data-gd-terrain-point] [data-gd-terrain-sources]").textContent()) && /lu à la demande/.test(await pm.locator("[data-gd-terrain-point] [data-gd-terrain-sources]").textContent()));
+await pm.screenshot({ path: join(OUT, "05-fond-mondial.png") });
+// Zoom insuffisant : message, aucune tuile demandée sous le zoom minimal.
+await pm.goto(`${BASE}/geodata#v=-7.106,33.53,6,0`);
+await pm.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+await pm.locator("[data-gd-terrain-bouton]").click();
+await pm.locator("[data-gd-terrain-zoom-minimal]").waitFor();
+await pm.waitForTimeout(1500);
+check("fond mondial sous le zoom minimal (6 < 8) : message, aucune tuile demandée", /niveau de zoom 8/.test(await pm.locator("[data-gd-terrain-zoom-minimal]").textContent()) && !appels.some((a) => /\/tuiles\/ter-test-mondial\/[a-z]+\/[0-7]\//.test(a)));
+// Levé local : la vue centrée sur son emprise le choisit (priorité TER-D16, plus fin) ; ailleurs, le fond mondial.
+await pm.goto(`${BASE}/geodata#v=8.25,47.05,15,0`);
+await pm.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+await pm.locator("[data-gd-terrain-bouton]").click();
+await pm.locator("[data-gd-terrain-jeu='ter-test-local']").waitFor();
+await pm.waitForTimeout(1200);
+check("levé local prioritaire sur son emprise : choisi quand la vue y est centrée", await pm.locator("[data-gd-terrain-jeu='ter-test-local'] input").isChecked());
+// Source distante indisponible : tuiles refusées, nouveaux essais, puis « indisponible » dit (jamais une valeur).
+tuilesMondialEnPanne = true;
+await pm.goto(`${BASE}/geodata#v=2.35,48.85,12,0`);
+await pm.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+await pm.locator("[data-gd-terrain-bouton]").click();
+await pm.locator("[data-gd-terrain-jeu='ter-test-mondial']").waitFor();
+await pm.locator("[data-gd-terrain-tuiles-indisponibles]").waitFor({ timeout: 40_000 }).catch(() => undefined);
+check("source distante indisponible (Paris) : nouveaux essais puis « indisponible » dit, aucune valeur estimée", (await pm.locator("[data-gd-terrain-tuiles-indisponibles]").count()) === 1 && appels.some((a) => /\/tuiles\/ter-test-mondial\/altitude\/1[23]\/.*essai=3/.test(a)), `${appels.filter((a) => a.includes("essai")).length} essais ; ${appels.slice(-4).join(" ")} ; choisi ${await pm.locator("[data-gd-terrain-jeu] input:checked").evaluate((i) => i.closest("[data-gd-terrain-jeu]").dataset.gdTerrainJeu).catch(() => "?")}`);
+tuilesMondialEnPanne = false;
+await pm.close();
+modeMondial = false;
+
 // ——— Interface anglaise : aucun résidu français dans le panneau Terrain ———
 const en = await (await navigateur.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 await intercepter(en.context());
@@ -270,8 +338,18 @@ writeFileSync(join(OUT, "residus-anglais.txt"), residus.join("\n"));
 check("interface anglaise : panneau Terrain, bouton Terrain et barre d'outils sans résidu français", residus.length === 0, residus.slice(0, 8).join(" | "));
 check("interface anglaise : titres anglais (Terrain profile, Sources and accuracy)", /Terrain profile/.test(await en.locator("[data-gd-terrain-profil-resultat] h3").textContent()) && /Sources and accuracy/.test(await en.locator("[data-gd-terrain-rubrique-sources] h3").textContent()));
 await en.screenshot({ path: join(OUT, "04-anglais.png") });
+// Fond mondial en anglais (TER-09) : messages de zoom minimal et d'accès à la demande traduits.
+modeMondial = true;
+await en.goto(`${BASE}/geodata#v=-7.106,33.53,6,0`);
+await en.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+await en.locator("[data-gd-terrain-bouton]").click();
+await en.locator("[data-gd-terrain-zoom-minimal]").waitFor();
+await en.waitForTimeout(800);
+const textesM = [await en.locator("[data-gd-terrain-zoom-minimal]").textContent(), await en.locator("[data-gd-terrain-a-la-demande]").textContent()];
+check("interface anglaise : messages du fond mondial traduits", /Zoom in further/.test(textesM[0]) && /read on demand/.test(textesM[1]) && !textesM.some((t) => FR.test(t)), textesM.join(" | "));
+modeMondial = false;
 
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.slice(0, 3).join(" | "));
 await navigateur.close();
-console.log(echecs ? `\n${echecs} échec(s)` : "\nRecette du terrain (TER-05) : tout est conforme.");
+console.log(echecs ? `\n${echecs} échec(s)` : "\nRecette du terrain (TER-05, TER-09) : tout est conforme.");
 process.exit(echecs ? 1 : 0);

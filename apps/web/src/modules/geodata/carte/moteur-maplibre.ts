@@ -69,6 +69,10 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (fondSignale !== fondCourant) { fondSignale = fondCourant; ev.surErreurFond?.(`Le fond choisi ne se charge pas${m?.status ? ` (réponse ${m.status})` : ""} : vérifiez le fournisseur et sa clé dans Paramètres, ou revenez au fond neutre.`); }
       return;
     }
+    // Terrain (TER-09) : une tuile « chargement » (lecture distante plus longue que le délai, le cache se remplit) ou
+    // « indisponible » est redemandée automatiquement (trois fois au plus par adresse), jamais remplacée par une valeur.
+    const sid = (e as { sourceId?: string }).sourceId ?? "";
+    if (sid.startsWith("gd-terrain-")) { terrainEnErreur(sid); return; }
     // Glyphe d'une plage non livrée : le libellé perd ce caractère, la couche reste accessible (pas une erreur de couche).
     if (/\/geodata\/glyphes\//.test(m?.message ?? "")) return;
     if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
@@ -101,8 +105,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const cle = [...etats].map(([k, v]) => `${k}:${v}:${nombres.get(k) ?? ""}`).join(",");
     if (cle !== etatsSignales) { etatsSignales = cle; ev.surEtatsCouches?.(etats, nombres); }
   };
-  carte.on("idle", () => releverEtats(false));
-  carte.on("dataloading", () => releverEtats(true));
+  carte.on("idle", () => { releverEtats(false); signalerTerrain(false); });
+  carte.on("dataloading", (e) => { releverEtats(true); if (String((e as { sourceId?: string }).sourceId ?? "").startsWith("gd-terrain-")) signalerTerrain(true); });
+  carte.on("movestart", () => { indisponiblesTerrain = 0; essaisTerrain.clear(); });
   carte.on("moveend", () => {
     const c = carte.getCenter();
     ev.surDeplacement({ lon: Number(c.lng.toFixed(6)), lat: Number(c.lat.toFixed(6)), zoom: Number(carte.getZoom().toFixed(2)), cap: Number(carte.getBearing().toFixed(1)) });
@@ -343,6 +348,33 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   let terrainVoulu: AffichageTerrain | null = null;
   /** Premier calque au-dessus du fond : le terrain se place sous toutes les couches de la composition. */
   const sousLesCouches = () => carte.getStyle().layers.find((l) => l.id.startsWith(PREFIXE) || l.id === "gd-zones-remplissage")?.id;
+  // État des tuiles du terrain (TER-09) et nouveaux essais : une tuile refusée (« chargement » trop long, « indisponible »)
+  // fait redemander la source une fois quelques secondes plus tard, trois fois au plus pour la même vue ; au-delà, les
+  // tuiles encore refusées sont dites « indisponibles ». Un déplacement de la carte remet les essais à zéro.
+  let indisponiblesTerrain = 0;
+  let etatTerrainSignale = "";
+  const essaisTerrain = new Map<string, number>();
+  const essaiPrevu = new Set<string>();
+  function signalerTerrain(chargement: boolean) {
+    const cle = `${chargement}|${indisponiblesTerrain}`;
+    if (cle === etatTerrainSignale) return;
+    etatTerrainSignale = cle;
+    ev.surEtatTerrain?.({ chargement, indisponibles: indisponiblesTerrain });
+  }
+  function terrainEnErreur(id: string) {
+    const adresse = adressesTerrain.get(id);
+    if (!adresse) return;
+    const n = essaisTerrain.get(id) ?? 0;
+    if (n >= 3) { indisponiblesTerrain++; signalerTerrain(false); return; }
+    if (essaiPrevu.has(id)) return;
+    essaiPrevu.add(id);
+    setTimeout(() => {
+      essaiPrevu.delete(id);
+      essaisTerrain.set(id, n + 1);
+      const src = carte.getSource(id) as { setTiles?: (t: string[]) => void } | undefined;
+      if (src?.setTiles && adressesTerrain.get(id) === adresse) src.setTiles([`${adresse}${adresse.includes("?") ? "&" : "?"}essai=${n + 1}`]);
+    }, 2500 * (n + 1));
+  }
   function sourceTerrain(id: string, adresse: string | null, creer: (adresse: string) => void) {
     if (adressesTerrain.get(id) === adresse) return;
     for (const suffixe of ["", "-cotes"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
@@ -358,14 +390,14 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       const reglage = t?.[style];
       const plage = style === "altitude" && t ? t.altitude.plage : null;
       sourceTerrain(id, v && reglage?.visible ? adresseTuilesTerrain(v, style, plage) : null, (adresse) => {
-        carte.addSource(id, { type: "raster", tiles: [adresse], tileSize: 256, minzoom: 0, maxzoom: 22, ...(t?.attribution ? { attribution: t.attribution } : {}) });
+        carte.addSource(id, { type: "raster", tiles: [adresse], tileSize: 256, minzoom: t?.zoomMinimal ?? 0, maxzoom: 22, ...(t?.attribution ? { attribution: t.attribution } : {}) });
         carte.addLayer({ id, type: "raster", source: id, paint: { "raster-opacity": reglage!.opacite, "raster-resampling": "linear" } }, sousLesCouches());
       });
       if (carte.getLayer(id) && reglage) carte.setPaintProperty(id, "raster-opacity", reglage.opacite);
     }
     const eq = t?.courbes.visible ? t.courbes.equidistance : null;
     sourceTerrain("gd-terrain-courbes", v && eq ? adresseCourbes(v, eq) : null, (adresse) => {
-      carte.addSource("gd-terrain-courbes", { type: "vector", tiles: [adresse], minzoom: 0, maxzoom: 16 });
+      carte.addSource("gd-terrain-courbes", { type: "vector", tiles: [adresse], minzoom: t?.zoomMinimalCourbes ?? 0, maxzoom: 16 });
       // Courbes maîtresses (toutes les cinq) plus épaisses et cotées ; les autres fines, sans cote.
       carte.addLayer({ id: "gd-terrain-courbes", type: "line", source: "gd-terrain-courbes", "source-layer": "courbes",
         paint: { "line-color": "#6b4423", "line-width": ["case", ["boolean", ["get", "maitresse"], false], 1.6, 0.6], "line-opacity": 0.9 } }, sousLesCouches());

@@ -129,6 +129,10 @@ services:
       GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
       # Drapeau de retour arrière du terrain (TER-04) : « false » ferme les services /geodata/api/terrain (404).
       GEODATA_TERRAIN_ENABLED: ${PREPROD_GEODATA_TERRAIN_ENABLED:-true}
+      # Fond mondial à la demande (TER-09) : l'API lit les sources distantes à travers le service terrain-distant (réseau
+      # internal ; conteneur lancé par `fadi-preprod terrain distant --demarrer`). Service arrêté : fond mondial
+      # « indisponible », jamais une valeur. L'API elle-même ne sort jamais vers les sources distantes.
+      GEODATA_TERRAIN_DISTANT_URL: http://fadi-preprod-terrain-distant:3002
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
     ports:
@@ -200,6 +204,34 @@ services:
       - internal
       - front
     mem_limit: 1g
+    cpus: 1
+    logging: *logging
+
+  # Fond mondial à la demande (TER-09) : seul service du terrain qui lit les sources distantes, par plages HTTP, vers les
+  # seules adresses des fiches livrées « distant » (liste fermée, aucune redirection, budget borné) ; écrit seulement le
+  # cache `cache-distant/` du volume terrain (quota à l'intérieur des 30 Go, éviction LRU). Aucune base, aucun secret,
+  # aucun port publié ; l'API le joint sur le réseau internal. Lancé seulement par `fadi-preprod terrain distant
+  # --demarrer` (conteneur détaché unique fadi-preprod-terrain-distant, restart "no"), arrêté par `--arreter`.
+  terrain-distant:
+    image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
+    profiles: ["terrain"]
+    restart: "no"
+    entrypoint: ["node", "apps/api/dist/geodata-terrain.js", "--distant-serveur"]
+    environment:
+      NODE_ENV: production
+      GEODATA_TERRAIN_DIR: /data/terrain
+      GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
+      GEODATA_TERRAIN_CACHE_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_CACHE_QUOTA_GO:-10}
+      GEODATA_TERRAIN_DISTANT_PAR_MINUTE: ${PREPROD_GEODATA_TERRAIN_DISTANT_PAR_MINUTE:-300}
+      GEODATA_TERRAIN_DISTANT_GO_PAR_JOUR: ${PREPROD_GEODATA_TERRAIN_DISTANT_GO_PAR_JOUR:-5}
+      GEODATA_TERRAIN_DISTANT_SIMULTANEES: ${PREPROD_GEODATA_TERRAIN_DISTANT_SIMULTANEES:-6}
+      GEODATA_TERRAIN_DISTANT_PORT: "3002"
+    volumes:
+      - fadi-preprod-terrain:/data/terrain
+    networks:
+      - internal
+      - front
+    mem_limit: 768m
     cpus: 1
     logging: *logging
 

@@ -54,6 +54,7 @@ export async function demanderExport(c: PoolClient, versionId: string, demandeur
   if (!FORMATS_EXPORT.includes(format as FormatExport)) throw new ServiceRefuse(400, "invalid_input", `Format attendu : ${FORMATS_EXPORT.join(", ")}.`);
   if (!empriseValide(emprise)) throw new ServiceRefuse(400, "invalid_input", "Emprise [ouest, sud, est, nord] en degrés WGS 84 attendue.");
   const s = await sourcePubliee(c, versionId);
+  if (s.distant) throw new ServiceRefuse(409, "export_distant", "Export du fond mondial lu à la demande : non disponible dans ce lot (TER-09). Exporter un jeu importé, ou demander l'extrait par une fiche.");
   exigerUsage(s, "export");
   exigerUsage(s, "telechargement");
   let eq: number | null = null;

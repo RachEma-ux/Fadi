@@ -75,6 +75,7 @@ export async function acquerir(stockage: StockageTerrain, d: DeclarationTerrain)
   const cible = stockage.cheminDepot(d.fichier.nom);
   const a = d.acquisition;
   if (a.methode === "depot") throw new AcquisitionRefusee("Fiche « depot » : le fichier est déposé par l'exploitant, aucune adresse n'est lue.");
+  if (a.methode === "distant") throw new AcquisitionRefusee("Fiche « distant » (fond mondial) : rien n'est téléchargé ; la source est lue à la demande, par plages, dans l'emprise affichée (--importer lit seulement son en-tête).");
   if (a.methode === "telechargement") return { ...(await telecharger(a.url, cible, a.empreinte)), cible };
   const octets = await extraire(a.url, a.fenetre);
   const empreinte = sha256(octets);

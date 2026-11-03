@@ -9,14 +9,15 @@
  * Chaque résultat numérique porte sa source : version, pas, référence verticale, état de qualité, étiquette, attribution.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { PRODUITS_TERRAIN, type ProduitTerrain } from "@parcours/geodata-model";
+import { LIMITES_FOND_MONDIAL, PRODUITS_TERRAIN, type ProduitTerrain } from "@parcours/geodata-model";
 import { pool } from "../../db/client.js";
 import { capacites, erreur, journal } from "../../lib/geodata/acces.js";
 import { StockageTerrain } from "../../lib/geodata/terrain/stockage.js";
 import {
   altitudePoint, exigerUsage, metadonnees, plageVersion, profilTerrain, publierVersion, ServiceRefuse, sourcePubliee, sourcesPubliees, statistiquesTerrain, terrainActive,
-  tuileTerrain, type SourceTerrain, type StyleTuile,
+  tuileCourbesDistante, tuileTerrain, type SourceTerrain, type StyleTuile,
 } from "../../lib/geodata/terrain/services.js";
+import { equidistanceDistante, equidistancesDistantes } from "../../lib/geodata/terrain/fond-mondial.js";
 import { demanderExport, equidistanceAdmise, baseCourbes, exportDuDemandeur } from "../../lib/geodata/terrain/exports.js";
 import { equidistanceExigeeVersion } from "../../lib/geodata/terrain/traitement.js";
 
@@ -27,6 +28,8 @@ const stockage = (): StockageTerrain => {
   if (!s) throw new ServiceRefuse(503, "terrain_indisponible", "Aucun volume terrain configuré sur ce serveur.");
   return s;
 };
+/** Volume terrain s'il est configuré : une version distante (fond mondial, TER-09) se lit sans lui. */
+const stockageSiConfigure = (): StockageTerrain | null => StockageTerrain.depuisEnvironnement();
 
 terrainRouter.use("/terrain", (_req, res, next) => (terrainActive() ? next() : void res.status(404).json({ error: "not_found", message: "Le terrain haute résolution n'est pas activé sur ce serveur." })));
 
@@ -70,15 +73,16 @@ terrainRouter.get("/terrain/jeux", service(async (req, res) => {
   // Interface (TER-05) : légende verrouillée sur la plage de la version (celle des tuiles sans portée), équidistance
   // minimale exigée par la précision (TER-D17) et équidistances calculées ; une plage illisible reste « non évaluée » (null).
   const plage = async (s: SourceTerrain): Promise<[number, number] | null> => {
-    const st = StockageTerrain.depuisEnvironnement();
-    if (!st) return null;
-    try { return await plageVersion(st, s); } catch { return null; }
+    try { return await plageVersion(stockageSiConfigure(), s, pool); } catch { return null; }
   };
   const jeux = [];
   for (const s of filtrees) {
+    const minimale = await equidistanceExigeeVersion(pool as unknown as import("pg").PoolClient, s.id);
     jeux.push({
       ...metadonnees(s), couverture: couvertures.get(s.id) ?? null, droits: s.droits, plageAltitude: await plage(s),
-      courbes: { equidistanceMinimale: await equidistanceExigeeVersion(pool as unknown as import("pg").PoolClient, s.id), calculees: calculees.get(s.id) ?? [] },
+      courbes: { equidistanceMinimale: minimale, calculees: s.distant ? equidistancesDistantes(minimale) : (calculees.get(s.id) ?? []) },
+      // Fond mondial lu à la demande (TER-09) : zooms minimaux d'affichage, couverture déclarée (lacunes possibles).
+      fondMondial: s.distant ? { zoomMinimal: LIMITES_FOND_MONDIAL.zoomMinTuiles, zoomMinimalCourbes: LIMITES_FOND_MONDIAL.zoomMinCourbes, couverture: "declaree" as const } : null,
     });
   }
   res.setHeader("Cache-Control", "private, no-store");
@@ -87,7 +91,8 @@ terrainRouter.get("/terrain/jeux", service(async (req, res) => {
 
 terrainRouter.get("/terrain/point", service(async (req, res) => {
   const lon = nombre(req.query["lon"], "lon", -180, 180), lat = nombre(req.query["lat"], "lat", -90, 90);
-  res.json(await altitudePoint(pool, stockage(), lon, lat, produitDe(req.query["produit"])));
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await altitudePoint(pool, stockageSiConfigure(), lon, lat, produitDe(req.query["produit"])));
 }));
 
 terrainRouter.post("/terrain/profil", service(async (req, res) => {
@@ -95,7 +100,7 @@ terrainRouter.post("/terrain/profil", service(async (req, res) => {
   if (!Array.isArray(b.ligne) || !b.ligne.every((p) => Array.isArray(p) && p.length === 2 && p.every((v) => typeof v === "number" && Number.isFinite(v)) && Math.abs(p[0]) <= 180 && Math.abs(p[1]) <= 90)) {
     throw new ServiceRefuse(400, "invalid_input", "Ligne [[lon, lat], …] en WGS 84 attendue.");
   }
-  const r = await profilTerrain(pool, stockage(), b.ligne as [number, number][], nombre(b.pas ?? 10, "pas", 0.05, 10_000), produitDe(b.produit));
+  const r = await profilTerrain(pool, stockageSiConfigure(), b.ligne as [number, number][], nombre(b.pas ?? 10, "pas", 0.05, 10_000), produitDe(b.produit));
   res.json({
     points: r.profil.points.map((p, i) => ({ chainage: p.chainage, lon: r.lonLat[i]![0], lat: r.lonLat[i]![1], altitude: p.altitude, source: p.source, interpolee: p.interpolee })),
     transitions: r.profil.transitions, lacunes: r.profil.lacunes, sources: r.sources, referencesEcartees: r.referencesEcartees,
@@ -109,7 +114,7 @@ terrainRouter.post("/terrain/statistiques", service(async (req, res) => {
   if (!Array.isArray(anneaux) || !anneaux.length || anneaux.length > 100 || !anneaux.every((a) => Array.isArray(a) && a.length >= 4 && a.length <= 10_000 && a.every((p) => Array.isArray(p) && p.length >= 2 && p.every((v) => typeof v === "number" && Number.isFinite(v))))) {
     throw new ServiceRefuse(400, "invalid_input", "Zone GeoJSON Polygon (WGS 84, anneau extérieur puis trous) attendue.");
   }
-  res.json(await statistiquesTerrain(pool, stockage(), anneaux as [number, number][][], produitDe(b.produit), typeof b.versionId === "string" ? b.versionId : null));
+  res.json(await statistiquesTerrain(pool, stockageSiConfigure(), anneaux as [number, number][][], produitDe(b.produit), typeof b.versionId === "string" ? b.versionId : null));
 }));
 
 const STYLES: readonly StyleTuile[] = ["altitude", "pente", "ombrage"];
@@ -121,7 +126,11 @@ terrainRouter.get("/terrain/tuiles/:versionId/:style/:z/:x/:y", service(async (r
   exigerUsage(s, "tuiles");
   // Légende adaptative : plage explicite (portée déclarée par le client) ; sinon légende verrouillée sur la version.
   const plage = req.query["min"] !== undefined && req.query["max"] !== undefined ? [nombre(req.query["min"], "min", -12_000, 10_000), nombre(req.query["max"], "max", -12_000, 10_000)] as [number, number] : null;
-  const png = await tuileTerrain(pool, stockage(), s, style, z, x, y, plage);
+  const png = await tuileTerrain(pool, s.distant ? stockageSiConfigure() : stockage(), s, style, z, x, y, plage).catch((e: unknown) => {
+    // Fond mondial : « chargement » (délai dépassé, le cache se remplit) ou « indisponible » : la carte réessaie plus tard.
+    if (e instanceof ServiceRefuse && e.statut === 503) { res.setHeader("Retry-After", "3"); res.setHeader("X-Terrain-Etat", e.code === "chargement" ? "chargement" : "indisponible"); res.setHeader("Cache-Control", "private, no-store"); }
+    throw e;
+  });
   res.setHeader("Content-Type", "image/png");
   res.setHeader("Cache-Control", "private, max-age=3600");
   res.setHeader("Vary", "Cookie");
@@ -133,9 +142,22 @@ terrainRouter.get("/terrain/courbes/:versionId/:z/:x/:y", service(async (req, re
   const { z, x, y } = tuile(req);
   const s = await sourcePubliee(pool, String(req.params["versionId"]));
   exigerUsage(s, "tuiles");
-  const eq = await equidistanceAdmise(pool as unknown as import("pg").PoolClient, s.id, req.query["equidistance"] === undefined ? null : nombre(req.query["equidistance"], "équidistance", 0.01, 10_000));
-  const base = (await baseCourbes(pool, s.id, eq))!;
+  const demandee = req.query["equidistance"] === undefined ? null : nombre(req.query["equidistance"], "équidistance", 0.01, 10_000);
   const ref = s.referenceVerticale.statut === "declaree" ? `${s.referenceVerticale.libelle}${s.referenceVerticale.code ? ` (${s.referenceVerticale.code})` : ""}` : "non déclarée";
+  if (s.distant) {
+    // Fond mondial (TER-09) : courbes calculées à la demande sur la grille native, jamais sous le seuil (TER-D17).
+    const eqd = await equidistanceDistante(pool, s, demandee);
+    const mvt = await tuileCourbesDistante(pool, s, z, x, y, eqd, ref).catch((e: unknown) => {
+      if (e instanceof ServiceRefuse && e.statut === 503) { res.setHeader("Retry-After", "3"); res.setHeader("X-Terrain-Etat", e.code === "chargement" ? "chargement" : "indisponible"); res.setHeader("Cache-Control", "private, no-store"); }
+      throw e;
+    });
+    res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.setHeader("Vary", "Cookie");
+    return void res.send(mvt);
+  }
+  const eq = await equidistanceAdmise(pool as unknown as import("pg").PoolClient, s.id, demandee);
+  const base = (await baseCourbes(pool, s.id, eq))!;
   const [r] = (await pool.query<{ mvt: Buffer }>(
     `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
           m AS (SELECT ST_AsMVTGeom(ST_Transform(c.geom, 3857), b.e, 4096, 64, true) AS geom, c.altitude,
