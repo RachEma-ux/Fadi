@@ -68,6 +68,8 @@ base() {
   log "instantanés pitr de plus de $garder oubliés (blocs nettoyés par fadi-backup-retention)"
 }
 
+VERIF_DIR=
+nettoyer_verification() { [[ -n $VERIF_DIR ]] && rm -rf -- "$VERIF_DIR"; VERIF_DIR=; }
 verifier() {
   local debut v img dir sortie duree resultat
   debut=$(date +%s)
@@ -75,7 +77,10 @@ verifier() {
   restic_pret
   install -d -m 0700 "$etat_dir"
   dir=$(mktemp -d "$etat_dir/verification.XXXXXX")
-  trap 'rm -rf -- "$dir"' EXIT
+  # Dossier jetable retiré dans tous les cas (succès, échec, interruption) ; variable globale : le piège EXIT s'exécute
+  # après le retour de la fonction (revue Codex de la PR #388).
+  VERIF_DIR=$dir
+  trap nettoyer_verification EXIT
   log "restauration de contrôle : dernier instantané pitr → $dir"
   restic restore --retry-lock 30m latest --quiet --tag pitr --target "$dir/r"
   [[ -d "$dir/r$v/base" && -d "$dir/r$v/wal" ]] || fail 'instantané pitr incomplet (base ou journal absent).'
@@ -88,6 +93,7 @@ verifier() {
   duree=$(( $(date +%s) - debut ))
   resultat=$(printf '%s' "$sortie" | tail -1 | sed "s/}\$/,\"duree_totale_s\":$duree,\"verifie_le\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}/")
   printf '%s\n' "$resultat" > "$etat_dir/derniere-verification.json"
+  nettoyer_verification
   log "restauration de contrôle réussie en $duree s (objectif de remise en service : 4 h) : $resultat"
 }
 

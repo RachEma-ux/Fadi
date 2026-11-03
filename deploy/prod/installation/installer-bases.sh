@@ -22,7 +22,7 @@ umask 022
 
 # fichier source | destination | mode | SHA-256 attendue
 FICHIERS=(
-  "ops/pitr/fadi-pitr|/usr/local/sbin/fadi-pitr|0755|07c6ac2d52d30dceade5941e3076aba83a24f4a249a188fdd193a3532e2e4e07"
+  "ops/pitr/fadi-pitr|/usr/local/sbin/fadi-pitr|0755|71d545cde1b1b01a5924a762658868f7ae18052ed94f6af98db907d90121d7c4"
   "scripts/backup-retention-restic.sh|/usr/local/sbin/fadi-backup-retention|0755|8ea3dce7f2c57786aa482be7bbce8ee309514935efb458b3fb99a9a26fc96e02"
   "ops/systemd/fadi-pitr-envoi.service|/etc/systemd/system/fadi-pitr-envoi.service|0644|56ff5df4a2f5608ed509a4ffad995266d25b94d968d906a4e11bda0e1bce1c7e"
   "ops/systemd/fadi-pitr-envoi.timer|/etc/systemd/system/fadi-pitr-envoi.timer|0644|2638ddb7900a6c72a50ecb8025a6899c93550ecedd02afd5341dafede492e69c"

@@ -42,6 +42,48 @@ if command -v systemd-analyze > /dev/null; then
   done
 fi
 
+echo "== fadi-pitr avec doublures de docker et restic (aucun conteneur, aucun réseau)"
+D=$T/doubles; mkdir -p "$D" "$T/app" "$T/etat" "$T/vol/wal" "$T/vol/base" "$T/secrets"
+touch "$T/app/docker-compose.yml" "$T/app/.env.deploy"
+printf 'x' > "$T/secrets/swift"; printf 'y' > "$T/secrets/restic"; chmod 0600 "$T/secrets/swift" "$T/secrets/restic"
+cat > "$D/docker" <<'DBL'
+#!/bin/bash
+echo "docker $*" >> "$MOCK_LOG"
+case "$*" in
+  *" ps -q db"*) echo dbid ;;
+  *"exec -T -u postgres db psql"*"SHOW archive_mode"*) echo on ;;
+  *"exec -T -u postgres db psql"*"pg_stat_archiver"*) [ "${MOCK_ARCHIVE:-}" = echec ] && echo "t|60" || echo "f|42" ;;
+  *"exec -T -u postgres db /opt/fadi-pitr/base.sh"*) echo "base écrite" ;;
+  "inspect --format {{range .Mounts}}"*) echo "$MOCK_VOL" ;;
+  "inspect --format {{.Config.Image}}"*) echo postgis/postgis:16-3.4 ;;
+  run\ *) [ "${MOCK_RESTAURATION:-}" = echec ] && exit 1; echo '{"resultat":"succes","tables":3,"derniere_migration":"","instant_vise":"","duree_restauration_s":2,"base":"20260101T000000Z"}' ;;
+  *) ;;
+esac
+DBL
+cat > "$D/restic" <<'DBL'
+#!/bin/bash
+echo "restic $*" >> "$MOCK_LOG"
+if [[ " $* " == *" restore "* ]]; then
+  t=; prev=; for a in "$@"; do [ "$prev" = --target ] && t=$a; prev=$a; done
+  mkdir -p "$t$MOCK_VOL/base/20260101T000000Z" "$t$MOCK_VOL/wal"
+fi
+DBL
+chmod 755 "$D/docker" "$D/restic"
+FP() { env PATH="$D:$PATH" MOCK_LOG="$T/doubles.log" MOCK_VOL="$T/vol" FADI_COMPOSE_DIR="$T/app" FADI_PITR_ETAT="$T/etat" \
+  RESTIC_REPOSITORY=swift:x:/y RESTIC_PASSWORD_FILE="$T/secrets/restic" FADI_SWIFT_PASSWORD_FILE="$T/secrets/swift" "$@"; }
+: > "$T/doubles.log"
+FP bash "$ICI/fadi-pitr" envoi > /dev/null && grep -q "restic backup --retry-lock 5m --quiet --tag pitr --exclude \*.part $T/vol" "$T/doubles.log" \
+  && pass "envoi : archivage conforme, copie restic étiquetée pitr" || fail "envoi"
+FP env MOCK_ARCHIVE=echec bash "$ICI/fadi-pitr" envoi > /dev/null 2>&1 && fail "envoi avec archivage en échec : refusé" || pass "envoi refusé quand l'archivage est en échec"
+: > "$T/doubles.log"
+FP bash "$ICI/fadi-pitr" base > /dev/null && grep -q "exec -T -u postgres db /opt/fadi-pitr/base.sh" "$T/doubles.log" && grep -q "forget --retry-lock 30m --quiet --tag pitr --group-by tags --keep-within 14d" "$T/doubles.log" \
+  && pass "base : sauvegarde de base, envoi, fenêtre de 14 jours" || fail "base"
+FP bash "$ICI/fadi-pitr" verifier > "$T/verif.out" 2>&1; rc=$?
+[ "$rc" = 0 ] && grep -q '"duree_totale_s":' "$T/etat/derniere-verification.json" && pass "verifier : réussite consignée (durée totale)" || { cat "$T/verif.out"; fail "verifier (code $rc)"; }
+ls -d "$T"/etat/verification.* > /dev/null 2>&1 && fail "verifier : dossier jetable laissé" || pass "verifier : dossier jetable retiré après succès"
+FP env MOCK_RESTAURATION=echec bash "$ICI/fadi-pitr" verifier > /dev/null 2>&1 && fail "verifier en échec : code non nul" || pass "verifier : échec de la restauration → code non nul"
+ls -d "$T"/etat/verification.* > /dev/null 2>&1 && fail "verifier : dossier jetable laissé après échec" || pass "verifier : dossier jetable retiré après échec"
+
 echo "== archiver-wal.sh"
 pg mkdir -p "$T/wal" "$T/base" "$T/sock" "$T/x"
 printf 'segment' > "$T/x/seg"; chown postgres "$T/x/seg"
