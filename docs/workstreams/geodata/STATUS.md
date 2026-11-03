@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-11-01 (UTC).
+Mis à jour : 2026-11-02 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,6 +9,28 @@ Mis à jour : 2026-11-01 (UTC).
 
 ## Faits vérifiés
 
+- Terrain TER-03 (traitement et porte qualité, Issue #381, branche `feat/381-ter-03-traitement-qualite`) : **implémenté et
+  vérifié**, non accepté. Calculs purs (pente, ombrage, courbes, profils, priorité TER-D16, statistiques de contrôle), travailleur
+  GDAL (COG vérifié cellule à cellule, dérivés à géoréférence recopiée), couverture WGS 84, courbes, rapports qualité,
+  décision de revue ; image `terrain-worker` (GDAL 3.6.2 épinglé). Tests : 246 du paquet, 9 sans base, DB-3 18/18 local,
+  préproduction 107/0. Essais réels locaux : Lucerne 71 s, GEDTM30 1,6 s, GLO-30 ≈ 90 s (`terrain/TER-03.md`).
+- Terrain TER-02 (catalogue et import contrôlé, Issue #381, branche `feat/381-ter-02-catalogue-import`) : **implémenté et
+  vérifié**, non accepté. Toutes les décisions TER-Dx décidées (recommandations retenues le 2 novembre 2026). Modèle pur
+  (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (13, exécutée aussi sur PostGIS 16
+  local ; correctifs de la revue Codex : identité de version, imports simultanés, reprise), garde et tests de préproduction (107/0). Données réelles importées localement : Lucerne MNT et MNS, GEDTM30
+  (extrait Benslimane), GLO-30 — **toutes en quarantaine** (référence verticale non déclarée ; NoData inconnu pour GLO-30),
+  questions Q-TER-02-1 à 3 (`terrain/TER-02.md`, `terrain/DECISIONS.md`).
+- Terrain haute résolution (plan v1.0, Issue #381, branche `docs/381-terrain-haute-resolution`) : **implémenté
+  (document)**, non accepté. Plan déposé tel quel (`terrain/PLAN.md`, SHA-256 `01423199…c569` identique à celui déclaré),
+  audit TER-00 au commit `79f7a38` (`terrain/TER-00-AUDIT.md`), décisions TER-D1 à TER-D15 soumises
+  (`terrain/DECISIONS.md`), cahier d'acquisition à compléter (`terrain/TER-01-CAHIER-ACQUISITION.md`). Licence Lucerne
+  vérifiée (Open-By, usage commercial permis, attribution obligatoire) ; aucun fichier téléchargé, aucun code.
+  TER-D4 décidé par le maître d'ouvrage (2 novembre 2026) : GEDTM30 v1.2 (CC BY 4.0 vérifiée) + MNS Copernicus GLO-30
+  (EGM2008 déclaré) ; référence verticale de GEDTM30 non déclarée ; comparaison sur ≈ 1 km² à Benslimane : centres
+  220,1 / 219,7 m, écart quadratique entre modèles 3,78 m (`terrain/MODELES-REGIONAUX.md`, constat, pas une précision).
+  TER-D16 décidé (2 novembre 2026) : catalogue d'altitudes multi-résolution (mondial / LiDAR officiel 0,25–2 m / levé
+  local 1–5 cm), MNS et MNT séparés, règle de priorité consignée dans `terrain/DECISIONS.md`. Courbes de niveau (demande du 2 novembre 2026) intégrées
+  au plan (`TER-00-AUDIT.md` § 4 bis), décisions TER-D17 (équidistance) et TER-D18 (DXF) soumises.
 - Prix immobiliers (GEO-PRIX, D-GD-56 à D-GD-59, PR #374, branche `claude/prix-immobiliers-geodata`) : **vérifié**
   (CI entièrement verte sur `1cacb2b`, 31 octobre 2026 : `validate` avec la suite DB-3 `geodata-prix.test.ts` sur base
   jetable attestée, e2e des six tranches dont `complements` qui joue la recette GeoData) ; **non accepté**, non fusionné

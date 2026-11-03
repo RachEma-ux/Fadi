@@ -1,0 +1,59 @@
+{
+  "cle": "copernicus-glo30-n33-w008",
+  "titre": "Copernicus DEM GLO-30 — MNS régional, tuile N33 W008 (Benslimane)",
+  "producteur": "ESA, programme Copernicus (WorldDEM : DLR, Airbus Defence and Space)",
+  "niveau": "mondial",
+  "produit": "MNS",
+  "etiquette": "Modèle régional, précision de plusieurs mètres — jamais un levé local. Modèle de surface (bâti et végétation compris).",
+  "demonstration": false,
+  "synthetique": false,
+  "licence": {
+    "nom": "Licence Copernicus DEM GLO-30 Public : gratuite, attribution obligatoire",
+    "url": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM"
+  },
+  "attribution": "© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. Produced using Copernicus WorldDEM-30. Copernicus Digital Elevation Model (DEM) accessed from https://registry.opendata.aws/copernicus-dem.",
+  "droits": {
+    "consultation": "autorise",
+    "stockage": "autorise",
+    "calcul": "autorise",
+    "tuiles": "autorise",
+    "commercial": "autorise",
+    "partage": "autorise",
+    "telechargement": "autorise",
+    "export": "autorise"
+  },
+  "version": {
+    "libelle": "GLO-30 Public (COG AWS Open Data), tuile Copernicus_DSM_COG_10_N33_00_W008_00_DEM",
+    "doi": "10.5270/ESA-c5d3d65",
+    "date": "Acquisitions TanDEM-X 2011–2015",
+    "url": "https://registry.opendata.aws/copernicus-dem/"
+  },
+  "acquisition": {
+    "methode": "telechargement",
+    "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N33_00_W008_00_DEM/Copernicus_DSM_COG_10_N33_00_W008_00_DEM.tif",
+    "empreinte": "ad851fa4f38b3abaab5d960fc69f8ee6e1fc5534d8807b8ec06940b85f8be65f"
+  },
+  "fichier": {
+    "nom": "Copernicus_DSM_COG_10_N33_00_W008_00_DEM.tif",
+    "format": "GeoTIFF"
+  },
+  "crsHorizontal": "EPSG:4326",
+  "referenceVerticale": {
+    "statut": "declaree",
+    "code": "EPSG:3855",
+    "libelle": "EGM2008",
+    "origine": "documentation",
+    "source": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM (lu le 2 novembre 2026)"
+  },
+  "uniteVerticale": "m",
+  "pasNatif": {
+    "valeur": 1,
+    "unite": "arcsec"
+  },
+  "nodata": null,
+  "precisionDeclaree": {
+    "texte": "Absolue verticale < 4 m (LE90) ; relative < 2 m (pente ≤ 20 %), < 4 m au-delà ; horizontale < 6 m (CE90)",
+    "verticaleM": 4,
+    "source": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM (lu le 2 novembre 2026)"
+  }
+}

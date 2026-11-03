@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-11-01 (UTC).
+Mis à jour : 2026-11-02 (UTC).
 État relevé après la fusion de la PR #339.
 
 ## Point de reprise
@@ -15,6 +15,21 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Terrain TER-03 (Issue #381) : PR sur `feat/381-ter-03-traitement-qualite` (compte rendu `terrain/TER-03.md`). Après fusion
+  et déploiement : construire et essayer le travailleur (`terrain-worker --essai-gdal`), puis `--traiter` dès qu'une version
+  sort de quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-04.
+- Terrain TER-02 (Issue #381) : PR #383 sur `feat/381-ter-02-catalogue-import`, fusion accordée par le maître d'ouvrage le
+  3 novembre 2026 (après correction des deux remarques de la revue Codex) (compte rendu `terrain/TER-02.md`). Après fusion
+  et déploiement : la session VPS constate `/mnt/data` et la racine Docker (TER-D7), puis lance `terrain-import`
+  (`docs/geodata/README.md` § Terrain) : `--telecharger` et `--importer` des 4 fiches. Les 4 versions arrivent en
+  quarantaine ; levée seulement par un responsable de publication avec source (Q-TER-02-1 à 3). Lot suivant : TER-03.
+- Terrain haute résolution (plan v1.0 du 2 novembre 2026, Issue #381) : étape 0 livrée en PR documentaire
+  (`docs/workstreams/geodata/terrain/`). TER-D4 décidé (GEDTM30 + GLO-30, `terrain/MODELES-REGIONAUX.md`) ; TER-D16 décidé (catalogue
+  multi-résolution, règle de priorité dans `terrain/DECISIONS.md`) ; courbes de niveau intégrées
+  (§ 4 bis de l'audit), TER-D17 et TER-D18 soumises. **En attente** des réponses du maître d'ouvrage aux
+  décisions bloquantes TER-D1, D3, D5, D7, D9, D10, D12 avant d'engager TER-02 ; constat à faire par la session VPS : racine des données Docker et
+  espace réellement libre sur `/mnt/data`. Ensuite TER-02 → TER-05, une PR par lot. Hors portée : TER-01 (contacts,
+  achats), TER-06 / TER-07, TER-08.
 - Prix immobiliers (GEO-PRIX, D-GD-56 à D-GD-59) : PR #374 (`claude/prix-immobiliers-geodata`), qui remplace la PR #368 ;
   lots P0 à P8 livrés et vérifiés (CI verte sur `1cacb2b`, recette e2e 260/0), **en attente de fusion par le maître
   d'ouvrage** (la fusion n'est pas permise à la session).

@@ -306,6 +306,10 @@ jobs:
       # la base PostGIS jetable de ce job est préparée et attestée (scripts/db3/preparer-base-test.mjs), et TOUTES les
       # suites API y tournent derrière la garde. Sans le secret (PR d'un fork, clé non installée), la garde reste
       # fermée : le contrôle historique exige que seule la liste fermée soit refusée, par la garde seule.
+      # Terrain TER-03 (TER-D6) : les tests du travailleur exigent GDAL ; installé ici (Ubuntu 24.04 : GDAL 3.8.4), le
+      # travailleur de préproduction épingle Debian bookworm 3.6.2 (essai dans le job image).
+      - name: GDAL pour les tests du travailleur terrain
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gdal-bin && gdalinfo --version
       - name: Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées
         env:
           FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
@@ -1309,6 +1313,16 @@ jobs:
           docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-communes.json
           # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
           docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
+          # Terrain haute résolution (TER-02) : commande et fiches dans l'image ; le dossier du volume terrain appartient au
+          # compte applicatif (un volume nommé vide en hérite) ; sans GEODATA_TERRAIN_DIR, la commande refuse explicitement.
+          docker exec fadi test -f apps/api/dist/geodata-terrain.js
+          docker exec fadi test -f apps/api/dist/geodata-terrain/gedtm30-v1-2-benslimane.json
+          test "$(docker exec fadi stat -c %U /data/terrain)" = "node"
+          { docker exec fadi node apps/api/dist/geodata-terrain.js --importer gedtm30-v1-2-benslimane --par image@example.com 2>&1 || true; } | tee /dev/stderr | grep -q "GEODATA_TERRAIN_DIR absent"
+          # Travailleur terrain (TER-03) : image applicative + GDAL épinglé ; essai complet sur une fixture « test seulement ».
+          DOCKER_BUILDKIT=1 docker build -f deploy/preprod/terrain-worker.Dockerfile --build-arg APP_IMAGE=fadi:ci -t fadi-terrain:ci .
+          docker run --rm --entrypoint gdalinfo fadi-terrain:ci --version | tee /dev/stderr | grep -q "GDAL 3.6.2"
+          docker run --rm fadi-terrain:ci --essai-gdal | tee /dev/stderr | grep -q "Essai GDAL réussi"
       - name: Journal du conteneur
         if: always()
         run: |

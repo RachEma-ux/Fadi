@@ -70,6 +70,16 @@
 - [x] GEO-PROXIMITE — À proximité dans la fiche : objets des couches de points à moins d'un rayon, le plus proche (D-GD-49).
 - [x] GEO-ETAT-COUCHES — État d'affichage par couche : chargement, objets dessinés, aucun objet dans la vue (D-GD-47).
 - [x] GEO-PLAN-SATELLITE — Bascule Plan / Satellite du fournisseur réglé, mini-barre, Alt+S (D-GD-46).
+- [ ] GEO-TERRAIN — Terrain haute résolution (plan v1.0, Issue #381, `terrain/`) :
+  - [x] Étape 0 : plan déposé, audit TER-00, décisions TER-Dx, cahier TER-01 à compléter (PR documentaire).
+  - [x] Décisions TER-Dx : toutes décidées (recommandations retenues le 2 novembre 2026).
+  - [x] TER-02 catalogue et import contrôlé (`terrain/TER-02.md`), fusionné (PR #383, `426c37b`).
+  - [ ] Levées de quarantaine Q-TER-02-1 à 3 (responsable de publication, avec source).
+  - [x] TER-03 traitement et porte qualité (`terrain/TER-03.md`), en revue.
+  - [ ] TER-04 services numériques, tuiles, droits, publication et export ;
+    TER-05 interface — un lot à la fois, une PR par lot.
+  - Hors portée de la session : TER-01 (contacts, achats), TER-06 / TER-07 (levé et contrôle indépendant, porte G2),
+    TER-08 (Release du maître d'ouvrage).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

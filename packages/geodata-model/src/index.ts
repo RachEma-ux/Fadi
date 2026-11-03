@@ -24,3 +24,7 @@ export * from "./adresse-vue.js";
 export * from "./tableau-croise.js";
 export * from "./prix/index.js";
 export * from "./qualification.js";
+export * from "./terrain/catalogue.js";
+export * from "./terrain/analyse.js";
+export * from "./terrain/qualite.js";
+export * from "./terrain/priorite.js";

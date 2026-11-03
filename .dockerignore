@@ -7,6 +7,8 @@ node_modules
 docs
 # Fiches de source GeoData qualifiées : copiées dans apps/api/dist/geodata-sources par le build de l'API.
 !docs/geodata/sources
+# Fiches des jeux d'altitudes (terrain, TER-02) : copiées dans apps/api/dist/geodata-terrain.
+!docs/geodata/terrain
 *.log
 .env
 .env.*
