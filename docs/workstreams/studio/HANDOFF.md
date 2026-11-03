@@ -1,5 +1,15 @@
 # Reprise — Studio
 
+## Checkpoint 2026-11-03 (heure suisse 06:20) — MIG-COEX-04 amendée (D-BD-12, chantier base-donnees, #384)
+
+- Décision du maître d'ouvrage du 2 novembre 2026 (D-BD-12) : la règle « ne jamais supprimer » de MIG-COEX-04 admet des
+  actions de maintenance déclarées (ADR-STUDIO-PILOTE-01 **P-13**) : quarantaine locale vidée par `forgetDevice` et
+  élaguée au-delà de 30 jours (PR #385).
+- `task-register.json` : libellés des deux preuves MIG-COEX-04 alignés sur les tests renommés ; rapports
+  `docs/ai-team/reports/etat-studio/` régénérés ; empreinte de la checklist dans `docs/ai-team/missions.json` mise à jour
+  (texte de MIG-COEX-04 seulement, affectations inchangées). BD-4.8 (D-BD-7) : une commande Studio verrouille sa variante
+  (`FOR UPDATE`) et le projet en `FOR SHARE` ; confirmation métier de l'équipe Studio souhaitée. Aucun statut du registre changé.
+
 ## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
 
 - PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de
