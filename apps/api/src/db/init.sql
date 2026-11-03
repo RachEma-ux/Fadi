@@ -4038,7 +4038,9 @@ BEGIN
     (OLD.etat = 'traitement' AND NEW.etat IN ('revue', 'quarantaine', 'rejete')) OR
     (OLD.etat = 'revue' AND NEW.etat IN ('accepte', 'quarantaine', 'retire')) OR
     (OLD.etat = 'accepte' AND NEW.etat IN ('publie', 'retire')) OR
-    (OLD.etat = 'publie' AND NEW.etat IN ('remplace', 'retire'))) THEN
+    (OLD.etat = 'publie' AND NEW.etat IN ('remplace', 'retire')) OR
+    -- Retour arrière (TER-04) : une version remplacée est republiée.
+    (OLD.etat = 'remplace' AND NEW.etat IN ('publie', 'retire'))) THEN
     RAISE EXCEPTION 'geodata_terrain_transition_refusee % -> %', OLD.etat, NEW.etat;
   END IF;
   IF NEW.reference_verticale IS DISTINCT FROM OLD.reference_verticale AND NOT (OLD.etat = 'quarantaine' AND NEW.etat = 'traitement') THEN
@@ -4151,6 +4153,27 @@ CREATE INDEX IF NOT EXISTS geodata_terrain_rapports_version_idx ON geodata_terra
 CREATE OR REPLACE TRIGGER geodata_terrain_couvertures_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_couvertures FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
 CREATE OR REPLACE TRIGGER geodata_terrain_courbes_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_courbes FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
 CREATE OR REPLACE TRIGGER geodata_terrain_rapports_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_rapports_qualite FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+
+-- Terrain haute résolution, lot TER-04 : exports demandés par un compte, préparés en tâche de fond par le travailleur
+-- (GeoTIFF numérique de l'original, courbes GeoJSON / DXF), téléchargeables par le seul demandeur jusqu'à expiration.
+CREATE TABLE IF NOT EXISTS geodata_terrain_exports (
+  id text PRIMARY KEY,
+  demandeur_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  format text NOT NULL CHECK (format IN ('geotiff', 'courbes-geojson', 'courbes-dxf')),
+  emprise jsonb NOT NULL,
+  equidistance double precision,
+  etat text NOT NULL DEFAULT 'en_attente' CHECK (etat IN ('en_attente', 'pret', 'echec', 'expire')),
+  cle_stockage text CHECK (cle_stockage IS NULL OR (cle_stockage ~ '^exports/[A-Za-z0-9._/-]{1,200}$' AND position('..' in cle_stockage) = 0)),
+  nom_fichier text,
+  taille bigint,
+  empreinte text CHECK (empreinte IS NULL OR empreinte ~ '^[0-9a-f]{64}$'),
+  motif_echec text,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  pret_le timestamptz,
+  expire_le timestamptz NOT NULL DEFAULT now() + interval '24 hours'
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_exports_attente_idx ON geodata_terrain_exports (etat, cree_le);
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à

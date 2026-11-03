@@ -70,6 +70,11 @@ async function rmsezMesuree(c: PoolClient, id: string): Promise<number | null> {
   return r?.rapport.global?.rmsez ?? null;
 }
 
+/** Équidistance exigée maintenant pour une version (TER-D17), lue en base. */
+export async function equidistanceExigeeVersion(c: PoolClient, id: string): Promise<number> {
+  return equidistanceExigee(c, await lireVersion(c, id));
+}
+
 /** Équidistance exigée maintenant (TER-D17) : dernière RMSEz mesurée, sinon précision déclarée, sinon mondiale. */
 async function equidistanceExigee(c: PoolClient, v: VersionLue): Promise<number> {
   return equidistanceMinimale({ niveau: v.declaration.niveau, rmsezMesuree: await rmsezMesuree(c, v.id), verticaleDeclaree: v.declaration.precisionDeclaree?.verticaleM ?? null });
@@ -192,9 +197,9 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
                 u AS (SELECT ST_Multi(ST_CollectionExtract(ST_UnaryUnion(ST_Collect(g)), 3)) AS g FROM r)
            INSERT INTO geodata_terrain_couvertures (terrain_version_id, geom, srid_natif, cellules_valides, cellules_total, surface_m2, transformation)
            SELECT $1, ST_Multi(ST_Transform(u.g, 4326)), $2, $4, $5,
-                  CASE WHEN $2 = 4326 THEN ST_Area(u.g::geography) ELSE ST_Area(u.g) END, $6 FROM u WHERE u.g IS NOT NULL
+                  CASE WHEN $7 THEN ST_Area(ST_Transform(u.g, 4326)::geography) ELSE ST_Area(u.g) END, $6 FROM u WHERE u.g IS NOT NULL
            RETURNING surface_m2 AS surface`,
-          [versionId, srid, JSON.stringify(rects), r.cellulesValides, r.cellulesTotal, transformation])).rows;
+          [versionId, srid, JSON.stringify(rects), r.cellulesValides, r.cellulesTotal, transformation, v.entete?.geographique === true])).rows;
         if (!couv) throw new TraitementRefuse("Aucune cellule valide : la version n'a pas de couverture.");
         const n = await insererCourbes(c, versionId, equidistance, srid, r.courbes);
         const initial = rapportQualite([]);

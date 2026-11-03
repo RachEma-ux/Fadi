@@ -23,7 +23,8 @@ export type ProduitTerrain = (typeof PRODUITS_TERRAIN)[number];
 
 /**
  * Cycle de vie du plan (TER-D12) : déposé → validation → rejeté | quarantaine | traitement → revue → accepté → publié →
- * remplacé | retiré. Une version ne revient jamais en arrière ; « rejeté », « remplacé » et « retiré » sont terminaux.
+ * remplacé | retiré. Une version ne revient jamais en arrière, sauf le retour arrière du plan (une version remplacée est
+ * republiée : TER-04) ; « rejeté » et « retiré » sont terminaux.
  */
 export const ETATS_TERRAIN = ["depose", "validation", "rejete", "quarantaine", "traitement", "revue", "accepte", "publie", "remplace", "retire"] as const;
 export type EtatTerrain = (typeof ETATS_TERRAIN)[number];
@@ -37,7 +38,8 @@ export const TRANSITIONS_TERRAIN: Readonly<Record<EtatTerrain, readonly EtatTerr
   revue: ["accepte", "quarantaine", "retire"],
   accepte: ["publie", "retire"],
   publie: ["remplace", "retire"],
-  remplace: [],
+  // Retour arrière (plan § Verification, TER-04) : une version remplacée peut être republiée ; l'actuelle devient remplacée.
+  remplace: ["publie", "retire"],
   retire: [],
 };
 

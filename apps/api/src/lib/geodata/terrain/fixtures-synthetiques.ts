@@ -18,6 +18,8 @@ export interface OptionsFixture {
   readonly nodata?: number | null;
   /** Valeur de la cellule (colonne, ligne) ; par défaut un plan incliné z = 500 + 0,1 × x (mètres). */
   readonly valeur?: (col: number, lig: number) => number;
+  /** Coin nord-ouest dans le repère (EPSG:2056 par défaut : 2 662 500 / 1 210 500). */
+  readonly origine?: readonly [number, number];
 }
 
 /** Écrit un GeoTIFF Float32 synthétique et renvoie ses octets. */
@@ -31,7 +33,7 @@ export function ecrireFixture(chemin: string, o: OptionsFixture = {}): Buffer {
     width: largeur,
     height: hauteur,
     ModelPixelScale: [pas, pas, 0],
-    ModelTiepoint: [0, 0, 0, 2662500, 1210500, 0],
+    ModelTiepoint: [0, 0, 0, o.origine?.[0] ?? 2662500, o.origine?.[1] ?? 1210500, 0],
     GTModelTypeGeoKey: 1,
     GTRasterTypeGeoKey: 1,
     ProjectedCSTypeGeoKey: o.epsg ?? 2056,

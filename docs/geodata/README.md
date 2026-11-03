@@ -72,6 +72,12 @@ $DW --controler <id> --points <csv> --methode "…" --par <gestionnaire-donnees>
 $DW --decider <id> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
 ```
 
+Services (TER-04, `docs/workstreams/geodata/terrain/TER-04.md`) sous `/geodata/api/terrain` : `jeux`, `point`, `profil`,
+`statistiques`, `tuiles/:version/:style/:z/:x/:y`, `courbes/:version/:z/:x/:y` (MVT), `exports` ; seules les versions
+publiées sont servies. Publication et retour arrière : `$DW --publier <id> --motif "…" --par <responsable-publication>` (ou
+`POST /geodata/api/terrain/versions/:id/publier`). Exports préparés par le travailleur : `$DW --exports`, ou
+`$DW --continu 30` (traitements et exports en boucle). Drapeau : `GEODATA_TERRAIN_ENABLED=false` ferme les services.
+
 Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
 de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est
 exclu et listé. La publication (accepté → publié) vient avec le lot TER-04.

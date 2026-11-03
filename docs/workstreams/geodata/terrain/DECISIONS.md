@@ -43,6 +43,12 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 
 | 2026-11-02 | TER-D1 à D3, D5 à D15, D17, D18 | « Recommandations retenues pour toutes les décisions TER-Dx. » | Maître d'ouvrage, dans la session | TER-02 engagé (`TER-02.md`). Reste à constater sur le VPS : racine des données Docker et espace libre réel (TER-D7). |
 
+### Précision soumise par TER-04
+
+| ID | Question | Recommandation | Bloque |
+| --- | --- | --- | --- |
+| TER-D19 | Retour arrière : le plan exige de rebasculer la version publiée vers la version acceptée précédente sans rien effacer ; le cycle TER-D12 rendait « remplacée » terminal | Ajouter la transition **remplacée → publiée** (republication d'une version remplacée ; l'actuelle devient remplacée), implémentée en TER-04 (modèle pur et déclencheur SQL), tracée par événement et journal (`terrain.retour-arriere`) | non (implémentée, à confirmer) |
+
 ### Questions ouvertes par TER-02 (levées de quarantaine, TER-D13)
 
 Les quatre jeux réels importés sont en quarantaine (`TER-02.md`). La session ne lève aucune quarantaine : il faut une
