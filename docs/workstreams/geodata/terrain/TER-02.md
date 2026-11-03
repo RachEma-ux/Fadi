@@ -61,6 +61,29 @@ Relance de l'import : « déjà importée », aucune seconde version. Ces quaran
 (« quarantine unknown vertical datums instead of guessing ») : **aucune ne sera levée par la session** ; elles attendent
 une décision consignée d'un responsable de publication avec sa source (questions Q-TER-02-1 à 3 de `DECISIONS.md`).
 
+## Correctif d'exploitation du 3 novembre 2026 (TER-D7 révisée)
+
+Demande du maître d'ouvrage relayée par la session VPS (« Exécute tes recommandations »). Constats : la garde de
+`deploy/preprod/fadi-preprod` ne rendait que `--profile recette` (le service `terrain-import` n'était jamais contrôlé) ; la
+procédure faisait lancer un `docker compose … run terrain-import` brut, en root, hors de `fadi-preprod` (ni garde, ni rôle,
+variables à reconstituer). Constat VPS : `/mnt/data` (racine des données Docker) a 112 Go libres et porte aussi la base et
+les sauvegardes de la production.
+
+| Élément | Changement |
+| --- | --- |
+| Garde (`fadi-preprod garde`, et avant toute action) | Configuration rendue avec `--profile recette --profile terrain` ; règles propres à `terrain-import` : image `fadi-preprod-app:<commit approuvé>`, volume `fadi-preprod-terrain` en écriture et rien d'autre, réseaux `internal` + `front` seuls, aucun `network_mode`, aucun port publié, `DATABASE_URL` en `fadi_app` sur `@db:5432`, jamais `DATABASE_MIGRATION_URL`, `SMTP_PASS` ni `MIGRATE_ONLY`, `restart: "no"`, pas de build propre ; service absent = refus |
+| Commande | `fadi-preprod terrain --etat` (opérateur ou administrateur, lecture) ; `--telecharger <fiche>`, `--importer <fiche> --par <courriel>`, `--lever <gdtv_…> --par <courriel> --motif "…" [--reference-…]` (administrateur seul : ces actions choisissent des données — sortie vers l'extérieur, disque partagé avec la production, décision de publication TER-D13 — comme `sync` choisit le code). Copie figée du commit approuvé, fichier d'environnement existant, `run --rm --no-deps -T … < /dev/null`, journal `terrain.log` ; nom de fiche validé contre `docs/geodata/terrain/*.json` du commit approuvé ; aucune adresse ni chemin ; textes sans caractère de contrôle ni tiret initial |
+| Quota | `PREPROD_GEODATA_TERRAIN_QUOTA_GO` : **30 Go** par défaut (`compose.yml`, `env.example`) ; le défaut du code (`LIMITES_TERRAIN`, hors préproduction) est inchangé |
+| Services | Liste fermée dans la garde : `db`, `migrate`, `app`, `recette`, `terrain-import`, `terrain-worker` ; tout autre service est refusé. `terrain-worker` (TER-03, PR #387, non fusionnée) : facultatif ; s'il est présent, image `fadi-preprod-app:<commit>-terrain` construite par `deploy/preprod/terrain-worker.Dockerfile` sur `fadi-preprod-app:<commit>`, volume terrain seul, réseau `internal` seul, aucun port, `fadi_app`, ni `DATABASE_MIGRATION_URL` ni `SMTP_PASS`, `restart: "no"` ; commande `fadi-preprod terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par …]` (administrateur). Le bloc `terrain-worker` de la PR #387 (tête `7a786af`) passe la garde tel quel ; la PR #387 devra encore aligner son quota (60 → 30), remplacer son `docker compose … run terrain-worker` par cette commande et reprendre `lib/geodata/terrain/fiches.ts` |
+| Liste fermée | `apps/api/src/lib/geodata/terrain/fiches.ts` (extrait de la commande, sans changement de comportement sauf : `--importer` n'accepte plus de chemin en production) ; test `fiches.test.ts` : exactement les 4 fiches, adresses refusées |
+
+Contrôles (3 novembre 2026, compte non privilégié) : `bash deploy/preprod/tests/run.sh` 181 réussis, 0 échec après fusion de `main` (TER-03, PR #387) : 18
+mutations de `terrain-import` et de la liste fermée, 12 de `terrain-worker` (bloc réel de `compose.yml`), 39 cas de la
+commande `terrain` dont `worker --essai-gdal | --traiter | --decider`, quota du travailleur aligné sur 30 Go ; puis
+`worker --controler` depuis l'emplacement fermé `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20) : 193 réussis, 0 échec, `run-auto.sh` 85 réussis, 0 échec ; `fiches.test.ts`
+4 tests réussis ; typecheck, test et build : voir la PR. Aucun déploiement ; la nouvelle commande est à réinstaller par le
+maître d'ouvrage.
+
 ## Suite
 
 TER-03 (traitement et porte qualité) après réponse aux questions de levée, ou en parallèle sur les jeux synthétiques ; un

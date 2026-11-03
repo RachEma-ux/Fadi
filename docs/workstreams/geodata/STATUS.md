@@ -13,10 +13,21 @@ Mis à jour : 2026-11-03 (UTC).
   Panneau Terrain (Alt+H) : MNT / MNS, jeux publiés et couvertures, altitude / pente / ombrage avec opacité, légende
   verrouillée ou adaptée (portée dite : vue ou zone d'étude), courbes jamais sous le seuil TER-D17, Altitude au point (Alt+O,
   arrondie à la précision de la source), Profil du terrain (Alt+U : raccords, lacunes, interpolation), « Sources et
-  précision », étiquette des jeux partout. Tests web 66/66, recette navigateur `geodata-terrain.mjs` 28/0 (services du
+  précision », étiquette des jeux partout. Tests web 66/66, recette navigateur `geodata-terrain.mjs` 32/0 (après revue Codex) (services du
   terrain interceptés, jeu synthétique « test seulement »), recette `geodata.mjs` 265/0 en local, DB-3 services 8/8 en
   local (`terrain/TER-05.md`).
   Q-TER-05-1 (rattachement au projet) soumise.
+- Préproduction terrain (TER-D7 révisée, PR #386, branche `fix/terrain-preprod-garde-commande`) : **implémenté et
+  vérifié**, non accepté, non déployé. Garde `fadi-preprod` sur `--profile recette --profile terrain` avec règles propres à
+  `terrain-import` ; sous-commande `fadi-preprod terrain` (rôles, arguments fermés, `< /dev/null`) ; quota par défaut 30 Go ;
+  liste fermée des 4 fiches testée (`apps/api/src/lib/geodata/terrain/fiches.test.ts`, 4 tests). Preuves au commit
+  `7c9f78a` : `deploy/preprod/tests/run.sh` 152/0 (16 mutations `terrain-import`), `run-auto.sh` 85/0, typecheck et build
+  verts, CI de la PR (validate, e2e, image) verte. Complément (demande VPS) : liste fermée des services et règles
+  `terrain-worker` (PR #387) avec `fadi-preprod terrain worker …` ; après fusion de `main` (#387) : `run.sh` 181/0,
+  quota du travailleur aligné sur 30 Go, `--decider` exposé ; `--controler` exposé depuis l'emplacement fermé
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20, entrée standard) : `run.sh` 193/0 ; après fusion de `main` (TER-04, #389) :
+  `worker --publier | --exports | --continu <s> | --arreter` (TER-D21, conteneur détaché unique, restart "no"), quota 30 Go
+  conservé, `GEODATA_TERRAIN_ENABLED` repris : `run.sh` 212/0. En attente : réinstallation du script par le maître d'ouvrage.
 - Terrain TER-04 (services, tuiles, droits, publication, export ; Issue #381, branche `feat/381-ter-04-services`) :
   **implémenté et vérifié**, non accepté. Routes `/geodata/api/terrain` (jeux, point, profil, statistiques, tuiles, courbes
   MVT, exports, publication / retour arrière), droits par usage, drapeau `GEODATA_TERRAIN_ENABLED`. Tests : 253 du paquet,

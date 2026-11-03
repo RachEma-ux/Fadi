@@ -19,6 +19,19 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   portée de la session (TER-02 → TER-05). Après fusion et déploiement : ouvrir GeoData › Terrain (Alt+H) ; rien ne
   s'affiche tant qu'aucune version n'est publiée (Q-TER-02-1 à 3). Restent au maître d'ouvrage : TER-D19, Q-TER-05-1,
   TER-01, TER-06 / TER-07 (porte G2), porte G3 en préproduction, TER-08.
+- Préproduction terrain (TER-D7 révisée, 3 novembre 2026) : PR #386 sur `fix/terrain-preprod-garde-commande`, **non
+  fusionnée** (fusion seulement sur accord écrit du maître d'ouvrage), aucun déploiement. Constat VPS fait : racine Docker
+  `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production → quota terrain
+  **30 Go**. Garde étendue au profil `terrain` ; `terrain-import` ne se lance plus que par `sudo fadi-preprod terrain …`
+  (`--etat` opérateur ; `--telecharger` / `--importer` / `--lever` administrateur). **Prochaine action** après fusion : le
+  maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` (sha256 dans la PR), puis lance
+  `sudo fadi-preprod terrain --telecharger|--importer` des 4 fiches (`docs/geodata/README.md` § Terrain) — l'ancienne
+  procédure `docker compose … run terrain-import` ci-dessous est caduque. Compte rendu : `terrain/TER-02.md` § Correctif.
+  La garde refuse tout service hors liste fermée et couvre `terrain-worker` (#387, fusionnée) : `main` fusionné dans la
+  branche, conflits résolus, quota du travailleur aligné sur 30 Go, `sudo fadi-preprod terrain worker --essai-gdal |
+  --traiter | --controler | --decider` remplace le `docker compose … run terrain-worker` ; points de contrôle dans
+  `/opt/fadi-preprod/controles/<nom>.csv` (TER-D20). TER-04 couvert : `worker --publier | --exports | --continu <s> |
+  --arreter` (TER-D21). La PR #390 (TER-05) n'ajoute que le scénario `geodata-terrain` à `E2E_DEFAUT` (conflit trivial).
 - Terrain TER-04 (Issue #381) : PR sur `feat/381-ter-04-services` (compte rendu `terrain/TER-04.md`). Après fusion et
   déploiement : `GEODATA_TERRAIN_ENABLED` (vrai par défaut), travailleur `--continu` pour les exports ; mesurer les budgets
   en préproduction (porte G3). Les versions réelles restent en quarantaine (Q-TER-02-1 à 3). Lot suivant : TER-05.
