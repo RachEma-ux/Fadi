@@ -70,24 +70,41 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
   const [profil, setProfil] = useState<(Etat<ProfilRecu> & { ligne: [number, number][] }) | null>(null);
   const [survol, setSurvol] = useState<[number, number] | null>(null);
   const actif = useRef(false);
+  /**
+   * Générations des requêtes : un changement de produit invalide tout ce qui est en vol (catalogue, point, profil,
+   * adaptation) ; une nouvelle requête d'un même type invalide la précédente. Une réponse périmée est ignorée : le MNT ne
+   * s'affiche jamais sous le choix MNS, ni un ancien point ou une ancienne plage après une nouvelle demande.
+   */
+  const generation = useRef({ produit: 0, catalogue: 0, point: 0, profil: 0, adaptation: 0 });
+  const jeton = (cle: "catalogue" | "point" | "profil" | "adaptation") => {
+    const g = generation.current;
+    g[cle] += 1;
+    const attendu = { produit: g.produit, n: g[cle] };
+    return () => generation.current.produit === attendu.produit && generation.current[cle] === attendu.n;
+  };
 
   const charger = useCallback(async (p: ProduitTerrain) => {
     setErreur(null);
+    const courant = jeton("catalogue");
     try {
       // Tous les jeux publiés du produit : la couverture disponible se lit avant de s'y rendre ; le plus fin d'abord.
       const r = await api.terrainJeux(p, null);
+      if (!courant()) return;
       const tries = [...r.jeux].sort((a, b) => a.pas.metres - b.pas.metres || a.titre.localeCompare(b.titre));
       setJeux(tries);
       setVersionId((v) => (v && tries.some((j) => j.versionId === v) ? v : (tries[0]?.versionId ?? null)));
     } catch (e) {
+      if (!courant()) return;
       setJeux([]);
       setErreur(message(e));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const ouvrir = useCallback(() => { if (!actif.current) { actif.current = true; void charger(produit); } }, [charger, produit]);
   const changerProduit = (p: ProduitTerrain) => {
     // Le MNT et le MNS ne se remplacent jamais : changer de produit efface les résultats de l'autre.
-    setProduit(p); setVersionId(null); setPoint(null); setProfil(null); setPlageVue(null); setModeLegende("verrouillee");
+    generation.current.produit += 1;
+    setProduit(p); setJeux(null); setVersionId(null); setPoint(null); setProfil(null); setSurvol(null); setPlageVue(null); setAdaptation(null); setModeLegende("verrouillee");
     actif.current = true;
     void charger(p);
   };
@@ -102,6 +119,10 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
    */
   const adapter = async (zoneEtude: { nom: string; geometrie: { type: string; coordinates: unknown } } | null) => {
     if (!jeu) return;
+    const courant = jeton("adaptation");
+    // La plage d'une adaptation précédente ne survit jamais à une nouvelle demande : en cas d'échec, la légende revient
+    // réellement à la plage de la version (couleurs et tuiles comprises).
+    setPlageVue(null);
     setModeLegende("adaptee");
     let polygone: { type: "Polygon"; coordinates: [number, number][][] } | null = null;
     if (zoneEtude) {
@@ -117,26 +138,29 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
     setAdaptation({ etat: "chargement" });
     try {
       const r = await api.terrainStatistiques(polygone, jeu.produit, jeu.versionId);
+      if (!courant()) return;
       if ("indisponible" in r) { setAdaptation({ etat: "erreur", message: r.motif }); return; }
       const { min, max } = r.statistiques;
       if (min === null || max === null || !(max > min)) { setAdaptation({ etat: "erreur", message: "Altitudes non évaluées dans cette portée : légende verrouillée sur la version." }); return; }
       setPlageVue({ versionId: jeu.versionId, plage: [min, max], zone: zoneEtude?.nom ?? null });
       setAdaptation(null);
-    } catch (e) { setAdaptation({ etat: "erreur", message: message(e) }); }
+    } catch (e) { if (courant()) setAdaptation({ etat: "erreur", message: message(e) }); }
   };
   const plageAdaptee = plageVue && plageVue.versionId === versionId ? plageVue : null;
   const portee = porteeLegende(modeLegende, jeu?.plageAltitude ?? null, plageAdaptee);
 
   const interroger = async (lon: number, lat: number) => {
+    const courant = jeton("point");
     setPoint({ etat: "chargement" });
-    try { setPoint({ etat: "ok", recu: await api.terrainPoint(lon, lat, produit) }); } catch (e) { setPoint({ etat: "erreur", message: message(e) }); }
+    try { const recu = await api.terrainPoint(lon, lat, produit); if (courant()) setPoint({ etat: "ok", recu }); } catch (e) { if (courant()) setPoint({ etat: "erreur", message: message(e) }); }
   };
   const tracerProfil = async (ligne: [number, number][]) => {
+    const courant = jeton("profil");
     setProfil({ etat: "chargement", ligne });
     setSurvol(null);
     const fins = (jeux ?? []).map((j) => j.pas.metres);
     const pas = pasProfil(longueurApprochee(ligne), fins.length ? Math.min(...fins) : null);
-    try { setProfil({ etat: "ok", recu: await api.terrainProfil(ligne, pas, produit), ligne }); } catch (e) { setProfil({ etat: "erreur", message: message(e), ligne }); }
+    try { const recu = await api.terrainProfil(ligne, pas, produit); if (courant()) setProfil({ etat: "ok", recu, ligne }); } catch (e) { if (courant()) setProfil({ etat: "erreur", message: message(e), ligne }); }
   };
   /** Clic ou tracé terminé avec un outil du terrain (moteur). */
   const surTrace = (o: OutilCarte, sommets: readonly [number, number][]) => {

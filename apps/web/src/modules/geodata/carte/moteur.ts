@@ -113,7 +113,7 @@ export interface MoteurCarte {
   afficherEntite(contour: unknown | null): void;
   /** Terrain haute résolution (TER-05) ; null : tout retiré. */
   afficherTerrain(t: AffichageTerrain | null): void;
-  /** Masque (ou rétablit) le contour territorial le temps d'une capture ; résolu une fois la carte redessinée. */
+  /** Masque (ou rétablit) le contour territorial et le terrain (TER-05, hors carte enregistrée) le temps d'une capture ; résolu une fois la carte redessinée. */
   masquerTerritoire(masque: boolean): Promise<void>;
   /** Image de la mini-carte (impression), ou null si elle n'est pas affichée. */
   canevasMiniCarte(): HTMLCanvasElement | null;

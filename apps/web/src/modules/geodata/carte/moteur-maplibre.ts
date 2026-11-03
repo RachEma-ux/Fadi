@@ -336,6 +336,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   carte.on("move", synchroniserMini);
 
   // ——— Terrain haute résolution (TER-05) ———
+  /** Calques du terrain, masqués pendant une capture (hors carte enregistrée, droits d'export non jugés par l'export). */
+  const CALQUES_TERRAIN = ["gd-terrain-altitude", "gd-terrain-pente", "gd-terrain-ombrage", "gd-terrain-courbes", "gd-terrain-courbes-cotes", "gd-terrain-couvertures", "gd-terrain-profil", "gd-terrain-point"];
   /** Adresse de chaque source du terrain (une adresse changée recrée la source : version, portée de la légende, équidistance). */
   const adressesTerrain = new Map<string, string>();
   let terrainVoulu: AffichageTerrain | null = null;
@@ -494,7 +496,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     },
     async masquerTerritoire(masque) {
       if (!pret) return;
-      for (const id of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      // Le terrain (TER-05) n'appartient pas à la carte enregistrée : ses droits d'export ne sont pas jugés par l'export
+      // de la carte, il n'entre donc jamais dans l'image (export PNG, impression).
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
       await new Promise<void>((resoudre) => {
         const fin = setTimeout(resoudre, 2000);
         carte.once("idle", () => { clearTimeout(fin); resoudre(); });

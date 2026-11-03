@@ -54,6 +54,9 @@ const PNG = png1x1();
 
 const appels = [];
 let terrainActif = true;
+/** Réponse du catalogue MNT retardée (réponse périmée après un changement de produit) ; statistiques indisponibles. */
+let retardMNT = 0;
+let statistiquesIndisponibles = false;
 async function intercepter(ctx) {
   await ctx.route(/\/geodata\/api\/terrain\//, async (route) => {
     const req = route.request();
@@ -62,6 +65,7 @@ async function intercepter(ctx) {
     const json = (corps, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(corps) });
     if (!terrainActif) return json({ error: "not_found", message: "Le terrain haute résolution n'est pas activé sur ce serveur." }, 404);
     const p = u.pathname.replace(/^\/geodata\/api\/terrain/, "");
+    if (p === "/jeux" && u.searchParams.get("produit") !== "MNS" && retardMNT) await new Promise((r) => setTimeout(r, retardMNT));
     if (p === "/jeux") return json({ jeux: u.searchParams.get("produit") === "MNS" ? [] : [JEU_B, JEU_A] });
     if (p === "/point") {
       const lon = Number(u.searchParams.get("lon")), lat = Number(u.searchParams.get("lat"));
@@ -73,6 +77,7 @@ async function intercepter(ctx) {
       for (let i = 0; i <= 40; i++) pts.push({ chainage: i * 25, lon: 7 + i * 0.0003, lat: 47, altitude: i >= 18 && i <= 22 ? null : 500 + i * 2, source: i >= 18 && i <= 22 ? null : i < 18 ? "ter-test-a" : "ter-test-b", interpolee: i > 30 });
       return json({ points: pts, transitions: [{ chainage: 450, de: "ter-test-a", vers: null }, { chainage: 575, de: null, vers: "ter-test-b" }], lacunes: [{ debut: 450, fin: 550 }], sources: [source("ter-test-a", "Jeu synthétique A", 0.5), source("ter-test-b", "Jeu synthétique B", 2)], referencesEcartees: [], chainage: "mètres, projection transverse de Mercator locale (WGS 84) centrée sur le premier sommet" });
     }
+    if (p === "/statistiques" && statistiquesIndisponibles) return json({ indisponible: true, motif: "Aucune version publiée ne recoupe la zone : statistiques indisponibles." });
     if (p === "/statistiques") return json({ statistiques: { cellulesZone: 100, cellulesValides: 90, min: 500.5, max: 540.25, moyenne: 520, ecartType: 10 }, surfaceZoneM2: 25, surfaceValideM2: 22.5, couvertureValide: 0.9, source: source("ter-test-a", "Jeu synthétique A", 0.5) });
     if (p.startsWith("/tuiles/")) return route.fulfill({ status: 200, contentType: "image/png", body: PNG });
     if (p.startsWith("/courbes/")) return route.fulfill({ status: 200, contentType: "application/vnd.mapbox-vector-tile", body: Buffer.alloc(0) });
@@ -129,6 +134,14 @@ await page.waitForFunction(() => /vue courante/.test(document.querySelector("[da
 await page.waitForTimeout(1200);
 check("Adapter à la vue : statistiques de la vue demandées pour la version, légende 501 → 540 m, portée « vue courante »", appels.some((a) => a.startsWith("POST /geodata/api/terrain/statistiques")) && /501 m/.test(await page.locator("[data-gd-terrain-legende='m']").textContent()) && /540 m/.test(await page.locator("[data-gd-terrain-legende='m']").textContent()));
 check("tuiles redemandées avec la portée explicite (min / max)", appels.some((a) => /\/tuiles\/ter-test-a\/altitude\/.*\?min=500\.50&max=540\.25$/.test(a)));
+// Nouvelle adaptation en échec : la plage précédente ne survit pas, couleurs et tuiles reviennent à la version.
+statistiquesIndisponibles = true;
+const tuilesAvant = appels.length;
+await page.locator("[data-gd-terrain-adapter]").click();
+await page.locator("[data-gd-terrain-adaptation-erreur]").waitFor();
+await page.waitForTimeout(1200);
+check("adaptation en échec : légende revenue à la plage de la version (480 → 620 m), tuiles sans portée", /480 m/.test(await page.locator("[data-gd-terrain-legende='m']").textContent()) && /620 m/.test(await page.locator("[data-gd-terrain-legende='m']").textContent()) && /verrouillée/.test(await page.locator("[data-gd-terrain-portee]").textContent()) && !appels.slice(tuilesAvant).some((a) => /\/tuiles\/ter-test-a\/altitude\/.*\?min=500/.test(a)));
+statistiquesIndisponibles = false;
 await page.locator("[data-gd-terrain-mode-legende='verrouillee']").check();
 check("retour à la légende verrouillée", /verrouillée/.test(await page.locator("[data-gd-terrain-portee]").textContent()));
 
@@ -194,6 +207,13 @@ else check("point hors couverture : « indisponible », aucune valeur", false, a
 await page.locator("[data-gd-terrain-produit='MNS']").check();
 await page.locator("[data-gd-terrain-aucun]").waitFor();
 check("MNS sans jeu publié : rien d'affiché, résultats du MNT effacés", (await page.locator("[data-gd-terrain-jeu]").count()) === 0 && (await page.locator("[data-gd-terrain-point]").count()) === 0);
+// Réponse périmée : un catalogue MNT lent qui arrive après le choix du MNS est ignoré.
+retardMNT = 1500;
+await page.locator("[data-gd-terrain-produit='MNT']").check();
+await page.locator("[data-gd-terrain-produit='MNS']").check();
+await page.waitForTimeout(2500);
+check("réponse périmée : le catalogue MNT arrivé après le choix du MNS est ignoré", (await page.locator("[data-gd-terrain-produit='MNS']").isChecked()) && (await page.locator("[data-gd-terrain-jeu]").count()) === 0 && (await page.locator("[data-gd-terrain-aucun]").count()) === 1);
+retardMNT = 0;
 await page.locator("[data-gd-terrain-produit='MNT']").check();
 
 // ——— Terrain désactivé côté serveur ———

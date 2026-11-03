@@ -53,7 +53,7 @@ bas (`panneaux/barre-outils.test.ts`) et dans le navigateur (`geodata-terrain.mj
 | Suite DB-3 `geodata-terrain-services.test.ts` (catalogue complété) | 8/8 en local (PostGIS 16 + GDAL 3.8.4, copie à connexion directe) ; en CI sur base attestée |
 | Tests web complets (`apps/web`) | 202 fichiers, 1 367 tests réussis (1 ignoré) |
 | `npm test` (racine) | Paquets et web réussis ; API : 20 suites DB-3 refusées par la garde sans base attestée (`TARGET_REQUIRED`, attendu en local), exécutées en CI |
-| Recette navigateur `geodata-terrain.mjs` (Chromium, WebGL logiciel, API construite locale) | 28 contrôles réussis, 0 échec |
+| Recette navigateur `geodata-terrain.mjs` (Chromium, WebGL logiciel, API construite locale) | 32 contrôles réussis, 0 échec (après la revue Codex) |
 | Recette GeoData complète `geodata.mjs` (non-régression, même API locale) | 265 contrôles réussis, 0 échec |
 
 Limite déclarée de la recette navigateur : les services `/geodata/api/terrain/…` y sont **interceptés** et répondent avec
@@ -61,6 +61,20 @@ un jeu **synthétique « test seulement »** (aucune donnée réelle). Elle vér
 traitement, qualité, publication, point, profil, statistiques, tuiles, courbes, droits) est vérifiée sur base réelle par
 les suites DB-3 de TER-02 à TER-04. L'essai sur un jeu réel publié (Lucerne, étiqueté démonstration) attend la levée de
 quarantaine (Q-TER-02-1 à 3) ; la porte G3 (préproduction, appareil Android réel) reste à passer.
+
+## Revue Codex de la PR #390 (corrigée)
+
+- Export et impression (P1) : le terrain n'appartient pas à la carte enregistrée, dont seuls les droits d'export sont jugés
+  par `POST /exports` ; ses calques sont donc **masqués pendant toute capture** (avec le contour territorial), jamais
+  exportés ni imprimés.
+- Réponses périmées : un changement de produit invalide tout ce qui est en vol (catalogue, point, profil, adaptation) ;
+  une nouvelle demande invalide la précédente du même type. Recette : catalogue MNT lent arrivé après le choix du MNS,
+  ignoré.
+- Adaptation en échec : la plage d'une adaptation précédente est effacée dès la nouvelle demande ; en cas d'échec, couleurs
+  et tuiles reviennent réellement à la plage de la version. Recette : adaptation réussie puis en échec → 480 → 620 m,
+  tuiles sans portée.
+
+Après correction : recette `geodata-terrain.mjs` 32/0, `geodata.mjs` 265/0, tests web du module 66/66.
 
 ## Hors de ce lot (décision du maître d'ouvrage)
 
