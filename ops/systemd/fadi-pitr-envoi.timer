@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - envoi hors VPS du journal de la base (sauvegarde continue, BD-7) (minuteur)
+
+[Timer]
+OnCalendar=*:0/10
+RandomizedDelaySec=0
+Persistent=true
+Unit=fadi-pitr-envoi.service
+
+[Install]
+WantedBy=timers.target

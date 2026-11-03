@@ -75,3 +75,13 @@ Décider de la purge future uniquement après avoir évalué :
 Si l'audit est acceptable, préparer **séparément** une tâche de rétention (jamais modifier le timer quotidien en place tant que non approuvé). L'action réelle `restic forget` supprimerait les références aux snapshots ; `restic prune` retirerait ensuite les blocs inutilisés, avec verrouillage du dépôt pendant l'opération. La simulation ne remplace pas un test de restauration après purge.
 
 **Aucun `forget` réel, aucun `prune` et aucun timer de rétention ne sont mis en œuvre par cette PR.**
+
+## Décision du 3 novembre 2026 — rétention réelle
+
+Le maître d'ouvrage a accepté la politique proposée (5 dernières, 14 quotidiennes, 8 hebdomadaires, 12 mensuelles) et sa
+mise en œuvre réelle, avec la sauvegarde continue (journal conservé 14 jours) : chantier
+[bases-de-donnees](workstreams/bases-de-donnees/PLAN.md), BD-7, et [sauvegarde continue](sauvegarde-continue.md).
+Conformément à la phase B ci-dessus, c'est une **tâche séparée** (`fadi-backup-retention`, chaque dimanche) : la
+sauvegarde quotidienne et la simulation `fadi-restic-retention-audit` restent inchangées. Garde-fou : rien n'est oublié
+si aucune copie quotidienne de moins de 48 heures n'existe. Prise d'effet : installation par l'administrateur
+(`installer-bases.sh`).

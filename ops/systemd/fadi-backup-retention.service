@@ -1,0 +1,20 @@
+[Unit]
+Description=Fadi - rétention réelle du dépôt Restic hors VPS (BD-7)
+Wants=network-online.target
+After=network-online.target docker.service
+RequiresMountsFor=/mnt/data
+ConditionPathExists=/etc/fadi/restic.env
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/mnt/data/fadi/app
+EnvironmentFile=/etc/fadi/restic.env
+Environment=RESTIC_CACHE_DIR=/mnt/data/fadi/restic-cache
+ExecStartPre=/usr/bin/mkdir -p /mnt/data/fadi/restic-cache
+ExecStartPre=/usr/bin/chmod 0700 /mnt/data/fadi/restic-cache
+ExecStart=/usr/local/sbin/fadi-backup-retention
+TimeoutStartSec=6h
+NoNewPrivileges=true

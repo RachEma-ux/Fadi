@@ -1,0 +1,111 @@
+#!/bin/bash
+# fadi-pitr — sauvegarde continue de la base de production (chantier bases-de-donnees, BD-7), sur le VPS, en root.
+# Installé par deploy/prod/installation/installer-bases.sh en /usr/local/sbin/fadi-pitr ; lancé par systemd :
+#   fadi-pitr envoi      toutes les 10 minutes : contrôle de l'archivage du journal, copie chiffrée (restic, étiquette
+#                        pitr) du volume fadi-pitr hors du VPS — perte de données maximale visée : 15 minutes ;
+#   fadi-pitr base       chaque nuit : sauvegarde de base (ops/pitr/base.sh dans le conteneur db), envoi, puis oubli
+#                        des instantanés pitr de plus de 14 jours (fenêtre de restauration ; le nettoyage des blocs est
+#                        fait par fadi-backup-retention) ;
+#   fadi-pitr verifier   chaque mois : restauration de contrôle depuis le dépôt hors VPS, dans un conteneur jetable sans
+#                        réseau, durée mesurée (temps de remise en service, objectif 4 h) ; résultat dans
+#                        /mnt/data/fadi/pitr/derniere-verification.json ;
+#   fadi-pitr etat       état de l'archivage et de la dernière vérification.
+# Configuration : /etc/fadi/restic.env (dépôt restic hors VPS, déjà utilisé par fadi-backup-offsite) ; aucun secret dans
+# le dépôt ni dans les journaux. La base de production n'est jamais restaurée par ce script. Restic ≥ 0.16 (--retry-lock :
+# attente du verrou pendant la rétention hebdomadaire).
+set -Eeuo pipefail
+umask 077
+log() { printf 'FADI_PITR: %s\n' "$*"; }
+fail() { printf 'FADI_PITR_ERROR: %s\n' "$*" >&2; exit 1; }
+
+[[ $(id -u) -eq 0 ]] || fail 'à lancer en root (systemd).'
+app=${FADI_COMPOSE_DIR:-/mnt/data/fadi/app}
+etat_dir=${FADI_PITR_ETAT:-/mnt/data/fadi/pitr}
+garder=${FADI_PITR_FENETRE:-14d}
+[[ -f "$app/docker-compose.yml" && -f "$app/.env.deploy" ]] || fail 'configuration Fadi absente.'
+compose=(docker compose -p app --project-directory "$app" --env-file "$app/.env.deploy" -f "$app/docker-compose.yml")
+
+restic_pret() {
+  [[ -n ${RESTIC_REPOSITORY:-} ]] || fail 'RESTIC_REPOSITORY manquant (/etc/fadi/restic.env).'
+  [[ -n ${RESTIC_PASSWORD_FILE:-} && -f ${RESTIC_PASSWORD_FILE:-} ]] || fail 'RESTIC_PASSWORD_FILE manquant.'
+  local f=${FADI_SWIFT_PASSWORD_FILE:-/etc/fadi/swift-password} m
+  [[ -f $f && $(stat -c '%u' "$f") == 0 ]] || fail 'secret Swift absent ou non détenu par root.'
+  m=$(stat -c '%a' "$f"); (( (8#$m & 077) == 0 )) || fail 'secret Swift accessible au groupe ou aux autres.'
+  export OS_PASSWORD; OS_PASSWORD=$(<"$f")
+  command -v restic > /dev/null || fail 'restic non installé.'
+}
+db_id() { local id; id=$("${compose[@]}" ps -q db); [[ -n $id ]] || fail 'conteneur db absent.'; echo "$id"; }
+volume_pitr() {
+  local v; v=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/pitr"}}{{.Source}}{{end}}{{end}}' "$(db_id)")
+  [[ -n $v && -d $v/wal && -d $v/base ]] || fail 'volume /pitr du conteneur db absent : base non recréée avec la sauvegarde continue (installer-bases.sh).'
+  echo "$v"
+}
+sql() { "${compose[@]}" exec -T -u postgres db psql -U fadi_backup -d fadi -XAtqc "$1"; }
+
+archivage_conforme() {
+  local mode etat
+  mode=$(sql "SHOW archive_mode") || fail 'base injoignable.'
+  [[ $mode == on ]] || fail "archivage du journal inactif (archive_mode=$mode)."
+  # Échec plus récent que le dernier succès : l'archivage est bloqué (disque, droits) — le journal s'accumule.
+  etat=$(sql "SELECT coalesce(last_failed_time > coalesce(last_archived_time, 'epoch'), false) || '|' || coalesce(extract(epoch FROM now() - last_archived_time)::bigint, -1) FROM pg_stat_archiver")
+  [[ ${etat%%|*} == f ]] || fail "archivage du journal en échec (pg_stat_archiver) ; voir les journaux du conteneur db."
+  log "archivage conforme (dernier segment archivé il y a ${etat##*|} s)"
+}
+
+envoi() {
+  local v; v=$(volume_pitr)
+  archivage_conforme
+  restic_pret
+  restic backup --retry-lock 5m --quiet --tag pitr --exclude '*.part' "$v"
+  log "copie hors VPS : $v (étiquette pitr)"
+}
+
+base() {
+  log 'sauvegarde de base (pg_basebackup par fadi_backup)…'
+  "${compose[@]}" exec -T -u postgres db /opt/fadi-pitr/base.sh
+  envoi
+  restic forget --retry-lock 30m --quiet --tag pitr --group-by tags --keep-within "$garder"
+  log "instantanés pitr de plus de $garder oubliés (blocs nettoyés par fadi-backup-retention)"
+}
+
+VERIF_DIR=
+nettoyer_verification() { [[ -n $VERIF_DIR ]] && rm -rf -- "$VERIF_DIR"; VERIF_DIR=; }
+verifier() {
+  local debut v img dir sortie duree resultat
+  debut=$(date +%s)
+  v=$(volume_pitr); img=$(docker inspect --format '{{.Config.Image}}' "$(db_id)")
+  restic_pret
+  install -d -m 0700 "$etat_dir"
+  dir=$(mktemp -d "$etat_dir/verification.XXXXXX")
+  # Dossier jetable retiré dans tous les cas (succès, échec, interruption) ; variable globale : le piège EXIT s'exécute
+  # après le retour de la fonction (revue Codex de la PR #388).
+  VERIF_DIR=$dir
+  trap nettoyer_verification EXIT
+  log "restauration de contrôle : dernier instantané pitr → $dir"
+  restic restore --retry-lock 30m latest --quiet --tag pitr --target "$dir/r"
+  [[ -d "$dir/r$v/base" && -d "$dir/r$v/wal" ]] || fail 'instantané pitr incomplet (base ou journal absent).'
+  local b; b=$(find "$dir/r$v/base" -mindepth 1 -maxdepth 1 -type d -name '[0-9]*Z' -printf '%f\n' | sort | tail -1)
+  [[ -n $b ]] || fail 'aucune sauvegarde de base dans l instantané.'
+  mkdir -p "$dir/travail"; chown -R 999:999 "$dir"
+  sortie=$(docker run --rm --network none -u 999:999 -e PITR_VERIF_ROLE=fadi \
+    -v "$dir:/verif" -v "$app/ops/pitr:/opt/fadi-pitr:ro" --entrypoint /opt/fadi-pitr/verifier-restauration.sh \
+    "$img" "/verif/r$v/base/$b" "/verif/r$v/wal" /verif/travail) || { tail -n 40 "$dir/travail/restauration.log" >&2 || true; fail 'restauration de contrôle en échec.'; }
+  duree=$(( $(date +%s) - debut ))
+  resultat=$(printf '%s' "$sortie" | tail -1 | sed "s/}\$/,\"duree_totale_s\":$duree,\"verifie_le\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}/")
+  printf '%s\n' "$resultat" > "$etat_dir/derniere-verification.json"
+  nettoyer_verification
+  log "restauration de contrôle réussie en $duree s (objectif de remise en service : 4 h) : $resultat"
+}
+
+etat() {
+  sql "SELECT 'archivés=' || archived_count || ' échecs=' || failed_count || ' dernier=' || coalesce(last_archived_wal, '-') || ' à ' || coalesce(last_archived_time::text, '-') FROM pg_stat_archiver"
+  [[ -f "$etat_dir/derniere-verification.json" ]] && cat "$etat_dir/derniere-verification.json" || echo 'aucune restauration de contrôle enregistrée'
+}
+
+case "${1:-}" in
+  envoi) envoi ;;
+  base) base ;;
+  verifier) verifier ;;
+  etat) etat ;;
+  *) fail 'usage : fadi-pitr envoi | base | verifier | etat' ;;
+esac

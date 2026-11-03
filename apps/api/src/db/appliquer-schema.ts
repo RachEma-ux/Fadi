@@ -9,7 +9,13 @@
  *   l'application — sinon toutes les requêtes suivantes s'empileraient derrière elle et l'application serait figée ;
  * - un verrou indisponible (55P03) n'applique rien (la transaction est annulée en entier) ; nouvel essai après une pause
  *   croissante, `MIGRATION_TENTATIVES` (6) essais au plus, puis échec franc (le déploiement s'arrête) ;
- * - chaque application réussie est consignée dans `admin.schema_applications` (empreinte du script, durée, essais).
+ * - chaque application réussie est consignée dans `admin.schema_applications` (empreinte du script, durée, essais) ;
+ * - BD-8 (D-7) : connectée en administrateur (super-utilisateur du conteneur), la migration ne fait en administrateur que
+ *   l'amorçage (extension de statistiques, lecture des tables de configuration des extensions par `fadi_backup`), puis
+ *   applique `init.sql` sous le rôle `fadi_migrator` (`SET ROLE`) : le schéma est écrit sans droit de super-utilisateur et
+ *   ses objets appartiennent à `fadi_owner`. Aucun mot de passe supplémentaire n'est nécessaire. Base neuve (rôles absents)
+ *   ou refus de droit (42501) : application en administrateur, signalée au journal. `MIGRATION_EN_ADMINISTRATEUR=1` force
+ *   l'ancien comportement.
  */
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
@@ -23,6 +29,8 @@ export interface ResultatSchema {
   readonly tentatives: number;
   readonly dureeMs: number;
   readonly pgStatStatements: "active" | "indisponible" | "non-chargee";
+  /** Rôle sous lequel `init.sql` a été appliqué (BD-8 : `fadi_migrator` attendu en production). */
+  readonly role: string;
 }
 
 const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -49,6 +57,16 @@ export async function appliquerSchema(
     // Attente sans limite d'une autre migration (verrou consultatif), puis délai court pour les verrous de tables.
     await client.query("SELECT pg_advisory_lock($1)", [VERROU_MIGRATION]);
     try {
+      const { rows: [moi] } = await client.query<{ su: boolean; migrateur: boolean }>(
+        "SELECT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS su, EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_migrator') AS migrateur");
+      let pgss: ResultatSchema["pgStatStatements"] | null = null;
+      let roleDdl: string | null = null;
+      if (moi?.su && moi.migrateur && env["MIGRATION_EN_ADMINISTRATEUR"] !== "1") {
+        pgss = await activerPgStatStatements(client);
+        await amorcerSauvegarde(client);
+        await client.query("SET ROLE fadi_migrator");
+        roleDdl = "fadi_migrator";
+      }
       await client.query(`SET lock_timeout = '${delaiVerrou(env["MIGRATION_LOCK_TIMEOUT"])}'`);
       for (;;) {
         tentatives += 1;
@@ -56,19 +74,28 @@ export async function appliquerSchema(
           await client.query(sql);
           break;
         } catch (e) {
+          if ((e as { code?: string }).code === "42501" && roleDdl) {
+            journal(`Migration : droit refusé au rôle ${roleDdl} (${(e as Error).message}) ; schéma appliqué en administrateur (repli signalé, BD-8).`);
+            await client.query("RESET ROLE");
+            roleDdl = null;
+            tentatives -= 1;
+            continue;
+          }
           if ((e as { code?: string }).code !== "55P03" || tentatives >= max) throw e;
           const attente = Math.min(30_000, 1000 * 2 ** (tentatives - 1));
           journal(`Migration : table occupée par l'application (essai ${tentatives}/${max}), rien n'est appliqué ; nouvel essai dans ${attente / 1000} s.`);
           await pause(attente);
         }
       }
-      const pgss = await activerPgStatStatements(client);
+      await client.query("RESET ROLE");
+      if (pgss === null) pgss = await activerPgStatStatements(client);
       const dureeMs = Date.now() - debut;
+      const { rows: [r] } = await client.query<{ role: string }>("SELECT coalesce($1::text, current_user) AS role", [roleDdl]);
       await client.query(
-        "INSERT INTO admin.schema_applications (empreinte, duree_ms, tentatives, role) VALUES ($1, $2, $3, current_user)",
-        [empreinte, dureeMs, tentatives],
+        "INSERT INTO admin.schema_applications (empreinte, duree_ms, tentatives, role) VALUES ($1, $2, $3, $4)",
+        [empreinte, dureeMs, tentatives, r!.role],
       );
-      return { empreinte, tentatives, dureeMs, pgStatStatements: pgss };
+      return { empreinte, tentatives, dureeMs, pgStatStatements: pgss, role: r!.role };
     } finally {
       await client.query("SELECT pg_advisory_unlock($1)", [VERROU_MIGRATION]).catch(() => undefined);
     }
@@ -94,4 +121,26 @@ async function activerPgStatStatements(client: PoolClient): Promise<ResultatSche
   } catch {
     return "indisponible";
   }
+}
+
+/**
+ * BD-8 : le rôle de sauvegarde `fadi_backup` (lecture seule, et réplication pour la sauvegarde de base BD-7) doit pouvoir
+ * sauvegarder toute la base, y compris les tables de
+ * configuration des extensions (PostGIS, topologie…), qui appartiennent au super-utilisateur : lecture accordée ici, en
+ * administrateur. Rien n'est fait si le rôle n'existe pas.
+ */
+async function amorcerSauvegarde(client: PoolClient): Promise<void> {
+  await client.query(`DO $$
+DECLARE r record;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_backup') THEN RETURN; END IF;
+  -- BD-7 : sauvegarde de base quotidienne (pg_basebackup) par ce même rôle, sur le socket local du conteneur.
+  IF NOT (SELECT rolreplication FROM pg_roles WHERE rolname = 'fadi_backup') THEN ALTER ROLE fadi_backup REPLICATION; END IF;
+  FOR r IN SELECT DISTINCT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace LOOP
+    EXECUTE format('GRANT USAGE ON SCHEMA %I TO fadi_backup', r.nspname);
+  END LOOP;
+  FOR r IN SELECT c.oid::regclass AS t FROM pg_extension e CROSS JOIN LATERAL unnest(e.extconfig) AS cfg(oid) JOIN pg_class c ON c.oid = cfg.oid LOOP
+    EXECUTE format('GRANT SELECT ON %s TO fadi_backup', r.t);
+  END LOOP;
+END $$`);
 }

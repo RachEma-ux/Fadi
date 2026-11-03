@@ -8,6 +8,10 @@ on:
       # fadi-prod-auto s'appuie sur docker-compose.yml (service migrate, D-7) et sur l'unité de sauvegarde hors VPS.
       - 'docker-compose.yml'
       - 'ops/systemd/**'
+      # Sauvegarde continue et rétention (chantier bases-de-donnees, BD-7).
+      - 'ops/pitr/**'
+      - 'scripts/backup.sh'
+      - 'scripts/backup-retention-restic.sh'
       # La liste e2e de la préproduction doit rester celle de la CI (tests/run.sh) : un scénario ajouté à ci.yml sans
       # elle passait inaperçu (geodata et sandbox-axes… manquaient le 25 octobre 2026).
       - '.github/workflows/ci.yml'
@@ -21,7 +25,7 @@ permissions:
 jobs:
   deployment-sources:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,3 +45,7 @@ jobs:
         run: bash deploy/prod/tests/run.sh
       - name: Shellcheck fadi-prod-auto, its installer and test doubles
         run: shellcheck -S warning deploy/prod/fadi-prod-auto deploy/prod/installation/installer-prod-auto.sh deploy/prod/tests/run.sh deploy/prod/tests/doubles/*
+      - name: Test continuous backup (ops/pitr) — WAL archive, base backup, local retention, restore to end and to a point in time, in the database image
+        run: docker run --rm -v "$PWD:/src:ro" postgis/postgis:16-3.4 bash /src/ops/pitr/tests/run.sh
+      - name: Shellcheck continuous backup and retention scripts
+        run: shellcheck -S warning ops/pitr/*.sh ops/pitr/fadi-pitr ops/pitr/tests/run.sh scripts/backup-retention-restic.sh deploy/prod/installation/installer-bases.sh
