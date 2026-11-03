@@ -40,6 +40,29 @@ docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-refere
 En préproduction, le conteneur s'appelle `fadi-preprod-app-1` (`sudo docker exec fadi-preprod-app-1 node apps/api/dist/…`).
 Le contrôle CI `image` exécute `geodata-role.js` dans le conteneur construit et vérifie la présence des fiches.
 
+## Terrain haute résolution : catalogue et import contrôlé (lot TER-02, Issue #381)
+
+Plan et décisions : `docs/workstreams/geodata/terrain/` (`PLAN.md`, `DECISIONS.md`, `TER-02.md`). Les fichiers d'altitudes
+vivent dans le volume nommé `fadi-preprod-terrain` (dérogation D-GD-29 décidée, TER-D5) : `depot/`, `travail/`,
+`originaux/<sha256>` (lecture seule), `derives/` ; la base garde fiche, empreinte, en-tête lu, état et événements
+(`geodata_terrain_*`). L'API monte le volume en lecture seule ; seul le service à usage unique `terrain-import` (profil
+`terrain`) y écrit. Quota : `GEODATA_TERRAIN_QUOTA_GO` (60 par défaut, TER-D7).
+
+```sh
+# Préproduction, depuis la copie figée de fadi-preprod (mêmes variables que fadi-preprod : FADI_COMMIT, mots de passe).
+DC="docker compose -p fadi-preprod -f deploy/preprod/compose.yml --profile terrain run --rm terrain-import"
+$DC                                                            # fiches livrées (docs/geodata/terrain)
+$DC --telecharger gedtm30-v1-2-benslimane                       # original d'une fiche livrée → depot/ (empreinte contrôlée)
+$DC --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
+$DC --etat                                                     # versions, états, motifs, étiquettes
+$DC --lever <id> --par <responsable-publication> --motif "…" \
+    --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
+```
+
+Cycle de vie (TER-D12) : déposé → validation → rejeté | quarantaine | prêt au traitement → revue → accepté → publié →
+remplacé | retiré. Une référence verticale inconnue, un datum incompatible, un NoData inconnu ou un écart avec la fiche
+mettent la version en quarantaine ; un fichier mal formé est rejeté (jamais archivé). Rien n'est deviné ni corrigé.
+
 ## Chaîne d'import de référence (D-GD-04, D-GD-07)
 
 Réception → empreinte SHA-256 comparée à la fiche → lecture (GeoJSON CRS84, ou GeoPackage EPSG:4326 lu sans GDAL) →

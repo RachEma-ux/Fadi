@@ -15,6 +15,11 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Terrain TER-02 (Issue #381) : PR #383 sur `feat/381-ter-02-catalogue-import`, fusion accordée par le maître d'ouvrage le
+  3 novembre 2026 (après correction des deux remarques de la revue Codex) (compte rendu `terrain/TER-02.md`). Après fusion
+  et déploiement : la session VPS constate `/mnt/data` et la racine Docker (TER-D7), puis lance `terrain-import`
+  (`docs/geodata/README.md` § Terrain) : `--telecharger` et `--importer` des 4 fiches. Les 4 versions arrivent en
+  quarantaine ; levée seulement par un responsable de publication avec source (Q-TER-02-1 à 3). Lot suivant : TER-03.
 - Terrain haute résolution (plan v1.0 du 2 novembre 2026, Issue #381) : étape 0 livrée en PR documentaire
   (`docs/workstreams/geodata/terrain/`). TER-D4 décidé (GEDTM30 + GLO-30, `terrain/MODELES-REGIONAUX.md`) ; TER-D16 décidé (catalogue
   multi-résolution, règle de priorité dans `terrain/DECISIONS.md`) ; courbes de niveau intégrées

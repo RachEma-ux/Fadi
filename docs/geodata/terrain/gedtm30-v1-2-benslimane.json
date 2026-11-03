@@ -1,0 +1,58 @@
+{
+  "cle": "gedtm30-v1-2-benslimane",
+  "titre": "GEDTM30 v1.2 — MNT régional autour de Benslimane",
+  "producteur": "OpenGeoHub (Yufeng Ho, Tom Hengl)",
+  "niveau": "mondial",
+  "produit": "MNT",
+  "etiquette": "Modèle régional, précision de plusieurs mètres — jamais un levé local.",
+  "demonstration": false,
+  "synthetique": false,
+  "licence": {
+    "nom": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "attribution": "GEDTM30 © OpenGeoHub, CC-BY 4.0 — Ho, Y. F. et al. (2025), PeerJ 13:e19673, doi:10.7717/peerj.19673 ; données doi:10.5281/zenodo.18887460",
+  "droits": {
+    "consultation": "autorise",
+    "stockage": "autorise",
+    "calcul": "autorise",
+    "tuiles": "autorise",
+    "commercial": "autorise",
+    "partage": "autorise",
+    "telechargement": "autorise",
+    "export": "autorise"
+  },
+  "version": {
+    "libelle": "v1.2.0 (Zenodo, publiée le 6 mars 2026, modifiée le 8 avril 2026)",
+    "doi": "10.5281/zenodo.18887460",
+    "date": "Modèle 2006–2015 (nom de fichier) ; version du 6 mars 2026",
+    "url": "https://zenodo.org/records/18887460"
+  },
+  "acquisition": {
+    "methode": "fenetre",
+    "url": "https://s3.opengeohub.org/global/dtm/v1.2/gedtm_rf_m_30m_s_20060101_20151231_go_epsg.4326.3855_v1.2.tif",
+    "fenetre": {
+      "ouest": -7.16,
+      "sud": 33.48,
+      "est": -7.05,
+      "nord": 33.58
+    },
+    "empreinte": "c4f27af36f83e3920f11394993d91ff3f2aad90e22206758e3da9b23d8105180"
+  },
+  "fichier": {
+    "nom": "gedtm30-v1-2-benslimane.tif",
+    "format": "GeoTIFF"
+  },
+  "crsHorizontal": "EPSG:4326",
+  "referenceVerticale": {
+    "statut": "non-declaree",
+    "indice": "nom de fichier « epsg.4326.3855 » (EPSG:3855 = EGM2008) — indice, non déclaré par le producteur (Zenodo, Codeberg, clés GeoTIFF)"
+  },
+  "uniteVerticale": "m",
+  "pasNatif": {
+    "valeur": 1,
+    "unite": "arcsec"
+  },
+  "nodata": null,
+  "precisionDeclaree": null
+}

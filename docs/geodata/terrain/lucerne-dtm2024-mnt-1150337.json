@@ -1,0 +1,52 @@
+{
+  "cle": "lucerne-dtm2024-mnt-1150337",
+  "titre": "Lucerne — MNT 2024 à 0,25 m, feuille 1150337 (démonstration)",
+  "producteur": "Canton de Lucerne, Dienststelle Raum und Wirtschaft (rawi)",
+  "niveau": "regional-officiel",
+  "produit": "MNT",
+  "etiquette": "Données suisses de démonstration — Canton de Lucerne, feuille 1150337 (Kriens). Jeu de référence logiciel : ne représente pas Benslimane ni aucun site de projet.",
+  "demonstration": true,
+  "synthetique": false,
+  "licence": {
+    "nom": "Open-By (geoportal.lu.ch) : usage libre, commercial compris, mention de la source obligatoire",
+    "url": "https://geoportal.lu.ch/Nutzungsbedingungen"
+  },
+  "attribution": "© 2026, rawi Kanton Luzern — www.geoportal.lu.ch",
+  "droits": {
+    "consultation": "autorise",
+    "stockage": "autorise",
+    "calcul": "autorise",
+    "tuiles": "autorise",
+    "commercial": "autorise",
+    "partage": "autorise",
+    "telechargement": "autorise",
+    "export": "autorise"
+  },
+  "version": {
+    "libelle": "DTM24025_DS version 1 — feuille 1150337",
+    "doi": null,
+    "date": "Produit « 2024 » ; données mises à jour le 28.02.2025 (fiche du produit)",
+    "url": "https://daten.geo.lu.ch/produkt/dtm24025_ds_v1"
+  },
+  "acquisition": {
+    "methode": "telechargement",
+    "url": "https://download.geo.lu.ch/api/stac/v1.0/downloads/DTM24025_DS_V1/DTM24025_DS-1150337/tif/DTM24025_V1_RAS_T1150337.tif",
+    "empreinte": "5fa5604f1b07214fe1160bc6464aacdb0fb9f1aa9fbefb19cc9917d4b28067ad"
+  },
+  "fichier": {
+    "nom": "DTM24025_V1_RAS_T1150337.tif",
+    "format": "GeoTIFF"
+  },
+  "crsHorizontal": "EPSG:2056",
+  "referenceVerticale": {
+    "statut": "non-declaree",
+    "indice": "« Höhe über Meer » (geoportal.lu.ch/3D/geodaten) ; aucune clé verticale dans le fichier ; référence non nommée par le producteur"
+  },
+  "uniteVerticale": "m",
+  "pasNatif": {
+    "valeur": 0.25,
+    "unite": "m"
+  },
+  "nodata": null,
+  "precisionDeclaree": null
+}
