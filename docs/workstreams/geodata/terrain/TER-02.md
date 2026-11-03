@@ -31,7 +31,7 @@ reprojection (TER-03, travailleur GDAL, TER-D6) ; routes de l'API, droits d'acc�
 | --- | --- |
 | `packages/geodata-model` : `npx vitest run` | 31 fichiers, 229 tests réussis, dont 18 du terrain |
 | `apps/api` : `src/lib/geodata/terrain/terrain-fichiers.test.ts` (sans base) | 7 tests réussis |
-| Suite DB-3 `src/routes/geodata-terrain.test.ts` (10 tests) | Inscrite dans `scripts/check-api-tests-db3.mjs` ; exécutée en CI sur base attestée. **Exécutée aussi localement** sur PostGIS 16 jetable par une copie qui remplace seulement la connexion gardée par une connexion directe : 10/10 |
+| Suite DB-3 `src/routes/geodata-terrain.test.ts` (13 tests) | Inscrite dans `scripts/check-api-tests-db3.mjs` ; exécutée en CI sur base attestée. **Exécutée aussi localement** sur PostGIS 16 jetable par une copie qui remplace seulement la connexion gardée par une connexion directe : 13/13 (cas concurrents relancés 5 fois) |
 | `node scripts/check-api-tests-db3.mjs` (sans clé DB-3, local) | Seules les suites de la liste sont refusées, par la garde seule |
 | `npm run db:migrate` sur PostGIS 16 local | Schéma appliqué |
 | `bash deploy/preprod/tests/run.sh` (compte non privilégié) | 107 réussis, 0 échec |
@@ -40,7 +40,9 @@ reprojection (TER-03, travailleur GDAL, TER-D6) ; routes de l'API, droits d'acc�
 
 Tests imposés par le plan couverts par ce lot : datum incompatible (quarantaine, aucune conversion), NoData distinct de
 zéro, import raté préservant la version publiée (et seconde publiée impossible), fichier mal formé rejeté ; en plus :
-idempotence, quota, contenu figé, levée de quarantaine. Les autres tests du plan (plan incliné, AOI trouée, couture,
+idempotence, quota, contenu figé, levée de quarantaine ; et, après la revue Codex de la PR #383 : fiche corrigée sur le même
+fichier (nouvelle version, identité = empreinte + fiche), imports simultanés sérialisés par verrou consultatif PostgreSQL
+(une seule version, un seul traitement), reprise d'une version enregistrée dont le traitement a échoué. Les autres tests du plan (plan incliné, AOI trouée, couture,
 accès non autorisé, exports) relèvent de TER-03 / TER-04.
 
 ## Données réelles importées (base locale jetable, volume local)

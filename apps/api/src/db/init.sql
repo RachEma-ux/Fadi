@@ -4013,7 +4013,10 @@ CREATE TABLE IF NOT EXISTS geodata_terrain_versions (
   depose_par text REFERENCES users (id) ON DELETE SET NULL,
   depose_le timestamptz NOT NULL DEFAULT now(),
   etat_le timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT geodata_terrain_versions_uniq UNIQUE (cle, empreinte),
+  -- Identité de la version = fichier (empreinte) + fiche (configuration) : une fiche corrigée sur le même fichier crée
+  -- une nouvelle version traçable, l'ancienne restant intacte ; le même fichier avec la même fiche n'en crée jamais deux.
+  cle_idempotence text NOT NULL CHECK (cle_idempotence ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT geodata_terrain_versions_uniq UNIQUE (cle_idempotence),
   CONSTRAINT geodata_terrain_versions_etiquette CHECK ((NOT synthetique AND NOT demonstration) OR etiquette IS NOT NULL)
 );
 CREATE INDEX IF NOT EXISTS geodata_terrain_versions_cle_idx ON geodata_terrain_versions (cle, produit, etat);
@@ -4024,8 +4027,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS geodata_terrain_versions_publiee_uniq ON geoda
 CREATE OR REPLACE FUNCTION geodata_terrain_version_controle() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'geodata_terrain_version_non_effacable'; END IF;
-  IF (NEW.id, NEW.cle, NEW.niveau, NEW.produit, NEW.declaration, NEW.empreinte, NEW.taille, NEW.entete, NEW.crs_horizontal, NEW.nodata, NEW.cellules, NEW.synthetique, NEW.demonstration, NEW.etiquette, NEW.depose_le)
-     IS DISTINCT FROM (OLD.id, OLD.cle, OLD.niveau, OLD.produit, OLD.declaration, OLD.empreinte, OLD.taille, OLD.entete, OLD.crs_horizontal, OLD.nodata, OLD.cellules, OLD.synthetique, OLD.demonstration, OLD.etiquette, OLD.depose_le) THEN
+  IF (NEW.id, NEW.cle, NEW.niveau, NEW.produit, NEW.declaration, NEW.empreinte, NEW.taille, NEW.entete, NEW.crs_horizontal, NEW.nodata, NEW.cellules, NEW.synthetique, NEW.demonstration, NEW.etiquette, NEW.depose_le, NEW.cle_idempotence)
+     IS DISTINCT FROM (OLD.id, OLD.cle, OLD.niveau, OLD.produit, OLD.declaration, OLD.empreinte, OLD.taille, OLD.entete, OLD.crs_horizontal, OLD.nodata, OLD.cellules, OLD.synthetique, OLD.demonstration, OLD.etiquette, OLD.depose_le, OLD.cle_idempotence) THEN
     RAISE EXCEPTION 'geodata_terrain_version_figee';
   END IF;
   IF NEW.etat IS DISTINCT FROM OLD.etat AND NOT (

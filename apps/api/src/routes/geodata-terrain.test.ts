@@ -180,6 +180,42 @@ describe("import contrôlé d'une version d'altitudes (TER-02)", () => {
     await pool.query("UPDATE geodata_terrain_versions SET etat = 'revue' WHERE id = $1", [r.versionId]);
   });
 
+  it("fiche corrigée sur le même fichier → nouvelle version traçable, l'ancienne intacte", async () => {
+    const octets = ecrireFixture(stockage.cheminDepot("plan.tif"));
+    const r1 = await importer(fiche(), null);
+    writeFileSync(stockage.cheminDepot("plan.tif"), octets);
+    const r2 = await importer(fiche({ attribution: "Fixture de test Fadi (attribution corrigée)" }), null);
+    expect(r2.deja).toBe(false);
+    expect(r2.versionId).not.toBe(r1.versionId);
+    expect(r2.empreinte).toBe(r1.empreinte);
+    const v = (await pool.query("SELECT id, declaration->>'attribution' AS attribution FROM geodata_terrain_versions ORDER BY depose_le, id")).rows;
+    expect(v).toEqual([{ id: r1.versionId, attribution: "Fixture de test Fadi" }, { id: r2.versionId, attribution: "Fixture de test Fadi (attribution corrigée)" }]);
+  });
+
+  it("imports simultanés du même fichier et de la même fiche → une seule version, un seul traitement terminé", async () => {
+    ecrireFixture(stockage.cheminDepot("plan.tif"));
+    const resultats = await Promise.allSettled([importer(fiche(), null), importer(fiche(), null), importer(fiche(), null)]);
+    const reussis = resultats.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+    for (const r of resultats) if (r.status === "rejected") expect(String(r.reason)).toMatch(/absent du dépôt/);
+    expect(reussis.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(reussis.map((r) => r.versionId)).size).toBe(1);
+    expect(await versions()).toHaveLength(1);
+    expect((await pool.query("SELECT etat FROM geodata_terrain_traitements")).rows).toEqual([{ etat: "termine" }]);
+  });
+
+  it("reprise : une version enregistrée dont le traitement a échoué termine ce traitement, sans seconde version", async () => {
+    const octets = ecrireFixture(stockage.cheminDepot("plan.tif"));
+    const r1 = await importer(fiche(), null);
+    await pool.query("UPDATE geodata_terrain_traitements SET etat = 'echec', motif_echec = 'interruption simulée' WHERE id = $1", [r1.traitementId]);
+    writeFileSync(stockage.cheminDepot("plan.tif"), octets);
+    const r2 = await importer(fiche(), null);
+    expect(r2).toMatchObject({ deja: true, versionId: r1.versionId, traitementId: r1.traitementId });
+    expect(await versions()).toHaveLength(1);
+    const [t] = (await pool.query("SELECT etat, tentatives FROM geodata_terrain_traitements WHERE id = $1", [r1.traitementId])).rows;
+    expect(t).toEqual({ etat: "termine", tentatives: 2 });
+    expect(existsSync(stockage.cheminDepot("plan.tif"))).toBe(false);
+  });
+
   it("aucun lien vers les projets dans les tables du terrain (GEO 04, TER-D9)", async () => {
     const cols = (await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name LIKE 'geodata_terrain_%'")).rows.map((r) => r.column_name as string);
     expect(cols.length).toBeGreaterThan(20);

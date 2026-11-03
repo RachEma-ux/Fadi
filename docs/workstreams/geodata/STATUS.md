@@ -11,8 +11,8 @@ Mis à jour : 2026-11-02 (UTC).
 
 - Terrain TER-02 (catalogue et import contrôlé, Issue #381, branche `feat/381-ter-02-catalogue-import`) : **implémenté et
   vérifié**, non accepté. Toutes les décisions TER-Dx décidées (recommandations retenues le 2 novembre 2026). Modèle pur
-  (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (10, exécutée aussi sur PostGIS 16
-  local), garde et tests de préproduction (107/0). Données réelles importées localement : Lucerne MNT et MNS, GEDTM30
+  (229 tests du paquet), tests sans base (7), suite DB-3 `geodata-terrain.test.ts` (13, exécutée aussi sur PostGIS 16
+  local ; correctifs de la revue Codex : identité de version, imports simultanés, reprise), garde et tests de préproduction (107/0). Données réelles importées localement : Lucerne MNT et MNS, GEDTM30
   (extrait Benslimane), GLO-30 — **toutes en quarantaine** (référence verticale non déclarée ; NoData inconnu pour GLO-30),
   questions Q-TER-02-1 à 3 (`terrain/TER-02.md`, `terrain/DECISIONS.md`).
 - Terrain haute résolution (plan v1.0, Issue #381, branche `docs/381-terrain-haute-resolution`) : **implémenté

@@ -94,26 +94,54 @@ export async function importerTerrain(
     throw new ImportRefuse(`Empreinte du fichier ${empreinte} différente de celle de la fiche ${d.acquisition.empreinte} : rien n'est importé.`);
   }
 
-  // Traitement idempotent : même fichier et même fiche → même traitement, jamais une seconde version.
+  // Traitement idempotent : même fichier et même fiche → même traitement, jamais une seconde version. Les imports d'une
+  // même clé sont sérialisés par un verrou consultatif de session PostgreSQL, relâché en fin d'import.
   const cle = sha256(texteIdempotence("import", [empreinte], d));
+  const verrou = BigInt.asIntN(64, BigInt(`0x${cle.slice(0, 16)}`)).toString();
+  await c.query("SELECT pg_advisory_lock($1::bigint)", [verrou]);
+  try {
+    return await importerSousVerrou(c, stockage, d, opts, limites, chemin, empreinte, taille, cle);
+  } finally {
+    await c.query("SELECT pg_advisory_unlock($1::bigint)", [verrou]).catch(() => undefined);
+  }
+}
+
+async function importerSousVerrou(
+  c: PoolClient,
+  stockage: StockageTerrain,
+  d: DeclarationTerrain,
+  opts: { readonly deposePar: string | null; readonly quotaOctets: number },
+  limites: { readonly octetsFichier: number; readonly cellules: number },
+  chemin: string,
+  empreinte: string,
+  taille: number,
+  cle: string,
+): Promise<ResultatImport> {
   const deja = await dejaImporte(c, cle, empreinte);
   if (deja) return deja;
-  const [existant] = (await c.query<{ id: string }>("SELECT id FROM geodata_terrain_traitements WHERE cle_idempotence = $1", [cle])).rows;
   // Quota (TER-D7) : le fichier est déjà dans le volume (dépôt) ; l'archivage en ajoute une copie temporaire.
   const quota = verifierQuota(await stockage.utilisation(), taille, opts.quotaOctets);
   if (!quota.ok) throw new ImportRefuse(quota.motif);
 
-  let traitementId: string;
-  if (existant) {
-    traitementId = existant.id;
-    await c.query("UPDATE geodata_terrain_traitements SET etat = 'en_cours', tentatives = tentatives + 1, progression = 0, motif_echec = NULL, maj_le = now() WHERE id = $1", [traitementId]);
-  } else {
-    traitementId = newId("gdtt");
-    await c.query(
-      `INSERT INTO geodata_terrain_traitements (id, cle_idempotence, type, entrees, parametres, logiciels, etat, demande_par)
-       VALUES ($1, $2, 'import', $3, $4, $5, 'en_cours', $6) ON CONFLICT (cle_idempotence) DO NOTHING`,
-      [traitementId, cle, JSON.stringify([{ empreinte, taille, nom: d.fichier.nom }]), JSON.stringify({ fiche: d.cle, version: d.version.libelle }), JSON.stringify({ node: process.version, lecteur: "geotiff" }), opts.deposePar],
-    );
+  // Réclamation atomique du traitement : créé, ou repris (tentative comptée) ; l'identifiant est celui de la base.
+  const [{ id: traitementId }] = (await c.query<{ id: string }>(
+    `INSERT INTO geodata_terrain_traitements (id, cle_idempotence, type, entrees, parametres, logiciels, etat, demande_par)
+     VALUES ($1, $2, 'import', $3, $4, $5, 'en_cours', $6)
+     ON CONFLICT (cle_idempotence) DO UPDATE SET etat = 'en_cours', tentatives = geodata_terrain_traitements.tentatives + 1,
+       progression = 0, motif_echec = NULL, maj_le = now()
+     RETURNING id`,
+    [newId("gdtt"), cle, JSON.stringify([{ empreinte, taille, nom: d.fichier.nom }]), JSON.stringify({ fiche: d.cle, version: d.version.libelle }), JSON.stringify({ node: process.version, lecteur: "geotiff" }), opts.deposePar],
+  )).rows as [{ id: string }];
+
+  // Reprise : une version déjà enregistrée pour cette clé (traitement interrompu après sa création) termine le traitement.
+  const [orpheline] = (await c.query<{ id: string; etat: EtatTerrain; motifs: Motif[]; cle_stockage: string | null }>(
+    `SELECT v.id, v.etat, v.motifs, f.cle_stockage FROM geodata_terrain_versions v
+       LEFT JOIN geodata_terrain_fichiers f ON f.terrain_version_id = v.id AND f.role = 'original' WHERE v.cle_idempotence = $1`, [cle])).rows;
+  if (orpheline) {
+    await c.query("UPDATE geodata_terrain_traitements SET etat = 'termine', progression = 100, sorties = $2, maj_le = now() WHERE id = $1",
+      [traitementId, JSON.stringify({ versionId: orpheline.id, etat: orpheline.etat, cleStockage: orpheline.cle_stockage })]);
+    if (orpheline.cle_stockage) await stockage.retirerDuDepot(d.fichier.nom);
+    return { versionId: orpheline.id, etat: orpheline.etat, motifs: orpheline.motifs, empreinte, deja: true, traitementId };
   }
 
   try {
@@ -132,10 +160,10 @@ export async function importerTerrain(
     await transaction(c, async () => {
       await c.query(
         `INSERT INTO geodata_terrain_versions (id, cle, niveau, produit, etat, declaration, empreinte, taille, entete, crs_horizontal,
-           reference_verticale, nodata, cellules, synthetique, demonstration, etiquette, depose_par)
-         VALUES ($1, $2, $3, $4, 'depose', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+           reference_verticale, nodata, cellules, synthetique, demonstration, etiquette, depose_par, cle_idempotence)
+         VALUES ($1, $2, $3, $4, 'depose', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
         [versionId, d.cle, d.niveau, d.produit, JSON.stringify(d), empreinte, taille, entete ? JSON.stringify(entete) : null, entete?.crsHorizontal ?? null,
-          JSON.stringify(verdict.referenceVerticale), verdict.nodata, entete ? verdict.cellules : null, d.synthetique, d.demonstration, d.etiquette, opts.deposePar],
+          JSON.stringify(verdict.referenceVerticale), verdict.nodata, entete ? verdict.cellules : null, d.synthetique, d.demonstration, d.etiquette, opts.deposePar, cle],
       );
       await evenement(c, versionId, null, "depose", opts.deposePar);
       await changerEtat(c, versionId, "depose", "validation", opts.deposePar, null);
