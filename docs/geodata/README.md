@@ -46,18 +46,28 @@ Plan et décisions : `docs/workstreams/geodata/terrain/` (`PLAN.md`, `DECISIONS.
 vivent dans le volume nommé `fadi-preprod-terrain` (dérogation D-GD-29 décidée, TER-D5) : `depot/`, `travail/`,
 `originaux/<sha256>` (lecture seule), `derives/` ; la base garde fiche, empreinte, en-tête lu, état et événements
 (`geodata_terrain_*`). L'API monte le volume en lecture seule ; seul le service à usage unique `terrain-import` (profil
-`terrain`) y écrit. Quota : `GEODATA_TERRAIN_QUOTA_GO` (60 par défaut, TER-D7).
+`terrain`) y écrit. Quota : `GEODATA_TERRAIN_QUOTA_GO` — en préproduction `PREPROD_GEODATA_TERRAIN_QUOTA_GO`, **30 Go**
+par défaut (TER-D7 révisée le 3 novembre 2026 : `/mnt/data`, racine des données Docker, porte aussi la base et les
+sauvegardes de la production) ; 60 Go hors préproduction si la variable est absente.
+
+En préproduction, `terrain-import` ne se lance **que** par `fadi-preprod` (garde d'isolation, rôles, copie figée du commit
+approuvé, fichier d'environnement existant, journal `fadi-preprod show <run> terrain.log`) — jamais par un `docker compose`
+direct. Fiches : noms de la liste fermée `docs/geodata/terrain/*.json` du commit approuvé ; aucune adresse ni chemin.
 
 ```sh
-# Préproduction, depuis la copie figée de fadi-preprod (mêmes variables que fadi-preprod : FADI_COMMIT, mots de passe).
-DC="docker compose -p fadi-preprod -f deploy/preprod/compose.yml --profile terrain run --rm terrain-import"
-$DC                                                            # fiches livrées (docs/geodata/terrain)
-$DC --telecharger gedtm30-v1-2-benslimane                       # original d'une fiche livrée → depot/ (empreinte contrôlée)
-$DC --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
-$DC --etat                                                     # versions, états, motifs, étiquettes
-$DC --lever <id> --par <responsable-publication> --motif "…" \
+sudo fadi-preprod terrain --etat                                     # versions, états, motifs, étiquettes (opérateur admis)
+# Administrateur seulement (écritures : sortie vers la source, disque partagé avec la production, décision de publication) :
+sudo fadi-preprod terrain --telecharger gedtm30-v1-2-benslimane      # original d'une fiche livrée → depot/ (empreinte contrôlée)
+sudo fadi-preprod terrain --importer gedtm30-v1-2-benslimane --par <gestionnaire-donnees>
+sudo fadi-preprod terrain --lever <gdtv_…> --par <responsable-publication> --motif "…" \
     --reference-libelle "…" --reference-source "…" [--reference-code EPSG:nnnn]   # décision consignée (TER-D13)
+# Travailleur GDAL (terrain-worker, TER-03) : voir « Traitement et porte qualité » ci-dessous.
 ```
+
+La garde tient une **liste fermée** des services (`db`, `migrate`, `app`, `recette`, `terrain-import`, `terrain-worker`) :
+tout autre service, quel que soit son profil, est refusé.
+
+Hors préproduction (développement) : `npm run geodata:terrain -- --etat` etc., mêmes options.
 
 Traitement et porte qualité (TER-03, TER-D6) : le service `terrain-worker` (image applicative + GDAL 3.6.2 épinglé,
 profil `terrain`) calcule pour chaque version prête au traitement le COG d'altitude (relu et comparé cellule à cellule à
@@ -65,18 +75,27 @@ l'original), la pente et l'ombrage en COG, la couverture exacte en WGS 84 et les
 (TER-D17) ; la version passe en attente de revue avec un rapport « non évaluée ».
 
 ```sh
-DW="docker compose -p fadi-preprod -f deploy/preprod/compose.yml --profile terrain run --rm terrain-worker"
-$DW --essai-gdal                                               # essai du travailleur (fixture « test seulement »)
-$DW --traiter [<id>] [--par <gestionnaire-donnees>]            # dérivés, couverture, courbes → en attente de revue
-$DW --controler <id> --points <csv> --methode "…" --par <gestionnaire-donnees> [--cible-rmsez 0.10 --cible-p95 0.20]
-$DW --decider <id> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
+# Préproduction : par fadi-preprod seulement (garde, rôles, copie figée) ; administrateur.
+sudo fadi-preprod terrain worker --essai-gdal                    # essai du travailleur (fixture « test seulement »)
+sudo fadi-preprod terrain worker --traiter [<gdtv_…>] [--par <gestionnaire-donnees>]   # dérivés, couverture, courbes → revue
+sudo fadi-preprod terrain worker --controler <gdtv_…> --points <nom> --methode "…" --par <gestionnaire-donnees> \
+    [--cible-rmsez 0.10 --cible-p95 0.20 [--cible-classe sol-nu]]   # rapport qualité depuis /opt/fadi-preprod/controles/<nom>.csv
+sudo fadi-preprod terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <responsable-publication>
 ```
 
+Points de contrôle en préproduction (emplacement fermé, TER-D20) : l'administrateur dépose le CSV sur le VPS dans
+`/opt/fadi-preprod/controles/<nom>.csv` (dossier `root` 0700, fichier `root` 0600, ≤ 10 Mo), par exemple
+`sudo install -d -m 0700 /opt/fadi-preprod/controles && sudo install -m 0600 releve.csv /opt/fadi-preprod/controles/releve-gnss.csv`.
+`--points` ne prend que `<nom>` (jamais un chemin) ; `fadi-preprod` refuse un lien, un fichier modifiable par d'autres ou
+trop gros, journalise l'empreinte SHA-256 du CSV et le transmet au conteneur sur l'entrée standard (`--points /dev/stdin`) :
+aucun montage de l'hôte, aucun chemin dans le conteneur.
+Hors préproduction (développement) : `npm run geodata:terrain -- --controler <id> --points <csv> --methode "…" --par …`.
 Services (TER-04, `docs/workstreams/geodata/terrain/TER-04.md`) sous `/geodata/api/terrain` : `jeux`, `point`, `profil`,
 `statistiques`, `tuiles/:version/:style/:z/:x/:y`, `courbes/:version/:z/:x/:y` (MVT), `exports` ; seules les versions
-publiées sont servies. Publication et retour arrière : `$DW --publier <id> --motif "…" --par <responsable-publication>` (ou
-`POST /geodata/api/terrain/versions/:id/publier`). Exports préparés par le travailleur : `$DW --exports`, ou
-`$DW --continu 30` (traitements et exports en boucle). Drapeau : `GEODATA_TERRAIN_ENABLED=false` ferme les services.
+publiées sont servies. Publication et retour arrière : `sudo fadi-preprod terrain worker --publier <gdtv_…> --motif "…" --par <responsable-publication>` (ou
+`POST /geodata/api/terrain/versions/:id/publier`). Exports préparés par le travailleur : `sudo fadi-preprod terrain worker --exports`, ou
+`sudo fadi-preprod terrain worker --continu 30` (traitements et exports en boucle, conteneur détaché unique arrêté par
+`sudo fadi-preprod terrain worker --arreter`, TER-D20). Drapeau : `GEODATA_TERRAIN_ENABLED=false` ferme les services.
 
 Points de contrôle : CSV `id;x;y;z;classe;incertitude` dans le repère natif de la version, points **indépendants** (exclus
 de l'ajustement) ; biais, RMSEz et P95 (rang le plus proche) exactement comme au plan ; un point sans valeur du modèle est

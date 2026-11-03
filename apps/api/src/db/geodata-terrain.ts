@@ -18,15 +18,16 @@
  *   (image : node apps/api/dist/geodata-terrain.js …)
  *
  * Fiches : `docs/geodata/terrain/<cle>.json` (copiées dans `dist/geodata-terrain/`). `--telecharger` n'accepte qu'une fiche
- * **livrée** (nom, jamais un chemin) : seules les adresses relues et versées au dépôt sont lues (TER-D10). Volume :
- * `GEODATA_TERRAIN_DIR` ; quota `GEODATA_TERRAIN_QUOTA_GO` (60 par défaut, TER-D7). Base : `DATABASE_URL`.
+ * **livrée** (nom, jamais un chemin ni une adresse ; `--importer` aussi en production) : seules les adresses relues et
+ * versées au dépôt sont lues (TER-D10). Liste fermée : `lib/geodata/terrain/fiches.ts`. Volume :
+ * `GEODATA_TERRAIN_DIR` ; quota `GEODATA_TERRAIN_QUOTA_GO` (60 par défaut ; 30 en préproduction, TER-D7 révisée). Base : `DATABASE_URL`.
  */
 import "dotenv/config";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Pool } from "pg";
-import { LIBELLES_ETATS_TERRAIN, LIMITES_TERRAIN, validerDeclarationTerrain, type DeclarationTerrain, type EtatTerrain } from "@parcours/geodata-model";
+import { LIBELLES_ETATS_TERRAIN, LIMITES_TERRAIN, type EtatTerrain } from "@parcours/geodata-model";
+import { dossierFiches, fichesLivrees, lireFiche } from "../lib/geodata/terrain/fiches.js";
 import { StockageTerrain } from "../lib/geodata/terrain/stockage.js";
 import { importerTerrain, leverQuarantaine } from "../lib/geodata/terrain/import.js";
 import { acquerir } from "../lib/geodata/terrain/acquisition.js";
@@ -42,27 +43,6 @@ import { tmpdir } from "node:os";
 function argument(nom: string): string | undefined {
   const i = process.argv.indexOf(`--${nom}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
-}
-
-/** Dossier des fiches de terrain livrées (à côté du bundle, ou dans le dépôt en développement). */
-function dossierFiches(): string {
-  for (const base of ["./geodata-terrain/", "../../../../docs/geodata/terrain/"]) {
-    const d = fileURLToPath(new URL(base, import.meta.url));
-    if (existsSync(d)) return d;
-  }
-  throw new Error("Aucun dossier de fiches de terrain.");
-}
-
-/** Fiche livrée par son nom, ou (import seulement) fiche donnée par un chemin. */
-function lireFiche(valeur: string, livreeSeulement: boolean): DeclarationTerrain {
-  let chemin: string;
-  if (/^[a-z0-9][a-z0-9-]{2,79}$/.test(valeur)) chemin = join(dossierFiches(), `${valeur}.json`);
-  else if (!livreeSeulement && existsSync(valeur)) chemin = valeur;
-  else throw new Error(livreeSeulement ? `Fiche livrée attendue (nom, pas un chemin) : ${valeur}` : `Fiche introuvable : ${valeur}`);
-  if (!existsSync(chemin)) throw new Error(`Fiche introuvable : ${valeur}`);
-  const r = validerDeclarationTerrain(JSON.parse(readFileSync(chemin, "utf8")));
-  if (!r.ok) throw new Error(`Fiche ${valeur} invalide :\n  - ${r.erreurs.join("\n  - ")}`);
-  return r.declaration;
 }
 
 function stockage(): StockageTerrain {
@@ -108,7 +88,8 @@ async function principal(): Promise<void> {
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   try {
     if (argument("importer")) {
-      const d = lireFiche(argument("importer")!, false);
+      // En production (service terrain-import), un nom de la liste fermée seulement ; un chemin en développement.
+      const d = lireFiche(argument("importer")!, process.env["NODE_ENV"] === "production");
       const par = await compte(pool, argument("par"), "gestionnaire-donnees");
       const client = await pool.connect();
       try {
@@ -225,7 +206,7 @@ async function principal(): Promise<void> {
       for (const l of lignes) console.log(`${l.id}  ${l.cle}  ${l.produit}  ${LIBELLES_ETATS_TERRAIN[l.etat]}${l.motifs.length ? `  [${l.motifs.map((m) => m.code).join(", ")}]` : ""}${l.etiquette ? `  — ${l.etiquette}` : ""}`);
       return;
     }
-    const fiches = existsSync(dossierFiches()) ? readdirSync(dossierFiches()).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5)) : [];
+    const fiches = existsSync(dossierFiches()) ? fichesLivrees() : [];
     console.log("Usage : --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | --traiter [<id>] | --controler <id> --points <csv> --methode … --par <courriel> | --decider <id> --decision … --motif … --par <courriel> | --etat | --essai-gdal");
     console.log(`Fiches livrées : ${fiches.join(", ") || "aucune"}`);
   } finally {

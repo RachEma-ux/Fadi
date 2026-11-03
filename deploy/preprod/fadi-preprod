@@ -8,7 +8,7 @@
 #
 # Deux rôles :
 #   administrateur (root, ou sudo depuis un autre compte que l'opérateur) : sync <sha> (approuve ET fige le code à
-#     construire), init-env, edge on|off ;
+#     construire), init-env, edge on|off, terrain --telecharger|--importer|--lever (écritures du terrain) ;
 #   opérateur (sudo depuis le compte « claude-fadi ») : exploitation courante du code approuvé, sans pouvoir choisir le
 #     code, les secrets ni l'exposition.
 # Règle sudoers proposée (NON installée ; seulement après revue indépendante), qui borne aussi les sous-commandes :
@@ -17,7 +17,8 @@
 #     /usr/local/sbin/fadi-preprod nettoyer, /usr/local/sbin/fadi-preprod smoke, /usr/local/sbin/fadi-preprod check, /usr/local/sbin/fadi-preprod e2e, \
 #     /usr/local/sbin/fadi-preprod e2e *, /usr/local/sbin/fadi-preprod backup, /usr/local/sbin/fadi-preprod restore-check, \
 #     /usr/local/sbin/fadi-preprod show, /usr/local/sbin/fadi-preprod show *, /usr/local/sbin/fadi-preprod status, \
-#     /usr/local/sbin/fadi-preprod logs, /usr/local/sbin/fadi-preprod logs *, /usr/local/sbin/fadi-preprod down
+#     /usr/local/sbin/fadi-preprod logs, /usr/local/sbin/fadi-preprod logs *, /usr/local/sbin/fadi-preprod down, \
+#     /usr/local/sbin/fadi-preprod terrain --etat
 #   claude-fadi ALL=(root) NOPASSWD: FADI_PREPROD_OP
 #
 # Disposition (root, aucun accès groupe / autres) :
@@ -25,6 +26,9 @@
 #   /opt/fadi-preprod/approved-commit    SHA approuvé par l'administrateur ; tout écart bloque l'exploitation
 #   /opt/fadi-preprod/env/.env.preprod   secrets propres à la préproduction (0600, jamais affichés)
 #   /opt/fadi-preprod/out/<run>/         journaux et rapports (0700) ; lecture par `show`
+#   /opt/fadi-preprod/controles/<nom>.csv  points de contrôle du terrain (0700 / fichiers root, déposés par
+#                                        l'administrateur) ; seul emplacement lu par `terrain worker --controler`, transmis
+#                                        au conteneur sur l'entrée standard (aucun montage de l'hôte)
 # Les conteneurs n'écrivent jamais sur l'hôte : la recette écrit dans le volume fadi-preprod-out ; seuls les fichiers
 # ordinaires en sont extraits, par un lecteur d'archive qui refuse liens, chemins absolus, « .. » et écrasements.
 #
@@ -97,6 +101,21 @@ Opérateur (code approuvé seulement) :
   show [<run> [fichier]]   liste les exécutions (et l'état du déploiement automatique), les fichiers d'une exécution,
                       ou affiche un fichier
   status | logs [db|app] | down   (status affiche aussi l'état du déploiement automatique)
+  terrain --etat      versions de terrain et leur état (service terrain-import, lecture seule)
+Administrateur — terrain haute résolution (service terrain-import, fiches de la liste fermée du commit approuvé) :
+  terrain --telecharger <fiche>                 original d'une fiche livrée → depot/ (empreinte contrôlée)
+  terrain --importer <fiche> --par <courriel>   import de depot/ (rôle GeoData gestionnaire-donnees)
+  terrain --lever <gdtv_…> --par <courriel> --motif "…" [--reference-libelle "…" --reference-source "…"
+          [--reference-code EPSG:nnnn]]         levée de quarantaine consignée (rôle responsable-publication, TER-D13)
+  terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>]   travailleur GDAL (TER-03, service terrain-worker)
+  terrain worker --publier <gdtv_…> --motif "…" --par <courriel>   publication / retour arrière (TER-04, responsable-publication)
+  terrain worker --exports                      prépare les exports en attente, une fois (TER-04)
+  terrain worker --continu <secondes> | --arreter   traitements et exports en boucle (5 à 3600 s) dans un conteneur détaché
+                                                unique (fadi-preprod-terrain-continu, restart "no") | son arrêt
+  terrain worker --controler <gdtv_…> --points <nom> --methode "…" --par <courriel> [--cible-rmsez <m> --cible-p95 <m>
+          [--cible-classe <classe>]]            rapport qualité ; <nom> = /opt/fadi-preprod/controles/<nom>.csv
+  terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
+                                                revue d'une version (rôle responsable-publication, TER-D13)
 EOF
 }
 
@@ -216,10 +235,12 @@ exporter_rapports() {
 garde() {
   local cfg rc=0
   cfg=$(mktemp)
-  dc --profile recette config --format json > "$cfg" || { rm -f "$cfg"; die "configuration invalide"; }
-  python3 -I - "$cfg" "$SRC" <<'PY' || rc=$?
+  # Profils recette ET terrain : tout service lançable par fadi-preprod est contrôlé (terrain-import compris, TER-02).
+  dc --profile recette --profile terrain config --format json > "$cfg" || { rm -f "$cfg"; die "configuration invalide"; }
+  local c12; c12=$(commit) || c12=
+  python3 -I - "$cfg" "$SRC" "${c12:0:12}" <<'PY' || rc=$?
 import json, sys
-cfg_path, src = sys.argv[1:3]
+cfg_path, src, c12 = sys.argv[1:4]
 c = json.load(open(cfg_path))
 errs = []
 def err(m): errs.append(m)
@@ -276,6 +297,56 @@ else:
     if not str(mig.get("image", "")).startswith("fadi-preprod-app:"): err(f"service migrate : image {mig.get('image')!r}")
     if mig.get("ports"): err("service migrate : aucun port publié")
     if sorted(mig.get("networks") or {}) != ["internal"]: err(f"service migrate : réseaux {sorted(mig.get('networks') or {})} (attendu internal seul)")
+# Liste fermée des services : tout service inconnu (quel que soit son profil) est refusé, jamais admis par défaut.
+CONNUS = {"db", "migrate", "app", "recette", "terrain-import", "terrain-worker"}
+for name in svcs:
+    if name not in CONNUS: err(f"service {name!r} inconnu (liste fermée : {', '.join(sorted(CONNUS))})")
+# TER-03 (PR #387) : terrain-worker, image propre <commit>-terrain construite depuis l'image applicative du même commit,
+# réseau internal seul (aucune sortie), volume terrain seul. Facultatif tant que TER-03 n'est pas livré.
+tw = svcs.get("terrain-worker")
+if tw:
+    p = "service terrain-worker"
+    env = tw.get("environment") or {}
+    if tw.get("image") != f"fadi-preprod-app:{c12}-terrain": err(f"{p} : image {tw.get('image')!r} (attendu fadi-preprod-app:{c12}-terrain)")
+    b = tw.get("build") or {}
+    if b and (b.get("context") != src or b.get("dockerfile") != "deploy/preprod/terrain-worker.Dockerfile"
+              or (b.get("args") or {}) != {"APP_IMAGE": f"fadi-preprod-app:{c12}"} or b.get("additional_contexts")):
+        err(f"{p} : build hors de deploy/preprod/terrain-worker.Dockerfile sur l'image fadi-preprod-app:{c12}")
+    vols = tw.get("volumes") or []
+    for v in vols:
+        if not (v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain"):
+            err(f"{p} : volume {v.get('source')!r} interdit (fadi-preprod-terrain seul)")
+    if sorted(tw.get("networks") or {}) != ["internal"]: err(f"{p} : réseaux {sorted(tw.get('networks') or {})} (attendu internal seul)")
+    if tw.get("network_mode"): err(f"{p} : network_mode interdit")
+    if tw.get("ports"): err(f"{p} : aucun port publié")
+    db = str(env.get("DATABASE_URL") or "")
+    if not (db.startswith("postgresql://fadi_app:") and "@db:5432/" in db): err(f"{p} : DATABASE_URL doit utiliser le rôle fadi_app sur @db:5432 (jamais le superutilisateur)")
+    for k in ("DATABASE_MIGRATION_URL", "SMTP_PASS", "MIGRATE_ONLY"):
+        if k in env: err(f"{p} : {k} interdit")
+    if str(tw.get("restart")) != "no": err(f"{p} : restart {tw.get('restart')!r} (attendu \"no\")")
+# TER-02 : terrain-import, seul à écrire dans le volume terrain et à sortir vers les adresses des fiches livrées.
+ti = svcs.get("terrain-import")
+if not ti: err("service terrain-import absent (profil terrain)")
+else:
+    p = "service terrain-import"
+    env = ti.get("environment") or {}
+    if ti.get("image") != f"fadi-preprod-app:{c12}": err(f"{p} : image {ti.get('image')!r} (attendu fadi-preprod-app:{c12})")
+    if ti.get("build"): err(f"{p} : construit par app, pas de build propre")
+    vols = ti.get("volumes") or []
+    for v in vols:
+        if not (v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain"):
+            err(f"{p} : volume {v.get('source')!r} interdit (fadi-preprod-terrain seul)")
+    if not any(v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain" and not v.get("read_only") for v in vols):
+        err(f"{p} : fadi-preprod-terrain en écriture exigé")
+    if (c.get("volumes", {}).get("fadi-preprod-terrain") or {}).get("name") != "fadi-preprod-terrain": err(f"{p} : volume fadi-preprod-terrain non déclaré sous ce nom")
+    if sorted(ti.get("networks") or {}) != ["front", "internal"]: err(f"{p} : réseaux {sorted(ti.get('networks') or {})} (attendu front et internal seuls)")
+    if ti.get("network_mode"): err(f"{p} : network_mode interdit")
+    if ti.get("ports"): err(f"{p} : aucun port publié")
+    db = str(env.get("DATABASE_URL") or "")
+    if not (db.startswith("postgresql://fadi_app:") and "@db:5432/" in db): err(f"{p} : DATABASE_URL doit utiliser le rôle fadi_app sur @db:5432 (jamais le superutilisateur)")
+    for k in ("DATABASE_MIGRATION_URL", "SMTP_PASS", "MIGRATE_ONLY"):
+        if k in env: err(f"{p} : {k} interdit")
+    if str(ti.get("restart")) != "no": err(f"{p} : restart {ti.get('restart')!r} (attendu \"no\")")
 for k, n in c.get("networks", {}).items():
     if not str(n.get("name", "")).startswith("fadi-preprod-"): err(f"réseau {k} : nom {n.get('name')!r}")
     if n.get("external"): err(f"réseau {k} : externe")
@@ -285,7 +356,8 @@ for k, v in c.get("volumes", {}).items():
 if errs:
     print("❌ garde : la configuration sort de la préproduction"); [print("   - " + e) for e in errs]; sys.exit(1)
 print(f"✓ garde : projet fadi-preprod isolé ({len(c['services'])} services, réseaux {sorted(n['name'] for n in c['networks'].values())}, "
-      f"volumes {sorted(v['name'] for v in c['volumes'].values())}, app en fadi_app avec MIGRATE_ON_START=0, migration isolée)")
+      f"volumes {sorted(v['name'] for v in c['volumes'].values())}, app en fadi_app avec MIGRATE_ON_START=0, migration isolée, "
+      f"terrain-import borné)")
 PY
   rm -f "$cfg"
   [ "$rc" -eq 0 ] || exit 1
@@ -362,6 +434,16 @@ case "$cmd" in
   ""|-h|--help|help) usage; exit 0 ;;
   sync|init-env|edge) admin_seulement "$cmd" ;;
   garde|build|nettoyer|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
+  # Terrain : lecture (--etat) ouverte à l'opérateur ; toute écriture (téléchargement depuis l'extérieur, import qui
+  # consomme le disque partagé avec la production, levée de quarantaine = décision de publication TER-D13) choisit des
+  # données comme sync choisit du code : réservée à l'administrateur.
+  terrain)
+    case "${1:-}" in
+      --etat) ;;
+      --telecharger|--importer|--lever) admin_seulement "terrain $1" ;;
+      worker) admin_seulement "terrain worker" ;;   # traitements : écritures dans le volume et la base
+      *) usage; die "terrain --etat | --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif …" ;;
+    esac ;;
   *) usage; die "commande inconnue : $cmd" ;;
 esac
 
@@ -542,4 +624,101 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     case "${1:-app}" in db|app) dc logs --no-color --tail 200 "${1:-app}" ;; *) die "logs db|app" ;; esac ;;
   down)
     verifier_disposition; dc --profile recette down --remove-orphans ;;
+  terrain)
+    # Arguments fermés : action, nom de fiche de la liste du commit approuvé (docs/geodata/terrain/<nom>.json), identifiant
+    # de version, courriel, textes sans contrôle ni tiret initial (jamais pris pour une option) ; aucune adresse ni chemin.
+    verifier_disposition
+    service=terrain-import
+    if [ "$1" = worker ]; then
+      service=terrain-worker; shift
+      case "${1:-}" in --essai-gdal|--traiter|--controler|--decider|--publier|--exports|--continu|--arreter) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>] | --controler <gdtv_…> --points <nom> --methode … --par <courriel> | --decider <gdtv_…> --decision … --motif … --par <courriel> | --publier <gdtv_…> --motif … --par <courriel> | --exports | --continu <secondes> | --arreter" ;; esac
+    fi
+    action=$1; shift; args=("$action")
+    case "$service:$action" in
+      terrain-worker:--continu)
+        s=${1:-}; [ $# -gt 0 ] && shift
+        [[ $s =~ ^[0-9]{1,4}$ ]] && [ "$s" -ge 5 ] && [ "$s" -le 3600 ] || die "pause invalide : « $s » (secondes, de 5 à 3600)"
+        args+=("$s") ;;
+      terrain-worker:--traiter)
+        if [ $# -gt 0 ] && [[ $1 != --* ]]; then
+          [[ $1 =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $1 » (gdtv_<uuid>, voir terrain --etat)"
+          args+=("$1"); shift
+        fi ;;
+      terrain-import:--telecharger|terrain-import:--importer)
+        f=${1:-}; [ $# -gt 0 ] && shift
+        [[ $f =~ ^[a-z0-9][a-z0-9-]{2,79}$ ]] || die "fiche invalide : « $f » (nom d'une fiche livrée, jamais une adresse ni un chemin)"
+        fiche=$SRC/docs/geodata/terrain/$f.json
+        [ -f "$fiche" ] && [ ! -L "$fiche" ] || die "fiche inconnue : $f (liste fermée du commit approuvé : $(cd "$SRC/docs/geodata/terrain" 2>/dev/null && ls -1 -- *.json 2>/dev/null | sed 's/\.json$//' | tr '\n' ' '))"
+        args+=("$f") ;;
+      terrain-import:--lever|terrain-worker:--decider|terrain-worker:--controler|terrain-worker:--publier)
+        v=${1:-}; [ $# -gt 0 ] && shift
+        [[ $v =~ ^gdtv_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || die "identifiant de version invalide : « $v » (gdtv_<uuid>, voir terrain --etat)"
+        args+=("$v") ;;
+    esac
+    declare -A vu=()
+    ENTREE=/dev/null
+    while [ $# -gt 0 ]; do
+      o=$1; val=${2-}
+      case "$action:$o" in
+        --importer:--par|--traiter:--par|--controler:--par|--controler:--points|--controler:--methode|--controler:--cible-rmsez|--controler:--cible-p95|--controler:--cible-classe|--decider:--par|--decider:--decision|--decider:--motif|--publier:--par|--publier:--motif|--lever:--par|--lever:--motif|--lever:--reference-libelle|--lever:--reference-source|--lever:--reference-code) ;;
+        *) die "option refusée pour terrain $action : $o" ;;
+      esac
+      [ $# -ge 2 ] || die "valeur manquante : $o"
+      [ -z "${vu[$o]:-}" ] || die "option répétée : $o"; vu[$o]=1
+      case "$o" in
+        --par) [[ $val =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || die "courriel invalide : « $val »" ;;
+        --reference-code) [[ $val =~ ^EPSG:[0-9]{4,6}$ ]] || die "code de référence invalide : « $val » (EPSG:nnnn)" ;;
+        --decision) [[ $val =~ ^(accepte|quarantaine|retire)$ ]] || die "décision invalide : « $val » (accepte | quarantaine | retire)" ;;
+        --cible-rmsez|--cible-p95) [[ $val =~ ^[0-9]{1,3}(\.[0-9]{1,4})?$ ]] || die "valeur invalide pour $o : « $val » (mètres, p. ex. 0.10)" ;;
+        --cible-classe) [[ $val =~ ^[a-z0-9][a-z0-9-]{0,39}$ ]] || die "classe invalide : « $val »" ;;
+        --points)
+          # Emplacement fermé : un nom (jamais un chemin) dans $BASE/controles, dossier et fichier root sans écriture
+          # groupe / autres, fichier ordinaire ≤ 10 Mo ; transmis sur l'entrée standard, lu par le CLI sur /dev/stdin.
+          [[ $val =~ ^[a-z0-9][a-z0-9-]{2,79}$ ]] || die "points de contrôle invalides : « $val » (nom de $BASE/controles/<nom>.csv, jamais un chemin)"
+          [ -d "$BASE/controles" ] || die "$BASE/controles absent : l'administrateur y dépose <nom>.csv (root, 0600)"
+          sur "$BASE/controles" d
+          [ -e "$BASE/controles/$val.csv" ] || die "points de contrôle inconnus : $val ($BASE/controles/$val.csv absent)"
+          sur "$BASE/controles/$val.csv" f
+          [ "$(stat -c %s "$BASE/controles/$val.csv")" -le 10000000 ] || die "points de contrôle trop volumineux (> 10 Mo) : $val"
+          ENTREE=$BASE/controles/$val.csv
+          log "points de contrôle : $val.csv (SHA-256 $(sha256sum "$ENTREE" | cut -d' ' -f1))"
+          val=/dev/stdin ;;
+        *) [[ -n $val && ${#val} -le 500 && $val != -* && ! $val =~ [[:cntrl:]] ]] || die "texte invalide pour $o (1 à 500 caractères, sans contrôle ni tiret initial)" ;;
+      esac
+      args+=("$o" "$val"); shift 2
+    done
+    case "$action" in
+      --importer) [ -n "${vu[--par]:-}" ] || die "--par <courriel> requis (rôle GeoData gestionnaire-donnees)" ;;
+      --lever) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--par <courriel> et --motif \"…\" requis (rôle GeoData responsable-publication)" ;;
+      --decider) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] && [ -n "${vu[--decision]:-}" ] || die "--decision, --motif \"…\" et --par <courriel> requis (rôle GeoData responsable-publication)" ;;
+      --publier) [ -n "${vu[--par]:-}" ] && [ -n "${vu[--motif]:-}" ] || die "--motif \"…\" et --par <courriel> requis (rôle GeoData responsable-publication)" ;;
+      --controler)
+        [ -n "${vu[--par]:-}" ] && [ -n "${vu[--points]:-}" ] && [ -n "${vu[--methode]:-}" ] || die "--points <nom>, --methode \"…\" et --par <courriel> requis (rôle GeoData gestionnaire-donnees)"
+        { [ -n "${vu[--cible-rmsez]:-}" ] && [ -n "${vu[--cible-p95]:-}" ]; } || { [ -z "${vu[--cible-rmsez]:-}" ] && [ -z "${vu[--cible-p95]:-}" ] && [ -z "${vu[--cible-classe]:-}" ]; } \
+          || die "--cible-rmsez et --cible-p95 vont ensemble (--cible-classe seulement avec elles)" ;;
+    esac
+    # Mode continu (TER-04, TER-D20) : un seul conteneur détaché nommé, lancé et arrêté par l'administrateur ; restart "no"
+    # (garde) — un échec l'arrête au lieu de boucler sans surveillance sur un disque partagé avec la production, et il ne
+    # repart pas seul après un redémarrage du VPS (relance explicite).
+    CONTINU=fadi-preprod-terrain-continu
+    continu_actif() { [ -n "$(docker ps -q --filter "name=^${CONTINU}\$")" ]; }
+    if [ "$action" = --arreter ]; then
+      if continu_actif; then docker stop "$CONTINU" > /dev/null; log "travailleur continu arrêté ($CONTINU)"
+      else log "aucun travailleur continu en marche"; fi
+      exit 0
+    fi
+    nouveau_run terrain; garde
+    dc --profile terrain config --services | grep -qx "$service" \
+      || die "service $service absent de la configuration du commit approuvé (TER-03 non livré ?)"
+    if [ "$action" = --continu ]; then
+      continu_actif && die "un travailleur continu est déjà en marche ($CONTINU) : terrain worker --arreter d'abord"
+    fi
+    dc up -d db; attendre_sante db 120
+    log "$service ${args[*]:0:2} (rôle $(role), commit $(commit | cut -c1-12))"
+    if [ "$action" = --continu ]; then
+      journal terrain.log dc --profile terrain run -d --rm --no-deps -T --name "$CONTINU" "$service" "${args[@]}" < /dev/null
+      log "travailleur continu lancé ($CONTINU, pause ${args[1]} s) ; journal : docker logs $CONTINU ; arrêt : fadi-preprod terrain worker --arreter"
+    else
+      journal terrain.log dc --profile terrain run --rm --no-deps -T "$service" "${args[@]}" < "$ENTREE"
+    fi ;;
 esac
