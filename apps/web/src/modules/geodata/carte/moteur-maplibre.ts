@@ -9,8 +9,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, zoomSurGrappe, type Composition, type SerieClics } from "@parcours/geodata-model";
-import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
-import type { DonneesAffichage, EtatCouche, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
+import { adresseCourbes, adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, adresseTuilesTerrain, type Fond } from "../client";
+import type { AffichageTerrain, DonneesAffichage, EtatCouche, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
 
 setWorkerUrl(urlWorker);
 
@@ -53,6 +53,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.addSource("gd-trace", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-territoire", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-entite", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    carte.addSource("gd-terrain-couvertures", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    carte.addSource("gd-terrain-repere", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     pret = true;
     enAttente?.();
     enAttente = null;
@@ -118,7 +120,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   carte.on("click", (e: MapMouseEvent) => {
     if (outil !== "navigation") {
       sommets.push([Number(e.lngLat.lng.toFixed(7)), Number(e.lngLat.lat.toFixed(7))]);
-      if (outil === "annotation") { ev.surTraceTermine(outil, sommets); sommets = []; }
+      // Un clic suffit à l'annotation et à l'altitude au point (TER-05).
+      if (outil === "annotation" || outil === "altitude") { ev.surTraceTermine(outil, sommets); sommets = []; }
       else ev.surTrace(outil, sommets);
       dessinerTrace();
       return;
@@ -151,7 +154,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
 
   function terminer() {
     if (outil === "navigation") return;
-    const min = outil === "distance" ? 2 : 3;
+    const min = outil === "distance" || outil === "profil" ? 2 : 3;
     if (sommets.length >= min) ev.surTraceTermine(outil, sommets);
     sommets = [];
     dessinerTrace();
@@ -332,6 +335,56 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   }
   carte.on("move", synchroniserMini);
 
+  // ——— Terrain haute résolution (TER-05) ———
+  /** Calques du terrain, masqués pendant une capture (hors carte enregistrée, droits d'export non jugés par l'export). */
+  const CALQUES_TERRAIN = ["gd-terrain-altitude", "gd-terrain-pente", "gd-terrain-ombrage", "gd-terrain-courbes", "gd-terrain-courbes-cotes", "gd-terrain-couvertures", "gd-terrain-profil", "gd-terrain-point"];
+  /** Adresse de chaque source du terrain (une adresse changée recrée la source : version, portée de la légende, équidistance). */
+  const adressesTerrain = new Map<string, string>();
+  let terrainVoulu: AffichageTerrain | null = null;
+  /** Premier calque au-dessus du fond : le terrain se place sous toutes les couches de la composition. */
+  const sousLesCouches = () => carte.getStyle().layers.find((l) => l.id.startsWith(PREFIXE) || l.id === "gd-zones-remplissage")?.id;
+  function sourceTerrain(id: string, adresse: string | null, creer: (adresse: string) => void) {
+    if (adressesTerrain.get(id) === adresse) return;
+    for (const suffixe of ["", "-cotes"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+    if (carte.getSource(id)) carte.removeSource(id);
+    adressesTerrain.delete(id);
+    if (adresse) { creer(adresse); adressesTerrain.set(id, adresse); }
+  }
+  function appliquerTerrain() {
+    const t = terrainVoulu;
+    const v = t?.versionId ?? null;
+    for (const style of ["altitude", "pente", "ombrage"] as const) {
+      const id = `gd-terrain-${style}`;
+      const reglage = t?.[style];
+      const plage = style === "altitude" && t ? t.altitude.plage : null;
+      sourceTerrain(id, v && reglage?.visible ? adresseTuilesTerrain(v, style, plage) : null, (adresse) => {
+        carte.addSource(id, { type: "raster", tiles: [adresse], tileSize: 256, minzoom: 0, maxzoom: 22, ...(t?.attribution ? { attribution: t.attribution } : {}) });
+        carte.addLayer({ id, type: "raster", source: id, paint: { "raster-opacity": reglage!.opacite, "raster-resampling": "linear" } }, sousLesCouches());
+      });
+      if (carte.getLayer(id) && reglage) carte.setPaintProperty(id, "raster-opacity", reglage.opacite);
+    }
+    const eq = t?.courbes.visible ? t.courbes.equidistance : null;
+    sourceTerrain("gd-terrain-courbes", v && eq ? adresseCourbes(v, eq) : null, (adresse) => {
+      carte.addSource("gd-terrain-courbes", { type: "vector", tiles: [adresse], minzoom: 0, maxzoom: 16 });
+      // Courbes maîtresses (toutes les cinq) plus épaisses et cotées ; les autres fines, sans cote.
+      carte.addLayer({ id: "gd-terrain-courbes", type: "line", source: "gd-terrain-courbes", "source-layer": "courbes",
+        paint: { "line-color": "#6b4423", "line-width": ["case", ["boolean", ["get", "maitresse"], false], 1.6, 0.6], "line-opacity": 0.9 } }, sousLesCouches());
+      carte.addLayer({ id: "gd-terrain-courbes-cotes", type: "symbol", source: "gd-terrain-courbes", "source-layer": "courbes", filter: ["boolean", ["get", "maitresse"], false],
+        layout: { "symbol-placement": "line", "text-field": ["concat", ["to-string", ["get", "altitude"]], " m"], "text-font": [POLICE_ETIQUETTES], "text-size": 11, "symbol-spacing": 280 },
+        paint: { "text-color": "#4a2f16", "text-halo-color": "#ffffff", "text-halo-width": 1.4 } }, sousLesCouches());
+    });
+    if (!carte.getLayer("gd-terrain-couvertures")) {
+      carte.addLayer({ id: "gd-terrain-couvertures", type: "line", source: "gd-terrain-couvertures", paint: { "line-color": "#5b3a8c", "line-width": 2, "line-dasharray": [3, 2] } }, "gd-trace-ligne");
+      carte.addLayer({ id: "gd-terrain-profil", type: "line", source: "gd-terrain-repere", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#5b3a8c", "line-width": 3 } }, "gd-trace-ligne");
+      carte.addLayer({ id: "gd-terrain-point", type: "circle", source: "gd-terrain-repere", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#5b3a8c", "circle-radius": 6, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } }, "gd-trace-ligne");
+    }
+    (carte.getSource("gd-terrain-couvertures") as GeoJSONSource).setData((t?.couvertures ?? { type: "FeatureCollection", features: [] }) as FeatureCollection);
+    const reperes: Feature[] = [];
+    if (t?.profil && t.profil.length >= 2) reperes.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: t.profil.map((p) => [...p]) } });
+    if (t?.repere) reperes.push({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [...t.repere] } });
+    (carte.getSource("gd-terrain-repere") as GeoJSONSource).setData({ type: "FeatureCollection", features: reperes });
+  }
+
   const posees = () => {
     if (carte.getLayer("gd-zones-remplissage")) return;
     carte.addLayer({ id: "gd-zones-remplissage", type: "fill", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#c77b35", "fill-opacity": 0.15 } });
@@ -437,9 +490,15 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       };
       if (pret) f(); else carte.once("load", f);
     },
+    afficherTerrain(t) {
+      terrainVoulu = t;
+      if (pret) { posees(); appliquerTerrain(); } else carte.once("load", () => { posees(); appliquerTerrain(); });
+    },
     async masquerTerritoire(masque) {
       if (!pret) return;
-      for (const id of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      // Le terrain (TER-05) n'appartient pas à la carte enregistrée : ses droits d'export ne sont pas jugés par l'export
+      // de la carte, il n'entre donc jamais dans l'image (export PNG, impression).
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
       await new Promise<void>((resoudre) => {
         const fin = setTimeout(resoudre, 2000);
         carte.once("idle", () => { clearTimeout(fin); resoudre(); });

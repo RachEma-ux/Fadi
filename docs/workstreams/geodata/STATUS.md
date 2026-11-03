@@ -9,6 +9,14 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
+- Terrain TER-05 (interface, Issue #381, branche `feat/381-ter-05-interface`) : **implémenté et vérifié**, non accepté.
+  Panneau Terrain (Alt+H) : MNT / MNS, jeux publiés et couvertures, altitude / pente / ombrage avec opacité, légende
+  verrouillée ou adaptée (portée dite : vue ou zone d'étude), courbes jamais sous le seuil TER-D17, Altitude au point (Alt+O,
+  arrondie à la précision de la source), Profil du terrain (Alt+U : raccords, lacunes, interpolation), « Sources et
+  précision », étiquette des jeux partout. Tests web 66/66, recette navigateur `geodata-terrain.mjs` 32/0 (après revue Codex) (services du
+  terrain interceptés, jeu synthétique « test seulement »), recette `geodata.mjs` 265/0 en local, DB-3 services 8/8 en
+  local (`terrain/TER-05.md`).
+  Q-TER-05-1 (rattachement au projet) soumise.
 - Préproduction terrain (TER-D7 révisée, PR #386, branche `fix/terrain-preprod-garde-commande`) : **implémenté et
   vérifié**, non accepté, non déployé. Garde `fadi-preprod` sur `--profile recette --profile terrain` avec règles propres à
   `terrain-import` ; sous-commande `fadi-preprod terrain` (rôles, arguments fermés, `< /dev/null`) ; quota par défaut 30 Go ;

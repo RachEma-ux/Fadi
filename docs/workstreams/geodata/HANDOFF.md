@@ -15,6 +15,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
+- Terrain TER-05 (Issue #381) : PR sur `feat/381-ter-05-interface` (compte rendu `terrain/TER-05.md`). Dernier lot de la
+  portée de la session (TER-02 → TER-05). Après fusion et déploiement : ouvrir GeoData › Terrain (Alt+H) ; rien ne
+  s'affiche tant qu'aucune version n'est publiée (Q-TER-02-1 à 3). Restent au maître d'ouvrage : TER-D19, Q-TER-05-1,
+  TER-01, TER-06 / TER-07 (porte G2), porte G3 en préproduction, TER-08.
 - Préproduction terrain (TER-D7 révisée, 3 novembre 2026) : PR #386 sur `fix/terrain-preprod-garde-commande`, **non
   fusionnée** (fusion seulement sur accord écrit du maître d'ouvrage), aucun déploiement. Constat VPS fait : racine Docker
   `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production → quota terrain

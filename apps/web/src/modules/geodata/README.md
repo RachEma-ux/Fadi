@@ -13,9 +13,12 @@ projet). Organisation inspirée de Kharita, identité de Fadi.
 | `panneaux/consultation.tsx` | Catalogue, fiche de version, Couches, Légende et seuils, fiche d'objet, table des attributs. |
 | `panneaux/travail.tsx` | Mes cartes et collections, Études (mesures, zones, annotations, analyses), Import, Export. |
 | `export-png.ts` | Image PNG de l'export (légende, échelle, attributions repliées, jamais tronquées). |
+| `panneaux/Terrain.tsx` | Terrain haute résolution (TER-05) : panneau Terrain (Alt+H), couches altitude / pente / ombrage, légende verrouillée ou adaptée (portée dite), courbes, Altitude au point (Alt+O), Profil du terrain (Alt+U), « Sources et précision ». |
+| `terrain-ops.ts` | Logique pure du terrain : arrondi à la précision de la source, portée de légende, équidistances admises, pas et tracé du profil. |
 | `geodata.css` | Styles sous `.geodata-page` seulement. |
 
-Règles tenues par les tests (`independance.test.ts`, `composition-ops.test.ts`, recette `apps/web/e2e/geodata.mjs`) : aucune
+Règles tenues par les tests (`independance.test.ts`, `composition-ops.test.ts`, `terrain-ops.test.ts`, recettes
+`apps/web/e2e/geodata.mjs` et `geodata-terrain.mjs`) : aucune
 notion de projet ; une valeur absente n'est jamais zéro (grise **et** hachurée, libellée avec son motif) ; un déplacement de
 la carte rend la composition « non enregistrée » mais ne l'écrit jamais ; conflit de révision → recharger ou enregistrer sa
 version comme copie ; sans WebGL, recherche, table et fiches restent utilisables ; au téléphone, un seul panneau ouvert.

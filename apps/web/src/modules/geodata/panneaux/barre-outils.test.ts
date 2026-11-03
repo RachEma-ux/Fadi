@@ -16,6 +16,15 @@ describe("barre d'outils flottante GeoData", () => {
     expect(new Set(touches).size).toBe(touches.length);
     expect(RACCOURCIS_BARRE).toMatchObject({ synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" });
   });
+  it("terrain (TER-05) : bouton Terrain de la carte, altitude au point et profil (commandes du panneau), chacun son icône et sa touche", async () => {
+    const { ICONES_TERRAIN, RACCOURCIS_TERRAIN } = await import("./Terrain");
+    const { ICONES_BARRE_BAS, RACCOURCIS_BARRE_BAS } = await import("./BarreBas");
+    expect(RACCOURCIS_TERRAIN).toEqual({ terrain: "Alt+H", altitude: "Alt+O", profil: "Alt+U" });
+    const icones = [...Object.values(ICONES), ...Object.values(ICONES_BARRE_BAS), ...Object.values(ICONES_TERRAIN)];
+    expect(new Set(icones).size).toBe(icones.length);
+    const touches = [...Object.values(RACCOURCIS_BARRE), ...Object.values(RACCOURCIS_BARRE_BAS), ...Object.values(RACCOURCIS_TERRAIN)];
+    expect(new Set(touches).size).toBe(touches.length);
+  });
 });
 
 describe("barre du bas sur téléphone (D-GD-52)", () => {

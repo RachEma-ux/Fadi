@@ -76,8 +76,9 @@
   - [x] TER-02 catalogue et import contrôlé (`terrain/TER-02.md`), fusionné (PR #383, `426c37b`).
   - [ ] Levées de quarantaine Q-TER-02-1 à 3 (responsable de publication, avec source).
   - [x] TER-03 traitement et porte qualité (`terrain/TER-03.md`), fusionné (PR #387, `22e22eb`).
-  - [x] TER-04 services numériques, tuiles, droits, publication et export (`terrain/TER-04.md`), en revue.
-  - [ ] TER-05 interface — un lot à la fois, une PR par lot.
+  - [x] TER-04 services numériques, tuiles, droits, publication et export (`terrain/TER-04.md`), fusionné (PR #389, `79141f3`).
+  - [x] TER-05 interface (`terrain/TER-05.md`), en revue.
+  - [ ] Q-TER-05-1 rattachement d'une version de terrain au projet (Parcours, Atelier) : décision du maître d'ouvrage.
   - Hors portée de la session : TER-01 (contacts, achats), TER-06 / TER-07 (levé et contrôle indépendant, porte G2),
     TER-08 (Release du maître d'ouvrage).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
