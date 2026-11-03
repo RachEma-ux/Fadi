@@ -54,9 +54,12 @@ def main():
  sql('GRANT USAGE ON SCHEMA public, auth, admin TO studio_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public, auth, admin TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO studio_app; REVOKE UPDATE,DELETE ON admin.audit_log FROM studio_app; ALTER DEFAULT PRIVILEGES FOR ROLE studio_owner IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO studio_app;')
  # Chantier base-donnees (#384) : migrations numérotées (db/migrations) et catalogues de données (BD-9.6, D-GD-29) par
  # l'exécuteur réel, en super-utilisateur du conteneur jetable ; puis droits de studio_app sur les tables ainsi créées.
- # Les migrations s'exécutent en fadi_owner (rôle créé par init.sql) : il reçoit les droits du propriétaire du profil.
- sql('GRANT studio_owner TO fadi_owner;')
- mig=subprocess.run(['npx','tsx','apps/api/src/db/migrate.ts'],cwd=ROOT,env={**ENV,'DATABASE_URL':'postgresql://postgres:'+secret+'@127.0.0.1:'+str(port)+'/'+db},text=True,capture_output=True,timeout=600)
+ # La base de départ vient d'être appliquée par le propriétaire du profil (ci-dessus) : elle est inscrite à son empreinte
+ # pour que l'exécuteur ne la rejoue pas en super-utilisateur (ce qui transférerait la propriété, D-7).
+ base=hashlib.sha256((ROOT/'apps/api/src/db/init.sql').read_text().encode()).hexdigest()
+ sql("INSERT INTO schema_migrations (version, name, checksum) VALUES ('0000', 'init', '"+base+"') ON CONFLICT (version) DO NOTHING;")
+ dsn_admin='postgresql://postgres:'+secret+'@127.0.0.1:'+str(port)+'/'+db
+ mig=subprocess.run(['npx','tsx','apps/api/src/db/migrate.ts'],cwd=ROOT,env={**ENV,'DATABASE_URL':dsn_admin,'DATABASE_MIGRATION_URL':dsn_admin},text=True,capture_output=True,timeout=600)
  if mig.returncode:
   diagnostic=state/'migrate-diagnostic.log'; diagnostic.write_text(mig.stdout+mig.stderr); os.chmod(diagnostic,0o600)
   raise RuntimeError('Versioned migrations failed; protected migrate-diagnostic.log contains details')

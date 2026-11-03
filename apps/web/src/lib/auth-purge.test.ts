@@ -34,6 +34,13 @@ describe("purge de l'appareil", () => {
     expect(readLastUser()).toBeNull();
     expect(calls).toEqual(expect.arrayContaining(["conflicts", "owner:null", "remove:fadi-queries-1", "studio", "tout", "quarantaine"]));
   });
+  it("D-BD-12 : sans compte connu de l'appareil, la quarantaine est gardée (consultable après une montée de version)", async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) });
+    await forgetDevice(new QueryClient());
+    expect(calls).toEqual(expect.arrayContaining(["studio", "tout"]));
+    expect(calls).not.toContain("quarantaine");
+  });
   it("seul un 401 du serveur vaut fin de session (une panne n'efface rien)", () => {
     expect(forgetsSession(new ApiError(401, "authentication_required"))).toBe(true);
     expect(forgetsSession(new ApiError(503, "x"))).toBe(false);

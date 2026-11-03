@@ -4212,6 +4212,12 @@ BEGIN
   REVOKE INSERT, UPDATE, DELETE ON public.spatial_ref_sys FROM fadi_app;
   REVOKE UPDATE, DELETE ON public.archive_signing_keys FROM fadi_app;
   REVOKE INSERT, UPDATE, DELETE ON public.schema_migrations FROM fadi_app;
+  -- BD-9.6 (migration 0011) : catalogues de données en lecture seule pour l'application. Repris ici parce qu'un nouveau
+  -- passage de ce fichier (base de départ modifiée, contrôle de restauration) rend l'écriture par le GRANT général ci-dessus.
+  IF to_regclass('public.catalogues') IS NOT NULL THEN
+    REVOKE INSERT, UPDATE, DELETE ON public.catalogues, public.catalogue_versions FROM fadi_app;
+    REVOKE ALL ON SEQUENCE public.catalogue_versions_id_seq FROM fadi_app;
+  END IF;
   REVOKE ALL ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_retention;
   GRANT SELECT ON admin.audit_log TO fadi_retention;
   GRANT UPDATE (actor_id, ip, metadata) ON admin.audit_log TO fadi_retention;

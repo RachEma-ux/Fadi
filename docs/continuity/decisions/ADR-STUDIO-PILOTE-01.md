@@ -237,7 +237,7 @@ retirer**. Les actions de maintenance autorisées à ce jour :
 
 | Action | Déclencheur | Effet | Code |
 |---|---|---|---|
-| Vidage à l'oubli de l'appareil | `forgetDevice` (déconnexion, session perdue, changement de compte) | Vide la table `quarantaine`, et elle seule : les lignes d'un propriétaire inconnu ne sont ni lues ni exportées par le compte suivant. | `localStore.quarantaineVider` |
+| Vidage à l'oubli de l'appareil | `forgetDevice` (déconnexion, session perdue, changement de compte) quand un compte était connu de l'appareil | Vide la table `quarantaine`, et elle seule : les lignes d'un propriétaire inconnu ne sont ni lues ni exportées par le compte suivant. Sans compte connu (premier démarrage après une montée de version, sans session), la quarantaine reste consultable et exportable. | `localStore.quarantaineVider` |
 | Élagage par âge | Ouverture de la base locale | Retire les lignes mises en quarantaine depuis plus de 30 jours. | `elaguerQuarantaine`, `DUREE_QUARANTAINE_MS` |
 
 Toute autre action de maintenance qui supprime une donnée locale est une décision nouvelle, consignée ici avec son

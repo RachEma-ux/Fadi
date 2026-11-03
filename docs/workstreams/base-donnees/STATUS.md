@@ -225,6 +225,11 @@ migration. Fusion de `origin/main` (`0810325`) dans la branche, un seul mécanis
   e2e compléments (la page GeoData garde son état `geodata.*`, retiré de la purge : un identifiant de carte n'ouvre rien
   sans droit, la reconnexion rouvre la dernière carte) ; e2e organisations (jeu synthétique : tables tenues par la
   migration tolérées) ; Studio V1 (profil jetable : migrations numérotées et catalogues appliqués par l'exécuteur réel).
+- Deuxième exécution (`a968031`, après fusion de #383) : `validate`, organisations, continuité, protocole Studio, Codex verts.
+  Corrigés ensuite : contrôle de restauration (`init.sql` rejoué rendait l'écriture des catalogues à `fadi_app` : révocation
+  reprise dans le bloc D-7 d'`init.sql`, droits identiques vérifiés après rejeu) ; recette MIG-COEX-04 (la quarantaine
+  n'est vidée par `forgetDevice` que si un compte était connu de l'appareil, P-13 précisé) ; profil Studio V1 (base de
+  départ inscrite avant l'exécuteur, aucun rôle `fadi_owner` requis ; répété sur un cluster sans rôles Fadi).
 
 ## Points ouverts
 
