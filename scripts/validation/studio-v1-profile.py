@@ -52,6 +52,16 @@ def main():
  # D-7 : schémas `auth` et `admin` (gestion des comptes) créés pour le propriétaire du profil avant init.sql.
  sql('CREATE EXTENSION IF NOT EXISTS postgis; GRANT USAGE,CREATE ON SCHEMA public TO studio_owner; CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION studio_owner; CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION studio_owner; SET ROLE studio_owner; '+init+' RESET ROLE;')
  sql('GRANT USAGE ON SCHEMA public, auth, admin TO studio_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public, auth, admin TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO studio_app; REVOKE UPDATE,DELETE ON admin.audit_log FROM studio_app; ALTER DEFAULT PRIVILEGES FOR ROLE studio_owner IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO studio_app;')
+ # Chantier base-donnees (#384) : migrations numérotées (db/migrations) et catalogues de données (BD-9.6, D-GD-29) par
+ # l'exécuteur réel, en super-utilisateur du conteneur jetable ; puis droits de studio_app sur les tables ainsi créées.
+ # Les migrations s'exécutent en fadi_owner (rôle créé par init.sql) : il reçoit les droits du propriétaire du profil.
+ sql('GRANT studio_owner TO fadi_owner;')
+ mig=subprocess.run(['npx','tsx','apps/api/src/db/migrate.ts'],cwd=ROOT,env={**ENV,'DATABASE_URL':'postgresql://postgres:'+secret+'@127.0.0.1:'+str(port)+'/'+db},text=True,capture_output=True,timeout=600)
+ if mig.returncode:
+  diagnostic=state/'migrate-diagnostic.log'; diagnostic.write_text(mig.stdout+mig.stderr); os.chmod(diagnostic,0o600)
+  raise RuntimeError('Versioned migrations failed; protected migrate-diagnostic.log contains details')
+ sql('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public, auth, admin TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO studio_app; REVOKE UPDATE,DELETE ON admin.audit_log FROM studio_app;')
+ assert sql("SELECT count(*) FROM catalogues WHERE version_publiee_id IS NOT NULL;")=='4'
  # Studio schema now lives in init.sql (owner decision D-A, #166): require its three tables after bootstrap.
  assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('studio_studies','studio_variants','studio_revisions');")=='3'
  identity=sql("SELECT current_database(),current_setting('server_version_num'),postgis_lib_version(),(SELECT rolsuper FROM pg_roles WHERE rolname='studio_app');");assert identity.split('|')[-1]=='f'

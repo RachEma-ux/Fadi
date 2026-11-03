@@ -3,7 +3,9 @@
  * projet, effacées par `forgetDevice` (déconnexion, 401 du serveur, connexion d'un autre compte).
  *
  * Restent volontairement : les réglages de l'appareil (langue, précision d'affichage, position des barres, module
- * OCCT en cache), qui ne disent rien du compte. Les suggestions Studio sont déjà rangées par compte.
+ * OCCT en cache), qui ne disent rien du compte, et l'état de la page GeoData (`geodata.*` : dernière carte ouverte,
+ * pays, panneaux) — GeoData est autonome des projets ; un identifiant de carte n'ouvre rien sans droit (l'API répond 404
+ * et la page l'oublie), et la reconnexion du même compte rouvre sa dernière carte (recette GEO 05). Les suggestions Studio sont déjà rangées par compte.
  *
  * Toute nouvelle clé qui porte des données de compte ou de projet doit être ajoutée ici (test associé).
  */
@@ -16,8 +18,6 @@ export const PREFIXES_DONNEES_COMPTE: readonly string[] = Object.freeze([
   // Préférences de l'Atelier (dont les ensembles d'affichage personnels, synchronisés avec le compte) et base de synchronisation.
   "fadi.atelier.prefs",
   "fadi.atelier.ensembles-sync",
-  // GeoData : dernière carte ouverte et état de la page.
-  "geodata.",
   // Bac à sable : contexte de travail par planche.
   "fadi.sandbox.contexte-travail.",
   // Conflits d'écriture affichés (déjà vidés par `conflictsStore.clearAll`, repris ici par sûreté).

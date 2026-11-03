@@ -216,6 +216,16 @@ migration. Fusion de `origin/main` (`0810325`) dans la branche, un seul mécanis
   effet) ; montée depuis `origin/main` et depuis `b9d9897` réussie ; 91 contraintes contrôlées sans violation ; typecheck,
   build, web 1 373, API 1 200 tests purs, `test:db-guard` 253, `test:scripts` 24 verts.
 
+## CI de la PR #385 (2026-11-03)
+
+- Première exécution (`128e682`) : `validate` vert — **126 fichiers de tests de l'API, dont les 19 suites sur base**,
+  montée de version (4 contrôles), `db:verifier-contraintes` ; e2e atelier, p2, planche, image, architecture, sécurité verts.
+- Échecs corrigés ensuite : description de PR au modèle Studio ; rapports d'état Studio et empreinte de la checklist ;
+  e2e parcours (la clé MapTiler de session est désormais oubliée avec la purge d'un 401, BD-1.7 : scénario adapté) ;
+  e2e compléments (la page GeoData garde son état `geodata.*`, retiré de la purge : un identifiant de carte n'ouvre rien
+  sans droit, la reconnexion rouvre la dernière carte) ; e2e organisations (jeu synthétique : tables tenues par la
+  migration tolérées) ; Studio V1 (profil jetable : migrations numérotées et catalogues appliqués par l'exécuteur réel).
+
 ## Points ouverts
 
 - Ouvrir l'Issue du chantier et reporter son numéro dans `CONTEXT.md` et l'index.

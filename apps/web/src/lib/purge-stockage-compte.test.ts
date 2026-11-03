@@ -29,9 +29,9 @@ describe("BD-1.7 — purge des données du compte dans le stockage local", () =>
     const effacees = purgerStockageCompte(s);
     expect(effacees.sort()).toEqual([
       "fadi-atelier-presse-papiers", "fadi.atelier.ensembles-sync", "fadi.atelier.prefs", "fadi.conflicts.proj",
-      "fadi.sandbox.contexte-travail.p1", "geodata.barre-outils", "geodata.derniere-carte", "parcelle-maptiler-key-v1",
+      "fadi.sandbox.contexte-travail.p1", "parcelle-maptiler-key-v1",
     ]);
-    expect(s.restantes()).toEqual(["fadi.langue", "fadi.occt.wasm", "fadi.planche.precision"]);
+    expect(s.restantes()).toEqual(["fadi.langue", "fadi.occt.wasm", "fadi.planche.precision", "geodata.barre-outils", "geodata.derniere-carte"]);
   });
 
   it("un stockage absent ou qui lève n'est pas une erreur", () => {

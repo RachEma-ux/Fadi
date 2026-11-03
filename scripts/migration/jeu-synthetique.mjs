@@ -68,6 +68,13 @@ const sha = (b) => createHash('sha256').update(b).digest('hex');
 export const SUFFIXES_BASE_SYNTHETIQUE = Object.freeze(['_mig', '_synth']);
 export const nomBaseSynthetiqueAdmis = (nom) => typeof nom === 'string' && SUFFIXES_BASE_SYNTHETIQUE.some((s) => nom.endsWith(s) && nom.length > s.length);
 
+/**
+ * Tables tenues par la migration elle-même (chantier base-donnees, #384) : suivi des migrations (BD-2) et catalogues de
+ * données chargés à chaque `db:migrate` (BD-9.6). Elles ne contiennent aucune donnée de projet ; une base neuve migrée
+ * les a déjà remplies.
+ */
+export const TABLES_DE_MIGRATION = Object.freeze(['schema_migrations', 'catalogues', 'catalogue_versions']);
+
 /** Tables du schéma public hors extensions, verrouillées en exclusif puis recomptées (dans la transaction ouverte). */
 async function verrouillerEtExigerVide(q) {
   const tables = (await q(`SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -80,7 +87,7 @@ async function verrouillerEtExigerVide(q) {
   const pleines = [];
   for (const [i, t] of tables.entries()) {
     const n = (await q(`SELECT count(*)::int AS n FROM ${noms[i]}`)).rows[0].n;
-    if (n) pleines.push(`${t} (${n})`);
+    if (n && !TABLES_DE_MIGRATION.includes(t)) pleines.push(`${t} (${n})`);
   }
   if (pleines.length) throw new Error(`Base non neuve : ${pleines.length} table(s) non vide(s) — ${pleines.join(', ')} : refus d'écrire.`);
   return tables.length;

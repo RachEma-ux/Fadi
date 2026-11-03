@@ -68,7 +68,7 @@
  *      main rendue), passage éditeur (saisie enregistrée), départ du projet ;
  *   6o. Harmonie, page transversale : état des choix du projet choisi (lu
  *      des étapes servies), 21 lignes, renvoi vers l'étape, synthèse ;
- *   6p. Paramètres : compte, clé MapTiler (session / locale / oubliée),
+ *   6p. Paramètres : compte, clé MapTiler (absente après la purge du 401, BD-1.7 ; session / locale / oubliée),
  *      données conservées par le navigateur (compteurs conformes à
  *      IndexedDB, caches vidés sans toucher aux écritures en attente),
  *      version du build ;
@@ -1337,14 +1337,15 @@ check("démarrage avec /auth/me en 401 : renvoi à la connexion (session réelle
     req.onsuccess = () => {
       const db = req.result;
       const tx = db.transaction(["lots", "modelCache"], "readonly");
-      const out = { lots: -1, modelCache: -1, lastUser: localStorage.getItem("fadi.lastUser") };
+      const out = { lots: -1, modelCache: -1, lastUser: localStorage.getItem("fadi.lastUser"), cleMapTiler: sessionStorage.getItem("fadi.maptiler.session-key") };
       tx.objectStore("lots").count().onsuccess = (e) => (out.lots = e.target.result);
       tx.objectStore("modelCache").count().onsuccess = (e) => (out.modelCache = e.target.result);
       tx.oncomplete = () => { db.close(); resolve(out); };
     };
     req.onerror = () => resolve(null);
   }));
-  check("démarrage avec /auth/me en 401 : appareil purgé (modèles et files de l'Atelier, utilisateur mémorisé)", purge?.lots === 0 && purge?.modelCache === 0 && purge?.lastUser === null, JSON.stringify(purge));
+  // BD-1.7 (chantier base-donnees) : la clé MapTiler saisie (un secret) est oubliée avec la session.
+  check("démarrage avec /auth/me en 401 : appareil purgé (modèles et files de l'Atelier, utilisateur mémorisé, clé MapTiler de session)", purge?.lots === 0 && purge?.modelCache === 0 && purge?.lastUser === null && purge?.cleMapTiler === null, JSON.stringify(purge));
 }
 await page.unroute(/\/auth\/me(\?|$)/);
 // La session serveur est intacte (seule la réponse était simulée) : l'Atelier rouvert remet le modèle en cache local.
@@ -1583,7 +1584,11 @@ await page.waitForSelector(".fadi-topbar-title h1");
 check("Paramètres · nom affiché « Roch Démo » → accueil « Bonjour Roch Démo, », avatar « RD », barre latérale au nom", (await page.locator(".fadi-topbar-title h1").textContent()).trim() === "Bonjour Roch Démo," && (await page.locator(".app-user .avatar").textContent()) === "RD" && (await page.locator(".app-user-name").textContent()).startsWith("Roch Démo"));
 await page.goto(`${BASE}/parametres`);
 await page.waitForSelector(".settings-page", { timeout: 30000 });
-check("Paramètres : adresse du compte, clé MapTiler de session (6c) reconnue", (await page.locator(".settings-page").textContent()).includes(email) && (await page.locator(".settings-state").getAttribute("data-key-state")) === "session");
+// BD-1.7 : la clé de session de 6c a été oubliée avec la purge du 401 ; une clé est ressaisie pour éprouver « Oublier la clé ».
+check("Paramètres : adresse du compte, aucune clé MapTiler après la purge du 401 (BD-1.7)", (await page.locator(".settings-page").textContent()).includes(email) && (await page.locator(".settings-state").getAttribute("data-key-state")) === "absente");
+await page.fill("#settings-maptiler-key", "cle-de-test-scenario");
+await page.locator('.settings-form button:has-text("Utiliser cette clé")').click();
+check("Paramètres : clé MapTiler de session reconnue", (await page.locator(".settings-state").getAttribute("data-key-state")) === "session");
 await page.locator('button:has-text("Oublier la clé")').click();
 check("Paramètres : « Oublier la clé » → aucune clé", (await page.locator(".settings-state").getAttribute("data-key-state")) === "absente" && (await page.evaluate(() => sessionStorage.getItem("fadi.maptiler.session-key"))) === null);
 await page.fill("#settings-maptiler-key", "cle-parametres-test");
