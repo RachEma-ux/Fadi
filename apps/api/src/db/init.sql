@@ -4100,6 +4100,58 @@ CREATE TABLE IF NOT EXISTS geodata_terrain_traitements (
   CONSTRAINT geodata_terrain_traitements_echec CHECK (etat <> 'echec' OR motif_echec IS NOT NULL)
 );
 
+-- Terrain haute résolution, lot TER-03 (traitement et porte qualité, Issue #381) : dérivés (COG d'altitude, pente,
+-- ombrage) dans le volume, couverture exacte en WGS 84, courbes de niveau, rapports qualité ; tout en ajout seul.
+ALTER TABLE geodata_terrain_traitements DROP CONSTRAINT IF EXISTS geodata_terrain_traitements_type_check;
+ALTER TABLE geodata_terrain_traitements ADD CONSTRAINT geodata_terrain_traitements_type_check CHECK (type IN ('import', 'derives', 'courbes'));
+ALTER TABLE geodata_terrain_fichiers ADD COLUMN IF NOT EXISTS nature text;
+ALTER TABLE geodata_terrain_fichiers DROP CONSTRAINT IF EXISTS geodata_terrain_fichiers_nature_check;
+ALTER TABLE geodata_terrain_fichiers ADD CONSTRAINT geodata_terrain_fichiers_nature_check
+  CHECK ((role = 'original' AND nature IS NULL) OR (role = 'derive' AND nature IN ('altitude', 'pente', 'ombrage')));
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_terrain_fichiers_derive_uniq ON geodata_terrain_fichiers (terrain_version_id, nature) WHERE role = 'derive';
+-- Couverture valide exacte (union des cellules valides, NoData exclu), transformée en WGS 84 par PostGIS / PROJ ; la
+-- transformation et sa précision sont consignées.
+CREATE TABLE IF NOT EXISTS geodata_terrain_couvertures (
+  terrain_version_id text PRIMARY KEY REFERENCES geodata_terrain_versions (id),
+  geom geometry(MultiPolygon, 4326) NOT NULL,
+  srid_natif integer NOT NULL,
+  cellules_valides bigint NOT NULL CHECK (cellules_valides >= 0),
+  cellules_total bigint NOT NULL CHECK (cellules_total > 0),
+  surface_m2 double precision NOT NULL,
+  transformation text NOT NULL,
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_couvertures_geom_idx ON geodata_terrain_couvertures USING gist (geom);
+-- Courbes de niveau calculées depuis la grille numérique (TER-D17), jamais lissées dans les données.
+CREATE TABLE IF NOT EXISTS geodata_terrain_courbes (
+  id bigserial PRIMARY KEY,
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  equidistance double precision NOT NULL CHECK (equidistance > 0),
+  altitude double precision NOT NULL,
+  maitresse boolean NOT NULL,
+  geom geometry(MultiLineString, 4326) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_courbes_version_idx ON geodata_terrain_courbes (terrain_version_id, equidistance);
+CREATE INDEX IF NOT EXISTS geodata_terrain_courbes_geom_idx ON geodata_terrain_courbes USING gist (geom);
+-- Rapports qualité (plan § TER-01) : points de contrôle indépendants et leur incertitude, méthode, biais, RMSEz, P95,
+-- par classe, points exclus listés, cibles, état ; « non évaluée » sans point.
+CREATE TABLE IF NOT EXISTS geodata_terrain_rapports_qualite (
+  id text PRIMARY KEY,
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  methode text NOT NULL,
+  echantillonnage text NOT NULL,
+  points jsonb NOT NULL,
+  rapport jsonb NOT NULL,
+  cibles jsonb,
+  etat_qualite text NOT NULL CHECK (etat_qualite IN ('non-evaluee', 'sans-cible', 'conforme', 'non-conforme')),
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_terrain_rapports_version_idx ON geodata_terrain_rapports_qualite (terrain_version_id, cree_le);
+CREATE OR REPLACE TRIGGER geodata_terrain_couvertures_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_couvertures FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+CREATE OR REPLACE TRIGGER geodata_terrain_courbes_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_courbes FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+CREATE OR REPLACE TRIGGER geodata_terrain_rapports_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_rapports_qualite FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
