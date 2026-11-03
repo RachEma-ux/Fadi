@@ -115,6 +115,25 @@ describe("magasin des préférences : rattaché au compte", () => {
     expect(m.lire()).toMatchObject({ compte: "b", etat: "chargement", prefs: PREFERENCES_DEFAUT });
   });
 
+  it("plusieurs composants montés ensemble ne relisent pas le serveur ; une relecture forcée le relit", async () => {
+    const sim = apiSimulee();
+    const m = creerMagasinPreferences(sim.api);
+    m.charger("a", "p1");
+    sim.enAttente.shift()!.resoudre(PREFS_A);
+    await attendre();
+    // Deuxième et troisième barres montées juste après : aucune nouvelle lecture.
+    m.charger("a", "p1");
+    m.charger("a", "p1");
+    expect(sim.enAttente).toHaveLength(0);
+    // Un autre projet, ou une relecture demandée (import de profil), relit le serveur.
+    m.charger("a", "p2");
+    expect(sim.enAttente).toHaveLength(1);
+    sim.enAttente.shift()!.resoudre(PREFS_A);
+    await attendre();
+    m.charger("a", "p2", true);
+    expect(sim.enAttente).toHaveLength(1);
+  });
+
   it("un enregistrement n'est accepté que pour le compte rattaché", async () => {
     const sim = apiSimulee();
     const m = creerMagasinPreferences(sim.api);

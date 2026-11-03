@@ -343,22 +343,29 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   // depuis par un autre compte (30 derniers jours) ; une notification par lot, sans rien inventer.
   if (projectIds.length) {
     const ids = (e: unknown, cles: string[]) => cles.flatMap((k) => (Array.isArray((e as Record<string, unknown>)?.[k]) ? ((e as Record<string, unknown>)[k] as unknown[]).filter((x): x is string => typeof x === "string") : []));
-    const miens = await db.select({ projectId: atelierCommands.projectId, effets: atelierCommands.effets, rev: atelierCommands.resultRevision }).from(atelierCommands).where(and(inArray(atelierCommands.projectId, projectIds), eq(atelierCommands.authorId, userId)));
-    const mesObjets = new Map<string, Map<string, number>>();
-    for (const m of miens) {
-      const parProjet = mesObjets.get(m.projectId) ?? new Map<string, number>();
-      for (const id of ids(m.effets, ["crees", "modifies"])) parProjet.set(id, Math.max(parProjet.get(id) ?? 0, m.rev));
-      mesObjets.set(m.projectId, parProjet);
-    }
-    if (mesObjets.size) {
+    // BD-4 : les commandes des autres (30 jours, 200 au plus) sont lues d'abord, dans les projets où vous avez au moins
+    // une commande (sous-requête servie par l'index atelier_commands_author_project_idx) ; vos propres commandes ne sont ensuite
+    // lues que dans les projets concernés — auparavant, tout votre historique de tous vos projets, à chaque appel.
+    const mesProjetsAtelier = db.selectDistinct({ projectId: atelierCommands.projectId }).from(atelierCommands)
+      .where(and(inArray(atelierCommands.projectId, projectIds), eq(atelierCommands.authorId, userId)));
+    {
       const autres = await db
         .select({ id: atelierCommands.id, projectId: atelierCommands.projectId, label: atelierCommands.label, effets: atelierCommands.effets, rev: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt, email: users.email, code: projects.code, name: projects.name })
         .from(atelierCommands)
         .innerJoin(users, eq(users.id, atelierCommands.authorId))
         .innerJoin(projects, eq(projects.id, atelierCommands.projectId))
-        .where(and(inArray(atelierCommands.projectId, [...mesObjets.keys()]), ne(atelierCommands.authorId, userId), gt(atelierCommands.createdAt, since)))
+        .where(and(inArray(atelierCommands.projectId, mesProjetsAtelier), ne(atelierCommands.authorId, userId), gt(atelierCommands.createdAt, since)))
         .orderBy(desc(atelierCommands.createdAt))
         .limit(200);
+      const projetsTouches = [...new Set(autres.map((a) => a.projectId))];
+      const miens = projetsTouches.length
+        ? await db.select({ projectId: atelierCommands.projectId, effets: atelierCommands.effets, rev: atelierCommands.resultRevision }).from(atelierCommands).where(and(inArray(atelierCommands.projectId, projetsTouches), eq(atelierCommands.authorId, userId)))
+        : [];
+      const mesObjets = new Map<string, Map<string, number>>(projetsTouches.map((p) => [p, new Map<string, number>()]));
+      for (const m of miens) {
+        const parProjet = mesObjets.get(m.projectId)!;
+        for (const id of ids(m.effets, ["crees", "modifies"])) parProjet.set(id, Math.max(parProjet.get(id) ?? 0, m.rev));
+      }
       let n = 0;
       for (const a of autres) {
         const miensP = mesObjets.get(a.projectId)!;

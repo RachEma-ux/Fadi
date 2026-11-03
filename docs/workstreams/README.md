@@ -21,7 +21,8 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Communication (COM) | **Fusionnée** dans `main` (PR #285, `173b9f1`, 2026-10-24) ; décisions COM-D1 à COM-D14 acceptées ; non déployée | [communication/](communication/CONTEXT.md) | [Issue #280](https://github.com/RachEma-ux/Fadi/issues/280) |
 | Temps réel (Real-time Collaboration) | **Cadrage RTC-0** (documentaire) ; RT-D1 à RT-D3 (Studio seul, canal propre) ; aucun code ; RTC-1 attend les phases 3 et 4 d'Organisations et la PR #282 | [real-time-collaboration/](real-time-collaboration/CONTEXT.md) | [Issue #283](https://github.com/RachEma-ux/Fadi/issues/283) |
 | Axes et repères | **En cours** sous délégation totale (AX-D1) : lots AX-0 à AX-5, Sandbox seul (AX-D2) | [axes/](axes/CONTEXT.md) | [Issue #296](https://github.com/RachEma-ux/Fadi/issues/296) · concept [#260](https://github.com/RachEma-ux/Fadi/issues/260) |
-| Base de données : fiabilité et performance | **À faire** : audit (2026-11-02, `b9d9897`) et plan BD-0 à BD-9 établis ; aucune remédiation engagée | [base-donnees/](base-donnees/CONTEXT.md) | Issue à ouvrir |
+| Bases de données | **En cours** : analyse et plan (BD-1 à BD-11) ; PR de remédiation ; BD-7 à BD-9 attendent le maître d'ouvrage | [bases-de-donnees/](bases-de-donnees/CONTEXT.md) · [plan](bases-de-donnees/PLAN.md) | [Issue #379](https://github.com/RachEma-ux/Fadi/issues/379) |
+| Base de données : fiabilité et performance | **En cours** : audit (2026-11-02), plan BD-0 à BD-9 et décisions D-BD-1 à D-BD-12 du maître d'ouvrage ; remédiation implémentée (branche `feat/bd-decisions-proprietaire`), intègre les livraisons de #379 / #380 | [base-donnees/](base-donnees/CONTEXT.md) | Issue à ouvrir |
 
 ## Ouvrir un chantier
 

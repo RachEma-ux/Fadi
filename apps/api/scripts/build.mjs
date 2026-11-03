@@ -44,13 +44,13 @@ await build({
   logLevel: "info",
 });
 
-// Outils d'exploitation GeoData (ADR-GEODATA-02) : bundles à côté du serveur, exécutables dans l'image de production
+// Outils d'exploitation GeoData (ADR-GEODATA-02) et contrôle des contraintes NOT VALID (BD-5, `node apps/api/dist/verifier-contraintes.js`) : bundles à côté du serveur, exécutables dans l'image de production
 // comme `create-admin.mjs` (`node apps/api/dist/geodata-role.js …`, `node apps/api/dist/geodata-reference.js …`), sans
 // tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
 await build({
   // BD-9.1 : reprise des fichiers vers le stockage objet (`node apps/api/dist/fichiers-vers-objet.js`), @aws-sdk externe.
   // BD-9.6 : chargement des catalogues de données (`node apps/api/dist/catalogues-charger.js`).
-  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts"), "catalogues-charger": join(root, "src/db/catalogues-charger.ts") },
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts"), "verifier-contraintes": join(root, "src/db/verifier-contraintes.ts"), "fichiers-vers-objet": join(root, "src/db/fichiers-vers-objet.ts"), "catalogues-charger": join(root, "src/db/catalogues-charger.ts") },
   outdir: join(root, "dist"),
   bundle: true,
   platform: "node",

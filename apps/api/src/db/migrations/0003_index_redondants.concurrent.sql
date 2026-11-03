@@ -8,3 +8,7 @@ DROP INDEX CONCURRENTLY IF EXISTS project_steps_project_id_idx;
 DROP INDEX CONCURRENTLY IF EXISTS studio_observations_variant_idx;
 -- Remplacé par atelier_outbox_unprocessed_idx (partiel, ordonné).
 DROP INDEX CONCURRENTLY IF EXISTS atelier_outbox_pending_idx;
+-- Index posés par init.sql dans #379 (BD-2), couverts par ceux de 0002 : `users_email_lower_unique` (même expression,
+-- unique) et `atelier_commands_author_project_idx` (author_id, project_id, result_revision), dont il est le préfixe.
+DROP INDEX CONCURRENTLY IF EXISTS users_email_lower_idx;
+DROP INDEX CONCURRENTLY IF EXISTS atelier_commands_author_idx;

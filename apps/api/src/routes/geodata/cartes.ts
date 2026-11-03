@@ -8,7 +8,7 @@
  */
 import { Router, type Request } from "express";
 import { COMPOSITION_INITIALE, validerComposition, type Composition } from "@parcours/geodata-model";
-import { erreur, espacePersonnel, introuvable, journal, requete, transaction, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
+import { erreur, espacePersonnel, introuvable, journal, requete, transaction, VERSION_CONSULTABLE, type Executeur } from "../../lib/geodata/acces.js";
 import { newId } from "../../lib/ids.js";
 
 export const cartesRouter = Router();
@@ -77,11 +77,13 @@ async function collectionDeLEspace(espaceId: string, id: unknown): Promise<boole
 }
 
 /** Ajoute une carte à la fin d'une collection (sans doublon) et date la modification de la collection. */
-async function ajouterEnFin(espaceId: string, collectionId: string, carteId: string) {
+async function ajouterEnFin(espaceId: string, collectionId: string, carteId: string, ex: Executeur) {
+  // BD-3 : la collection est verrouillée le temps de calculer le rang, deux ajouts simultanés n'obtiennent pas le même.
+  await requete("SELECT 1 FROM geodata_collections WHERE id = $1 AND espace_id = $2 FOR UPDATE", [collectionId, espaceId], ex);
   await requete(`INSERT INTO geodata_collection_cartes (collection_id, carte_id, espace_id, rang)
       VALUES ($1, $2, $3, coalesce((SELECT max(rang) FROM geodata_collection_cartes WHERE collection_id = $1), 0) + 1)
-    ON CONFLICT (collection_id, carte_id) DO NOTHING`, [collectionId, carteId, espaceId]);
-  await requete("UPDATE geodata_collections SET revision = revision + 1, modifie_le = now() WHERE id = $1 AND espace_id = $2", [collectionId, espaceId]);
+    ON CONFLICT (collection_id, carte_id) DO NOTHING`, [collectionId, carteId, espaceId], ex);
+  await requete("UPDATE geodata_collections SET revision = revision + 1, modifie_le = now() WHERE id = $1 AND espace_id = $2", [collectionId, espaceId], ex);
 }
 
 const MAX_CARTES_COLLECTION = 500;
@@ -114,11 +116,14 @@ cartesRouter.post("/cartes", async (req, res) => {
   const refusees = await referencesRefusees(espaceId, v.composition, null);
   if (refusees.length) return erreur(res, 400, "couche_inaccessible", "Couche inconnue ou non consultable par ce compte.", { couches: refusees });
   const id = newId("gdcarte");
-  await requete(`INSERT INTO geodata_cartes (id, espace_id, proprietaire_id, nom, composition) VALUES ($1, $2, $3, $4, $5)`,
-    [id, espaceId, req.user!.id, nom.trim(), JSON.stringify(v.composition)]);
-  // Collection choisie à l'enregistrement : la carte y est ajoutée en dernière position.
-  if (typeof collectionId === "string") await ajouterEnFin(espaceId, collectionId, id);
-  await journal(req.user!.id, "carte.creee", id, "succes");
+  // BD-3 : carte, ajout à la collection et journal dans une seule transaction (tout ou rien).
+  await transaction(async (c) => {
+    await requete(`INSERT INTO geodata_cartes (id, espace_id, proprietaire_id, nom, composition) VALUES ($1, $2, $3, $4, $5)`,
+      [id, espaceId, req.user!.id, nom.trim(), JSON.stringify(v.composition)], c);
+    // Collection choisie à l'enregistrement : la carte y est ajoutée en dernière position.
+    if (typeof collectionId === "string") await ajouterEnFin(espaceId, collectionId, id, c);
+    await journal(req.user!.id, "carte.creee", id, "succes", {}, c);
+  });
   res.status(201).json(await vueCarte(espaceId, (await lireCarte(espaceId, id))!));
 });
 

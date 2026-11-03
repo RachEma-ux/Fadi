@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { applicationPoolConfig } from "./pool-config.js";
+import { optionsPool } from "./pool-options.js";
 import * as schema from "./schema.js";
 import { createRuntimeTestPool } from "../testing/test-database.js";
 
@@ -11,14 +11,14 @@ function createApplicationPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set. Copy apps/api/.env.example to apps/api/.env and fill it in.");
   }
-  const created = new Pool(applicationPoolConfig(connectionString));
-  // Une erreur sur un client inactif (redémarrage de PostgreSQL, coupure réseau) est émise sur le pool : sans écouteur,
-  // Node lève une exception non gérée et le processus s'arrête. Le pool remplace lui-même le client fautif.
-  created.on("error", (err) => {
+  const p = new Pool(optionsPool(connectionString));
+  // Une connexion inactive coupée par le serveur (redémarrage, délai) émet « error » sur le pool : sans écouteur, le
+  // processus entier s'arrêtait. La connexion est écartée par le pool ; l'erreur est journalisée (sans identifiant).
+  p.on("error", (err) => {
     // eslint-disable-next-line no-console
-    console.error(JSON.stringify({ level: "error", message: "pg_pool_idle_client_error", detail: err.message }));
+    console.error(JSON.stringify({ level: "error", message: "Connexion inactive à la base perdue.", code: (err as { code?: string }).code ?? null, detail: err.message }));
   });
-  return created;
+  return p;
 }
 
 export const pool = createApplicationPool();

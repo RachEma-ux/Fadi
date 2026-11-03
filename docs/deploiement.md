@@ -8,7 +8,7 @@ démonstration : 5 à 30 minutes, base jetable — à garder pour les démonstra
 
 | Élément | Rôle |
 |---|---|
-| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué par le service à usage unique `migrate` (`MIGRATE_ONLY=1`, D-7), jamais par l'API. |
+| `Dockerfile` | Image de production : l'API (bundle esbuild) **sert aussi l'application construite** (`WEB_DIST`) — un seul processus, un seul port (3001), même origine. Plus de `vite preview` (outil de développement). Le schéma idempotent est appliqué par le service de migration à usage unique `migrate` (`MIGRATE_ONLY=1`) avant le démarrage de l'application, qui tourne avec `MIGRATE_ON_START=0` (D-7) ; garde-fous de la migration : chantier [bases-de-donnees](workstreams/bases-de-donnees/PLAN.md), BD-5. |
 | `docker-compose.yml` | Application + base PostgreSQL/PostGIS persistante (volume `fadi-db`) + relais HTTPS automatique (Caddy, Let's Encrypt) + service de **sauvegarde quotidienne** (`pg_dump` format custom, 14 jours conservés, volume `fadi-backups`). |
 | `.env.deploy.example` | Les deux réglages à fournir : `FADI_DOMAIN`, `POSTGRES_PASSWORD`. |
 | `scripts/backup.sh` | Sauvegarde horodatée + rotation. |
@@ -47,9 +47,9 @@ avant sa fin (« Outils du projet » → « Sauvegarder projet JSON »).
 
 Mise à jour : faire d'abord une sauvegarde à la demande (section suivante), puis
 `git pull && docker compose --env-file .env.deploy up -d --build`. Le service `migrate` applique le schéma
-(`apps/api/src/db/init.sql`, idempotent) avant le démarrage de `app`. Il échoue vite plutôt que de bloquer le trafic si une
-transaction longue tient un verrou (`lock_timeout` de 3 s, quatre essais espacés : BD-1.1) ; dans ce cas, relancer la mise à
-jour. Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`) fait lui-même ce dump préalable.
+(`apps/api/src/db/init.sql`, idempotent) avant le démarrage de `app`. Seuls la base de départ modifiée et les fichiers numérotés
+non encore appliqués (`apps/api/src/db/migrations/`, table `schema_migrations`) sont joués ; la migration cède vite si une
+transaction de l'application tient un verrou (`MIGRATION_LOCK_TIMEOUT`, 5 s, essais espacés, puis échec franc : relancer). Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`) fait lui-même ce dump préalable.
 
 Catalogues de données (BD-9.6, D-BD-6, D-GD-29) : la bibliothèque des bâtiments, les profils et le moteur Harmonie et la
 répartition programmatique sont lus par l'API **en base** (tables `catalogues`, `catalogue_versions`), jamais depuis les
@@ -118,7 +118,6 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `TRUST_PROXY` | `1` derrière un relais TLS (adresse du client, cookie `secure`). |
 | `NODE_ENV` | `production` : cookie de session `secure` (HTTPS obligatoire). |
 | `PORT` | 3001 par défaut. |
-| `PG_POOL_MAX`, `PG_CONNECTION_TIMEOUT_MS`, `PG_STATEMENT_TIMEOUT_MS`, `PG_IDLE_IN_TRANSACTION_MS`, `PG_POOL_IDLE_MS`, `PG_APP_NAME` | Pool PostgreSQL de l'API (BD-1.2) : 10 connexions, 10 s pour obtenir une connexion, 60 s par instruction, 60 s pour une transaction inactive, nom `fadi-api` dans `pg_stat_activity`. `0` = pas de délai (retour arrière sans nouvelle image). |
 | `CONTACT_RETENTION_ENABLED` | Effacement des contacts sans compte 2 ans après la clôture de leurs projets (OP-2). Activé en production par `docker-compose.yml` (D-BD-4) ; `0` le coupe. |
 | `FADI_RETENTION_SESSIONS_JOURS`, `FADI_RETENTION_JETONS_JOURS`, `FADI_RETENTION_COURRIELS_JOURS` | Purge horaire des sessions expirées ou révoquées, des jetons de compte expirés ou utilisés et des courriels traités (BD-6.1). Vide : 30 jours (D-BD-11) ; un entier change la durée (2 jours au moins pour les courriels) ; `desactive` coupe la catégorie. |
 | `FADI_STOCKAGE` | Où sont écrits les nouveaux fichiers (pièces des étapes, exports de l'Atelier, volumes figés, photos de la messagerie) : `base` (défaut, colonne bytea) ou `s3` (stockage objet). Toute autre valeur : refus de démarrer. |

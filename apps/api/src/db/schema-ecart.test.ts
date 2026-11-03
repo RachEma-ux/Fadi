@@ -28,6 +28,8 @@ const TABLES_SQL_SEULEMENT = [
   "public.geodata_prix_zones", "public.geodata_rasters", "public.geodata_reglages", "public.geodata_roles",
   "public.geodata_sources", "public.geodata_tableaux_bord", "public.geodata_territoires", "public.geodata_valeurs",
   "public.geodata_versions", "public.geodata_zones", "public.schema_migrations",
+  // #379 (BD-5) : journal des applications de la base de départ, écrit par la migration seulement.
+  "admin.schema_applications",
 ];
 
 /** Tables de l'ancien moteur de l'Atelier, recréées un instant par le test de la bascule (atelier-commands.test.ts). */

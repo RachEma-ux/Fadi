@@ -274,7 +274,8 @@ comRouter.post("/conversations/:conversationId/lu", endpoint(async (req, res) =>
       .where(and(eq(comMessages.conversationId, conv.id), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : [])))
       .orderBy(desc(comMessages.createdAt), desc(comMessages.id)).limit(FENETRE_MESSAGES);
     const autres = fenetre.filter((m) => m.authorId !== userId);
-    for (const m of autres) await tx.insert(comReceipts).values({ messageId: m.id, userId, openedAt: now }).onConflictDoUpdate({ target: [comReceipts.messageId, comReceipts.userId], set: { openedAt: sql`coalesce(${comReceipts.openedAt}, ${now.toISOString()}::timestamptz)` } });
+    // BD-4 : une seule instruction pour toute la fenêtre (jusqu'à FENETRE_MESSAGES), au lieu d'une écriture par message.
+    if (autres.length) await tx.insert(comReceipts).values(autres.map((m) => ({ messageId: m.id, userId, openedAt: now }))).onConflictDoUpdate({ target: [comReceipts.messageId, comReceipts.userId], set: { openedAt: sql`coalesce(${comReceipts.openedAt}, ${now.toISOString()}::timestamptz)` } });
   });
   res.json({ lu: now.toISOString() });
 }));

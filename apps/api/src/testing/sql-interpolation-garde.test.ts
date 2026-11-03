@@ -16,6 +16,8 @@ const SRC = fileURLToPath(new URL("..", import.meta.url));
 
 /** Relevé accepté (revue de l'audit, 2026-11-02 ; ajouts BD-2 : noms de contraintes et d'index lus dans le catalogue). */
 const ACCEPTE: Record<string, number> = {
+  // #379 (BD-5) : délai de verrou validé par `delaiVerrou` (motif numérique + unité) avant interpolation.
+  "db/appliquer-schema.ts": 1,
   "db/schema-migrations.ts": 1,
   "db/valider-contraintes.ts": 1,
   "lib/fin-participation.ts": 1,

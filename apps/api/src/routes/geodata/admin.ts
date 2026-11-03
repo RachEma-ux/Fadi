@@ -6,7 +6,7 @@
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { estRoleGeoData, lireDroits, lireQualification, qualificationAdmise, verifierUsage, type Capacite } from "@parcours/geodata-model";
-import { capacites, erreur, introuvable, journal, requete } from "../../lib/geodata/acces.js";
+import { capacites, erreur, introuvable, journal, requete, transaction } from "../../lib/geodata/acces.js";
 import { sourcesProvisoiresAdmises } from "../../lib/geodata/provisoires.js";
 import { COLONNES_VERSION, lireVersion } from "./consultation.js";
 
@@ -42,8 +42,14 @@ adminRouter.post("/admin/versions/:id/publier", exiger("publier-version"), async
     await journal(req.user!.id, "version.publication_refusee", String(req.params["id"]), "refus", { motifs });
     return erreur(res, 409, "publication_bloquee", "Publication bloquée.", { motifs });
   }
-  await requete(`UPDATE geodata_versions SET etat = 'publiee', publiee_par = $2, publiee_le = now() WHERE id = $1`, [String(req.params["id"]), req.user!.id]);
-  await journal(req.user!.id, "version.publiee", String(req.params["id"]), "succes");
+  // BD-3 : la mise à jour ne vaut que pour une version encore en préparation — deux publications simultanées ne
+  // passent pas toutes deux le contrôle ci-dessus ; la seconde reçoit le même 409 qu'une version déjà publiée.
+  const publiee = await transaction(async (c) => {
+    const r = await requete(`UPDATE geodata_versions SET etat = 'publiee', publiee_par = $2, publiee_le = now() WHERE id = $1 AND etat = 'preparation' RETURNING id`, [String(req.params["id"]), req.user!.id], c);
+    if (r.length) await journal(req.user!.id, "version.publiee", String(req.params["id"]), "succes", {}, c);
+    return r.length > 0;
+  });
+  if (!publiee) return erreur(res, 409, "deja_publiee", "Seule une version en préparation se publie.", { etat: "publiee" });
   res.json({ id: String(req.params["id"]), etat: "publiee" });
 });
 

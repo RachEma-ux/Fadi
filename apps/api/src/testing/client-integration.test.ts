@@ -39,13 +39,13 @@ describe("application DB seam, completely mocked driver", () => {
     vi.stubEnv("VITEST", "false"); vi.stubEnv("NODE_ENV", "production");
     const connectionString = "postgresql://synthetic:sentinel@192.0.2.1:5432/never_connected";
     vi.stubEnv("DATABASE_URL", connectionString);
-    for (const k of ["PG_POOL_MAX", "PG_POOL_IDLE_MS", "PG_CONNECTION_TIMEOUT_MS", "PG_STATEMENT_TIMEOUT_MS", "PG_IDLE_IN_TRANSACTION_MS", "PG_APP_NAME"]) vi.stubEnv(k, "");
+    for (const k of ["DB_POOL_MAX", "DB_IDLE_TIMEOUT_MS", "DB_CONNECTION_TIMEOUT_MS", "DB_STATEMENT_TIMEOUT_MS", "DB_IDLE_IN_TRANSACTION_TIMEOUT_MS", "DB_APPLICATION_NAME"]) vi.stubEnv(k, "");
     const { pool, db } = await import("../db/client.js");
+    // BD-1 (chantier bases-de-donnees) : délais et taille du pool explicites, écouteur d'erreur des connexions inactives.
     expect(driver.construct).toHaveBeenCalledExactlyOnceWith({
-      connectionString, max: 10, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000,
-      statement_timeout: 60_000, idle_in_transaction_session_timeout: 60_000, application_name: "fadi-api",
+      connectionString, application_name: "fadi-api", max: 10, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000,
+      statement_timeout: 120_000, idle_in_transaction_session_timeout: 120_000,
     });
-    // An idle-client error is logged instead of crashing the process.
     expect(driver.on).toHaveBeenCalledExactlyOnceWith("error", expect.any(Function));
     expect(pool).toBeDefined(); expect(db).toEqual({ simulated: true });
     expect(driver.connect).not.toHaveBeenCalled(); expect(driver.query).not.toHaveBeenCalled();

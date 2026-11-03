@@ -19,10 +19,13 @@ async function main() {
   const sql = readFileSync(sqlPath, "utf8");
   const pool = new Pool({ connectionString, max: 1, application_name: "fadi-migrate" });
   try {
-    // BD-2 : base de départ (init.sql) si nouvelle ou modifiée, puis migrations numérotées manquantes (db/migrations).
+    // BD-2 : base de départ (init.sql) si nouvelle ou modifiée — application journalisée dans admin.schema_applications
+    // (#379, BD-5) —, puis migrations numérotées manquantes (db/migrations).
     const rapport = await migrer(pool, { baseSql: sql, dossier: new URL("./migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
     console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
+    // eslint-disable-next-line no-console
+    if (rapport.base) console.log(`Migration : ${rapport.base.dureeMs} ms, ${rapport.base.tentatives} essai(s), statistiques des requêtes ${rapport.base.pgStatStatements}.`);
     // BD-9.6 (D-GD-29) : catalogues de données du Parcours chargés en base depuis les fichiers livrés (idempotent).
     // eslint-disable-next-line no-console
     console.log(ligneBilanCatalogues(await chargerCatalogues(pool)));

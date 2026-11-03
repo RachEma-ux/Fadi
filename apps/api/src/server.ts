@@ -41,6 +41,8 @@ async function migrateOnStart(): Promise<void> {
     const rapport = await migrer(migrationPool, { baseSql: sql, dossier: new URL("./db/migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
     console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
+    // eslint-disable-next-line no-console
+    if (rapport.base) console.log(`Migration : ${rapport.base.dureeMs} ms, ${rapport.base.tentatives} essai(s), statistiques des requêtes ${rapport.base.pgStatStatements}.`);
     // BD-9.6 (D-GD-29) : catalogues de données du Parcours chargés en base depuis les fichiers livrés (dist/data, idempotent).
     // eslint-disable-next-line no-console
     console.log(ligneBilanCatalogues(await chargerCatalogues(migrationPool)));
@@ -119,8 +121,9 @@ Promise.resolve()
     server.headersTimeout = 66_000;
     // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
     const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
-    // Arrêt (déploiement) : les clients temps réel sont prévenus (1001), le serveur cesse d'accepter des connexions et
-    // laisse finir les requêtes en cours, puis le pool est fermé (BD-1.2). Au-delà de 10 s, arrêt forcé.
+    // Arrêt (déploiement) : les clients du temps réel sont prévenus (1001), le serveur cesse d'accepter des requêtes et
+    // termine celles en cours, puis les connexions à la base sont rendues (BD-1) ; au plus ARRET_DELAI_MS (8 s, sous les
+    // 10 s laissés par Docker avant l'arrêt forcé). SIGINT (développement) suit le même chemin.
     let arretEnCours = false;
     const arreter = (signal: string) => {
       if (arretEnCours) return;
@@ -129,11 +132,12 @@ Promise.resolve()
       console.log(JSON.stringify({ level: "info", message: "arrêt demandé", signal }));
       arreterTempsReel();
       arreterImportAuto();
-      setTimeout(() => process.exit(1), 10_000).unref();
+      const delai = Number(process.env["ARRET_DELAI_MS"] ?? 8000);
+      const fin = setTimeout(() => process.exit(0), Number.isFinite(delai) && delai >= 0 ? delai : 8000);
+      fin.unref();
       server.close(() => {
-        void pool.end().catch(() => undefined).finally(() => process.exit(0));
+        pool.end().catch(() => undefined).finally(() => process.exit(0));
       });
-      // Les connexions persistantes inactives ne retiennent pas l'arrêt.
       server.closeIdleConnections();
     };
     process.once("SIGTERM", () => arreter("SIGTERM"));

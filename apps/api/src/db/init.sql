@@ -8,11 +8,9 @@
 -- appliqué une seule fois par `db/schema-migrations.ts`. `schema.ts` ne décrit pas tout le SQL (CHECK, une partie des
 -- clés étrangères et index, tables GeoData) : ne jamais l'utiliser avec `drizzle-kit push` ou `generate`.
 
--- BD-1.1 (chantier base-donnees) : le fichier s'exécute en une seule transaction et reprend des verrous exclusifs sur
--- des tables chaudes. Un verrou non obtenu en 3 s fait échouer la migration (code 55P03, tout est annulé) au lieu de
--- bloquer le trafic derrière elle ; `applySchema` (db/apply-schema.ts) relance alors après une attente.
-SET lock_timeout = '3s';
-SET statement_timeout = '10min';
+-- BD-1.1 / #379 (BD-5) : le fichier s'exécute en une seule transaction et reprend des verrous exclusifs sur des tables
+-- chaudes. `db/appliquer-schema.ts` le joue sous `lock_timeout` court (MIGRATION_LOCK_TIMEOUT, 5 s) : un verrou non obtenu
+-- fait échouer l'application (55P03, tout est annulé) au lieu de bloquer le trafic, puis un nouvel essai suit.
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -109,7 +107,8 @@ CREATE TABLE IF NOT EXISTS project_steps (
   content jsonb NOT NULL DEFAULT '{}'::jsonb,
   PRIMARY KEY (project_id, step_number)
 );
-CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
+-- BD-2 : index redondant retiré (la clé primaire (project_id, step_number) sert déjà les recherches par projet).
+DO $$ BEGIN DROP INDEX IF EXISTS project_steps_project_id_idx; END $$;
 
 -- R2 · Planning métier par projet : champs indépendants du Parcours et version CAS.
 CREATE TABLE IF NOT EXISTS project_plans (
@@ -131,8 +130,8 @@ CREATE TABLE IF NOT EXISTS project_plan_baselines (
   created_by text REFERENCES users (id) ON DELETE SET NULL,
   PRIMARY KEY (project_id, version)
 );
-CREATE INDEX IF NOT EXISTS project_plan_baselines_project_idx
-  ON project_plan_baselines (project_id, version);
+-- BD-2 : doublon exact de la clé primaire (project_id, version), retiré.
+DO $$ BEGIN DROP INDEX IF EXISTS project_plan_baselines_project_idx; END $$;
 
 -- Répartition programmatique (module Programmation), une ligne par projet,
 -- créée à la première modification ; voir schema.ts.
@@ -4011,6 +4010,32 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et
 -- ajout seulement ; `fadi_retention` : anonymisation de colonnes du journal ; `fadi_backup` : lecture seule.
 -- ---------------------------------------------------------------------------
+
+-- Chantier bases-de-donnees (BD-2, BD-5) : index des recherches réellement utilisées et journal des applications du schéma.
+-- Tables petites ou moyennes : création ordinaire dans la transaction de migration, bornée par lock_timeout
+-- (db/appliquer-schema.ts). Les index des très grandes tables passeront par une migration CONCURRENTLY (PLAN.md, BD-5).
+-- Fiche, tableaux et légendes GeoData : indicateurs d'une couche (la table était relue en entier à chaque fiche).
+CREATE INDEX IF NOT EXISTS geodata_indicateurs_couche_idx ON geodata_indicateurs (couche_id, ordre);
+-- Clés étrangères des versions GeoData (suppression d'une version ou d'un espace, lectures par version).
+CREATE INDEX IF NOT EXISTS geodata_territoires_version_idx ON geodata_territoires (version_id);
+CREATE INDEX IF NOT EXISTS geodata_analyses_version_idx ON geodata_analyses (version_id);
+CREATE INDEX IF NOT EXISTS geodata_imports_version_idx ON geodata_imports (version_id);
+CREATE INDEX IF NOT EXISTS geodata_versions_espace_idx ON geodata_versions (espace_id);
+-- Notifications de l'Atelier : commandes d'une personne dans ses projets.
+CREATE INDEX IF NOT EXISTS atelier_commands_author_idx ON atelier_commands (author_id, project_id);
+-- Recherche d'un compte par adresse sans tenir compte de la casse (lower(email) dans les invitations, mandats, imports).
+CREATE INDEX IF NOT EXISTS users_email_lower_idx ON users (lower(email));
+-- Journal des applications du schéma (empreinte SHA-256 d'init.sql, durée, essais, rôle) : écrit par la migration
+-- seulement ; l'API n'y a aucun droit (révoqué plus bas).
+CREATE TABLE IF NOT EXISTS admin.schema_applications (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  empreinte text NOT NULL CONSTRAINT schema_applications_empreinte_ck CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  appliquee_le timestamptz NOT NULL DEFAULT now(),
+  duree_ms integer NOT NULL CONSTRAINT schema_applications_duree_ck CHECK (duree_ms >= 0),
+  tentatives integer NOT NULL CONSTRAINT schema_applications_tentatives_ck CHECK (tentatives >= 1),
+  role text NOT NULL
+);
+CREATE INDEX IF NOT EXISTS schema_applications_le_idx ON admin.schema_applications (appliquee_le);
 DO $$
 DECLARE
   r record;
@@ -4055,6 +4080,8 @@ BEGIN
   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO fadi_app;
   REVOKE UPDATE, DELETE, TRUNCATE ON admin.audit_log FROM fadi_app;
   REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_app;
+  -- BD-5 : le journal des migrations n'appartient qu'à la migration.
+  REVOKE ALL ON admin.schema_applications FROM fadi_app;
   -- Lot OP-PONT : `project_members` est une vue de compatibilité en LECTURE ; le partage s'écrit dans les participations.
   REVOKE INSERT, UPDATE, DELETE ON public.project_members FROM fadi_app;
   -- BD-1.4 (constat S2) : journaux en ajout seul pour l'application. Leurs déclencheurs `*_no_update` refusent déjà la
@@ -4082,7 +4109,3 @@ BEGIN
   ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT SELECT ON TABLES TO fadi_backup;
 END $$;
 
--- BD-1.1 : délais de migration rendus à la valeur de la session (paramètres de connexion), pour qu'une connexion de pool
--- réutilisée après la migration ne garde pas un `statement_timeout` de 10 minutes.
-RESET lock_timeout;
-RESET statement_timeout;

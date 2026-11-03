@@ -29,4 +29,5 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS com_message_versions_message_idx ON com_
 CREATE INDEX CONCURRENTLY IF NOT EXISTS project_comments_parent_idx ON project_comments (parent_id) WHERE parent_id IS NOT NULL;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS com_messages_reply_to_idx ON com_messages (reply_to_id) WHERE reply_to_id IS NOT NULL;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS collab_demandes_source_message_idx ON collab_demandes (source_message_id) WHERE source_message_id IS NOT NULL;
-CREATE INDEX CONCURRENTLY IF NOT EXISTS geodata_indicateurs_couche_idx ON geodata_indicateurs (couche_id);
+-- geodata_indicateurs_couche_idx (couche_id, ordre) : créé par init.sql (#379, BD-2) ; repris ici sous la même forme.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS geodata_indicateurs_couche_idx ON geodata_indicateurs (couche_id, ordre);

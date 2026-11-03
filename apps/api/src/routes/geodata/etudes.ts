@@ -126,11 +126,21 @@ async function vueAnalyse(espaceId: string, a: Record<string, unknown>) {
   };
 }
 
+/**
+ * BD-4 : au plus `n` requêtes à la fois (la liste compte jusqu'à 200 analyses ; tout en parallèle occupait le pool de
+ * connexions entier). L'ordre des résultats est celui des entrées.
+ */
+async function parPaquets<T, R>(entrees: readonly T[], n: number, f: (x: T) => Promise<R>): Promise<R[]> {
+  const sortie: R[] = [];
+  for (let i = 0; i < entrees.length; i += n) sortie.push(...(await Promise.all(entrees.slice(i, i + n).map(f))));
+  return sortie;
+}
+
 etudesRouter.get("/analyses", async (req, res) => {
   const espaceId = await espaceDe(req);
   const lignes = await requete(`SELECT id, zone_id, zone_revision, couche_id, version_id, methode, version_methode, parametres, resultat, cree_le FROM geodata_analyses
     WHERE espace_id = $1 ORDER BY cree_le DESC LIMIT 200`, [espaceId]);
-  res.json({ analyses: await Promise.all(lignes.map((a) => vueAnalyse(espaceId, a))) });
+  res.json({ analyses: await parPaquets(lignes, 4, (a) => vueAnalyse(espaceId, a)) });
 });
 
 etudesRouter.get("/analyses/:id", async (req, res) => {

@@ -15,16 +15,20 @@
  *   un index sans bloquer les écritures (`CREATE INDEX CONCURRENTLY`). Un index laissé invalide par un échec est
  *   supprimé avant d'être recréé.
  * - Un fichier déjà appliqué dont le contenu a changé est refusé : on n'édite pas l'histoire, on ajoute un fichier.
- * - Un verrou consultatif garantit qu'un seul processus migre à la fois.
+ * - Un verrou consultatif (le même que `db/appliquer-schema.ts`, #379) garantit qu'un seul processus migre à la fois.
+ * - La base de départ est appliquée par `appliquerSchemaClient` (#379, BD-5) : `MIGRATION_LOCK_TIMEOUT` (5 s), réessais,
+ *   journal `admin.schema_applications`, extension `pg_stat_statements` si la bibliothèque est chargée.
  */
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import type { Pool, PoolClient } from "pg";
-import { applySchema, isLockTimeout } from "./apply-schema.js";
+import { appliquerSchemaClient, type ResultatSchema, VERROU_MIGRATION } from "./appliquer-schema.js";
+
+/** Erreur « verrou non obtenu dans le délai » (lock_timeout, SQLSTATE 55P03). */
+export const isLockTimeout = (err: unknown): boolean => (err as { code?: string } | null)?.code === "55P03";
 
 export const VERSION_BASE = "0000";
 const MOTIF = /^(\d{4})_([a-z0-9_]+?)(\.concurrent)?\.sql$/;
-const VERROU = "fadi:schema-migrations";
 
 export interface FichierMigration {
   version: string;
@@ -79,6 +83,8 @@ export function indexCree(instruction: string): string | null {
 export interface RapportMigration {
   baseAppliquee: boolean;
   appliquees: string[];
+  /** Résultat de l'application de la base de départ, quand elle a été (re)jouée. */
+  base?: ResultatSchema;
 }
 
 interface Options {
@@ -87,8 +93,8 @@ interface Options {
   log?: (entree: Record<string, unknown>) => void;
   sleep?: (ms: number) => Promise<void>;
   essais?: number;
-  /** Application de la base de départ (par défaut : `applySchema`, lock_timeout et relances). */
-  appliquerBase?: (client: PoolClient, sql: string) => Promise<unknown>;
+  /** Application de la base de départ (par défaut : `appliquerSchemaClient`, lock_timeout, relances et journal). */
+  appliquerBase?: (client: PoolClient, sql: string) => Promise<ResultatSchema | void>;
 }
 
 async function roleProprietaire(client: PoolClient): Promise<boolean> {
@@ -174,7 +180,7 @@ export async function migrer(pool: Pool, o: Options): Promise<RapportMigration> 
   const client = await pool.connect();
   const rapport: RapportMigration = { baseAppliquee: false, appliquees: [] };
   try {
-    await client.query("SELECT pg_advisory_lock(hashtext($1))", [VERROU]);
+    await client.query("SELECT pg_advisory_lock($1)", [VERROU_MIGRATION]);
     try {
       const existe = (await client.query<{ t: string | null }>("SELECT to_regclass('public.schema_migrations')::text AS t")).rows[0]?.t;
       const faites = new Map<string, string>();
@@ -184,7 +190,9 @@ export async function migrer(pool: Pool, o: Options): Promise<RapportMigration> 
       const empreinteBase = empreinte(o.baseSql);
       if (faites.get(VERSION_BASE) !== empreinteBase) {
         log({ level: "info", message: faites.has(VERSION_BASE) ? "migration : init.sql a changé, base de départ rejouée" : "migration : base de départ (init.sql) appliquée" });
-        await (o.appliquerBase ?? ((c: PoolClient, sql: string) => applySchema(c, sql, { log, ...(o.sleep ? { sleep: o.sleep } : {}) })))(client, o.baseSql);
+        const base = await (o.appliquerBase ?? ((c: PoolClient, sql: string) =>
+          appliquerSchemaClient(c, sql, process.env, (m) => log({ level: "warn", message: m }), o.sleep)))(client, o.baseSql);
+        if (base) rapport.base = base;
         await client.query(
           `INSERT INTO schema_migrations (version, name, checksum) VALUES ($1, 'init', $2)
            ON CONFLICT (version) DO UPDATE SET checksum = EXCLUDED.checksum, applied_at = now()`,
@@ -205,7 +213,7 @@ export async function migrer(pool: Pool, o: Options): Promise<RapportMigration> 
         rapport.appliquees.push(f.fichier);
       }
     } finally {
-      await client.query("SELECT pg_advisory_unlock(hashtext($1))", [VERROU]).catch(() => undefined);
+      await client.query("SELECT pg_advisory_unlock($1)", [VERROU_MIGRATION]).catch(() => undefined);
     }
   } finally {
     client.release();

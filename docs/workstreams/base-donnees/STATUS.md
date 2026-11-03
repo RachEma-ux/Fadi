@@ -199,6 +199,23 @@ Mis à jour : 2026-11-02 (UTC).
   effet ; aucun index invalide ; 91 contraintes `NOT VALID` validées sans violation.
 - Montée depuis le commit audité `b9d9897` (`migration-montee-version.mjs`) : quatre contrôles réussis.
 
+## Intégration avec `main` (#379 / #380, 2026-11-03)
+
+Le chantier parallèle `bases-de-donnees` (Issue #379, PR #380 fusionnée le 2026-11-02) recoupait BD-1, des index et la
+migration. Fusion de `origin/main` (`0810325`) dans la branche, un seul mécanisme gardé :
+- Pool : `db/pool-options.ts` de #379 (variables `DB_*`, 120 s) remplace `db/pool-config.ts` (`PG_*`, 60 s) ; arrêt propre
+  commun (SIGTERM et SIGINT, `ARRET_DELAI_MS` 8 s).
+- Migration : l'exécuteur versionné (`db/schema-migrations.ts`) applique la base de départ par `appliquerSchemaClient` de
+  #379 (même verrou consultatif, `MIGRATION_LOCK_TIMEOUT` 5 s et réessais, journal `admin.schema_applications`,
+  `pg_stat_statements`) ; `db/apply-schema.ts` retiré, ainsi que les `SET lock_timeout` / `RESET` ajoutés à `init.sql`.
+- Index : `geodata_indicateurs_couche_idx (couche_id, ordre)` de #379 repris en 0001 ; `users_email_lower_idx` et
+  `atelier_commands_author_idx` (#379) couverts par ceux de 0002, retirés en 0003.
+- Contraintes : `db:verifier-contraintes` (#379, contrôle sans modification, en CI) et `db:validate-constraints` (validation)
+  coexistent. `init.sql` regelé (nouvelle empreinte).
+- Vérifié sur base jetable : base neuve (migrations 0001–0011, une ligne `admin.schema_applications`, second passage sans
+  effet) ; montée depuis `origin/main` et depuis `b9d9897` réussie ; 91 contraintes contrôlées sans violation ; typecheck,
+  build, web 1 373, API 1 200 tests purs, `test:db-guard` 253, `test:scripts` 24 verts.
+
 ## Points ouverts
 
 - Ouvrir l'Issue du chantier et reporter son numéro dans `CONTEXT.md` et l'index.
