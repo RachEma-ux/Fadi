@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { estCatalogueNonCharge } from "./lib/catalogues.js";
 import rateLimit from "express-rate-limit";
 import { attachUser } from "./middleware/require-auth.js";
 import { pool } from "./db/client.js";
@@ -55,6 +56,21 @@ export function createApp() {
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());
+  // BD-4.9 (constat Q14) : les fichiers du build (scripts, styles, images, service worker) sont servis avant la garde
+  // CSRF et la lecture de session — chaque fichier coûtait sinon une requête à la base. Lecture seule (GET/HEAD), aucun
+  // fichier ne porte le nom d'une route de l'API ; le repli SPA (index.html) reste après les routes, plus bas.
+  const webDistStatique = process.env["WEB_DIST"] ? resolve(process.env["WEB_DIST"]) : null;
+  if (webDistStatique && existsSync(join(webDistStatique, "index.html"))) {
+    app.use(
+      express.static(webDistStatique, {
+        index: false,
+        setHeaders: (res, filePath) => {
+          if (/[\\/]assets[\\/]/.test(filePath)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          else res.setHeader("Cache-Control", "no-cache");
+        },
+      }),
+    );
+  }
   // CSRF (gestion des comptes, phase 2) : toute requête qui modifie avec un cookie doit venir de l'application.
   app.use(csrfGuard(webOrigin.split(",")));
   app.use(attachUser);
@@ -113,15 +129,7 @@ export function createApp() {
   // immuables ; `index.html` et le service worker ne sont jamais mis en cache ; toute route du client renvoie `index.html`.
   const webDist = process.env["WEB_DIST"] ? resolve(process.env["WEB_DIST"]) : null;
   if (webDist && existsSync(join(webDist, "index.html"))) {
-    app.use(
-      express.static(webDist, {
-        index: false,
-        setHeaders: (res, filePath) => {
-          if (/[\\/]assets[\\/]/.test(filePath)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-          else res.setHeader("Cache-Control", "no-cache");
-        },
-      }),
-    );
+    // Fichiers du build : servis plus haut, avant la lecture de session (BD-4.9). Ici, seulement le repli SPA.
     app.use((req, res, next) => {
       // Repli SPA : une route du client (sans extension de fichier), jamais un fichier manquant ni un chemin de l'API.
       if (req.method !== "GET" || API_PREFIX.test(req.path) || /\.[a-z0-9]+$/i.test(req.path) || !req.accepts("html")) {
@@ -140,6 +148,13 @@ export function createApp() {
     // (EX-087 : taille d'entrée contrôlée ; rien n'a été lu ni écrit).
     if ((err as { type?: string } | null)?.type === "entity.too.large") {
       res.status(413).json({ error: "payload_too_large", message: "Le corps de la requête dépasse la taille admise." });
+      return;
+    }
+    // BD-9.6 (D-GD-29) : catalogue de données absent de la base — état explicite, jamais de repli sur une copie embarquée.
+    if (estCatalogueNonCharge(err)) {
+      // eslint-disable-next-line no-console
+      console.error(JSON.stringify({ level: "error", message: err.message, catalogue: err.cle }));
+      res.status(503).json({ error: "catalogue_non_charge", catalogue: err.cle, message: err.message });
       return;
     }
     // eslint-disable-next-line no-console

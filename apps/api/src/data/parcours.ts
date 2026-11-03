@@ -1,7 +1,9 @@
 /**
- * Chargement du registre des 21 étapes du Parcours, des formulaires métier,
- * des référentiels (Harmonie, répartition programmatique) et des exemples
- * importables. Les fichiers JSON à côté de ce module sont une extraction
+ * Chargement du registre des 21 étapes du Parcours, des formulaires métier
+ * (configuration, D-BD-6) et des exemples importables. Les catalogues de
+ * données (bibliothèque des bâtiments, Harmonie, répartition programmatique)
+ * ne sont plus lus ici : ils vivent en base (BD-9.6, D-GD-29,
+ * `lib/catalogues.ts`). Les fichiers JSON à côté de ce module sont une extraction
  * traçable du prototype fourni par l'utilisateur (voir leur champ
  * `sourceVersion`/`sourceBlock` et `scripts/extract-prototype-data.mjs`) —
  * ce module les lit et les type, il ne les invente pas (AGENTS.md : « Treat
@@ -13,17 +15,13 @@ import { fileURLToPath } from "node:url";
 import {
   DEFAULT_SITE_OBSERVATIONS,
   EMPTY_PARCOURS_STEP_CONTENT,
-  type BuildingLibraryData,
   type DesignAssumption,
-  type HarmonieProfilesData,
-  type HarmonyEngineData,
   type ParcoursFieldValue,
   type ParcoursFormField,
   type ParcoursStepContent,
   type ParcoursStepDefinition,
   type ParcoursStepForm,
   type ParcoursStepResult,
-  type ProgrammeRepartitionData,
   type ProgrammeSpace,
   type SiteManualGeographic,
   type SiteObservations,
@@ -56,8 +54,6 @@ interface ParcoursFormsFile {
 }
 
 const stepsFile = readJson<ParcoursStepsFile>("parcours-steps.json");
-/** Bibliothèque des bâtiments (10 types, 21 cas, 3 variantes chacun, références) — `building-library-data` du prototype, tel quel. */
-export const BUILDING_LIBRARY = readJson<BuildingLibraryData>("building-library.json");
 const formsFile = readJson<ParcoursFormsFile>("parcours-forms.json");
 
 /**
@@ -91,12 +87,8 @@ export function bizSchema(number: number): ParcoursFormField[] | null {
 export const BIZ_FIELD_COUNT: number = Object.values(formsFile.schemas).reduce((n, s) => n + s.length, 0);
 
 // ---------------------------------------------------------------------------
-// Référentiels : Harmonie, répartition programmatique
+// Dossier Harmony de l'exemple (les profils et le moteur Harmonie sont des catalogues en base : lib/catalogues.ts)
 // ---------------------------------------------------------------------------
-
-export const HARMONIE_PROFILES: HarmonieProfilesData = readJson<HarmonieProfilesData>("harmonie-profiles.json");
-/** Moteur Harmony V6 : types, phases, lectures, 69 règles, directions, Gua, sources (`harmony-engine-v6` du prototype, tables telles quelles). */
-export const HARMONY_ENGINE: HarmonyEngineData = readJson<HarmonyEngineData>("harmony-engine.json");
 
 interface HarmonyDossierFile {
   exampleId: string;
@@ -158,7 +150,6 @@ export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUr
 export const DESIGN_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("design-report.css")), "utf8");
 /** Feuille de style de l'exemple résolu (`<style id="ex81-css">`), telle quelle : « Dossier complet de l’exemple » (P118_Exemple_Resolu_V8_19.html). */
 export const EXAMPLE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("example-report.css")), "utf8");
-export const PROGRAMME_REPARTITION: ProgrammeRepartitionData = readJson<ProgrammeRepartitionData>("programme-repartition.json");
 
 // ---------------------------------------------------------------------------
 // Exemples importables

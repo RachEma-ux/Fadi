@@ -73,7 +73,7 @@ describe("MIG-COEX-04 — données locales sans propriétaire en quarantaine, co
     expect([...lignes("quarantaine").keys()].filter((k) => k.startsWith("lots|"))).toEqual(["lots|7|p2|r1"]);
   });
 
-  it("MIG-COEX-04 [−] aucune montée de version ne vide plus une table de données sans passer par la quarantaine, qui n'est jamais vidée", async () => {
+  it("MIG-COEX-04 [−] aucune montée de version ne vide plus une table de données sans passer par la quarantaine (vidée seulement par les actions de maintenance de P-13)", async () => {
     const { mettreEnQuarantaine } = await import("./local-store");
     disque.tables.clear();
     // Sans table de quarantaine disponible, rien n'est vidé (l'écriture échoue avant le vidage).

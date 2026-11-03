@@ -2,8 +2,8 @@
  * Module Programmation — répartition programmatique par type de bâtiment
  * (étapes 06 et 07 du prototype) : type, surface de référence, position
  * dans la fourchette, ratios forcés. Monté sous
- * `/projects/:projectId/programme`. Le référentiel des fourchettes vient de
- * `data/programme-repartition.json` ; les calculs (ratios, surfaces, solde)
+ * `/projects/:projectId/programme`. Le référentiel des fourchettes est le
+ * catalogue « programme-repartition » publié en base (BD-9.6) ; les calculs (ratios, surfaces, solde)
  * sont ceux de `@parcours/domain-model` et sont renvoyés avec le réglage
  * pour que l'affichage ne recalcule rien de son côté.
  */
@@ -24,12 +24,14 @@ import {
   programmeTotals,
   type ProgrammeCase,
   type ProgrammeRepartition,
+  type ProgrammeRepartitionData,
   type ProgrammeSpace,
 } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { programmeRepartitions } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { BUILDING_LIBRARY, HARMONIE_PROFILES, PROGRAMME_REPARTITION } from "../data/parcours.js";
+import { catalogue } from "../lib/catalogues-db.js";
+import { estCatalogueNonCharge } from "../lib/catalogues.js";
 import { loadOwnedProject, projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import {
   adoptProgrammeConflict,
@@ -61,7 +63,7 @@ type Querier = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function loadProgrammeRepartition(projectId: string, q: Querier = db): Promise<StoredRepartition> {
   const rows = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, projectId)).limit(1);
   const row = rows[0];
-  if (!row) return { ...defaultProgrammeRepartition(PROGRAMME_REPARTITION), components: [], stored: false, fromCase: false };
+  if (!row) return { ...defaultProgrammeRepartition(await catalogue("programme-repartition")), components: [], stored: false, fromCase: false };
   const mode = (PROGRAMME_MODES as readonly string[]).includes(row.mode) ? (row.mode as ProgrammeRepartition["mode"]) : "cible";
   return { type: row.type, baseArea: row.baseArea, mode, custom: { ...row.custom }, components: [...row.components], stored: true, fromCase: row.mode === "cas" };
 }
@@ -72,8 +74,11 @@ export async function loadProgrammeRepartition(projectId: string, q: Querier = d
  * / `programmeTotal` de building-library), sinon depuis le référentiel.
  */
 async function repartitionView(project: OwnedProject) {
+  const referentiel = await catalogue("programme-repartition");
+  const bibliotheque = await catalogue("bibliotheque-batiments");
+  const profilsHarmonie = await catalogue("harmonie-profils");
   const rep = await loadProgrammeRepartition(project.id);
-  const typeInfo = PROGRAMME_REPARTITION.types[rep.type];
+  const typeInfo = referentiel.types[rep.type];
   const active = await loadActiveProgrammeCase(db, project.id);
   // Cas de programme de l'exemple importé, conservé en pièce jointe (lecture).
   const attachmentCase = project.sourceAttachment?.["programmeCase"] as { title?: string; scenarioLabel?: string; revision?: number; spaces?: ProgrammeSpace[]; users?: string } | undefined;
@@ -81,12 +86,12 @@ async function repartitionView(project: OwnedProject) {
   const caseSums = a ? programmeCaseSums(a.spaces) : attachmentCase?.spaces ? programmeCaseSums(attachmentCase.spaces) : null;
   const rows =
     a && caseSums
-      ? PROGRAMME_REPARTITION.families.map((f) => {
-          const range = PROGRAMME_REPARTITION.types[rep.type]?.ratios[f.key] ?? [0, 0, 0];
+      ? referentiel.families.map((f) => {
+          const range = referentiel.types[rep.type]?.ratios[f.key] ?? [0, 0, 0];
           const ratio = caseSums.total ? ((caseSums[f.key as keyof typeof caseSums] as number) / caseSums.total) * 100 : 0;
           return { key: f.key, label: f.label, range: [range[0], range[2]] as [number, number], ratio, area: (caseSums[f.key as keyof typeof caseSums] as number) ?? 0 };
         })
-      : programmeRows(PROGRAMME_REPARTITION, rep);
+      : programmeRows(referentiel, rep);
   const totals =
     a && caseSums
       ? {
@@ -96,30 +101,30 @@ async function repartitionView(project: OwnedProject) {
           netPercent: caseSums.total ? (caseSums.principal / caseSums.total) * 100 : 0,
           netArea: caseSums.principal,
         }
-      : programmeTotals(PROGRAMME_REPARTITION, rep);
+      : programmeTotals(referentiel, rep);
   const state = programmeStateOf(project);
-  const libraryCase = a ? buildingCase(BUILDING_LIBRARY, a.caseId) : null;
+  const libraryCase = a ? buildingCase(bibliotheque, a.caseId) : null;
   return {
     repartition: rep,
     // Un type hors du référentiel de répartition (ex. « mixte » d'un cas importé) garde le libellé de son profil Harmonie.
-    typeLabel: typeInfo?.label ?? harmonieProfile(HARMONIE_PROFILES, rep.type, rep.components).label,
+    typeLabel: typeInfo?.label ?? harmonieProfile(profilsHarmonie, rep.type, rep.components).label,
     rows,
     totals,
     /** Référence protégée d'un exemple résolu : présentation « Répartition renseignée et liée au modèle » du prototype (`projectProgramme`), modifiable dans une copie. */
     resolvedExample: project.exampleMode === "reference",
     reference: {
-      subtitle: PROGRAMME_REPARTITION.subtitle,
-      modes: PROGRAMME_REPARTITION.modes,
-      types: Object.entries(PROGRAMME_REPARTITION.types).map(([key, v]) => ({ key, label: v.label })),
-      adjacency: PROGRAMME_REPARTITION.adjacency,
-      statusNote: PROGRAMME_REPARTITION.statusNote,
-      transfer: PROGRAMME_REPARTITION.transfer,
+      subtitle: referentiel.subtitle,
+      modes: referentiel.modes,
+      types: Object.entries(referentiel.types).map(([key, v]) => ({ key, label: v.label })),
+      adjacency: referentiel.adjacency,
+      statusNote: referentiel.statusNote,
+      transfer: referentiel.transfer,
     },
     programmeCase:
       a && caseSums
         ? {
             ...a,
-            profileLabel: libraryCase?.profile.label ?? harmonieProfile(HARMONIE_PROFILES, a.type, rep.components).label,
+            profileLabel: libraryCase?.profile.label ?? harmonieProfile(profilsHarmonie, a.type, rep.components).label,
             libraryCaseExists: !!libraryCase,
             spaceCount: a.spaces.length,
             sums: caseSums,
@@ -166,7 +171,7 @@ programmeRouter.post("/case", async (req, res) => {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
-  const c = buildingCase(BUILDING_LIBRARY, parsed.data.caseId);
+  const c = buildingCase(await catalogue("bibliotheque-batiments"), parsed.data.caseId);
   if (!c || !c.scenarios.some((s) => s.id === parsed.data.scenarioId)) {
     res.status(400).json({ error: "invalid_input", details: { caseId: c ? "Variante inconnue" : "Cas inconnu" } });
     return;
@@ -211,6 +216,7 @@ programmeRouter.patch("/case/spaces/:spaceId", async (req, res) => {
   try {
     await db.transaction(async (tx) => (await lockProject(tx, project.id), editProgrammeCaseSpace(tx, project, req.params["spaceId"] as string, key, value, new Date().toISOString())));
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
     return;
   }
@@ -251,6 +257,7 @@ programmeRouter.post("/case/links", async (req, res) => {
       await linkProgrammeCaseRoom(tx, project, parsed.data.spaceId, parsed.data.roomId, false, model?.rooms ?? [], new Date().toISOString());
     });
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Liaison refusée." });
     return;
   }
@@ -267,6 +274,7 @@ programmeRouter.delete("/case/links/:spaceId/:roomId", async (req, res) => {
       await linkProgrammeCaseRoom(tx, project, req.params["spaceId"] as string, req.params["roomId"] as string, true, model?.rooms ?? [], new Date().toISOString());
     });
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Liaison refusée." });
     return;
   }
@@ -291,6 +299,7 @@ programmeRouter.patch("/case/hypotheses/:hypothesisId", async (req, res) => {
     );
     res.json({ hypotheses: next.hypotheses, revision: next.revision });
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
   }
 });
@@ -315,6 +324,7 @@ programmeRouter.post("/case/transfer/preview", async (req, res) => {
   try {
     res.json(previewSurfaceTransfer(a, project.id, parsed.data.from, parsed.data.to, parsed.data.amount, parsed.data.reason, fnv1a));
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Transfert refusé." });
   }
 });
@@ -344,25 +354,28 @@ programmeRouter.post("/case/transfer", async (req, res) => {
     const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
     res.json({ ...(await repartitionView(refreshed ?? project)), transfer: { total: result.total, revision: result.programmeCase.revision } });
   } catch (err) {
+    if (estCatalogueNonCharge(err)) throw err;
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Transfert refusé." });
   }
 });
 
-const putSchema = z.object({
-  type: z.string().refine((t) => t in PROGRAMME_REPARTITION.types, "Type de bâtiment inconnu"),
-  baseArea: z.number().finite().min(0).max(1_000_000),
-  mode: z.enum(["min", "cible", "max"]),
-  custom: z.record(
-    z.string().refine((k) => PROGRAMME_REPARTITION.families.some((f) => f.key === k), "Famille inconnue"),
-    z.number().finite().min(0).max(100),
-  ),
-  components: z.array(z.string().max(40)).max(10).optional(),
-});
+/** Le type et les familles se contrôlent contre le catalogue publié, lu à la requête. */
+const putSchemaFor = (ref: ProgrammeRepartitionData) =>
+  z.object({
+    type: z.string().refine((t) => t in ref.types, "Type de bâtiment inconnu"),
+    baseArea: z.number().finite().min(0).max(1_000_000),
+    mode: z.enum(["min", "cible", "max"]),
+    custom: z.record(
+      z.string().refine((k) => ref.families.some((f) => f.key === k), "Famille inconnue"),
+      z.number().finite().min(0).max(100),
+    ),
+    components: z.array(z.string().max(40)).max(10).optional(),
+  });
 
 programmeRouter.put("/", async (req, res) => {
   const project = await projectOr404(req, res, "write");
   if (!project) return;
-  const parsed = putSchema.safeParse(req.body);
+  const parsed = putSchemaFor(await catalogue("programme-repartition")).safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;

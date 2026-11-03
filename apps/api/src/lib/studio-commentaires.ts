@@ -47,6 +47,7 @@ import {
   contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema,
   TACHE_TRANSITIONS, tacheApres, tacheAutorisee, VUE_MODES, type ActeurObservation, type ObservationTransition, type TacheTransition,
 } from "./studio-observations.js";
+import { colonnesVolume } from "./stockage-objet/index.js";
 
 export const STUDIO_COMMENT_MAX_OBJECTS = 200;
 
@@ -479,7 +480,7 @@ export async function enregistrerPieces(tx: Tx, pieces: StudioObservationInput["
     const probleme = attachmentProblem(p.mime, bytes);
     if (probleme) throw new StudioRequestError(400, { error: "invalid_input", code: "piece_invalide", name: p.name, message: probleme });
     const sha256 = createHash("sha256").update(bytes).digest("hex");
-    await tx.insert(volumes).values({ id: sha256, mime: p.mime, size: bytes.byteLength, content: bytes, createdAt: new Date() }).onConflictDoNothing();
+    await tx.insert(volumes).values({ id: sha256, mime: p.mime, size: bytes.byteLength, ...(await colonnesVolume(bytes, p.mime)), createdAt: new Date() }).onConflictDoNothing();
     out.push({ name: safeFileName(p.name), mime: p.mime, size: bytes.byteLength, sha256 });
   }
   return out;

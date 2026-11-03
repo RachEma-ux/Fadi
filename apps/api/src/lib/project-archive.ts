@@ -28,10 +28,11 @@ import {
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
+import { contenuFichier, rangerFichier } from "./stockage-objet/index.js";
 import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, projectPlans, projectPlanBaselines, stepFiles } from "../db/schema.js";
 import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
-import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
 import { ensureOwnerParticipation } from "./project-access-db.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
@@ -107,7 +108,9 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
       continue;
     }
     bytes += f.size;
-    stageAttachments.push({ stepNumber: f.stepNumber, name: f.name, type: f.type, size: f.size, addedAt: f.addedAt.toISOString(), dataUrl: `data:${f.type};base64,${f.content.toString("base64")}` });
+    // BD-9.1 : contenu lu là où il est (base ou stockage objet), vérifié contre la taille et l'empreinte connues.
+    const content = await contenuFichier(f, { sha256: f.empreinte, taille: f.size });
+    stageAttachments.push({ stepNumber: f.stepNumber, name: f.name, type: f.type, size: f.size, addedAt: f.addedAt.toISOString(), dataUrl: `data:${f.type};base64,${content.toString("base64")}` });
   }
   return {
     kind: PROJECT_ARCHIVE_KIND,
@@ -162,7 +165,7 @@ export async function stampStepFingerprints(tx: Tx, project: StepContextProject)
     if (!row) continue;
     const fingerprint = ctx.dependencies.get(def.number)?.fingerprint ?? null;
     const decisions: Record<string, HarmonieProposalDecision> = { ...row.content.harmonie.proposals };
-    for (const q of buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number), fingerprint)) {
+    for (const q of buildHarmonieProposals(ctx.harmonieProfils, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number), fingerprint)) {
       const d = decisions[q.id];
       if (q.retained && d) decisions[q.id] = { ...d, acceptedHash: fingerprint, snapshot: q.orphaned && d.snapshot ? d.snapshot : proposalSnapshot(q) };
     }
@@ -257,7 +260,9 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       continue;
     }
     const content = Buffer.from(decoded.base64, "base64");
-    await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: f.stepNumber, name: f.name, type: f.type || decoded.type, size: content.length, content, addedAt: f.addedAt ? new Date(f.addedAt) : new Date(now) });
+    const type = f.type || decoded.type;
+    const range = await rangerFichier("step_files", content, type);
+    await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: f.stepNumber, name: f.name, type, size: content.length, content: range.content, objetCle: range.objetCle, empreinte: range.sha256, addedAt: f.addedAt ? new Date(f.addedAt) : new Date(now) });
   }
 
   // Studio (R.1-02) : lignes réinsérées telles quelles (révisions immuables, empreintes conservées), après les étapes

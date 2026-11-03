@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioFusionRevision, type StudioProvenance } from "../db/schema.js";
+import { projects, studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioFusionRevision, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
@@ -139,9 +139,47 @@ function assertEcriture(access: AccessibleProject, actorId: string, ecriture: St
   assertAccess(access, actorId, "write");
 }
 
+/**
+ * Portée du verrou d'une écriture Studio (BD-4.8, décision D-BD-7 : « verrou de la variante plutôt que du projet
+ * pendant une commande »).
+ *
+ * - `projet` (défaut) : ligne `projects` en `FOR UPDATE` (`lockProject`). Toutes les écritures du projet sont
+ *   sérialisées. Reste la règle pour toute écriture qui lit ou modifie un état COMMUN à plusieurs variantes : études
+ *   et variantes (création, dérivation depuis la tête d'une autre variante, archivage, renommage), fusion (lit les
+ *   variantes sources), bascule et chemin d'écriture (`studio_bascules`, une ligne par projet), publications,
+ *   dossiers, délégations, migrations, exigences, vues de coupe, commentaires, essais (jobs)…
+ * - `variante` : ligne `projects` en `FOR SHARE` seulement ; l'appelant verrouille ENSUITE la ligne de sa variante en
+ *   `FOR UPDATE`. Réservée au lot de commandes (`submitStudioCommands`), qui ne lit et n'écrit que sa variante :
+ *   révision append-only, tête, journal (`studio_revision_events`) — l'unicité du `requestId` et l'ordre des révisions
+ *   sont par variante (`studio_revisions_request_unique`, parent de la même variante). Deux lots sur deux variantes
+ *   du même projet avancent donc en parallèle ; deux lots sur la même variante restent sérialisés par la ligne de la
+ *   variante (même base → un seul avance la tête, l'autre reçoit 409 ; même `requestId` → le second rejoue).
+ *
+ * Pourquoi `FOR SHARE` sur le projet et non rien : ce verrou partagé est compatible avec un autre `FOR SHARE` (lots
+ * parallèles) mais incompatible avec `FOR UPDATE` (`lockProject` des écritures de portée projet ci-dessus, du
+ * Parcours, du verrou d'édition, de l'Atelier) et avec `UPDATE` / `DELETE` de la ligne du projet. Tout ce que le lot
+ * lit au niveau du projet reste donc stable jusqu'au commit, comme avant : archivage de l'étude ou de la variante,
+ * bascule Atelier → Studio (`controlerCheminEcriture`), verrou d'édition, suppression du projet. Les participations
+ * de l'acteur restent verrouillées en `FOR SHARE` (`lockAccessRows`) contre une révocation concurrente.
+ * Ordre des verrous inchangé (projet, participations, variante) : aucun nouvel interblocage. Un lot sous `FOR SHARE`
+ * ne doit JAMAIS reprendre `lockProject` (montée de verrou : deux lots parallèles s'interbloqueraient).
+ */
+export type StudioPorteeVerrou = "projet" | "variante";
+
+/** Mode de verrou de la ligne `projects` selon la portée (choix pur, testé : `studio-verrou-variante.test.ts`). */
+export function modeVerrouProjetStudio(portee: StudioPorteeVerrou): "update" | "share" {
+  return portee === "variante" ? "share" : "update";
+}
+
+/** Verrou de la ligne du projet selon la portée (voir `StudioPorteeVerrou`). */
+export async function verrouillerProjetStudio(tx: Tx, projectId: string, portee: StudioPorteeVerrou): Promise<void> {
+  if (modeVerrouProjetStudio(portee) === "update") { await lockProject(tx, projectId); return; }
+  await tx.select({ id: projects.id }).from(projects).where(eq(projects.id, projectId)).for("share");
+}
+
 /** Verrouille également le membre : une révocation concurrente ne traverse pas le commit. */
-export async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
-  await lockProject(tx, projectId);
+export async function lockedAccess(tx: Tx, projectId: string, actorId: string, portee: StudioPorteeVerrou = "projet"): Promise<AccessibleProject> {
+  await verrouillerProjetStudio(tx, projectId, portee);
   await lockAccessRows(tx, projectId, actorId);
   return assertAccess(await loadProjectAccess(projectId, actorId, tx), actorId, "read");
 }
@@ -450,6 +488,8 @@ export async function ecrireRevisionFusionStudio(scope: StudioScope, actorId: st
     const transactionId = nouvelleTransaction();
     return orchestrerCommandesDansTransaction<StudioFusionEcrite>(tx, { kind: "studio", ...scope }, {
       prepare: async (t) => {
+        // Portée projet conservée (BD-4.8) : la fusion lit les variantes SOURCES (`calculer`) ; aucun lot d'une autre
+        // variante ne doit avancer pendant son calcul.
         const access = await lockedAccess(t, scope.projectId, actorId);
         const [study] = await t.select({ id: studioStudies.id }).from(studioStudies)
           .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
@@ -736,10 +776,13 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
     const transactionId = nouvelleTransaction();
     return orchestrerCommandesDansTransaction<StudioSoumission>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
-        const access = await lockedAccess(transaction, scope.projectId, actorId);
+        // BD-4.8 (D-BD-7) : projet en FOR SHARE, puis variante en FOR UPDATE — le lot ne touche que sa variante, deux
+        // variantes du même projet avancent en parallèle ; les écritures de portée projet (FOR UPDATE) restent exclues.
+        const access = await lockedAccess(transaction, scope.projectId, actorId, "variante");
         const [study] = await transaction.select({ id: studioStudies.id }).from(studioStudies)
           .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
         if (!study) return notFound();
+        // Verrou de la variante : sérialise les lots d'une même variante (ordre des révisions, rejeu par requestId).
         const [variant] = await transaction.select({ id: studioVariants.id }).from(studioVariants)
           .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
         if (!variant) return notFound();
@@ -761,7 +804,8 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
       },
       execute: async (transaction) => {
         if (!current) throw new Error("studio_scope_not_prepared");
-        // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
+        // Lu sous les verrous du projet (partagé) et de la variante : un (dés)archivage concurrent, qui prend le projet en
+        // FOR UPDATE, est sérialisé avec ce lot.
         if (current.archived) return studioArchivedRefusal();
         // EX-028 : quota d'invocation du compte, contrôlé à chaque invocation effective (jamais pour un rejeu ni pour
         // l'installation d'un exemple) ; un lot refusé ici n'écrit rien et ne consomme rien.

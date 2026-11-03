@@ -4,10 +4,12 @@ import { Pool } from "pg";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
-import { appliquerSchema } from "./db/appliquer-schema.js";
+import { migrer } from "./db/schema-migrations.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
+import { chargerCatalogues, ligneBilanCatalogues } from "./db/catalogues-chargement.js";
 import { mailRuntime } from "./lib/mailer/index.js";
+import { initialiserStockageFichiers } from "./lib/stockage-objet/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
 import { startSurveillance } from "./lib/studio-surveillance-db.js";
 import { attacherTempsReel } from "./lib/temps-reel-canal.js";
@@ -33,13 +35,17 @@ async function migrateOnStart(): Promise<void> {
   const sql = readFileSync(fileURLToPath(new URL("./db/init.sql", import.meta.url)), "utf8");
   // D-7 : DDL avec le rôle migrateur quand il est fourni ; l'API elle-même n'a aucun droit DDL.
   const migrationUrl = process.env["DATABASE_MIGRATION_URL"];
-  const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1 }) : pool;
+  const migrationPool = migrationUrl ? new Pool({ connectionString: migrationUrl, max: 1, application_name: "fadi-migrate" }) : pool;
   try {
-    const r = await appliquerSchema(migrationPool, sql);
+    // BD-2 : base de départ (init.sql) si nouvelle ou modifiée, puis migrations numérotées manquantes (dist/db/migrations).
+    const rapport = await migrer(migrationPool, { baseSql: sql, dossier: new URL("./db/migrations/", import.meta.url) });
     // eslint-disable-next-line no-console
-    console.log("Schema applied (init.sql).");
+    console.log(`Schema applied (init.sql). Base de départ ${rapport.baseAppliquee ? "appliquée" : "inchangée"} ; ${rapport.appliquees.length} migration(s) appliquée(s).`);
     // eslint-disable-next-line no-console
-    console.log(`Migration : ${r.dureeMs} ms, ${r.tentatives} essai(s), statistiques des requêtes ${r.pgStatStatements}.`);
+    if (rapport.base) console.log(`Migration : ${rapport.base.dureeMs} ms, ${rapport.base.tentatives} essai(s), statistiques des requêtes ${rapport.base.pgStatStatements}.`);
+    // BD-9.6 (D-GD-29) : catalogues de données du Parcours chargés en base depuis les fichiers livrés (dist/data, idempotent).
+    // eslint-disable-next-line no-console
+    console.log(ligneBilanCatalogues(await chargerCatalogues(migrationPool)));
     const roles = await applyRolePasswords(migrationPool);
     // eslint-disable-next-line no-console
     if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);
@@ -94,6 +100,9 @@ Promise.resolve()
     const { config } = mailRuntime();
     // eslint-disable-next-line no-console
     console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}${config.transport === "smtp" ? (config.allowReservedDomains ? " ; domaines réservés envoyés (MAIL_ALLOW_RESERVED_DOMAINS, serveur de capture)" : " ; domaines réservés jamais envoyés") : ""}.`);
+    // Stockage des fichiers (BD-9.1, D-BD-8) : configuration FADI_STOCKAGE / FADI_S3_* invalide = refus de démarrer.
+    // eslint-disable-next-line no-console
+    console.log(initialiserStockageFichiers());
     // File de courriels et anonymisation différée (D-5) ; `ACCOUNT_WORKERS=0` les coupe (deuxième processus, outils).
     if (process.env["ACCOUNT_WORKERS"] !== "0") startAccountWorkers();
     // Surveillance d'exploitation (R.5-03, OPS-08) : règles d'alerte évaluées chaque minute, transitions journalisées.
@@ -114,8 +123,13 @@ Promise.resolve()
     const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
     // Arrêt (déploiement) : les clients du temps réel sont prévenus (1001), le serveur cesse d'accepter des requêtes et
     // termine celles en cours, puis les connexions à la base sont rendues (BD-1) ; au plus ARRET_DELAI_MS (8 s, sous les
-    // 10 s laissés par Docker avant l'arrêt forcé).
-    process.once("SIGTERM", () => {
+    // 10 s laissés par Docker avant l'arrêt forcé). SIGINT (développement) suit le même chemin.
+    let arretEnCours = false;
+    const arreter = (signal: string) => {
+      if (arretEnCours) return;
+      arretEnCours = true;
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({ level: "info", message: "arrêt demandé", signal }));
       arreterTempsReel();
       arreterImportAuto();
       const delai = Number(process.env["ARRET_DELAI_MS"] ?? 8000);
@@ -125,7 +139,9 @@ Promise.resolve()
         pool.end().catch(() => undefined).finally(() => process.exit(0));
       });
       server.closeIdleConnections();
-    });
+    };
+    process.once("SIGTERM", () => arreter("SIGTERM"));
+    process.once("SIGINT", () => arreter("SIGINT"));
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

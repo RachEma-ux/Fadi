@@ -75,15 +75,21 @@ lockRouter.delete("/", async (req, res) => {
     res.status(404).json({ error: "not_found" });
     return;
   }
-  const lock = activeLock(access);
-  if (!lock) {
-    res.status(204).end();
+  // BD-4.5 (constat Q11) : relecture et libération sous le verrou de ligne du projet, comme la pose (PUT). Avant, la
+  // réservation lue hors transaction pouvait avoir été reprise par un autre entre la lecture et l'effacement, qui
+  // supprimait alors la réservation d'autrui.
+  const refus = await db.transaction(async (tx) => {
+    await lockProject(tx, access.id);
+    const [row] = await tx.select({ editingLock: projects.editingLock }).from(projects).where(eq(projects.id, access.id)).limit(1);
+    const lock = activeLock({ editingLock: row?.editingLock ?? null }, new Date());
+    if (!lock) return null;
+    if (lock.userId !== req.user!.id && access.role !== "proprietaire") return lock;
+    await tx.update(projects).set({ editingLock: null }).where(eq(projects.id, access.id));
+    return null;
+  });
+  if (refus) {
+    res.status(403).json({ error: "forbidden", message: `Seul ${refus.email} ou le propriétaire du projet peut libérer cette réservation.` });
     return;
   }
-  if (lock.userId !== req.user!.id && access.role !== "proprietaire") {
-    res.status(403).json({ error: "forbidden", message: `Seul ${lock.email} ou le propriétaire du projet peut libérer cette réservation.` });
-    return;
-  }
-  await db.update(projects).set({ editingLock: null }).where(eq(projects.id, access.id));
   res.status(204).end();
 });

@@ -37,7 +37,8 @@ import {
   type ProgrammeCase,
 } from "@parcours/domain-model";
 import { projects } from "../db/schema.js";
-import { HARMONY_ENGINE, PARCOURS_STEPS } from "../data/parcours.js";
+import { PARCOURS_STEPS } from "../data/parcours.js";
+import { catalogue } from "./catalogues-db.js";
 import { loadModelDomains } from "./model-context.js";
 import { loadActiveProgrammeCase, programmeStateOf } from "./programme-case.js";
 import { loadProgrammeRepartition } from "../routes/programme.js";
@@ -71,6 +72,7 @@ export function ownsP118(project: { sourceExampleId: string | null }, programmeC
 export async function loadDesignContext(q: Querier, project: ProjectRow, now: string, rows?: StepRows): Promise<DesignContext> {
   const stepRows = rows ?? (await loadStepRows(q, project.id));
   const steps = await loadStepContext(q, project, stepRows);
+  const moteurHarmony = await catalogue("harmonie-moteur");
   const domains = await loadModelDomains(q, project.id);
   const programmeCase = await loadActiveProgrammeCase(q, project.id);
   const rep = await loadProgrammeRepartition(project.id, q);
@@ -126,12 +128,12 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
     parcelTransmission: (project.parcelTransmission as { status?: string; reason?: string } | null) ?? null,
     decision19: (stepRows.get(19)?.content.fields["decision"] as string | undefined) ?? null,
     textConflicts: programmeState.conflicts.length,
-    engine: HARMONY_ENGINE,
+    engine: moteurHarmony,
     now,
   };
   const analysis = designAnalysis(input);
   const programmeType = rep.stored ? rep.type : programmeCase?.type;
-  const profileLabel = harmonyProfile(HARMONY_ENGINE, h, programmeType ? { type: programmeType } : null, example).label;
+  const profileLabel = harmonyProfile(moteurHarmony, h, programmeType ? { type: programmeType } : null, example).label;
   return { input, analysis, audit: designAudit(input, analysis, profileLabel), profileLabel, harmony: h, steps };
 }
 

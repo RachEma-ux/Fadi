@@ -1,7 +1,8 @@
 /**
  * Bibliothèque des bâtiments (Parcours V6.1) — lecture seule : 10 types,
  * 21 cas, 3 variantes chacun, références réglementaires. Les cas sources
- * sont immuables ; leur application à un projet passe par
+ * sont immuables (catalogue « bibliotheque-batiments » en base, BD-9.6 ;
+ * absent : 503 `catalogue_non_charge`) ; leur application à un projet passe par
  * `routes/programme.ts` (`POST /projects/:id/programme/case`).
  *
  *   GET /library/buildings      → { version, date, surfaceConvention, profiles, cases (résumés) }
@@ -10,7 +11,8 @@
 import { Router } from "express";
 import { buildingCase, programmeCaseSums, referenceRows } from "@parcours/domain-model";
 import { requireAuth } from "../middleware/require-auth.js";
-import { BUILDING_LIBRARY, PARCOURS_STEPS } from "../data/parcours.js";
+import { PARCOURS_STEPS } from "../data/parcours.js";
+import { catalogue } from "../lib/catalogues-db.js";
 
 /** `routeNames` de building-library-app : ce que chaque étape reçoit du cas (l'entrée 22 « Harmony » du V6 n'est plus une étape). */
 const ROUTE_NAMES: Record<number, string> = {
@@ -40,14 +42,15 @@ const ROUTE_NAMES: Record<number, string> = {
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
 
-libraryRouter.get("/buildings", (_req, res) => {
+libraryRouter.get("/buildings", async (_req, res) => {
+  const bibliotheque = await catalogue("bibliotheque-batiments");
   res.json({
-    version: BUILDING_LIBRARY.version,
-    date: BUILDING_LIBRARY.date,
-    surfaceConvention: BUILDING_LIBRARY.surfaceConvention,
-    profiles: Object.values(BUILDING_LIBRARY.profiles).map((p) => ({ id: p.id, label: p.label, tags: p.tags })),
+    version: bibliotheque.version,
+    date: bibliotheque.date,
+    surfaceConvention: bibliotheque.surfaceConvention,
+    profiles: Object.values(bibliotheque.profiles).map((p) => ({ id: p.id, label: p.label, tags: p.tags })),
     steps: PARCOURS_STEPS.map((d) => ({ number: d.number, title: d.title, route: ROUTE_NAMES[d.number] ?? "" })),
-    cases: BUILDING_LIBRARY.cases.map((c) => {
+    cases: bibliotheque.cases.map((c) => {
       const t = programmeCaseSums(c.spaces);
       return {
         id: c.id,
@@ -69,11 +72,12 @@ libraryRouter.get("/buildings", (_req, res) => {
   });
 });
 
-libraryRouter.get("/buildings/:id", (req, res) => {
-  const c = buildingCase(BUILDING_LIBRARY, req.params["id"] as string);
+libraryRouter.get("/buildings/:id", async (req, res) => {
+  const bibliotheque = await catalogue("bibliotheque-batiments");
+  const c = buildingCase(bibliotheque, req.params["id"] as string);
   if (!c) {
     res.status(404).json({ error: "not_found" });
     return;
   }
-  res.json({ case: c, references: referenceRows(BUILDING_LIBRARY, c), surfaceConvention: BUILDING_LIBRARY.surfaceConvention, version: BUILDING_LIBRARY.version });
+  res.json({ case: c, references: referenceRows(bibliotheque, c), surfaceConvention: bibliotheque.surfaceConvention, version: bibliotheque.version });
 });

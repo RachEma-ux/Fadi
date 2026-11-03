@@ -45,9 +45,22 @@ Première connexion : créer un compte (`/inscription`), importer l'exemple P.11
 archive JSON (« Importer ») exportée d'une instance précédente — y compris d'une instance temporaire Builder Deploy
 avant sa fin (« Outils du projet » → « Sauvegarder projet JSON »).
 
-Mise à jour : `git pull && docker compose --env-file .env.deploy up -d --build` (le service `migrate` applique le schéma
-idempotent `apps/api/src/db/init.sql` avant l'application ; en production, la mise à jour automatique d'une Release
-passe par `deploy/prod/fadi-prod-auto`).
+Mise à jour : faire d'abord une sauvegarde à la demande (section suivante), puis
+`git pull && docker compose --env-file .env.deploy up -d --build`. Le service `migrate` applique le schéma
+(`apps/api/src/db/init.sql`, idempotent) avant le démarrage de `app`. Seuls la base de départ modifiée et les fichiers numérotés
+non encore appliqués (`apps/api/src/db/migrations/`, table `schema_migrations`) sont joués ; la migration cède vite si une
+transaction de l'application tient un verrou (`MIGRATION_LOCK_TIMEOUT`, 5 s, essais espacés, puis échec franc : relancer). Le déploiement automatique de la production (`deploy/prod/fadi-prod-auto`) fait lui-même ce dump préalable.
+
+Catalogues de données (BD-9.6, D-BD-6, D-GD-29) : la bibliothèque des bâtiments, les profils et le moteur Harmonie et la
+répartition programmatique sont lus par l'API **en base** (tables `catalogues`, `catalogue_versions`), jamais depuis les
+fichiers de l'image. Le service `migrate` les charge juste après les migrations, depuis les fichiers qualifiés livrés
+(`dist/data/*.json`, extraits de `apps/api/src/data/`) : chaque fichier est archivé tel quel (octets, taille, empreinte
+SHA-256), en version immuable, puis publié ; une empreinte déjà publiée ne change rien (journal
+« Catalogues : … inchangée »). Recharger sans migrer : `docker compose --env-file .env.deploy run --rm migrate`, ou
+`node apps/api/dist/catalogues-charger.js` avec `DATABASE_MIGRATION_URL` (`npm run db:catalogues:charger` en
+développement ; `npm run db:migrate` le fait aussi). Sans catalogue en base, les écrans concernés affichent « Catalogue
+de référence non chargé en base de données » (API : 503 `catalogue_non_charge`), sans repli sur une copie embarquée.
+`fadi_app` n'a que la lecture sur ces tables.
 
 ## Sauvegardes
 
@@ -59,18 +72,35 @@ passe par `deploy/prod/fadi-prod-auto`).
   (ou `rsync` vers une autre machine). Vérifier régulièrement que la copie contient le fichier du jour.
 - Sauvegarde à la demande : `docker compose --env-file .env.deploy exec backup fadi-backup db fadi fadi /backups`.
 - Les pièces jointes des étapes et les fichiers de l'outil Parcelle sont **dans la base** (`step_files`, `parcels`) :
-  une sauvegarde de la base est complète.
+  une sauvegarde de la base est complète — **tant que** `FADI_STOCKAGE` vaut `base` et qu'aucune reprise vers le stockage
+  objet n'a été faite. Sinon, le compartiment S3 est sauvegardé à part (section « Stockage des fichiers » ci-dessous et
+  `docs/sauvegarde-pitr.md`, § 6).
 
 ## Restauration (procédure)
 
-1. Arrêter l'application : `docker compose --env-file .env.deploy stop app`.
+La restauration se fait **d'abord dans une base de contrôle**, jamais directement dans la base courante, puis la migration
+est rejouée : `pg_restore --no-privileges` recrée les tables sans les droits des rôles D-7, et l'application échouerait
+sinon sur « permission denied » (`fadi_app`). Corrigé le 2026-11-02 (chantier base-donnees, BD-1.5).
+
+1. **Garder l'état actuel**, même cassé (il peut servir à comprendre l'incident) :
+   `docker compose --env-file .env.deploy exec backup fadi-backup db fadi fadi /backups`.
 2. Choisir la sauvegarde : `docker compose --env-file .env.deploy exec backup ls -l /backups`.
-3. Restaurer dans la base courante (les tables sont recréées) :
-   `docker compose --env-file .env.deploy exec backup sh -c 'PGPASSWORD=$PGPASSWORD pg_restore -h db -U fadi -d fadi --clean --if-exists --no-owner --no-privileges --exit-on-error /backups/fadi-<horodatage>.dump'`
-   (ou, hors Docker : `PGPASSWORD=… sh scripts/restore.sh <hôte> fadi fadi <fichier.dump>` ; le rôle doit pouvoir créer
+3. **Restaurer dans une base de contrôle** `fadi_restore` :
+   `docker compose --env-file .env.deploy exec backup sh -c 'PGPASSWORD=$PGPASSWORD dropdb -h db -U fadi --if-exists fadi_restore && PGPASSWORD=$PGPASSWORD createdb -h db -U fadi fadi_restore && PGPASSWORD=$PGPASSWORD pg_restore -h db -U fadi -d fadi_restore --no-owner --no-privileges --exit-on-error /backups/fadi-<horodatage>.dump'`
+   (hors Docker : `PGPASSWORD=… sh scripts/restore.sh <hôte> fadi fadi_restore <fichier.dump>` ; le rôle doit pouvoir créer
    l'extension PostGIS, ou l'extension doit déjà exister dans la base cible).
-4. Redémarrer : `docker compose --env-file .env.deploy start app`, puis `curl -s https://$FADI_DOMAIN/health`.
-5. Vérifier : se connecter, ouvrir un projet, l'Atelier (révision du modèle, empreinte dans l'en-tête du projet).
+4. **Contrôler** la base restaurée : nombre de projets et d'utilisateurs, date de la dernière révision Studio, par exemple
+   `psql -h db -U fadi -d fadi_restore -c "SELECT count(*) FROM projects; SELECT max(created_at) FROM studio_revisions;"`.
+5. **Basculer** : arrêter l'application (`docker compose --env-file .env.deploy stop app`), puis renommer les bases depuis
+   la base `postgres` (aucune connexion ouverte sur `fadi`) :
+   `psql -h db -U fadi -d postgres -c "ALTER DATABASE fadi RENAME TO fadi_avant_restauration; ALTER DATABASE fadi_restore RENAME TO fadi;"`.
+6. **Rejouer la migration** (propriété `fadi_owner` et droits D-7 rétablis) :
+   `docker compose --env-file .env.deploy run --rm migrate`.
+7. Redémarrer : `docker compose --env-file .env.deploy start app`, puis `curl -s https://$FADI_DOMAIN/health`.
+8. Vérifier : se connecter, ouvrir un projet, l'Atelier (révision du modèle, empreinte dans l'en-tête du projet).
+   Supprimer `fadi_avant_restauration` seulement une fois la reprise acceptée.
+
+Noter l'heure de début et de fin de la procédure : c'est le temps de remise en service (RTO) réellement mesuré.
 
 Pour **répéter la vérification** sans toucher à la base courante (restauration dans une base de contrôle, comparaison
 ligne à ligne et par empreintes) :
@@ -88,7 +118,58 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `TRUST_PROXY` | `1` derrière un relais TLS (adresse du client, cookie `secure`). |
 | `NODE_ENV` | `production` : cookie de session `secure` (HTTPS obligatoire). |
 | `PORT` | 3001 par défaut. |
+| `CONTACT_RETENTION_ENABLED` | Effacement des contacts sans compte 2 ans après la clôture de leurs projets (OP-2). Activé en production par `docker-compose.yml` (D-BD-4) ; `0` le coupe. |
+| `FADI_RETENTION_SESSIONS_JOURS`, `FADI_RETENTION_JETONS_JOURS`, `FADI_RETENTION_COURRIELS_JOURS` | Purge horaire des sessions expirées ou révoquées, des jetons de compte expirés ou utilisés et des courriels traités (BD-6.1). Vide : 30 jours (D-BD-11) ; un entier change la durée (2 jours au moins pour les courriels) ; `desactive` coupe la catégorie. |
+| `FADI_STOCKAGE` | Où sont écrits les nouveaux fichiers (pièces des étapes, exports de l'Atelier, volumes figés, photos de la messagerie) : `base` (défaut, colonne bytea) ou `s3` (stockage objet). Toute autre valeur : refus de démarrer. |
+| `FADI_S3_ENDPOINT`, `FADI_S3_REGION`, `FADI_S3_BUCKET`, `FADI_S3_ACCESS_KEY_ID`, `FADI_S3_SECRET_ACCESS_KEY` | Service compatible S3 (BD-9.1, D-BD-8 : hébergé en Suisse ; hébergeur non choisi, aucune valeur dans le dépôt). Tout ou rien : obligatoires avec `FADI_STOCKAGE=s3`, et à garder renseignées tant que des fichiers sont dans le compartiment, même revenu à `base`. `https://` exigé en production. |
+| `FADI_S3_FORCE_PATH_STYLE` | `1` (défaut) : adressage `https://hote/compartiment/cle` ; `0` : sous-domaine du compartiment, si l'hébergeur l'exige. |
 | `AUTH_RATE_LIMIT`, `API_RATE_LIMIT` | Ne servent qu'aux tests ; ne pas définir en production (20 / 15 min et 300 / min). |
+
+## Stockage des fichiers (BD-9.1, D-BD-8)
+
+Par défaut, les fichiers restent dans la base (`bytea`). La décision D-BD-8 du maître d'ouvrage prévoit un stockage
+objet compatible S3 hébergé en Suisse ; le dépôt fournit le mécanisme, pas l'hébergeur ni ses identifiants.
+
+Tables concernées : `step_files`, `drawing_exports`, `volumes`, `com_pieces`. **Jamais** `geodata_fichiers` (archivage
+en base exigé, D-GD-29) ni `geodata_rasters`. Une ligne porte soit son contenu, soit une clé d'objet
+(`objet_cle`, adressée par le contenu : `<table>/<2 caractères>/<sha256>`), avec l'empreinte SHA-256 et la taille en
+base (migration `0010_fichiers_stockage_objet.sql`). La lecture suit l'emplacement réel : l'API sert un objet en flux
+(sans le garder en mémoire), vérifié contre la taille et l'empreinte de la base ; un écart interrompt la réponse.
+
+Mise en service, d'abord en préproduction avec un compartiment qui lui est propre :
+
+1. Créer le compartiment chez l'hébergeur retenu, avec **versionnement et réplication** (`docs/sauvegarde-pitr.md`, § 6),
+   et une clé d'accès limitée à ce compartiment (lecture, écriture, liste, suppression).
+2. Renseigner les cinq variables `FADI_S3_*` (et `FADI_S3_FORCE_PATH_STYLE` si besoin) dans `.env.deploy`
+   (préproduction : `PREPROD_FADI_S3_*` dans le fichier d'environnement de l'hôte), laisser `FADI_STOCKAGE=base`, redéployer :
+   l'API valide la configuration au démarrage (message explicite et refus de démarrer sinon) et l'affiche dans son journal.
+3. Essai de la reprise (rien n'est écrit ; vérifie aussi l'accès au compartiment) :
+   `docker compose --env-file .env.deploy exec app node apps/api/dist/fichiers-vers-objet.js`
+   (développement : `npm run db:fichiers-vers-objet`).
+4. Passer `FADI_STOCKAGE=s3` et redéployer : les nouveaux fichiers vont dans le compartiment.
+5. Reprise des fichiers existants, hors pic, par lots : `… fichiers-vers-objet.js --appliquer [--lot 50] [--max N]
+   [--table step_files]`. Chaque objet déposé est relu en entier (taille et SHA-256) avant que le bytea soit vidé, par un
+   `UPDATE` conditionné au même contenu ; une ligne incohérente est signalée et laissée en base. Relançable à volonté.
+6. Valider les contraintes posées `NOT VALID` par la migration : `npm run db:validate-constraints`.
+7. Périodiquement : `… fichiers-vers-objet.js --orphelins` (essai), puis `--orphelins --appliquer` pour supprimer les
+   objets qu'aucune ligne ne cite plus (fichiers supprimés, projets effacés, volumes nettoyés) et plus anciens que
+   `--age-heures` (24 par défaut). Les objets ne sont jamais supprimés avec leur ligne, car deux lignes au même contenu
+   partagent un objet. Tant que ce balayage n'a pas tourné, un fichier effacé dans l'application reste dans le compartiment.
+
+Retour arrière :
+
+- Revenir à `FADI_STOCKAGE=base` (sans nouvelle image) : les nouveaux fichiers retournent en base ; les fichiers déjà
+  déplacés restent lus dans le compartiment, d'où l'obligation de garder les variables `FADI_S3_*`.
+- Revenir à une **image antérieure à BD-9.1** n'est possible que si aucune ligne n'a de clé d'objet
+  (`SELECT count(*) FROM step_files WHERE objet_cle IS NOT NULL`, idem pour les trois autres tables) : l'ancien code
+  attend `content` partout. Il n'existe pas encore d'outil de rapatriement (objet → bytea) : à écrire avant d'en avoir
+  besoin si ce retour doit rester possible.
+
+Limites connues : l'export d'archive d'un projet (pièces des étapes, volumes Studio) relit les objets et les intègre à
+l'archive (format inchangé, toujours en mémoire, constat Q6 non traité ici) ; à l'import, ces fichiers sont écrits selon
+`FADI_STOCKAGE` (volumes Studio : toujours en base, la reprise les déplace ensuite). Les outils de comparaison
+`scripts/migration/migration-lib.mjs` et `scripts/validation/studio-compare-restore.mjs` lisent `content` et ne
+connaissent pas encore les fichiers déplacés.
 
 ## Ce que l'instance temporaire ne fait pas
 

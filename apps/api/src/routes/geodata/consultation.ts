@@ -3,16 +3,32 @@
  * valeurs d'indicateur. Toute lecture passe par `VERSION_CONSULTABLE` : une version privée d'un autre espace, retirée ou en
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
-import { Router, type Request } from "express";
+import { Router, type Request, type Response } from "express";
 import { attribuerCategories, bornerEmprise, grilleRegroupement, lireCoordonnees, lireDroits, lireQualification, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, regroupementActif, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
 import type { DescriptionRaster } from "@parcours/geodata-model";
 import { prixPubliesDeLObjet } from "./prix.js";
+import { correspond, etagTuile, type CleTuile } from "../../lib/geodata/cache-tuiles.js";
 
 export const consultationRouter = Router();
 
 const espaceDe = async (req: Request) => (await espacePersonnel(req.user!.id)).id;
+
+/**
+ * Validation HTTP d'une tuile d'une version commune publiée (BD-8.4, `lib/geodata/cache-tuiles.ts`) : ETag posé, et
+ * `true` si le navigateur a déjà cette tuile (304 envoyé, rien n'est recalculé). Toujours appelé après le contrôle
+ * d'accès. Version privée : aucun ETag (`no-store`).
+ */
+function tuileDejaConnue(req: Request, res: Response, couche: Record<string, unknown>, cle: Omit<CleTuile, "versionId" | "empreinte" | "coucheId">): boolean {
+  if (couche["privee"]) return false;
+  const etag = etagTuile({ ...cle, versionId: String(couche["version_id"]), empreinte: String(couche["empreinte"]), coucheId: String(couche["couche_id"]) });
+  res.setHeader("ETag", etag);
+  res.setHeader("Cache-Control", "private, max-age=300");
+  if (!correspond(req.headers["if-none-match"], etag)) return false;
+  res.status(304).end();
+  return true;
+}
 
 /** Description publique d'une version (fiche obligatoire, concept § 7.2) ; jamais de chemin de fichier interne. */
 export const COLONNES_VERSION = `v.id AS version_id, v.libelle, v.empreinte, v.url_source, v.recupere_le, v.periode, v.licence, v.attribution, v.droits,
@@ -137,7 +153,8 @@ consultationRouter.get("/recherche", async (req, res) => {
  * Tuiles vectorielles (MVT) d'une couche consultable : autorisation vérifiée AVANT toute lecture. Aucune simplification
  * propre à une couche (D-GD-33) : la seule réduction est la quantification de `ST_AsMVTGeom` sur la grille de la tuile,
  * identique pour toutes les couches, pour qu'une frontière partagée (région, province, commune) se superpose exactement à
- * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private` ; versions privées `no-store`.
+ * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private`, ETag de la version commune
+ * publiée (304 sans recalcul, BD-8.4) ; versions privées `no-store`.
  *
  * `?regrouper=1` (D-GD-40) : jusqu'au zoom 13, les points sont réunis par cellule (grille Web Mercator de 8 × 8 cellules
  * par tuile, `grilleRegroupement`) en une grappe au centre de gravité de ses points, avec leur `nombre` ; une cellule d'un
@@ -155,6 +172,7 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
   const geom = `ST_AsMVTGeom(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), b.e, 4096, 64, true)`;
   const regrouper = req.query["regrouper"] === "1" && regroupementActif(z);
+  if (tuileDejaConnue(req, res, couche, { genre: "objets", z, x, y, variante: regrouper ? "regrouper" : "" })) return;
   const grille = grilleRegroupement(z);
   const [r] = await requete<{ mvt: Buffer | null }>(
     regrouper
@@ -254,6 +272,7 @@ consultationRouter.get("/etiquettes/:coucheId/:z/:x/:y", async (req, res) => {
   if (!couche) return introuvable(res);
   const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
   if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  if (tuileDejaConnue(req, res, couche, { genre: "etiquettes", z, x, y, variante: "" })) return;
   const [r] = await requete<{ mvt: Buffer | null }>(
     `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
      p AS (
@@ -427,6 +446,9 @@ consultationRouter.get("/couches/:id/objets/:code/proximite", async (req, res) =
     const c = await coucheConsultable(espaceId, id);
     if (!c) { resultats.push({ coucheId: id, accessible: false }); continue; }
     const [r] = await requete<{ nombre: string; nom: string | null; code: string | null; distance: number | null }>(
+      // BD-8.5 (constat B3) : `ST_DWithin` sur le géographique s'appuie sur l'index GiST fonctionnel
+      // `geodata_objets_geog_idx` (migration 0009) : PostGIS y ajoute lui-même le préfiltre `&&` sur la boîte agrandie du
+      // rayon, calculée sur la sphère (arcs de grand cercle compris). Résultat exact, sans parcours de toute la couche.
       `WITH t AS (SELECT geom FROM geodata_objets WHERE couche_id = $1 AND code = $2),
        p AS (
          SELECT o.code, o.nom, ST_Distance(o.geom::geography, t.geom::geography) AS d

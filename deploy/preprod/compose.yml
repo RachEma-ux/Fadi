@@ -112,6 +112,15 @@ services:
       MAIL_FROM: ${PREPROD_MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${PREPROD_MAIL_DAILY_LIMIT:-50}
       MAIL_RECIPIENT_HOURLY_LIMIT: ${PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT:-5}
+      # Stockage des fichiers (BD-9.1, D-BD-8) : `base` par défaut ; `s3` seulement avec un compartiment propre à la
+      # préproduction (jamais celui de la production), renseigné à la main par l'administrateur.
+      FADI_STOCKAGE: ${PREPROD_FADI_STOCKAGE:-base}
+      FADI_S3_ENDPOINT: ${PREPROD_FADI_S3_ENDPOINT:-}
+      FADI_S3_REGION: ${PREPROD_FADI_S3_REGION:-}
+      FADI_S3_BUCKET: ${PREPROD_FADI_S3_BUCKET:-}
+      FADI_S3_ACCESS_KEY_ID: ${PREPROD_FADI_S3_ACCESS_KEY_ID:-}
+      FADI_S3_SECRET_ACCESS_KEY: ${PREPROD_FADI_S3_SECRET_ACCESS_KEY:-}
+      FADI_S3_FORCE_PATH_STYLE: ${PREPROD_FADI_S3_FORCE_PATH_STYLE:-1}
       # Organisations-participation (OP-5) : effacement automatique des contacts sans compte 2 ans après la clôture de
       # tous leurs projets — réserve d'OP-2 levée par le maître d'ouvrage ; activé en préproduction (données synthétiques).
       CONTACT_RETENTION_ENABLED: ${PREPROD_CONTACT_RETENTION_ENABLED:-1}

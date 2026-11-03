@@ -34,6 +34,7 @@ import {
   type ProgrammeBucket,
 } from "@parcours/domain-model";
 import { api, ApiError, type ApplyProgrammeCaseInput, type BuildingCaseDetail } from "../../lib/api";
+import { estCatalogueNonCharge, MESSAGE_CATALOGUE_NON_CHARGE } from "../../lib/catalogues";
 import "./building-library.css";
 import libraryCss from "./building-library.css?raw";
 
@@ -756,7 +757,7 @@ export function BuildingCasePage() {
   if (detail.isError) {
     return (
       <main className="bl">
-        <p role="alert">Cas introuvable.</p>
+        <p role="alert">{estCatalogueNonCharge(detail.error) ? MESSAGE_CATALOGUE_NON_CHARGE : "Cas introuvable."}</p>
         <Link className="bl-button" to="/bibliotheque/batiments">
           ← Bibliothèque par types
         </Link>
@@ -894,6 +895,11 @@ export function BuildingLibraryPage() {
           </button>
         </div>
       </section>
+      {library.isError && (
+        <p role="alert" className="bl-note warn">
+          {estCatalogueNonCharge(library.error) ? MESSAGE_CATALOGUE_NON_CHARGE : "Impossible de charger la bibliothèque des bâtiments."}
+        </p>
+      )}
       <div className="bl-controls">
         <label>
           Rechercher un type, sous-type ou cas

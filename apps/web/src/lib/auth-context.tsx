@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ApiError, accountApi, api, type CurrentUser } from "./api";
+import { ApiError, accountApi, api, ecouterSessionPerdue, type CurrentUser } from "./api";
 import { localStore } from "./local-store";
 import { QUERY_CACHE_VERSION } from "./query-persister";
 import { conflictsStore } from "./mutations";
 import { oublierBrouillons } from "./com-brouillons";
+import { oublierStockageCompte } from "./purge-stockage-compte";
 
 interface AuthState {
   user: CurrentUser | null;
@@ -55,6 +56,9 @@ export function forgetsSession(err: unknown): boolean {
  * révoquée) et quand un autre compte se connecte : rien n'est rejoué ni montré sous un autre compte.
  */
 export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient>) {
+  // D-BD-12 : la quarantaine n'est vidée que si un compte était connu de l'appareil (rien à séparer sinon : premier
+  // démarrage après une montée de version, sans session, l'utilisateur doit encore pouvoir la consulter et l'exporter).
+  const compteConnu = readLastUser() !== null;
   queryClient.clear();
   conflictsStore.clearAll();
   // Brouillons de la Communication : jamais relus ni envoyés par un autre compte du même appareil.
@@ -64,12 +68,42 @@ export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient
   await localStore.removeValue(QUERY_CACHE_VERSION);
   await localStore.studioOublierTout().catch(() => undefined);
   await localStore.oublierTout();
+  // BD-7.1 (constat A2) : la quarantaine (lignes sans propriétaire) n'est ni lue ni exportée par le compte suivant.
+  if (compteConnu) await localStore.quarantaineVider();
+  // BD-1.7 : presse-papiers et préférences de l'Atelier, état GeoData, clé MapTiler… (purge-stockage-compte.ts).
+  oublierStockageCompte();
+}
+
+/**
+ * BD-7.4 (chantier base-donnees, constat A5) : garde « session perdue en cours de session ». Appelée sur chaque 401
+ * `authentication_required` (`ecouterSessionPerdue`) ; ne purge que si un compte est connu de l'appareil (le 401 du
+ * démarrage est traité par la vérification de `/auth/me`), une seule fois pour une rafale de 401 simultanés.
+ */
+export function creerGardeSession(o: { connecte: () => boolean; purger: () => Promise<void> }): () => Promise<void> {
+  let enCours: Promise<void> | null = null;
+  return () => {
+    if (enCours) return enCours;
+    if (!o.connecte()) return Promise.resolve();
+    enCours = o.purger().catch(() => undefined).finally(() => { enCours = null; });
+    return enCours;
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const userRef = useRef<CurrentUser | null>(null);
+  userRef.current = user;
+
+  // BD-7.4 : un 401 en cours de session purge l'appareil comme la déconnexion, puis ramène à la connexion.
+  useEffect(() => {
+    const garde = creerGardeSession({
+      connecte: () => userRef.current !== null,
+      purger: async () => { userRef.current = null; setUser(null); await forgetDevice(queryClient); },
+    });
+    return ecouterSessionPerdue(() => { void garde(); });
+  }, [queryClient]);
 
   /** Un autre utilisateur sur le même appareil ne doit pas relire le cache du précédent : cache vidé (mémoire et IndexedDB). */
   async function adopt(fromLogin: CurrentUser) {

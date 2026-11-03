@@ -35,10 +35,11 @@ describe("application DB seam, completely mocked driver", () => {
     vi.stubEnv("DATABASE_URL", "postgresql://synthetic:sentinel@192.0.2.1:5432/production");
     await expect(import("../db/client.js")).rejects.toThrow("TARGET_REQUIRED"); expect(driver.construct).not.toHaveBeenCalled();
   });
-  it("normal production configuration remains unchanged, verified with a constructor double only", async () => {
+  it("normal production configuration: DATABASE_URL plus bounded timeouts (BD-1.2), verified with a constructor double only", async () => {
     vi.stubEnv("VITEST", "false"); vi.stubEnv("NODE_ENV", "production");
     const connectionString = "postgresql://synthetic:sentinel@192.0.2.1:5432/never_connected";
     vi.stubEnv("DATABASE_URL", connectionString);
+    for (const k of ["DB_POOL_MAX", "DB_IDLE_TIMEOUT_MS", "DB_CONNECTION_TIMEOUT_MS", "DB_STATEMENT_TIMEOUT_MS", "DB_IDLE_IN_TRANSACTION_TIMEOUT_MS", "DB_APPLICATION_NAME"]) vi.stubEnv(k, "");
     const { pool, db } = await import("../db/client.js");
     // BD-1 (chantier bases-de-donnees) : délais et taille du pool explicites, écouteur d'erreur des connexions inactives.
     expect(driver.construct).toHaveBeenCalledExactlyOnceWith({

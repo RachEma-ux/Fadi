@@ -83,6 +83,23 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-150}
+      # D-BD-4 (maître d'ouvrage, 2 novembre 2026) : effacement automatique des contacts sans compte 2 ans après la
+      # clôture de leurs projets, activé en production ; 0 le coupe.
+      CONTACT_RETENTION_ENABLED: ${CONTACT_RETENTION_ENABLED:-1}
+      # D-BD-11 (maître d'ouvrage, 2 novembre 2026) : sessions, jetons de compte et courriels traités purgés après
+      # 30 jours (défaut du code) ; un nombre de jours change la durée, « desactive » coupe la catégorie.
+      FADI_RETENTION_SESSIONS_JOURS: ${FADI_RETENTION_SESSIONS_JOURS:-}
+      FADI_RETENTION_JETONS_JOURS: ${FADI_RETENTION_JETONS_JOURS:-}
+      FADI_RETENTION_COURRIELS_JOURS: ${FADI_RETENTION_COURRIELS_JOURS:-}
+      # Stockage des fichiers (BD-9.1, D-BD-8) : `base` par défaut (bytea) ; `s3` = stockage objet compatible S3, dont
+      # l'hébergeur et les identifiants sont à fournir (docs/deploiement.md, « Stockage des fichiers »).
+      FADI_STOCKAGE: ${FADI_STOCKAGE:-base}
+      FADI_S3_ENDPOINT: ${FADI_S3_ENDPOINT:-}
+      FADI_S3_REGION: ${FADI_S3_REGION:-}
+      FADI_S3_BUCKET: ${FADI_S3_BUCKET:-}
+      FADI_S3_ACCESS_KEY_ID: ${FADI_S3_ACCESS_KEY_ID:-}
+      FADI_S3_SECRET_ACCESS_KEY: ${FADI_S3_SECRET_ACCESS_KEY:-}
+      FADI_S3_FORCE_PATH_STYLE: ${FADI_S3_FORCE_PATH_STYLE:-1}
     expose:
       - "3001"
 
@@ -114,6 +131,14 @@ services:
       - fadi-backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/fadi-backup:ro
     entrypoint: ["sh", "-c", "while true; do fadi-backup db fadi fadi /backups; sleep 86400; done"]
+    # BD-1.6 (constat M13) : le conteneur passe « unhealthy » si aucun dump n'a été écrit depuis 26 h (sauvegarde arrêtée
+    # en silence) ; `docker compose ps` et la supervision de l'hôte le voient. Le premier dump part au démarrage.
+    healthcheck:
+      test: ["CMD-SHELL", "find /backups -name 'fadi-*.dump' -mmin -1560 | grep -q ."]
+      interval: 30m
+      timeout: 10s
+      retries: 1
+      start_period: 20m
 
 volumes:
   fadi-db:

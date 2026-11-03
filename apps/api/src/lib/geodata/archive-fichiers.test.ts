@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { inventaireFichiers, ligneBilanArchive, ROLES_FICHIER } from "./archive-fichiers.js";
+import type { PoolClient } from "pg";
+import { archiverFichiers, inventaireFichiers, ligneBilanArchive, ROLES_FICHIER, VERROU_ARCHIVE } from "./archive-fichiers.js";
 
 const DOSSIER = fileURLToPath(new URL("../../../../../docs/geodata/sources/", import.meta.url));
 
@@ -62,5 +63,39 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
     expect(avec.get("provisoires/feenway-prix-quartiers.json")).toMatchObject({ role: "fiche", sourceCle: "feenway-prix-quartiers" });
     expect(avec.get("provisoires/donnees/feenway-prix-quartiers.geojson")).toMatchObject({ role: "donnees", sourceCle: "feenway-prix-quartiers" });
     expect(avec.get("provisoires/donnees/feenway-prix-quartiers-origine.json")).toMatchObject({ role: "donnees", sourceCle: "feenway-prix-quartiers" });
+  });
+
+  /** Connexion simulée : journal des instructions ; `echec` fait échouer la première instruction qui le contient. */
+  const simulee = (echec?: string) => {
+    const sql: string[] = [];
+    let liberee = false;
+    const client = {
+      query: async (texte: string) => {
+        sql.push(texte.trim().split(/\s+/).slice(0, 3).join(" "));
+        if (echec && texte.includes(echec)) throw new Error("coupure simulée");
+        return { rows: [], rowCount: 0 };
+      },
+      release: () => { liberee = true; },
+    } as unknown as PoolClient;
+    return { sql, liberee: () => liberee, source: { connect: async () => client } };
+  };
+
+  it("BD-8.2 (constat B6) : archive en une transaction, sous verrou consultatif, connexion rendue", async () => {
+    const s = simulee();
+    const b = await archiverFichiers(s.source, DOSSIER);
+    expect(b.ajoutes).toBe(inventaire.length);
+    expect(s.sql[0]).toBe("BEGIN");
+    expect(s.sql[1]).toBe("SELECT pg_advisory_xact_lock(hashtext($1))");
+    expect(s.sql.at(-1)).toBe("COMMIT");
+    expect(s.liberee()).toBe(true);
+    expect(VERROU_ARCHIVE).toBe("geodata_fichiers");
+  });
+
+  it("BD-8.2 : un échec en cours de route annule tout (aucune archive partielle)", async () => {
+    const s = simulee("UPDATE geodata_fichiers SET retire_le");
+    await expect(archiverFichiers(s.source, DOSSIER)).rejects.toThrow("coupure simulée");
+    expect(s.sql.at(-1)).toBe("ROLLBACK");
+    expect(s.sql).not.toContain("COMMIT");
+    expect(s.liberee()).toBe(true);
   });
 });

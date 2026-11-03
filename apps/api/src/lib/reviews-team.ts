@@ -37,6 +37,7 @@ import { frozenPublicationFiles, publicationReviewState, type PublicationReviewS
 import { sha256 } from "./studio-publication-statuts.js";
 import { echeanceValide } from "./studio-observations.js";
 import { lockProject, type Querier } from "./step-rows.js";
+import { colonnesVolume } from "./stockage-objet/index.js";
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const dateSchema = z.string().refine(echeanceValide, "date AAAA-MM-JJ");
@@ -443,7 +444,7 @@ export async function shareReviewPackage(projectId: string, packageId: string, u
     const files: StudioPackageFile[] = [];
     for (const f of frozen!.files) {
       if (sha256(f.body) !== f.sha256) throw new Error("review_package_hash_drift");
-      await tx.insert(volumes).values({ id: f.sha256, mime: f.mime, size: f.body.byteLength, content: f.body, createdAt: now }).onConflictDoNothing();
+      await tx.insert(volumes).values({ id: f.sha256, mime: f.mime, size: f.body.byteLength, ...(await colonnesVolume(f.body, f.mime)), createdAt: now }).onConflictDoNothing();
       files.push({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: f.sha256 });
     }
     await tx.update(reviewPackages).set({

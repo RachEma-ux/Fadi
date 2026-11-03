@@ -211,7 +211,8 @@ export function PageGeoData() {
   }, []);
   const rangementCatalogue = useMemo(() => rangementDepuis(rangement), [rangement]);
   // Thèmes des pastilles (D-GD-48) : catégories gérées du catalogue, couches d'objets ; sans les limites administratives.
-  const themes = useMemo(() => regrouperCatalogue(catalogue ?? [], "vecteurs", new Set<string>(), rangementCatalogue)
+  // Sans catégories lues en base (D-GD-29, BD-8.7) : aucune pastille, jamais de repli sur des catégories embarquées.
+  const themes = useMemo(() => (rangementCatalogue ? regrouperCatalogue(catalogue ?? [], "vecteurs", new Set<string>(), rangementCatalogue) : [])
     .map((g) => ({ cle: g.categorie.cle, libelle: g.categorie.libelle, couches: g.couches.filter((c) => !c.niveauAdministratif) }))
     .filter((g) => g.couches.length > 0), [catalogue, rangementCatalogue]);
   const chargerZones = useCallback(() => { api.zones().then((r) => { setZones(r.zones); setZonesLues(true); }).catch(() => undefined); api.analyses().then((r) => setAnalysesIds(r.analyses.map((a) => a.id))).catch(() => undefined); }, []);

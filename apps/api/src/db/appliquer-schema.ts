@@ -25,7 +25,7 @@ export interface ResultatSchema {
   readonly pgStatStatements: "active" | "indisponible" | "non-chargee";
 }
 
-const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const pauseParDefaut = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Délai PostgreSQL accepté pour `lock_timeout` (« 5s », « 500ms », « 2min ») ; autre valeur → défaut. */
 export function delaiVerrou(v: string | undefined): string {
@@ -38,37 +38,12 @@ export async function appliquerSchema(
   env: Record<string, string | undefined> = process.env,
   journal: (m: string) => void = (m) => console.log(m), // eslint-disable-line no-console
 ): Promise<ResultatSchema> {
-  const empreinte = createHash("sha256").update(sql).digest("hex");
-  const max = Math.max(1, entier(env, "MIGRATION_TENTATIVES", 6));
   const client: PoolClient = await pool.connect();
-  const debut = Date.now();
-  let tentatives = 0;
   try {
-    await client.query("SET application_name = 'fadi-migration'");
-    await client.query("SET statement_timeout = 0");
-    // Attente sans limite d'une autre migration (verrou consultatif), puis délai court pour les verrous de tables.
+    // Attente sans limite d'une autre migration (verrou consultatif), puis application journalisée.
     await client.query("SELECT pg_advisory_lock($1)", [VERROU_MIGRATION]);
     try {
-      await client.query(`SET lock_timeout = '${delaiVerrou(env["MIGRATION_LOCK_TIMEOUT"])}'`);
-      for (;;) {
-        tentatives += 1;
-        try {
-          await client.query(sql);
-          break;
-        } catch (e) {
-          if ((e as { code?: string }).code !== "55P03" || tentatives >= max) throw e;
-          const attente = Math.min(30_000, 1000 * 2 ** (tentatives - 1));
-          journal(`Migration : table occupée par l'application (essai ${tentatives}/${max}), rien n'est appliqué ; nouvel essai dans ${attente / 1000} s.`);
-          await pause(attente);
-        }
-      }
-      const pgss = await activerPgStatStatements(client);
-      const dureeMs = Date.now() - debut;
-      await client.query(
-        "INSERT INTO admin.schema_applications (empreinte, duree_ms, tentatives, role) VALUES ($1, $2, $3, current_user)",
-        [empreinte, dureeMs, tentatives],
-      );
-      return { empreinte, tentatives, dureeMs, pgStatStatements: pgss };
+      return await appliquerSchemaClient(client, sql, env, journal);
     } finally {
       await client.query("SELECT pg_advisory_unlock($1)", [VERROU_MIGRATION]).catch(() => undefined);
     }
@@ -77,6 +52,52 @@ export async function appliquerSchema(
     // leurs valeurs de connexion (délais du pool compris).
     await client.query("RESET ALL").catch(() => undefined);
     client.release();
+  }
+}
+
+/**
+ * Cœur de l'application, sur une connexion qui tient déjà le verrou consultatif `VERROU_MIGRATION` (l'exécuteur des
+ * migrations versionnées, `db/schema-migrations.ts`, l'appelle pour la base de départ `init.sql`) : `lock_timeout` court,
+ * réessais sur 55P03, extension des statistiques, journal `admin.schema_applications`. Les délais de session sont
+ * rétablis à la fin.
+ */
+export async function appliquerSchemaClient(
+  client: PoolClient,
+  sql: string,
+  env: Record<string, string | undefined> = process.env,
+  journal: (m: string) => void = (m) => console.log(m), // eslint-disable-line no-console
+  pause: (ms: number) => Promise<void> = pauseParDefaut,
+): Promise<ResultatSchema> {
+  const empreinte = createHash("sha256").update(sql).digest("hex");
+  const max = Math.max(1, entier(env, "MIGRATION_TENTATIVES", 6));
+  const debut = Date.now();
+  let tentatives = 0;
+  try {
+    await client.query("SET application_name = 'fadi-migration'");
+    await client.query("SET statement_timeout = 0");
+    await client.query(`SET lock_timeout = '${delaiVerrou(env["MIGRATION_LOCK_TIMEOUT"])}'`);
+    for (;;) {
+      tentatives += 1;
+      try {
+        await client.query(sql);
+        break;
+      } catch (e) {
+        if ((e as { code?: string }).code !== "55P03" || tentatives >= max) throw e;
+        const attente = Math.min(30_000, 1000 * 2 ** (tentatives - 1));
+        journal(`Migration : table occupée par l'application (essai ${tentatives}/${max}), rien n'est appliqué ; nouvel essai dans ${attente / 1000} s.`);
+        await pause(attente);
+      }
+    }
+    const pgss = await activerPgStatStatements(client);
+    const dureeMs = Date.now() - debut;
+    await client.query(
+      "INSERT INTO admin.schema_applications (empreinte, duree_ms, tentatives, role) VALUES ($1, $2, $3, current_user)",
+      [empreinte, dureeMs, tentatives],
+    );
+    return { empreinte, tentatives, dureeMs, pgStatStatements: pgss };
+  } finally {
+    await client.query("RESET lock_timeout").catch(() => undefined);
+    await client.query("RESET statement_timeout").catch(() => undefined);
   }
 }
 

@@ -41,7 +41,7 @@
  * service externe, absent (voir docs/migration/matrix.md).
  */
 import { Router } from "express";
-import { db } from "../db/client.js";
+import { db, pool } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
   collabDemandeEvents, collabDemandes, comConversations, comMessages, comParticipants, atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectEffectiveAccess, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
@@ -103,7 +103,8 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   // Phase 2 (Issue #262) : projets accessibles d'après la seule source de l'accès (`project_effective_access`) — une
   // participation suspendue, terminée ou sans rôle de projet n'apparaît plus ; la ligne de partage date l'invitation.
   const memberships = (await db
-    .select({ project: projects, role: projectEffectiveAccess.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
+    // BD-4.1 : seuls l'identifiant, le code et le nom servent (la ligne entière portait sept colonnes jsonb).
+    .select({ project: { id: projects.id, code: projects.code, name: projects.name }, role: projectEffectiveAccess.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
     .from(projectEffectiveAccess)
     .innerJoin(projects, eq(projects.id, projectEffectiveAccess.projectId))
     .leftJoin(projectMembers, and(eq(projectMembers.projectId, projectEffectiveAccess.projectId), eq(projectMembers.userId, projectEffectiveAccess.userId)))
@@ -343,7 +344,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   if (projectIds.length) {
     const ids = (e: unknown, cles: string[]) => cles.flatMap((k) => (Array.isArray((e as Record<string, unknown>)?.[k]) ? ((e as Record<string, unknown>)[k] as unknown[]).filter((x): x is string => typeof x === "string") : []));
     // BD-4 : les commandes des autres (30 jours, 200 au plus) sont lues d'abord, dans les projets où vous avez au moins
-    // une commande (sous-requête servie par l'index atelier_commands_author_idx) ; vos propres commandes ne sont ensuite
+    // une commande (sous-requête servie par l'index atelier_commands_author_project_idx) ; vos propres commandes ne sont ensuite
     // lues que dans les projets concernés — auparavant, tout votre historique de tous vos projets, à chaque appel.
     const mesProjetsAtelier = db.selectDistinct({ projectId: atelierCommands.projectId }).from(atelierCommands)
       .where(and(inArray(atelierCommands.projectId, projectIds), eq(atelierCommands.authorId, userId)));
@@ -397,14 +398,27 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       .orderBy(desc(drawingExports.createdAt));
     const derniers = new Map<string, (typeof exports)[number]>();
     for (const x of exports) if (!derniers.has(`${x.projectId}|${x.fileName}`)) derniers.set(`${x.projectId}|${x.fileName}`, x);
-    for (const x of [...derniers.values()].slice(0, LIMIT)) {
-      const [premiere] = await db
-        .select({ rev: atelierCommands.resultRevision, label: atelierCommands.label, createdAt: atelierCommands.createdAt, email: users.email })
-        .from(atelierCommands)
-        .innerJoin(users, eq(users.id, atelierCommands.authorId))
-        .where(and(eq(atelierCommands.projectId, x.projectId), ne(atelierCommands.authorId, userId), gt(atelierCommands.resultRevision, x.rev), gt(atelierCommands.createdAt, x.createdAt)))
-        .orderBy(atelierCommands.resultRevision)
-        .limit(1);
+    // BD-4.1 (constat Q3) : la première modification par un autre compte de chaque export, en une seule requête
+    // (LATERAL) au lieu d'une requête par export (jusqu'à 40 par appel de la cloche, sondée chaque minute).
+    const cibles = [...derniers.values()].slice(0, LIMIT);
+    const premieres = new Map<string, { rev: number; label: string; createdAt: Date; email: string }>();
+    if (cibles.length) {
+      const { rows } = await pool.query<{ id: string; rev: number; label: string; created_at: Date; email: string }>(
+        `SELECT x.id, p.rev, p.label, p.created_at, u.email
+           FROM unnest($1::text[], $2::text[], $3::int[], $4::timestamptz[]) AS x(id, project_id, rev, created_at)
+           CROSS JOIN LATERAL (
+             SELECT c.result_revision AS rev, c.label, c.created_at, c.author_id
+               FROM atelier_commands c
+              WHERE c.project_id = x.project_id AND c.author_id <> $5 AND c.result_revision > x.rev AND c.created_at > x.created_at
+              ORDER BY c.result_revision
+              LIMIT 1) p
+           JOIN users u ON u.id = p.author_id`,
+        [cibles.map((x) => x.id), cibles.map((x) => x.projectId), cibles.map((x) => x.rev), cibles.map((x) => x.createdAt), userId],
+      );
+      for (const r of rows) premieres.set(r.id, { rev: r.rev, label: r.label, createdAt: r.created_at, email: r.email });
+    }
+    for (const x of cibles) {
+      const premiere = premieres.get(x.id);
       if (!premiere) continue;
       items.push({
         id: `peremption:${x.id}`,

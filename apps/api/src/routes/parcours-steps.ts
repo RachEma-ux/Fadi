@@ -32,7 +32,7 @@ import {
 import { db } from "../db/client.js";
 import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
 import { projectOr404 } from "../lib/owned-project.js";
 import { recordProducedDocument, stepReportHash, synthesisHash } from "../lib/documents.js";
 import { computationFor, harmonieReport, loadStepContext, stepView, withRows } from "../lib/step-context.js";
@@ -407,7 +407,7 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
         }
       }
       const decided = decideHarmonieProposal(
-        HARMONIE_PROFILES,
+        ctx.harmonieProfils,
         def,
         current.content.harmonie,
         proposalId,

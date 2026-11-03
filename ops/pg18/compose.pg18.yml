@@ -1,0 +1,26 @@
+# BD-9.2 (chantier base-donnees, D-BD-9 « PostgreSQL 18, fenêtre annoncée ») : surcharge Compose qui fait tourner la base
+# en PostgreSQL 18 / PostGIS 3.6 sur un NOUVEAU volume (fadi-db18). Le volume PostgreSQL 16 (fadi-db) n'est ni monté ni
+# modifié : il reste le chemin de retour arrière. Procédure complète : docs/montee-postgresql-18.md. MODÈLE NON ÉPROUVÉ en
+# conteneur dans le chantier (pas de Docker dans la session) : répétition en préproduction d'abord.
+#
+#   docker compose --env-file .env.deploy -f docker-compose.yml -f ops/pg18/compose.pg18.yml up -d
+#   # avec l'archivage WAL (BD-5.1), dans cet ordre :
+#   #   -f docker-compose.yml -f ops/pg18/compose.pg18.yml -f ops/pgbackrest/compose.pitr.yml -f ops/pg18/compose.pitr18.yml
+#
+# Image : postgis/postgis:18-3.6 (Debian trixie, PostGIS 3.6.4 d'après github.com/postgis/docker-postgis, relevé du
+# 2026-11-02). Épingler l'empreinte relevée en répétition (docker inspect --format '{{index .RepoDigests 0}}').
+# Les images 18 changent le volume : /var/lib/postgresql (données dans /var/lib/postgresql/18/docker) au lieu de
+# /var/lib/postgresql/data. `!override` (Docker Compose ≥ 2.24.4) remplace la liste de volumes du service au lieu de la
+# compléter : sans lui, l'ancien volume serait monté à l'intérieur du nouveau.
+services:
+  db:
+    image: postgis/postgis:18-3.6
+    volumes: !override
+      - fadi-db18:/var/lib/postgresql
+
+  # pg_dump 18 sait lire un serveur 16 ou 18 ; le format « custom » produit se restaure en 18.
+  backup:
+    image: postgis/postgis:18-3.6
+
+volumes:
+  fadi-db18:

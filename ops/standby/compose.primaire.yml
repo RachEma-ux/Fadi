@@ -1,0 +1,17 @@
+# BD-9.3 (D-BD-10) : surcharge Compose du PRIMAIRE pour le standby en streaming. Publie le port de la base sur l'adresse
+# PRIVÉE seulement (réseau entre les deux machines : WireGuard ou réseau privé de l'hébergeur ; jamais sur l'adresse
+# publique) et monte les certificats TLS du serveur. Les réglages de réplication sont posés une fois par ALTER SYSTEM
+# (docs/haute-disponibilite.md, étape 2) : ils vivent dans postgresql.auto.conf, que pg_basebackup et pg_rewind recopient,
+# et ne se battent pas avec la ligne de commande de ops/pgbackrest/compose.pitr.yml. MODÈLE NON ÉPROUVÉ en conteneur.
+#
+#   -f docker-compose.yml -f ops/pg18/compose.pg18.yml [-f ops/pgbackrest/compose.pitr.yml -f ops/pg18/compose.pitr18.yml] \
+#   -f ops/standby/compose.primaire.yml
+#
+# /etc/fadi/pg-tls (hôte) : server.crt, server.key (0600, uid 999) — certificat dont le nom correspond à l'adresse
+# privée que le standby utilise (sslmode verify-full).
+services:
+  db:
+    ports:
+      - "${FADI_REPLICATION_ECOUTE:?FADI_REPLICATION_ECOUTE manquant (adresse privée:port, ex. réseau WireGuard)}:5432"
+    volumes:
+      - /etc/fadi/pg-tls:/etc/fadi/pg-tls:ro

@@ -1,0 +1,25 @@
+# BD-9.2 (D-BD-9) : service à usage unique qui exécute pg_upgrade 16 → 18 (ops/pg18/montee.sh), base arrêtée.
+# Même projet Compose que la production (mêmes volumes) ; jamais démarré par `up` (profil « montee »).
+#
+#   docker compose --env-file .env.deploy -f docker-compose.yml -f ops/pg18/compose.pg18.yml -f ops/pg18/compose.montee.yml \
+#     run --rm montee controle      # puis « executer » pendant la fenêtre (docs/montee-postgresql-18.md, étape 4)
+#
+# Ancien volume fadi-db sur /ancien, nouveau volume fadi-db18 sur /var/lib/postgresql : deux volumes distincts, donc
+# mode « copy » (MONTEE_MODE) — l'ancien volume reste intact et sert de retour arrière.
+services:
+  montee:
+    build:
+      context: .
+      dockerfile: ops/pg18/pg-upgrade.Dockerfile
+    image: fadi-pg-upgrade:16-vers-18
+    profiles: ["montee"]
+    restart: "no"
+    network_mode: none
+    environment:
+      MONTEE_LOCALE: ${MONTEE_LOCALE:?MONTEE_LOCALE manquant (datcollate de template0, docs/montee-postgresql-18.md)}
+      MONTEE_MODE: ${MONTEE_MODE:-copy}
+      MONTEE_JOBS: ${MONTEE_JOBS:-}
+      POSTGRES_USER: fadi
+    volumes:
+      - fadi-db:/ancien
+      - fadi-db18:/var/lib/postgresql

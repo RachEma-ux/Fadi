@@ -254,6 +254,7 @@ export const projectSteps = pgTable("project_steps", {
   content: jsonb("content").notNull().$type<Record<string, unknown>>(),
 }, (t) => [
   uniqueIndex("project_steps_project_id_step_number_unique").on(t.projectId, t.stepNumber),
+  // BD-3.3 : project_steps_project_id_idx retiré (préfixe de la clé primaire).
 ]);
 
 /** R2 : données de pilotage séparées des 21 statuts de Parcours. */
@@ -285,6 +286,7 @@ export const projectPlanBaselines = pgTable("project_plan_baselines", {
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.version] }),
+  // BD-3.3 : project_plan_baselines_project_idx retiré (doublon de la clé primaire).
 ]);
 
 /**
@@ -292,7 +294,7 @@ export const projectPlanBaselines = pgTable("project_plan_baselines", {
  * bâtiment, surface de référence, position dans la fourchette et ratios
  * forcés — `programmeRepartition` du prototype, une ligne par projet,
  * créée à la première modification (les valeurs par défaut viennent de
- * `data/programme-repartition.json`, pas de la base). `components` porte
+ * catalogue « programme-repartition » publié en base, table `catalogues`). `components` porte
  * les composantes déclarées d'un bâtiment mixte (profil Harmonie).
  */
 export const programmeRepartitions = pgTable("programme_repartitions", {
@@ -327,12 +329,45 @@ export const parcels = pgTable(
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
 
-/** Contenu binaire tel quel (bytea) : pièces jointes des étapes. */
+/**
+ * Contenu binaire tel quel (bytea). BD-9.1 : la colonne `content` des fichiers devient facultative ; une ligne porte
+ * soit son contenu, soit une clé d'objet (`objet_cle`, stockage objet S3) — voir `lib/stockage-objet/`.
+ */
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType() {
     return "bytea";
   },
 });
+
+/**
+ * BD-9.6 (D-BD-6, D-GD-29) : catalogues de données du Parcours (bibliothèque des bâtiments, profils et moteur Harmonie,
+ * répartition programmatique), chargés depuis les fichiers qualifiés du dépôt par `db/catalogues-charger.ts` et lus par
+ * l'API (`lib/catalogues.ts`). Versions immuables (déclencheur), fichier archivé tel quel ; `fadi_app` lit seulement.
+ * CHECK, clé étrangère composée de la version publiée et déclencheur : migrations/0011_catalogues_donnees.sql.
+ */
+export const catalogues = pgTable("catalogues", {
+  cle: text("cle").primaryKey(),
+  titre: text("titre").notNull(),
+  versionPublieeId: bigint("version_publiee_id", { mode: "number" }),
+  creeLe: timestamp("cree_le", { withTimezone: true }).defaultNow().notNull(),
+  publieLe: timestamp("publie_le", { withTimezone: true }),
+});
+
+export const catalogueVersions = pgTable("catalogue_versions", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  catalogueCle: text("catalogue_cle").notNull().references(() => catalogues.cle),
+  numero: integer("numero").notNull(),
+  fichierNom: text("fichier_nom").notNull(),
+  source: text("source").notNull(),
+  typeMedia: text("type_media").notNull().default("application/json"),
+  taille: bigint("taille", { mode: "number" }).notNull(),
+  empreinte: text("empreinte").notNull(),
+  fichier: bytea("fichier").notNull(),
+  contenu: jsonb("contenu").notNull(),
+  chargeLe: timestamp("charge_le", { withTimezone: true }).defaultNow().notNull(),
+  chargePar: text("charge_par").notNull(),
+}, (t) => [uniqueIndex("catalogue_versions_numero_uq").on(t.catalogueCle, t.numero), uniqueIndex("catalogue_versions_empreinte_uq").on(t.catalogueCle, t.empreinte)]);
+
 
 /**
  * Sources de l'étape (module Projets et sources) : les fichiers rattachés à
@@ -348,7 +383,11 @@ export const stepFiles = pgTable("step_files", {
   name: text("name").notNull(),
   type: text("type").notNull(),
   size: integer("size").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
+  /** BD-9.1 : SHA-256 du contenu (hexadécimal) ; renseigné pour les lignes écrites ou déplacées depuis BD-9.1. */
+  empreinte: text("empreinte"),
   addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("step_files_project_step_idx").on(t.projectId, t.stepNumber)]);
 
@@ -357,7 +396,7 @@ export const stepFiles = pgTable("step_files", {
  * `Parcours.ProgrammeCase`) : une ligne par révision, la révision courante
  * est la plus haute ; les précédentes sont l'historique des variantes
  * appliquées (`programmeHistory` du prototype, borné à 12 par le routeur).
- * Les cas sources restent immuables dans `data/building-library.json`.
+ * Les cas sources restent immuables dans le catalogue « bibliotheque-batiments » (table `catalogue_versions`).
  */
 export const programmeCases = pgTable("programme_cases", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -388,7 +427,11 @@ export const drawingExports = pgTable("drawing_exports", {
   kind: text("kind").notNull(),
   fileName: text("file_name").notNull(),
   mime: text("mime").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
+  /** BD-9.1 : SHA-256 du contenu (hexadécimal). */
+  empreinte: text("empreinte"),
   size: integer("size").notNull(),
   levelId: text("level_id"),
   levelName: text("level_name"),
@@ -850,7 +893,8 @@ export const atelierOutbox = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
     attempts: integer("attempts").notNull().default(0),
   },
-  (t) => [index("atelier_outbox_pending_idx").on(t.projectId, t.processedAt)],
+  // BD-3.4 : index partiel des lignes à traiter (migration 0002).
+  (t) => [index("atelier_outbox_unprocessed_idx").on(t.projectId, t.createdAt).where(sql`processed_at IS NULL`)],
 );
 
 /** Version nommée (lot 7) : instantané immuable du modèle à une révision, avec son empreinte. */
@@ -890,7 +934,9 @@ export const volumes = pgTable("volumes", {
   id: text("id").primaryKey(),
   mime: text("mime").notNull(),
   size: integer("size").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet (l'identifiant reste le SHA-256). */
+  objetCle: text("objet_cle"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -1127,7 +1173,7 @@ export const studioObservations = pgTable("studio_observations", {
   gravite: text("gravite").$type<StudioObservationGravite | null>(),
   pieces: jsonb("pieces").$type<(StudioObservationPiece & { sha256: string })[]>().notNull().default([]),
   bcfRefs: jsonb("bcf_refs").$type<StudioObservationBcfRef[]>().notNull().default([]),
-}, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+}, (t) => [index("studio_observations_responsable_idx").on(t.responsableId)]);
 
 /** Catégories d'une observation (IF-010, vocabulaire du lot PUB). */
 export type StudioObservationCategorie = "coordination" | "conformite" | "geometrie" | "documentation" | "metre" | "autre";
@@ -1253,7 +1299,8 @@ export const studioStudySteps = pgTable("studio_study_steps", {
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
-  uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
+  // BD-3.7 : la clé primaire (study_id, step_number) remplace la contrainte d'unicité (migration 0004).
+  primaryKey({ columns: [t.studyId, t.stepNumber], name: "studio_study_steps_pkey" }),
   index("studio_study_steps_step_idx").on(t.stepNumber),
 ]);
 
@@ -1735,7 +1782,8 @@ export const studioRevisionEvents = pgTable("studio_revision_events", {
   baseRevisionId: text("base_revision_id"),
   transactionId: text("transaction_id").notNull(),
   // Défaut SQL `txid_current()::text` : jamais écrit par l'application.
-  xactId: text("xact_id"),
+  // BD-2.7 : aligné sur init.sql (NOT NULL, transaction PostgreSQL par défaut).
+  xactId: text("xact_id").notNull().default(sql`(txid_current()::text)`),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   requestId: text("request_id"),
   effects: jsonb("effects").$type<unknown>().notNull(),
@@ -1949,7 +1997,9 @@ export const comPieces = pgTable("com_pieces", {
   width: integer("width").notNull(),
   height: integer("height").notNull(),
   empreinte: text("empreinte").notNull(),
-  content: bytea("content").notNull(),
+  content: bytea("content"),
+  /** BD-9.1 : clé de l'objet quand le contenu est dans le stockage objet. */
+  objetCle: text("objet_cle"),
   clientRequestId: text("client_request_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("com_pieces_message_idx").on(t.messageId)]);

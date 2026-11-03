@@ -12,13 +12,16 @@
  */
 import { and, eq, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { accountTokens, invitations, mailOutbox, people, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
+import { accountTokens, atelierLocks, invitations, mailOutbox, people, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
 import { runContactRetentionJob } from "./participants-db.js";
 import { runStudioAccessRetentionJob } from "./studio-journal-acces.js";
 import { contactRetentionEnabled } from "./participants.js";
 import { relabelShareInviter, revokeSharesOfUser } from "./project-access-db.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
+import { nettoyageVolumes } from "./volumes-gc-app.js";
+import * as clientBase from "../db/client.js";
+import { configRetention, retentionActive, runRetentionTechnique } from "./retention-technique.js";
 import { surveillanceStudio, type SurveillanceStudio } from "./studio-surveillance.js";
 import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
 import type { Tx } from "./admin-eligibility.js";
@@ -49,6 +52,8 @@ export async function anonymiseAccountIn(tx: Tx, userId: string, by: AnonymisedB
   await tx.update(people).set({ displayName: null, jobTitle: null, workEmail: null, workPhone: null, updatedAt: new Date() }).where(eq(people.userId, userId));
   await relabelShareInviter(tx, oldEmail, DELETED_LABEL);
   await tx.update(projectComments).set({ authorEmail: DELETED_LABEL }).where(eq(projectComments.authorId, userId));
+  // BD-6.4 (chantier base-donnees, constat S12) : copie de l'adresse dans un verrou fin transmis par ce compte.
+  await tx.update(atelierLocks).set({ transmisPar: DELETED_LABEL }).where(eq(atelierLocks.transmisPar, oldEmail));
   await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${userId}`);
   await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, userId));
   await tx.delete(sessions).where(eq(sessions.userId, userId));
@@ -87,7 +92,9 @@ export const PERIODE_HORAIRE_MS = 3_600_000;
 export function startAccountWorkers(log: (line: string) => void = (l) => console.log(l), s: SurveillanceStudio = surveillanceStudio): () => void {
   // Chaque boucle est déclarée à la surveillance : succès et échecs comptés, règle « worker.echec » (R.5-03).
   s.declarerWorker("mail_outbox", PERIODE_COURRIELS_MS);
-  for (const nom of ["account_deletion_job", "studio_access_retention_job", ...(contactRetentionEnabled() ? ["contact_retention_job"] : [])]) s.declarerWorker(nom, PERIODE_HORAIRE_MS);
+  // BD-6.1 : purge des données techniques, active seulement si des durées sont fournies (registre de traitement).
+  const retention = configRetention();
+  for (const nom of ["account_deletion_job", "studio_access_retention_job", ...(contactRetentionEnabled() ? ["contact_retention_job"] : []), ...(retentionActive(retention) ? ["retention_technique_job"] : [])]) s.declarerWorker(nom, PERIODE_HORAIRE_MS);
   let busy = false;
   const mail = setInterval(() => {
     if (busy) return;
@@ -101,6 +108,16 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
       s.workerReussi("account_deletion_job");
       if (r.anonymised || r.blocked) log(JSON.stringify({ level: "info", message: "account_deletion_job", ...r }));
     } catch (err) { s.workerEchoue("account_deletion_job", err); log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
+    if (retentionActive(retention)) {
+      try {
+        const r = await runRetentionTechnique(clientBase.pool, retention);
+        s.workerReussi("retention_technique_job");
+        if (r.sessions || r.jetons || r.courriels) log(JSON.stringify({ level: "info", message: "retention_technique_job", ...r }));
+      } catch (err) { s.workerEchoue("retention_technique_job", err); log(JSON.stringify({ level: "error", message: "retention_technique_job", detail: (err as Error).message })); }
+    }
+    // Volumes (BD-1.3, BD-6.3) : passage horaire du ramasse-miettes, hors requête ; il reprend aussi les volumes des
+    // projets supprimés par l'anonymisation. Un échec est journalisé par le planificateur et ne supprime rien.
+    await nettoyageVolumes.executerMaintenant();
     // Journal d'accès Studio (TR-EX-046) : événements au-delà de la durée de conservation (12 mois par défaut) purgés,
     // chaque purge datée dans `studio_access_purges` ; le journal des publications n'est jamais touché.
     try {
@@ -120,5 +137,5 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
   const daily = setInterval(deletion, PERIODE_HORAIRE_MS);
   void deletion();
   mail.unref(); daily.unref();
-  return () => { clearInterval(mail); clearInterval(daily); };
+  return () => { clearInterval(mail); clearInterval(daily); nettoyageVolumes.arreter(); };
 }

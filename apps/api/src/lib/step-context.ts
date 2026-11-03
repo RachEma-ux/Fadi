@@ -20,6 +20,7 @@ import {
   siteContextHash,
   siteProposalComputation,
   type HarmonieProfile,
+  type HarmonieProfilesData,
   type HarmonieProposalComputation,
   type HarmonieReportStep,
   type ModelAnalysis,
@@ -29,7 +30,8 @@ import {
   type StepDependency,
   type StepFingerprintSources,
 } from "@parcours/domain-model";
-import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, HARMONIE_REPORT_CSS, PARCOURS_STEPS } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, HARMONIE_REPORT_CSS, PARCOURS_STEPS } from "../data/parcours.js";
+import { catalogue } from "./catalogues-db.js";
 import { loadProgrammeRepartition } from "../routes/programme.js";
 import { analyseModelDomains, loadModelDomains, type ModelDomains } from "./model-context.js";
 import { loadActiveProgrammeCase } from "./programme-case.js";
@@ -46,6 +48,8 @@ export interface StepContextProject {
 
 export interface StepContext {
   project: StepContextProject;
+  /** Catalogue « harmonie-profils » publié en base (BD-9.6), lu une fois par contexte. */
+  harmonieProfils: HarmonieProfilesData;
   rows: StepRows;
   profile: HarmonieProfile;
   site: SiteContext;
@@ -82,7 +86,7 @@ function dependenciesOf(base: Omit<StepContext, "dependencies" | "sources">, row
     compass: harmonyDossier(base.project.harmony ?? null, "").compass,
   };
   const dependencies = computeStepDependencies(
-    HARMONIE_PROFILES,
+    base.harmonieProfils,
     PARCOURS_STEPS.map((def) => ({ def, state: contentOf(rows, def.number).harmonie, computed: computationFor(base, def.number) })),
     base.profile,
     sources,
@@ -96,13 +100,14 @@ function dependenciesOf(base: Omit<StepContext, "dependencies" | "sources">, row
  */
 export async function loadStepContext(q: Querier, project: StepContextProject, rows?: StepRows): Promise<StepContext> {
   const stepRows = rows ?? (await loadStepRows(q, project.id));
+  const harmonieProfils = await catalogue("harmonie-profils");
   const rep = await loadProgrammeRepartition(project.id, q);
-  const profile = harmonieProfile(HARMONIE_PROFILES, rep.stored ? rep.type : null, rep.components);
+  const profile = harmonieProfile(harmonieProfils, rep.stored ? rep.type : null, rep.components);
   const site = await loadSiteContext(q, project, profile);
   const domains = await loadModelDomains(q, project.id);
   const programmeCase = await loadActiveProgrammeCase(q, project.id);
   const model = analyseModelDomains(domains, programmeCase);
-  const base = { project, rows: stepRows, profile, site, domains, model, programmeCase };
+  const base = { project, harmonieProfils, rows: stepRows, profile, site, domains, model, programmeCase };
   const programmeRepartition = rep.stored ? { type: rep.type, baseArea: rep.baseArea, mode: rep.mode, custom: rep.custom, components: rep.components } : null;
   return { ...base, ...dependenciesOf(base, stepRows, programmeRepartition) };
 }
@@ -141,7 +146,7 @@ export function stepView(def: ParcoursStepDefinition, ctx: StepContext) {
   const row = ctx.rows.get(def.number);
   const content = row?.content ?? EMPTY_STEP_CONTENT;
   const dep = ctx.dependencies.get(def.number) ?? null;
-  const proposals = buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, content.harmonie, computationFor(ctx, def.number), dep?.fingerprint ?? null);
+  const proposals = buildHarmonieProposals(ctx.harmonieProfils, def, ctx.profile, content.harmonie, computationFor(ctx, def.number), dep?.fingerprint ?? null);
   const programme = def.number >= 7 && ctx.programmeCase ? { spaceCount: ctx.programmeCase.spaces.length, total: programmeCaseSums(ctx.programmeCase.spaces).total } : null;
   return {
     ...def,
@@ -181,11 +186,11 @@ export function harmonieReport(ctx: StepContext, stepNumber: number | null, now:
     const sketch = ctx.site.local.length >= 3 ? { local: ctx.site.local, area: ctx.site.area, vertexIds: ctx.site.parcel.vertexIds, crs: ctx.site.parcel.crs, approachStatus: ctx.site.observations.approachStatus } : null;
     return {
       def,
-      proposals: buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, contentOf(ctx.rows, def.number).harmonie, computationFor(ctx, def.number), dep?.fingerprint ?? null),
+      proposals: buildHarmonieProposals(ctx.harmonieProfils, def, ctx.profile, contentOf(ctx.rows, def.number).harmonie, computationFor(ctx, def.number), dep?.fingerprint ?? null),
       incoming: dep?.incoming ?? [],
       stale: dep?.stale ?? false,
       site: def.number === 1 ? { geoSource: ctx.site.geo.source, sketch } : null,
     };
   });
-  return harmonieReportHtml({ projectName: ctx.project.name, stepNumber, steps, definitions: PARCOURS_STEPS, states: HARMONIE_PROFILES.states, css: HARMONIE_REPORT_CSS, now });
+  return harmonieReportHtml({ projectName: ctx.project.name, stepNumber, steps, definitions: PARCOURS_STEPS, states: ctx.harmonieProfils.states, css: HARMONIE_REPORT_CSS, now });
 }

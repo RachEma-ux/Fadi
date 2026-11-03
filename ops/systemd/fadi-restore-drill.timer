@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - exercice de restauration le premier dimanche du mois (activation manuelle requise)
+
+[Timer]
+OnCalendar=Sun *-*-01..07 06:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=fadi-restore-drill.service
+
+[Install]
+WantedBy=timers.target

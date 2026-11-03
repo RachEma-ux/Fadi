@@ -48,11 +48,16 @@ describe("files locales et changement de build (OPS-05)", () => {
     expect(Object.fromEntries(versions().filter((v) => v.vides.length).map((v) => [v.version, v.vides]))).toEqual({ 4: ["modelCache"] });
   });
 
-  it("MIG-COEX-04 [+] les lignes sans propriétaire passent en quarantaine (v6 : Studio ; v7 : lots), présente dès la v6 et jamais vidée", () => {
+  it("MIG-COEX-04 [+] les lignes sans propriétaire passent en quarantaine (v6 : Studio ; v7 : lots), présente dès la v6, jamais vidée par une montée ni par l'oubli d'un projet", () => {
     expect(Object.fromEntries(versions().filter((v) => v.quarantaines.length).map((v) => [v.version, v.quarantaines]))).toEqual({ 6: ["studioBrouillons", "studioContextes"], 7: ["lots"] });
     for (const v of versions().filter((x) => x.version >= 6)) expect(v.stores["quarantaine"], `v${v.version}`).toBe("id, table, misEnQuarantaineA");
-    // Ni montée de version, ni déconnexion, ni oubli d'un projet ne vident la quarantaine.
-    expect(SOURCE).not.toMatch(/quarantaine\.(clear|delete|bulkDelete)\(|table\("quarantaine"\)\.(clear|delete|bulkDelete)\(/);
+    // Ni montée de version ni oubli d'un projet ne vident la quarantaine. BD-7.1 (chantier base-donnees, constat A2) :
+    // seuls `quarantaineVider` (appelé par `forgetDevice`) et l'élagage par âge (`elaguerQuarantaine`) en retirent.
+    expect(SOURCE).not.toMatch(/table\("quarantaine"\)\.(clear|delete|bulkDelete)\(/);
+    expect(SOURCE.match(/quarantaine\.(clear|delete|bulkDelete)\(/g)).toEqual(["quarantaine.clear("]);
+    expect(SOURCE).toMatch(/quarantaineVider: \(\) => safe\(\(d\) => d\.quarantaine\.clear\(\)/);
+    const oubliProjet = SOURCE.slice(SOURCE.indexOf("oublierProjet: async"), SOURCE.indexOf("comPhotoEcrire:"));
+    expect(oubliProjet).not.toMatch(/quarantaine/);
   });
 
   it("ni l'application ni le service worker ne suppriment la base locale", () => {

@@ -11,8 +11,11 @@
     "test": "vitest run",
     "test:db-guard": "vitest run --config vitest.guard.config.ts",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:catalogues:charger": "tsx src/db/catalogues-charger.ts",
+    "db:validate-constraints": "tsx src/db/valider-contraintes.ts",
     "db:verifier-contraintes": "tsx src/db/verifier-contraintes.ts",
     "db:volumes-gc": "tsx src/db/volumes-gc.ts",
+    "db:fichiers-vers-objet": "tsx src/db/fichiers-vers-objet.ts",
     "db:account-jobs": "tsx src/db/account-jobs.ts",
     "geodata:import-reference": "tsx src/db/geodata-reference.ts",
     "geodata:import-decoupage": "tsx src/db/geodata-reference.ts --decoupage",
@@ -20,6 +23,7 @@
     "geodata:terrain": "tsx src/db/geodata-terrain.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1152.0",
     "@node-rs/argon2": "~2.0.2",
     "@parcours/atelier-model": "0.1.0",
     "@parcours/core-geometry": "0.1.0",

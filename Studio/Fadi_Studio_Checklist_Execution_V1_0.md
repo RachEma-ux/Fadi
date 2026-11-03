@@ -838,7 +838,7 @@ Les préparatifs de cette section alimentent le lot R. La migration et le déplo
 - [ ] **MIG-COEX-01** — Réaliser la première migration en préproduction sur copie isolée.
 - [ ] **MIG-COEX-02** — Décider pour les pilotes la continuité d’identifiants ou leur correspondance explicite selon DEC-01/02/03/18.
 - [ ] **MIG-COEX-03** — Préserver le lien entre chaque publication historique et ses pièces originales.
-- [ ] **MIG-COEX-04** — Synchroniser, migrer sous contrat ou mettre en résolution les commandes locales pendantes avant bascule ; ne jamais les supprimer.
+- [ ] **MIG-COEX-04** — Synchroniser, migrer sous contrat ou mettre en résolution les commandes locales pendantes avant bascule ; ne jamais les supprimer (données sans propriétaire : seules les actions de maintenance déclarées en ADR-STUDIO-PILOTE-01 P-13 en retirent).
 - [ ] **MIG-COEX-05** — Décider le transfert de propriété d’écriture Atelier → Studio par périmètre.
 - [ ] **MIG-COEX-06** — Empêcher deux chaînes d’écriture incompatibles sur la même étude et maintenir la consultation historique nécessaire.
 - [ ] **MIG-COEX-07** — Traiter la suppression d’anciens écrans, routes ou stockages comme un lot ultérieur explicitement autorisé, distinct du lot I.

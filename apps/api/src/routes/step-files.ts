@@ -22,6 +22,7 @@ import { projects, stepFiles } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectNeed } from "../lib/owned-project.js";
 import { parcoursStepDefinition } from "../data/parcours.js";
+import { envoyerFichier, rangerFichier } from "../lib/stockage-objet/index.js";
 
 export const stepFilesRouter = Router({ mergeParams: true });
 stepFilesRouter.use(requireAuth);
@@ -87,7 +88,9 @@ stepFilesRouter.post("/", raw({ type: () => true, limit: STEP_FILE_LIMIT }), asy
     return;
   }
   const type = (req.get("x-file-type") ?? "").slice(0, 120) || "application/octet-stream";
-  const row = { id: randomUUID(), projectId: scope.projectId, stepNumber: scope.stepNumber, name, type, size: content.length, content, addedAt: new Date() };
+  // BD-9.1 : contenu en base ou dans le stockage objet (FADI_STOCKAGE) ; empreinte toujours enregistrée.
+  const range = await rangerFichier("step_files", content, type);
+  const row = { id: randomUUID(), projectId: scope.projectId, stepNumber: scope.stepNumber, name, type, size: content.length, content: range.content, objetCle: range.objetCle, empreinte: range.sha256, addedAt: new Date() };
   await db.transaction(async (tx) => {
     await tx.insert(stepFiles).values(row);
     await tx.update(projects).set({ updatedAt: new Date() }).where(eq(projects.id, scope.projectId));
@@ -114,7 +117,7 @@ stepFilesRouter.get("/:fileId", async (req, res) => {
   res.setHeader("Content-Disposition", `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(row.name)}`);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Cache-Control", "private, no-store");
-  res.end(row.content);
+  await envoyerFichier(res, row, { sha256: row.empreinte, taille: row.size });
 });
 
 stepFilesRouter.delete("/:fileId", async (req, res) => {

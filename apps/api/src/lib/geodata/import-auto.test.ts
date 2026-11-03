@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { arreterImportAuto, bilanImport, etatImportAuto, lancerImportAuto } from "./import-auto.js";
+import { arreterImportAuto, bilanImport, etatImportAuto, IMPORT_DEJA_EN_COURS, lancerImportAuto } from "./import-auto.js";
 
 const attendreFin = async () => {
   for (let i = 0; i < 100 && etatImportAuto().etat === "en-cours"; i++) await new Promise((r) => setTimeout(r, 50));
@@ -24,7 +24,7 @@ describe("import automatique des données GeoData au déploiement (D-GD-23)", ()
     const dossier = mkdtempSync(join(tmpdir(), "gd-auto-"));
     const ok = join(dossier, "ok.mjs");
     writeFileSync(ok, `const a = process.argv.slice(2).join(" ");
-if (a !== "--archiver --fiche toutes --preparateur donnees@example.test --publier-par donnees@example.test") { console.error("arguments : " + a); process.exit(2); }
+if (a !== "--exclusif --archiver --fiche toutes --preparateur donnees@example.test --publier-par donnees@example.test") { console.error("arguments : " + a); process.exit(2); }
 console.log("Archive des fichiers : 2 ajouté(s), 0 modifié(s), 5 inchangé(s), 0 retiré(s).\\nVersion préparée : gdver_1 (couche c, 2 objets)\\nVersion gdver_1 publiée par donnees@example.test.\\nVersion déjà présente (même source, empreinte identique) : gdver_0 (publiee) ; aucune nouvelle version.\\nRetrait : osm-mar-villes (gdver_9) — remplacée");`);
     lancerImportAuto({ GEODATA_IMPORT_AUTO_PAR: "donnees@example.test" }, ok);
     expect(etatImportAuto().etat).toBe("en-cours");
@@ -38,7 +38,7 @@ console.log("Archive des fichiers : 2 ajouté(s), 0 modifié(s), 5 inchangé(s),
     const dossier = mkdtempSync(join(tmpdir(), "gd-livraison-"));
     const script = join(dossier, "livraison.mjs");
     writeFileSync(script, `const a = process.argv.slice(2).join(" ");
-if (a !== "--archiver --fiche toutes --livraison") { console.error("arguments : " + a); process.exit(2); }
+if (a !== "--exclusif --archiver --fiche toutes --livraison") { console.error("arguments : " + a); process.exit(2); }
 console.log("Archive des fichiers : 121 ajouté(s), 0 modifié(s), 0 inchangé(s), 0 retiré(s).\\nVersion préparée : gdver_1 (couche c, 2 objets)\\nVersion gdver_1 publiée par la livraison.");`);
     lancerImportAuto({}, script);
     expect(etatImportAuto().message).toContain("par la livraison");
@@ -60,7 +60,7 @@ console.log("Archive des fichiers : 121 ajouté(s), 0 modifié(s), 0 inchangé(s
     const dossier = mkdtempSync(join(tmpdir(), "gd-regl-"));
     const script = join(dossier, "livraison.mjs");
     writeFileSync(script, `const a = process.argv.slice(2).join(" ");
-if (a !== "--archiver --fiche toutes --livraison") { console.error("arguments : " + a); process.exit(2); }
+if (a !== "--exclusif --archiver --fiche toutes --livraison") { console.error("arguments : " + a); process.exit(2); }
 console.log("Archive des fichiers : 0 ajouté(s), 0 modifié(s), 121 inchangé(s), 0 retiré(s).");`);
     lancerImportAuto({ GEODATA_IMPORT_AUTO_PAR: "<adresse du compte GeoData>" }, script);
     expect(etatImportAuto()).toMatchObject({ etat: "en-cours", message: expect.stringContaining("ignoré") });
@@ -68,5 +68,21 @@ console.log("Archive des fichiers : 0 ajouté(s), 0 modifié(s), 121 inchangé(s
   });
   it("bilan : compte les lignes du journal de la chaîne d'import", () => {
     expect(bilanImport("")).toBe("0 version(s) préparée(s), 0 publiée(s), 0 retirée(s), 0 fiche(s) déjà en base.");
+  });
+  it("BD-8.1 : une autre instance tient le verrou de l'import automatique — rien n'est importé, l'état le dit", async () => {
+    expect(bilanImport(`${IMPORT_DEJA_EN_COURS}\n`)).toBe(IMPORT_DEJA_EN_COURS);
+    const dossier = mkdtempSync(join(tmpdir(), "gd-verrou-"));
+    const script = join(dossier, "occupe.mjs");
+    writeFileSync(script, `if (process.argv[2] !== "--exclusif") process.exit(2); console.log(${JSON.stringify(IMPORT_DEJA_EN_COURS)});`);
+    lancerImportAuto({}, script);
+    expect(await attendreFin()).toMatchObject({ etat: "termine", message: IMPORT_DEJA_EN_COURS });
+  });
+  it("BD-8.1 : même texte dans la chaîne d'import et dans le bilan de l'import automatique", async () => {
+    const { readFileSync } = await import("node:fs");
+    const source = readFileSync(new URL("../../db/geodata-reference.ts", import.meta.url), "utf8");
+    expect(source).toContain(`export const IMPORT_DEJA_EN_COURS = ${JSON.stringify(IMPORT_DEJA_EN_COURS)};`);
+    // Recherche, écriture et publication d'une version : une transaction, sous un verrou par source (constat B1).
+    expect(source).toMatch(/BEGIN"\);\s*await client\.query\("SELECT pg_advisory_xact_lock\(hashtext\(\$1\)\)", \[`geodata_import:\$\{fiche\.cle\}`\]\);/);
+    expect(source).toContain("pg_try_advisory_lock(hashtext($1))");
   });
 });

@@ -26,8 +26,9 @@ import { lockProject } from "../lib/step-rows.js";
 import { buildingCase, cibleDocument, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { BUILDING_LIBRARY } from "../data/parcours.js";
+import { catalogue } from "../lib/catalogues-db.js";
 import { loadDesignContext } from "../lib/design-context.js";
+import { envoyerFichier, rangerFichier } from "../lib/stockage-objet/index.js";
 import { documentCatalogue, documentDescriptors, recordProducedDocument, studioDossierDocuments, studioPackageDocuments } from "../lib/documents.js";
 import { exampleReportFor } from "../lib/example-report.js";
 import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
@@ -97,11 +98,12 @@ documentsRouter.get("/surfaces", async (req, res) => {
 });
 
 documentsRouter.get("/programme", async (req, res) => {
+  const bibliotheque = await catalogue("bibliotheque-batiments");
   await produce(req, res, "programme-csv", (dctx) => {
     const a = dctx.steps.programmeCase;
     if (!a) return null;
     // Les colonnes Cas / Type / Sous-type viennent du cas de la bibliothèque quand il existe, sinon du cas appliqué lui-même (cas importé).
-    const c = buildingCase(BUILDING_LIBRARY, a.caseId) ?? { title: a.title, type: a.type, subtype: a.subtype };
+    const c = buildingCase(bibliotheque, a.caseId) ?? { title: a.title, type: a.type, subtype: a.subtype };
     return { body: programmeCsv(c, { label: a.scenarioLabel ?? "", spaces: a.spaces as LibrarySpace[] }), type: "text/csv; charset=utf-8" };
   });
 });
@@ -210,13 +212,18 @@ documentsRouter.post("/dessins", raw({ type: () => true, limit: DRAWING_LIMIT })
   }
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());
+  const mime = (req.get("x-file-type") ?? "").replace(/[^\w./+;=-]/g, "").slice(0, 120) || "application/octet-stream";
+  // BD-9.1 : contenu en base ou dans le stockage objet (FADI_STOCKAGE), déposé avant la transaction.
+  const range = await rangerFichier("drawing_exports", content, mime);
   const row = {
     id: randomUUID(),
     projectId: project.id,
     kind,
     fileName,
-    mime: (req.get("x-file-type") ?? "").replace(/[^\w./+;=-]/g, "").slice(0, 120) || "application/octet-stream",
-    content,
+    mime,
+    content: range.content,
+    objetCle: range.objetCle,
+    empreinte: range.sha256,
     size: content.length,
     levelId: headerText(req, "x-export-level", 80),
     levelName: headerText(req, "x-export-level-name", 120),
@@ -246,7 +253,7 @@ documentsRouter.get("/dessins/:exportId", async (req, res) => {
   res.setHeader("Content-Type", row.mime);
   res.setHeader("Content-Disposition", `attachment; filename="${row.fileName.replace(/"/g, "")}"`);
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.send(row.content);
+  await envoyerFichier(res, row, { sha256: row.empreinte, taille: row.size }, (b) => void res.send(b));
 });
 
 documentsRouter.delete("/dessins/:exportId", async (req, res) => {

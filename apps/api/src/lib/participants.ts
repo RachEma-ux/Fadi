@@ -113,7 +113,9 @@ export function contactDetailsFor<T extends { workEmail: string | null; workPhon
  * `CONTACT_RETENTION_ENABLED=1` n'est pas posé — décision OP-4 du maître d'ouvrage (2026-10-25) : la réserve juridique
  * d'OP-2 (obligations de conservation, garantie décennale) est à lever avant toute activation. Seule cette tâche est
  * coupée : la file des courriels et l'anonymisation des comptes (D-5) continuent ; l'effacement sur demande et la
- * commande manuelle (`db:account-jobs`) restent disponibles.
+ * commande manuelle (`db:account-jobs`) restent disponibles. D-BD-4 (maître d'ouvrage, 2 novembre 2026) : activé en
+ * production par `docker-compose.yml` (`CONTACT_RETENTION_ENABLED=1` par défaut) ; le code reste coupé par défaut hors de
+ * ce déploiement (développement, tests).
  */
 export function contactRetentionEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env["CONTACT_RETENTION_ENABLED"] === "1";

@@ -263,6 +263,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
+      # BD-2 (chantier base-donnees) : montée de version du schéma — schéma de la branche cible, puis migrations du HEAD
+      # deux fois (la seconde n'applique rien), schema_migrations complet, aucun index invalide. Base jetable du job.
+      - name: Migrations versionnées — montée de version depuis la branche cible
+        env:
+          MIGRATION_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+        run: node scripts/validation/migration-montee-version.mjs
       # Chantier bases-de-donnees (BD-5) : seconde application (verrou consultatif, journal admin.schema_applications), puis
       # contrôle des contraintes NOT VALID sur les lignes présentes, en transactions annulées (rien n'est modifié).
       - name: Base — seconde migration journalisée et contraintes NOT VALID respectées

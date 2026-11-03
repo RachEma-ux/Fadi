@@ -45,34 +45,72 @@ export async function enqueueMail(
   return { queued: !refusal, reason: refusal };
 }
 
-/** Traite les messages échus ; renvoie le nombre traité. Verrou `SKIP LOCKED` : deux processus ne s'en disputent pas un. */
-export async function processMailOutbox(limit = 100): Promise<number> {
-  const { mailer } = mailRuntime();
+/** Durée du bail d'un message réclamé : au-delà (processus arrêté pendant l'envoi), il redevient éligible. */
+export const BAIL_ENVOI_MS = 5 * 60_000;
+
+type LigneFile = typeof mailOutbox.$inferSelect;
+
+/** Opérations sur la file, séparées pour tester l'enchaînement sans base. */
+export interface OperationsFile {
+  /** Transaction courte : choisit un message échu (`SKIP LOCKED`) et le réserve en repoussant son échéance (bail). */
+  reclamer(): Promise<LigneFile | null>;
+  envoyer(row: LigneFile): Promise<void>;
+  marquerEnvoye(row: LigneFile): Promise<void>;
+  marquerEchec(row: LigneFile, err: unknown): Promise<void>;
+}
+
+/**
+ * BD-4.7 (chantier base-donnees, constat Q10) : l'envoi SMTP ne tient plus de transaction ni de verrou de ligne. Avant,
+ * chaque message gardait une connexion du pool « idle in transaction » pendant toute la latence du serveur de courriel.
+ * Désormais : réclamation en transaction courte (bail de 5 minutes), envoi hors transaction, puis enregistrement du
+ * résultat. Un arrêt pendant l'envoi laisse le message réessayé à la fin du bail (au plus une fois de plus, comme avant
+ * quand la transaction était annulée).
+ */
+export async function traiterFile(ops: OperationsFile, limit = 100): Promise<number> {
   let handled = 0;
   for (let i = 0; i < limit; i++) {
-    const done = await db.transaction(async (tx) => {
+    const row = await ops.reclamer();
+    if (!row) break;
+    try {
+      await ops.envoyer(row);
+    } catch (err) {
+      await ops.marquerEchec(row, err);
+      handled++;
+      continue;
+    }
+    await ops.marquerEnvoye(row);
+    handled++;
+  }
+  return handled;
+}
+
+/** Traite les messages échus ; renvoie le nombre traité. `SKIP LOCKED` + bail : deux processus ne s'en disputent pas un. */
+export async function processMailOutbox(limit = 100): Promise<number> {
+  const { mailer } = mailRuntime();
+  return traiterFile({
+    reclamer: () => db.transaction(async (tx) => {
       const rows = await tx.select().from(mailOutbox)
         .where(and(eq(mailOutbox.status, "pending"), lte(mailOutbox.nextAttemptAt, new Date())))
         .orderBy(asc(mailOutbox.nextAttemptAt)).limit(1).for("update", { skipLocked: true });
       const row = rows[0];
-      if (!row) return false;
-      try {
-        await mailer.send({ to: row.toAddress, template: row.template as MailTemplate, data: row.payload as Record<string, string>, locale: row.locale });
-        await tx.update(mailOutbox).set({ status: "sent", sentAt: new Date(), payload: {}, attempts: row.attempts + 1, lastError: null }).where(eq(mailOutbox.id, row.id));
-      } catch (err) {
-        const attempts = row.attempts + 1;
-        const last = attempts >= MAX_ATTEMPTS;
-        // Message d'erreur borné, sans la charge : jamais de lien à jeton dans la base au-delà de l'abandon.
-        await tx.update(mailOutbox).set({
-          attempts, lastError: String((err as Error).message ?? err).slice(0, 300),
-          status: last ? "failed" : "pending", payload: last ? {} : row.payload,
-          nextAttemptAt: new Date(Date.now() + retryDelayMs(attempts)),
-        }).where(eq(mailOutbox.id, row.id));
-      }
-      return true;
-    });
-    if (!done) break;
-    handled++;
-  }
-  return handled;
+      if (!row) return null;
+      await tx.update(mailOutbox).set({ nextAttemptAt: new Date(Date.now() + BAIL_ENVOI_MS) }).where(eq(mailOutbox.id, row.id));
+      return row;
+    }),
+    envoyer: (row) => mailer.send({ to: row.toAddress, template: row.template as MailTemplate, data: row.payload as Record<string, string>, locale: row.locale }),
+    marquerEnvoye: async (row) => {
+      await db.update(mailOutbox).set({ status: "sent", sentAt: new Date(), payload: {}, attempts: row.attempts + 1, lastError: null })
+        .where(and(eq(mailOutbox.id, row.id), eq(mailOutbox.status, "pending")));
+    },
+    marquerEchec: async (row, err) => {
+      const attempts = row.attempts + 1;
+      const last = attempts >= MAX_ATTEMPTS;
+      // Message d'erreur borné, sans la charge : jamais de lien à jeton dans la base au-delà de l'abandon.
+      await db.update(mailOutbox).set({
+        attempts, lastError: String((err as Error)?.message ?? err).slice(0, 300),
+        status: last ? "failed" : "pending", payload: last ? {} : row.payload,
+        nextAttemptAt: new Date(Date.now() + retryDelayMs(attempts)),
+      }).where(and(eq(mailOutbox.id, row.id), eq(mailOutbox.status, "pending")));
+    },
+  }, limit);
 }

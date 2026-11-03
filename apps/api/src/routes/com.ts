@@ -59,6 +59,7 @@ import { loadProjectAccess, projectOr404, type AccessibleProject } from "../lib/
 import { readStudioContext, StudioRequestError } from "../lib/studio-commands.js";
 import { nettoyerPhoto, PhotoRefusee, positionValide } from "../lib/com-images.js";
 import { openStudioObservation } from "../lib/studio-observations-suivi.js";
+import { envoyerFichier, rangerFichier } from "../lib/stockage-objet/index.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
 export const comRouter = Router({ mergeParams: true });
@@ -550,8 +551,10 @@ comRouter.post("/conversations/:conversationId/pieces", lirePhoto, endpoint(asyn
     }
   }
   const id = newId("com_piece");
+  // BD-9.1 : photo en base ou dans le stockage objet (FADI_STOCKAGE) ; l'empreinte reste celle du contenu nettoyé.
+  const range = await rangerFichier("com_pieces", photo.content, photo.mime);
   try {
-    await db.insert(comPieces).values({ id, projectId: c.access.id, conversationId: c.conv.id, authorId: userId, mime: photo.mime, size: photo.content.length, width: photo.width, height: photo.height, empreinte: photo.sha256, content: photo.content, clientRequestId: requete });
+    await db.insert(comPieces).values({ id, projectId: c.access.id, conversationId: c.conv.id, authorId: userId, mime: photo.mime, size: photo.content.length, width: photo.width, height: photo.height, empreinte: photo.sha256, content: range.content, objetCle: range.objetCle, clientRequestId: requete });
   } catch (e) {
     // Envoi concurrent du même identifiant : la première écriture l'emporte, le rejeu la relit.
     const [prev] = requete ? await db.select().from(comPieces).where(and(eq(comPieces.authorId, userId), eq(comPieces.clientRequestId, requete))).limit(1) : [];
@@ -574,11 +577,11 @@ comRouter.get("/pieces/:pieceId", endpoint(async (req, res) => {
     if (!m || m.withdrawnAt || (debut && m.createdAt < debut)) return introuvable();
   }
   res.setHeader("Content-Type", ph.mime);
-  res.setHeader("Content-Length", String(ph.content.length));
+  res.setHeader("Content-Length", String(ph.size));
   res.setHeader("Content-Disposition", "inline");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Cache-Control", "private, no-store");
-  res.end(ph.content);
+  await envoyerFichier(res, ph, { sha256: ph.empreinte, taille: ph.size });
 }));
 
 /** Plan d'une révision exacte d'une variante Studio (SVG, mètres, y inversé) : support de pose et d'affichage des épingles. */
@@ -645,7 +648,7 @@ comRouter.post("/conversations/:conversationId/partages", endpoint(async (req, r
     if (aCopier.length) {
       const sources = await tx.select().from(comPieces).where(inArray(comPieces.id, aCopier)).orderBy(asc(comPieces.createdAt));
       for (const ph of sources) {
-        await tx.insert(comPieces).values({ id: newId("com_piece"), projectId: ph.projectId, conversationId: p.cible.conv.id, messageId: id, authorId: userId, mime: ph.mime, size: ph.size, width: ph.width, height: ph.height, empreinte: ph.empreinte, content: ph.content, createdAt: now });
+        await tx.insert(comPieces).values({ id: newId("com_piece"), projectId: ph.projectId, conversationId: p.cible.conv.id, messageId: id, authorId: userId, mime: ph.mime, size: ph.size, width: ph.width, height: ph.height, empreinte: ph.empreinte, content: ph.content, objetCle: ph.objetCle, createdAt: now });
       }
     }
     await tx.update(comConversations).set({ lastMessageAt: now }).where(eq(comConversations.id, p.cible.conv.id));
@@ -925,19 +928,49 @@ async function mesProjets(userId: string): Promise<AccessibleProject[]> {
 export async function boiteDe(userId: string): Promise<ElementBoite[]> {
   const items: ElementBoite[] = [];
   const jour = aujourdHui();
-  for (const access of await mesProjets(userId)) {
-    const convs = await db.select().from(comConversations).where(eq(comConversations.projectId, access.id));
-    for (const conv of convs) {
-      const parts = await participationsDe(conv.id);
-      const moi = lecteur(userId, access.role, parts);
+  // BD-4.4 (chantier base-donnees, constat Q4) : conversations, participants, dates de lecture et accusés de réception de
+  // toute la boîte chargés en une requête chacun (avant : quatre requêtes par conversation, en série). Les messages
+  // restent lus par conversation (borne de 200, début d'historique propre à chaque lecteur). Résultat inchangé.
+  const acces = await mesProjets(userId);
+  const projetIds = acces.map((a) => a.id);
+  const toutesConvs = projetIds.length ? await db.select().from(comConversations).where(inArray(comConversations.projectId, projetIds)) : [];
+  const convIds = toutesConvs.map((c) => c.id);
+  const participations = new Map<string, Map<string, { historyFrom: Date | null; removedAt: Date | null; addedAt: Date }>>();
+  if (convIds.length) {
+    for (const r of await db.select().from(comParticipants).where(inArray(comParticipants.conversationId, convIds))) {
+      const m = participations.get(r.conversationId) ?? new Map();
+      m.set(r.userId, { historyFrom: r.historyFrom, removedAt: r.removedAt, addedAt: r.addedAt });
+      participations.set(r.conversationId, m);
+    }
+  }
+  const lectures = new Map<string, Date>();
+  if (convIds.length) {
+    for (const r of await db.select({ conversationId: comReads.conversationId, at: comReads.lastReadAt }).from(comReads).where(and(inArray(comReads.conversationId, convIds), eq(comReads.userId, userId)))) lectures.set(r.conversationId, r.at);
+  }
+  // Première passe : messages lisibles de chaque conversation (même filtre qu'avant), dans l'ordre des projets.
+  type Lu = { conv: (typeof toutesConvs)[number]; access: AccessibleProject; debut: Date | null; msgs: { m: typeof comMessages.$inferSelect; email: string }[] };
+  const parProjet = new Map<string, Lu[]>();
+  for (const access of acces) {
+    const lus: Lu[] = [];
+    for (const conv of toutesConvs.filter((c) => c.projectId === access.id)) {
+      const moi = lecteur(userId, access.role, participations.get(conv.id) ?? new Map());
       if (!peutLire(conv.audience, moi)) continue;
       const debut = debutHistorique(conv.audience, moi);
-      const [lu] = await db.select({ at: comReads.lastReadAt }).from(comReads).where(and(eq(comReads.conversationId, conv.id), eq(comReads.userId, userId)));
-      const borne = [lu?.at, debut].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
       const msgs = await db.select({ m: comMessages, email: users.email }).from(comMessages).innerJoin(users, eq(users.id, comMessages.authorId))
         .where(and(eq(comMessages.conversationId, conv.id), ne(comMessages.authorId, userId), isNull(comMessages.withdrawnAt), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : [])))
         .orderBy(desc(comMessages.createdAt)).limit(200);
-      const recus = msgs.length ? await db.select().from(comReceipts).where(and(inArray(comReceipts.messageId, msgs.map((x) => x.m.id)), eq(comReceipts.userId, userId))) : [];
+      lus.push({ conv, access, debut, msgs });
+    }
+    parProjet.set(access.id, lus);
+  }
+  const messageIds = [...parProjet.values()].flat().flatMap((l) => l.msgs.map((x) => x.m.id));
+  const recusTous = messageIds.length ? await db.select().from(comReceipts).where(and(inArray(comReceipts.messageId, messageIds), eq(comReceipts.userId, userId))) : [];
+  // Seconde passe : mêmes éléments, dans le même ordre qu'avant.
+  for (const access of acces) {
+    for (const { conv, debut, msgs } of parProjet.get(access.id) ?? []) {
+      const lu = lectures.get(conv.id);
+      const borne = [lu, debut].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
+      const recus = recusTous.filter((r) => msgs.some((x) => x.m.id === r.messageId));
       const nonLus = msgs.filter(({ m }) => !borne || m.createdAt > borne);
       for (const { m, email } of msgs) {
         const base = { at: m.createdAt.toISOString(), projectId: access.id, projectCode: access.code, conversationId: conv.id, demandeId: null, titre: conv.title, urgent: m.urgent, enRetard: false };

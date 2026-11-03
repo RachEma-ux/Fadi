@@ -1,10 +1,16 @@
 -- Schéma initial. Tenu à la main et volontairement en miroir exact de
 -- schema.ts (voir ce fichier pour la justification de chaque choix,
 -- notamment pourquoi seule `projects.parcel_footprint` est une géométrie
--- PostGIS). `npm run db:migrate` l'exécute avec IF NOT EXISTS, donc il est
--- sûr de le relancer (idempotent) ; ce n'est pas un outil de migrations
--- versionnées — à l'échelle de l'équipe, Drizzle Kit (ou équivalent) devra
--- prendre le relais dès que le schéma évolue après le premier déploiement.
+-- PostGIS). Idempotent (IF NOT EXISTS).
+--
+-- BD-2 (chantier base-donnees, 2026-11-02) : ce fichier est la BASE DE DÉPART GELÉE (version 0000). Il n'est plus
+-- modifié : toute évolution du schéma est un fichier numéroté de `db/migrations/` (voir db/migrations/README.md),
+-- appliqué une seule fois par `db/schema-migrations.ts`. `schema.ts` ne décrit pas tout le SQL (CHECK, une partie des
+-- clés étrangères et index, tables GeoData) : ne jamais l'utiliser avec `drizzle-kit push` ou `generate`.
+
+-- BD-1.1 / #379 (BD-5) : le fichier s'exécute en une seule transaction et reprend des verrous exclusifs sur des tables
+-- chaudes. `db/appliquer-schema.ts` le joue sous `lock_timeout` court (MIGRATION_LOCK_TIMEOUT, 5 s) : un verrou non obtenu
+-- fait échouer l'application (55P03, tout est annulé) au lieu de bloquer le trafic, puis un nouvel essai suit.
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -4100,6 +4106,17 @@ CREATE TABLE IF NOT EXISTS geodata_terrain_traitements (
   CONSTRAINT geodata_terrain_traitements_echec CHECK (etat <> 'echec' OR motif_echec IS NOT NULL)
 );
 
+-- BD-2 (chantier base-donnees) : suivi des migrations versionnées. `0000` = ce fichier (empreinte SHA-256 de son
+-- contenu) ; les versions suivantes sont les fichiers `db/migrations/NNNN_nom.sql`, appliqués une seule fois par
+-- `db/schema-migrations.ts`. Lecture seule pour l'application.
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version text PRIMARY KEY CHECK (version ~ '^[0-9]{4}$'),
+  name text NOT NULL,
+  checksum text NOT NULL CHECK (checksum ~ '^[0-9a-f]{64}$'),
+  applied_at timestamptz NOT NULL DEFAULT now(),
+  duration_ms integer NOT NULL DEFAULT 0 CHECK (duration_ms >= 0)
+);
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
@@ -4164,6 +4181,9 @@ BEGIN
     GRANT USAGE, CREATE ON SCHEMA public TO fadi_owner;
     ALTER ROLE fadi_app SET search_path = public, auth, admin;
     ALTER ROLE fadi_migrator SET search_path = public, auth, admin;
+    -- BD-1.2 : filet de sécurité côté serveur, quel que soit le client (API, import GeoData, script) : une transaction
+    -- laissée ouverte sans activité est fermée au bout de 10 minutes au lieu de garder ses verrous indéfiniment.
+    ALTER ROLE fadi_app SET idle_in_transaction_session_timeout = '10min';
   ELSIF NOT pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
     RAISE NOTICE 'D-7 : % n''est ni super-utilisateur ni membre de fadi_owner, droits inchangés', current_user;
     RETURN;
@@ -4177,6 +4197,27 @@ BEGIN
   REVOKE ALL ON admin.schema_applications FROM fadi_app;
   -- Lot OP-PONT : `project_members` est une vue de compatibilité en LECTURE ; le partage s'écrit dans les participations.
   REVOKE INSERT, UPDATE, DELETE ON public.project_members FROM fadi_app;
+  -- BD-1.4 (constat S2) : journaux en ajout seul pour l'application. Leurs déclencheurs `*_no_update` refusent déjà la
+  -- modification (et gardent leur message d'erreur) ; la suppression directe est retirée ici. Les suppressions en cascade
+  -- depuis le parent restent possibles : elles s'exécutent avec les droits du propriétaire de la table.
+  -- `studio_access_events` garde DELETE : sa purge de rétention (12 mois, `runStudioAccessRetentionJob`) passe par
+  -- l'application et est elle-même journalisée (`studio_access_purges`).
+  REVOKE DELETE ON public.studio_agent_events, public.studio_revision_events, public.studio_observation_events,
+    public.studio_observation_task_events, public.studio_external_model_events, public.studio_approval_delegation_events,
+    public.com_events, public.com_message_versions, public.collab_demande_events, public.rt_session_events FROM fadi_app;
+  -- Sans déclencheur : ni modification ni suppression directe.
+  REVOKE UPDATE, DELETE ON public.geodata_journal, public.atelier_lock_events FROM fadi_app;
+  -- Table des systèmes de coordonnées de PostGIS : jamais écrite par l'application (une ligne altérée fausserait toutes
+  -- les reprojections). Clé de signature des archives : créée une fois (INSERT … ON CONFLICT DO NOTHING), puis lue.
+  REVOKE INSERT, UPDATE, DELETE ON public.spatial_ref_sys FROM fadi_app;
+  REVOKE UPDATE, DELETE ON public.archive_signing_keys FROM fadi_app;
+  REVOKE INSERT, UPDATE, DELETE ON public.schema_migrations FROM fadi_app;
+  -- BD-9.6 (migration 0011) : catalogues de données en lecture seule pour l'application. Repris ici parce qu'un nouveau
+  -- passage de ce fichier (base de départ modifiée, contrôle de restauration) rend l'écriture par le GRANT général ci-dessus.
+  IF to_regclass('public.catalogues') IS NOT NULL THEN
+    REVOKE INSERT, UPDATE, DELETE ON public.catalogues, public.catalogue_versions FROM fadi_app;
+    REVOKE ALL ON SEQUENCE public.catalogue_versions_id_seq FROM fadi_app;
+  END IF;
   REVOKE ALL ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_retention;
   GRANT SELECT ON admin.audit_log TO fadi_retention;
   GRANT UPDATE (actor_id, ip, metadata) ON admin.audit_log TO fadi_retention;
@@ -4186,3 +4227,4 @@ BEGIN
   ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT USAGE, SELECT ON SEQUENCES TO fadi_app;
   ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT SELECT ON TABLES TO fadi_backup;
 END $$;
+
