@@ -76,6 +76,15 @@ quarantaine (Q-TER-02-1 à 3) ; la porte G3 (préproduction, appareil Android r�
 
 Après correction : recette `geodata-terrain.mjs` 32/0, `geodata.mjs` 265/0, tests web du module 66/66.
 
+## Fusion de `main` (#386) et correctif de préproduction
+
+`main` (#386, préproduction du terrain) fusionné dans la branche. La CI a alors révélé un échec intermittent du script
+`deploy/preprod/fadi-preprod` (test « administrateur : terrain --lever consigné ») : avec `set -o pipefail`,
+`docker compose config --services | grep -qx` pouvait faire échouer la vérification du service (SIGPIPE quand `grep -q`
+s'arrête au premier résultat). Remplacé par `grep -x … > /dev/null` (lecture complète). Le script change donc avec cette
+PR (liste `E2E_DEFAUT` et ce correctif) : son SHA-256 n'est plus celui annoncé dans la PR #386 ; la réinstallation de
+`/usr/local/sbin/fadi-preprod` par le maître d'ouvrage se fait à partir de `main` après fusion.
+
 ## Hors de ce lot (décision du maître d'ouvrage)
 
 Le plan demande aussi, « dans le parcours parcellaire », d'**attacher la version de terrain approuvée au projet**, et dans

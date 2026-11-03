@@ -708,7 +708,9 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
       exit 0
     fi
     nouveau_run terrain; garde
-    dc --profile terrain config --services | grep -qx "$service" \
+    # Lecture complète (grep -x > /dev/null, jamais grep -q) : avec pipefail, un grep -q qui s'arrête au premier résultat
+    # pouvait interrompre docker compose (SIGPIPE) et faire échouer la vérification au hasard.
+    dc --profile terrain config --services | grep -x "$service" > /dev/null \
       || die "service $service absent de la configuration du commit approuvé (TER-03 non livré ?)"
     if [ "$action" = --continu ]; then
       continu_actif && die "un travailleur continu est déjà en marche ($CONTINU) : terrain worker --arreter d'abord"
