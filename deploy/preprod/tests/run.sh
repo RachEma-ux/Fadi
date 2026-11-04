@@ -387,7 +387,8 @@ larges=$(find "$B/out" \( -type d -perm /077 \) -o \( -type f -perm /177 \) | he
 grep -nE '0?777|a\+[rwx]|o\+[rwx]|go\+' "$SCRIPT" "$PREPROD"/*.yml "$PREPROD"/recette.Dockerfile > "$T/larges" \
   && { ko=$((ko + 1)); echo "✗ droits globaux dans les fichiers :"; cat "$T/larges"; } \
   || { ok=$((ok + 1)); echo "✓ aucun 0777 ni droit global dans les fichiers de la préproduction"; }
-RUNID=$(ls "$B/out" | grep -- '-e2e$' | tail -1)
+# Exécution la plus récente par date de modification (deux exécutions dans la même seconde se classent par PID, pas par ordre).
+RUNID=$(ls -t "$B/out" | grep -- '-e2e$' | head -1)
 attendu 0  "show : liste des fichiers d'une exécution" "rapport.txt" -- fp show "$RUNID"
 attendu 0  "show : lecture d'un rapport" "ok" -- fp show "$RUNID" out/parcours-scenario/rapport.txt
 attendu nz "show : remontée de dossier refusée" "fichier invalide" -- fp show "$RUNID" ../../env/.env.preprod
