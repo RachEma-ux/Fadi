@@ -49,19 +49,22 @@ Réponse attendue sous la forme : `TER-D1 : A` (ou `recommandation`), `TER-D2 : 
 
 | 2026-11-03 | TER-D7 (révisée) | « Exécute tes recommandations » : constat VPS (data-root Docker = `/mnt/data/docker`, 112 Go libres, disque partagé avec la base et les sauvegardes de la production) ; quota terrain ramené à **30 Go** ; garde de préproduction étendue au profil `terrain` ; `terrain-import` lancé seulement par `sudo fadi-preprod terrain …` (plus de `docker compose` brut). | Maître d'ouvrage via la session VPS « Fadi VPS - Audit » | `TER-02.md` § « Correctif d'exploitation du 3 novembre 2026 ». Le maître d'ouvrage réinstalle `/usr/local/sbin/fadi-preprod` après fusion (empreinte dans la PR). |
 
+| 2026-11-04 | TER-D22 à TER-D28 | « J'accepte les recommandations TER-D22 à TER-D28 » : quota du cache distant 10 Go (D22) ; GEDTM30 dès le zoom 3, GLO-30 dès le zoom 8, courbes dès le zoom 12 (D23) ; budget A — 6 simultanées, 300/min, 5 Go/jour, 16 Mio/requête, délai 20 s (D24) ; extrait Benslimane conservé publié, retiré après la porte G3 (D25) ; dérogation d'archivage A — épinglage et DOI en base, source non copiée (D26) ; `terrain-distant` en conteneur détaché unique lancé par l'administrateur, `restart "no"`, jusqu'à la porte G3 (D27) ; levée de la quarantaine de `gedtm30-v1-2-mondial` avec la même décision sourcée que l'extrait, EGM2008 / EPSG:3855 (D28). | Maître d'ouvrage, dans la session (après la fusion de la PR #391, `dce8066`) | Valeurs déjà celles du code fusionné. D26 : l'administrateur peut poser `PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26=accordee` (étape 3 bis de `TER-09.md`). D28 : la levée reste un acte du responsable de publication sur le VPS (`terrain --lever`, étape 3) ; la session ne lève rien. Restent : déploiement, procédure VPS, porte G3 sur un appareil Android réel. |
+
 ### Précision soumise par TER-04
 
 | ID | Question | Recommandation | Bloque |
 | --- | --- | --- | --- |
 | TER-D19 | Retour arrière : le plan exige de rebasculer la version publiée vers la version acceptée précédente sans rien effacer ; le cycle TER-D12 rendait « remplacée » terminal | Ajouter la transition **remplacée → publiée** (republication d'une version remplacée ; l'actuelle devient remplacée), implémentée en TER-04 (modèle pur et déclencheur SQL), tracée par événement et journal (`terrain.retour-arriere`) | non (implémentée, à confirmer) |
 
-### Décisions soumises par TER-09 (fond mondial à la demande, 3 novembre 2026)
+### Décisions de TER-09 (fond mondial à la demande, soumises le 3 novembre 2026, acceptées le 4 novembre 2026)
 
 Demande du maître d'ouvrage du 3 novembre 2026 (relayée par la session VPS « Fadi VPS - Audit ») : « Les données d'altitude
 ne doivent pas être celles de Benslimane uniquement mais celles de la zone sélectionnée, comme dans une carte normale. »
 Compte rendu : [`TER-09.md`](TER-09.md). La numérotation reprend à **TER-D22** : TER-D21 est déjà prise (mode continu du
 travailleur, PR #386). Les valeurs recommandées sont celles du code livré (modifiables par variable ou constante, sans
-refonte) ; rien n'est décidé tant que le maître d'ouvrage n'a pas répondu.
+refonte). **Toutes décidées le 4 novembre 2026** : le maître d'ouvrage a accepté les recommandations TER-D22 à TER-D28
+(« J'accepte les recommandations TER-D22 à TER-D28 », dans la session) ; la colonne « Recommandation » vaut décision.
 
 | ID | Question | Options | Recommandation | Bloque |
 | --- | --- | --- | --- | --- |

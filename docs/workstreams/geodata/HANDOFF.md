@@ -15,12 +15,13 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
-- Terrain TER-09 (fond mondial à la demande, Issue #381) : PR sur `feat/381-ter-09-fond-mondial` (compte rendu
-  `terrain/TER-09.md`), **non fusionnée** (accord écrit du maître d'ouvrage requis), aucun déploiement. Après fusion et
-  déploiement : réinstaller `/usr/local/sbin/fadi-preprod` (SHA-256 dans la PR), `sudo fadi-preprod terrain distant
-  --demarrer`, `terrain --importer gedtm30-v1-2-mondial`, levée consignée (TER-D28), `worker --traiter | --decider |
-  --publier` (procédure exacte dans `TER-09.md`). Décisions TER-D22 à TER-D28 en attente (quota du cache, zoom minimal,
-  budget, sort de l'extrait Benslimane, archivage, service permanent, référence verticale).
+- Terrain TER-09 (fond mondial à la demande, Issue #381) : **fusionné** (PR #391, `dce8066`, 4 novembre 2026), aucun
+  déploiement. Décisions TER-D22 à TER-D28 **acceptées** le 4 novembre 2026 (recommandations). Prochaine étape, sur le VPS
+  par l'administrateur, après déploiement : réinstaller `/usr/local/sbin/fadi-preprod` (SHA-256
+  `386dfbb0a2cbe264af2e6daf11624137c7c28a96b92aef68170e8113bff18b19`), `sudo fadi-preprod terrain distant --demarrer`,
+  `terrain --importer gedtm30-v1-2-mondial`, levée consignée (TER-D28, responsable de publication), poser
+  `PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26=accordee` (TER-D26) puis `fadi-preprod up`, `worker --traiter | --decider |
+  --publier` (procédure exacte dans `TER-09.md`) ; puis porte G3 sur un appareil Android réel.
 - Terrain TER-05 (Issue #381) : PR sur `feat/381-ter-05-interface` (compte rendu `terrain/TER-05.md`). Dernier lot de la
   portée de la session (TER-02 → TER-05). Après fusion et déploiement : ouvrir GeoData › Terrain (Alt+H) ; rien ne
   s'affiche tant qu'aucune version n'est publiée (Q-TER-02-1 à 3). Restent au maître d'ouvrage : TER-D19, Q-TER-05-1,
