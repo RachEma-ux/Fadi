@@ -20,10 +20,19 @@ export interface OptionsFixture {
   readonly valeur?: (col: number, lig: number) => number;
   /** Coin nord-ouest dans le repère (EPSG:2056 par défaut : 2 662 500 / 1 210 500). */
   readonly origine?: readonly [number, number];
+  /** Repère géographique (EPSG:4326, pas en degrés) au lieu d'un repère projeté. */
+  readonly geographique?: boolean;
 }
 
 /** Écrit un GeoTIFF Float32 synthétique et renvoie ses octets. */
 export function ecrireFixture(chemin: string, o: OptionsFixture = {}): Buffer {
+  const octets = octetsFixture(o);
+  writeFileSync(chemin, octets);
+  return octets;
+}
+
+/** Octets d'un GeoTIFF Float32 synthétique (sans écriture), p. ex. servis par une origine distante simulée (TER-09). */
+export function octetsFixture(o: OptionsFixture = {}): Buffer {
   const largeur = o.largeur ?? 40;
   const hauteur = o.hauteur ?? 30;
   const pas = o.pas ?? 0.25;
@@ -34,16 +43,12 @@ export function ecrireFixture(chemin: string, o: OptionsFixture = {}): Buffer {
     height: hauteur,
     ModelPixelScale: [pas, pas, 0],
     ModelTiepoint: [0, 0, 0, o.origine?.[0] ?? 2662500, o.origine?.[1] ?? 1210500, 0],
-    GTModelTypeGeoKey: 1,
     GTRasterTypeGeoKey: 1,
-    ProjectedCSTypeGeoKey: o.epsg ?? 2056,
-    ProjLinearUnitsGeoKey: 9001,
+    ...(o.geographique ? { GTModelTypeGeoKey: 2, GeographicTypeGeoKey: o.epsg ?? 4326, GeogAngularUnitsGeoKey: 9102 } : { GTModelTypeGeoKey: 1, ProjectedCSTypeGeoKey: o.epsg ?? 2056, ProjLinearUnitsGeoKey: 9001 }),
     ...(o.verticalEpsg ? { VerticalCSTypeGeoKey: o.verticalEpsg, VerticalUnitsGeoKey: 9001 } : {}),
     ...(o.nodata === null ? {} : { GDAL_NODATA: `${o.nodata ?? -9999}\0` }),
   };
-  const octets = Buffer.from(writeArrayBuffer(valeurs, meta as Parameters<typeof writeArrayBuffer>[1]));
-  writeFileSync(chemin, octets);
-  return octets;
+  return Buffer.from(writeArrayBuffer(valeurs, meta as Parameters<typeof writeArrayBuffer>[1]));
 }
 
 /** Fiche synthétique conforme à la fixture par défaut (référence verticale déclarée par une « documentation » fictive). */

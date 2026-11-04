@@ -12,8 +12,13 @@ fail() { echo "double docker : échec simulé ($1)" >&2; exit 3; }
 if [ "${1:-}" != compose ]; then
   case "${1:-}" in
     inspect) echo "${MOCK_HEALTH:-healthy}" ;;
-    ps) if [[ " $* " == *terrain-continu* ]]; then [ -n "${MOCK_CONTINU:-}" ] && echo cont0001; else echo "prod0001  app-db-1  Up 3 days"; fi ;;
+    ps) if [[ " $* " == *terrain-continu* ]]; then [ -n "${MOCK_CONTINU:-}" ] && echo cont0001
+        elif [[ " $* " == *terrain-distant* ]]; then [ -n "${MOCK_DISTANT:-}" ] && echo dist0001
+        else echo "prod0001  app-db-1  Up 3 days"; fi ;;
     stop) : ;;
+    # Service terrain-distant (TER-09) : journal de démarrage (MOCK_DISTANT_LOG le remplace) et état.
+    logs) echo "${MOCK_DISTANT_LOG-terrain-distant : port 3002 ; sources copernicus-glo30-mondial, gedtm30-v1-2-mondial ; cache 0 / 10000000000 octets}" ;;
+    exec) echo '{"ok":true,"sources":["copernicus-glo30-mondial","gedtm30-v1-2-mondial"]}' ;;
     image)
       case "${2:-}" in
         ls) for t in ${MOCK_IMAGES:-}; do echo "$t"; done ;;
@@ -37,7 +42,7 @@ case "$verb" in
     if [[ $cmdline == *"tar --null"* ]]; then
       if [ -n "${MOCK_TAR:-}" ]; then cat "$MOCK_TAR"; else tar -cf - -T /dev/null; fi; exit 0
     fi
-    if [[ $cmdline =~ \ (terrain-import|terrain-worker)\  ]]; then
+    if [[ $cmdline =~ \ (terrain-import|terrain-worker|terrain-distant)(\ |$) ]]; then
       [ -n "${MOCK_TRACE:-}" ] && echo "stdin=$(readlink /proc/self/fd/0)" >> "$MOCK_TRACE"
       has run-terrain && fail terrain; echo "${BASH_REMATCH[1]} ok"; exit 0
     fi

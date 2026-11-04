@@ -56,22 +56,41 @@ export const LIBELLES_QUALITE: Record<SourceTerrainRecue["qualite"]["etat"], str
 
 /** Lignes « Sources et précision » (libellé, valeur) d'une source ; une valeur absente est « non évaluée » ou « non déclarée ». */
 export function lignesSource(s: SourceTerrainRecue): [string, string][] {
-  const p = precisionSupportee(s);
   const m = (v: number | null) => (v === null ? "non évaluée" : `${nombreFr(v, 3)} m`);
+  // Une seule ligne « Précision » (TER-09) : mesurée si un contrôle existe, sinon celle du producteur, sinon non évaluée ;
+  // l'état du contrôle n'est ajouté que s'il en existe un (jamais « non évaluée » répété).
+  const precision = s.qualite.n > 0
+    ? `RMSEz ${m(s.qualite.rmsez)} · P95 ${m(s.qualite.p95)} · ${s.qualite.n} points`
+    : s.precisionDeclaree ? s.precisionDeclaree.texte : "non évaluée (aucun point de contrôle)";
   return [
     ["Jeu", s.titre],
     ["Produit", s.produit === "MNT" ? "MNT (terrain nu)" : "MNS (surface, bâtiments et végétation compris)"],
     ["Date des données", s.date ?? "non déclarée"],
     ["Pas de la grille", `${nombreFr(s.pas.metres, s.pas.metres < 1 ? 2 : 1)} m`],
     ["Référence verticale", texteReference(s.referenceVerticale)],
-    ["Qualité mesurée", s.qualite.n > 0 ? `RMSEz ${m(s.qualite.rmsez)} · P95 ${m(s.qualite.p95)} · ${s.qualite.n} points` : "non évaluée"],
-    ["Précision déclarée", s.precisionDeclaree ? s.precisionDeclaree.texte : "non déclarée"],
-    ["Précision retenue", p.nature === "mesuree" ? "mesurée" : p.nature === "declaree" ? "déclarée par le producteur" : "non évaluée"],
-    ["État de validation", LIBELLES_QUALITE[s.qualite.etat]],
+    [s.qualite.n > 0 ? "Précision mesurée" : s.precisionDeclaree ? "Précision du producteur" : "Précision", precision],
+    ...(s.qualite.n > 0 ? [["Contrôle", LIBELLES_QUALITE[s.qualite.etat]] as [string, string]] : []),
     ["Publiée le", s.publieeLe.slice(0, 10)],
     ["Attribution", s.attribution],
     ["Licence", s.licence.nom],
+    ...(s.doi ? [["DOI", s.doi] as [string, string]] : []),
+    ...(s.acces === "a-la-demande" ? [["Accès", "fond mondial lu à la demande (emprise affichée seulement)"] as [string, string]] : []),
   ];
+}
+
+/**
+ * Résumé lisible d'une source en une ligne (TER-09) : « GEDTM30 v1.2 · 30 m · précision de plusieurs mètres ». Le nom
+ * court est le titre avant son tiret ; la précision est la mesurée, sinon celle du producteur, sinon celle de l'étiquette
+ * d'un modèle mondial, sinon « précision non évaluée ».
+ */
+export function resumeSource(s: SourceTerrainRecue): string {
+  const nom = s.titre.split(" — ")[0]!.trim();
+  const pas = `${nombreFr(s.pas.metres, s.pas.metres < 1 ? 2 : 0)} m`;
+  const p = precisionSupportee(s);
+  const precision = p.nature === "mesuree" && p.valeur !== null ? `précision mesurée ${nombreFr(p.valeur, 2)} m`
+    : s.niveau === "mondial" ? "précision de plusieurs mètres"
+    : p.nature === "declaree" && p.valeur !== null ? `précision déclarée ${nombreFr(p.valeur, 2)} m` : "précision non évaluée";
+  return `${nom} · ${pas} · ${precision}`;
 }
 
 export type ModeLegende = "verrouillee" | "adaptee";
@@ -221,4 +240,19 @@ export function messageCouverture(jeux: readonly Pick<JeuTerrainRecu, "couvertur
   if (!dansVue.length) return "Aucun jeu publié ne couvre la vue : centrez la carte sur une couverture disponible.";
   if (!dansVue.some((j) => j.niveau === "leve-local")) return "Seul un modèle régional ou mondial couvre la vue : aucun levé local ici (précision limitée).";
   return null;
+}
+
+/**
+ * Jeu à afficher pour une vue (TER-09, « comme une carte normale ») : parmi les jeux dont la couverture contient le centre
+ * de la vue, le plus fin (le levé local sur son emprise, sinon le fond mondial) ; le jeu courant est gardé s'il est aussi
+ * fin. Un seul jeu est affiché à la fois : le jeu courant reste si aucun ne contient le centre.
+ */
+export function jeuPourVue(jeux: readonly Pick<JeuTerrainRecu, "versionId" | "couverture" | "pas">[], vue: readonly [number, number, number, number] | null, courant: string | null): string | null {
+  if (!vue) return courant;
+  const [lon, lat] = [(vue[0] + vue[2]) / 2, (vue[1] + vue[3]) / 2];
+  const dans = jeux.filter((j) => { const e = empriseGeometrie(j.couverture); return !!e && lon >= e[0] && lon <= e[2] && lat >= e[1] && lat <= e[3]; });
+  if (!dans.length) return courant;
+  const fin = Math.min(...dans.map((j) => j.pas.metres));
+  const meilleurs = dans.filter((j) => j.pas.metres === fin);
+  return meilleurs.some((j) => j.versionId === courant) ? courant : meilleurs[0]!.versionId;
 }

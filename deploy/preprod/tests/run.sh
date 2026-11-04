@@ -186,7 +186,7 @@ TW_NETS="    networks:${NL}      - internal${NL}    mem_limit: 3g"
 TW_IMG="    image: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}-terrain"
 TW_DF="      dockerfile: deploy/preprod/terrain-worker.Dockerfile"
 TW_REST="    profiles: [\"terrain\"]${NL}    restart: \"no\"${NL}    depends_on:${NL}      db:${NL}        condition: service_healthy${NL}    environment:${NL}      DATABASE_URL: postgresql://fadi_app:"
-TW_ENV="      NODE_ENV: production${NL}      GEODATA_TERRAIN_DIR: /data/terrain${NL}      GEODATA_TERRAIN_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}${NL}    volumes:${NL}      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}"
+TW_ENV="      NODE_ENV: production${NL}      GEODATA_TERRAIN_DIR: /data/terrain${NL}      GEODATA_TERRAIN_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}${NL}      GEODATA_TERRAIN_DEROGATION_TER_D26: \${PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26:-non}${NL}    volumes:${NL}      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}"
 WORKER="  terrain-worker:${NL}${TW_IMG}${NL}    build:${NL}      context: \${FADI_SRC:?FADI_SRC manquant}${NL}${TW_DF}${NL}      args:${NL}        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}${NL}${TW_REST}\${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi${NL}${TW_ENV}${NL}    mem_limit: 3g${NL}    cpus: 2${NL}    logging: *logging${NL}${NL}${VOLS}"
 WORKER=${WORKER/${TW_NETS}${NL}    mem_limit: 3g/${TW_NETS}}
 # Depuis la fusion de la PR #387, compose.yml contient le bloc réel : il est alors contrôlé tel quel (aucune insertion).
@@ -221,6 +221,59 @@ worker_mut "Dockerfile étranger" "service terrain-worker : build hors de deploy
   "$TW_DF" "      dockerfile: Dockerfile"
 worker_mut "image de base étrangère" "service terrain-worker : build hors de deploy/preprod/terrain-worker.Dockerfile" \
   "        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}${NL}${TW_REST}" "        APP_IMAGE: osgeo/gdal:latest${NL}${TW_REST}"
+
+echo "== Garde : service terrain-distant (fond mondial à la demande, TER-09)"
+# Bloc réel de compose.yml (contrôlé tel quel dans la configuration normale), puis configurations dangereuses.
+TD_ENT="    entrypoint: [\"node\", \"apps/api/dist/geodata-terrain.js\", \"--distant-serveur\"]"
+TD_PORT="      GEODATA_TERRAIN_DISTANT_PORT: \"3002\""
+TD_VOL="      - fadi-preprod-terrain:/data/terrain${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"
+TD_IMG="  terrain-distant:${NL}    image: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}"
+TD_REST="    profiles: [\"terrain\"]${NL}    restart: \"no\"${NL}${TD_ENT}"
+TD_CACHE="      GEODATA_TERRAIN_CACHE_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_CACHE_QUOTA_GO:-10}"
+TD_APP="      GEODATA_TERRAIN_DISTANT_URL: http://fadi-preprod-terrain-distant:3002"
+grep -q '^  terrain-distant:$' "$PREPROD/compose.yml" \
+  && { ok=$((ok + 1)); echo "✓ compose.yml déclare terrain-distant (profil terrain)"; } || { ko=$((ko + 1)); echo "✗ terrain-distant absent de compose.yml"; }
+B=$(dispo garde-distant)
+attendu 0 "garde : terrain-distant (bloc de compose.yml) admis" "terrain-distant borné" -- fp garde
+distant_mut() {  # distant_mut <libellé> <motif de refus> <motif> <remplacement> [<motif> <remplacement>…]
+  local lib=$1 motif=$2; shift 2
+  B=$(dispo "td-$RANDOM$RANDOM")
+  if muter "$@"; then attendu nz "garde refuse (terrain-distant) : $lib" "$motif" -- fp garde
+  else ko=$((ko + 1)); echo "✗ mutation non appliquée : $lib"; fi
+}
+distant_mut "montage de l'hôte" "service terrain-distant : volume '/mnt/data' interdit (fadi-preprod-terrain seul)" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}      - /mnt/data:/hote${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"
+distant_mut "volume des sauvegardes" "service terrain-distant : volume 'fadi-preprod-backups' interdit" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}      - fadi-preprod-backups:/b${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"
+distant_mut "volume terrain en lecture seule" "service terrain-distant : fadi-preprod-terrain en écriture exigé" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain:ro${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"
+distant_mut "port publié (même local)" "service terrain-distant : aucun port publié" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}    ports:${NL}      - \"127.0.0.1:3102:3002\"${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"
+distant_mut "réseau supplémentaire" "service terrain-distant : réseaux ['autre', 'front', 'internal'] (attendu front et internal seuls)" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}    networks:${NL}      - internal${NL}      - front${NL}      - autre${NL}    mem_limit: 768m" \
+  "$NETS" "networks:${NL}  autre:${NL}    name: fadi-preprod-autre${NL}  internal:"
+distant_mut "réseau de l'hôte" "service terrain-distant : network_mode interdit" \
+  "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}    network_mode: host${NL}    mem_limit: 768m"
+distant_mut "accès à la base" "service terrain-distant : variable DATABASE_URL interdite" \
+  "$TD_PORT" "${TD_PORT}${NL}      DATABASE_URL: postgresql://fadi_app:x@db:5432/fadi"
+distant_mut "SMTP_PASS" "service terrain-distant : variable SMTP_PASS interdite" \
+  "$TD_PORT" "${TD_PORT}${NL}      SMTP_PASS: x"
+distant_mut "secret quelconque" "service terrain-distant : variable ARCHIVE_SIGNING_KEY interdite" \
+  "$TD_PORT" "${TD_PORT}${NL}      ARCHIVE_SIGNING_KEY: x"
+distant_mut "relancé en boucle" "service terrain-distant : restart 'unless-stopped' (attendu \"no\")" \
+  "$TD_REST" "${TD_REST/restart: \"no\"/restart: unless-stopped}"
+distant_mut "point d'entrée détourné" "service terrain-distant : point d'entrée" \
+  "$TD_ENT" "    entrypoint: [\"node\", \"apps/api/dist/geodata-terrain.js\", \"--telecharger\"]"
+distant_mut "commande ajoutée" "service terrain-distant : command interdite" \
+  "$TD_ENT" "${TD_ENT}${NL}    command: [\"--etat\"]"
+distant_mut "image de la recette" "service terrain-distant : image 'fadi-preprod-recette:" \
+  "$TD_IMG" "  terrain-distant:${NL}    image: fadi-preprod-recette:\${FADI_COMMIT:?FADI_COMMIT manquant}"
+distant_mut "image d'un autre commit" "service terrain-distant : image 'fadi-preprod-app:0123456789ab'" \
+  "$TD_IMG" "  terrain-distant:${NL}    image: fadi-preprod-app:0123456789ab"
+distant_mut "cache plus grand que le volume terrain" "service terrain-distant : quota du cache 40.0 Go hors du quota du volume terrain" \
+  "$TD_CACHE" "      GEODATA_TERRAIN_CACHE_QUOTA_GO: \"40\""
+distant_mut "API pointée vers un autre hôte" "service app : GEODATA_TERRAIN_DISTANT_URL 'http://exemple.test:3002'" \
+  "$TD_APP" "      GEODATA_TERRAIN_DISTANT_URL: http://exemple.test:3002"
 
 echo "== Propagation des échecs"
 B=$(dispo codes)
@@ -334,7 +387,8 @@ larges=$(find "$B/out" \( -type d -perm /077 \) -o \( -type f -perm /177 \) | he
 grep -nE '0?777|a\+[rwx]|o\+[rwx]|go\+' "$SCRIPT" "$PREPROD"/*.yml "$PREPROD"/recette.Dockerfile > "$T/larges" \
   && { ko=$((ko + 1)); echo "✗ droits globaux dans les fichiers :"; cat "$T/larges"; } \
   || { ok=$((ok + 1)); echo "✓ aucun 0777 ni droit global dans les fichiers de la préproduction"; }
-RUNID=$(ls "$B/out" | grep -- '-e2e$' | tail -1)
+# Exécution la plus récente par date de modification (deux exécutions dans la même seconde se classent par PID, pas par ordre).
+RUNID=$(ls -t "$B/out" | grep -- '-e2e$' | head -1)
 attendu 0  "show : liste des fichiers d'une exécution" "rapport.txt" -- fp show "$RUNID"
 attendu 0  "show : lecture d'un rapport" "ok" -- fp show "$RUNID" out/parcours-scenario/rapport.txt
 attendu nz "show : remontée de dossier refusée" "fichier invalide" -- fp show "$RUNID" ../../env/.env.preprod
@@ -458,6 +512,41 @@ muter "$TI_PROF" "${TI_PROF}${NL}    ports:${NL}      - \"127.0.0.1:3102:3001\""
 attendu nz "terrain : garde refusée → refus" "service terrain-import : aucun port publié" -- fpe MOCK_TRACE="$T/trace-terrain-g" terrain --etat
 ! grep -q 'terrain-import' "$T/trace-terrain-g" && ! grep -q ' up -d db' "$T/trace-terrain-g" \
   && { ok=$((ok + 1)); echo "✓ terrain : garde en échec, ni base démarrée ni terrain-import lancé"; } || { ko=$((ko + 1)); echo "✗ terrain lancé malgré la garde"; }
+
+echo "== Fond mondial à la demande (fadi-preprod terrain distant, TER-09)"
+B=$(dispo distant)
+attendu nz "opérateur : terrain distant --etat, service arrêté" "service terrain-distant non démarré" -- fp terrain distant --etat
+: > "$T/trace-distant"
+attendu 0 "opérateur : terrain distant --etat (lecture)" "gedtm30-v1-2-mondial" -- fpe MOCK_DISTANT=1 MOCK_TRACE="$T/trace-distant" terrain distant --etat
+grep -q -- "exec -e GEODATA_TERRAIN_DISTANT_URL=http://localhost:3002 fadi-preprod-terrain-distant node apps/api/dist/geodata-terrain.js --distant-etat$" "$T/trace-distant" \
+  && { ok=$((ok + 1)); echo "✓ terrain distant --etat : lecture dans le conteneur, sans garde ni lancement"; } || { ko=$((ko + 1)); echo "✗ terrain distant --etat : $(cat "$T/trace-distant")"; }
+for a in --demarrer --arreter --vider; do
+  attendu nz "opérateur : terrain distant $a refusé" "« terrain distant $a » est réservée à l'administrateur" -- fp terrain distant $a
+done
+: > "$T/trace-distant-a"
+attendu 0 "administrateur : terrain distant --demarrer" "service terrain-distant lancé (fadi-preprod-terrain-distant" -- fpa MOCK_TRACE="$T/trace-distant-a" terrain distant --demarrer
+python3 -I - "$T/trace-distant-a" <<'PY' && { ok=$((ok + 1)); echo "✓ terrain distant --demarrer : garde (profils recette et terrain), puis conteneur détaché unique, sans argument ni base"; } || { ko=$((ko + 1)); echo "✗ terrain distant --demarrer : appels"; sed 's/^/    /' "$T/trace-distant-a"; }
+import sys
+l = open(sys.argv[1]).read().splitlines()
+g = next(i for i, x in enumerate(l) if "--profile recette --profile terrain config --format json" in x)
+r = next(i for i, x in enumerate(l) if x.endswith("--profile terrain run -d --rm --no-deps -T --name fadi-preprod-terrain-distant terrain-distant"))
+assert g < r and not any(" up -d db" in x for x in l), l
+PY
+attendu nz "terrain distant --demarrer : déjà en marche" "déjà en marche" -- fpa MOCK_DISTANT=1 terrain distant --demarrer
+attendu nz "terrain distant --demarrer : démarrage non constaté" "terrain-distant n'a pas démarré" -- fpa MOCK_DISTANT_LOG="erreur" terrain distant --demarrer
+attendu 0 "administrateur : terrain distant --arreter" "service terrain-distant arrêté" -- fpa MOCK_DISTANT=1 terrain distant --arreter
+attendu nz "terrain distant --vider : service en marche" "terrain distant --arreter d'abord" -- fpa MOCK_DISTANT=1 terrain distant --vider
+: > "$T/trace-distant-v"
+attendu 0 "administrateur : terrain distant --vider (service arrêté)" "terrain-import ok" -- fpa MOCK_TRACE="$T/trace-distant-v" terrain distant --vider
+grep -q -- "--profile terrain run --rm --no-deps -T terrain-import --distant-vider$" "$T/trace-distant-v" \
+  && { ok=$((ok + 1)); echo "✓ terrain distant --vider : par terrain-import (volume terrain), sans argument libre"; } || { ko=$((ko + 1)); echo "✗ terrain distant --vider : $(grep run "$T/trace-distant-v")"; }
+attendu nz "terrain distant : argument en trop" "terrain distant --demarrer | --arreter | --etat | --vider" -- fpa terrain distant --demarrer --par a@example.test
+attendu nz "terrain distant : action inconnue" "terrain distant --demarrer | --arreter | --etat | --vider" -- fpa terrain distant --telecharger
+B=$(dispo distant-garde)
+muter "$TD_VOL" "      - fadi-preprod-terrain:/data/terrain${NL}    ports:${NL}      - \"127.0.0.1:3102:3002\"${NL}    networks:${NL}      - internal${NL}      - front${NL}    mem_limit: 768m"; : > "$T/trace-distant-g"
+attendu nz "terrain distant --demarrer : garde refusée → refus" "service terrain-distant : aucun port publié" -- fpa MOCK_TRACE="$T/trace-distant-g" terrain distant --demarrer
+! grep -q 'terrain-distant$' "$T/trace-distant-g" \
+  && { ok=$((ok + 1)); echo "✓ terrain distant : garde en échec, aucun conteneur lancé"; } || { ko=$((ko + 1)); echo "✗ terrain-distant lancé malgré la garde"; }
 
 echo "== Rôles et intégrité du code approuvé"
 B=$(dispo roles)

@@ -102,6 +102,7 @@ Opérateur (code approuvé seulement) :
                       ou affiche un fichier
   status | logs [db|app] | down   (status affiche aussi l'état du déploiement automatique)
   terrain --etat      versions de terrain et leur état (service terrain-import, lecture seule)
+  terrain distant --etat   état du service terrain-distant (fond mondial à la demande : cache, budget ; lecture seule)
 Administrateur — terrain haute résolution (service terrain-import, fiches de la liste fermée du commit approuvé) :
   terrain --telecharger <fiche>                 original d'une fiche livrée → depot/ (empreinte contrôlée)
   terrain --importer <fiche> --par <courriel>   import de depot/ (rôle GeoData gestionnaire-donnees)
@@ -116,6 +117,9 @@ Administrateur — terrain haute résolution (service terrain-import, fiches de 
           [--cible-classe <classe>]]            rapport qualité ; <nom> = /opt/fadi-preprod/controles/<nom>.csv
   terrain worker --decider <gdtv_…> --decision accepte|quarantaine|retire --motif "…" --par <courriel>
                                                 revue d'une version (rôle responsable-publication, TER-D13)
+  terrain distant --demarrer | --arreter        fond mondial à la demande (TER-09) : conteneur détaché unique
+                                                fadi-preprod-terrain-distant (restart "no", réseaux front + internal)
+  terrain distant --vider                       vide le cache distant du volume terrain (service arrêté)
 EOF
 }
 
@@ -298,7 +302,7 @@ else:
     if mig.get("ports"): err("service migrate : aucun port publié")
     if sorted(mig.get("networks") or {}) != ["internal"]: err(f"service migrate : réseaux {sorted(mig.get('networks') or {})} (attendu internal seul)")
 # Liste fermée des services : tout service inconnu (quel que soit son profil) est refusé, jamais admis par défaut.
-CONNUS = {"db", "migrate", "app", "recette", "terrain-import", "terrain-worker"}
+CONNUS = {"db", "migrate", "app", "recette", "terrain-import", "terrain-worker", "terrain-distant"}
 for name in svcs:
     if name not in CONNUS: err(f"service {name!r} inconnu (liste fermée : {', '.join(sorted(CONNUS))})")
 # TER-03 (PR #387) : terrain-worker, image propre <commit>-terrain construite depuis l'image applicative du même commit,
@@ -347,6 +351,40 @@ else:
     for k in ("DATABASE_MIGRATION_URL", "SMTP_PASS", "MIGRATE_ONLY"):
         if k in env: err(f"{p} : {k} interdit")
     if str(ti.get("restart")) != "no": err(f"{p} : restart {ti.get('restart')!r} (attendu \"no\")")
+# TER-09 : terrain-distant, seul à lire les sources distantes (réseau front) ; mêmes exigences que terrain-import, et
+# en plus : point d'entrée fixé (le service ne fait que servir le cache), aucune base, aucun secret, environnement fermé.
+td = svcs.get("terrain-distant")
+if td:
+    p = "service terrain-distant"
+    env = td.get("environment") or {}
+    if td.get("image") != f"fadi-preprod-app:{c12}": err(f"{p} : image {td.get('image')!r} (attendu fadi-preprod-app:{c12})")
+    if td.get("build"): err(f"{p} : construit par app, pas de build propre")
+    if td.get("entrypoint") != ["node", "apps/api/dist/geodata-terrain.js", "--distant-serveur"]: err(f"{p} : point d'entrée {td.get('entrypoint')!r} (attendu node apps/api/dist/geodata-terrain.js --distant-serveur)")
+    if td.get("command"): err(f"{p} : command interdite (point d'entrée fixé)")
+    vols = td.get("volumes") or []
+    for v in vols:
+        if not (v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain"):
+            err(f"{p} : volume {v.get('source')!r} interdit (fadi-preprod-terrain seul)")
+    if not any(v.get("type") == "volume" and v.get("source") == "fadi-preprod-terrain" and not v.get("read_only") for v in vols):
+        err(f"{p} : fadi-preprod-terrain en écriture exigé (cache-distant/)")
+    if sorted(td.get("networks") or {}) != ["front", "internal"]: err(f"{p} : réseaux {sorted(td.get('networks') or {})} (attendu front et internal seuls)")
+    if td.get("network_mode"): err(f"{p} : network_mode interdit")
+    if td.get("ports"): err(f"{p} : aucun port publié")
+    if td.get("expose"): err(f"{p} : expose interdit (joint par son nom sur internal)")
+    permis = {"NODE_ENV", "GEODATA_TERRAIN_DIR", "GEODATA_TERRAIN_QUOTA_GO", "GEODATA_TERRAIN_CACHE_QUOTA_GO", "GEODATA_TERRAIN_DISTANT_PAR_MINUTE",
+              "GEODATA_TERRAIN_DISTANT_GO_PAR_JOUR", "GEODATA_TERRAIN_DISTANT_SIMULTANEES", "GEODATA_TERRAIN_DISTANT_DELAI_MS", "GEODATA_TERRAIN_DISTANT_PORT"}
+    for k in env:
+        if k not in permis: err(f"{p} : variable {k} interdite (aucune base, aucun secret ; liste fermée)")
+    try:
+        cq, vq = float(env.get("GEODATA_TERRAIN_CACHE_QUOTA_GO", "10")), float(env.get("GEODATA_TERRAIN_QUOTA_GO", "30"))
+        if not (0 < cq <= vq <= 30): err(f"{p} : quota du cache {cq} Go hors du quota du volume terrain ({vq} Go, 30 au plus)")
+    except ValueError: err(f"{p} : quotas illisibles")
+    if str(td.get("restart")) != "no": err(f"{p} : restart {td.get('restart')!r} (attendu \"no\")")
+    if app:
+        u = (app.get("environment") or {}).get("GEODATA_TERRAIN_DISTANT_URL")
+        if u not in (None, "http://fadi-preprod-terrain-distant:3002"): err(f"service app : GEODATA_TERRAIN_DISTANT_URL {u!r} (attendu http://fadi-preprod-terrain-distant:3002)")
+elif app and "GEODATA_TERRAIN_DISTANT_URL" in (app.get("environment") or {}):
+    err("service app : GEODATA_TERRAIN_DISTANT_URL sans service terrain-distant")
 for k, n in c.get("networks", {}).items():
     if not str(n.get("name", "")).startswith("fadi-preprod-"): err(f"réseau {k} : nom {n.get('name')!r}")
     if n.get("external"): err(f"réseau {k} : externe")
@@ -357,7 +395,7 @@ if errs:
     print("❌ garde : la configuration sort de la préproduction"); [print("   - " + e) for e in errs]; sys.exit(1)
 print(f"✓ garde : projet fadi-preprod isolé ({len(c['services'])} services, réseaux {sorted(n['name'] for n in c['networks'].values())}, "
       f"volumes {sorted(v['name'] for v in c['volumes'].values())}, app en fadi_app avec MIGRATE_ON_START=0, migration isolée, "
-      f"terrain-import borné)")
+      f"terrain-import borné, terrain-distant borné)")
 PY
   rm -f "$cfg"
   [ "$rc" -eq 0 ] || exit 1
@@ -440,9 +478,10 @@ case "$cmd" in
   terrain)
     case "${1:-}" in
       --etat) ;;
+      distant) case "${2:-}" in --etat) ;; *) admin_seulement "terrain distant ${2:-}" ;; esac ;;   # lecture | sortie vers l'extérieur, disque
       --telecharger|--importer|--lever) admin_seulement "terrain $1" ;;
       worker) admin_seulement "terrain worker" ;;   # traitements : écritures dans le volume et la base
-      *) usage; die "terrain --etat | --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif …" ;;
+      *) usage; die "terrain --etat | --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | worker … | distant --demarrer|--arreter|--etat|--vider" ;;
     esac ;;
   *) usage; die "commande inconnue : $cmd" ;;
 esac
@@ -629,6 +668,41 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     # de version, courriel, textes sans contrôle ni tiret initial (jamais pris pour une option) ; aucune adresse ni chemin.
     verifier_disposition
     service=terrain-import
+    # Fond mondial à la demande (TER-09) : service terrain-distant, conteneur détaché unique, sans argument (point d'entrée
+    # fixé, vérifié par la garde) ; l'API le joint par son nom sur le réseau internal.
+    if [ "$1" = distant ]; then
+      shift
+      DISTANT=fadi-preprod-terrain-distant
+      distant_actif() { [ -n "$(docker ps -q --filter "name=^${DISTANT}\$")" ]; }
+      [ $# -eq 1 ] || die "terrain distant --demarrer | --arreter | --etat | --vider"
+      case "$1" in
+        --arreter)
+          if distant_actif; then docker stop "$DISTANT" > /dev/null; log "service terrain-distant arrêté ($DISTANT) : fond mondial indisponible"
+          else log "service terrain-distant non démarré"; fi ;;
+        --etat)
+          distant_actif || die "service terrain-distant non démarré (fadi-preprod terrain distant --demarrer, administrateur)"
+          docker exec -e GEODATA_TERRAIN_DISTANT_URL=http://localhost:3002 "$DISTANT" node apps/api/dist/geodata-terrain.js --distant-etat ;;
+        --demarrer|--vider)
+          nouveau_run terrain; garde
+          dc --profile terrain config --services | grep -x terrain-distant > /dev/null \
+            || die "service terrain-distant absent de la configuration du commit approuvé (TER-09 non livré ?)"
+          if [ "$1" = --vider ]; then
+            distant_actif && die "service terrain-distant en marche : terrain distant --arreter d'abord"
+            log "terrain-import --distant-vider (rôle $(role), commit $(commit | cut -c1-12))"
+            journal terrain.log dc --profile terrain run --rm --no-deps -T terrain-import --distant-vider < /dev/null
+          else
+            distant_actif && die "service terrain-distant déjà en marche ($DISTANT)"
+            log "terrain-distant (rôle $(role), commit $(commit | cut -c1-12))"
+            journal terrain.log dc --profile terrain run -d --rm --no-deps -T --name "$DISTANT" terrain-distant < /dev/null
+            ok=0; for _ in $(seq 1 30); do docker logs "$DISTANT" 2>&1 | grep "terrain-distant : port" > /dev/null && { ok=1; break; }; sleep 1; done
+            [ "$ok" = 1 ] || { docker logs "$DISTANT" 2>&1 | tail -n 20 >&2 || true; die "terrain-distant n'a pas démarré"; }
+            log "$(docker logs "$DISTANT" 2>&1 | grep "terrain-distant : port" | tail -n 1)"
+            log "service terrain-distant lancé ($DISTANT) ; état : fadi-preprod terrain distant --etat ; arrêt : --arreter"
+          fi ;;
+        *) die "terrain distant --demarrer | --arreter | --etat | --vider" ;;
+      esac
+      exit 0
+    fi
     if [ "$1" = worker ]; then
       service=terrain-worker; shift
       case "${1:-}" in --essai-gdal|--traiter|--controler|--decider|--publier|--exports|--continu|--arreter) ;; *) die "terrain worker --essai-gdal | --traiter [<gdtv_…>] [--par <courriel>] | --controler <gdtv_…> --points <nom> --methode … --par <courriel> | --decider <gdtv_…> --decision … --motif … --par <courriel> | --publier <gdtv_…> --motif … --par <courriel> | --exports | --continu <secondes> | --arreter" ;; esac

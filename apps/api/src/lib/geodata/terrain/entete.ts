@@ -4,7 +4,7 @@
  * écarts avec la fiche sont jugés par `controlerTerrain` (paquet pur).
  */
 import { open } from "node:fs/promises";
-import { fromFile } from "geotiff";
+import { fromFile, type GeoTIFF } from "geotiff";
 import type { EnTeteRaster } from "@parcours/geodata-model";
 
 export class FichierIllisible extends Error {}
@@ -29,14 +29,27 @@ const entier = (x: unknown): number | null => (typeof x === "number" && Number.i
 export async function lireEnTete(chemin: string): Promise<EnTeteRaster> {
   if (!(await signatureTiff(chemin))) throw new FichierIllisible("Signature TIFF absente : le fichier n'est pas un GeoTIFF.");
   let tiff;
-  let image;
   try {
     tiff = await fromFile(chemin);
-    image = await tiff.getImage();
   } catch (e) {
     throw new FichierIllisible(`Structure TIFF illisible : ${(e as Error).message}`);
   }
   try {
+    return await enTeteDe(tiff);
+  } finally {
+    await tiff.close?.();
+  }
+}
+
+/** En-tête d'un GeoTIFF déjà ouvert (fichier du volume, ou COG distant lu par plages : TER-09). */
+export async function enTeteDe(tiff: GeoTIFF): Promise<EnTeteRaster> {
+  let image;
+  try {
+    image = await tiff.getImage();
+  } catch (e) {
+    throw new FichierIllisible(`Structure TIFF illisible : ${(e as Error).message}`);
+  }
+  {
     const cles = (image.getGeoKeys() ?? {}) as Record<string, unknown>;
     const fd = image.getFileDirectory();
     const projete = entier(cles["ProjectedCSTypeGeoKey"]);
@@ -75,7 +88,5 @@ export async function lireEnTete(chemin: string): Promise<EnTeteRaster> {
       bits,
       pixel: rasterType === 1 ? "aire" : rasterType === 2 ? "point" : null,
     };
-  } finally {
-    await tiff.close?.();
   }
 }

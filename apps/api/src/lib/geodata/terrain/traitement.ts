@@ -142,6 +142,7 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
   await c.query("SELECT pg_advisory_lock($1::bigint)", [verrou]);
   try {
     const v = await lireVersion(c, versionId);
+    if (v.declaration.acquisition.methode === "distant") return await traiterDistante(c, v, demandePar);
     const gdal = await versionGdal();
     if (!gdal) throw new TraitementRefuse("GDAL absent : lancer le traitement dans le travailleur terrain (TER-D6).");
     const equidistance = await equidistanceExigee(c, v);
@@ -225,6 +226,66 @@ export async function traiterVersion(c: PoolClient, stockage: StockageTerrain, v
   }
 }
 
+/**
+ * Surface (m²) d'une emprise lon / lat déclarée, sur la sphère authalique de WGS 84 (R = 6 371 007,2 m) : bande de latitude
+ * × écart de longitude, exacte pour un rectangle de méridiens et de parallèles (la géographie PostGIS rend une emprise de
+ * 360° ambiguë). Indicatif : la couverture d'une source distante est déclarée, jamais mesurée.
+ */
+export function surfaceEmprise(e: { readonly ouest: number; readonly sud: number; readonly est: number; readonly nord: number }): number {
+  const R = 6_371_007.181, rad = Math.PI / 180;
+  return R * R * (e.est - e.ouest) * rad * (Math.sin(e.nord * rad) - Math.sin(e.sud * rad));
+}
+
+/**
+ * Traitement d'une version **distante** (fond mondial, TER-09) : aucun dérivé n'est calculé d'avance (la source entière
+ * compterait des centaines de gigaoctets) ; pente, ombrage et courbes sont calculés à la demande sur la grille numérique,
+ * dans l'emprise affichée. Couverture = emprise **déclarée** par la fiche (nature « declaree », cellules valides non
+ * comptées) ; rapport qualité initial « non évaluée » ; puis en attente de revue. Aucun réseau ni GDAL requis ici.
+ */
+async function traiterDistante(c: PoolClient, v: VersionLue, demandePar: string | null): Promise<ResultatTraitement> {
+  const a = v.declaration.acquisition;
+  if (a.methode !== "distant") throw new TraitementRefuse("Version non distante.");
+  const equidistance = await equidistanceExigee(c, v);
+  const parametres = { distant: true, emprise: a.emprise, methodePente: "horn (à la demande)", ombrage: [315, 45], equidistance };
+  const cle = sha256(texteIdempotence("derives", [v.empreinte], { versionId: v.id, parametres }));
+  const [fait] = (await c.query<{ etat: string; sorties: { surfaceM2?: number } }>("SELECT etat, sorties FROM geodata_terrain_traitements WHERE cle_idempotence = $1", [cle])).rows;
+  if (fait?.etat === "termine") {
+    if (v.etat === "traitement") await transaction(c, () => evenement(c, v.id, "traitement", "revue", demandePar, "Source distante déjà préparée : reprise sans nouveau calcul."));
+    return { versionId: v.id, deja: true, equidistance, courbes: 0, surfaceM2: fait.sorties.surfaceM2 ?? 0 };
+  }
+  if (v.etat !== "traitement") throw new TraitementRefuse(`Version en état « ${v.etat} » : seule une version prête au traitement est traitée.`);
+  const pas = v.entete?.pas ?? [1 / 3600, 1 / 3600];
+  const total = Math.max(1, Math.round(((a.emprise.est - a.emprise.ouest) / pas[0]) * ((a.emprise.nord - a.emprise.sud) / pas[1])));
+  const [{ id: traitementId }] = (await c.query<{ id: string }>(
+    `INSERT INTO geodata_terrain_traitements (id, cle_idempotence, type, entrees, parametres, logiciels, etat, demande_par)
+     VALUES ($1, $2, 'derives', $3, $4, '{"lecture":"à la demande"}'::jsonb, 'en_cours', $5)
+     ON CONFLICT (cle_idempotence) DO UPDATE SET etat = 'en_cours', tentatives = geodata_terrain_traitements.tentatives + 1, progression = 0, motif_echec = NULL, maj_le = now()
+     RETURNING id`,
+    [newId("gdtt"), cle, JSON.stringify([{ versionId: v.id, empreinte: v.empreinte }]), JSON.stringify(parametres), demandePar])).rows as [{ id: string }];
+  try {
+    const surface = await transaction(c, async () => {
+      const [couv] = (await c.query<{ surface: number }>(
+        `INSERT INTO geodata_terrain_couvertures (terrain_version_id, geom, srid_natif, cellules_valides, cellules_total, surface_m2, transformation, nature)
+         SELECT $1, ST_Multi(g), 4326, NULL, $6, $7, 'aucune (source en WGS 84, emprise déclarée par la fiche)', 'declaree'
+           FROM (SELECT ST_MakeEnvelope($2, $3, $4, $5, 4326) AS g) e RETURNING surface_m2 AS surface`,
+        [v.id, a.emprise.ouest, a.emprise.sud, a.emprise.est, a.emprise.nord, total, surfaceEmprise(a.emprise)])).rows;
+      await c.query(
+        `INSERT INTO geodata_terrain_rapports_qualite (id, terrain_version_id, methode, echantillonnage, points, rapport, cibles, etat_qualite, auteur_id)
+         VALUES ($1, $2, $3, 'aucun', '[]'::jsonb, $4, NULL, 'non-evaluee', NULL)`,
+        [newId("gdtq"), v.id, "Aucun point de contrôle indépendant : qualité non évaluée (modèle mondial, précision de plusieurs mètres).", JSON.stringify(rapportQualite([]))]);
+      await evenement(c, v.id, "traitement", "revue", demandePar, "Source distante : couverture déclarée ; pente, ombrage et courbes calculés à la demande ; qualité non évaluée.");
+      await c.query("UPDATE geodata_terrain_traitements SET etat = 'termine', progression = 100, sorties = $2, maj_le = now() WHERE id = $1",
+        [traitementId, JSON.stringify({ versionId: v.id, equidistance, courbes: 0, surfaceM2: couv!.surface, distant: true })]);
+      await c.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'terrain.derives', $2, 'succes', $3)", [demandePar, v.id, JSON.stringify({ distant: true, equidistance })]);
+      return couv!.surface;
+    });
+    return { versionId: v.id, deja: false, equidistance, courbes: 0, surfaceM2: surface };
+  } catch (e) {
+    await c.query("UPDATE geodata_terrain_traitements SET etat = 'echec', motif_echec = $2, maj_le = now() WHERE id = $1", [traitementId, ((e as Error).message || String(e)).slice(0, 2000)]).catch(() => undefined);
+    throw e;
+  }
+}
+
 export interface PointLeve { readonly id: string; readonly x: number; readonly y: number; readonly z: number; readonly classe: string; readonly incertitude: number | null }
 
 /**
@@ -237,6 +298,7 @@ export async function controlerQualite(
 ): Promise<{ rapport: RapportQualite; etat: EtatQualite; equidistance: number }> {
   const v = await lireVersion(c, versionId);
   if (!["revue", "accepte", "publie"].includes(v.etat)) throw new TraitementRefuse(`Version en état « ${v.etat} » : le contrôle suit le traitement.`);
+  if (v.declaration.acquisition.methode === "distant") throw new TraitementRefuse("Version distante (fond mondial) : le contrôle par points n'est pas disponible dans ce lot (TER-09) ; qualité « non évaluée ».");
   if (!v.cle_stockage) throw new TraitementRefuse("Original absent.");
   if (!o.methode || o.methode.trim().length < 10) throw new TraitementRefuse("Méthode de contrôle requise (comment les points ont été levés, et par qui).");
   if (!o.points.length) throw new TraitementRefuse("Aucun point de contrôle.");
@@ -290,7 +352,9 @@ export async function deciderRevue(c: PoolClient, versionId: string, decision: "
     if (v.etat !== "revue") throw new TraitementRefuse(`Version en état « ${v.etat} » : seule une version en attente de revue se décide.`);
     const [q] = (await c.query<{ etat_qualite: EtatQualite; id: string }>("SELECT id, etat_qualite FROM geodata_terrain_rapports_qualite WHERE terrain_version_id = $1 ORDER BY cree_le DESC, id DESC LIMIT 1", [versionId])).rows;
     if (!q) throw new TraitementRefuse("Aucun rapport qualité : la version n'a pas été traitée.");
-    if (decision === "accepte") {
+    const distante = (await lireVersion(c, versionId)).declaration.acquisition.methode === "distant";
+    // Version distante : courbes calculées à la demande, jamais sous le seuil exigé (contrôlé à chaque tuile).
+    if (decision === "accepte" && !distante) {
       const exigee = await equidistanceExigee(c, await lireVersion(c, versionId));
       const calculee = await equidistanceCalculee(c, versionId);
       if (calculee === null || calculee < exigee) throw new TraitementRefuse(`Courbes calculées à ${calculee ?? "—"} m, plus fines que les ${exigee} m permis par la précision (TER-D17) : contrôler la qualité ou relancer le traitement avant d'accepter.`);

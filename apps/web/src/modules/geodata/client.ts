@@ -170,6 +170,9 @@ export interface SourceTerrainRecue {
   qualite: { etat: EtatQualite; rmsez: number | null; p95: number | null; n: number };
   precisionDeclaree: { texte: string; verticaleM: number | null; source: string } | null;
   date: string | null; publieeLe: string; attribution: string; licence: { nom: string; url: string | null };
+  /** DOI de la version (null s'il n'y en a pas) ; accès : jeu du volume (« local ») ou fond mondial lu à la demande (TER-09). */
+  doi?: string | null;
+  acces?: "local" | "a-la-demande";
 }
 export interface JeuTerrainRecu extends SourceTerrainRecue {
   couverture: { type: string; coordinates: unknown } | null;
@@ -177,10 +180,12 @@ export interface JeuTerrainRecu extends SourceTerrainRecue {
   /** Plage d'altitude de la version (légende verrouillée) ; null = non évaluée. */
   plageAltitude: [number, number] | null;
   courbes: { equidistanceMinimale: number; calculees: number[] };
+  /** Fond mondial lu à la demande (TER-09) : zooms minimaux, couverture déclarée (lacunes « indisponibles ») ; null sinon. */
+  fondMondial?: { zoomMinimal: number; zoomMinimalCourbes: number; couverture: "declaree" } | null;
 }
 export type AltitudeRecue =
   | { disponible: true; lon: number; lat: number; altitude: number; echantillonnage: string; source: SourceTerrainRecue }
-  | { disponible: false; lon: number; lat: number; altitude: null; motif: string };
+  | { disponible: false; lon: number; lat: number; altitude: null; motif: string; etat?: "hors-couverture" | "indisponible" | "chargement" };
 export interface ProfilRecu {
   points: { chainage: number; lon: number; lat: number; altitude: number | null; source: string | null; interpolee: boolean }[];
   transitions: { chainage: number; de: string | null; vers: string | null }[];
@@ -268,6 +273,9 @@ export const api = {
     appeler<{ jeux: JeuTerrainRecu[] }>(`/terrain/jeux?${new URLSearchParams({ produit, ...(emprise ? { ouest: emprise[0].toFixed(6), sud: emprise[1].toFixed(6), est: emprise[2].toFixed(6), nord: emprise[3].toFixed(6) } : {}) })}`),
   terrainPoint: (lon: number, lat: number, produit: ProduitTerrain) => appeler<AltitudeRecue>(`/terrain/point?${new URLSearchParams({ lon: lon.toFixed(7), lat: lat.toFixed(7), produit })}`),
   terrainProfil: (ligne: readonly (readonly [number, number])[], pas: number, produit: ProduitTerrain) => envoyer<ProfilRecu>("/terrain/profil", "POST", { ligne, pas, produit }),
+  /** Plage d'altitude de la vue (légende adaptée à la vue, couleur seulement, lue sur un aperçu). */
+  terrainPlage: (versionId: string, e: readonly [number, number, number, number]) =>
+    appeler<{ plage: [number, number] | null; portee: "vue" }>(`/terrain/plage?${new URLSearchParams({ versionId, ouest: e[0].toFixed(6), sud: e[1].toFixed(6), est: e[2].toFixed(6), nord: e[3].toFixed(6) })}`),
   terrainStatistiques: (zone: { type: "Polygon"; coordinates: [number, number][][] }, produit: ProduitTerrain, versionId: string) =>
     envoyer<StatistiquesTerrainRecues>("/terrain/statistiques", "POST", { zone, produit, versionId }),
 };

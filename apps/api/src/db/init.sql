@@ -4175,6 +4175,30 @@ CREATE TABLE IF NOT EXISTS geodata_terrain_exports (
 );
 CREATE INDEX IF NOT EXISTS geodata_terrain_exports_attente_idx ON geodata_terrain_exports (etat, cree_le);
 
+-- Terrain, lot TER-09 (fond mondial à la demande, Issue #381) : une version « distante » n'a ni original ni dérivé dans le
+-- volume ; sa source (adresse unique ou dalles 1° × 1°) est lue par plages HTTP, dans l'emprise demandée seulement.
+-- Épinglage par version, en ajout seul : chaque adresse lue est consignée à sa première lecture (ETag, Last-Modified,
+-- taille) ; une source modifiée ensuite est refusée (jamais de contenu changé en silence sous une version publiée).
+CREATE TABLE IF NOT EXISTS geodata_terrain_sources_distantes (
+  terrain_version_id text NOT NULL REFERENCES geodata_terrain_versions (id),
+  url text NOT NULL CHECK (url ~ '^https://[a-z0-9.-]+/[A-Za-z0-9._/-]+$' AND position('..' in url) = 0),
+  dalle text CHECK (dalle IS NULL OR dalle ~ '^[NS][0-9]{2}[EW][0-9]{3}$'),
+  etag text,
+  last_modified text,
+  taille bigint NOT NULL CHECK (taille > 0),
+  empreinte_entete text CHECK (empreinte_entete IS NULL OR empreinte_entete ~ '^[0-9a-f]{64}$'),
+  premier_acces timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (terrain_version_id, url)
+);
+CREATE OR REPLACE TRIGGER geodata_terrain_sources_distantes_ajout_seul BEFORE UPDATE OR DELETE ON geodata_terrain_sources_distantes FOR EACH ROW EXECUTE FUNCTION geodata_terrain_ajout_seul();
+-- Couverture d'une version distante : l'emprise **déclarée** par la fiche (jamais mesurée : les lacunes de la source
+-- sont « indisponibles » à la lecture) ; cellules valides non comptées (NULL), jamais présentées comme mesurées.
+ALTER TABLE geodata_terrain_couvertures ADD COLUMN IF NOT EXISTS nature text NOT NULL DEFAULT 'mesuree';
+ALTER TABLE geodata_terrain_couvertures ALTER COLUMN cellules_valides DROP NOT NULL;
+ALTER TABLE geodata_terrain_couvertures DROP CONSTRAINT IF EXISTS geodata_terrain_couvertures_nature_check;
+ALTER TABLE geodata_terrain_couvertures ADD CONSTRAINT geodata_terrain_couvertures_nature_check
+  CHECK ((nature = 'mesuree' AND cellules_valides IS NOT NULL) OR (nature = 'declaree' AND cellules_valides IS NULL));
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non

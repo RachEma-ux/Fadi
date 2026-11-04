@@ -5,7 +5,9 @@
  *   travail/    copies temporaires (écriture puis renommage atomique) ;
  *   originaux/  originaux adressés par leur empreinte SHA-256 (`originaux/<sha256>`), en lecture seule, jamais réécrits ;
  *   derives/    produits du traitement (TER-03) ;
- *   exports/    exports demandés (TER-04), effacés à expiration (24 h).
+ *   exports/    exports demandés (TER-04), effacés à expiration (24 h) ;
+ *   cache-distant/  blocs lus à la demande des sources distantes (fond mondial, TER-09), écrits par le seul service
+ *               terrain-distant, bornés par un quota et évincés du moins récemment utilisé (jamais adressables ici).
  * La base garde l'empreinte, la taille et la clé de stockage ; chaque archivage relit l'empreinte. Aucune URL n'est lue ici.
  */
 import { createHash } from "node:crypto";
@@ -77,6 +79,18 @@ export class StockageTerrain {
   /** Octets occupés par tout le volume terrain (dépôt, travail, originaux, dérivés) : base du quota (TER-D7). */
   utilisation(): Promise<number> {
     return tailleDossier(this.racine);
+  }
+
+  /** Octets du volume hors du cache distant (TER-09) : le cache est évincé pour que le volume reste sous son quota. */
+  async utilisationHorsCache(): Promise<number> {
+    let total = 0;
+    for (const nom of await readdir(this.racine).catch(() => [] as string[])) {
+      if (nom === "cache-distant") continue;
+      const p = join(this.racine, nom);
+      const s = await stat(p);
+      total += s.isDirectory() ? await tailleDossier(p) : s.size;
+    }
+    return total;
   }
 
   /**

@@ -1,0 +1,64 @@
+{
+  "cle": "gedtm30-v1-2-mondial",
+  "titre": "GEDTM30 v1.2 — MNT, fond mondial lu à la demande",
+  "producteur": "OpenGeoHub (Yufeng Ho, Tom Hengl)",
+  "niveau": "mondial",
+  "produit": "MNT",
+  "etiquette": "Modèle régional, précision de plusieurs mètres — jamais un levé local.",
+  "demonstration": false,
+  "synthetique": false,
+  "licence": {
+    "nom": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "attribution": "GEDTM30 © OpenGeoHub, CC-BY 4.0 — Ho, Y. F. et al. (2025), PeerJ 13:e19673, doi:10.7717/peerj.19673 ; données doi:10.5281/zenodo.18887460",
+  "droits": {
+    "consultation": "autorise",
+    "stockage": "autorise",
+    "calcul": "autorise",
+    "tuiles": "autorise",
+    "commercial": "autorise",
+    "partage": "autorise",
+    "telechargement": "autorise",
+    "export": "autorise"
+  },
+  "version": {
+    "libelle": "v1.2.0 (Zenodo, publiée le 6 mars 2026, modifiée le 8 avril 2026)",
+    "doi": "10.5281/zenodo.18887460",
+    "date": "Modèle 2006–2015 (nom de fichier) ; version du 6 mars 2026",
+    "url": "https://zenodo.org/records/18887460"
+  },
+  "acquisition": {
+    "methode": "distant",
+    "hote": "s3.opengeohub.org",
+    "modele": "https://s3.opengeohub.org/global/dtm/v1.2/gedtm_rf_m_30m_s_20060101_20151231_go_epsg.4326.3855_v1.2.tif",
+    "dalles": null,
+    "dalleReference": null,
+    "emprise": {
+      "ouest": -180,
+      "sud": -65,
+      "est": 180,
+      "nord": 85
+    },
+    "conditions": {
+      "texte": "CC BY 4.0 (Zenodo v1.2.0, lu le 3 novembre 2026) : stockage, calcul, affichage, export et usage commercial permis avec attribution ; adresse officielle du COG 30 m citée par la page Zenodo ; producteur : « first release », « Use for testing purposes only », données « as is ». Lecture par plages HTTP dans l'emprise affichée seulement ; aucune copie entière (432 Go).",
+      "source": "https://zenodo.org/records/18887460"
+    }
+  },
+  "fichier": {
+    "nom": "gedtm_rf_m_30m_s_20060101_20151231_go_epsg.4326.3855_v1.2.tif",
+    "format": "GeoTIFF"
+  },
+  "crsHorizontal": "EPSG:4326",
+  "referenceVerticale": {
+    "statut": "non-declaree",
+    "indice": "nom de fichier « epsg.4326.3855 » (EPSG:3855 = EGM2008) — indice, non déclaré par le producteur (Zenodo, Codeberg, clés GeoTIFF)"
+  },
+  "uniteVerticale": "m",
+  "pasNatif": {
+    "valeur": 1,
+    "unite": "arcsec"
+  },
+  "nodata": null,
+  "precisionDeclaree": null
+}

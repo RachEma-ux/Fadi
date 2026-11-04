@@ -15,6 +15,9 @@
  *   npm run geodata:terrain -- --exports                                  prépare les exports en attente, efface les expirés
  *   npm run geodata:terrain -- --continu [secondes]                       travailleur : traitements et exports en boucle
  *   npm run geodata:terrain -- --essai-gdal                              essai du travailleur sur une fixture « test seulement »
+ *   npm run geodata:terrain -- --distant-serveur                         service terrain-distant (fond mondial à la demande, TER-09)
+ *   npm run geodata:terrain -- --distant-etat                            état du service terrain-distant (cache, budget)
+ *   npm run geodata:terrain -- --distant-vider                           vide le cache distant (service arrêté)
  *   (image : node apps/api/dist/geodata-terrain.js …)
  *
  * Fiches : `docs/geodata/terrain/<cle>.json` (copiées dans `dist/geodata-terrain/`). `--telecharger` n'accepte qu'une fiche
@@ -29,7 +32,9 @@ import { Pool } from "pg";
 import { LIBELLES_ETATS_TERRAIN, LIMITES_TERRAIN, type EtatTerrain } from "@parcours/geodata-model";
 import { dossierFiches, fichesLivrees, lireFiche } from "../lib/geodata/terrain/fiches.js";
 import { StockageTerrain } from "../lib/geodata/terrain/stockage.js";
-import { importerTerrain, leverQuarantaine } from "../lib/geodata/terrain/import.js";
+import { importerTerrain, importerTerrainDistant, leverQuarantaine } from "../lib/geodata/terrain/import.js";
+import { adresseServiceDistant, BUDGET_DISTANT_DEFAUT, QUOTA_CACHE_DEFAUT, ServiceDistant, sourcesDistantes } from "../lib/geodata/terrain/distant.js";
+import { rm } from "node:fs/promises";
 import { acquerir } from "../lib/geodata/terrain/acquisition.js";
 import { controlerQualite, deciderRevue, traiterVersion, versionsATraiter } from "../lib/geodata/terrain/traitement.js";
 import { expirerExports, traiterUnExport } from "../lib/geodata/terrain/exports.js";
@@ -79,6 +84,54 @@ async function principal(): Promise<void> {
     }
     return;
   }
+  if (process.argv.includes("--distant-serveur")) {
+    // Service terrain-distant (TER-09) : seul à sortir vers Internet, vers les seules adresses des fiches livrées ; aucune base.
+    const st = stockage();
+    const sources = sourcesDistantes(fichesLivrees().map((n) => lireFiche(n, true)));
+    const nombreEnv = (nom: string, defaut: number, min: number, max: number) => {
+      const v = process.env[nom];
+      if (v === undefined || v === "") return defaut;
+      const n = Number(v);
+      if (!(Number.isFinite(n) && n >= min && n <= max)) throw new Error(`${nom} invalide : ${v} (${min} à ${max}).`);
+      return n;
+    };
+    const quotaVolume = quotaOctets();
+    const service = new ServiceDistant({
+      racine: st.racine, sources, quotaVolume,
+      quotaCache: nombreEnv("GEODATA_TERRAIN_CACHE_QUOTA_GO", QUOTA_CACHE_DEFAUT / 1000 ** 3, 0.1, quotaVolume / 1000 ** 3) * 1000 ** 3,
+      budget: {
+        simultanees: nombreEnv("GEODATA_TERRAIN_DISTANT_SIMULTANEES", BUDGET_DISTANT_DEFAUT.simultanees, 1, 32),
+        parMinute: nombreEnv("GEODATA_TERRAIN_DISTANT_PAR_MINUTE", BUDGET_DISTANT_DEFAUT.parMinute, 1, 10_000),
+        octetsParJour: nombreEnv("GEODATA_TERRAIN_DISTANT_GO_PAR_JOUR", BUDGET_DISTANT_DEFAUT.octetsParJour / 1000 ** 3, 0.01, 1000) * 1000 ** 3,
+        octetsParRequete: BUDGET_DISTANT_DEFAUT.octetsParRequete,
+        delaiMs: nombreEnv("GEODATA_TERRAIN_DISTANT_DELAI_MS", BUDGET_DISTANT_DEFAUT.delaiMs, 1000, 120_000),
+      },
+      horsCache: () => st.utilisationHorsCache(),
+    });
+    await st.preparer();
+    await service.demarrer();
+    setInterval(() => { void service.mesurerVolume().then(() => service.evincer()); }, 600_000).unref();
+    const port = nombreEnv("GEODATA_TERRAIN_DISTANT_PORT", 3002, 1024, 65535);
+    service.serveur().listen(port, "0.0.0.0", () => {
+      const e = service.etat();
+      console.log(`terrain-distant : port ${port} ; sources ${e.sources.join(", ") || "aucune"} ; cache ${e.cache.octets} / ${e.cache.quota} octets (volume ${quotaVolume}) ; budget ${e.budget.parMinute} req/min, ${e.budget.octetsParJour} o/jour, ${e.budget.simultanees} simultanées.`);
+    });
+    await new Promise(() => undefined);
+    return;
+  }
+  if (process.argv.includes("--distant-etat")) {
+    const base = adresseServiceDistant();
+    if (!base) throw new Error("GEODATA_TERRAIN_DISTANT_URL absent : service terrain-distant non configuré.");
+    const r = await fetch(`${base}/sante`, { signal: AbortSignal.timeout(5000) }).catch((e: Error) => { throw new Error(`service terrain-distant injoignable (${e.message}) : sudo fadi-preprod terrain distant --demarrer`); });
+    console.log(JSON.stringify(await r.json(), null, 2));
+    return;
+  }
+  if (process.argv.includes("--distant-vider")) {
+    const d = join(stockage().racine, "cache-distant");
+    await rm(d, { recursive: true, force: true });
+    console.log(`Cache distant vidé : ${d} (l'épinglage des versions reste en base).`);
+    return;
+  }
   if (argument("telecharger")) {
     const d = lireFiche(argument("telecharger")!, true);
     const r = await acquerir(stockage(), d);
@@ -93,7 +146,8 @@ async function principal(): Promise<void> {
       const par = await compte(pool, argument("par"), "gestionnaire-donnees");
       const client = await pool.connect();
       try {
-        const r = await importerTerrain(client, stockage(), d, { deposePar: par, quotaOctets: quotaOctets() });
+        // Fiche distante (fond mondial, TER-09) : en-tête lu à la source, aucun fichier déposé ni copié.
+        const r = d.acquisition.methode === "distant" ? await importerTerrainDistant(client, d, { deposePar: par }) : await importerTerrain(client, stockage(), d, { deposePar: par, quotaOctets: quotaOctets() });
         console.log(`${r.deja ? "Déjà importée" : "Importée"} : ${r.versionId} — ${LIBELLES_ETATS_TERRAIN[r.etat]} (SHA-256 ${r.empreinte}).`);
         for (const m of r.motifs) console.log(`  - [${m.gravite}] ${m.code} : ${m.message}`);
       } finally {
@@ -207,7 +261,7 @@ async function principal(): Promise<void> {
       return;
     }
     const fiches = existsSync(dossierFiches()) ? fichesLivrees() : [];
-    console.log("Usage : --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | --traiter [<id>] | --controler <id> --points <csv> --methode … --par <courriel> | --decider <id> --decision … --motif … --par <courriel> | --etat | --essai-gdal");
+    console.log("Usage : --telecharger <fiche> | --importer <fiche> --par <courriel> | --lever <id> --par <courriel> --motif … | --traiter [<id>] | --controler <id> --points <csv> --methode … --par <courriel> | --decider <id> --decision … --motif … --par <courriel> | --etat | --essai-gdal | --distant-serveur | --distant-etat | --distant-vider");
     console.log(`Fiches livrées : ${fiches.join(", ") || "aucune"}`);
   } finally {
     await pool.end();

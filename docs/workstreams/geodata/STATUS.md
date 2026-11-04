@@ -9,6 +9,13 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
+- Terrain TER-09 (fond mondial à la demande, Issue #381, branche `feat/381-ter-09-fond-mondial`) : **implémenté et
+  vérifié**, non accepté, non déployé. Fiches distantes GEDTM30 mondial (MNT) et GLO-30 mondial (MNS, dalles), service
+  `terrain-distant` (liste fermée, budget, cache LRU dans le volume), mêmes services et métadonnées pour toute zone, levés
+  locaux prioritaires, « indisponible » sinon. Preuves locales : paquet 266, API sans base 21, DB-3 fond mondial 4/4 et
+  terrain 18/18 + 8/8, web 1 369, recettes `geodata-terrain.mjs` 39/0 et `geodata.mjs` 265/0, `run.sh` 248/0,
+  `run-auto.sh` 85/0 ; imports réels en quarantaine (mêmes motifs que les extraits) ; mesures point p95 ≤ 19 ms, vue ≤ 34 ms
+  en cache, vue à froid 0,3 à 3,5 s (`terrain/TER-09.md`). Décisions TER-D22 à TER-D28 soumises.
 - Terrain TER-05 (interface, Issue #381, branche `feat/381-ter-05-interface`) : **implémenté et vérifié**, non accepté.
   Panneau Terrain (Alt+H) : MNT / MNS, jeux publiés et couvertures, altitude / pente / ombrage avec opacité, légende
   verrouillée ou adaptée (portée dite : vue ou zone d'étude), courbes jamais sous le seuil TER-D17, Altitude au point (Alt+O,

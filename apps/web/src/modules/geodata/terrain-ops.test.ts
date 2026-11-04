@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ProfilRecu, SourceTerrainRecue } from "./client";
 import {
-  decimalesPour, empriseGeometrie, messageCouverture, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, nombreFr,
-  pasProfil, porteeLegende, precisionSupportee, texteReference, traceProfil,
+  decimalesPour, empriseGeometrie, jeuPourVue, messageCouverture, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, nombreFr,
+  pasProfil, porteeLegende, precisionSupportee, resumeSource, texteReference, traceProfil,
 } from "./terrain-ops";
 
 /** Source « test seulement » : aucune donnée réelle. */
@@ -33,12 +33,17 @@ describe("terrain : précision et arrondi (TER-05)", () => {
   });
   it("sources et précision : chaque rubrique présente, valeurs absentes dites", () => {
     const l = new Map(lignesSource(source()));
-    expect(l.get("Qualité mesurée")).toBe("non évaluée");
-    expect(l.get("Précision déclarée")).toBe("non déclarée");
+    // Une seule ligne de précision, jamais « non évaluée » répété (TER-09).
+    expect(l.get("Précision")).toBe("non évaluée (aucun point de contrôle)");
+    expect([...l.values()].filter((v) => /non évaluée/.test(v)).length).toBe(1);
+    expect(l.has("Contrôle")).toBe(false);
     expect(l.get("Date des données")).toBe("non déclarée");
     expect(l.get("Référence verticale")).toBe("LN02 (EPSG:5728)");
     expect(l.get("Attribution")).toBe("Fixture de test Fadi");
-    expect(new Map(lignesSource(source({ qualite: { etat: "conforme", rmsez: 0.081, p95: 0.152, n: 40 } }))).get("Qualité mesurée")).toBe("RMSEz 0,081 m · P95 0,152 m · 40 points");
+    const mesure = new Map(lignesSource(source({ qualite: { etat: "conforme", rmsez: 0.081, p95: 0.152, n: 40 } })));
+    expect(mesure.get("Précision mesurée")).toBe("RMSEz 0,081 m · P95 0,152 m · 40 points");
+    expect(mesure.get("Contrôle")).toBe("conforme aux cibles");
+    expect(new Map(lignesSource(source({ precisionDeclaree: { texte: "LE90 < 4 m", verticaleM: 4, source: "x" } }))).get("Précision du producteur")).toBe("LE90 < 4 m");
   });
 });
 
@@ -101,5 +106,30 @@ describe("terrain : couverture de la vue (TER-05)", () => {
     expect(messageCouverture([{ couverture: couv(0), niveau: "mondial" }, { couverture: couv(5), niveau: "leve-local" }], [0.2, 0.2, 0.8, 0.8])).toContain("Seul un modèle régional");
     expect(messageCouverture([{ couverture: couv(0), niveau: "leve-local" }], [0.2, 0.2, 0.8, 0.8])).toBeNull();
     expect(messageCouverture([], null)).toBeNull();
+  });
+});
+
+describe("terrain : fond mondial à la demande (TER-09)", () => {
+  const carre = (o: number, s: number, e: number, n: number) => ({ type: "Polygon", coordinates: [[[o, s], [e, s], [e, n], [o, n], [o, s]]] });
+  const mondial = { versionId: "mondial", couverture: carre(-180, -65, 180, 85), pas: { metres: 30.9, declare: { valeur: 1, unite: "arcsec" } } };
+  const lucerne = { versionId: "lucerne", couverture: carre(8.2, 47.0, 8.3, 47.1), pas: { metres: 0.25, declare: { valeur: 0.25, unite: "m" } } };
+  it("le jeu affiché suit le centre de la vue : levé local sur son emprise, fond mondial partout ailleurs", () => {
+    expect(jeuPourVue([mondial, lucerne], [8.24, 47.04, 8.26, 47.06], "mondial")).toBe("lucerne");
+    expect(jeuPourVue([mondial, lucerne], [-7.2, 33.4, -7.0, 33.6], "lucerne")).toBe("mondial");
+    expect(jeuPourVue([mondial, lucerne], [2.2, 48.8, 2.4, 48.9], null)).toBe("mondial");
+    // Aucun jeu ne contient le centre (hors de l'emprise du fond) : le jeu courant reste.
+    expect(jeuPourVue([mondial], [10, 86, 11, 87], "mondial")).toBe("mondial");
+    expect(jeuPourVue([mondial], null, null)).toBeNull();
+  });
+  it("Sources et précision : DOI et accès « à la demande » affichés avec les métadonnées habituelles", () => {
+    const l = lignesSource(source({ doi: "10.5281/zenodo.18887460", acces: "a-la-demande" }));
+    expect(l).toContainEqual(["DOI", "10.5281/zenodo.18887460"]);
+    expect(l).toContainEqual(["Accès", "fond mondial lu à la demande (emprise affichée seulement)"]);
+    expect(l.map((x) => x[0])).toEqual(expect.arrayContaining(["Jeu", "Pas de la grille", "Référence verticale", "Précision", "Attribution", "Licence"]));
+  });
+  it("résumé d'une ligne : nom court, pas, précision lisible", () => {
+    expect(resumeSource(source({ titre: "GEDTM30 v1.2 — MNT, fond mondial lu à la demande", niveau: "mondial", pas: { metres: 30.9, declare: { valeur: 1, unite: "arcsec" } } }))).toBe("GEDTM30 v1.2 · 31 m · précision de plusieurs mètres");
+    expect(resumeSource(source({ qualite: { etat: "conforme", rmsez: 0.08, p95: 0.15, n: 40 } }))).toBe("Jeu synthétique · 0,25 m · précision mesurée 0,08 m");
+    expect(resumeSource(source())).toBe("Jeu synthétique · 0,25 m · précision non évaluée");
   });
 });

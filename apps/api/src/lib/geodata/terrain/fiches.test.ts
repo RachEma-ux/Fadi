@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { fichesLivrees, lireFiche } from "./fiches.js";
 
-const LISTE = ["copernicus-glo30-n33-w008", "gedtm30-v1-2-benslimane", "lucerne-dom2024-mns-1150337", "lucerne-dtm2024-mnt-1150337"];
+const LISTE = ["copernicus-glo30-mondial", "copernicus-glo30-n33-w008", "gedtm30-v1-2-benslimane", "gedtm30-v1-2-mondial", "lucerne-dom2024-mns-1150337", "lucerne-dtm2024-mnt-1150337"];
 
 describe("fiches de terrain livrées (liste fermée)", () => {
-  it("la liste fermée compte exactement les 4 fiches livrées", () => {
+  it("la liste fermée compte exactement les 6 fiches livrées (dont les 2 fonds mondiaux, TER-09)", () => {
     expect(fichesLivrees()).toEqual(LISTE);
   });
 
@@ -17,7 +17,8 @@ describe("fiches de terrain livrées (liste fermée)", () => {
     for (const nom of LISTE) {
       const d = lireFiche(nom, true);
       expect(d.cle).toBe(nom);
-      expect(d.acquisition.methode === "depot" || d.acquisition.url.startsWith("https://")).toBe(true);
+      const a = d.acquisition;
+      expect(a.methode === "depot" || (a.methode === "distant" ? a.modele : a.url).startsWith("https://")).toBe(true);
     }
   });
 

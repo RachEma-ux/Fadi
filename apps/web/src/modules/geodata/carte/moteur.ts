@@ -22,12 +22,23 @@ export interface AffichageTerrain {
   readonly altitude: { readonly visible: boolean; readonly opacite: number; readonly plage: readonly [number, number] | null };
   readonly pente: { readonly visible: boolean; readonly opacite: number };
   readonly ombrage: { readonly visible: boolean; readonly opacite: number };
-  readonly courbes: { readonly visible: boolean; readonly equidistance: number | null };
+  readonly courbes: { readonly visible: boolean; readonly equidistance: number | null; readonly opacite?: number };
   readonly couvertures: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] } | null;
   readonly repere: readonly [number, number] | null;
   readonly profil: readonly (readonly [number, number])[] | null;
   readonly attribution: string | null;
+  /**
+   * Fond mondial lu à la demande (TER-09) : sous ces zooms, ses tuiles et ses courbes ne sont pas demandées (rien n'est lu) ;
+   * null pour une version locale.
+   */
+  readonly zoomMinimal?: number | null;
+  readonly zoomMinimalCourbes?: number | null;
+  /** Bulle de l'altitude au point, à l'endroit touché (« 221 m », « indisponible »…), ou null. */
+  readonly bulle?: { readonly lon: number; readonly lat: number; readonly texte: string } | null;
 }
+
+/** Tuiles du terrain en cours de chargement, ou refusées (« indisponible », « chargement » trop long) après nouveaux essais. */
+export interface EtatTuilesTerrain { readonly chargement: boolean; readonly indisponibles: number }
 
 export interface ObjetDesigne { readonly coucheId: string; readonly code: string }
 
@@ -79,6 +90,8 @@ export interface EvenementsMoteur {
    * points). Signalé seulement quand il change.
    */
   surEtatsCouches?(etats: ReadonlyMap<string, EtatCouche>, nombres: ReadonlyMap<string, number>): void;
+  /** Tuiles du terrain (TER-09) : chargement en cours, tuiles indisponibles ; signalé seulement quand il change. */
+  surEtatTerrain?(e: EtatTuilesTerrain): void;
 }
 
 export interface MoteurCarte {
