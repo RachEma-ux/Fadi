@@ -78,8 +78,9 @@
   - [x] TER-03 traitement et porte qualité (`terrain/TER-03.md`), fusionné (PR #387, `22e22eb`).
   - [x] TER-04 services numériques, tuiles, droits, publication et export (`terrain/TER-04.md`), fusionné (PR #389, `79141f3`).
   - [x] TER-05 interface (`terrain/TER-05.md`), fusionné (PR #390, `5a5885a`).
-  - [ ] TER-09 fond mondial à la demande (`terrain/TER-09.md`) : implémenté et vérifié, PR en revue ; décisions TER-D22 à
-    TER-D28 au maître d'ouvrage ; procédure VPS après fusion.
+  - [x] TER-09 fond mondial à la demande (`terrain/TER-09.md`), fusionné (PR #391, `dce8066`) ; décisions TER-D22 à
+    TER-D28 acceptées le 4 novembre 2026.
+  - [ ] TER-09 en préproduction : procédure VPS (`TER-09.md` § Procédure), puis porte G3 sur un appareil Android réel.
   - [ ] Q-TER-05-1 rattachement d'une version de terrain au projet (Parcours, Atelier) : décision du maître d'ouvrage.
   - Hors portée de la session : TER-01 (contacts, achats), TER-06 / TER-07 (levé et contrôle indépendant, porte G2),
     TER-08 (Release du maître d'ouvrage).

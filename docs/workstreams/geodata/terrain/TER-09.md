@@ -4,7 +4,7 @@ Date : 3 novembre 2026 (heure suisse). Issue : https://github.com/RachEma-ux/Fad
 `feat/381-ter-09-fond-mondial`, partie de `main@5a5885a` (TER-05 fusionné, en ligne en préproduction). Demande du maître
 d'ouvrage du 3 novembre 2026, relayée par la session VPS « Fadi VPS - Audit » : « Les données d'altitude ne doivent pas être
 celles de Benslimane uniquement mais celles de la zone sélectionnée, comme dans une carte normale. » Décisions appliquées :
-TER-D4, D5, D7, D10, D12, D13, D14, D16, D17, D19 ; **soumises : TER-D22 à TER-D28** ([`DECISIONS.md`](DECISIONS.md)).
+TER-D4, D5, D7, D10, D12, D13, D14, D16, D17, D19 ; **TER-D22 à TER-D28 acceptées le 4 novembre 2026** (recommandations retenues) ([`DECISIONS.md`](DECISIONS.md)).
 
 État : **implémenté et vérifié** (contrôles ci-dessous) ; **non accepté** ; aucun déploiement ; aucune fusion sans accord
 écrit du maître d'ouvrage.
