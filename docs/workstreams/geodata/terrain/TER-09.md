@@ -134,10 +134,12 @@ sudo fadi-preprod terrain --importer copernicus-glo30-mondial --par <gestionnair
 # ou PREPROD_GEODATA_TERRAIN_ENABLED=false (terrain fermé).
 ```
 
-Contrôle après publication : GeoData › Terrain (Alt+H) à Benslimane, Lucerne et Paris, zoom ≥ 8 : couche d'altitude,
-point (≈ 220 m au centre de Benslimane), « Sources et précision » (GEDTM30 v1.2, DOI 10.5281/zenodo.18887460, 1″, EGM2008
-déclaré par décision, « précision de plusieurs mètres », qualité non évaluée, attribution) ; zoom < 8 : « Zoomez
-davantage ». Puis mesurer les budgets en préproduction (porte G3).
+Contrôle après publication : GeoData › Terrain (Alt+H) à Benslimane, Lucerne et Paris, sans choisir de jeu : couche
+d'altitude dès le zoom 3 (GEDTM30, TER-D23), légende « adaptée à la vue », bulle au point touché (≈ 220 m au centre de
+Benslimane), « Contours » dès le zoom 12, « Sources et précision » replié (GEDTM30 v1.2, DOI 10.5281/zenodo.18887460,
+1″, EGM2008 déclaré par décision, « précision de plusieurs mètres », qualité non évaluée, attribution) ; zoom < 3 :
+« Zoomez davantage » ; MNS GLO-30 seulement dès le zoom 8. Puis mesurer les budgets en préproduction (porte G3), sur un
+appareil Android réel.
 
 ## Hors de ce lot
 
