@@ -29,6 +29,9 @@ export class ServiceRefuse extends Error {
   constructor(readonly statut: number, readonly code: string, message: string) { super(message); }
 }
 
+/** Dérogation TER-D26 (archivage d'une version distante) accordée par le maître d'ouvrage et portée par l'exploitation. */
+export const derogationDistanteAccordee = (env: NodeJS.ProcessEnv = process.env) => env["GEODATA_TERRAIN_DEROGATION_TER_D26"] === "accordee";
+
 /** Fonction terrain activée (drapeau de retour arrière du plan) : `GEODATA_TERRAIN_ENABLED=false` la ferme. */
 export const terrainActive = (env: NodeJS.ProcessEnv = process.env) => env["GEODATA_TERRAIN_ENABLED"] !== "false";
 
@@ -568,8 +571,13 @@ export async function publierVersion(c: PoolClient, id: string, par: string, mot
   if (!motif || motif.trim().length < 10) throw new ServiceRefuse(400, "invalid_input", "Motif écrit requis (10 caractères au moins).");
   await c.query("BEGIN");
   try {
-    const [v] = (await c.query<{ cle: string; etat: string }>("SELECT cle, etat FROM geodata_terrain_versions WHERE id = $1 FOR UPDATE", [id])).rows;
+    const [v] = (await c.query<{ cle: string; etat: string; methode: string | null }>("SELECT cle, etat, declaration->'acquisition'->>'methode' AS methode FROM geodata_terrain_versions WHERE id = $1 FOR UPDATE", [id])).rows;
     if (!v) throw new ServiceRefuse(404, "not_found", "Version de terrain introuvable.");
+    // Version distante (TER-09) : aucun fichier n'est archivé tel quel (D-GD-29) ; sa publication attend la dérogation
+    // TER-D26 accordée par écrit par le maître d'ouvrage, portée par l'exploitation (GEODATA_TERRAIN_DEROGATION_TER_D26).
+    if (v.methode === "distant" && !derogationDistanteAccordee()) {
+      throw new ServiceRefuse(409, "derogation_requise", "Version distante (fond mondial) : la source n'est pas archivée telle quelle (D-GD-29). Publication refusée tant que la dérogation TER-D26 n'est pas accordée (GEODATA_TERRAIN_DEROGATION_TER_D26=accordee après la décision écrite du maître d'ouvrage).");
+    }
     if (v.etat !== "accepte" && v.etat !== "remplace") throw new ServiceRefuse(409, "etat_incompatible", `Version en état « ${v.etat} » : seule une version acceptée (ou remplacée, pour un retour arrière) se publie.`);
     const [{ n }] = (await c.query<{ n: number }>("SELECT count(*)::int AS n FROM geodata_terrain_couvertures WHERE terrain_version_id = $1", [id])).rows as [{ n: number }];
     if (!n) throw new ServiceRefuse(409, "etat_incompatible", "Version sans dérivés ni couverture : la traiter avant de la publier.");

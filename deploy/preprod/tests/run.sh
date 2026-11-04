@@ -186,7 +186,7 @@ TW_NETS="    networks:${NL}      - internal${NL}    mem_limit: 3g"
 TW_IMG="    image: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}-terrain"
 TW_DF="      dockerfile: deploy/preprod/terrain-worker.Dockerfile"
 TW_REST="    profiles: [\"terrain\"]${NL}    restart: \"no\"${NL}    depends_on:${NL}      db:${NL}        condition: service_healthy${NL}    environment:${NL}      DATABASE_URL: postgresql://fadi_app:"
-TW_ENV="      NODE_ENV: production${NL}      GEODATA_TERRAIN_DIR: /data/terrain${NL}      GEODATA_TERRAIN_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}${NL}    volumes:${NL}      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}"
+TW_ENV="      NODE_ENV: production${NL}      GEODATA_TERRAIN_DIR: /data/terrain${NL}      GEODATA_TERRAIN_QUOTA_GO: \${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}${NL}      GEODATA_TERRAIN_DEROGATION_TER_D26: \${PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26:-non}${NL}    volumes:${NL}      - fadi-preprod-terrain:/data/terrain${NL}${TW_NETS}"
 WORKER="  terrain-worker:${NL}${TW_IMG}${NL}    build:${NL}      context: \${FADI_SRC:?FADI_SRC manquant}${NL}${TW_DF}${NL}      args:${NL}        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT:?FADI_COMMIT manquant}${NL}${TW_REST}\${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi${NL}${TW_ENV}${NL}    mem_limit: 3g${NL}    cpus: 2${NL}    logging: *logging${NL}${NL}${VOLS}"
 WORKER=${WORKER/${TW_NETS}${NL}    mem_limit: 3g/${TW_NETS}}
 # Depuis la fusion de la PR #387, compose.yml contient le bloc réel : il est alors contrôlé tel quel (aucune insertion).

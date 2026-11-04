@@ -38,6 +38,8 @@ export function origineTest() {
   const fichiers = new Map<string, { octets: Buffer; etag: string }>([
     [urlTest("N47E008"), { octets: dalle(8, 47, (c, l) => 400 + c + 2 * l), etag: "\"a1\"" }],
     [urlTest("N47E009"), { octets: dalle(9, 47, () => 900), etag: "\"b1\"" }],
+    // Dalle de plusieurs blocs du cache (≈ 1,4 Mo) : lectures concurrentes qui se recouvrent.
+    [urlTest("N46E008"), { octets: octetsFixture({ geographique: true, largeur: 600, hauteur: 600, pas: 1 / 600, origine: [8, 47], valeur: (c, l) => 300 + c + l, nodata: -9999 }), etag: "\"c1\"" }],
   ]);
   const etat = { mode: "normal" as ModeOrigine, requetes: 0 };
   const transport: Transport = async (url, init) => {

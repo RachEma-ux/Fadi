@@ -14,7 +14,7 @@
  * Jamais de cache public (réponses `private, no-store` ; service interne sans port publié). Hors couverture → « hors
  * couverture » ; origine injoignable, budget atteint ou source modifiée → « indisponible » ; jamais une valeur inventée.
  */
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -200,8 +200,9 @@ export class ServiceDistant {
     }
     const nouveau: MetaSource = { ...e, url, cle, dalle, premierAcces: new Date(this.maintenant()).toISOString() };
     await mkdir(d, { recursive: true });
-    await writeFile(join(d, "meta.json.part"), JSON.stringify(nouveau));
-    await rename(join(d, "meta.json.part"), join(d, "meta.json"));
+    const part = join(d, `meta.json.${process.pid}.${randomUUID()}.part`);
+    await writeFile(part, JSON.stringify(nouveau));
+    await rename(part, join(d, "meta.json"));
     this.metas.set(d, nouveau);
     return nouveau;
   }
@@ -220,8 +221,9 @@ export class ServiceDistant {
       if (!morceau.length) break;
       if (b * TAILLE_BLOC + morceau.length < Math.min((b + 1) * TAILLE_BLOC, meta.taille)) break; // bloc incomplet : jamais mis en cache
       const p = join(d, `b${b}`);
-      await writeFile(`${p}.part`, morceau);
-      await rename(`${p}.part`, p);
+      const part = `${p}.${process.pid}.${randomUUID()}.part`;
+      await writeFile(part, morceau);
+      await rename(part, p);
       const ancien = this.index.get(p);
       if (ancien) this.total -= ancien.taille;
       this.index.set(p, { taille: morceau.length, utiliseLe: this.maintenant() });
@@ -251,18 +253,21 @@ export class ServiceDistant {
     for (const b of voulus) this.protegees.add(join(d, `b${b}`));
     try {
       if (manquants.length) {
-        for (const [b0, b1] of suitesContigues(manquants, Math.max(1, Math.floor(this.o.budget.octetsParRequete / TAILLE_BLOC)))) {
-          const k = `${d}|${b0}-${b1}`;
-          let p = this.enVol.get(k);
-          if (!p) {
-            p = this.chercher(cle, url, dalle, b0, b1, meta?.taille ?? null).catch((e) => {
-              if (e instanceof ErreurDistante && e.etat === "hors-couverture") this.absences.set(url, { depuis: this.maintenant(), motif: e.message });
-              throw e;
-            }).finally(() => this.enVol.delete(k));
-            this.enVol.set(k, p);
-          }
-          await p;
+        // Un bloc n'est cherché qu'une fois à la fois : les blocs déjà en vol (lecture concurrente, plage différente) sont
+        // attendus ; seuls les autres partent, regroupés en suites contiguës.
+        const attentes: Promise<void>[] = [];
+        const libres: number[] = [];
+        for (const b of manquants) { const p = this.enVol.get(`${d}|b${b}`); if (p) attentes.push(p); else libres.push(b); }
+        for (const [b0, b1] of suitesContigues(libres, Math.max(1, Math.floor(this.o.budget.octetsParRequete / TAILLE_BLOC)))) {
+          const p = this.chercher(cle, url, dalle, b0, b1, meta?.taille ?? null).catch((e) => {
+            if (e instanceof ErreurDistante && e.etat === "hors-couverture") this.absences.set(url, { depuis: this.maintenant(), motif: e.message });
+            throw e;
+          });
+          for (let b = b0; b <= b1; b++) this.enVol.set(`${d}|b${b}`, p);
+          void p.catch(() => undefined).finally(() => { for (let b = b0; b <= b1; b++) if (this.enVol.get(`${d}|b${b}`) === p) this.enVol.delete(`${d}|b${b}`); });
+          attentes.push(p);
         }
+        await Promise.all(attentes);
         meta = await this.meta(cle, url);
       }
       if (!meta) throw new ErreurDistante("indisponible", "Source distante sans en-tête épinglé.");

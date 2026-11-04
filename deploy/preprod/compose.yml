@@ -133,6 +133,9 @@ services:
       # internal ; conteneur lancé par `fadi-preprod terrain distant --demarrer`). Service arrêté : fond mondial
       # « indisponible », jamais une valeur. L'API elle-même ne sort jamais vers les sources distantes.
       GEODATA_TERRAIN_DISTANT_URL: http://fadi-preprod-terrain-distant:3002
+      # Dérogation TER-D26 (une version distante n'est pas archivée telle quelle, D-GD-29) : « accordee » seulement après
+      # la décision écrite du maître d'ouvrage ; sinon la publication d'une version distante est refusée.
+      GEODATA_TERRAIN_DEROGATION_TER_D26: ${PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26:-non}
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
     ports:
@@ -256,6 +259,7 @@ services:
       NODE_ENV: production
       GEODATA_TERRAIN_DIR: /data/terrain
       GEODATA_TERRAIN_QUOTA_GO: ${PREPROD_GEODATA_TERRAIN_QUOTA_GO:-30}
+      GEODATA_TERRAIN_DEROGATION_TER_D26: ${PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26:-non}
     volumes:
       - fadi-preprod-terrain:/data/terrain
     networks:

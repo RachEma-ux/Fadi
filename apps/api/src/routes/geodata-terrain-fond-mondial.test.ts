@@ -53,6 +53,7 @@ beforeEach(async () => {
   await stockage.preparer();
   process.env["GEODATA_TERRAIN_DIR"] = racine;
   delete process.env["GEODATA_TERRAIN_ENABLED"];
+  process.env["GEODATA_TERRAIN_DEROGATION_TER_D26"] = "accordee";
   origine.etat.mode = "normal";
   invaliderCaches();
   await demarrerService();
@@ -89,6 +90,18 @@ const tuileDe = (z: number, lon: number, lat: number) => {
 };
 
 describe("TER-09 : fond mondial à la demande", () => {
+  it("publication d'une version distante refusée tant que la dérogation TER-D26 n'est pas accordée", async () => {
+    delete process.env["GEODATA_TERRAIN_DEROGATION_TER_D26"];
+    const c = await pool.connect();
+    try {
+      const r = await importerTerrainDistant(c, ficheDistanteTest(), { deposePar: null, transport: origine.transport });
+      await traiterVersion(c, stockage, r.versionId);
+      await deciderRevue(c, r.versionId, "accepte", "Fond mondial synthétique de test accepté", pub);
+      await expect(publierVersion(c, r.versionId, pub, "Publication du fond mondial synthétique de test")).rejects.toMatchObject({ code: "derogation_requise" });
+      expect((await pool.query("SELECT etat FROM geodata_terrain_versions WHERE id = $1", [r.versionId])).rows[0].etat).toBe("accepte");
+    } finally { c.release(); process.env["GEODATA_TERRAIN_DEROGATION_TER_D26"] = "accordee"; }
+  });
+
   it("cycle d'une version distante : en-tête lu à la source, épinglé, couverture déclarée, aucun fichier copié", async () => {
     const id = await mondial();
     const [v] = (await pool.query("SELECT etat, taille, empreinte, entete->>'crsHorizontal' AS crs FROM geodata_terrain_versions WHERE id = $1", [id])).rows;

@@ -8,7 +8,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CompteurBudget, type DeclarationTerrain } from "@parcours/geodata-model";
 import { BUDGET_DISTANT_DEFAUT, ErreurDistante, lirePlageOrigine, ServiceDistant, sourcesDistantes, TAILLE_BLOC } from "./distant.js";
-import { oublierDistants, valeursDistantes } from "./fond-mondial.js";
+import { grilleMetrique, oublierDistants, valeursDistantes } from "./fond-mondial.js";
+import { espacementMetrique, pente } from "@parcours/geodata-model";
 import { invaliderCaches, tuileTerrain, type Executeur, type SourceTerrain } from "./services.js";
 import { ACQ_TEST, ficheDistanteTest, HOTE_TEST, MODELE_TEST, origineTest } from "./fixtures-distantes.js";
 import { pngTransparent } from "../raster.js";
@@ -111,6 +112,19 @@ describe("cache borné, évincé du moins récemment utilisé", () => {
     expect(blocs.length).toBeLessThanOrEqual(1);
   });
 
+  it("lectures concurrentes de plages qui se recouvrent : chaque bloc lu une fois, aucune écriture en conflit", async () => {
+    await demarrer();
+    const B = TAILLE_BLOC;
+    await service.lire(FICHE.cle, "N46E008", 0, 10);
+    const avant = origine.requetes;
+    const [a, b] = await Promise.all([service.lire(FICHE.cle, "N46E008", B, 3 * B - 1), service.lire(FICHE.cle, "N46E008", B, 4 * B - 1)]);
+    const attendu = ORIGINE.get(MODELE.replaceAll("{lat}", "N46").replaceAll("{lon}", "E008"))!.octets;
+    expect(a.octets.equals(attendu.subarray(B, 3 * B))).toBe(true);
+    expect(b.octets.equals(attendu.subarray(B, 4 * B))).toBe(true);
+    // Blocs 1-2 lus une fois (requête partagée), bloc 3 une fois : jamais deux écritures du même bloc.
+    expect(origine.requetes - avant).toBeLessThanOrEqual(2);
+  });
+
   it("le quota du cache doit tenir dans celui du volume terrain", () => {
     expect(() => new ServiceDistant({ racine, sources: SOURCES, quotaCache: 3e9, quotaVolume: 2e9, budget: BUDGET_DISTANT_DEFAUT })).toThrow(/quota/i);
   });
@@ -171,5 +185,19 @@ describe("liste fermée, redirections, indisponibilité", () => {
     } finally {
       ORIGINE.set(url, ancien);
     }
+  });
+});
+
+describe("pente du fond mondial : pas métrique à la latitude de la fenêtre lue", () => {
+  it("un plan est-ouest de 45° à la latitude de Lucerne reste à 45° (jamais calculé à 10° N, centre de l'emprise GEDTM30)", () => {
+    const rx = 1 / 3600, ry = -1 / 3600, L = 8, H = 8;
+    // Fenêtre près de 47,05° N : z croît d'un pas métrique est-ouest par colonne → pente exacte de 45°.
+    const oy = 47.06, l0 = 0;
+    const dx = espacementMetrique(oy + (l0 + 4 + 0.5) * ry, rx, -ry).pasX;
+    const valeurs = new Float32Array(L * H);
+    for (let l = 0; l < H; l++) for (let c = 0; c < L; c++) valeurs[l * L + c] = 400 + c * espacementMetrique(oy + (l0 + l + 0.5) * ry, rx, -ry).pasX;
+    const p = pente(grilleMetrique({ oy, ry, rx, l0, largeur: L, hauteur: H, valeurs }, null));
+    expect(p[4 * L + 4]).toBeCloseTo(45, 2);
+    expect(dx).toBeGreaterThan(20);
   });
 });

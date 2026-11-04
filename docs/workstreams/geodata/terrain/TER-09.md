@@ -120,6 +120,9 @@ sudo fadi-preprod terrain --etat                          # gdtv_… gedtm30-v1-
 #    l'extrait gdtv_c5ed38b7-6d28-478a-b045-a5af1d6ca1ab (même fichier) ; la session ne lève rien :
 sudo fadi-preprod terrain --lever <gdtv_mondial> --par <responsable-publication> --motif "…" \
     --reference-libelle "EGM2008" --reference-code EPSG:3855 --reference-source "<source citée pour l'extrait>"
+# 3 bis. Publication possible seulement après la décision écrite TER-D26 (dérogation d'archivage) : l'administrateur ajoute
+#    PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26=accordee au fichier d'environnement de la préproduction, puis
+#    sudo fadi-preprod up ; sans elle, --publier d'une version distante est refusé (409 « derogation_requise »).
 # 4. Traitement (aucun réseau ni GDAL), revue, publication :
 sudo fadi-preprod terrain worker --traiter <gdtv_mondial> --par <gestionnaire-donnees>
 sudo fadi-preprod terrain worker --decider <gdtv_mondial> --decision accepte --motif "…" --par <responsable-publication>

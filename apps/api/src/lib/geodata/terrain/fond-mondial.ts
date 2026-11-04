@@ -188,6 +188,16 @@ export async function plageDistante(ex: Executeur, s: SourceTerrain): Promise<[n
 
 // ——— Tuiles d'image ———
 
+/**
+ * Grille d'une fenêtre lon / lat avec son pas métrique à la latitude **réelle de chaque ligne** de la fenêtre (jamais
+ * celle de l'emprise de la source : pour GEDTM30, l'emprise est centrée sur 10° N et fausserait pente et ombrage ailleurs).
+ */
+export function grilleMetrique(f: { readonly oy: number; readonly ry: number; readonly rx: number; readonly l0: number; readonly largeur: number; readonly hauteur: number; readonly valeurs: ArrayLike<number> }, nodata: number | null) {
+  const latLigne = (l: number) => f.oy + (f.l0 + l + 0.5) * f.ry;
+  const pasY = espacementMetrique(latLigne(f.hauteur / 2), Math.abs(f.rx), Math.abs(f.ry)).pasY;
+  return { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata, pasX: (l: number) => espacementMetrique(latLigne(l), Math.abs(f.rx), Math.abs(f.ry)).pasX, pasY };
+}
+
 interface FenetreDalle { readonly ox: number; readonly oy: number; readonly rx: number; readonly ry: number; readonly c0: number; readonly l0: number; readonly largeur: number; readonly hauteur: number; readonly valeurs: ArrayLike<number>; readonly borne: readonly [number, number, number, number] }
 
 /** Fenêtres des dalles qui recoupent une emprise, au niveau d'aperçu le plus grossier dont le pas reste ≤ `pasDeg`. */
@@ -222,8 +232,7 @@ export async function tuileDistante(ex: Executeur, s: SourceTerrain, style: "alt
   const liste = await fenetres(ex, s, [o, sud, e, n], pasDeg, 2, 9);
   const valeurs = liste.map((f) => {
     if (style === "altitude") return f.valeurs;
-    const m = espacementMetrique((f.borne[1] + f.borne[3]) / 2, Math.abs(f.rx), Math.abs(f.ry));
-    const g = { largeur: f.largeur, hauteur: f.hauteur, valeurs: f.valeurs, nodata: s.nodata, pasX: m.pasX, pasY: m.pasY };
+    const g = grilleMetrique(f, s.nodata);
     return style === "pente" ? pente(g) : ombrage(g);
   });
   const rgba = new Uint8Array(256 * 256 * 4);
