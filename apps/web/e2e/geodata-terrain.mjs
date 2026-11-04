@@ -191,6 +191,8 @@ await page.locator("[data-gd-terrain-jeu='ter-test-a'] input").check();
 await page.locator("[data-gd-terrain-courbes-visible]").check();
 await page.locator("[data-gd-terrain-equidistance]").selectOption("1");
 await page.waitForTimeout(1500);
+const couchesListe = await page.locator("[data-gd-terrain-couche]").evaluateAll((ds) => ds.map((d) => d.dataset.gdTerrainCouche));
+check("couches : « Contours » dans la liste (Altitude, Pente, Ombrage, Contours), avec son opacité", couchesListe.join(",") === "altitude,pente,ombrage,contours" && (await page.locator("[data-gd-terrain-couche='contours']").textContent()).includes("Contours") && !(await page.locator("[data-gd-terrain-opacite='contours']").isDisabled()), couchesListe.join(","));
 check("courbes : tuiles vectorielles demandées à l'équidistance choisie", appels.some((a) => /\/courbes\/ter-test-a\/\d+\/\d+\/\d+\?equidistance=1$/.test(a)));
 
 // ——— Alt+O : altitude au point ———

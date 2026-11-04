@@ -22,7 +22,7 @@ export interface AffichageTerrain {
   readonly altitude: { readonly visible: boolean; readonly opacite: number; readonly plage: readonly [number, number] | null };
   readonly pente: { readonly visible: boolean; readonly opacite: number };
   readonly ombrage: { readonly visible: boolean; readonly opacite: number };
-  readonly courbes: { readonly visible: boolean; readonly equidistance: number | null };
+  readonly courbes: { readonly visible: boolean; readonly equidistance: number | null; readonly opacite?: number };
   readonly couvertures: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] } | null;
   readonly repere: readonly [number, number] | null;
   readonly profil: readonly (readonly [number, number])[] | null;

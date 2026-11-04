@@ -14688,5 +14688,8 @@
 "Le jeu affiché suit la carte : le plus fin au centre de la vue (levé local sur son emprise, sinon fond mondial).": "The displayed dataset follows the map: the finest one at the centre of the view (local survey within its extent, otherwise the global background).",
 "Précision mesurée": "Measured accuracy",
 "Précision du producteur": "Producer's accuracy",
-"non évaluée (aucun point de contrôle)": "not assessed (no checkpoint)"
+"non évaluée (aucun point de contrôle)": "not assessed (no checkpoint)",
+"Contours": "Contours",
+"Opacité : Contours": "Opacity: Contours",
+"Couverture disponible (limites)": "Available coverage (outlines)"
 }

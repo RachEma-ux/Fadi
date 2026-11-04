@@ -67,7 +67,7 @@ export function useTerrain(lireEmprise: () => Emprise | null) {
   const [pointDemande, setPointDemande] = useState<[number, number] | null>(null);
   const [plageVue, setPlageVue] = useState<{ versionId: string; plage: [number, number]; zone: string | null } | null>(null);
   const [adaptation, setAdaptation] = useState<{ etat: "chargement" } | { etat: "erreur"; message: string } | null>(null);
-  const [courbes, setCourbes] = useState<{ visible: boolean; equidistance: number | null }>({ visible: false, equidistance: null });
+  const [courbes, setCourbes] = useState<{ visible: boolean; equidistance: number | null; opacite: number }>({ visible: false, equidistance: null, opacite: 0.9 });
   const [couvertures, setCouvertures] = useState(true);
   const [point, setPoint] = useState<Etat<AltitudeRecue> | null>(null);
   const [profil, setProfil] = useState<(Etat<ProfilRecu> & { ligne: [number, number][] }) | null>(null);
@@ -390,10 +390,14 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, z
             {t.pente.visible && <Legende min={0} max={45} palette={PALETTE_PENTE} unite="°" libelle="Pente en degrés, de 0 à 45°" />}
             {couche("ombrage", "Ombrage", t.ombrage, t.setOmbrage)}
             {t.ombrage.visible && <p className="gd-discret">Relief éclairé du nord-ouest, pour la lecture seulement.</p>}
-          </fieldset>
-          <fieldset data-gd-terrain-courbes>
-            <legend>Courbes de niveau</legend>
-            <label className="gd-case"><input type="checkbox" checked={t.courbes.visible} disabled={!t.equidistances.length || j.droits.tuiles !== "autorise"} onChange={() => t.setCourbes({ ...t.courbes, visible: !t.courbes.visible })} data-gd-terrain-courbes-visible />Afficher les courbes</label>
+            {/* Contours : courbes de niveau, une couche comme les autres (case et opacité), équidistance juste en dessous. */}
+            <div className="gd-terrain-couche" data-gd-terrain-couche="contours">
+              <label className="gd-case"><input type="checkbox" checked={t.courbes.visible} disabled={!t.equidistances.length || j.droits.tuiles !== "autorise"} onChange={() => t.setCourbes({ ...t.courbes, visible: !t.courbes.visible })} data-gd-terrain-visible="contours" data-gd-terrain-courbes-visible />Contours</label>
+              <label className="gd-terrain-opacite"><span>Opacité</span>
+                <input type="range" min={0} max={1} step={0.05} value={t.courbes.opacite} disabled={!t.courbes.visible} onChange={(e) => t.setCourbes({ ...t.courbes, opacite: Number(e.target.value) })} aria-label="Opacité : Contours" data-gd-terrain-opacite="contours" />
+              </label>
+            </div>
+            <div data-gd-terrain-courbes>
             <label className="gd-terrain-equidistance"><span>Équidistance</span>
               <select value={t.courbes.equidistance ?? ""} disabled={!t.equidistances.length} onChange={(e) => t.setCourbes({ ...t.courbes, equidistance: Number(e.target.value) })} data-gd-terrain-equidistance>
                 {t.equidistances.map((e) => <option key={e} value={e} translate="no">{`${nombreFr(e, e < 1 ? 2 : 0)} m`}</option>)}
@@ -401,6 +405,7 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, z
             </label>
             <p className="gd-discret" data-gd-terrain-equidistance-min><span>Équidistance minimale admise par la précision de la source :</span> <span translate="no">{`${nombreFr(j.courbes.equidistanceMinimale, j.courbes.equidistanceMinimale < 1 ? 2 : 0)} m`}</span></p>
             {!t.equidistances.length && <p className="gd-alerte">Aucune courbe calculée n'atteint ce seuil : courbes indisponibles pour cette version.</p>}
+            </div>
           </fieldset>
         </>
       )}
@@ -473,7 +478,7 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, z
                 </li>
               ))}
             </ul>
-            <label className="gd-case"><input type="checkbox" checked={t.couvertures} onChange={() => t.setCouvertures(!t.couvertures)} data-gd-terrain-couvertures />Couverture disponible (contours)</label>
+            <label className="gd-case"><input type="checkbox" checked={t.couvertures} onChange={() => t.setCouvertures(!t.couvertures)} data-gd-terrain-couvertures />Couverture disponible (limites)</label>
             {(() => { const m = messageCouverture(t.jeux, vue); return m && <p className="gd-discret" role="status" data-gd-terrain-couverture-vue>{m}</p>; })()}
           </fieldset>
         </details>

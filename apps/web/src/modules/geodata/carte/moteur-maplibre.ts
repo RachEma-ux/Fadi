@@ -401,11 +401,16 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.addSource("gd-terrain-courbes", { type: "vector", tiles: [adresse], minzoom: t?.zoomMinimalCourbes ?? 0, maxzoom: 16 });
       // Courbes maîtresses (toutes les cinq) plus épaisses et cotées ; les autres fines, sans cote.
       carte.addLayer({ id: "gd-terrain-courbes", type: "line", source: "gd-terrain-courbes", "source-layer": "courbes",
-        paint: { "line-color": "#6b4423", "line-width": ["case", ["boolean", ["get", "maitresse"], false], 1.6, 0.6], "line-opacity": 0.9 } }, sousLesCouches());
+        paint: { "line-color": "#6b4423", "line-width": ["case", ["boolean", ["get", "maitresse"], false], 1.6, 0.6], "line-opacity": t?.courbes.opacite ?? 0.9 } }, sousLesCouches());
       carte.addLayer({ id: "gd-terrain-courbes-cotes", type: "symbol", source: "gd-terrain-courbes", "source-layer": "courbes", filter: ["boolean", ["get", "maitresse"], false],
         layout: { "symbol-placement": "line", "text-field": ["concat", ["to-string", ["get", "altitude"]], " m"], "text-font": [POLICE_ETIQUETTES], "text-size": 11, "symbol-spacing": 280 },
         paint: { "text-color": "#4a2f16", "text-halo-color": "#ffffff", "text-halo-width": 1.4 } }, sousLesCouches());
     });
+    // Opacité de la couche Contours (courbes et cotes), réglée sans recharger les tuiles.
+    if (carte.getLayer("gd-terrain-courbes") && t) {
+      carte.setPaintProperty("gd-terrain-courbes", "line-opacity", t.courbes.opacite ?? 0.9);
+      carte.setPaintProperty("gd-terrain-courbes-cotes", "text-opacity", t.courbes.opacite ?? 0.9);
+    }
     if (!carte.getLayer("gd-terrain-couvertures")) {
       carte.addLayer({ id: "gd-terrain-couvertures", type: "line", source: "gd-terrain-couvertures", paint: { "line-color": "#5b3a8c", "line-width": 2, "line-dasharray": [3, 2] } }, "gd-trace-ligne");
       carte.addLayer({ id: "gd-terrain-profil", type: "line", source: "gd-terrain-repere", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#5b3a8c", "line-width": 3 } }, "gd-trace-ligne");
