@@ -9,12 +9,12 @@
  * Chaque résultat numérique porte sa source : version, pas, référence verticale, état de qualité, étiquette, attribution.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { LIMITES_FOND_MONDIAL, PRODUITS_TERRAIN, type ProduitTerrain } from "@parcours/geodata-model";
+import { LIMITES_FOND_MONDIAL, PRODUITS_TERRAIN, zoomMinimalTuiles, type ProduitTerrain } from "@parcours/geodata-model";
 import { pool } from "../../db/client.js";
 import { capacites, erreur, journal } from "../../lib/geodata/acces.js";
 import { StockageTerrain } from "../../lib/geodata/terrain/stockage.js";
 import {
-  altitudePoint, exigerUsage, metadonnees, plageVersion, profilTerrain, publierVersion, ServiceRefuse, sourcePubliee, sourcesPubliees, statistiquesTerrain, terrainActive,
+  altitudePoint, exigerUsage, metadonnees, plageEmprise, plageVersion, profilTerrain, publierVersion, ServiceRefuse, sourcePubliee, sourcesPubliees, statistiquesTerrain, terrainActive,
   tuileCourbesDistante, tuileTerrain, type SourceTerrain, type StyleTuile,
 } from "../../lib/geodata/terrain/services.js";
 import { equidistanceDistante, equidistancesDistantes } from "../../lib/geodata/terrain/fond-mondial.js";
@@ -82,11 +82,24 @@ terrainRouter.get("/terrain/jeux", service(async (req, res) => {
       ...metadonnees(s), couverture: couvertures.get(s.id) ?? null, droits: s.droits, plageAltitude: await plage(s),
       courbes: { equidistanceMinimale: minimale, calculees: s.distant ? equidistancesDistantes(minimale) : (calculees.get(s.id) ?? []) },
       // Fond mondial lu à la demande (TER-09) : zooms minimaux d'affichage, couverture déclarée (lacunes possibles).
-      fondMondial: s.distant ? { zoomMinimal: LIMITES_FOND_MONDIAL.zoomMinTuiles, zoomMinimalCourbes: LIMITES_FOND_MONDIAL.zoomMinCourbes, couverture: "declaree" as const } : null,
+      fondMondial: s.distant ? { zoomMinimal: zoomMinimalTuiles(s.distant), zoomMinimalCourbes: LIMITES_FOND_MONDIAL.zoomMinCourbes, couverture: "declaree" as const } : null,
     });
   }
   res.setHeader("Cache-Control", "private, no-store");
   res.json({ jeux });
+}));
+
+/**
+ * Plage d'altitude de la vue (légende adaptée à la vue par défaut, TER-09) : couleur seulement, lue sur un aperçu, portée
+ * « vue courante » ; jamais une statistique de la zone (pour cela : POST /terrain/statistiques).
+ */
+terrainRouter.get("/terrain/plage", service(async (req, res) => {
+  const s = await sourcePubliee(pool, String(req.query["versionId"] ?? ""));
+  exigerUsage(s, "tuiles");
+  const e = ["ouest", "sud", "est", "nord"].map((k) => nombre(req.query[k], k, k === "sud" || k === "nord" ? -90 : -180, k === "sud" || k === "nord" ? 90 : 180)) as [number, number, number, number];
+  if (!(e[2] > e[0] && e[3] > e[1])) throw new ServiceRefuse(400, "invalid_input", "Emprise ouest < est, sud < nord attendue.");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ versionId: s.id, plage: await plageEmprise(pool, s.distant ? stockageSiConfigure() : stockage(), s, e), portee: "vue", lecture: "aperçu de la grille numérique, couleur seulement" });
 }));
 
 terrainRouter.get("/terrain/point", service(async (req, res) => {

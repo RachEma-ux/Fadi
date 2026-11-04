@@ -154,6 +154,13 @@ describe("TER-09 : fond mondial à la demande", () => {
     expect((k.body as Buffer).length).toBeGreaterThan(100);
     expect((await a.get(`${API}/courbes/${id}/${t.z}/${t.x}/${t.y}?equidistance=5`)).status).toBe(422);
 
+    // Légende adaptée à la vue (par défaut dans l'interface) : plage lue sur un aperçu de la vue, portée « vue ».
+    const pl = await a.get(`${API}/plage?versionId=${id}&ouest=8.1&sud=47.1&est=8.4&nord=47.3`);
+    expect(pl.status).toBe(200);
+    expect(pl.body.portee).toBe("vue");
+    expect(pl.body.plage[0]).toBeGreaterThanOrEqual(400);
+    expect(pl.body.plage[1]).toBeLessThanOrEqual(400 + 119 + 2 * 119);
+    expect((await a.get(`${API}/plage?versionId=${id}&ouest=-31&sud=33&est=-30&nord=34`)).body.plage).toBeNull();
     // Export du fond mondial : refusé dans ce lot.
     expect((await a.post(`${API}/exports`).send({ versionId: id, format: "geotiff", emprise: [8.2, 47.2, 8.3, 47.3] })).status).toBe(409);
   });

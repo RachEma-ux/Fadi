@@ -273,6 +273,9 @@ export const api = {
     appeler<{ jeux: JeuTerrainRecu[] }>(`/terrain/jeux?${new URLSearchParams({ produit, ...(emprise ? { ouest: emprise[0].toFixed(6), sud: emprise[1].toFixed(6), est: emprise[2].toFixed(6), nord: emprise[3].toFixed(6) } : {}) })}`),
   terrainPoint: (lon: number, lat: number, produit: ProduitTerrain) => appeler<AltitudeRecue>(`/terrain/point?${new URLSearchParams({ lon: lon.toFixed(7), lat: lat.toFixed(7), produit })}`),
   terrainProfil: (ligne: readonly (readonly [number, number])[], pas: number, produit: ProduitTerrain) => envoyer<ProfilRecu>("/terrain/profil", "POST", { ligne, pas, produit }),
+  /** Plage d'altitude de la vue (légende adaptée à la vue, couleur seulement, lue sur un aperçu). */
+  terrainPlage: (versionId: string, e: readonly [number, number, number, number]) =>
+    appeler<{ plage: [number, number] | null; portee: "vue" }>(`/terrain/plage?${new URLSearchParams({ versionId, ouest: e[0].toFixed(6), sud: e[1].toFixed(6), est: e[2].toFixed(6), nord: e[3].toFixed(6) })}`),
   terrainStatistiques: (zone: { type: "Polygon"; coordinates: [number, number][][] }, produit: ProduitTerrain, versionId: string) =>
     envoyer<StatistiquesTerrainRecues>("/terrain/statistiques", "POST", { zone, produit, versionId }),
 };

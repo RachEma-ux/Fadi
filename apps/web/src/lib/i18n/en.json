@@ -14681,5 +14681,12 @@
 "Export du fond mondial lu à la demande : non disponible dans ce lot (TER-09). Exporter un jeu importé, ou demander l'extrait par une fiche.": "Export of the global background read on demand: not available in this lot (TER-09). Export an imported dataset, or request the extract through a source record.",
 "Équidistance {0} m non proposée ({1} m).": "Contour interval {0} m not offered ({1} m).",
 "Aucune donnée à cette adresse (HTTP {0}).": "No data at this address (HTTP {0}).",
-"Hors de l'emprise déclarée de la source.": "Outside the declared extent of the source."
+"Hors de l'emprise déclarée de la source.": "Outside the declared extent of the source.",
+"Détail de la valeur": "Value details",
+"Relief éclairé du nord-ouest, pour la lecture seulement.": "Relief lit from the north-west, for reading only.",
+"Pente en degrés, de 0 à 45°": "Slope in degrees, from 0 to 45°",
+"Le jeu affiché suit la carte : le plus fin au centre de la vue (levé local sur son emprise, sinon fond mondial).": "The displayed dataset follows the map: the finest one at the centre of the view (local survey within its extent, otherwise the global background).",
+"Précision mesurée": "Measured accuracy",
+"Précision du producteur": "Producer's accuracy",
+"non évaluée (aucun point de contrôle)": "not assessed (no checkpoint)"
 }

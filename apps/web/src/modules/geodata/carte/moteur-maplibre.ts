@@ -4,7 +4,7 @@
  * couches servies par `/geodata/api/tuiles` (autorisées au serveur), fond neutre par défaut ; une valeur absente est grise
  * ET hachurée, jamais confondue avec zéro ; l'objet sélectionné a un contour épais (la couleur n'est pas le seul signe).
  */
-import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, type ExpressionSpecification, type GeoJSONSource, type MapMouseEvent } from "maplibre-gl";
+import { AttributionControl, Map as CarteMapLibre, Popup, ScaleControl, setWorkerUrl, type ExpressionSpecification, type GeoJSONSource, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -362,8 +362,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     ev.surEtatTerrain?.({ chargement, indisponibles: indisponiblesTerrain });
   }
   function terrainEnErreur(id: string) {
-    const adresse = adressesTerrain.get(id);
-    if (!adresse) return;
+    if (!adressesTerrain.get(id)) return;
     const n = essaisTerrain.get(id) ?? 0;
     if (n >= 3) { indisponiblesTerrain++; signalerTerrain(false); return; }
     if (essaiPrevu.has(id)) return;
@@ -371,8 +370,10 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     setTimeout(() => {
       essaiPrevu.delete(id);
       essaisTerrain.set(id, n + 1);
+      // Adresse courante de la source (la légende a pu changer entre-temps) : c'est elle qui est redemandée.
+      const courante = adressesTerrain.get(id);
       const src = carte.getSource(id) as { setTiles?: (t: string[]) => void } | undefined;
-      if (src?.setTiles && adressesTerrain.get(id) === adresse) src.setTiles([`${adresse}${adresse.includes("?") ? "&" : "?"}essai=${n + 1}`]);
+      if (src?.setTiles && courante) src.setTiles([`${courante}${courante.includes("?") ? "&" : "?"}essai=${n + 1}`]);
     }, 2500 * (n + 1));
   }
   function sourceTerrain(id: string, adresse: string | null, creer: (adresse: string) => void) {
@@ -415,7 +416,20 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     if (t?.profil && t.profil.length >= 2) reperes.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: t.profil.map((p) => [...p]) } });
     if (t?.repere) reperes.push({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [...t.repere] } });
     (carte.getSource("gd-terrain-repere") as GeoJSONSource).setData({ type: "FeatureCollection", features: reperes });
+    // Altitude au point (TER-09) : une bulle à l'endroit touché, comme sur une carte ordinaire.
+    const b = t?.bulle ?? null;
+    if (!b) { bulleTerrain?.remove(); bulleTerrain = null; }
+    else {
+      bulleTerrain ??= new Popup({ closeButton: false, closeOnClick: false, className: "gd-terrain-bulle", offset: 10 });
+      const el = document.createElement("span");
+      el.dataset["gdTerrainBulle"] = "";
+      el.setAttribute("translate", /^[\d\s.,]+ m$/.test(b.texte) ? "no" : "yes");
+      el.textContent = b.texte;
+      bulleTerrain.setLngLat([b.lon, b.lat]).setDOMContent(el);
+      if (!bulleTerrain.isOpen()) bulleTerrain.addTo(carte);
+    }
   }
+  let bulleTerrain: Popup | null = null;
 
   const posees = () => {
     if (carte.getLayer("gd-zones-remplissage")) return;

@@ -9,6 +9,8 @@
  *
  * `phase` : libellé de la mesure (« froid », « cache-disque », « cache-memoire »…), repris dans la sortie JSON.
  */
+import { randomBytes } from "node:crypto";
+
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const PHASE = process.argv[2] ?? "mesure";
 const ZONES = [
@@ -30,7 +32,7 @@ async function appeler(chemin, init = {}) {
 
 async function connecter() {
   const email = `mesure-terrain-${Date.now().toString(36)}@example.test`;
-  const r = await fetch(`${BASE}/auth/register`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: "mesure-terrain-123456" }) });
+  const r = await fetch(`${BASE}/auth/register`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: randomBytes(18).toString("base64url") }) });
   cookie = (r.headers.getSetCookie?.() ?? []).map((c) => c.split(";")[0]).join("; ");
   if (r.status !== 201) throw new Error(`inscription : HTTP ${r.status}`);
 }

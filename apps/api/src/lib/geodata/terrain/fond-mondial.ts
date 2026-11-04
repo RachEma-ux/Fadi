@@ -12,7 +12,7 @@
 import { fromCustomClient, type GeoTIFF } from "geotiff";
 import {
   couleurContinue, courbesDeNiveau, dallesEmprise, empriseDalle, EQUIDISTANCES, espacementMetrique, LIMITES_FOND_MONDIAL, latitudeMercator, memeSource, nomDalle, ombrage,
-  PALETTE_ALTITUDE, PALETTE_PENTE, pente, sansValeur, statistiquesZone, verifierEquidistance, type AcquisitionDistante, type EpinglageDistant, type StatistiquesZone,
+  PALETTE_ALTITUDE, PALETTE_PENTE, pente, sansValeur, statistiquesZone, verifierEquidistance, zoomMinimalTuiles, type AcquisitionDistante, type EpinglageDistant, type StatistiquesZone,
 } from "@parcours/geodata-model";
 import { adresseServiceDistant, ClientServiceDistant, ErreurDistante, TAILLE_BLOC } from "./distant.js";
 import { georef, lireFenetreTuilee, ServiceRefuse, valeursDansTiff, type Executeur, type SourceTerrain } from "./services.js";
@@ -215,7 +215,7 @@ async function fenetres(ex: Executeur, s: SourceTerrain, e: readonly [number, nu
  * viennent de la grille numérique (ou de ses aperçus pour l'affichage) ; pente et ombrage calculés sur la fenêtre lue.
  */
 export async function tuileDistante(ex: Executeur, s: SourceTerrain, style: "altitude" | "pente" | "ombrage", z: number, _x: number, y: number, lonLat: (px: number, py: number) => [number, number], plage: [number, number]): Promise<Uint8Array | null> {
-  if (z < LIMITES_FOND_MONDIAL.zoomMinTuiles) return null;
+  if (z < zoomMinimalTuiles(acq(s))) return null;
   const [o, n] = lonLat(0, 0);
   const [e, sud] = lonLat(256, 256);
   const pasDeg = (e - o) / 256;
@@ -275,4 +275,17 @@ export async function courbesDistantes(ex: Executeur, s: SourceTerrain, z: numbe
     }
   }
   return sortie;
+}
+
+/**
+ * Plage d'altitude d'une emprise (légende adaptée à la vue, TER-09) : min et max lus sur l'aperçu dont le pas reste
+ * proche de celui d'un écran (≈ 512 cellules de large) ; portée « vue courante », pour la couleur seulement (jamais une
+ * statistique de la zone). null si aucune valeur.
+ */
+export async function plageDistanteEmprise(ex: Executeur, s: SourceTerrain, e: readonly [number, number, number, number]): Promise<[number, number] | null> {
+  let min = Infinity, max = -Infinity;
+  for (const f of await fenetres(ex, s, e, (e[2] - e[0]) / 512, 0, 9)) {
+    for (let i = 0; i < f.valeurs.length; i++) { const v = f.valeurs[i]!; if (sansValeur(v, s.nodata)) continue; if (v < min) min = v; if (v > max) max = v; }
+  }
+  return Number.isFinite(min) ? [min, max] : null;
 }

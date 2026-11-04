@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProfilRecu, SourceTerrainRecue } from "./client";
 import {
   decimalesPour, empriseGeometrie, jeuPourVue, messageCouverture, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, lignesSource, longueurApprochee, nombreFr,
-  pasProfil, porteeLegende, precisionSupportee, texteReference, traceProfil,
+  pasProfil, porteeLegende, precisionSupportee, resumeSource, texteReference, traceProfil,
 } from "./terrain-ops";
 
 /** Source « test seulement » : aucune donnée réelle. */
@@ -33,12 +33,17 @@ describe("terrain : précision et arrondi (TER-05)", () => {
   });
   it("sources et précision : chaque rubrique présente, valeurs absentes dites", () => {
     const l = new Map(lignesSource(source()));
-    expect(l.get("Qualité mesurée")).toBe("non évaluée");
-    expect(l.get("Précision déclarée")).toBe("non déclarée");
+    // Une seule ligne de précision, jamais « non évaluée » répété (TER-09).
+    expect(l.get("Précision")).toBe("non évaluée (aucun point de contrôle)");
+    expect([...l.values()].filter((v) => /non évaluée/.test(v)).length).toBe(1);
+    expect(l.has("Contrôle")).toBe(false);
     expect(l.get("Date des données")).toBe("non déclarée");
     expect(l.get("Référence verticale")).toBe("LN02 (EPSG:5728)");
     expect(l.get("Attribution")).toBe("Fixture de test Fadi");
-    expect(new Map(lignesSource(source({ qualite: { etat: "conforme", rmsez: 0.081, p95: 0.152, n: 40 } }))).get("Qualité mesurée")).toBe("RMSEz 0,081 m · P95 0,152 m · 40 points");
+    const mesure = new Map(lignesSource(source({ qualite: { etat: "conforme", rmsez: 0.081, p95: 0.152, n: 40 } })));
+    expect(mesure.get("Précision mesurée")).toBe("RMSEz 0,081 m · P95 0,152 m · 40 points");
+    expect(mesure.get("Contrôle")).toBe("conforme aux cibles");
+    expect(new Map(lignesSource(source({ precisionDeclaree: { texte: "LE90 < 4 m", verticaleM: 4, source: "x" } }))).get("Précision du producteur")).toBe("LE90 < 4 m");
   });
 });
 
@@ -120,6 +125,11 @@ describe("terrain : fond mondial à la demande (TER-09)", () => {
     const l = lignesSource(source({ doi: "10.5281/zenodo.18887460", acces: "a-la-demande" }));
     expect(l).toContainEqual(["DOI", "10.5281/zenodo.18887460"]);
     expect(l).toContainEqual(["Accès", "fond mondial lu à la demande (emprise affichée seulement)"]);
-    expect(l.map((x) => x[0])).toEqual(expect.arrayContaining(["Jeu", "Pas de la grille", "Référence verticale", "Qualité mesurée", "Attribution", "Licence"]));
+    expect(l.map((x) => x[0])).toEqual(expect.arrayContaining(["Jeu", "Pas de la grille", "Référence verticale", "Précision", "Attribution", "Licence"]));
+  });
+  it("résumé d'une ligne : nom court, pas, précision lisible", () => {
+    expect(resumeSource(source({ titre: "GEDTM30 v1.2 — MNT, fond mondial lu à la demande", niveau: "mondial", pas: { metres: 30.9, declare: { valeur: 1, unite: "arcsec" } } }))).toBe("GEDTM30 v1.2 · 31 m · précision de plusieurs mètres");
+    expect(resumeSource(source({ qualite: { etat: "conforme", rmsez: 0.08, p95: 0.15, n: 40 } }))).toBe("Jeu synthétique · 0,25 m · précision mesurée 0,08 m");
+    expect(resumeSource(source())).toBe("Jeu synthétique · 0,25 m · précision non évaluée");
   });
 });

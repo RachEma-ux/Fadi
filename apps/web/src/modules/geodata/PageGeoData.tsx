@@ -437,7 +437,7 @@ export function PageGeoData() {
   }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese, versionEmprise]);
   // Terrain (TER-09, « comme une carte normale ») : le jeu affiché suit le centre de la vue (levé local sur son emprise,
   // sinon fond mondial), tant qu'aucun jeu n'a été choisi à la main.
-  useEffect(() => { terrainRef.current.suivreVue(moteur.current?.emprise() ?? null); }, [composition.camera, versionEmprise]);
+  useEffect(() => { terrainRef.current.suivreVue(moteur.current?.emprise() ?? null, composition.camera.zoom); }, [composition.camera, versionEmprise]);
   const lignesSynthese = useMemo<LigneSynthese[]>(() => couchesSynthese.map((k) => {
     const titre = couchesConnues.get(k.coucheId)?.titre ?? k.coucheId;
     const v = vues.get(k.coucheId);

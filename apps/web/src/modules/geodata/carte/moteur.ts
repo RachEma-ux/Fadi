@@ -33,6 +33,8 @@ export interface AffichageTerrain {
    */
   readonly zoomMinimal?: number | null;
   readonly zoomMinimalCourbes?: number | null;
+  /** Bulle de l'altitude au point, à l'endroit touché (« 221 m », « indisponible »…), ou null. */
+  readonly bulle?: { readonly lon: number; readonly lat: number; readonly texte: string } | null;
 }
 
 /** Tuiles du terrain en cours de chargement, ou refusées (« indisponible », « chargement » trop long) après nouveaux essais. */

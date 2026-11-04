@@ -13,7 +13,7 @@
 import type { PoolClient } from "pg";
 import { fromFile, type GeoTIFF } from "geotiff";
 import {
-  couleurContinue, dateDeDonnees, LIMITES_FOND_MONDIAL, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
+  couleurContinue, dateDeDonnees, LIMITES_FOND_MONDIAL, zoomMinimalTuiles, espacementMetrique, lonLatTuile, ordonnerSources, PALETTE_ALTITUDE, PALETTE_PENTE, pasPixelTuile, pointsLigne,
   profil, sansValeur, statistiquesZone, valeurBilineaire, valeurCellule,
   type AcquisitionDistante, type DeclarationTerrain, type DroitsVersion, type EnTeteRaster, type EtatQualite, type ProduitTerrain, type Profil, type RapportQualite,
   type ReferenceVerticale, type SourceAltitude, type StatistiquesZone,
@@ -21,7 +21,7 @@ import {
 import { encoderPng, pngTransparent } from "../raster.js";
 import type { StockageTerrain } from "./stockage.js";
 import {
-  avecDelai, courbesDistantes, ErreurDistante, oublierDistants, plageDistante, statistiquesDistantes, tuileDistante, valeursDistantes,
+  avecDelai, courbesDistantes, ErreurDistante, oublierDistants, plageDistante, plageDistanteEmprise, statistiquesDistantes, tuileDistante, valeursDistantes,
 } from "./fond-mondial.js";
 
 export type Executeur = Pick<PoolClient, "query">;
@@ -427,12 +427,37 @@ export async function plageVersion(stockage: StockageTerrain | null, s: SourceTe
   return p;
 }
 
+/**
+ * Plage d'altitude d'une emprise WGS 84 pour la légende adaptée à la vue (TER-09) : lue sur l'aperçu le plus proche d'un
+ * écran (≈ 512 cellules de large), couleur seulement, portée « vue courante ». null si aucune valeur dans la vue.
+ */
+export async function plageEmprise(ex: Executeur, stockage: StockageTerrain | null, s: SourceTerrain, e: readonly [number, number, number, number]): Promise<[number, number] | null> {
+  const [o, sd, es, n] = [Math.max(e[0], s.emprise[0]), Math.max(e[1], s.emprise[1]), Math.min(e[2], s.emprise[2]), Math.min(e[3], s.emprise[3])];
+  if (!(es > o && n > sd)) return null;
+  if (s.distant) return avecDelai(plageDistanteEmprise(ex, s, [o, sd, es, n]), LIMITES_FOND_MONDIAL.delaiTuileMs).catch(versRefus);
+  if (!stockage || !s.altitude) throw new ServiceRefuse(503, "terrain_indisponible", "Aucun volume terrain configuré sur ce serveur.");
+  const coins = s.srid === 4326 ? [[o, sd], [es, sd], [es, n], [o, n]] as [number, number][] : await transformer(ex, [[o, sd], [es, sd], [es, n], [o, n]], 4326, s.srid);
+  const xs = coins.map((p) => p[0]);
+  const t = await ouvrir(stockage.chemin(s.altitude));
+  const cible = (Math.max(...xs) - Math.min(...xs)) / 512;
+  const nb = await t.getImageCount();
+  let niveau = 0;
+  for (let i = 1; i < nb; i++) { const gi = await georef(t, i); if (Math.abs(gi.rx) <= cible) niveau = i; }
+  const g = await georef(t, niveau);
+  const px = coins.map(([x, y]) => [(x - g.ox) / g.rx, (y - g.oy) / g.ry] as const);
+  const f = await lireFenetre(t, niveau, Math.min(...px.map((p) => p[0])), Math.min(...px.map((p) => p[1])), Math.max(...px.map((p) => p[0])), Math.max(...px.map((p) => p[1])), 4_000_000);
+  if (!f) return null;
+  let min = Infinity, max = -Infinity;
+  for (let i = 0; i < f.valeurs.length; i++) { const v = f.valeurs[i]!; if (sansValeur(v, s.nodata)) continue; if (v < min) min = v; if (v > max) max = v; }
+  return Number.isFinite(min) ? [min, max] : null;
+}
+
 /** Tuile PNG 256 × 256 (Web Mercator) d'une version : altitude (palette sans bleu), pente ou ombrage ; transparente hors couverture. */
 export async function tuileTerrain(ex: Executeur, stockage: StockageTerrain | null, s: SourceTerrain, style: StyleTuile, z: number, x: number, y: number, plage: [number, number] | null): Promise<Buffer> {
   const [o, n] = lonLatTuile(z, x, y, 0, 0);
   const [e, sud] = lonLatTuile(z, x, y, 256, 256);
   if (e < s.emprise[0] || o > s.emprise[2] || n < s.emprise[1] || sud > s.emprise[3]) return pngTransparent();
-  if (s.distant && z < LIMITES_FOND_MONDIAL.zoomMinTuiles) return pngTransparent();
+  if (s.distant && z < zoomMinimalTuiles(s.distant)) return pngTransparent();
   const lue = style === "altitude" && !plage ? await plageVersion(stockage, s, ex) : null;
   if (style === "altitude" && !plage && !lue) throw new ServiceRefuse(422, "plage_requise", "Plage d'altitude de la version non évaluée (source mondiale en dalles) : légende adaptée à la vue ou à une zone requise.");
   const plageEff = style === "altitude" ? (plage ?? lue)! : style === "pente" ? ([0, 45] as [number, number]) : ([1, 255] as [number, number]);

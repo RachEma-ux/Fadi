@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validerDeclarationTerrain, type AcquisitionDistante } from "./catalogue.js";
 import {
   adresseAutorisee, adresseDistante, blocsDePlage, CompteurBudget, dallesEmprise, empriseDalle, grilleMosaique, latitudeMercator, lireContentRange, lirePlage,
-  memeSource, nomDalle, planEviction, suitesContigues,
+  memeSource, nomDalle, planEviction, suitesContigues, zoomMinimalTuiles,
 } from "./distant.js";
 
 const GLO: AcquisitionDistante = {
@@ -110,6 +110,13 @@ describe("budget des requêtes distantes", () => {
     b.liberer();
     expect(b.reserver(300, 62_000)).toMatch(/par jour/);
     expect(b.etat(62_000)).toEqual({ enCours: 0, minute: 1, octetsJour: 900 });
+  });
+});
+
+describe("zoom minimal des tuiles", () => {
+  it("adresse unique avec aperçus : dès le zoom 3 ; dalles : dès le zoom 8", () => {
+    expect(zoomMinimalTuiles(GEDTM)).toBe(3);
+    expect(zoomMinimalTuiles(GLO)).toBe(8);
   });
 });
 

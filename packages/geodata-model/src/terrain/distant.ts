@@ -227,7 +227,10 @@ export const latitudeMercator = (yNorm: number) => (Math.atan(Math.sinh(Math.PI 
  * (elles seraient calculées sur un aperçu, pas sur la grille numérique).
  */
 export const LIMITES_FOND_MONDIAL = Object.freeze({
+  /** Source en dalles (GLO-30) : une tuile de carte lirait jusqu'à 9 dalles au zoom 8, des centaines plus bas. */
   zoomMinTuiles: 8,
+  /** Adresse unique avec aperçus (GEDTM30) : un aperçu basse résolution remplit la vue dès le zoom 3, puis 30 m. */
+  zoomMinTuilesFichier: 3,
   zoomMinCourbes: 12,
   /** Dalles distantes lues pour une seule requête (tuile, point, profil, statistiques). */
   dallesParRequete: 4,
@@ -238,3 +241,6 @@ export const LIMITES_FOND_MONDIAL = Object.freeze({
   delaiPointMs: 12_000,
   delaiCalculMs: 25_000,
 });
+
+/** Zoom minimal des tuiles d'une source distante : dès le zoom 3 pour une adresse unique (aperçus), 8 pour des dalles. */
+export const zoomMinimalTuiles = (a: Pick<AcquisitionDistante, "dalles">): number => (a.dalles === null ? LIMITES_FOND_MONDIAL.zoomMinTuilesFichier : LIMITES_FOND_MONDIAL.zoomMinTuiles);
