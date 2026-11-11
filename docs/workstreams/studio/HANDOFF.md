@@ -1,5 +1,16 @@
 # Reprise — Studio
 
+## Checkpoint 2026-11-11 (heure suisse 10:45) — Console : navigation de l'outil
+
+- Demande du maître d'ouvrage du 11 novembre 2026 : garder les barres d'outils verticales et les icônes, améliorer la
+  navigation de la Console d'après la maquette « Console Dessin ». Livré (Console seulement, hors téléphone) : recherche
+  d'outil en tête de la barre verticale, rail des panneaux à droite avec tiroir unique (Ctrl+Maj+1 à 9), repères sur le
+  canevas (contexte, outil actif). Détail : [ADR-STUDIO-CONSOLE-01](../../continuity/decisions/ADR-STUDIO-CONSOLE-01.md),
+  section « Navigation de l'outil ».
+- Preuves : `console/navigation-console.test.ts`, suites Vitest du web vertes, typecheck et build verts. Recette de bout en
+  bout sur l'API réelle non exécutée (base PostGIS absente de la session). Aucun statut du registre Studio changé.
+- Reprise : CI de la PR, puis acceptation du maître d'ouvrage.
+
 ## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
 
 - PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de

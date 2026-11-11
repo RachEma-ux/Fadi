@@ -14691,5 +14691,20 @@
 "non évaluée (aucun point de contrôle)": "not assessed (no checkpoint)",
 "Contours": "Contours",
 "Opacité : Contours": "Opacity: Contours",
-"Couverture disponible (limites)": "Available coverage (outlines)"
+"Couverture disponible (limites)": "Available coverage (outlines)",
+"Hors projet": "Outside any project",
+"modifications non enregistrées": "unsaved changes",
+"aucune modification": "no changes",
+"Panneaux": "Panels",
+"Fermer le panneau {0}": "Close the {0} panel",
+"{0} (indisponible dans la Console)": "{0} (unavailable in the Console)",
+"Ctrl+Maj+1": "Ctrl+Shift+1",
+"Ctrl+Maj+2": "Ctrl+Shift+2",
+"Ctrl+Maj+3": "Ctrl+Shift+3",
+"Ctrl+Maj+4": "Ctrl+Shift+4",
+"Ctrl+Maj+5": "Ctrl+Shift+5",
+"Ctrl+Maj+6": "Ctrl+Shift+6",
+"Ctrl+Maj+7": "Ctrl+Shift+7",
+"Ctrl+Maj+8": "Ctrl+Shift+8",
+"Ctrl+Maj+9": "Ctrl+Shift+9"
 }
