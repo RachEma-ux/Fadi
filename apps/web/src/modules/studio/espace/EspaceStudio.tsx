@@ -11,7 +11,7 @@
  *   échelle, planche affichée, commandes en attente, état d'enregistrement et de connexion.
  * - `PanneauLateral` : panneau repliable de la colonne de droite (propriétés, éléments, exigences, métré…).
  */
-import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { STUDIO_PHASES_WORKFLOW, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
@@ -181,9 +181,28 @@ export function BarreEtat(p: PropsBarreEtat) {
 }
 
 /** Panneau latéral repliable : un en-tête (bouton) et son contenu ; replié, seul l'en-tête reste. */
+/**
+ * Tiroir des panneaux (navigation de la Console, `console/navigation-console.tsx`) : quand il est fourni, chaque panneau
+ * latéral n'est montré que s'il est le panneau choisi dans le rail ; les autres restent montés, masqués (leur état est
+ * conservé). Son en-tête nomme le panneau et le referme, au lieu de le replier.
+ */
+export interface TiroirPanneaux { actif: string | null; fermer: () => void }
+export const ContexteTiroirPanneaux = createContext<TiroirPanneaux | null>(null);
+
 export function PanneauLateral({ id, titre, ouvertInitial = true, children }: { id: string; titre: string; ouvertInitial?: boolean; children: ReactNode }) {
   const [ouvert, setOuvert] = useState(ouvertInitial);
+  const tiroir = useContext(ContexteTiroirPanneaux);
   const corps = `studio-panneau-${id}`;
+  if (tiroir) {
+    const montre = tiroir.actif === id;
+    return <section className="studio-panneau studio-panneau-tiroir" data-studio-panneau={id} data-studio-panneau-ouvert={montre ? "" : undefined} aria-label={titre} hidden={!montre}>
+      <div className="studio-panneau-tiroir-tete">
+        <h3>{titre}</h3>
+        <button type="button" aria-label={`Fermer le panneau ${titre}`} title={`Fermer le panneau ${titre}`} onClick={tiroir.fermer} data-studio-tiroir-fermer={id}><span aria-hidden="true">✕</span></button>
+      </div>
+      <div id={corps} className="studio-panneau-corps">{children}</div>
+    </section>;
+  }
   return <section className="studio-panneau" data-studio-panneau={id} data-studio-panneau-ouvert={ouvert ? "" : undefined} aria-label={titre}>
     <button type="button" className="studio-panneau-tete" aria-expanded={ouvert} aria-controls={corps} onClick={() => setOuvert((o) => !o)} data-studio-panneau-bascule={id}>
       <Icon name="chevron-down" size={14} /><span>{titre}</span>

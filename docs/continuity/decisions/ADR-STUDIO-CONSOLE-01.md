@@ -43,6 +43,32 @@ Demande du maître d'ouvrage du 20 octobre 2026 : « cloner la Planche de l'éta
 
 Le bouton Enregistrer devient « Enregistrer dans un projet » dès qu'il y a des commandes. Le dialogue (`console/DialogueEnregistrerConsole.tsx`) demande un projet (rôle « lecteur » exclu) et un nom d'étude, puis `console/transfert.ts` **crée une étude neuve** et lui envoie les commandes de la Console par enveloppes de 500, chacune sur la révision de la précédente, puis ouvre la variante créée. Jamais dans une étude existante. Le plan d'envoi garde ses `requestId` : après un échec la reprise rejoue les mêmes demandes, sans recréer l'étude ni dupliquer un lot. La Console reste non liée : elle n'est pas rattachée au projet après l'enregistrement.
 
+## Navigation de l'outil (11 novembre 2026)
+
+Demande du maître d'ouvrage du 11 novembre 2026 : « garder les barres verticales d'outils comme dans SketchUp ; garder le
+dessin des icônes ; s'inspirer de la maquette « Console Dessin » pour améliorer la navigation ». Livré dans
+`console/navigation-console.tsx`, **seulement dans la Console** (mode `autonome`) et hors téléphone ; l'espace d'une
+variante de projet et l'affichage téléphone ne changent pas.
+
+- **Barres verticales et icônes inchangées** : la palette d'outils reste la colonne verticale de `BarreOutils` (mêmes
+  familles, mêmes icônes, mêmes raccourcis). Elle gagne en tête un bouton « Rechercher un outil » (icône de recherche
+  existante) qui ouvre la palette de commandes (Ctrl+K).
+- **Rail des panneaux** (à droite, vertical, comme le plateau de panneaux d'un logiciel de modélisation) : un bouton
+  d'icône par panneau du domaine affiché (Propriétés, Planche 3D en 3D, Éléments ; Propriétés et exigences ; Scènes ;
+  Publications, Historique, Quantités). Un clic ouvre le panneau dans un **tiroir unique** de 300 px, un second clic ou ✕
+  le referme ; le premier panneau du domaine est ouvert par défaut, le choix est retenu par domaine. Raccourcis
+  **Ctrl+Maj+1 à Ctrl+Maj+9** (Cmd sur Mac ; Alt+Maj+chiffre appartient aux commandes de collaboration) ; flèches haut /
+  bas, Début, Fin dans le rail. Les panneaux d'étude restent listés, grisés, avec « indisponible dans la Console ». Les
+  panneaux masqués restent montés (leur état est conservé). Icônes prises dans le jeu existant (`ICONES_PANNEAUX`).
+- **Repères sur le canevas** (ils ne captent aucun clic) : en haut à gauche, la pastille de contexte « Hors projet ·
+  planche · Repère local · m · état » ; en bas au centre, l'outil actif, son aide et son raccourci (doublon visuel de la
+  barre d'état, masqué des lecteurs d'écran : la barre d'état reste la source annoncée).
+- Textes français dans le code, traductions dans `en.json`.
+- Preuves : `console/navigation-console.test.ts` (rail, panneau par défaut, raccourcis hors table clavier de Studio, rendu
+  du rail, de la recherche, des repères et du tiroir), suites Vitest du web, `npm run typecheck`, `npm run build`. Rendu
+  contrôlé dans Chromium (bureau 1440 × 900 en 2D, double vue et domaine BIM ; téléphone 390 × 844 inchangé) avec une API
+  simulée ; **non vérifié** : recette de bout en bout sur l'API réelle (base PostGIS indisponible dans la session).
+
 ## Écart assumé
 
 NAV-003 interdit un projet fictif et une géométrie sans variante. La Console n'en crée aucun : le document est tenu dans la page, jamais envoyé au serveur, jamais rattaché à un projet. Ce qui est dessiné est perdu à la fermeture de la page. Les identifiants `console` du contexte local ne quittent pas le navigateur.

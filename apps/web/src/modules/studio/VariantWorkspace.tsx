@@ -123,7 +123,8 @@ import {
 } from "./domaines/domaines";
 import { LienPublications, NavigationDomaines, SectionDomaine, SelecteurPlanche, useEcranTelephone } from "./domaines/DomainesStudio";
 import type { ElementBarre, IdFamille } from "./planche2d/barre-compacte";
-import { ActionsEspace, BarreEtat, PanneauLateral } from "./espace/EspaceStudio";
+import { ActionsEspace, BarreEtat, ContexteTiroirPanneaux, PanneauLateral } from "./espace/EspaceStudio";
+import { panneauActif, panneauxDuRail, RailPanneaux, RechercheOutil, ReperesCanevas } from "./console/navigation-console";
 import { memoriserContexte } from "./accueil/dernier-contexte";
 import "./studio.css";
 import "./planche2d/planche2d.css";
@@ -269,6 +270,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [hoteVisualisation, setHoteVisualisation] = useState<HTMLElement | null>(null);
   // Colonne des panneaux latéraux : repliable (bureau) ; au téléphone, les panneaux passent sous l'écran de travail.
   const [panneauxOuverts, setPanneauxOuverts] = useState(true);
+  /** Console : panneau choisi dans le rail, par domaine (`null` = tiroir fermé ; absent = premier panneau du domaine). */
+  const [choixTiroir, setChoixTiroir] = useState<Partial<Record<DomaineStudio, string | null>>>({});
   // Vue par niveau (lot W3-B) : la planche et la vue 3D montrent les objets d'un niveau ; les commandes visent le document entier.
   const [vueNiveau, setVueNiveau] = useState<ChoixVueNiveau>(null);
   const [masquerLibres, setMasquerLibres] = useState(false);
@@ -867,7 +870,16 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const domaine01 = definitionDomaine(domaineActif);
   const libelleSave = uncertain ? { enregistrer: "Réessayer la sauvegarde" } : autonome ? { enregistrer: "Enregistrer dans un projet" } : undefined;
   /** Palette d'outils du domaine affiché : verticale à gauche du canevas ; au téléphone, barre inférieure défilante. */
-  const palette = context && drawing ? <div className="studio-palette" data-studio-palette-outils={domaineActif}>
+  // Console (hors téléphone) : navigation resserrée autour des barres verticales (`console/navigation-console.tsx`).
+  const navConsole = autonome && !telephone;
+  const rail = navConsole ? panneauxDuRail(domaineActif, {
+    vue3d, titres: TITRES_PANNEAUX, indisponibles: PANNEAUX_D_ETUDE,
+    panneaux: panneauxDuDomaine(domaineActif).filter((f) => f !== "commentaires-observations" || commentaires),
+  }) : [];
+  const tiroirActif = navConsole ? panneauActif(rail, choixTiroir[domaineActif]) : null;
+  const choisirTiroir = (id: string | null) => setChoixTiroir((c) => ({ ...c, [domaineActif]: id }));
+  const palette = context && drawing ? <div className="studio-palette" data-studio-palette-outils={domaineActif} data-studio-palette-console={navConsole ? "" : undefined}>
+    {navConsole && <RechercheOutil surOuvrir={() => executer({ type: "commande", id: "palette" }, true)} />}
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={libelleSave}
       basculeActive={basculeActive} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien}
       filtre={FILTRES_PALETTE[domaineActif]} prioritaires={PRIORITES_PALETTE[domaineActif]} orientation={telephone ? "horizontale" : "verticale"} libelle={domaineActif === "dessin" ? "Outils de dessin" : `Outils — ${domaine01.libelleFR}`} />
@@ -905,6 +917,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         superposition={enDirect ? <Superposition2D doc={drawing} cadre={cadre} pointeurs={pointeursFrais(tr.etat, Date.now())} selections={tr.etat.selections} noms={nomsSession} /> : undefined}
         moteur={moteur2d.moteur} />
       {moteur2d.verdict && <p className="studio-moteur-planche" role="status" data-studio-moteur-etat={moteur2d.moteur}>{texteMoteurPlanche(moteur2d)}</p>}
+      {navConsole && <ReperesCanevas planche={libelleModePlanche(affichage)} enAttente={commands.length} outil={toolEntry?.libelleFR ?? ""} raccourci={toolEntry?.raccourci ?? null} aide={hint} />}
     </div>}
     {vue3d && <div className="studio-canevas-3d" data-studio-vue-niveau-active={choixNiveau ?? ""}><Vue3D doc={docVue ?? drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
@@ -927,27 +940,37 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       {actif && !actif.visible && OUTILS_TRACE.has(tool) && <p className="studio-info">Le calque actif est masqué : ce que vous dessinez n’apparaîtra pas.</p>}
     </div>
   </div> : null;
+  /** Sections des panneaux de chaque domaine (colonne d'une variante, ou tiroir de la Console). */
+  function sectionsPanneaux(): ReactNode {
+    if (!context || !drawing) return null;
+    return DOMAINES_STUDIO.map((d) => <SectionDomaine key={d.id} id={d.id} actif={domaineActif === d.id}>
+      {d.id === "dessin" && <PanneauLateral id="proprietes" titre="Propriétés">
+        <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
+          surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
+          architecture={<><PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
+            contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />
+            {OUTILS_BATIMENT.has(tool) && <PanneauBatiment doc={drawing} outil={tool} modifiable={writable} contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })}
+              surCommandes={apply} surErreur={setError} vueNiveau={choixNiveau} surVueNiveau={setVueNiveau} masquerLibres={masquerLibres} surMasquerLibres={setMasquerLibres} />}</>}
+          formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !OUTILS_BATIMENT.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
+            values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
+            sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
+          calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} />
+      </PanneauLateral>}
+      {d.id === "dessin" && <div hidden={!vue3d}><PanneauLateral id="volume-3d" titre="Planche 3D"><div className="studio-hote-3d" ref={setHote3dDessin} data-studio-planche3d-panneaux /></PanneauLateral></div>}
+      {panneauxDuDomaine(d.id).filter((f) => f !== "commentaires-observations" || commentaires).map((f) => <PanneauLateral key={f} id={f} titre={TITRES_PANNEAUX[f] ?? f}>{bloc(f)}</PanneauLateral>)}
+    </SectionDomaine>);
+  }
   /** Panneaux latéraux du domaine affiché (les autres domaines restent montés, masqués). */
-  const panneaux = context && drawing ? <aside className="studio-panneaux" aria-label="Panneaux du domaine" data-studio-panneaux data-studio-panneaux-replies={panneauxOuverts ? undefined : ""}>
+  const panneaux = context && drawing ? navConsole ? <aside className="studio-panneaux studio-panneaux-console" aria-label="Panneaux du domaine" data-studio-panneaux data-studio-tiroir-ouvert={tiroirActif ? "" : undefined}>
+    <ContexteTiroirPanneaux.Provider value={{ actif: tiroirActif, fermer: () => choisirTiroir(null) }}>
+      <div className="studio-panneaux-corps studio-tiroir" hidden={!tiroirActif} data-studio-tiroir={tiroirActif ?? ""}>{sectionsPanneaux()}</div>
+    </ContexteTiroirPanneaux.Provider>
+    <RailPanneaux panneaux={rail} actif={tiroirActif} surChoix={choisirTiroir} />
+  </aside> : <aside className="studio-panneaux" aria-label="Panneaux du domaine" data-studio-panneaux data-studio-panneaux-replies={panneauxOuverts ? undefined : ""}>
     {!telephone && <button type="button" className="studio-panneaux-repli" aria-expanded={panneauxOuverts} onClick={() => setPanneauxOuverts(o => !o)} data-studio-replier-panneaux
       aria-label={panneauxOuverts ? "Replier les panneaux" : "Déplier les panneaux"} title={panneauxOuverts ? "Replier les panneaux" : "Déplier les panneaux"}><Icon name="chevron-right" size={16} /></button>}
     <div className="studio-panneaux-corps" hidden={!panneauxOuverts && !telephone}>
-      {DOMAINES_STUDIO.map((d) => <SectionDomaine key={d.id} id={d.id} actif={domaineActif === d.id}>
-        {d.id === "dessin" && <PanneauLateral id="proprietes" titre="Propriétés">
-          <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
-            surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-            architecture={<><PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
-              contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />
-              {OUTILS_BATIMENT.has(tool) && <PanneauBatiment doc={drawing} outil={tool} modifiable={writable} contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })}
-                surCommandes={apply} surErreur={setError} vueNiveau={choixNiveau} surVueNiveau={setVueNiveau} masquerLibres={masquerLibres} surMasquerLibres={setMasquerLibres} />}</>}
-            formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !OUTILS_BATIMENT.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
-              values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
-              sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
-            calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} />
-        </PanneauLateral>}
-        {d.id === "dessin" && <div hidden={!vue3d}><PanneauLateral id="volume-3d" titre="Planche 3D"><div className="studio-hote-3d" ref={setHote3dDessin} data-studio-planche3d-panneaux /></PanneauLateral></div>}
-        {panneauxDuDomaine(d.id).filter((f) => f !== "commentaires-observations" || commentaires).map((f) => <PanneauLateral key={f} id={f} titre={TITRES_PANNEAUX[f] ?? f}>{bloc(f)}</PanneauLateral>)}
-      </SectionDomaine>)}
+      {sectionsPanneaux()}
     </div>
   </aside> : null;
   const barreEtat = context && drawing ? <BarreEtat aide={hint} coordonnees={plan2d ? survol?.point ?? null : null} accrochages={accrochagesActifs} pas={pas} pasAffiche={pasAffiche}

@@ -114,3 +114,36 @@
   .studio-panneaux{width:auto;margin-top:8px}
   .studio-workflow-menu{right:auto;left:0}
 }
+
+/*
+ * Console (`console/navigation-console.tsx`) : recherche d'outil en tête de la barre verticale, repères sur le canevas,
+ * rail des panneaux à droite et tiroir d'un seul panneau. Bureau seulement (le téléphone garde sa disposition).
+ */
+.studio-palette[data-studio-palette-console]{flex-direction:column;gap:4px}
+.studio-palette[data-studio-palette-console]>.studio-tools{flex:1;height:auto}
+:is(.studio-shell,.studio-workspace) .studio-recherche-outil{flex:none;width:52px;min-height:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #d5e1e4;border-radius:10px;color:#2c4950}
+:is(.studio-shell,.studio-workspace) .studio-recherche-outil:hover{background:#edf5f3}
+.studio-workspace .studio-sheet{position:relative}
+.studio-reperes-contexte{position:absolute;left:10px;top:10px;z-index:2;display:flex;align-items:center;max-width:calc(100% - 20px);overflow:hidden;background:#fff;border:1px solid #d5e1e4;border-radius:8px;box-shadow:0 1px 3px #0d262c1f;font-size:11.5px;color:#4a5f66;pointer-events:none;white-space:nowrap}
+.studio-reperes-contexte>span{padding:5px 10px;border-right:1px solid #e3ecee}
+.studio-reperes-contexte>span:last-child{border-right:0}
+.studio-reperes-fort{font-weight:600;color:var(--studio-ink)}
+.studio-reperes-unite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.studio-reperes-etat>span{color:#9fb0b5}
+.studio-reperes-etat-modifie>span{color:#b8740f}
+.studio-reperes-outil{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:2;display:flex;align-items:center;gap:10px;max-width:min(640px,calc(100% - 24px));padding:6px 12px;background:#173f45;color:#fff;border-radius:8px;font-size:12px;pointer-events:none;white-space:nowrap;box-shadow:0 2px 8px #0d262c33}
+.studio-reperes-outil strong{font-weight:600;color:#bfe3dc}
+.studio-reperes-aide{min-width:0;overflow:hidden;text-overflow:ellipsis;color:#d9e6e8}
+.studio-reperes-outil kbd{flex:none;font-size:10.5px;border:1px solid #7fa1a8;border-radius:3px;padding:1px 5px;color:#fff;background:transparent}
+.studio-panneaux.studio-panneaux-console{width:auto;flex-direction:row;gap:6px}
+.studio-tiroir{width:300px;flex:none;gap:6px}
+.studio-tiroir[hidden]{display:none}
+.studio-panneau-tiroir[hidden]{display:none}
+.studio-panneau-tiroir-tete{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:40px;padding:0 6px 0 12px;border-bottom:1px solid #e3ecee;margin-bottom:8px}
+.studio-panneau-tiroir-tete h3{margin:0;font-size:13px;font-weight:600}
+:is(.studio-shell,.studio-workspace) .studio-panneau-tiroir-tete button{min-height:30px;width:30px;padding:0;display:flex;align-items:center;justify-content:center;border-color:transparent;background:transparent;color:#4a5f66}
+.studio-rail-panneaux{flex:none;width:52px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 5px;background:#fff;border:1px solid #d5e1e4;border-radius:10px;overflow-y:auto;scrollbar-width:none}
+:is(.studio-shell,.studio-workspace) .studio-rail-panneaux button{width:40px;height:40px;min-height:40px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+:is(.studio-shell,.studio-workspace) .studio-rail-panneaux button[aria-pressed=true]{background:#173f45;color:#fff;border-color:#173f45}
+:is(.studio-shell,.studio-workspace) .studio-rail-panneaux button[data-studio-rail-indisponible]:not([aria-pressed=true]){color:#9fb0b5}
+@media(max-width:900px){.studio-tiroir{width:260px}}
