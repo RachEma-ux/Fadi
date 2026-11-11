@@ -1,5 +1,14 @@
 # État — Studio
 
+## Checkpoint 2026-11-11 (heure suisse 10:45) — Console : navigation de l'outil
+
+- Implémenté (PR #394, Issue #393) : recherche d'outil en tête de la barre verticale, rail des panneaux et tiroir unique
+  (Ctrl+Maj+1 à 9), repères du canevas — Console seulement, hors téléphone ; barres verticales et icônes inchangées.
+  Décision consignée dans ADR-STUDIO-CONSOLE-01, section « Navigation de l'outil ».
+- Faits vérifiés : `console/navigation-console.test.ts` et suites Vitest du web verts, typecheck et build verts.
+- Points ouverts : recette de bout en bout sur l'API réelle non exécutée ; acceptation du maître d'ouvrage. Aucun statut
+  du registre Studio changé.
+
 ## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
 
 - PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de
