@@ -2390,7 +2390,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <ChoixPeripherique ui={ui} />
     </>
   );
-  const canevasBas = <span className="canevas-bas">{choix}</span>;
+  /**
+   * Ordinateur : langue et périphérique en icônes (globe, souris) à gauche de la barre d'état, comme SketchUp ; la liste
+   * native reste dessous, transparente, et s'ouvre au clic (clavier et lecteur d'écran inchangés).
+   */
+  const canevasBas = (
+    <span className="canevas-bas">
+      <span className="planche-choix-icone" title={t("bas.langue")} data-planche-choix="langue">
+        <IconeSandbox nom="langue" />
+        <ChoixLangue className="canevas-langue" />
+      </span>
+      <span className="planche-choix-icone" title={t("bas.peripherique")} data-planche-choix="peripherique">
+        <IconeSandbox nom="peripherique" />
+        <ChoixPeripherique ui={ui} />
+      </span>
+    </span>
+  );
   /** Flèches de direction : touches modificatrices (ordinateur tactile) ou panneau Instructeur (téléphone). */
   // Tirage d'arête (D-197) : au téléphone, les flèches (verrou d'axe, ↓ = allonger) entrent dans la barre de modificateurs
   // au lieu du seul panneau Instructeur, pour que le geste se fasse au doigt sans détour.
@@ -3250,8 +3265,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
       <footer className="planche-bas">
-        {/* Lot 4 : barre du bas comme SketchUp — aide, consigne de l'outil actif, champ Mesures à droite. */}
+        {/* Pied façon SketchUp : aide, langue et périphérique à gauche, puis la consigne, puis le contexte des repères. */}
         {!etroit && <span className="planche-bas-aide">{aideBouton}</span>}
+        {!etroit && canevasBas}
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
@@ -3284,7 +3300,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
           {volet ? t("planche.volet.moins") : t("planche.volet.plus")}
         </button>
-        {!etroit && canevasBas}
       </footer>
 
       {(outilId === "profile" || outilId === "profiles-aretes") && (

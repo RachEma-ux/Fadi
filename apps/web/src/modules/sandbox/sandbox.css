@@ -2965,3 +2965,140 @@
 .sandbox-planche .planche-reperes-details.est-alerte {
   color: #b54708;
 }
+
+/* Pied de page façon SketchUp (ordinateur, page et fenêtre détachée) : UNE bande pleine largeur collée au bord bas,
+   sans carte ni ombre — à gauche aide, langue (globe) et périphérique (souris) en icônes, puis la consigne, qui garde la
+   priorité de place ; le contexte des repères tient sur une ligne et se raccourcit le premier ; « Mesures » et son champ à
+   droite, dans la même bande (Entrée valide ; le bouton OK ne reste qu'au toucher). Les rangées flottantes (fil
+   d'édition, isolement, options d'outil, pièce) s'empilent au-dessus de la bande. Téléphone : volet inchangé. */
+@media (min-width: 761px) {
+  .sandbox-planche .planche-pied {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    row-gap: 0.4rem;
+    column-gap: 0;
+  }
+  .sandbox-planche .planche-pied > :not(.planche-bas):not(.planche-saisie) {
+    grid-column: 1 / -1;
+    justify-self: end;
+    margin: 0 calc(var(--colonne-l) + 1rem) 0 0.5rem;
+  }
+  .sandbox-planche .planche-pied > .planche-bas,
+  .sandbox-planche .planche-pied > .planche-saisie {
+    order: 1;
+    min-height: 32px;
+    margin: 0;
+    background: var(--flottant-fond);
+    border: 0;
+    border-top: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .sandbox-planche .planche-pied > .planche-bas {
+    grid-column: 1;
+    gap: 0.5rem;
+    padding: 0.1rem 0.4rem;
+  }
+  .sandbox-planche .planche-pied > .planche-saisie {
+    grid-column: 2;
+    flex-wrap: nowrap;
+    padding: 0.1rem 0.4rem 0.1rem 0;
+  }
+  .sandbox-planche .planche-bas .lien {
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+  }
+  .sandbox-planche .planche-bas .canevas-bas {
+    order: -1;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .sandbox-planche .planche-choix-icone {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    color: var(--atelier-encre);
+  }
+  .sandbox-planche .planche-choix-icone:hover {
+    background: color-mix(in srgb, var(--atelier-encre) 8%, transparent);
+  }
+  .sandbox-planche .planche-choix-icone:focus-within {
+    outline: 2px solid var(--atelier-accent);
+    outline-offset: 1px;
+  }
+  .sandbox-planche .planche-choix-icone > svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+  /* La liste native couvre l'icône, invisible : un clic l'ouvre, le clavier et le lecteur d'écran la trouvent. */
+  .sandbox-planche .planche-choix-icone > label {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+  .sandbox-planche .planche-choix-icone select {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .sandbox-planche .planche-bas .planche-etat {
+    flex: 1 1 auto;
+  }
+  .sandbox-planche .planche-bas .planche-reperes-etat {
+    flex: 0 1000 auto;
+    min-width: 4rem;
+    max-width: 22rem;
+    font-size: 0.75rem;
+    color: var(--atelier-doux);
+  }
+  .sandbox-planche .planche-bas .planche-reperes-etat > * {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .sandbox-planche .planche-pied .planche-mesures {
+    padding: 0 0 0 0.6rem;
+    background: none;
+    border: 0;
+    border-left: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .sandbox-planche .planche-pied .planche-mesures input {
+    width: 10rem;
+    min-height: 24px;
+    padding: 0.1rem 0.3rem;
+  }
+  .sandbox-planche .planche-pied .planche-ok {
+    display: none;
+  }
+  .sandbox-planche .planche.planche-tactile .planche-pied .planche-ok {
+    display: inline-block;
+    min-width: 36px;
+    min-height: 28px;
+  }
+  /* La colonne de droite s'arrête au-dessus de la bande (elle défile au lieu de la recouvrir). */
+  .sandbox-planche .planche-colonne {
+    max-height: calc(100% - var(--pied-h, 2.5rem) - 1rem);
+    overflow-y: auto;
+  }
+}
+@media (min-width: 761px) and (hover: none) and (pointer: coarse) {
+  .sandbox-planche .planche-pied .planche-ok {
+    display: inline-block;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
