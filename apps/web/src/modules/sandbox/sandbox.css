@@ -3066,9 +3066,10 @@
     min-width: 36px;
     min-height: 28px;
   }
-  /* La colonne de droite s'arrête au-dessus de la bande (elle défile au lieu de la recouvrir). */
+  /* La colonne de droite s'arrête au-dessus de la bande (elle défile au lieu de la recouvrir) : sa marge haute (alignée
+     sur la barre de gauche) est retirée aussi, sinon ses derniers boutons sortent de la Planche, rognés. */
   .sandbox-planche .planche-colonne {
-    max-height: calc(100% - var(--pied-h, 2.5rem) - 1rem);
+    max-height: calc(100% - var(--pied-h, 2.5rem) - (0.5rem + 2 * 54px + 0.85rem + 0.25rem + 36px - 1px) - 1rem);
     overflow-y: auto;
   }
 }
