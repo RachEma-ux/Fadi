@@ -65,7 +65,8 @@ async function disposition(page, contexte) {
   check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
   const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
   check(`${contexte} : colonne — chaque panneau à un clic (Repères compris, chantier Axes), Info modèle en bas`, colonne.length === 14 && colonne.includes("reperes") && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
-  check(`${contexte} : menu Planche (pictogramme seul) et loupe ; plus de barre du haut`, (await racine.locator(".planche > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator("[data-planche-recherche]").count() === 1) && (await racine.locator(".planche-haut").count()) === 0 && (await racine.locator("[data-planche-outils-bouton]").count()) === 0);
+  check(`${contexte} : menu Planche (pictogramme seul) et loupe ; plus de barre du haut`, (await racine.locator(".planche > [data-planche-bandeau] > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator("[data-planche-recherche]").count() === 1) && (await racine.locator(".planche-haut").count()) === 0 && (await racine.locator("[data-planche-outils-bouton]").count()) === 0);
+  await bandeau(page, racine, contexte);
   check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
   const curseur = await racine.locator("[data-planche-vue]").evaluate((v) => v.style.cursor);
   check(`${contexte} : curseur propre à l'outil (Sélection : flèche)`, curseur === "default", curseur);
@@ -95,6 +96,49 @@ async function disposition(page, contexte) {
     const titres = await racine.locator("[data-barre-actions] [data-planche-zoom]").evaluateAll((l) => l.map((b) => b.getAttribute("title") ?? ""));
     check("téléphone : zoom + / − portent leur raccourci", titres.length === 2 && /\(Alt\+Maj\+Y\)/.test(titres[0]) && /\(F8\)/.test(titres[1]), JSON.stringify(titres));
   }
+}
+
+/**
+ * Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon) : ordinateur — 48 px sombres collés en haut
+ * de la Planche, ☰ dans le carré gauche (non déplaçable), « Planche » et le nom ; la loupe juste dessous ; le menu
+ * s'ouvre sous le bandeau, contenu inchangé ; aucune barre flottante sur le bandeau. Téléphone — pas de bandeau, ☰ reste
+ * une carte flottante déplaçable.
+ */
+async function bandeau(page, racine, contexte) {
+  const m = await racine.evaluate((r) => {
+    const box = (sel) => { const e = r.querySelector(sel); if (!e) return null; const b = e.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right, w: b.width, h: b.height }; };
+    const bd = r.querySelector("[data-planche-bandeau]");
+    return {
+      planche: box(".planche"), bandeau: box("[data-planche-bandeau]"), bouton: box("[data-planche-menu-ouvrir]"), loupe: box("[data-planche-recherche]"), cadre: box("[data-planche-cadre]"),
+      actions: box("[data-barre-actions]"), affichage: getComputedStyle(bd).display, fond: getComputedStyle(bd).backgroundColor,
+      nom: r.querySelector("[data-planche-bandeau-nom]")?.textContent?.trim() ?? "", nomVisible: getComputedStyle(r.querySelector("[data-planche-bandeau-nom]")).display !== "none",
+      deplacable: r.querySelector("[data-planche-menu-principal]")?.getAttribute("data-planche-menu-deplacable"),
+    };
+  });
+  if (contexte === "téléphone") {
+    check("téléphone : pas de bandeau d'en-tête, ☰ reste une carte flottante déplaçable", m.affichage === "contents" && !m.nomVisible && m.deplacable === "true" && Math.abs(m.cadre.t - m.planche.t) <= 1, JSON.stringify({ a: m.affichage, d: m.deplacable }));
+    return;
+  }
+  check(`${contexte} : bandeau d'en-tête de 48 px, sombre (#161616), en haut de la Planche, pleine largeur`, Math.round(m.bandeau.h) === 48 && Math.abs(m.bandeau.t - m.planche.t) <= 1 && Math.abs(m.bandeau.w - m.planche.w) <= 1 && m.fond === "rgb(22, 22, 22)", JSON.stringify({ b: m.bandeau, f: m.fond }));
+  check(`${contexte} : ☰ dans le carré gauche du bandeau (48 × 48 px), non déplaçable`, Math.abs(m.bouton.l - m.planche.l) <= 1 && Math.abs(m.bouton.t - m.planche.t) <= 1 && Math.round(m.bouton.w) === 48 && m.bouton.h >= 46 && m.deplacable === "false", JSON.stringify(m.bouton));
+  check(`${contexte} : le bandeau porte « Planche » et le nom de la Planche`, /^Planche\s+\S/.test(m.nom) && m.nomVisible, m.nom);
+  check(`${contexte} : le dessin commence sous le bandeau ; la loupe remonte juste dessous`, Math.abs(m.cadre.t - m.bandeau.b) <= 1 && m.loupe.t >= m.bandeau.b && m.loupe.t - m.bandeau.b <= 16, JSON.stringify({ cadre: m.cadre.t, loupe: m.loupe.t, bandeau: m.bandeau.b }));
+  check(`${contexte} : la barre d'actions reste sous le bandeau`, !m.actions || m.actions.t >= m.bandeau.b, JSON.stringify(m.actions));
+  await racine.locator("[data-planche-menu-ouvrir]").click();
+  const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
+  check(`${contexte} : ☰ ouvre le menu sous le bandeau, contenu inchangé (onze entrées)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 11, JSON.stringify(liste));
+  // Les couleurs claires du bandeau ne fuient ni dans le menu ni dans la page Informations (rendus dans le bandeau).
+  const couleurMenu = await racine.locator(".planche-menu-liste [data-planche-menu-item='informations']").evaluate((e) => getComputedStyle(e).color);
+  await racine.locator("[data-planche-menu-item='informations']").click();
+  const info = page.locator("[data-planche-informations]");
+  await info.waitFor({ state: "visible", timeout: 5000 });
+  const couleurInfo = await info.evaluate((e) => getComputedStyle(e).color);
+  const clair = (c) => { const n = (c.match(/\d+/g) ?? []).slice(0, 3).map(Number); return n.length === 3 && n.every((x) => x > 200); };
+  check(`${contexte} : le menu et la page Informations gardent un texte foncé (rien n'hérite du bandeau sombre)`, !clair(couleurMenu) && !clair(couleurInfo), `${couleurMenu} · ${couleurInfo}`);
+  await page.keyboard.press("Escape");
+  await info.waitFor({ state: "hidden", timeout: 5000 }).catch(() => undefined);
+  if (await racine.locator(".planche-menu-liste").count()) await page.keyboard.press("Escape");
+  check(`${contexte} : Échap referme le menu`, (await racine.locator(".planche-menu-liste").count()) === 0);
 }
 
 /** Lot 6 : raccourcis harmonisés avec SketchUp — recherche Maj+S, Zoom étendu Maj+Z, Texte 3D Alt+Maj+Z, Diviser Maj+D. */

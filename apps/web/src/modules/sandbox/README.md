@@ -20,7 +20,7 @@ comportement ni d'apparence.
   (`npx tsx apps/web/scripts/generer-pictogrammes-sandbox.ts`) et ne contient que les icônes utilisées.
 - Disposition par défaut (lot 4, profil « Standard », proche de SketchUp) : barre gauche de seize outils dans l'ordre de
   SketchUp, grille « ⋯ » par famille, colonne de droite à un clic par panneau (Info modèle en bas, chevron à mi-hauteur
-  au survol), aucune barre du haut (Annuler / Rétablir au clavier : Ctrl + Z / Ctrl + Y), aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
+  au survol), aucune barre d'outils en haut (Annuler / Rétablir au clavier : Ctrl + Z / Ctrl + Y), aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
   dans la barre d'actions, curseur propre à chaque outil (`pictogrammes/curseur.ts`).
 - Pied de page façon SketchUp (24 novembre 2026, ordinateur : page et fenêtre détachée) : une seule bande blanche pleine
   largeur collée en bas, sans carte ni ombre ; à gauche les icônes aide, langue (globe) et périphérique (souris), dont la
@@ -36,11 +36,17 @@ comportement ni d'apparence.
 - `routes-sandbox.ts` — adresses : `/sandbox` et l'ancienne `/studio/console/sandbox`, qui y redirige.
 - `sandbox.css` (sous `.sandbox-planche`) et `page-sandbox.css` (sous `.sandbox-page`) — feuilles de style isolées.
 
-## Menu de la Planche
+## Bandeau d'en-tête et menu de la Planche
 
-Pictogramme ☰ seul (Tabler `menu-2`, MIT), carte flottante en haut à gauche de la Planche, sans barre du haut : un clic
-déroule le menu ; un appui maintenu 2 s le rend déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce
-navigateur ; Alt + flèches au clavier) ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
+- **Bandeau d'en-tête** (24 novembre 2026, ordinateur : page et fenêtre détachée) : à la manière de l'en-tête « UI Shell »
+  de Carbon, sans logo ni marque IBM et sans la bibliothèque Carbon (CSS propre au Sandbox, `.planche-bandeau`) — 48 px
+  gris très foncé (`#161616`) en haut de la Planche ; ☰ occupe le carré gauche (48 × 48), puis « **Planche** » et le nom
+  de la Planche ouverte. Le dessin et tout ce qui flotte dessus vivent dans la zone « vue », sous le bandeau ; les barres
+  flottantes se placent par défaut sous lui (`planche/zone-dessin.ts`). Aucune autre commande dans le bandeau.
+- **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
+  déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
+
+Pictogramme ☰ seul (Tabler `menu-2`, MIT) : un clic déroule le menu, sous le bandeau à l'ordinateur ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
 Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,
 Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Télécharger la vue (PNG).
 

@@ -17,6 +17,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { IconeInterface } from "../pictogrammes/interface";
 import { useNavigationBarre } from "../navigation-barre";
 import { borner, largeurMaximale, pasClavier, positionParDefautHaut, retirerGauche, type Position, type Taille, type Zone } from "./barre-actions-position";
+import { rectZoneDessin } from "../planche/zone-dessin";
 
 export interface ActionBarre {
   id: string;
@@ -97,7 +98,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     let taille = tailleDe(el);
     const fenetre = zoneDe(el);
     const ref = reference?.current;
-    const r = ref?.getBoundingClientRect();
+    const r = ref ? rectZoneDessin(ref) : undefined;
     let zone: Zone = fenetre;
     let reduite: Zone = fenetre;
     if (ref && r && r.width > 0 && r.height > 0) {
