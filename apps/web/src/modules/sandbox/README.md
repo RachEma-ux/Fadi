@@ -46,7 +46,7 @@ comportement ni d'apparence.
 - **Barre d'actions dans le bandeau** (24 novembre 2026, ordinateur, `panneaux/ActionsBandeau.tsx`) : la barre flottante
   du milieu disparaît ; ses commandes passent au centre du bandeau, en trois groupes — Cadrer (zoom − / + au toucher) |
   Grouper, Composant, Éclater, Unique | Diviser, Diviser la courbe, Isoler selon la sélection. États grisés et infobulles
-  inchangés, Isoler enfoncé pendant l'isolement ; sous 1180 px de large, icônes seules (nom en infobulle). À droite :
+  inchangés, Isoler enfoncé pendant l'isolement ; sous 1180 px de large et à la souris, icônes seules (nom en infobulle ; au toucher, le nom reste visible). Le choix bandeau / barre flottante suit la largeur de la fenêtre qui porte la Planche (fenêtre détachée comprise). À droite :
   « Détacher » dans la page ; dans la fenêtre détachée, plus de « Rattacher » : ✕ « Fermer et rattacher ». Position
   mémorisée, poignée et masquage de l'ancienne barre ne s'appliquent plus à l'ordinateur. Téléphone : barre flottante
   inchangée.

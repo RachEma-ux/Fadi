@@ -207,6 +207,12 @@ async function fenetreDetachee(page, context) {
   check("fenêtre détachée : barre d'actions au centre du bandeau, plus de barre flottante", m.actions[0] === "cadrer" && m.actions.length === 5 && m.flottantes === 0, JSON.stringify(m));
   check("fenêtre détachée : plus de « Rattacher » ; ✕ « Fermer et rattacher » à droite", m.fermer === "Fermer et rattacher" && !m.rattacher, JSON.stringify(m));
   await w.screenshot({ path: join(OUT, "sandbox-fenetre-detachee.png") });
+  // Fenêtre détachée rétrécie au format téléphone : la barre flottante y revient (commandes jamais perdues).
+  await w.setViewportSize({ width: 700, height: 700 });
+  await w.locator(".barre-actions [data-planche-cadrer]").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  check("fenêtre détachée étroite : la barre flottante reprend les commandes", (await w.locator(".barre-actions [data-planche-cadrer]").isVisible()) && (await w.locator(".barre-actions [data-planche-detacher]").isVisible()));
+  await w.setViewportSize({ width: taille.l, height: taille.h });
+  await w.locator("[data-planche-fermer-rattacher]").waitFor({ state: "visible", timeout: 5000 });
   await w.locator("[data-planche-fermer-rattacher]").click();
   await racine.locator("[data-planche-bandeau-droite] [data-planche-detacher]").waitFor({ state: "visible", timeout: 10000 });
   check("fenêtre détachée : ✕ ferme la fenêtre et rattache la Planche", w.isClosed() && (await racine.locator("[data-planche-detache-carte]").count()) === 0);

@@ -376,6 +376,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  const etroitRef = useRef(etroit);
+  etroitRef.current = etroit;
   // Écran tactile dès l'ouverture (un pointeur grossier, même secondaire, ou des points de contact) : les boutons zoom + / −
   // sont visibles sans attendre un premier toucher, y compris sur un portable à écran tactile piloté à la souris.
   const [pointeurGrossier] = useState(() => typeof window !== "undefined" && (window.matchMedia("(any-pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0));
@@ -1584,15 +1586,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 760px)");
+    // Largeur de la fenêtre qui porte la Planche (page, ou fenêtre détachée redimensionnée) : barre d'actions du bandeau
+    // ou barre flottante selon ELLE, jamais selon la page restée derrière.
+    const hote = racineRef.current?.ownerDocument.defaultView ?? window;
+    const mq = hote.matchMedia("(max-width: 760px)");
     // En passant au format téléphone (rotation, fenêtre rétrécie), la colonne se replie aussi en icônes.
     const maj = () => {
       setEtroit(mq.matches);
       if (mq.matches) setColonneRepliee(true);
     };
+    if (mq.matches !== etroitRef.current) maj();
     mq.addEventListener("change", maj);
     return () => mq.removeEventListener("change", maj);
-  }, []);
+  }, [detache]);
 
   // --- Vue three.js : créée une fois, détruite au démontage.
   useEffect(() => {

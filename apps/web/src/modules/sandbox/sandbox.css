@@ -3304,7 +3304,8 @@
     height: 20px;
   }
 }
-@media (min-width: 761px) and (max-width: 1180px) {
+/* Icônes seules seulement à la souris : au toucher, chaque bouton garde son nom visible (AGENTS.md). */
+@media (min-width: 761px) and (max-width: 1180px) and (hover: hover) and (pointer: fine) {
   .sandbox-planche .planche-bandeau-actions .barre-actions-texte {
     display: none;
   }
