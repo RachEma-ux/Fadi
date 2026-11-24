@@ -40,6 +40,9 @@ export const ICONES_INTERFACE = {
   menuImage: "photo-down",
   menuRetour: "arrow-left",
   menuHistorique: "history",
+  // Barre d'état (pied de page façon SketchUp) : langue et périphérique en icônes, la liste s'ouvre au clic.
+  langue: "world",
+  peripherique: "mouse",
 } as const;
 
 export type IconeInterface = keyof typeof ICONES_INTERFACE;

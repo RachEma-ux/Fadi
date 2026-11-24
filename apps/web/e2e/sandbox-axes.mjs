@@ -93,7 +93,9 @@ async function outils(page) {
   return { cliquer, survoler, touche, saisir };
 }
 
-const ligneEtat = (page) => page.locator("[data-reperes-etat] button").innerText();
+// Le contexte de travail n'est plus affiché dans le pied (pied façon SketchUp, 24 novembre 2026) : il reste annoncé au
+// lecteur d'écran par la zone vivante masquée `[data-reperes-etat]`, que la recette lit.
+const ligneEtat = (page) => page.locator("[data-reperes-etat]").textContent();
 
 try {
   // ———————————————————————————————————————————————————————————— Ordinateur
@@ -108,6 +110,18 @@ try {
 
   let e = await etat(page);
   check("ligne d'état au départ : repère du modèle, plan XY du modèle, portée Modèle, unité m", /Repère : Modèle · Plan : XY du modèle · Portée : Modèle · Unité : m/.test(await ligneEtat(page)), await ligneEtat(page));
+  {
+    // Pied façon SketchUp (24 novembre 2026) : la ligne n'est plus visible ; seule reste la zone annoncée au lecteur d'écran (1 px).
+    const pied = await page.evaluate(() => {
+      const annonce = document.querySelector("[data-reperes-etat]")?.getBoundingClientRect();
+      const visibles = [...document.querySelectorAll(".planche-bas *")].filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 2 && r.height > 2 && [...el.childNodes].some((n) => n.nodeType === 3 && /Repère :/.test(n.textContent ?? ""));
+      }).length;
+      return { visibles, annonce: annonce ? annonce.width <= 1 && annonce.height <= 1 : false };
+    });
+    check("pied façon SketchUp : la ligne Repère · Plan · Portée · Unité n'est plus affichée, seulement annoncée au lecteur d'écran", pied.visibles === 0 && pied.annonce, JSON.stringify(pied));
+  }
 
   // Une face de référence (rectangle de 2 m × 1 m au sol) : elle ne doit jamais bouger.
   await touche("r");
