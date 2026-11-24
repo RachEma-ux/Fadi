@@ -456,6 +456,60 @@ try {
   surSandbox = false;
   await large.context.close();
 
+  // 8. Planche détachée au téléphone (demande du 24 novembre 2026) : plein écran, mise en page large (bandeau, barre de
+  // gauche, colonne avec libellés, bande du bas) réduite à l'écran ; aucun composant ne manque, rien ne déborde.
+  for (const [nom, viewport] of [["téléphone détaché", { width: 412, height: 915 }], ["téléphone détaché couché", { width: 915, height: 412 }]]) {
+    const d = await nouvellePage(viewport, { hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+    await inscrire(d.page);
+    surSandbox = true;
+    await d.page.goto(`${BASE}/sandbox`);
+    await plancheChargee(d.page, nom);
+    const rd = d.page.locator("[data-sandbox-page] [data-sandbox-planche]");
+    await rd.locator("[data-planche-detacher]").first().tap();
+    await d.page.locator("[data-planche-ecran-large]").waitFor({ state: "attached" });
+    await d.page.waitForTimeout(800);
+    const plein = await d.page.evaluate(() => document.fullscreenElement?.hasAttribute("data-planche-ecran-large") ?? false);
+    check(`${nom} : plein écran sur le cadre de la Planche`, plein);
+    const doc = d.page.frameLocator("[data-planche-ecran-large-document]");
+    const mesure = await d.page.evaluate(() => {
+      const iframe = document.querySelector("[data-planche-ecran-large-document]");
+      const b = iframe.getBoundingClientRect();
+      const w = iframe.contentWindow;
+      const r = w.document.querySelector("[data-planche]");
+      const dedans = (sel) => [...r.querySelectorAll(sel)].every((e) => {
+        const x = e.getBoundingClientRect();
+        return x.width > 0 && x.left >= -1 && x.top >= -1 && x.right <= w.innerWidth + 1 && x.bottom <= w.innerHeight + 1;
+      });
+      return {
+        ecran: [innerWidth, innerHeight], cadre: [Math.round(b.width), Math.round(b.height)], large: !w.matchMedia("(max-width: 760px)").matches,
+        deborde: w.document.documentElement.scrollWidth > w.innerWidth + 1 || w.document.documentElement.scrollHeight > w.innerHeight + 1,
+        bandeau: dedans("[data-planche-bandeau]"), outils: r.querySelectorAll('.planche-outils[role="toolbar"] [data-planche-outil]').length,
+        colonne: r.querySelectorAll("[data-planche-panneau-icone]").length, libelles: !r.classList.contains("colonne-repliee"),
+        pied: dedans("[data-planche-pied]"), mesures: dedans("[data-planche-pied] input"), colonneDedans: dedans(".planche-colonne"),
+        // Barre de gauche et colonne entières, sans défilement : aucun outil ni panneau caché.
+        entieres: [".planche-outils", ".planche-colonne"].every((sel) => { const e = r.querySelector(sel); return e && e.scrollHeight <= e.clientHeight + 1; }),
+      };
+    });
+    check(`${nom} : la Planche remplit exactement l'écran, rien ne déborde`, Math.abs(mesure.cadre[0] - mesure.ecran[0]) <= 1 && Math.abs(mesure.cadre[1] - mesure.ecran[1]) <= 1 && !mesure.deborde, JSON.stringify(mesure));
+    check(`${nom} : mise en page large — bandeau, barre de gauche, colonne avec libellés, bande du bas et Mesures`, mesure.large && mesure.bandeau && mesure.outils >= 6 && mesure.colonne === 14 && mesure.libelles && mesure.pied && mesure.mesures && mesure.colonneDedans && mesure.entieres, JSON.stringify(mesure));
+    await d.page.screenshot({ path: join(OUT, `sandbox-${nom.replaceAll(" ", "-").normalize("NFD").replace(/[^\w-]/g, "")}.png`) });
+    // Le chevron de la colonne se comporte comme dans la page : caché, puis paru au toucher de la colonne.
+    const vuChevron = () => doc.locator("[data-planche-colonne-bascule]").evaluate((k) => getComputedStyle(k).visibility === "visible");
+    const cache = !(await vuChevron());
+    await doc.locator("[data-planche-panneau-icone='styles']").tap();
+    await d.page.waitForTimeout(300);
+    check(`${nom} : chevron caché, puis paru au toucher de la colonne`, cache && (await vuChevron()));
+    await doc.locator("[data-planche-panneau-icone='styles']").tap();
+    // Un outil répond toujours au doigt dans le mode détaché, et « Quitter » remet la Planche dans la page.
+    await doc.locator('[data-planche-outil="rectangle"]').first().tap();
+    check(`${nom} : un outil se choisit au doigt`, (await doc.locator("[data-planche]").getAttribute("data-outil-actif")) === "rectangle");
+    await doc.locator("[data-planche-bandeau-droite] [data-planche-detacher]").tap();
+    await d.page.waitForTimeout(600);
+    check(`${nom} : « Quitter » remet la Planche dans la page`, (await d.page.locator("[data-planche-ecran-large]").count()) === 0 && (await rd.locator("[data-planche] [data-planche-vue] canvas").count()) === 1 && !(await d.page.evaluate(() => !!document.fullscreenElement)));
+    surSandbox = false;
+    await d.context.close();
+  }
+
   check("aucun appel à l'API d'un projet pendant le Sandbox", appels.length === 0, appels.slice(0, 5).join(" ; "));
   check("aucune erreur JavaScript", erreurs.length === 0, erreurs.slice(0, 5).join(" ; "));
 } catch (e) {

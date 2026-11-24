@@ -161,6 +161,7 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
 import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
+import { miseEchelleEcranLarge } from "./ecran-large";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
@@ -412,6 +413,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return d;
   });
   const stylesObserveur = useRef<MutationObserver | null>(null);
+  // Téléphone : cadre plein écran qui porte la Planche détachée dans un document à part, mis à l'échelle (ecran-large.ts).
+  const ecranLargeRef = useRef<{ cadre: HTMLDivElement; observateur: ResizeObserver | null } | null>(null);
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
   const [brouillonCharge, setBrouillonCharge] = useState(false);
   const [etatSauvegarde, setEtatSauvegarde] = useState<EtatSauvegarde>("chargement");
@@ -2098,10 +2101,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         w.removeEventListener("blur", c.perte);
         w.removeEventListener("pointerdown", c.pointeur, true);
       }
-      try {
-        w.close();
-      } catch {
-        // déjà fermée par le navigateur
+      const large = ecranLargeRef.current;
+      ecranLargeRef.current = null;
+      if (large) {
+        large.observateur?.disconnect();
+        if (document.fullscreenElement === large.cadre) void document.exitFullscreen().catch(() => undefined);
+        large.cadre.remove();
+      } else {
+        try {
+          w.close();
+        } catch {
+          // déjà fermée par le navigateur
+        }
       }
       setDetache("non");
       setMessage(t("planche.rattache"));
@@ -2110,72 +2121,134 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
   }, [porte]);
+  const rattacherRef = useRef(rattacher);
+  rattacherRef.current = rattacher;
+
+  // Pose la porte dans un autre document (fenêtre séparée ou cadre du téléphone) : mêmes feuilles de style, mêmes attributs
+  // de document, même chaîne de classes ancêtres, mêmes écouteurs du clavier.
+  const installerPorte = useCallback((w: Window) => {
+    const copierFeuille = (feuille: CSSStyleSheet) => {
+      try {
+        const style = w.document.createElement("style");
+        style.textContent = Array.from(feuille.cssRules)
+          .map((r) => r.cssText)
+          .join("\n");
+        w.document.head.appendChild(style);
+      } catch {
+        if (feuille.href) {
+          const lien = w.document.createElement("link");
+          lien.rel = "stylesheet";
+          lien.href = feuille.href;
+          w.document.head.appendChild(lien);
+        }
+      }
+    };
+    for (const feuille of Array.from(document.styleSheets)) copierFeuille(feuille);
+    // Feuilles chargées plus tard (panneaux chargés à la demande) : recopiées dès leur arrivée.
+    const observeur = new MutationObserver((mutations) => {
+      for (const m of mutations)
+        for (const n of Array.from(m.addedNodes)) {
+          if (n instanceof HTMLStyleElement && n.sheet) copierFeuille(n.sheet);
+          else if (n instanceof HTMLLinkElement && n.rel === "stylesheet") {
+            const lien = w.document.createElement("link");
+            lien.rel = "stylesheet";
+            lien.href = n.href;
+            w.document.head.appendChild(lien);
+          }
+        }
+    });
+    observeur.observe(document.head, { childList: true });
+    stylesObserveur.current = observeur;
+    const base = w.document.createElement("style");
+    base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-chaine{display:contents!important}.planche-porte>.planche{height:100vh}";
+    w.document.head.appendChild(base);
+    // Mêmes attributs de document (langue, thème) et même chaîne de classes ancêtres que dans la page : les
+    // variables et règles de l'Atelier (`.atelier-n …`) s'appliquent à l'identique ; chaque maillon est transparent.
+    for (const a of Array.from(document.documentElement.attributes)) w.document.documentElement.setAttribute(a.name, a.value);
+    w.document.body.className = document.body.className;
+    w.document.title = `Fadi · ${t("mode.planche")}`;
+    let parent: HTMLElement = w.document.body;
+    const ancetres: string[] = [];
+    for (let n = emplacementRef.current?.parentElement ?? null; n && n !== document.body; n = n.parentElement) ancetres.unshift(n.className);
+    for (const classe of ancetres) {
+      const maillon = w.document.createElement("div");
+      maillon.className = `${classe} planche-chaine`.trim();
+      parent.appendChild(maillon);
+      parent = maillon;
+    }
+    parent.appendChild(porte);
+    const c = clavierRef.current;
+    if (c) {
+      w.addEventListener("keydown", c.touche);
+      w.addEventListener("keyup", c.relache);
+      w.addEventListener("blur", c.perte);
+      w.addEventListener("pointerdown", c.pointeur, true);
+    }
+  }, [porte]);
+
+  // Téléphone (aucune fenêtre séparée) : la Planche passe en plein écran DANS un document à part, posé sur une largeur
+  // virtuelle et réduit à l'écran — ses règles « écran large » s'y appliquent (bandeau, colonne et libellés, bande du
+  // bas), comme en « version ordinateur », et rien ne déborde. Sans plein écran (iPhone), le cadre couvre la page.
+  const detacherEcranLarge = useCallback(async (): Promise<boolean> => {
+    try {
+      const cadre = document.createElement("div");
+      cadre.className = "planche-ecran-large";
+      cadre.setAttribute("data-planche-ecran-large", "");
+      // Styles en ligne : le cadre vit hors de la Planche (corps de la page), hors de portée des feuilles du module.
+      cadre.style.cssText = "position:fixed;inset:0;z-index:2147483000;overflow:hidden;background:#f4f6f8";
+      const iframe = document.createElement("iframe");
+      iframe.title = t("mode.planche");
+      iframe.setAttribute("data-planche-ecran-large-document", "");
+      iframe.style.cssText = "position:absolute;top:0;left:0;display:block;border:0;transform-origin:0 0";
+      cadre.appendChild(iframe);
+      document.body.appendChild(cadre);
+      const w = iframe.contentWindow;
+      if (!w) {
+        cadre.remove();
+        return false;
+      }
+      w.document.open();
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
+      w.document.close();
+      const dimensionner = () => {
+        const m = miseEchelleEcranLarge({ largeur: cadre.clientWidth, hauteur: cadre.clientHeight });
+        iframe.style.width = `${m.largeur}px`;
+        iframe.style.height = `${m.hauteur}px`;
+        iframe.style.transform = `scale(${m.echelle})`;
+      };
+      dimensionner();
+      installerPorte(w);
+      const observateur = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(dimensionner);
+      observateur?.observe(cadre);
+      ecranLargeRef.current = { cadre, observateur };
+      fenetreRef.current = w;
+      setColonneRepliee(false);
+      setDetache("plein-ecran");
+      setMessage(null);
+      try {
+        await cadre.requestFullscreen();
+      } catch {
+        // plein écran refusé (iPhone) : le cadre fixe couvre déjà toute la page
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [installerPorte]);
 
   const detacher = useCallback(async () => {
     const hote = hoteRef.current;
     const racine = racineRef.current;
     if (!hote || !racine) return;
     const dpip = (window as Window & { documentPictureInPicture?: { requestWindow: (options: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
+    // Téléphone (écran étroit, ou écran tactile sans survol : debout comme couché, « version ordinateur » comprise) :
+    // plein écran en mise en page large réduite à l'écran. Ailleurs : fenêtre séparée, sinon plein écran simple.
+    const telephone = window.matchMedia("(max-width: 760px)").matches || window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    if (telephone && (await detacherEcranLarge())) return;
     if (dpip && window.matchMedia("(min-width: 761px)").matches) {
       try {
         const w = await dpip.requestWindow(tailleFenetreDetachee(window.screen));
-        const copierFeuille = (feuille: CSSStyleSheet) => {
-          try {
-            const style = w.document.createElement("style");
-            style.textContent = Array.from(feuille.cssRules)
-              .map((r) => r.cssText)
-              .join("\n");
-            w.document.head.appendChild(style);
-          } catch {
-            if (feuille.href) {
-              const lien = w.document.createElement("link");
-              lien.rel = "stylesheet";
-              lien.href = feuille.href;
-              w.document.head.appendChild(lien);
-            }
-          }
-        };
-        for (const feuille of Array.from(document.styleSheets)) copierFeuille(feuille);
-        // Feuilles chargées plus tard (panneaux chargés à la demande) : recopiées dès leur arrivée.
-        const observeur = new MutationObserver((mutations) => {
-          for (const m of mutations)
-            for (const n of Array.from(m.addedNodes)) {
-              if (n instanceof HTMLStyleElement && n.sheet) copierFeuille(n.sheet);
-              else if (n instanceof HTMLLinkElement && n.rel === "stylesheet") {
-                const lien = w.document.createElement("link");
-                lien.rel = "stylesheet";
-                lien.href = n.href;
-                w.document.head.appendChild(lien);
-              }
-            }
-        });
-        observeur.observe(document.head, { childList: true });
-        stylesObserveur.current = observeur;
-        const base = w.document.createElement("style");
-        base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-chaine{display:contents!important}.planche-porte>.planche{height:100vh}";
-        w.document.head.appendChild(base);
-        // Mêmes attributs de document (langue, thème) et même chaîne de classes ancêtres que dans la page : les
-        // variables et règles de l'Atelier (`.atelier-n …`) s'appliquent à l'identique ; chaque maillon est transparent.
-        for (const a of Array.from(document.documentElement.attributes)) w.document.documentElement.setAttribute(a.name, a.value);
-        w.document.body.className = document.body.className;
-        w.document.title = `Fadi · ${t("mode.planche")}`;
-        let parent: HTMLElement = w.document.body;
-        const ancetres: string[] = [];
-        for (let n = emplacementRef.current?.parentElement ?? null; n && n !== document.body; n = n.parentElement) ancetres.unshift(n.className);
-        for (const classe of ancetres) {
-          const maillon = w.document.createElement("div");
-          maillon.className = `${classe} planche-chaine`.trim();
-          parent.appendChild(maillon);
-          parent = maillon;
-        }
-        parent.appendChild(porte);
-        const c = clavierRef.current;
-        if (c) {
-          w.addEventListener("keydown", c.touche);
-          w.addEventListener("keyup", c.relache);
-          w.addEventListener("blur", c.perte);
-          w.addEventListener("pointerdown", c.pointeur, true);
-        }
+        installerPorte(w);
         w.addEventListener("pagehide", () => {
           if (fenetreRef.current === w) rattacher();
         });
@@ -2193,16 +2266,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     } catch {
       setMessage(t("planche.detacher.impossible"));
     }
-  }, [rattacher, porte]);
+  }, [rattacher, installerPorte, detacherEcranLarge]);
 
   useEffect(() => {
-    const maj = () => setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
+    const maj = () => {
+      // Téléphone : sortir du plein écran (geste retour) rattache la Planche.
+      const large = ecranLargeRef.current;
+      if (large) {
+        if (document.fullscreenElement !== large.cadre) rattacherRef.current();
+        return;
+      }
+      setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
+    };
     document.addEventListener("fullscreenchange", maj);
     return () => {
       document.removeEventListener("fullscreenchange", maj);
       stylesObserveur.current?.disconnect();
       const w = fenetreRef.current;
       fenetreRef.current = null;
+      ecranLargeRef.current?.observateur?.disconnect();
+      ecranLargeRef.current?.cadre.remove();
+      ecranLargeRef.current = null;
       try {
         w?.close();
       } catch {
@@ -3685,7 +3769,7 @@ function margesVue(racine: HTMLElement | null): { gauche: number; droite: number
   const panneau = boite(".planche-panneau");
   const haut = boite(".planche-haut");
   const pied = boite(".planche-pied");
-  const etroit = window.matchMedia("(max-width: 760px)").matches;
+  const etroit = (racine.ownerDocument.defaultView ?? window).matchMedia("(max-width: 760px)").matches;
   return {
     gauche: etroit || !outils ? 0 : Math.max(0, outils.right - r.left),
     droite: etroit ? 0 : Math.max(colonne ? r.right - colonne.left : 0, panneau ? r.right - panneau.left : 0),
