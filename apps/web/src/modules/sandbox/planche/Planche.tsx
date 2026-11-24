@@ -3265,12 +3265,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
       <footer className="planche-bas">
-        {/* Pied façon SketchUp : aide, langue et périphérique à gauche, puis la consigne, puis le contexte des repères. */}
+        {/* Pied façon SketchUp : aide, langue et périphérique à gauche, puis la consigne, puis Mesures à droite. */}
         {!etroit && <span className="planche-bas-aide">{aideBouton}</span>}
         {!etroit && canevasBas}
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
+          {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
           {etatBarre && (() => {
             // Lot L19 (EX-ERR-01) : un refus codé montre son message, puis son recours traduit ; le code reste lisible.
@@ -3284,14 +3285,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             );
           })()}
         </p>
-        {/* Chantier Axes (AX-2) : contexte de travail toujours lisible, hors de la consigne (jamais coupé par elle) ; un clic
-            ouvre la barre « Axes et repères » ; les changements sont annoncés (aria-live). */}
-        <p className="planche-reperes-etat" aria-live="polite" data-reperes-etat>
-          <button type="button" className="planche-reperes-etat-bouton" onClick={() => afficherBarreReperes(true)} title={`${ligneReperes} — ${t("planche.reperes.barre")}`}>
-            {ligneReperes}
-          </button>
-          {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable>{verrouInapplicable}</span>}
-        </p>
+        {/* Chantier Axes (AX-2) : le contexte de travail n'est plus affiché dans le pied (maître d'ouvrage, 24 novembre 2026,
+            pied façon SketchUp) ; il reste annoncé au lecteur d'écran, et la barre « Axes et repères » s'ouvre par l'outil
+            Axes (Maj + Y) ou Alt + Maj + 1. */}
+        <span className="planche-annonce-reperes" aria-live="polite" data-reperes-etat>{ligneReperes}</span>
         {lienSelectionne() && (
           <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>
             <Pictogramme picto={COMMANDE_DETACHER_LIEN.picto} /> {t(COMMANDE_DETACHER_LIEN.court)}

@@ -22,6 +22,12 @@ comportement ni d'apparence.
   SketchUp, grille « ⋯ » par famille, colonne de droite à un clic par panneau (Info modèle en bas, chevron à mi-hauteur
   au survol), aucune barre du haut (Annuler / Rétablir au clavier : Ctrl + Z / Ctrl + Y), aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
   dans la barre d'actions, curseur propre à chaque outil (`pictogrammes/curseur.ts`).
+- Pied de page façon SketchUp (24 novembre 2026, ordinateur : page et fenêtre détachée) : une seule bande blanche pleine
+  largeur collée en bas, sans carte ni ombre ; à gauche les icônes aide, langue (globe) et périphérique (souris), dont la
+  liste s'ouvre au clic ; puis la consigne de l'outil actif ; « Mesures » et son champ à droite (bouton OK seulement au
+  toucher) ; la colonne de droite s'arrête au-dessus de la bande. Le contexte de travail (repère, plan, portée, unité)
+  n'y est plus affiché : il est annoncé au lecteur d'écran (`[data-reperes-etat]`, masqué) et la barre « Axes et repères »
+  s'ouvre par l'outil Axes (Maj + Y) ou Alt + Maj + 1. Téléphone inchangé.
 - `preferences/` (lot 5) — personnalisation : profils Standard, Métier (Bois et menuiserie, Volumes et solides) et
   Personnel, favoris, regroupements nommés, « Réinitialiser » (panneau ouvert par « Modifier » dans la grille).
   Préférences enregistrées sur le serveur, par compte (`GET`/`PUT /sandbox/preferences`, table
@@ -62,7 +68,7 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   déplace jamais la géométrie ; l'ancien `annotations.repere` d'un document n'est plus écrit, seulement lu comme
   contexte initial.
 - **Barre « Axes et repères »** (AX-2, `planche/BarreReperes.tsx`, `planche/commandes-reperes.ts`) : compacte et
-  flottante, ouverte par Placer les axes (Maj + Y), Alt + Maj + 1 ou la ligne d'état du pied ; commandes Alt + Maj + 1 à 8
+  flottante, ouverte par Placer les axes (Maj + Y) ou Alt + Maj + 1 ; commandes Alt + Maj + 1 à 8
   et F4 ; inspecteur (origine, orientation, rotation par axe nommé, plan, verrou). Recette `apps/web/e2e/sandbox-axes.mjs`.
 - **Repères enregistrés** (AX-3, `annotations.reperes`, panneau « Repères », `planche/PanneauReperes.tsx`) : mutations du
   document (Annuler les défait) ; « Modifié » ; suppression d'un repère cité par une scène après résolution explicite ;

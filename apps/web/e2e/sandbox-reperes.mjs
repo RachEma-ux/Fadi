@@ -97,7 +97,7 @@ try {
   const ids = Object.keys(e.reperes);
   const id = ids[0];
   check("AX08 : repère enregistré (nom, révision 1, instantané), devenu le repère actif, un pas d'historique", ids.length === 1 && e.reperes[id].nom === "Façade sud" && e.reperes[id].revision === 1 && e.reperes[id].source.mode === "instantane" && e.ctx.contexte.source.genre === "enregistre" && e.ctx.contexte.source.id === id && e.pas === pas0 + 1, JSON.stringify(e.reperes[id]));
-  check("ligne d'état : nom du repère enregistré", /Repère : Façade sud/.test(await page.locator("[data-reperes-etat] button").innerText()));
+  check("ligne d'état : nom du repère enregistré", /Repère : Façade sud/.test(await page.locator("[data-reperes-etat]").textContent()));
 
   // « Modifié » après une rotation ; Enregistrer les modifications.
   await vueFocus();
@@ -105,7 +105,7 @@ try {
   await page.fill("[data-reperes-pivoter-angle]", "90");
   await page.click("[data-reperes-pivoter]");
   e = await etat();
-  check("« Modifié » : rotation d'un repère enregistré — définition intacte, contexte temporaire issu de « Façade sud »", e.reperes[id].revision === 1 && e.ctx.contexte.source.genre === "temporaire" && e.ctx.contexte.source.depuis?.id === id && (await page.locator("[data-reperes-modifie]").count()) === 1 && /Modifié/.test(await page.locator("[data-reperes-etat] button").innerText()));
+  check("« Modifié » : rotation d'un repère enregistré — définition intacte, contexte temporaire issu de « Façade sud »", e.reperes[id].revision === 1 && e.ctx.contexte.source.genre === "temporaire" && e.ctx.contexte.source.depuis?.id === id && (await page.locator("[data-reperes-modifie]").count()) === 1 && /Modifié/.test(await page.locator("[data-reperes-etat]").textContent()));
   await page.click("[data-reperes-inspecteur-fermer]");
   await page.click("[data-reperes-enregistrer-modifications]");
   e = await etat();
