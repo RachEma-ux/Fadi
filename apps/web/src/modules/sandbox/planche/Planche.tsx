@@ -161,7 +161,7 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
 import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
-import { miseEchelleEcranLarge } from "./ecran-large";
+import { largeurVueEcranLarge } from "./ecran-large";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
@@ -413,8 +413,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return d;
   });
   const stylesObserveur = useRef<MutationObserver | null>(null);
-  // Téléphone : cadre plein écran qui porte la Planche détachée dans un document à part, mis à l'échelle (ecran-large.ts).
-  const ecranLargeRef = useRef<{ cadre: HTMLDivElement; observateur: ResizeObserver | null } | null>(null);
+  // Téléphone détaché : largeur de mise en page imposée (balise viewport) et Planche posée sur toute la page, avec les
+  // valeurs d'avant à rétablir.
+  const vueLargeRef = useRef<{ meta: HTMLMetaElement; avant: string; style: string; racine: HTMLElement; maj: () => void } | null>(null);
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
   const [brouillonCharge, setBrouillonCharge] = useState(false);
   const [etatSauvegarde, setEtatSauvegarde] = useState<EtatSauvegarde>("chargement");
@@ -2085,6 +2086,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return () => porte.remove();
   }, [porte]);
 
+  // Téléphone détaché : rétablit la balise viewport et la place de la Planche ; vrai si ce mode était actif.
+  const restaurerVue = useCallback(() => {
+    const v = vueLargeRef.current;
+    if (!v) return false;
+    vueLargeRef.current = null;
+    window.removeEventListener("resize", v.maj);
+    v.meta.setAttribute("content", v.avant);
+    v.racine.setAttribute("style", v.style);
+    if (!v.style) v.racine.removeAttribute("style");
+    return true;
+  }, []);
+
   const rattacher = useCallback(() => {
     const w = fenetreRef.current;
     if (w) {
@@ -2101,28 +2114,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         w.removeEventListener("blur", c.perte);
         w.removeEventListener("pointerdown", c.pointeur, true);
       }
-      const large = ecranLargeRef.current;
-      ecranLargeRef.current = null;
-      if (large) {
-        large.observateur?.disconnect();
-        if (document.fullscreenElement === large.cadre) void document.exitFullscreen().catch(() => undefined);
-        large.cadre.remove();
-      } else {
-        try {
-          w.close();
-        } catch {
-          // déjà fermée par le navigateur
-        }
+      try {
+        w.close();
+      } catch {
+        // déjà fermée par le navigateur
       }
       setDetache("non");
       setMessage(t("planche.rattache"));
       hote?.focus({ preventScroll: true });
       return;
     }
+    if (restaurerVue()) {
+      setDetache("non");
+      setMessage(t("planche.rattache"));
+      hoteRef.current?.focus({ preventScroll: true });
+      return;
+    }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
-  }, [porte]);
-  const rattacherRef = useRef(rattacher);
-  rattacherRef.current = rattacher;
+  }, [porte, restaurerVue]);
 
   // Pose la porte dans un autre document (fenêtre séparée ou cadre du téléphone) : mêmes feuilles de style, mêmes attributs
   // de document, même chaîne de classes ancêtres, mêmes écouteurs du clavier.
@@ -2186,55 +2195,32 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
   }, [porte]);
 
-  // Téléphone (aucune fenêtre séparée) : la Planche passe en plein écran DANS un document à part, posé sur une largeur
-  // virtuelle et réduit à l'écran — ses règles « écran large » s'y appliquent (bandeau, colonne et libellés, bande du
-  // bas), comme en « version ordinateur », et rien ne déborde. Sans plein écran (iPhone), le cadre couvre la page.
-  const detacherEcranLarge = useCallback(async (): Promise<boolean> => {
-    try {
-      const cadre = document.createElement("div");
-      cadre.className = "planche-ecran-large";
-      cadre.setAttribute("data-planche-ecran-large", "");
-      // Styles en ligne : le cadre vit hors de la Planche (corps de la page), hors de portée des feuilles du module.
-      cadre.style.cssText = "position:fixed;inset:0;z-index:2147483000;overflow:hidden;background:#f4f6f8";
-      const iframe = document.createElement("iframe");
-      iframe.title = t("mode.planche");
-      iframe.setAttribute("data-planche-ecran-large-document", "");
-      iframe.style.cssText = "position:absolute;top:0;left:0;display:block;border:0;transform-origin:0 0";
-      cadre.appendChild(iframe);
-      document.body.appendChild(cadre);
-      const w = iframe.contentWindow;
-      if (!w) {
-        cadre.remove();
-        return false;
-      }
-      w.document.open();
-      w.document.write('<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>');
-      w.document.close();
-      const dimensionner = () => {
-        const m = miseEchelleEcranLarge({ largeur: cadre.clientWidth, hauteur: cadre.clientHeight });
-        iframe.style.width = `${m.largeur}px`;
-        iframe.style.height = `${m.hauteur}px`;
-        iframe.style.transform = `scale(${m.echelle})`;
-      };
-      dimensionner();
-      installerPorte(w);
-      const observateur = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(dimensionner);
-      observateur?.observe(cadre);
-      ecranLargeRef.current = { cadre, observateur };
-      fenetreRef.current = w;
-      setColonneRepliee(false);
-      setDetache("plein-ecran");
-      setMessage(null);
-      try {
-        await cadre.requestFullscreen();
-      } catch {
-        // plein écran refusé (iPhone) : le cadre fixe couvre déjà toute la page
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  }, [installerPorte]);
+  // Téléphone (aucune fenêtre séparée) : la Planche couvre tout l'écran du navigateur avec la mise en page large, comme la
+  // « version ordinateur » — la balise viewport impose une largeur de mise en page (au moins 980 px, plus en position
+  // couchée : ecran-large.ts) que le navigateur réduit à l'écran ; les règles « écran large » s'appliquent (bandeau,
+  // colonne et libellés, bande du bas) et rien ne déborde. Pas de plein écran du navigateur : il rétablirait la largeur
+  // de l'appareil (donc la mise en page téléphone). « Quitter » rétablit la balise et la Planche dans la page.
+  const detacherEcranLarge = useCallback((racine: HTMLElement): boolean => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!meta) return false;
+    const avant = meta.getAttribute("content") ?? "width=device-width, initial-scale=1.0";
+    const maj = () => {
+      const l = Math.max(1, window.screen?.width ?? 0);
+      const h = Math.max(1, window.screen?.height ?? 0);
+      const couche = window.matchMedia("(orientation: landscape)").matches;
+      const contenu = `width=${largeurVueEcranLarge({ largeur: couche ? Math.max(l, h) : Math.min(l, h), hauteur: couche ? Math.min(l, h) : Math.max(l, h) })}`;
+      if (meta.getAttribute("content") !== contenu) meta.setAttribute("content", contenu);
+    };
+    vueLargeRef.current = { meta, avant, style: racine.getAttribute("style") ?? "", racine, maj };
+    maj();
+    window.addEventListener("resize", maj);
+    // Styles en ligne : la même Planche sert le Sandbox et l'Atelier (feuilles différentes).
+    racine.style.cssText += ";position:fixed;inset:0;z-index:2147483000;width:auto;height:auto;margin:0;border-radius:0";
+    setColonneRepliee(false);
+    setDetache("plein-ecran");
+    setMessage(null);
+    return true;
+  }, []);
 
   const detacher = useCallback(async () => {
     const hote = hoteRef.current;
@@ -2244,7 +2230,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     // Téléphone (écran étroit, ou écran tactile sans survol : debout comme couché, « version ordinateur » comprise) :
     // plein écran en mise en page large réduite à l'écran. Ailleurs : fenêtre séparée, sinon plein écran simple.
     const telephone = window.matchMedia("(max-width: 760px)").matches || window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-    if (telephone && (await detacherEcranLarge())) return;
+    if (telephone && detacherEcranLarge(racine)) return;
     if (dpip && window.matchMedia("(min-width: 761px)").matches) {
       try {
         const w = await dpip.requestWindow(tailleFenetreDetachee(window.screen));
@@ -2270,12 +2256,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
   useEffect(() => {
     const maj = () => {
-      // Téléphone : sortir du plein écran (geste retour) rattache la Planche.
-      const large = ecranLargeRef.current;
-      if (large) {
-        if (document.fullscreenElement !== large.cadre) rattacherRef.current();
-        return;
-      }
+      if (vueLargeRef.current) return;
       setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
     };
     document.addEventListener("fullscreenchange", maj);
@@ -2284,16 +2265,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       stylesObserveur.current?.disconnect();
       const w = fenetreRef.current;
       fenetreRef.current = null;
-      ecranLargeRef.current?.observateur?.disconnect();
-      ecranLargeRef.current?.cadre.remove();
-      ecranLargeRef.current = null;
+      restaurerVue();
       try {
         w?.close();
       } catch {
         // déjà fermée
       }
     };
-  }, []);
+  }, [restaurerVue]);
 
   // Grille « … » fermée au clic extérieur.
   useEffect(() => {
