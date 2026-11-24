@@ -42,9 +42,19 @@ comportement ni d'apparence.
   de Carbon, sans logo ni marque IBM et sans la bibliothèque Carbon (CSS propre au Sandbox, `.planche-bandeau`) — 48 px
   gris très foncé (`#161616`) en haut de la Planche ; ☰ occupe le carré gauche (48 × 48), puis « **Planche** » et le nom
   de la Planche ouverte. Le dessin et tout ce qui flotte dessus vivent dans la zone « vue », sous le bandeau ; les barres
-  flottantes se placent par défaut sous lui (`planche/zone-dessin.ts`). Aucune autre commande dans le bandeau.
+  flottantes se placent par défaut sous lui (`planche/zone-dessin.ts`).
+- **Barre d'actions dans le bandeau** (24 novembre 2026, ordinateur, `panneaux/ActionsBandeau.tsx`) : la barre flottante
+  du milieu disparaît ; ses commandes passent au centre du bandeau, en trois groupes — Cadrer (zoom − / + au toucher) |
+  Grouper, Composant, Éclater, Unique | Diviser, Diviser la courbe, Isoler selon la sélection. États grisés et infobulles
+  inchangés, Isoler enfoncé pendant l'isolement ; sous 1180 px de large, icônes seules (nom en infobulle). À droite :
+  « Détacher » dans la page ; dans la fenêtre détachée, plus de « Rattacher » : ✕ « Fermer et rattacher ». Position
+  mémorisée, poignée et masquage de l'ancienne barre ne s'appliquent plus à l'ordinateur. Téléphone : barre flottante
+  inchangée.
 - **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
   déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
+- **Fenêtre détachée** (24 novembre 2026) : « Détacher » ouvre toujours la fenêtre « image dans l'image » (Document
+  Picture-in-Picture), désormais demandée à la taille utile de l'écran au lieu de 1040 × 700 fixes
+  (`planche/taille-fenetre-detachee.ts` ; jamais plus petite qu'avant). Le navigateur peut la plafonner à son maximum.
 
 Pictogramme ☰ seul (Tabler `menu-2`, MIT) : un clic déroule le menu, sous le bandeau à l'ordinateur ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
 Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,

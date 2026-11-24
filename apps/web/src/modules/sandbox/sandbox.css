@@ -3196,3 +3196,119 @@
     grid-area: vue;
   }
 }
+/* Barre d'actions intégrée au bandeau (24 novembre 2026, ordinateur) : Cadrer, Grouper, Composant, Éclater, Unique, puis
+   Diviser, Diviser la courbe et Isoler selon la sélection, au centre du bandeau ; « Détacher » (page) ou ✕ « Fermer et
+   rattacher » (fenêtre détachée) à droite. Texte clair sur le fond sombre, commandes grisées atténuées, Isoler enfoncé
+   sur fond #393939 ; fenêtre étroite : icônes seules, le nom reste en infobulle. Téléphone : barre flottante inchangée. */
+.sandbox-planche .planche-bandeau-actions,
+.sandbox-planche .planche-bandeau-droite {
+  display: none;
+}
+@media (min-width: 761px) {
+  .sandbox-planche .planche-bandeau-nom {
+    flex: 0 1 auto;
+  }
+  .sandbox-planche .planche-bandeau-actions {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: center;
+    align-items: stretch;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .sandbox-planche .planche-bandeau-groupe {
+    display: flex;
+    align-items: stretch;
+  }
+  .sandbox-planche .planche-bandeau-groupe + .planche-bandeau-groupe {
+    border-left: 1px solid #393939;
+    margin: 8px 0;
+  }
+  .sandbox-planche .planche-bandeau-groupe + .planche-bandeau-groupe > button {
+    margin-top: -8px;
+    margin-bottom: -8px;
+  }
+  .sandbox-planche .planche-bandeau-droite {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    margin-left: auto;
+  }
+  .sandbox-planche .planche-bandeau-actions button,
+  .sandbox-planche .planche-bandeau-droite button {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-width: 48px;
+    height: calc(var(--bandeau-h) - 1px);
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #f4f4f4;
+    font: inherit;
+    line-height: 1.1;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .sandbox-planche .planche-bandeau-actions .barre-actions-picto,
+  .sandbox-planche .planche-bandeau-droite .barre-actions-picto {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .sandbox-planche .planche-bandeau-actions .barre-actions-texte {
+    font-size: 0.68rem;
+    color: #c6c6c6;
+  }
+  /* Cadrer et Détacher : nom à côté de l'icône, comme sur l'image validée. */
+  .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer],
+  .sandbox-planche .planche-bandeau-droite button {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer] .barre-actions-texte,
+  .sandbox-planche .planche-bandeau-droite .barre-actions-texte {
+    font-size: 0.875rem;
+    color: #f4f4f4;
+  }
+  .sandbox-planche .planche-bandeau-actions button:hover:not(:disabled),
+  .sandbox-planche .planche-bandeau-droite button:hover {
+    background: #2c2c2c;
+  }
+  .sandbox-planche .planche-bandeau-actions button[aria-pressed="true"] {
+    background: #393939;
+  }
+  /* Icônes blanches sur le bandeau (comme l'image validée), quelle que soit la teinte de famille de l'outil. */
+  .sandbox-planche .planche-bandeau .planche-bandeau-actions .sandbox-picto,
+  .sandbox-planche .planche-bandeau .planche-bandeau-droite .sandbox-picto {
+    color: #f4f4f4;
+  }
+  .sandbox-planche .planche-bandeau-actions button:disabled {
+    cursor: default;
+  }
+  .sandbox-planche .planche-bandeau .planche-bandeau-actions button:disabled .sandbox-picto,
+  .sandbox-planche .planche-bandeau-actions button:disabled .barre-actions-texte {
+    color: #8d8d8d;
+  }
+  .sandbox-planche .planche-bandeau-actions button:focus-visible,
+  .sandbox-planche .planche-bandeau-droite button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+  }
+  .sandbox-planche .planche-bandeau-droite [data-planche-fermer-rattacher] .barre-actions-picto {
+    width: 20px;
+    height: 20px;
+  }
+}
+@media (min-width: 761px) and (max-width: 1180px) {
+  .sandbox-planche .planche-bandeau-actions .barre-actions-texte {
+    display: none;
+  }
+  .sandbox-planche .planche-bandeau-actions button {
+    padding: 0 0.6rem;
+  }
+}

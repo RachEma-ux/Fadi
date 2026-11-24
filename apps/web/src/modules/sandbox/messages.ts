@@ -931,6 +931,7 @@ const FR = {
   "planche.detache.texte": "Déplacez la fenêtre sur votre second écran : le dessin y garde sa barre d'outils, ses panneaux, la barre d'état et le champ Mesures. Même brouillon, même historique.",
   "planche.detache.afficher": "Afficher la fenêtre",
   "planche.detache.aide": "Si le navigateur ferme la fenêtre, la Planche revient ici automatiquement.",
+  "planche.fermer-rattacher": "Fermer et rattacher",
   // D-198 : bouton « Outils ▾ » et barres d'opérations de la Planche.
   "outils.bouton": "Outils",
   "outils.bouton.aide": "Outils par famille, barres d'opérations",
@@ -1883,6 +1884,7 @@ const EN: Record<CleMessage, string> = {
   "planche.detache.texte": "Move the window to your second screen: the drawing keeps its toolbar, panels, status bar and Measurements field there. Same draft, same history.",
   "planche.detache.afficher": "Show the window",
   "planche.detache.aide": "If the browser closes the window, the Board comes back here automatically.",
+  "planche.fermer-rattacher": "Close and reattach",
   // D-198 : “Tools ▾” button and operations bars of the Board.
   "outils.bouton": "Tools",
   "outils.bouton.aide": "Tools by family, operation bars",
