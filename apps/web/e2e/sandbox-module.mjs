@@ -57,7 +57,46 @@ async function inscrire(page) {
 }
 
 /** Disposition par défaut proche de SketchUp (lot 4), sur ordinateur et sur téléphone. */
-async function disposition(page, contexte) {
+/** Aspect du chevron (fond, bordure, texte, contour) : il ne change jamais de couleur (demande du 24 novembre 2026). */
+const aspectChevron = (racine) => racine.evaluate((r) => {
+  const c = getComputedStyle(r.querySelector("[data-planche-colonne-bascule]"));
+  return [c.backgroundColor, c.borderTopColor, c.color, c.outlineStyle].join(" | ");
+});
+
+/** Écran tactile : chevron caché au repos, affiché ~3 s après un toucher sur la colonne, et un toucher dessus plie / déplie. */
+async function toucherColonneEtChevron(page, racine, contexte, repos) {
+  const etat = () => racine.evaluate((r) => {
+    const k = r.querySelector("[data-planche-colonne-bascule]");
+    return { opacite: Number(getComputedStyle(k).opacity), visible: getComputedStyle(k).visibility === "visible", replie: r.querySelector("[data-planche]").classList.contains("colonne-repliee"), panneau: r.querySelectorAll("[data-planche-panneau]").length };
+  });
+  check(`${contexte} : chevron caché au repos (écran tactile)`, repos.opacite === 0 && !(await etat()).visible, JSON.stringify(repos));
+  // Toucher un bouton de la colonne : son panneau s'ouvre comme avant, et le chevron paraît, au-dessus du panneau.
+  await racine.locator("[data-planche-panneau-icone='styles']").tap();
+  await page.waitForTimeout(300);
+  const touche = await etat();
+  const dessus = await racine.evaluate((r) => {
+    const k = r.querySelector("[data-planche-colonne-bascule]");
+    const b = k.getBoundingClientRect();
+    const el = k.ownerDocument.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+    return el === k || k.contains(el);
+  });
+  check(`${contexte} : un toucher sur la colonne ouvre le panneau et fait paraître le chevron, au-dessus`, touche.panneau === 1 && touche.opacite === 1 && touche.visible && dessus, JSON.stringify(touche));
+  const avant = touche.replie;
+  const aspect = await aspectChevron(racine);
+  await racine.locator("[data-planche-colonne-bascule]").tap();
+  await page.waitForTimeout(200);
+  check(`${contexte} : un toucher sur le chevron plie / déplie la colonne`, (await etat()).replie === !avant);
+  check(`${contexte} : le chevron touché ne change pas de couleur`, (await aspectChevron(racine)) === aspect, `${aspect} → ${await aspectChevron(racine)}`);
+  await racine.locator("[data-planche-colonne-bascule]").tap();
+  await page.waitForTimeout(200);
+  check(`${contexte} : un second toucher la remet comme avant`, (await etat()).replie === avant);
+  await page.waitForTimeout(3600);
+  check(`${contexte} : sans nouveau toucher, le chevron disparaît (environ 3 s)`, !(await etat()).visible);
+  await racine.locator("[data-planche-panneau-icone='styles']").tap();
+  await page.waitForTimeout(3600);
+}
+
+async function disposition(page, contexte, tactile = contexte === "téléphone") {
   const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
   const barre = await racine.locator('.planche-outils[role="toolbar"] [data-planche-outil]').evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-outil")));
   const attendue = ["selection", "gomme", "ligne", "arc", "rectangle", "pousser-tirer", "decalage", "deplacer", "faire-pivoter", "echelle", "metre", "peinture", "orbite", "panoramique", "zoom", "zoom-etendu"];
@@ -79,14 +118,28 @@ async function disposition(page, contexte) {
   });
   const repos = await chevron();
   check(`${contexte} : chevron de la colonne à mi-hauteur, au bord gauche`, repos.milieu && repos.gauche, JSON.stringify(repos));
-  check(`${contexte} : chevron caché au repos`, repos.opacite === 0);
-  if (contexte !== "téléphone") {
+  const replie = () => racine.evaluate((r) => r.querySelector("[data-planche]").classList.contains("colonne-repliee"));
+  if (!tactile) {
+    check(`${contexte} : chevron caché au repos`, repos.opacite === 0);
     await racine.locator("[data-planche-panneau-icone='styles']").hover();
     await page.waitForTimeout(300);
-    check("ordinateur : chevron visible au survol de la colonne", (await chevron()).opacite === 1);
+    check(`${contexte} : chevron visible au survol de la colonne`, (await chevron()).opacite === 1);
+    // Le chevron n'est pas qu'affiché : un clic plie puis déplie vraiment la colonne ; il ne change jamais de couleur.
+    const avant = await replie();
+    const aspect = await aspectChevron(racine);
+    await racine.locator("[data-planche-colonne-bascule]").hover();
+    check(`${contexte} : le chevron survolé ne change pas de couleur`, (await aspectChevron(racine)) === aspect, `${aspect} → ${await aspectChevron(racine)}`);
+    await racine.locator("[data-planche-colonne-bascule]").click();
+    check(`${contexte} : un clic sur le chevron plie / déplie la colonne`, (await replie()) === !avant);
+    await racine.locator("[data-planche-colonne-bascule]").click();
+    check(`${contexte} : un second clic la remet comme avant`, (await replie()) === avant);
     await page.mouse.move(400, 400);
     await page.waitForTimeout(900);
-    check("ordinateur : chevron de nouveau caché hors survol", (await chevron()).opacite === 0);
+    check(`${contexte} : chevron de nouveau caché hors survol`, (await chevron()).opacite === 0);
+  } else {
+    // Écran tactile (24 novembre 2026) : pas de survol ; l'équivalent est un toucher sur la colonne, qui fait paraître le
+    // chevron environ 3 s (au repos il reste caché, demande du maître d'ouvrage) ; le chevron touché plie / déplie la colonne.
+    await toucherColonneEtChevron(page, racine, contexte, repos);
   }
   if (contexte === "téléphone") {
     const choix = await racine.locator(".canevas-bas select").first().isVisible().catch(() => false);
@@ -379,6 +432,82 @@ try {
   await tel.page.screenshot({ path: join(OUT, "sandbox-telephone.png") });
   surSandbox = false;
   await tel.context.close();
+
+  // 7. Téléphone en « version ordinateur » (signalé le 24 novembre 2026) : mise en page large, mais écran tactile ; le
+  // chevron de la colonne de droite paraît au toucher de la colonne, et un toucher sur lui la plie / déplie.
+  const large = await nouvellePage({ width: 980, height: 1900 }, { hasTouch: true, isMobile: true });
+  await inscrire(large.page);
+  surSandbox = true;
+  await large.page.goto(`${BASE}/sandbox`);
+  await plancheChargee(large.page, "téléphone, version ordinateur");
+  const r7 = large.page.locator("[data-sandbox-page] [data-sandbox-planche]");
+  const repos7 = await r7.evaluate((r) => ({ opacite: Number(getComputedStyle(r.querySelector("[data-planche-colonne-bascule]")).opacity) }));
+  check("téléphone, version ordinateur : colonne dépliée au départ", (await r7.evaluate((r) => r.querySelector("[data-planche]").classList.contains("colonne-repliee"))) === false);
+  await toucherColonneEtChevron(large.page, r7, "téléphone, version ordinateur", repos7);
+  // Captures : repos (chevron caché), puis chevron paru après un toucher sur la colonne (Styles ouvert).
+  await large.page.screenshot({ path: join(OUT, "sandbox-telephone-large-repos.png") });
+  await r7.locator("[data-planche-panneau-icone='styles']").tap();
+  await large.page.waitForTimeout(300);
+  await large.page.screenshot({ path: join(OUT, "sandbox-telephone-large-chevron.png") });
+  await r7.locator("[data-planche-colonne-bascule]").tap();
+  await large.page.waitForTimeout(300);
+  await large.page.screenshot({ path: join(OUT, "sandbox-telephone-large-repliee.png") });
+
+  surSandbox = false;
+  await large.context.close();
+
+  // 8. Planche détachée au téléphone (demande du 24 novembre 2026) : la Planche couvre l'écran du navigateur, en mise en
+  // page large (bandeau, barre de gauche, colonne avec libellés, bande du bas) réduite à l'écran (balise viewport) ;
+  // aucun composant ne manque, rien ne déborde.
+  for (const [nom, viewport] of [["téléphone détaché", { width: 412, height: 915 }], ["téléphone détaché couché", { width: 915, height: 412 }]]) {
+    const d = await nouvellePage(viewport, { hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+    await inscrire(d.page);
+    surSandbox = true;
+    await d.page.goto(`${BASE}/sandbox`);
+    await plancheChargee(d.page, nom);
+    const rd = d.page.locator("[data-sandbox-page] [data-sandbox-planche]");
+    const viewportAvant = await d.page.evaluate(() => document.querySelector('meta[name="viewport"]').getAttribute("content"));
+    await rd.locator("[data-planche-detacher]").first().tap();
+    await d.page.waitForTimeout(1000);
+    const couvre = await d.page.evaluate(() => getComputedStyle(document.querySelector("[data-planche]")).position === "fixed" && document.querySelector("[data-planche]").getAttribute("data-planche-detache") === "plein-ecran");
+    check(`${nom} : la Planche couvre tout l'écran du navigateur`, couvre);
+    const mesure = await d.page.evaluate(() => {
+      const r = document.querySelector("[data-planche]");
+      const b = r.getBoundingClientRect();
+      const dedans = (sel) => [...r.querySelectorAll(sel)].every((e) => {
+        const x = e.getBoundingClientRect();
+        return x.width > 0 && x.left >= -1 && x.top >= -1 && x.right <= innerWidth + 1 && x.bottom <= innerHeight + 1;
+      });
+      return {
+        vue: [innerWidth, innerHeight], planche: [Math.round(b.width), Math.round(b.height)], large: !matchMedia("(max-width: 760px)").matches,
+        deborde: b.right > innerWidth + 1 || b.bottom > innerHeight + 1,
+        bandeau: dedans("[data-planche-bandeau]"), outils: r.querySelectorAll('.planche-outils[role="toolbar"] [data-planche-outil]').length,
+        colonne: r.querySelectorAll("[data-planche-panneau-icone]").length, libelles: !r.classList.contains("colonne-repliee"),
+        pied: dedans("[data-planche-pied]"), mesures: dedans("[data-planche-pied] input"), colonneDedans: dedans(".planche-colonne"),
+        // Barre de gauche et colonne entières, sans défilement : aucun outil ni panneau caché.
+        entieres: [".planche-outils", ".planche-colonne"].every((sel) => { const e = r.querySelector(sel); return e && e.scrollHeight <= e.clientHeight + 1; }),
+      };
+    });
+    check(`${nom} : la Planche remplit exactement l'écran, rien ne déborde`, Math.abs(mesure.planche[0] - mesure.vue[0]) <= 1 && Math.abs(mesure.planche[1] - mesure.vue[1]) <= 1 && !mesure.deborde, JSON.stringify(mesure));
+    check(`${nom} : mise en page large — bandeau, barre de gauche, colonne avec libellés, bande du bas et Mesures`, mesure.large && mesure.bandeau && mesure.outils >= 6 && mesure.colonne === 14 && mesure.libelles && mesure.pied && mesure.mesures && mesure.colonneDedans && mesure.entieres, JSON.stringify(mesure));
+    await d.page.screenshot({ path: join(OUT, `sandbox-${nom.replaceAll(" ", "-").normalize("NFD").replace(/[^\w-]/g, "")}.png`) });
+    // Le chevron de la colonne se comporte comme dans la page : caché, puis paru au toucher de la colonne.
+    const vuChevron = () => rd.locator("[data-planche-colonne-bascule]").evaluate((k) => getComputedStyle(k).visibility === "visible");
+    const cache = !(await vuChevron());
+    await rd.locator("[data-planche-panneau-icone='styles']").tap();
+    await d.page.waitForTimeout(300);
+    check(`${nom} : chevron caché, puis paru au toucher de la colonne`, cache && (await vuChevron()));
+    await rd.locator("[data-planche-panneau-icone='styles']").tap();
+    // Un outil répond toujours au doigt, et « Quitter » remet la Planche dans la page, avec la mise en page d'avant.
+    await rd.locator('[data-planche-outil="rectangle"]').first().tap();
+    check(`${nom} : un outil se choisit au doigt`, (await rd.locator("[data-planche]").getAttribute("data-outil-actif")) === "rectangle");
+    await rd.locator("[data-planche-bandeau-droite] [data-planche-detacher]").tap();
+    await d.page.waitForTimeout(800);
+    const apres = await d.page.evaluate(() => ({ plein: getComputedStyle(document.querySelector("[data-planche]")).position === "fixed", viewport: document.querySelector('meta[name="viewport"]').getAttribute("content"), etroit: matchMedia("(max-width: 760px)").matches }));
+    check(`${nom} : « Quitter » remet la Planche dans la page, mise en page d'avant rétablie`, !apres.plein && apres.viewport === viewportAvant && (await rd.locator("[data-planche] [data-planche-vue] canvas").count()) === 1, JSON.stringify(apres));
+    surSandbox = false;
+    await d.context.close();
+  }
 
   check("aucun appel à l'API d'un projet pendant le Sandbox", appels.length === 0, appels.slice(0, 5).join(" ; "));
   check("aucune erreur JavaScript", erreurs.length === 0, erreurs.slice(0, 5).join(" ; "));

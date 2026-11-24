@@ -2325,8 +2325,10 @@
 @media (max-width: 760px) {
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
-   (position calculée, variables sur la racine). Il n'apparaît qu'au survol de la colonne ou de lui-même (sur écran
-   tactile : au toucher de la colonne) et au clavier ; au repos il est caché et inerte. */
+   (position calculée, variables sur la racine). Avec une souris, il n'apparaît qu'au survol de la colonne ou de lui-même
+   et au clavier ; au repos il est caché et inerte. Sur écran tactile (aucun survol), l'équivalent du survol : un toucher
+   sur la colonne (le bouton touché ouvre son panneau, comme avant) le fait paraître environ 3 s (`.colonne-touchee`,
+   posée par Planche.tsx), au-dessus du panneau ouvert, puis il disparaît (demande du 24 novembre 2026). */
 .sandbox-planche .planche-colonne-bascule {
   position: absolute;
   z-index: 7;
@@ -2350,18 +2352,50 @@
   transition: opacity 0.15s ease 0.4s, visibility 0s linear 0.55s;
 }
 .sandbox-planche .planche-colonne:hover + .planche-colonne-bascule,
-.sandbox-planche .planche-colonne:focus-within + .planche-colonne-bascule,
-.sandbox-planche .planche-colonne-bascule:hover,
+/* Clavier seulement (:focus-visible) : un bouton touché du doigt garde le focus, qui ne doit pas figer le chevron. */
+.sandbox-planche .planche-colonne:has(:focus-visible) + .planche-colonne-bascule,
 .sandbox-planche .planche-colonne-bascule:focus-visible {
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
+}
+/* Survol réel seulement : sur écran tactile, le navigateur garde un « survol » collé après un toucher, qui figerait le
+   chevron ; là, c'est `.colonne-touchee` (ci-dessous) qui tient lieu de survol. */
+@media (hover: hover) {
+  .sandbox-planche .planche-colonne:hover + .planche-colonne-bascule,
+  .sandbox-planche .planche-colonne-bascule:hover {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
 }
 @media (hover: none) {
   .sandbox-planche .planche-colonne-bascule {
     width: 44px;
     height: 44px;
   }
+}
+/* Le chevron garde le même aspect en tout état (demande du 24 novembre 2026 : jamais bleu) : ni le survol des boutons de
+   la page, ni le reflet du toucher (Android), ni le focus ne changent sa couleur ; au clavier, un contour sombre. */
+.sandbox-planche .planche button.planche-colonne-bascule,
+.sandbox-planche .planche button.planche-colonne-bascule:hover,
+.sandbox-planche .planche button.planche-colonne-bascule:active,
+.sandbox-planche .planche button.planche-colonne-bascule:focus {
+  background: var(--flottant-fond, #fff);
+  border-color: var(--atelier-ligne, #dce5df);
+  color: var(--atelier-encre, #183d32);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.sandbox-planche .planche button.planche-colonne-bascule:focus-visible {
+  outline: 2px solid var(--atelier-encre, #183d32);
+  outline-offset: 1px;
+}
+.sandbox-planche .planche.colonne-touchee .planche-colonne-bascule {
+  z-index: 8;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
 }
 /* Lot 5 — personnalisation : « Modifier » au pied de la grille, panneau « Personnaliser les outils ». */
 .sandbox-planche .planche-grille-modifier {

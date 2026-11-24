@@ -1,7 +1,7 @@
 /** Chantier Axes (AX-3) : triade d'orientation — géométrie pure, préférences relues, placement dans un coin. */
 import { describe, expect, it } from "vitest";
 import { REPERE_DU_MODELE } from "@parcours/sandbox-planche-model";
-import { MARGE_TRIADE, TAILLE_TRIADE, TRIADE_DEFAUT, lireTriade, placerTriade, segmentsTriade } from "./triade";
+import { ECART_TRIADE_COLONNE, MARGE_TRIADE, TAILLE_TRIADE, TRIADE_DEFAUT, lireTriade, placerTriade, placerTriadeAncree, segmentsTriade } from "./triade";
 
 describe("triade d'orientation", () => {
   it("vue de dessus (identité) : X à droite, Y en haut de l'écran, Z vers l'observateur, tracé en dernier", () => {
@@ -28,5 +28,23 @@ describe("triade d'orientation", () => {
     expect(placerTriade("haut-gauche", 1000, 800, r)).toEqual({ x: 72 + MARGE_TRIADE, y: 56 + MARGE_TRIADE });
     expect(placerTriade("bas-droite", 1000, 800, r)).toEqual({ x: 1000 - 72 - MARGE_TRIADE - TAILLE_TRIADE, y: 800 - 100 - MARGE_TRIADE - TAILLE_TRIADE });
     expect(placerTriade("bas-droite", 100, 100, r)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe("triade ancrée sur la colonne de droite", () => {
+  it("se centre sur l'axe des boutons et se pose juste au-dessus de la colonne", () => {
+    const p = placerTriadeAncree({ x: 800, bas: 200 }, 960);
+    expect(p.taille).toBe(TAILLE_TRIADE);
+    expect(p.x + p.taille / 2).toBe(800);
+    expect(p.y + p.taille).toBe(200 - ECART_TRIADE_COLONNE);
+  });
+  it("près du bord, se réduit pour rester centrée sans sortir de la vue", () => {
+    const p = placerTriadeAncree({ x: 930, bas: 200 }, 960);
+    expect(p.taille).toBe(60);
+    expect(p.x + p.taille / 2).toBe(930);
+    expect(p.x + p.taille).toBeLessThanOrEqual(960);
+  });
+  it("ne monte jamais au-dessus de la marge haute", () => {
+    expect(placerTriadeAncree({ x: 800, bas: 40 }, 960).y).toBe(MARGE_TRIADE);
   });
 });

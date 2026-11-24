@@ -161,6 +161,7 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
 import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
+import { largeurVueEcranLarge } from "./ecran-large";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
@@ -412,6 +413,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return d;
   });
   const stylesObserveur = useRef<MutationObserver | null>(null);
+  // Téléphone détaché : largeur de mise en page imposée (balise viewport) et Planche posée sur toute la page, avec les
+  // valeurs d'avant à rétablir.
+  const vueLargeRef = useRef<{ meta: HTMLMetaElement; avant: string; style: string; racine: HTMLElement; maj: () => void } | null>(null);
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
   const [brouillonCharge, setBrouillonCharge] = useState(false);
   const [etatSauvegarde, setEtatSauvegarde] = useState<EtatSauvegarde>("chargement");
@@ -2082,6 +2086,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return () => porte.remove();
   }, [porte]);
 
+  // Téléphone détaché : rétablit la balise viewport et la place de la Planche ; vrai si ce mode était actif.
+  const restaurerVue = useCallback(() => {
+    const v = vueLargeRef.current;
+    if (!v) return false;
+    vueLargeRef.current = null;
+    window.removeEventListener("resize", v.maj);
+    v.meta.setAttribute("content", v.avant);
+    v.racine.setAttribute("style", v.style);
+    if (!v.style) v.racine.removeAttribute("style");
+    return true;
+  }, []);
+
   const rattacher = useCallback(() => {
     const w = fenetreRef.current;
     if (w) {
@@ -2108,74 +2124,117 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       hote?.focus({ preventScroll: true });
       return;
     }
+    if (restaurerVue()) {
+      setDetache("non");
+      setMessage(t("planche.rattache"));
+      hoteRef.current?.focus({ preventScroll: true });
+      return;
+    }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  }, [porte, restaurerVue]);
+
+  // Pose la porte dans un autre document (fenêtre séparée ou cadre du téléphone) : mêmes feuilles de style, mêmes attributs
+  // de document, même chaîne de classes ancêtres, mêmes écouteurs du clavier.
+  const installerPorte = useCallback((w: Window) => {
+    const copierFeuille = (feuille: CSSStyleSheet) => {
+      try {
+        const style = w.document.createElement("style");
+        style.textContent = Array.from(feuille.cssRules)
+          .map((r) => r.cssText)
+          .join("\n");
+        w.document.head.appendChild(style);
+      } catch {
+        if (feuille.href) {
+          const lien = w.document.createElement("link");
+          lien.rel = "stylesheet";
+          lien.href = feuille.href;
+          w.document.head.appendChild(lien);
+        }
+      }
+    };
+    for (const feuille of Array.from(document.styleSheets)) copierFeuille(feuille);
+    // Feuilles chargées plus tard (panneaux chargés à la demande) : recopiées dès leur arrivée.
+    const observeur = new MutationObserver((mutations) => {
+      for (const m of mutations)
+        for (const n of Array.from(m.addedNodes)) {
+          if (n instanceof HTMLStyleElement && n.sheet) copierFeuille(n.sheet);
+          else if (n instanceof HTMLLinkElement && n.rel === "stylesheet") {
+            const lien = w.document.createElement("link");
+            lien.rel = "stylesheet";
+            lien.href = n.href;
+            w.document.head.appendChild(lien);
+          }
+        }
+    });
+    observeur.observe(document.head, { childList: true });
+    stylesObserveur.current = observeur;
+    const base = w.document.createElement("style");
+    base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-chaine{display:contents!important}.planche-porte>.planche{height:100vh}";
+    w.document.head.appendChild(base);
+    // Mêmes attributs de document (langue, thème) et même chaîne de classes ancêtres que dans la page : les
+    // variables et règles de l'Atelier (`.atelier-n …`) s'appliquent à l'identique ; chaque maillon est transparent.
+    for (const a of Array.from(document.documentElement.attributes)) w.document.documentElement.setAttribute(a.name, a.value);
+    w.document.body.className = document.body.className;
+    w.document.title = `Fadi · ${t("mode.planche")}`;
+    let parent: HTMLElement = w.document.body;
+    const ancetres: string[] = [];
+    for (let n = emplacementRef.current?.parentElement ?? null; n && n !== document.body; n = n.parentElement) ancetres.unshift(n.className);
+    for (const classe of ancetres) {
+      const maillon = w.document.createElement("div");
+      maillon.className = `${classe} planche-chaine`.trim();
+      parent.appendChild(maillon);
+      parent = maillon;
+    }
+    parent.appendChild(porte);
+    const c = clavierRef.current;
+    if (c) {
+      w.addEventListener("keydown", c.touche);
+      w.addEventListener("keyup", c.relache);
+      w.addEventListener("blur", c.perte);
+      w.addEventListener("pointerdown", c.pointeur, true);
+    }
   }, [porte]);
+
+  // Téléphone (aucune fenêtre séparée) : la Planche couvre tout l'écran du navigateur avec la mise en page large, comme la
+  // « version ordinateur » — la balise viewport impose une largeur de mise en page (au moins 980 px, plus en position
+  // couchée : ecran-large.ts) que le navigateur réduit à l'écran ; les règles « écran large » s'appliquent (bandeau,
+  // colonne et libellés, bande du bas) et rien ne déborde. Pas de plein écran du navigateur : il rétablirait la largeur
+  // de l'appareil (donc la mise en page téléphone). « Quitter » rétablit la balise et la Planche dans la page.
+  const detacherEcranLarge = useCallback((racine: HTMLElement): boolean => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!meta) return false;
+    const avant = meta.getAttribute("content") ?? "width=device-width, initial-scale=1.0";
+    const maj = () => {
+      const l = Math.max(1, window.screen?.width ?? 0);
+      const h = Math.max(1, window.screen?.height ?? 0);
+      const couche = window.matchMedia("(orientation: landscape)").matches;
+      const contenu = `width=${largeurVueEcranLarge({ largeur: couche ? Math.max(l, h) : Math.min(l, h), hauteur: couche ? Math.min(l, h) : Math.max(l, h) })}`;
+      if (meta.getAttribute("content") !== contenu) meta.setAttribute("content", contenu);
+    };
+    vueLargeRef.current = { meta, avant, style: racine.getAttribute("style") ?? "", racine, maj };
+    maj();
+    window.addEventListener("resize", maj);
+    // Styles en ligne : la même Planche sert le Sandbox et l'Atelier (feuilles différentes).
+    racine.style.cssText += ";position:fixed;inset:0;z-index:2147483000;width:auto;height:auto;margin:0;border-radius:0";
+    setColonneRepliee(false);
+    setDetache("plein-ecran");
+    setMessage(null);
+    return true;
+  }, []);
 
   const detacher = useCallback(async () => {
     const hote = hoteRef.current;
     const racine = racineRef.current;
     if (!hote || !racine) return;
     const dpip = (window as Window & { documentPictureInPicture?: { requestWindow: (options: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
+    // Téléphone (écran étroit, ou écran tactile sans survol : debout comme couché, « version ordinateur » comprise) :
+    // plein écran en mise en page large réduite à l'écran. Ailleurs : fenêtre séparée, sinon plein écran simple.
+    const telephone = window.matchMedia("(max-width: 760px)").matches || window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    if (telephone && detacherEcranLarge(racine)) return;
     if (dpip && window.matchMedia("(min-width: 761px)").matches) {
       try {
         const w = await dpip.requestWindow(tailleFenetreDetachee(window.screen));
-        const copierFeuille = (feuille: CSSStyleSheet) => {
-          try {
-            const style = w.document.createElement("style");
-            style.textContent = Array.from(feuille.cssRules)
-              .map((r) => r.cssText)
-              .join("\n");
-            w.document.head.appendChild(style);
-          } catch {
-            if (feuille.href) {
-              const lien = w.document.createElement("link");
-              lien.rel = "stylesheet";
-              lien.href = feuille.href;
-              w.document.head.appendChild(lien);
-            }
-          }
-        };
-        for (const feuille of Array.from(document.styleSheets)) copierFeuille(feuille);
-        // Feuilles chargées plus tard (panneaux chargés à la demande) : recopiées dès leur arrivée.
-        const observeur = new MutationObserver((mutations) => {
-          for (const m of mutations)
-            for (const n of Array.from(m.addedNodes)) {
-              if (n instanceof HTMLStyleElement && n.sheet) copierFeuille(n.sheet);
-              else if (n instanceof HTMLLinkElement && n.rel === "stylesheet") {
-                const lien = w.document.createElement("link");
-                lien.rel = "stylesheet";
-                lien.href = n.href;
-                w.document.head.appendChild(lien);
-              }
-            }
-        });
-        observeur.observe(document.head, { childList: true });
-        stylesObserveur.current = observeur;
-        const base = w.document.createElement("style");
-        base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-chaine{display:contents!important}.planche-porte>.planche{height:100vh}";
-        w.document.head.appendChild(base);
-        // Mêmes attributs de document (langue, thème) et même chaîne de classes ancêtres que dans la page : les
-        // variables et règles de l'Atelier (`.atelier-n …`) s'appliquent à l'identique ; chaque maillon est transparent.
-        for (const a of Array.from(document.documentElement.attributes)) w.document.documentElement.setAttribute(a.name, a.value);
-        w.document.body.className = document.body.className;
-        w.document.title = `Fadi · ${t("mode.planche")}`;
-        let parent: HTMLElement = w.document.body;
-        const ancetres: string[] = [];
-        for (let n = emplacementRef.current?.parentElement ?? null; n && n !== document.body; n = n.parentElement) ancetres.unshift(n.className);
-        for (const classe of ancetres) {
-          const maillon = w.document.createElement("div");
-          maillon.className = `${classe} planche-chaine`.trim();
-          parent.appendChild(maillon);
-          parent = maillon;
-        }
-        parent.appendChild(porte);
-        const c = clavierRef.current;
-        if (c) {
-          w.addEventListener("keydown", c.touche);
-          w.addEventListener("keyup", c.relache);
-          w.addEventListener("blur", c.perte);
-          w.addEventListener("pointerdown", c.pointeur, true);
-        }
+        installerPorte(w);
         w.addEventListener("pagehide", () => {
           if (fenetreRef.current === w) rattacher();
         });
@@ -2193,23 +2252,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     } catch {
       setMessage(t("planche.detacher.impossible"));
     }
-  }, [rattacher, porte]);
+  }, [rattacher, installerPorte, detacherEcranLarge]);
 
   useEffect(() => {
-    const maj = () => setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
+    const maj = () => {
+      if (vueLargeRef.current) return;
+      setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
+    };
     document.addEventListener("fullscreenchange", maj);
     return () => {
       document.removeEventListener("fullscreenchange", maj);
       stylesObserveur.current?.disconnect();
       const w = fenetreRef.current;
       fenetreRef.current = null;
+      restaurerVue();
       try {
         w?.close();
       } catch {
         // déjà fermée
       }
     };
-  }, []);
+  }, [restaurerVue]);
 
   // Grille « … » fermée au clic extérieur.
   useEffect(() => {
@@ -2786,6 +2849,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
     ) : null;
 
+  // Écran tactile : l'équivalent du survol de la colonne — un toucher sur elle (ou sur le chevron) fait paraître le chevron
+  // pendant DUREE_COLONNE_TOUCHEE ms, puis il disparaît ; chaque nouveau toucher relance le délai.
+  const [colonneTouchee, setColonneTouchee] = useState(false);
+  const colonneToucheeMinuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toucherColonne = useCallback((e: { pointerType: string }) => {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (colonneToucheeMinuterie.current) clearTimeout(colonneToucheeMinuterie.current);
+    setColonneTouchee(true);
+    colonneToucheeMinuterie.current = setTimeout(() => setColonneTouchee(false), DUREE_COLONNE_TOUCHEE);
+  }, []);
+  useEffect(() => () => {
+    if (colonneToucheeMinuterie.current) clearTimeout(colonneToucheeMinuterie.current);
+  }, []);
+
   // Chevron de la colonne : centré sur sa hauteur et collé à son bord gauche, recalculé quand elle change de taille.
   useLayoutEffect(() => {
     const n = colonneRef.current;
@@ -2797,6 +2874,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const b = (r.querySelector("[data-planche-cadre]") ?? r).getBoundingClientRect();
       r.style.setProperty("--colonne-bascule-droite", `${Math.round(b.right - a.left)}px`);
       r.style.setProperty("--colonne-bascule-haut", `${Math.round(a.top - b.top + a.height / 2)}px`);
+      // Triade d'orientation : sur l'axe vertical des boutons de la colonne, juste au-dessus d'elle (coin haut droit).
+      const picto = n.querySelector("[data-planche-panneau-icone] .canevas-picto")?.getBoundingClientRect();
+      const vue = hoteRef.current?.getBoundingClientRect();
+      vueRef.current?.ancrerTriade(picto && vue && picto.width > 0 ? { x: picto.left + picto.width / 2 - vue.left, bas: a.top - vue.top } : null);
     };
     placer();
     const Observateur = (n.ownerDocument.defaultView as (Window & typeof globalThis) | null)?.ResizeObserver ?? globalThis.ResizeObserver;
@@ -2809,7 +2890,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}${isolement ? " est-isole" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${colonneTouchee ? " colonne-touchee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}${isolement ? " est-isole" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       <div className="planche-vue-cadre" data-planche-cadre>
         <div
           ref={hoteRef}
@@ -2965,7 +3046,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
 
-      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")}>
+      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")} onPointerDown={toucherColonne}>
         {COLONNE.map(({ id, picto, bas }) => (
           <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
             <Pictogramme className="canevas-picto" picto={picto} />
@@ -2973,9 +3054,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </button>
         ))}
       </nav>
-      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; il apparaît au survol de la
-          colonne ou du chevron, et reste visible sur écran tactile (pas de survol) et au clavier (focus). */}
-      <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
+      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; avec une souris, il apparaît
+          au survol de la colonne ou du chevron et au clavier (focus) ; sur écran tactile (pas de survol), un toucher sur la
+          colonne ou sur lui le fait paraître environ 3 s (`colonne-touchee`). */}
+      <button type="button" className="planche-colonne-bascule" onPointerDown={toucherColonne} aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
         <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
       </button>
       {panneau === "personnaliser" && (
@@ -3657,6 +3739,9 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
   );
 }
 
+/** Écran tactile : durée (ms) pendant laquelle un toucher sur la colonne de droite affiche son chevron. */
+const DUREE_COLONNE_TOUCHEE = 3000;
+
 /** Marges (px) occupées par la barre d'outils et la colonne de droite : Zoom étendu cadre la zone restante. */
 function margesVue(racine: HTMLElement | null): { gauche: number; droite: number; haut: number; bas: number } {
   if (!racine) return { gauche: 0, droite: 0, haut: 0, bas: 0 };
@@ -3667,7 +3752,7 @@ function margesVue(racine: HTMLElement | null): { gauche: number; droite: number
   const panneau = boite(".planche-panneau");
   const haut = boite(".planche-haut");
   const pied = boite(".planche-pied");
-  const etroit = window.matchMedia("(max-width: 760px)").matches;
+  const etroit = (racine.ownerDocument.defaultView ?? window).matchMedia("(max-width: 760px)").matches;
   return {
     gauche: etroit || !outils ? 0 : Math.max(0, outils.right - r.left),
     droite: etroit ? 0 : Math.max(colonne ? r.right - colonne.left : 0, panneau ? r.right - panneau.left : 0),
