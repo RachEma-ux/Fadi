@@ -158,7 +158,9 @@ import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brou
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
-import { BarreActions } from "../panneaux/BarreActions";
+import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
+import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
+import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
@@ -374,6 +376,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  const etroitRef = useRef(etroit);
+  etroitRef.current = etroit;
   // Écran tactile dès l'ouverture (un pointeur grossier, même secondaire, ou des points de contact) : les boutons zoom + / −
   // sont visibles sans attendre un premier toucher, y compris sur un portable à écran tactile piloté à la souris.
   const [pointeurGrossier] = useState(() => typeof window !== "undefined" && (window.matchMedia("(any-pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0));
@@ -1582,15 +1586,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 760px)");
+    // Largeur de la fenêtre qui porte la Planche (page, ou fenêtre détachée redimensionnée) : barre d'actions du bandeau
+    // ou barre flottante selon ELLE, jamais selon la page restée derrière.
+    const hote = racineRef.current?.ownerDocument.defaultView ?? window;
+    const mq = hote.matchMedia("(max-width: 760px)");
     // En passant au format téléphone (rotation, fenêtre rétrécie), la colonne se replie aussi en icônes.
     const maj = () => {
       setEtroit(mq.matches);
       if (mq.matches) setColonneRepliee(true);
     };
+    if (mq.matches !== etroitRef.current) maj();
     mq.addEventListener("change", maj);
     return () => mq.removeEventListener("change", maj);
-  }, []);
+  }, [detache]);
 
   // --- Vue three.js : créée une fois, détruite au démontage.
   useEffect(() => {
@@ -2110,7 +2118,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const dpip = (window as Window & { documentPictureInPicture?: { requestWindow: (options: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
     if (dpip && window.matchMedia("(min-width: 761px)").matches) {
       try {
-        const w = await dpip.requestWindow({ width: 1040, height: 700 });
+        const w = await dpip.requestWindow(tailleFenetreDetachee(window.screen));
         const copierFeuille = (feuille: CSSStyleSheet) => {
           try {
             const style = w.document.createElement("style");
@@ -2675,71 +2683,89 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     />
   );
 
-  /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
+  /**
+   * Commandes de la barre d'actions (D-195), en trois groupes : Cadrer (et zoom − / + au toucher) ; Grouper, Composant,
+   * Éclater, Unique ; puis Diviser, Diviser la courbe et Isoler selon la sélection. À l'ordinateur, elles vivent au centre
+   * du bandeau d'en-tête (24 novembre 2026) et « Détacher » à sa droite ; au téléphone, la barre flottante est inchangée.
+   */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
-  const barreActions = (
+  const groupeVue: ActionBarre[] = [
+    // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
+    { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
+    ...(tactile || etroit || pointeurGrossier
+      ? (["zoom-moins", "zoom-plus"] as const)
+          .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
+          .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
+      : []),
+  ];
+  const commandeObjet = (c: (typeof COMMANDES_OBJETS)[number]): ActionBarre[] => {
+    const d = disponibiliteObjet(c.id, etatSelectionObjets());
+    // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
+    if (c.contextuelle && !d.disponible) return [];
+    const nom = t(c.libelle);
+    return [{
+      id: c.id,
+      picto: c.picto,
+      libelle: nom,
+      // Nom visible sous l'icône (règle d'or : bouton nommé au toucher, pas seulement un pictogramme).
+      texte: t(c.court),
+      titre: d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.objets.motif.vide")}`,
+      onClick: () => executerObjet(c.id),
+      disabled: !d.disponible,
+      attributs: { "data-planche-commande": c.id },
+    }];
+  };
+  const groupeObjets: ActionBarre[] = COMMANDES_OBJETS.filter((c) => !c.contextuelle).flatMap(commandeObjet);
+  const actionDiviser: ActionBarre[] = [
+    // Lot 6 : arête sélectionnée → l'outil Diviser (Maj+D), qui remplace la commande en double du même nom.
+    ...(((o) => {
+      if (!o || (etatSelectionObjets().aretes ?? 0) === 0) return [];
+      const raison = raisonDe(o);
+      const nom = nomOutil(o);
+      const titre = raison ? `${nom} — ${raison}` : `${nom} (${afficherRaccourci(raccourciOutil(o)!)})`;
+      return [{ id: "diviser", picto: pictoOutil(o.id), libelle: nom, texte: t("planche.objets.court.diviser"), titre, onClick: () => choisirOutil(o.id), disabled: raison !== null, attributs: { "data-planche-action-outil": o.id } }];
+    })(outilParId("diviser"))),
+  ];
+  const actionIsoler: ActionBarre[] = [
+    // Objets O-5 : Isoler, présent avec une sélection ou pendant l'isolement (enfoncé), qui le lève.
+    ...commandesVue()
+      .filter((c) => c.id === "isoler" && c.motif === null)
+      .map((c) => ({
+        id: c.id,
+        picto: c.picto,
+        libelle: c.nom,
+        texte: t("planche.objets.court.isoler"),
+        titre: `${c.nom} (${afficherRaccourci(c.raccourci)})`,
+        onClick: c.executer,
+        pressed: isolement !== null,
+        attributs: { "data-planche-commande": c.id },
+      })),
+  ];
+  const groupeSelection: ActionBarre[] = [...actionDiviser, ...COMMANDES_OBJETS.filter((c) => c.contextuelle).flatMap(commandeObjet), ...actionIsoler];
+  const actionDetacher: ActionBarre = {
+    id: "detacher",
+    picto: detache === "non" ? "detacher" : "rattacher",
+    libelle: libelleDetacher,
+    titre: detache === "non" ? t("planche.detacher.aide") : libelleDetacher,
+    texte: detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court"),
+    onClick: () => (detache === "non" ? void detacher() : rattacher()),
+    attributs: { "data-planche-detacher": "" },
+  };
+  // Droite du bandeau : « Détacher » dans la page ; ✕ « Fermer et rattacher » dans la fenêtre détachée (plus de
+  // « Rattacher ») ; « Quitter le plein écran » quand la Planche a été mise en plein écran faute de fenêtre.
+  const actionBandeauDroite: ActionBarre =
+    detache === "fenetre"
+      ? { id: "fermer-rattacher", picto: "fermer" as const, libelle: t("planche.fermer-rattacher"), titre: t("planche.fermer-rattacher"), onClick: rattacher, attributs: { "data-planche-detacher": "", "data-planche-fermer-rattacher": "" } }
+      : actionDetacher;
+  const barreActions = etroit ? (
     <BarreActions
-      autres={[
-        // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
-        { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
-        ...(tactile || etroit || pointeurGrossier
-          ? (["zoom-moins", "zoom-plus"] as const)
-              .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
-              .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
-          : []),
-        // Lot 6 : arête sélectionnée → l'outil Diviser (Maj+D), qui remplace la commande en double du même nom.
-        ...(((o) => {
-          if (!o || (etatSelectionObjets().aretes ?? 0) === 0) return [];
-          const raison = raisonDe(o);
-          const nom = nomOutil(o);
-          const titre = raison ? `${nom} — ${raison}` : `${nom} (${afficherRaccourci(raccourciOutil(o)!)})`;
-          return [{ id: "diviser", picto: pictoOutil(o.id), libelle: nom, texte: t("planche.objets.court.diviser"), titre, onClick: () => choisirOutil(o.id), disabled: raison !== null, attributs: { "data-planche-action-outil": o.id } }];
-        })(outilParId("diviser"))),
-        ...COMMANDES_OBJETS.flatMap((c) => {
-          const d = disponibiliteObjet(c.id, etatSelectionObjets());
-          // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
-          if (c.contextuelle && !d.disponible) return [];
-          const nom = t(c.libelle);
-          return {
-            id: c.id,
-            picto: c.picto,
-            libelle: nom,
-            // Nom visible sous l'icône (règle d'or : bouton nommé au toucher, pas seulement un pictogramme).
-            texte: t(c.court),
-            titre: d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.objets.motif.vide")}`,
-            onClick: () => executerObjet(c.id),
-            disabled: !d.disponible,
-            attributs: { "data-planche-commande": c.id },
-          };
-        }),
-        // Objets O-5 : Isoler, présent avec une sélection ou pendant l'isolement (enfoncé), qui le lève.
-        ...commandesVue()
-          .filter((c) => c.id === "isoler" && c.motif === null)
-          .map((c) => ({
-            id: c.id,
-            picto: c.picto,
-            libelle: c.nom,
-            texte: t("planche.objets.court.isoler"),
-            titre: `${c.nom} (${afficherRaccourci(c.raccourci)})`,
-            onClick: c.executer,
-            pressed: isolement !== null,
-            attributs: { "data-planche-commande": c.id },
-          })),
-        {
-          id: "detacher",
-          picto: detache === "non" ? "detacher" : "rattacher",
-          libelle: libelleDetacher,
-          titre: detache === "non" ? t("planche.detacher.aide") : libelleDetacher,
-          texte: detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court"),
-          onClick: () => (detache === "non" ? void detacher() : rattacher()),
-          attributs: { "data-planche-detacher": "" },
-        },
-      ]}
+      // Téléphone : même barre flottante, même ordre qu'avant.
+      autres={[...groupeVue, ...actionDiviser, ...COMMANDES_OBJETS.flatMap(commandeObjet), ...actionIsoler, actionDetacher]}
       reference={racineRef}
       reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils, .planche-recherche-carte, [data-planche-menu-principal]" }}
       fenetreCle={`${detache}|${hautDocquee ?? ""}`}
     />
-  );
+  ) : null;
 
   const carteDetache =
     detache === "fenetre" ? (
@@ -2811,6 +2837,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
           <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
         </p>
+        {!etroit && <ActionsBandeau groupes={[groupeVue, groupeObjets, groupeSelection]} />}
+        {!etroit && (
+          <div className="planche-bandeau-droite" data-planche-bandeau-droite>
+            <BoutonBandeau a={actionBandeauDroite} />
+          </div>
+        )}
       </div>
       <p className="sr-only" role="status" aria-live="polite" data-planche-brouillon data-sauvegarde={etatSauvegarde}>
         {t(`planche.sauvegarde.${etatSauvegarde}`)}

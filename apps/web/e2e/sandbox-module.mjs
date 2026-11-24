@@ -123,7 +123,21 @@ async function bandeau(page, racine, contexte) {
   check(`${contexte} : ☰ dans le carré gauche du bandeau (48 × 48 px), non déplaçable`, Math.abs(m.bouton.l - m.planche.l) <= 1 && Math.abs(m.bouton.t - m.planche.t) <= 1 && Math.round(m.bouton.w) === 48 && m.bouton.h >= 46 && m.deplacable === "false", JSON.stringify(m.bouton));
   check(`${contexte} : le bandeau porte « Planche » et le nom de la Planche`, /^Planche\s+\S/.test(m.nom) && m.nomVisible, m.nom);
   check(`${contexte} : le dessin commence sous le bandeau ; la loupe remonte juste dessous`, Math.abs(m.cadre.t - m.bandeau.b) <= 1 && m.loupe.t >= m.bandeau.b && m.loupe.t - m.bandeau.b <= 16, JSON.stringify({ cadre: m.cadre.t, loupe: m.loupe.t, bandeau: m.bandeau.b }));
-  check(`${contexte} : la barre d'actions reste sous le bandeau`, !m.actions || m.actions.t >= m.bandeau.b, JSON.stringify(m.actions));
+  // Barre d'actions intégrée au bandeau (24 novembre 2026) : au centre, dans les 48 px ; « Détacher » à droite ; plus
+  // aucune barre flottante sur le dessin.
+  const ba = await racine.evaluate((r) => {
+    const bd = r.querySelector("[data-planche-bandeau]").getBoundingClientRect();
+    const box = (e) => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+    const actions = r.querySelector("[data-planche-bandeau] [data-planche-bandeau-actions]");
+    const cadrer = r.querySelector("[data-planche-bandeau-actions] [data-planche-cadrer]");
+    const detacher = r.querySelector("[data-planche-bandeau-droite] [data-planche-detacher]");
+    const ids = [...r.querySelectorAll("[data-planche-bandeau-actions] [data-action]")].map((b) => b.getAttribute("data-action"));
+    const grises = [...r.querySelectorAll("[data-planche-bandeau-actions] button:disabled")].map((b) => ({ id: b.getAttribute("data-action"), titre: b.getAttribute("title") ?? "" }));
+    return { bd: box({ getBoundingClientRect: () => bd }), actions: actions && box(actions), cadrer: cadrer && box(cadrer), detacher: detacher && box(detacher), detacherTexte: detacher?.textContent?.trim(), ids, grises, flottantes: r.querySelectorAll(".barre-actions").length };
+  });
+  check(`${contexte} : barre d'actions au centre du bandeau (Cadrer, Grouper, Composant, Éclater, Unique), plus de barre flottante`, ba.actions && ba.cadrer && ba.cadrer.t >= ba.bd.t - 1 && ba.cadrer.b <= ba.bd.b + 1 && JSON.stringify(ba.ids) === JSON.stringify(["cadrer", "groupe", "composant", "eclater", "rendre-unique"]) && ba.flottantes === 0, JSON.stringify(ba));
+  check(`${contexte} : sans sélection, Cadrer seul actif ; le reste grisé avec son motif en infobulle`, ba.grises.length === 4 && ba.grises.every((g) => g.titre.includes("—")), JSON.stringify(ba.grises));
+  check(`${contexte} : « Détacher » à droite du bandeau`, ba.detacher && Math.abs(ba.detacher.r - ba.bd.r) <= 1 && ba.detacherTexte === "Détacher", JSON.stringify(ba.detacher));
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
   check(`${contexte} : ☰ ouvre le menu sous le bandeau, contenu inchangé (onze entrées)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 11, JSON.stringify(liste));
@@ -167,6 +181,43 @@ async function raccourcisHarmonises(page) {
   await page.keyboard.press("Space");
 }
 
+/**
+ * Fenêtre détachée (Document Picture-in-Picture, 24 novembre 2026) : demandée à la taille de l'écran (jamais sous
+ * 1040 × 700) ; même bandeau, barre d'actions au centre ; plus de « Rattacher » : ✕ « Fermer et rattacher » à droite,
+ * qui ferme la fenêtre et ramène la Planche dans la page.
+ */
+async function fenetreDetachee(page, context) {
+  const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
+  const ouverture = context.waitForEvent("page", { timeout: 10000 }).catch(() => null);
+  await racine.locator("[data-planche-bandeau-droite] [data-planche-detacher]").click();
+  const w = await ouverture;
+  if (!w) {
+    check("fenêtre détachée : ouverte (Document Picture-in-Picture)", false, "aucune fenêtre");
+    return;
+  }
+  await w.locator("[data-planche-bandeau]").waitFor({ state: "visible" });
+  const taille = await w.evaluate(() => ({ l: innerWidth, h: innerHeight, ecranL: screen.availWidth, ecranH: screen.availHeight }));
+  check("fenêtre détachée : plus grande que l'ancienne fenêtre fixe 1040 × 700", taille.l >= 1040 && taille.h >= 700 && (taille.l > 1040 || taille.h > 700), JSON.stringify(taille));
+  const m = await w.evaluate(() => ({
+    actions: [...document.querySelectorAll("[data-planche-bandeau-actions] [data-action]")].map((b) => b.getAttribute("data-action")),
+    fermer: document.querySelector("[data-planche-bandeau-droite] [data-planche-fermer-rattacher]")?.getAttribute("title") ?? null,
+    rattacher: [...document.querySelectorAll("[data-planche-bandeau] button")].some((b) => /Rattacher/.test(b.textContent ?? "")),
+    flottantes: document.querySelectorAll(".barre-actions").length,
+  }));
+  check("fenêtre détachée : barre d'actions au centre du bandeau, plus de barre flottante", m.actions[0] === "cadrer" && m.actions.length === 5 && m.flottantes === 0, JSON.stringify(m));
+  check("fenêtre détachée : plus de « Rattacher » ; ✕ « Fermer et rattacher » à droite", m.fermer === "Fermer et rattacher" && !m.rattacher, JSON.stringify(m));
+  await w.screenshot({ path: join(OUT, "sandbox-fenetre-detachee.png") });
+  // Fenêtre détachée rétrécie au format téléphone : la barre flottante y revient (commandes jamais perdues).
+  await w.setViewportSize({ width: 700, height: 700 });
+  await w.locator(".barre-actions [data-planche-cadrer]").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  check("fenêtre détachée étroite : la barre flottante reprend les commandes", (await w.locator(".barre-actions [data-planche-cadrer]").isVisible()) && (await w.locator(".barre-actions [data-planche-detacher]").isVisible()));
+  await w.setViewportSize({ width: taille.l, height: taille.h });
+  await w.locator("[data-planche-fermer-rattacher]").waitFor({ state: "visible", timeout: 5000 });
+  await w.locator("[data-planche-fermer-rattacher]").click();
+  await racine.locator("[data-planche-bandeau-droite] [data-planche-detacher]").waitFor({ state: "visible", timeout: 10000 });
+  check("fenêtre détachée : ✕ ferme la fenêtre et rattache la Planche", w.isClosed() && (await racine.locator("[data-planche-detache-carte]").count()) === 0);
+}
+
 /** La Planche de Sandbox est chargée : vue 3D (canvas) et barre d'outils garnie, visibles. */
 async function plancheChargee(page, contexte) {
   const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
@@ -198,6 +249,7 @@ try {
   await disposition(page, "ordinateur");
   await raccourcisHarmonises(page);
   await page.screenshot({ path: join(OUT, "sandbox-ordinateur.png") });
+  await fenetreDetachee(page, context);
   surSandbox = false;
 
   // 2. Ancienne adresse : redirection vers /sandbox, sans entrée d'historique supplémentaire.
