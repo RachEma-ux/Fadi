@@ -3107,9 +3107,6 @@
     box-sizing: border-box;
     background: #161616;
     border-bottom: 1px solid #393939;
-    color: #f4f4f4;
-    font-size: 0.875rem;
-    letter-spacing: 0.01em;
   }
   .sandbox-planche .planche-bandeau .planche-menu-principal.dans-bandeau {
     position: relative;
@@ -3152,8 +3149,6 @@
   .sandbox-planche .planche-bandeau .dans-bandeau > .planche-menu-liste {
     top: calc(100% + 1px);
     left: 0;
-    color: var(--texte, #1d2a25);
-    letter-spacing: normal;
     max-height: calc(100vh - var(--bandeau-h) - 2rem);
   }
   .sandbox-planche .planche-bandeau-nom {
@@ -3167,6 +3162,11 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     border-left: 1px solid #393939;
+    /* Texte clair seulement ici et sur ☰ : le menu et la page Informations, rendus dans le bandeau, gardent leurs
+       couleurs claires habituelles (rien n'est hérité du fond sombre). */
+    color: #f4f4f4;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
   }
   .sandbox-planche .planche-bandeau-nom > span:last-child {
     overflow: hidden;

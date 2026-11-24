@@ -127,7 +127,17 @@ async function bandeau(page, racine, contexte) {
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
   check(`${contexte} : ☰ ouvre le menu sous le bandeau, contenu inchangé (onze entrées)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 11, JSON.stringify(liste));
+  // Les couleurs claires du bandeau ne fuient ni dans le menu ni dans la page Informations (rendus dans le bandeau).
+  const couleurMenu = await racine.locator(".planche-menu-liste [data-planche-menu-item='informations']").evaluate((e) => getComputedStyle(e).color);
+  await racine.locator("[data-planche-menu-item='informations']").click();
+  const info = page.locator("[data-planche-informations]");
+  await info.waitFor({ state: "visible", timeout: 5000 });
+  const couleurInfo = await info.evaluate((e) => getComputedStyle(e).color);
+  const clair = (c) => { const n = (c.match(/\d+/g) ?? []).slice(0, 3).map(Number); return n.length === 3 && n.every((x) => x > 200); };
+  check(`${contexte} : le menu et la page Informations gardent un texte foncé (rien n'hérite du bandeau sombre)`, !clair(couleurMenu) && !clair(couleurInfo), `${couleurMenu} · ${couleurInfo}`);
   await page.keyboard.press("Escape");
+  await info.waitFor({ state: "hidden", timeout: 5000 }).catch(() => undefined);
+  if (await racine.locator(".planche-menu-liste").count()) await page.keyboard.press("Escape");
   check(`${contexte} : Échap referme le menu`, (await racine.locator(".planche-menu-liste").count()) === 0);
 }
 
