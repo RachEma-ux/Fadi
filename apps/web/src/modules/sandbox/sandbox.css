@@ -2325,8 +2325,9 @@
 @media (max-width: 760px) {
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
-   (position calculée, variables sur la racine). Il n'apparaît qu'au survol de la colonne ou de lui-même (sur écran
-   tactile : au toucher de la colonne) et au clavier ; au repos il est caché et inerte. */
+   (position calculée, variables sur la racine). Avec une souris, il n'apparaît qu'au survol de la colonne ou de lui-même
+   et au clavier ; au repos il est caché et inerte. Sur écran tactile (aucun survol), il reste affiché : toucher la
+   colonne ouvre un panneau, rien d'autre ne pouvait le faire paraître (signalé le 24 novembre 2026). */
 .sandbox-planche .planche-colonne-bascule {
   position: absolute;
   z-index: 7;
@@ -2361,7 +2362,16 @@
   .sandbox-planche .planche-colonne-bascule {
     width: 44px;
     height: 44px;
+    opacity: 1;
+    visibility: visible;
+    transition: none;
   }
+}
+/* Écran tactile reconnu au premier toucher (portable tactile piloté aussi à la souris) : même règle. */
+.sandbox-planche .planche.planche-tactile .planche-colonne-bascule {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
 }
 /* Lot 5 — personnalisation : « Modifier » au pied de la grille, panneau « Personnaliser les outils ». */
 .sandbox-planche .planche-grille-modifier {

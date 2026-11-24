@@ -2973,8 +2973,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </button>
         ))}
       </nav>
-      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; il apparaît au survol de la
-          colonne ou du chevron, et reste visible sur écran tactile (pas de survol) et au clavier (focus). */}
+      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; avec une souris, il apparaît
+          au survol de la colonne ou du chevron et au clavier (focus) ; sur écran tactile (pas de survol), il reste affiché. */}
       <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
         <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
       </button>
