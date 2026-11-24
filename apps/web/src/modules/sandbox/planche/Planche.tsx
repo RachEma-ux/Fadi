@@ -2786,6 +2786,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
     ) : null;
 
+  // Écran tactile : l'équivalent du survol de la colonne — un toucher sur elle (ou sur le chevron) fait paraître le chevron
+  // pendant DUREE_COLONNE_TOUCHEE ms, puis il disparaît ; chaque nouveau toucher relance le délai.
+  const [colonneTouchee, setColonneTouchee] = useState(false);
+  const colonneToucheeMinuterie = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toucherColonne = useCallback((e: { pointerType: string }) => {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if (colonneToucheeMinuterie.current) clearTimeout(colonneToucheeMinuterie.current);
+    setColonneTouchee(true);
+    colonneToucheeMinuterie.current = setTimeout(() => setColonneTouchee(false), DUREE_COLONNE_TOUCHEE);
+  }, []);
+  useEffect(() => () => {
+    if (colonneToucheeMinuterie.current) clearTimeout(colonneToucheeMinuterie.current);
+  }, []);
+
   // Chevron de la colonne : centré sur sa hauteur et collé à son bord gauche, recalculé quand elle change de taille.
   useLayoutEffect(() => {
     const n = colonneRef.current;
@@ -2809,7 +2823,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}${isolement ? " est-isole" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${colonneTouchee ? " colonne-touchee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}${isolement ? " est-isole" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       <div className="planche-vue-cadre" data-planche-cadre>
         <div
           ref={hoteRef}
@@ -2965,7 +2979,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
 
-      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")}>
+      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")} onPointerDown={toucherColonne}>
         {COLONNE.map(({ id, picto, bas }) => (
           <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
             <Pictogramme className="canevas-picto" picto={picto} />
@@ -2974,8 +2988,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ))}
       </nav>
       {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; avec une souris, il apparaît
-          au survol de la colonne ou du chevron et au clavier (focus) ; sur écran tactile (pas de survol), il reste affiché. */}
-      <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
+          au survol de la colonne ou du chevron et au clavier (focus) ; sur écran tactile (pas de survol), un toucher sur la
+          colonne ou sur lui le fait paraître environ 3 s (`colonne-touchee`). */}
+      <button type="button" className="planche-colonne-bascule" onPointerDown={toucherColonne} aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
         <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
       </button>
       {panneau === "personnaliser" && (
@@ -3656,6 +3671,9 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
     </div>
   );
 }
+
+/** Écran tactile : durée (ms) pendant laquelle un toucher sur la colonne de droite affiche son chevron. */
+const DUREE_COLONNE_TOUCHEE = 3000;
 
 /** Marges (px) occupées par la barre d'outils et la colonne de droite : Zoom étendu cadre la zone restante. */
 function margesVue(racine: HTMLElement | null): { gauche: number; droite: number; haut: number; bas: number } {
