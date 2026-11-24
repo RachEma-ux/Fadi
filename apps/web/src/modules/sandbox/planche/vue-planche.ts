@@ -13,7 +13,7 @@ import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
-import { type PreferencesTriade, type SegmentTriade, TAILLE_TRIADE, TRIADE_DEFAUT, placerTriade, segmentsTriade } from "./triade";
+import { type PreferencesTriade, type SegmentTriade, TAILLE_TRIADE, TRIADE_DEFAUT, placerTriade, placerTriadeAncree, segmentsTriade } from "./triade";
 
 /** Réserves de la triade (px) : menu ☰ en haut, rail d'outils à gauche, colonne à droite, pied en bas. */
 const RESERVES_TRIADE = { haut: 56, bas: 104, gauche: 72, droite: 72 };
@@ -242,6 +242,7 @@ export class VuePlanche {
   private readonly etiquettesDom: HTMLDivElement;
   private readonly triadeSvg: SVGSVGElement;
   private triade: { prefs: PreferencesTriade; libelle: string } = { prefs: TRIADE_DEFAUT, libelle: "" };
+  private ancreTriade: { x: number; bas: number } | null = null;
   private etiquettesFixes: Etiquette[] = [];
   private etiquettesApercu: Etiquette[] = [];
   /** Pastilles annelées (SketchUp web) : point de départ du tracé et sommet de référence de l'inférence. */
@@ -950,6 +951,18 @@ export class VuePlanche {
     });
   }
 
+  /**
+   * Ancre de la triade dans le coin haut droit (24 novembre 2026, demande du maître d'ouvrage) : centrée sur l'axe vertical
+   * des boutons de la colonne de droite (`x`, px dans la vue) et posée juste au-dessus de la colonne (`bas` : haut de la
+   * colonne). `null` : place par défaut (réserves fixes).
+   */
+  ancrerTriade(ancre: { x: number; bas: number } | null): void {
+    const a = this.ancreTriade;
+    if (a === ancre || (a && ancre && Math.abs(a.x - ancre.x) < 0.5 && Math.abs(a.bas - ancre.bas) < 0.5)) return;
+    this.ancreTriade = ancre;
+    this.majTriade();
+  }
+
   /** Préférences de la triade d'orientation et sa légende (repère représenté), données par la Planche. */
   poserTriade(prefs: PreferencesTriade, libelle: string): void {
     this.triade = { prefs, libelle };
@@ -972,7 +985,11 @@ export class VuePlanche {
     const svg = this.triadeSvg;
     svg.style.display = prefs.visible ? "" : "none";
     if (!prefs.visible) return;
-    const p = placerTriade(prefs.coin, this.largeur, this.hauteur, RESERVES_TRIADE);
+    const ancree = this.ancreTriade && prefs.coin === "haut-droite" ? placerTriadeAncree(this.ancreTriade, this.largeur) : null;
+    const p = ancree ?? placerTriade(prefs.coin, this.largeur, this.hauteur, RESERVES_TRIADE);
+    // Même dessin (viewBox inchangée), simplement réduit quand la triade est ancrée près du bord.
+    svg.setAttribute("width", String(ancree?.taille ?? TAILLE_TRIADE));
+    svg.setAttribute("height", String(ancree?.taille ?? TAILLE_TRIADE));
     svg.style.left = `${p.x}px`;
     svg.style.top = `${p.y}px`;
     svg.setAttribute("data-represente", prefs.represente);

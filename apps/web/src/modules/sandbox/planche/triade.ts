@@ -66,6 +66,21 @@ export function segmentsTriade(repere: Pick<Repere, "x" | "y" | "z">, versVue: (
 export const TAILLE_TRIADE = 84;
 export const MARGE_TRIADE = 12;
 
+/** Écart (px) entre le bas de la triade et le haut de la colonne de droite, quand elle y est ancrée. */
+export const ECART_TRIADE_COLONNE = 8;
+
+/**
+ * Triade ancrée sur la colonne de droite (coin haut droit, demande du 24 novembre 2026) : centrée sur l'axe vertical de
+ * ses boutons (`ancre.x`) et posée juste au-dessus d'elle (`ancre.bas` = haut de la colonne). Les boutons sont près du
+ * bord : la triade est réduite (`taille`) autant qu'il faut pour rester centrée sans sortir de la vue.
+ */
+export function placerTriadeAncree(ancre: { x: number; bas: number }, largeur: number): { x: number; y: number; taille: number } {
+  const taille = Math.max(40, Math.min(TAILLE_TRIADE, 2 * Math.min(ancre.x, largeur - ancre.x)));
+  const x = Math.min(Math.max(0, largeur - taille), ancre.x - taille / 2);
+  const y = ancre.bas - ECART_TRIADE_COLONNE - taille;
+  return { x: Math.max(0, x), y: Math.max(MARGE_TRIADE, y), taille };
+}
+
 /** Origine (coin haut gauche) de la surcouche dans une zone de largeur × hauteur, selon le coin et des réserves (px). */
 export function placerTriade(coin: CoinTriade, largeur: number, hauteur: number, reserves: { haut: number; bas: number; gauche: number; droite: number }): { x: number; y: number } {
   const x = coin.endsWith("gauche") ? reserves.gauche + MARGE_TRIADE : largeur - reserves.droite - MARGE_TRIADE - TAILLE_TRIADE;

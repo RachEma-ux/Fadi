@@ -80,6 +80,14 @@ try {
   const boite = await triade.boundingBox();
   const vue = await page.locator("[data-planche-vue]").boundingBox();
   check("triade : lettres X, Y, Z (jamais la couleur seule), en haut à droite de la vue", lettres === "XYZ" && !!boite && !!vue && boite.x > vue.x + vue.width / 2 && boite.y < vue.y + vue.height / 2, `${lettres} ${JSON.stringify(boite)}`);
+  // Demande du 24 novembre 2026 : sur l'axe vertical des boutons de la colonne de droite, au-dessus d'elle (sans la recouvrir).
+  const alignement = await page.evaluate(() => {
+    const t = document.querySelector("[data-planche-triade]").getBoundingClientRect();
+    const p = document.querySelector(".planche-colonne [data-planche-panneau-icone] .canevas-picto").getBoundingClientRect();
+    const c = document.querySelector(".planche-colonne").getBoundingClientRect();
+    return { ecart: Math.round(Math.abs(t.left + t.width / 2 - (p.left + p.width / 2))), dessus: t.bottom <= c.top + 1 };
+  });
+  check("triade : centrée sur l'axe des boutons de la colonne, au-dessus d'elle", alignement.ecart <= 2 && alignement.dessus, JSON.stringify(alignement));
   check("triade : ne capte pas le pointeur", (await triade.evaluate((el) => getComputedStyle(el).pointerEvents)) === "none");
 
   // AX08 — enregistrer un repère placé au clavier.

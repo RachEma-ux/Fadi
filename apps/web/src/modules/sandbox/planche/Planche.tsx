@@ -2895,6 +2895,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const b = (r.querySelector("[data-planche-cadre]") ?? r).getBoundingClientRect();
       r.style.setProperty("--colonne-bascule-droite", `${Math.round(b.right - a.left)}px`);
       r.style.setProperty("--colonne-bascule-haut", `${Math.round(a.top - b.top + a.height / 2)}px`);
+      // Triade d'orientation : sur l'axe vertical des boutons de la colonne, juste au-dessus d'elle (coin haut droit).
+      const picto = n.querySelector("[data-planche-panneau-icone] .canevas-picto")?.getBoundingClientRect();
+      const vue = hoteRef.current?.getBoundingClientRect();
+      vueRef.current?.ancrerTriade(picto && vue && picto.width > 0 ? { x: picto.left + picto.width / 2 - vue.left, bas: a.top - vue.top } : null);
     };
     placer();
     const Observateur = (n.ownerDocument.defaultView as (Window & typeof globalThis) | null)?.ResizeObserver ?? globalThis.ResizeObserver;
