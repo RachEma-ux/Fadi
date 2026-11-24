@@ -18,6 +18,7 @@ import { titreOperation } from "./BoutonOutils";
 import { t } from "../messages";
 import { nomOutil, pictoOutil } from "./outils-planche";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import { rectZoneDessin } from "./zone-dessin";
 
 export interface PropsBarreOutilsFlottante {
   outil: Outil;
@@ -73,7 +74,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
     const ref = reference.current;
     if (!el) return null;
     const fenetre = zoneDe(el);
-    const r = ref?.getBoundingClientRect();
+    const r = ref ? rectZoneDessin(ref) : undefined;
     const zone: Zone = r && r.width > 0 && r.height > 0 ? { gauche: r.left, haut: r.top, largeur: r.width, hauteur: r.height } : fenetre;
     const visible = (sel: string) => {
       const q = ref?.querySelector(sel)?.getBoundingClientRect();

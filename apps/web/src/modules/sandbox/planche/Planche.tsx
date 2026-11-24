@@ -2767,7 +2767,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (!n || !r) return;
     const placer = () => {
       const a = n.getBoundingClientRect();
-      const b = r.getBoundingClientRect();
+      // Mesuré depuis la zone « vue » (sous le bandeau d'en-tête), qui est le bloc conteneur du chevron.
+      const b = (r.querySelector("[data-planche-cadre]") ?? r).getBoundingClientRect();
       r.style.setProperty("--colonne-bascule-droite", `${Math.round(b.right - a.left)}px`);
       r.style.setProperty("--colonne-bascule-haut", `${Math.round(a.top - b.top + a.height / 2)}px`);
     };
@@ -2800,10 +2801,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       </div>
 
-      {/* Menu de la Planche : pictogramme seul, flottant, déplaçable (appui de 2 s) — hors de la barre du haut. */}
-      <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} />
-      {/* Pas de barre du haut (demande du maître d'ouvrage) : le menu et la loupe sont des cartes flottantes. L'état
-          d'enregistrement reste annoncé aux lecteurs d'écran ; seule une erreur d'enregistrement s'affiche. */}
+      {/* Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon, sans logo ni marque) : 48 px sombres en
+          haut de la Planche, le menu dans le carré gauche, puis « Planche » et le nom de la Planche ouverte ; même bandeau dans
+          la page et en fenêtre détachée. Au téléphone, le bandeau s'efface (display: contents) et le menu reste une carte
+          flottante déplaçable (appui de 2 s), comme avant. L'état d'enregistrement reste annoncé aux lecteurs d'écran ;
+          seule une erreur d'enregistrement s'affiche. */}
+      <div className="planche-bandeau" role="group" aria-label={t("planche.bandeau")} data-planche-bandeau>
+        <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} deplacable={etroit} />
+        <p className="planche-bandeau-nom" data-planche-bandeau-nom>
+          <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
+        </p>
+      </div>
       <p className="sr-only" role="status" aria-live="polite" data-planche-brouillon data-sauvegarde={etatSauvegarde}>
         {t(`planche.sauvegarde.${etatSauvegarde}`)}
       </p>

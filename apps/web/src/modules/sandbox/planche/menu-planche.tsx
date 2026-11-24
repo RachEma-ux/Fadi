@@ -38,7 +38,11 @@ type Volet = "nouvelle" | "renommer" | "copier" | "supprimer" | null;
 /** Nom affiché d'une Planche : le nom choisi, sinon le nom par défaut du brouillon d'origine. */
 export const nomAffiche = (p: InfoPlanche): string => (p.nom !== "" ? p.nom : t("planche.sb.defaut"));
 
-export function MenuPlanche({ planches, courante, etat, actions }: { planches: readonly InfoPlanche[]; courante: InfoPlanche; etat: EtatSauvegarde; actions: ActionsMenuPlanche }) {
+/**
+ * `deplacable` : au téléphone, carte flottante qu'un appui de 2 s rend déplaçable (comme avant) ; à l'ordinateur, le
+ * pictogramme occupe le carré gauche du bandeau d'en-tête de la Planche et ne se déplace pas (le menu s'ouvre dessous).
+ */
+export function MenuPlanche({ planches, courante, etat, actions, deplacable = true }: { planches: readonly InfoPlanche[]; courante: InfoPlanche; etat: EtatSauvegarde; actions: ActionsMenuPlanche; deplacable?: boolean }) {
   const [ouvert, setOuvert] = useState(false);
   const [section, setSection] = useState<Section>(null);
   const [volet, setVolet] = useState<Volet>(null);
@@ -80,6 +84,7 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
     }
   };
   const surAppui = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!deplacable) return;
     if (e.button !== 0 && e.pointerType === "mouse") return;
     const m = mesures();
     if (!m) return;
@@ -120,7 +125,7 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
     if (m) setPos(bornerPosition({ x: a.x + dx, y: a.y + dy }, m.taille, m.zone));
   };
   const surClavier = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (!e.altKey) return;
+    if (!deplacable || !e.altKey) return;
     const pas = e.shiftKey ? 32 : 8;
     const d = e.key === "ArrowLeft" ? [-pas, 0] : e.key === "ArrowRight" ? [pas, 0] : e.key === "ArrowUp" ? [0, -pas] : e.key === "ArrowDown" ? [0, pas] : null;
     const m = mesures();
@@ -134,12 +139,13 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
   const basculerMenu = () => {
     if (clicIgnore.current) return;
     if (ouvert) return fermer();
-    const m = mesures();
+    const m = deplacable ? mesures() : null;
+    if (!deplacable) setCote({ horizontal: "gauche", vertical: "bas" });
     if (m) setCote(coteOuverture({ x: m.x, y: m.y }, m.taille, m.zone));
     setOuvert(true);
   };
   useEffect(() => {
-    if (pos === null) return;
+    if (pos === null || !deplacable) return;
     const w = ref.current?.ownerDocument.defaultView ?? window;
     const replacer = () => {
       const m = mesures();
@@ -147,7 +153,7 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
     };
     w.addEventListener("resize", replacer);
     return () => w.removeEventListener("resize", replacer);
-  }, [pos === null]);
+  }, [pos === null, deplacable]);
   useEffect(() => () => finAppui(false), []);
 
   const fermer = () => {
@@ -238,12 +244,14 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
     </li>
   );
   const titre = nomAffiche(courante);
+  const place = deplacable ? pos : null;
   return (
     <div
-      className={`planche-menu-principal${pos ? " est-deplace" : ""}${enDeplacement ? " en-deplacement" : ""}`}
+      className={`planche-menu-principal${place ? " est-deplace" : ""}${enDeplacement ? " en-deplacement" : ""}${deplacable ? "" : " dans-bandeau"}`}
       ref={ref}
-      style={pos ? { left: `${pos.x}px`, top: `${pos.y}px` } : undefined}
+      style={place ? { left: `${place.x}px`, top: `${place.y}px` } : undefined}
       data-planche-menu-principal
+      data-planche-menu-deplacable={deplacable}
       data-cote-h={cote.horizontal}
       data-cote-v={cote.vertical}
     >
@@ -253,7 +261,7 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
         aria-haspopup="menu"
         aria-expanded={ouvert}
         aria-label={`${t("planche.menu-principal")} — ${titre}`}
-        title={`${t("planche.menu-principal")} — ${titre}\n${t("planche.sb.menu-deplacer")}`}
+        title={deplacable ? `${t("planche.menu-principal")} — ${titre}\n${t("planche.sb.menu-deplacer")}` : `${t("planche.menu-principal")} — ${titre}`}
         onClick={basculerMenu}
         onPointerDown={surAppui}
         onPointerMove={surMouvement}

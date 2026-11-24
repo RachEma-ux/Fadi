@@ -17,6 +17,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { borner, positionDefautBarre, positionDocquee, type Position, type Taille, type Zone } from "./barres-outils-disposition";
 import { COMMANDES_REPERES, type CommandeRepere, type IdCommandeRepere, disponibiliteRepere } from "./commandes-reperes";
 import { afficherRaccourci, pictoOutil } from "./outils-planche";
+import { rectZoneDessin } from "./zone-dessin";
 
 const RACCOURCI_PLACER = entreeOutil("axes").raccourci ?? "";
 
@@ -96,7 +97,7 @@ export function BarreReperes(p: PropsBarreReperes) {
     const el = racine.current;
     if (!el) return null;
     const fenetre = zoneDe(el);
-    const r = p.reference.current?.getBoundingClientRect();
+    const r = p.reference.current ? rectZoneDessin(p.reference.current) : undefined;
     const zone: Zone = r && r.width > 0 && r.height > 0 ? { gauche: r.left, haut: r.top, largeur: r.width, hauteur: r.height } : fenetre;
     const visible = (sel: string) => {
       const q = p.reference.current?.querySelector(sel)?.getBoundingClientRect();
