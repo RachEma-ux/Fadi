@@ -2962,6 +2962,82 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(row).toEqual({ approved_self_control: true, manifest_hash: before, approved_manifest_hash: before });
     });
   });
+
+  describe("9. catalogue des extensions : réglages de la plateforme (25 novembre 2026)", () => {
+    const CORPS = { profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [] };
+    type Fiche = { id: string; etat: string; activeParDefaut: boolean; version: string; reglee?: boolean; updatedBy?: string | null };
+    const fiche = (corps: { catalogue?: Fiche[]; addons?: Fiche[] }, id: string) => (corps.catalogue ?? corps.addons ?? []).find((f) => f.id === id);
+    async function admin() {
+      const boss = await account("addons-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      return boss;
+    }
+
+    it("réservé à l'administrateur : 404 pour un compte ordinaire et pour une personne anonyme", async () => {
+      const plain = await account("addons-simple");
+      expect((await plain.a.get("/admin/addons")).status).toBe(404);
+      expect((await plain.a.patch("/admin/addons/bois").send({ etat: "retiree" })).status).toBe(404);
+      expect((await agent().get("/admin/addons")).status).toBe(404);
+      expect(Number((await pool.query("SELECT count(*)::int AS n FROM addon_platform_settings")).rows[0].n)).toBe(0);
+    });
+
+    it("sans réglage : tout est disponible avec le réglage livré ; les préférences d'un compte portent le catalogue", async () => {
+      const boss = await admin();
+      const liste = await boss.a.get("/admin/addons");
+      expect(liste.status).toBe(200);
+      expect(fiche(liste.body, "bois")).toMatchObject({ etat: "disponible", activeParDefaut: true, reglee: false, updatedBy: null });
+      expect(fiche(liste.body, "controle")).toMatchObject({ etat: "disponible", activeParDefaut: false, reglee: false });
+      const user = await account("addons-lecteur");
+      const prefs = await user.a.get("/sandbox/preferences");
+      expect(prefs.status).toBe(200);
+      expect(prefs.body.extensions).toEqual({});
+      expect(fiche(prefs.body, "bois")).toMatchObject({ etat: "disponible", activeParDefaut: true });
+      expect(fiche(prefs.body, "bois")!.version).toMatch(/^\d+\.\d+\.\d+$/);
+    });
+
+    it("retrait et réglage d'origine : vus par tous les comptes, choix du compte gardé, chaque changement journalisé une fois", async () => {
+      const boss = await admin();
+      const user = await account("addons-compte");
+      expect((await user.a.put("/sandbox/preferences").send({ ...CORPS, extensions: { volumes: true } })).status).toBe(200);
+
+      const retrait = await boss.a.patch("/admin/addons/volumes").send({ etat: "retiree" });
+      expect(retrait.status).toBe(200);
+      expect(retrait.body.addon).toMatchObject({ id: "volumes", etat: "retiree", activeParDefaut: true, reglee: true, updatedBy: boss.id });
+      const origine = await boss.a.patch("/admin/addons/controle").send({ etat: "experimentale", activeParDefaut: true });
+      expect(origine.body.addon).toMatchObject({ etat: "experimentale", activeParDefaut: true, activeParDefautLivre: false });
+
+      const prefs = await user.a.get("/sandbox/preferences");
+      expect(prefs.body.extensions).toEqual({ volumes: true });
+      expect(fiche(prefs.body, "volumes")).toMatchObject({ etat: "retiree" });
+      expect(fiche(prefs.body, "controle")).toMatchObject({ etat: "experimentale", activeParDefaut: true });
+      // L'enregistrement des préférences renvoie le même catalogue.
+      const ecrit = await user.a.put("/sandbox/preferences").send({ ...CORPS, extensions: { volumes: true, controle: false } });
+      expect(ecrit.body.extensions).toEqual({ volumes: true, controle: false });
+      expect(fiche(ecrit.body, "volumes")).toMatchObject({ etat: "retiree" });
+
+      // Une demande qui ne change rien n'écrit pas au journal ; le rétablissement, si.
+      expect((await boss.a.patch("/admin/addons/volumes").send({ etat: "retiree" })).status).toBe(200);
+      expect(await auditCount("admin.addon.updated", "volumes")).toBe(1);
+      expect((await boss.a.patch("/admin/addons/volumes").send({ etat: "disponible" })).body.addon).toMatchObject({ etat: "disponible", activeParDefaut: true });
+      expect(await auditCount("admin.addon.updated", "volumes")).toBe(2);
+      const journal = (await pool.query("SELECT actor_id, target_type, metadata FROM admin.audit_log WHERE action = 'admin.addon.updated' AND target_id = 'volumes' ORDER BY id")).rows;
+      expect(journal[0]).toMatchObject({ actor_id: boss.id, target_type: "addon", metadata: { avant: { etat: "disponible", activeParDefaut: true }, apres: { etat: "retiree", activeParDefaut: true } } });
+      expect(fiche((await user.a.get("/sandbox/preferences")).body, "volumes")).toMatchObject({ etat: "disponible" });
+    });
+
+    it("refus : extension inconnue → 404 ; corps invalide → 400 invalid_input ; rien n'est écrit", async () => {
+      const boss = await admin();
+      expect((await boss.a.patch("/admin/addons/fantome").send({ etat: "retiree" })).status).toBe(404);
+      for (const corps of [{}, { etat: "supprimee" }, { activeParDefaut: "oui" }, { etat: "retiree", version: "2.0.0" }]) {
+        const r = await boss.a.patch("/admin/addons/bois").send(corps);
+        expect(r.status).toBe(400);
+        expect(r.body.error).toBe("invalid_input");
+      }
+      expect(Number((await pool.query("SELECT count(*)::int AS n FROM addon_platform_settings")).rows[0].n)).toBe(0);
+      expect(await auditCount("admin.addon.updated", "bois")).toBe(0);
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

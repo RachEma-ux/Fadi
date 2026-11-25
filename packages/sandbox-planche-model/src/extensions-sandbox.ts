@@ -8,8 +8,9 @@
  * Règles :
  * - une entrée appartient à une extension au plus ; une entrée sans extension est toujours offerte ;
  * - désactiver une extension ne touche jamais au dessin : seule la visibilité de ses outils, commandes et panneaux change ;
- * - le choix enregistré ne retient que les écarts au défaut de chaque extension (`activeParDefaut`) : un compte qui n'a
- *   rien choisi suit les défauts, y compris ceux d'une extension livrée plus tard ;
+ * - le choix enregistré ne retient que ce que le compte a lui-même basculé : un compte qui n'a rien choisi suit le
+ *   réglage d'origine (celui de la plateforme, `catalogue-extensions.ts`, sinon `activeParDefaut`), y compris pour une
+ *   extension livrée plus tard ; un choix fait reste le sien quand le réglage d'origine change ;
  * - une extension inconnue est un refus nommé, jamais un filtrage silencieux (même règle que les préférences).
  *
  * Pur : ni React, ni DOM, ni base.
@@ -19,6 +20,8 @@ import { REGISTRE_SANDBOX, entreeSandbox, type EntreeSandbox, type NatureEntree 
 export interface ExtensionSandbox {
   /** Identifiant stable (minuscules, chiffres, tirets). */
   readonly id: string;
+  /** Version livrée (`majeur.mineur.correctif`), augmentée quand le contenu de l'extension change. */
+  readonly version: string;
   /** Nom français de référence (le web le traduit par la clé `extension.<id>`). */
   readonly libelle: string;
   /** Une phrase : ce que l'extension apporte (clé `extension.<id>.description`). */
@@ -35,6 +38,7 @@ export interface ExtensionSandbox {
 }
 
 export const MOTIF_ID_EXTENSION = /^[a-z0-9-]{1,40}$/;
+export const MOTIF_VERSION_EXTENSION = /^\d{1,4}\.\d{1,4}\.\d{1,4}$/;
 
 /**
  * Extensions livrées. Les deux premières regroupent des outils existants (décision du 25 novembre 2026) : elles
@@ -43,6 +47,7 @@ export const MOTIF_ID_EXTENSION = /^[a-z0-9-]{1,40}$/;
 export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
   {
     id: "bois",
+    version: "1.0.0",
     libelle: "Bois et menuiserie",
     description: "Profilés, onglets, coupes par profil et liste de débit.",
     pictogramme: "outil:profile",
@@ -55,6 +60,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
   },
   {
     id: "volumes",
+    version: "1.0.0",
     libelle: "Volumes et solides",
     description: "Union, soustraction, intersection, scinder, épaissir.",
     pictogramme: "outil:enveloppe-exterieure",
@@ -64,6 +70,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
   {
     // Première extension nouvelle : à activer (elle ajoute un panneau à la colonne), contrairement aux regroupements.
     id: "controle",
+    version: "1.0.0",
     libelle: "Contrôle et nettoyage",
     description: "Relevé des objets vides, matières et balises inutilisées, arêtes isolées, solides ouverts ; nettoyage sur commande.",
     pictogramme: "commande:controler",
@@ -73,6 +80,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
   {
     // D'après les Dynamic Components de SketchUp : paramètres, options et règles par formules, sans code.
     id: "dynamiques",
+    version: "1.0.0",
     libelle: "Composants dynamiques",
     description: "Composants paramétrés : options à choisir, tailles, positions et répétitions calculées par formules.",
     pictogramme: "commande:composant-dynamique",
@@ -82,6 +90,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
   {
     // D'après Add Location et Solar North de SketchUp, fusionnés (décision du 25 novembre 2026).
     id: "emplacement",
+    version: "1.0.0",
     libelle: "Emplacement",
     description: "Position saisie de la Planche (latitude, longitude, altitude) et nord vrai ; les ombres les suivent.",
     pictogramme: "commande:emplacement",
@@ -102,8 +111,8 @@ export const extensionDeCle = (cle: string): ExtensionSandbox | undefined => PAR
 export const extensionDe = (nature: NatureEntree, id: string): ExtensionSandbox | undefined => PAR_CLE.get(`${nature}:${id}`);
 
 /**
- * Choix d'un compte : seulement les écarts voulus (`true` activée, `false` désactivée) ; une extension absente suit son
- * défaut.
+ * Choix d'un compte : ce qu'il a basculé lui-même (`true` activée, `false` désactivée) ; une extension absente suit le
+ * réglage d'origine.
  */
 export type ChoixExtensions = Readonly<Record<string, boolean>>;
 
@@ -128,12 +137,13 @@ export function entreeOfferte(nature: NatureEntree, id: string, choix: ChoixExte
   return !x || extensionActive(x.id, choix);
 }
 
-/** Choix après bascule d'une extension : l'écart est retenu, le retour au défaut l'efface. */
+/**
+ * Choix après bascule d'une extension : le geste est retenu tel quel, même s'il rejoint le réglage d'origine — ce
+ * réglage peut changer (plateforme), le choix du compte ne doit pas changer avec lui.
+ */
 export function basculerExtension(choix: ChoixExtensions, id: string, active: boolean): ChoixExtensions {
-  const x = extensionSandbox(id);
-  if (!x) return choix;
-  const { [id]: _ancien, ...reste } = choix;
-  return active === x.activeParDefaut ? reste : { ...reste, [id]: active };
+  if (!extensionSandbox(id)) return choix;
+  return { ...choix, [id]: active };
 }
 
 /** Décompte d'une extension par nature, pour sa carte (« 6 outils · 5 commandes · 1 panneau »). */
@@ -154,9 +164,7 @@ export function validerChoixExtensions(v: unknown): ResultatChoixExtensions {
   if (entrees.some(([, actif]) => typeof actif !== "boolean")) return { ok: false, erreur: "forme_invalide", detail: "extensions : valeur booléenne attendue" };
   const inconnues = entrees.map(([id]) => id).filter((id) => !extensionSandbox(id));
   if (inconnues.length > 0) return { ok: false, erreur: "extension_inconnue", detail: "extension absente de la liste du Sandbox", inconnues: inconnues.map((id) => `extension:${id}`) };
-  let choix: ChoixExtensions = {};
-  for (const [id, actif] of entrees) choix = basculerExtension(choix, id, actif as boolean);
-  return { ok: true, choix };
+  return { ok: true, choix: Object.fromEntries(entrees) as Record<string, boolean> };
 }
 
 /**
@@ -170,6 +178,7 @@ export function defautsExtensions(liste: readonly ExtensionSandbox[] = EXTENSION
   for (const x of liste) {
     if (!MOTIF_ID_EXTENSION.test(x.id)) defauts.push(`${x.id} : identifiant mal formé`);
     if (ids.has(x.id)) defauts.push(`${x.id} : identifiant cité deux fois`);
+    if (!MOTIF_VERSION_EXTENSION.test(x.version)) defauts.push(`${x.id} : version mal formée`);
     ids.add(x.id);
     if (x.entrees.length === 0) defauts.push(`${x.id} : aucune entrée`);
     if (!x.entrees.includes(x.pictogramme)) defauts.push(`${x.id} : pictogramme hors de ses entrées`);

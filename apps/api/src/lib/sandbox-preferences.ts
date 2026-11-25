@@ -5,7 +5,7 @@
  * de même une extension inconnue (`unknown_extension`, 25 novembre 2026).
  * Pur : aucune base (lectures et écritures dans `routes/sandbox-preferences.ts`).
  */
-import { FORMAT_PREFERENCES_SANDBOX, PREFERENCES_SANDBOX_DEFAUT, lirePreferencesSandbox, validerPreferencesSandbox, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { FORMAT_PREFERENCES_SANDBOX, PREFERENCES_SANDBOX_DEFAUT, catalogueExtensions, lirePreferencesSandbox, validerPreferencesSandbox, type FicheCatalogue, type PreferencesSandbox, type ReglagesPlateforme } from "@parcours/sandbox-planche-model";
 
 export interface LignePreferencesSandbox {
   profile: string;
@@ -22,13 +22,20 @@ export interface ReponsePreferencesSandbox extends PreferencesSandbox {
   readonly compte: string;
   /** Date serveur du dernier enregistrement ; `null` tant que rien n'est enregistré (profil Standard). */
   readonly updatedAt: string | null;
+  /**
+   * Catalogue des extensions tel que la plateforme le propose (25 novembre 2026) : état et réglage d'origine de chaque
+   * extension livrée. Le navigateur en déduit ce qui est actif pour le compte (`choixEffectif`) ; `extensions` reste
+   * le choix du compte, tel qu'enregistré.
+   */
+  readonly catalogue: readonly FicheCatalogue[];
 }
 
 /** Réponse d'une lecture : la ligne relue (tolérante : une ligne ancienne invalide vaut les défauts), sinon les défauts. */
-export function reponsePreferences(compte: string, ligne: LignePreferencesSandbox | undefined): ReponsePreferencesSandbox {
-  if (!ligne) return { ...PREFERENCES_SANDBOX_DEFAUT, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: null };
+export function reponsePreferences(compte: string, ligne: LignePreferencesSandbox | undefined, reglages: ReglagesPlateforme = {}): ReponsePreferencesSandbox {
+  const catalogue = catalogueExtensions(reglages);
+  if (!ligne) return { ...PREFERENCES_SANDBOX_DEFAUT, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: null, catalogue };
   const p = lirePreferencesSandbox({ profil: ligne.profile, barrePersonnelle: ligne.leftBar, favoris: ligne.favorites, regroupements: ligne.groups, extensions: ligne.extensions ?? {} });
-  return { ...p, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: ligne.updatedAt.toISOString() };
+  return { ...p, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: ligne.updatedAt.toISOString(), catalogue };
 }
 
 export type CorpsLu =

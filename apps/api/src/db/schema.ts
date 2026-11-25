@@ -1457,6 +1457,18 @@ export const sandboxToolPreferences = pgTable("sandbox_tool_preferences", {
 });
 
 /**
+ * Catalogue des extensions, réglages de la plateforme (25 novembre 2026, `lib/addons.ts`) : une ligne par extension
+ * réglée par l'administrateur ; sans ligne, l'extension est disponible avec le réglage livré par Fadi.
+ */
+export const addonPlatformSettings = pgTable("addon_platform_settings", {
+  addonId: text("addon_id").primaryKey(),
+  state: text("state").$type<"disponible" | "experimentale" | "retiree">().notNull().default("disponible"),
+  defaultActive: boolean("default_active").notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
  * Exigences Studio (E.1-02 à E.1-06, lib/studio-exigences.ts) : versions append-only d'un jeu d'exigences par étude
  * (UPDATE refusée par déclencheur, init.sql) et résultats de contrôle liés à la révision et à la version examinées
  * (FK composites et contrôles dans init.sql). Aucune exigence n'est fournie par Fadi.

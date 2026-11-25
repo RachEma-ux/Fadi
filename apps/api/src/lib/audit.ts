@@ -39,6 +39,8 @@ export type AuditAction =
   | "admin.user.deletion_cancelled"
   | "admin.user.anonymized_now"
   | "admin.user.promoted_by_script"
+  // Catalogue des extensions (25 novembre 2026) : cible = l'extension ; métadonnées = version, réglage avant / après.
+  | "admin.addon.updated"
   | "invitation.created"
   | "invitation.resent"
   | "invitation.cancelled"
@@ -121,7 +123,7 @@ export type AuditAction =
 export interface AuditEntry {
   actorId: string | null;
   action: AuditAction;
-  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person" | "organization"; id: string } | undefined;
+  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person" | "organization" | "addon"; id: string } | undefined;
   metadata?: Record<string, unknown> | undefined;
   ip?: string | null | undefined;
 }

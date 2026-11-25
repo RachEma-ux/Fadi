@@ -5,7 +5,7 @@
  * enregistrement manqué est renvoyé au retour du réseau, et seulement au compte à qui il appartient. Seules ces préférences passent par le serveur : le brouillon de dessin reste local.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PREFERENCES_SANDBOX_DEFAUT, lirePreferencesSandbox, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { CATALOGUE_LIVRE, PREFERENCES_SANDBOX_DEFAUT, lireCatalogue, lirePreferencesSandbox, type FicheCatalogue, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 import { enregistrerPreferencesServeur, lirePreferencesServeur } from "./client";
 
 /** Copie locale (stockage de l'appareil) de la dernière version reçue, et d'un changement pas encore enregistré. */
@@ -24,14 +24,16 @@ interface Copie {
    * en attente n'est envoyé qu'au même compte : sur un navigateur partagé, la copie d'un autre compte est remplacée.
    */
   readonly compte: string | null;
+  /** Dernier catalogue des extensions reçu de la plateforme (une copie d'avant le catalogue vaut le catalogue livré). */
+  readonly catalogue: readonly FicheCatalogue[];
 }
 
 function lireCopie(): Copie | null {
   try {
     const brut = window.localStorage.getItem(CLE_PREFERENCES);
     if (!brut) return null;
-    const v = JSON.parse(brut) as { preferences?: unknown; enAttente?: unknown; recue?: unknown; compte?: unknown };
-    return { preferences: lirePreferencesSandbox(v.preferences), enAttente: v.enAttente === true, recue: v.recue === true, compte: typeof v.compte === "string" ? v.compte : null };
+    const v = JSON.parse(brut) as { preferences?: unknown; enAttente?: unknown; recue?: unknown; compte?: unknown; catalogue?: unknown };
+    return { preferences: lirePreferencesSandbox(v.preferences), enAttente: v.enAttente === true, recue: v.recue === true, compte: typeof v.compte === "string" ? v.compte : null, catalogue: lireCatalogue(v.catalogue) };
   } catch {
     return null;
   }
@@ -46,6 +48,11 @@ function ecrireCopie(c: Copie): void {
 
 export interface PreferencesSandboxEtat {
   readonly preferences: PreferencesSandbox;
+  /**
+   * Catalogue des extensions réglé par la plateforme : dernier reçu, sinon celui de la copie locale, sinon le catalogue
+   * livré. Ce qui est actif pour le compte se déduit des deux (`choixEffectif(preferences.extensions, catalogue)`).
+   */
+  readonly catalogue: readonly FicheCatalogue[];
   readonly etat: EtatPreferences;
   /** Applique un changement tout de suite et l'enregistre sur le compte. */
   readonly modifier: (p: PreferencesSandbox) => void;
@@ -57,6 +64,12 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
   const depart = useRef(lireCopie());
   const [preferences, setPreferences] = useState<PreferencesSandbox>(depart.current?.preferences ?? PREFERENCES_SANDBOX_DEFAUT);
   const [etat, setEtat] = useState<EtatPreferences>("chargement");
+  const [catalogue, setCatalogue] = useState<readonly FicheCatalogue[]>(depart.current?.catalogue ?? CATALOGUE_LIVRE);
+  const catalogueRef = useRef(catalogue);
+  const recevoirCatalogue = (c: readonly FicheCatalogue[]) => {
+    catalogueRef.current = c;
+    setCatalogue((avant) => (JSON.stringify(avant) === JSON.stringify(c) ? avant : c));
+  };
   const courante = useRef(preferences);
   const enAttente = useRef(depart.current?.enAttente ?? false);
   const recue = useRef(depart.current?.recue ?? false);
@@ -68,7 +81,7 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
   const enVol = useRef(false);
   const monte = useRef(false);
   const replie = () => setEtat(recue.current ? "copie" : "defaut");
-  const copie = (p: PreferencesSandbox) => ecrireCopie({ preferences: p, enAttente: enAttente.current, recue: recue.current, compte: compte.current });
+  const copie = (p: PreferencesSandbox) => ecrireCopie({ preferences: p, enAttente: enAttente.current, recue: recue.current, compte: compte.current, catalogue: catalogueRef.current });
 
   /**
    * Un seul enregistrement à la fois : quand il revient, la dernière version demandée repart si elle a changé entre-temps.
@@ -87,6 +100,7 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
           enAttente.current = false;
           recue.current = true;
           compte.current = r.compte;
+          recevoirCatalogue(r.catalogue);
           copie(r.preferences);
           setEtat("serveur");
         } catch {
@@ -108,6 +122,7 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
       const r = await lirePreferencesServeur();
       if (!vivant()) return;
       compteConfirme.current = true;
+      recevoirCatalogue(r.catalogue);
       if (enAttente.current && (modifieIci.current || compte.current === r.compte)) {
         compte.current = r.compte;
         return envoyer();
@@ -152,5 +167,5 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
     else void synchroniser(() => monte.current);
   }, [envoyer, synchroniser]);
   const reinitialiser = useCallback(() => modifier(PREFERENCES_SANDBOX_DEFAUT), [modifier]);
-  return { preferences, etat, modifier, reinitialiser };
+  return { preferences, catalogue, etat, modifier, reinitialiser };
 }

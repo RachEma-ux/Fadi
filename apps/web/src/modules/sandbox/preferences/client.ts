@@ -3,7 +3,7 @@
  * `GET` et `PUT /sandbox/preferences`, sur la session du compte. Le test d'indépendance n'autorise que ce fichier à
  * appeler le serveur, et seulement cette adresse ; le client API général de Fadi n'est jamais importé.
  */
-import { lirePreferencesSandbox, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { lireCatalogue, lirePreferencesSandbox, type FicheCatalogue, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 
 export const ADRESSE_PREFERENCES = "/sandbox/preferences";
 
@@ -13,6 +13,8 @@ export interface PreferencesRecues {
   readonly compte: string;
   /** Date serveur du dernier enregistrement ; `null` si rien n'est enregistré. */
   readonly updatedAt: string | null;
+  /** Catalogue des extensions tel que la plateforme le propose (état, réglage d'origine) ; relu avec tolérance. */
+  readonly catalogue: readonly FicheCatalogue[];
 }
 
 /** Erreur d'un appel : `statut` HTTP (0 = réseau indisponible). */
@@ -33,7 +35,7 @@ async function appeler(init?: RequestInit): Promise<PreferencesRecues> {
   const corps = (await r.json()) as Record<string, unknown>;
   const { updatedAt, compte, ...reste } = corps;
   if (typeof compte !== "string" || compte.length === 0) throw new ErreurPreferences(r.status);
-  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"], extensions: reste["extensions"] }), compte, updatedAt: typeof updatedAt === "string" ? updatedAt : null };
+  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"], extensions: reste["extensions"] }), compte, updatedAt: typeof updatedAt === "string" ? updatedAt : null, catalogue: lireCatalogue(reste["catalogue"]) };
 }
 
 export const lirePreferencesServeur = (): Promise<PreferencesRecues> => appeler();
