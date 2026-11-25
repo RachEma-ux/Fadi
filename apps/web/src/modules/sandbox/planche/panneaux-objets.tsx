@@ -476,9 +476,9 @@ export function PanneauOmbres({ options, onOptions, latitudeParcelle }: { option
       </label>
       <label>
         {t("planche.ombres.latitude")} : {virgule(options.latitude, 1)}°
-        <input type="range" min={-66} max={66} step={0.5} value={options.latitude} onChange={(e) => onOptions({ latitude: Number(e.target.value) })} data-planche-option="latitude" />
+        <input type="range" min={-66} max={66} step={0.5} value={options.latitude} disabled={latitudeParcelle !== null} onChange={(e) => onOptions({ latitude: Number(e.target.value) })} data-planche-option="latitude" />
       </label>
-      {latitudeParcelle === null && <p className="inspecteur-aide">{t("planche.ombres.non-evalue")}</p>}
+      {latitudeParcelle === null ? <p className="inspecteur-aide">{t("planche.ombres.non-evalue")}</p> : <p className="inspecteur-aide" data-planche-ombres-emplacement>{t("planche.ombres.latitude.emplacement")}</p>}
       <p className="inspecteur-aide">{t("planche.styles.note")}</p>
     </div>
   );

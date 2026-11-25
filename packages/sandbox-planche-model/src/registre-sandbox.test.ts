@@ -27,6 +27,8 @@ describe("registre du Sandbox — contenu", () => {
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "dynamique").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["composant-dynamique", true, "panneau-dynamique"], ["redessiner-composant", true, "panneau-dynamique"]]);
     expect(entreePanneau("dynamique").horsCatalogue).toBe(true);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "emplacement").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["emplacement", true, "panneau-emplacement"], ["nord-arete", true, "panneau-emplacement"], ["afficher-nord", true, "panneau-emplacement"]]);
+    expect(entreePanneau("emplacement").horsCatalogue).toBe(true);
     expect(entreePanneau("reperes").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
@@ -98,7 +100,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("panneaux : chacun à un clic dans la colonne de droite, Info modèle en bas (lot 4)", () => {
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne").map((e) => e.id)).toEqual([
-      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle", "dynamique",
+      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle", "dynamique", "emplacement",
     ]);
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
   });

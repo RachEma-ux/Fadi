@@ -425,7 +425,7 @@ try {
       const fenetre = racine.locator("[data-planche-extensions]");
       await fenetre.waitFor({ state: "visible" });
       const lignes = await fenetre.locator("[data-planche-extension]").evaluateAll((l) => l.map((e) => `${e.getAttribute("data-planche-extension")}:${e.getAttribute("data-planche-extension-active")}`));
-      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false", "dynamiques:false"]), lignes.join(", "));
+      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false", "dynamiques:false", "emplacement:false"]), lignes.join(", "));
       await p3.screenshot({ path: join(OUT, "sandbox-extensions-fenetre.png") });
       await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
       await fenetre.locator('[data-planche-extensions-etat="compte"]').waitFor();
@@ -530,6 +530,32 @@ try {
       await p3.keyboard.press("Control+z");
       await p3.waitForTimeout(1500);
       check("dynamique : Annuler défait la dernière option seulement", (await tablettes()).matiere === "m1,m1,m1,m1,m1" && (await tablettes()).n === 5, JSON.stringify(await tablettes()));
+      // Extension « Emplacement » : position saisie et vrai nord ; les ombres les reprennent.
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      await fenetre.locator('[data-planche-extension-interrupteur="emplacement"]').click();
+      await p3.waitForTimeout(600);
+      await p3.keyboard.press("Escape");
+      await p3.keyboard.press("Escape");
+      await racine.locator('[data-planche-panneau-icone="emplacement"]').click();
+      const lieu = racine.locator("[data-planche-lieu]");
+      check("emplacement : sans position, le panneau le dit", (await lieu.getAttribute("data-planche-lieu")) === "absent" && (await lieu.locator("[data-planche-lieu-absent]").count()) === 1);
+      await lieu.locator('[data-planche-lieu-champ="latitude"]').fill("95");
+      await lieu.locator("[data-planche-lieu-enregistrer]").click();
+      check("emplacement : une latitude hors de −90 à 90 est refusée", (await lieu.locator('[data-planche-lieu-erreur="latitude"]').count()) === 1 && (await lieu.getAttribute("data-planche-lieu")) === "absent");
+      for (const [champ, valeur] of [["latitude", "46,2"], ["longitude", "6,15"], ["nord", "30"]]) await lieu.locator(`[data-planche-lieu-champ="${champ}"]`).fill(valeur);
+      await lieu.locator("[data-planche-lieu-enregistrer]").click();
+      await p3.waitForTimeout(400);
+      check("emplacement : la position est enregistrée dans la Planche", (await lieu.getAttribute("data-planche-lieu")) === "renseigne" && (await lieu.locator("[data-planche-lieu-note]").count()) === 1);
+      await lieu.locator('[data-planche-commande="afficher-nord"]').click();
+      check("emplacement : la flèche du nord s'affiche sur commande", (await lieu.locator('[data-planche-commande="afficher-nord"]').getAttribute("aria-pressed")) === "true");
+      await p3.screenshot({ path: join(OUT, "sandbox-emplacement.png") });
+      await racine.locator('[data-planche-panneau-icone="ombres"]').click();
+      check("emplacement : les ombres prennent la latitude de l'emplacement", (await racine.locator("[data-planche-ombres-emplacement]").count()) === 1 && (await racine.locator("[data-planche-ombres]").innerText()).includes("46,2"));
+      await p3.keyboard.press("Control+z");
+      await p3.waitForTimeout(600);
+      await racine.locator('[data-planche-panneau-icone="emplacement"]').click();
+      check("emplacement : Annuler retire la position", (await racine.locator("[data-planche-lieu]").getAttribute("data-planche-lieu")) === "absent");
     }
     await c3.close();
   }

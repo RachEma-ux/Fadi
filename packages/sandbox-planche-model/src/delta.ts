@@ -7,6 +7,7 @@
  * obtenue n'est pas celle annoncée (la Planche a changé entre-temps : 409). Les tables sont des `Record<Id, …>` :
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
+import { estEmplacement } from "./emplacement.js";
 import { estComposantDynamique } from "./composants-dynamiques.js";
 import { type RepereEnregistre, repereEnregistreValide } from "./reperes.js";
 import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
@@ -295,7 +296,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
     if (an["pieces"] !== undefined && !Object.entries(an["pieces"] as object).every(([id, v]) => estLienPiece(id, v))) return null;
     if (an["reperes"] !== undefined && !Object.entries(an["reperes"] as object).every(([id, v]) => repereEnregistreValide(v) && v.id === id)) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
-    if (an["reglages"] !== undefined && !estObjet(an["reglages"])) return null;
+    if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])))) return null;
   }
   return brut as unknown as Modele;
 }
