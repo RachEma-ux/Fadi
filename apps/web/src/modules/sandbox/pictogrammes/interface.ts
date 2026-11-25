@@ -44,6 +44,9 @@ export const ICONES_INTERFACE = {
   // Barre d'état (pied de page façon SketchUp) : langue et périphérique en icônes, la liste s'ouvre au clic.
   langue: "world",
   peripherique: "mouse",
+  // Ordre des entrées d'une barre personnelle (panneau « Personnaliser les outils »).
+  monter: "arrow-up",
+  descendre: "arrow-down",
 } as const;
 
 export type IconeInterface = keyof typeof ICONES_INTERFACE;

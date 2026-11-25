@@ -128,6 +128,9 @@ import {
   changerSectionPiece,
   tournerPieceAxe,
   CLES_PERSONNALISABLES,
+  MAX_NOM_REGROUPEMENT,
+  MAX_REGROUPEMENTS,
+  idRegroupement,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type ExtensionsMenu, type FormatEchange, type UniteFichier } from "./menu-planche";
@@ -190,7 +193,9 @@ import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
 import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
-import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
+import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
+import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
+import { SECTIONS } from "./barres-outils";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
 import { PanneauControle } from "./panneau-controle";
@@ -200,7 +205,7 @@ import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
-import { BoutonOutils } from "./BoutonOutils";
+import { BoutonOutils, titreOperation, type LigneBarre } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -415,7 +420,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   // Barres d'opérations flottantes (D-198) : haut de la barre rangée en bas au téléphone (la barre d'actions s'en écarte).
   const [hautDocquee, setHautDocquee] = useState<number | null>(null);
-  const afficherBarre = useCallback((id: string, afficher: boolean) => etatUi.set((u) => ({ barresOutils: basculerBarre(u.barresOutils, id, afficher) })), []);
+  const afficherBarre = useCallback((id: string, afficher: boolean) => etatUi.set((u) => ({ barresOutils: basculerBarre(normaliserBarres(u.barresOutils), id, afficher) })), []);
+  // Barres nommées (25 novembre 2026) : un état mémorisé avant cette date retenait des identifiants d'outil ; il est
+  // ramené une fois aux identifiants de barre (la barre de l'objet de chaque outil, sans doublon).
+  useEffect(() => {
+    const e = etatUi.get().barresOutils;
+    const n = normaliserBarres(e);
+    if (n !== e) etatUi.set({ barresOutils: n });
+  }, []);
+  /** Barre personnelle ouverte dans « Personnaliser » par « Modifier », « Dupliquer » ou « Nouvelle barre… ». */
+  const [barreEditee, setBarreEditee] = useState<{ groupe: string | null; jeton: number }>({ groupe: null, jeton: 0 });
   const [webgl, setWebgl] = useState<"ok" | "indisponible">("ok");
   // Volet bas (téléphone) : replié, la consigne tient sur une ligne ; déployé, consigne complète et flèches.
   const [volet, setVolet] = useState(false);
@@ -2681,27 +2695,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     </span>
   );
 
-  /** Barres d'opérations flottantes (D-198) : affichées par la liste « Outils ▾ » ; au téléphone, la dernière seulement, rangée en bas. */
-  const barresOutils = barresRendues(ui.barresOutils, etroit)
-    .filter((id) => !masquees.has(`outil:${id}`))
-    .map((id) => outilParId(id))
-    .filter((o): o is Outil => o !== null)
-    .map((o, rang) => (
-      <BarreOutilsFlottante
-        key={o.id}
-        outil={o}
-        rang={rang}
-        outilId={outilId}
-        telephone={etroit}
-        raison={raisonDe}
-        onChoisir={choisirOutil}
-        onFermer={() => afficherBarre(o.id, false)}
-        reference={racineRef}
-        fenetreCle={detache}
-        onDocquee={setHautDocquee}
-        catalogue={outilsOfferts}
-      />
-    ));
   /** Objets O-2 : une surface liée à ses arêtes sources est sélectionnée (à la racine, seul endroit des liens). */
   const lienSelectionne = () => !readOnly && dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0;
   /** Objets O-1 (D-203) : état de la sélection pour la disponibilité commune au menu, à la barre et au clavier. */
@@ -2944,7 +2937,83 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteRepere(c.id, etatReperes());
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reperes.motif.face"), executer: () => executerRepere(c.id) };
         }),
-  ].filter((c) => !masquees.has(`commande:${c.id}`));
+  ]
+    .filter((c) => !masquees.has(`commande:${c.id}`))
+    .map((c) => ({ ...c, groupe: groupeDeCommande(c.id) }));
+
+  // ——— Barres d'outils nommées (25 novembre 2026, `barres-nommees.ts`) : livrées et personnelles, chacune une fois.
+  const regroupements = prefsSandbox.preferences.regroupements;
+  const barresNommees: BarreNommee[] = [...barresLivrees(masquees), ...barresPersonnelles(regroupements, masquees)];
+  const nomBarre = (b: BarreNommee) => b.nom ?? (b.nomCle ? t(b.nomCle) : b.id);
+  const etatBarres = normaliserBarres(ui.barresOutils);
+  /** Bouton d'une entrée de barre : outil du catalogue offert ou commande livrée ; une entrée inconnue n'est pas rendue. */
+  const boutonDeBarre = (cle: string): BoutonBarre | null => {
+    if (cle.startsWith("outil:")) {
+      const o = outilsOfferts.find((x) => x.id === cle.slice(6));
+      if (!o) return null;
+      const r = raisonDe(o);
+      return { cle, picto: pictoOutil(o.id), titre: titreOperation(o, r), actif: o.id === outilId, indisponible: r !== null, executer: () => choisirOutil(o.id) };
+    }
+    const c = cle.startsWith("commande:") ? commandesListe.find((x) => x.id === cle.slice(9)) : undefined;
+    if (!c) return null;
+    return { cle, picto: c.picto, titre: c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`, actif: false, indisponible: c.motif !== null, executer: () => { if (!c.motif) c.executer(); } };
+  };
+  /** Barres flottantes : affichées par leur interrupteur de la liste « Outils » ; au téléphone, la dernière seulement, rangée en bas. */
+  // Seules les barres qui existent encore et portent au moins un bouton sont montées : une barre supprimée dont
+  // l'identifiant est resté dans l'état ne prend pas la place de la dernière barre au téléphone, et une barre vide est
+  // montée (donc placée) au moment où elle reçoit sa première entrée.
+  const barresMontables = new Set(barresNommees.filter((b) => entreesDe(b).some((c) => boutonDeBarre(c) !== null)).map((b) => b.id));
+  const barresOutils = barresRendues({ ...etatBarres, visibles: etatBarres.visibles.filter((id) => barresMontables.has(id)) }, etroit)
+    .map((id) => barresNommees.find((b) => b.id === id))
+    .filter((b): b is BarreNommee => b !== undefined)
+    .map((b, rang) => (
+      <BarreOutilsFlottante
+        key={b.id}
+        id={b.id}
+        nom={nomBarre(b)}
+        sections={b.sections.map((x) => {
+          const section = x.section ? SECTIONS.find((y) => y.cle === x.section) : undefined;
+          return { cle: x.cle, ...(section ? { numero: section.numero, libelle: t(section.message) } : {}), boutons: x.entrees.map(boutonDeBarre).filter((y): y is BoutonBarre => y !== null) };
+        })}
+        rang={rang}
+        telephone={etroit}
+        onFermer={() => afficherBarre(b.id, false)}
+        reference={racineRef}
+        fenetreCle={detache}
+        onDocquee={setHautDocquee}
+      />
+    ));
+  /** Lignes de la section « Barres d'outils » : nom, aperçu des icônes, interrupteur. */
+  const lignesBarres: LigneBarre[] = barresNommees.map((b) => ({
+    id: b.id,
+    nom: nomBarre(b),
+    origine: b.origine,
+    ...(b.groupe ? { groupe: b.groupe } : {}),
+    affichee: etatBarres.visibles.includes(b.id),
+    apercu: entreesDe(b)
+      .map(boutonDeBarre)
+      .filter((x): x is BoutonBarre => x !== null)
+      .map((x) => ({ cle: x.cle, picto: x.picto, nom: x.titre })),
+  }));
+  const etiquetteOutil = (id: string) => {
+    const b = barresNommees.find((x) => x.id === barreDeLOutil(id));
+    return b ? { id: b.id, nom: nomBarre(b) } : null;
+  };
+  const ouvrirBarreEditee = (groupe: string | null) => {
+    setBarreEditee((e) => ({ groupe, jeton: e.jeton + 1 }));
+    setPanneau("personnaliser");
+  };
+  /** « Dupliquer » : la barre livrée devient une barre personnelle (regroupement du compte), affichée et ouverte à la modification. */
+  const dupliquerBarre = (id: string) => {
+    const b = barresNommees.find((x) => x.id === id);
+    if (!b || regroupements.length >= MAX_REGROUPEMENTS) return;
+    const nom = nomDeCopie(nomBarre(b), regroupements.map((g) => g.nom), MAX_NOM_REGROUPEMENT);
+    const groupe = idRegroupement(nom, regroupements.map((g) => g.id));
+    const entrees = [...new Set(entreesDe(b))].filter((c) => CLES_PERSONNALISABLES.includes(c));
+    prefsSandbox.modifier({ ...prefsSandbox.preferences, regroupements: [...regroupements, { id: groupe, nom, entrees }] });
+    afficherBarre(idBarreGroupe(groupe), true);
+    ouvrirBarreEditee(groupe);
+  };
   /**
    * Fenêtre « Extensions » du menu ☰ : une carte par extension livrée, pictogramme repris de l'une de ses entrées ; la
    * bascule s'applique tout de suite et rejoint les préférences du compte.
@@ -2982,9 +3051,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}
-      barres={ui.barresOutils}
+      barres={lignesBarres}
+      etiquette={etiquetteOutil}
       onAfficherBarre={afficherBarre}
-      onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
+      onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(normaliserBarres(u.barresOutils)) }))}
+      reinitialisable={Object.keys(etatBarres.positions).length > 0}
+      onNouvelleBarre={() => ouvrirBarreEditee(null)}
+      onDupliquerBarre={regroupements.length < MAX_REGROUPEMENTS ? dupliquerBarre : undefined}
+      onModifierBarre={ouvrirBarreEditee}
     />
   );
 
@@ -3312,6 +3386,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </header>
           <div className="canevas-panneau-corps">
             <PanneauPersonnaliser
+              key={barreEditee.jeton}
+              groupeInitial={barreEditee.groupe}
               preferences={prefsSandbox.preferences}
               etat={prefsSandbox.etat}
               outils={outilsOfferts}

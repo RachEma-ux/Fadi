@@ -1,21 +1,43 @@
 /**
- * Bouton « Outils ▾ » de la Planche (D-198, demande du maître d'ouvrage du 10 octobre 2026) : une entrée de plus vers
- * les outils, à côté du rail de gauche et de la grille « … » qui restent inchangés. Comme le bouton « Plan » (D-195),
- * un clic ouvre la liste sous le bouton ; Échap, un clic ailleurs ou le choix d'une icône la referment.
+ * Bouton « Outils ▾ » de la Planche (D-198, puis proposition A du 25 novembre 2026) : une entrée de plus vers les outils,
+ * à côté du rail de gauche et de la grille « … ». Un clic ouvre la liste sous le bouton ; Échap, un clic ailleurs ou le
+ * choix d'un outil la referment.
  *
- * Liste (rôle `menu`) : champ « Rechercher un outil… » (Entrée active le premier outil retenu), puis un groupe par
- * famille du catalogue (flèche ▾ / ▸ + nom), une ligne par outil — cliquer le NOM déplie / replie sa barre d'opérations
- * (① Créer, ② Modifier, ③ Mesurer / annoter) dans la liste ; la case « afficher » montre cette barre en barre flottante
- * sur le dessin —, et en pied « ⚙ Barres d'outils » (barres affichées, « Réinitialiser la disposition »). Clavier :
- * flèches haut / bas (Début, Fin) d'un élément à l'autre, flèche droite / gauche pour déplier / replier, Entrée, Échap.
+ * Liste (rôle `menu`) à DEUX niveaux : champ « Rechercher un outil… » (Entrée active le premier outil retenu), puis un
+ * groupe par famille du catalogue (flèche + nom) et une ligne par outil — cliquer la ligne ACTIVE l'outil et ferme la
+ * liste ; l'étiquette en bout de ligne nomme la barre où l'outil est rangé et l'affiche ou la masque. Les commandes
+ * suivent, en trois groupes : « Groupe », « Repères » et « Bois » (Zoom avant / arrière sont rangés avec « Caméra »).
+ *
+ * En pied, « ⚙ Barres d'outils » : chaque barre nommée (`barres-nommees.ts`) y figure UNE fois, avec son aperçu et son
+ * interrupteur ; « Mes barres » liste les barres personnelles (regroupements du compte), « Nouvelle barre… » en crée une,
+ * « Dupliquer » copie une barre livrée, « Modifier » ouvre le panneau « Personnaliser ». Clavier : flèches haut / bas
+ * (Début, Fin) d'un élément à l'autre, flèche droite / gauche pour déplier / replier un groupe, Entrée, Échap.
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { OUTILS, outilParId, type FamilleOutil, type Outil, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
-import { barreDe, groupesOutils, libelleOperation, premierOutil, type SectionBarre } from "./barres-outils";
-import type { EtatBarresOutils } from "./barres-outils-disposition";
+import { OUTILS, outilParId, type Outil, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import { FAMILLE_DES_COMMANDES_CAMERA, GROUPES_COMMANDES, type GroupeCommande } from "./barres-nommees";
+import { groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { t } from "../messages";
 import { afficherRaccourci, nomOutil, pictoOutil, raccourciOutil } from "./outils-planche";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+
+/** Aperçu d'une entrée dans la ligne d'une barre (icône seule ; le nom sert d'infobulle). */
+export interface ApercuBarre {
+  readonly cle: string;
+  readonly picto: DescriptionPictogramme;
+  readonly nom: string;
+}
+
+/** Ligne de la section « Barres d'outils » : une barre nommée, livrée ou personnelle. */
+export interface LigneBarre {
+  readonly id: string;
+  readonly nom: string;
+  readonly origine: "livree" | "personnelle";
+  /** Barre personnelle : identifiant de son regroupement (« Modifier »). */
+  readonly groupe?: string;
+  readonly affichee: boolean;
+  readonly apercu: readonly ApercuBarre[];
+}
 
 export interface PropsBoutonOutils {
   /** Outil actif (surligné dans la liste). */
@@ -24,12 +46,23 @@ export interface PropsBoutonOutils {
   raison: (o: Outil) => string | null;
   /** Active un outil exactement comme la barre de gauche. */
   onChoisir: (id: string) => void;
-  barres: EtatBarresOutils;
+  /** Barres nommées, dans l'ordre affiché : les livrées, puis les personnelles. */
+  barres: readonly LigneBarre[];
+  /** Étiquette d'un outil : la barre livrée où il est rangé (identifiant et nom), ou `null`. */
+  etiquette: (outilId: string) => { id: string; nom: string } | null;
   onAfficherBarre: (id: string, afficher: boolean) => void;
   onReinitialiser: () => void;
+  /** Une barre au moins a été déplacée : « Réinitialiser la disposition » a quelque chose à faire. */
+  reinitialisable: boolean;
+  /** « Nouvelle barre… » : ouvre le panneau « Personnaliser » ; absent (lecture seule), le bouton n'est pas offert. */
+  onNouvelleBarre?: () => void;
+  /** « Dupliquer » une barre livrée en barre personnelle ; absent ou limite atteinte, le bouton n'est pas offert. */
+  onDupliquerBarre?: (id: string) => void;
+  /** « Modifier » une barre personnelle (identifiant de son regroupement). */
+  onModifierBarre?: (groupe: string) => void;
   /**
-   * Commandes de la Planche (Objets O-1, règle d'or) : un groupe « Objets » après les familles d'outils. Chaque commande
-   * garde son icône, son nom et son raccourci ; grisée, elle dit pourquoi.
+   * Commandes de la Planche (règle d'or) : chacune garde son icône, son nom et son raccourci ; grisée, elle dit pourquoi.
+   * `groupe` la range dans « Groupe », « Repères », « Bois » ou avec la famille « Caméra ».
    */
   commandes?: readonly CommandeListe[];
   /**
@@ -52,6 +85,8 @@ export interface CommandeListe {
   /** Motif d'indisponibilité (`null` = disponible). */
   readonly motif: string | null;
   readonly executer: () => void;
+  /** Groupe de la liste (`groupeDeCommande`) ; absent : « Groupe ». */
+  readonly groupe?: GroupeCommande;
 }
 
 /** Bouton d'une opération : pictogramme propre à l'outil, « Nom — raccourci » en infobulle et en nom accessible. */
@@ -68,11 +103,11 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], variante = "outils", catalogue = OUTILS }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, commandes = [], variante = "outils", catalogue = OUTILS }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
-  const [familles, setFamilles] = useState<ReadonlySet<FamilleOutil>>(() => new Set());
-  const [deplies, setDeplies] = useState<ReadonlySet<string>>(() => new Set());
+  // Groupes dépliés : familles d'outils et groupes de commandes (« groupe », « reperes », « bois »).
+  const [familles, setFamilles] = useState<ReadonlySet<string>>(() => new Set());
   // Téléphone : la liste sort en surcouche fixe, posée juste sous le bouton (la barre du haut défile, D-192).
   const [hautTelephone, setHautTelephone] = useState<number | null>(null);
   const [hauteurListe, setHauteurListe] = useState<number | null>(null);
@@ -87,7 +122,6 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     const texte = `${c.nom} ${c.raccourci} ${c.id}`.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
     return motsRequete.every((m) => texte.includes(m));
   });
-  const [objetsDeplies, setObjetsDeplies] = useState(false);
 
   const fermer = (rendreFocus = true) => {
     setOuvert(false);
@@ -171,21 +205,13 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     fermer();
   };
 
-  const basculerFamille = (f: FamilleOutil) =>
+  const basculerFamille = (f: string) =>
     setFamilles((s) => {
       const n = new Set(s);
       if (n.has(f)) n.delete(f);
       else n.add(f);
       return n;
     });
-  const basculerOutil = (id: string) =>
-    setDeplies((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-
   /** Éléments parcourus au clavier, dans l'ordre affiché : le champ, puis chaque élément du menu. */
   const navigables = () => Array.from(racine.current?.querySelectorAll<HTMLElement>("[data-outils-nav]") ?? []).filter((e) => !(e as HTMLButtonElement).disabled);
   const surClavier = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -211,43 +237,77 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     }
   };
 
-  const operations = (o: Outil, sections: SectionBarre[]) => (
-    <div className="planche-outils-ops" role="group" aria-label={t("outils.barre", { outil: nomOutil(o) })} data-outils-barre={o.id}>
-      {sections.map((s) => (
-        <div key={s.cle} className="planche-outils-section" role="group" aria-label={`${s.numero} ${s.libelle}`} data-outils-section={s.cle}>
-          <span className="planche-outils-section-titre" aria-hidden="true">
-            {s.numero} {s.libelle}
-          </span>
-          <span className="planche-outils-icones">
-            {s.outils.map((x) => {
-              const r = raison(x);
-              const actif = x.id === outilId;
-              return (
-                <button
-                  key={x.id}
-                  type="button"
-                  role="menuitem"
-                  className={`planche-outils-op${actif ? " est-actif" : ""}${r ? " est-indisponible" : ""}`}
-                  aria-current={actif ? "true" : undefined}
-                  aria-disabled={r ? true : undefined}
-                  title={titreOperation(x, r)}
-                  aria-label={titreOperation(x, r)}
-                  data-outils-nav
-                  data-outils-operation={x.id}
-                  data-raccourci={raccourciOutil(x) ?? undefined}
-                  onClick={() => choisir(x.id)}
-                >
-                  <Pictogramme picto={pictoOutil(x.id)} />
-                </button>
-              );
-            })}
-          </span>
-        </div>
-      ))}
+  /** Ligne d'une commande : icône, nom, raccourci ; grisée, son titre dit pourquoi. */
+  const ligneCommande = (c: CommandeListe) => (
+    <div key={c.id} className="planche-outils-ligne" role="none" data-outils-ligne={c.id}>
+      <div className="planche-outils-tete" role="none">
+        <button
+          type="button"
+          role="menuitem"
+          className={`planche-outils-nom${c.motif ? " est-indisponible" : ""}`}
+          aria-disabled={c.motif ? true : undefined}
+          title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`}
+          data-outils-nav
+          data-outils-commande={c.id}
+          onClick={() => {
+            if (c.motif) return;
+            fermer(false);
+            c.executer();
+          }}
+        >
+          <Pictogramme picto={c.picto} className="planche-outils-picto" />
+          <span className="planche-outils-libelle">{c.nom}</span>
+          <span aria-hidden="true"> · </span>
+          <kbd>{afficherRaccourci(c.raccourci)}</kbd>
+        </button>
+      </div>
     </div>
   );
-
-  const affichees = barres.visibles.map((id) => outilParId(id)).filter((o): o is Outil => o !== null && catalogue.includes(o));
+  const commandesDe = (g: GroupeCommande) => commandesRetenues.filter((c) => (c.groupe ?? "groupe") === g);
+  const commandesCamera = commandesDe("camera");
+  // Une famille sans outil retenu garde son groupe si une de ses commandes l'est (Zoom avant / arrière sous « Caméra »).
+  const groupesAffiches = commandesCamera.length > 0 && !groupes.some((g) => g.famille === FAMILLE_DES_COMMANDES_CAMERA) ? [...groupes, { famille: FAMILLE_DES_COMMANDES_CAMERA, libelle: t("outils.famille.camera"), outils: [] as Outil[] }] : groupes;
+  const livrees = barres.filter((b) => b.origine === "livree");
+  const personnelles = barres.filter((b) => b.origine === "personnelle");
+  const APERCU_MAX = 6;
+  /** Ligne d'une barre nommée : interrupteur (toute la ligne), nom, aperçu des icônes, puis Dupliquer ou Modifier. */
+  const ligneBarre = (b: LigneBarre) => (
+    <div key={b.id} className="planche-outils-barre" role="none" data-outils-barre-ligne={b.id}>
+      <button
+        type="button"
+        role="menuitemcheckbox"
+        className="planche-outils-barre-bascule"
+        aria-checked={b.affichee}
+        aria-label={t("outils.afficher.aide", { outil: b.nom })}
+        title={t("outils.afficher.aide", { outil: b.nom })}
+        data-outils-nav
+        data-outils-afficher={b.id}
+        onClick={() => onAfficherBarre(b.id, !b.affichee)}
+      >
+        <span className="planche-outils-barre-nom">{b.nom}</span>
+        <span className="planche-outils-barre-apercu" aria-hidden="true">
+          {b.apercu.slice(0, APERCU_MAX).map((a) => (
+            <span key={a.cle} title={a.nom}>
+              <Pictogramme picto={a.picto} />
+            </span>
+          ))}
+          {b.apercu.length > APERCU_MAX && <span className="planche-outils-barre-reste">+{b.apercu.length - APERCU_MAX}</span>}
+          {b.apercu.length === 0 && <span className="planche-outils-barre-reste">{t("outils.barre.vide")}</span>}
+        </span>
+        <span className="planche-outils-interrupteur" aria-hidden="true" data-actif={b.affichee ? "" : undefined} />
+      </button>
+      {b.origine === "livree" && onDupliquerBarre && (
+        <button type="button" role="menuitem" className="planche-outils-barre-action" aria-label={t("outils.barre.dupliquer", { outil: b.nom })} title={t("outils.barre.dupliquer", { outil: b.nom })} data-outils-nav data-outils-dupliquer={b.id} onClick={() => { fermer(false); onDupliquerBarre(b.id); }}>
+          <IconeSandbox nom="menuEnregistrerSous" />
+        </button>
+      )}
+      {b.origine === "personnelle" && b.groupe && onModifierBarre && (
+        <button type="button" role="menuitem" className="planche-outils-barre-action" aria-label={t("outils.barre.modifier", { outil: b.nom })} title={t("outils.barre.modifier", { outil: b.nom })} data-outils-nav data-outils-modifier={b.groupe} onClick={() => { const g = b.groupe!; fermer(false); onModifierBarre(g); }}>
+          <IconeSandbox nom="menuRenommer" />
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className={`planche-outils-menu${variante === "loupe" ? " planche-outils-menu-loupe" : ""}`} ref={racine} onKeyDown={ouvert ? surClavier : undefined} data-planche-outils-menu>
@@ -310,7 +370,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
           </div>
           <div id={idListe} className="planche-outils-arbre" role="menu" aria-label={t("outils.menu")}>
             {filtre && groupes.length === 0 && commandesRetenues.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
-            {groupes.map((g) => {
+            {groupesAffiches.map((g) => {
               const deplie = filtre || familles.has(g.famille);
               return (
                 <div key={g.famille} className="planche-outils-groupe" role="group" aria-label={g.libelle} data-outils-groupe={g.famille}>
@@ -320,15 +380,15 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                   </button>
                   {deplie &&
                     g.outils.map((o) => {
-                      const sections = barreDe(o.id, catalogue);
-                      const ouverte = deplies.has(o.id);
-                      const affichee = barres.visibles.includes(o.id);
                       const r = raccourciOutil(o);
                       const actif = o.id === outilId;
+                      const motif = raison(o);
+                      const e = etiquette(o.id);
+                      const affichee = e ? barres.some((b) => b.id === e.id && b.affichee) : false;
                       return (
                         <div key={o.id} className={`planche-outils-ligne${actif ? " est-actif" : ""}`} role="none" data-outils-ligne={o.id}>
                           <div className="planche-outils-tete" role="none">
-                            <button type="button" role="menuitem" className="planche-outils-nom" aria-expanded={ouverte} aria-current={actif ? "true" : undefined} title={t("outils.deplier", { operation: libelleOperation(o) })} data-outils-nav data-outils-outil={o.id} onClick={() => basculerOutil(o.id)}>
+                            <button type="button" role="menuitem" className={`planche-outils-nom${motif ? " est-indisponible" : ""}`} aria-current={actif ? "true" : undefined} aria-disabled={motif ? true : undefined} title={titreOperation(o, motif)} data-outils-nav data-outils-outil={o.id} data-raccourci={r ?? undefined} onClick={() => choisir(o.id)}>
                               <Pictogramme picto={pictoOutil(o.id)} className="planche-outils-picto" />
                               <span className="planche-outils-libelle">{nomOutil(o)}</span>
                               {r && (
@@ -337,71 +397,57 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                                   <kbd>{afficherRaccourci(r)}</kbd>
                                 </>
                               )}
-                              <IconeSandbox nom={ouverte ? "menu" : "sousMenu"} className="planche-outils-fleche" />
                             </button>
-                            <button type="button" role="menuitemcheckbox" className="planche-outils-afficher" aria-checked={affichee} aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} title={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-afficher={o.id} onClick={() => onAfficherBarre(o.id, !affichee)}>
-                              <IconeSandbox nom={affichee ? "coche" : "caseVide"} className="planche-outils-case" />
-                              <span aria-hidden="true">{t("outils.afficher")}</span>
-                            </button>
+                            {e && (
+                              <button type="button" role="menuitemcheckbox" className="planche-outils-etiquette" aria-checked={affichee} aria-label={t("outils.afficher.aide", { outil: e.nom })} title={t("outils.afficher.aide", { outil: e.nom })} data-outils-nav data-outils-etiquette={e.id} onClick={() => onAfficherBarre(e.id, !affichee)}>
+                                {t("outils.etiquette", { barre: e.nom })}
+                              </button>
+                            )}
                           </div>
-                          {ouverte && sections && operations(o, sections)}
                         </div>
                       );
                     })}
+                  {deplie && g.famille === FAMILLE_DES_COMMANDES_CAMERA && commandesCamera.map(ligneCommande)}
                 </div>
               );
             })}
-            {commandesRetenues.length > 0 && (
-              <div className="planche-outils-groupe" role="group" aria-label={t("outils.famille.objets")} data-outils-groupe="objets">
-                <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={filtre || objetsDeplies} data-outils-nav data-outils-famille="objets" onClick={() => !filtre && setObjetsDeplies(!objetsDeplies)}>
-                  <IconeSandbox nom={filtre || objetsDeplies ? "menu" : "sousMenu"} className="planche-outils-fleche" />
-                  {t("outils.famille.objets")}
-                </button>
-                {(filtre || objetsDeplies) &&
-                  commandesRetenues.map((c) => (
-                    <div key={c.id} className="planche-outils-ligne" role="none" data-outils-ligne={c.id}>
-                      <div className="planche-outils-tete" role="none">
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className={`planche-outils-nom${c.motif ? " est-indisponible" : ""}`}
-                          aria-disabled={c.motif ? true : undefined}
-                          title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`}
-                          data-outils-nav
-                          data-outils-commande={c.id}
-                          onClick={() => {
-                            if (c.motif) return;
-                            fermer(false);
-                            c.executer();
-                          }}
-                        >
-                          <Pictogramme picto={c.picto} className="planche-outils-picto" />
-                          <span className="planche-outils-libelle">{c.nom}</span>
-                          <span aria-hidden="true"> · </span>
-                          <kbd>{afficherRaccourci(c.raccourci)}</kbd>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-            <div className="planche-outils-pied" role="group" aria-label="Barres d'outils" data-outils-reglages>
+            {GROUPES_COMMANDES.map((g) => {
+              const lignes = commandesDe(g.id);
+              if (lignes.length === 0) return null;
+              const deplie = filtre || familles.has(g.id);
+              return (
+                <div key={g.id} className="planche-outils-groupe" role="group" aria-label={t(g.cle)} data-outils-groupe={g.id}>
+                  <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={deplie} data-outils-nav data-outils-famille={g.id} onClick={() => !filtre && basculerFamille(g.id)}>
+                    <IconeSandbox nom={deplie ? "menu" : "sousMenu"} className="planche-outils-fleche" />
+                    {t(g.cle)}
+                  </button>
+                  {deplie && lignes.map(ligneCommande)}
+                </div>
+              );
+            })}
+            <div className="planche-outils-pied" role="group" aria-label={t("outils.pied")} data-outils-reglages>
               <span className="planche-outils-pied-titre" aria-hidden="true">
                 <IconeSandbox nom="reglages" /> {t("outils.pied")}
               </span>
-              {affichees.length === 0 && (
+              <span className="inspecteur-aide" role="none">
+                {t("outils.pied.aide")}
+              </span>
+              {livrees.map(ligneBarre)}
+              <span className="planche-outils-pied-sous-titre" role="none" data-outils-mes-barres>
+                {t("outils.pied.mes-barres")}
+              </span>
+              {personnelles.length === 0 && (
                 <span className="inspecteur-aide" role="none">
                   {t("outils.pied.aucune")}
                 </span>
               )}
-              {affichees.map((o) => (
-                <button key={o.id} type="button" role="menuitemcheckbox" aria-checked="true" className="planche-outils-afficher" aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-barre-visible={o.id} onClick={() => onAfficherBarre(o.id, false)}>
-                  <IconeSandbox nom="coche" className="planche-outils-case" />
-                  <Pictogramme picto={pictoOutil(o.id)} className="planche-outils-picto" />
-                  <span aria-hidden="true">{nomOutil(o)}</span>
+              {personnelles.map(ligneBarre)}
+              {onNouvelleBarre && (
+                <button type="button" role="menuitem" className="planche-outils-nouvelle" data-outils-nav data-outils-nouvelle onClick={() => { fermer(false); onNouvelleBarre(); }}>
+                  {t("outils.barre.nouvelle")}
                 </button>
-              ))}
-              <button type="button" role="menuitem" className="planche-outils-reinitialiser" disabled={Object.keys(barres.positions).length === 0} data-outils-nav data-outils-reinitialiser onClick={onReinitialiser}>
+              )}
+              <button type="button" role="menuitem" className="planche-outils-reinitialiser" disabled={!reinitialisable} data-outils-nav data-outils-reinitialiser onClick={onReinitialiser}>
                 {t("outils.reinitialiser")}
               </button>
             </div>
