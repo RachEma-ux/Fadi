@@ -6,6 +6,7 @@
 export type IconName =
   | "home"
   | "organization"
+  | "puzzle"
   | "map"
   | "review"
   | "folder"
@@ -163,6 +164,8 @@ const PATHS: Record<IconName, string> = {
   // Carte pliée en trois volets et repère : entrée GeoData de la barre latérale.
   map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14",
   organization: "M3 21h18M5 21V5h8v16M13 9h6v12M8 8h2M8 11h2M8 14h2M16 12h1M16 15h1M8 18h2",
+  // Extensions : pièce de puzzle (tracé inspiré de Tabler « puzzle », MIT).
+  puzzle: "M4 7h3a1 1 0 0 0 1-1V5a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-1a2 2 0 0 0-4 0v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a2 2 0 0 0 0-4H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1",
   // Revue externe (phase 4) : feuille et loupe.
   review: "M6 3h8l4 4v6M6 3v18h7M14 3v4h4M15.5 19.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 18l3 3",
   folder: "M3 7a1.5 1.5 0 0 1 1.5-1.5H9l2 2h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V7Z",

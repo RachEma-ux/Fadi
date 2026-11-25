@@ -1,0 +1,24 @@
+/* Page « Extensions » de la barre latérale : deux options (Installées, Disponibles), une carte par extension. */
+.extensions-options { display: inline-flex; gap: 4px; padding: 4px; margin: 12px 0 18px; border-radius: 12px; background: #e3e9e4; }
+.extensions-options button { min-height: 36px; padding: 6px 18px; border: 0; border-radius: 9px; background: none; color: #4d665f; font: inherit; font-weight: 600; cursor: pointer; }
+.extensions-options button.active { background: #fff; color: #17352f; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.13); }
+.extensions-compte { margin-inline-start: 6px; font-weight: 500; color: #5c726c; }
+.extensions-grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.extensions-carte { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border: 1px solid #d5ddd6; border-radius: 18px; background: #fff; }
+.extensions-picto { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #e8efe9; color: #1b4d42; }
+.extensions-texte { flex: 1; min-width: 0; }
+.extensions-texte h2 { margin: 0; font-size: 1.05rem; }
+.extensions-texte p { margin: 4px 0 8px; color: #4d665f; font-size: 0.92rem; overflow-wrap: anywhere; }
+.extensions-texte .extensions-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 0; font-size: 0.82rem; color: #5c726c; }
+.extensions-etat { padding: 1px 9px; border-radius: 999px; background: #fbf0d4; color: #7a5a00; font-weight: 600; }
+.extensions-carte > button { flex: none; white-space: nowrap; }
+.extensions-note { margin-top: 16px; font-size: 0.85rem; }
+@media (max-width: 900px) {
+  .extensions-grille { grid-template-columns: minmax(0, 1fr); }
+}
+/* Écran étroit : le texte garde toute la largeur de la carte, le bouton passe dessous, aligné sur le texte. */
+@media (max-width: 700px) {
+  .extensions-carte { flex-wrap: wrap; padding: 14px; }
+  .extensions-texte { flex: 1 1 calc(100% - 58px); }
+  .extensions-carte > button { margin-inline-start: 58px; }
+}
