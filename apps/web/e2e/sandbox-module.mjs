@@ -16,7 +16,7 @@
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
@@ -425,7 +425,7 @@ try {
       const fenetre = racine.locator("[data-planche-extensions]");
       await fenetre.waitFor({ state: "visible" });
       const lignes = await fenetre.locator("[data-planche-extension]").evaluateAll((l) => l.map((e) => `${e.getAttribute("data-planche-extension")}:${e.getAttribute("data-planche-extension-active")}`));
-      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false"]), lignes.join(", "));
+      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false", "dynamiques:false"]), lignes.join(", "));
       await p3.screenshot({ path: join(OUT, "sandbox-extensions-fenetre.png") });
       await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
       await fenetre.locator('[data-planche-extensions-etat="compte"]').waitFor();
@@ -477,6 +477,59 @@ try {
       await p3.keyboard.press("Control+z");
       await p3.waitForTimeout(400);
       check("contrôle : un seul Annuler rétablit ce qui a été retiré", (await isolees()) === "1", await isolees());
+      // Extension « Composants dynamiques » : une étagère paramétrée (jeu d'essai) ; ses options redessinent ses tablettes.
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      await fenetre.locator('[data-planche-extension-interrupteur="dynamiques"]').click();
+      await p3.waitForTimeout(600);
+      const etagere = readFileSync(new URL("./donnees/sandbox-etagere-dynamique.json", import.meta.url), "utf8").trim();
+      await p3.evaluate((valeur) => new Promise((ok, ko) => {
+        const r = indexedDB.open("fadi-local");
+        r.onerror = () => ko(r.error);
+        r.onsuccess = () => {
+          const tx = r.result.transaction("keyValue", "readwrite");
+          tx.objectStore("keyValue").put({ key: "sandbox-planche-brouillon", value: valeur, updatedAt: new Date().toISOString() });
+          tx.oncomplete = () => { r.result.close(); ok(null); };
+          tx.onerror = () => ko(tx.error);
+        };
+      }), etagere);
+      await p3.reload();
+      await plancheChargee(p3, "étagère dynamique");
+      await racine.locator('[data-planche-panneau-icone="dynamique"]').click();
+      const dynamique = racine.locator('[data-planche-panneau="dynamique"]');
+      check("dynamique : sans sélection, le panneau demande de choisir un composant", (await dynamique.locator("[data-planche-dynamique-aucun]").count()) === 1);
+      await racine.locator('[data-planche-outil="selection"]').first().click();
+      await p3.keyboard.press("Control+a");
+      await dynamique.locator('[data-planche-dynamique="dynamique"]').waitFor();
+      const lire = (nom) => dynamique.locator(`[data-planche-dynamique-option="${nom}"]`).inputValue();
+      check("dynamique : le composant sélectionné montre ses options (largeur, tablettes, essence)", (await lire("Largeur")) === "1" && (await lire("Tablettes")) === "3" && (await lire("Essence")) === "Chêne");
+      const brouillonLu = () => p3.evaluate(() => new Promise((ok) => {
+        const r = indexedDB.open("fadi-local");
+        r.onsuccess = () => {
+          const q = r.result.transaction("keyValue").objectStore("keyValue").get("sandbox-planche-brouillon");
+          q.onsuccess = () => { r.result.close(); ok(JSON.parse(q.result.value).modele); };
+        };
+      }));
+      const tablettes = async () => {
+        const m = await brouillonLu();
+        const d = Object.values(m.definitions).find((x) => x.dynamique);
+        const occ = Object.values(d.contenu.occurrences);
+        return { n: occ.length, largeur: Number(Math.hypot(occ[0].transformation[0], occ[0].transformation[4], occ[0].transformation[8]).toFixed(3)), matiere: occ.map((o) => o.materiau).join(",") };
+      };
+      const champ = dynamique.locator('[data-planche-dynamique-option="Tablettes"]');
+      await champ.fill("5");
+      await champ.blur();
+      const large = dynamique.locator('[data-planche-dynamique-option="Largeur"]');
+      await large.fill("1,6");
+      await large.blur();
+      await dynamique.locator('[data-planche-dynamique-option="Essence"]').selectOption("Hêtre");
+      await p3.waitForTimeout(1500);
+      const apresOptions = await tablettes();
+      check("dynamique : les options redessinent le composant (5 tablettes, largeur × 1,6, matière Hêtre)", apresOptions.n === 5 && apresOptions.largeur === 1.6 && apresOptions.matiere === "m2,m2,m2,m2,m2", JSON.stringify(apresOptions));
+      await p3.screenshot({ path: join(OUT, "sandbox-dynamique-options.png") });
+      await p3.keyboard.press("Control+z");
+      await p3.waitForTimeout(1500);
+      check("dynamique : Annuler défait la dernière option seulement", (await tablettes()).matiere === "m1,m1,m1,m1,m1" && (await tablettes()).n === 5, JSON.stringify(await tablettes()));
     }
     await c3.close();
   }

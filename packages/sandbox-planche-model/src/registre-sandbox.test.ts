@@ -25,6 +25,8 @@ describe("registre du Sandbox — contenu", () => {
     // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["controler", true, "panneau-controle"], ["nettoyer", true, "panneau-controle"]]);
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "dynamique").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["composant-dynamique", true, "panneau-dynamique"], ["redessiner-composant", true, "panneau-dynamique"]]);
+    expect(entreePanneau("dynamique").horsCatalogue).toBe(true);
     expect(entreePanneau("reperes").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
@@ -96,7 +98,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("panneaux : chacun à un clic dans la colonne de droite, Info modèle en bas (lot 4)", () => {
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne").map((e) => e.id)).toEqual([
-      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle",
+      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle", "dynamique",
     ]);
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
   });

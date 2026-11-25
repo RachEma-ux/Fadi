@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -271,6 +271,27 @@ export function disponibiliteControle(id: IdCommandeControle, s: { readonly aNet
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
   return s.aNettoyer ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.rien" };
+}
+
+/** Extension « Composants dynamiques » : ouvrir le panneau, redessiner le composant sélectionné (règle d'or). */
+export type IdCommandeDynamique = "composant-dynamique" | "redessiner-composant";
+export interface CommandeDynamique {
+  readonly id: IdCommandeDynamique;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_DYNAMIQUE: readonly CommandeDynamique[] = [
+  { id: "composant-dynamique", ...depuisRegistre("composant-dynamique"), libelle: "planche.dynamique.ouvrir", court: "planche.dynamique.court.ouvrir" },
+  { id: "redessiner-composant", ...depuisRegistre("redessiner-composant"), libelle: "planche.dynamique.redessiner", court: "planche.dynamique.court.redessiner" },
+];
+
+/** Disponibilité : le panneau toujours ; redessiner hors lecture, avec un composant dynamique sélectionné seul. */
+export function disponibiliteDynamique(id: IdCommandeDynamique, s: { readonly dynamique: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "composant-dynamique") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.dynamique ? { disponible: true, motif: null } : { disponible: false, motif: "planche.dynamique.motif.selection" };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */

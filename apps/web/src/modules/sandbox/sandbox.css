@@ -3563,3 +3563,74 @@
   font-size: 0.76rem;
   color: #6b7672;
 }
+
+/* Extension « Composants dynamiques » : options, paramètres et règles du composant sélectionné. */
+.sandbox-planche .planche-dynamique-bloc > summary {
+  min-height: 34px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 34px;
+  cursor: pointer;
+}
+.sandbox-planche .planche-dynamique-parametre {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  margin: 0 0 0.5rem;
+  padding: 0.45rem;
+  border: 1px solid #dfe5e2;
+  border-radius: 8px;
+}
+.sandbox-planche .planche-dynamique-ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+.sandbox-planche .planche-dynamique-ligne input,
+.sandbox-planche .planche-dynamique-ligne select {
+  min-width: 0;
+  width: 100%;
+  min-height: 30px;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-dynamique-ligne button {
+  flex: none;
+  min-height: 30px;
+  font-size: 0.82rem;
+}
+.sandbox-planche .planche-dynamique-cible {
+  flex: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-dynamique small {
+  font-size: 0.76rem;
+  color: #6b7672;
+}
+.sandbox-planche .planche-dynamique-coche {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.82rem;
+  text-align: left;
+}
+.sandbox-planche .planche-dynamique-coche input {
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 0;
+  margin: 0;
+}
+.sandbox-planche .planche-dynamique-erreurs {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #9a2c1c;
+}

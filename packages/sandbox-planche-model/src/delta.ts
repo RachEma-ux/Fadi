@@ -7,6 +7,7 @@
  * obtenue n'est pas celle annoncée (la Planche a changé entre-temps : 409). Les tables sont des `Record<Id, …>` :
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
+import { estComposantDynamique } from "./composants-dynamiques.js";
 import { type RepereEnregistre, repereEnregistreValide } from "./reperes.js";
 import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
@@ -277,7 +278,7 @@ function estContexte(c: unknown): c is Contexte {
 }
 
 const estDefinition = (id: Id, d: unknown): d is Definition =>
-  estObjet(d) && d["id"] === id && typeof d["nom"] === "string" && (d["genre"] === "groupe" || d["genre"] === "composant") && estContexte(d["contenu"]) && (d["piece"] === undefined || estMetadonneesPiece(d["piece"]));
+  estObjet(d) && d["id"] === id && typeof d["nom"] === "string" && (d["genre"] === "groupe" || d["genre"] === "composant") && estContexte(d["contenu"]) && (d["piece"] === undefined || estMetadonneesPiece(d["piece"])) && (d["dynamique"] === undefined || estComposantDynamique(d["dynamique"]));
 
 /** Modèle de la Planche lu d'une valeur quelconque (JSON reçu, brouillon), ou `null` s'il est mal formé : chaque sommet, arête, face, courbe, occurrence et définition est vérifié, ainsi que les références internes. */
 export function lireModelePlanche(brut: unknown): Modele | null {
