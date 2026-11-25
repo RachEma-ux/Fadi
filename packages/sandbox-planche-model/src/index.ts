@@ -5,6 +5,7 @@ export * from "./annotations.js";
 export * from "./profiles.js";
 export * from "./assemblages.js";
 export * from "./debit.js";
+export * from "./controle.js";
 export * from "./maillage.js";
 export * from "./police-geometrique.js";
 export * from "./inference.js";

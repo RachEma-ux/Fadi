@@ -19,16 +19,16 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
  * `actions` barre d'actions flottante ; `fil-ariane` fil d'Ariane d'un groupe ; `outils` « Outils ▾ » seulement ;
- * `panneau-navigateur`, `panneau-debit` barre du panneau ; `barre-piece` bloc de la pièce ; `colonne` colonne de droite,
+ * `panneau-navigateur`, `panneau-debit`, `panneau-controle` barre du panneau ; `barre-piece` bloc de la pièce ; `colonne` colonne de droite,
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -297,6 +297,9 @@ const commandes: EntreeSandbox[] = [
   c("gerer-reperes", "repere", "fadi:reperes-liste", "Alt+Maj+0", "barre-reperes", true),
   // AX-4 : origine et axes d'un composant (édition d'objet, menu contextuel « Changer les axes »).
   c("origine-composant", "repere", "fadi:origine-composant", "Maj+F4", "barre-reperes", true),
+  // Extension « Contrôle et nettoyage » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
+  c("controler", "controle", "stethoscope", "Maj+F8", "panneau-controle", true),
+  c("nettoyer", "controle", "sparkles", "Maj+F2", "panneau-controle", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
@@ -329,6 +332,8 @@ const panneaux: EntreeSandbox[] = [
   p("debit", "fadi:debit", "colonne"),
   // Chantier Axes (AX-3) : gestionnaire des repères enregistrés, hors des 86 entrées du catalogue.
   p("reperes", "fadi:reperes-liste", "colonne", true),
+  // Extension « Contrôle et nettoyage » : relevé de la Planche, hors des 86 entrées du catalogue.
+  p("controle", "stethoscope", "colonne", true),
   p("info-modele", "info-circle", "colonne-bas"),
 ];
 
@@ -341,6 +346,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["outil:balise", "panneau:balises"],
   ["commande:liste-debit", "panneau:debit"],
   ["commande:gerer-reperes", "panneau:reperes"],
+  ["commande:controler", "panneau:controle"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

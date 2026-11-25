@@ -61,6 +61,15 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     activeParDefaut: true,
     entrees: ["outil:enveloppe-exterieure", "outil:intersection", "outil:union", "outil:soustraction", "outil:ajuster", "outil:scinder", "outil:epaissir"],
   },
+  {
+    // Première extension nouvelle : à activer (elle ajoute un panneau à la colonne), contrairement aux regroupements.
+    id: "controle",
+    libelle: "Contrôle et nettoyage",
+    description: "Relevé des objets vides, matières et balises inutilisées, arêtes isolées, solides ouverts ; nettoyage sur commande.",
+    pictogramme: "commande:controler",
+    activeParDefaut: false,
+    entrees: ["commande:controler", "commande:nettoyer", "panneau:controle"],
+  },
 ]);
 
 /** Extension par identifiant, ou `undefined`. */

@@ -106,3 +106,15 @@ describe("Liste de débit (lot L14) : commandes et disponibilités", () => {
     expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Alt+Maj+X"]);
   });
 });
+
+describe("Extension « Contrôle et nettoyage » — disponibilité des commandes", () => {
+  it("contrôler toujours ; nettoyer hors lecture, à la racine, avec quelque chose de coché à retirer", async () => {
+    const { disponibiliteControle } = await import("./commandes-objets");
+    const s = { aNettoyer: true, dansObjet: false, lecture: false };
+    expect(disponibiliteControle("controler", { aNettoyer: false, dansObjet: true, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteControle("nettoyer", s).disponible).toBe(true);
+    expect(disponibiliteControle("nettoyer", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteControle("nettoyer", { ...s, dansObjet: true }).motif).toBe("planche.controle.motif.objet");
+    expect(disponibiliteControle("nettoyer", { ...s, aNettoyer: false }).motif).toBe("planche.controle.motif.rien");
+  });
+});

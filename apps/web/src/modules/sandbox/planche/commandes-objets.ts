@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -247,6 +247,31 @@ export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
   { id: "effacer-etiquettes", ...depuisRegistre("effacer-etiquettes"), libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes" },
   { id: "exporter-debit", ...depuisRegistre("exporter-debit"), libelle: "planche.debit.exporter", court: "planche.debit.court.exporter" },
 ];
+
+/**
+ * Extension « Contrôle et nettoyage » : ouvrir le relevé, nettoyer ce qui est coché (règle d'or : icône, barre du
+ * panneau, raccourci).
+ */
+export type IdCommandeControle = "controler" | "nettoyer";
+export interface CommandeControle {
+  readonly id: IdCommandeControle;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_CONTROLE: readonly CommandeControle[] = [
+  { id: "controler", ...depuisRegistre("controler"), libelle: "planche.controle.controler", court: "planche.controle.court.controler" },
+  { id: "nettoyer", ...depuisRegistre("nettoyer"), libelle: "planche.controle.nettoyer", court: "planche.controle.court.nettoyer" },
+];
+
+/** Disponibilité : le contrôle toujours ; le nettoyage hors lecture, à la racine, avec quelque chose de coché à retirer. */
+export function disponibiliteControle(id: IdCommandeControle, s: { readonly aNettoyer: boolean; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "controler") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
+  return s.aNettoyer ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.rien" };
+}
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */
 export type IdCommandePiece = "piece-section" | "piece-rotation";

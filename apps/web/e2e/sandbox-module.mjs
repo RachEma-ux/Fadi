@@ -425,7 +425,7 @@ try {
       const fenetre = racine.locator("[data-planche-extensions]");
       await fenetre.waitFor({ state: "visible" });
       const lignes = await fenetre.locator("[data-planche-extension]").evaluateAll((l) => l.map((e) => `${e.getAttribute("data-planche-extension")}:${e.getAttribute("data-planche-extension-active")}`));
-      check("extensions : la fenêtre liste « Bois et menuiserie » et « Volumes et solides », actives d'origine", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true"]), lignes.join(", "));
+      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false"]), lignes.join(", "));
       await p3.screenshot({ path: join(OUT, "sandbox-extensions-fenetre.png") });
       await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
       await fenetre.locator('[data-planche-extensions-etat="compte"]').waitFor();
@@ -447,6 +447,36 @@ try {
       await p3.keyboard.press("Escape");
       await p3.keyboard.press("Escape");
       check("extensions : réactivée, ses outils reviennent sans rechargement", (await nbGrille("union")) >= 1);
+      // Extension « Contrôle et nettoyage » : à activer ; son panneau rejoint la colonne, le relevé compte, Nettoyer retire.
+      const iconeControle = racine.locator('[data-planche-panneau-icone="controle"]');
+      check("contrôle : extension inactive d'origine, pas de panneau dans la colonne", (await iconeControle.count()) === 0);
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      await fenetre.locator('[data-planche-extension-interrupteur="controle"]').click();
+      await p3.waitForTimeout(600);
+      await p3.keyboard.press("Escape");
+      await p3.keyboard.press("Escape");
+      check("contrôle : activée, son panneau est dans la colonne", (await iconeControle.count()) === 1);
+      await racine.locator('[data-planche-outil="ligne"]').first().click();
+      await p3.mouse.click(900, 600);
+      await p3.mouse.move(1000, 640, { steps: 5 });
+      await p3.mouse.click(1000, 640);
+      await p3.keyboard.press("Escape");
+      await racine.locator('[data-planche-outil="selection"]').first().click();
+      await iconeControle.click();
+      const releve = racine.locator("[data-planche-controle]");
+      await releve.waitFor({ state: "visible" });
+      const isolees = () => releve.locator('[data-planche-controle-nombre="aretesIsolees"]').innerText();
+      check("contrôle : le trait dessiné est relevé comme arête isolée, rien n'est retiré", (await isolees()) === "1", await isolees());
+      check("contrôle : Nettoyer grisé tant que rien de coché n'est à retirer", await releve.locator('[data-planche-commande="nettoyer"]').isDisabled());
+      await releve.locator('[data-planche-controle-choix="aretesIsolees"]').check();
+      await p3.screenshot({ path: join(OUT, "sandbox-controle-releve.png") });
+      await releve.locator('[data-planche-commande="nettoyer"]').click();
+      await p3.waitForTimeout(400);
+      check("contrôle : Nettoyer retire l'arête cochée et le dit", (await isolees()) === "0" && (await releve.locator("[data-planche-controle-note]").count()) === 1, await isolees());
+      await p3.keyboard.press("Control+z");
+      await p3.waitForTimeout(400);
+      check("contrôle : un seul Annuler rétablit ce qui a été retiré", (await isolees()) === "1", await isolees());
     }
     await c3.close();
   }
