@@ -22,9 +22,9 @@ describe("Extensions du Sandbox — liste", () => {
 
   it("détecte une liste incohérente (garde construite)", () => {
     const fausse = [
-      { id: "Mauvais Id", libelle: "x", description: "x", pictogramme: "outil:ligne", activeParDefaut: true, entrees: ["outil:absent"] },
-      { id: "double", libelle: "x", description: "x", pictogramme: "outil:union", activeParDefaut: true, entrees: ["outil:union"] },
-      { id: "double", libelle: "x", description: "x", pictogramme: "outil:union", activeParDefaut: true, entrees: ["outil:union"] },
+      { id: "Mauvais Id", libelle: "x", description: "x", pictogramme: "outil:ligne", version: "1.0.0", activeParDefaut: true, entrees: ["outil:absent"] },
+      { id: "double", libelle: "x", description: "x", pictogramme: "outil:union", version: "1.0.0", activeParDefaut: true, entrees: ["outil:union"] },
+      { id: "double", libelle: "x", description: "x", pictogramme: "outil:union", version: "1.0.0", activeParDefaut: true, entrees: ["outil:union"] },
     ];
     const defauts = defautsExtensions(fausse);
     expect(defauts.some((d) => d.includes("mal formé"))).toBe(true);
@@ -70,10 +70,10 @@ describe("Extensions du Sandbox — choix du compte", () => {
     expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 10);
   });
 
-  it("ne retient que les écarts au défaut : réactiver efface le choix", () => {
+  it("retient le geste du compte tel quel, même quand il rejoint le réglage d'origine", () => {
     const off = basculerExtension({}, "bois", false);
     expect(off).toEqual({ bois: false });
-    expect(basculerExtension(off, "bois", true)).toEqual({});
+    expect(basculerExtension(off, "bois", true)).toEqual({ bois: true });
     expect(basculerExtension({}, "inconnue", false)).toEqual({});
   });
 
@@ -83,7 +83,7 @@ describe("Extensions du Sandbox — choix du compte", () => {
 
   it("valide un choix reçu : forme, booléens, identifiants connus — jamais de filtrage silencieux", () => {
     expect(validerChoixExtensions({ bois: false })).toEqual({ ok: true, choix: { bois: false } });
-    expect(validerChoixExtensions({ bois: true })).toEqual({ ok: true, choix: {} });
+    expect(validerChoixExtensions({ bois: true, controle: false })).toEqual({ ok: true, choix: { bois: true, controle: false } });
     expect(validerChoixExtensions([])).toMatchObject({ ok: false, erreur: "forme_invalide" });
     expect(validerChoixExtensions({ bois: "non" })).toMatchObject({ ok: false, erreur: "forme_invalide" });
     expect(validerChoixExtensions({ fantome: false })).toMatchObject({ ok: false, erreur: "extension_inconnue", inconnues: ["extension:fantome"] });

@@ -972,6 +972,18 @@ ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS extensions jsonb N
 ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_extensions_check,
   ADD CONSTRAINT sandbox_tool_preferences_extensions_check
   CHECK (jsonb_typeof(extensions) = 'object') NOT VALID;
+-- Catalogue des extensions, réglages de la plateforme (25 novembre 2026) : une ligne par extension que l'administrateur
+-- a réglée — état (disponible, expérimentale, retirée) et réglage d'origine des comptes qui n'ont rien choisi. Sans
+-- ligne, l'extension est disponible avec le réglage livré par Fadi. Le contenu d'une extension (outils, commandes,
+-- panneaux, version) reste du code ; chaque changement est journalisé (`admin.addon.updated`). Additive.
+CREATE TABLE IF NOT EXISTS addon_platform_settings (
+  addon_id text PRIMARY KEY CONSTRAINT addon_platform_settings_id_check CHECK (addon_id ~ '^[a-z0-9-]{1,40}$'),
+  state text NOT NULL DEFAULT 'disponible'
+    CONSTRAINT addon_platform_settings_state_check CHECK (state IN ('disponible', 'experimentale', 'retiree')),
+  default_active boolean NOT NULL,
+  updated_by text REFERENCES users(id) ON DELETE SET NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

@@ -65,8 +65,13 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   étiquette. Aucun code tiers, aucune installation, aucun redémarrage. La fenêtre « Extensions » du menu propose un
   interrupteur par extension ; une extension désactivée retire ses outils, commandes et panneaux des barres, de la
   grille, de la liste des commandes et de la colonne, sans toucher au dessin. Le choix suit le compte
-  (`extensions` des préférences, `/sandbox/preferences`, colonne `extensions` de `sandbox_tool_preferences`) : seuls
-  les écarts au réglage d'origine sont enregistrés, si bien qu'un compte existant ne perd rien. Premières extensions,
+  (`extensions` des préférences, `/sandbox/preferences`, colonne `extensions` de `sandbox_tool_preferences`) : seul
+  ce que le compte a basculé lui-même est enregistré, si bien qu'un compte existant ne perd rien. La plateforme règle
+  le catalogue en base (`addon_platform_settings`, routes `GET /admin/addons` et `PATCH /admin/addons/:id`,
+  journalisées) : état de chaque extension (disponible, expérimentale, retirée) et réglage d'origine des comptes qui
+  n'ont rien choisi. La réponse de `/sandbox/preferences` porte ce `catalogue` ; la Planche en déduit ce qui est actif
+  (`choixEffectif`, `catalogue-extensions.ts`) : une extension retirée ne l'est pour personne, le choix du compte est
+  gardé et revient si elle est rétablie. Premières extensions,
   actives d'origine : « Bois et menuiserie » et « Volumes et solides » (regroupement d'outils existants).
 - **Extension « Contrôle et nettoyage »** (à activer ; `packages/sandbox-planche-model/src/controle.ts`,
   `planche/panneau-controle.tsx`) : panneau de la colonne et deux commandes, Contrôler (Maj + F8) et Nettoyer

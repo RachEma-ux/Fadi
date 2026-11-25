@@ -38,11 +38,16 @@ interface Props {
   readonly reinitialiser: () => void;
   /** Barre personnelle à modifier à l'ouverture (« Modifier », « Dupliquer » de la liste « Outils ») ; `null` : le champ du nom d'une nouvelle barre reçoit le focus. */
   readonly groupeInitial?: string | null;
+  /**
+   * Extensions actives pour le compte dans le catalogue de la plateforme (`choixEffectif`) : sert à l'affichage de la
+   * barre seulement ; `preferences` reste le choix enregistré, c'est lui qu'on réécrit.
+   */
+  readonly extensionsEffectives?: PreferencesSandbox["extensions"];
 }
 
 const basculer = (liste: readonly string[], cle: string, present: boolean) => (present ? (liste.includes(cle) ? [...liste] : [...liste, cle]) : liste.filter((x) => x !== cle));
 
-export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, modifier, reinitialiser, groupeInitial }: Props) {
+export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, modifier, reinitialiser, groupeInitial, extensionsEffectives }: Props) {
   const [groupeEdite, setGroupeEdite] = useState<string | null>(groupeInitial && p.regroupements.some((g) => g.id === groupeInitial) ? groupeInitial : (p.regroupements[0]?.id ?? null));
   const champNom = useRef<HTMLInputElement | null>(null);
   // « Nouvelle barre… » : le panneau s'ouvre sur le champ du nom.
@@ -50,7 +55,7 @@ export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, 
     if (groupeInitial === null) champNom.current?.focus();
   }, [groupeInitial]);
   const [nouveau, setNouveau] = useState("");
-  const barre = barreGaucheSandbox(p);
+  const barre = barreGaucheSandbox(extensionsEffectives ? { ...p, extensions: extensionsEffectives } : p);
   // Barre du profil avant le filtre des extensions : c'est elle qu'on réécrit, pour que les outils d'une extension
   // désactivée restent rangés à leur place et reviennent avec elle.
   const barreEntiere = barreDuProfilSandbox(p);

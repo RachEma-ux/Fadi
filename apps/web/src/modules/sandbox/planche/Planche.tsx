@@ -58,6 +58,7 @@ import {
   OUTILS,
   barreGaucheSandbox,
   basculerExtension,
+  choixEffectif,
   clesMasquees,
   contenuExtension,
   entreeDeCle,
@@ -439,11 +440,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
   const prefsSandbox = usePreferencesSandbox();
   // Barre gauche affichée (profil) : un outil choisi hors d'elle devient l'« outil récent » sous la barre.
-  const idsBarreRef = useRef<readonly string[]>(barreGaucheSandbox(prefsSandbox.preferences));
-  idsBarreRef.current = barreGaucheSandbox(prefsSandbox.preferences);
+  // Catalogue de la plateforme (25 novembre 2026) : ce qui est actif pour le compte = son choix dans ce que la
+  // plateforme propose (extension retirée : jamais active ; rien de choisi : réglage d'origine de la plateforme). Le
+  // choix enregistré (`prefsSandbox.preferences.extensions`) reste celui du compte.
+  const extensionsEffectives = useMemo(() => choixEffectif(prefsSandbox.preferences.extensions, prefsSandbox.catalogue), [prefsSandbox.preferences.extensions, prefsSandbox.catalogue]);
+  const prefsEffectives = useMemo(() => ({ ...prefsSandbox.preferences, extensions: extensionsEffectives }), [prefsSandbox.preferences, extensionsEffectives]);
+  const idsBarreRef = useRef<readonly string[]>(barreGaucheSandbox(prefsEffectives));
+  idsBarreRef.current = barreGaucheSandbox(prefsEffectives);
   // Extensions (25 novembre 2026) : les entrées d'une extension désactivée quittent barres, listes, colonne et clavier ;
   // le dessin n'est jamais touché.
-  const masquees = useMemo(() => clesMasquees(prefsSandbox.preferences.extensions), [prefsSandbox.preferences.extensions]);
+  const masquees = useMemo(() => clesMasquees(extensionsEffectives), [extensionsEffectives]);
   const masqueesRef = useRef(masquees);
   masqueesRef.current = masquees;
   const outilsOfferts = useMemo(() => (masquees.size === 0 ? OUTILS : OUTILS.filter((o) => !masquees.has(`outil:${o.id}`))), [masquees]);
@@ -2560,7 +2566,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const id = sel.find((x) => genreAnnotation(x) === "plan");
     return id ? hist.present.modele.annotations?.plansDeCoupe[id] ?? null : null;
   }, [vue.selection, hist.present.modele]);
-  const idsBarre = useMemo(() => barreGaucheSandbox(prefsSandbox.preferences), [prefsSandbox.preferences]);
+  const idsBarre = useMemo(() => barreGaucheSandbox(prefsEffectives), [prefsEffectives]);
   const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
   const sections = useMemo(() => sectionsGrille(outilsOfferts, undefined, idsBarre), [outilsOfferts, idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
@@ -2985,7 +2991,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const pluriel = (n: number, un: "extensions.contenu.outil" | "extensions.contenu.commande" | "extensions.contenu.panneau", plusieurs: "extensions.contenu.outils" | "extensions.contenu.commandes" | "extensions.contenu.panneaux") =>
     n === 0 ? null : n === 1 ? t(un) : t(plusieurs, { n: String(n) });
   const extensionsMenu: ExtensionsMenu = {
-    liste: EXTENSIONS_SANDBOX.map((x) => {
+    // Une extension retirée par la plateforme n'est plus proposée : elle quitte la fenêtre.
+    liste: EXTENSIONS_SANDBOX.filter((x) => prefsSandbox.catalogue.find((f) => f.id === x.id)?.etat !== "retiree").map((x) => {
       const n = contenuExtension(x);
       return {
         id: x.id,
@@ -2993,7 +3000,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         description: t(`extension.${x.id}.description` as "extension.bois.description"),
         picto: entreeDeCle(x.pictogramme)!.pictogramme,
         contenu: [pluriel(n.outil, "extensions.contenu.outil", "extensions.contenu.outils"), pluriel(n.commande, "extensions.contenu.commande", "extensions.contenu.commandes"), pluriel(n.panneau, "extensions.contenu.panneau", "extensions.contenu.panneaux")].filter(Boolean).join(" · "),
-        active: extensionActive(x.id, prefsSandbox.preferences.extensions),
+        active: extensionActive(x.id, extensionsEffectives),
       };
     }),
     basculer: (id, active) => prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, id, active) }),
@@ -3349,6 +3356,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               key={barreEditee.jeton}
               groupeInitial={barreEditee.groupe}
               preferences={prefsSandbox.preferences}
+              extensionsEffectives={extensionsEffectives}
               etat={prefsSandbox.etat}
               outils={outilsOfferts}
               commandes={commandesListe.filter((c) => CLES_PERSONNALISABLES.includes(`commande:${c.id}`)).map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}

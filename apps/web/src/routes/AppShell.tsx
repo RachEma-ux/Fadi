@@ -105,6 +105,8 @@ export function AppShell() {
           {/* Revue externe (phase 4) : paquets partagés nominativement ; n'ouvre aucun projet. */}
           <NavLink to="/revues" title="Revues externes" aria-label="Revues externes" className={({ isActive }) => isActive ? "active" : undefined} data-nav-revues><Icon name="review" /><span className="sidebar-label">Revues externes</span></NavLink>
           <NavLink to="/organisations" title="Organisations" aria-label="Organisations" className={({ isActive }) => isActive ? "active" : undefined} data-nav-organisations><Icon name="organization" /><span className="sidebar-label">Organisations</span></NavLink>
+          {/* Extensions de la Planche (25 novembre 2026) : installées et disponibles, choix du compte. */}
+          <NavLink to="/extensions" title="Extensions" aria-label="Extensions" className={({ isActive }) => isActive ? "active" : undefined} data-nav-extensions><Icon name="puzzle" /><span className="sidebar-label">Extensions</span></NavLink>
           <NavLink to="/parametres" title="Paramètres" aria-label="Paramètres" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="gear" /><span className="sidebar-label">Paramètres</span></NavLink>
           {/* Entrée visible seulement pour un administrateur, administration activée (FADI_ADMIN_ENABLED) ; la protection reste au serveur (404 sinon). */}
           {adminEnabled && <NavLink to="/admin/utilisateurs" title="Administration" aria-label="Administration" className={({ isActive }) => isActive ? "active" : undefined} data-nav-admin><Icon name="admin" /><span className="sidebar-label">Administration</span></NavLink>}
