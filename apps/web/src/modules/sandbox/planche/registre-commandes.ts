@@ -8,7 +8,7 @@
  */
 import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox, type Pictogramme } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
-import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
+import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_CONTROLE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
 import { COMMANDES_REPERES } from "./commandes-reperes";
 import { type Cle, raccourciClavier } from "./outils-planche";
 
@@ -25,7 +25,7 @@ export interface EntreeRegistre {
 
 /** Libellé de chaque commande livrée, par identifiant. */
 const LIBELLES: ReadonlyMap<string, CleMessage> = new Map(
-  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES].map((c) => [c.id, c.libelle] as const),
+  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES, ...COMMANDES_CONTROLE].map((c) => [c.id, c.libelle] as const),
 );
 
 export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = entreesSandbox("commande").map((e) => {

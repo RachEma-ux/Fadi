@@ -51,8 +51,11 @@ describe("Extensions du Sandbox — liste", () => {
 describe("Extensions du Sandbox — choix du compte", () => {
   it("sans choix, les extensions faites d'outils existants sont actives : personne ne perd un outil", () => {
     expect(extensionsActives({}).map((x) => x.id)).toEqual(["bois", "volumes"]);
-    expect(clesMasquees({}).size).toBe(0);
-    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length);
+    // Seule l'extension nouvelle « Contrôle et nettoyage » attend d'être activée : rien d'existant n'est masqué.
+    expect([...clesMasquees({})].sort()).toEqual(["commande:controler", "commande:nettoyer", "panneau:controle"]);
+    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length - 3);
+    expect(extensionsActives(basculerExtension({}, "controle", true)).map((x) => x.id)).toEqual(["bois", "volumes", "controle"]);
+    expect(basculerExtension({}, "controle", true)).toEqual({ controle: true });
   });
 
   it("une extension désactivée retire ses entrées, et seulement elles", () => {
@@ -64,7 +67,7 @@ describe("Extensions du Sandbox — choix du compte", () => {
     expect(entreeOfferte("commande", "liste-debit", choix)).toBe(false);
     expect(entreeOfferte("outil", "union", choix)).toBe(true);
     expect(entreeOfferte("outil", "ligne", choix)).toBe(true);
-    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12);
+    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 3);
   });
 
   it("ne retient que les écarts au défaut : réactiver efface le choix", () => {

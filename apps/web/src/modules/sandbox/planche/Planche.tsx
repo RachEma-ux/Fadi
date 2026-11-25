@@ -101,6 +101,12 @@ import {
   type SectionCourante,
   csvDebit,
   effacerEtiquettesPieces,
+  CHOIX_NETTOYAGE_DEFAUT,
+  type ChoixNettoyage,
+  controlerModele,
+  nettoyerModele,
+  objetsNonSolides,
+  rienANettoyer,
   listeDebit,
   numeroterPieces,
   etiquettesDebit,
@@ -174,10 +180,11 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
+import { PanneauControle } from "./panneau-controle";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -234,7 +241,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -367,6 +374,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Lot L14 : réglages de la liste de débit (portée, renumérotation, masse volumique déclarée avec sa source, tri).
   const [reglagesDebit, setReglagesDebit] = useState<ReglagesDebit>(REGLAGES_DEBIT_DEFAUT);
   const [noteDebit, setNoteDebit] = useState<string | null>(null);
+  // Extension « Contrôle et nettoyage » : ce que le nettoyage retire (choix de la séance) et le dernier résultat.
+  const [choixNettoyage, setChoixNettoyage] = useState<ChoixNettoyage>(CHOIX_NETTOYAGE_DEFAUT);
+  const [noteControle, setNoteControle] = useState<string | null>(null);
   // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
   const booleensRef = useRef<AdaptateurBooleens | null>(null);
   const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
@@ -2387,6 +2397,31 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     operer(t("planche.debit.effacer-etiquettes"), (m) => ({ modele: effacerEtiquettesPieces(m).modele }));
   };
+  /** Extension « Contrôle et nettoyage » : relevé de la Planche entière (calculé panneau ouvert, ou à la demande). */
+  const rapportControle = useMemo(() => (panneau === "controle" ? controlerModele(hist.present.modele) : null), [panneau, hist.present.modele]);
+  const disponibiliteCommandeControle = (id: IdCommandeControle) =>
+    disponibiliteControle(id, { aNettoyer: id === "nettoyer" && !rienANettoyer(rapportControle ?? controlerModele(hist.present.modele), choixNettoyage), dansObjet: dans !== undefined, lecture: readOnly });
+  const executerControle = (id: IdCommandeControle) => {
+    if (!disponibiliteCommandeControle(id).disponible) return;
+    if (id === "controler") {
+      setNoteControle(null);
+      setPanneau("controle");
+      return;
+    }
+    operer(t("planche.controle.nettoyer"), (m) => {
+      const n = nettoyerModele(m, choixNettoyage);
+      const total = Object.values(n.retires).reduce((a, b) => a + b, 0);
+      const message = t("planche.controle.note.nettoye", { total: String(total) });
+      setNoteControle(message);
+      return { modele: n.modele, selection: [], message };
+    });
+  };
+  const selectionnerNonSolides = () => {
+    const ids = objetsNonSolides(histRef.current.present.modele);
+    setSelection(ids);
+    setNoteControle(t("planche.controle.note.selection", { nombre: String(ids.length) }));
+    rafraichir();
+  };
   /** Lot L17 : pièce de profilé sélectionnée seule dans le contexte ouvert (bloc d'édition sous l'Info entité). */
   const pieceSelectionnee = (): string | null => {
     const sel = selectionRef.current;
@@ -2715,6 +2750,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (disponibiliteVue(id, etatVue()).disponible) executerVue(id);
     } else if (c.famille === "debit") executerDebit(c.id as IdCommandeDebit);
     else if (c.famille === "piece") executerPiece(c.id as IdCommandePiece);
+    else if (c.famille === "controle") executerControle(c.id as IdCommandeControle);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -2745,6 +2781,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_DEBIT.map((c) => {
           const d = disponibiliteCommandeDebit(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
+        }),
+        // Extension « Contrôle et nettoyage » : mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_CONTROLE.map((c) => {
+          const d = disponibiliteCommandeControle(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.controle.motif.rien"), executer: () => executerControle(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -3203,6 +3244,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           <div className="canevas-panneau-corps">
             {panneau === "debit" && (
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
+            )}
+            {panneau === "controle" && rapportControle && (
+              <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
             )}
             {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} actions={actionsInfo} />}
             {panneau === "composants" && (

@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "./catalogue-outils.js";
+import { extensionDe } from "./extensions-sandbox.js";
 import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCOURCIS_HARMONISES, RACCOURCIS_NAVIGATEUR, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
 
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
@@ -20,7 +21,10 @@ describe("registre du Sandbox — contenu", () => {
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
     // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.id !== "reperes").map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.id !== "reperes" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["controler", true, "panneau-controle"], ["nettoyer", true, "panneau-controle"]]);
+    expect(entreePanneau("controle").horsCatalogue).toBe(true);
     expect(entreePanneau("reperes").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
@@ -92,7 +96,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("panneaux : chacun à un clic dans la colonne de droite, Info modèle en bas (lot 4)", () => {
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne").map((e) => e.id)).toEqual([
-      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes",
+      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle",
     ]);
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
   });

@@ -68,6 +68,12 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   (`extensions` des préférences, `/sandbox/preferences`, colonne `extensions` de `sandbox_tool_preferences`) : seuls
   les écarts au réglage d'origine sont enregistrés, si bien qu'un compte existant ne perd rien. Premières extensions,
   actives d'origine : « Bois et menuiserie » et « Volumes et solides » (regroupement d'outils existants).
+- **Extension « Contrôle et nettoyage »** (à activer ; `packages/sandbox-planche-model/src/controle.ts`,
+  `planche/panneau-controle.tsx`) : panneau de la colonne et deux commandes, Contrôler (Maj + F8) et Nettoyer
+  (Maj + F2). Le relevé compte sur toute la Planche les objets vides, les matières et balises inutilisées, les arêtes
+  isolées et les objets de la racine qui ne sont pas des solides fermés ; il ne modifie rien. Nettoyer retire
+  seulement ce qui est coché (les arêtes isolées ne le sont pas d'origine), en une opération : un seul Annuler. Un
+  objet verrouillé n'est jamais touché ; le nettoyage se fait à la racine, aucun objet ouvert en édition.
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun
