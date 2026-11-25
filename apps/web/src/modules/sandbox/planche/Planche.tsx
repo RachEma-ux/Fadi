@@ -194,7 +194,7 @@ import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
 import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
-import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
+import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
@@ -2894,7 +2894,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }),
   ]
     .filter((c) => !masquees.has(`commande:${c.id}`))
-    .map((c) => ({ ...c, groupe: groupeDeCommande(c.id) }));
+    .map((c) => {
+      const extension = extensionDeLaCommande(c.id);
+      return { ...c, groupe: groupeDeCommande(c.id), ...(extension ? { extension } : {}) };
+    });
 
   // ——— Barres d'outils nommées (25 novembre 2026, `barres-nommees.ts`) : livrées et personnelles, chacune une fois.
   const regroupements = prefsSandbox.preferences.regroupements;
@@ -3009,6 +3012,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       barres={lignesBarres}
       etiquette={etiquetteOutil}
       onAfficherBarre={afficherBarre}
+      extensions={extensionsMenu.liste.map((x) => ({ id: x.id, nom: x.nom, picto: x.picto, active: x.active }))}
+      onBasculerExtension={extensionsMenu.basculer}
       onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(normaliserBarres(u.barresOutils)) }))}
       reinitialisable={Object.keys(etatBarres.positions).length > 0}
       onNouvelleBarre={() => ouvrirBarreEditee(null)}
