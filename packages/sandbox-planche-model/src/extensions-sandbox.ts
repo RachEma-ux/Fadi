@@ -79,6 +79,15 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     activeParDefaut: false,
     entrees: ["commande:composant-dynamique", "commande:redessiner-composant", "panneau:dynamique"],
   },
+  {
+    // D'après Add Location et Solar North de SketchUp, fusionnés (décision du 25 novembre 2026).
+    id: "emplacement",
+    libelle: "Emplacement",
+    description: "Position saisie de la Planche (latitude, longitude, altitude) et nord vrai ; les ombres les suivent.",
+    pictogramme: "commande:emplacement",
+    activeParDefaut: false,
+    entrees: ["commande:emplacement", "commande:nord-arete", "commande:afficher-nord", "panneau:emplacement"],
+  },
 ]);
 
 /** Extension par identifiant, ou `undefined`. */

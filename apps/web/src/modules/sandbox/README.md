@@ -84,6 +84,14 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   SketchUp : longueurs en mètres (SketchUp : pouces) ; une option change toutes les instances du composant (« Rendre
   unique » en détache une) ; pas d'outil Interagir ni d'`onClick`, pas de `RotX` / `RotY`, pas de référence d'un objet à
   un autre, pas de fonction aléatoire. Jeu d'essai de la recette : `apps/web/e2e/donnees/sandbox-etagere-dynamique.json`.
+- **Extension « Emplacement »** (à activer ; réunit Add Location et Solar North de SketchUp ;
+  `packages/sandbox-planche-model/src/emplacement.ts`, `planche/panneau-emplacement.tsx`) : la position du projet est
+  **saisie** (latitude, longitude, altitude facultative, nom libre) et rangée dans les réglages de la Planche
+  (`reglages.emplacement`, vérifiés à la relecture), avec le **vrai nord** en degrés depuis l'axe vert, sens horaire. Les
+  ombres prennent alors cette latitude et ce nord (`soleil`) ; sans emplacement elles gardent leur réglage de vue.
+  Commandes : panneau (Maj + F1), Nord sur l'arête sélectionnée (Maj + F9), Flèche du nord (Maj + F12, état de vue).
+  Limites déclarées : ni carte, ni terrain, ni recherche d'adresse (ils demandent une source de données qualifiée) ;
+  l'heure des ombres est l'heure solaire du lieu, la longitude est enregistrée sans y entrer.
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun

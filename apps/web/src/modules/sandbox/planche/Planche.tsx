@@ -102,6 +102,11 @@ import {
   csvDebit,
   effacerEtiquettesPieces,
   CHOIX_NETTOYAGE_DEFAUT,
+  type Emplacement,
+  nordDepuisArete,
+  annotationsDe,
+  REGLAGES_DEFAUT,
+  matriceMonde,
   type ComposantDynamique,
   definirDynamique,
   definirParametre,
@@ -184,12 +189,14 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
+import { PanneauEmplacement } from "./panneau-emplacement";
+import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -246,7 +253,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -1483,7 +1490,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       /* stockage indisponible : la préférence ne survit pas à la session */
     }
   }, []);
-  const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = r)).modele, message: t("planche.infomodele.enregistre") })), [operer]);
+  const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = a.reglages?.emplacement && !r.emplacement ? { ...r, emplacement: a.reglages.emplacement } : r)).modele, message: t("planche.infomodele.enregistre") })), [operer]);
   const actionsInfo = useMemo(
     () => ({
       renommerOccurrence: (id: string, nom: string) => operer(t("planche.info.nom"), (m) => ({ modele: renommerOccurrence(m, id, nom, o()).modele })),
@@ -2427,6 +2434,50 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setNoteControle(t("planche.controle.note.selection", { nombre: String(ids.length) }));
     rafraichir();
   };
+  /** Extension « Emplacement » : position saisie de la Planche (réglage enregistré avec elle) ; les ombres la suivent. */
+  const emplacement: Emplacement | null = annotationsDe(hist.present.modele.annotations).reglages?.emplacement ?? null;
+  const [noteEmplacement, setNoteEmplacement] = useState<string | null>(null);
+  useEffect(() => {
+    majOptions(emplacement ? { latitude: emplacement.latitude, nord: emplacement.nord } : { nord: 0 });
+  }, [emplacement?.latitude, emplacement?.nord, emplacement === null, majOptions]);
+  const poserEmplacement = (e: Emplacement | null, message: string) =>
+    operer(t("planche.emplacement.ouvrir"), (m) => {
+      setNoteEmplacement(message);
+      return {
+        modele: modifierAnnotations(m, (a) => {
+          const { emplacement: _ancien, ...reste } = a.reglages ?? REGLAGES_DEFAUT;
+          a.reglages = e ? { ...reste, emplacement: e } : reste;
+        }).modele,
+        message,
+      };
+    });
+  /** Arête sélectionnée seule et non verticale : l'angle du nord qu'elle donnerait, sinon `null`. */
+  const nordDeLaSelection = (): number | null => {
+    const sel = vue.selection ?? selectionRef.current;
+    if (sel.length !== 1) return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const a = c.aretes[sel[0]!];
+    const p = a ? c.sommets[a.a]?.position : undefined;
+    const q = a ? c.sommets[a.b]?.position : undefined;
+    if (!p || !q) return null;
+    const M = dans !== undefined ? matriceMonde(hist.present.modele, dans) : null;
+    return nordDepuisArete(M ? appliquerMatrice(M, p) : p, M ? appliquerMatrice(M, q) : q, emplacement?.nord ?? 0);
+  };
+  const disponibiliteCommandeEmplacement = (id: IdCommandeEmplacement) => disponibiliteEmplacement(id, { arete: id === "nord-arete" && nordDeLaSelection() !== null, lecture: readOnly });
+  const executerEmplacement = (id: IdCommandeEmplacement) => {
+    if (!disponibiliteCommandeEmplacement(id).disponible) return;
+    if (id === "emplacement") {
+      setNoteEmplacement(null);
+      setPanneau("emplacement");
+    } else if (id === "afficher-nord") majOptions({ flecheNord: !options.flecheNord });
+    else {
+      const nord = nordDeLaSelection();
+      if (nord === null) return;
+      const base: Emplacement = emplacement ?? { latitude: options.latitude, longitude: 0, nord: 0 };
+      poserEmplacement({ ...base, nord }, t("planche.emplacement.note.nord", { angle: nord.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) }));
+      majOptions({ flecheNord: true });
+    }
+  };
   /** Extension « Composants dynamiques » : définition du composant sélectionné seul dans le contexte ouvert, ou `null`. */
   const composantSelectionne = (): string | null => {
     const sel = vue.selection ?? selectionRef.current;
@@ -2789,6 +2840,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "piece") executerPiece(c.id as IdCommandePiece);
     else if (c.famille === "controle") executerControle(c.id as IdCommandeControle);
     else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
+    else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -2829,6 +2881,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_DYNAMIQUE.map((c) => {
           const d = disponibiliteCommandeDynamique(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.dynamique.motif.selection"), executer: () => executerDynamique(c.id) };
+        }),
+        // Extension « Emplacement » : mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_EMPLACEMENT.map((c) => {
+          const d = disponibiliteCommandeEmplacement(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.emplacement.motif.arete"), executer: () => executerEmplacement(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -3288,6 +3345,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "debit" && (
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
             )}
+            {panneau === "emplacement" && (
+              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement} />
+            )}
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
@@ -3309,7 +3369,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "styles" && <PanneauStyles options={options} onOptions={majOptions} />}
-            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={null} />}
+            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={emplacement && !masquees.has("panneau:emplacement") ? emplacement.latitude : null} />}
             {panneau === "affichage" && (
               <PanneauAffichage
                 options={options}

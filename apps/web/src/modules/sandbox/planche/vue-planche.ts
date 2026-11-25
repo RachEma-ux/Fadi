@@ -7,6 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
+import { directionNord, soleil } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -91,8 +92,11 @@ export interface OptionsAffichage {
   readonly heure: number;
   readonly jour: number;
   readonly latitude: number;
+  /** (Extension « Emplacement ») Nord vrai, en degrés depuis l'axe vert dans le sens horaire ; flèche du nord affichée. */
+  readonly nord: number;
+  readonly flecheNord: boolean;
 }
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46 };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -407,6 +411,26 @@ export class VuePlanche {
 
   // ---------------------------------------------------------------------------------------------------------------
   // Dessin
+
+  /** (Extension « Emplacement ») Flèche du nord vrai, posée à l'origine sur le sol : fût, pointe et lettre N. */
+  private flecheNord: THREE.LineSegments | null = null;
+  private majFlecheNord(): void {
+    if (this.flecheNord) {
+      this.scene.remove(this.flecheNord);
+      this.flecheNord.geometry.dispose();
+      this.flecheNord = null;
+    }
+    if (!this.options.flecheNord) return;
+    const n = directionNord(this.options.nord);
+    const e = { x: n.y, y: -n.x };
+    const p = (le: number, la: number) => new THREE.Vector3(n.x * le + e.x * la, n.y * le + e.y * la, 0.01);
+    // Segments : fût 0 → 5 m, pointe, puis la lettre N au-delà de la pointe.
+    const pts = [p(0, 0), p(5, 0), p(5, 0), p(4.2, 0.4), p(5, 0), p(4.2, -0.4), p(5.5, -0.3), p(6.4, -0.3), p(6.4, -0.3), p(5.5, 0.3), p(5.5, 0.3), p(6.4, 0.3)];
+    this.flecheNord = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: "#d9480f", depthTest: false }));
+    this.flecheNord.frustumCulled = false;
+    this.flecheNord.renderOrder = 5;
+    this.scene.add(this.flecheNord);
+  }
 
   private axes(): THREE.Group {
     const g = new THREE.Group();
@@ -1289,6 +1313,7 @@ export class VuePlanche {
     this.moteur.shadowMap.enabled = this.options.ombres;
     this.soleil.castShadow = this.options.ombres;
     this.majSoleil();
+    this.majFlecheNord();
     if (this.modele) this.majModele(this.modele);
     else this.rendre();
   }
@@ -1299,19 +1324,10 @@ export class VuePlanche {
 
   /** Position du soleil d'après l'heure, le jour de l'année et la latitude (formule de déclinaison simplifiée, nv). */
   private majSoleil(): void {
-    const o = this.options;
-    const decl = (23.44 * Math.PI) / 180 * Math.sin(((2 * Math.PI) / 365) * (o.jour - 81));
-    const lat = (o.latitude * Math.PI) / 180;
-    const h = ((o.heure - 12) * 15 * Math.PI) / 180;
-    const sinAlt = Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(h);
-    const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
-    const cosAz = (Math.sin(decl) - Math.sin(alt) * Math.sin(lat)) / (Math.cos(alt) * Math.cos(lat) || 1e-9);
-    let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
-    if (h > 0) az = 2 * Math.PI - az;
-    // Azimut depuis le nord (+y) vers l'est (+x) ; le soleil vient de cette direction, à l'altitude calculée.
+    // Calcul pur du modèle (`soleil`) : azimut depuis le nord vrai vers l'est, nord vrai tourné de `nord` depuis l'axe vert.
+    const s = soleil(this.options).direction;
     const d = 120;
-    const z = Math.max(0.05, Math.sin(alt));
-    this.soleil.position.set(Math.sin(az) * Math.cos(alt) * d, Math.cos(az) * Math.cos(alt) * d, z * d);
+    this.soleil.position.set(s.x * d, s.y * d, Math.max(0.05, s.z) * d);
     this.soleil.target.position.set(0, 0, 0);
     this.soleil.intensity = intensiteLumiere(this.options.ombres);
   }

@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -292,6 +292,28 @@ export function disponibiliteDynamique(id: IdCommandeDynamique, s: { readonly dy
   if (id === "composant-dynamique") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   return s.dynamique ? { disponible: true, motif: null } : { disponible: false, motif: "planche.dynamique.motif.selection" };
+}
+
+/** Extension « Emplacement » : ouvrir le panneau, aligner le nord sur l'arête sélectionnée, afficher la flèche du nord. */
+export type IdCommandeEmplacement = "emplacement" | "nord-arete" | "afficher-nord";
+export interface CommandeEmplacement {
+  readonly id: IdCommandeEmplacement;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_EMPLACEMENT: readonly CommandeEmplacement[] = [
+  { id: "emplacement", ...depuisRegistre("emplacement"), libelle: "planche.emplacement.ouvrir", court: "planche.emplacement.court.ouvrir" },
+  { id: "nord-arete", ...depuisRegistre("nord-arete"), libelle: "planche.emplacement.nord-arete", court: "planche.emplacement.court.nord-arete" },
+  { id: "afficher-nord", ...depuisRegistre("afficher-nord"), libelle: "planche.emplacement.afficher-nord", court: "planche.emplacement.court.afficher-nord" },
+];
+
+/** Disponibilité : panneau et flèche toujours ; le nord par une arête hors lecture, avec une seule arête non verticale. */
+export function disponibiliteEmplacement(id: IdCommandeEmplacement, s: { readonly arete: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id !== "nord-arete") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.arete ? { disponible: true, motif: null } : { disponible: false, motif: "planche.emplacement.motif.arete" };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */

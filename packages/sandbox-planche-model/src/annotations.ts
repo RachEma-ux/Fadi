@@ -8,6 +8,7 @@
  * Les opérations sont dans `geometrie-libre.ts` (`modifierAnnotations`, `peindreFaces`, `peindreOccurrences`,
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
+import type { Emplacement } from "./emplacement.js";
 import type { RepereEnregistre } from "./reperes.js";
 import type { Id } from "./geometrie-libre.js";
 import type { Vec3 } from "./vecteur.js";
@@ -132,6 +133,8 @@ export interface ReglagesPlanche {
   readonly alignerTexte: "ecran" | "epingle";
   readonly extremitesCote: "aucune" | "barre" | "fleche-ouverte" | "fleche-fermee" | "point";
   readonly alignerCote: "dessus" | "centre" | "exterieur" | "ecran";
+  /** (Extension « Emplacement ») Position saisie de la Planche et nord vrai ; absent = non renseigné. */
+  readonly emplacement?: Emplacement;
 }
 export const REGLAGES_DEFAUT: ReglagesPlanche = { accrochageLongueur: 0.01, accrochageAngle: 15, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre" };
 
