@@ -310,9 +310,11 @@ export const COMMANDES_EMPLACEMENT: readonly CommandeEmplacement[] = [
 ];
 
 /** Disponibilité : panneau et flèche toujours ; le nord par une arête hors lecture, avec une seule arête non verticale. */
-export function disponibiliteEmplacement(id: IdCommandeEmplacement, s: { readonly arete: boolean; readonly lecture: boolean }): Disponibilite {
+export function disponibiliteEmplacement(id: IdCommandeEmplacement, s: { readonly arete: boolean; readonly position: boolean; readonly lecture: boolean }): Disponibilite {
   if (id !== "nord-arete") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  // Le nord s'enregistre avec la position : sans position saisie, rien n'est créé (aucune coordonnée inventée).
+  if (!s.position) return { disponible: false, motif: "planche.emplacement.motif.position" };
   return s.arete ? { disponible: true, motif: null } : { disponible: false, motif: "planche.emplacement.motif.arete" };
 }
 

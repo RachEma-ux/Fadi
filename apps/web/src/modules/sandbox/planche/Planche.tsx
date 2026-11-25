@@ -2436,10 +2436,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   /** Extension « Emplacement » : position saisie de la Planche (réglage enregistré avec elle) ; les ombres la suivent. */
   const emplacement: Emplacement | null = annotationsDe(hist.present.modele.annotations).reglages?.emplacement ?? null;
+  // L'emplacement ne pilote les ombres que si son extension est active ; la réactiver réapplique latitude et nord.
+  const emplacementActif = emplacement && !masquees.has("panneau:emplacement") ? emplacement : null;
   const [noteEmplacement, setNoteEmplacement] = useState<string | null>(null);
   useEffect(() => {
-    majOptions(emplacement ? { latitude: emplacement.latitude, nord: emplacement.nord } : { nord: 0 });
-  }, [emplacement?.latitude, emplacement?.nord, emplacement === null, majOptions]);
+    majOptions(emplacementActif ? { latitude: emplacementActif.latitude, nord: emplacementActif.nord } : { nord: 0 });
+  }, [emplacementActif?.latitude, emplacementActif?.nord, emplacementActif === null, majOptions]);
   const poserEmplacement = (e: Emplacement | null, message: string) =>
     operer(t("planche.emplacement.ouvrir"), (m) => {
       setNoteEmplacement(message);
@@ -2463,7 +2465,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const M = dans !== undefined ? matriceMonde(hist.present.modele, dans) : null;
     return nordDepuisArete(M ? appliquerMatrice(M, p) : p, M ? appliquerMatrice(M, q) : q, emplacement?.nord ?? 0);
   };
-  const disponibiliteCommandeEmplacement = (id: IdCommandeEmplacement) => disponibiliteEmplacement(id, { arete: id === "nord-arete" && nordDeLaSelection() !== null, lecture: readOnly });
+  const disponibiliteCommandeEmplacement = (id: IdCommandeEmplacement) => disponibiliteEmplacement(id, { arete: id === "nord-arete" && nordDeLaSelection() !== null, position: emplacement !== null, lecture: readOnly });
   const executerEmplacement = (id: IdCommandeEmplacement) => {
     if (!disponibiliteCommandeEmplacement(id).disponible) return;
     if (id === "emplacement") {
@@ -2473,8 +2475,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else {
       const nord = nordDeLaSelection();
       if (nord === null) return;
-      const base: Emplacement = emplacement ?? { latitude: options.latitude, longitude: 0, nord: 0 };
-      poserEmplacement({ ...base, nord }, t("planche.emplacement.note.nord", { angle: nord.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) }));
+      // Aucune coordonnée n'est inventée : le nord ne s'enregistre que sur une position déjà saisie.
+      if (!emplacement) return;
+      poserEmplacement({ ...emplacement, nord }, t("planche.emplacement.note.nord", { angle: nord.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) }));
       majOptions({ flecheNord: true });
     }
   };
@@ -3369,7 +3372,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "styles" && <PanneauStyles options={options} onOptions={majOptions} />}
-            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={emplacement && !masquees.has("panneau:emplacement") ? emplacement.latitude : null} />}
+            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={emplacementActif ? emplacementActif.latitude : null} />}
             {panneau === "affichage" && (
               <PanneauAffichage
                 options={options}

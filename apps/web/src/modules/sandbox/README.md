@@ -89,7 +89,7 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   **saisie** (latitude, longitude, altitude facultative, nom libre) et rangée dans les réglages de la Planche
   (`reglages.emplacement`, vérifiés à la relecture), avec le **vrai nord** en degrés depuis l'axe vert, sens horaire. Les
   ombres prennent alors cette latitude et ce nord (`soleil`) ; sans emplacement elles gardent leur réglage de vue.
-  Commandes : panneau (Maj + F1), Nord sur l'arête sélectionnée (Maj + F9), Flèche du nord (Maj + F12, état de vue).
+  Commandes : panneau (Maj + F1), Nord sur l'arête sélectionnée (Maj + F9, une fois la position enregistrée : aucune coordonnée n'est inventée), Flèche du nord (Maj + F12, état de vue).
   Limites déclarées : ni carte, ni terrain, ni recherche d'adresse (ils demandent une source de données qualifiée) ;
   l'heure des ombres est l'heure solaire du lieu, la longitude est enregistrée sans y entrer.
 

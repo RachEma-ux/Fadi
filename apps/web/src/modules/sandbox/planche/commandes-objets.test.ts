@@ -119,11 +119,12 @@ describe("Extension « Contrôle et nettoyage » — disponibilité des commande
   });
   it("Emplacement : le panneau et la flèche sont toujours offerts ; le nord sur l'arête demande une arête et une Planche modifiable", async () => {
     const { disponibiliteEmplacement } = await import("./commandes-objets");
-    expect(disponibiliteEmplacement("emplacement", { arete: false, lecture: true }).disponible).toBe(true);
-    expect(disponibiliteEmplacement("afficher-nord", { arete: false, lecture: true }).disponible).toBe(true);
-    expect(disponibiliteEmplacement("nord-arete", { arete: true, lecture: false }).disponible).toBe(true);
-    expect(disponibiliteEmplacement("nord-arete", { arete: false, lecture: false }).motif).toBe("planche.emplacement.motif.arete");
-    expect(disponibiliteEmplacement("nord-arete", { arete: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteEmplacement("emplacement", { arete: false, position: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteEmplacement("afficher-nord", { arete: false, position: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteEmplacement("nord-arete", { arete: true, position: true, lecture: false }).disponible).toBe(true);
+    expect(disponibiliteEmplacement("nord-arete", { arete: true, position: false, lecture: false }).motif).toBe("planche.emplacement.motif.position");
+    expect(disponibiliteEmplacement("nord-arete", { arete: false, position: true, lecture: false }).motif).toBe("planche.emplacement.motif.arete");
+    expect(disponibiliteEmplacement("nord-arete", { arete: true, position: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
   });
 });
 
