@@ -2914,7 +2914,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return { cle, picto: c.picto, titre: c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`, actif: false, indisponible: c.motif !== null, executer: () => { if (!c.motif) c.executer(); } };
   };
   /** Barres flottantes : affichées par leur interrupteur de la liste « Outils » ; au téléphone, la dernière seulement, rangée en bas. */
-  const barresOutils = barresRendues(etatBarres, etroit)
+  // Seules les barres qui existent encore et portent au moins un bouton sont montées : une barre supprimée dont
+  // l'identifiant est resté dans l'état ne prend pas la place de la dernière barre au téléphone, et une barre vide est
+  // montée (donc placée) au moment où elle reçoit sa première entrée.
+  const barresMontables = new Set(barresNommees.filter((b) => entreesDe(b).some((c) => boutonDeBarre(c) !== null)).map((b) => b.id));
+  const barresOutils = barresRendues({ ...etatBarres, visibles: etatBarres.visibles.filter((id) => barresMontables.has(id)) }, etroit)
     .map((id) => barresNommees.find((b) => b.id === id))
     .filter((b): b is BarreNommee => b !== undefined)
     .map((b, rang) => (
