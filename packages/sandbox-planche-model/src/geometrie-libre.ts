@@ -150,6 +150,35 @@ export interface MetadonneesDefinition {
   readonly faceCamera?: boolean;
   /** (Lot L11) Pièce de profilé : de quoi régénérer la géométrie sur commande ; jamais une seconde géométrie. */
   readonly piece?: MetadonneesPiece;
+  /** (Extension « Composants dynamiques ») Paramètres, options et règles du composant ; absent = composant ordinaire. */
+  readonly dynamique?: ComposantDynamique;
+}
+
+/** Option montrée à l'utilisateur pour un paramètre : zone de texte, ou liste quand `choix` est donné. */
+export interface OptionDynamique {
+  readonly libelle: string;
+  readonly choix?: readonly { readonly libelle: string; readonly valeur: string }[];
+}
+/** Paramètre d'un composant dynamique : un nom, une valeur ou une formule (« =… »), exposé ou non comme option. */
+export interface ParametreDynamique {
+  readonly nom: string;
+  readonly valeur: string;
+  readonly option?: OptionDynamique;
+}
+/** Attributs prédéfinis qu'une règle peut fixer sur un objet enfant (noms de SketchUp ; longueurs en mètres, angles en degrés). */
+export const ATTRIBUTS_DYNAMIQUES = ["X", "Y", "Z", "LenX", "LenY", "LenZ", "RotZ", "Hidden", "Material", "Copies"] as const;
+export type AttributDynamique = (typeof ATTRIBUTS_DYNAMIQUES)[number];
+/** Règle : l'attribut d'un objet enfant (occurrence du contenu du composant) donné par une valeur ou une formule. */
+export interface RegleDynamique {
+  readonly objet: Id;
+  readonly attribut: AttributDynamique;
+  readonly formule: string;
+}
+export interface ComposantDynamique {
+  readonly parametres: readonly ParametreDynamique[];
+  readonly regles: readonly RegleDynamique[];
+  /** Copies tenues par le moteur (attribut `Copies`) : objet d'origine → ses copies, dans l'ordre. */
+  readonly copies?: Readonly<Record<Id, readonly Id[]>>;
 }
 
 /** (Lot L11) Métadonnées d'une pièce de profilé, portées par sa définition (composant). */
@@ -587,7 +616,7 @@ interface DefTravail extends MetadonneesDefinition {
   contenu: Ctx;
 }
 
-const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera", "piece"] as const;
+const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera", "piece", "dynamique"] as const;
 function metaDe(d: MetadonneesDefinition): MetadonneesDefinition {
   const r: Record<string, unknown> = {};
   for (const k of META_DEF) if (d[k] !== undefined) r[k] = d[k];
@@ -695,11 +724,13 @@ class Travail {
     const def = this.definitions.get(occ.definition);
     if (!def) throw new Error(`Définition inconnue : ${occ.definition}`);
     this.salir(ctx);
-    const copie = cloner(this, def.contenu);
+    const map = new Map<Id, Id>();
+    const copie = cloner(this, def.contenu, map);
     const id = this.id("d");
     const pourOcc = garderIds ? def.contenu : copie;
-    if (garderIds) this.definitions.set(def.id, { ...def, contenu: copie });
-    this.definitions.set(id, { id, nom: this.nomUnique(def.nom), genre: def.genre, contenu: pourOcc, ...metaDe(def) });
+    // Composants dynamiques : la définition qui reçoit le clone voit ses règles suivre les nouveaux identifiants.
+    if (garderIds) this.definitions.set(def.id, reporterDynamique({ ...def, contenu: copie }, map));
+    this.definitions.set(id, { id, nom: this.nomUnique(def.nom), genre: def.genre, contenu: pourOcc, ...metaDe(garderIds ? def : reporterDynamique(def, map)) });
     ctx.occurrences.set(occId, { ...occ, definition: id });
     return this.salir(pourOcc);
   }
@@ -756,9 +787,17 @@ class Travail {
 }
 
 /** Copie d'un contexte avec de nouveaux identifiants (I2). */
-function cloner(t: Travail, c: Ctx): Ctx {
+/** Description dynamique d'une définition dont le contenu vient d'être cloné : règles et copies suivent les nouveaux identifiants. */
+function reporterDynamique<D extends MetadonneesDefinition>(d: D, map: ReadonlyMap<Id, Id>): D {
+  const dyn = d.dynamique;
+  if (!dyn) return d;
+  const neuf = (id: Id): Id => map.get(id) ?? id;
+  const copies = dyn.copies ? Object.fromEntries(Object.entries(dyn.copies).map(([o, ids]) => [neuf(o), ids.map(neuf)])) : undefined;
+  return { ...d, dynamique: { parametres: dyn.parametres, regles: dyn.regles.map((r) => ({ ...r, objet: neuf(r.objet) })), ...(copies ? { copies } : {}) } };
+}
+
+function cloner(t: Travail, c: Ctx, map: Map<Id, Id> = new Map()): Ctx {
   const r: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
-  const map = new Map<Id, Id>();
   const neuf = (ancien: Id): Id => {
     let n = map.get(ancien);
     if (!n) {
