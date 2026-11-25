@@ -133,3 +133,12 @@ Planche du **Sandbox** seulement (`apps/web/src/modules/sandbox/planche/` ; la P
 
 Contrôles : `barres-nommees.test.ts` (chaque outil dans une seule barre livrée, chaque commande dans un groupe, libellés
 dans les deux langues, migration de l'état), règle d'or inchangée (`barres-outils.test.ts`).
+
+### Groupe « Extensions » (25 novembre 2026)
+
+Demande du maître d'ouvrage du 25 novembre 2026, image validée : la liste « Outils » du Sandbox reçoit un groupe
+« Extensions » après « Bois ». Il montre une ligne par extension livrée, avec son interrupteur (même effet que la fenêtre
+« Extensions » du menu) ; une extension active montre dessous les commandes qu'elle apporte. Les commandes des extensions
+autres que « Bois et menuiserie » (Contrôle et nettoyage, Composants dynamiques, Emplacement) quittent donc « Groupe » et
+« Repères » ; celles du bois restent dans « Bois » (`groupeDeCommande`, `extensionDeLaCommande`). Aucun changement de
+données : l'interrupteur écrit le même choix d'extensions du compte.

@@ -10,7 +10,7 @@
  * Ce module fixe aussi le groupe de chaque commande dans la liste : « Objets et arêtes » est scindé en « Groupe »,
  * « Repères » et « Bois » ; Zoom avant et Zoom arrière rejoignent « Caméra ». Pur : ni DOM, ni React.
  */
-import { REGISTRE_SANDBOX, entreeSandbox, type FamilleOutil, type Outil, type RegroupementSandbox } from "@parcours/sandbox-planche-model";
+import { REGISTRE_SANDBOX, entreeSandbox, extensionDeCle, type FamilleOutil, type Outil, type RegroupementSandbox } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
 import { BARRES, OBJET_DE, SECTIONS, type CleSection, type ObjetBarre } from "./barres-outils";
 import type { EtatBarresOutils } from "./barres-outils-disposition";
@@ -130,23 +130,35 @@ export function normaliserBarres(e: EtatBarresOutils): EtatBarresOutils {
   return inchange ? e : { visibles, positions };
 }
 
-/** Groupes de commandes de la liste « Outils » (anciennement « Objets et arêtes ») ; `camera` rejoint la famille Caméra. */
-export type GroupeCommande = "groupe" | "reperes" | "bois" | "camera";
-export const GROUPES_COMMANDES: readonly { id: Exclude<GroupeCommande, "camera">; cle: CleMessage }[] = [
+/**
+ * Groupes de commandes de la liste « Outils » (anciennement « Objets et arêtes ») ; `camera` rejoint la famille Caméra ;
+ * `extensions` (après « Bois ») réunit les commandes des extensions autres que « Bois et menuiserie ».
+ */
+export type GroupeCommande = "groupe" | "reperes" | "bois" | "extensions" | "camera";
+export const GROUPES_COMMANDES: readonly { id: Exclude<GroupeCommande, "camera" | "extensions">; cle: CleMessage }[] = [
   { id: "groupe", cle: "outils.famille.groupe" },
   { id: "reperes", cle: "outils.famille.reperes" },
   { id: "bois", cle: "outils.famille.bois" },
 ];
 /** Famille d'outils où s'affichent les commandes du groupe `camera`. */
 export const FAMILLE_DES_COMMANDES_CAMERA: FamilleOutil = "camera";
+/** Extension dont les commandes ont déjà leur groupe (« Bois ») : elles ne vont pas dans « Extensions ». */
+export const EXTENSION_DU_GROUPE_BOIS = "bois";
+
+/** Extension (identifiant) dont une commande est rangée dans le groupe « Extensions », sinon `null`. */
+export function extensionDeLaCommande(id: string): string | null {
+  const x = extensionDeCle(`commande:${id}`);
+  return x && x.id !== EXTENSION_DU_GROUPE_BOIS ? x.id : null;
+}
 
 /**
- * Groupe d'une commande dans la liste, d'après sa famille au registre : repères et emplacement → « Repères » ; débit et
- * pièce → « Bois » ; Zoom avant / Zoom arrière → « Caméra » ; tout le reste (objets, contexte d'édition, liens,
- * Navigateur, Isoler, Masquer le reste, contrôle, composants dynamiques) → « Groupe ».
+ * Groupe d'une commande dans la liste : commande d'une extension (hors « Bois et menuiserie ») → « Extensions » ; sinon
+ * d'après sa famille au registre : repères → « Repères » ; débit et pièce → « Bois » ; Zoom avant / Zoom arrière →
+ * « Caméra » ; tout le reste (objets, contexte d'édition, liens, Navigateur, Isoler, Masquer le reste) → « Groupe ».
  */
 export function groupeDeCommande(id: string): GroupeCommande {
   if (id === "zoom-plus" || id === "zoom-moins") return "camera";
+  if (extensionDeLaCommande(id)) return "extensions";
   const famille = entreeSandbox("commande", id)?.famille;
   if (famille === "repere" || famille === "emplacement") return "reperes";
   if (famille === "debit" || famille === "piece") return "bois";
