@@ -7,6 +7,7 @@
 import { useState } from "react";
 import {
   PROFILS_METIER,
+  barreDuProfilSandbox,
   barreGaucheSandbox,
   idRegroupement,
   MAX_NOM_REGROUPEMENT,
@@ -42,11 +43,14 @@ export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, 
   const [groupeEdite, setGroupeEdite] = useState<string | null>(p.regroupements[0]?.id ?? null);
   const [nouveau, setNouveau] = useState("");
   const barre = barreGaucheSandbox(p);
+  // Barre du profil avant le filtre des extensions : c'est elle qu'on réécrit, pour que les outils d'une extension
+  // désactivée restent rangés à leur place et reviennent avec elle.
+  const barreEntiere = barreDuProfilSandbox(p);
   const groupe = p.regroupements.find((g) => g.id === groupeEdite) ?? null;
 
-  const choisirProfil = (profil: ProfilSandbox) => modifier({ ...p, profil, barrePersonnelle: profil === "personnel" && p.barrePersonnelle.length === 0 ? [...barre] : p.barrePersonnelle });
+  const choisirProfil = (profil: ProfilSandbox) => modifier({ ...p, profil, barrePersonnelle: profil === "personnel" && p.barrePersonnelle.length === 0 ? [...barreEntiere] : p.barrePersonnelle });
   // Cocher ou décocher un outil de la barre passe au profil Personnel, à partir de la barre affichée.
-  const basculerBarre = (id: string, present: boolean) => modifier({ ...p, profil: "personnel", barrePersonnelle: basculer(barre, id, present) });
+  const basculerBarre = (id: string, present: boolean) => modifier({ ...p, profil: "personnel", barrePersonnelle: basculer(barreEntiere, id, present) });
   const basculerFavori = (cle: string, present: boolean) => modifier({ ...p, favoris: basculer(p.favoris, cle, present) });
   const basculerGroupe = (cle: string, present: boolean) =>
     groupe && modifier({ ...p, regroupements: p.regroupements.map((g) => (g.id === groupe.id ? { ...g, entrees: basculer(g.entrees, cle, present) } : g)) });

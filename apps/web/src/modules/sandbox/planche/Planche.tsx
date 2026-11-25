@@ -2404,8 +2404,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   /** Extension « Contrôle et nettoyage » : relevé de la Planche entière (calculé panneau ouvert, ou à la demande). */
   const rapportControle = useMemo(() => (panneau === "controle" ? controlerModele(hist.present.modele) : null), [panneau, hist.present.modele]);
+  // Panneau fermé : le relevé n'est calculé que si l'extension est active, et une fois par modèle (pas à chaque rendu).
+  const controleOffert = !masquees.has("commande:nettoyer");
+  const rapportNettoyage = useMemo(() => rapportControle ?? (controleOffert ? controlerModele(hist.present.modele) : null), [rapportControle, controleOffert, hist.present.modele]);
   const disponibiliteCommandeControle = (id: IdCommandeControle) =>
-    disponibiliteControle(id, { aNettoyer: id === "nettoyer" && !rienANettoyer(rapportControle ?? controlerModele(hist.present.modele), choixNettoyage), dansObjet: dans !== undefined, lecture: readOnly });
+    disponibiliteControle(id, { aNettoyer: id === "nettoyer" && rapportNettoyage !== null && !rienANettoyer(rapportNettoyage, choixNettoyage), dansObjet: dans !== undefined, lecture: readOnly });
   const executerControle = (id: IdCommandeControle) => {
     if (!disponibiliteCommandeControle(id).disponible) return;
     if (id === "controler") {
@@ -2603,6 +2606,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         reference={racineRef}
         fenetreCle={detache}
         onDocquee={setHautDocquee}
+        catalogue={outilsOfferts}
       />
     ));
   /** Objets O-2 : une surface liée à ses arêtes sources est sélectionnée (à la racine, seul endroit des liens). */

@@ -14,9 +14,50 @@ import { ATTRIBUTS_DYNAMIQUES, type AttributDynamique, type ComposantDynamique, 
 import type { Vec3 } from "./vecteur.js";
 
 export type ValeurDynamique = number | string;
-export class ErreurFormule extends Error {}
-const refus = (message: string): never => {
-  throw new ErreurFormule(message);
+/**
+ * Messages d'erreur, par clé. Le texte français ci-dessous sert de `message` ; l'interface traduit par la clé et ses
+ * arguments (`planche.dynamique.erreur.<clé>`), pour qu'une erreur soit lue dans la langue de l'interface.
+ */
+export const MESSAGES_ERREUR_DYNAMIQUE = {
+  "nombre-illisible": "Nombre illisible à la position {position}.",
+  guillemet: "Guillemet non fermé.",
+  reference: "Référence « {nom}! » : seule « Parent! » est admise (pas de référence à un autre objet).",
+  caractere: "Caractère inattendu « {texte} ».",
+  "nombre-vide": "Nombre attendu ({quoi}), texte vide reçu.",
+  "nombre-attendu": "Nombre attendu ({quoi}), « {texte} » reçu.",
+  argument: "Argument manquant.",
+  racine: "Racine d'un nombre négatif.",
+  logarithme: "Logarithme d'un nombre négatif ou nul.",
+  choose: "CHOOSE : rang hors de la liste.",
+  option: "{fonction} : « {nom} » n'est pas un paramètre à liste.",
+  incomplete: "Formule incomplète.",
+  parenthese: "Parenthèse non fermée.",
+  "parenthese-apres": "Parenthèse non fermée après {nom}.",
+  fonction: "Fonction inconnue : {nom}.",
+  nom: "Nom inconnu : {nom}.",
+  inattendu: "« {texte} » inattendu.",
+  division: "Division par zéro.",
+  circulaire: "Référence circulaire par « {nom} ».",
+  objet: "Objet introuvable dans le composant : ses règles sont sans effet.",
+  copies: "Copies : un entier de 0 à {max} (reçu {recu}).",
+  longueur: "{attribut} : une longueur strictement positive (reçu {recu}).",
+  epaisseur: "{attribut} : l'objet n'a pas d'épaisseur dans cette direction, il ne peut pas être étiré.",
+  matiere: "Matière inconnue : « {nom} ». Créez-la dans le panneau Matériaux.",
+  composant: "Composant introuvable.",
+  "pas-dynamique": "Ce composant n'est pas dynamique.",
+  limites: "Description trop longue ou invalide : 64 paramètres, 512 règles, 500 caractères par valeur ou formule, 80 par libellé, 50 choix par liste ; noms de paramètres distincts.",
+  inconnue: "Erreur : {texte}",
+} as const;
+export type CleErreurDynamique = keyof typeof MESSAGES_ERREUR_DYNAMIQUE;
+type ArgsErreur = Readonly<Record<string, string>>;
+const rediger = (cle: CleErreurDynamique, args: ArgsErreur): string => MESSAGES_ERREUR_DYNAMIQUE[cle].replace(/\{(\w+)\}/g, (_, k: string) => args[k] ?? "");
+export class ErreurFormule extends Error {
+  constructor(readonly cle: CleErreurDynamique, readonly args: ArgsErreur = {}) {
+    super(rediger(cle, args));
+  }
+}
+const refus = (cle: CleErreurDynamique, args: ArgsErreur = {}): never => {
+  throw new ErreurFormule(cle, args);
 };
 
 // ————————————————————————————————————————————————————————————————————————————————— Formules
@@ -32,7 +73,7 @@ function decouper(source: string): Jeton[] {
       i++;
     } else if (/[0-9.]/.test(c)) {
       const m = /^[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?|^[0-9]+\.?/.exec(source.slice(i));
-      if (!m) refus(`Nombre illisible à la position ${i + 1}.`);
+      if (!m) refus("nombre-illisible", { position: String(i + 1) });
       jetons.push({ t: "nombre", v: Number((m as RegExpExecArray)[0]) });
       i += (m as RegExpExecArray)[0].length;
     } else if (c === '"') {
@@ -43,7 +84,7 @@ function decouper(source: string): Jeton[] {
         texte += source[j];
         j++;
       }
-      if (j >= source.length) refus("Guillemet non fermé.");
+      if (j >= source.length) refus("guillemet");
       jetons.push({ t: "texte", v: texte });
       i = j + 1;
     } else if (/[A-Za-zÀ-ÿ_]/.test(c)) {
@@ -51,7 +92,7 @@ function decouper(source: string): Jeton[] {
       i += m[0].length;
       // « Parent!nom » (écriture de SketchUp) désigne un paramètre du composant : le préfixe est admis et ignoré.
       if (source[i] === "!") {
-        if (m[0].toLowerCase() !== "parent") refus(`Référence « ${m[0]}! » : seule « Parent! » est admise (pas de référence à un autre objet).`);
+        if (m[0].toLowerCase() !== "parent") refus("reference", { nom: m[0] });
         i++;
         continue;
       }
@@ -59,7 +100,7 @@ function decouper(source: string): Jeton[] {
     } else {
       const deux = source.slice(i, i + 2);
       const op = ["<=", ">=", "<>"].includes(deux) ? deux : c;
-      if (!"+-*/^&=<>(),;".includes(op[0] as string)) refus(`Caractère inattendu « ${c} ».`);
+      if (!"+-*/^&=<>(),;".includes(op[0] as string)) refus("caractere", { texte: c });
       jetons.push({ t: "op", v: op === ";" ? "," : op });
       i += op.length;
     }
@@ -76,38 +117,38 @@ export interface EnvironnementFormule {
 
 const nombre = (v: ValeurDynamique, quoi = "valeur"): number => {
   const n = typeof v === "number" ? v : Number(v.trim().replace(",", "."));
-  if (typeof v === "string" && v.trim() === "") refus(`Nombre attendu (${quoi}), texte vide reçu.`);
-  return Number.isFinite(n) ? n : refus(`Nombre attendu (${quoi}), « ${v} » reçu.`);
+  if (typeof v === "string" && v.trim() === "") refus("nombre-vide", { quoi });
+  return Number.isFinite(n) ? n : refus("nombre-attendu", { quoi, texte: String(v) });
 };
 const texte = (v: ValeurDynamique): string => (typeof v === "number" ? String(Number(v.toFixed(9))) : v);
 const vrai = (v: ValeurDynamique): boolean => (typeof v === "number" ? v !== 0 : v !== "" && v !== "0");
 const RAD = Math.PI / 180;
 
 type Fonction = (a: ValeurDynamique[], env: EnvironnementFormule) => ValeurDynamique;
-const n1 = (f: (x: number) => number): Fonction => (a) => f(nombre(a[0] ?? refus("Argument manquant.")));
+const n1 = (f: (x: number) => number): Fonction => (a) => f(nombre(a[0] ?? refus("argument")));
 const multiple = (x: number, pas: number, f: (q: number) => number): number => (pas === 0 ? 0 : f(x / pas) * pas);
 const FONCTIONS: Readonly<Record<string, Fonction>> = {
-  ABS: n1(Math.abs), INT: n1(Math.floor), SQRT: n1((x) => (x < 0 ? refus("Racine d'un nombre négatif.") : Math.sqrt(x))), SIGN: n1(Math.sign), EXP: n1(Math.exp),
-  LN: n1((x) => (x <= 0 ? refus("Logarithme d'un nombre négatif ou nul.") : Math.log(x))), LOG10: n1((x) => (x <= 0 ? refus("Logarithme d'un nombre négatif ou nul.") : Math.log10(x))),
+  ABS: n1(Math.abs), INT: n1(Math.floor), SQRT: n1((x) => (x < 0 ? refus("racine") : Math.sqrt(x))), SIGN: n1(Math.sign), EXP: n1(Math.exp),
+  LN: n1((x) => (x <= 0 ? refus("logarithme") : Math.log(x))), LOG10: n1((x) => (x <= 0 ? refus("logarithme") : Math.log10(x))),
   DEGREES: n1((x) => x / RAD), RADIANS: n1((x) => x * RAD), EVEN: n1((x) => Math.sign(x) * Math.ceil(Math.abs(x) / 2) * 2), ODD: n1((x) => Math.sign(x || 1) * (Math.ceil((Math.abs(x) - 1) / 2) * 2 + 1)),
   SIN: n1((x) => Math.sin(x * RAD)), COS: n1((x) => Math.cos(x * RAD)), TAN: n1((x) => Math.tan(x * RAD)),
   ASIN: n1((x) => Math.asin(x) / RAD), ACOS: n1((x) => Math.acos(x) / RAD), ATAN: n1((x) => Math.atan(x) / RAD),
   PI: () => Math.PI, TRUE: () => 1, FALSE: () => 0,
-  ROUND: (a) => { const p = 10 ** Math.round(nombre(a[1] ?? 0)); return Math.round(nombre(a[0] ?? refus("Argument manquant.")) * p) / p; },
-  CEILING: (a) => multiple(nombre(a[0] ?? refus("Argument manquant.")), nombre(a[1] ?? 1), Math.ceil),
-  FLOOR: (a) => multiple(nombre(a[0] ?? refus("Argument manquant.")), nombre(a[1] ?? 1), Math.floor),
+  ROUND: (a) => { const p = 10 ** Math.round(nombre(a[1] ?? 0)); return Math.round(nombre(a[0] ?? refus("argument")) * p) / p; },
+  CEILING: (a) => multiple(nombre(a[0] ?? refus("argument")), nombre(a[1] ?? 1), Math.ceil),
+  FLOOR: (a) => multiple(nombre(a[0] ?? refus("argument")), nombre(a[1] ?? 1), Math.floor),
   LARGEST: (a) => Math.max(...a.map((x) => nombre(x))), MAX: (a) => Math.max(...a.map((x) => nombre(x))),
   SMALLEST: (a) => Math.min(...a.map((x) => nombre(x))), MIN: (a) => Math.min(...a.map((x) => nombre(x))),
-  NEAREST: (a) => { const x = nombre(a[0] ?? refus("Argument manquant.")); const c = a.slice(1).map((v) => nombre(v)); return c.length ? c.reduce((m, v) => (Math.abs(v - x) < Math.abs(m - x) ? v : m)) : x; },
-  CHOOSE: (a) => a[Math.round(nombre(a[0] ?? refus("Argument manquant.")))] ?? refus("CHOOSE : rang hors de la liste."),
-  IF: (a) => (vrai(a[0] ?? refus("Argument manquant.")) ? a[1] ?? 1 : a[2] ?? 0),
+  NEAREST: (a) => { const x = nombre(a[0] ?? refus("argument")); const c = a.slice(1).map((v) => nombre(v)); return c.length ? c.reduce((m, v) => (Math.abs(v - x) < Math.abs(m - x) ? v : m)) : x; },
+  CHOOSE: (a) => a[Math.round(nombre(a[0] ?? refus("argument")))] ?? refus("choose"),
+  IF: (a) => (vrai(a[0] ?? refus("argument")) ? a[1] ?? 1 : a[2] ?? 0),
   AND: (a) => (a.every(vrai) ? 1 : 0), OR: (a) => (a.some(vrai) ? 1 : 0), NOT: (a) => (vrai(a[0] ?? 0) ? 0 : 1),
   CONCATENATE: (a) => a.map(texte).join(""), LEN: (a) => texte(a[0] ?? "").length, UPPER: (a) => texte(a[0] ?? "").toUpperCase(), LOWER: (a) => texte(a[0] ?? "").toLowerCase(),
   TRIM: (a) => texte(a[0] ?? "").trim(), VALUE: (a) => nombre(a[0] ?? ""), EXACT: (a) => (texte(a[0] ?? "") === texte(a[1] ?? "") ? 1 : 0),
   LEFT: (a) => texte(a[0] ?? "").slice(0, Math.max(0, nombre(a[1] ?? 1))), RIGHT: (a) => { const s = texte(a[0] ?? ""); return s.slice(Math.max(0, s.length - Math.max(0, nombre(a[1] ?? 1)))); },
   MID: (a) => texte(a[0] ?? "").substr(Math.max(0, nombre(a[1] ?? 1) - 1), Math.max(0, nombre(a[2] ?? 1))),
-  OPTIONINDEX: (a, env) => env.option?.(texte(a[0] ?? ""))?.rang ?? refus(`OPTIONINDEX : « ${texte(a[0] ?? "")} » n'est pas un paramètre à liste.`),
-  OPTIONLABEL: (a, env) => env.option?.(texte(a[0] ?? ""))?.libelle ?? refus(`OPTIONLABEL : « ${texte(a[0] ?? "")} » n'est pas un paramètre à liste.`),
+  OPTIONINDEX: (a, env) => env.option?.(texte(a[0] ?? ""))?.rang ?? refus("option", { fonction: "OPTIONINDEX", nom: texte(a[0] ?? "") }),
+  OPTIONLABEL: (a, env) => env.option?.(texte(a[0] ?? ""))?.libelle ?? refus("option", { fonction: "OPTIONLABEL", nom: texte(a[0] ?? "") }),
 };
 /** Fonctions admises dans une formule, pour l'aide du panneau. */
 export const FONCTIONS_DYNAMIQUES: readonly string[] = Object.freeze(Object.keys(FONCTIONS).sort());
@@ -119,11 +160,11 @@ export function evaluerFormule(source: string, env: EnvironnementFormule): Valeu
   const vu = (v: string): boolean => j[i]?.t === "op" && j[i]?.v === v;
   const primaire = (): ValeurDynamique => {
     const x = j[i++];
-    if (!x) return refus("Formule incomplète.");
+    if (!x) return refus("incomplete");
     if (x.t === "nombre" || x.t === "texte") return x.v;
     if (x.t === "op" && x.v === "(") {
       const v = comparaison();
-      if (!vu(")")) refus("Parenthèse non fermée.");
+      if (!vu(")")) refus("parenthese");
       i++;
       return v;
     }
@@ -132,19 +173,19 @@ export function evaluerFormule(source: string, env: EnvironnementFormule): Valeu
     if (x.t === "nom") {
       if (vu("(")) {
         i++;
-        const f = FONCTIONS[x.v.toUpperCase()] ?? refus(`Fonction inconnue : ${x.v}.`);
+        const f = FONCTIONS[x.v.toUpperCase()] ?? refus("fonction", { nom: x.v });
         const args: ValeurDynamique[] = [];
         if (!vu(")")) {
           do args.push(comparaison());
           while (vu(",") && ++i);
         }
-        if (!vu(")")) refus(`Parenthèse non fermée après ${x.v}.`);
+        if (!vu(")")) refus("parenthese-apres", { nom: x.v });
         i++;
         return f(args, env);
       }
-      return env.valeur(x.v) ?? refus(`Nom inconnu : ${x.v}.`);
+      return env.valeur(x.v) ?? refus("nom", { nom: x.v });
     }
-    return refus(`« ${x.v} » inattendu.`);
+    return refus("inattendu", { texte: String(x.v) });
   };
   const puissance = (): ValeurDynamique => {
     const g = primaire();
@@ -157,7 +198,7 @@ export function evaluerFormule(source: string, env: EnvironnementFormule): Valeu
     while (vu("*") || vu("/")) {
       const op = (j[i++] as Jeton).v;
       const d = nombre(puissance());
-      if (op === "/" && d === 0) refus("Division par zéro.");
+      if (op === "/" && d === 0) refus("division");
       g = op === "*" ? nombre(g) * d : nombre(g) / d;
     }
     return g;
@@ -190,7 +231,7 @@ export function evaluerFormule(source: string, env: EnvironnementFormule): Valeu
     return ok ? 1 : 0;
   }
   const v = comparaison();
-  if (i < j.length) refus(`« ${(j[i] as Jeton).v} » inattendu.`);
+  if (i < j.length) refus("inattendu", { texte: String((j[i] as Jeton).v) });
   return v;
 }
 
@@ -207,8 +248,13 @@ export function evaluerSaisie(saisie: string, env: EnvironnementFormule): Valeur
 export interface ErreurDynamique {
   /** Paramètre ou règle en cause (« Largeur », « o12.LenX »). */
   readonly ou: string;
+  /** Texte français ; l'interface traduit par `cle` et `args`. */
   readonly message: string;
+  readonly cle: CleErreurDynamique;
+  readonly args: Readonly<Record<string, string>>;
 }
+const erreur = (ou: string, cle: CleErreurDynamique, args: ArgsErreur = {}): ErreurDynamique => ({ ou, message: rediger(cle, args), cle, args });
+const depuis = (ou: string, e: unknown): ErreurDynamique => (e instanceof ErreurFormule ? { ou, message: e.message, cle: e.cle, args: e.args } : erreur(ou, "inconnue", { texte: e instanceof Error ? e.message : String(e) }));
 
 export const NOM_PARAMETRE = /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9_]{0,39}$/;
 const RESERVES: ReadonlySet<string> = new Set(["copy", "parent", ...Object.keys(FONCTIONS).map((f) => f.toLowerCase())]);
@@ -232,7 +278,7 @@ export function evaluerParametres(dyn: ComposantDynamique): { readonly env: Envi
     const p = parNom.get(cle);
     if (!p) return undefined;
     if (connues.has(cle)) return connues.get(cle);
-    if (enCours.has(cle)) return refus(`Référence circulaire par « ${p.nom} ».`);
+    if (enCours.has(cle)) return refus("circulaire", { nom: p.nom });
     enCours.add(cle);
     try {
       const v = evaluerSaisie(p.valeur, { valeur, option });
@@ -247,7 +293,7 @@ export function evaluerParametres(dyn: ComposantDynamique): { readonly env: Envi
     try {
       valeurs[p.nom] = valeur(p.nom) as ValeurDynamique;
     } catch (e) {
-      erreurs.push({ ou: p.nom, message: e instanceof Error ? e.message : String(e) });
+      erreurs.push(depuis(p.nom, e));
     }
   }
   return { env: { valeur, option }, valeurs, erreurs };
@@ -316,17 +362,21 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
   for (const [objet, regles] of parObjet) {
     const base = def.contenu.occurrences[objet];
     if (!base) {
-      erreurs.push({ ou: objet, message: "Objet introuvable dans le composant : ses règles sont sans effet." });
+      erreurs.push(erreur(objet, "objet"));
       continue;
     }
     const etiquette = base.nom ?? m.definitions[base.definition]?.nom ?? objet;
+    // Une même erreur (même règle, même message) n'est rapportée qu'une fois, qu'elle vienne de l'objet ou d'une de ses copies.
+    const signaler = (e: ErreurDynamique): void => {
+      if (!erreurs.some((x) => x.ou === e.ou && x.message === e.message)) erreurs.push(e);
+    };
     const calcul = (attribut: AttributDynamique, copy: number): ValeurDynamique | undefined => {
       const r = regles.find((x) => x.attribut === attribut);
       if (!r) return undefined;
       try {
         return evaluerSaisie(r.formule, { valeur: (nom) => (nom.toLowerCase() === "copy" ? copy : p.env.valeur(nom)), ...(p.env.option ? { option: p.env.option } : {}) });
       } catch (e) {
-        if (copy === 0) erreurs.push({ ou: `${etiquette}.${attribut}`, message: e instanceof Error ? e.message : String(e) });
+        signaler(depuis(`${etiquette}.${attribut}`, e));
         return undefined;
       }
     };
@@ -336,7 +386,7 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
       try {
         return nombre(v, attribut);
       } catch (e) {
-        if (copy === 0) erreurs.push({ ou: `${etiquette}.${attribut}`, message: e instanceof Error ? e.message : String(e) });
+        signaler(depuis(`${etiquette}.${attribut}`, e));
         return undefined;
       }
     };
@@ -347,7 +397,7 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
     if (regles.some((r) => r.attribut === "Copies")) {
       if (demande === undefined) n = existantes.length;
       else if (!Number.isInteger(demande) || demande < 0 || demande > COPIES_MAX) {
-        erreurs.push({ ou: `${etiquette}.Copies`, message: `Copies : un entier de 0 à ${COPIES_MAX} (reçu ${demande}).` });
+        erreurs.push(erreur(`${etiquette}.Copies`, "copies", { max: String(COPIES_MAX), recu: String(demande) }));
         n = existantes.length;
       } else n = demande;
       const ids = existantes.slice(0, n);
@@ -369,7 +419,7 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
         if (voulu === undefined) return ech[axe] as number;
         const naturel = boite ? (["x", "y", "z"] as const).map((c) => boite.max[c] - boite.min[c])[axe] as number : 0;
         if (voulu <= 0 || naturel <= 1e-9) {
-          if (k === 0) erreurs.push({ ou: `${etiquette}.${a}`, message: voulu <= 0 ? `${a} : une longueur strictement positive (reçu ${voulu}).` : `${a} : l'objet n'a pas d'épaisseur dans cette direction, il ne peut pas être étiré.` });
+          signaler(voulu <= 0 ? erreur(`${etiquette}.${a}`, "longueur", { attribut: a, recu: String(voulu) }) : erreur(`${etiquette}.${a}`, "epaisseur", { attribut: a }));
           return ech[axe] as number;
         }
         return voulu / naturel;
@@ -385,7 +435,11 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
       } else if (texte(matiere) !== "") {
         const trouve = materiaux.find((x) => x.id === texte(matiere) || x.nom.toLowerCase() === texte(matiere).toLowerCase());
         if (trouve) suite = { ...suite, materiau: trouve.id };
-        else if (k === 0) erreurs.push({ ou: `${etiquette}.Material`, message: `Matière inconnue : « ${texte(matiere)} ». Créez-la dans le panneau Matériaux.` });
+        else {
+          // Matière inconnue : l'erreur est rapportée et la matière déjà posée reste (une règle en erreur est sans effet).
+          if (base.materiau !== undefined) suite = { ...suite, materiau: base.materiau };
+          signaler(erreur(`${etiquette}.Material`, "matiere", { nom: texte(matiere) }));
+        }
       }
       occurrences[id] = suite;
     }
@@ -400,11 +454,13 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
 /** Pose (ou retire, `null`) la description dynamique d'un composant, puis le redessine. */
 export function definirDynamique(m: Modele, definition: Id, dyn: ComposantDynamique | null): ResultatDynamique {
   const def = m.definitions[definition];
-  if (!def) return { modele: m, erreurs: [{ ou: definition, message: "Composant introuvable." }] };
+  if (!def) return { modele: m, erreurs: [erreur(definition, "composant")] };
   if (dyn === null) {
     const { dynamique: _d, ...reste } = def;
     return { modele: { ...m, definitions: { ...m.definitions, [definition]: reste } }, erreurs: [] };
   }
+  // Ce que la relecture refuserait n'est jamais enregistré : la Planche resterait illisible à la réouverture.
+  if (!estComposantDynamique(dyn)) return { modele: m, erreurs: [erreur(def.nom, "limites")] };
   const copies = def.dynamique?.copies;
   const pose = { ...m, definitions: { ...m.definitions, [definition]: { ...def, dynamique: copies && !dyn.copies ? { ...dyn, copies } : dyn } } };
   return redessinerDynamique(pose, definition);
@@ -413,7 +469,7 @@ export function definirDynamique(m: Modele, definition: Id, dyn: ComposantDynami
 /** Change la valeur d'un paramètre (une option choisie par l'utilisateur), puis redessine. */
 export function definirParametre(m: Modele, definition: Id, nom: string, valeur: string): ResultatDynamique {
   const dyn = m.definitions[definition]?.dynamique;
-  if (!dyn) return { modele: m, erreurs: [{ ou: nom, message: "Ce composant n'est pas dynamique." }] };
+  if (!dyn) return { modele: m, erreurs: [erreur(nom, "pas-dynamique")] };
   return definirDynamique(m, definition, { ...dyn, parametres: dyn.parametres.map((p): ParametreDynamique => (p.nom === nom ? { ...p, valeur } : p)) });
 }
 

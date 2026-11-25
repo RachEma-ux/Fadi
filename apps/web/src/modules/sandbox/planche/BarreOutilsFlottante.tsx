@@ -21,6 +21,8 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { rectZoneDessin } from "./zone-dessin";
 
 export interface PropsBarreOutilsFlottante {
+  /** Outils offerts : le catalogue moins ceux des extensions désactivées ; absents, tout le catalogue. */
+  catalogue?: readonly Outil[];
   outil: Outil;
   /** Rang d'affichage (empilement des positions par défaut au bureau). */
   rang: number;
@@ -48,7 +50,7 @@ function tailleDe(el: HTMLElement): Taille {
   return { largeur: r.width, hauteur: r.height };
 }
 
-export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, onChoisir, onFermer, reference, fenetreCle = "", onDocquee }: PropsBarreOutilsFlottante) {
+export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, onChoisir, onFermer, reference, fenetreCle = "", onDocquee, catalogue }: PropsBarreOutilsFlottante) {
   const ui = useEtatUi();
   const racine = useRef<HTMLDivElement | null>(null);
   // Lot 9 (EX-CMD-06) : une halte de tabulation, flèches entre les opérations (motif W3C APG Toolbar).
@@ -188,7 +190,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
   }, [hautDocquee, onDocquee]);
   useEffect(() => () => onDocquee?.(null), [onDocquee]);
 
-  const sections = barreDe(id);
+  const sections = barreDe(id, catalogue);
   if (!sections) return null;
   const style: React.CSSProperties | undefined = pos ? { left: `${pos.x}px`, top: `${pos.y}px`, ...(telephone && defaut?.largeur ? { width: `${defaut.largeur}px` } : {}) } : { visibility: "hidden" };
   return (

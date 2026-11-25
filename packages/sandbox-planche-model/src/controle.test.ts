@@ -78,6 +78,17 @@ describe("Contrôle et nettoyage", () => {
     }
   });
 
+  it("un trait isolé dans un groupe non verrouillé, lui-même dans un groupe verrouillé, est laissé", () => {
+    let m = base();
+    const dedans = grouper(m, [...Object.keys(m.racine.aretes), ...Object.keys(m.racine.faces)]);
+    const dehors = grouper(dedans.modele, [dedans.occurrence]);
+    m = verrouillerOccurrences(dehors.modele, [dehors.occurrence], true).modele;
+    expect(controlerModele(m).aretesIsolees).toBe(0);
+    const n = nettoyerModele(m, TOUT);
+    expect(n.retires.aretesIsolees).toBe(0);
+    expect(n.modele.definitions).toEqual(m.definitions);
+  });
+
   it("solides : une boîte fermée est un solide, une face seule groupée ne l'est pas", () => {
     let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
     m = pousserTirer(m, Object.keys(m.racine.faces)[0]!, 1).modele;

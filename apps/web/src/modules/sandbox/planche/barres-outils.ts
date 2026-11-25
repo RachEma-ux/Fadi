@@ -147,12 +147,15 @@ export interface SectionBarre {
   outils: Outil[];
 }
 
-/** Barre d'opérations d'un outil : trois sections ①②③ (outils du catalogue), ou `null` pour un identifiant inconnu. */
-export function barreDe(id: string): SectionBarre[] | null {
+/**
+ * Barre d'opérations d'un outil : trois sections ①②③ (outils du catalogue), ou `null` pour un identifiant inconnu.
+ * `offerts` (facultatif) restreint les opérations aux outils offerts : ceux d'une extension désactivée n'y sont pas.
+ */
+export function barreDe(id: string, offerts?: readonly Outil[]): SectionBarre[] | null {
   const objet = OBJET_DE[id];
   if (!objet) return null;
   const b = BARRES[objet];
-  return SECTIONS.map((s) => ({ cle: s.cle, numero: s.numero, libelle: t(s.message), outils: b[s.cle].map((x) => outilParId(x)).filter((o): o is Outil => o !== null) }));
+  return SECTIONS.map((s) => ({ cle: s.cle, numero: s.numero, libelle: t(s.message), outils: b[s.cle].map((x) => outilParId(x)).filter((o): o is Outil => o !== null && (offerts === undefined || offerts.includes(o))) }));
 }
 
 /**
