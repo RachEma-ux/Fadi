@@ -4,25 +4,38 @@ import { lireCorpsPreferencesSandbox, reponsePreferences } from "./sandbox-prefe
 
 describe("préférences d'outils du Sandbox — serveur", () => {
   it("sans ligne : profil Standard, rien de choisi, updatedAt null", () => {
-    expect(reponsePreferences("u1", undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], format: "sandbox-preferences/1", compte: "u1", updatedAt: null });
+    expect(reponsePreferences("u1", undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: {}, format: "sandbox-preferences/1", compte: "u1", updatedAt: null });
   });
 
   it("une ligne est relue telle qu'enregistrée ; une ligne ancienne invalide vaut les défauts", () => {
     const at = new Date("2026-10-20T20:00:00Z");
-    const r = reponsePreferences("u1", { profile: "personnel", leftBar: ["ligne", "selection"], favorites: ["commande:groupe"], groups: [{ id: "bois", nom: "Bois", entrees: ["outil:onglet"] }], updatedAt: at });
+    const r = reponsePreferences("u1", { profile: "personnel", leftBar: ["ligne", "selection"], favorites: ["commande:groupe"], groups: [{ id: "bois", nom: "Bois", entrees: ["outil:onglet"] }], extensions: {}, updatedAt: at });
     expect(r).toMatchObject({ profil: "personnel", barrePersonnelle: ["ligne", "selection"], favoris: ["commande:groupe"], compte: "u1", updatedAt: at.toISOString() });
-    expect(reponsePreferences("u1", { profile: "personnel", leftBar: ["fantome"], favorites: [], groups: [], updatedAt: at })).toMatchObject({ profil: "standard", barrePersonnelle: [] });
+    expect(reponsePreferences("u1", { profile: "personnel", leftBar: ["fantome"], favorites: [], groups: [], extensions: {}, updatedAt: at })).toMatchObject({ profil: "standard", barrePersonnelle: [] });
   });
 
   it("corps PUT : valeurs de ligne ; forme invalide → invalid_input ; entrée inconnue → unknown_entry nommée", () => {
     expect(lireCorpsPreferencesSandbox({ profil: "metier:bois", barrePersonnelle: [], favoris: ["outil:ligne"], regroupements: [] })).toEqual({
       ok: true,
-      valeurs: { profile: "metier:bois", leftBar: [], favorites: ["outil:ligne"], groups: [] },
+      valeurs: { profile: "metier:bois", leftBar: [], favorites: ["outil:ligne"], groups: [], extensions: {} },
     });
     expect(lireCorpsPreferencesSandbox({ profil: "x" })).toMatchObject({ ok: false, body: { error: "invalid_input" } });
     expect(lireCorpsPreferencesSandbox({ profil: "standard", barrePersonnelle: ["fantome"], favoris: [], regroupements: [] })).toEqual({
       ok: false,
       body: { error: "unknown_entry", detail: "entrée absente du registre du Sandbox", inconnues: ["outil:fantome"] },
+    });
+  });
+
+  it("extensions (25 novembre 2026) : relues et enregistrées ; extension inconnue → unknown_extension nommée", () => {
+    const at = new Date("2026-11-25T01:00:00Z");
+    expect(reponsePreferences("u1", { profile: "standard", leftBar: [], favorites: [], groups: [], extensions: { bois: false }, updatedAt: at })).toMatchObject({ extensions: { bois: false } });
+    expect(lireCorpsPreferencesSandbox({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: { volumes: false } })).toEqual({
+      ok: true,
+      valeurs: { profile: "standard", leftBar: [], favorites: [], groups: [], extensions: { volumes: false } },
+    });
+    expect(lireCorpsPreferencesSandbox({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: { fantome: true } })).toEqual({
+      ok: false,
+      body: { error: "unknown_extension", detail: "extension absente de la liste du Sandbox", inconnues: ["extension:fantome"] },
     });
   });
 });

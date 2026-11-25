@@ -193,7 +193,7 @@ async function bandeau(page, racine, contexte) {
   check(`${contexte} : « Détacher » à droite du bandeau`, ba.detacher && Math.abs(ba.detacher.r - ba.bd.r) <= 1 && ba.detacherTexte === "Détacher", JSON.stringify(ba.detacher));
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
-  check(`${contexte} : ☰ ouvre le menu sous le bandeau, contenu inchangé (onze entrées)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 11, JSON.stringify(liste));
+  check(`${contexte} : ☰ ouvre le menu sous le bandeau, douze entrées (Extensions en dernier)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 12, JSON.stringify(liste));
   // Les couleurs claires du bandeau ne fuient ni dans le menu ni dans la page Informations (rendus dans le bandeau).
   const couleurMenu = await racine.locator(".planche-menu-liste [data-planche-menu-item='informations']").evaluate((e) => getComputedStyle(e).color);
   await racine.locator("[data-planche-menu-item='informations']").click();
@@ -411,6 +411,43 @@ try {
     await p3.waitForTimeout(500);
     const apres = await api("get");
     check("copie en attente d'un autre compte : remplacée par la version du compte, rien envoyé", apres.corps.profil === "standard" && apres.corps.updatedAt === remis.corps.updatedAt && (await ordreBarre())[3] === "arc", JSON.stringify(apres.corps));
+    // Extensions (25 novembre 2026) : fenêtre du menu, un interrupteur par extension, choix enregistré sur le compte.
+    {
+      const nbGrille = async (outil) => {
+        await racine.locator("[data-planche-plus]").click();
+        const n = await racine.locator(`[data-planche-grille] [data-planche-outil="${outil}"]`).count();
+        await p3.keyboard.press("Escape");
+        return n;
+      };
+      check("extensions : d'origine, les outils de « Volumes et solides » sont dans la grille", (await nbGrille("union")) >= 1);
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      const fenetre = racine.locator("[data-planche-extensions]");
+      await fenetre.waitFor({ state: "visible" });
+      const lignes = await fenetre.locator("[data-planche-extension]").evaluateAll((l) => l.map((e) => `${e.getAttribute("data-planche-extension")}:${e.getAttribute("data-planche-extension-active")}`));
+      check("extensions : la fenêtre liste « Bois et menuiserie » et « Volumes et solides », actives d'origine", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true"]), lignes.join(", "));
+      await p3.screenshot({ path: join(OUT, "sandbox-extensions-fenetre.png") });
+      await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
+      await fenetre.locator('[data-planche-extensions-etat="compte"]').waitFor();
+      await p3.waitForTimeout(400);
+      const coupe = await api("get");
+      check("extensions : le choix est enregistré sur le compte (écart seul)", JSON.stringify(coupe.corps.extensions) === JSON.stringify({ volumes: false }), JSON.stringify(coupe.corps.extensions));
+      await p3.keyboard.press("Escape");
+      await p3.keyboard.press("Escape");
+      check("extensions : désactivée, ses outils quittent la grille ; les autres restent", (await nbGrille("union")) === 0 && (await nbGrille("onglet")) >= 1);
+      await p3.reload();
+      await plancheChargee(p3, "extensions rechargées");
+      check("extensions : le choix revient au rechargement", (await nbGrille("union")) === 0);
+      const inconnueX = await api("put", { profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: { fantome: true } });
+      check("extensions : identifiant inconnu refusé (400 unknown_extension)", inconnueX.statut === 400 && inconnueX.corps.error === "unknown_extension", JSON.stringify(inconnueX.corps));
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
+      await p3.waitForTimeout(600);
+      await p3.keyboard.press("Escape");
+      await p3.keyboard.press("Escape");
+      check("extensions : réactivée, ses outils reviennent sans rechargement", (await nbGrille("union")) >= 1);
+    }
     await c3.close();
   }
 

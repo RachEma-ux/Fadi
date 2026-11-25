@@ -966,6 +966,12 @@ ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_pref
   ADD CONSTRAINT sandbox_tool_preferences_lists_check
   CHECK (jsonb_typeof(left_bar) = 'array' AND jsonb_typeof(favorites) = 'array' AND jsonb_typeof(groups) = 'array'
     AND jsonb_array_length(groups) <= 20) NOT VALID;
+-- Extensions du Sandbox (25 novembre 2026) : écarts du compte aux défauts de chaque extension, { <id>: booléen } ;
+-- vide = défauts. Les identifiants sont vérifiés par le serveur contre la liste EXTENSIONS_SANDBOX. Additive.
+ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS extensions jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_extensions_check,
+  ADD CONSTRAINT sandbox_tool_preferences_extensions_check
+  CHECK (jsonb_typeof(extensions) = 'object') NOT VALID;
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

@@ -2,10 +2,11 @@
  * Préférences d'outils du Sandbox du compte connecté (lot 5, décision du maître d'ouvrage du 20 octobre 2026), montées
  * sous `/sandbox/preferences` :
  *
- *   GET /  → { profil, barrePersonnelle, favoris, regroupements, format, compte, updatedAt } — préférences du compte (défaut :
+ *   GET /  → { profil, barrePersonnelle, favoris, regroupements, extensions, format, compte, updatedAt } — préférences du compte (défaut :
  *            profil Standard, rien de choisi, `updatedAt` null tant que rien n'est enregistré) ;
- *   PUT /  { profil, barrePersonnelle, favoris, regroupements } → remplace l'ensemble (idempotent) ; forme invalide →
- *            400 invalid_input ; entrée absente du registre du Sandbox → 400 unknown_entry (entrées nommées).
+ *   PUT /  { profil, barrePersonnelle, favoris, regroupements, extensions? } → remplace l'ensemble (idempotent) ; forme
+ *            invalide → 400 invalid_input ; entrée absente du registre du Sandbox → 400 unknown_entry (entrées nommées) ;
+ *            extension absente de la liste du Sandbox → 400 unknown_extension. `extensions` omis = aucun choix.
  *
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
