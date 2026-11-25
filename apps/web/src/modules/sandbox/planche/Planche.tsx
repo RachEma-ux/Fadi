@@ -102,6 +102,10 @@ import {
   csvDebit,
   effacerEtiquettesPieces,
   CHOIX_NETTOYAGE_DEFAUT,
+  type ComposantDynamique,
+  definirDynamique,
+  definirParametre,
+  redessinerDynamique,
   type ChoixNettoyage,
   controlerModele,
   nettoyerModele,
@@ -180,11 +184,12 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
 import { PanneauControle } from "./panneau-controle";
+import { PanneauDynamique } from "./panneau-dynamique";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -241,7 +246,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -2422,6 +2427,38 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setNoteControle(t("planche.controle.note.selection", { nombre: String(ids.length) }));
     rafraichir();
   };
+  /** Extension « Composants dynamiques » : définition du composant sélectionné seul dans le contexte ouvert, ou `null`. */
+  const composantSelectionne = (): string | null => {
+    const sel = vue.selection ?? selectionRef.current;
+    if (sel.length !== 1) return null;
+    const m = hist.present.modele;
+    const occ = contexteDe(m, dans).occurrences[sel[0]!];
+    const d = occ ? m.definitions[occ.definition] : undefined;
+    return d?.genre === "composant" ? d.id : null;
+  };
+  const definitionDynamique = panneau === "dynamique" ? composantSelectionne() : null;
+  const erreursDynamique = useMemo(() => (definitionDynamique ? redessinerDynamique(hist.present.modele, definitionDynamique).erreurs : []), [definitionDynamique, hist.present.modele]);
+  const disponibiliteCommandeDynamique = (id: IdCommandeDynamique) => {
+    const d = id === "redessiner-composant" ? composantSelectionne() : null;
+    return disponibiliteDynamique(id, { dynamique: d !== null && hist.present.modele.definitions[d]?.dynamique !== undefined, lecture: readOnly });
+  };
+  const executerDynamique = (id: IdCommandeDynamique) => {
+    if (!disponibiliteCommandeDynamique(id).disponible) return;
+    if (id === "composant-dynamique") {
+      setPanneau("dynamique");
+      return;
+    }
+    const d = composantSelectionne();
+    if (d) operer(t("planche.dynamique.redessiner"), (m) => ({ modele: redessinerDynamique(m, d).modele, message: t("planche.dynamique.note.redessine") }));
+  };
+  const definirComposantDynamique = (dyn: ComposantDynamique | null) => {
+    const d = composantSelectionne();
+    if (d) operer(t("planche.dynamique.ouvrir"), (m) => ({ modele: definirDynamique(m, d, dyn).modele }));
+  };
+  const choisirOptionDynamique = (nom: string, valeur: string) => {
+    const d = composantSelectionne();
+    if (d) operer(t("planche.dynamique.options"), (m) => ({ modele: definirParametre(m, d, nom, valeur).modele }));
+  };
   /** Lot L17 : pièce de profilé sélectionnée seule dans le contexte ouvert (bloc d'édition sous l'Info entité). */
   const pieceSelectionnee = (): string | null => {
     const sel = selectionRef.current;
@@ -2751,6 +2788,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     } else if (c.famille === "debit") executerDebit(c.id as IdCommandeDebit);
     else if (c.famille === "piece") executerPiece(c.id as IdCommandePiece);
     else if (c.famille === "controle") executerControle(c.id as IdCommandeControle);
+    else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -2786,6 +2824,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_CONTROLE.map((c) => {
           const d = disponibiliteCommandeControle(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.controle.motif.rien"), executer: () => executerControle(c.id) };
+        }),
+        // Extension « Composants dynamiques » : mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_DYNAMIQUE.map((c) => {
+          const d = disponibiliteCommandeDynamique(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.dynamique.motif.selection"), executer: () => executerDynamique(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -3244,6 +3287,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           <div className="canevas-panneau-corps">
             {panneau === "debit" && (
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
+            )}
+            {panneau === "dynamique" && (
+              <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
             {panneau === "controle" && rapportControle && (
               <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />

@@ -74,6 +74,16 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   isolées et les objets de la racine qui ne sont pas des solides fermés ; il ne modifie rien. Nettoyer retire
   seulement ce qui est coché (les arêtes isolées ne le sont pas d'origine), en une opération : un seul Annuler. Un
   objet verrouillé n'est jamais touché ; le nettoyage se fait à la racine, aucun objet ouvert en édition.
+- **Extension « Composants dynamiques »** (à activer ; d'après les Dynamic Components de SketchUp ;
+  `packages/sandbox-planche-model/src/composants-dynamiques.ts`, `planche/panneau-dynamique.tsx`) : un composant porte
+  des **paramètres** (valeur ou formule de tableur « =… »), montrés ou non comme **options** (zone de texte ou liste), et
+  des **règles** qui fixent par formule les attributs de ses objets contenus : `X`, `Y`, `Z`, `LenX`, `LenY`, `LenZ`,
+  `RotZ`, `Hidden`, `Material`, `Copies` (avec la variable `Copy`). Aucun code n'est exécuté : les formules sont lues par
+  un interpréteur pur (fonctions listées par `FONCTIONS_DYNAMIQUES`). Tout est rangé sur la définition du composant
+  (`dynamique`), vérifié à la relecture. Commandes : panneau (Maj + F7), Redessiner (Maj + F11). Écarts déclarés avec
+  SketchUp : longueurs en mètres (SketchUp : pouces) ; une option change toutes les instances du composant (« Rendre
+  unique » en détache une) ; pas d'outil Interagir ni d'`onClick`, pas de `RotX` / `RotY`, pas de référence d'un objet à
+  un autre, pas de fonction aléatoire. Jeu d'essai de la recette : `apps/web/e2e/donnees/sandbox-etagere-dynamique.json`.
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun

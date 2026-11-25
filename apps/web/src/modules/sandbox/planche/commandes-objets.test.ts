@@ -118,3 +118,20 @@ describe("Extension « Contrôle et nettoyage » — disponibilité des commande
     expect(disponibiliteControle("nettoyer", { ...s, aNettoyer: false }).motif).toBe("planche.controle.motif.rien");
   });
 });
+
+describe("Extension « Composants dynamiques » — commandes et liste de choix", () => {
+  it("le panneau toujours ; redessiner hors lecture avec un composant dynamique sélectionné", async () => {
+    const { disponibiliteDynamique } = await import("./commandes-objets");
+    expect(disponibiliteDynamique("composant-dynamique", { dynamique: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteDynamique("redessiner-composant", { dynamique: true, lecture: false }).disponible).toBe(true);
+    expect(disponibiliteDynamique("redessiner-composant", { dynamique: false, lecture: false }).motif).toBe("planche.dynamique.motif.selection");
+    expect(disponibiliteDynamique("redessiner-composant", { dynamique: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+  });
+
+  it("liste de choix : « Libellé=valeur ; … », un choix sans « = » vaut son libellé, aller-retour stable", async () => {
+    const { lireChoix, ecrireChoix } = await import("./panneau-dynamique");
+    const choix = lireChoix("Chêne=chene ; Hêtre ; ; Pin = pin ");
+    expect(choix).toEqual([{ libelle: "Chêne", valeur: "chene" }, { libelle: "Hêtre", valeur: "Hêtre" }, { libelle: "Pin", valeur: "pin" }]);
+    expect(lireChoix(ecrireChoix(choix))).toEqual(choix);
+  });
+});

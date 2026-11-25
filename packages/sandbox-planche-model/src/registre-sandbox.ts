@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -300,6 +300,9 @@ const commandes: EntreeSandbox[] = [
   // Extension « Contrôle et nettoyage » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("controler", "controle", "stethoscope", "Maj+F8", "panneau-controle", true),
   c("nettoyer", "controle", "sparkles", "Maj+F2", "panneau-controle", true),
+  // Extension « Composants dynamiques » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
+  c("composant-dynamique", "dynamique", "math-function", "Maj+F7", "panneau-dynamique", true),
+  c("redessiner-composant", "dynamique", "refresh", "Maj+F11", "panneau-dynamique", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
@@ -334,6 +337,8 @@ const panneaux: EntreeSandbox[] = [
   p("reperes", "fadi:reperes-liste", "colonne", true),
   // Extension « Contrôle et nettoyage » : relevé de la Planche, hors des 86 entrées du catalogue.
   p("controle", "stethoscope", "colonne", true),
+  // Extension « Composants dynamiques » : options et attributs du composant sélectionné.
+  p("dynamique", "math-function", "colonne", true),
   p("info-modele", "info-circle", "colonne-bas"),
 ];
 
@@ -347,6 +352,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:liste-debit", "panneau:debit"],
   ["commande:gerer-reperes", "panneau:reperes"],
   ["commande:controler", "panneau:controle"],
+  ["commande:composant-dynamique", "panneau:dynamique"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

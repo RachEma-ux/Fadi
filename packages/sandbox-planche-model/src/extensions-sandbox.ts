@@ -70,6 +70,15 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     activeParDefaut: false,
     entrees: ["commande:controler", "commande:nettoyer", "panneau:controle"],
   },
+  {
+    // D'après les Dynamic Components de SketchUp : paramètres, options et règles par formules, sans code.
+    id: "dynamiques",
+    libelle: "Composants dynamiques",
+    description: "Composants paramétrés : options à choisir, tailles, positions et répétitions calculées par formules.",
+    pictogramme: "commande:composant-dynamique",
+    activeParDefaut: false,
+    entrees: ["commande:composant-dynamique", "commande:redessiner-composant", "panneau:dynamique"],
+  },
 ]);
 
 /** Extension par identifiant, ou `undefined`. */
