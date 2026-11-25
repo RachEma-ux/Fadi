@@ -5,7 +5,7 @@
  * enregistrement manqué est renvoyé au retour du réseau, et seulement au compte à qui il appartient. Seules ces préférences passent par le serveur : le brouillon de dessin reste local.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CATALOGUE_LIVRE, PREFERENCES_SANDBOX_DEFAUT, lireCatalogue, lirePreferencesSandbox, type FicheCatalogue, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { CATALOGUE_LIVRE, PREFERENCES_SANDBOX_DEFAUT, basculerExtension, lireCatalogue, lirePreferencesSandbox, type FicheCatalogue, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 import { enregistrerPreferencesServeur, lirePreferencesServeur } from "./client";
 
 /** Copie locale (stockage de l'appareil) de la dernière version reçue, et d'un changement pas encore enregistré. */
@@ -43,6 +43,33 @@ function ecrireCopie(c: Copie): void {
     window.localStorage.setItem(CLE_PREFERENCES, JSON.stringify(c));
   } catch {
     // Stockage indisponible (navigation privée) : la préférence reste en mémoire pour la séance.
+  }
+}
+
+/**
+ * Report, dans la copie locale, d'une extension installée ou désinstallée hors de la Planche (page « Extensions ») et
+ * déjà enregistrée sur le compte. Sans lui, une copie restée « en attente » (changement fait hors connexion) serait
+ * renvoyée telle quelle à la prochaine ouverture de la Planche et annulerait ce geste. Pur : rend la copie à écrire, ou
+ * `null` s'il n'y a rien à écrire (aucune copie, copie illisible ou copie d'un autre compte).
+ */
+export function copieAvecExtension(brut: string | null, compte: string, id: string, installee: boolean): string | null {
+  if (!brut) return null;
+  try {
+    const v = JSON.parse(brut) as Record<string, unknown>;
+    if (v["compte"] !== compte) return null;
+    const preferences = lirePreferencesSandbox(v["preferences"]);
+    return JSON.stringify({ ...v, preferences: { ...preferences, extensions: basculerExtension(preferences.extensions, id, installee) } });
+  } catch {
+    return null;
+  }
+}
+/** Applique `copieAvecExtension` à la copie du navigateur ; sans effet si le stockage est indisponible. */
+export function reporterExtensionDansCopie(compte: string, id: string, installee: boolean): void {
+  try {
+    const suite = copieAvecExtension(window.localStorage.getItem(CLE_PREFERENCES), compte, id, installee);
+    if (suite !== null) window.localStorage.setItem(CLE_PREFERENCES, suite);
+  } catch {
+    // Stockage indisponible : rien à reporter.
   }
 }
 

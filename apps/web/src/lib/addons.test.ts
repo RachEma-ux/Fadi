@@ -1,4 +1,5 @@
 /** Page « Extensions » : répartition « Installées » / « Disponibles » d'un compte dans le catalogue de la plateforme. */
+import { copieAvecExtension } from "../modules/sandbox/preferences/usePreferencesSandbox";
 import { describe, expect, it } from "vitest";
 import { CATALOGUE_LIVRE, PREFERENCES_SANDBOX_DEFAUT, catalogueExtensions, EXTENSIONS_SANDBOX } from "@parcours/sandbox-planche-model";
 import { repartirExtensions } from "./addons";
@@ -33,5 +34,22 @@ describe("page « Extensions » — répartition", () => {
     const catalogue = catalogueExtensions({ controle: { etat: "disponible", activeParDefaut: true } });
     expect(ids(repartirExtensions({ preferences: prefs({}), catalogue }).installees)).toContain("controle");
     expect(ids(repartirExtensions({ preferences: prefs({ controle: false }), catalogue }).disponibles)).toContain("controle");
+  });
+});
+
+describe("copie locale de la Planche : report d'une installation faite sur la page Extensions", () => {
+  const copie = (compte: string, enAttente: boolean) => JSON.stringify({ preferences: { ...PREFERENCES_SANDBOX_DEFAUT, favoris: ["outil:ligne"], extensions: { bois: false } }, enAttente, recue: true, compte, catalogue: [] });
+
+  it("garde le changement en attente et y ajoute l'extension installée", () => {
+    const suite = JSON.parse(copieAvecExtension(copie("u1", true), "u1", "bois", true) ?? "null") as { enAttente: boolean; preferences: { favoris: string[]; extensions: Record<string, boolean> } };
+    expect(suite.enAttente).toBe(true);
+    expect(suite.preferences.favoris).toEqual(["outil:ligne"]);
+    expect(suite.preferences.extensions["bois"]).toBe(true);
+  });
+
+  it("n'écrit rien sans copie, pour un autre compte ou pour une copie illisible", () => {
+    expect(copieAvecExtension(null, "u1", "bois", true)).toBeNull();
+    expect(copieAvecExtension(copie("u2", true), "u1", "bois", true)).toBeNull();
+    expect(copieAvecExtension("{", "u1", "bois", true)).toBeNull();
   });
 });

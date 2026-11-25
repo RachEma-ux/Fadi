@@ -8,6 +8,7 @@ import {
   EXTENSIONS_SANDBOX, basculerExtension, choixEffectif, contenuExtension, extensionProposee, lireCatalogue, lirePreferencesSandbox,
   type ExtensionSandbox, type FicheCatalogue, type PreferencesSandbox,
 } from "@parcours/sandbox-planche-model";
+import { reporterExtensionDansCopie } from "../modules/sandbox/preferences/usePreferencesSandbox";
 import { apiRequest } from "./api";
 
 export interface EtatExtensionsCompte {
@@ -29,7 +30,11 @@ export const addonsApi = {
   basculer: async (etat: EtatExtensionsCompte, id: string, installee: boolean): Promise<EtatExtensionsCompte> => {
     const p = etat.preferences;
     const corps = { profil: p.profil, barrePersonnelle: p.barrePersonnelle, favoris: p.favoris, regroupements: p.regroupements, extensions: basculerExtension(p.extensions, id, installee) };
-    return lire(await apiRequest<unknown>("/sandbox/preferences", { method: "PUT", body: JSON.stringify(corps) }));
+    const reponse = await apiRequest<unknown>("/sandbox/preferences", { method: "PUT", body: JSON.stringify(corps) });
+    // La Planche garde sa propre copie des préférences : le geste y est reporté, sinon une copie en attente l'annulerait.
+    const compte = (reponse as { compte?: unknown } | null)?.compte;
+    if (typeof compte === "string") reporterExtensionDansCopie(compte, id, installee);
+    return lire(reponse);
   },
 };
 
