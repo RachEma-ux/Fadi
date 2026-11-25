@@ -1543,45 +1543,122 @@
   width: 1.4rem;
   text-align: center;
 }
-.sandbox-planche .planche-outils-afficher {
-  display: inline-flex;
+/* Liste à deux niveaux (25 novembre 2026) : la ligne active l'outil ; l'étiquette nomme sa barre et l'affiche. */
+.sandbox-planche .planche-outils-nom.est-indisponible {
+  opacity: 0.55;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-etiquette {
+  flex: none;
+  min-height: 28px;
+  padding: 0 0.6rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--atelier-doux, #5b7468);
+  background: #f1f4f2;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 999px;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-etiquette[aria-checked="true"] {
+  color: #1a5fd6;
+  border-color: #1a5fd6;
+  background: color-mix(in srgb, #1a5fd6 10%, transparent);
+}
+/* Section « Barres d'outils » : une ligne par barre nommée — nom, aperçu des icônes, interrupteur, puis l'action. */
+.sandbox-planche .planche-outils-barre {
+  display: flex;
   align-items: center;
-  gap: 0.25rem;
-  min-height: 36px;
+  gap: 0.15rem;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-barre-bascule {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 40px;
   padding: 0 0.4rem;
-  font-size: 0.85em;
+  text-align: left;
+}
+.sandbox-planche .planche-outils-barre-nom {
+  flex: 0 0 7.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sandbox-planche .planche-outils-case {
-  font-size: 1.1em;
-}
-.sandbox-planche .planche-outils-ops {
+.sandbox-planche .planche-outils-barre-apercu {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
   gap: 0.3rem;
-  margin: 0.1rem 0 0.35rem 1.6rem;
-  padding: 0.3rem;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 0.4rem;
+  overflow: hidden;
+  font-size: 0.8rem;
   background: #f6f8fa;
-  border: 1px solid var(--atelier-ligne, #dce5df);
-  border-radius: 6px;
+  border-radius: 5px;
 }
-.sandbox-planche .planche-outils-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+.sandbox-planche .planche-outils-barre-apercu > span {
+  display: inline-flex;
+  flex: none;
 }
-.sandbox-planche .planche-outils-section + .planche-outils-section {
-  padding-left: 0.35rem;
-  border-left: 1px solid var(--atelier-ligne, #dce5df);
+.sandbox-planche .planche-outils-barre-apercu .sandbox-picto {
+  width: 16px;
+  height: 16px;
 }
-.sandbox-planche .planche-outils-section-titre {
+.sandbox-planche .planche-outils-barre-reste {
   font-size: 0.72rem;
   color: var(--atelier-doux, #5b7468);
 }
-.sandbox-planche .planche-outils-icones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
+.sandbox-planche .planche-outils-interrupteur {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 16px;
+  background: #8d9a94;
+  border-radius: 8px;
+}
+.sandbox-planche .planche-outils-interrupteur::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+}
+.sandbox-planche .planche-outils-interrupteur[data-actif] {
+  background: #1f7a57;
+}
+.sandbox-planche .planche-outils-interrupteur[data-actif]::after {
+  left: 18px;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-barre-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-outils-barre-action .sandbox-picto {
+  width: 18px;
+  height: 18px;
+}
+.sandbox-planche .planche-outils-pied-sous-titre {
+  padding: 0.35rem 0.4rem 0;
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-outils-liste .planche-outils-nouvelle {
+  align-self: flex-start;
+  min-height: 36px;
+  margin: 0.2rem 0.4rem;
+  padding: 0 0.8rem;
+  color: #1a5fd6;
+  border: 1px dashed #1a5fd6;
 }
 .sandbox-planche .planche-outils-op,
 .sandbox-planche .planche-barre-outils-op {
@@ -1612,7 +1689,6 @@
   font-weight: 600;
   font-size: 0.85rem;
 }
-.sandbox-planche .planche-outils-pied .planche-outils-afficher,
 .sandbox-planche .planche-outils-reinitialiser {
   justify-content: flex-start;
   width: 100%;
@@ -2431,6 +2507,37 @@
   align-items: center;
   gap: 0.4rem;
   justify-content: space-between;
+}
+.sandbox-planche .planche-personnaliser-ordre {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sandbox-planche .planche-personnaliser-ordre li {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.sandbox-planche .planche-personnaliser-ordre-nom {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.sandbox-planche .planche-personnaliser-ordre button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+.sandbox-planche .planche-personnaliser-ordre .sandbox-picto {
+  width: 18px;
+  height: 18px;
 }
 .sandbox-planche .planche-personnaliser-table {
   width: 100%;

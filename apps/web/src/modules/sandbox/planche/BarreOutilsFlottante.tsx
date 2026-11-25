@@ -1,35 +1,52 @@
 /**
- * Barre d'opérations flottante de la Planche (D-198) : la barre d'un outil (① Créer, ② Modifier, ③ Mesurer / annoter)
- * affichée sur le dessin par la case « afficher » de la liste « Outils ▾ ». Comme la barre d'actions (D-195) : position
+ * Barre d'outils flottante de la Planche (D-198, puis barres nommées du 25 novembre 2026, `barres-nommees.ts`) : une barre
+ * nommée — livrée (« Premiers pas », Sélection, Arêtes… avec ① Créer, ② Modifier, ③ Mesurer / annoter) ou personnelle —
+ * affichée sur le dessin par son interrupteur de la section « Barres d'outils » de la liste « Outils ». Comme la barre d'actions (D-195) : position
  * fixe — elle flotte au-dessus du dessin sans le redimensionner —, déplaçable par sa poignée (souris, doigt — capture du
  * pointeur —, flèches au clavier, Maj : plus vite), toujours entière dans la zone visible (ramenée au relâchement, au
  * redimensionnement, à la rotation, sous le clavier virtuel), position mémorisée sur l'appareil (`etat-ui.ts`). ✕ la
- * masque (décoche « afficher »). L'outil actif y est surligné. Au téléphone (≤ 760 px), elle se range en bas, au-dessus
+ * masque (coupe son interrupteur). L'outil actif y est surligné. Au téléphone (≤ 760 px), elle se range en bas, au-dessus
  * du volet, une seule à la fois (la Planche ne rend que la dernière affichée).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { Outil } from "@parcours/sandbox-planche-model";
+import type { Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { pasClavier } from "../panneaux/barre-actions-position";
-import { barreDe } from "./barres-outils";
 import { useNavigationBarre } from "../navigation-barre";
 import { borner, placerBarre, positionDefautBarre, positionDocquee, type Position, type Taille, type Zone } from "./barres-outils-disposition";
-import { titreOperation } from "./BoutonOutils";
 import { t } from "../messages";
-import { nomOutil, pictoOutil } from "./outils-planche";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { rectZoneDessin } from "./zone-dessin";
 
+/** Bouton d'une barre : un outil (surligné quand il est actif) ou une commande ; grisé, son titre dit pourquoi. */
+export interface BoutonBarre {
+  /** Clé d'entrée du registre (`outil:<id>`, `commande:<id>`). */
+  cle: string;
+  picto: DescriptionPictogramme;
+  /** « Nom — raccourci », suivi du motif d'indisponibilité s'il y en a un (infobulle et nom accessible). */
+  titre: string;
+  actif: boolean;
+  indisponible: boolean;
+  executer: () => void;
+}
+
+export interface SectionBarreRendue {
+  cle: string;
+  /** Section ① ② ③ d'une barre livrée : numéro et libellé ; absents pour un simple paquet séparé. */
+  numero?: string;
+  libelle?: string;
+  boutons: BoutonBarre[];
+}
+
 export interface PropsBarreOutilsFlottante {
-  /** Outils offerts : le catalogue moins ceux des extensions désactivées ; absents, tout le catalogue. */
-  catalogue?: readonly Outil[];
-  outil: Outil;
+  /** Identifiant de la barre (`premiers-pas`, `objet:<objet>`, `groupe:<id>`) : clé de sa position mémorisée. */
+  id: string;
+  /** Nom affiché et prononcé (« Premiers pas », « Arêtes », nom d'une barre personnelle). */
+  nom: string;
+  sections: SectionBarreRendue[];
   /** Rang d'affichage (empilement des positions par défaut au bureau). */
   rang: number;
-  outilId: string;
   telephone: boolean;
-  raison: (o: Outil) => string | null;
-  onChoisir: (id: string) => void;
   onFermer: () => void;
   /** Racine de la Planche : zone de référence (barre du haut, rail d'outils, volet). */
   reference: React.RefObject<HTMLElement | null>;
@@ -50,7 +67,7 @@ function tailleDe(el: HTMLElement): Taille {
   return { largeur: r.width, hauteur: r.height };
 }
 
-export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, onChoisir, onFermer, reference, fenetreCle = "", onDocquee, catalogue }: PropsBarreOutilsFlottante) {
+export function BarreOutilsFlottante({ id, nom, sections, rang, telephone, onFermer, reference, fenetreCle = "", onDocquee }: PropsBarreOutilsFlottante) {
   const ui = useEtatUi();
   const racine = useRef<HTMLDivElement | null>(null);
   // Lot 9 (EX-CMD-06) : une halte de tabulation, flèches entre les opérations (motif W3C APG Toolbar).
@@ -58,7 +75,6 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
   const [glisser, setGlisser] = useState<Position | null>(null);
   const [defaut, setDefaut] = useState<{ pos: Position; largeur?: number } | null>(null);
   const depart = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
-  const id = outil.id;
   const memorisee = telephone ? null : (ui.barresOutils.positions[id] ?? null);
 
   const memoriser = useCallback(
@@ -190,15 +206,14 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
   }, [hautDocquee, onDocquee]);
   useEffect(() => () => onDocquee?.(null), [onDocquee]);
 
-  const sections = barreDe(id, catalogue);
-  if (!sections) return null;
+  if (sections.every((x) => x.boutons.length === 0)) return null;
   const style: React.CSSProperties | undefined = pos ? { left: `${pos.x}px`, top: `${pos.y}px`, ...(telephone && defaut?.largeur ? { width: `${defaut.largeur}px` } : {}) } : { visibility: "hidden" };
   return (
     <div
       ref={racine}
       className={`planche-barre-outils${glisser ? " en-glisser" : ""}${telephone ? " est-docquee" : ""}`}
       role="toolbar"
-      aria-label={t("outils.barre", { outil: nomOutil(outil) })}
+      aria-label={t("outils.barre", { outil: nom })}
       onKeyDown={naviguer}
       style={style}
       data-barre-outils={id}
@@ -208,8 +223,8 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
       <button
         type="button"
         className="planche-barre-outils-poignee"
-        aria-label={t("outils.barre.deplacer", { outil: nomOutil(outil) })}
-        title={telephone ? t("outils.barre.docquee", { outil: nomOutil(outil) }) : t("outils.barre.deplacer.aide")}
+        aria-label={t("outils.barre.deplacer", { outil: nom })}
+        title={telephone ? t("outils.barre.docquee", { outil: nom }) : t("outils.barre.deplacer.aide")}
         disabled={telephone}
         data-barre-outils-poignee
         onPointerDown={surPointeur}
@@ -221,38 +236,39 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
         <IconeSandbox nom="poignee" />
       </button>
       <span className="planche-barre-outils-titre" aria-hidden="true">
-        <Pictogramme picto={pictoOutil(id)} /> {nomOutil(outil)}
+        {nom}
       </span>
       <div className="planche-barre-outils-corps">
-        {sections.map((s, i) => (
-          <div key={s.cle} className="planche-barre-outils-section" role="group" aria-label={`${s.numero} ${s.libelle}`} data-barre-outils-section={s.cle}>
-            {i > 0 && <span className="planche-barre-outils-separateur" aria-hidden="true" />}
-            <span className="planche-barre-outils-numero" aria-hidden="true" title={s.libelle}>
-              {s.numero}
-            </span>
-            {s.outils.map((o) => {
-              const r = raison(o);
-              const actif = o.id === outilId;
-              return (
+        {sections
+          .filter((x) => x.boutons.length > 0)
+          .map((s, i) => (
+            <div key={s.cle} className="planche-barre-outils-section" role="group" aria-label={s.libelle ? `${s.numero ?? ""} ${s.libelle}`.trim() : undefined} data-barre-outils-section={s.cle}>
+              {i > 0 && <span className="planche-barre-outils-separateur" aria-hidden="true" />}
+              {s.numero && (
+                <span className="planche-barre-outils-numero" aria-hidden="true" title={s.libelle}>
+                  {s.numero}
+                </span>
+              )}
+              {s.boutons.map((b) => (
                 <button
-                  key={o.id}
+                  key={b.cle}
                   type="button"
-                  className={`planche-barre-outils-op${actif ? " est-actif" : ""}${r ? " est-indisponible" : ""}`}
-                  aria-pressed={actif}
-                  aria-disabled={r ? true : undefined}
-                  title={titreOperation(o, r)}
-                  aria-label={titreOperation(o, r)}
-                  data-barre-outils-operation={o.id}
-                  onClick={() => onChoisir(o.id)}
+                  className={`planche-barre-outils-op${b.actif ? " est-actif" : ""}${b.indisponible ? " est-indisponible" : ""}`}
+                  aria-pressed={b.cle.startsWith("outil:") ? b.actif : undefined}
+                  aria-disabled={b.indisponible ? true : undefined}
+                  title={b.titre}
+                  aria-label={b.titre}
+                  data-barre-outils-operation={b.cle.slice(b.cle.indexOf(":") + 1)}
+                  data-barre-outils-entree={b.cle}
+                  onClick={b.executer}
                 >
-                  <Pictogramme picto={pictoOutil(o.id)} />
+                  <Pictogramme picto={b.picto} />
                 </button>
-              );
-            })}
-          </div>
-        ))}
+              ))}
+            </div>
+          ))}
       </div>
-      <button type="button" className="planche-barre-outils-fermer" aria-label={t("outils.barre.masquer", { outil: nomOutil(outil) })} title={t("outils.barre.masquer", { outil: nomOutil(outil) })} data-barre-outils-fermer onClick={onFermer}>
+      <button type="button" className="planche-barre-outils-fermer" aria-label={t("outils.barre.masquer", { outil: nom })} title={t("outils.barre.masquer", { outil: nom })} data-barre-outils-fermer onClick={onFermer}>
         <IconeSandbox nom="fermer" />
       </button>
     </div>

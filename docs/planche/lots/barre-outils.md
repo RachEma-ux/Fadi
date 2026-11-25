@@ -112,3 +112,24 @@ quand Option de macOS change le caractère (Alt+Maj+P donne « ∏ ») ; une let
   deux outils du même objet ont le même contenu.
 - Téléphone : barre rangée non déplaçable (rangement imposé par la demande) ; clavier virtuel couvert par le bornage
   (zone visuelle) mais pas éprouvé sur appareil réel.
+
+## Sandbox — liste « Outils » à deux niveaux et barres nommées (25 novembre 2026)
+
+Décision du maître d'ouvrage du 25 novembre 2026 (proposition A de la revue des barres, maquette validée), appliquée à la
+Planche du **Sandbox** seulement (`apps/web/src/modules/sandbox/planche/` ; la Planche de l'Atelier n'est pas touchée) :
+
+- la liste n'a plus que deux niveaux : le groupe, puis l'outil ; cliquer le nom d'un outil l'active (il ne déplie plus sa
+  barre). Chaque outil porte une étiquette « barre <nom> » qui affiche ou retire la barre où il est rangé ;
+- « Objets et arêtes » est scindé en « Groupe », « Repères » et « Bois » (d'après la famille de la commande au registre) ;
+  Zoom avant et Zoom arrière rejoignent « Caméra » (`barres-nommees.ts`, `groupeDeCommande`) ;
+- section « Barres d'outils » : chaque barre figure une seule fois, avec son nom, un aperçu et un interrupteur — « Premiers
+  pas » (douze outils, proposée, non affichée d'office) et les neuf barres d'objet (Sélection, Arêtes, Surfaces, Volumes,
+  Solides, Matière, Guides, Annotations, Caméra) ;
+- « Mes barres » : barres composées par l'utilisateur (outils et commandes, dans l'ordre choisi), enregistrées sur le
+  compte dans les regroupements des préférences du Sandbox (aucun changement de base ni d'API) ; « Nouvelle barre… »,
+  « Dupliquer » (d'une barre livrée) et « Modifier » ouvrent « Personnaliser les outils », qui reçoit l'ordre des entrées ;
+- l'état mémorisé par appareil (`barresOutils`) retient l'identifiant de la barre et non plus celui d'un outil ; un état
+  ancien est ramené à la barre de l'objet (`normaliserBarres`), deux outils du même objet ne donnent plus deux barres.
+
+Contrôles : `barres-nommees.test.ts` (chaque outil dans une seule barre livrée, chaque commande dans un groupe, libellés
+dans les deux langues, migration de l'état), règle d'or inchangée (`barres-outils.test.ts`).

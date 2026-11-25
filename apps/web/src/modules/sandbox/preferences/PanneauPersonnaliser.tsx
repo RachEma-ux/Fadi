@@ -4,7 +4,7 @@
  * Même fonctionnement que le catalogue du 01, sans son code. Chaque changement s'applique tout de suite et s'enregistre
  * sur le compte (`usePreferencesSandbox`) ; l'état d'enregistrement est affiché.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PROFILS_METIER,
   barreDuProfilSandbox,
@@ -18,7 +18,8 @@ import {
   type ProfilSandbox,
 } from "@parcours/sandbox-planche-model";
 import { t, type CleMessage } from "../messages";
-import { Pictogramme } from "../pictogrammes/Pictogramme";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import { deplacerEntree } from "../planche/barres-nommees";
 import { nomOutil, pictoOutil } from "../planche/outils-planche";
 import type { EtatPreferences } from "./usePreferencesSandbox";
 
@@ -35,12 +36,19 @@ interface Props {
   readonly commandes: readonly CommandePersonnalisable[];
   readonly modifier: (p: PreferencesSandbox) => void;
   readonly reinitialiser: () => void;
+  /** Barre personnelle à modifier à l'ouverture (« Modifier », « Dupliquer » de la liste « Outils ») ; `null` : le champ du nom d'une nouvelle barre reçoit le focus. */
+  readonly groupeInitial?: string | null;
 }
 
 const basculer = (liste: readonly string[], cle: string, present: boolean) => (present ? (liste.includes(cle) ? [...liste] : [...liste, cle]) : liste.filter((x) => x !== cle));
 
-export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, modifier, reinitialiser }: Props) {
-  const [groupeEdite, setGroupeEdite] = useState<string | null>(p.regroupements[0]?.id ?? null);
+export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, modifier, reinitialiser, groupeInitial }: Props) {
+  const [groupeEdite, setGroupeEdite] = useState<string | null>(groupeInitial && p.regroupements.some((g) => g.id === groupeInitial) ? groupeInitial : (p.regroupements[0]?.id ?? null));
+  const champNom = useRef<HTMLInputElement | null>(null);
+  // « Nouvelle barre… » : le panneau s'ouvre sur le champ du nom.
+  useEffect(() => {
+    if (groupeInitial === null) champNom.current?.focus();
+  }, [groupeInitial]);
   const [nouveau, setNouveau] = useState("");
   const barre = barreGaucheSandbox(p);
   // Barre du profil avant le filtre des extensions : c'est elle qu'on réécrit, pour que les outils d'une extension
@@ -54,6 +62,16 @@ export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, 
   const basculerFavori = (cle: string, present: boolean) => modifier({ ...p, favoris: basculer(p.favoris, cle, present) });
   const basculerGroupe = (cle: string, present: boolean) =>
     groupe && modifier({ ...p, regroupements: p.regroupements.map((g) => (g.id === groupe.id ? { ...g, entrees: basculer(g.entrees, cle, present) } : g)) });
+  const ordonner = (cle: string, sens: -1 | 1) => groupe && modifier({ ...p, regroupements: p.regroupements.map((g) => (g.id === groupe.id ? { ...g, entrees: deplacerEntree(g.entrees, cle, sens) } : g)) });
+  /** Nom et pictogramme d'une entrée de barre parmi les outils et commandes offerts ; une entrée masquée (extension coupée) garde sa place sans être listée. */
+  const entreeOfferte = (cle: string): { picto: DescriptionPictogramme; nom: string } | null => {
+    if (cle.startsWith("outil:")) {
+      const o = outils.find((x) => x.id === cle.slice(6));
+      return o ? { picto: pictoOutil(o.id), nom: nomOutil(o) } : null;
+    }
+    const c = commandes.find((x) => `commande:${x.id}` === cle);
+    return c ? { picto: c.picto, nom: c.nom } : null;
+  };
   const creerGroupe = () => {
     const nom = nouveau.trim();
     if (!nom || p.regroupements.length >= MAX_REGROUPEMENTS || p.regroupements.some((g) => g.nom.toLocaleLowerCase("fr") === nom.toLocaleLowerCase("fr"))) return;
@@ -114,13 +132,42 @@ export function PanneauPersonnaliser({ preferences: p, etat, outils, commandes, 
         ))}
         {p.regroupements.length < MAX_REGROUPEMENTS && (
           <div className="planche-personnaliser-groupe">
-            <input value={nouveau} maxLength={MAX_NOM_REGROUPEMENT} onChange={(e) => setNouveau(e.target.value)} onKeyDown={(e) => e.key === "Enter" && creerGroupe()} placeholder={t("personnaliser.groupe.nom")} aria-label={t("personnaliser.groupe.nom")} data-personnaliser-nouveau-nom />
+            <input ref={champNom} value={nouveau} maxLength={MAX_NOM_REGROUPEMENT} onChange={(e) => setNouveau(e.target.value)} onKeyDown={(e) => e.key === "Enter" && creerGroupe()} placeholder={t("personnaliser.groupe.nom")} aria-label={t("personnaliser.groupe.nom")} data-personnaliser-nouveau-nom />
             <button type="button" onClick={creerGroupe} disabled={!nouveau.trim()} data-personnaliser-creer>
               {t("personnaliser.groupe.creer")}
             </button>
           </div>
         )}
       </fieldset>
+
+      {groupe && (
+        <fieldset data-personnaliser-ordre={groupe.id}>
+          <legend>{t("personnaliser.groupe.ordre", { groupe: groupe.nom })}</legend>
+          {groupe.entrees.length === 0 && <p className="inspecteur-aide">{t("personnaliser.groupe.vide", { groupe: groupe.nom })}</p>}
+          <ol className="planche-personnaliser-ordre">
+            {groupe.entrees.map((cle, i) => {
+              const e = entreeOfferte(cle);
+              if (!e) return null;
+              return (
+                <li key={cle} data-personnaliser-ordre-entree={cle}>
+                  <span className="planche-personnaliser-ordre-nom">
+                    <Pictogramme picto={e.picto} /> {e.nom}
+                  </span>
+                  <button type="button" disabled={i === 0} onClick={() => ordonner(cle, -1)} aria-label={t("personnaliser.groupe.monter", { outil: e.nom })} title={t("personnaliser.groupe.monter", { outil: e.nom })} data-personnaliser-monter={cle}>
+                    <IconeSandbox nom="monter" />
+                  </button>
+                  <button type="button" disabled={i === groupe.entrees.length - 1} onClick={() => ordonner(cle, 1)} aria-label={t("personnaliser.groupe.descendre", { outil: e.nom })} title={t("personnaliser.groupe.descendre", { outil: e.nom })} data-personnaliser-descendre={cle}>
+                    <IconeSandbox nom="descendre" />
+                  </button>
+                  <button type="button" onClick={() => basculerGroupe(cle, false)} aria-label={t("personnaliser.groupe.retirer", { outil: e.nom })} title={t("personnaliser.groupe.retirer", { outil: e.nom })} data-personnaliser-retirer={cle}>
+                    <IconeSandbox nom="fermer" />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </fieldset>
+      )}
 
       <table className="planche-personnaliser-table">
         <thead>
