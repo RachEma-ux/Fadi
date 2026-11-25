@@ -44,8 +44,10 @@ describe("Scripts — exécution", () => {
     expect(executerScript("const = ;", modeleVide()).erreur).toMatchObject({ cle: "syntaxe", ligne: null });
     expect(executerScript(`// ${"x".repeat(MAX_CODE_SCRIPT)}`, modeleVide()).erreur).toMatchObject({ cle: "texte" });
     expect(executerScript("const m = await import('https://exemple.invalid/x.js');", modeleVide()).erreur).toMatchObject({ cle: "import" });
-    // Le mot dans un commentaire n'est pas un import.
-    expect(executerScript("// import interdit\nplanche.afficher('ok');", modeleVide()).erreur).toBeNull();
+    // Le mot est refusé partout : un « // » dans une chaîne ne cache pas l'import qui suit (revue de #405).
+    expect(executerScript('const s = "//"; void import("https://exemple.invalid/m.js");', modeleVide()).erreur).toMatchObject({ cle: "import" });
+    expect(executerScript("/* import */ planche.afficher('ok');", modeleVide()).erreur).toMatchObject({ cle: "import" });
+    expect(executerScript("const important = 1;\nplanche.afficher(important);", modeleVide()).erreur).toBeNull();
   });
 
   it("vérifie les arguments : point, nombre, identifiants, genre d'élément", () => {
@@ -58,6 +60,19 @@ describe("Scripts — exécution", () => {
     expect(cle("const a = planche.ligne([0, 0, 0], [1, 0, 0]);\nplanche.aire(a[0]);")).toBe("face");
     expect(cle("const f = planche.rectangle([0, 0, 0], [1, 0, 0], [0, 1, 0]);\nplanche.longueur(f);")).toBe("arete");
     expect(cle("const f = planche.rectangle([0, 0, 0], [1, 0, 0], [0, 1, 0]);\nplanche.pousser(f, 'haut');")).toBe("nombre");
+  });
+
+  it("une boîte posée sur une face existante est refusée, jamais sautée en silence (revue de #405)", () => {
+    const r = executerScript("planche.boite([0, 0, 0], 1, 1, 1);\nplanche.boite([0, 0, 1], 1, 1, 1);", modeleVide());
+    expect(r.erreur).toMatchObject({ cle: "base", ligne: 2 });
+    expect(Object.keys(r.modele.racine.faces)).toHaveLength(0);
+    // Groupée d'abord, la première boîte ne gêne plus : la seconde se pose dessus.
+    const g = executerScript("planche.grouper(planche.boite([0, 0, 0], 1, 1, 1));\nplanche.grouper(planche.boite([0, 0, 1], 1, 1, 1));", modeleVide());
+    expect(g.erreur).toBeNull();
+    expect(Object.keys(g.modele.racine.occurrences)).toHaveLength(2);
+    // rectangle() rend la face qui occupait déjà ces coins.
+    const f = executerScript("const a = planche.rectangle([0, 0, 0], [1, 0, 0], [0, 1, 0]);\nconst b = planche.rectangle([0, 0, 0], [1, 0, 0], [0, 1, 0]);\nplanche.afficher(a === b, planche.faces().length);", modeleVide());
+    expect(f.journal).toEqual(["true 1"]);
   });
 
   it("lit le dessin : sélection, genres, aire, longueur, points", () => {

@@ -110,7 +110,8 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   Limites déclarées : script synchrone seulement (ni attente, ni minuterie) ; au plus 2 000 opérations de dessin par
   script ; la ligne d'une erreur de lecture (syntaxe) n'est pas donnée, ni celle d'une erreur sous Safari ; en
   développement (`vite`), le fichier du Worker est servi sans la politique de contenu, seul le retrait des fonctions
-  s'applique ; pas d'accès aux matières, balises, annotations ni composants dynamiques.
+  s'applique, et le mot `import` est refusé partout dans le texte (commentaires compris) ; une boîte dont la base
+  touche une face existante est refusée (grouper d'abord) ; pas d'accès aux matières, balises, annotations ni composants dynamiques.
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun

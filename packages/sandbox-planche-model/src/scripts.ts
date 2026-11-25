@@ -152,7 +152,8 @@ planche.afficher(faces + " face(s) : " + total.toFixed(3) + " m²");
 export const MESSAGES_ERREUR_SCRIPT = {
   syntaxe: "Le script ne peut pas être lu : {texte}",
   execution: "{texte}",
-  import: "« import » n'est pas disponible dans un script.",
+  import: "« import » n'est pas disponible dans un script (le mot est refusé partout, commentaires compris).",
+  base: "{fonction} : la base de la boîte touche une face qui existe déjà ; groupez d'abord la géométrie voisine, ou décalez la boîte.",
   point: "{fonction} : point attendu sous la forme [x, y, z] en mètres (reçu {recu}).",
   nombre: "{fonction} : nombre attendu pour « {quoi} » (reçu {recu}).",
   positif: "{fonction} : « {quoi} » doit être strictement positif (reçu {recu}).",
@@ -268,8 +269,10 @@ export function executerScript(code: string, modele: Modele, options: OptionsScr
   const echec = (cle: CleErreurScript, args: Args, message: string, ligne: number | null): ResultatScript => ({ modele, journal, crees: [], erreur: { cle, args, message, ligne } });
   const refus = (e: ErreurScript, ligne: number | null = null) => echec(e.cle, e.args, e.message, ligne);
   if (code.length > MAX_CODE_SCRIPT) return refus(new ErreurScript("texte", { max: String(MAX_CODE_SCRIPT) }));
-  // `import(...)` chargerait du code d'ailleurs : refusé à la lecture (le Worker le bloque aussi par sa politique de contenu).
-  if (/\bimport\b/.test(code.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, ""))) return refus(new ErreurScript("import"));
+  // `import(...)` chargerait du code d'ailleurs : le mot est refusé partout dans le texte, chaînes et commentaires compris
+  // (un tri entre code et commentaires se laisse tromper par « // » dans une chaîne). Un mot-clé ne peut pas s'écrire
+  // avec des échappements « \u », donc ce relevé suffit ; le Worker le bloque aussi par sa politique de contenu.
+  if (/\bimport\b/.test(code)) return refus(new ErreurScript("import"));
 
   const dans = options.dans;
   const o = dans !== undefined ? { dans } : {};
@@ -316,23 +319,40 @@ export function executerScript(code: string, modele: Modele, options: OptionsScr
     for (const id of nouveaux) crees.add(id);
     return nouveaux;
   };
-  const rectangle = (coin: Vec3, cote1: Vec3, cote2: Vec3): Id | null => {
+  /** Face dont le contour extérieur a exactement ces quatre coins (dans l'ordre ou non), ou `null`. */
+  const faceAuxCoins = (coins: readonly Vec3[]): Id | null => {
+    const c = ctx();
+    for (const f of Object.values(c.faces)) {
+      if (f.exterieur.length !== 4 || f.trous.length > 0) continue;
+      const pts = f.exterieur.map((s) => c.sommets[s]?.position);
+      if (pts.every((q) => q && coins.some((k) => dist(k, q) <= 1e-9))) return f.id;
+    }
+    return null;
+  };
+  /** Rectangle : rend sa face, `existante` vraie si une face occupait déjà ces quatre coins. */
+  const rectangle = (coin: Vec3, cote1: Vec3, cote2: Vec3): { readonly face: Id | null; readonly existante: boolean } => {
     const nouveaux = operer(ajouterRectangle(m, coin, cote1, cote2, o));
     const c = ctx();
-    return nouveaux.find((id) => c.faces[id]) ?? null;
+    const nouvelle = nouveaux.find((id) => c.faces[id]);
+    if (nouvelle) return { face: nouvelle, existante: false };
+    const coins = [coin, v3(coin.x + cote1.x, coin.y + cote1.y, coin.z + cote1.z), v3(coin.x + cote1.x + cote2.x, coin.y + cote1.y + cote2.y, coin.z + cote1.z + cote2.z), v3(coin.x + cote2.x, coin.y + cote2.y, coin.z + cote2.z)];
+    const existante = faceAuxCoins(coins);
+    return { face: existante, existante: existante !== null };
   };
 
   const api: Record<FonctionScript, (...a: unknown[]) => unknown> = {
     ligne: (a, b) => operer(ajouterSegment(m, point("ligne", a), point("ligne", b), o)),
-    rectangle: (coin, cote1, cote2) => rectangle(point("rectangle", coin), point("rectangle", cote1), point("rectangle", cote2)),
+    rectangle: (coin, cote1, cote2) => rectangle(point("rectangle", coin), point("rectangle", cote1), point("rectangle", cote2)).face,
     boite: (coin, largeur, profondeur, hauteur) => {
       const p = point("boite", coin);
       const l = positif("boite", "largeur", largeur);
       const pr = positif("boite", "profondeur", profondeur);
       const h = positif("boite", "hauteur", hauteur);
       const avant = new Set([...Object.keys(ctx().faces), ...Object.keys(ctx().aretes)]);
-      const base = rectangle(p, v3(l, 0, 0), v3(0, pr, 0));
-      if (!base) return [];
+      const r = rectangle(p, v3(l, 0, 0), v3(0, pr, 0));
+      // Base posée sur une face existante (le dessus d'une autre boîte non groupée) : la pousser étirerait l'autre boîte.
+      if (r.existante || !r.face) throw new ErreurScript("base", { fonction: "boite" });
+      const base = r.face;
       const normale = ctx().faces[base]?.normale;
       operer(pousserTirer(m, base, normale && normale.z < 0 ? -h : h, o));
       const c = ctx();
