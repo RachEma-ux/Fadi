@@ -207,8 +207,8 @@ describe("R.5-03 / OPS-08 — exposition", () => {
     const index = readFileSync(join(RACINE, "apps/api/src/routes/admin/index.ts"), "utf8");
     expect(index.indexOf('adminRouter.use(requirePlatformRole("admin"))')).toBeLessThan(index.indexOf("adminRouter.use(adminSurveillanceRouter)"));
     const app = readFileSync(join(RACINE, "apps/api/src/app.ts"), "utf8");
-    expect(app).toContain("admin\\/(?:users|invitations|trash|audit|surveillance)");
-    expect(app).toContain("/^\\/(users|invitations|trash|audit|surveillance)(\\/|$)/.test(req.path)");
+    expect(app).toContain("admin\\/(?:users|invitations|trash|audit|surveillance|addons)");
+    expect(app).toContain("/^\\/(users|invitations|trash|audit|surveillance|addons)(\\/|$)/.test(req.path)");
     const serveur = readFileSync(join(RACINE, "apps/api/src/server.ts"), "utf8");
     expect(serveur).toMatch(/startSurveillance\(\)/);
   });

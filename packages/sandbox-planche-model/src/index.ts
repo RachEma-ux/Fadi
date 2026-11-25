@@ -28,4 +28,5 @@ export * from "./echanges-ifc.js";
 export * from "./echanges-import.js";
 export * from "./registre-sandbox.js";
 export * from "./extensions-sandbox.js";
+export * from "./catalogue-extensions.js";
 export * from "./personnalisation-sandbox.js";

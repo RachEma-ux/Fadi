@@ -2,8 +2,9 @@
  * Préférences d'outils du Sandbox du compte connecté (lot 5, décision du maître d'ouvrage du 20 octobre 2026), montées
  * sous `/sandbox/preferences` :
  *
- *   GET /  → { profil, barrePersonnelle, favoris, regroupements, extensions, scripts, format, compte, updatedAt } — préférences du compte (défaut :
- *            profil Standard, rien de choisi, `updatedAt` null tant que rien n'est enregistré) ;
+ *   GET /  → { profil, barrePersonnelle, favoris, regroupements, extensions, scripts, format, compte, updatedAt, catalogue } — préférences du compte (défaut :
+ *            profil Standard, rien de choisi, `updatedAt` null tant que rien n'est enregistré) ; `catalogue` : état et
+ *            réglage d'origine de chaque extension, tels que la plateforme les a réglés (`addon_platform_settings`) ;
  *   PUT /  { profil, barrePersonnelle, favoris, regroupements, extensions?, scripts? } → remplace l'ensemble (idempotent) ; forme
  *            invalide → 400 invalid_input ; entrée absente du registre du Sandbox → 400 unknown_entry (entrées nommées) ;
  *            extension absente de la liste du Sandbox → 400 unknown_extension. `extensions` omis = aucun choix.
@@ -19,6 +20,7 @@ import { db } from "../db/client.js";
 import { sandboxToolPreferences } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { lireCorpsPreferencesSandbox, reponsePreferences } from "../lib/sandbox-preferences.js";
+import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
 
 export const sandboxPreferencesRouter = Router();
 sandboxPreferencesRouter.use(requireAuth);
@@ -29,7 +31,7 @@ sandboxPreferencesRouter.use((_req, res, next) => {
 
 sandboxPreferencesRouter.get("/", async (req, res) => {
   const [ligne] = await db.select().from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, req.user!.id)).limit(1);
-  res.json(reponsePreferences(req.user!.id, ligne));
+  res.json(reponsePreferences(req.user!.id, ligne, await lireReglagesPlateforme()));
 });
 
 sandboxPreferencesRouter.put("/", async (req, res) => {
@@ -43,5 +45,5 @@ sandboxPreferencesRouter.put("/", async (req, res) => {
   const [ligne] = await db.insert(sandboxToolPreferences).values({ userId: req.user!.id, ...valeurs })
     .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: lu.scriptsFournis ? valeurs : sansScripts })
     .returning();
-  res.json(reponsePreferences(req.user!.id, ligne));
+  res.json(reponsePreferences(req.user!.id, ligne, await lireReglagesPlateforme()));
 });

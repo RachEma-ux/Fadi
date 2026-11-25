@@ -1,10 +1,11 @@
 /** Préférences d'outils du Sandbox (lot 5) côté serveur : lecture d'une ligne, validation d'un corps PUT (pur, sans base). */
 import { describe, expect, it } from "vitest";
+import { CATALOGUE_LIVRE } from "@parcours/sandbox-planche-model";
 import { lireCorpsPreferencesSandbox, reponsePreferences } from "./sandbox-preferences.js";
 
 describe("préférences d'outils du Sandbox — serveur", () => {
   it("sans ligne : profil Standard, rien de choisi, updatedAt null", () => {
-    expect(reponsePreferences("u1", undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: {}, scripts: [], format: "sandbox-preferences/1", compte: "u1", updatedAt: null });
+    expect(reponsePreferences("u1", undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: {}, scripts: [], format: "sandbox-preferences/1", compte: "u1", updatedAt: null, catalogue: CATALOGUE_LIVRE });
   });
 
   it("une ligne est relue telle qu'enregistrée ; une ligne ancienne invalide vaut les défauts", () => {
@@ -51,5 +52,14 @@ describe("préférences d'outils du Sandbox — serveur", () => {
     expect(lireCorpsPreferencesSandbox(base)).toMatchObject({ ok: true, scriptsFournis: false });
     expect(lireCorpsPreferencesSandbox({ ...base, scripts: [{ id: "Mauvais", nom: "x", code: "" }] })).toMatchObject({ ok: false, body: { error: "invalid_input" } });
     expect(lireCorpsPreferencesSandbox({ ...base, scripts: [{ id: "a", nom: "A", code: "x".repeat(8001) }] })).toMatchObject({ ok: false, body: { error: "invalid_input" } });
+  });
+
+  it("catalogue (25 novembre 2026) : la réponse porte l'état et le réglage d'origine réglés par la plateforme ; le choix du compte n'est pas réécrit", () => {
+    const at = new Date("2026-11-25T19:00:00Z");
+    const r = reponsePreferences("u1", { profile: "standard", leftBar: [], favorites: [], groups: [], extensions: { volumes: true }, scripts: [], updatedAt: at }, { volumes: { etat: "retiree", activeParDefaut: true }, controle: { etat: "experimentale", activeParDefaut: true } });
+    expect(r.extensions).toEqual({ volumes: true });
+    expect(r.catalogue.find((f) => f.id === "volumes")).toMatchObject({ etat: "retiree" });
+    expect(r.catalogue.find((f) => f.id === "controle")).toMatchObject({ etat: "experimentale", activeParDefaut: true });
+    expect(r.catalogue.find((f) => f.id === "bois")).toMatchObject({ etat: "disponible", activeParDefaut: true });
   });
 });

@@ -113,6 +113,8 @@ const ecrans = [
   ["bibliotheque", "/bibliotheque/batiments"],
   // Espace d'organisation (organisations, phase 5) : la liste et le formulaire de création.
   ["organisations", "/organisations"],
+  // Extensions de la Planche (page de la barre latérale) : « Add-ons » en anglais.
+  ["extensions", "/extensions"],
   ["parcours", `/projets/${pid}?module=parcours`],
   ["etape-03", `/projets/${pid}?module=parcours&etape=3`],
   ["programmation", `/projets/${pid}?module=programmation`],

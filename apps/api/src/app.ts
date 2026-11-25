@@ -26,7 +26,7 @@ import { studioMcpRouter } from "./routes/mcp-studio.js";
 import { surveillanceStudio } from "./lib/studio-surveillance.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews|mcp)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews|mcp)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -71,9 +71,9 @@ export function createApp() {
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
   // Administration de la plateforme (comptes seulement, D-2) : 404 tant que FADI_ADMIN_ENABLED n'est pas `true`.
-  // Seuls `/admin/users*`, `/admin/invitations*` et `/admin/trash` (corbeille, UM-27) et `/admin/audit` (journal, phase 3 bis) et `/admin/surveillance` (R.5-03) sont l'API ; `/admin/utilisateurs`
+  // Seuls `/admin/users*`, `/admin/invitations*` et `/admin/trash` (corbeille, UM-27) et `/admin/audit` (journal, phase 3 bis) et `/admin/surveillance` (R.5-03) et `/admin/addons` (catalogue des extensions) sont l'API ; `/admin/utilisateurs`
   // est la page du client (repli SPA).
-  app.use("/admin", (req, res, next) => (/^\/(users|invitations|trash|audit|surveillance)(\/|$)/.test(req.path) ? authLimiter(req, res, () => adminRouter(req, res, next)) : next()));
+  app.use("/admin", (req, res, next) => (/^\/(users|invitations|trash|audit|surveillance|addons)(\/|$)/.test(req.path) ? authLimiter(req, res, () => adminRouter(req, res, next)) : next()));
 
   // `API_RATE_LIMIT` ne sert, comme `AUTH_RATE_LIMIT`, qu'à desserrer la limite pour la suite de tests (une seule instance, des dizaines de scénarios) ; production : 300 requêtes / minute.
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);

@@ -1081,6 +1081,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la page « Extensions » — icône de la barre latérale, Installées / Disponibles, installer et désinstaller enregistrés sur le compte et appliqués par la Planche, hors connexion, téléphone (apps/web/e2e/extensions-page.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/extensions node apps/web/e2e/extensions-page.mjs 2>&1 | tee -a e2e.log
       - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
