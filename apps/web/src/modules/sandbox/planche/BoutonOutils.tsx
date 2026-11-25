@@ -10,7 +10,7 @@
  * flèches haut / bas (Début, Fin) d'un élément à l'autre, flèche droite / gauche pour déplier / replier, Entrée, Échap.
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { outilParId, type FamilleOutil, type Outil, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import { OUTILS, outilParId, type FamilleOutil, type Outil, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { barreDe, groupesOutils, libelleOperation, premierOutil, type SectionBarre } from "./barres-outils";
 import type { EtatBarresOutils } from "./barres-outils-disposition";
 import { t } from "../messages";
@@ -37,6 +37,11 @@ export interface PropsBoutonOutils {
    * verticale. Chaque instance a son propre état : aucun lien entre les deux.
    */
   variante?: "outils" | "loupe";
+  /**
+   * Outils offerts (25 novembre 2026) : le catalogue moins les outils des extensions désactivées ; par défaut, tout le
+   * catalogue. La recherche et les familles ne montrent que ceux-là.
+   */
+  catalogue?: readonly Outil[];
 }
 
 export interface CommandeListe {
@@ -63,7 +68,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], variante = "outils" }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], variante = "outils", catalogue = OUTILS }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   const [familles, setFamilles] = useState<ReadonlySet<FamilleOutil>>(() => new Set());
@@ -75,7 +80,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   const bouton = useRef<HTMLButtonElement | null>(null);
   const champ = useRef<HTMLInputElement | null>(null);
   const idListe = useId();
-  const groupes = useMemo(() => groupesOutils(requete), [requete]);
+  const groupes = useMemo(() => groupesOutils(requete, catalogue), [requete, catalogue]);
   const filtre = requete.trim() !== "";
   const motsRequete = requete.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/\s+/).filter(Boolean);
   const commandesRetenues = commandes.filter((c) => {
@@ -242,7 +247,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     </div>
   );
 
-  const affichees = barres.visibles.map((id) => outilParId(id)).filter((o): o is Outil => o !== null);
+  const affichees = barres.visibles.map((id) => outilParId(id)).filter((o): o is Outil => o !== null && catalogue.includes(o));
 
   return (
     <div className={`planche-outils-menu${variante === "loupe" ? " planche-outils-menu-loupe" : ""}`} ref={racine} onKeyDown={ouvert ? surClavier : undefined} data-planche-outils-menu>
@@ -297,7 +302,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  const o = premierOutil(requete);
+                  const o = premierOutil(requete, catalogue);
                   if (o) choisir(o.id);
                 }
               }}

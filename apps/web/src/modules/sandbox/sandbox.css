@@ -2477,6 +2477,166 @@
   height: 18px;
   flex: none;
 }
+/* Extensions (25 novembre 2026) : entrée du menu ☰ avec sa pastille, et fenêtre à interrupteurs ouverte à la place de
+   la liste, sous ☰ (même place, mêmes côtés d'ouverture que le menu). */
+.sandbox-planche .planche-menu-pastille {
+  align-self: center;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #fff;
+  background: var(--atelier-accent, #1f7a57);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-extensions {
+  width: min(25rem, calc(100vw - 1rem));
+  max-width: none;
+  padding: 0.75rem;
+}
+.sandbox-planche .planche-extensions-tete {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.sandbox-planche .planche-extensions-tete h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+.sandbox-planche .planche-extensions-bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sandbox-planche .planche-extensions-bouton:hover {
+  background: var(--atelier-survol, rgba(31, 122, 87, 0.12));
+}
+.sandbox-planche .planche-extensions-bouton svg {
+  width: 18px;
+  height: 18px;
+}
+.sandbox-planche .planche-extensions-aide,
+.sandbox-planche .planche-extensions-pied {
+  margin: 0.4rem 0 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-extensions-pied {
+  margin: 0.2rem 0 0;
+}
+.sandbox-planche .planche-extensions-liste {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+.sandbox-planche .planche-extension {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+}
+.sandbox-planche .planche-extension-picto {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  background: var(--atelier-survol, rgba(31, 122, 87, 0.12));
+  border-radius: 7px;
+}
+.sandbox-planche .planche-extension-picto svg {
+  width: 20px;
+  height: 20px;
+}
+.sandbox-planche .planche-extension-texte {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-extension-description {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-extension-contenu {
+  font-size: 0.75rem;
+  color: var(--atelier-texte-faible, #556);
+  opacity: 0.85;
+}
+.sandbox-planche .planche-extensions button.planche-extension-interrupteur {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 38px;
+  min-width: 0;
+  height: 22px;
+  min-height: 0;
+  margin-top: 0.1rem;
+  padding: 0;
+  background: #c3c9c6;
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sandbox-planche .planche-extensions button.planche-extension-interrupteur::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.15s;
+}
+.sandbox-planche .planche-extensions button.planche-extension-interrupteur[aria-checked="true"] {
+  background: #1f7a57;
+}
+.sandbox-planche .planche-extensions button.planche-extension-interrupteur[aria-checked="true"]::after {
+  left: 18px;
+}
+.sandbox-planche .planche-extensions button.planche-extension-interrupteur:focus-visible {
+  outline: 2px solid var(--atelier-accent, #1f7a57);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .sandbox-planche .planche-extensions button.planche-extension-interrupteur {
+    width: 46px;
+    height: 28px;
+    border-radius: 14px;
+  }
+  .sandbox-planche .planche-extensions button.planche-extension-interrupteur::after {
+    width: 24px;
+    height: 24px;
+  }
+  .sandbox-planche .planche-extensions button.planche-extension-interrupteur[aria-checked="true"]::after {
+    left: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sandbox-planche .planche-extensions button.planche-extension-interrupteur,
+  .sandbox-planche .planche-extensions button.planche-extension-interrupteur::after {
+    transition: none;
+  }
+}
 .sandbox-planche .planche-menu-item-chevron {
   width: 16px;
   height: 16px;

@@ -56,9 +56,18 @@ comportement ni d'apparence.
   Picture-in-Picture), désormais demandée à la taille utile de l'écran au lieu de 1040 × 700 fixes
   (`planche/taille-fenetre-detachee.ts` ; jamais plus petite qu'avant). Le navigateur peut la plafonner à son maximum.
 
-Pictogramme ☰ seul (Tabler `menu-2`, MIT) : un clic déroule le menu, sous le bandeau à l'ordinateur ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
+Pictogramme ☰ seul (Tabler `menu-2`, MIT) : un clic déroule le menu, sous le bandeau à l'ordinateur ; douze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
 Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,
-Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Télécharger la vue (PNG).
+Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Télécharger la vue (PNG) | Extensions.
+
+- **Extensions** (« Add-ons » en anglais ; `packages/sandbox-planche-model/src/extensions-sandbox.ts`) : une extension est
+  un paquet de fonctions fourni par Fadi — des entrées du registre unique (outils, commandes, panneaux) portant son
+  étiquette. Aucun code tiers, aucune installation, aucun redémarrage. La fenêtre « Extensions » du menu propose un
+  interrupteur par extension ; une extension désactivée retire ses outils, commandes et panneaux des barres, de la
+  grille, de la liste des commandes et de la colonne, sans toucher au dessin. Le choix suit le compte
+  (`extensions` des préférences, `/sandbox/preferences`, colonne `extensions` de `sandbox_tool_preferences`) : seuls
+  les écarts au réglage d'origine sont enregistrés, si bien qu'un compte existant ne perd rien. Premières extensions,
+  actives d'origine : « Bois et menuiserie » et « Volumes et solides » (regroupement d'outils existants).
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun

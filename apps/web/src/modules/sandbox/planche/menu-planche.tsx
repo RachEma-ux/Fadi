@@ -1,12 +1,14 @@
 /**
  * Menu de la Planche de Sandbox (pictogramme ☰ Tabler « menu-2 », MIT) : Ouvrir, Nouvelle, Enregistrer, Enregistrer
  * sous, Renommer / niveau de référence, Supprimer, Partager, Exporter et Importer (IFC, OBJ, STL), Informations
- * (page dans le style d'Excel) et PNG de la vue. Les Planches de Sandbox sont nommées mais locales à ce navigateur :
+ * (page dans le style d'Excel), PNG de la vue et Extensions (25 novembre 2026 : la fenêtre à interrupteurs s'ouvre à la
+ * place de la liste, sous ☰). Les Planches de Sandbox sont nommées mais locales à ce navigateur :
  * aucun projet, aucun serveur. Composant pur : il reçoit les Planches et des rappels ; la Planche exécute.
  */
 import { useEffect, useRef, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
-import { IconeSandbox } from "../pictogrammes/Pictogramme";
+import type { Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { DELAI_APPUI_MS, SEUIL_MOUVEMENT_PX, bornerPosition, coteOuverture, ecrirePositionMenu, lirePositionMenu, stockageLocal, type PositionMenu } from "./deplacement-menu";
 import { InformationsPlancheVue, type InformationsPlanche } from "./informations-planche";
 import { altitudeSaisie, nomValide, type InfoPlanche } from "./registre-planches";
@@ -32,6 +34,31 @@ export interface ActionsMenuPlanche {
   informations(): InformationsPlanche;
 }
 
+/** Une extension telle que la fenêtre « Extensions » l'affiche : textes déjà traduits, état du compte. */
+export interface ExtensionAffichee {
+  readonly id: string;
+  readonly nom: string;
+  readonly description: string;
+  readonly picto: DescriptionPictogramme;
+  /** « 6 outils · 5 commandes · 1 panneau ». */
+  readonly contenu: string;
+  readonly active: boolean;
+}
+
+/** Fenêtre « Extensions » du menu : la liste, la bascule (effet immédiat) et l'état d'enregistrement du compte. */
+export interface ExtensionsMenu {
+  readonly liste: readonly ExtensionAffichee[];
+  basculer(id: string, active: boolean): void;
+  /** Les choix n'ont pas encore rejoint le compte (hors connexion, erreur) : la fenêtre le dit. */
+  readonly enAttente: boolean;
+}
+
+/** Pastille de l'entrée « Extensions » : nombre d'extensions actives. */
+export function pastilleExtensions(liste: readonly Pick<ExtensionAffichee, "active">[]): string {
+  const n = liste.filter((x) => x.active).length;
+  return n === 0 ? t("planche.sb.extensions.aucune") : n === 1 ? t("planche.sb.extensions.active") : t("planche.sb.extensions.actives", { n: String(n) });
+}
+
 type Section = "ouvrir" | "exporter" | "importer" | null;
 type Volet = "nouvelle" | "renommer" | "copier" | "supprimer" | null;
 
@@ -42,7 +69,7 @@ export const nomAffiche = (p: InfoPlanche): string => (p.nom !== "" ? p.nom : t(
  * `deplacable` : au téléphone, carte flottante qu'un appui de 2 s rend déplaçable (comme avant) ; à l'ordinateur, le
  * pictogramme occupe le carré gauche du bandeau d'en-tête de la Planche et ne se déplace pas (le menu s'ouvre dessous).
  */
-export function MenuPlanche({ planches, courante, etat, actions, deplacable = true }: { planches: readonly InfoPlanche[]; courante: InfoPlanche; etat: EtatSauvegarde; actions: ActionsMenuPlanche; deplacable?: boolean }) {
+export function MenuPlanche({ planches, courante, etat, actions, extensions, deplacable = true }: { planches: readonly InfoPlanche[]; courante: InfoPlanche; etat: EtatSauvegarde; actions: ActionsMenuPlanche; extensions?: ExtensionsMenu; deplacable?: boolean }) {
   const [ouvert, setOuvert] = useState(false);
   const [section, setSection] = useState<Section>(null);
   const [volet, setVolet] = useState<Volet>(null);
@@ -52,6 +79,7 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
   const [unite, setUnite] = useState<UniteFichier>("m");
   const [occupe, setOccupe] = useState(false);
   const [infos, setInfos] = useState<InformationsPlanche | null>(null);
+  const [fenetreExtensions, setFenetreExtensions] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const fichierRef = useRef<HTMLInputElement | null>(null);
   const formatImportRef = useRef<FormatEchange>("ifc");
@@ -98,6 +126,7 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
       setSection(null);
       setVolet(null);
       setInfos(null);
+      setFenetreExtensions(false);
       setPos({ x: a.x, y: a.y });
       if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") navigator.vibrate(30);
     }, DELAI_APPUI_MS);
@@ -162,6 +191,7 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
     setVolet(null);
     setErreur(null);
     setInfos(null);
+    setFenetreExtensions(false);
   };
   useEffect(() => {
     if (!ouvert) return;
@@ -173,6 +203,7 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
       e.stopPropagation();
       if (infosOuvertes) setInfos(null);
       else if (volet) setVolet(null);
+      else if (fenetreExtensions) setFenetreExtensions(false);
       else fermer();
     };
     // Fenêtre où vit le menu (page ou Planche détachée).
@@ -183,7 +214,7 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
       w.removeEventListener("pointerdown", dehors, true);
       w.removeEventListener("keydown", clavier, true);
     };
-  }, [ouvert, volet, infosOuvertes]);
+  }, [ouvert, volet, infosOuvertes, fenetreExtensions]);
 
   const executer = async (fn: () => Promise<void>, fermerApres = true) => {
     setOccupe(true);
@@ -206,6 +237,11 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
     } else if (v === "copier") {
       setNom(`${nomAffiche(courante)} (${LANGUE_INTERFACE === "en" ? "copy" : "copie"})`);
     }
+  };
+  const ouvrirExtensions = () => {
+    setVolet(null);
+    setSection(null);
+    setFenetreExtensions(true);
   };
   const ouvrirInformations = () => {
     setVolet(null);
@@ -235,10 +271,11 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
     setVolet(null);
     setSection(section === s ? null : s);
   };
-  const item = (cle: string, icone: Parameters<typeof IconeSandbox>[0]["nom"], libelle: string, onClick: () => void, options: { desactive?: boolean; etendu?: boolean } = {}) => (
+  const item = (cle: string, icone: Parameters<typeof IconeSandbox>[0]["nom"], libelle: string, onClick: () => void, options: { desactive?: boolean; etendu?: boolean; pastille?: string } = {}) => (
     <li role="none">
-      <button type="button" role="menuitem" disabled={options.desactive || occupe} aria-haspopup={options.etendu === undefined ? undefined : "true"} aria-expanded={options.etendu} onClick={onClick} data-planche-menu-item={cle}>
+      <button type="button" role="menuitem" disabled={options.desactive || occupe} aria-haspopup={options.pastille !== undefined ? "dialog" : options.etendu === undefined ? undefined : "true"} aria-expanded={options.etendu} onClick={onClick} data-planche-menu-item={cle}>
         <span className="planche-menu-item-libelle"><IconeSandbox nom={icone} className="planche-menu-item-icone" />{libelle}</span>
+        {options.pastille !== undefined && <span className="planche-menu-pastille" data-planche-extensions-pastille>{options.pastille}</span>}
         {options.etendu !== undefined && <IconeSandbox nom={options.etendu ? "menu" : "sousMenu"} className="planche-menu-item-chevron" />}
       </button>
     </li>
@@ -284,7 +321,44 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
           if (f) void executer(() => actions.importer(formatImportRef.current, f, unite));
         }}
       />
-      {ouvert && (
+      {ouvert && fenetreExtensions && extensions && (
+        <div className="planche-menu planche-menu-liste planche-extensions" role="dialog" aria-label={t("extensions.titre")} data-planche-extensions>
+          <header className="planche-extensions-tete">
+            <button type="button" className="planche-extensions-bouton" onClick={() => setFenetreExtensions(false)} aria-label={t("extensions.retour")} title={t("extensions.retour")} data-planche-extensions-retour>
+              <IconeSandbox nom="menuRetour" />
+            </button>
+            <h3><IconeSandbox nom="menuExtensions" className="planche-menu-item-icone" />{t("extensions.titre")}</h3>
+            <button type="button" className="planche-extensions-bouton" onClick={fermer} aria-label={t("extensions.fermer")} title={t("extensions.fermer")} data-planche-extensions-fermer>
+              <IconeSandbox nom="fermer" />
+            </button>
+          </header>
+          <p className="planche-extensions-aide">{t("extensions.aide")}</p>
+          <ul className="planche-extensions-liste">
+            {extensions.liste.map((x) => (
+              <li key={x.id} className="planche-extension" data-planche-extension={x.id} data-planche-extension-active={x.active}>
+                <span className="planche-extension-picto" aria-hidden="true"><Pictogramme picto={x.picto} /></span>
+                <span className="planche-extension-texte">
+                  <strong id={`planche-extension-${x.id}`}>{x.nom}</strong>
+                  <span className="planche-extension-description">{x.description}</span>
+                  <span className="planche-extension-contenu">{x.contenu}</span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  className="planche-extension-interrupteur"
+                  aria-checked={x.active}
+                  aria-labelledby={`planche-extension-${x.id}`}
+                  title={`${x.nom} — ${t(x.active ? "extensions.etat.active" : "extensions.etat.inactive")}`}
+                  onClick={() => extensions.basculer(x.id, !x.active)}
+                  data-planche-extension-interrupteur={x.id}
+                />
+              </li>
+            ))}
+          </ul>
+          <p className="planche-extensions-pied" role="status" data-planche-extensions-etat={extensions.enAttente ? "attente" : "compte"}>{t(extensions.enAttente ? "extensions.copie" : "extensions.compte")}</p>
+        </div>
+      )}
+      {ouvert && !(fenetreExtensions && extensions) && (
         <div className="planche-menu planche-menu-liste" role="menu" aria-label={t("planche.menu-principal")}>
           <ul role="none">
             {item("ouvrir", "menuOuvrir", t("planche.sb.ouvrir"), () => basculer("ouvrir"), { etendu: section === "ouvrir" })}
@@ -348,6 +422,9 @@ export function MenuPlanche({ planches, courante, etat, actions, deplacable = tr
             <li role="none" className="avec-separateur" aria-hidden="true" />
             {item("informations", "menuInformations", t("planche.sb.informations"), ouvrirInformations)}
             {item("png", "menuImage", t("planche.telecharger-png"), () => void executer(() => actions.telechargerPng()))}
+
+            <li role="none" className="avec-separateur" aria-hidden="true" />
+            {item("extensions", "menuExtensions", t("planche.sb.extensions"), ouvrirExtensions, { desactive: !extensions, pastille: extensions ? pastilleExtensions(extensions.liste) : "" })}
           </ul>
           {volet && (
             <form className="planche-menu-volet" data-planche-menu-volet={volet} onSubmit={validerVolet}>

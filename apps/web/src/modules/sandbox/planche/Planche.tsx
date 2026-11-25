@@ -57,7 +57,13 @@ import {
   outilParId,
   OUTILS,
   barreGaucheSandbox,
+  basculerExtension,
+  clesMasquees,
+  contenuExtension,
   entreeDeCle,
+  extensionActive,
+  extensionDeCle,
+  EXTENSIONS_SANDBOX,
   entreeOutil,
   entreePanneau,
   entreesSandbox,
@@ -109,7 +115,7 @@ import {
   CLES_PERSONNALISABLES,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
-import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type FormatEchange, type UniteFichier } from "./menu-planche";
+import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type ExtensionsMenu, type FormatEchange, type UniteFichier } from "./menu-planche";
 import {
   type ContexteTravail,
   type HistoriqueContextes,
@@ -399,6 +405,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Barre gauche affichée (profil) : un outil choisi hors d'elle devient l'« outil récent » sous la barre.
   const idsBarreRef = useRef<readonly string[]>(barreGaucheSandbox(prefsSandbox.preferences));
   idsBarreRef.current = barreGaucheSandbox(prefsSandbox.preferences);
+  // Extensions (25 novembre 2026) : les entrées d'une extension désactivée quittent barres, listes, colonne et clavier ;
+  // le dessin n'est jamais touché.
+  const masquees = useMemo(() => clesMasquees(prefsSandbox.preferences.extensions), [prefsSandbox.preferences.extensions]);
+  const masqueesRef = useRef(masquees);
+  masqueesRef.current = masquees;
+  const outilsOfferts = useMemo(() => (masquees.size === 0 ? OUTILS : OUTILS.filter((o) => !masquees.has(`outil:${o.id}`))), [masquees]);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -668,6 +680,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       frappeRef.current = consommerFrappe(frappeRef.current);
       const o = outilParId(id);
       if (!o) return;
+      // Outil d'une extension désactivée (raccourci clavier, favori ancien) : il dit où l'activer, rien d'autre ne change.
+      const extension = masqueesRef.current.has(`outil:${id}`) ? extensionDeCle(`outil:${id}`) : undefined;
+      if (extension) {
+        setMessage(t("extensions.inactive", { nom: nomOutil(o), extension: t(`extension.${extension.id}` as "extension.bois") }));
+        return;
+      }
       const raison = disponibilite(o, { lecture: readOnly });
       if (raison) {
         setMessage(raison);
@@ -2401,7 +2419,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, [vue.selection, hist.present.modele]);
   const idsBarre = useMemo(() => barreGaucheSandbox(prefsSandbox.preferences), [prefsSandbox.preferences]);
   const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
-  const sections = useMemo(() => sectionsGrille(OUTILS, undefined, idsBarre), [idsBarre]);
+  const sections = useMemo(() => sectionsGrille(outilsOfferts, undefined, idsBarre), [outilsOfferts, idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
   const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
   const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
@@ -2430,7 +2448,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
 
   // Un outil récent que le profil a mis dans la barre gauche n'est pas répété sous le séparateur.
-  const recentOutil = recent && !idsBarre.includes(recent) ? outilParId(recent) : null;
+  const recentOutil = recent && !idsBarre.includes(recent) && !masquees.has(`outil:${recent}`) ? outilParId(recent) : null;
 
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
@@ -2497,6 +2515,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
   /** Barres d'opérations flottantes (D-198) : affichées par la liste « Outils ▾ » ; au téléphone, la dernière seulement, rangée en bas. */
   const barresOutils = barresRendues(ui.barresOutils, etroit)
+    .filter((id) => !masquees.has(`outil:${id}`))
     .map((id) => outilParId(id))
     .filter((o): o is Outil => o !== null)
     .map((o, rang) => (
@@ -2679,6 +2698,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
   /** Lot 9 : exécution d'une entrée du registre au clavier, après la disponibilité de sa famille (mêmes motifs qu'ailleurs). */
   executerCommandeRef.current = (c: EntreeRegistre) => {
+    if (masqueesRef.current.has(`commande:${c.id}`)) return;
     const s = etatSelectionObjets();
     if (c.famille === "repere") {
       executerRepere(c.id as IdCommandeRepere);
@@ -2731,11 +2751,40 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteRepere(c.id, etatReperes());
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reperes.motif.face"), executer: () => executerRepere(c.id) };
         }),
-  ];
+  ].filter((c) => !masquees.has(`commande:${c.id}`));
+  /**
+   * Fenêtre « Extensions » du menu ☰ : une carte par extension livrée, pictogramme repris de l'une de ses entrées ; la
+   * bascule s'applique tout de suite et rejoint les préférences du compte.
+   */
+  // Une extension vient d'être désactivée : son panneau ouvert se ferme et son outil actif rend la main à Sélectionner.
+  useEffect(() => {
+    if (masquees.size === 0) return;
+    if (panneau && masquees.has(`panneau:${panneau}`)) setPanneau(null);
+    if (masquees.has(`outil:${outilId}`)) demandeOutilRef.current("selection");
+  }, [masquees, panneau, outilId, setPanneau]);
+  const pluriel = (n: number, un: "extensions.contenu.outil" | "extensions.contenu.commande" | "extensions.contenu.panneau", plusieurs: "extensions.contenu.outils" | "extensions.contenu.commandes" | "extensions.contenu.panneaux") =>
+    n === 0 ? null : n === 1 ? t(un) : t(plusieurs, { n: String(n) });
+  const extensionsMenu: ExtensionsMenu = {
+    liste: EXTENSIONS_SANDBOX.map((x) => {
+      const n = contenuExtension(x);
+      return {
+        id: x.id,
+        nom: t(`extension.${x.id}` as "extension.bois"),
+        description: t(`extension.${x.id}.description` as "extension.bois.description"),
+        picto: entreeDeCle(x.pictogramme)!.pictogramme,
+        contenu: [pluriel(n.outil, "extensions.contenu.outil", "extensions.contenu.outils"), pluriel(n.commande, "extensions.contenu.commande", "extensions.contenu.commandes"), pluriel(n.panneau, "extensions.contenu.panneau", "extensions.contenu.panneaux")].filter(Boolean).join(" · "),
+        active: extensionActive(x.id, prefsSandbox.preferences.extensions),
+      };
+    }),
+    basculer: (id, active) => prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, id, active) }),
+    enAttente: prefsSandbox.etat === "copie" || prefsSandbox.etat === "defaut",
+  };
+
   /** Même liste « Outils », deux déclencheurs indépendants : le bouton de la barre du haut et la loupe de la barre verticale. */
   const listeOutils = (variante: "outils" | "loupe") => (
     <BoutonOutils
       variante={variante}
+      catalogue={outilsOfferts}
       commandes={commandesListe}
       outilId={outilId}
       raison={raisonDe}
@@ -2914,7 +2963,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           flottante déplaçable (appui de 2 s), comme avant. L'état d'enregistrement reste annoncé aux lecteurs d'écran ;
           seule une erreur d'enregistrement s'affiche. */}
       <div className="planche-bandeau" role="group" aria-label={t("planche.bandeau")} data-planche-bandeau>
-        <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} deplacable={etroit} />
+        <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} extensions={extensionsMenu} deplacable={etroit} />
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
           <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
         </p>
@@ -3015,6 +3064,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 <h4 className="sr-only">{x.libelle}</h4>
                 <div className="planche-grille-tuiles">
                   {x.entrees.map((cle) => {
+                    if (masquees.has(cle)) return null;
                     const e = entreeDeCle(cle);
                     if (e?.nature === "outil") {
                       const o = outilParId(e.id);
@@ -3048,7 +3098,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")} onPointerDown={toucherColonne}>
         {COLONNE.map(({ id, picto, bas }) => (
-          <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
+          // Extensions : le panneau d'une extension désactivée n'est pas offert.
+          masquees.has(`panneau:${id}`) ? null : <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
             <Pictogramme className="canevas-picto" picto={picto} />
             <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
           </button>
@@ -3070,7 +3121,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             <PanneauPersonnaliser
               preferences={prefsSandbox.preferences}
               etat={prefsSandbox.etat}
-              outils={OUTILS}
+              outils={outilsOfferts}
               commandes={commandesListe.filter((c) => CLES_PERSONNALISABLES.includes(`commande:${c.id}`)).map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}
               modifier={prefsSandbox.modifier}
               reinitialiser={prefsSandbox.reinitialiser}

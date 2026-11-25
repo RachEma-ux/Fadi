@@ -8,6 +8,7 @@
  * Un identifiant d'entrée s'écrit `<nature>:<id>` (« outil:ligne », « commande:groupe ») : il est vérifié contre le
  * registre, jamais filtré en silence. Rien ici ne touche au dessin : seule la visibilité des outils dans les barres.
  */
+import { clesMasquees, validerChoixExtensions, type ChoixExtensions } from "./extensions-sandbox.js";
 import { BARRE_GAUCHE_SANDBOX, REGISTRE_SANDBOX, entreeSandbox, type NatureEntree } from "./registre-sandbox.js";
 
 /** Profils : Standard (disposition par défaut, lot 4), Métier (listes fournies par Fadi), Personnel (barre choisie). */
@@ -27,6 +28,11 @@ export interface PreferencesSandbox {
   /** Entrées favorites (`<nature>:<id>`), dans l'ordre choisi. */
   readonly favoris: readonly string[];
   readonly regroupements: readonly RegroupementSandbox[];
+  /**
+   * Extensions (25 novembre 2026) : écarts du compte aux défauts de chaque extension (`extensions-sandbox.ts`) ; vide
+   * tant que rien n'a été choisi. Champ ajouté au format 1 : un corps ou une ligne qui ne le porte pas vaut « vide ».
+   */
+  readonly extensions: ChoixExtensions;
 }
 
 /** Version du format des préférences, enregistrée avec chaque ligne. */
@@ -42,6 +48,7 @@ export const PREFERENCES_SANDBOX_DEFAUT: PreferencesSandbox = Object.freeze({
   barrePersonnelle: [],
   favoris: [],
   regroupements: [],
+  extensions: {},
 });
 
 export interface ProfilMetier {
@@ -68,11 +75,20 @@ export const PROFILS_METIER: readonly ProfilMetier[] = Object.freeze([
   },
 ]);
 
-/** Barre gauche effective d'un jeu de préférences (identifiants d'outil, dans l'ordre affiché). */
-export function barreGaucheSandbox(p: PreferencesSandbox): readonly string[] {
+function barreDuProfil(p: PreferencesSandbox): readonly string[] {
   if (p.profil === "personnel") return p.barrePersonnelle.length > 0 ? p.barrePersonnelle : BARRE_GAUCHE_SANDBOX;
   if (p.profil.startsWith("metier:")) return PROFILS_METIER.find((m) => m.id === p.profil)?.barre ?? BARRE_GAUCHE_SANDBOX;
   return BARRE_GAUCHE_SANDBOX;
+}
+
+/**
+ * Barre gauche effective d'un jeu de préférences (identifiants d'outil, dans l'ordre affiché) : celle du profil, moins
+ * les outils d'une extension désactivée (le choix du profil est gardé, ils reviennent avec l'extension).
+ */
+export function barreGaucheSandbox(p: PreferencesSandbox): readonly string[] {
+  const barre = barreDuProfil(p);
+  const masquees = clesMasquees(p.extensions);
+  return masquees.size === 0 ? barre : barre.filter((id) => !masquees.has(`outil:${id}`));
 }
 
 /** Entrée du registre désignée par `<nature>:<id>`, ou `undefined`. */
@@ -91,7 +107,7 @@ const OUTILS: ReadonlySet<string> = new Set(REGISTRE_SANDBOX.filter((e) => e.nat
 
 export type ResultatValidation =
   | { readonly ok: true; readonly preferences: PreferencesSandbox }
-  | { readonly ok: false; readonly erreur: "forme_invalide" | "entree_inconnue"; readonly detail: string; readonly inconnues?: readonly string[] };
+  | { readonly ok: false; readonly erreur: "forme_invalide" | "entree_inconnue" | "extension_inconnue"; readonly detail: string; readonly inconnues?: readonly string[] };
 
 const estListe = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === "string");
 const sansDoublon = (l: readonly string[]) => new Set(l).size === l.length;
@@ -103,7 +119,7 @@ const sansDoublon = (l: readonly string[]) => new Set(l).size === l.length;
 export function validerPreferencesSandbox(corps: unknown): ResultatValidation {
   if (!corps || typeof corps !== "object" || Array.isArray(corps)) return { ok: false, erreur: "forme_invalide", detail: "objet attendu" };
   const c = corps as Record<string, unknown>;
-  const cles = Object.keys(c).filter((k) => !["profil", "barrePersonnelle", "favoris", "regroupements"].includes(k));
+  const cles = Object.keys(c).filter((k) => !["profil", "barrePersonnelle", "favoris", "regroupements", "extensions"].includes(k));
   if (cles.length > 0) return { ok: false, erreur: "forme_invalide", detail: `champ inconnu : ${cles.join(", ")}` };
   const profil = c["profil"];
   if (typeof profil !== "string" || !(profil === "standard" || profil === "personnel" || /^metier:[a-z0-9-]{1,40}$/.test(profil))) {
@@ -134,7 +150,10 @@ export function validerPreferencesSandbox(corps: unknown): ResultatValidation {
     ...groupes.flatMap((g) => g.entrees.filter((k) => !PERSONNALISABLES.has(k))),
   ];
   if (inconnues.length > 0) return { ok: false, erreur: "entree_inconnue", detail: "entrée absente du registre du Sandbox", inconnues: [...new Set(inconnues)] };
-  return { ok: true, preferences: { profil: profil as ProfilSandbox, barrePersonnelle: [...barre], favoris: [...favoris], regroupements: groupes } };
+  // Extensions : champ facultatif (corps et lignes d'avant le 25 novembre 2026) ; présent, il est vérifié comme le reste.
+  const extensions = c["extensions"] === undefined ? ({ ok: true, choix: {} } as const) : validerChoixExtensions(c["extensions"]);
+  if (!extensions.ok) return extensions;
+  return { ok: true, preferences: { profil: profil as ProfilSandbox, barrePersonnelle: [...barre], favoris: [...favoris], regroupements: groupes, extensions: extensions.choix } };
 }
 
 /** Relecture tolérante (copie locale, ligne ancienne) : une valeur invalide donne les préférences par défaut. */

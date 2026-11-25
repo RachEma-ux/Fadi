@@ -1450,6 +1450,8 @@ export const sandboxToolPreferences = pgTable("sandbox_tool_preferences", {
   leftBar: jsonb("left_bar").$type<string[]>().notNull().default([]),
   favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
   groups: jsonb("groups").$type<{ id: string; nom: string; entrees: string[] }[]>().notNull().default([]),
+  /** Extensions (25 novembre 2026) : écarts du compte aux défauts, `{ <id>: booléen }` ; vide = défauts. */
+  extensions: jsonb("extensions").$type<Record<string, boolean>>().notNull().default({}),
   format: text("format").notNull().default("sandbox-preferences/1"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -38,6 +38,7 @@ export const ICONES_INTERFACE = {
   menuImporter: "file-import",
   menuInformations: "info-circle",
   menuImage: "photo-down",
+  menuExtensions: "puzzle",
   menuRetour: "arrow-left",
   menuHistorique: "history",
   // Barre d'état (pied de page façon SketchUp) : langue et périphérique en icônes, la liste s'ouvre au clic.
