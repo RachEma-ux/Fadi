@@ -57,6 +57,10 @@ describe("Barres d'opérations (D-198) — correspondance outil → ① Créer �
       expect(new Set(ids).size, o.id).toBe(ids.length);
     }
     expect(barreDe("inconnu")).toBeNull();
+    // Extensions : une barre d'opérations ne montre que les outils offerts.
+    const sansProfile = barreDe("pousser-tirer", OUTILS.filter((o) => o.id !== "profile"))!.flatMap((s) => s.outils.map((o) => o.id));
+    expect(barreDe("pousser-tirer")!.flatMap((s) => s.outils.map((o) => o.id))).toContain("profile");
+    expect(sansProfile).not.toContain("profile");
   });
 
   it("exemple de la demande : Ligne", () => {

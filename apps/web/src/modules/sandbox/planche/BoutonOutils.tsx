@@ -320,7 +320,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                   </button>
                   {deplie &&
                     g.outils.map((o) => {
-                      const sections = barreDe(o.id);
+                      const sections = barreDe(o.id, catalogue);
                       const ouverte = deplies.has(o.id);
                       const affichee = barres.visibles.includes(o.id);
                       const r = raccourciOutil(o);

@@ -141,6 +141,31 @@ describe("Composants dynamiques — règles appliquées aux objets enfants", () 
     expect(Object.keys(contexte(trop.modele, e.parent).occurrences)).toEqual([e.planche]);
   });
 
+  it("une erreur sur une copie seulement est rapportée ; une matière inconnue laisse la matière déjà posée", () => {
+    const e = etagere();
+    const copie = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "Copies", formule: "1" }, { objet: e.planche, attribut: "X", formule: "=1/(1-Copy)" }] });
+    expect(copie.erreurs.map((x) => [x.ou, x.cle])).toEqual([["Planche.X", "division"]]);
+    let m = modifierAnnotations(e.m, (a) => {
+      a.materiaux.m1 = { id: "m1", nom: "Chêne", couleur: "#aa8855" };
+    }).modele;
+    m = definirDynamique(m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "Material", formule: "Chêne" }] }).modele;
+    const faute = definirDynamique(m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "Material", formule: "Chene" }] });
+    expect(faute.erreurs.map((x) => x.cle)).toEqual(["matiere"]);
+    expect(faute.erreurs[0]!.args).toEqual({ nom: "Chene" });
+    expect(contexte(faute.modele, e.parent).occurrences[e.planche]!.materiau).toBe("m1");
+  });
+
+  it("ce que la relecture refuserait n'est pas enregistré : valeur trop longue, trop de paramètres", () => {
+    const e = etagere();
+    const long = definirDynamique(e.m, e.definition, { parametres: [{ nom: "A", valeur: "x".repeat(501) }], regles: [] });
+    expect(long.modele).toBe(e.m);
+    expect(long.erreurs.map((x) => x.cle)).toEqual(["limites"]);
+    const trop = definirDynamique(e.m, e.definition, { parametres: Array.from({ length: 65 }, (_, i) => ({ nom: `P${i}`, valeur: "1" })), regles: [] });
+    expect(trop.modele).toBe(e.m);
+    const bon = definirDynamique(e.m, e.definition, { parametres: [{ nom: "A", valeur: "x".repeat(500) }], regles: [] });
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(bon.modele)))).not.toBeNull();
+  });
+
   it("matière par son nom, masquage et rotation", () => {
     const e = etagere();
     const m = modifierAnnotations(e.m, (a) => {

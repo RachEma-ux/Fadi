@@ -135,3 +135,16 @@ describe("Extension « Composants dynamiques » — commandes et liste de choix"
     expect(lireChoix(ecrireChoix(choix))).toEqual(choix);
   });
 });
+
+describe("Composants dynamiques — erreurs traduites", () => {
+  it("chaque erreur du modèle a son message français (le même texte) et son message anglais", async () => {
+    const { MESSAGES_ERREUR_DYNAMIQUE } = await import("@parcours/sandbox-planche-model");
+    const { CATALOGUE } = await import("../messages");
+    for (const [cle, texte] of Object.entries(MESSAGES_ERREUR_DYNAMIQUE)) {
+      const k = `planche.dynamique.erreur.${cle}` as keyof typeof CATALOGUE.fr;
+      expect(CATALOGUE.fr[k], k).toBe(texte);
+      expect(CATALOGUE.en[k], k).toBeTruthy();
+      expect(CATALOGUE.en[k], k).not.toBe(texte);
+    }
+  });
+});

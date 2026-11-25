@@ -12,7 +12,7 @@ import {
   extensionsActives,
   validerChoixExtensions,
 } from "./extensions-sandbox.js";
-import { PREFERENCES_SANDBOX_DEFAUT, PROFILS_METIER, barreGaucheSandbox, validerPreferencesSandbox } from "./personnalisation-sandbox.js";
+import { PREFERENCES_SANDBOX_DEFAUT, PROFILS_METIER, barreDuProfilSandbox, barreGaucheSandbox, validerPreferencesSandbox } from "./personnalisation-sandbox.js";
 import { REGISTRE_SANDBOX } from "./registre-sandbox.js";
 
 describe("Extensions du Sandbox — liste", () => {
@@ -113,5 +113,7 @@ describe("Extensions du Sandbox — préférences", () => {
     expect(sans).not.toContain("profile");
     expect(sans).toContain("ligne");
     expect(sans).toEqual(metier.barre.filter((id) => !["profile", "profiles-aretes", "onglet", "coupe-profil", "allonger-piece", "aligner-face"].includes(id)));
+    // La barre du profil, elle, garde ses outils : c'est elle qu'une édition de la barre réécrit.
+    expect(barreDuProfilSandbox({ ...actif, extensions: { bois: false } })).toEqual(metier.barre);
   });
 });

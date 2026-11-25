@@ -75,7 +75,8 @@ export const PROFILS_METIER: readonly ProfilMetier[] = Object.freeze([
   },
 ]);
 
-function barreDuProfil(p: PreferencesSandbox): readonly string[] {
+/** Barre gauche du profil, **sans** le filtre des extensions : c'est elle qu'une édition de la barre réécrit. */
+export function barreDuProfilSandbox(p: PreferencesSandbox): readonly string[] {
   if (p.profil === "personnel") return p.barrePersonnelle.length > 0 ? p.barrePersonnelle : BARRE_GAUCHE_SANDBOX;
   if (p.profil.startsWith("metier:")) return PROFILS_METIER.find((m) => m.id === p.profil)?.barre ?? BARRE_GAUCHE_SANDBOX;
   return BARRE_GAUCHE_SANDBOX;
@@ -86,7 +87,7 @@ function barreDuProfil(p: PreferencesSandbox): readonly string[] {
  * les outils d'une extension désactivée (le choix du profil est gardé, ils reviennent avec l'extension).
  */
 export function barreGaucheSandbox(p: PreferencesSandbox): readonly string[] {
-  const barre = barreDuProfil(p);
+  const barre = barreDuProfilSandbox(p);
   const masquees = clesMasquees(p.extensions);
   return masquees.size === 0 ? barre : barre.filter((id) => !masquees.has(`outil:${id}`));
 }

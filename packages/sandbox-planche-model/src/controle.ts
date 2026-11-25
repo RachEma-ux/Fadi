@@ -60,13 +60,33 @@ function definitionsVides(m: Modele): Set<Id> {
   return vides;
 }
 
+/**
+ * Définitions tenues par un verrou : celles d'un objet verrouillé et tout ce qu'elles contiennent. Modifier une telle
+ * définition changerait ce que montre un objet verrouillé, même par un objet contenu qui ne l'est pas lui-même.
+ */
+function definitionsVerrouillees(m: Modele): Set<Id> {
+  const tenues = new Set<Id>();
+  const pile: Id[] = [];
+  for (const porteur of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) {
+    for (const o of Object.values(porteur.occurrences)) if (o.verrouille === true) pile.push(o.definition);
+  }
+  while (pile.length) {
+    const id = pile.pop() as Id;
+    if (tenues.has(id)) continue;
+    tenues.add(id);
+    for (const o of Object.values(m.definitions[id]?.contenu.occurrences ?? {})) pile.push(o.definition);
+  }
+  return tenues;
+}
+
 /** Contextes rendus : la racine et le contenu des définitions non vides, avec une occurrence qui y mène (absente à la racine). */
 function contextes(m: Modele): { readonly dans: Id | undefined; readonly definition: Id | undefined; readonly c: Contexte; readonly verrouille: boolean }[] {
   const liste: { dans: Id | undefined; definition: Id | undefined; c: Contexte; verrouille: boolean }[] = [{ dans: undefined, definition: undefined, c: m.racine, verrouille: false }];
+  const tenues = definitionsVerrouillees(m);
   for (const porteur of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) {
     for (const o of Object.values(porteur.occurrences)) {
       const d = m.definitions[o.definition];
-      if (d) liste.push({ dans: o.id, definition: d.id, c: d.contenu, verrouille: o.verrouille === true });
+      if (d) liste.push({ dans: o.id, definition: d.id, c: d.contenu, verrouille: tenues.has(d.id) });
     }
   }
   return liste;

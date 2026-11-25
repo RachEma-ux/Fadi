@@ -4,10 +4,10 @@
  * formule, montrés ou non comme option) et les **règles** de ses objets contenus (X, Y, Z, LenX, LenY, LenZ, RotZ,
  * Hidden, Material, Copies). Chaque changement est une opération de la Planche (Annuler). Aucun code : des formules.
  */
-import { ATTRIBUTS_DYNAMIQUES, type AttributDynamique, type ComposantDynamique, type ErreurDynamique, type Id, type Modele, type ParametreDynamique, evaluerParametres, nomParametreValide, nombreInstances, objetsPilotables } from "@parcours/sandbox-planche-model";
+import { ATTRIBUTS_DYNAMIQUES, type AttributDynamique, type ComposantDynamique, type ErreurDynamique, type Id, type Modele, type ParametreDynamique, estComposantDynamique, evaluerParametres, nomParametreValide, nombreInstances, objetsPilotables } from "@parcours/sandbox-planche-model";
 import { useState } from "react";
 import { LOCALE } from "../../../lib/i18n";
-import { t } from "../messages";
+import { type CleMessage, t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { COMMANDES_DYNAMIQUE, type Disponibilite, type IdCommandeDynamique } from "./commandes-objets";
 import { afficherRaccourci } from "./outils-planche";
@@ -51,7 +51,7 @@ export function PanneauDynamique({
   definition,
   erreurs,
   lecture,
-  onDefinir,
+  onDefinir: poser,
   onOption,
   executer,
   disponibilite,
@@ -67,6 +67,13 @@ export function PanneauDynamique({
   disponibilite: (id: IdCommandeDynamique) => Disponibilite;
 }) {
   const [refus, setRefus] = useState(false);
+  const [horsLimites, setHorsLimites] = useState(false);
+  /** Une description que la relecture de la Planche refuserait (trop longue, trop d'entrées) n'est pas enregistrée. */
+  const onDefinir = (d: ComposantDynamique | null) => {
+    const refusee = d !== null && !estComposantDynamique(d);
+    setHorsLimites(refusee);
+    if (!refusee) poser(d);
+  };
   const [nouvelle, setNouvelle] = useState<{ objet: string; attribut: AttributDynamique }>({ objet: "", attribut: "LenX" });
   const def = definition ? modele.definitions[definition] : undefined;
   if (!def) return <p className="inspecteur-aide" data-planche-dynamique-aucun>{t("planche.dynamique.aucun")}</p>;
@@ -129,7 +136,7 @@ export function PanneauDynamique({
                   {p.option!.choix.map((c) => <option key={c.valeur} value={c.valeur}>{c.libelle}</option>)}
                 </select>
               ) : (
-                <Champ valeur={p.valeur} onValider={(v) => onOption(p.nom, v)} disabled={lecture} data-planche-dynamique-option={p.nom} />
+                <Champ valeur={p.valeur} onValider={(v) => onOption(p.nom, v)} disabled={lecture} maxLength={500} data-planche-dynamique-option={p.nom} />
               )}
             </label>
           ))}
@@ -139,7 +146,7 @@ export function PanneauDynamique({
         <div role="alert" data-planche-dynamique-erreurs>
           <h4>{t("planche.dynamique.erreurs")}</h4>
           <ul className="planche-dynamique-erreurs">
-            {erreurs.map((e, i) => <li key={i}><strong>{e.ou}</strong> : {e.message}</li>)}
+            {erreurs.map((e, i) => <li key={i} data-planche-dynamique-erreur={e.cle}><strong>{e.ou}</strong> : {t(`planche.dynamique.erreur.${e.cle}` as CleMessage, e.args)}</li>)}
           </ul>
         </div>
       )}
@@ -149,7 +156,7 @@ export function PanneauDynamique({
           <fieldset key={`${i}:${p.nom}`} className="planche-dynamique-parametre" disabled={lecture} data-planche-dynamique-parametre={p.nom}>
             <div className="planche-dynamique-ligne">
               <Champ valeur={p.nom} onValider={(v) => renommer(i, v.trim())} aria-label={t("planche.dynamique.parametre.nom")} data-planche-dynamique-nom="" />
-              <Champ valeur={p.valeur} onValider={(v) => majParametre(i, { ...p, valeur: v })} aria-label={t("planche.dynamique.parametre.valeur")} placeholder={t("planche.dynamique.parametre.valeur")} data-planche-dynamique-valeur="" />
+              <Champ valeur={p.valeur} onValider={(v) => majParametre(i, { ...p, valeur: v })} aria-label={t("planche.dynamique.parametre.valeur")} placeholder={t("planche.dynamique.parametre.valeur")} maxLength={500} data-planche-dynamique-valeur="" />
               <button type="button" onClick={() => majParametre(i, null)} aria-label={t("planche.dynamique.parametre.retirer", { nom: p.nom })} title={t("planche.dynamique.parametre.retirer", { nom: p.nom })}><IconeSandbox nom="fermer" /></button>
             </div>
             <small data-planche-dynamique-vaut={p.nom}>{t("planche.dynamique.vaut", { valeur: affiche(valeurs[p.nom]) })}</small>
@@ -159,7 +166,7 @@ export function PanneauDynamique({
             </label>
             {p.option && (
               <div className="planche-dynamique-ligne">
-                <Champ valeur={p.option.libelle} onValider={(v) => majParametre(i, { ...p, option: { ...p.option!, libelle: v } })} aria-label={t("planche.dynamique.parametre.libelle")} placeholder={t("planche.dynamique.parametre.libelle")} />
+                <Champ valeur={p.option.libelle} onValider={(v) => majParametre(i, { ...p, option: { ...p.option!, libelle: v } })} aria-label={t("planche.dynamique.parametre.libelle")} maxLength={80} placeholder={t("planche.dynamique.parametre.libelle")} />
                 <Champ
                   valeur={ecrireChoix(p.option.choix ?? [])}
                   onValider={(v) => { const choix = lireChoix(v); majParametre(i, { ...p, option: choix.length ? { libelle: p.option!.libelle, choix } : { libelle: p.option!.libelle } }); }}
@@ -172,8 +179,9 @@ export function PanneauDynamique({
           </fieldset>
         ))}
         {refus && <p className="inspecteur-aide" role="alert">{t("planche.dynamique.parametre.invalide")}</p>}
+        {horsLimites && <p className="inspecteur-aide" role="alert" data-planche-dynamique-limites>{t("planche.dynamique.erreur.limites")}</p>}
         <div className="planche-debit-barre">
-          <button type="button" disabled={lecture} onClick={ajouterParametre} data-planche-dynamique-ajouter-parametre>{t("planche.dynamique.parametre.ajouter")}</button>
+          <button type="button" disabled={lecture || dyn.parametres.length >= 64} onClick={ajouterParametre} data-planche-dynamique-ajouter-parametre>{t("planche.dynamique.parametre.ajouter")}</button>
         </div>
       </details>
       <details className="planche-dynamique-bloc" data-planche-dynamique-regles>
@@ -181,7 +189,7 @@ export function PanneauDynamique({
         {dyn.regles.map((r, i) => (
           <div key={`${r.objet}:${r.attribut}`} className="planche-dynamique-ligne" data-planche-dynamique-regle={`${r.objet}:${r.attribut}`}>
             <span className="planche-dynamique-cible">{nomObjet(r.objet)} · <strong>{r.attribut}</strong></span>
-            <Champ valeur={r.formule} onValider={(v) => onDefinir({ ...dyn, regles: dyn.regles.map((x, k) => (k === i ? { ...x, formule: v } : x)) })} disabled={lecture} aria-label={t("planche.dynamique.regle.formule")} />
+            <Champ valeur={r.formule} onValider={(v) => onDefinir({ ...dyn, regles: dyn.regles.map((x, k) => (k === i ? { ...x, formule: v } : x)) })} disabled={lecture} maxLength={500} aria-label={t("planche.dynamique.regle.formule")} />
             <button type="button" disabled={lecture} onClick={() => onDefinir({ ...dyn, regles: dyn.regles.filter((_, k) => k !== i) })} aria-label={t("planche.dynamique.regle.retirer", { attribut: r.attribut, objet: nomObjet(r.objet) })} title={t("planche.dynamique.regle.retirer", { attribut: r.attribut, objet: nomObjet(r.objet) })}><IconeSandbox nom="fermer" /></button>
           </div>
         ))}
@@ -195,7 +203,7 @@ export function PanneauDynamique({
             <select value={nouvelle.attribut} disabled={lecture} onKeyDown={arreter} onChange={(e) => setNouvelle({ ...nouvelle, attribut: e.target.value as AttributDynamique })} aria-label={t("planche.dynamique.regle.attribut")} data-planche-dynamique-regle-attribut>
               {ATTRIBUTS_DYNAMIQUES.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
-            <button type="button" disabled={lecture || dyn.regles.some((r) => r.objet === objetChoisi && r.attribut === nouvelle.attribut)} onClick={() => onDefinir({ ...dyn, regles: [...dyn.regles, { objet: objetChoisi, attribut: nouvelle.attribut, formule: nouvelle.attribut === "Copies" || nouvelle.attribut === "Hidden" ? "0" : nouvelle.attribut === "Material" ? "" : "=" }] })} data-planche-dynamique-ajouter-regle>
+            <button type="button" disabled={lecture || dyn.regles.length >= 512 || dyn.regles.some((r) => r.objet === objetChoisi && r.attribut === nouvelle.attribut)} onClick={() => onDefinir({ ...dyn, regles: [...dyn.regles, { objet: objetChoisi, attribut: nouvelle.attribut, formule: nouvelle.attribut === "Copies" || nouvelle.attribut === "Hidden" ? "0" : nouvelle.attribut === "Material" ? "" : "=" }] })} data-planche-dynamique-ajouter-regle>
               {t("planche.dynamique.regle.ajouter")}
             </button>
           </div>
