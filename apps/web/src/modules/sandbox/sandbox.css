@@ -3634,3 +3634,60 @@
   font-size: 0.82rem;
   color: #9a2c1c;
 }
+
+/* Extension « Scripts » : éditeur de texte à chasse fixe, messages du script et aide des fonctions. */
+.sandbox-planche .planche-scripts-code {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 9rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+.sandbox-planche .planche-scripts-issue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.sandbox-planche .planche-scripts-erreur {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-scripts-journal {
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  max-height: 10rem;
+  overflow: auto;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 4px;
+  background: #f4f6f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-scripts-fonctions summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  min-height: 30px;
+}
+.sandbox-planche .planche-scripts-fonctions dl {
+  margin: 0.3rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.sandbox-planche .planche-scripts-fonctions dt code {
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-scripts-fonctions dd {
+  margin: 0;
+  font-size: 0.78rem;
+}

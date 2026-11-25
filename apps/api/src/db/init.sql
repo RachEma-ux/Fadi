@@ -972,6 +972,13 @@ ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS extensions jsonb N
 ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_extensions_check,
   ADD CONSTRAINT sandbox_tool_preferences_extensions_check
   CHECK (jsonb_typeof(extensions) = 'object') NOT VALID;
+-- « Mes scripts » de l'extension Scripts du Sandbox (25 novembre 2026) : scripts personnels du compte, [{ id, nom, code }],
+-- au plus 20 (forme et bornes vérifiées par le serveur, validerScripts). Texte rangé et rendu au compte, jamais exécuté
+-- par le serveur. Additive.
+ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS scripts jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_scripts_check,
+  ADD CONSTRAINT sandbox_tool_preferences_scripts_check
+  CHECK (jsonb_typeof(scripts) = 'array' AND jsonb_array_length(scripts) <= 20) NOT VALID;
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

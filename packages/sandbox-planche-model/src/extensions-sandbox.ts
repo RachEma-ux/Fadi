@@ -88,6 +88,15 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     activeParDefaut: false,
     entrees: ["commande:emplacement", "commande:nord-arete", "commande:afficher-nord", "panneau:emplacement"],
   },
+  {
+    // D'après la console Ruby et les extensions libres de SketchUp (décision du 25 novembre 2026 : scripts libres, intégration simple).
+    id: "scripts",
+    libelle: "Scripts",
+    description: "Vos propres scripts JavaScript : ils dessinent sur une copie isolée, sans accès au réseau, et s'annulent en une fois.",
+    pictogramme: "commande:scripts",
+    activeParDefaut: false,
+    entrees: ["commande:scripts", "commande:executer-script", "panneau:scripts"],
+  },
 ]);
 
 /** Extension par identifiant, ou `undefined`. */

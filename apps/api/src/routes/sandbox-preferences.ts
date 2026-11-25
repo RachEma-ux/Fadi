@@ -2,11 +2,13 @@
  * Préférences d'outils du Sandbox du compte connecté (lot 5, décision du maître d'ouvrage du 20 octobre 2026), montées
  * sous `/sandbox/preferences` :
  *
- *   GET /  → { profil, barrePersonnelle, favoris, regroupements, extensions, format, compte, updatedAt } — préférences du compte (défaut :
+ *   GET /  → { profil, barrePersonnelle, favoris, regroupements, extensions, scripts, format, compte, updatedAt } — préférences du compte (défaut :
  *            profil Standard, rien de choisi, `updatedAt` null tant que rien n'est enregistré) ;
- *   PUT /  { profil, barrePersonnelle, favoris, regroupements, extensions? } → remplace l'ensemble (idempotent) ; forme
+ *   PUT /  { profil, barrePersonnelle, favoris, regroupements, extensions?, scripts? } → remplace l'ensemble (idempotent) ; forme
  *            invalide → 400 invalid_input ; entrée absente du registre du Sandbox → 400 unknown_entry (entrées nommées) ;
  *            extension absente de la liste du Sandbox → 400 unknown_extension. `extensions` omis = aucun choix.
+ *            `scripts` (« Mes scripts » de l'extension Scripts : texte rangé, jamais exécuté par le serveur) omis = les
+ *            scripts déjà enregistrés sont gardés, pour qu'un navigateur resté sur une ancienne version ne les efface pas.
  *
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
@@ -37,8 +39,9 @@ sandboxPreferencesRouter.put("/", async (req, res) => {
     return;
   }
   const valeurs = { ...lu.valeurs, updatedAt: new Date() };
+  const { scripts: _scripts, ...sansScripts } = valeurs;
   const [ligne] = await db.insert(sandboxToolPreferences).values({ userId: req.user!.id, ...valeurs })
-    .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: valeurs })
+    .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: lu.scriptsFournis ? valeurs : sansScripts })
     .returning();
   res.json(reponsePreferences(req.user!.id, ligne));
 });

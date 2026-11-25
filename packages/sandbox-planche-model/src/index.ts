@@ -8,6 +8,7 @@ export * from "./debit.js";
 export * from "./controle.js";
 export * from "./emplacement.js";
 export * from "./composants-dynamiques.js";
+export * from "./scripts.js";
 export * from "./maillage.js";
 export * from "./police-geometrique.js";
 export * from "./inference.js";

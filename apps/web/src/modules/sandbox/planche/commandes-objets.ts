@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -316,6 +316,30 @@ export function disponibiliteEmplacement(id: IdCommandeEmplacement, s: { readonl
   // Le nord s'enregistre avec la position : sans position saisie, rien n'est créé (aucune coordonnée inventée).
   if (!s.position) return { disponible: false, motif: "planche.emplacement.motif.position" };
   return s.arete ? { disponible: true, motif: null } : { disponible: false, motif: "planche.emplacement.motif.arete" };
+}
+
+/** Extension « Scripts » : ouvrir le panneau, exécuter le script affiché. */
+export type IdCommandeScripts = "scripts" | "executer-script";
+export interface CommandeScripts {
+  readonly id: IdCommandeScripts;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_SCRIPTS: readonly CommandeScripts[] = [
+  { id: "scripts", ...depuisRegistre("scripts"), libelle: "planche.scripts.ouvrir", court: "planche.scripts.court.ouvrir" },
+  { id: "executer-script", ...depuisRegistre("executer-script"), libelle: "planche.scripts.executer", court: "planche.scripts.court.executer" },
+];
+
+/**
+ * Disponibilité : le panneau toujours ; exécuter avec un texte non vide et aucun script en cours. Un projet en lecture
+ * seule peut lancer un script (une mesure, par exemple) : son résultat n'est simplement jamais appliqué au dessin.
+ */
+export function disponibiliteScripts(id: IdCommandeScripts, s: { readonly vide: boolean; readonly enCours: boolean }): Disponibilite {
+  if (id === "scripts") return { disponible: true, motif: null };
+  if (s.enCours) return { disponible: false, motif: "planche.scripts.motif.encours" };
+  return s.vide ? { disponible: false, motif: "planche.scripts.motif.vide" } : { disponible: true, motif: null };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */

@@ -49,7 +49,7 @@ export interface PreferencesSandboxEtat {
   readonly etat: EtatPreferences;
   /** Applique un changement tout de suite et l'enregistre sur le compte. */
   readonly modifier: (p: PreferencesSandbox) => void;
-  /** Retour au profil Standard, sans favori ni regroupement. */
+  /** Retour au profil Standard, sans favori ni regroupement ; « Mes scripts » sont gardés (ce ne sont pas des réglages d'affichage). */
   readonly reinitialiser: () => void;
 }
 
@@ -151,6 +151,6 @@ export function usePreferencesSandbox(): PreferencesSandboxEtat {
     if (compteConfirme.current) void envoyer();
     else void synchroniser(() => monte.current);
   }, [envoyer, synchroniser]);
-  const reinitialiser = useCallback(() => modifier(PREFERENCES_SANDBOX_DEFAUT), [modifier]);
+  const reinitialiser = useCallback(() => modifier({ ...PREFERENCES_SANDBOX_DEFAUT, scripts: courante.current.scripts }), [modifier]);
   return { preferences, etat, modifier, reinitialiser };
 }

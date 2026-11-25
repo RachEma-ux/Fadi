@@ -92,6 +92,25 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   Commandes : panneau (Maj + F1), Nord sur l'arête sélectionnée (Maj + F9, une fois la position enregistrée : aucune coordonnée n'est inventée), Flèche du nord (Maj + F12, état de vue).
   Limites déclarées : ni carte, ni terrain, ni recherche d'adresse (ils demandent une source de données qualifiée) ;
   l'heure des ombres est l'heure solaire du lieu, la longitude est enregistrée sans y entrer.
+- **Extension « Scripts »** (à activer ; d'après la console Ruby et les extensions libres de SketchUp ;
+  `packages/sandbox-planche-model/src/scripts.ts`, `planche/panneau-scripts.tsx`, `planche/scripts-execution.ts`,
+  `planche/scripts-planche.worker.ts`) : la personne écrit ou colle un script **JavaScript** qui dessine par l'objet
+  `planche` (vingt fonctions : `ligne`, `rectangle`, `boite`, `pousser`, `deplacer`, `copier`, `tourner`, `grouper`,
+  `composant`, `effacer`, lectures et `afficher` ; longueurs en mètres, points `[x, y, z]`) — les mêmes opérations du
+  modèle que les outils. Trois exemples fournis (rangée de poteaux, escalier droit, aire des faces sélectionnées).
+  **Isolement** : un Web Worker neuf par exécution reçoit une copie du modèle ; il est arrêté à la réponse ou d'office
+  après 5 s ; son fichier est servi avec une politique de contenu (`apps/api/src/lib/sandbox-scripts-csp.ts` :
+  `connect-src 'none'`, `script-src 'self' 'unsafe-eval'`) qui interdit toute connexion et tout code d'une autre origine,
+  et le Worker retire en plus au script les fonctions de réseau, de stockage et de chargement de code. Le modèle rendu
+  est relu (`lireModelePlanche`) puis appliqué en **un seul pas d'historique**, seulement si le dessin n'a pas changé
+  entre-temps ; une erreur donne sa ligne et ne garde rien. « Mes scripts » (20 au plus, 8 000 caractères chacun,
+  40 000 au total) suivent le compte : champ `scripts` de `/sandbox/preferences`, colonne `scripts` de
+  `sandbox_tool_preferences` ; le serveur les range, il ne les exécute jamais ; un enregistrement sans ce champ les garde.
+  Commandes : panneau (Maj + F3), Exécuter (Maj + F6, aussi depuis l'éditeur).
+  Limites déclarées : script synchrone seulement (ni attente, ni minuterie) ; au plus 2 000 opérations de dessin par
+  script ; la ligne d'une erreur de lecture (syntaxe) n'est pas donnée, ni celle d'une erreur sous Safari ; en
+  développement (`vite`), le fichier du Worker est servi sans la politique de contenu, seul le retrait des fonctions
+  s'applique ; pas d'accès aux matières, balises, annotations ni composants dynamiques.
 
 - **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
   (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun

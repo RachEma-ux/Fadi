@@ -52,8 +52,8 @@ describe("Extensions du Sandbox — choix du compte", () => {
   it("sans choix, les extensions faites d'outils existants sont actives : personne ne perd un outil", () => {
     expect(extensionsActives({}).map((x) => x.id)).toEqual(["bois", "volumes"]);
     // Seules les extensions nouvelles attendent d'être activées : rien d'existant n'est masqué.
-    expect([...clesMasquees({})].sort()).toEqual(["commande:afficher-nord", "commande:composant-dynamique", "commande:controler", "commande:emplacement", "commande:nettoyer", "commande:nord-arete", "commande:redessiner-composant", "panneau:controle", "panneau:dynamique", "panneau:emplacement"]);
-    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length - 10);
+    expect([...clesMasquees({})].sort()).toEqual(["commande:afficher-nord", "commande:composant-dynamique", "commande:controler", "commande:emplacement", "commande:executer-script", "commande:nettoyer", "commande:nord-arete", "commande:redessiner-composant", "commande:scripts", "panneau:controle", "panneau:dynamique", "panneau:emplacement", "panneau:scripts"]);
+    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length - 13);
     expect(extensionsActives(basculerExtension({}, "controle", true)).map((x) => x.id)).toEqual(["bois", "volumes", "controle"]);
     expect(basculerExtension({}, "controle", true)).toEqual({ controle: true });
   });
@@ -67,7 +67,7 @@ describe("Extensions du Sandbox — choix du compte", () => {
     expect(entreeOfferte("commande", "liste-debit", choix)).toBe(false);
     expect(entreeOfferte("outil", "union", choix)).toBe(true);
     expect(entreeOfferte("outil", "ligne", choix)).toBe(true);
-    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 10);
+    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 13);
   });
 
   it("ne retient que les écarts au défaut : réactiver efface le choix", () => {

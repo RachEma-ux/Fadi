@@ -54,3 +54,15 @@ describe("personnalisation du Sandbox", () => {
     expect(idRegroupement("!!!", [])).toBe("groupe");
   });
 });
+
+describe("Préférences du Sandbox — « Mes scripts »", () => {
+  const base = { profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [] };
+  it("un corps sans scripts vaut « aucun script » ; présents, ils sont validés comme le reste", () => {
+    expect(validerPreferencesSandbox(base)).toMatchObject({ ok: true, preferences: { scripts: [] } });
+    const scripts = [{ id: "a", nom: "A", code: "planche.afficher(1);" }];
+    expect(validerPreferencesSandbox({ ...base, scripts })).toMatchObject({ ok: true, preferences: { scripts } });
+    expect(validerPreferencesSandbox({ ...base, scripts: [{ id: "A", nom: "A", code: "" }] })).toMatchObject({ ok: false, erreur: "forme_invalide" });
+    expect(lirePreferencesSandbox({ ...base, scripts: "x" })).toBe(PREFERENCES_SANDBOX_DEFAUT);
+    expect(PREFERENCES_SANDBOX_DEFAUT.scripts).toEqual([]);
+  });
+});

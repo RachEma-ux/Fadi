@@ -157,3 +157,36 @@ describe("Composants dynamiques — erreurs traduites", () => {
     }
   });
 });
+
+describe("Extension « Scripts » — commandes, erreurs et aide traduites", () => {
+  it("le panneau toujours ; exécuter avec un texte et aucun script en cours", async () => {
+    const { disponibiliteScripts } = await import("./commandes-objets");
+    expect(disponibiliteScripts("scripts", { vide: true, enCours: true }).disponible).toBe(true);
+    expect(disponibiliteScripts("executer-script", { vide: false, enCours: false }).disponible).toBe(true);
+    expect(disponibiliteScripts("executer-script", { vide: true, enCours: false }).motif).toBe("planche.scripts.motif.vide");
+    expect(disponibiliteScripts("executer-script", { vide: false, enCours: true }).motif).toBe("planche.scripts.motif.encours");
+  });
+  it("chaque erreur, chaque fonction et chaque exemple a son texte français et anglais", async () => {
+    const { MESSAGES_ERREUR_SCRIPT, FONCTIONS_SCRIPT, EXEMPLES_SCRIPTS } = await import("@parcours/sandbox-planche-model");
+    const { CATALOGUE } = await import("../messages");
+    const { SIGNATURES_SCRIPT } = await import("./panneau-scripts");
+    for (const [cle, texte] of Object.entries(MESSAGES_ERREUR_SCRIPT)) {
+      const k = `planche.scripts.erreur.${cle}` as keyof typeof CATALOGUE.fr;
+      expect(CATALOGUE.fr[k], k).toBe(texte);
+      expect(CATALOGUE.en[k], k).toBeTruthy();
+      if (cle !== "execution") expect(CATALOGUE.en[k], k).not.toBe(texte);
+    }
+    expect(Object.keys(SIGNATURES_SCRIPT)).toEqual([...FONCTIONS_SCRIPT]);
+    for (const f of FONCTIONS_SCRIPT) {
+      const k = `planche.scripts.fonction.${f}` as keyof typeof CATALOGUE.fr;
+      expect(CATALOGUE.fr[k], k).toBeTruthy();
+      expect(CATALOGUE.en[k], k).toBeTruthy();
+      expect(SIGNATURES_SCRIPT[f].startsWith(`planche.${f}(`), f).toBe(true);
+    }
+    for (const e of EXEMPLES_SCRIPTS) {
+      const k = `planche.scripts.exemple.${e.id}` as keyof typeof CATALOGUE.fr;
+      expect(CATALOGUE.fr[k], k).toBe(e.nom);
+      expect(CATALOGUE.en[k], k).toBeTruthy();
+    }
+  });
+});

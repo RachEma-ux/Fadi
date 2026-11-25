@@ -10,6 +10,7 @@
  */
 import { clesMasquees, validerChoixExtensions, type ChoixExtensions } from "./extensions-sandbox.js";
 import { BARRE_GAUCHE_SANDBOX, REGISTRE_SANDBOX, entreeSandbox, type NatureEntree } from "./registre-sandbox.js";
+import { validerScripts, type ScriptPersonnel } from "./scripts.js";
 
 /** Profils : Standard (disposition par défaut, lot 4), Métier (listes fournies par Fadi), Personnel (barre choisie). */
 export type ProfilSandbox = "standard" | "personnel" | `metier:${string}`;
@@ -33,6 +34,12 @@ export interface PreferencesSandbox {
    * tant que rien n'a été choisi. Champ ajouté au format 1 : un corps ou une ligne qui ne le porte pas vaut « vide ».
    */
   readonly extensions: ChoixExtensions;
+  /**
+   * « Mes scripts » (extension Scripts, 25 novembre 2026) : scripts personnels du compte (`scripts.ts`). Champ ajouté au
+   * format 1 : un corps ou une ligne qui ne le porte pas vaut « aucun script ». Ce n'est pas un réglage d'affichage :
+   * « Réinitialiser » les garde.
+   */
+  readonly scripts: readonly ScriptPersonnel[];
 }
 
 /** Version du format des préférences, enregistrée avec chaque ligne. */
@@ -49,6 +56,7 @@ export const PREFERENCES_SANDBOX_DEFAUT: PreferencesSandbox = Object.freeze({
   favoris: [],
   regroupements: [],
   extensions: {},
+  scripts: [],
 });
 
 export interface ProfilMetier {
@@ -120,7 +128,7 @@ const sansDoublon = (l: readonly string[]) => new Set(l).size === l.length;
 export function validerPreferencesSandbox(corps: unknown): ResultatValidation {
   if (!corps || typeof corps !== "object" || Array.isArray(corps)) return { ok: false, erreur: "forme_invalide", detail: "objet attendu" };
   const c = corps as Record<string, unknown>;
-  const cles = Object.keys(c).filter((k) => !["profil", "barrePersonnelle", "favoris", "regroupements", "extensions"].includes(k));
+  const cles = Object.keys(c).filter((k) => !["profil", "barrePersonnelle", "favoris", "regroupements", "extensions", "scripts"].includes(k));
   if (cles.length > 0) return { ok: false, erreur: "forme_invalide", detail: `champ inconnu : ${cles.join(", ")}` };
   const profil = c["profil"];
   if (typeof profil !== "string" || !(profil === "standard" || profil === "personnel" || /^metier:[a-z0-9-]{1,40}$/.test(profil))) {
@@ -154,7 +162,10 @@ export function validerPreferencesSandbox(corps: unknown): ResultatValidation {
   // Extensions : champ facultatif (corps et lignes d'avant le 25 novembre 2026) ; présent, il est vérifié comme le reste.
   const extensions = c["extensions"] === undefined ? ({ ok: true, choix: {} } as const) : validerChoixExtensions(c["extensions"]);
   if (!extensions.ok) return extensions;
-  return { ok: true, preferences: { profil: profil as ProfilSandbox, barrePersonnelle: [...barre], favoris: [...favoris], regroupements: groupes, extensions: extensions.choix } };
+  // Scripts personnels : champ facultatif, vérifié comme le reste quand il est présent.
+  const scripts = c["scripts"] === undefined ? ({ ok: true, scripts: [] } as const) : validerScripts(c["scripts"]);
+  if (!scripts.ok) return scripts;
+  return { ok: true, preferences: { profil: profil as ProfilSandbox, barrePersonnelle: [...barre], favoris: [...favoris], regroupements: groupes, extensions: extensions.choix, scripts: scripts.scripts } };
 }
 
 /** Relecture tolérante (copie locale, ligne ancienne) : une valeur invalide donne les préférences par défaut. */
