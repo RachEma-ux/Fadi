@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { politiqueContenuStatique } from "./lib/sandbox-scripts-csp.js";
 import rateLimit from "express-rate-limit";
 import { attachUser } from "./middleware/require-auth.js";
 import { pool } from "./db/client.js";
@@ -119,6 +120,9 @@ export function createApp() {
         setHeaders: (res, filePath) => {
           if (/[\\/]assets[\\/]/.test(filePath)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
           else res.setHeader("Cache-Control", "no-cache");
+          // Worker des scripts personnels du Sandbox : ni connexion, ni code d'une autre origine (lib/sandbox-scripts-csp.ts).
+          const csp = politiqueContenuStatique(filePath);
+          if (csp) res.setHeader("Content-Security-Policy", csp);
         },
       }),
     );

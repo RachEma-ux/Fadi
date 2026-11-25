@@ -425,7 +425,7 @@ try {
       const fenetre = racine.locator("[data-planche-extensions]");
       await fenetre.waitFor({ state: "visible" });
       const lignes = await fenetre.locator("[data-planche-extension]").evaluateAll((l) => l.map((e) => `${e.getAttribute("data-planche-extension")}:${e.getAttribute("data-planche-extension-active")}`));
-      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false", "dynamiques:false", "emplacement:false"]), lignes.join(", "));
+      check("extensions : la fenêtre liste les regroupements actifs d'origine et « Contrôle et nettoyage » à activer", JSON.stringify(lignes) === JSON.stringify(["bois:true", "volumes:true", "controle:false", "dynamiques:false", "emplacement:false", "scripts:false"]), lignes.join(", "));
       await p3.screenshot({ path: join(OUT, "sandbox-extensions-fenetre.png") });
       await fenetre.locator('[data-planche-extension-interrupteur="volumes"]').click();
       await fenetre.locator('[data-planche-extensions-etat="compte"]').waitFor();
@@ -556,6 +556,85 @@ try {
       await p3.waitForTimeout(600);
       await racine.locator('[data-planche-panneau-icone="emplacement"]').click();
       check("emplacement : Annuler retire la position", (await racine.locator("[data-planche-lieu]").getAttribute("data-planche-lieu")) === "absent");
+      // Extension « Scripts » : un script personnel dessine sur une copie isolée ; un seul Annuler ; « Mes scripts » suit le compte.
+      await racine.locator("[data-planche-menu-ouvrir]").click();
+      await racine.locator('[data-planche-menu-item="extensions"]').click();
+      await fenetre.locator('[data-planche-extension-interrupteur="scripts"]').click();
+      await p3.waitForTimeout(600);
+      await p3.keyboard.press("Escape");
+      await p3.keyboard.press("Escape");
+      await racine.locator('[data-planche-panneau-icone="scripts"]').click();
+      const scripts = racine.locator("[data-planche-scripts]");
+      const editeur = scripts.locator("[data-planche-scripts-code]");
+      const issue = scripts.locator("[data-planche-scripts-issue]");
+      /** Lance le script affiché et attend sa fin ; rend l'état de l'issue. */
+      const lancer = async (code) => {
+        if (code !== undefined) await editeur.fill(code);
+        await scripts.locator('[data-planche-commande="executer-script"]').click();
+        await racine.locator('[data-planche-scripts="pret"] [data-planche-scripts-issue]:not([data-planche-scripts-issue="encours"])').waitFor({ timeout: 20_000 });
+        return issue.getAttribute("data-planche-scripts-issue");
+      };
+      const journal = async () => ((await scripts.locator("[data-planche-scripts-journal]").count()) ? scripts.locator("[data-planche-scripts-journal]").innerText() : "");
+      const objets = async () => {
+        await lancer("planche.afficher(planche.objets().length);");
+        return Number(await journal());
+      };
+      check("scripts : le panneau s'ouvre sur l'exemple « Rangée de poteaux »", (await editeur.inputValue()).includes("planche.boite(") && (await scripts.locator("[data-planche-scripts-choix]").inputValue()) === "exemple:rangee-poteaux");
+      const avantScript = await objets();
+      await scripts.locator("[data-planche-scripts-choix]").selectOption("exemple:rangee-poteaux");
+      check("scripts : l'exemple s'exécute et modifie le dessin", (await lancer()) === "modifie" && (await journal()).includes("6 poteaux"), await journal());
+      await p3.screenshot({ path: join(OUT, "sandbox-scripts.png") });
+      check("scripts : six poteaux sont ajoutés", (await objets()) === avantScript + 6);
+      await p3.keyboard.press("Control+z");
+      await p3.waitForTimeout(600);
+      check("scripts : un seul Annuler défait tout le script", (await objets()) === avantScript, String(await objets()));
+      check("scripts : une erreur donne sa ligne et laisse le dessin intact", (await lancer("planche.boite([0, 0, 0], 1, 1, 1);\n\nplanche.boite([0, 0, 0], -1, 1, 1);")) === "erreur" && (await scripts.locator("[data-planche-scripts-erreur]").getAttribute("data-planche-scripts-ligne")) === "3" && (await scripts.locator("[data-planche-scripts-erreur]").getAttribute("data-planche-scripts-erreur")) === "positif");
+      check("scripts : après l'erreur, rien n'a été dessiné", (await objets()) === avantScript && (await lancer("planche.afficher(planche.faces().length);")) === "inchange");
+      // Sans réseau : ni connexion, ni code chargé d'ailleurs, ni exécution différée.
+      for (const [quoi, code] of [
+        ["fetch", "fetch('/sandbox/preferences');"],
+        ["XMLHttpRequest", "new XMLHttpRequest();"],
+        ["WebSocket", "new WebSocket('wss://exemple.invalid');"],
+        ["importScripts", "importScripts('/sw.js');"],
+        ["Function", "Function('return 1')();"],
+        ["fonction asynchrone", "(async () => {}).constructor('return 1')();"],
+        ["setTimeout", "setTimeout(() => {}, 0);"],
+      ]) {
+        check(`scripts : « ${quoi} » est refusé au script`, (await lancer(code)) === "erreur" && (await scripts.locator("[data-planche-scripts-erreur]").getAttribute("data-planche-scripts-erreur")) === "execution", await scripts.locator("[data-planche-scripts-issue]").innerText());
+      }
+      check("scripts : « import » est refusé à la lecture", (await lancer("const m = import('/sw.js');")) === "erreur" && (await scripts.locator("[data-planche-scripts-erreur]").getAttribute("data-planche-scripts-erreur")) === "import");
+      {
+        const actif = await p3.evaluate(async () => (await fetch(performance.getEntriesByType("resource").map((e) => e.name).find((n) => /scripts-planche\.worker-/.test(n)) ?? "/absent")).headers.get("content-security-policy"));
+        check("scripts : le fichier du Worker est servi avec sa politique de contenu (aucune connexion)", typeof actif === "string" && actif.includes("connect-src 'none'") && actif.includes("default-src 'none'"), String(actif));
+      }
+      const debutBoucle = Date.now();
+      check("scripts : une boucle sans fin est arrêtée d'office, la page reste utilisable", (await lancer("for (;;) {}")) === "delai" && Date.now() - debutBoucle < 15_000 && (await objets()) === avantScript);
+      // « Mes scripts » : enregistré avec le compte, retrouvé après rechargement, supprimé sur demande.
+      await scripts.locator("[data-planche-scripts-choix]").selectOption("nouveau");
+      await editeur.fill("planche.afficher('bonjour');");
+      await scripts.locator("[data-planche-scripts-enregistrer]").click();
+      check("scripts : sans nom, l'enregistrement est refusé", (await scripts.locator('[data-planche-scripts-refus="nom"]').count()) === 1);
+      await scripts.locator("[data-planche-scripts-nom]").fill("Mon essai");
+      await scripts.locator("[data-planche-scripts-enregistrer]").click();
+      await scripts.locator('[data-planche-scripts-etat="compte"]').waitFor();
+      await p3.waitForTimeout(800);
+      const enregistres = (await api("get")).corps.scripts;
+      check("scripts : le script est enregistré avec le compte", JSON.stringify(enregistres) === JSON.stringify([{ id: "mon-essai", nom: "Mon essai", code: "planche.afficher('bonjour');" }]), JSON.stringify(enregistres));
+      {
+        const courant = (await api("get")).corps;
+        const sans = await api("put", { profil: courant.profil, barrePersonnelle: courant.barrePersonnelle, favoris: courant.favoris, regroupements: courant.regroupements, extensions: courant.extensions });
+        check("scripts : un enregistrement sans le champ « scripts » (ancienne version) garde les scripts du compte", sans.statut === 200 && sans.corps.scripts?.length === 1, JSON.stringify(sans.corps.scripts));
+        const refus = await api("put", { ...courant, format: undefined, compte: undefined, updatedAt: undefined, scripts: [{ id: "Mauvais Id", nom: "x", code: "" }] });
+        check("scripts : une liste de scripts invalide est refusée (400 invalid_input)", refus.statut === 400 && refus.corps.error === "invalid_input", JSON.stringify(refus.corps));
+      }
+      await p3.reload();
+      await plancheChargee(p3, "scripts enregistrés");
+      await racine.locator('[data-planche-panneau-icone="scripts"]').click();
+      await scripts.locator("[data-planche-scripts-choix]").selectOption("personnel:mon-essai");
+      check("scripts : après rechargement, le script du compte se relit et s'exécute", (await editeur.inputValue()) === "planche.afficher('bonjour');" && (await lancer()) === "inchange" && (await journal()) === "bonjour");
+      await scripts.locator("[data-planche-scripts-supprimer]").click();
+      await p3.waitForTimeout(1200);
+      check("scripts : supprimé, il quitte le compte", (await api("get")).corps.scripts.length === 0 && (await scripts.locator('[data-planche-scripts-choix] option[value="personnel:mon-essai"]').count()) === 0);
     }
     await c3.close();
   }

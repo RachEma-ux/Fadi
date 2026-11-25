@@ -47,7 +47,14 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
   it("serveur : seul le client des préférences (lot 5) l'appelle, et seulement à /sandbox/preferences", () => {
     const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
     const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
-    expect(appelants).toEqual(["preferences/client.ts"]);
+    // Le Worker des scripts (extension Scripts) nomme ces fonctions pour les **retirer** au script : il n'en appelle aucune.
+    expect(appelants).toEqual(["planche/scripts-planche.worker.ts", "preferences/client.ts"]);
+    const worker = code(join(RACINE, "planche/scripts-planche.worker.ts"));
+    const retires = /const RETIRES = \[([\s\S]*?)\] as const;/.exec(worker)?.[1] ?? "";
+    for (const nom of ["fetch", "XMLHttpRequest", "WebSocket", "EventSource", "importScripts", "indexedDB", "caches", "Worker"]) expect(retires, nom).toContain(`"${nom}"`);
+    const horsListe = worker.replace(/const RETIRES = \[[\s\S]*?\] as const;/, "").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    expect(horsListe).not.toMatch(appels);
+    expect(horsListe).not.toMatch(/https?:\/\/|\bimport\s*\(/);
     const client = code(join(RACINE, "preferences/client.ts"));
     expect(client).toContain('export const ADRESSE_PREFERENCES = "/sandbox/preferences";');
     expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES"]);

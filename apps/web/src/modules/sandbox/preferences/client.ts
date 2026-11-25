@@ -35,9 +35,9 @@ async function appeler(init?: RequestInit): Promise<PreferencesRecues> {
   const corps = (await r.json()) as Record<string, unknown>;
   const { updatedAt, compte, ...reste } = corps;
   if (typeof compte !== "string" || compte.length === 0) throw new ErreurPreferences(r.status);
-  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"], extensions: reste["extensions"] }), compte, updatedAt: typeof updatedAt === "string" ? updatedAt : null, catalogue: lireCatalogue(reste["catalogue"]) };
+  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"], extensions: reste["extensions"], scripts: reste["scripts"] }), compte, updatedAt: typeof updatedAt === "string" ? updatedAt : null, catalogue: lireCatalogue(reste["catalogue"]) };
 }
 
 export const lirePreferencesServeur = (): Promise<PreferencesRecues> => appeler();
 export const enregistrerPreferencesServeur = (p: PreferencesSandbox): Promise<PreferencesRecues> =>
-  appeler({ method: "PUT", body: JSON.stringify({ profil: p.profil, barrePersonnelle: p.barrePersonnelle, favoris: p.favoris, regroupements: p.regroupements, extensions: p.extensions }) });
+  appeler({ method: "PUT", body: JSON.stringify({ profil: p.profil, barrePersonnelle: p.barrePersonnelle, favoris: p.favoris, regroupements: p.regroupements, extensions: p.extensions, scripts: p.scripts }) });

@@ -972,6 +972,13 @@ ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS extensions jsonb N
 ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_extensions_check,
   ADD CONSTRAINT sandbox_tool_preferences_extensions_check
   CHECK (jsonb_typeof(extensions) = 'object') NOT VALID;
+-- « Mes scripts » de l'extension Scripts du Sandbox (25 novembre 2026) : scripts personnels du compte, [{ id, nom, code }],
+-- au plus 20 (forme et bornes vérifiées par le serveur, validerScripts). Texte rangé et rendu au compte, jamais exécuté
+-- par le serveur. Additive.
+ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS scripts jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_scripts_check,
+  ADD CONSTRAINT sandbox_tool_preferences_scripts_check
+  CHECK (jsonb_typeof(scripts) = 'array' AND jsonb_array_length(scripts) <= 20) NOT VALID;
 -- Catalogue des extensions, réglages de la plateforme (25 novembre 2026) : une ligne par extension que l'administrateur
 -- a réglée — état (disponible, expérimentale, retirée) et réglage d'origine des comptes qui n'ont rien choisi. Sans
 -- ligne, l'extension est disponible avec le réglage livré par Fadi. Le contenu d'une extension (outils, commandes,

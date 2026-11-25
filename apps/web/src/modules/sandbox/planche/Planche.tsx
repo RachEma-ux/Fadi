@@ -193,7 +193,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -202,6 +202,8 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
+import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils, titreOperation, type LigneBarre } from "./BoutonOutils";
@@ -259,7 +261,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -2504,6 +2506,43 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       majOptions({ flecheNord: true });
     }
   };
+  /**
+   * Extension « Scripts » : le script affiché (gardé quand le panneau se ferme), l'exécution en cours et sa dernière
+   * issue. Le script tourne dans un Web Worker sur une copie du modèle ; son résultat n'est appliqué que si le dessin
+   * n'a pas changé entre-temps, en un seul pas d'historique.
+   */
+  const [scriptEdite, setScriptEdite] = useState<ScriptEdite>(() => scriptExemple("rangee-poteaux") ?? SCRIPT_NOUVEAU);
+  const [issueScript, setIssueScript] = useState<IssueAffichee | null>(null);
+  const executionScript = useRef<ExecutionScript | null>(null);
+  const [scriptEnCours, setScriptEnCours] = useState(false);
+  useEffect(() => () => executionScript.current?.arreter(), []);
+  const disponibiliteCommandeScripts = (id: IdCommandeScripts) => disponibiliteScripts(id, { vide: scriptEdite.code.trim().length === 0, enCours: scriptEnCours });
+  const executerScripts = (id: IdCommandeScripts) => {
+    if (!disponibiliteCommandeScripts(id).disponible) return;
+    setPanneau("scripts");
+    if (id === "scripts") return;
+    const depart = histRef.current.present.modele;
+    const dansDepart = dansRef.current;
+    const x = lancerScript({ code: scriptEdite.code, modele: depart, selection: [...selectionRef.current], ...(dansDepart !== undefined ? { dans: dansDepart } : {}) });
+    executionScript.current = x;
+    setScriptEnCours(true);
+    setIssueScript({ etat: "encours", journal: [], erreur: null });
+    void x.issue.then((i) => {
+      if (executionScript.current !== x) return;
+      executionScript.current = null;
+      setScriptEnCours(false);
+      if (i.genre !== "fini") return setIssueScript({ etat: i.genre, journal: [], erreur: null });
+      const fin = (etat: IssueAffichee["etat"]) => setIssueScript({ etat, journal: i.journal, erreur: i.erreur });
+      if (i.erreur) return fin("erreur");
+      if (!i.modele) return fin("inchange");
+      if (readOnly) return fin("lecture");
+      if (histRef.current.present.modele !== depart || dansRef.current !== dansDepart) return fin("perime");
+      const modele = i.modele;
+      operer(t("planche.scripts.executer"), () => ({ modele, selection: i.crees, message: t("planche.scripts.issue.modifie") }));
+      fin("modifie");
+    });
+  };
+
   /** Extension « Composants dynamiques » : définition du composant sélectionné seul dans le contexte ouvert, ou `null`. */
   const composantSelectionne = (): string | null => {
     const sel = vue.selection ?? selectionRef.current;
@@ -2847,6 +2886,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "controle") executerControle(c.id as IdCommandeControle);
     else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
+    else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -2892,6 +2932,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_EMPLACEMENT.map((c) => {
           const d = disponibiliteCommandeEmplacement(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.emplacement.motif.arete"), executer: () => executerEmplacement(c.id) };
+        }),
+        // Extension « Scripts » : mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_SCRIPTS.map((c) => {
+          const d = disponibiliteCommandeScripts(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.scripts.motif.vide"), executer: () => executerScripts(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -3443,6 +3488,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             )}
             {panneau === "emplacement" && (
               <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement} />
+            )}
+            {panneau === "scripts" && (
+              <PanneauScripts
+                scripts={prefsSandbox.preferences.scripts}
+                edite={scriptEdite}
+                onEdite={setScriptEdite}
+                onScripts={(scripts) => prefsSandbox.modifier({ ...prefsSandbox.preferences, scripts })}
+                enAttente={prefsSandbox.etat === "copie" || prefsSandbox.etat === "defaut"}
+                enCours={scriptEnCours}
+                issue={issueScript}
+                executer={executerScripts}
+                disponibilite={disponibiliteCommandeScripts}
+                onArreter={() => executionScript.current?.arreter()}
+              />
             )}
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
