@@ -41,7 +41,7 @@ export interface WorkerExtension {
 export interface HoteExtension {
   /** Adresse une demande (commande) ou un événement à l'extension ; la démarre au besoin. */
   readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown) => Promise<IssueAppelExtension>;
-  /** Arrête l'espace isolé ; un appel en cours rend « arrete ». Sans effet s'il est déjà arrêté. */
+  /** Arrête l'espace isolé ; l'appel en cours et ceux qui attendaient rendent « arrete ». Un appel fait ensuite la redémarre. */
   readonly arreter: () => void;
   readonly enMarche: () => boolean;
 }
@@ -74,6 +74,8 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   /** Appel en cours : au plus un, les autres attendent dans `file`. */
   let enCours: { readonly id: number | "demarrage"; readonly clore: (i: IssueAppelExtension | DemarrageRendu) => void } | null = null;
   let file: Promise<unknown> = Promise.resolve();
+  /** Avance à chaque arrêt demandé : un appel mis en file avant l'arrêt ne relance pas l'extension. */
+  let epoque = 0;
 
   const eteindre = () => {
     if (!w) return;
@@ -151,10 +153,13 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   };
 
   const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null) => {
+    const demandeA = epoque;
     const suite = file.then(async (): Promise<IssueAppelExtension> => {
+      if (demandeA !== epoque) return { genre: "arrete" };
       lignes = 0;
       const refusDemarrage = await demarrer();
       if (refusDemarrage) return refusDemarrage;
+      if (demandeA !== epoque) return { genre: "arrete" };
       const id = ++numero;
       return attendre<IssueAppelExtension>(id, delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
     });
@@ -165,6 +170,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   return {
     appeler,
     arreter: () => {
+      epoque += 1;
       eteindre();
       enCours?.clore({ genre: "arrete" });
     },

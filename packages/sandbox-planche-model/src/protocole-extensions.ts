@@ -93,7 +93,8 @@ export interface PaquetExtension {
 export type MotifRefusPaquet = "forme_invalide" | "hors_bornes" | "version_non_prise_en_charge";
 export type ValidationPaquet = { readonly ok: true; readonly paquet: PaquetExtension } | { readonly ok: false; readonly erreur: MotifRefusPaquet; readonly detail: string };
 
-const MOTIF_ID_ENTREE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** Commence par une lettre : l'identifiant devient un segment de nom de message (« commande.<id> »), voir `MOTIF_NOM_MESSAGE`. */
+const MOTIF_ID_ENTREE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const MOTIF_PAGE = /^[a-z0-9][a-z0-9._-]{0,59}$/;
 const MOTIF_RACCOURCI = /^(?:(?:Ctrl|Alt|Maj)\+){0,3}(?:[A-Z0-9]|F(?:[1-9]|1[0-2]))$/;
 const MOTIF_PROTOCOLE = /^(\d{1,3})\.(\d{1,3})$/;
@@ -224,6 +225,8 @@ export function validerPaquetExtension(v: unknown): ValidationPaquet {
     const outils = liste(f["outils"], "outils", BORNES_EXTENSION.outils).map((o) => entree(o, "outil", pages));
     sansDoublon([...commandes, ...outils].map((x) => x.id), "commandes et outils");
     sansDoublon([...commandes, ...outils].map((x) => x.raccourci), "raccourcis");
+    // Règle d'or de la Planche : chaque commande et chaque outil a sa propre icône, jamais partagée.
+    sansDoublon([...commandes, ...outils].map((x) => x.icone), "icônes");
     const panneaux = liste(f["panneaux"], "panneaux", BORNES_EXTENSION.panneaux).map((p): PanneauDeclare => {
       if (!estObjet(p)) return refuser("panneau : objet attendu");
       const horsP = clesHors(p, ["id", "titre", "page"]);

@@ -57,6 +57,12 @@ describe("paquet d'extension fadi-addon/1", () => {
     expect(refuse(paquet({}, { commandes: [c({ icone: "absente.svg" })] }))).toMatch(/icône absente du paquet/);
     expect(refuse(paquet({}, { commandes: [c({}), c({ raccourci: "Alt+Maj+T" })] }))).toMatch(/« saluer » déclaré deux fois/);
     expect(refuse(paquet({}, { commandes: [c({}), c({ id: "autre" })] }))).toMatch(/« Alt\+Maj\+S » déclaré deux fois/);
+    // Règle d'or : une icône par commande ou outil, jamais partagée.
+    expect(refuse(paquet({}, { commandes: [c({}), c({ id: "autre", raccourci: "Alt+Maj+T" })] }))).toMatch(/icônes : « saluer\.svg » déclaré deux fois/);
+    expect(refuse(paquet({ pages: { "saluer.svg": ICONE, "autre.svg": ICONE } }, { commandes: [c({}), c({ id: "autre", raccourci: "Alt+Maj+T", icone: "autre.svg" })] }))).toBe("accepté");
+    // L'identifiant devient « commande.<id> » : il commence par une lettre, comme tout segment de nom de message.
+    expect(refuse(paquet({}, { commandes: [c({ id: "123" })] }))).toMatch(/identifiant mal formé/);
+    expect(lireMessageProtocole(demandeProtocole(1, "commande.vue-2d", null))).not.toBeNull();
   });
 
   it("une déclaration sans sa permission est refusée ; avec, elle est acceptée", () => {

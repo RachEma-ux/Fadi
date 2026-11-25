@@ -104,6 +104,21 @@ describe("hôte d'une extension — l'extension d'essai du socle", () => {
     expect(f.crees[0]!.termine).toBe(true);
   });
 
+  it("arrêt à la demande : les appels qui attendaient rendent « arrete » sans relancer l'extension ; un appel fait ensuite la relance", async () => {
+    const f = faux({ muet: ["commande.boucler"], journal: [] });
+    const h = creerHoteExtension(ESSAI, { creer: f.creer });
+    const premier = h.appeler("demande", "commande.boucler");
+    const second = h.appeler("demande", "commande.compter");
+    await new Promise((r) => setTimeout(r, 5));
+    h.arreter();
+    expect(await premier).toEqual({ genre: "arrete" });
+    expect(await second).toEqual({ genre: "arrete" });
+    expect(h.enMarche()).toBe(false);
+    expect(f.crees).toHaveLength(1);
+    expect(await h.appeler("demande", "commande.compter")).toMatchObject({ genre: "fini" });
+    expect(f.crees).toHaveLength(2);
+  });
+
   it("démarrage manqué : le motif est rendu et l'espace isolé est arrêté", async () => {
     const f = faux();
     const h = creerHoteExtension({ ...ESSAI, code: 'const m = import("ailleurs");' }, { creer: f.creer });
