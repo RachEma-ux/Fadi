@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { OUTILS, CLES_PERSONNALISABLES, clesMasquees, outilParId } from "@parcours/sandbox-planche-model";
+import { OUTILS, CLES_PERSONNALISABLES, clesMasquees, extensionDeCle, outilParId } from "@parcours/sandbox-planche-model";
 import { CATALOGUE } from "../messages";
 import { BARRES, OBJET_DE } from "./barres-outils";
 import {
@@ -15,6 +15,7 @@ import {
   barresPersonnelles,
   deplacerEntree,
   entreesDe,
+  extensionDeLaCommande,
   groupeDeCommande,
   idBarreCanonique,
   idBarreGroupe,
@@ -91,7 +92,7 @@ describe("État mémorisé des barres — reprise des identifiants d'outil d'ava
 });
 
 describe("Groupes de commandes de la liste « Outils » — « Objets et arêtes » scindé", () => {
-  it("chaque commande du registre a un groupe : Groupe, Repères, Bois ou Caméra", () => {
+  it("chaque commande du registre a un groupe : Groupe, Repères, Bois, Extensions ou Caméra", () => {
     const attendu: Record<string, string> = {
       groupe: "groupe", composant: "groupe", eclater: "groupe", "rendre-unique": "groupe", "diviser-courbe": "groupe",
       fermer: "groupe", "fermer-tout": "groupe", "detacher-lien": "groupe", "groupe-vide": "groupe", "deplacer-vers": "groupe", renommer: "groupe",
@@ -105,7 +106,14 @@ describe("Groupes de commandes de la liste « Outils » — « Objets et arêtes
       expect(COMMANDES_DU_REGISTRE, id).toContain(id);
       expect(groupeDeCommande(id), id).toBe(g);
     }
-    for (const id of COMMANDES_DU_REGISTRE) expect(["groupe", "reperes", "bois", "camera"]).toContain(groupeDeCommande(id));
+    for (const id of COMMANDES_DU_REGISTRE) expect(["groupe", "reperes", "bois", "extensions", "camera"]).toContain(groupeDeCommande(id));
+    // Groupe « Extensions » (après « Bois ») : toute commande d'une extension autre que « Bois et menuiserie », et elles seules.
+    for (const id of COMMANDES_DU_REGISTRE) {
+      const x = extensionDeCle(`commande:${id}`);
+      expect(groupeDeCommande(id) === "extensions", id).toBe(x !== undefined && x.id !== "bois");
+      expect(extensionDeLaCommande(id), id).toBe(x && x.id !== "bois" ? x.id : null);
+    }
+    for (const id of ["controler", "nettoyer", "composant-dynamique", "redessiner-composant", "emplacement", "nord-arete", "afficher-nord"]) expect(groupeDeCommande(id), id).toBe("extensions");
     // Répartition validée par le maître d'ouvrage : 13 dans Groupe, 12 dans Repères, 7 dans Bois, 2 avec Caméra.
     const compte = (g: string) => Object.values(attendu).filter((x) => x === g).length;
     expect([compte("groupe"), compte("reperes"), compte("bois"), compte("camera")]).toEqual([13, 12, 7, 2]);

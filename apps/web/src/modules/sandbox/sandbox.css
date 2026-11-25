@@ -3798,3 +3798,31 @@
   margin: 0;
   font-size: 0.78rem;
 }
+
+/* Liste « Outils », groupe « Extensions » : une ligne par extension (interrupteur), ses commandes dessous, en retrait. */
+.sandbox-planche .planche-outils-liste .planche-outils-extension {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px 4px 28px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-extension:hover {
+  background: rgba(15, 76, 58, 0.08);
+}
+.sandbox-planche .planche-outils-extension .planche-outils-libelle {
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-outils-extension-commandes {
+  margin-left: 22px;
+  border-left: 1px solid rgba(15, 76, 58, 0.18);
+}
