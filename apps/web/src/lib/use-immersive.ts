@@ -25,7 +25,11 @@ export function useImmersive(active: boolean): void {
       // s'arrête au-dessus d'elle (hauteur réelle recopiée par la coquille, 0 quand la barre n'est pas affichée).
       const barreBas = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fd-barre-bas-reelle")) || 0;
       const visible = window.innerHeight - barreBas;
-      const height = `${Math.max(360, Math.floor(visible - top - 24))}px`;
+      // Plancher : 360 px au bureau. Avec la barre du bas (téléphone), 480 px : la Planche garde une palette d'outils
+      // utilisable (bascule, outils, Rechercher et Plus d'outils) ; si l'écran est trop court, la page défile un peu
+      // plutôt que de comprimer l'espace de dessin (la zone de travail réserve déjà la hauteur de la barre en bas).
+      const plancher = barreBas > 0 ? 480 : 360;
+      const height = `${Math.max(plancher, Math.floor(visible - top - 24))}px`;
       if (workspace.style.getPropertyValue("--atelier-workspace-height") !== height) {
         workspace.style.setProperty("--atelier-workspace-height", height);
       }
