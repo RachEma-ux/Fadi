@@ -118,7 +118,14 @@ try {
   await reglerOrigine("emplacement", !origineDepart);
   await ouvrirAdministration();
   await pret("emplacement");
-  check("extension fournie par Fadi : état et « installée d'origine » réglés, gardés au rechargement", (await ligne("emplacement").locator("[data-admin-etat]").inputValue()) === etatVoulu && (await ligne("emplacement").locator("[data-admin-origine]").getAttribute("aria-checked")) === String(!origineDepart));
+  // Au rechargement, la liste s'affiche d'abord depuis le cache persistant (IndexedDB), écrit par lots de 200 ms : il
+  // peut encore porter l'avant-dernier réglage tant que la relecture du serveur (invalidation après restauration) n'a
+  // pas répondu. On attend donc l'état que le serveur a gardé (15 s au plus) au lieu de lire la ligne au premier rendu.
+  const garde = await page.waitForFunction(([x, e, o]) => {
+    const l = document.querySelector(`[data-admin-extension="${x}"]`);
+    return !!l && l.querySelector("[data-admin-etat]")?.value === e && l.querySelector("[data-admin-origine]")?.getAttribute("aria-checked") === o;
+  }, ["emplacement", etatVoulu, String(!origineDepart)], { timeout: 15000 }).then(() => true, () => false);
+  check("extension fournie par Fadi : état et « installée d'origine » réglés, gardés au rechargement", garde, `affiché : ${await ligne("emplacement").locator("[data-admin-etat]").inputValue()} / ${await ligne("emplacement").locator("[data-admin-origine]").getAttribute("aria-checked")} ; attendu : ${etatVoulu} / ${!origineDepart}`);
   await reglerOrigine("emplacement", origineDepart);
   await reglerEtat("emplacement", etatDepart);
 
