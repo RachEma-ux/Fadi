@@ -14,10 +14,10 @@ const avec = (f: (p: { fiche: { id: string; commandes: { id: string; icone: stri
 };
 
 describe("import d'un paquet d'extension", () => {
-  it("le paquet d'essai du lot 3 est admis, et rendu tel quel", () => {
+  it("le paquet d'essai (lots 3 et 5) est admis, et rendu tel quel", () => {
     const j = jugerImportPaquet(essai());
     expect(j).toMatchObject({ ok: true });
-    if (j.ok) expect(j.paquet.fiche.commandes.map((c) => c.id)).toEqual(["poser-boite", "boite-sur-mesure", "compter", "trainer", "echouer"]);
+    if (j.ok) expect(j.paquet.fiche.commandes.map((c) => c.id)).toEqual(["poser-boite", "boite-sur-mesure", "compter", "etiqueter", "lire-etiquette", "trainer", "echouer"]);
   });
 
   it("la forme du paquet est jugée d'abord : le motif du protocole est rendu", () => {
@@ -38,7 +38,7 @@ describe("import d'un paquet d'extension", () => {
       expect(j, r).toMatchObject({ ok: false, erreur: "raccourci_refuse" });
       if (!j.ok) expect(j.detail, r).toContain(r);
     }
-    for (const r of ["Alt+Maj+F8", "Ctrl+Alt+9", "Alt+F5"]) expect(raccourci(r).ok, r).toBe(true);
+    for (const r of ["Alt+Maj+F11", "Ctrl+Alt+9", "Alt+F5"]) expect(raccourci(r).ok, r).toBe(true);
     // Une autre extension installée tient déjà Alt+Maj+F2 ; la même extension, réimportée, se remplace.
     const autre = avec((p) => void (p.fiche.id = "autre")) as PaquetExtension;
     expect(jugerImportPaquet(essai(), [autre])).toMatchObject({ ok: false, erreur: "raccourci_refuse" });
