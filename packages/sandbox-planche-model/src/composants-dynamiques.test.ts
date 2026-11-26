@@ -228,6 +228,18 @@ const colonneDe = (m: Modele, parent: Id, objet: Id, c: number) => {
 };
 
 describe("Composants dynamiques — phase 1, lot 1 : RotX et RotY", () => {
+  it("redessins répétés stables : RotY = 100 seul ne bascule pas d'une branche d'Euler à l'autre", () => {
+    const e = etagere();
+    const un = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotY", formule: "100" }] }).modele;
+    const axes = (m: Modele) => [0, 1, 2].map((c) => colonneDe(m, e.parent, e.planche, c));
+    const premier = axes(un);
+    let m = un;
+    for (let i = 0; i < 3; i++) {
+      m = redessinerDynamique(m, e.definition).modele;
+      expect(axes(m)).toEqual(premier);
+    }
+  });
+
   it("RotX, RotY puis RotZ, dans cet ordre, autour des axes du composant", () => {
     const e = etagere();
     const rx = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotX", formule: "90" }] });
@@ -329,6 +341,14 @@ describe("Composants dynamiques — phase 1, lot 1 : action au clic (outil Inter
     const sans = definirDynamique(e.m, e.definition, { parametres: [], regles: [] }).modele;
     expect(cliquerDynamique(sans, e.definition).erreurs.map((x) => x.cle)).toEqual(["sans-clic"]);
     expect(cliquerDynamique(e.m, e.definition).erreurs.map((x) => x.cle)).toEqual(["pas-dynamique"]);
+  });
+
+  it("tout ou rien : une action qui rend un paramètre faux (division par zéro) annule le clic", () => {
+    const e = etagere();
+    const m = definirDynamique(e.m, e.definition, { parametres: [{ nom: "A", valeur: "1" }, { nom: "B", valeur: "=1/A" }], regles: [], surClic: 'SET("A", 0)' }).modele;
+    const r = cliquerDynamique(m, e.definition);
+    expect(r.erreurs.map((x) => x.cle)).toEqual(["division"]);
+    expect(r.modele).toBe(m);
   });
 
   it("l'objet visé répond par le composant le plus profond qui a une action au clic", () => {

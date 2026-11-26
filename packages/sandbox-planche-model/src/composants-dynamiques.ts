@@ -388,6 +388,24 @@ export function anglesRotation(axes: readonly [Vec3, Vec3, Vec3]): [number, numb
   return [propre(Math.atan2(v.z, w.z) / RAD), propre(ry / RAD), propre(Math.atan2(u.y, u.x) / RAD)];
 }
 
+/** Écart angulaire (degrés, ramené à 0…180). */
+const ecartAngle = (a: number, b: number): number => {
+  const d = Math.abs((((a - b) % 360) + 360) % 360);
+  return Math.min(d, 360 - d);
+};
+
+/**
+ * Angles actuels d'axes donnés, sur la branche d'Euler la plus proche des angles demandés par les règles : une même
+ * orientation s'écrit (rx, ry, rz) ou (rx + 180, 180 − ry, rz + 180). Sans cette précaution, un angle sans règle repris
+ * sur l'autre branche changerait l'orientation à chaque redessin.
+ */
+function anglesCompatibles(axes: readonly [Vec3, Vec3, Vec3], voulus: readonly (number | undefined)[]): [number, number, number] {
+  const a = anglesRotation(axes);
+  const b: [number, number, number] = [a[0] + 180, 180 - a[1], a[2] + 180];
+  const cout = (c: readonly number[]) => voulus.reduce<number>((s, v, i) => (v === undefined ? s : s + ecartAngle(v, c[i] as number)), 0);
+  return cout(b) < cout(a) - 1e-9 ? b : a;
+}
+
 /**
  * Redessine un composant dynamique : évalue ses paramètres puis applique ses règles à ses objets enfants. Une règle en
  * erreur est rapportée et laissée sans effet ; si un paramètre est en erreur, rien n'est modifié.
@@ -516,14 +534,15 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
       if (ids.length) copies[objet] = ids;
     }
     const { M, ech, unites, naturel } = geometrie(base);
-    const anglesActuels = anglesRotation(unites);
     const tourne = regles.some((r) => r.attribut === "RotX" || r.attribut === "RotY" || r.attribut === "RotZ");
     for (let k = 0; k <= n; k++) {
       const id = k === 0 ? objet : ((copies[objet] as readonly Id[])[k - 1] as Id);
       // Rotation : un angle sans règle (ou en erreur) garde sa valeur actuelle ; sans aucune règle d'angle, les axes restent.
       let axes = unites;
       if (tourne) {
-        const [rx, ry, rz] = (["RotX", "RotY", "RotZ"] as const).map((a, i) => num(a, k) ?? (anglesActuels[i] as number));
+        const voulus = (["RotX", "RotY", "RotZ"] as const).map((a) => num(a, k));
+        const actuels = anglesCompatibles(unites, voulus);
+        const [rx, ry, rz] = voulus.map((v, i) => v ?? (actuels[i] as number));
         axes = axesRotation(rx as number, ry as number, rz as number);
       }
       const echelles = (["LenX", "LenY", "LenZ"] as const).map((a, axe) => {
@@ -654,6 +673,9 @@ export function cliquerDynamique(m: Modele, definition: Id): ResultatDynamique {
   } catch (e) {
     return { modele: m, erreurs: [depuis(`${def.nom}.surClic`, e)] };
   }
+  // Tout ou rien : un paramètre que la dernière action rendrait faux (division par zéro…) annule le clic.
+  const finale = evaluerParametres(suite);
+  if (finale.erreurs.length) return { modele: m, erreurs: finale.erreurs };
   return definirDynamique(m, definition, suite);
 }
 
