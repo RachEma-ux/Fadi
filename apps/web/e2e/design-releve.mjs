@@ -11,6 +11,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { LARGEURS, axe, cibles, nouvellesGraves, reflow } from "./lib-design.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/design";
@@ -22,11 +23,9 @@ const check = (nom, ok, detail = "") => { console.log(`${ok ? "✓" : BLOQUANT ?
 const navigateur = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const amorce = await navigateur.newContext();
 const page0 = await amorce.newPage();
-const email = `design-${Date.now().toString(36)}@example.test`;
-await page0.goto(`${BASE}/inscription`);
-await page0.fill('input[name="email"]', email);
-await page0.fill('input[name="password"]', "design-recette-123");
-await page0.click('button[type="submit"]');
+const email = `design-${Date.now().toString(36)}@example.com`;
+// Inscription par le lien du courriel (#428) : adresse sur /inscription, mot de passe sur la page du lien.
+await inscrireDansLaPage(page0, email, "design-recette-123", BASE);
 await page0.waitForURL(/\/(accueil|projets)/);
 const reponse = await page0.request.post(`${BASE}/projects`, { data: { code: "P.DESIGN", name: "Design — écran témoin" } });
 if (!reponse.ok()) throw new Error(`Préparation : POST /projects → ${reponse.status()}`);
