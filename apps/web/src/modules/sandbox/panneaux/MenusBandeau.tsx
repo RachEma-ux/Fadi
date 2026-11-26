@@ -6,7 +6,8 @@
  * Comportement (motif W3C APG « Menubar ») : un clic ouvre un menu ; tant qu'un menu est ouvert, survoler un autre titre
  * l'ouvre à sa place ; flèches gauche / droite d'un menu à l'autre, haut / bas d'une entrée à l'autre ; Échap ou un clic
  * ailleurs referme. Une case à cocher ou un choix radio laisse le menu ouvert pour enchaîner ; une commande le ferme.
- * Sur fenêtre étroite (`replie`), les quatre menus se rangent sous un seul bouton « Menus ▾ », en sections.
+ * Les quatre titres restent toujours visibles, comme sur la maquette validée (pas de menu replié) ; sur fenêtre étroite,
+ * ils se resserrent et le nom de la Planche s'abrège.
  * Composant de présentation : aucun état de la Planche ici, seulement des descriptions et des rappels.
  */
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
@@ -32,11 +33,8 @@ function entreesActives(menu: HTMLElement | null): HTMLElement[] {
   return menu ? [...menu.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')] : [];
 }
 
-export function MenusBandeau({ menus, replie }: { menus: readonly MenuBandeau[]; replie: boolean }) {
-  // Fenêtre étroite : un seul menu « Menus ▾ » qui reprend les quatre, chacun sous son titre de section.
-  const affiches: readonly MenuBandeau[] = replie
-    ? [{ id: "menus", libelle: t("planche.menus.replie"), entrees: menus.flatMap((m, i) => [...(i > 0 ? [{ genre: "separateur" } as const] : []), { genre: "titre", libelle: m.libelle } as const, ...m.entrees]) }]
-    : menus;
+export function MenusBandeau({ menus }: { menus: readonly MenuBandeau[] }) {
+  const affiches = menus;
   const [ouvert, setOuvert] = useState<string | null>(null);
   const racine = useRef<HTMLDivElement | null>(null);
   const liste = useRef<HTMLDivElement | null>(null);
@@ -61,7 +59,7 @@ export function MenusBandeau({ menus, replie }: { menus: readonly MenuBandeau[];
     }
   }, [ouvert]);
 
-  // Menu fermé avec un changement de largeur (repli) : rien ne reste ouvert sur un titre disparu.
+  // Liste des menus changée (extensions) : rien ne reste ouvert sur un titre disparu.
   useEffect(() => {
     if (ouvert && !affiches.some((m) => m.id === ouvert)) setOuvert(null);
   }, [affiches, ouvert]);
@@ -135,7 +133,7 @@ export function MenusBandeau({ menus, replie }: { menus: readonly MenuBandeau[];
 
   const menuOuvert = affiches.find((m) => m.id === ouvert) ?? null;
   return (
-    <div ref={racine} className="planche-bandeau-menus" role="menubar" aria-label={t("planche.menus.barre")} data-planche-menus-bandeau data-replie={replie ? "" : undefined}>
+    <div ref={racine} className="planche-bandeau-menus" role="menubar" aria-label={t("planche.menus.barre")} data-planche-menus-bandeau>
       {affiches.map((m) => (
         <div key={m.id} className="planche-bandeau-menu">
           <button
@@ -150,7 +148,6 @@ export function MenusBandeau({ menus, replie }: { menus: readonly MenuBandeau[];
             data-planche-menu-bandeau={m.id}
           >
             {m.libelle}
-            {replie && <IconeSandbox nom="menu" className="planche-bandeau-menu-chevron" />}
           </button>
           {menuOuvert?.id === m.id && (
             <div ref={liste} className="planche-bandeau-menu-liste" role="menu" aria-label={m.libelle} onKeyDown={toucheListe} data-planche-menu-bandeau-liste={m.id}>

@@ -46,14 +46,15 @@ comportement ni d'apparence.
 - **Barre d'actions dans le bandeau** (24 novembre 2026, ordinateur, `panneaux/ActionsBandeau.tsx`) : la barre flottante
   du milieu disparaît ; ses commandes passent au centre du bandeau, en trois groupes — Cadrer (zoom − / + au toucher) |
   Grouper, Composant, Éclater, Unique | Diviser, Diviser la courbe, Isoler selon la sélection. États grisés et infobulles
-  inchangés, Isoler enfoncé pendant l'isolement ; sous 1180 px de large et à la souris, icônes seules (nom en infobulle ; au toucher, le nom reste visible). Le choix bandeau / barre flottante suit la largeur de la fenêtre qui porte la Planche (fenêtre détachée comprise). À droite :
+  inchangés, Isoler enfoncé pendant l'isolement ; sous 1180 px de large et à la souris, icônes seules (nom en infobulle ; au toucher, le nom reste visible, en petit sous l'icône). Le choix bandeau / barre flottante suit la largeur de la fenêtre qui porte la Planche (fenêtre détachée comprise). À droite :
   « Détacher » dans la page ; dans la fenêtre détachée, plus de « Rattacher » : ✕ « Fermer et rattacher ». Position
   mémorisée, poignée et masquage de l'ancienne barre ne s'appliquent plus à l'ordinateur. Téléphone : barre flottante
   inchangée.
 - **Centre du bandeau : Annuler · Rétablir | Cadrer · Zoom** (26 novembre 2026, maquette validée par le maître
   d'ouvrage) : le centre ne garde que ce qui sert quel que soit l'outil. Annuler (Ctrl Z) et Rétablir (Ctrl Y) du
   brouillon, grisés quand il n'y a rien à faire, l'infobulle nomme l'opération ; Cadrer (Maj Z) ; Zoom choisit l'outil
-  Zoom (Z), enfoncé quand il est l'outil courant. Les commandes de groupe (Grouper, Composant, Éclater, Unique, Diviser,
+  Zoom (Z), enfoncé quand il est l'outil courant. Annuler et Rétablir en icônes seules à la souris (au toucher, nom visible sous l'icône, AGENTS.md) ;
+  pas de zoom − / + dans le bandeau (ils restent dans la barre flottante du téléphone). Les commandes de groupe (Grouper, Composant, Éclater, Unique, Diviser,
   Diviser la courbe, Isoler) quittent le bandeau sans disparaître : barre « Groupe » de la liste Outils, clic droit et
   clavier. Téléphone : barre flottante inchangée.
 - **Menus du bandeau** (26 novembre 2026, `panneaux/MenusBandeau.tsx`) : Édition, Affichage, Caméra et Fenêtres juste
@@ -62,8 +63,11 @@ comportement ni d'apparence.
   X-ray, sol, axes, guides, plans de coupe, couleur par balise, objets masqués, Réafficher tout), Caméra (vues standard,
   perspective / parallèle, champ de vision, zoom, Mes scènes), Fenêtres (chaque panneau de la colonne, panneaux des
   extensions actives). Motif « Menubar » : clic, survol d'un titre voisin, flèches, Échap, clic ailleurs ; une case ou
-  un choix radio laisse le menu ouvert. Sous 1180 px de large, un seul « Menus ▾ » en sections. Rien n'est écrit dans
+  un choix radio laisse le menu ouvert. Les quatre titres restent visibles à toute largeur, comme sur la maquette (resserrés sous 1180 px). Rien n'est écrit dans
   la Planche par Affichage et Caméra (R10).
+- **Nom de la Planche dans le fil d'Ariane** (26 novembre 2026, maquette validée, `fil-ariane-planche.ts`) : dans la
+  page, le bandeau ne porte que « Planche » ; le nom de la Planche ouverte termine le fil « Studio / Console / Sandbox /
+  <nom> ». Détachée (fenêtre ou plein écran), la Planche remet son nom dans son bandeau.
 - **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
   déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
 - **Fenêtre détachée** (24 novembre 2026) : « Détacher » ouvre toujours la fenêtre « image dans l'image » (Document

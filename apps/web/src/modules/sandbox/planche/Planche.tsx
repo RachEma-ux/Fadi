@@ -6,7 +6,7 @@
  * cette interface ne fait que traduire pointeur et clavier en `EvenementOutil`, appeler `traiter`, puis afficher
  * `vue()`. Brouillon LOCAL (C6) : aucun envoi au serveur, aucune commande ; annuler / rétablir local.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   COULEUR_MATERIAU_DEFAUT,
@@ -160,6 +160,7 @@ import {
   idRegroupement,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
+import { FilArianePlanche } from "../fil-ariane-planche";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type ExtensionsMenu, type FormatEchange, type UniteFichier } from "./menu-planche";
 import {
   type ContexteTravail,
@@ -492,8 +493,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [outilsReplies, setOutilsReplies] = useState(true);
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
-  // Menus du bandeau (26 novembre 2026) : sous 1180 px de large, les quatre menus se rangent sous « Menus ▾ ».
-  const [menusReplies, setMenusReplies] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches);
   const colonneRef = useRef<HTMLElement | null>(null);
   // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
   const prefsSandbox = usePreferencesSandbox();
@@ -534,6 +533,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Planches nommées de ce navigateur (menu de la Planche) : l'index dit laquelle est ouverte ; l'enregistrement
   // automatique écrit toujours dans la Planche courante et met sa date à jour.
   const [indexPlanches, setIndexPlanches] = useState<IndexPlanches>(() => indexInitial());
+  // Nom de la Planche ouverte (26 novembre 2026, maquette validée) : dans le fil d'Ariane de la page tant que la Planche
+  // y est rattachée, le bandeau ne portant alors que « Planche » ; détachée (fenêtre ou plein écran), le nom revient
+  // dans le bandeau. Sans fil d'Ariane fourni par la page, le nom reste dans le bandeau.
+  const signalerNomFil = useContext(FilArianePlanche);
+  const nomCourant = nomAffiche(plancheDe(indexPlanches));
+  const nomDansFil = signalerNomFil !== null && detache === "non";
+  useEffect(() => {
+    signalerNomFil?.(nomDansFil ? nomCourant : null);
+  }, [signalerNomFil, nomDansFil, nomCourant]);
+  useEffect(() => () => signalerNomFil?.(null), [signalerNomFil]);
   const indexRef = useRef<IndexPlanches>(indexPlanches);
   /** Le prochain chargement remplace le dessin et l'historique (changement de Planche), au lieu de reprendre le brouillon. */
   const remplacerRef = useRef(false);
@@ -1765,13 +1774,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     };
     if (mq.matches !== etroitRef.current) maj();
     mq.addEventListener("change", maj);
-    const mqMenus = hote.matchMedia("(max-width: 1180px)");
-    const majMenus = () => setMenusReplies(mqMenus.matches);
-    majMenus();
-    mqMenus.addEventListener("change", majMenus);
     return () => {
       mq.removeEventListener("change", maj);
-      mqMenus.removeEventListener("change", majMenus);
     };
   }, [detache]);
 
@@ -3623,7 +3627,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
       : []),
   ];
-  const groupeVue: ActionBarre[] = [actionCadrer, ...actionZoom, ...zoomPas];
+  // Maquette validée : Cadrer · Zoom seulement ; zoom − / + restent dans la barre flottante du téléphone.
+  const groupeVue: ActionBarre[] = [actionCadrer, ...actionZoom];
   const commandeObjet = (c: (typeof COMMANDES_OBJETS)[number]): ActionBarre[] => {
     const d = disponibiliteObjet(c.id, etatSelectionObjets());
     // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -3861,9 +3866,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <div className="planche-bandeau" role="group" aria-label={t("planche.bandeau")} data-planche-bandeau>
         <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} extensions={extensionsMenu} deplacable={etroit} />
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
-          <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
+          <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span>{!nomDansFil && <> <span>{nomCourant}</span></>}
         </p>
-        {!etroit && <MenusBandeau menus={menusBandeau} replie={menusReplies} />}
+        {!etroit && <MenusBandeau menus={menusBandeau} />}
         {!etroit && <ActionsBandeau groupes={[groupeHistorique, groupeVue]} />}
         {!etroit && (
           <div className="planche-bandeau-droite" data-planche-bandeau-droite>
