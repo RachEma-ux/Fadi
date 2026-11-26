@@ -71,6 +71,7 @@ import {
   type CauseEvenement,
   type EvenementExtension,
   type AccesPlanche,
+  type FichierLu,
   type EntreeDeclaree,
   type PaquetExtension,
   type ValeursSaisie,
@@ -190,7 +191,7 @@ import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, su
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
-import { AvisExtensions, DialogueSaisieExtension, ajouterAvis, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
+import { AvisExtensions, DialogueFichierExtension, DialogueSaisieExtension, ajouterAvis, retirerFichier, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
 import { creerHoteExtension, type HoteExtension, type IssueAppelExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
@@ -2590,6 +2591,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // File des fenêtres de saisie : deux extensions peuvent en demander une en même temps ; la première demandée est
   // affichée, les suivantes attendent leur tour (leur commande reste suspendue, jamais oubliée).
   const [saisiesExtensions, setSaisiesExtensions] = useState<readonly SaisieOuverte[]>([]);
+  const [fichiersExtensions, setFichiersExtensions] = useState<readonly FichierDemande[]>([]);
   const [extensionsEnCours, setExtensionsEnCours] = useState<ReadonlySet<string>>(() => new Set());
   const extensionsEnCoursRef = useRef<Set<string>>(new Set());
   const hotesExtensions = useRef(new Map<string, { readonly paquet: PaquetExtension; readonly hote: HoteExtension }>());
@@ -2678,6 +2680,28 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       rafraichir();
     },
   });
+  /** Ouvre une fenêtre de fichier pour une extension ; `fermer` la retire si l'appel prend fin avant la réponse. */
+  const fenetreFichier = <T,>(creer: (cle: number, repondre: (v: T) => void) => FichierDemande) => {
+    const cle = ++cleExtensions.current;
+    let close = false;
+    const retirer = () => setFichiersExtensions((file) => retirerFichier(file, cle));
+    const reponse = new Promise<T>((resolve) => {
+      const fenetre = creer(cle, (v) => {
+        if (close) return;
+        close = true;
+        retirer();
+        resolve(v);
+      });
+      setFichiersExtensions((file) => [...file, fenetre]);
+    });
+    return {
+      reponse,
+      fermer: () => {
+        close = true;
+        if (plancheMontee.current) retirer();
+      },
+    };
+  };
   const hoteExtension = (p: PaquetExtension): HoteExtension => {
     const id = p.fiche.id;
     const connu = hotesExtensions.current.get(id);
@@ -2690,6 +2714,23 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
       libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
+      fichiers: {
+        ouvrir: (demande) => fenetreFichier<FichierLu | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
+        enregistrer: (demande) =>
+          fenetreFichier<boolean>(
+            (cle, repondre) => ({
+              cle,
+              extension: nom,
+              sorte: "enregistrer",
+              demande,
+              repondre: (accepte) => {
+                // Le fichier part dans les téléchargements de l'utilisateur, au moment où il l'accepte.
+                if (accepte) telechargerFichier(new Blob([demande.texte], { type: "text/plain;charset=utf-8" }), demande.nom);
+                repondre(accepte);
+              },
+            }),
+          ),
+      },
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
         let close = false;
@@ -3892,6 +3933,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         />
       )}
       {saisiesExtensions[0] && <DialogueSaisieExtension key={saisiesExtensions[0].cle} saisie={saisiesExtensions[0]} />}
+      {!saisiesExtensions[0] && fichiersExtensions[0] && <DialogueFichierExtension key={fichiersExtensions[0].cle} fichier={fichiersExtensions[0]} />}
       {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
         <div ref={coupeRef} onKeyDown={naviguerCoupe} className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>

@@ -1103,6 +1103,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/extensions-evenements node apps/web/e2e/extensions-evenements.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des fichiers d'extension — fenêtre « Ouvrir un fichier » (types, taille, refus d'un autre type, annulation), fenêtre « Enregistrer un fichier » (nom, taille, aperçu, téléchargement, Échap), délai suspendu, anglais (apps/web/e2e/extensions-fichiers.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/extensions-fichiers node apps/web/e2e/extensions-fichiers.mjs 2>&1 | tee -a e2e.log
       - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

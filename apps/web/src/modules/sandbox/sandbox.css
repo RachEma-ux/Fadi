@@ -3958,6 +3958,45 @@
   flex: none;
   margin: 0;
 }
+.sandbox-planche .planche-fichier-lignes {
+  margin: 0.2rem 0 0;
+  text-align: left;
+}
+.sandbox-planche .planche-fichier-lignes > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--atelier-ligne);
+}
+.sandbox-planche .planche-fichier-lignes dt {
+  color: var(--atelier-doux);
+}
+.sandbox-planche .planche-fichier-lignes dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-fichier-apercu {
+  margin: 0;
+  max-height: 9.5em;
+  overflow: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  background: var(--plan-fond);
+  color: var(--atelier-encre);
+  font: 12.5px/1.5 ui-monospace, Menlo, monospace;
+  text-align: left;
+  white-space: pre;
+}
+.sandbox-planche .planche-fichier-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--atelier-doux);
+  text-align: left;
+}
 .sandbox-planche .planche-saisie-erreur {
   margin: 0;
   color: #b3261e;

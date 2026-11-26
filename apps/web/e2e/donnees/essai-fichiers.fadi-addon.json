@@ -1,0 +1,51 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-fichiers",
+    "nom": {
+      "fr": "Essai des fichiers",
+      "en": "Files trial"
+    },
+    "description": {
+      "fr": "Extension d'essai des fichiers : elle importe des points depuis un fichier choisi par l'utilisateur et lui propose d'enregistrer un relevé du dessin.",
+      "en": "Trial add-on for files: it imports points from a file the user chooses and offers to save a count of the drawing."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "messages",
+      "fichiers"
+    ],
+    "commandes": [
+      {
+        "id": "importer-points",
+        "libelle": {
+          "fr": "Importer des points…",
+          "en": "Import points…"
+        },
+        "icone": "importer-points.svg",
+        "raccourci": "Ctrl+Alt+I"
+      },
+      {
+        "id": "exporter-releve",
+        "libelle": {
+          "fr": "Exporter le relevé…",
+          "en": "Export the count…"
+        },
+        "icone": "exporter-releve.svg",
+        "raccourci": "Ctrl+Alt+E"
+      }
+    ],
+    "outils": [],
+    "panneaux": [],
+    "abonnements": []
+  },
+  "code": "// Extension d'essai des fichiers (protocole 1.0, lot 7) : importer des points, exporter un relevé.\nplanche.sur(\"commande.importer-points\", async (d) => {\n  const en = d && d.langue === \"en\";\n  const fichier = await planche.fichiers.ouvrir([\".csv\", \".txt\"]);\n  if (fichier === null) {\n    await planche.message.afficher(en ? \"No file chosen.\" : \"Aucun fichier choisi.\", \"alerte\");\n    return null;\n  }\n  // Une ligne par point : x;y;z en mètres. Les lignes illisibles sont ignorées.\n  const points = fichier.texte.split(/\\r?\\n/).map((l) => l.split(\";\").map((v) => Number(v.replace(\",\", \".\")))).filter((p) => p.length === 3 && p.every((v) => Number.isFinite(v)));\n  if (points.length < 2) {\n    await planche.message.afficher((en ? \"No polyline in \" : \"Aucun tracé dans \") + fichier.nom, \"alerte\");\n    return 0;\n  }\n  await planche.operation.ouvrir(en ? \"Import points\" : \"Importer des points\");\n  for (let i = 1; i < points.length; i++) await planche.modele.ligne(points[i - 1], points[i]);\n  await planche.operation.valider();\n  await planche.message.afficher(points.length + (en ? \" points imported from \" : \" points repris de \") + fichier.nom);\n  return points.length;\n});\n\nplanche.sur(\"commande.exporter-releve\", async (d) => {\n  const en = d && d.langue === \"en\";\n  const m = await planche.modele.lire();\n  const texte = (en ? \"Kind;Count\" : \"Nature;Nombre\") + \"\\n\" + (en ? \"Faces\" : \"Faces\") + \";\" + m.faces.length + \"\\n\" + (en ? \"Edges\" : \"Arêtes\") + \";\" + m.aretes.length + \"\\n\" + (en ? \"Objects\" : \"Objets\") + \";\" + m.objets.length + \"\\n\";\n  const fait = await planche.fichiers.enregistrer(en ? \"drawing-count.csv\" : \"releve-du-dessin.csv\", texte);\n  await planche.message.afficher(fait ? (en ? \"File saved.\" : \"Fichier enregistré.\") : en ? \"Saving cancelled.\" : \"Enregistrement annulé.\", fait ? \"info\" : \"alerte\");\n  return fait;\n});\n",
+  "pages": {
+    "importer-points.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 3v10M8 9l4 4 4-4\"/><path d=\"M4 15v4h16v-4\"/></svg>",
+    "exporter-releve.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 13V3M8 7l4-4 4 4\"/><path d=\"M4 15v4h16v-4\"/></svg>"
+  }
+}

@@ -245,6 +245,15 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     dessin fait son propre pas ; les minuteries sont perdues quand l'extension s'arrête.
   - Extension d'essai : `apps/web/e2e/donnees/essai-evenements.fadi-addon.json` ; recette
     `apps/web/e2e/extensions-evenements.mjs` (CI, tranche `planche`).
+  - *Fichiers* (permission « fichiers ») : `planche.fichiers.ouvrir(types?)` rend `{ nom, texte }` ou `null`,
+    `planche.fichiers.enregistrer(nom, texte)` rend vrai ou faux. Pendant une commande seulement, une fenêtre à la
+    fois, délai suspendu. C'est toujours une fenêtre de la Planche qui s'ouvre, au nom de l'extension : pour ouvrir,
+    elle dit les types acceptés et la taille (texte seulement, 1 000 000 caractères au plus) et l'utilisateur choisit
+    le fichier — l'extension ne reçoit que celui-là, un autre type est refusé dans la fenêtre ; pour enregistrer, elle
+    montre le nom, la taille et les premières lignes, et le fichier part dans les téléchargements si l'utilisateur
+    accepte. L'extension ne lit ni ne choisit aucun emplacement. Extension d'essai :
+    `apps/web/e2e/donnees/essai-fichiers.fadi-addon.json` ; recette `apps/web/e2e/extensions-fichiers.mjs` (CI,
+    tranche `planche`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants
