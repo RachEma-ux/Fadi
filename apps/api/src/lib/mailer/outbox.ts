@@ -12,6 +12,7 @@ import { db } from "../../db/client.js";
 import { mailOutbox } from "../../db/schema.js";
 import { audit } from "../audit.js";
 import { newId } from "../ids.js";
+import { capturerPourRecette } from "./capture.js";
 import { mailRuntime, type MailLocale, type MailTemplate } from "./index.js";
 
 import { isReservedDomain, quotaDecision, retryDelayMs, MAX_ATTEMPTS, type EnqueueResult } from "./quota.js";
@@ -38,6 +39,9 @@ export async function enqueueMail(
     status: refusal ? "skipped" : "pending",
     lastError: refusal,
   });
+  if (config.captureRecette && (refusal === "disabled" || refusal === "reserved_domain") && isReservedDomain(message.to)) {
+    capturerPourRecette(config.captureRecette, message);
+  }
   // « disabled » et « reserved_domain » sont des non-envois déclarés par la configuration, pas des dépassements.
   if (refusal === "daily_quota" || refusal === "recipient_limit") {
     await audit(executor, { actorId: null, action: "mail.quota_exceeded", target: { type: "mail", id }, metadata: { reason: refusal, template: message.template } });
