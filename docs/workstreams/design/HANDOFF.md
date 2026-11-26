@@ -20,6 +20,7 @@ Mis à jour : 2026-11-26 (UTC).
   (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
 
 - `design-releve.mjs` passe à l'inscription par lien (#428) depuis l'intégration de main.
+- `extensions-commandes.mjs` (venue de main, #438) passe aussi à l'inscription par lien : sur main elle échouait au champ mot de passe.
 
 ## Prochaine action
 
