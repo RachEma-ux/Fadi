@@ -1,21 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Icon, type IconName } from "../../components/Icon";
 import { ConflictPanel } from "../../components/ConflictPanel";
 import { ApiError } from "../../lib/api";
 import { dossierReconnectHref } from "../../lib/dossier-return";
 import { reachability } from "../../lib/reachability";
+import { useProjectAccess } from "../../lib/access";
+import { useAuth } from "../../lib/auth-context";
+import { rememberedStep, rememberedWork, useLastDossier } from "../../lib/last-dossier";
 import { useWorkspaceNavigation } from "../../lib/workspace-navigation";
 import { useDossierQueries, type DossierQueries, dateLabel, denied, resourceLabel, dossierSubtitle } from "./dossier-data";
-import { completeParcoursList } from "./dossier-state";
+import { completeParcoursList, resolveDossierPrimaryAction, type DossierActionIntent } from "./dossier-state";
 import { useDossierSync } from "./use-dossier-sync";
 import { RoadmapPreview } from "../pilotage/RoadmapPreview";
 
 export function DossierDashboard({ projectId, applicationHome = false }: { projectId: string; applicationHome?: boolean }) {
   const queries = useDossierQueries(projectId);
+  const access = useProjectAccess(projectId);
   const sync = useDossierSync(projectId);
+  const { user } = useAuth();
+  const last = useLastDossier(user?.id);
+  const navigate = useNavigate();
   const { openProjects } = useWorkspaceNavigation();
-  const [operation, setOperation] = useState<"reconnect" | "retry-project" | null>(null);
+  const [operation, setOperation] = useState<DossierActionIntent | "retry-project" | null>(null);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const compare = searchParams.get("conflits") === "1";
@@ -31,6 +38,31 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
   const project = queries.project.data;
   const connected = sync.online && sync.reachable;
   const completeSteps = completeParcoursList(queries.steps.data);
+  // Tâche 3 (lot Design L4, décision du maître d'ouvrage du 26 novembre 2026) : une seule action utile dans la Vue d'ensemble,
+  // résolue sans rien supposer (droits, avancement, synchronisation, dernier travail consulté). Les avertissements détaillés
+  // restent dans la cloche ; la carte ne porte que la prochaine commande.
+  const action = resolveDossierPrimaryAction({
+    projectId,
+    access: { known: access.known && !denied(queries.project.error), canWrite: access.canWrite, locked: !!access.lock && !access.holdsLock },
+    steps: { status: queries.steps.data ? "ready" : queries.steps.isError ? "error" : "loading", data: queries.steps.data },
+    sync: operation ? { ...sync, busy: true, busyLabel: operation === "reconnect" ? "Vérification de la connexion…" : operation === "retry-local" ? "Enregistrement local en cours…" : "Actualisation en cours…" } : sync,
+    confirmedNew: !!project && !project.sourceExampleId && project.modelRevision === 0 && completeSteps && queries.steps.data!.every((s) => s.status === "a-faire" && !Object.values(s.content.fields ?? {}).some((value) => value !== null && value !== "")),
+    resumedStep: (last?.projectId === projectId ? last.step : user ? rememberedStep(user.id, projectId) : null) ?? undefined,
+    currentWork: (last?.projectId === projectId ? last.currentWork : user ? rememberedWork(user.id, projectId) : null) ?? undefined,
+  });
+  async function recover(intent: DossierActionIntent) {
+    if (operation || action.disabled) return;
+    // Les versions à comparer s'ouvrent par l'adresse, comme depuis la cloche (?conflits=1).
+    if (intent === "review-conflicts") { navigate({ search: "?conflits=1" }); return; }
+    setOperation(intent); setRecoveryError(null);
+    try {
+      if (intent === "retry-local" && !await sync.retryLocal()) setRecoveryError("La sauvegarde locale n’est toujours pas confirmée. Gardez cette page ouverte et réessayez.");
+      if (intent === "reconnect") { const ok = await sync.reconnect(); if (ok === false) setRecoveryError("Le serveur reste injoignable. Les modifications sont conservées en attente."); }
+      if (intent === "retry-steps") { const result = await queries.steps.refetch(); if (result.isError) setRecoveryError("L’avancement n’a pas pu être actualisé. Réessayez lorsque le serveur sera disponible."); }
+      if (intent === "retry-access") { const result = await queries.project.refetch(); if (result.isError) setRecoveryError("Les droits du dossier n’ont pas pu être vérifiés."); }
+    } catch { setRecoveryError(intent === "retry-local" ? "La sauvegarde locale n’est toujours pas confirmée. Gardez cette page ouverte et réessayez." : "La reprise a échoué. Le travail en attente reste en mémoire ; réessayez cette opération."); }
+    finally { setOperation(null); }
+  }
   async function recoverProject(intent: "reconnect" | "retry-project") {
     if (operation || queries.project.isFetching || !sync.online || (typeof navigator !== "undefined" && !navigator.onLine)) return;
     setOperation(intent);setRecoveryError(null);
@@ -92,6 +124,11 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
       <div className="dossier-primary">
       <section className="panel dossier-overview" data-project-id={projectId} aria-labelledby="dossier-overview-heading">
         <div className="dossier-card-heading"><h2 id="dossier-overview-heading">Vue d’ensemble</h2><p>{dossierSubtitle(queries)}</p></div>
+        <div className="dossier-primary-action" aria-busy={action.disabled && !!operation}>
+          <div><strong>{action.href ? "Prochaine action" : "À reprendre"}</strong><p id="dossier-action-purpose">{action.detail}</p></div>
+          {action.href ? <Link className="button-primary" to={action.href} aria-describedby="dossier-action-purpose">{action.label}<Icon name="arrow-right" size={18} /></Link> : <button type="button" className="button-primary" disabled={action.disabled || !!operation} aria-describedby="dossier-action-purpose" onClick={() => action.intent && void recover(action.intent)}>{action.label}</button>}
+          {recoveryError && <p role="alert" className="dossier-notice">{recoveryError}</p>}
+        </div>
         <figure className="dossier-preview">
           {queries.preview.data?.svg ? <div className="dossier-preview-svg" role="img" aria-label="Aperçu conceptuel du modèle de ce dossier" dangerouslySetInnerHTML={{ __html: queries.preview.data.svg }} /> : <div className="dossier-preview-placeholder"><Icon name="cube" size={38} /><p>{queries.preview.data ? "Aucun modèle dessiné pour l’instant. L’aperçu apparaîtra après les premiers éléments dans l’Atelier." : resourceLabel(queries.preview, connected)}</p></div>}
           <figcaption><span>Aperçu conceptuel</span>{queries.preview.data?.svg && <span>Généré le {dateLabel(queries.preview.data.generatedAt)} · cette date concerne uniquement l’aperçu.</span>}</figcaption>

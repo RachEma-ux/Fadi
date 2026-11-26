@@ -10,7 +10,7 @@ production. Cycle Issue → branche → PR (`AGENTS.md`). Seuls les lots marqué
 | L1 | GeoData : seuil téléphone 760 → 700 px (CSS et `PageGeoData.tsx`), état pressé de la barre du bas lisible | L0 | « Carte » pressé ≥ 4,5:1 ; barre à 700 px, absente à 701 px | autorisé (#414) |
 | L2 | GeoData : colonne d'outils bornée au-dessus de la barre du bas, défilable au doigt | L1 | aucun outil sous la barre ; `tap()` sur chaque outil | autorisé (#415) |
 | L3 | Étape : saisie numérique sans effacement ni conversion silencieuse, message relié au champ | L0 | « 12,5 » → 12,5 ; « 1e » : message, aucune écriture | autorisé (#416) |
-| L4 | Vue d'ensemble : action utile de la Tâche 3 rendue, recettes alignées | L0 | action visible sans défiler à 412 × 839, ≥ 44 px | autorisé (#417) |
+| L4 | Vue d'ensemble : action utile de la Tâche 3 rendue, recettes alignées | L0 | action visible sans défiler à 412 × 839, ≥ 44 px | autorisé (#417), action remise (décision du 26-11-2026) |
 | L5 | Navigation, préparation (barre du bas et feuille « Plus » masquées) | L0 | aucune capture ne change | à autoriser |
 | L6 | Navigation, activation ≤ 700 px ; rail masqué | L5 | rail ou barre, jamais les deux ; focus non masqué | à autoriser |
 | L6b | Rail bureau : ordre des entrées | L6 | ordre Tab = ordre visuel | à autoriser |
