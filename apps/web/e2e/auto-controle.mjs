@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 // Base : promotion de l'administrateur (`create-admin.mjs`) et LECTURE du journal d'audit ; aucune autre écriture directe
@@ -66,7 +67,7 @@ async function compte(tag, options = desktop, anglais = false) {
   if (anglais) await ctx.addInitScript(() => { try { localStorage.setItem("fadi.langue", "en"); } catch { /* indisponible */ } });
   const call = appelPlaywright(ctx.request, BASE);
   const email = `auto-${tag}-${uid()}@example.test`, password = `phrase de passe ${randomBytes(6).toString("hex")}`;
-  const r = await call("POST", "/auth/register", { email, password });
+  const r = await inscrire(call, { email, password }, "POST");
   if (r.status !== 201) throw new Error(`inscription ${tag} : ${r.status}`);
   return { ctx, call, email, password, id: r.body.id };
 }

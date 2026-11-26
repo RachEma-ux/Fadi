@@ -16,6 +16,7 @@
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { inviterEtAccepter } from './lib-invitations.mjs';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 let failures = 0;
@@ -47,8 +48,8 @@ const short = (x) => JSON.stringify(x).slice(0, 300);
 
 const owner = client(), editor = client(), approver = client();
 const accounts = { owner: credentials(), editor: credentials() };
-check('propriétaire inscrit', (await owner('POST', '/auth/register', accounts.owner)).status === 201);
-check('éditeur inscrit', (await editor('POST', '/auth/register', accounts.editor)).status === 201);
+check('propriétaire inscrit', (await inscrire(owner, accounts.owner, "POST")).status === 201);
+check('éditeur inscrit', (await inscrire(editor, accounts.editor, "POST")).status === 201);
 const project = await owner('POST', '/projects', { code: `PUBX_${randomUUID().slice(0, 8)}`, name: 'Studio — lot PUB (recette synthétique)' });
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;

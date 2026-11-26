@@ -21,6 +21,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { inscrire, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const erreurs = [];
@@ -65,10 +66,7 @@ try {
     return { context, page };
   };
   let { context, page } = await session();
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', motDePasse);
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, email, motDePasse, BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
@@ -81,8 +79,8 @@ try {
 
   const lecteur = client(), etranger = client(), anonyme = client();
   const compteLecteur = { email: `studio-dossier-lecteur-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") };
-  check("lecteur inscrit", (await lecteur("POST", "/auth/register", compteLecteur)).status === 201);
-  check("compte étranger inscrit", (await etranger("POST", "/auth/register", { email: `studio-dossier-x-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") })).status === 201);
+  check("lecteur inscrit", (await inscrire(lecteur, compteLecteur, "POST")).status === 201);
+  check("compte étranger inscrit", (await inscrire(etranger, { email: `studio-dossier-x-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") }, "POST")).status === 201);
   const projet = (await api("post", "/projects", { code: `P.DOS.${randomUUID().slice(0, 6)}`, name: "Studio — production documentaire (recette)" })).body;
   const invite = await inviterEtAccepter((m, p, b) => api(m.toLowerCase(), p, b), lecteur, projet.id, compteLecteur.email, "lecteur");
   check("lecteur invité, invitation acceptée (phase 3)", invite.ok);

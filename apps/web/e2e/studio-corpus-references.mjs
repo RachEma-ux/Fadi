@@ -20,6 +20,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-corpus-references";
@@ -68,10 +69,7 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
   page.on("pageerror", (e) => erreurs.push(e.message));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-corpus-ref-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-corpus-ref-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-corpus-ref-${Date.now()}@example.com`, "studio-corpus-ref-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

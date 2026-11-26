@@ -15,6 +15,7 @@ import { resetTestDatabase } from "./testing/guarded-test-pool.js";
 import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
 import { base32Decode, hotp, stepAt } from "./lib/security/totp.js";
+import { inscrire } from "./test-helpers/inscription.js";
 
 const app = createApp();
 
@@ -51,7 +52,7 @@ function agent() {
 
 async function registerAndLogin(email: string) {
   const client = agent();
-  const res = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
+  const res = await inscrire(client, email, "correct-horse-battery");
   expect(res.status).toBe(201);
   return client;
 }
@@ -101,8 +102,11 @@ describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => 
 
 describe("auth", () => {
   it("rejects a password shorter than 12 characters (D-6, gestion des comptes)", async () => {
-    const res = await agent().post("/auth/register").send({ email: "a@example.com", password: "short" });
+    // Le mot de passe se choisit sur la page du lien (Issue #425) : c'est l'activation qui le refuse.
+    const res = await inscrire(agent(), "a@example.com", "short");
     expect(res.status).toBe(400);
+    expect(res.body.error).toBe("weak_password");
+    expect((await pool.query("SELECT count(*)::int AS n FROM users WHERE email = 'a@example.com'")).rows[0].n).toBe(0);
   });
 
   it("registers, sets a session cookie, and exposes /auth/me", async () => {
@@ -127,11 +131,33 @@ describe("auth", () => {
     expect((await agent().patch("/auth/me").send({ displayName: "Roch" })).status).toBe(401);
   });
 
-  it("rejects a duplicate registration with a generic error", async () => {
+  it("inscription : même réponse pour une adresse connue ou nouvelle, aucune session, aucun compte avant le lien (Issue #425)", async () => {
     await registerAndLogin("bob@example.com");
-    // Mot de passe conforme (12 caractères au moins, D-6) : le refus vient bien du doublon, pas de la politique.
-    const res = await agent().post("/auth/register").send({ email: "bob@example.com", password: "whatever-12345" });
-    expect(res.status).toBe(409);
+    const known = agent();
+    const fresh = agent();
+    const a = await known.post("/auth/register").send({ email: "bob@example.com", password: "whatever-12345" });
+    const b = await fresh.post("/auth/register").send({ email: "nouveau-bob@example.com", password: "whatever-12345" });
+    expect([a.status, b.status]).toEqual([202, 202]);
+    expect(a.body).toEqual(b.body);
+    expect(a.headers["set-cookie"]).toBeUndefined();
+    expect(b.headers["set-cookie"]).toBeUndefined();
+    expect((await known.get("/auth/me")).status).toBe(401);
+    expect((await fresh.get("/auth/me")).status).toBe(401);
+    // Adresse nouvelle : aucune ligne de compte, une invitation de création de compte (sans invitant, sans rôle).
+    expect((await pool.query("SELECT count(*)::int AS n FROM users WHERE email = 'nouveau-bob@example.com'")).rows[0].n).toBe(0);
+    const inv = (await pool.query("SELECT purpose, invited_by, grant_platform_role, status FROM auth.invitations WHERE email = 'nouveau-bob@example.com'")).rows;
+    expect(inv).toEqual([{ purpose: "platform_account", invited_by: null, grant_platform_role: null, status: "pending" }]);
+    // Adresse connue : aucune invitation, un courriel « compte existant » à sa boîte.
+    expect((await pool.query("SELECT count(*)::int AS n FROM auth.invitations WHERE email = 'bob@example.com'")).rows[0].n).toBe(0);
+    expect((await pool.query("SELECT template FROM admin.mail_outbox WHERE to_address = 'bob@example.com' ORDER BY created_at DESC LIMIT 1")).rows[0].template).toBe("signup_existing");
+    // Une seconde demande renouvelle la même invitation (nouveau lien), sans doublon.
+    expect((await fresh.post("/auth/register").send({ email: "nouveau-bob@example.com" })).status).toBe(202);
+    expect((await pool.query("SELECT count(*)::int AS n FROM auth.invitations WHERE email = 'nouveau-bob@example.com' AND status = 'pending'")).rows[0].n).toBe(1);
+    // Le lien crée le compte, adresse vérifiée d'office, rôle utilisateur ; la connexion marche ensuite.
+    const created = await inscrire(fresh, "nouveau-bob@example.com", "whatever-12345");
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ email: "nouveau-bob@example.com", platformRole: "user", emailVerified: true });
+    expect((await fresh.get("/auth/me")).status).toBe(200);
   });
 
   it("rejects login with a wrong password using the same error as an unknown user", async () => {
@@ -3466,6 +3492,8 @@ describe("Invitations acceptées liées à une participation — fin de l'ajout 
     expect((await x.get("/notifications")).body.items.some((i: { invitation?: { id: string } }) => i.invitation?.id === id)).toBe(true);
     // Une autre adresse ne la voit pas ; une adresse non vérifiée ne l'accepte pas depuis la notification.
     expect((await accept(other, id)).status).toBe(404);
+    // Compte antérieur à l'inscription par lien (Issue #425) : adresse jamais confirmée.
+    await pool.query("UPDATE users SET email_verified_at = NULL WHERE email = $1", ["p3-x@example.com"]);
     expect((await accept(x, id)).body.error).toBe("email_unverified");
     await verify("p3-x@example.com");
     // Double soumission simultanée : une seule activation.

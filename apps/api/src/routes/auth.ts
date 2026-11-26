@@ -1,7 +1,7 @@
 /**
  * Authentification et compte (docs/workstreams/users-management, phases 2 et 4).
  *
- *   POST   /auth/register                  inscription libre (UM-7), politique de mot de passe D-6
+ *   POST   /auth/register                  inscription libre (UM-7) : 202 pour toute adresse, lien par courriel (Issue #425)
  *   POST   /auth/login                     mot de passe → session, ou 202 { mfaRequired } (étape « code attendu », 5 min)
  *   POST   /auth/login/mfa                 { code } ou { recoveryCode } → session
  *   POST   /auth/logout                    révoque la session courante
@@ -38,11 +38,11 @@ import {
 } from "../lib/auth.js";
 import { audit, clientIp, emailHash } from "../lib/audit.js";
 import {
-  consumeAccountToken, DELETION_GRACE_MS, formatDate, issueAccountToken, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail,
+  consumeAccountToken, DELETION_GRACE_MS, formatDate, issueAccountToken, mailLocale, PUBLIC_PATHS, publicLink, publicPage, sendAccountMail,
 } from "../lib/account.js";
 import { ReviewActivationRefused, reviewInvitationContext } from "../lib/reviews-core.js";
 import {
-  activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized, projectParticipationRefusal,
+  activateInvitation, createOrRenewInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized, projectParticipationRefusal,
 } from "../lib/invitations.js";
 import { pendingWorkFor } from "../lib/project-invitations-db.js";
 import { organizationNameOf } from "../lib/organizations.js";
@@ -123,34 +123,38 @@ const publicUser = (u: ReturnType<typeof toSessionUser>) => {
 // Inscription, connexion, déconnexion
 // ---------------------------------------------------------------------------------------------------------------------
 
+/**
+ * Inscription libre (UM-7, Issue #425) : **une seule réponse pour toute adresse** (202), jamais de session ici.
+ * - Adresse sans compte : une invitation de création de compte (finalité `platform_account`, sans invitant) est créée
+ *   ou renouvelée, et son lien part par courriel ; le compte naît sur la page de l'invitation (`POST /auth/activate`),
+ *   où la personne choisit son mot de passe et accepte les conditions : l'adresse est ainsi prouvée d'office.
+ * - Adresse déjà inscrite : un courriel le dit à la boîte concernée (connexion, mot de passe oublié) ; rien ne change.
+ * Ni le code, ni le corps, ni le cookie ne distinguent les deux cas. Sans transport de courriel, aucun lien ne part :
+ * l'inscription libre n'aboutit pas (un administrateur invite).
+ */
+const registerSchema = z.object({ email: emailSchema, locale: z.enum(["fr", "en"]).optional() });
+export const REGISTER_ANSWER = { accepted: true, message: "Si cette adresse peut recevoir un nouveau compte, un courriel vient de lui être envoyé : suivez son lien pour choisir votre mot de passe." } as const;
+
 authRouter.post("/register", perIdentifier(10), async (req, res) => {
-  const parsed = credentialsSchema.safeParse(req.body);
+  const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
-  const { email, password } = parsed.data;
-  if (passwordRefused(res, password, email)) return;
-
-  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-  if (existing.length > 0) {
-    // Message volontairement générique : ne pas confirmer qu'un e-mail existe déjà (A07 OWASP).
-    res.status(409).json({ error: "registration_failed" });
-    return;
-  }
-
-  const passwordHash = await hashPassword(password);
-  const id = newId("user");
-  const locale = mailLocale(req);
-  const created = await db.transaction(async (tx) => {
-    const [row] = await tx.insert(users).values({ id, email, passwordHash, passwordChangedAt: new Date() }).returning();
-    await audit(tx, { actorId: id, action: "auth.register", target: { type: "user", id }, ip: clientIp(req) });
-    const token = await issueAccountToken(id, "verify_email", tx);
-    await sendAccountMail(email, "verify_email", { link: publicLink(PUBLIC_PATHS.verify_email, token) }, locale, tx);
-    return row!;
+  const { email } = parsed.data;
+  const locale = mailLocale(req, parsed.data.locale);
+  await db.transaction(async (tx) => {
+    const [existing] = await tx.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+    if (existing) {
+      const mail = await sendAccountMail(email, "signup_existing", { loginLink: publicPage(PUBLIC_PATHS.login), resetLink: publicPage(PUBLIC_PATHS.forgot_password) }, locale, tx);
+      await audit(tx, { actorId: null, action: "auth.register.existing_account", target: { type: "user", id: existing.id }, metadata: { sent: mail.queued, reason: mail.reason }, ip: clientIp(req) });
+      return;
+    }
+    const created = await createOrRenewInvitation(tx, { purpose: "platform_account", email, invitedBy: null, ip: clientIp(req) });
+    const mail = await sendAccountMail(email, "signup", { link: publicLink(PUBLIC_PATHS.signup, created.token), expiresAt: formatDate(created.invitation.expiresAt, locale) }, locale, tx);
+    await audit(tx, { actorId: null, action: "auth.register.requested", target: { type: "invitation", id: created.invitation.id }, metadata: { emailHash: emailHash(email), sent: mail.queued, reason: mail.reason }, ip: clientIp(req) });
   });
-  const user = await openFullSession(req, res, created);
-  res.status(201).json(publicUser(user));
+  res.status(202).json(REGISTER_ANSWER);
 });
 
 authRouter.post("/login", perIdentifier(10), async (req, res) => {
@@ -622,7 +626,7 @@ async function describeInvitation(inv: typeof invitations.$inferSelect) {
   const [project] = inv.projectId ? await db.select({ name: projects.name, code: projects.code }).from(projects).where(eq(projects.id, inv.projectId)).limit(1) : [];
   const [inviter] = inv.invitedBy ? await db.select({ email: users.email, displayName: users.displayName }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
   return invitationView(inv, {
-    projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme"),
+    projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : inv.grantPlatformRole === "admin" ? "Exploitation de la plateforme" : "Votre demande d’inscription"),
     organizationName: await organizationNameOf(inv.organizationId),
     representedOrganizationName: (await representedOrganizationOfMandate(db, inv.mandateId))?.name ?? null,
     reviewPackage: await reviewInvitationContext(inv.reviewAssignmentId ?? null).then((r) => (r ? { id: r.packageId, title: r.title, version: r.version, projectLabel: r.projectLabel, responsibility: r.responsibility } : null)),
@@ -726,7 +730,9 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
       id, email: locked.email, passwordHash, passwordChangedAt: now, emailVerifiedAt: now, termsAcceptedAt: now, displayName: parsed.data.displayName || null,
       platformRole: locked.grantPlatformRole === "admin" ? "admin" : "user",
     }).returning();
-    await audit(tx, { actorId: id, action: "account.activated", target: { type: "user", id }, metadata: { invitationId: locked.id }, ip: clientIp(req) });
+    // Inscription libre (lien demandé par la personne elle-même, Issue #425) : journalisée comme une inscription.
+    const selfSignup = locked.purpose === "platform_account" && !locked.invitedBy && !locked.grantPlatformRole;
+    await audit(tx, { actorId: id, action: selfSignup ? "auth.register" : "account.activated", target: { type: "user", id }, metadata: { invitationId: locked.id }, ip: clientIp(req) });
     // Revue externe (phase 4) : un refus d'identité annule toute la transaction (aucun compte créé), rendu ci-dessous.
     await activateInvitation(tx, locked, id, clientIp(req));
     return { user: user!, projectId: locked.projectId, organizationId: locked.organizationId ?? null, reviewPackageId: (await reviewInvitationContext(locked.reviewAssignmentId ?? null, tx))?.packageId ?? null };

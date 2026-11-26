@@ -8,6 +8,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const PHASE = process.env.PHASE ?? 'initial';
@@ -70,9 +71,9 @@ if (PHASE === 'reopen') {
 } else {
   const owner = client(), foreign = client(), anonymous = client();
   const ownerCredentials = credentials();
-  const ownerUser = await owner('POST', '/auth/register', ownerCredentials);
+  const ownerUser = await inscrire(owner, ownerCredentials, "POST");
   check('compte propriétaire créé par l\'API', ownerUser.status === 201);
-  check('second compte créé par l\'API', (await foreign('POST', '/auth/register', credentials())).status === 201);
+  check('second compte créé par l\'API', (await inscrire(foreign, credentials(), "POST")).status === 201);
   const project = await owner('POST', '/projects', { code: `SP_${randomUUID().slice(0, 8)}`, name: 'Studio — projet de recette synthétique' });
   check('projet créé', project.status === 201, String(project.status));
   const projectId = project.body?.id;
@@ -212,7 +213,7 @@ if (PHASE === 'reopen') {
   // Création idempotente (requestId facultatif) : rejeu du même auteur = réponse 201 d'origine, autre auteur = 409.
   const editor = client();
   const editorCredentials = credentials();
-  check('compte éditeur créé', (await editor('POST', '/auth/register', editorCredentials)).status === 201);
+  check('compte éditeur créé', (await inscrire(editor, editorCredentials, "POST")).status === 201);
   check('éditeur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, editor, projectId, editorCredentials.email, 'editeur')).ok);
   const studyRequestId = `creation-${randomUUID()}`;
   const ideal = await owner('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
@@ -310,7 +311,7 @@ if (PHASE === 'reopen') {
   const commentsPath = `${variantPath(s)}/comments`;
   const reader = client();
   const readerCredentials = credentials();
-  check('compte lecteur créé', (await reader('POST', '/auth/register', readerCredentials)).status === 201);
+  check('compte lecteur créé', (await inscrire(reader, readerCredentials, "POST")).status === 201);
   check('lecteur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, 'lecteur')).ok);
   const emptyComments = await owner('GET', commentsPath);
   check('commentaires : liste vide au départ', emptyComments.status === 200 && Array.isArray(emptyComments.body?.comments) && emptyComments.body.comments.length === 0, JSON.stringify(emptyComments.body));

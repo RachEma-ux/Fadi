@@ -22,6 +22,7 @@ import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { inscrire } from "./lib-inscription.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -49,7 +50,7 @@ const short = (v) => JSON.stringify(v ?? null).slice(0, 300);
 const credentials = (n) => ({ email: `participants-${n}-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") });
 const owner = client(), editor = client(), reader = client(), foreign = client();
 const cOwner = credentials("p"), cEditor = credentials("e"), cReader = credentials("l"), cForeign = credentials("x");
-for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [foreign, cForeign]]) check(`compte créé (${cred.email.split("-")[1]})`, (await c("POST", "/auth/register", cred)).status === 201);
+for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [foreign, cForeign]]) check(`compte créé (${cred.email.split("-")[1]})`, (await inscrire(c, cred, "POST")).status === 201);
 const idOf = async (c) => { const me = (await c("GET", "/auth/me")).body; return me?.user?.id ?? me?.id; };
 const ids = { owner: await idOf(owner), editor: await idOf(editor), reader: await idOf(reader) };
 const project = await owner("POST", "/projects", { code: `PA_${randomUUID().slice(0, 6)}`, name: "Équipe et participants (recette synthétique)" });

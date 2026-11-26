@@ -11,6 +11,7 @@
 import { execSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -70,7 +71,7 @@ if (!process.env.SANS_DRAPEAU || !process.env.AVEC_DRAPEAU) { console.log("SANS_
 const attendreApi = async () => { for (let i = 0; i < 120; i++) { if (await fetch(`${BASE}/health`).then((r) => r.ok).catch(() => false)) return true; await pause(500); } return false; };
 const hote = client();
 const cH = credentials("h");
-check("compte créé", (await hote("POST", "/auth/register", cH)).status === 201);
+check("compte créé", (await inscrire(hote, cH, "POST")).status === 201);
 const projet = (await hote("POST", "/projects", { code: `TRR_${randomUUID().slice(0, 6)}`, name: "Retour arrière (recette synthétique)" })).body;
 const etude = (await hote("POST", `/projects/${projet.id}/studio/studies`, { name: "Étude" })).body;
 const tr = `/projects/${projet.id}/temps-reel`;

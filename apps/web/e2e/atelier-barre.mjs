@@ -16,6 +16,7 @@
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
 import { allerEnPlan, basculerCanevas, fermerMenus, ouvrirFichier, ouvrirReglages } from "./lib-barre.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -88,10 +89,7 @@ async function axe(nom, p = page) {
   check(`axe ${nom} : aucune violation critique ou sérieuse`, r.length === 0, r.join(" ; "));
 }
 
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `barre-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "barre-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `barre-${Date.now()}@example.com`, "barre-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · barre" })).body.id;

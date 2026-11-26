@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 import pg from "pg";
+import { inscrireAvecContexte } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const dbUrl = process.env.DATABASE_URL ?? "";
@@ -27,12 +28,12 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 try {
   const admin = await browser.newContext();
   const adminEmail = `administratrice-plateforme-adresse-tres-longue-${RUN}@organisation-au-nom-tres-long.test`;
-  check("compte administrateur créé", (await admin.request.post(`${BASE}/auth/register`, { data: { email: adminEmail, password: PASSWORD }, headers: { origin: BASE } })).status() === 201);
+  check("compte administrateur créé", (await inscrireAvecContexte(admin.request, BASE, { email: adminEmail, password: PASSWORD })).status === 201);
   await sql.query("UPDATE users SET platform_role = 'admin', display_name = 'Administratrice de la plateforme au nom particulièrement long' WHERE email = $1", [adminEmail]);
 
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await phone.newPage();
-  check("propriétaire créé", (await page.request.post(`${BASE}/auth/register`, { data: { email: `support-tel-${RUN}@example.test`, password: PASSWORD }, headers: { origin: BASE } })).status() === 201);
+  check("propriétaire créé", (await inscrireAvecContexte(page.request, BASE, { email: `support-tel-${RUN}@example.test`, password: PASSWORD })).status === 201);
   const created = await page.request.post(`${BASE}/projects`, { data: { code: `ST_${RUN.slice(0, 4)}`, name: "Accès support sur téléphone (recette synthétique)" }, headers: { origin: BASE } });
   const pid = (await created.json()).id;
   await page.goto(`${BASE}/projets/${pid}?module=collaboration`);

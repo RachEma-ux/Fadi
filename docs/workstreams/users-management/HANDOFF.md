@@ -20,6 +20,9 @@ Mis à jour : 2026-10-24 (UTC).
 - **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
   fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
   `Accept-Language` n'est plus lu (DECISIONS.md UM-30).
+- **UM-33 (2026-11-26)** : branche `fix/inscription-sans-enumeration` (depuis `main` à `470e99f`), PR vers `main` **non
+  fusionnée** ([Issue #425](https://github.com/RachEma-ux/Fadi/issues/425)) — inscription sans énumération : 202 pour toute
+  adresse, compte créé par le lien du courriel (DECISIONS.md UM-33). Indépendante de la PR #423 (UM-32, 5 failles).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié

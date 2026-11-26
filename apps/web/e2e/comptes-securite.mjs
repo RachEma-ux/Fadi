@@ -26,6 +26,7 @@ import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { partagerEnBase, retirerPartagesEnBase } from './lib-partage-sql.mjs';
 import { execFileSync } from 'node:child_process';
 import pg from 'pg';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const dbUrl = process.env.DATABASE_URL ?? '';
@@ -94,7 +95,7 @@ async function nextCode(acct) {
 async function register(tag) {
   const acct = { email: mail(tag), password: strong() };
   acct.a = agent();
-  const r = await acct.a.call('POST', '/auth/register', { email: acct.email, password: acct.password });
+  const r = await inscrire((m, p, b) => acct.a.call(m, p, b), { email: acct.email, password: acct.password }, "POST");
   if (r.status !== 201) throw new Error(`inscription ${tag} : ${r.status}`);
   acct.id = r.body.id;
   return acct;

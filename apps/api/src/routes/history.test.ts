@@ -6,6 +6,7 @@ import { createApp } from "../app.js";
 import { countTestOperations, resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
 import type { HistoryEvent } from "../lib/history.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
@@ -13,7 +14,7 @@ afterAll(async () => { await pool.end(); });
 
 async function account(email: string) {
   const client = request.agent(app);
-  const result = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
+  const result = await inscrire(client, email, "correct-horse-battery");
   expect(result.status).toBe(201);
   return { client, id: result.body.id as string };
 }

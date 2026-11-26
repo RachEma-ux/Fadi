@@ -9,6 +9,7 @@ import request from "supertest";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 const CONTRAT = "atelier-commands/3";
@@ -20,7 +21,7 @@ beforeEach(resetDb);
 afterAll(async () => { await pool.end(); });
 async function registerAndLogin(email: string) {
   const client = request.agent(app);
-  const res = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
+  const res = await inscrire(client, email, "correct-horse-battery");
   expect(res.status).toBe(201);
   return client;
 }

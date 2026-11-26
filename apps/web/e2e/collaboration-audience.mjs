@@ -23,6 +23,7 @@ import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
@@ -50,7 +51,7 @@ function client() {
 const credentials = (n) => ({ email: `audience-${n}-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") });
 const owner = client(), editor = client(), reader = client();
 const cOwner = credentials("p"), cEditor = credentials("e"), cReader = credentials("l");
-for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader]]) check(`compte créé (${cred.email.split("-")[1]})`, (await c("POST", "/auth/register", cred)).status === 201);
+for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader]]) check(`compte créé (${cred.email.split("-")[1]})`, (await inscrire(c, cred, "POST")).status === 201);
 const idOf = async (c) => { const me = (await c("GET", "/auth/me")).body; return me?.user?.id ?? me?.id; };
 const ids = { owner: await idOf(owner), editor: await idOf(editor), reader: await idOf(reader) };
 const project = await owner("POST", "/projects", { code: `AU_${randomUUID().slice(0, 6)}`, name: "Audience et export (recette synthétique)" });
