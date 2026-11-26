@@ -480,3 +480,88 @@ planche.sur("commande.onze", () => essayer(async () => { for (let i = 0; i < 11;
     expect(h.enMarche()).toBe(false);
   });
 });
+
+describe("fichiers (lot 7)", () => {
+  /** Fenêtres de remplacement : retiennent les demandes, la recette répond ou laisse l'hôte fermer. */
+  function fichiersFaux() {
+    const ouvertes: { sorte: "ouvrir" | "enregistrer"; demande: unknown; repondre: (v: unknown) => void; fermee: boolean }[] = [];
+    const fenetre = (sorte: "ouvrir" | "enregistrer") => (demande: unknown) => {
+      let repondre: (v: unknown) => void = () => {};
+      const reponse = new Promise<unknown>((r) => (repondre = r));
+      const x = { sorte, demande, repondre, fermee: false };
+      ouvertes.push(x);
+      return { reponse: reponse as Promise<never>, fermer: () => void (x.fermee = true) };
+    };
+    const attendre = async () => {
+      const avant = ouvertes.length;
+      for (let i = 0; i < 200 && ouvertes.length === avant; i++) await pause(2);
+      return ouvertes[ouvertes.length - 1]!;
+    };
+    return { ouvertes, attendre, fichiers: { ouvrir: fenetre("ouvrir"), enregistrer: fenetre("enregistrer") } };
+  }
+  const nom = 'async (f) => { try { return await f(); } catch (e) { return e.name + " : " + e.message; } }';
+  const code = `const essayer = ${nom};
+planche.sur("commande.ouvrir", () => essayer(() => planche.fichiers.ouvrir([".csv"])));
+planche.sur("commande.enregistrer", () => essayer(() => planche.fichiers.enregistrer("liste.csv", "a;b")));
+planche.sur("commande.chemin", () => essayer(() => planche.fichiers.enregistrer("../liste.csv", "a;b")));
+planche.sur("commande.page", () => essayer(() => planche.fichiers.ouvrir([".html"])));
+planche.sur("modele.change", () => essayer(() => planche.fichiers.ouvrir()).then((r) => planche.afficher(r)));`;
+  const PERMISSIONS = ["modele.lire", "fichiers"] as const;
+
+  it("ouvrir : l'extension reçoit le seul fichier choisi, relu ; le délai ne court pas pendant le choix", async () => {
+    const f = fichiersFaux();
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, delaiCommandeMs: 60, fichiers: f.fichiers });
+    const appel = h.appeler("demande", "commande.ouvrir");
+    const fenetre = await f.attendre();
+    expect(fenetre).toMatchObject({ sorte: "ouvrir", demande: { types: [".csv"] } });
+    await pause(150);
+    expect(h.enMarche()).toBe(true);
+    fenetre.repondre({ nom: "/home/moi/liste.csv", texte: "a;b\n1;2" });
+    expect(await appel).toEqual({ genre: "fini", resultat: { nom: "liste.csv", texte: "a;b\n1;2" } });
+
+    const renonce = h.appeler("demande", "commande.ouvrir");
+    (await f.attendre()).repondre(null);
+    expect(await renonce).toEqual({ genre: "fini", resultat: null });
+
+    const autreType = h.appeler("demande", "commande.ouvrir");
+    (await f.attendre()).repondre({ nom: "notes.txt", texte: "x" });
+    expect(await autreType).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : fichier d'un autre type/) });
+    h.arreter();
+  });
+
+  it("enregistrer : vrai si l'utilisateur accepte, faux s'il renonce ; l'arrêt referme la fenêtre", async () => {
+    const f = fichiersFaux();
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, fichiers: f.fichiers });
+    const accepte = h.appeler("demande", "commande.enregistrer");
+    const fenetre = await f.attendre();
+    expect(fenetre).toMatchObject({ sorte: "enregistrer", demande: { nom: "liste.csv", texte: "a;b" } });
+    fenetre.repondre(true);
+    expect(await accepte).toEqual({ genre: "fini", resultat: true });
+    const refuse = h.appeler("demande", "commande.enregistrer");
+    (await f.attendre()).repondre(false);
+    expect(await refuse).toEqual({ genre: "fini", resultat: false });
+    const arrete = h.appeler("demande", "commande.enregistrer");
+    const derniere = await f.attendre();
+    h.arreter();
+    expect(await arrete).toEqual({ genre: "arrete" });
+    expect(derniere.fermee).toBe(true);
+  });
+
+  it("refus nommés : sans la permission, chemin, type étranger, hors d'une commande, Planche sans fenêtre", async () => {
+    const f = fichiersFaux();
+    const journal: string[] = [];
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, fichiers: f.fichiers, surJournal: (l) => journal.push(l) });
+    expect(await h.appeler("demande", "commande.chemin")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : nom : nom de fichier simple/) });
+    expect(await h.appeler("demande", "commande.page")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : types/) });
+    expect((await h.appeler("evenement", "modele.change")).genre).toBe("fini");
+    expect(journal).toEqual(["argument_invalide : fichiers : pendant une commande seulement"]);
+    expect(f.ouvertes).toHaveLength(0);
+    h.arreter();
+    const sans = creerHoteExtension(avecCode(code, ["modele.lire"]), { creer: faux().creer, fichiers: f.fichiers });
+    expect(await sans.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "permission_refusee : fichiers" });
+    sans.arreter();
+    const nue = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer });
+    expect(await nue.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : fichiers.ouvrir" });
+    nue.arreter();
+  });
+});

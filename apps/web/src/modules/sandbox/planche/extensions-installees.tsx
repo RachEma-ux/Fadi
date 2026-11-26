@@ -13,7 +13,7 @@
  * Les textes venus d'une extension sont toujours posés comme du texte, jamais comme du balisage.
  */
 import { useEffect, useRef, useState } from "react";
-import { lireNombreSaisi, valeursInitiales, validerSaisie, type DemandeSaisie, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { BORNES_FICHIER, lireNombreSaisi, typeDeFichier, valeursInitiales, validerSaisie, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichierLu, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { IconeSandbox } from "../pictogrammes/Pictogramme";
 import { lireExtensionsServeur } from "../preferences/client";
@@ -163,6 +163,103 @@ export function DialogueSaisieExtension({ saisie }: { saisie: SaisieOuverte }) {
         <div className="planche-dialogue-actions">
           <button type="button" className="secondary" onClick={() => saisie.repondre(null)} data-planche-saisie-annuler>{t("extensions.saisie.annuler")}</button>
           <button type="submit" data-planche-saisie-valider>{t("extensions.saisie.valider")}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/** Fenêtre de fichier demandée par une extension (lot 7) : l'utilisateur choisit le fichier à ouvrir, ou accepte d'enregistrer. */
+export type FichierDemande =
+  | { readonly cle: number; readonly extension: string; readonly sorte: "ouvrir"; readonly demande: DemandeOuverture; readonly repondre: (fichier: FichierLu | null) => void }
+  | { readonly cle: number; readonly extension: string; readonly sorte: "enregistrer"; readonly demande: DemandeEnregistrement; readonly repondre: (accepte: boolean) => void };
+
+export const retirerFichier = (file: readonly FichierDemande[], cle: number): readonly FichierDemande[] => (file.some((x) => x.cle === cle) ? file.filter((x) => x.cle !== cle) : file);
+
+/** Lignes montrées avant d'enregistrer : l'utilisateur voit ce qu'il accepte. */
+export const LIGNES_APERCU_FICHIER = 5;
+const LARGEUR_APERCU_FICHIER = 90;
+export function apercuFichier(texte: string): string {
+  const lignes = texte.split(/\r?\n/);
+  if (lignes.at(-1) === "") lignes.pop();
+  const vues = lignes.slice(0, LIGNES_APERCU_FICHIER).map((l) => (l.length > LARGEUR_APERCU_FICHIER ? `${l.slice(0, LARGEUR_APERCU_FICHIER)}…` : l));
+  if (lignes.length > LIGNES_APERCU_FICHIER) vues.push("…");
+  return vues.join("\n");
+}
+/** Taille d'un texte enregistré en UTF-8, écrite pour l'utilisateur. */
+export function tailleFichier(texte: string): string {
+  const octets = new Blob([texte]).size;
+  return octets < 1024 ? t("extensions.fichier.taille.octets", { n: String(octets) }) : t("extensions.fichier.taille.ko", { n: String(Math.round(octets / 1024)) });
+}
+
+export function DialogueFichierExtension({ fichier }: { fichier: FichierDemande }) {
+  const [erreur, setErreur] = useState<string | null>(null);
+  const racine = useRef<HTMLFormElement | null>(null);
+  const champ = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    racine.current?.querySelector<HTMLElement>("[data-planche-fichier-valider]")?.focus();
+  }, []);
+  const renoncer = () => (fichier.sorte === "ouvrir" ? fichier.repondre(null) : fichier.repondre(false));
+  const choisi = async (f: File | undefined) => {
+    if (!f || fichier.sorte !== "ouvrir") return;
+    const type = typeDeFichier(f.name);
+    if (!type || !fichier.demande.types.includes(type)) return setErreur(t("extensions.fichier.erreur.type", { types: fichier.demande.types.join(", ") }));
+    // Un texte ne compte jamais plus de caractères que d'octets : un fichier plus lourd que la borne est refusé sans être lu.
+    if (f.size > BORNES_FICHIER.caracteres * 4) return setErreur(t("extensions.fichier.erreur.taille"));
+    let texte: string;
+    try {
+      texte = await f.text();
+    } catch {
+      return setErreur(t("extensions.fichier.erreur.lecture"));
+    }
+    if (texte.length > BORNES_FICHIER.caracteres) return setErreur(t("extensions.fichier.erreur.taille"));
+    fichier.repondre({ nom: f.name, texte });
+  };
+  const titre = t(fichier.sorte === "ouvrir" ? "extensions.fichier.ouvrir.titre" : "extensions.fichier.enregistrer.titre");
+  return (
+    <div className="planche-recherche-fond" onPointerDown={(e) => e.target === e.currentTarget && renoncer()}>
+      <form
+        ref={racine}
+        className="planche-recherche planche-dialogue planche-saisie-extension planche-fichier-extension"
+        role="dialog"
+        aria-modal="true"
+        aria-label={titre}
+        data-planche-fichier-extension={fichier.sorte}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (fichier.sorte === "enregistrer") fichier.repondre(true);
+          else champ.current?.click();
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Escape") {
+            e.preventDefault();
+            renoncer();
+          }
+        }}
+      >
+        <h3>{titre}</h3>
+        <p className="inspecteur-aide" data-planche-saisie-origine>{t("extensions.saisie.demandee", { extension: fichier.extension })}</p>
+        <dl className="planche-fichier-lignes">
+          {fichier.sorte === "ouvrir" ? (
+            <>
+              <div><dt>{t("extensions.fichier.types")}</dt><dd data-planche-fichier-types>{fichier.demande.types.join(", ")}</dd></div>
+              <div><dt>{t("extensions.fichier.taille")}</dt><dd>{t("extensions.fichier.taille.borne")}</dd></div>
+            </>
+          ) : (
+            <>
+              <div><dt>{t("extensions.fichier.nom")}</dt><dd data-planche-fichier-nom>{fichier.demande.nom}</dd></div>
+              <div><dt>{t("extensions.fichier.taille")}</dt><dd data-planche-fichier-taille>{tailleFichier(fichier.demande.texte)}</dd></div>
+            </>
+          )}
+        </dl>
+        {fichier.sorte === "enregistrer" && <pre className="planche-fichier-apercu" data-planche-fichier-apercu>{apercuFichier(fichier.demande.texte)}</pre>}
+        <p className="planche-fichier-note">{t(fichier.sorte === "ouvrir" ? "extensions.fichier.ouvrir.note" : "extensions.fichier.enregistrer.note")}</p>
+        {fichier.sorte === "ouvrir" && <input ref={champ} type="file" hidden accept={fichier.demande.types.join(",")} onChange={(e) => void choisi(e.target.files?.[0])} data-planche-fichier-champ />}
+        {erreur && <p className="planche-saisie-erreur" role="alert" data-planche-saisie-erreur>{erreur}</p>}
+        <div className="planche-dialogue-actions">
+          <button type="button" className="secondary" onClick={renoncer} data-planche-saisie-annuler>{t("extensions.saisie.annuler")}</button>
+          <button type="submit" data-planche-fichier-valider>{t(fichier.sorte === "ouvrir" ? "extensions.fichier.ouvrir.choisir" : "extensions.fichier.enregistrer.valider")}</button>
         </div>
       </form>
     </div>

@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { REGISTRE_SANDBOX, jugerImportPaquet, normaliserRaccourci, type PaquetExtension } from "@parcours/sandbox-planche-model";
-import { MAX_AVIS_AFFICHES, ajouterAvis, retirerSaisie, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
+import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, apercuFichier, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
 import { idBarreCanonique, normaliserBarres } from "./barres-nommees";
 
 describe("avis des extensions", () => {
@@ -40,5 +40,36 @@ describe("règle d'or — commandes d'une extension installée", () => {
     expect(idBarreCanonique("extension:essai-commandes")).toBe("extension:essai-commandes");
     const etat = { visibles: ["extension:essai-commandes"], positions: { "extension:essai-commandes": { x: 10, y: 20 } } };
     expect(normaliserBarres(etat)).toBe(etat);
+  });
+});
+
+describe("fenêtres de fichier des extensions (lot 7)", () => {
+  it("l'aperçu montre les premières lignes seulement, et dit qu'il en reste", () => {
+    expect(apercuFichier("a\nb")).toBe("a\nb");
+    const long = Array.from({ length: LIGNES_APERCU_FICHIER + 3 }, (_, i) => `ligne ${i + 1}`).join("\n");
+    const vu = apercuFichier(long).split("\n");
+    expect(vu.slice(0, LIGNES_APERCU_FICHIER)).toEqual(long.split("\n").slice(0, LIGNES_APERCU_FICHIER));
+    expect(vu).toHaveLength(LIGNES_APERCU_FICHIER + 1);
+    expect(vu[LIGNES_APERCU_FICHIER]).toBe("…");
+  });
+
+  it("la taille annoncée est celle du texte, jamais vide", () => {
+    expect(tailleFichier("")).not.toBe("");
+    expect(tailleFichier("abc")).not.toBe(tailleFichier("x".repeat(5000)));
+  });
+
+  it("elles font la file comme les fenêtres de saisie", () => {
+    const f = (cle: number): FichierDemande => ({ sorte: "ouvrir", cle, extension: `E${cle}`, demande: { types: [".csv"] }, repondre: () => {} });
+    const file = [f(1), f(2)];
+    expect(retirerFichier(file, 1).map((x) => x.cle)).toEqual([2]);
+    expect(retirerFichier(file, 9)).toBe(file);
+  });
+
+  it("règle d'or : le paquet d'essai des fichiers a une icône par commande et des raccourcis libres", () => {
+    const essai = JSON.parse(readFileSync(new URL("../../../../e2e/donnees/essai-fichiers.fadi-addon.json", import.meta.url), "utf8")) as PaquetExtension;
+    expect(jugerImportPaquet(essai).ok).toBe(true);
+    const pris = new Set(REGISTRE_SANDBOX.flatMap((e) => (e.raccourci ? [normaliserRaccourci(e.raccourci)] : [])));
+    expect(new Set(essai.fiche.commandes.map((c) => c.icone)).size).toBe(essai.fiche.commandes.length);
+    for (const c of essai.fiche.commandes) expect(pris.has(normaliserRaccourci(c.raccourci)), c.id).toBe(false);
   });
 });

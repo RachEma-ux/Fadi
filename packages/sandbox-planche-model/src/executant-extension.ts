@@ -139,6 +139,12 @@ export function creerExecutantExtension(
     saisie: Object.freeze({
       demander: (titre: unknown, champs: unknown) => demander("saisie.demander", { titre, champs }),
     }),
+    fichiers: Object.freeze({
+      /** Fichier texte choisi par l'utilisateur : `{ nom, texte }`, ou `null` s'il renonce. */
+      ouvrir: (types?: unknown) => demander("fichiers.ouvrir", types === undefined ? {} : { types: typeof types === "string" ? [types] : types }),
+      /** Propose à l'utilisateur d'enregistrer un fichier texte : `true`, ou `false` s'il renonce. */
+      enregistrer: (nom: unknown, texte: unknown) => demander("fichiers.enregistrer", { nom, texte }),
+    }),
     protocole: VERSION_PROTOCOLE,
     extension: Object.freeze({ id: extension.fiche.id, version: extension.fiche.version }),
     sur: (nom: unknown, fonction: unknown): void => {
