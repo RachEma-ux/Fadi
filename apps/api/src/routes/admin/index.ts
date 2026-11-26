@@ -35,7 +35,7 @@ import { z } from "zod";
 import { db } from "../../db/client.js";
 import { auditLog, invitations, projectMembers, projectSupportGrants, projects, sessions, users } from "../../db/schema.js";
 import { removesLastAdmin, requirePlatformRole } from "../../lib/platform-access.js";
-import { revokeUserSessions } from "../../lib/auth.js";
+import { revokeUserAgentTokens, revokeUserSessions } from "../../lib/auth.js";
 import { audit, clientIp } from "../../lib/audit.js";
 import { displayStatus } from "../../lib/security/auth-policy.js";
 import { assertTransition, AccountTransitionRefused } from "../../lib/security/account-state.js";
@@ -201,6 +201,8 @@ adminRouter.post("/users/:userId/suspend", async (req, res) => {
     if (removesLastAdmin(admins, id)) return "last_admin" as const;
     const [updated] = await tx.update(users).set({ status: "suspended" }).where(eq(users.id, id)).returning();
     const revoked = await revokeUserSessions(id, null, tx);
+    // Un compte suspendu perd aussi ses jetons d'agent de Studio (ils ne revivent pas à la réactivation).
+    await revokeUserAgentTokens(id, tx);
     // Réservations d'édition (« un seul éditeur actif ») détenues : libérées, le projet redevient modifiable par les autres.
     const released = await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${id} RETURNING id`);
     await audit(tx, { actorId: req.user!.id, action: "admin.user.suspended", target: { type: "user", id }, metadata: { revokedSessions: revoked, releasedLocks: released.rows.length }, ip: clientIp(req) });

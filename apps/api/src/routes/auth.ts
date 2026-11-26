@@ -34,7 +34,7 @@ import {
 } from "../db/schema.js";
 import {
   clearSessionCookies, createSession, hashPassword, needsRehash, requestContext, resolvePendingMfa, revokeSessionById,
-  revokeUserSessions, sessionTokenFrom, setSessionCookie, toSessionUser, verifyDummyPassword, verifyPassword,
+  revokeUserAgentTokens, revokeUserSessions, sessionTokenFrom, setSessionCookie, toSessionUser, verifyDummyPassword, verifyPassword,
 } from "../lib/auth.js";
 import { audit, clientIp, emailHash } from "../lib/audit.js";
 import {
@@ -52,7 +52,7 @@ import { JOURNAL_PAGE_DEFAULT, JOURNAL_PAGE_MAX } from "../lib/journal-audience.
 import { adminEnabled, removesLastAdmin } from "../lib/platform-access.js";
 import { lockAdminEligibility, type Tx } from "../lib/admin-eligibility.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
-import { lockDurationMs, loginBlock } from "../lib/security/auth-policy.js";
+import { isLocked, lockDurationMs, loginBlock } from "../lib/security/auth-policy.js";
 import { EncryptionUnavailable, openSecret, sealSecret } from "../lib/security/secret-box.js";
 import { generateTotpSecret, otpauthUri, verifyTotp } from "../lib/security/totp.js";
 import { normalizeRecoveryCode, RECOVERY_CODE_COUNT, recoveryCode, sha256Hex } from "../lib/security/tokens.js";
@@ -118,6 +118,24 @@ const publicUser = (u: ReturnType<typeof toSessionUser>) => {
   const { sessionId: _sessionId, ...rest } = u;
   return rest;
 };
+
+/**
+ * Échec d'authentification compté sur le compte (mot de passe ou code de double authentification). Incrément atomique
+ * (revue Codex de la PR #255) : des échecs simultanés ne s'écrasent pas ; la durée du verrouillage se calcule sur la valeur
+ * renvoyée par la base, sous le verrou de ligne de cette même transaction. Renvoie la durée du verrouillage posé (0 sinon).
+ */
+async function recordLoginFailure(req: Request, user: typeof users.$inferSelect, reason: "bad_password" | "bad_mfa_code", now = new Date()): Promise<number> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx.update(users).set({ failedLoginCount: sql`${users.failedLoginCount} + 1` }).where(eq(users.id, user.id))
+      .returning({ failures: users.failedLoginCount });
+    const failures = row?.failures ?? user.failedLoginCount + 1;
+    const lockMs = lockDurationMs(failures);
+    if (lockMs) await tx.update(users).set({ lockedUntil: new Date(now.getTime() + lockMs) }).where(eq(users.id, user.id));
+    const action = lockMs ? "auth.login.locked" : reason === "bad_mfa_code" ? "auth.login.mfa_failed" : "auth.login.failed";
+    await audit(tx, { actorId: user.id, action, target: { type: "user", id: user.id }, metadata: { reason, failures, lockSeconds: lockMs / 1000 }, ip: clientIp(req) });
+    return lockMs;
+  });
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Inscription, connexion, déconnexion
@@ -200,16 +218,7 @@ authRouter.post("/login", perIdentifier(10), async (req, res) => {
   }
   const valid = await verifyPassword(user.passwordHash, password);
   if (!valid) {
-    // Incrément atomique (revue Codex de la PR #255) : des échecs simultanés ne s'écrasent pas ; la durée du verrouillage
-    // se calcule sur la valeur renvoyée par la base, sous le verrou de ligne de cette même transaction.
-    await db.transaction(async (tx) => {
-      const [row] = await tx.update(users).set({ failedLoginCount: sql`${users.failedLoginCount} + 1` }).where(eq(users.id, user.id))
-        .returning({ failures: users.failedLoginCount });
-      const failures = row?.failures ?? user.failedLoginCount + 1;
-      const lockMs = lockDurationMs(failures);
-      if (lockMs) await tx.update(users).set({ lockedUntil: new Date(now.getTime() + lockMs) }).where(eq(users.id, user.id));
-      await audit(tx, { actorId: user.id, action: lockMs ? "auth.login.locked" : "auth.login.failed", target: { type: "user", id: user.id }, metadata: { reason: "bad_password", failures, lockSeconds: lockMs / 1000 }, ip: clientIp(req) });
-    });
+    await recordLoginFailure(req, user, "bad_password", now);
     invalid();
     return;
   }
@@ -225,7 +234,8 @@ authRouter.post("/login", perIdentifier(10), async (req, res) => {
   if (needsRehash(user.passwordHash)) await db.update(users).set({ passwordHash: await hashPassword(password) }).where(eq(users.id, user.id));
 
   if (user.totpEnabledAt) {
-    await db.update(users).set({ failedLoginCount: 0, lockedUntil: null }).where(eq(users.id, user.id));
+    // Le compteur d'échecs n'est PAS remis à zéro ici : il ne l'est qu'à l'ouverture de la session complète, après le code.
+    // Sinon chaque bonne saisie du mot de passe rouvrirait un crédit d'essais de code (force brute du TOTP).
     const pending = await createSession(user.id, user.platformRole, { ...requestContext(req), mfaPending: true });
     setSessionCookie(res, pending.token, pending.absoluteExpiresAt);
     res.status(202).json({ mfaRequired: true, expiresAt: pending.absoluteExpiresAt.toISOString() });
@@ -251,9 +261,18 @@ authRouter.post("/login/mfa", mfaLimiter, async (req, res) => {
     return;
   }
   const { user, session } = pending;
+  // Le verrouillage du compte vaut aussi pour l'étape du code : un compte verrouillé ne peut plus essayer de code.
+  if (isLocked(user.lockedUntil, new Date())) {
+    await revokeSessionById(session.id);
+    res.status(401).json({ error: "mfa_session_expired", message: "L'étape de connexion a expiré : saisissez de nouveau votre mot de passe." });
+    return;
+  }
   const ok = parsed.data.code ? await acceptTotp(user, parsed.data.code) : await consumeRecoveryCode(user.id, parsed.data.recoveryCode!, req);
   if (!ok) {
-    await audit(db, { actorId: user.id, action: "auth.login.mfa_failed", target: { type: "user", id: user.id }, ip: clientIp(req) });
+    // Chaque code faux compte sur le compte, comme un mauvais mot de passe : le plafond ne dépend plus de l'étape de
+    // connexion ni de l'adresse IP. Si le compte vient d'être verrouillé, l'étape en cours est close.
+    const lockMs = await recordLoginFailure(req, user, "bad_mfa_code");
+    if (lockMs) await revokeSessionById(session.id);
     res.status(401).json({ error: "invalid_code", message: "Code incorrect ou déjà utilisé." });
     return;
   }
@@ -346,7 +365,8 @@ authRouter.post("/me/password", async (req, res) => {
   const revoked = await db.transaction(async (tx) => {
     await tx.update(users).set({ passwordHash, passwordChangedAt: new Date() }).where(eq(users.id, user.id));
     const n = await revokeUserSessions(user.id, req.user!.sessionId, tx);
-    await audit(tx, { actorId: user.id, action: "auth.password.changed", target: { type: "user", id: user.id }, metadata: { revokedSessions: n }, ip: clientIp(req) });
+    const agentTokens = await revokeUserAgentTokens(user.id, tx);
+    await audit(tx, { actorId: user.id, action: "auth.password.changed", target: { type: "user", id: user.id }, metadata: { revokedSessions: n, revokedAgentTokens: agentTokens }, ip: clientIp(req) });
     await sendAccountMail(user.email, "password_changed", {}, locale, tx);
     return n;
   });
@@ -432,7 +452,8 @@ authRouter.post("/me/mfa/setup", async (req, res) => {
   res.json({ otpauthUri: uri, secret, qrSvg });
 });
 
-const codeSchema = z.object({ code: z.string().trim().regex(/^\d{6}$/) });
+/** Activation : le mot de passe est redemandé (une session volée ne suffit pas à lier un TOTP choisi par l'attaquant). */
+const enableSchema = z.object({ password: passwordInput, code: z.string().trim().regex(/^\d{6}$/) });
 
 async function newRecoveryCodes(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], userId: string): Promise<string[]> {
   await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, userId));
@@ -443,14 +464,18 @@ async function newRecoveryCodes(tx: Parameters<Parameters<typeof db.transaction>
 
 authRouter.post("/me/mfa/enable", mfaLimiter, async (req, res) => {
   if (!requireUser(req, res)) return;
-  const parsed = codeSchema.safeParse(req.body);
+  const parsed = enableSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input" });
     return;
   }
   const [user] = await db.select().from(users).where(eq(users.id, req.user.id)).limit(1);
-  if (!user?.totpSecretEnc || user.totpEnabledAt) {
-    res.status(409).json({ error: user?.totpEnabledAt ? "mfa_already_enabled" : "mfa_setup_required" });
+  if (!user || !(await verifyPassword(user.passwordHash, parsed.data.password))) {
+    res.status(403).json({ error: "invalid_password", message: "Mot de passe incorrect." });
+    return;
+  }
+  if (!user.totpSecretEnc || user.totpEnabledAt) {
+    res.status(409).json({ error: user.totpEnabledAt ? "mfa_already_enabled" : "mfa_setup_required" });
     return;
   }
   try { openSecret(user.totpSecretEnc); } catch { return encryptionMissing(res); }
@@ -613,7 +638,11 @@ authRouter.post("/reset-password", async (req, res) => {
   }
   // La politique est vérifiée avant de consommer le jeton : un mot de passe refusé ne brûle pas le lien.
   const [peek] = await db.select({ email: users.email }).from(accountTokens)
-    .innerJoin(users, eq(users.id, accountTokens.userId)).where(eq(accountTokens.tokenHash, sha256Hex(parsed.data.token))).limit(1);
+    .innerJoin(users, eq(users.id, accountTokens.userId))
+    // Seul un lien de réinitialisation valable (bon usage, non utilisé, non expiré) sert à refuser un mot de passe proche
+    // de l'adresse : un jeton d'un autre usage ou périmé ne doit rien révéler du compte.
+    .where(and(eq(accountTokens.tokenHash, sha256Hex(parsed.data.token)), eq(accountTokens.purpose, "reset_password"), isNull(accountTokens.usedAt), gt(accountTokens.expiresAt, new Date())))
+    .limit(1);
   if (passwordRefused(res, parsed.data.password, peek?.email ?? null)) return;
   const passwordHash = await hashPassword(parsed.data.password);
   const userId = await db.transaction(async (tx) => {
@@ -622,7 +651,8 @@ authRouter.post("/reset-password", async (req, res) => {
     const [user] = await tx.update(users).set({ passwordHash, passwordChangedAt: new Date(), failedLoginCount: 0, lockedUntil: null }).where(and(eq(users.id, id), eq(users.status, "active"))).returning();
     if (!user) return null;
     const n = await revokeUserSessions(id, null, tx);
-    await audit(tx, { actorId: id, action: "auth.password.reset", target: { type: "user", id }, metadata: { revokedSessions: n }, ip: clientIp(req) });
+    const agentTokens = await revokeUserAgentTokens(id, tx);
+    await audit(tx, { actorId: id, action: "auth.password.reset", target: { type: "user", id }, metadata: { revokedSessions: n, revokedAgentTokens: agentTokens }, ip: clientIp(req) });
     await sendAccountMail(user.email, "password_changed", {}, mailLocale(req), tx);
     return id;
   });
@@ -838,7 +868,8 @@ export async function scheduleDeletion(userId: string, actorId: string, req: Req
     const now = new Date();
     await tx.update(users).set({ deletionRequestedAt: now }).where(eq(users.id, userId));
     const n = await revokeUserSessions(userId, null, tx);
-    await audit(tx, { actorId, action, target: { type: "user", id: userId }, metadata: { revokedSessions: n }, ip: clientIp(req) });
+    const agentTokens = await revokeUserAgentTokens(userId, tx);
+    await audit(tx, { actorId, action, target: { type: "user", id: userId }, metadata: { revokedSessions: n, revokedAgentTokens: agentTokens }, ip: clientIp(req) });
     const token = await issueAccountToken(userId, "cancel_deletion", tx);
     const deletionAt = new Date(now.getTime() + DELETION_GRACE_MS);
     const cancelLink = publicLink(PUBLIC_PATHS.cancel_deletion, token);

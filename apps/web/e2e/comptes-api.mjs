@@ -178,9 +178,9 @@ try {
   const secret = setup.body.secret;
   const { rows: [{ totp_secret_enc: enc }] } = await sql.query('SELECT totp_secret_enc FROM users WHERE email = $1', [bEmail]);
   check('secret TOTP chiffré en base', enc.startsWith('v1.') && !enc.includes(secret));
-  check('code faux refusé à l\'activation', (await B.call('POST', '/auth/me/mfa/enable', { code: '000000' })).status === 400);
+  check('code faux refusé à l\'activation', (await B.call('POST', '/auth/me/mfa/enable', { password: bPass, code: '000000' })).status === 400);
   const s0 = step();
-  const enabled = await B.call('POST', '/auth/me/mfa/enable', { code: totp(secret, s0) });
+  const enabled = await B.call('POST', '/auth/me/mfa/enable', { password: bPass, code: totp(secret, s0) });
   check('TOTP activé, 10 codes de secours', enabled.status === 200 && enabled.body.recoveryCodes?.length === 10, enabled);
   const recovery = enabled.body.recoveryCodes;
   check('codes de secours hachés en base', (await sql.query('SELECT count(*)::int AS c FROM auth.user_recovery_codes r JOIN users u ON u.id = r.user_id WHERE u.email = $1 AND r.code_hash = ANY($2)', [bEmail, recovery.map((c) => c.replace('-', ''))])).rows[0].c === 0);

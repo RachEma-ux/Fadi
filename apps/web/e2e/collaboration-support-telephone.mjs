@@ -29,7 +29,7 @@ try {
   const admin = await browser.newContext();
   const adminEmail = `administratrice-plateforme-adresse-tres-longue-${RUN}@organisation-au-nom-tres-long.test`;
   check("compte administrateur créé", (await inscrireAvecContexte(admin.request, BASE, { email: adminEmail, password: PASSWORD })).status === 201);
-  await sql.query("UPDATE users SET platform_role = 'admin', display_name = 'Administratrice de la plateforme au nom particulièrement long' WHERE email = $1", [adminEmail]);
+  await sql.query("UPDATE users SET platform_role = 'admin', totp_enabled_at = now(), display_name = 'Administratrice de la plateforme au nom particulièrement long' WHERE email = $1", [adminEmail]);
 
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await phone.newPage();

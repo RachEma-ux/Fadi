@@ -89,7 +89,7 @@ try {
   const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const b32 = (s) => { let bits = 0, v = 0; const out = []; for (const ch of s.replace(/=+$/, "")) { v = (v << 5) | B32.indexOf(ch); bits += 5; if (bits >= 8) { out.push((v >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(out); };
   const totp = (secret) => { const m = Buffer.alloc(8); m.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000))); const h = createHmac("sha1", b32(secret)).update(m).digest(); const o = h[h.length - 1] & 15; return String((((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1e6).padStart(6, "0"); };
-  const enabled = await admin.call("POST", "/auth/me/mfa/enable", { code: totp(setup.body.secret) });
+  const enabled = await admin.call("POST", "/auth/me/mfa/enable", { password: admin.password, code: totp(setup.body.secret) });
   check("administrateur : double authentification activée", enabled.status === 200, short(enabled.body));
 
   const owner = await compte("proprio");

@@ -460,7 +460,7 @@ try {
     execFileSync(process.execPath, [CREATE_ADMIN, admin.email], { env: { ...process.env, DATABASE_URL: process.env.CREATE_ADMIN_DATABASE_URL ?? process.env.DATABASE_URL }, encoding: "utf8" });
     const login = await admin.call("post", "/auth/login", { email: admin.email, password: PASSWORD });
     const setup = await admin.call("post", "/auth/me/mfa/setup");
-    const enabled = await admin.call("post", "/auth/me/mfa/enable", { code: totp(setup.body?.secret ?? "") });
+    const enabled = await admin.call("post", "/auth/me/mfa/enable", { password: PASSWORD, code: totp(setup.body?.secret ?? "") });
     adminReady = login.status === 200 && enabled.status === 200;
     check("administrateur promu, double authentification activée depuis sa session (UM-18)", adminReady, `${login.status} ${setup.status} ${enabled.status}`);
   } else notRun("journal d'administration", "DATABASE_URL absent (promotion par create-admin.mjs)");

@@ -63,7 +63,9 @@ export function permissionsAdaptateurMcp(env: NodeJS.ProcessEnv = process.env): 
 
 // ——— Jetons ———
 
-export const studioJetonSchema = z.object({ nom: z.string().trim().min(1).max(80), joursValidite: z.number().int().min(1).max(90).optional() }).strict();
+/** Création : le mot de passe du compte est redemandé (une session volée ne suffit pas à obtenir un jeton de 90 jours). */
+export const studioJetonSchema = z.object({ nom: z.string().trim().min(1).max(80), joursValidite: z.number().int().min(1).max(90).optional(), motDePasse: z.string().min(1).max(1024) }).strict();
+
 
 export async function creerJetonAgent(projectId: string, userId: string, nom: string, jours = 30, maintenant = new Date()) {
   assertAccess(await loadProjectAccess(projectId, userId), userId, "read");

@@ -120,7 +120,7 @@ async function enableMfa(acct, client) {
   if (s.status !== 200) throw new Error(`mfa/setup : ${s.status} ${JSON.stringify(s.body)}`);
   acct.secret = s.body.secret;
   acct.lastStep = undefined;
-  const e = await client.call('POST', '/auth/me/mfa/enable', { code: await nextCode(acct) });
+  const e = await client.call('POST', '/auth/me/mfa/enable', { password: acct.password, code: await nextCode(acct) });
   if (e.status !== 200) throw new Error(`mfa/enable : ${e.status} ${JSON.stringify(e.body)}`);
   acct.recovery = e.body.recoveryCodes;
   return e;
