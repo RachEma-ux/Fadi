@@ -105,6 +105,8 @@ export interface VueOutil {
     readonly points?: readonly Vec3[];
     /** (Ajout, optionnel) Lignes en pointillé (monde) : trajet d'un point glissé, de sa position d'origine au curseur. */
     readonly pointilles?: readonly (readonly Vec3[])[];
+    /** (Extensions, lot 6) Teinte de l'aperçu d'un outil d'extension : lignes, pointillés, points et étiquettes. */
+    readonly teinte?: string;
     /** (Lot 4) Étiquettes de texte à afficher près d'un point monde (longueur du Mètre, angle du Rapporteur…). */
     readonly etiquettes?: readonly { readonly point: Vec3; readonly texte: string }[];
     /** (Lot 4) Plan de coupe en aperçu : rectangle à languettes sur la face survolée (origine, normale, demi-tailles). */

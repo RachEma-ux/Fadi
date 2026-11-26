@@ -13,6 +13,7 @@
  * Les services eux-mêmes (modèle, opération, sélection, panneau, outil…) arrivent lot par lot ; ce lot ne connaît que
  * le journal (`journal.afficher`), pour que le canal soit éprouvé de bout en bout.
  */
+import { CURSEURS_OUTIL, estCurseurOutil, type CurseurOutil } from "./outils/outil-extension.js";
 import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbox.js";
 
 // ————————————————————————————————————————————————————————————— Constantes
@@ -58,6 +59,8 @@ export interface EntreeDeclaree {
   readonly icone: string;
   /** Raccourci obligatoire (règle d'or de la Planche), forme « Alt+Maj+U ». */
   readonly raccourci: string;
+  /** Outil seulement : curseur montré sur le dessin (défaut « croix ») ; l'outil peut le changer par sa description. */
+  readonly curseur?: CurseurOutil;
 }
 
 export interface PanneauDeclare {
@@ -145,7 +148,7 @@ function sansDoublon(ids: readonly string[], quoi: string): void {
 
 function entree(v: unknown, quoi: string, pages: Readonly<Record<string, string>>): EntreeDeclaree {
   if (!estObjet(v)) return refuser(`${quoi} : objet attendu`);
-  const hors = clesHors(v, ["id", "libelle", "icone", "raccourci"]);
+  const hors = clesHors(v, quoi === "outil" ? ["id", "libelle", "icone", "raccourci", "curseur"] : ["id", "libelle", "icone", "raccourci"]);
   if (hors) return refuser(`${quoi} : champ inconnu « ${hors} »`);
   const id = v["id"];
   if (typeof id !== "string" || !MOTIF_ID_ENTREE.test(id) || id.length > 40) return refuser(`${quoi} : identifiant mal formé`);
@@ -153,7 +156,9 @@ function entree(v: unknown, quoi: string, pages: Readonly<Record<string, string>
   if (typeof icone !== "string" || !Object.prototype.hasOwnProperty.call(pages, icone)) return refuser(`${quoi} « ${id} » : icône absente du paquet`);
   const raccourci = v["raccourci"];
   if (typeof raccourci !== "string" || !MOTIF_RACCOURCI.test(raccourci)) return refuser(`${quoi} « ${id} » : raccourci obligatoire, de la forme « Alt+Maj+U »`);
-  return { id, libelle: bilingue(v["libelle"], `${quoi} « ${id} » : libellé`, BORNES_EXTENSION.libelle), icone, raccourci };
+  const curseur = v["curseur"];
+  if (curseur !== undefined && !estCurseurOutil(curseur)) return refuser(`${quoi} « ${id} » : curseur inconnu (${CURSEURS_OUTIL.join(", ")})`);
+  return { id, libelle: bilingue(v["libelle"], `${quoi} « ${id} » : libellé`, BORNES_EXTENSION.libelle), icone, raccourci, ...(curseur !== undefined ? { curseur } : {}) };
 }
 
 /** Jugement d'une version de protocole attendue par une extension, face à celle de cette Planche. */
