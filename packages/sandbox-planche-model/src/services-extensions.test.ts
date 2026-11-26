@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, modeleVide, type Id, type Modele } from "./geometrie-libre.js";
 import { DEMANDES_EXTENSION, ERREURS_PROTOCOLE, FONCTIONS_MODIFICATION, type PermissionExtension } from "./protocole-extensions.js";
-import { FONCTIONS_SCRIPT } from "./scripts.js";
+import { FONCTIONS_SCRIPT, creerFonctionsPlanche } from "./scripts.js";
 import { creerServicesExtension, type AccesPlanche, type ModeleLu } from "./services-extensions.js";
 import { v3 } from "./vecteur.js";
 
@@ -166,6 +166,62 @@ describe("services d'une extension — opération", () => {
     expect(s.servir("modele.modifier", { fonction: "effacer", arguments: [["inconnu"]] })).toMatchObject({ ok: false, erreur: "objet_introuvable" });
     expect(s.operationOuverte()).toBe(true);
     expect((ok(s.servir("modele.lire", null)) as ModeleLu).aretes).toHaveLength(0);
+  });
+});
+
+describe("services d'une extension — remarques de relecture", () => {
+  it("une fonction refusée à mi-chemin ne laisse rien dans le modèle de travail", () => {
+    // `figer` rend l'état d'avant, opérations comptées et éléments créés compris.
+    const f = creerFonctionsPlanche(modeleVide());
+    f.api.ligne([0, 0, 5], [1, 0, 5]);
+    const [modele, crees] = [f.modele(), f.crees()];
+    const revenir = f.figer();
+    f.api.boite([0, 0, 0], 1, 1, 1);
+    expect(f.modele()).not.toBe(modele);
+    revenir();
+    expect(f.modele()).toBe(modele);
+    expect(f.crees()).toEqual(crees);
+
+    // Par le service : une boîte dont la base tombe sur une face existante trace sa base puis est refusée.
+    const { etat, acces } = planche(carre());
+    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    ok(s.servir("operation.ouvrir", { nom: "Essai" }));
+    expect(s.servir("modele.modifier", { fonction: "boite", arguments: [[0, 0, 0], 1, 1, 1] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    ok(s.servir("operation.valider", null));
+    expect(etat.pas).toEqual([]);
+  });
+
+  it("pendant une opération, la sélection demandée se relit, même vide", () => {
+    const { etat, acces } = planche(carre());
+    const face = Object.keys(etat.modele.racine.faces)[0]!;
+    etat.selection = [face];
+    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    ok(s.servir("operation.ouvrir", { nom: "Essai" }));
+    const objet = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [[face], "G"] })) as Id;
+    ok(s.servir("selection.definir", { ids: [objet] }));
+    expect(ok(s.servir("selection.lire", null))).toEqual([objet]);
+    ok(s.servir("selection.definir", { ids: [] }));
+    expect(ok(s.servir("selection.lire", null))).toEqual([]);
+    expect(etat.selection).toEqual([face]);
+  });
+
+  it("opération qui ne change que la sélection : refusée si le dessin a changé, la sélection n'est pas posée", () => {
+    const { etat, acces } = planche(carre());
+    const face = Object.keys(etat.modele.racine.faces)[0]!;
+    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    ok(s.servir("operation.ouvrir", { nom: "Choisir" }));
+    ok(s.servir("selection.definir", { ids: [face] }));
+    etat.modele = modeleVide(); // l'utilisateur a effacé la face entre-temps
+    expect(s.servir("operation.valider", null)).toMatchObject({ ok: false, erreur: "operation_refusee" });
+    expect(etat.selection).toEqual([]);
+    // Sans changement entre-temps : la sélection seule est posée, sans pas d'annulation.
+    etat.modele = carre();
+    const autre = Object.keys(etat.modele.racine.faces)[0]!;
+    ok(s.servir("operation.ouvrir", { nom: "Choisir" }));
+    ok(s.servir("selection.definir", { ids: [autre] }));
+    ok(s.servir("operation.valider", null));
+    expect(etat.selection).toEqual([autre]);
+    expect(etat.pas).toEqual([]);
   });
 });
 

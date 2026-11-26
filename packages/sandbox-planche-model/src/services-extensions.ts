@@ -118,11 +118,10 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     operation = null;
     const travail = op.travail.modele();
     const crees = op.travail.crees();
-    if (travail !== op.base) {
-      // Le dessin ou le contexte d'édition a changé depuis l'ouverture : rien n'est appliqué.
-      if (acces.modele() !== op.base || acces.dans() !== op.dans) return refus("operation_refusee", "le dessin a changé depuis l'ouverture de l'opération");
-      if (!acces.appliquer(travail, op.nom, crees)) return refus("operation_refusee", "la Planche a refusé l'opération");
-    }
+    // Le dessin ou le contexte d'édition a changé depuis l'ouverture : rien n'est appliqué, ni dessin ni sélection
+    // (une sélection retenue pendant l'opération désigne des objets du modèle d'alors).
+    if ((travail !== op.base || op.selection) && (acces.modele() !== op.base || acces.dans() !== op.dans)) return refus("operation_refusee", "le dessin a changé depuis l'ouverture de l'opération");
+    if (travail !== op.base && !acces.appliquer(travail, op.nom, crees)) return refus("operation_refusee", "la Planche a refusé l'opération");
     if (op.selection) acces.selectionner(op.selection.filter((id) => op.travail.existe(id)));
     return rendu({ crees });
   };
@@ -152,9 +151,13 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (!Array.isArray(args) || args.length > 8) return refus("argument_invalide", "arguments : liste attendue");
     // Sans opération ouverte : opération automatique au nom de l'appel en cours, validée à la fin de l'appel.
     const op = operation ?? ouvrir(appel ?? "extension", true);
+    // Une fonction fait parfois plusieurs opérations du modèle (une boîte : sa base, puis son volume) : refusée à
+    // mi-chemin, elle ne laisse rien dans le modèle de travail.
+    const revenir = op.travail.figer();
     try {
       return rendu(op.travail.api[donnees["fonction"] as FonctionModification](...(args as unknown[])) ?? null);
     } catch (e) {
+      revenir();
       if (e instanceof ErreurScript) return refus(e.cle === "introuvable" ? "objet_introuvable" : "argument_invalide", e.message);
       // Refus du modèle lui-même (géométrie impossible) : l'opération reste ouverte, l'extension décide de la suite.
       return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
@@ -209,7 +212,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return rendu();
         case "selection.lire": {
           const f = vue();
-          return rendu(acces.selection().filter((id) => f.existe(id)));
+          // Pendant une opération, l'extension relit la sélection qu'elle vient de demander (même vide).
+          return rendu((operation?.selection ?? acces.selection()).filter((id) => f.existe(id)));
         }
         case "selection.definir":
           return definirSelection(donnees);

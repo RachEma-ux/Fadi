@@ -277,6 +277,8 @@ export interface FonctionsPlanche {
   /** Objets et éléments créés qui existent encore. */
   readonly crees: () => Id[];
   readonly existe: (id: Id) => boolean;
+  /** Retient l'état de travail ; la fonction rendue y revient (une demande refusée à mi-chemin ne laisse rien). */
+  readonly figer: () => () => void;
 }
 
 /**
@@ -425,7 +427,17 @@ export function creerFonctionsPlanche(modele: Modele, options: OptionsFonctionsP
     },
   };
 
-  return { api: Object.freeze(api), modele: () => m, crees: () => { const c = ctx(); return [...crees].filter((id) => existe(c, id)); }, existe: (id) => existe(ctx(), id) };
+  return { api: Object.freeze(api), modele: () => m, crees: () => { const c = ctx(); return [...crees].filter((id) => existe(c, id)); }, existe: (id) => existe(ctx(), id),
+    figer: () => {
+      const [m0, operations0, crees0] = [m, operations, [...crees]];
+      return () => {
+        m = m0;
+        operations = operations0;
+        crees.clear();
+        for (const id of crees0) crees.add(id);
+      };
+    },
+  };
 }
 
 /**
