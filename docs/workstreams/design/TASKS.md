@@ -2,7 +2,7 @@
 
 ## À faire
 
-- Lots L5 et suivants : à autoriser ([PLAN-LOTS.md](PLAN-LOTS.md)).
+- Lots L8 et suivants (sauf L9) : à autoriser ([PLAN-LOTS.md](PLAN-LOTS.md)).
 
 ## En cours
 
@@ -11,6 +11,7 @@
 - [ ] DESIGN-L2 — GeoData : colonne d'outils défilable (#415), PR #420.
 - [ ] DESIGN-L3 — Étape : saisie invalide sans effacement (#416), PR #421.
 - [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 remise (#417), branche `design/l4-action-utile`.
+- [ ] DESIGN-L5 — Navigation téléphone : préparation masquée (#429).
 
 ## Terminé
 

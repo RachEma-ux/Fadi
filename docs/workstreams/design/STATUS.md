@@ -39,6 +39,8 @@ Mis à jour : 2026-11-26 (UTC).
   programme / Atelier / revue, l'action en attente pendant le chargement et « Vérifier l'accès au dossier » pour un
   rôle inconnu. Sur l'accueil de l'application, l'action reste sous la ligne de flottaison au téléphone (relevé, lot L9).
 
+- L5 (#429) : `navigation-entrees.ts` (entrées de la barre et de la feuille, entrée active ; 3 tests vitest), `BarreBasGlobale`, `FeuillePlus`, `barre-bas.css` ; rendues mais `display:none` à toutes les largeurs (vérifié au Pixel 7 et à 1 440 px : barre présente, non affichée, rail inchangé).
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.
