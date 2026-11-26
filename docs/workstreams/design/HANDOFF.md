@@ -19,6 +19,7 @@ Mis à jour : 2026-11-26 (UTC).
   supérieures (jamais de rebase ni de push forcé).
 - L5 : PR #434 (barre et feuille « Plus » préparées, masquées). L6 : PR #436 (barre du bas active sous 700 px, rail
   masqué) ; les libellés NAV-001 mobile et RISQ-02 téléphone du registre Studio suivent les nouveaux contrôles.
+- L6b : PR #437 (rail du bureau dans l'ordre de la barre puis de « Plus » ; Harmonie ajoutée).
 
 ## Prochaine action
 
