@@ -7,7 +7,9 @@ Mis à jour : 2026-11-26 (UTC).
 - Chantier : design
 - Issue : https://github.com/RachEma-ux/Fadi/issues/412
 - Branches / PR actives : `design/l0-outillage` (L0) ; L1 à L4 empilées dessus (`design/l1-geodata-seuil`,
-  `design/l2-geodata-outils`, `design/l3-saisie-etape`, `design/l4-action-utile`). Vérifier leur état sur GitHub.
+  `design/l2-geodata-outils`, `design/l3-saisie-etape`, `design/l4-action-utile`) ; puis L5 à L9
+  (`design/l5-navigation-preparation`, `design/l6-navigation-activation`, `design/l6b-ordre-rail`,
+  `design/l7-geodata-barre-unique`, `design/l9-entete-une-rangee`). Vérifier leur état sur GitHub.
 - Dernier commit vérifié : à relever en début de session.
 
 ## Dernier état vérifié
@@ -15,6 +17,8 @@ Mis à jour : 2026-11-26 (UTC).
 - L0 : PR #418. L1 : PR #419. L2 : PR #420. L3 : PR #421. L4 : action utile remise, `accueils-design.mjs` vert en local ;
   voir `STATUS.md`. Les constats de revue Codex sur #418 et #420 sont corrigés et propagés par fusion dans les branches
   supérieures (jamais de rebase ni de push forcé).
+- L5 : PR #434 (barre et feuille « Plus » préparées, masquées). L6 : PR #436 (barre du bas active sous 700 px, rail
+  masqué) ; les libellés NAV-001 mobile et RISQ-02 téléphone du registre Studio suivent les nouveaux contrôles.
 
 ## Prochaine action
 
