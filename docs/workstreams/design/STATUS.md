@@ -4,7 +4,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## État
 
-**En cours** — lot L0 implémenté sur branche ; non accepté.
+**En cours** — lots L0 (PR #418) et L1 implémentés sur branches empilées ; non acceptés.
 
 ## Faits vérifiés
 
@@ -14,6 +14,10 @@ Mis à jour : 2026-11-26 (UTC).
   320 px) : aucune violation axe critique ou grave ; aucun débordement du document ; défilements horizontaux internes
   relevés (barre des modules de projet, phases et grille de la Vue d'ensemble, onglets et pastilles GeoData) ; cibles
   sous 24 px relevées par écran (1 à 5).
+
+- L1 (#414) : GeoData bascule à 700 px (CSS et `PageGeoData.tsx`), plus aucun 760 px dans le module ; « Carte » pressé
+  et survolé à 5,23:1 (au lieu de 1,00:1). `e2e/geodata.mjs` : 269 contrôles verts en local, dont 4 nouveaux
+  (`DESIGN L1`). Points de rupture : plafond inchangé à 19 (700 existait déjà ; 701 écrit `not all and (max-width:700px)`).
 
 ## Points ouverts
 

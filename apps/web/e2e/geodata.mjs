@@ -1137,6 +1137,32 @@ await page.keyboard.press("Tab");
 const focusApres = await page.evaluate(() => document.activeElement?.textContent?.trim());
 check("GEO 12 · clavier : la recherche mène au bouton « Rechercher »", focusApres === "Rechercher", focusApres);
 
+// --- Design L1 : bascule téléphone à 700 px (barre du bas globale, brief Design Fadi, arbitrage 1) et « Carte » pressé lisible ---
+/** Rapport de contraste WCAG entre deux couleurs CSS calculées (rgb / rgba opaque). */
+const contraste = (a, b) => {
+  const lum = (c) => { const [r, g, bl] = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * bl; };
+  const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+};
+for (const [largeur, attendue] of [[700, true], [701, false]]) {
+  await page.setViewportSize({ width: largeur, height: 839 });
+  await page.goto(`${BASE}/geodata`);
+  await page.locator("[data-geodata-page]").waitFor();
+  const visible = await page.locator("[data-gd-barre-bas-nav]").isVisible();
+  check(`DESIGN L1 · ${largeur} px : barre du bas GeoData ${attendue ? "affichée" : "absente"}`, visible === attendue, `visible=${visible}`);
+}
+await page.setViewportSize({ width: 412, height: 839 });
+await page.goto(`${BASE}/geodata`);
+await page.locator("[data-geodata-page]").waitFor();
+const carteBas = page.locator("[data-gd-barre-bas='carte']");
+for (const survol of [false, true]) {
+  if (survol) await carteBas.hover();
+  const { pressed, couleur, fond } = await carteBas.evaluate((b) => { const s = getComputedStyle(b); return { pressed: b.getAttribute("aria-pressed"), couleur: s.color, fond: s.backgroundColor }; });
+  const r = contraste(couleur, fond);
+  check(`DESIGN L1 · « Carte » pressé${survol ? " et survolé" : ""} : libellé ≥ 4,5:1 (WCAG 1.4.3)`, pressed === "true" && r >= 4.5, `${r.toFixed(2)}:1 (${couleur} sur ${fond})`);
+}
+await page.screenshot({ path: join(OUT, "design-l1-carte-pressee-412.png") });
+
 // --- GEO 12 : téléphone, un seul panneau ouvert à la fois ---
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${BASE}/geodata`);
