@@ -1,7 +1,7 @@
 # Rattachement des fiches EX / INV / IF / AC aux sous-lots et aux composants (X.3-01)
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` (module `scripts/registre/rattachements-studio.mjs`) ; la CI
-> le recalcule à chaque commit. Registre SHA-256 `6a2ddae53fddabee135a267151596153ce9b0732d0283a363dd0bd292d4dad45` ; sous-lots relus dans `Studio/Fadi_Studio_Checklist_Execution_V1_0.md`.
+> le recalcule à chaque commit. Registre SHA-256 `450796d12bc4512ead8a767952806afea28bd09953a7cb7c3372ad181d092a34` ; sous-lots relus dans `Studio/Fadi_Studio_Checklist_Execution_V1_0.md`.
 
 Règle contrôlée (`controlerRattachement`, `node --test scripts/registre/controles-suivi.test.mjs`) : les identifiants sont
 exactement ceux des 141 fiches REF-02 (M004) et des obligations TR-* du registre — aucun renuméroté ; chaque fiche a au
