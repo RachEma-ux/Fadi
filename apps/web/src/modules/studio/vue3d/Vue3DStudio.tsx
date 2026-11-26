@@ -551,6 +551,21 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const o = rc.ray.origin, d = rc.ray.direction;
     return { origine: { x: o.x, y: o.y, z: o.z }, direction: { x: d.x, y: d.y, z: d.z } };
   };
+  /**
+   * Face saisissable réellement vue : un objet rendu plus proche sur le rayon (calque verrouillé, solide exact,
+   * architecture…) la masque, et le geste ne doit pas modifier l'objet caché derrière.
+   */
+  const toucherVisible = (m: Moteur, rayon: Rayon) => {
+    const t = toucherFace(facesPousserRef.current, rayon);
+    if (!t) return null;
+    const o = rayon.origine, dr = rayon.direction;
+    const dFace = Math.hypot(t.point.x - o.x, t.point.y - o.y, t.point.z - o.z);
+    const rc = new THREE.Raycaster(new THREE.Vector3(o.x, o.y, o.z), new THREE.Vector3(dr.x, dr.y, dr.z).normalize());
+    const visible = (x: THREE.Object3D | null): boolean => { for (let n = x; n; n = n.parent) if (!n.visible) return false; return true; };
+    const devant = rc.intersectObjects([m.contenu, m.libres, m.architecture], true)
+      .find((h) => h.object instanceof THREE.Mesh && visible(h.object));
+    return devant && devant.distance < dFace - Math.max(1e-3, dFace * 1e-4) ? null : t;
+  };
   /** Tolérance d'inférence : 10 pixels à l'écran, ramenés en mètres au point saisi. */
   const tolerance = (m: Moteur, p: P3): number => {
     const h = Math.max(m.renderer.domElement.clientHeight, 1);
@@ -565,7 +580,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const m = moteur.current;
       if (!pousserActif || !m || e.button !== 0) return false;
       if (gesteRef.current?.mode === "suivi") return true; // le clic qui suit valide (au relâchement)
-      const t = toucherFace(facesPousserRef.current, rayonDe(m, e));
+      const t = toucherVisible(m, rayonDe(m, e));
       if (!t) return false;
       if (t.face.refus) { setErreur(t.face.refus); return true; }
       setErreur("");
@@ -586,7 +601,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         return;
       }
       if (!pousserActif || e.buttons) return;
-      const t = toucherFace(facesPousserRef.current, rayonDe(m, e));
+      const t = toucherVisible(m, rayonDe(m, e));
       viser(t?.face ?? null);
       // Sur une face, le geste est le pousser / tirer ; ailleurs, le glisser reste l'orbite.
       if (m.controls) m.controls.enabled = !t;
