@@ -1250,6 +1250,11 @@ check("L7 · GeoData : une seule barre du bas (pas de barre de l'application), h
   && (await barreBas.locator("button").evaluateAll((bs) => bs.every((b) => b.getBoundingClientRect().height >= 48))), JSON.stringify(boiteBas));
 if (await page.locator("[data-gd-volet-ouvert]").count()) await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
 const plusGd = barreBas.locator("[data-gd-barre-bas='plus']");
+// Survol d'un bouton non pressé : le fond reste sur le vert de la barre (la règle générique du survol, presque blanche, ne
+// s'applique pas), le libellé blanc reste lisible.
+await barreBas.locator("[data-gd-barre-bas='chercher']").hover();
+const survolBas = await barreBas.locator("[data-gd-barre-bas='chercher']").evaluate((b) => ({ fond: getComputedStyle(b).backgroundColor, texte: getComputedStyle(b).color }));
+check("L7 · survol de « Chercher » : fond translucide sur le vert, libellé blanc", survolBas.texte === "rgb(255, 255, 255)" && /^rgba\(255, 255, 255, 0\.0\d+\)$/.test(survolBas.fond), JSON.stringify(survolBas));
 await plusGd.click();
 const feuilleGd = page.locator("[data-fd-feuille-plus]");
 await feuilleGd.waitFor({ state: "visible", timeout: 5_000 });
