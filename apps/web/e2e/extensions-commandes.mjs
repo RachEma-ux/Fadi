@@ -14,6 +14,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/extensions-commandes";
@@ -46,10 +47,7 @@ async function ouvrir(langue) {
   page.setDefaultTimeout(30000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   if (!enBase) await page.route("**/sandbox/preferences/extensions", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ extensions: [paquet] }) }));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `extcmd-${langue}-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "extensions-commandes-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `extcmd-${langue}-${Date.now()}@example.com`, "extensions-commandes-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   if (langue === "en") await page.evaluate(() => window.localStorage.setItem("fadi.langue", "en"));
   const recues = page.waitForResponse((r) => new URL(r.url()).pathname === "/sandbox/preferences/extensions");
