@@ -260,20 +260,33 @@ function decalageLignes(): number {
   return decalage;
 }
 
-/**
- * Exécute `code` sur `modele`. Le script ne reçoit que l'objet `planche` ; chaque fonction de dessin est une opération du
- * modèle (les mêmes que les outils). Le modèle d'entrée n'est jamais modifié : au premier refus, il est rendu tel quel.
- */
-export function executerScript(code: string, modele: Modele, options: OptionsScript = {}): ResultatScript {
-  const journal: string[] = [];
-  const echec = (cle: CleErreurScript, args: Args, message: string, ligne: number | null): ResultatScript => ({ modele, journal, crees: [], erreur: { cle, args, message, ligne } });
-  const refus = (e: ErreurScript, ligne: number | null = null) => echec(e.cle, e.args, e.message, ligne);
-  if (code.length > MAX_CODE_SCRIPT) return refus(new ErreurScript("texte", { max: String(MAX_CODE_SCRIPT) }));
-  // `import(...)` chargerait du code d'ailleurs : le mot est refusé partout dans le texte, chaînes et commentaires compris
-  // (un tri entre code et commentaires se laisse tromper par « // » dans une chaîne). Un mot-clé ne peut pas s'écrire
-  // avec des échappements « \u », donc ce relevé suffit ; le Worker le bloque aussi par sa politique de contenu.
-  if (/\bimport\b/.test(code)) return refus(new ErreurScript("import"));
+export interface OptionsFonctionsPlanche {
+  /** Sélection courante, lue par `selection()`. */
+  readonly selection?: readonly Id[];
+  /** Occurrence ouverte en édition ; absent = racine. */
+  readonly dans?: Id;
+  /** Reçoit chaque ligne de `afficher` (déjà bornée en longueur). */
+  readonly afficher?: (ligne: string) => void;
+}
 
+export interface FonctionsPlanche {
+  /** Les fonctions de l'objet `planche`, liées à ce modèle de travail. */
+  readonly api: Readonly<Record<FonctionScript, (...a: unknown[]) => unknown>>;
+  /** Modèle de travail, après les opérations déjà faites. Le modèle d'entrée n'est jamais modifié. */
+  readonly modele: () => Modele;
+  /** Objets et éléments créés qui existent encore. */
+  readonly crees: () => Id[];
+  readonly existe: (id: Id) => boolean;
+  /** Retient l'état de travail ; la fonction rendue y revient (une demande refusée à mi-chemin ne laisse rien). */
+  readonly figer: () => () => void;
+}
+
+/**
+ * Fonctions de dessin et de lecture de la Planche sur un modèle de travail : celles d'un script personnel, et celles
+ * que la Planche sert à une extension (protocole 1.0). Chaque fonction de dessin est une opération du modèle, la même
+ * que celle des outils. Un argument refusé lève une `ErreurScript`.
+ */
+export function creerFonctionsPlanche(modele: Modele, options: OptionsFonctionsPlanche = {}): FonctionsPlanche {
   const dans = options.dans;
   const o = dans !== undefined ? { dans } : {};
   let m = modele;
@@ -410,9 +423,44 @@ export function executerScript(code: string, modele: Modele, options: OptionsScr
       return occ.nom ?? m.definitions[occ.definition]?.nom ?? "";
     },
     afficher: (...valeurs) => {
-      if (journal.length < MAX_LIGNES_JOURNAL) journal.push(valeurs.map(ecrire).join(" ").slice(0, MAX_LONGUEUR_LIGNE_JOURNAL));
+      options.afficher?.(valeurs.map(ecrire).join(" ").slice(0, MAX_LONGUEUR_LIGNE_JOURNAL));
     },
   };
+
+  return { api: Object.freeze(api), modele: () => m, crees: () => { const c = ctx(); return [...crees].filter((id) => existe(c, id)); }, existe: (id) => existe(ctx(), id),
+    figer: () => {
+      const [m0, operations0, crees0] = [m, operations, [...crees]];
+      return () => {
+        m = m0;
+        operations = operations0;
+        crees.clear();
+        for (const id of crees0) crees.add(id);
+      };
+    },
+  };
+}
+
+/**
+ * Exécute `code` sur `modele`. Le script ne reçoit que l'objet `planche` ; chaque fonction de dessin est une opération du
+ * modèle (les mêmes que les outils). Le modèle d'entrée n'est jamais modifié : au premier refus, il est rendu tel quel.
+ */
+export function executerScript(code: string, modele: Modele, options: OptionsScript = {}): ResultatScript {
+  const journal: string[] = [];
+  const echec = (cle: CleErreurScript, args: Args, message: string, ligne: number | null): ResultatScript => ({ modele, journal, crees: [], erreur: { cle, args, message, ligne } });
+  const refus = (e: ErreurScript, ligne: number | null = null) => echec(e.cle, e.args, e.message, ligne);
+  if (code.length > MAX_CODE_SCRIPT) return refus(new ErreurScript("texte", { max: String(MAX_CODE_SCRIPT) }));
+  // `import(...)` chargerait du code d'ailleurs : le mot est refusé partout dans le texte, chaînes et commentaires compris
+  // (un tri entre code et commentaires se laisse tromper par « // » dans une chaîne). Un mot-clé ne peut pas s'écrire
+  // avec des échappements « \u », donc ce relevé suffit ; le Worker le bloque aussi par sa politique de contenu.
+  if (/\bimport\b/.test(code)) return refus(new ErreurScript("import"));
+
+  const f = creerFonctionsPlanche(modele, {
+    ...(options.selection ? { selection: options.selection } : {}),
+    ...(options.dans !== undefined ? { dans: options.dans } : {}),
+    afficher: (ligne) => {
+      if (journal.length < MAX_LIGNES_JOURNAL) journal.push(ligne);
+    },
+  });
 
   let fn: (planche: unknown) => unknown;
   try {
@@ -423,7 +471,7 @@ export function executerScript(code: string, modele: Modele, options: OptionsScr
   const base = decalageLignes();
   options.avantExecution?.();
   try {
-    fn(Object.freeze(api));
+    fn(f.api);
   } catch (e) {
     const brut = ligneDansPile(e instanceof Error ? e.stack : undefined);
     const lignes = code.split("\n").length;
@@ -433,6 +481,5 @@ export function executerScript(code: string, modele: Modele, options: OptionsScr
     const texte = e instanceof Error ? e.message : String(e);
     return echec("execution", { texte }, texte, sure);
   }
-  const c = ctx();
-  return { modele: m, journal, crees: [...crees].filter((id) => existe(c, id)), erreur: null };
+  return { modele: f.modele(), journal, crees: f.crees(), erreur: null };
 }

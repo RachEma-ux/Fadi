@@ -266,6 +266,8 @@ export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" |
 export interface InvitationView {
   id: string;
   purpose: "platform_account" | "project_participation" | "organization_membership" | "review_package";
+  /** Inscription libre (Issue #425) : lien demandé par la personne elle-même. */
+  selfSignup?: boolean;
   email: string;
   status: InvitationStatus;
   expiresAt: string;
@@ -484,7 +486,7 @@ export const accountApi = {
   revokeOtherSessions: () => request<{ revoked: number }>("/auth/me/sessions", { method: "DELETE" }),
   mfaStatus: () => request<MfaStatus>("/auth/me/mfa"),
   mfaSetup: () => request<MfaSetup>("/auth/me/mfa/setup", { method: "POST" }),
-  mfaEnable: (code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json(withLocale({ code }))),
+  mfaEnable: (password: string, code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json(withLocale({ password, code }))),
   mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json(withLocale({ password, code }))),
   mfaRecoveryCodes: (password: string, code: string) => request<{ recoveryCodes: string[] }>("/auth/me/mfa/recovery-codes", json({ password, code })),
   exportUrl: "/auth/me/export",
@@ -1518,8 +1520,9 @@ export const api = {
   importStudioProfil: (p: string, profil: unknown, resolution?: "ecarter") => request<StudioToolPreferences & { ecartes: StudioConflitRaccourci[] }>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/import`, { method: "POST", body: JSON.stringify(resolution ? { profil, resolution } : { profil }) }),
   /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
   studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
-  register: (email: string, password: string) =>
-    request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify(withLocale({ email, password })) }),
+  /** Inscription (Issue #425) : même réponse pour toute adresse, aucune session ; le lien part par courriel. */
+  register: (email: string) =>
+    request<{ accepted: true; message: string }>("/auth/register", { method: "POST", body: JSON.stringify(withLocale({ email })) }),
   login: (email: string, password: string) =>
     request<LoginResult>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),

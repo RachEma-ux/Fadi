@@ -11,6 +11,10 @@
  *            `scripts` (« Mes scripts » de l'extension Scripts : texte rangé, jamais exécuté par le serveur) omis = les
  *            scripts déjà enregistrés sont gardés, pour qu'un navigateur resté sur une ancienne version ne les efface pas.
  *
+ *   GET /extensions → { extensions: [paquet…] } — extensions installées sur la plateforme (protocole des extensions 1.0,
+ *            lot 3) : paquets `fadi-addon/1` importés par l'administrateur (`addon_packages`), fiche, code en texte et
+ *            pages. Le navigateur les relit et les exécute dans un espace isolé ; le serveur ne les exécute jamais.
+ *
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
  */
@@ -21,6 +25,7 @@ import { sandboxToolPreferences } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { lireCorpsPreferencesSandbox, reponsePreferences } from "../lib/sandbox-preferences.js";
 import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
+import { lirePaquetsServis } from "../lib/addon-paquets-lecture.js";
 
 export const sandboxPreferencesRouter = Router();
 sandboxPreferencesRouter.use(requireAuth);
@@ -32,6 +37,10 @@ sandboxPreferencesRouter.use((_req, res, next) => {
 sandboxPreferencesRouter.get("/", async (req, res) => {
   const [ligne] = await db.select().from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, req.user!.id)).limit(1);
   res.json(reponsePreferences(req.user!.id, ligne, await lireReglagesPlateforme()));
+});
+
+sandboxPreferencesRouter.get("/extensions", async (_req, res) => {
+  res.json({ extensions: await lirePaquetsServis() });
 });
 
 sandboxPreferencesRouter.put("/", async (req, res) => {

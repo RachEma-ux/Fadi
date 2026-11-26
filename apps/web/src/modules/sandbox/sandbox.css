@@ -3826,3 +3826,151 @@
   margin-left: 22px;
   border-left: 1px solid rgba(15, 76, 58, 0.18);
 }
+
+/* Extensions installées (protocole des extensions, lot 3) : icône d'une commande (image du paquet), pastille de la
+   famille dans la liste « Outils », avis au-dessus de la barre d'état, fenêtre de saisie. */
+.sandbox-planche .planche-extension-icone {
+  display: inline-block;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+.sandbox-planche .planche-outils-barre-apercu .planche-extension-icone {
+  width: 16px;
+  height: 16px;
+}
+.sandbox-planche .planche-outils-pastille-extension {
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  background: #8f6a1f;
+  border-radius: 999px;
+}
+.sandbox-planche .planche-avis-extensions {
+  position: absolute;
+  /* Le cadre du dessin passe sous le rail d'outils (à gauche) et sous la barre d'état (en bas) : l'avis s'en écarte. */
+  left: 96px;
+  bottom: 72px;
+  z-index: 15;
+  display: grid;
+  gap: 8px;
+  width: min(35rem, calc(100% - 108px));
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-avis-extensions {
+    left: 64px;
+    width: calc(100% - 76px);
+  }
+}
+.sandbox-planche .planche-avis-extension {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 0.94rem;
+  line-height: 1.4;
+  color: #1f2933;
+  background: #fff;
+  border-left: 5px solid #b5852d;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+.sandbox-planche .planche-avis-extension[data-genre="arret"] {
+  border-left-color: #b3261e;
+}
+.sandbox-planche .planche-avis-extension-picto {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-avis-extension[data-genre="arret"] .planche-avis-extension-picto {
+  color: #b3261e;
+}
+.sandbox-planche .planche-avis-extension-corps {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-avis-extension-fermer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  opacity: 0.65;
+  cursor: pointer;
+}
+.sandbox-planche .planche-avis-extension-fermer:hover,
+.sandbox-planche .planche-avis-extension-fermer:focus-visible {
+  opacity: 1;
+  background: rgba(31, 41, 51, 0.08);
+}
+.sandbox-planche .planche-avis-extension-fermer .sandbox-picto {
+  width: 18px;
+  height: 18px;
+}
+.sandbox-planche .planche-saisie-extension .planche-saisie-champ {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+}
+.sandbox-planche .planche-saisie-extension .planche-saisie-champ input,
+.sandbox-planche .planche-saisie-extension .planche-saisie-champ select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  font: inherit;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+}
+.sandbox-planche .planche-saisie-extension .planche-saisie-champ input[aria-invalid="true"] {
+  border-color: #b3261e;
+}
+.sandbox-planche .planche-saisie-extension .planche-saisie-case {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  text-align: left;
+}
+.sandbox-planche .planche-saisie-extension .planche-saisie-case input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex: none;
+  margin: 0;
+}
+.sandbox-planche .planche-saisie-erreur {
+  margin: 0;
+  color: #b3261e;
+}
+.sandbox-planche .planche-saisie-extension .planche-dialogue-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0.4rem;
+}
+/* Le nom d'une extension peut être long : l'étiquette de sa barre se rogne, le nom de la commande garde la place. */
+.sandbox-planche .planche-outils-liste [data-outils-extension-installee] .planche-outils-etiquette {
+  max-width: 38%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

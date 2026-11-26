@@ -25,10 +25,19 @@ export const DELETION_GRACE_MS = 30 * 24 * HOUR;
 /** Pages publiques du client (apps/web, route `/compte/*`). */
 export const PUBLIC_PATHS = {
   invitation: "/compte/invitation",
+  /** Lien d'inscription libre (Issue #425) : même page que l'invitation, chemin distinct. */
+  signup: "/compte/creer",
   verify_email: "/compte/verifier-email",
   reset_password: "/compte/reinitialiser",
   cancel_deletion: "/compte/annuler-suppression",
+  login: "/connexion",
+  forgot_password: "/compte/mot-de-passe-oublie",
 } as const;
+
+/** Adresse publique d'une page de l'application (sans jeton). */
+export function publicPage(path: string): string {
+  return `${mailRuntime().config.publicUrl}${path}`;
+}
 
 export function publicLink(path: string, token: string): string {
   return `${mailRuntime().config.publicUrl}${path}#jeton=${encodeURIComponent(token)}`;

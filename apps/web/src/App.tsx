@@ -66,6 +66,8 @@ export function App() {
         <Route path="/inscription" element={<RegisterPage />} />
         {/* Pages publiques des comptes : le jeton du lien reçu est dans le fragment (#jeton=…). */}
         <Route path="/compte/invitation" element={<InvitationPage />} />
+        {/* Lien d'inscription (Issue #425) : même page, chemin distinct de celui des invitations. */}
+        <Route path="/compte/creer" element={<InvitationPage />} />
         <Route path="/compte/mot-de-passe-oublie" element={<MotDePasseOubliePage />} />
         <Route path="/compte/reinitialiser" element={<ReinitialiserPage />} />
         <Route path="/compte/verifier-email" element={<VerifierEmailPage />} />

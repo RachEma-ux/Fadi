@@ -8,6 +8,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/extensions";
@@ -25,10 +26,7 @@ const page = await context.newPage();
 page.setDefaultTimeout(30000);
 page.on("pageerror", (e) => erreurs.push(e.message));
 
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `extensions-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "extensions-page-ci-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `extensions-${Date.now()}@example.com`, "extensions-page-ci-123", BASE);
 await page.waitForURL(/\/(accueil|projets)$/);
 
 // Barre latérale : l'entrée existe, entre Organisations et Paramètres, avec une icône.

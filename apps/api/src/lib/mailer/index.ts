@@ -101,4 +101,7 @@ export function mailRuntime(): { config: MailConfig; mailer: Mailer } {
   return current;
 }
 
+/** Tests seulement : relire la configuration au prochain appel (après un `vi.stubEnv`). */
+export function resetMailRuntime(): void { current = null; }
+
 export { renderMail, type MailLocale, type MailTemplate };

@@ -9,6 +9,7 @@
 import { createRequire } from "node:module";
 import { allerEnPlan } from "./lib-barre.mjs";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -86,10 +87,7 @@ const attendreObjet = async (f, nom) => {
 const pid = () => url.split("/").pop();
 
 // Compte, exemple, copie de travail par un premier niveau d'essai.
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `docs-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "documents-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `docs-${Date.now()}@example.com`, "documents-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 await page.goto(`${BASE}/projets`);
 await page.locator('.example-card button:has-text("Importer")').first().click();
@@ -289,7 +287,8 @@ const poignee = page.locator(`[data-detail="feuille"] .feuille-poignee[data-poig
 await page.waitForFunction(() => document.querySelectorAll('[data-detail="feuille"] .feuille-poignee[data-poignee-vue]').length === 2 && !document.querySelector('[data-detail="feuille"] [aria-busy="true"]'), null, { timeout: 60000 });
 await page.waitForTimeout(300);
 await poignee.waitFor({ timeout: 60000 });
-await poignee.scrollIntoViewIfNeeded();
+// Un recalcul de la composition peut remplacer la poignée entre l'attente et le défilement : le localisateur est relu.
+await poignee.scrollIntoViewIfNeeded().catch(async () => { await page.waitForTimeout(500); await poignee.waitFor({ timeout: 60000 }); await poignee.scrollIntoViewIfNeeded(); });
 const bp = await poignee.boundingBox();
 await page.mouse.move(bp.x + bp.width / 2, bp.y + bp.height / 2);
 const sousPointeur = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class")} ${e?.getAttribute("data-poignee-vue") ?? e?.getAttribute("data-tableau") ?? ""}`; }, [bp.x + bp.width / 2, bp.y + bp.height / 2]);
