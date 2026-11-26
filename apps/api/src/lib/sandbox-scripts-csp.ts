@@ -7,8 +7,11 @@
  */
 export const CSP_WORKER_SCRIPTS = "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'none'";
 
-/** Fichier construit du Worker des scripts (nom donné par Vite à `scripts-planche.worker.ts`). */
-const WORKER_SCRIPTS = /[\\/]assets[\\/]scripts-planche\.worker-[^\\/]+\.js$/;
+/**
+ * Fichiers construits des Workers qui exécutent du code écrit hors de Fadi (noms donnés par Vite) : celui des scripts
+ * personnels (`scripts-planche.worker.ts`) et celui des extensions (`extension-planche.worker.ts`, protocole 1.0).
+ */
+const WORKER_SCRIPTS = /[\\/]assets[\\/](?:scripts|extension)-planche\.worker-[^\\/]+\.js$/;
 
 /** Politique de contenu à joindre à un fichier statique, ou `null` (tous les autres fichiers : inchangés). */
 export function politiqueContenuStatique(chemin: string): string | null {
