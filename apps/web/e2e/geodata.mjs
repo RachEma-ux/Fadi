@@ -131,6 +131,8 @@ await inscrire(page, alice);
 const projets = await (await page.request.get(`${BASE}/projects`)).json();
 check("GEO 01 · le compte n'a aucun projet", Array.isArray(projets) && projets.length === 0);
 const entree = page.locator("[data-nav-geodata]");
+// La coquille se monte après la redirection de l'inscription : attendre l'entrée plutôt que la compter aussitôt.
+await entree.first().waitFor({ state: "attached", timeout: 15_000 }).catch(() => undefined);
 check("GEO 02 · entrée GeoData dans la navigation générale", (await entree.count()) === 1);
 await entree.click();
 await page.waitForURL(/\/geodata(#.*)?$/);
@@ -1157,7 +1159,15 @@ await page.locator("[data-geodata-page]").waitFor();
 const carteBas = page.locator("[data-gd-barre-bas='carte']");
 for (const survol of [false, true]) {
   if (survol) await carteBas.hover();
-  const { pressed, couleur, fond } = await carteBas.evaluate((b) => { const s = getComputedStyle(b); return { pressed: b.getAttribute("aria-pressed"), couleur: s.color, fond: s.backgroundColor }; });
+  // Fond effectif : les fonds translucides (L7 : voile blanc sur le vert de la barre) sont composés sur ceux des parents.
+  const { pressed, couleur, fond } = await carteBas.evaluate((b) => {
+    const rgba = (c) => { const v = c.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0]; return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
+    const couches = [];
+    for (let e = b; e && couches.at(-1)?.[3] !== 1; e = e.parentElement) { const c = rgba(getComputedStyle(e).backgroundColor); if (c[3] > 0) couches.push(c); }
+    let [r, g, bl] = [255, 255, 255];
+    for (const [cr, cg, cb, a] of couches.reverse()) [r, g, bl] = [cr * a + r * (1 - a), cg * a + g * (1 - a), cb * a + bl * (1 - a)];
+    return { pressed: b.getAttribute("aria-pressed"), couleur: getComputedStyle(b).color, fond: `rgb(${r.toFixed(1)}, ${g.toFixed(1)}, ${bl.toFixed(1)})` };
+  });
   const r = contraste(couleur, fond);
   check(`DESIGN L1 · « Carte » pressé${survol ? " et survolé" : ""} : libellé ≥ 4,5:1 (WCAG 1.4.3)`, pressed === "true" && r >= 4.5, `${r.toFixed(2)}:1 (${couleur} sur ${fond})`);
 }
@@ -1227,11 +1237,35 @@ await volet(page, "cartes");
 const ouverts = await page.evaluate(() => [document.querySelector(".gd-panneau.gd-ouvert"), document.querySelector("[data-gd-volet-ouvert]")].filter(Boolean).length);
 check("GEO 12 · téléphone : un seul panneau principal ouvert", ouverts === 1);
 check("GEO 12 · téléphone : aucun débordement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
-// Barre du bas (D-GD-52) : Carte · Chercher · Couches · Enregistrer, en bas de l'écran, sous les panneaux.
+// Barre du bas (D-GD-52, chantier Design L7) : Carte · Chercher · Couches · Enregistrer · Plus, seule barre en bas de l'écran.
 const barreBas = page.locator("[data-gd-barre-bas-nav]");
 const boiteBas = await barreBas.boundingBox();
-check("barre du bas (D-GD-52) : au téléphone, quatre boutons nommés en bas de l'écran, panneaux au-dessus", !!boiteBas && Math.abs(boiteBas.y + boiteBas.height - 844) <= 2 && (await barreBas.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-bas")).join(","))) === "carte,chercher,couches,enregistrer"
+check("barre du bas (D-GD-52, L7) : au téléphone, cinq boutons nommés en bas de l'écran, panneaux au-dessus", !!boiteBas && Math.abs(boiteBas.y + boiteBas.height - 844) <= 2 && (await barreBas.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-bas")).join(","))) === "carte,chercher,couches,enregistrer,plus"
   && await page.evaluate(() => { const v = document.querySelector("[data-gd-volet-ouvert], .gd-panneau.gd-ouvert")?.getBoundingClientRect(); const b = document.querySelector("[data-gd-barre-bas-nav]")?.getBoundingClientRect(); return !v || !b || v.bottom <= b.top + 1; }), JSON.stringify(boiteBas));
+// L7 : une seule barre (la barre de l'application n'est pas rendue sur GeoData), au moins 64 px, cibles d'au moins 48 px ;
+// « Plus » ouvre la feuille de l'application avec la navigation principale en tête, Échap la ferme et rend le focus.
+check("L7 · GeoData : une seule barre du bas (pas de barre de l'application), hauteur ≥ 64 px, boutons ≥ 48 px", (await page.locator("[data-fd-barre-bas]").count()) === 0 && (boiteBas?.height ?? 0) >= 63.5
+  && (await barreBas.locator("button").evaluateAll((bs) => bs.every((b) => b.getBoundingClientRect().height >= 48))), JSON.stringify(boiteBas));
+if (await page.locator("[data-gd-volet-ouvert]").count()) await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
+const plusGd = barreBas.locator("[data-gd-barre-bas='plus']");
+// Survol d'un bouton non pressé : le fond reste sur le vert de la barre (la règle générique du survol, presque blanche, ne
+// s'applique pas), le libellé blanc reste lisible.
+await barreBas.locator("[data-gd-barre-bas='chercher']").hover();
+const survolBas = await barreBas.locator("[data-gd-barre-bas='chercher']").evaluate((b) => ({ fond: getComputedStyle(b).backgroundColor, texte: getComputedStyle(b).color }));
+check("L7 · survol de « Chercher » : fond translucide sur le vert, libellé blanc", survolBas.texte === "rgb(255, 255, 255)" && /^rgba\(255, 255, 255, 0\.0\d+\)$/.test(survolBas.fond), JSON.stringify(survolBas));
+await plusGd.click();
+const feuilleGd = page.locator("[data-fd-feuille-plus]");
+await feuilleGd.waitFor({ state: "visible", timeout: 5_000 });
+await page.waitForTimeout(400);
+check("L7 · « Plus » de GeoData : feuille ouverte, navigation principale en tête (Accueil, Projets, Studio, GeoData courant), aria-expanded", (await plusGd.getAttribute("aria-expanded")) === "true"
+  && (await feuilleGd.locator("section").first().locator("[data-fd-entree]").evaluateAll((as) => as.map((a) => a.getAttribute("data-fd-entree")).join(","))) === "accueil,projets,studio,geodata"
+  && (await feuilleGd.locator("[data-fd-entree='geodata']").getAttribute("aria-current")) === "page"
+  && await page.evaluate(() => document.activeElement?.id === "fd-feuille-plus-titre"));
+await page.screenshot({ path: join(OUT, "02d-telephone-plus.png") });
+await page.keyboard.press("Escape");
+await feuilleGd.waitFor({ state: "hidden", timeout: 5_000 });
+await page.waitForFunction(() => document.querySelector("[data-gd-barre-bas='plus']")?.getAttribute("aria-expanded") === "false" && document.activeElement?.getAttribute("data-gd-barre-bas") === "plus", null, { timeout: 5_000 }).catch(() => undefined);
+check("L7 · Échap ferme la feuille, rend le focus à « Plus » et remet aria-expanded à false", (await plusGd.getAttribute("aria-expanded")) === "false" && await page.evaluate(() => document.activeElement?.getAttribute("data-gd-barre-bas") === "plus"));
 await barreBas.locator("[data-gd-barre-bas='carte']").click();
 check("barre du bas : « Carte » ferme panneaux et volets", (await page.locator("[data-gd-volet-ouvert], .gd-panneau.gd-ouvert").count()) === 0 && (await barreBas.locator("[data-gd-barre-bas='carte']").getAttribute("aria-pressed")) === "true");
 await barreBas.locator("[data-gd-barre-bas='couches']").click();

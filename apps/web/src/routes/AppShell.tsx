@@ -13,7 +13,7 @@ import { MenuStudio } from "./MenuStudio";
 import { useAdminEnabled } from "../lib/use-platform-role";
 import { BarreBasGlobale } from "./BarreBasGlobale";
 import { FeuillePlus } from "./FeuillePlus";
-import { entreeActive, entreesPlus } from "./navigation-entrees";
+import { entreeActive, entreesPlus, EVENEMENT_OUVRIR_PLUS, EVENEMENT_PLUS_FERME } from "./navigation-entrees";
 import "./barre-bas.css";
 
 export { initialsFrom, shownName } from "../lib/user-display";
@@ -52,6 +52,21 @@ export function AppShell() {
     window.addEventListener("resize", recopier);
     return () => { observateur?.disconnect(); window.removeEventListener("resize", recopier); racine.style.removeProperty("--fd-barre-bas-reelle"); };
   });
+  // GeoData garde sa propre barre (lot L7) : son bouton « Plus » demande la feuille par un événement du navigateur.
+  const [plusGeoData, setPlusGeoData] = useState(false);
+  useEffect(() => {
+    const ouvrir = (e: Event) => {
+      const declencheur = (e as CustomEvent<{ declencheur?: HTMLElement | null }>).detail?.declencheur ?? null;
+      setPlusGeoData(true);
+      setPlus({ declencheur });
+    };
+    window.addEventListener(EVENEMENT_OUVRIR_PLUS, ouvrir);
+    return () => window.removeEventListener(EVENEMENT_OUVRIR_PLUS, ouvrir);
+  }, []);
+  const fermerPlus = () => {
+    setPlus(null);
+    if (plusGeoData) { setPlusGeoData(false); window.dispatchEvent(new CustomEvent(EVENEMENT_PLUS_FERME)); }
+  };
   const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
   const collaborationActive = location.pathname === "/collaboration" || !!projectId && new URLSearchParams(location.search).get("module") === "collaboration";
 
@@ -151,9 +166,9 @@ export function AppShell() {
       </div>}
       <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div>
         {/* GeoData porte sa propre barre du bas (lot L7 : « Plus » en 5ᵉ) : une seule barre fixe par écran. */}
-        {active !== "geodata" && <BarreBasGlobale ref={barreBas} active={active} pageDansPlus={pageDansPlus} plusOuvert={!!plus} onPlus={() => setPlus(plus ? null : { declencheur: barreBas.current?.querySelector<HTMLElement>('[data-fd-entree="plus"]') ?? null })} />}
+        {active !== "geodata" && <BarreBasGlobale ref={barreBas} active={active} pageDansPlus={pageDansPlus} plusOuvert={!!plus} onPlus={() => plus ? fermerPlus() : setPlus({ declencheur: barreBas.current?.querySelector<HTMLElement>('[data-fd-entree="plus"]') ?? null })} />}
       </div>
-      {plus && <FeuillePlus entrees={entreesFeuille} active={active} navigationPrincipale={false} nom={user ? shownName(user) : ""} declencheur={plus.declencheur} onFermer={() => setPlus(null)} onDeconnexion={() => { setPlus(null); void logout(); }} />}
+      {plus && <FeuillePlus entrees={entreesFeuille} active={active} navigationPrincipale={plusGeoData} nom={user ? shownName(user) : ""} declencheur={plus.declencheur} onFermer={fermerPlus} onDeconnexion={() => { fermerPlus(); void logout(); }} />}
     </div>
   </WorkspaceNavigation.Provider>;
 }

@@ -3,7 +3,12 @@
  * à portée du pouce. Chaque bouton appelle la fonction existante de la page (même condition que la mini-barre et le menu) ;
  * raccourcis : Alt+X (carte seule : panneaux fermés), Alt+R (recherche), Alt+C (Couches), Alt+E (Enregistrer). Masquée au
  * bureau (la barre d'outils et la mini-barre y suffisent).
+ * Chantier Design, lot L7 : c'est la seule barre du bas sur GeoData (la barre globale de l'application n'y est pas rendue).
+ * Un 5ᵉ bouton « Plus » ouvre la feuille de navigation de l'application par un événement du navigateur
+ * (`fadi:ouvrir-plus`, détail `{ declencheur }`) ; la coquille répond par `fadi:plus-ferme` à la fermeture. Le module ne
+ * dépend ainsi d'aucun fichier de l'application (test d'indépendance).
  */
+import { useEffect, useRef, useState } from "react";
 export interface ActionsBarreBas {
   carteSeule: boolean;
   rechercheOuverte: boolean;
@@ -23,6 +28,12 @@ const ICONES = {
   enregistrer: "M5 3h11l3 3v15H5zM8 3v5h7V3M8 21v-7h8v7",
 } as const;
 
+/** Événements échangés avec la coquille de l'application (chaînes en dur : aucun import hors du module). */
+export const EVENEMENT_OUVRIR_PLUS = "fadi:ouvrir-plus";
+export const EVENEMENT_PLUS_FERME = "fadi:plus-ferme";
+// Même pictogramme que le « Plus » de la barre de l'application (`Icon` « plus »), recopié : aucun import hors du module.
+const ICONE_PLUS = "M12 5v14M5 12h14";
+
 export function BarreBas(p: ActionsBarreBas) {
   const bouton = (cle: keyof typeof ICONES, libelle: string, raccourci: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => (
     <button type="button" className="gd-barre-bas-bouton" onClick={action} aria-pressed={extra.pressed} disabled={extra.disabled} title={`${libelle} (${raccourci})`} aria-keyshortcuts={raccourci} data-gd-barre-bas={cle}>
@@ -30,13 +41,28 @@ export function BarreBas(p: ActionsBarreBas) {
       <span>{libelle}</span>
     </button>
   );
+  const plus = useRef<HTMLButtonElement>(null);
+  const [plusOuvert, setPlusOuvert] = useState(false);
+  useEffect(() => {
+    const ferme = () => setPlusOuvert(false);
+    window.addEventListener(EVENEMENT_PLUS_FERME, ferme);
+    return () => window.removeEventListener(EVENEMENT_PLUS_FERME, ferme);
+  }, []);
+  const ouvrirPlus = () => {
+    setPlusOuvert(true);
+    window.dispatchEvent(new CustomEvent(EVENEMENT_OUVRIR_PLUS, { detail: { declencheur: plus.current } }));
+  };
   return (
-    <nav className="gd-barre-bas" aria-label="Barre du bas" data-gd-barre-bas-nav>
+    <div role="group" className="gd-barre-bas" aria-label="Barre du bas" data-gd-barre-bas-nav>
       {bouton("carte", "Carte", "Alt+X", p.onCarte, { pressed: p.carteSeule })}
       {bouton("chercher", "Chercher", "Alt+R", p.onChercher, { pressed: p.rechercheOuverte })}
       {bouton("couches", "Couches", "Alt+C", p.onCouches, { pressed: p.couchesOuvertes })}
       {bouton("enregistrer", p.enregistrementLibelle, "Alt+E", p.onEnregistrer, { disabled: p.enregistrementImpossible })}
-    </nav>
+      <button ref={plus} type="button" className="gd-barre-bas-bouton" onClick={ouvrirPlus} aria-haspopup="dialog" aria-expanded={plusOuvert} aria-controls="fd-feuille-plus" data-gd-barre-bas="plus">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={ICONE_PLUS} /></svg>
+        <span>Plus</span>
+      </button>
+    </div>
   );
 }
 
