@@ -3200,13 +3200,13 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(await agentTokens(d.id)).toBe(0);
     });
 
-    it("inscription : une adresse connue coûte le même hachage qu'une inscription réelle", async () => {
+    it("inscription : une adresse connue répond comme une adresse nouvelle, sans mot de passe ni hachage (UM-33)", async () => {
+      // L'inscription par lien (Issue #425) remplace l'égalisation du hachage : aucune des deux branches ne hache plus.
       const known = await account("arena-connu");
-      const t0 = Date.now();
-      const r = await request(app).post("/auth/register").send({ email: known.email, password: "une-autre-phrase-solide" });
-      expect(r.status).toBe(409);
-      // Argon2id (19 MiB, t=2) prend plusieurs millisecondes : une réponse immédiate trahirait l'adresse.
-      expect(Date.now() - t0).toBeGreaterThanOrEqual(5);
+      const connu = await request(app).post("/auth/register").send({ email: known.email });
+      const nouveau = await request(app).post("/auth/register").send({ email: "arena-nouveau@example.com" });
+      expect([connu.status, nouveau.status]).toEqual([202, 202]);
+      expect(connu.body).toEqual(nouveau.body);
     });
   });
 });
