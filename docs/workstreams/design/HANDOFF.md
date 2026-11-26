@@ -35,6 +35,7 @@ Mis à jour : 2026-11-26 (UTC).
 - `design-releve.mjs` passe à l'inscription par lien (#428) depuis l'intégration de main.
 - `extensions-commandes.mjs` (venue de main, #438) passe aussi à l'inscription par lien : sur main elle échouait au champ mot de passe.
 - `studio-preuves-d1.mjs` (I.5-02, shard complements) attend GeoData entre Console et Collaboration depuis L6b (libellé repris dans `docs/workstreams/studio/task-register.json`).
+- `studio-navigation.mjs` (NAV-001, shard parcours) cherche Collaboration dans le groupe secondaire, où L6b l'a placée.
 
 ## Prochaine action
 
