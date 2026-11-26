@@ -31,7 +31,8 @@ const ICONES = {
 /** Événements échangés avec la coquille de l'application (chaînes en dur : aucun import hors du module). */
 export const EVENEMENT_OUVRIR_PLUS = "fadi:ouvrir-plus";
 export const EVENEMENT_PLUS_FERME = "fadi:plus-ferme";
-const ICONE_PLUS = "M5 12h.01M12 12h.01M19 12h.01";
+// Même pictogramme que le « Plus » de la barre de l'application (`Icon` « plus »), recopié : aucun import hors du module.
+const ICONE_PLUS = "M12 5v14M5 12h14";
 
 export function BarreBas(p: ActionsBarreBas) {
   const bouton = (cle: keyof typeof ICONES, libelle: string, raccourci: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => (
@@ -58,7 +59,7 @@ export function BarreBas(p: ActionsBarreBas) {
       {bouton("couches", "Couches", "Alt+C", p.onCouches, { pressed: p.couchesOuvertes })}
       {bouton("enregistrer", p.enregistrementLibelle, "Alt+E", p.onEnregistrer, { disabled: p.enregistrementImpossible })}
       <button ref={plus} type="button" className="gd-barre-bas-bouton" onClick={ouvrirPlus} aria-haspopup="dialog" aria-expanded={plusOuvert} aria-controls="fd-feuille-plus" data-gd-barre-bas="plus">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={ICONE_PLUS} /></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={ICONE_PLUS} /></svg>
         <span>Plus</span>
       </button>
     </div>
