@@ -4,7 +4,8 @@
  *
  *  - le panneau paraît dans la colonne de la Planche, avec sa propre icône ; ouvert, il porte son titre, la pastille
  *    « extension » et la note d'isolement ; il est exclusif des panneaux de la Planche ;
- *  - sa page est affichée à l'écart : cadre sans origine, aucun réseau, ni la Planche ni l'enregistrement local ;
+ *  - sa page est affichée à l'écart : cadre sans origine, aucun réseau, ni la Planche ni l'enregistrement local, et elle ne
+ *    peut pas conduire son cadre vers une autre adresse ;
  *  - la page appelle des actions nommées de l'extension (relevé, tracer) : un seul pas d'annulation, une erreur de
  *    l'extension revient à la page ; l'extension envoie des données à la page quand le dessin change ;
  *  - une commande de l'extension ouvre le panneau ; anglais.
@@ -12,6 +13,7 @@
  *   BASE_URL=http://localhost:3001 [DATABASE_URL=…] OUT=atelier-captures/extensions-panneau node apps/web/e2e/extensions-panneau.mjs
  */
 import { mkdirSync, readFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { inscrireDansLaPage } from "./lib-inscription.mjs";
@@ -146,6 +148,22 @@ const attendreReleve = (page, aretes) => cadre(page).locator("#aretes").filter({
   await panneau(page).waitFor();
   await attendreReleve(page, avant.aretes);
   check("la commande de l'extension ouvre son panneau, qui remplace celui de la Planche", (await page.locator('[data-planche-panneau="materiaux"]').count()) === 0 && (await textesAvis(page)).length === 0);
+  // La page ne peut pas non plus conduire son propre cadre vers une autre adresse : la règle `frame-src 'self'` de
+  // l'application (index.html) refuse la navigation, donc aucune donnée ne part dans l'adresse demandée.
+  {
+    let recus = 0;
+    const ailleurs = createServer((_req, res) => {
+      recus++;
+      res.end("ailleurs");
+    });
+    await new Promise((r) => ailleurs.listen(0, "127.0.0.1", r));
+    const adresse = `http://127.0.0.1:${ailleurs.address().port}/fuite?donnees=dessin`;
+    const dedans2 = await (await page.locator("[data-planche-panneau-cadre]").elementHandle()).contentFrame();
+    await dedans2.evaluate((a) => void (window.location.href = a), adresse).catch(() => {});
+    await page.waitForTimeout(1200);
+    check("la page ne peut pas conduire son cadre vers une autre adresse : aucune demande ne part", recus === 0, `demandes reçues ailleurs : ${recus}`);
+    await new Promise((r) => ailleurs.close(r));
+  }
   await panneau(page).locator(".canevas-fermer").click();
   check("le bouton de fermeture referme le panneau", (await panneau(page).count()) === 0);
   await page.context().close();
