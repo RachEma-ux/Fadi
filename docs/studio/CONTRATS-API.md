@@ -173,7 +173,7 @@ version incompatible sans écriture, inventaire à l'exécution) et `apps/api/sr
 | Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
 |---|---|---|---|---|---|---|
 | `studio-api-agents-jetons-lister/1` | `GET /agents/jetons` | Jetons d'agent du compte sur le projet (jamais leur valeur). | Aucune. | — | 200 | JSON : `jetons` |
-| `studio-api-agents-jeton-creer/1` | `POST /agents/jetons` | Création d'un jeton d'agent, montré une seule fois. | Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90). | `studioJetonSchema` | 201 | JSON : `id`, `nom`, `jeton`, `expireLe` |
+| `studio-api-agents-jeton-creer/1` | `POST /agents/jetons` | Création d'un jeton d'agent, montré une seule fois. | Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90, motDePasse du compte). | `studioJetonSchema` | 201 | JSON : `id`, `nom`, `jeton`, `expireLe` |
 | `studio-api-agents-jeton-revoquer/1` | `POST /agents/jetons/:tokenId/revoquer` | Révocation d'un jeton d'agent du compte. | Aucune. | — | 200 | JSON : `id`, `revoque` |
 | `studio-api-agents-propositions/1` | `GET /agents/propositions` | Propositions des agents du compte, à confirmer ou refuser. | Aucune. | — | 200 | JSON : `propositions` |
 | `studio-api-agents-proposition-confirmer/1` | `POST /agents/propositions/:proposalId/confirmer` | Confirmation humaine : le point d'entrée commun écrit la révision (source agent-mcp). | Aucune. | `envelopeSchema` | 200 | JSON : `proposition`, `revisionId`, `replayed` |

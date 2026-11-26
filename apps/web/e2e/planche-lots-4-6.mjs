@@ -12,6 +12,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { ecarterBarreActions } from "./lib-barre.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 mkdirSync(OUT, { recursive: true });
@@ -28,10 +29,7 @@ page.on("pageerror", (e) => erreurs.push(e.message));
 page.on("dialog", (d) => void d.accept());
 const api = async (m, c, d) => { const r = await page.request[m](`${BASE}${c}`, d === undefined ? undefined : { data: d }); return { status: r.status(), body: await r.json().catch(() => null) }; };
 
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `lots456-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "planche-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `lots456-${Date.now()}@example.com`, "planche-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const ref = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${ref}/copies`, { name: "lots 4 à 6" })).body.id;

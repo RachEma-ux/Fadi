@@ -31,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { chromium } from 'playwright';
 import { TABLES, canonicalJson, keyOf, sha256 } from '../../../scripts/validation/studio-compare-lib.mjs';
+import { inscrire } from "./lib-inscription.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
@@ -74,8 +75,8 @@ const credentials = (role) => ({ email: `restauration-${role}-${randomUUID().rep
 // --- Base A : projet Studio synthétique -------------------------------------------------------------------------
 const accounts = { owner: credentials('proprietaire'), editor: credentials('editeur') };
 const ownerA = client(BASE), editorA = client(BASE);
-check('A : propriétaire inscrit', (await ownerA('POST', '/auth/register', accounts.owner)).status === 201);
-check('A : éditeur inscrit', (await editorA('POST', '/auth/register', accounts.editor)).status === 201);
+check('A : propriétaire inscrit', (await inscrire(ownerA, accounts.owner, "POST")).status === 201);
+check('A : éditeur inscrit', (await inscrire(editorA, accounts.editor, "POST")).status === 201);
 const project = await ownerA('POST', '/projects', { code: `RST_${randomUUID().slice(0, 8)}`, name: 'Studio — restauration (recette synthétique)' });
 check('A : projet créé', project.status === 201, String(project.status));
 const pA = project.body.id;
@@ -207,7 +208,7 @@ check('sauvegarde (troisième projet) : l\'acceptant figure parmi les comptes ci
 // Restauré dans B, l'acceptation est retirée (jamais attribuée au compte qui restaure, qui n'a pas accepté).
 accounts.tiers = credentials('tiers');
 const tiersA = client(BASE);
-check('A : compte tiers inscrit (absent de B)', (await tiersA('POST', '/auth/register', accounts.tiers)).status === 201);
+check('A : compte tiers inscrit (absent de B)', (await inscrire(tiersA, accounts.tiers, "POST")).status === 201);
 const project4 = await tiersA('POST', '/projects', { code: `RSK_${randomUUID().slice(0, 8)}`, name: 'Studio — acceptant absent (recette synthétique)' });
 const p4 = project4.body?.id;
 const study4 = await tiersA('POST', `/projects/${p4}/studio/studies`, { name: 'Étude acceptant absent' });
@@ -297,8 +298,8 @@ let pForged = null;
 let compareExit = null;
 try {
   const ownerB = client(BASE_B), editorB = client(BASE_B);
-  check('B : propriétaire réinscrit (même adresse)', (await ownerB('POST', '/auth/register', accounts.owner)).status === 201);
-  check('B : éditeur réinscrit (même adresse)', (await editorB('POST', '/auth/register', accounts.editor)).status === 201);
+  check('B : propriétaire réinscrit (même adresse)', (await inscrire(ownerB, accounts.owner, "POST")).status === 201);
+  check('B : éditeur réinscrit (même adresse)', (await inscrire(editorB, accounts.editor, "POST")).status === 201);
 
   // Contrôle négatif : section Studio altérée (document d'une révision modifié) → refus, rien n'est créé.
   const tampered = JSON.parse(archiveText);

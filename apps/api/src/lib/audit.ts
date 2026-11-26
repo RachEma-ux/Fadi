@@ -25,6 +25,8 @@ export type AuditAction =
   | "auth.mfa.recovery_used"
   | "auth.email.verified"
   | "auth.register"
+  | "auth.register.requested"
+  | "auth.register.existing_account"
   | "account.activated"
   | "account.export"
   | "account.deletion.requested"
@@ -41,6 +43,9 @@ export type AuditAction =
   | "admin.user.promoted_by_script"
   // Catalogue des extensions (25 novembre 2026) : cible = l'extension ; métadonnées = version, réglage avant / après.
   | "admin.addon.updated"
+  // Extensions installées (lot 3 du protocole) : cible = l'extension ; métadonnées = version, auteur, permissions.
+  | "admin.addon.package.imported"
+  | "admin.addon.package.removed"
   | "invitation.created"
   | "invitation.resent"
   | "invitation.cancelled"

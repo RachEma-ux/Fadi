@@ -97,7 +97,9 @@ def main():
             values[key] = value
         env['DATABASE_URL'] = validate_database_url(values.get('DATABASE_URL'), current_manifest)
         env.update(NODE_ENV='development', MIGRATE_ON_START='0', HOST='127.0.0.1',
-                   PORT='3001', WEB_ORIGIN='http://127.0.0.1:5173')
+                   PORT='3001', WEB_ORIGIN='http://127.0.0.1:5173',
+                   # Issue #425 : l'inscription passe par le lien du courriel, lu par la recette dans le journal de l'API.
+                   MAIL_TRANSPORT='console', API_LOG=str(path.parent / 'api.log'))
         preflight()  # Recheck labels, image, volume, marker and role before EVERY launch.
         return launch(['node', 'apps/api/dist/server.js'], 'api.log')
 

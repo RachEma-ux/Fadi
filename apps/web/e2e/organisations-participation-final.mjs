@@ -39,6 +39,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -122,7 +123,7 @@ async function account(tag, { register = true } = {}) {
     return { status: r.status(), body: await r.json().catch(() => null), headers: r.headers() };
   };
   if (register) {
-    const r = await call("post", "/auth/register", { email, password: PASSWORD });
+    const r = await inscrire(call, { email, password: PASSWORD }, "post");
     if (r.status !== 201) throw new Error(`inscription ${tag} : ${r.status}`);
   }
   const me = register ? (await call("get", "/auth/me")).body : null;
@@ -459,7 +460,7 @@ try {
     execFileSync(process.execPath, [CREATE_ADMIN, admin.email], { env: { ...process.env, DATABASE_URL: process.env.CREATE_ADMIN_DATABASE_URL ?? process.env.DATABASE_URL }, encoding: "utf8" });
     const login = await admin.call("post", "/auth/login", { email: admin.email, password: PASSWORD });
     const setup = await admin.call("post", "/auth/me/mfa/setup");
-    const enabled = await admin.call("post", "/auth/me/mfa/enable", { code: totp(setup.body?.secret ?? "") });
+    const enabled = await admin.call("post", "/auth/me/mfa/enable", { password: PASSWORD, code: totp(setup.body?.secret ?? "") });
     adminReady = login.status === 200 && enabled.status === 200;
     check("administrateur promu, double authentification activée depuis sa session (UM-18)", adminReady, `${login.status} ${setup.status} ${enabled.status}`);
   } else notRun("journal d'administration", "DATABASE_URL absent (promotion par create-admin.mjs)");

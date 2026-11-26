@@ -12,6 +12,7 @@ import { pointVisiblePlanche } from "./lib-cible-planche.mjs";
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { ecarterBarreActions } from "./lib-barre.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures/planche-assemblages";
@@ -40,10 +41,7 @@ async function preparer(contexte, avecCatalogue = true) {
     const r = await page.request[methode](`${BASE}${chemin}`, data === undefined ? undefined : { data });
     return { status: r.status(), body: await r.json().catch(() => null) };
   };
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `assemblages-${Date.now()}-${Math.round(Math.random() * 1e6)}@example.com`);
-  await page.fill('input[name="password"]', "planche-pass-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `assemblages-${Date.now()}-${Math.round(Math.random() * 1e6)}@example.com`, "planche-pass-123", BASE);
   await page.waitForURL(/\/(projets|accueil)/);
   const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
   const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · assemblages" })).body.id;

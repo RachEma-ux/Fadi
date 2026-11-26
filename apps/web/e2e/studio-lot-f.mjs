@@ -15,6 +15,7 @@
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const RELAIS = fileURLToPath(new URL("../../api/scripts/studio-mcp-stdio.mjs", import.meta.url));
@@ -44,10 +45,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-lot-f-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-lot-f-ci-12345");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-lot-f-${Date.now()}@example.com`, "studio-lot-f-ci-12345", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
@@ -135,6 +133,7 @@ try {
   const agents = page.locator("[data-studio-agents]");
   await agents.waitFor();
   await agents.locator("[data-studio-jeton-nom]").fill("Agent de recette");
+  await agents.locator("[data-studio-jeton-mot-de-passe]").fill("studio-lot-f-ci-12345");
   await agents.locator("[data-studio-jeton-creer]").click();
   const jeton = (await agents.locator("[data-studio-jeton-valeur]").textContent()).trim();
   check("jeton d'agent créé et montré une fois", jeton.startsWith("fadi_mcp_"));

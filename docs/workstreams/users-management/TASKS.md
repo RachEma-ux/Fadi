@@ -19,6 +19,11 @@
   ouverte, **non fusionnée** ; CI du HEAD à vérifier ; fusion et déploiement sur décision du maître d'ouvrage
   (Issue : #272).
 
+- [ ] UM-33 — Inscription par lien : `POST /auth/register` répond toujours 202 sans cookie, le compte naît à
+  `/compte/creer` par le lien reçu ; plus d'énumération ni de connexion automatique. Vérifié en local (typecheck, tests,
+  build) ; PR vers `main` ouverte, **non fusionnée** ; suites DB-3 et e2e en CI ; fusion sur décision du maître d'ouvrage,
+  avec captures Android et bureau (Issue : #425).
+
 ## Terminé
 
 - [x] UM-30 — Langue des courriels = langue de l'interface, sinon français (`Accept-Language` n'est plus lu) :
