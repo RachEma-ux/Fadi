@@ -1,4 +1,6 @@
 {
+"Nombre attendu, par exemple 12,5. La valeur enregistrée n'a pas changé.": "A number is expected, for example 12.5. The saved value has not changed.",
+"Date incomplète ou invalide. La valeur enregistrée n'a pas changé.": "Incomplete or invalid date. The saved value has not changed.",
 "Accès retiré. Sa réservation d’édition et ses verrous ont été libérés ; ses observations et tâches ouvertes restent à réattribuer.": "Access removed. Their editing reservation and locks have been released; their open observations and tasks remain to be reassigned.",
 "Responsabilités à réattribuer": "Responsibilities to reassign",
 "Ces observations et tâches Studio sont encore confiées à une personne qui n’a plus accès au projet. Rien n’est réattribué d’office : ouvrez la variante et réattribuez-les ; leur auteur et leur historique restent inchangés.": "These Studio observations and tasks are still assigned to someone who no longer has access to the project. Nothing is reassigned automatically: open the variant and reassign them; their author and history stay unchanged.",

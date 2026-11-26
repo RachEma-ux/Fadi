@@ -329,6 +329,39 @@ await page.waitForSelector("#biz-f2");
 await page.waitForFunction(() => document.querySelector("#biz-f2")?.value === "13500000" && document.querySelectorAll(".biz-kpis").length === 1, null, { timeout: 10000 }).catch(() => {});
 check("étape 14 : valeurs conservées après rechargement", (await page.inputValue("#biz-f2")) === "13500000" && (await page.locator(".biz-kpis").count()) === 1);
 
+// Lot Design L3 (M27, arbitrage 11) : une saisie numérique invalide n'est ni enregistrée ni effacée en silence ;
+// « 12,5 » vaut 12,5 (et non 125) ; « -3 » reste accepté (aucune règle métier nouvelle). Valeurs remises ensuite.
+{
+  const ecritures = [];
+  const suivre = (r) => { if (r.method() === "PATCH" && /\/steps\/14$/.test(new URL(r.url()).pathname)) ecritures.push(r.url()); };
+  page.on("request", suivre);
+  for (const saisie of ["1e", "abc"]) {
+    ecritures.length = 0;
+    await page.locator("#biz-f2").fill(saisie);
+    await page.locator("#biz-f2").blur();
+    await page.waitForTimeout(400);
+    const etat = await page.locator("#biz-f2").evaluate((el) => ({ valeur: el.value, invalide: el.getAttribute("aria-invalid"), message: document.getElementById(el.getAttribute("aria-describedby") ?? "")?.textContent ?? "" }));
+    check(`DESIGN L3 · étape 14 : « ${saisie} » refusé — texte gardé, message relié au champ, aucune écriture`, etat.valeur === saisie && etat.invalide === "true" && /Nombre attendu/.test(etat.message) && ecritures.length === 0, JSON.stringify({ ...etat, ecritures: ecritures.length }));
+  }
+  await page.screenshot({ path: `${OUT}/design-l3-saisie-refusee-bureau.png` });
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector("#biz-f2")?.value === "13500000", null, { timeout: 10000 }).catch(() => {});
+  check("DESIGN L3 · étape 14 : après rechargement, la valeur enregistrée est inchangée (13500000)", (await page.inputValue("#biz-f2")) === "13500000");
+  const saisir = async (k, v) => { await page.locator(`#biz-${k}`).fill(v); await page.locator(`#biz-${k}`).blur(); await page.waitForTimeout(500); };
+  await saisir("f3", "12,5");
+  await saisir("f4", "-3");
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector("#biz-f3")?.value === "12.5", null, { timeout: 10000 }).catch(() => {});
+  const relu = { f3: await page.inputValue("#biz-f3"), f4: await page.inputValue("#biz-f4") };
+  check("DESIGN L3 · étape 14 : « 12,5 » enregistré 12,5 (pas 125) ; « -3 » accepté", relu.f3 === "12.5" && relu.f4 === "-3", JSON.stringify(relu));
+  await saisir("f3", "1600000");
+  await saisir("f4", "1200000");
+  await page.reload();
+  await page.waitForFunction(() => /Solde0/.test((document.querySelector(".biz-kpis")?.textContent ?? "").replace(/\u202f|\u00a0/g, " ")), null, { timeout: 15000 }).catch(() => {});
+  check("DESIGN L3 · étape 14 : valeurs remises, solde revenu à 0", /Solde0/.test((await page.locator(".biz-kpis").textContent()).replace(/\u202f|\u00a0/g, " ")));
+  page.off("request", suivre);
+}
+
 // 5. Étape 17 et 19, marquer terminée
 await page.goto(`${projectUrl}?module=parcours&etape=17`);
 await page.waitForSelector("#biz-f1");

@@ -12,7 +12,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Dernier état vérifié
 
-- L0 : PR #418. L1 : PR #419. L2 : recette GeoData verte en local ; voir `STATUS.md`.
+- L0 : PR #418. L1 : PR #419. L2 : PR #420. L3 : contrôles de saisie verts en local ; voir `STATUS.md`.
 
 ## Prochaine action
 
@@ -23,6 +23,9 @@ Mis à jour : 2026-11-26 (UTC).
 - `npx vitest run src/design` (apps/web) ; `node apps/web/e2e/design-releve.mjs` (relevé, planches « avant »).
 
 ## Risques et blocages
+
+- Le scénario `parcours-scenario.mjs` complet n'a pas pu finir sur la stack locale (serveur de développement Vite) : il
+  s'arrête aussi sur `main`, à un autre endroit ; la CI (application construite) fait foi.
 
 - Les recettes `accueils-design.mjs` exigent l'absence de l'action utile : le lot L4 les modifie avec le code.
 
