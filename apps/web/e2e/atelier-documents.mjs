@@ -289,7 +289,8 @@ const poignee = page.locator(`[data-detail="feuille"] .feuille-poignee[data-poig
 await page.waitForFunction(() => document.querySelectorAll('[data-detail="feuille"] .feuille-poignee[data-poignee-vue]').length === 2 && !document.querySelector('[data-detail="feuille"] [aria-busy="true"]'), null, { timeout: 60000 });
 await page.waitForTimeout(300);
 await poignee.waitFor({ timeout: 60000 });
-await poignee.scrollIntoViewIfNeeded();
+// Un recalcul de la composition peut remplacer la poignée entre l'attente et le défilement : le localisateur est relu.
+await poignee.scrollIntoViewIfNeeded().catch(async () => { await page.waitForTimeout(500); await poignee.waitFor({ timeout: 60000 }); await poignee.scrollIntoViewIfNeeded(); });
 const bp = await poignee.boundingBox();
 await page.mouse.move(bp.x + bp.width / 2, bp.y + bp.height / 2);
 const sousPointeur = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class")} ${e?.getAttribute("data-poignee-vue") ?? e?.getAttribute("data-tableau") ?? ""}`; }, [bp.x + bp.width / 2, bp.y + bp.height / 2]);

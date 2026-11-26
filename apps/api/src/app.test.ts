@@ -2260,7 +2260,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
     expect(setup.status).toBe(200);
     acct.secret = setup.body.secret;
     acct.lastStep = undefined;
-    const enabled = await client.post("/auth/me/mfa/enable").send({ code: await nextCode(acct) });
+    const enabled = await client.post("/auth/me/mfa/enable").send({ password: PASSWORD, code: await nextCode(acct) });
     expect(enabled.status).toBe(200);
     acct.recovery = enabled.body.recoveryCodes;
     return enabled;
@@ -3036,6 +3036,124 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       }
       expect(Number((await pool.query("SELECT count(*)::int AS n FROM addon_platform_settings")).rows[0].n)).toBe(0);
       expect(await auditCount("admin.addon.updated", "bois")).toBe(0);
+    });
+  });
+
+  describe("10. revue Multi-Arena du module comptes (26 novembre 2026)", () => {
+    const agentTokens = async (id: string) => (await pool.query("SELECT count(*)::int AS n FROM studio_agent_tokens WHERE user_id = $1 AND revoked_at IS NULL", [id])).rows[0].n as number;
+    async function projetAvecJeton(acct: Account) {
+      const pid = (await acct.a.post("/projects").send({ code: `AG.${n}`, name: "Agents" })).body.id as string;
+      const refus = await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent", motDePasse: "pas-le-bon-mot-de-passe" });
+      expect(refus.status).toBe(403);
+      expect(refus.body.error).toBe("invalid_password");
+      expect((await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent" })).status).toBe(400);
+      const ok = await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent", motDePasse: PASSWORD });
+      expect(ok.status).toBe(201);
+      expect(await agentTokens(acct.id)).toBe(1);
+      return ok.body.jeton as string;
+    }
+
+    it("accès support : un administrateur sans double authentification n'est ni proposé ni accordé ; une session sans preuve ne lit rien", async () => {
+      const owner = await account("arena-proprio");
+      const pid = (await owner.a.post("/projects").send({ code: "AR.1", name: "Support" })).body.id as string;
+      const sansMfa = await account("arena-admin-sans");
+      await promoteInDb(sansMfa.id);
+      const avecMfa = await account("arena-admin-avec");
+      await enableMfa(avecMfa, avecMfa.a);
+      await promoteInDb(avecMfa.id);
+      const liste = await owner.a.get(`/projects/${pid}/support-grants`);
+      const proposes = (liste.body.admins as { id: string }[]).map((a) => a.id);
+      expect(proposes).toContain(avecMfa.id);
+      expect(proposes).not.toContain(sansMfa.id);
+      const refus = await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: sansMfa.id, hours: 1, purpose: "Diagnostic" });
+      expect(refus.status).toBe(422);
+      expect(refus.body.error).toBe("admin_without_mfa");
+      // Un accès accordé en base à un administrateur sans TOTP (état antérieur) n'ouvre rien.
+      await pool.query("INSERT INTO project_support_grants (id, project_id, admin_id, granted_by, purpose, granted_at, expires_at) VALUES ($1, $2, $3, $4, 'ancien', now(), now() + interval '1 hour')", [`sg_arena_${n}`, pid, sansMfa.id, owner.id]);
+      expect((await sansMfa.a.get(`/projects/${pid}`)).status).toBe(404);
+      // Administrateur avec TOTP : la session prouvée lit ; une session sans preuve (héritée) est refusée.
+      expect((await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: avecMfa.id, hours: 1, purpose: "Diagnostic" })).status).toBe(201);
+      expect((await avecMfa.a.get(`/projects/${pid}`)).status).toBe(200);
+      await pool.query("UPDATE sessions SET mfa_verified_at = NULL WHERE user_id = $1", [avecMfa.id]);
+      const sansPreuve = await avecMfa.a.get(`/projects/${pid}`);
+      expect(sansPreuve.status).toBe(403);
+      expect(sansPreuve.body.error).toBe("mfa_session_required");
+    });
+
+    it("code TOTP : chaque code faux compte sur le compte, le bon mot de passe ne remet pas le compteur à zéro, le compte se verrouille", async () => {
+      const acct = await account("arena-totp");
+      await enableMfa(acct, acct.a);
+      for (let i = 0; i < 4; i++) {
+        const { c, r } = await passwordLogin(acct);
+        expect(r.status).toBe(202);
+        expect((await c.post("/auth/login/mfa").send({ code: "000000" })).status).toBe(401);
+      }
+      expect((await pool.query("SELECT failed_login_count FROM users WHERE id = $1", [acct.id])).rows[0].failed_login_count).toBe(4);
+      const { c, r } = await passwordLogin(acct);
+      expect(r.status).toBe(202);
+      expect((await c.post("/auth/login/mfa").send({ code: "000000" })).status).toBe(401);
+      const etat = (await pool.query("SELECT failed_login_count, locked_until FROM users WHERE id = $1", [acct.id])).rows[0];
+      expect(etat.failed_login_count).toBe(5);
+      expect(new Date(etat.locked_until).getTime()).toBeGreaterThan(Date.now());
+      // Étape en cours close, et un bon code n'ouvre plus rien tant que le compte est verrouillé.
+      expect((await c.post("/auth/login/mfa").send({ code: await nextCode(acct) })).body.error).toBe("mfa_session_expired");
+      expect((await passwordLogin(acct)).r.status).toBe(401);
+      expect(await auditCount("auth.login.locked", acct.id)).toBeGreaterThanOrEqual(1);
+      // Après le verrouillage, un bon code remet le compteur à zéro.
+      await pool.query("UPDATE users SET locked_until = NULL WHERE id = $1", [acct.id]);
+      await mfaLogin(acct);
+      expect((await pool.query("SELECT failed_login_count FROM users WHERE id = $1", [acct.id])).rows[0].failed_login_count).toBe(0);
+    });
+
+    it("activation du TOTP : le mot de passe est redemandé", async () => {
+      const acct = await account("arena-enable");
+      const setup = await acct.a.post("/auth/me/mfa/setup");
+      acct.secret = setup.body.secret;
+      expect((await acct.a.post("/auth/me/mfa/enable").send({ code: await nextCode(acct) })).status).toBe(400);
+      const faux = await acct.a.post("/auth/me/mfa/enable").send({ password: "pas-le-bon-mot-de-passe", code: await nextCode(acct) });
+      expect(faux.status).toBe(403);
+      expect(faux.body.error).toBe("invalid_password");
+      expect((await pool.query("SELECT totp_enabled_at FROM users WHERE id = $1", [acct.id])).rows[0].totp_enabled_at).toBeNull();
+      expect((await acct.a.post("/auth/me/mfa/enable").send({ password: PASSWORD, code: await nextCode(acct) })).status).toBe(200);
+    });
+
+    it("jetons d'agent de Studio : mot de passe à la création, révoqués au changement ou à la réinitialisation du mot de passe, à la suspension et à la suppression", async () => {
+      // Changement du mot de passe.
+      const a = await account("arena-jeton-a");
+      const jeton = await projetAvecJeton(a);
+      expect((await a.a.post("/auth/me/password").send({ currentPassword: PASSWORD, newPassword: "une-autre-phrase-solide" })).status).toBe(200);
+      expect(await agentTokens(a.id)).toBe(0);
+      expect((await request(app).post("/mcp/studio").set("Authorization", `Bearer ${jeton}`).send({ jsonrpc: "2.0", id: 1, method: "tools/list" })).status).toBe(401);
+      // Réinitialisation par lien.
+      const b = await account("arena-jeton-b");
+      await projetAvecJeton(b);
+      const brut = `arena-reset-${n}-${randomBytes(8).toString("hex")}`;
+      const { createHash } = await import("node:crypto");
+      await pool.query("INSERT INTO auth.account_tokens (id, user_id, purpose, token_hash, expires_at) VALUES ($1, $2, 'reset_password', $3, now() + interval '1 hour')", [`tok_arena_${n}`, b.id, createHash("sha256").update(brut).digest("hex")]);
+      expect((await request(app).post("/auth/reset-password").send({ token: brut, password: "une-autre-phrase-solide" })).status).toBe(200);
+      expect(await agentTokens(b.id)).toBe(0);
+      // Suppression programmée.
+      const c = await account("arena-jeton-c");
+      await projetAvecJeton(c);
+      expect((await c.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" })).status).toBeLessThan(300);
+      expect(await agentTokens(c.id)).toBe(0);
+      // Suspension par l'administration.
+      const d = await account("arena-jeton-d");
+      await projetAvecJeton(d);
+      const boss = await account("arena-jeton-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      expect((await boss.a.post(`/admin/users/${d.id}/suspend`).send({ reason: "Recette" })).status).toBeLessThan(300);
+      expect(await agentTokens(d.id)).toBe(0);
+    });
+
+    it("inscription : une adresse connue coûte le même hachage qu'une inscription réelle", async () => {
+      const known = await account("arena-connu");
+      const t0 = Date.now();
+      const r = await request(app).post("/auth/register").send({ email: known.email, password: "une-autre-phrase-solide" });
+      expect(r.status).toBe(409);
+      // Argon2id (19 MiB, t=2) prend plusieurs millisecondes : une réponse immédiate trahirait l'adresse.
+      expect(Date.now() - t0).toBeGreaterThanOrEqual(5);
     });
   });
 });

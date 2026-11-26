@@ -39,7 +39,7 @@ import { studioProvenanceRendu } from "@parcours/atelier-model";
 import { creerJetonAgent, proposerCommandes } from "../lib/studio-agents.js";
 import { ecrirePng } from "../lib/studio-png.js";
 import { studioRouter } from "./studio.js";
-import { ACTEURS, banc, initialiserProjet, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
+import { ACTEURS, banc, initialiserProjet, MOT_DE_PASSE_ESSAI, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
 
 const app = express();
 app.use("/projects/:projectId/studio", studioRouter);
@@ -342,7 +342,7 @@ export const ROUTES: Route[] = [
   { route: `POST ${IL}`, besoin: "modification", url: () => `${V}/illustrations`, body: corpsIllustration(), note: "image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié" },
   { route: `GET ${IL}/:illustrationId/image`, besoin: "lecture", preparer: illustration, url: (c) => `${V}/illustrations/${c["il"]}/image`, note: "téléchargement : droit d'export exigé (lecteur sans export et accès support refusés)" },
   { route: "GET /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, note: "jetons du compte seulement" },
-  { route: "POST /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, body: { nom: "Agent" }, note: "tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel" },
+  { route: "POST /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, body: { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI }, note: "tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel" },
   { route: "POST /agents/jetons/:tokenId/revoquer", besoin: "acteur", preparer: jetonAgent, url: (c) => `${S}/agents/jetons/${c["jt"]}/revoquer`, note: "titulaire du jeton seulement ; un autre compte : 404" },
   { route: "GET /agents/propositions", besoin: "lecture", url: () => `${S}/agents/propositions`, note: "propositions du compte seulement" },
   { route: "POST /agents/propositions/:proposalId/confirmer", besoin: "acteur", preparer: propositionAgent, url: (c) => `${S}/agents/propositions/${c["pr"]}/confirmer`, note: "titulaire seulement (un autre compte : 404) ; l'écriture passe par le point d'entrée commun (droits, verrou, référence)" },

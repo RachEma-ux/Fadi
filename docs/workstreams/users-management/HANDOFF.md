@@ -20,6 +20,12 @@ Mis à jour : 2026-10-24 (UTC).
 - **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
   fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
   `Accept-Language` n'est plus lu (DECISIONS.md UM-30).
+- **UM-32 (2026-11-26)** : branche `fix/422-failles-comptes` (depuis `main` à `470e99f`), PR vers `main` **non fusionnée**
+  ([Issue #422](https://github.com/RachEma-ux/Fadi/issues/422)) — 5 failles de la revue Multi-Arena du module comptes : accès
+  support exigeant TOTP et session prouvée, échecs de code TOTP comptés par compte, mot de passe à l'activation du TOTP,
+  jetons d'agent révoqués (mot de passe, réinitialisation, suspension, suppression, anonymisation) et créés avec mot de
+  passe, temps d'inscription égalisé. Tests en suite DB-3 (`app.test.ts`, section 10), donc vérifiés en CI seulement.
+  Décision ouverte : supprimer la connexion automatique à l'inscription (seule façon d'ôter le 409 / 201 révélateur).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié

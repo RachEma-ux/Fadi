@@ -177,6 +177,7 @@ try {
   check("enrôlement : QR code affiché", await admin.locator("img.mfa-qr").isVisible());
   await axe(admin, "Mon compte — enrôlement TOTP (bureau)");
   await admin.fill("#mfa-code", totp(secret));
+  await admin.fill("#mfa-enable-password", adminPass);
   await admin.getByRole("button", { name: "Confirmer l’activation" }).click();
   await admin.locator("[data-recovery-codes]").waitFor();
   const recovery = (await admin.locator(".recovery-codes li").allTextContents()).map((s) => s.trim());
