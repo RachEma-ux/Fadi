@@ -155,9 +155,10 @@ try {
     await page.keyboard.press("Shift+Tab");
     await page.keyboard.press("ArrowLeft");
     check("I.5-02 : flèche gauche replie le menu, le focus reste sur le chevron", (await focusChevron()) === "false" && !(await page.locator("#studio-menu-domaines").isVisible()));
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    check("I.5-02 : menu replié — Tab saute les entrées masquées (Console, puis Collaboration)", await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) === "Collaboration");
+    // Lot Design L6b : GeoData suit Studio dans le rail (ordre de la barre du bas), avant Collaboration.
+    const apresRepli = [];
+    for (let i = 0; i < 3; i++) { await page.keyboard.press("Tab"); apresRepli.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label"))); }
+    check("I.5-02 : menu replié — Tab saute les entrées masquées (Console, GeoData, puis Collaboration)", apresRepli.join(" → ") === "Console → GeoData → Collaboration", apresRepli.join(" → "));
     await page.locator("[data-studio-menu-lateral-bascule]").click();
     check("I.5-02 : un clic sur le chevron le déplie et lui laisse le focus", (await focusChevron()) === "true");
     await page.locator("[data-studio-menu-lateral-bascule]").click();
