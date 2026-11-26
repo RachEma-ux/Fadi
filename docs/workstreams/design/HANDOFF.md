@@ -19,6 +19,8 @@ Mis à jour : 2026-11-26 (UTC).
   supérieures (jamais de rebase ni de push forcé).
 - L5 : PR #434 (barre et feuille « Plus » préparées, masquées). L6 : PR #436 (barre du bas active sous 700 px, rail
   masqué) ; les libellés NAV-001 mobile et RISQ-02 téléphone du registre Studio suivent les nouveaux contrôles.
+  Correctif CI : la hauteur de la barre était lue à 0 (`offsetParent` est nul en `position: fixed`) ; l'Atelier et la
+  Planche s'arrêtent maintenant au-dessus de la barre ; `select` des options de Collaboration à 44 px.
 - L6b : PR #437 (rail du bureau dans l'ordre de la barre puis de « Plus » ; Harmonie ajoutée).
 - L7 : PR #439 (GeoData : une seule barre du bas, 5ᵉ bouton « Plus » par l'événement `fadi:ouvrir-plus`) ;
   `geodata.mjs` 276/276 en local.
