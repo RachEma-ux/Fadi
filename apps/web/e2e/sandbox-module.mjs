@@ -326,7 +326,9 @@ try {
 
   // 4. Échec du chargement de la Planche : limite d'erreur du Sandbox, navigation de Fadi gardée, « Réessayer » recharge.
   {
-    const { context: c2, page: p2 } = await nouvellePage({ width: 1440, height: 900 });
+    // Service worker bloqué (comme studio-chargement) : un morceau servi par lui échapperait à `route` et l'échec ne serait
+    // jamais simulé ; l'inscription par lien (deux pages) lui laisse le temps de prendre la main.
+    const { context: c2, page: p2 } = await nouvellePage({ width: 1440, height: 900 }, { serviceWorkers: "block" });
     await inscrire(p2);
     const morceau = /\/assets\/SandboxPlanche-[^/]+\.js$/;
     await p2.route(morceau, (r) => r.abort());
