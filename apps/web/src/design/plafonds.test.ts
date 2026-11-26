@@ -27,7 +27,9 @@ export function mesurer(textes: string[]) {
       if (b.length === 3 || b.length === 6) opaques.add(b.length === 3 ? [...b].map((c) => c + c).join("") : b);
       if ([3, 4, 6, 8].includes(b.length)) alpha.add(b);
     }
-    for (const [, px] of s.matchAll(/@media[^{]*?\((?:max|min)-width\s*:\s*([\d.]+)px/g)) ruptures.add(px!);
+    // Chaque prélude @media est lu en entier : une requête composée (min-width: 761px) and (max-width: 1180px) compte ses deux seuils.
+    for (const [prelude] of s.matchAll(/@media[^{]*/g))
+      for (const [, px] of prelude.matchAll(/\((?:max|min)-width\s*:\s*([\d.]+)px/g)) ruptures.add(px!);
   }
   return { couleursHexOpaques: opaques.size, couleursHexAvecAlpha: alpha.size, pointsDeRupturePx: ruptures.size };
 }
@@ -45,6 +47,9 @@ describe("Design — plafonds de dispersion (cliquet)", () => {
   it("mesure : couleurs courtes normalisées, alpha comptées à part, points de rupture uniques", () => {
     expect(mesurer(["a{color:#FFF;border:#ffffff;background:#ffffff80}", "@media (max-width:700px){} @media(min-width: 701px){} @media (max-width:700px){}"]))
       .toEqual({ couleursHexOpaques: 1, couleursHexAvecAlpha: 3, pointsDeRupturePx: 2 });
+  });
+  it("mesure : chaque seuil d'une requête composée est compté", () => {
+    expect(mesurer(["@media (min-width: 761px) and (max-width: 1180px){} @media (max-width:600px), (min-width:900px){}"]).pointsDeRupturePx).toBe(4);
   });
   it("viewport : le zoom n'est jamais bloqué (WCAG 1.4.4, M42)", () => {
     const html = readFileSync(join(WEB, "index.html"), "utf8");
