@@ -12,7 +12,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Dernier état vérifié
 
-- L0 : PR #418. L1 : recette GeoData verte en local ; voir `STATUS.md`.
+- L0 : PR #418. L1 : PR #419. L2 : recette GeoData verte en local ; voir `STATUS.md`.
 
 - Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
   (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
