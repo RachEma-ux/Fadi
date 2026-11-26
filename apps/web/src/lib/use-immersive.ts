@@ -14,20 +14,41 @@ export function useImmersive(active: boolean): void {
     document.body.classList.add(IMMERSIVE_CLASS);
     const workspace = document.getElementById("workspace-content");
     let frame = 0;
+    let observed: HTMLElement | null = null;
+    let attempts = 0;
     const measure = () => {
       frame = 0;
       const editor = workspace?.querySelector<HTMLElement>(".atelier-n");
-      if (!workspace || !editor) return;
+      // Lazy editor not mounted yet: try again on the next frames (bounded). Without this, when no observed element
+      // changes size afterwards (one-row phone header, Design L9), the menu offsets were never set and the level list
+      // opened over the mode strip, hiding Planche / 3D.
+      if (!workspace || !editor) {
+        if (attempts++ < 600) schedule();
+        return;
+      }
+      attempts = 0;
+      if (observed !== editor) {
+        observed = editor;
+        observer.observe(editor);
+      }
       // Document-relative top remains stable when the page is scrolled.
       // Minimum height preserves a usable drawing area on short/mobile screens.
       const top = editor.getBoundingClientRect().top + window.scrollY;
-      const height = `${Math.max(360, Math.floor(window.innerHeight - top - 24))}px`;
+      // Téléphone (chantier Design L6) : la barre du bas fixe de Fadi couvre le bas de l'écran ; l'espace de travail
+      // s'arrête au-dessus d'elle (hauteur réelle recopiée par la coquille, 0 quand la barre n'est pas affichée).
+      const barreBas = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fd-barre-bas-reelle")) || 0;
+      const visible = window.innerHeight - barreBas;
+      // Plancher : 360 px au bureau. Avec la barre du bas (téléphone), 480 px : la Planche garde une palette d'outils
+      // utilisable (bascule, outils, Rechercher et Plus d'outils) ; si l'écran est trop court, la page défile un peu
+      // plutôt que de comprimer l'espace de dessin (la zone de travail réserve déjà la hauteur de la barre en bas).
+      const plancher = barreBas > 0 ? 480 : 360;
+      const height = `${Math.max(plancher, Math.floor(visible - top - 24))}px`;
       if (workspace.style.getPropertyValue("--atelier-workspace-height") !== height) {
         workspace.style.setProperty("--atelier-workspace-height", height);
       }
       const bar = editor.querySelector<HTMLElement>(".atelier-n-barre");
       if (bar) {
-        const bottom = Math.min(window.innerHeight, editor.getBoundingClientRect().bottom);
+        const bottom = Math.min(visible, editor.getBoundingClientRect().bottom);
         workspace.style.setProperty("--atelier-menu-top", `${Math.ceil(bar.getBoundingClientRect().bottom + 4)}px`);
         workspace.style.setProperty("--atelier-menu-max-height", `${Math.max(88, Math.floor(bottom - bar.getBoundingClientRect().bottom - 12))}px`);
       }
@@ -39,7 +60,7 @@ export function useImmersive(active: boolean): void {
     // The workspace resizes when the lazy editor arrives. No mutation observer
     // over drawing geometry is needed during pointer movements.
     for (const element of [workspace, document.querySelector(".fadi-topbar"),
-      document.querySelector(".module-nav"), document.querySelector(".project-header")]) {
+      document.querySelector(".module-nav"), document.querySelector(".project-header"), document.getElementById("fd-navigation-bas")]) {
       if (element) observer.observe(element);
     }
     window.addEventListener("resize", schedule);

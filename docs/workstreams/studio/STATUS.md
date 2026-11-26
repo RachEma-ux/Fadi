@@ -1,5 +1,13 @@
 # État — Studio
 
+## Checkpoint 2026-11-26 (heure suisse 04:45) — libellés NAV-001 mobile et RISQ-02 suivent la barre du bas (chantier Design L6)
+
+- PR #436 (chantier `design`, lot L6) : au téléphone, la navigation de Fadi passe du rail à la barre du bas. Les contrôles
+  cités par le registre sont renommés dans `studio-navigation.mjs` (« NAV-001 mobile : entrée Studio présente et visible
+  (barre du bas) ») et `studio-domaines.mjs` (« RISQ-02 téléphone : … la navigation de Fadi (barre du bas) reste affichée,
+  aucun mode immersif ») ; `task-register.json` cite les nouveaux libellés, documents d'état régénérés
+  (`etat-studio.mjs --ecrire`). Aucun statut du registre changé ; compteurs inchangés.
+
 ## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
 
 - PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de
@@ -429,3 +437,5 @@ La validation personnelle et l'accès distant à la démo ne sont pas acquis. L'
 
 Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et recueillir son acceptation. Fusion de #181 autorisée explicitement par le propriétaire après vérification du candidat réconcilié ; cette autorisation ne vaut pas constat d’une recette personnelle ni clôture du MVP. Le SQL Studio est appliqué uniquement à la base neuve attestée ; aucun migrateur, schéma existant, sauvegarde, réglage GitHub ou déploiement de production n'est autorisé implicitement.
 
+
+- 2026-11-26 (lot Design L6b) : libellé I.5-02 du registre (`task-register.json`) aligné sur la recette `studio-preuves-d1.mjs` ; le rail place GeoData entre Studio et Collaboration. Aucun autre changement Studio.

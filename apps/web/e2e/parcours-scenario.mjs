@@ -327,6 +327,39 @@ await page.waitForSelector("#biz-f2");
 await page.waitForFunction(() => document.querySelector("#biz-f2")?.value === "13500000" && document.querySelectorAll(".biz-kpis").length === 1, null, { timeout: 10000 }).catch(() => {});
 check("étape 14 : valeurs conservées après rechargement", (await page.inputValue("#biz-f2")) === "13500000" && (await page.locator(".biz-kpis").count()) === 1);
 
+// Lot Design L3 (M27, arbitrage 11) : une saisie numérique invalide n'est ni enregistrée ni effacée en silence ;
+// « 12,5 » vaut 12,5 (et non 125) ; « -3 » reste accepté (aucune règle métier nouvelle). Valeurs remises ensuite.
+{
+  const ecritures = [];
+  const suivre = (r) => { if (r.method() === "PATCH" && /\/steps\/14$/.test(new URL(r.url()).pathname)) ecritures.push(r.url()); };
+  page.on("request", suivre);
+  for (const saisie of ["1e", "abc"]) {
+    ecritures.length = 0;
+    await page.locator("#biz-f2").fill(saisie);
+    await page.locator("#biz-f2").blur();
+    await page.waitForTimeout(400);
+    const etat = await page.locator("#biz-f2").evaluate((el) => ({ valeur: el.value, invalide: el.getAttribute("aria-invalid"), message: document.getElementById(el.getAttribute("aria-describedby") ?? "")?.textContent ?? "" }));
+    check(`DESIGN L3 · étape 14 : « ${saisie} » refusé — texte gardé, message relié au champ, aucune écriture`, etat.valeur === saisie && etat.invalide === "true" && /Nombre attendu/.test(etat.message) && ecritures.length === 0, JSON.stringify({ ...etat, ecritures: ecritures.length }));
+  }
+  await page.screenshot({ path: `${OUT}/design-l3-saisie-refusee-bureau.png` });
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector("#biz-f2")?.value === "13500000", null, { timeout: 10000 }).catch(() => {});
+  check("DESIGN L3 · étape 14 : après rechargement, la valeur enregistrée est inchangée (13500000)", (await page.inputValue("#biz-f2")) === "13500000");
+  const saisir = async (k, v) => { await page.locator(`#biz-${k}`).fill(v); await page.locator(`#biz-${k}`).blur(); await page.waitForTimeout(500); };
+  await saisir("f3", "12,5");
+  await saisir("f4", "-3");
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector("#biz-f3")?.value === "12.5", null, { timeout: 10000 }).catch(() => {});
+  const relu = { f3: await page.inputValue("#biz-f3"), f4: await page.inputValue("#biz-f4") };
+  check("DESIGN L3 · étape 14 : « 12,5 » enregistré 12,5 (pas 125) ; « -3 » accepté", relu.f3 === "12.5" && relu.f4 === "-3", JSON.stringify(relu));
+  await saisir("f3", "1600000");
+  await saisir("f4", "1200000");
+  await page.reload();
+  await page.waitForFunction(() => /Solde0/.test((document.querySelector(".biz-kpis")?.textContent ?? "").replace(/\u202f|\u00a0/g, " ")), null, { timeout: 15000 }).catch(() => {});
+  check("DESIGN L3 · étape 14 : valeurs remises, solde revenu à 0", /Solde0/.test((await page.locator(".biz-kpis").textContent()).replace(/\u202f|\u00a0/g, " ")));
+  page.off("request", suivre);
+}
+
 // 5. Étape 17 et 19, marquer terminée
 await page.goto(`${projectUrl}?module=parcours&etape=17`);
 await page.waitForSelector("#biz-f1");
@@ -378,10 +411,10 @@ await page.goto(`${BASE}/accueil`);
 await page.waitForSelector(".dossier-preview-svg svg", { timeout: 30000 });
 await page.locator(".dossier-overview .dossier-preview").waitFor({ timeout: 20000 });
 const appNav = (await page.locator('.app-nav > a,.app-nav > button,.app-nav > .sidebar-studio > .sidebar-studio-tete > a').allTextContents()).map((t) => t.trim()).join("|");
-check("accueil : barre verticale Projets, Studio (après Projets, D07) et Collaboration indépendants, recherche de projet et état de plateforme", appNav === "Accueil|Projets|Studio|Collaboration" && (await page.getByRole("button", { name: "Rechercher un projet", exact: true }).count()) === 1 && (await page.getByRole("button", { name: "État de la plateforme", exact: true }).count()) === 1 && (await page.locator(".app-sidebar").isVisible()), appNav);
+check("accueil : barre verticale Accueil, Projets, Studio (après Projets, D07), GeoData (ordre de la barre du bas, lot Design L6b), Collaboration en tête du groupe secondaire, recherche de projet et état de plateforme", appNav === "Accueil|Projets|Studio|GeoData" && (await page.locator(".app-nav-secondary a").first().getAttribute("aria-label")) === "Collaboration" && (await page.getByRole("button", { name: "Rechercher un projet", exact: true }).count()) === 1 && (await page.getByRole("button", { name: "État de la plateforme", exact: true }).count()) === 1 && (await page.locator(".app-sidebar").isVisible()), appNav);
 check("accueil : salut dans la barre haute, Importer et Nouveau projet accessibles", /^Bonjour .+,$/.test((await page.locator(".fadi-topbar-title h1").textContent()).trim()) && (await page.locator('.workspace-entry-actions button:has-text("Importer")').count()) === 1 && (await page.locator('.workspace-entry-actions a:has-text("Nouveau projet")').count()) === 1);
 const homePreviewCaption = await page.locator(".dossier-preview figcaption").textContent();
-check("accueil : dernier dossier P.118 explicite, aperçu réel des 6 niveaux, sans actions supplémentaires", (await page.locator(".dossier-section-heading p").textContent()) === "P.118 — Escalier B et mezzanine" && (await page.locator('.dossier-preview-svg svg g[data-level]').count()) === 6 && /Aperçu conceptuel/.test(homePreviewCaption) && (await page.locator('.dossier-section-heading a').getAttribute("href")) === new URL(exampleUrl).pathname && (await page.locator(".dossier-primary-action,.dossier-card-footer").count()) === 0, homePreviewCaption);
+check("accueil : dernier dossier P.118 explicite, aperçu réel des 6 niveaux, une seule action utile (Tâche 3, lot Design L4) et aucun pied de carte", (await page.locator(".dossier-section-heading p").textContent()) === "P.118 — Escalier B et mezzanine" && (await page.locator('.dossier-preview-svg svg g[data-level]').count()) === 6 && /Aperçu conceptuel/.test(homePreviewCaption) && (await page.locator('.dossier-section-heading a').getAttribute("href")) === new URL(exampleUrl).pathname && (await page.locator(".dossier-primary-action").count()) === 1 && (await page.locator(".dossier-card-footer").count()) === 0, homePreviewCaption);
 await page.waitForFunction(() => /point\(s\) d’attention calculé\(s\)/.test(document.querySelector(".dossier-status-strip")?.textContent ?? ""), null, { timeout: 20000 });
 const dossierStates = await page.locator(".dossier-status-strip > div").allTextContents();
 check("accueil : 21 étapes terminées, revue technique calculée et envois en attente suivis séparément", dossierStates.length === 3 && /21 \/ 21 étapes terminées/.test(dossierStates[0]) && /Revue technique/.test(dossierStates[1]) && Number(/(\d+) point\(s\) d’attention/.exec(dossierStates[1])?.[1]) >= 7 && /Aucun envoi en attente/.test(dossierStates[2]), dossierStates.join(" | "));
@@ -400,7 +433,7 @@ await page.waitForFunction(() => document.querySelector(".fadi-topbar-title h1")
 check("accueil : nom édité → Bonjour Roch, avatar RO et compte mis à jour", (await page.locator(".fadi-topbar-title h1").textContent()).trim() === "Bonjour Roch," && (await page.locator(".app-user .avatar").textContent()) === "RO" && (await page.locator(".app-user-name").textContent()).startsWith("Roch"));
 await page.setViewportSize({ width: 390, height: 844 });
 await page.screenshot({ path: `${OUT}/00-accueil-mobile.png`, fullPage: true });
-check("accueil (téléphone) : barre verticale conservée et aucun défilement horizontal", (await page.locator(".app-sidebar").isVisible()) && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+check("accueil (téléphone) : barre du bas affichée, rail masqué (lot Design L6) et aucun défilement horizontal", ((await page.locator("[data-fd-barre-bas]").isVisible()) && !(await page.locator(".app-sidebar").isVisible())) && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
 await page.setViewportSize({ width: 1280, height: 900 });
 // La page du projet conserve les six phases et leurs 21 liens d’origine.
 await page.locator(".dossier-section-heading a").click();
@@ -1760,7 +1793,7 @@ await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
 // Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne). Les barres de Fadi restent accessibles hors de l'Atelier immersif ; les métadonnées de projet s'effacent.
-check("téléphone : bandeau « Parcours du projet », barres verticale et supérieure de Fadi conservées, métadonnées de projet effacées (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && (await page.locator(".app-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
+check("téléphone : bandeau « Parcours du projet », barre du bas (lot Design L6) et barre supérieure de Fadi conservées, métadonnées de projet effacées (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && (await page.locator(".app-topbar").isVisible()) && ((await page.locator("[data-fd-barre-bas]").isVisible()) && !(await page.locator(".app-sidebar").isVisible())) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
 // Remontée en haut de page à chaque changement de vue, comme `goto()` / `study()` / `overview()` du prototype : une étape ouverte depuis
 // le bas de la grille, « Suivante → » et « ← » repartent du bandeau (sans cela, la page restait au défilement de la grille).
 const atTop = () => page.evaluate(() => window.scrollY === 0 && document.querySelector(".atelier-stage-header").getBoundingClientRect().top >= 0);
@@ -1804,7 +1837,7 @@ await atelierPret();
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}/10-mobile.png`, fullPage: false });
 check("téléphone étape 10 : outil actif signalé dans la barre d'outils (rangée défilante), onglets des panneaux en bas", /Sélection/.test((await page.locator(".atelier-n-outils .outil.est-actif").first().textContent().catch(() => "")) || "") && (await page.locator(".atelier-n-outils").evaluate((e) => e.scrollWidth > e.clientWidth && getComputedStyle(e).overflowX === "auto")) && (await page.locator(".atelier-n-onglets").isVisible()));
-check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », navigation commune conservée, dessin sur toute la largeur utile entre les marges", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-workspace") && !document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".atelier-n").evaluate((e) => { const workspace = document.getElementById("workspace-content"); const bounds = workspace.getBoundingClientRect(); const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter")); const editor = e.getBoundingClientRect(); return Math.abs(editor.left - bounds.left - gutter) <= 2 && Math.abs(bounds.right - editor.right - gutter) <= 2; })));
+check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », navigation commune conservée (barre du bas, lot Design L6), dessin sur toute la largeur utile entre les marges", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-workspace") && !document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && ((await page.locator("[data-fd-barre-bas]").isVisible()) && !(await page.locator(".app-sidebar").isVisible())) && (await page.locator(".atelier-n").evaluate((e) => { const workspace = document.getElementById("workspace-content"); const bounds = workspace.getBoundingClientRect(); const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter")); const editor = e.getBoundingClientRect(); return Math.abs(editor.left - bounds.left - gutter) <= 2 && Math.abs(bounds.right - editor.right - gutter) <= 2; })));
 
 check("aucune erreur JavaScript", consoleErrors.length === 0, consoleErrors.join(" | "));
 console.log(`⏱ mesures indicatives (Chromium headless, cette machine) : ${measures.map((m) => `${m.label} = ${m.ms} ms`).join(" ; ")}`);

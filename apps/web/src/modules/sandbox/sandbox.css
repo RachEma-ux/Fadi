@@ -10,7 +10,7 @@
   --atelier-doux: var(--muted, #5b7468);
   position: relative;
   display: block;
-  height: calc(100dvh - 120px);
+  height: calc(100dvh - 120px - var(--fd-barre-bas-reelle, 0px));
   min-height: 520px;
   background: var(--surface, #fff);
   color: var(--atelier-encre);

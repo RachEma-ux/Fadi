@@ -279,7 +279,23 @@ const toucher = async (q) => {
   const e = await ecran(q, tel);
   await tel.touchscreen.tap(e.x, e.y);
 };
-await toucher({ x: -3, y: -3, z: 0 }); // premier toucher (Sélection, dans le vide) : l'interface passe en mode tactile
+// Premier toucher (Sélection, dans le vide) : l'interface passe en mode tactile. Le point est cherché sur le canevas
+// lui-même (aucun panneau ni bouton par-dessus) et loin de l'origine : depuis la barre du bas (L6, #430), la vue est plus
+// courte et un point du repère fixé d'avance peut tomber sous la palette d'outils.
+{
+  const b = await boite("[data-planche-vue] canvas", tel);
+  const o = await ecran({ x: 0, y: 0, z: 0 }, tel);
+  const vide = await tel.evaluate(([b, o]) => {
+    const cv = document.querySelector("[data-planche-vue] canvas");
+    for (const fy of [0.25, 0.75, 0.5]) for (const fx of [0.75, 0.25, 0.5]) {
+      const x = b.x + b.width * fx, y = b.y + b.height * fy;
+      if (Math.hypot(x - o.x, y - o.y) > 60 && document.elementFromPoint(x, y) === cv) return { x, y };
+    }
+    return null;
+  }, [b, o]);
+  check("mobile : un point libre du canevas pour le premier toucher", !!vide, JSON.stringify(b));
+  if (vide) await tel.touchscreen.tap(vide.x, vide.y);
+}
 check("mobile : barre de modificateurs visible au toucher (C18, P-12)", await tel.locator("[data-planche-modificateurs]").isVisible());
 const petites = await tel.locator("[data-planche-modificateurs] button:visible, .planche-outils .outil:visible, .planche-colonne .canevas-icone:visible, .planche-haut button:visible").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); const min = e.closest(".planche-pied") ? 36 : 44; return r.width < min || r.height < min; }).map((e) => e.getAttribute("data-planche-mod") ?? e.getAttribute("data-planche-outil") ?? e.className));
 check("mobile : outils et panneaux d'au moins 44 px, modificateurs d'au moins 36 px", petites.length === 0, petites.join(", "));
@@ -306,6 +322,10 @@ check("mobile : premier point posé au toucher (étape 2)", (await etat(tel)).et
   check("mobile : relâcher le doigt pose la seconde extrémité (1 arête)", nbAretes === 1 && (await etat(tel)).etape === 2, `${nbAretes} arête(s)`);
   await cdp.detach();
   await tel.keyboard.press("Escape");
+  // L'arête tracée au doigt n'est qu'approchée (≈ 4,00 m, à un pixel près) : on l'annule pour que le carré qui suit
+  // soit fait des seules coordonnées relatives saisies, donc exact, quelle que soit l'échelle de la vue.
+  await tel.keyboard.press("Control+z");
+  check("mobile : Annuler retire l'arête tracée au doigt (brouillon vide)", (await etat(tel)).aretes === 0, JSON.stringify(await etat(tel)));
   await toucher({ x: 0, y: 0, z: 0 });
 }
 // Refonte responsive : les flèches et la consigne sont dans le panneau Instructeur (« ? » du bas).

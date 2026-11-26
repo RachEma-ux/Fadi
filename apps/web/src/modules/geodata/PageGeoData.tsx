@@ -41,7 +41,7 @@ const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
 const ecrireLocal = (k: string, v: string | null) => { try { if (v === null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, v); } catch { /* stockage indisponible : simple confort perdu */ } };
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const estTelephone = () => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+const estTelephone = () => typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches;
 const empriseDe = (coords: number[][][] | undefined): [number, number, number, number] | null => {
   const ps = coords?.[0];
   if (!ps?.length) return null;
