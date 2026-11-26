@@ -1,10 +1,9 @@
 /**
- * Barre d'actions intégrée au bandeau d'en-tête de la Planche (24 novembre 2026, ordinateur seulement) : les commandes de
- * l'ancienne barre flottante (Cadrer, zoom − / + au toucher, Grouper, Composant, Éclater, Unique, puis Diviser, Diviser
- * la courbe et Isoler selon la sélection) passent au centre du bandeau, par groupes séparés d'un filet. États grisés et
- * infobulles inchangés ; sur fenêtre étroite, icônes seules (le nom reste dans l'infobulle et pour le lecteur d'écran).
- * Rien ne se déplace ni ne se masque : position et affichage de l'ancienne barre ne s'appliquent plus à l'ordinateur.
- * Au téléphone, la barre flottante (`BarreActions`) reste telle quelle.
+ * Barre d'actions intégrée au bandeau d'en-tête de la Planche (ordinateur seulement). Depuis le 26 novembre 2026, le
+ * centre du bandeau porte Annuler · Rétablir | Cadrer · Zoom (groupes séparés d'un filet) ; les commandes de groupe
+ * restent dans la barre « Groupe » de la liste Outils, au clic droit et au clavier. États grisés et infobulles ; sur
+ * fenêtre étroite, icônes seules (le nom reste dans l'infobulle et pour le lecteur d'écran). Au téléphone, la barre
+ * flottante (`BarreActions`) reste telle quelle.
  */
 import { useRef } from "react";
 import { t } from "../messages";

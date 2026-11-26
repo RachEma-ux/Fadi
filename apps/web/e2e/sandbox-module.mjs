@@ -186,8 +186,14 @@ async function bandeau(page, racine, contexte) {
     const grises = [...r.querySelectorAll("[data-planche-bandeau-actions] button:disabled")].map((b) => ({ id: b.getAttribute("data-action"), titre: b.getAttribute("title") ?? "" }));
     return { bd: box({ getBoundingClientRect: () => bd }), actions: actions && box(actions), cadrer: cadrer && box(cadrer), detacher: detacher && box(detacher), detacherTexte: detacher?.textContent?.trim(), ids, grises, flottantes: r.querySelectorAll(".barre-actions").length };
   });
-  check(`${contexte} : barre d'actions au centre du bandeau (Cadrer, Grouper, Composant, Éclater, Unique), plus de barre flottante`, ba.actions && ba.cadrer && ba.cadrer.t >= ba.bd.t - 1 && ba.cadrer.b <= ba.bd.b + 1 && JSON.stringify(ba.ids) === JSON.stringify(["cadrer", "groupe", "composant", "eclater", "rendre-unique"]) && ba.flottantes === 0, JSON.stringify(ba));
-  check(`${contexte} : sans sélection, Cadrer seul actif ; le reste grisé avec son motif en infobulle`, ba.grises.length === 4 && ba.grises.every((g) => g.titre.includes("—")), JSON.stringify(ba.grises));
+  // 26 novembre 2026 : le centre du bandeau ne porte plus que Annuler · Rétablir | Cadrer · Zoom ; les commandes de groupe
+  // restent dans la barre « Groupe » de la liste Outils, au clic droit et au clavier.
+  check(`${contexte} : centre du bandeau — Annuler, Rétablir, Cadrer, Zoom ; plus de commandes de groupe ni de barre flottante`, ba.actions && ba.cadrer && ba.cadrer.t >= ba.bd.t - 1 && ba.cadrer.b <= ba.bd.b + 1 && JSON.stringify(ba.ids) === JSON.stringify(["annuler", "retablir", "cadrer", "zoom"]) && ba.flottantes === 0, JSON.stringify(ba));
+  check(`${contexte} : seuls Annuler / Rétablir peuvent être grisés, avec leur motif en infobulle ; Cadrer et Zoom toujours actifs`, ba.grises.every((g) => (g.id === "annuler" || g.id === "retablir") && g.titre.includes("—")), JSON.stringify(ba.grises));
+  const outilCourant = () => page.evaluate(() => window.fadiPlanche?.outil());
+  await racine.locator('[data-planche-bandeau-actions] [data-action="zoom"]').click();
+  check(`${contexte} : Zoom du bandeau choisit l'outil Zoom (Z), bouton enfoncé`, (await outilCourant()) === "zoom" && (await racine.locator('[data-planche-bandeau-actions] [data-action="zoom"]').getAttribute("aria-pressed")) === "true" && /\(Z\)/.test((await racine.locator('[data-planche-bandeau-actions] [data-action="zoom"]').getAttribute("title")) ?? ""), String(await outilCourant()));
+  await racine.locator('.planche-outils [data-planche-outil="selection"]').click();
   check(`${contexte} : « Détacher » à droite du bandeau`, ba.detacher && Math.abs(ba.detacher.r - ba.bd.r) <= 1 && ba.detacherTexte === "Détacher", JSON.stringify(ba.detacher));
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
@@ -255,7 +261,7 @@ async function fenetreDetachee(page, context) {
     rattacher: [...document.querySelectorAll("[data-planche-bandeau] button")].some((b) => /Rattacher/.test(b.textContent ?? "")),
     flottantes: document.querySelectorAll(".barre-actions").length,
   }));
-  check("fenêtre détachée : barre d'actions au centre du bandeau, plus de barre flottante", m.actions[0] === "cadrer" && m.actions.length === 5 && m.flottantes === 0, JSON.stringify(m));
+  check("fenêtre détachée : barre d'actions au centre du bandeau, plus de barre flottante", m.actions.join(",") === "annuler,retablir,cadrer,zoom" && m.flottantes === 0, JSON.stringify(m));
   check("fenêtre détachée : plus de « Rattacher » ; ✕ « Fermer et rattacher » à droite", m.fermer === "Fermer et rattacher" && !m.rattacher, JSON.stringify(m));
   await w.screenshot({ path: join(OUT, "sandbox-fenetre-detachee.png") });
   // Fenêtre détachée rétrécie au format téléphone : la barre flottante y revient (commandes jamais perdues).
@@ -474,9 +480,19 @@ try {
       await releve.locator('[data-planche-commande="nettoyer"]').click();
       await p3.waitForTimeout(400);
       check("contrôle : Nettoyer retire l'arête cochée et le dit", (await isolees()) === "0" && (await releve.locator("[data-planche-controle-note]").count()) === 1, await isolees());
-      await p3.keyboard.press("Control+z");
+      // Annuler du bandeau (26 novembre 2026) : actif après une opération, l'infobulle la nomme ; Rétablir la refait.
+      const boutonAnnuler = racine.locator("[data-planche-bandeau-actions] [data-planche-annuler]");
+      const boutonRetablir = racine.locator("[data-planche-bandeau-actions] [data-planche-retablir]");
+      check("bandeau : Annuler actif après Nettoyer, l'infobulle nomme l'opération (Ctrl Z)", !(await boutonAnnuler.isDisabled()) && /^Annuler .+\(Ctrl Z\)$/.test((await boutonAnnuler.getAttribute("title")) ?? ""), (await boutonAnnuler.getAttribute("title")) ?? "");
+      await boutonAnnuler.click();
       await p3.waitForTimeout(400);
-      check("contrôle : un seul Annuler rétablit ce qui a été retiré", (await isolees()) === "1", await isolees());
+      check("contrôle : un seul Annuler (bouton du bandeau) rétablit ce qui a été retiré", (await isolees()) === "1", await isolees());
+      check("bandeau : Rétablir actif après Annuler", !(await boutonRetablir.isDisabled()) && /\(Ctrl Y\)$/.test((await boutonRetablir.getAttribute("title")) ?? ""), (await boutonRetablir.getAttribute("title")) ?? "");
+      await boutonRetablir.click();
+      await p3.waitForTimeout(400);
+      check("bandeau : Rétablir refait Nettoyer", (await isolees()) === "0", await isolees());
+      await boutonAnnuler.click();
+      await p3.waitForTimeout(400);
       // Extension « Composants dynamiques » : une étagère paramétrée (jeu d'essai) ; ses options redessinent ses tablettes.
       await racine.locator("[data-planche-menu-ouvrir]").click();
       await racine.locator('[data-planche-menu-item="extensions"]').click();
