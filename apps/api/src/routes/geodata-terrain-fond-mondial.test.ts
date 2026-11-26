@@ -26,6 +26,7 @@ import { ficheDistanteTest, origineTest } from "../lib/geodata/terrain/fixtures-
 import { ecrireFixture, ficheSynthetique } from "../lib/geodata/terrain/fixtures-synthetiques.js";
 import { pngTransparent } from "../lib/geodata/raster.js";
 import { newId } from "../lib/ids.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 const API = "/geodata/api/terrain";
@@ -66,7 +67,7 @@ afterAll(async () => { await pool.end(); });
 
 async function compte(email: string) {
   const client = request.agent(app);
-  const r = await client.post("/auth/register").send({ email, password: PASSWORD });
+  const r = await inscrire(client, email, PASSWORD);
   expect(r.status).toBe(201);
   return client;
 }

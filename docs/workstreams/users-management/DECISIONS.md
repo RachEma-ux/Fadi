@@ -288,3 +288,26 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      part de `main` et n'en dépend pas. Aucune migration, aucun déploiement.
   6. *Fusion* : demandée par le maître d'ouvrage le 2026-10-24 (« Fusionner PR #278 (UM-31) »), après fusion de `main`
      (`42c13db`) dans la branche et CI verte sur `6bc453b` ; commit de fusion `bf21c4b` (méthode habituelle du dépôt).
+- **UM-33 — Inscription sans énumération d'adresses (2026-11-26).** Décision du maître d'ouvrage (carte de décision du
+  26 novembre 2026, « Oui, dans une PR séparée » : supprimer la connexion automatique à l'inscription), suite de la revue
+  Multi-Arena du module comptes ([Issue #425](https://github.com/RachEma-ux/Fadi/issues/425)). Avant : `POST /auth/register`
+  répondait 409 pour une adresse connue et 201 avec une session sinon, ce qui disait à quiconque si une adresse avait un
+  compte.
+  1. *Une seule réponse* : `POST /auth/register { email }` répond **202** et le même corps pour toute adresse valide, sans
+     cookie ni session ; le mot de passe n'y est plus demandé (un champ envoyé par un ancien client est ignoré).
+  2. *Adresse sans compte* : une invitation de création de compte est créée ou renouvelée (finalité `platform_account`,
+     **sans invitant ni rôle** ; aucune migration : la colonne `invited_by` était déjà facultative) et son lien part par
+     courriel (gabarit `signup`, chemin `/compte/creer`, distinct de `/compte/invitation` pour qu'aucun lecteur de lien
+     ne les confonde). Le compte naît sur cette page, par la route existante `POST /auth/activate` (mot de passe, conditions,
+     adresse vérifiée d'office) ; l'acte est journalisé `auth.register`. `inviterStillAuthorized` accepte une invitation
+     `platform_account` sans invitant (amorçage ou inscription libre) ; un renouvellement par inscription garde l'invitant
+     et le rôle d'une invitation déjà en attente.
+  3. *Adresse déjà inscrite* : rien n'est créé ; un courriel `signup_existing` le dit à la boîte (liens de connexion et de
+     mot de passe oublié), journalisé `auth.register.existing_account`.
+  4. *Conséquences assumées* : sans transport de courriel (D-1), aucun lien ne part et l'inscription libre n'aboutit pas
+     (un administrateur invite). Tout compte créé par l'inscription a son adresse vérifiée ; le parcours « vérifier
+     l'adresse » ne sert plus qu'aux comptes antérieurs. Les recettes et suites DB-3 inscrivent par le lien
+     (`apps/web/e2e/lib-inscription.mjs`, `apps/api/src/test-helpers/inscription.ts`) ; les recettes lisent le lien dans
+     Mailpit (`MAILPIT_URL`) ou le journal de l'API (`MAIL_TRANSPORT=console`, `API_LOG`).
+  5. *Reste ouvert, signalé* : la recherche de participants et l'aperçu d'invitation (`members/preview`) disent encore à
+     un utilisateur connecté si une adresse a un compte (voulu pour inviter ; à confirmer par le maître d'ouvrage).

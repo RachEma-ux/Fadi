@@ -13,6 +13,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { inviterEtAccepter } from './lib-invitations.mjs';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const DB = process.env.DATABASE_URL;
@@ -44,8 +45,8 @@ const short = (x) => JSON.stringify(x).slice(0, 300);
 
 const owner = client(), editor = client();
 const comptes = { owner: credentials(), editor: credentials() };
-check('propriétaire inscrit', (await owner('POST', '/auth/register', comptes.owner)).status === 201);
-check('éditeur inscrit', (await editor('POST', '/auth/register', comptes.editor)).status === 201);
+check('propriétaire inscrit', (await inscrire(owner, comptes.owner, "POST")).status === 201);
+check('éditeur inscrit', (await inscrire(editor, comptes.editor, "POST")).status === 201);
 const project = await owner('POST', '/projects', { code: `D2_${randomUUID().slice(0, 8)}`, name: 'Studio — preuves D2 (recette synthétique)' });
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;

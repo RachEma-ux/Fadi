@@ -15,6 +15,7 @@ import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "atelier-captures/accueils-design";
@@ -83,10 +84,7 @@ async function checkComposition(id, label, mobile = false) {
   await page.screenshot({ path: join(OUT, label + ".png"), fullPage: true });
 }
 async function register(target, email) {
-  await target.goto(`${BASE}/inscription`);
-  await target.fill('input[name="email"]', email);
-  await target.fill('input[name="password"]', "accueils-design-ci-123");
-  await target.click('button[type="submit"]');
+  await inscrireDansLaPage(target, email, "accueils-design-ci-123", BASE);
   await target.waitForURL(/\/(accueil|projets)$/);
 }
 

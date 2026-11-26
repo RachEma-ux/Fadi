@@ -91,6 +91,7 @@ import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:4173";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "../../../docs/migration/captures/webapp");
@@ -138,10 +139,7 @@ const consoleErrors = [];
 page.on("pageerror", (e) => consoleErrors.push(e.message));
 
 const email = `scenario-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "scenario-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "scenario-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 
 // 1. Nouveau projet
@@ -1417,10 +1415,7 @@ const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } }
 const page2 = await ctx2.newPage();
 page2.on("pageerror", (e) => consoleErrors.push(e.message));
 const readerEmail = `lecteur-${Date.now()}@example.com`;
-await page2.goto(`${BASE}/inscription`);
-await page2.fill('input[name="email"]', readerEmail);
-await page2.fill('input[name="password"]', "scenario-pass-123");
-await page2.click('button[type="submit"]');
+await inscrireDansLaPage(page2, readerEmail, "scenario-pass-123", BASE);
 await page2.waitForURL(/\/(projets|accueil)/);
 await page2.goto(`${BASE}/projets`);
 await page2.waitForSelector("#project-list-heading");
@@ -1452,10 +1447,9 @@ const apercuCompte = await inviterDepuisLeFormulaire(readerEmail);
 check("collaboration : aperçu d'un compte existant (acceptation requise)", /compte existant/.test(apercuCompte), apercuCompte);
 check("collaboration : compte existant → invitation en attente d'acceptation, toujours aucun membre", (await page.locator(`[data-project-invitations] li[data-invitation="${readerEmail}"]`).getAttribute("data-invitation-etat")) === "acceptation" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
 check("partage : avant l'acceptation, le second compte n'a toujours pas accès (404)", (await page2.request.get(`${BASE}/projects/${testPid}`)).status() === 404);
-// Le second compte vérifie son adresse (lien reçu à l'inscription), puis accepte depuis « Invitations reçues » de Mes projets.
-const jetonVerification = await jetonDuCourriel(readerEmail, "/compte/verifier-email");
-check("partage : lien de vérification reçu par le second compte", !!jetonVerification);
-await page2.request.post(`${BASE}/auth/verify-email/confirm`, { data: { token: jetonVerification } });
+// Le second compte a prouvé son adresse en créant son compte par le lien reçu (Issue #425) : il accepte depuis
+// « Invitations reçues » de Mes projets.
+check("partage : adresse du second compte vérifiée à la création", (await (await page2.request.get(`${BASE}/auth/me`)).json()).emailVerified === true);
 await page2.goto(`${BASE}/projets`);
 await page2.waitForSelector(`[data-invitations-recues] li[data-invitation-recue="P.TEST"]`, { timeout: 15000 });
 check("partage : « Invitations reçues » — P.TEST, accès proposé lecteur", /lecteur/.test(await page2.locator('[data-invitation-recue="P.TEST"]').textContent()));
@@ -1695,10 +1689,7 @@ check("bibliothèque · cas P.118, rubrique Technique : « P.118 conserve ses po
 // Un compte sans l'exemple : l'exemple est importé puis ouvert (« Dossier source absent » n'arrive pas).
 const ctxFresh = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const pageFresh = await ctxFresh.newPage();
-await pageFresh.goto(`${BASE}/inscription`);
-await pageFresh.fill('input[name="email"]', `fresh-${Date.now()}@example.com`);
-await pageFresh.fill('input[name="password"]', "scenario-pass-123");
-await pageFresh.click('button[type="submit"]');
+await inscrireDansLaPage(pageFresh, `fresh-${Date.now()}@example.com`, "scenario-pass-123", BASE);
 await pageFresh.waitForURL(/\/(projets|accueil)/);
 // Accueil sans projet : importer P.118 ou créer un projet depuis les entrées de l’application.
 await pageFresh.goto(`${BASE}/accueil`);

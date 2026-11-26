@@ -1,0 +1,40 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-socle",
+    "nom": {
+      "fr": "Essai du socle",
+      "en": "Base trial"
+    },
+    "description": {
+      "fr": "Extension d'essai du lot 1 : elle compte ses appels et écrit au journal.",
+      "en": "Trial add-on for lot 1: it counts its calls and writes to the log."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "evenements"
+    ],
+    "commandes": [
+      {
+        "id": "compter",
+        "libelle": {
+          "fr": "Compter",
+          "en": "Count"
+        },
+        "icone": "compter.svg",
+        "raccourci": "Alt+Maj+F5"
+      }
+    ],
+    "outils": [],
+    "panneaux": [],
+    "abonnements": [
+      "selection.change"
+    ]
+  },
+  "code": "// Extension d'essai du socle (protocole 1.0, lot 1).\nlet appels = 0;\nlet selection = 0;\nplanche.sur(\"commande.compter\", () => {\n  appels += 1;\n  planche.afficher(\"appel\", appels);\n  return { appels, selection };\n});\nplanche.sur(\"selection.change\", (ids) => {\n  selection = ids.length;\n});\nplanche.sur(\"commande.boucler\", () => {\n  for (;;) {}\n});\nplanche.afficher(\"prête\");\n",
+  "pages": {
+    "compter.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M5 19V9M10 19V5M15 19v-7M20 19v-4\"/></svg>"
+  }
+}

@@ -19,6 +19,7 @@
 import { chromium } from "playwright";
 import { randomUUID } from "node:crypto";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const erreurs = [];
@@ -37,10 +38,7 @@ async function session(nom) {
   page.on("pageerror", (e) => erreurs.push(`${nom} : ${e.message}`));
   page.on("dialog", (d) => void d.accept());
   const cred = { email: `studio-dec-${nom}-${Date.now()}-${randomUUID().slice(0, 6)}@example.com`, password: `studio-dec-${randomUUID()}` };
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', cred.email);
-  await page.fill('input[name="password"]', cred.password);
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, cred.email, cred.password, BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const brut = async (method, path, data) => {
     const r = await context.request.fetch(`${BASE}${path}`, { method, headers: { origin: BASE, "content-type": "application/json" }, ...(data === undefined ? {} : { data }) });

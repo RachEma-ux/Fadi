@@ -12,6 +12,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const MAILPIT = process.env.MAILPIT_URL?.replace(/\/$/, '');
@@ -106,15 +107,19 @@ try {
   // ===== Phase 2 — politique de mot de passe, connexion, anti-abus =====
   const A = agent();
   const aEmail = mail('a'), aPass = strong();
-  check('mot de passe de 11 caractères refusé', (await A.call('POST', '/auth/register', { email: aEmail, password: 'abcdefghijk' })).body?.reason === 'too_short');
-  check('mot de passe compromis refusé', (await A.call('POST', '/auth/register', { email: aEmail, password: 'password1234' })).body?.reason === 'common');
-  const reg = await A.call('POST', '/auth/register', { email: aEmail, password: aPass });
-  check('inscription avec 12 caractères ou plus', reg.status === 201 && reg.body.platformRole === 'user' && reg.body.emailVerified === false, reg);
-  const verifyToken = await lastLink(aEmail, '/compte/verifier-email');
-  check('courriel de vérification reçu', !!verifyToken);
-  check('adresse vérifiée par le lien', (await A.call('POST', '/auth/verify-email/confirm', { token: verifyToken })).body?.verified === true);
-  check('lien de vérification à usage unique', (await A.call('POST', '/auth/verify-email/confirm', { token: verifyToken })).status === 400);
+  check('mot de passe de 11 caractères refusé', (await inscrire((m, p, b) => A.call(m, p, b), { email: aEmail, password: 'abcdefghijk' }, "POST")).body?.reason === 'too_short');
+  check('mot de passe compromis refusé', (await inscrire((m, p, b) => A.call(m, p, b), { email: aEmail, password: 'password1234' }, "POST")).body?.reason === 'common');
+  const reg = await inscrire((m, p, b) => A.call(m, p, b), { email: aEmail, password: aPass }, "POST");
+  check('inscription par le lien : 12 caractères ou plus, adresse vérifiée d\'office', reg.status === 201 && reg.body.platformRole === 'user' && reg.body.emailVerified === true, reg);
   check('/auth/me : adresse vérifiée', (await A.call('GET', '/auth/me')).body?.emailVerified === true);
+  // Issue #425 : l'inscription ne dit jamais si une adresse a déjà un compte, et n'ouvre aucune session.
+  const N = agent(), nEmail = mail('nouveau');
+  const connu = await N.call('POST', '/auth/register', { email: aEmail, password: strong() });
+  const nouveau = await N.call('POST', '/auth/register', { email: nEmail, password: strong() });
+  check('inscription : même réponse pour une adresse connue ou nouvelle', connu.status === 202 && nouveau.status === 202 && JSON.stringify(connu.body) === JSON.stringify(nouveau.body), { connu, nouveau });
+  check('inscription : aucune session ouverte', !N.cookie && (await N.call('GET', '/auth/me')).status === 401);
+  check('inscription : aucun compte avant le lien', (await sql.query('SELECT count(*)::int AS c FROM users WHERE email = $1', [nEmail])).rows[0].c === 0);
+  check('adresse nouvelle : lien de création ; adresse connue : courriel « vous avez déjà un compte »', !!(await lastLink(nEmail, '/compte/creer')) && (await sql.query("SELECT count(*)::int AS c FROM admin.mail_outbox WHERE to_address = $1 AND template = 'signup_existing'", [aEmail])).rows[0].c >= 1);
 
   const { rows: [{ token_hash: th, n }] } = await sql.query("SELECT max(token_hash) AS token_hash, count(*)::int AS n FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.email = $1", [aEmail]);
   const rawCookie = A.cookie.split('=')[1];
@@ -128,7 +133,7 @@ try {
   check('réponse identique : compte inconnu / mauvais mot de passe', unknown.status === 401 && wrong.status === 401 && JSON.stringify(unknown.body) === JSON.stringify(wrong.body), { unknown, wrong });
 
   const L = agent(), lEmail = mail('verrou'), lPass = strong();
-  await L.call('POST', '/auth/register', { email: lEmail, password: lPass });
+  await inscrire((m, p, b) => L.call(m, p, b), { email: lEmail, password: lPass }, "POST");
   for (let i = 0; i < 5; i++) await X.call('POST', '/auth/login', { email: lEmail, password: `faux-${i}-mot-de-passe` });
   const lockedLogin = await X.call('POST', '/auth/login', { email: lEmail, password: lPass });
   check('verrouillage progressif après 5 échecs (même réponse, même avec le bon mot de passe)', lockedLogin.status === 401 && lockedLogin.body?.error === 'invalid_credentials', lockedLogin);
@@ -158,7 +163,7 @@ try {
 
   // ===== Phase 3 — administrateur =====
   const B = agent(), bEmail = mail('admin'), bPass = strong();
-  await B.call('POST', '/auth/register', { email: bEmail, password: bPass });
+  await inscrire((m, p, b) => B.call(m, p, b), { email: bEmail, password: bPass }, "POST");
   check('non-admin : /admin/users → 404', (await A.call('GET', '/admin/users')).status === 404);
   check('anonyme : /admin/users → 404', (await X.call('GET', '/admin/users')).status === 404);
   const out = execFileSync('node', ['apps/api/scripts/create-admin.mjs', bEmail], { env: { ...process.env }, encoding: 'utf8' });
@@ -173,9 +178,9 @@ try {
   const secret = setup.body.secret;
   const { rows: [{ totp_secret_enc: enc }] } = await sql.query('SELECT totp_secret_enc FROM users WHERE email = $1', [bEmail]);
   check('secret TOTP chiffré en base', enc.startsWith('v1.') && !enc.includes(secret));
-  check('code faux refusé à l\'activation', (await B.call('POST', '/auth/me/mfa/enable', { code: '000000' })).status === 400);
+  check('code faux refusé à l\'activation', (await B.call('POST', '/auth/me/mfa/enable', { password: bPass, code: '000000' })).status === 400);
   const s0 = step();
-  const enabled = await B.call('POST', '/auth/me/mfa/enable', { code: totp(secret, s0) });
+  const enabled = await B.call('POST', '/auth/me/mfa/enable', { password: bPass, code: totp(secret, s0) });
   check('TOTP activé, 10 codes de secours', enabled.status === 200 && enabled.body.recoveryCodes?.length === 10, enabled);
   const recovery = enabled.body.recoveryCodes;
   check('codes de secours hachés en base', (await sql.query('SELECT count(*)::int AS c FROM auth.user_recovery_codes r JOIN users u ON u.id = r.user_id WHERE u.email = $1 AND r.code_hash = ANY($2)', [bEmail, recovery.map((c) => c.replace('-', ''))])).rows[0].c === 0);
@@ -232,7 +237,7 @@ try {
   check('invitation listée pour le propriétaire', (await A.call('GET', `/projects/${pid}/members`)).body?.invitations?.some((i) => i.email === dEmail));
   const dToken = await lastLink(dEmail, '/compte/invitation');
   const E = agent(), eEmail = mail('autre');
-  await E.call('POST', '/auth/register', { email: eEmail, password: strong() });
+  await inscrire((m, p, b) => E.call(m, p, b), { email: eEmail, password: strong() }, "POST");
   const forwarded = await E.call('POST', '/auth/invitations/accept', { token: dToken });
   check('lien transféré à un autre compte : refusé (wrong_account)', forwarded.status === 403 && forwarded.body.error === 'wrong_account', forwarded);
   check('E n\'a pas accès au projet', (await E.call('GET', `/projects/${pid}`)).status === 404);
@@ -264,12 +269,14 @@ try {
   // Le détail (rôles par portée, aperçu, mauvais compte, invitant révoqué, accès expiré, navigateur) est dans
   // apps/web/e2e/invitations-participation.mjs ; ici, le contrat des comptes : un compte existant est invité, jamais ajouté.
   const P3 = agent(), xEmail = mail('existant');
-  await P3.call('POST', '/auth/register', { email: xEmail, password: strong() });
+  await inscrire((m, p, b) => P3.call(m, p, b), { email: xEmail, password: strong() }, "POST");
   const xinv = await A.call('POST', `/projects/${pid}/members`, { email: xEmail, role: 'lecteur' });
   check('compte existant : invitation (202), aucun ajout direct', xinv.status === 202 && xinv.body.accountExists === true && xinv.body.invitation.projectRole === 'lecteur', xinv);
   check('compte existant : aucun accès avant acceptation', (await P3.call('GET', `/projects/${pid}`)).status === 404);
   check('compte existant : notification « invitation en attente » dans l\'application', (await P3.call('GET', '/notifications')).body?.items?.some((i) => i.invitation?.id === xinv.body.invitation.id));
   check('propriétaire : invitation listée « en attente d\'acceptation »', (await A.call('GET', `/projects/${pid}/members`)).body?.invitations?.some((i) => i.email === xEmail && i.awaiting === 'acceptation'));
+  // Compte antérieur à l'inscription par lien (Issue #425) : adresse jamais confirmée.
+  await sql.query('UPDATE users SET email_verified_at = NULL WHERE email = $1', [xEmail]);
   const xNotif = await P3.call('POST', `/notifications/invitations/${xinv.body.invitation.id}/accept`, {});
   check('acceptation depuis la notification : adresse non vérifiée refusée (403)', xNotif.status === 403 && xNotif.body?.error === 'email_unverified', xNotif);
   check('acceptation depuis la notification : une autre adresse ne la voit pas (404)', (await E.call('POST', `/notifications/invitations/${xinv.body.invitation.id}/accept`, {})).status === 404);
@@ -340,7 +347,7 @@ try {
   const own = await A.call('DELETE', '/auth/me', { password: aPass3, confirm: 'SUPPRIMER' });
   check('suppression refusée : projet partagé possédé', own.status === 409 && own.body.error === 'owns_shared_projects' && own.body.projects.some((p) => p.id === pid), own);
   const F = agent(), fe = mail('suppression'), fp = strong();
-  await F.call('POST', '/auth/register', { email: fe, password: fp });
+  await inscrire((m, p, b) => F.call(m, p, b), { email: fe, password: fp }, "POST");
   const solo = await F.call('POST', '/projects', { code: `SOLO-${uid().slice(0, 4)}`, name: 'Projet solitaire' });
   await F.call('POST', `/projects/${solo.body.id}/collaboration/comments`, { body: 'Note avant départ' });
   const del = await F.call('DELETE', '/auth/me', { password: fp, confirm: 'SUPPRIMER' });

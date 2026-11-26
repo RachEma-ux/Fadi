@@ -10,6 +10,7 @@
 import { createRequire } from "node:module";
 import { allerEnPlan, basculerCanevas, fermerMenus } from "./lib-barre.mjs";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -50,10 +51,7 @@ async function axe(nom, p = page) {
 const boite = async (sel, p = page) => p.locator(sel).first().boundingBox();
 
 const email = `canevas-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "canevas-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "canevas-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · canevas" })).body.id;

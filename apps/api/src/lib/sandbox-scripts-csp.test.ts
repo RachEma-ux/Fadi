@@ -5,6 +5,7 @@ describe("Sandbox — politique de contenu du Worker des scripts", () => {
   it("ne vise que le fichier construit du Worker des scripts", () => {
     expect(politiqueContenuStatique("/srv/web/dist/assets/scripts-planche.worker-BxY12_a9.js")).toBe(CSP_WORKER_SCRIPTS);
     expect(politiqueContenuStatique("C:\\web\\dist\\assets\\scripts-planche.worker-BxY12_a9.js")).toBe(CSP_WORKER_SCRIPTS);
+    expect(politiqueContenuStatique("/srv/web/dist/assets/extension-planche.worker-BxY12_a9.js")).toBe(CSP_WORKER_SCRIPTS);
     expect(politiqueContenuStatique("/srv/web/dist/assets/index-BxY12_a9.js")).toBeNull();
     expect(politiqueContenuStatique("/srv/web/dist/assets/noyau-studio.worker-BxY12_a9.js")).toBeNull();
     expect(politiqueContenuStatique("/srv/web/dist/scripts-planche.worker-x.js")).toBeNull();

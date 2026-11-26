@@ -21,6 +21,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -78,7 +79,7 @@ function canal(cookie, { origin = BASE, chemin = "/temps-reel" } = {}) {
 const credentials = (n) => ({ email: `tr-${n}-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") });
 const proprio = client(), editeur = client(), lecteur = client(), tiers = client();
 const cP = credentials("p"), cE = credentials("e"), cL = credentials("l"), cT = credentials("t");
-for (const [c, cred] of [[proprio, cP], [editeur, cE], [lecteur, cL], [tiers, cT]]) check(`compte créé (${cred.email.split("-")[1]})`, (await c("POST", "/auth/register", cred)).status === 201);
+for (const [c, cred] of [[proprio, cP], [editeur, cE], [lecteur, cL], [tiers, cT]]) check(`compte créé (${cred.email.split("-")[1]})`, (await inscrire(c, cred, "POST")).status === 201);
 const idDe = async (c) => { const me = (await c("GET", "/auth/me")).body; return me?.user?.id ?? me?.id; };
 const ids = { proprio: await idDe(proprio), editeur: await idDe(editeur), lecteur: await idDe(lecteur) };
 

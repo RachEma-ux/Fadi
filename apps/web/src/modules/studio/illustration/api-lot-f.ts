@@ -48,7 +48,7 @@ export const apiIllustrations = {
 };
 export const apiAgents = {
   jetons: (p: string) => appel<{ jetons: JetonLu[] }>(`${cheminAgents(p)}/jetons`),
-  creerJeton: (p: string, nom: string, joursValidite: number) => appel<{ id: string; nom: string; jeton: string; expireLe: string }>(`${cheminAgents(p)}/jetons`, { method: "POST", body: JSON.stringify({ nom, joursValidite }) }),
+  creerJeton: (p: string, nom: string, joursValidite: number, motDePasse: string) => appel<{ id: string; nom: string; jeton: string; expireLe: string }>(`${cheminAgents(p)}/jetons`, { method: "POST", body: JSON.stringify({ nom, joursValidite, motDePasse }) }),
   revoquer: (p: string, id: string) => appel<{ id: string; revoque: boolean }>(`${cheminAgents(p)}/jetons/${e(id)}/revoquer`, { method: "POST", body: "{}" }),
   propositions: (p: string) => appel<{ propositions: PropositionLue[] }>(`${cheminAgents(p)}/propositions`),
   decider: (p: string, id: string, action: "confirmer" | "refuser") => appel<{ proposition: PropositionLue; revisionId?: string; replayed?: boolean }>(`${cheminAgents(p)}/propositions/${e(id)}/${action}`, { method: "POST", body: "{}" }),

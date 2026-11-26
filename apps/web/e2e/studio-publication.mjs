@@ -13,6 +13,7 @@
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 let failures = 0;
@@ -48,10 +49,10 @@ const canonical = (v) => Array.isArray(v) ? `[${v.map(canonical).join(',')}]`
 
 const owner = client(), editor = client(), reader = client(), foreign = client(), anonymous = client();
 const accounts = { owner: credentials(), editor: credentials(), reader: credentials() };
-check('propriétaire inscrit', (await owner('POST', '/auth/register', accounts.owner)).status === 201);
-check('éditeur inscrit', (await editor('POST', '/auth/register', accounts.editor)).status === 201);
-check('lecteur inscrit', (await reader('POST', '/auth/register', accounts.reader)).status === 201);
-check('compte étranger inscrit', (await foreign('POST', '/auth/register', credentials())).status === 201);
+check('propriétaire inscrit', (await inscrire(owner, accounts.owner, "POST")).status === 201);
+check('éditeur inscrit', (await inscrire(editor, accounts.editor, "POST")).status === 201);
+check('lecteur inscrit', (await inscrire(reader, accounts.reader, "POST")).status === 201);
+check('compte étranger inscrit', (await inscrire(foreign, credentials(), "POST")).status === 201);
 const project = await owner('POST', '/projects', { code: `PUB_${randomUUID().slice(0, 8)}`, name: 'Studio — publications (recette synthétique)' });
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;

@@ -31,6 +31,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-g4";
@@ -100,10 +101,7 @@ const APPAREIL = M.studioQualifierEnvironnement({ gpu: { fournisseur: appareil.f
 async function preparer() {
   const ctx = await browser.newContext({ viewport: VIEWPORT });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-g4-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-g4-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-g4-${Date.now()}@example.com`, "studio-g4-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await ctx.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
