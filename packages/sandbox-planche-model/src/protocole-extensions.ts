@@ -363,6 +363,8 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "unites.formater": null,
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
+  "fichiers.ouvrir": "fichiers",
+  "fichiers.enregistrer": "fichiers",
 };
 
 /** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */

@@ -20,7 +20,7 @@
  */
 import {
   BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
-  lireAvisExtension, lireDelaiMinuterie, lireDemandeSaisie, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeSaisie,
+  lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie,
   type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
 import type { DemarrageExtension, DemarrageRendu } from "./extension-planche.worker";
@@ -76,6 +76,16 @@ export interface OptionsHoteExtension {
    * l'utilisateur annule ; `fermer` la retire quand l'appel prend fin avant la réponse. Absent : la demande est refusée.
    */
   readonly saisir?: (demande: DemandeSaisie) => { readonly reponse: Promise<ValeursSaisie | null>; readonly fermer: () => void };
+  /**
+   * Fichiers (lot 7, permission « fichiers ») : la Planche montre la fenêtre et l'utilisateur choisit. `ouvrir` rend le
+   * fichier choisi (`{ nom, texte }`, relu ici avant d'atteindre l'extension) ou `null` ; `enregistrer` rend vrai si
+   * l'utilisateur a accepté. Comme la saisie : pendant une commande, une fenêtre à la fois, délai suspendu. Absent : les
+   * demandes sont refusées.
+   */
+  readonly fichiers?: {
+    readonly ouvrir: (demande: DemandeOuverture) => { readonly reponse: Promise<unknown>; readonly fermer: () => void };
+    readonly enregistrer: (demande: DemandeEnregistrement) => { readonly reponse: Promise<boolean>; readonly fermer: () => void };
+  };
 }
 
 const creerWorkerExtension = (): WorkerExtension => new Worker(new URL("./extension-planche.worker.ts", import.meta.url), { type: "module", name: "fadi-planche-extension" }) as unknown as WorkerExtension;
@@ -158,6 +168,43 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     });
   };
 
+  /** Fichiers : comme la saisie — pendant une commande seulement, une fenêtre à la fois, délai suspendu. */
+  const servirFichiers = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
+    const appel = enCours;
+    if (!o.fichiers || !appel || appel.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+    if (appel.sorte !== "demande") return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "fichiers : pendant une commande seulement"));
+    if (saisie) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "fichiers : une fenêtre est déjà ouverte"));
+    let ouverte: { readonly reponse: Promise<unknown>; readonly fermer: () => void };
+    let rendre: (valeur: unknown) => MessageProtocole;
+    if (m.nom === "fichiers.ouvrir") {
+      const lu = lireDemandeOuverture(m.donnees);
+      if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
+      rendre = (valeur) => {
+        const fichier = lireFichierChoisi(valeur, lu.demande);
+        return fichier.ok ? reponseProtocole(m.id, fichier.fichier) : refusProtocole(m.id, "argument_invalide", fichier.detail);
+      };
+      appel.suspendre();
+      ouverte = o.fichiers.ouvrir(lu.demande);
+    } else {
+      const lu = lireDemandeEnregistrement(m.donnees);
+      if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
+      rendre = (valeur) => reponseProtocole(m.id, valeur === true);
+      appel.suspendre();
+      ouverte = o.fichiers.enregistrer(lu.demande);
+    }
+    saisie = ouverte;
+    void ouverte.reponse.then(
+      (valeur) => valeur,
+      () => null,
+    ).then((valeur) => {
+      if (saisie !== ouverte) return;
+      saisie = null;
+      if (enCours !== appel) return;
+      appel.reprendre();
+      w?.postMessage(rendre(valeur));
+    });
+  };
+
   /** Minuteries : armées pendant un appel seulement ; à l'échéance, l'extension reçoit « minuterie.echeance ». */
   const servirMinuterie = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
     if (m.nom === "minuterie.annuler") {
@@ -190,6 +237,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     if (!jugement.ok) return void w?.postMessage(refusProtocole(m.id, jugement.erreur, jugement.detail));
     if (m.nom === "message.afficher" || m.nom === "saisie.demander") return servirMessages(m);
     if (m.nom === "minuterie.armer" || m.nom === "minuterie.annuler") return servirMinuterie(m);
+    if (m.nom === "fichiers.ouvrir" || m.nom === "fichiers.enregistrer") return servirFichiers(m);
     if (m.nom !== "journal.afficher") {
       // Hors d'un appel (aucune commande ni événement en cours), une extension ne lit ni ne modifie rien.
       if (!services || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
