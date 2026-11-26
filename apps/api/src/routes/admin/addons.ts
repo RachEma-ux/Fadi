@@ -27,10 +27,25 @@
  *
  * Import et retrait sont journalisés (`admin.addon.package.imported`, `admin.addon.package.removed`) dans la transaction
  * de l'écriture. Le serveur valide et range un paquet ; il ne l'exécute jamais.
+ *
+ * Écran d'administration (images 12 à 15, 26 novembre 2026) :
+ *
+ *   POST   /admin/addons/paquets?essai=1                    juge le paquet sans rien écrire → 200 { paquet } (fiche) ou
+ *                                                           le même refus 400 : « rien n'est installé avant votre accord ».
+ *   POST   /admin/addons/paquets?etat=…&origine=…&installee=…  réglage posé à l'ajout : `etat` (disponible, experimentale ;
+ *                                                           défaut experimentale), `origine` (importee, creee ; défaut
+ *                                                           importee), `installee` (oui, non ; défaut oui). Un paquet
+ *                                                           qui en remplace un autre garde le réglage en place, sauf
+ *                                                           valeur donnée. Valeur inconnue → 400 invalid_input.
+ *   GET    /admin/addons/paquets/:id                        { paquet, fiche } — le paquet entier, pour l'éditeur et
+ *                                                           l'export ; inconnue → 404.
+ *   PATCH  /admin/addons/paquets/:id                        { etat?, activeParDefaut? } → { paquet } (fiche) ; journalisé
+ *                                                           (`admin.addon.package.updated`, avant et après) si le
+ *                                                           réglage change vraiment.
  */
 import express, { Router } from "express";
 import { eq, sql } from "drizzle-orm";
-import { BORNES_EXTENSION, extensionSandbox, jugerImportPaquet, validerChangementReglage } from "@parcours/sandbox-planche-model";
+import { BORNES_EXTENSION, estEtatPaquet, estOriginePaquet, extensionSandbox, jugerImportPaquet, validerChangementReglage, validerChangementReglagePaquet } from "@parcours/sandbox-planche-model";
 import { db } from "../../db/client.js";
 import { addonPackages, addonPlatformSettings } from "../../db/schema.js";
 import { fichesAdminPaquets, paquetsDeLignes } from "../../lib/addon-paquets.js";
@@ -53,7 +68,53 @@ adminAddonsRouter.get("/addons/paquets", async (_req, res) => {
 export const LIMITE_CORPS_PAQUET = Math.ceil(BORNES_EXTENSION.paquet * 1.3);
 const corpsPaquet = express.json({ limit: LIMITE_CORPS_PAQUET });
 
+adminAddonsRouter.get("/addons/paquets/:id", async (req, res) => {
+  const [ligne] = await db.select().from(addonPackages).where(eq(addonPackages.addonId, String(req.params["id"]))).limit(1);
+  if (!ligne) return void res.status(404).json({ error: "not_found" });
+  res.json({ paquet: ligne.package, fiche: fichesAdminPaquets([ligne])[0] });
+});
+
+adminAddonsRouter.patch("/addons/paquets/:id", async (req, res) => {
+  const id = String(req.params["id"]);
+  const lu = validerChangementReglagePaquet(req.body);
+  if (!lu.ok) return void res.status(400).json({ error: "invalid_input", detail: lu.detail });
+  const ligne = await db.transaction(async (tx) => {
+    const [actuelle] = await tx.select().from(addonPackages).where(eq(addonPackages.addonId, id)).for("update");
+    if (!actuelle) return null;
+    const avant = { etat: actuelle.state, activeParDefaut: actuelle.defaultActive };
+    const apres = { ...avant, ...lu.reglage };
+    if (apres.etat === avant.etat && apres.activeParDefaut === avant.activeParDefaut) return actuelle;
+    const [ecrite] = await tx.update(addonPackages).set({ state: apres.etat, defaultActive: apres.activeParDefaut }).where(eq(addonPackages.addonId, id)).returning();
+    await audit(tx, { actorId: req.user!.id, action: "admin.addon.package.updated", target: { type: "addon", id }, metadata: { version: actuelle.version, avant, apres }, ip: clientIp(req) });
+    return ecrite!;
+  });
+  if (!ligne) return void res.status(404).json({ error: "not_found" });
+  // La fiche dit si le paquet est encore rendu aux comptes : ce jugement se fait parmi toutes les extensions ajoutées.
+  const toutes = await db.select().from(addonPackages);
+  res.json({ paquet: fichesAdminPaquets(toutes).find((f) => f.id === id) });
+});
+
+/** Réglage demandé à l'ajout, dans l'adresse : `etat`, `origine`, `installee` (oui / non), `essai`. */
+function lireReglageAjout(q: Record<string, unknown>): { ok: true; etat?: "disponible" | "experimentale"; origine?: "importee" | "creee"; installee?: boolean; essai: boolean } | { ok: false; detail: string } {
+  const { etat, origine, installee, essai } = q;
+  if (etat !== undefined && !estEtatPaquet(etat)) return { ok: false, detail: "etat : disponible, experimentale" };
+  if (origine !== undefined && !estOriginePaquet(origine)) return { ok: false, detail: "origine : importee, creee" };
+  if (installee !== undefined && installee !== "oui" && installee !== "non") return { ok: false, detail: "installee : oui, non" };
+  if (essai !== undefined && essai !== "1") return { ok: false, detail: "essai : 1" };
+  return { ok: true, ...(etat !== undefined ? { etat } : {}), ...(origine !== undefined ? { origine } : {}), ...(installee !== undefined ? { installee: installee === "oui" } : {}), essai: essai === "1" };
+}
+
 adminAddonsRouter.post("/addons/paquets", corpsPaquet, async (req, res) => {
+  const ajout = lireReglageAjout(req.query as Record<string, unknown>);
+  if (!ajout.ok) return void res.status(400).json({ error: "invalid_input", detail: ajout.detail });
+  if (ajout.essai) {
+    // Jugement seul : rien n'est écrit, rien n'est journalisé.
+    const lignes = await db.select().from(addonPackages);
+    const jugement = jugerImportPaquet(req.body, paquetsDeLignes(lignes));
+    if (!jugement.ok) return void res.status(400).json({ error: "invalid_package", motif: jugement.erreur, detail: jugement.detail });
+    const p = jugement.paquet;
+    return void res.json({ paquet: { id: p.fiche.id, nom: p.fiche.nom, description: p.fiche.description, version: p.fiche.version, auteur: p.fiche.auteur, protocole: p.fiche.protocole, permissions: p.fiche.permissions, commandes: p.fiche.commandes.length, outils: p.fiche.outils.length, panneaux: p.fiche.panneaux.length, remplace: lignes.some((l) => l.addonId === p.fiche.id) } });
+  }
   const resultat = await db.transaction(async (tx) => {
     // Un import à la fois : le jugement des raccourcis lit les autres extensions installées.
     await tx.execute(sql`LOCK TABLE addon_packages IN SHARE ROW EXCLUSIVE MODE`);
@@ -63,12 +124,14 @@ adminAddonsRouter.post("/addons/paquets", corpsPaquet, async (req, res) => {
     const p = jugement.paquet;
     const remplace = lignes.find((l) => l.addonId === p.fiche.id);
     const valeurs = { version: p.fiche.version, package: p as unknown as Record<string, unknown>, importedBy: req.user!.id, importedAt: new Date() };
-    const [ecrite] = await tx.insert(addonPackages).values({ addonId: p.fiche.id, ...valeurs }).onConflictDoUpdate({ target: addonPackages.addonId, set: valeurs }).returning();
+    // Réglage : celui demandé ; à défaut, celui en place si l'extension est remplacée, sinon celui d'un ajout.
+    const reglage = { ...(ajout.etat !== undefined ? { state: ajout.etat } : {}), ...(ajout.installee !== undefined ? { defaultActive: ajout.installee } : {}), ...(ajout.origine !== undefined && !remplace ? { origin: ajout.origine } : {}) };
+    const [ecrite] = await tx.insert(addonPackages).values({ addonId: p.fiche.id, ...valeurs, ...reglage }).onConflictDoUpdate({ target: addonPackages.addonId, set: { ...valeurs, ...reglage } }).returning();
     await audit(tx, {
       actorId: req.user!.id,
       action: "admin.addon.package.imported",
       target: { type: "addon", id: p.fiche.id },
-      metadata: { version: p.fiche.version, versionRemplacee: remplace?.version ?? null, auteur: p.fiche.auteur, protocole: p.fiche.protocole, permissions: [...p.fiche.permissions], commandes: p.fiche.commandes.length },
+      metadata: { version: p.fiche.version, versionRemplacee: remplace?.version ?? null, auteur: p.fiche.auteur, protocole: p.fiche.protocole, permissions: [...p.fiche.permissions], commandes: p.fiche.commandes.length, etat: ecrite!.state, activeParDefaut: ecrite!.defaultActive, origine: ecrite!.origin },
       ip: clientIp(req),
     });
     return { ok: true as const, ligne: ecrite!, remplace: remplace !== undefined };

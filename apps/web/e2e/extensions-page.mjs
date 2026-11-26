@@ -42,20 +42,24 @@ const racine = page.locator("[data-extensions-page]");
 await racine.locator("[data-extensions-liste] [data-extension]").first().waitFor();
 check("barre latérale : l'entrée est marquée active sur la page", (await lien.getAttribute("class"))?.includes("active") === true);
 
-const ids = () => racine.locator("[data-extension]").evaluateAll((l) => l.map((x) => x.getAttribute("data-extension")));
+// Les extensions fournies par Fadi ; celles que la plateforme a ajoutées (autres recettes, même base) sont comptées à part.
+const ids = () => racine.locator("[data-extension]:not([data-extension-ajoutee])").evaluateAll((l) => l.map((x) => x.getAttribute("data-extension")));
+const total = () => racine.locator("[data-extension]").count();
 const option = (o) => racine.locator(`[data-extensions-option="${o}"]`);
 const compte = async (o) => Number(await option(o).locator(".extensions-compte").textContent());
 check("deux options seulement : Installées et Disponibles", (await racine.locator("[data-extensions-option]").count()) === 2 && (await option("installees").getAttribute("aria-selected")) === "true");
 const installeesDepart = await ids();
+const totalInstallees = await total();
 check("Installées, compte neuf : les extensions actives d'origine", JSON.stringify(installeesDepart) === JSON.stringify(["bois", "volumes"]), installeesDepart.join(", "));
-check("Installées : un seul geste, « Désinstaller »", (await racine.locator("[data-extension-desinstaller]").count()) === installeesDepart.length && (await racine.locator("[data-extension-installer], input[type=checkbox], [role=switch]").count()) === 0);
+check("Installées : un seul geste, « Désinstaller »", (await racine.locator("[data-extension-desinstaller]").count()) === totalInstallees && (await racine.locator("[data-extension-installer], input[type=checkbox], [role=switch]").count()) === 0);
 check("carte : nom, description, version et contenu", /Bois et menuiserie/.test(await racine.locator('[data-extension="bois"]').innerText()) && /Version 1\.0\.0/.test(await racine.locator('[data-extension="bois"]').innerText()) && /6 outils · 5 commandes · 1 panneau/.test(await racine.locator('[data-extension="bois"]').innerText()));
 await page.screenshot({ path: join(OUT, "extensions-1-installees.png") });
 
 await option("disponibles").click();
 const disponiblesDepart = await ids();
-check("Disponibles : le reste du catalogue, avec « Installer »", disponiblesDepart.includes("controle") && !disponiblesDepart.includes("bois") && (await racine.locator("[data-extension-installer]").count()) === disponiblesDepart.length, disponiblesDepart.join(", "));
-check("les compteurs des options suivent les listes", (await compte("installees")) === installeesDepart.length && (await compte("disponibles")) === disponiblesDepart.length);
+const totalDisponibles = await total();
+check("Disponibles : le reste du catalogue, avec « Installer »", disponiblesDepart.includes("controle") && !disponiblesDepart.includes("bois") && (await racine.locator("[data-extension-installer]").count()) === totalDisponibles, disponiblesDepart.join(", "));
+check("les compteurs des options suivent les listes", (await compte("installees")) === totalInstallees && (await compte("disponibles")) === totalDisponibles);
 await page.screenshot({ path: join(OUT, "extensions-2-disponibles.png") });
 
 // Installer : l'extension quitte « Disponibles », rejoint « Installées », et le compte l'enregistre.
@@ -65,9 +69,9 @@ const [ecriture] = await Promise.all([
 ]);
 check("Installer : enregistré sur le compte (200)", ecriture.status() === 200 && (await ecriture.json()).extensions.controle === true);
 await racine.locator('[data-extension="controle"]').waitFor({ state: "detached" });
-check("Installer : l'extension quitte « Disponibles »", !(await ids()).includes("controle") && (await compte("disponibles")) === disponiblesDepart.length - 1);
+check("Installer : l'extension quitte « Disponibles »", !(await ids()).includes("controle") && (await compte("disponibles")) === totalDisponibles - 1);
 await option("installees").click();
-check("Installer : elle est dans « Installées »", (await ids()).includes("controle") && (await compte("installees")) === installeesDepart.length + 1);
+check("Installer : elle est dans « Installées »", (await ids()).includes("controle") && (await compte("installees")) === totalInstallees + 1);
 await page.screenshot({ path: join(OUT, "extensions-3-apres-installation.png") });
 
 // La Planche applique le choix : le panneau de l'extension installée est offert, celui d'une extension non installée ne l'est pas.

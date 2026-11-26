@@ -3169,6 +3169,73 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect(await auditCount("admin.addon.package.imported", "autre-essai")).toBe(0);
       });
 
+      it("écran d'administration : essai sans écriture, réglage à l'ajout, réglage modifié et journalisé, paquet entier", async () => {
+        const boss = await admin();
+        // Le journal garde les lignes des essais précédents : les comptes se lisent par rapport au départ.
+        const importsAvant = await auditCount("admin.addon.package.imported", "essai-commandes");
+        const reglagesAvant = await auditCount("admin.addon.package.updated", "essai-commandes");
+        const essai = await boss.a.post("/admin/addons/paquets?essai=1").send(paquet());
+        expect(essai.status).toBe(200);
+        expect(essai.body.paquet).toMatchObject({ id: "essai-commandes", commandes: 7, remplace: false });
+        expect(await nombre()).toBe(0);
+        expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(importsAvant);
+        expect((await boss.a.post("/admin/addons/paquets?essai=1").send({ format: "fadi-addon/1" })).body).toMatchObject({ error: "invalid_package", motif: "forme_invalide" });
+        for (const q of ["etat=retiree", "origine=ailleurs", "installee=peut-etre", "essai=2"]) expect((await boss.a.post(`/admin/addons/paquets?${q}`).send(paquet())).status, q).toBe(400);
+        expect(await nombre()).toBe(0);
+
+        const ajout = await boss.a.post("/admin/addons/paquets?etat=disponible&origine=creee&installee=non").send(paquet());
+        expect(ajout.status).toBe(201);
+        expect(ajout.body.paquet).toMatchObject({ etat: "disponible", activeParDefaut: false, origine: "creee" });
+        const entier = await boss.a.get("/admin/addons/paquets/essai-commandes");
+        expect(entier.body.paquet).toEqual(paquet());
+        expect(entier.body.fiche).toMatchObject({ id: "essai-commandes", origine: "creee" });
+        expect((await boss.a.get("/admin/addons/paquets/fantome")).status).toBe(404);
+
+        const regle = await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "experimentale", activeParDefaut: true });
+        expect(regle.body.paquet).toMatchObject({ etat: "experimentale", activeParDefaut: true, origine: "creee", servie: true });
+        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(reglagesAvant + 1);
+        expect((await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "experimentale" })).status).toBe(200);
+        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(reglagesAvant + 1);
+        expect((await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "retiree" })).status).toBe(400);
+        expect((await boss.a.patch("/admin/addons/paquets/fantome").send({ etat: "disponible" })).status).toBe(404);
+        // Un remplacement garde le réglage en place et l'origine.
+        const suivant = paquet();
+        suivant.fiche.version = "1.2.0";
+        expect((await boss.a.post("/admin/addons/paquets").send(suivant)).body.paquet).toMatchObject({ version: "1.2.0", etat: "experimentale", activeParDefaut: true, origine: "creee" });
+        const plain = await account("paquets-reglage-simple");
+        expect((await plain.a.get("/admin/addons/paquets/essai-commandes")).status).toBe(404);
+        expect((await plain.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "disponible" })).status).toBe(404);
+      });
+
+      it("un compte ne reçoit que les extensions ajoutées qu'il a installées ; son choix est rangé à part", async () => {
+        const boss = await admin();
+        expect((await boss.a.post("/admin/addons/paquets?installee=non").send(paquet())).status).toBe(201);
+        const user = await account("paquets-choix");
+        expect((await agent().get("/sandbox/preferences/extensions/catalogue")).status).toBe(401);
+        expect((await user.a.get("/sandbox/preferences/extensions")).body.extensions).toEqual([]);
+        const catalogue = await user.a.get("/sandbox/preferences/extensions/catalogue");
+        expect(catalogue.body.paquets).toEqual([expect.objectContaining({ id: "essai-commandes", etat: "experimentale", installee: false, commandes: 7 })]);
+        expect(JSON.stringify(catalogue.body)).not.toContain("planche.sur(");
+
+        const installe = await user.a.put("/sandbox/preferences/extensions/essai-commandes").send({ installee: true });
+        expect(installe.status).toBe(200);
+        expect(installe.body.paquets[0]).toMatchObject({ id: "essai-commandes", installee: true });
+        expect((await user.a.get("/sandbox/preferences/extensions")).body.extensions).toHaveLength(1);
+        // Un autre compte suit le réglage d'origine ; la Planche, qui réécrit ses préférences, ne touche pas ce choix.
+        const autre = await account("paquets-choix-autre");
+        expect((await autre.a.get("/sandbox/preferences/extensions")).body.extensions).toEqual([]);
+        expect((await user.a.put("/sandbox/preferences").send({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [] })).status).toBe(200);
+        expect((await user.a.get("/sandbox/preferences/extensions")).body.extensions).toHaveLength(1);
+
+        expect((await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ activeParDefaut: true })).status).toBe(200);
+        expect((await autre.a.get("/sandbox/preferences/extensions")).body.extensions).toHaveLength(1);
+        expect((await autre.a.put("/sandbox/preferences/extensions/essai-commandes").send({ installee: false })).body.paquets[0].installee).toBe(false);
+        expect((await autre.a.get("/sandbox/preferences/extensions")).body.extensions).toEqual([]);
+
+        expect((await user.a.put("/sandbox/preferences/extensions/fantome").send({ installee: true })).status).toBe(404);
+        for (const corps of [{}, { installee: "oui" }, { installee: true, autre: 1 }]) expect((await user.a.put("/sandbox/preferences/extensions/essai-commandes").send(corps)).status).toBe(400);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

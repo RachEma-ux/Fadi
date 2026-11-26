@@ -14,6 +14,12 @@
  *   GET /extensions → { extensions: [paquet…] } — extensions installées sur la plateforme (protocole des extensions 1.0,
  *            lot 3) : paquets `fadi-addon/1` importés par l'administrateur (`addon_packages`), fiche, code en texte et
  *            pages. Le navigateur les relit et les exécute dans un espace isolé ; le serveur ne les exécute jamais.
+ *            Depuis l'écran d'administration (26 novembre 2026) : seulement celles que le compte a installées (son
+ *            choix, sinon le réglage « installée d'origine » de la plateforme).
+ *   GET /extensions/catalogue → { paquets: [{ id, nom, description, version, etat, commandes, outils, panneaux,
+ *            installee }] } — fiches, sans code, des extensions ajoutées que la plateforme propose au compte.
+ *   PUT /extensions/:id { installee: booléen } → { paquets } ; extension inconnue → 404 ; corps invalide → 400. Le
+ *            choix est rangé à part (`packages`) : la Planche, qui réécrit `extensions` en entier, n'y touche pas.
  *
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
@@ -25,7 +31,9 @@ import { sandboxToolPreferences } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { lireCorpsPreferencesSandbox, reponsePreferences } from "../lib/sandbox-preferences.js";
 import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
-import { lirePaquetsServis } from "../lib/addon-paquets-lecture.js";
+import { basculerPaquet, lireChoixPaquets, type ChoixPaquets } from "@parcours/sandbox-planche-model";
+import { fichesComptePaquets, paquetsDuCompte } from "../lib/addon-paquets.js";
+import { lireLignesPaquets } from "../lib/addon-paquets-lecture.js";
 
 export const sandboxPreferencesRouter = Router();
 sandboxPreferencesRouter.use(requireAuth);
@@ -39,8 +47,30 @@ sandboxPreferencesRouter.get("/", async (req, res) => {
   res.json(reponsePreferences(req.user!.id, ligne, await lireReglagesPlateforme()));
 });
 
-sandboxPreferencesRouter.get("/extensions", async (_req, res) => {
-  res.json({ extensions: await lirePaquetsServis() });
+/** Choix du compte parmi les extensions ajoutées à la plateforme (colonne `packages`), relu avec tolérance. */
+async function choixPaquetsDe(userId: string): Promise<ChoixPaquets> {
+  const [ligne] = await db.select({ packages: sandboxToolPreferences.packages }).from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, userId)).limit(1);
+  return lireChoixPaquets(ligne?.packages);
+}
+
+sandboxPreferencesRouter.get("/extensions", async (req, res) => {
+  res.json({ extensions: paquetsDuCompte(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)) });
+});
+
+sandboxPreferencesRouter.get("/extensions/catalogue", async (req, res) => {
+  res.json({ paquets: fichesComptePaquets(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)) });
+});
+
+sandboxPreferencesRouter.put("/extensions/:id", async (req, res) => {
+  const id = String(req.params["id"]);
+  const installee = (req.body as { installee?: unknown } | null)?.installee;
+  if (typeof installee !== "boolean" || Object.keys(req.body as object).length !== 1) return void res.status(400).json({ error: "invalid_input", detail: "{ installee: booléen }" });
+  const lignes = await lireLignesPaquets();
+  if (!lignes.some((l) => l.addonId === id)) return void res.status(404).json({ error: "not_found" });
+  const choix = basculerPaquet(await choixPaquetsDe(req.user!.id), id, installee, lignes.map((l) => l.addonId));
+  await db.insert(sandboxToolPreferences).values({ userId: req.user!.id, packages: { ...choix } })
+    .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: { packages: { ...choix }, updatedAt: new Date() } });
+  res.json({ paquets: fichesComptePaquets(lignes, choix) });
 });
 
 sandboxPreferencesRouter.put("/", async (req, res) => {

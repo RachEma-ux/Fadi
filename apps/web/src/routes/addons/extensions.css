@@ -22,3 +22,70 @@
   .extensions-texte { flex: 1 1 calc(100% - 58px); }
   .extensions-carte > button { margin-inline-start: 58px; }
 }
+
+/* Onglet « Administration » (images 12 à 15) : table des extensions, fenêtres d'import, éditeur. */
+.extensions-page-large { max-width: 1280px; }
+.extensions-admin-tete { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+.extensions-admin-bilan { margin-inline-start: auto; }
+.extensions-table-cadre { overflow-x: auto; border: 1px solid #d5ddd6; border-radius: 18px; background: #fff; }
+.extensions-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.extensions-table th, .extensions-table td { padding: 14px 16px; text-align: start; vertical-align: middle; border-bottom: 1px solid #e3e9e4; }
+.extensions-table tbody tr:last-child > * { border-bottom: 0; }
+.extensions-table thead th { background: #e8efe9; color: #4d665f; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.extensions-table tbody th { font-weight: 700; color: #17352f; }
+.extensions-table tbody th small { display: block; margin-top: 3px; font-weight: 400; color: #5c726c; }
+.extensions-table select, .extensions-dialogue select { min-height: 36px; padding: 4px 10px; border: 1px solid #d5ddd6; border-radius: 9px; background: #fff; font: inherit; }
+.extensions-origine { padding: 2px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; background: #e8efe9; color: #1b4d42; }
+.extensions-origine.importee { background: #fbf0d4; color: #7a5a00; }
+.extensions-origine.creee { background: #e9f0f8; color: #2f4f73; }
+.extensions-interrupteur { position: relative; width: 46px; height: 26px; padding: 0; border: 0; border-radius: 999px; background: #b7c9c0; cursor: pointer; }
+.extensions-interrupteur::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: inset-inline-start 0.12s; }
+.extensions-interrupteur.actif { background: #1b4d42; }
+.extensions-interrupteur.actif::after { inset-inline-start: 23px; }
+.extensions-interrupteur:disabled { opacity: 0.6; cursor: default; }
+.extensions-actions-ligne, .extensions-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.extensions-actions { justify-content: flex-end; margin-top: 16px; }
+.extensions-danger { color: #9b2c2c; border-color: #ecc9c0; }
+.extensions-danger-plein { background: #9b2c2c; border-color: #9b2c2c; }
+.extensions-voile { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, 0.45); overflow-y: auto; }
+.extensions-dialogue { width: min(720px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 26px 28px; border-radius: 18px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.13); }
+.extensions-dialogue h2 { margin: 0 0 4px; }
+.extensions-dialogue h3, .extensions-editeur-volet h3 { margin: 18px 0 8px; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; color: #4d665f; }
+.extensions-fiche { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 6px 14px; margin: 14px 0 0; }
+.extensions-fiche dt { color: #5c726c; }
+.extensions-fiche dd { margin: 0; overflow-wrap: anywhere; }
+.extensions-pastilles { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.extensions-pastilles span { padding: 4px 12px; border: 1px solid #d5ddd6; border-radius: 999px; background: #e8efe9; font-size: 0.9rem; }
+.extensions-commandes { list-style: none; margin: 0; padding: 0; }
+.extensions-commandes li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e3e9e4; }
+.extensions-commande-icone { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; background: #fbf0d4; }
+.extensions-commande-texte { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
+.extensions-commande-texte small { color: #5c726c; }
+.extensions-commandes kbd { flex: none; padding: 1px 8px; border: 1px solid #d5ddd6; border-radius: 6px; background: #e8efe9; font-size: 0.82rem; }
+.extensions-conforme { margin: 16px 0 0; padding: 12px 16px; border: 1px solid #cfdfd3; border-radius: 12px; background: #ebf3ec; color: #2f6f57; }
+.extensions-avis { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: #fbf0d4; color: #7a5a00; }
+.extensions-refus { margin: 14px 0; padding: 14px 18px; border: 1px solid #ecc9c0; border-radius: 12px; background: #fbeeea; color: #9b2c2c; }
+.extensions-refus p { margin: 6px 0 0; overflow-wrap: anywhere; }
+.extensions-dialogue-pied { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.extensions-dialogue-pied .extensions-actions { margin-top: 0; }
+.extensions-champ { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 0.9rem; color: #4d665f; }
+.extensions-champ input, .extensions-champ textarea { padding: 8px 10px; border: 1px solid #d5ddd6; border-radius: 9px; background: #fff; color: #17352f; font: inherit; }
+.extensions-champ input:disabled { background: #e8efe9; color: #5c726c; }
+.extensions-champs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.extensions-champs.trois { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.extensions-editeur { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.extensions-editeur-volet { padding: 20px 22px; border: 1px solid #d5ddd6; border-radius: 18px; background: #fff; }
+.extensions-editeur-volet h2 { margin: 0 0 14px; font-size: 1.1rem; }
+.extensions-permissions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; margin: 0; padding: 0; border: 0; }
+.extensions-permissions legend { padding: 0; margin-bottom: 6px; font-size: 0.9rem; color: #4d665f; }
+.extensions-permissions label { display: flex; align-items: flex-start; gap: 8px; }
+.extensions-commande-saisie { margin: 12px 0; padding: 14px; border: 1px solid #d5ddd6; border-radius: 12px; background: #e8efe9; }
+.extensions-commande-saisie h4 { margin: 0 0 10px; }
+.extensions-code { width: 100%; min-height: 320px; padding: 14px; border: 0; border-radius: 12px; background: #11302a; color: #eef3ef; font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; white-space: pre; overflow: auto; }
+.extensions-controles { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.extensions-controles .ok { color: #2f6f57; }
+.extensions-controles .non { color: #9b2c2c; overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .extensions-editeur, .extensions-champs, .extensions-champs.trois, .extensions-permissions { grid-template-columns: minmax(0, 1fr); }
+  .extensions-admin-bilan { margin-inline-start: 0; flex-basis: 100%; }
+}
