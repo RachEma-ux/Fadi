@@ -1118,14 +1118,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/extensions-outil node apps/web/e2e/extensions-outil.mjs 2>&1 | tee -a e2e.log
-<<<<<<< HEAD
       - name: Recette de l'administration des extensions — onglet réservé à l'administrateur, liste et réglages, import jugé avant d'installer (accepté, refusé avec ses motifs), éditeur et contrôles avant d'enregistrer, création, installation par compte, export, retrait confirmé, anglais (apps/web/e2e/extensions-administration.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/extensions-administration node apps/web/e2e/extensions-administration.mjs 2>&1 | tee -a e2e.log
-=======
->>>>>>> origin/main
       - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
