@@ -57,6 +57,15 @@ describe("création d'un jeton d'agent : le mot de passe du compte est redemand�
     expect(banc.lignes.get(studioAgentTokens) ?? []).toHaveLength(0);
     expect((await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI })).status).toBe(201);
   });
+  it("les mots de passe faux sont comptés par compte : au-delà de 10 refus en 15 min, 429 même avec le bon mot de passe ; un autre compte n'est pas touché", async () => {
+    const statuts: number[] = [];
+    for (let i = 0; i < 10; i++) statuts.push((await humain("proprietaire").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: `faux-${i}` })).status);
+    expect(statuts.every((s) => s === 403)).toBe(true);
+    const bloque = await humain("proprietaire").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI });
+    expect(bloque.status).toBe(429);
+    expect(bloque.body.error).toBe("too_many_attempts");
+    expect((await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI })).status).toBe(201);
+  });
 });
 
 describe("TEST-033 — appel MCP sur une commande protégée : même schéma, mêmes droits, confirmation et idempotence que l'interface humaine", () => {

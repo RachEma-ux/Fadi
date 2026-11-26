@@ -135,6 +135,7 @@ try {
   const agents = page.locator("[data-studio-agents]");
   await agents.waitFor();
   await agents.locator("[data-studio-jeton-nom]").fill("Agent de recette");
+  await agents.locator("[data-studio-jeton-mot-de-passe]").fill("studio-lot-f-ci-12345");
   await agents.locator("[data-studio-jeton-creer]").click();
   const jeton = (await agents.locator("[data-studio-jeton-valeur]").textContent()).trim();
   check("jeton d'agent créé et montré une fois", jeton.startsWith("fadi_mcp_"));
