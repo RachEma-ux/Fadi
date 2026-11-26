@@ -47,6 +47,8 @@ Mis à jour : 2026-11-26 (UTC).
 
 - L7 (#432) : L7 (#432) : GeoData garde une seule barre du bas, à 5 boutons (Carte, Chercher, Couches, Enregistrer, Plus) ; « Plus » ouvre la feuille de l'application (navigation principale en tête) par l'événement fadi:ouvrir-plus ; même hauteur (64 px) et même fond que la barre globale ; recette geodata.mjs 276/276 en local.
 
+- L9 (#433) : L9 (#433) : au téléphone (≤ 700 px), l'en-tête tient sur une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche) ; plus d'icône Accueil (la barre du bas l'a) ; Historique, État et Langue sous « Autres actions » ; bureau inchangé ; recette accueils-design.mjs verte en local avec 6 contrôles L9.
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
@@ -19,6 +19,21 @@ export function HomeTopbar({ projectId }: { projectId?: string }) {
   const last = useLastDossier(user?.id);
   const location = useLocation();
   const [dialog, setDialog] = useState<"search" | "history" | "status" | "name" | null>(null);
+  // Téléphone (≤ 700 px, chantier Design L9) : en-tête d'une rangée ; Historique, État et Langue passent sous
+  // « Autres actions » (bouton de divulgation, même DOM qu'au bureau, où le bouton est masqué et les trois restent en ligne).
+  const [autres, setAutres] = useState(false);
+  const autresRef = useRef<HTMLDivElement>(null);
+  const autresBouton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { setAutres(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!autres) return;
+    const dehors = (e: PointerEvent) => { const t = e.target as Node; if (!autresRef.current?.contains(t) && !autresBouton.current?.contains(t)) setAutres(false); };
+    const echap = (e: KeyboardEvent) => { if (e.key === "Escape") { setAutres(false); autresBouton.current?.focus(); } };
+    document.addEventListener("pointerdown", dehors);
+    document.addEventListener("keydown", echap);
+    return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
+  }, [autres]);
+  const ouvrir = (d: "history" | "status") => { setAutres(false); setDialog(d); };
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId!), enabled: !!projectId, staleTime: 30_000, retry: (count, e) => !denied(e) && count < 1 });
   // Studio sous un projet (`/studio/projets/:id…`) : l'en-tête nomme le projet et le module, sans lire le Parcours ni le
   // programme, ni les alertes du dossier de la cloche (ADR-STUDIO-NAV-01, C-B / NAV-002 : Studio ne passe pas par le Parcours).
@@ -39,9 +54,13 @@ export function HomeTopbar({ projectId }: { projectId?: string }) {
     <div className="fadi-topbar-actions">
       <Link className="topbar-icon topbar-home" to="/accueil" title="Accueil de Fadi" aria-label="Accueil de Fadi"><Icon name="home" /></Link>
       <button type="button" className="topbar-icon" title={projectId ? "Rechercher dans ce projet" : "Rechercher un projet"} aria-label={projectId ? "Rechercher dans ce projet" : "Rechercher un projet"} onClick={() => setDialog("search")}><Icon name="search" /></button>
-      <button type="button" className="topbar-icon history-trigger" title={projectId ? "Historique du Dossier" : "Historique de la plateforme"} aria-label={projectId ? "Historique du Dossier" : "Historique de la plateforme"} onClick={() => setDialog("history")}>H</button>
-      <button type="button" className="topbar-state" onClick={() => setDialog("status")} title={projectId ? "Consulter les données, les droits et la synchronisation de ce dossier" : "Consulter la connexion et les données de votre espace de travail"}>{projectId ? "État du Dossier" : "État de la plateforme"}</button>
-      <ChoixLangue /><NotificationBell projectId={studio ? undefined : projectId ?? (appHome ? last?.projectId : undefined)} />
+      <button type="button" ref={autresBouton} className="topbar-icon topbar-autres" aria-label="Autres actions" title="Autres actions" aria-expanded={autres} aria-controls="fadi-topbar-autres" onClick={() => setAutres(!autres)}><span aria-hidden="true">⋯</span></button>
+      <div id="fadi-topbar-autres" ref={autresRef} className="fadi-topbar-autres" data-ouvert={autres ? "" : undefined}>
+        <button type="button" className="topbar-icon history-trigger" title={projectId ? "Historique du Dossier" : "Historique de la plateforme"} aria-label={projectId ? "Historique du Dossier" : "Historique de la plateforme"} onClick={() => ouvrir("history")}>H<span className="topbar-autres-libelle">Historique</span></button>
+        <button type="button" className="topbar-state" onClick={() => ouvrir("status")} title={projectId ? "Consulter les données, les droits et la synchronisation de ce dossier" : "Consulter la connexion et les données de votre espace de travail"}>{projectId ? "État du Dossier" : "État de la plateforme"}</button>
+        <ChoixLangue />
+      </div>
+      <NotificationBell projectId={studio ? undefined : projectId ?? (appHome ? last?.projectId : undefined)} />
     </div>
     {dialog === "search" && <SearchDialog key={projectId ?? "platform"} projectId={projectId} onClose={() => setDialog(null)} />}
     {dialog === "history" && <HistoryDialog key={projectId ?? "platform"} projectId={projectId} onClose={() => setDialog(null)} />}
