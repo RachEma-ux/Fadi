@@ -1,0 +1,41 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-outil",
+    "nom": {
+      "fr": "Essai de l'outil",
+      "en": "Tool trial"
+    },
+    "description": {
+      "fr": "Extension d'essai de l'outil interactif : un trait entre deux points, accroché comme les outils de la Planche, avec un aperçu décrit par l'extension.",
+      "en": "Trial add-on for the interactive tool: a line between two points, snapped like the Planche's own tools, with a preview described by the add-on."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "outil"
+    ],
+    "commandes": [],
+    "outils": [
+      {
+        "id": "trait",
+        "libelle": {
+          "fr": "Trait d'essai",
+          "en": "Trial line"
+        },
+        "icone": "trait.svg",
+        "raccourci": "Ctrl+Alt+T",
+        "curseur": "croix"
+      }
+    ],
+    "panneaux": [],
+    "abonnements": []
+  },
+  "code": "// Extension d'essai de l'outil interactif (protocole 1.0, lot 6) : un trait entre deux points, avec son aperçu.\nlet depart = null;\nlet vise = null;\nconst ecart = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);\nconst repos = (en) => ({ etat: en ? \"Click the start point.\" : \"Cliquez le point de départ.\", curseur: \"croix\" });\n// Description de l'aperçu : la Planche la dessine, l'outil ne dessine rien lui-même.\nconst enCours = async (en) => {\n  const texte = await planche.unites.formater(ecart(depart, vise));\n  const milieu = [(depart[0] + vise[0]) / 2, (depart[1] + vise[1]) / 2, (depart[2] + vise[2]) / 2];\n  return {\n    apercu: { pointilles: [[depart, vise]], points: [depart], textes: [{ point: milieu, texte }] },\n    etat: en ? \"Click the end point, or type a length. | Esc = Cancel.\" : \"Cliquez le point d'arrivée, ou saisissez une longueur. | Échap = Annuler.\",\n    saisie: { libelle: en ? \"Length\" : \"Longueur\", valeur: texte },\n    reference: depart,\n    curseur: \"cible\",\n  };\n};\nconst recommencer = (d) => {\n  depart = null;\n  vise = null;\n  return repos(d.langue === \"en\");\n};\nplanche.outil.sur(\"trait\", \"activation\", recommencer);\nplanche.outil.sur(\"trait\", \"annulation\", recommencer);\nplanche.outil.sur(\"trait\", \"deplacement\", (d) => {\n  if (!depart) return null;\n  vise = d.point;\n  return enCours(d.langue === \"en\");\n});\nplanche.outil.sur(\"trait\", \"clic\", async (d) => {\n  if (!depart) {\n    depart = d.point;\n    vise = d.point;\n    return enCours(d.langue === \"en\");\n  }\n  if (ecart(depart, d.point) < 1e-6) return null;\n  await planche.modele.ligne(depart, d.point);\n  return recommencer(d);\n});\n// Longueur saisie : le trait part du point de départ, vers le point visé.\nplanche.outil.sur(\"trait\", \"saisie\", async (d) => {\n  const l = depart && vise ? ecart(depart, vise) : 0;\n  if (!(d.longueur > 0) || l < 1e-9) return null;\n  const k = d.longueur / l;\n  await planche.modele.ligne(depart, [depart[0] + (vise[0] - depart[0]) * k, depart[1] + (vise[1] - depart[1]) * k, depart[2] + (vise[2] - depart[2]) * k]);\n  return recommencer(d);\n});\n",
+  "pages": {
+    "trait.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 19L19 5\"/><circle cx=\"5\" cy=\"19\" r=\"2\"/><circle cx=\"19\" cy=\"5\" r=\"2\"/></svg>"
+  }
+}

@@ -66,6 +66,16 @@ import {
   idBarreExtension,
   imageIcone,
   nomAppelPanneau,
+  BORNES_OUTIL,
+  MACHINE_OUTIL_EXTENSION,
+  avecDescription,
+  cleOutilExtension,
+  lireCleOutilExtension,
+  lireDescriptionOutil,
+  nomAppelOutil,
+  type CurseurOutil,
+  type EtatOutilExtension,
+  type EvenementOutilExtension,
   nomAppelCommande,
   destinatairesEvenement,
   resumerChangement,
@@ -668,6 +678,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         return false;
       }
       etatMachineRef.current = tr.etat;
+      if (m === MACHINE_OUTIL_EXTENSION) {
+        // L'événement préparé par la machine part vers l'extension ; sa description reviendra plus tard.
+        const emis = (tr.etat as EtatOutilExtension).emis;
+        if (emis && emis !== (avant as EtatOutilExtension | null)?.emis) transmettreOutilRef.current(outilRef.current, emis.nom, emis.donnees);
+      }
       let change = tr.etat !== avant;
       if (tr.modele && tr.modele !== ctx.modele && !readOnly) {
         poserHistorique(enregistrer(histRef.current, tr.modele, tr.operation ?? libelleOutil(outilRef.current), tr.remplaceDernier === true));
@@ -769,11 +784,35 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   );
 
 
+  // Outils des extensions installées (lot 6) : déclarés plus bas, une fois les extensions et leurs hôtes connus.
+  const outilExtensionDeclareRef = useRef<(cle: string) => boolean>(() => false);
+  /** Changement d'outil : prévient l'outil d'extension quitté (désactivation, pause) et celui qui arrive (activation, reprise). */
+  const passerOutilExtensionRef = useRef<(avant: string, apres: string, etatQuitte?: unknown) => void>(() => undefined);
+  const transmettreOutilRef = useRef<(cle: string, nom: EvenementOutilExtension, donnees: Readonly<Record<string, unknown>>) => void>(() => undefined);
+  /** Outil d'extension mis en pause par un outil de caméra : son état est gardé pour la reprise. */
+  const outilEnPauseRef = useRef<{ readonly cle: string; readonly etat: unknown } | null>(null);
   const demandeOutilRef = useRef<(id: string, options?: { garderPrecedent?: boolean }) => void>(() => undefined);
   const retourOutilRef = useRef<() => void>(() => undefined);
   const choisirOutil = useCallback(
     (id: string, options: { garderPrecedent?: boolean } = {}) => {
       frappeRef.current = consommerFrappe(frappeRef.current);
+      // Outil d'une extension installée (lot 6) : il n'est pas au catalogue, sa machine fait le lien avec l'extension.
+      if (lireCleOutilExtension(id)) {
+        if (!outilExtensionDeclareRef.current(id)) return;
+        setGrille(false);
+        setEdition(null);
+        const avant = outilRef.current;
+        if (id !== avant && !options.garderPrecedent) precedentRef.current = avant;
+        const reprise = outilEnPauseRef.current?.cle === id ? outilEnPauseRef.current.etat : null;
+        outilRef.current = id;
+        etatMachineRef.current = reprise ?? machineParId(id)?.initial() ?? null;
+        setOutilId(id);
+        setTexte(null);
+        setMessage(null);
+        passerOutilExtensionRef.current(avant, id);
+        rafraichir();
+        return;
+      }
       const o = outilParId(id);
       if (!o) return;
       // Outil d'une extension désactivée (raccourci clavier, favori ancien) : il dit où l'activer, rien d'autre ne change.
@@ -815,8 +854,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         );
       }
       if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
+      const etatQuitte = etatMachineRef.current;
+      const quitte = outilRef.current;
       outilRef.current = id;
       etatMachineRef.current = machineParId(id)?.initial() ?? null;
+      passerOutilExtensionRef.current(quitte, id, etatQuitte);
       // Revue de #129 : l'alignement du Texte 3D survit à la réactivation (préférence d'interface, pas d'état d'outil).
       if (id === "texte-3d") {
         const m = machineParId(id);
@@ -838,6 +880,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   /** Retour à l'outil précédent s'il est disponible, sinon Sélection. */
   const retourOutil = useCallback(() => {
     const precedent = precedentRef.current;
+    // Retour à l'outil d'extension mis en pause par un outil de caméra.
+    if (precedent !== outilRef.current && lireCleOutilExtension(precedent) && outilExtensionDeclareRef.current(precedent)) return choisirOutil(precedent);
     const o = outilParId(precedent);
     if (precedent !== outilRef.current && o && !disponibilite(o, { lecture: readOnly }) && !OUTILS_CAMERA_TEMPORAIRES.has(precedent)) choisirOutil(precedent);
     else choisirOutil("selection");
@@ -2858,6 +2902,87 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         poserAvisExtension(nom, `${texte} ${suite}`, "arret");
       });
   };
+  // ——— Outils interactifs des extensions (lot 6).
+  const outilExtensionDe = (cle: string) => {
+    const lu = lireCleOutilExtension(cle);
+    const paquet = lu ? paquetsRef.current.find((x) => x.fiche.id === lu.extension) : undefined;
+    const declare = paquet?.fiche.outils.find((x) => x.id === lu!.outil);
+    return paquet && declare ? { paquet, declare } : null;
+  };
+  outilExtensionDeclareRef.current = (cle) => outilExtensionDe(cle) !== null;
+  /** Déplacements : un seul en vol par outil, on ne garde que le dernier — la file ne peut pas enfler. */
+  const deplacementOutilRef = useRef<{ enVol: boolean; suivant: Readonly<Record<string, unknown>> | null }>({ enVol: false, suivant: null });
+  transmettreOutilRef.current = (cle, nom, donnees) => {
+    const x = outilExtensionDe(cle);
+    if (!x) return;
+    const file = deplacementOutilRef.current;
+    if (nom === "deplacement") {
+      if (file.enVol) return void (file.suivant = donnees);
+      file.enVol = true;
+    }
+    const extension = texteFiche(x.paquet.fiche.nom);
+    const outilNom = texteFiche(x.declare.libelle);
+    void hoteExtension(x.paquet)
+      .appeler("demande", nomAppelOutil(x.declare.id, nom), { ...donnees, langue: LANGUE_INTERFACE }, t("extensions.installee.operation", { extension, commande: outilNom }), undefined, BORNES_OUTIL.delaiMs)
+      .then((i) => {
+        if (nom === "deplacement") {
+          file.enVol = false;
+          const suivant = file.suivant;
+          file.suivant = null;
+          if (suivant && outilRef.current === cle) transmettreOutilRef.current(cle, "deplacement", suivant);
+        }
+        if (!plancheMontee.current || outilRef.current !== cle) return;
+        // Un événement que l'outil ne traite pas est simplement sans effet.
+        if (i.genre === "arrete" || (i.genre === "erreur" && i.nom === "demande_inconnue")) return;
+        if (i.genre === "fini") {
+          const lu = lireDescriptionOutil(i.resultat);
+          if (lu.ok) {
+            etatMachineRef.current = avecDescription(etatMachineRef.current as EtatOutilExtension, lu.description);
+            return rafraichir();
+          }
+          poserAvisExtension(extension, t("extensions.outil.avis.description", { outil: outilNom, detail: lu.detail }), "arret");
+        } else if (i.genre === "delai") poserAvisExtension(extension, t("extensions.outil.avis.delai", { outil: outilNom }), "arret");
+        else if (i.genre === "panne") poserAvisExtension(extension, t("extensions.avis.panne"), "arret");
+        else if (i.genre === "demarrage") poserAvisExtension(extension, i.erreur.genre === "import" ? t("extensions.avis.demarrage.import") : t("extensions.avis.demarrage", { detail: i.erreur.texte }), "arret");
+        else if (i.nom === "operation_refusee") poserAvisExtension(extension, t(readOnly ? "extensions.avis.lecture" : "extensions.avis.refusee", { commande: outilNom }), "arret");
+        else poserAvisExtension(extension, t("extensions.avis.erreur", { commande: outilNom, detail: i.detail || i.nom }), "arret");
+        // L'outil qui échoue rend la main : la Planche revient à Sélection, un seul avis le dit.
+        demandeOutilRef.current("selection");
+      });
+  };
+  passerOutilExtensionRef.current = (avant, apres, etatQuitte) => {
+    if (avant === apres) return;
+    const pause = outilEnPauseRef.current;
+    if (lireCleOutilExtension(avant)) {
+      // Un outil de caméra ne fait que suspendre l'outil : son état est gardé pour la reprise.
+      if (estOutilCamera(apres)) {
+        outilEnPauseRef.current = { cle: avant, etat: etatQuitte ?? null };
+        transmettreOutilRef.current(avant, "pause", {});
+      } else {
+        outilEnPauseRef.current = null;
+        transmettreOutilRef.current(avant, "desactivation", {});
+      }
+    } else if (pause && pause.cle !== apres && !estOutilCamera(apres)) {
+      outilEnPauseRef.current = null;
+      transmettreOutilRef.current(pause.cle, "desactivation", {});
+    }
+    if (lireCleOutilExtension(apres)) {
+      const reprise = pause?.cle === apres;
+      if (reprise) outilEnPauseRef.current = null;
+      transmettreOutilRef.current(apres, reprise ? "reprise" : "activation", {});
+    }
+  };
+  /** Outil d'extension actif : son nom en tête de la barre d'état, son curseur. */
+  const outilExtensionActif = (() => {
+    const x = outilExtensionDe(outilId);
+    if (!x) return null;
+    const d = (etatMachineRef.current as EtatOutilExtension | null)?.description;
+    return { nom: texteFiche(x.declare.libelle), curseur: CURSEURS_CSS[d?.curseur ?? x.declare.curseur ?? "croix"] };
+  })();
+  // L'extension de l'outil actif n'est plus installée : la Planche revient à Sélection.
+  useEffect(() => {
+    if (lireCleOutilExtension(outilId) && !paquetsInstalles.some((p) => p.fiche.outils.some((o) => cleOutilExtension(p.fiche.id, o.id) === outilId))) demandeOutilRef.current("selection");
+  }, [outilId, paquetsInstalles]);
   /** Action nommée appelée par la page d'un panneau : une demande adressée à l'extension, comme une commande. */
   const appelerPanneauExtension = (p: PaquetExtension, panneauId: string, titre: string, action: string, donnees: unknown): Promise<ReponseActionPanneau> => {
     const nomAppel = nomAppelPanneau(panneauId, action);
@@ -2880,7 +3005,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const panneauExtensionOuvert = panneauExtension ? (panneauxInstalles.find((x) => x.paquet.fiche.id === panneauExtension.extension && x.id === panneauExtension.panneau) ?? null) : null;
   /** Familles des extensions installées (liste « Outils ») : une par extension qui déclare des commandes. */
   const famillesInstallees: FamilleExtension[] = paquetsInstalles
-    .filter((p) => p.fiche.commandes.length > 0)
+    .filter((p) => p.fiche.commandes.length + p.fiche.outils.length > 0)
     .map((p) => ({
       id: p.fiche.id,
       nom: texteFiche(p.fiche.nom),
@@ -2896,7 +3021,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           motif: extensionsEnCours.has(p.fiche.id) ? t("extensions.installee.encours") : null,
           executer: () => lancerCommandeExtension(p, c),
         };
-      }),
+      }).concat(
+        // Outils interactifs (lot 6) : dans la même famille, ils s'activent comme un outil de la Planche.
+        p.fiche.outils.map((o): CommandeListe => {
+          const image = imageIcone(p, o.icone);
+          return { id: cleOutilExtension(p.fiche.id, o.id), picto: PICTO_EXTENSION_INSTALLEE, ...(image ? { image } : {}), nom: texteFiche(o.libelle), raccourci: o.raccourci, motif: null, executer: () => choisirOutil(cleOutilExtension(p.fiche.id, o.id)) };
+        }),
+      ),
     }));
   const commandesInstallees = famillesInstallees.flatMap((f) => f.commandes);
   /** Raccourci d'une commande d'extension : résolu après ceux de la Planche (refusés à l'import s'ils se recouvrent). */
@@ -3596,7 +3727,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
           // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
-          style={{ cursor: curseurOutil(outilId, pictoOutil(outilId)) }}
+          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
           data-planche-curseur={outilId}
         >
@@ -4144,7 +4275,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         {!etroit && canevasBas}
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
-          <span className="planche-consigne">{vue.consigne}</span>
+          <span className="planche-consigne">
+            {outilExtensionActif && <strong className="planche-consigne-outil-extension" data-planche-outil-extension={outilId}>{outilExtensionActif.nom}</strong>}
+            {outilExtensionActif && vue.consigne ? " — " : ""}
+            {vue.consigne}
+          </span>
           {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
           {etatBarre && (() => {
@@ -4353,6 +4488,9 @@ function nomOccurrence(m: Modele, id: string): string {
   }
   return id;
 }
+
+/** Curseurs qu'un outil d'extension peut demander (liste fermée du protocole) et leur valeur CSS. */
+const CURSEURS_CSS: Readonly<Record<CurseurOutil, string>> = { croix: "crosshair", fleche: "default", main: "pointer", cible: "cell" };
 
 /** Vue d'un outil sans machine d'états (caméra) : consigne et champ Mesures relevés dans le catalogue. */
 function vueParDefaut(id: string, champDeVision: number, hauteurOeil: number): VueOutil {

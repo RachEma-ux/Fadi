@@ -801,20 +801,20 @@ export class VuePlanche {
       };
       for (const l of vue.apercu.lignes) {
         if (l.length < 2) continue;
-        const couleur = (l.length === 2 ? parallele(l) : !!lineaire) ? vue.inference!.couleur : "#000000";
+        const couleur = vue.apercu.teinte ?? ((l.length === 2 ? parallele(l) : !!lineaire) ? vue.inference!.couleur : "#000000");
         this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
       }
       // Trajet en pointillé (Sélection : de la position d'origine de l'extrémité glissée au curseur).
       for (const l of vue.apercu.pointilles ?? []) {
         if (l.length < 2) continue;
         const fin = l[l.length - 1] as Vec3;
-        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineDashedMaterial({ color: "#5b7468", dashSize: this.metresParPixel(fin) * 6, gapSize: this.metresParPixel(fin) * 4, depthTest: false }));
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineDashedMaterial({ color: vue.apercu.teinte ?? "#5b7468", dashSize: this.metresParPixel(fin) * 6, gapSize: this.metresParPixel(fin) * 4, depthTest: false }));
         ligne.computeLineDistances();
         this.groupeApercu.add(ligne);
       }
       // Poignées d'extrémité (Sélection) : carrés pleins, taille écran constante, toujours visibles.
       if (vue.apercu.points && vue.apercu.points.length) {
-        const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(vue.apercu.points.map(v3)), new THREE.PointsMaterial({ color: COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
+        const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(vue.apercu.points.map(v3)), new THREE.PointsMaterial({ color: vue.apercu.teinte ?? COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
         poignees.renderOrder = 10;
         this.groupeApercu.add(poignees);
       }
@@ -876,7 +876,7 @@ export class VuePlanche {
       for (const q of vue.references ?? []) this.ajouterPastille(q);
       for (const e of vue.apercu.etiquettes ?? []) {
         const el = document.createElement("div");
-        el.className = "planche-etiquette planche-etiquette-apercu";
+        el.className = `planche-etiquette planche-etiquette-apercu${vue.apercu.teinte ? " planche-etiquette-extension" : ""}`;
         el.textContent = e.texte;
         this.etiquettesDom.append(el);
         this.etiquettesApercu.push({ el, point: e.point });

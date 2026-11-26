@@ -267,6 +267,20 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     passe que des données, 20 000 caractères au plus. Extension d'essai :
     `apps/web/e2e/donnees/essai-panneau.fadi-addon.json` ; recette `apps/web/e2e/extensions-panneau.mjs` (CI, tranche
     `planche`).
+  - *Outil interactif* (lot 6, permission « outil ») : la fiche déclare `outils: [{ id, libelle, icone, raccourci,
+    curseur? }]`. L'outil paraît dans la liste des outils, sous son extension, et s'active comme un outil de la Planche
+    (clic ou raccourci) ; son nom s'affiche en tête de la barre d'état. Une seule machine pure sert tous les outils
+    d'extension (`outils/outil-extension.ts`, identifiant `extension:<extension>:<outil>`) : elle calcule l'accrochage
+    comme les outils d'origine et prépare l'événement, que la Planche transmet à l'extension
+    (`outil.<outil>.<evenement>` : activation, desactivation, pause, reprise, annulation, deplacement, appui,
+    relachement, clic, double-clic, touche, validation, saisie). Un événement de souris porte `{ point, nature, objet }`
+    ; une saisie `{ texte, longueur }`. L'extension les traite par `planche.outil.sur(outil, evenement, fn)` et rend
+    une **description** que la Planche relit et dessine : `apercu { segments, pointilles, points, contours, textes }`,
+    `etat` (barre d'état), `saisie { libelle, valeur }`, `curseur` (croix, fleche, main, cible), `reference` (départ
+    de l'accrochage). L'outil ne dessine jamais lui-même. 1 s par événement ; les déplacements ne s'empilent pas (un en
+    cours, le dernier en attente). Un outil qui échoue ou dépasse son délai rend la main à Sélection, avec un avis.
+    Extension d'essai : `apps/web/e2e/donnees/essai-outil.fadi-addon.json` ; recette
+    `apps/web/e2e/extensions-outil.mjs` (CI, tranche `planche`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

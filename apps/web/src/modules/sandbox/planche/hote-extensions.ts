@@ -53,8 +53,10 @@ export interface HoteExtension {
   /**
    * Adresse une demande (commande) ou un événement à l'extension ; la démarre au besoin. `libelle` nomme l'opération
    * automatique éventuelle dans l'historique (défaut : le nom de l'appel).
+   * `delaiMs` remplace le délai de la sorte d'appel : un événement d'outil (lot 6) est une demande — il rend la
+   * description de l'outil — bornée à 1 s.
    */
-  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown, libelle?: string, marque?: unknown) => Promise<IssueAppelExtension>;
+  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown, libelle?: string, marque?: unknown, delaiMs?: number) => Promise<IssueAppelExtension>;
   /** Arrête l'espace isolé ; l'appel en cours et ceux qui attendaient rendent « arrete ». Un appel fait ensuite la redémarre. */
   readonly arreter: () => void;
   readonly enMarche: () => boolean;
@@ -342,7 +344,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     return { genre: "demarrage", erreur: r.erreur! };
   };
 
-  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null, libelle = nom, marque = undefined) => {
+  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null, libelle = nom, marque = undefined, delaiMs = undefined) => {
     const demandeA = epoque;
     const suite = file.then(async (): Promise<IssueAppelExtension> => {
       if (demandeA !== epoque) return { genre: "arrete" };
@@ -356,7 +358,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       // l'utilisateur ; l'échéance d'une minuterie, qui arrive plus tard, fait son propre pas.
       services?.debutAppel(libelle, { discrete: sorte === "evenement" && nom !== "minuterie.echeance", marque });
       marqueEnCours = marque;
-      const issue = await attendre<IssueAppelExtension>(id, sorte, delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
+      const issue = await attendre<IssueAppelExtension>(id, sorte, delaiMs ?? delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
       // Fin de l'appel : l'opération automatique est validée s'il a réussi, toute opération est abandonnée sinon.
       marqueEnCours = undefined;
       if (services && !services.finAppel(issue.genre === "fini")) return { genre: "erreur", nom: "operation_refusee", detail: "le dessin a changé pendant la commande" };

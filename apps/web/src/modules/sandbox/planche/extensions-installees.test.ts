@@ -94,3 +94,18 @@ describe("panneau d'une extension (lot 4)", () => {
     expect(clePanneauExtension("essai-panneau", "releve")).toBe("extension:essai-panneau:releve");
   });
 });
+
+describe("outil interactif d'une extension (lot 6)", () => {
+  const essai = JSON.parse(readFileSync(new URL("../../../../e2e/donnees/essai-outil.fadi-addon.json", import.meta.url), "utf8")) as PaquetExtension;
+
+  it("règle d'or : le paquet d'essai est accepté, l'outil a sa propre icône, un raccourci libre et un curseur", () => {
+    expect(jugerImportPaquet(essai).ok).toBe(true);
+    const pris = new Set(REGISTRE_SANDBOX.flatMap((e) => (e.raccourci ? [normaliserRaccourci(e.raccourci)] : [])));
+    expect(essai.fiche.outils).toHaveLength(1);
+    for (const o of essai.fiche.outils) {
+      expect(pris.has(normaliserRaccourci(o.raccourci)), o.id).toBe(false);
+      expect(o.icone.endsWith(".svg")).toBe(true);
+      expect(o.curseur).toBe("croix");
+    }
+  });
+});

@@ -32,6 +32,9 @@
  *   planche.saisie.demander(titre, champs)   fenêtre de saisie ; rend { <id> : valeur… }, ou `null` si elle est annulée.
  *                                            Le temps passé devant la fenêtre ne compte pas dans le délai de la commande.
  *
+ * Lot 6 (permission « outil ») — voir `outils/outil-extension.ts` :
+ *   planche.outil.sur(outil, evenement, fn)    traite un événement de l'outil ; `fn` rend la description à dessiner
+ *
  * Lot 4 (permission « panneau ») — voir `panneaux-extensions.ts` :
  *   planche.panneau.sur(panneau, action, fn)   traite une action appelée par la page du panneau
  *   planche.panneau.envoyer(panneau, donnees)  envoie des données à la page ; faux si le panneau est fermé
@@ -160,6 +163,18 @@ export function creerExecutantExtension(
         const nom = `panneau.${String(panneau)}.${String(action)}`;
         if (!MOTIF_NOM.test(nom)) throw new TypeError("planche.panneau.sur : panneau ou action mal nommé");
         if (typeof fonction !== "function") throw new TypeError("planche.panneau.sur : fonction attendue");
+        traitements.set(nom, fonction as (d: unknown) => unknown);
+      },
+    }),
+    outil: Object.freeze({
+      /**
+       * Traite un événement de l'outil (activation, deplacement, clic, saisie…) ; la fonction rend la description que
+       * la Planche dessine, ou rien pour garder la précédente.
+       */
+      sur: (outil: unknown, evenement: unknown, fonction: unknown): void => {
+        const nom = `outil.${String(outil)}.${String(evenement)}`;
+        if (!MOTIF_NOM.test(nom)) throw new TypeError("planche.outil.sur : outil ou événement mal nommé");
+        if (typeof fonction !== "function") throw new TypeError("planche.outil.sur : fonction attendue");
         traitements.set(nom, fonction as (d: unknown) => unknown);
       },
     }),

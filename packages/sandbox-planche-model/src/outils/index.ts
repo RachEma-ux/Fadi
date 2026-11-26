@@ -6,6 +6,7 @@ import { MACHINES_MODIFICATION } from "./registre-modification.js";
 import { MACHINES_MESURE } from "./registre-mesure.js";
 import { MACHINES_MATERIAU } from "./registre-materiau.js";
 import { MACHINES_PROFILES } from "./registre-profiles.js";
+import { MACHINE_OUTIL_EXTENSION, PREFIXE_OUTIL_EXTENSION } from "./outil-extension.js";
 
 export * from "./machine.js";
 export { poignees, type Poignee } from "./echelle.js";
@@ -26,8 +27,10 @@ export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map(
 );
 
 export function machineParId(id: string): MachineOutil<any> | undefined {
-  return MACHINES.get(id);
+  // Outil d'une extension installée (lot 6 du protocole) : une seule machine, qui fait le lien avec l'extension.
+  return id.startsWith(PREFIXE_OUTIL_EXTENSION) ? MACHINE_OUTIL_EXTENSION : MACHINES.get(id);
 }
+export * from "./outil-extension.js";
 export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
 export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";
 export { ERREUR_SANS_SECTION, CONSIGNE_PROFILE_1, CONSIGNE_PROFILE_2, type EtatProfile } from "./profile.js";
