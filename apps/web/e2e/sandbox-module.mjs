@@ -195,6 +195,7 @@ async function bandeau(page, racine, contexte) {
   check(`${contexte} : Zoom du bandeau choisit l'outil Zoom (Z), bouton enfoncé`, (await outilCourant()) === "zoom" && (await racine.locator('[data-planche-bandeau-actions] [data-action="zoom"]').getAttribute("aria-pressed")) === "true" && /\(Z\)/.test((await racine.locator('[data-planche-bandeau-actions] [data-action="zoom"]').getAttribute("title")) ?? ""), String(await outilCourant()));
   await racine.locator('.planche-outils [data-planche-outil="selection"]').click();
   check(`${contexte} : « Détacher » à droite du bandeau`, ba.detacher && Math.abs(ba.detacher.r - ba.bd.r) <= 1 && ba.detacherTexte === "Détacher", JSON.stringify(ba.detacher));
+  await menusBandeau(page, racine, contexte, ba);
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
   check(`${contexte} : ☰ ouvre le menu sous le bandeau, douze entrées (Extensions en dernier)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 12, JSON.stringify(liste));
@@ -210,6 +211,60 @@ async function bandeau(page, racine, contexte) {
   await info.waitFor({ state: "hidden", timeout: 5000 }).catch(() => undefined);
   if (await racine.locator(".planche-menu-liste").count()) await page.keyboard.press("Escape");
   check(`${contexte} : Échap referme le menu`, (await racine.locator(".planche-menu-liste").count()) === 0);
+}
+
+/**
+ * Menus du bandeau (26 novembre 2026) : Édition, Affichage, Caméra, Fenêtres après le nom de la Planche, avant le centre ;
+ * chaque entrée appelle une fonction existante ; une case laisse le menu ouvert, une commande le ferme ; survoler un
+ * autre titre l'ouvre à sa place ; Échap referme ; sous 1180 px, un seul « Menus ▾ » en sections.
+ */
+async function menusBandeau(page, racine, contexte, ba) {
+  const titres = await racine.locator('[data-planche-menus-bandeau] > .planche-bandeau-menu > button').evaluateAll((l) => l.map((b) => ({ id: b.getAttribute("data-planche-menu-bandeau"), texte: b.textContent.trim(), r: b.getBoundingClientRect().right, l: b.getBoundingClientRect().left })));
+  const nom = await racine.locator("[data-planche-bandeau-nom]").evaluate((e) => e.getBoundingClientRect().right);
+  check(`${contexte} : menus Édition, Affichage, Caméra, Fenêtres après le nom, avant le centre du bandeau`, JSON.stringify(titres.map((x) => x.texte)) === JSON.stringify(["Édition", "Affichage", "Caméra", "Fenêtres"]) && titres[0].l >= nom - 1 && titres.at(-1).r <= ba.actions.l + 1 && (await racine.locator('[data-planche-menus-bandeau][role="menubar"]').count()) === 1, JSON.stringify({ titres, nom, actions: ba.actions?.l }));
+  const titre = (id) => racine.locator(`[data-planche-menu-bandeau="${id}"]`);
+  const entree = (id) => racine.locator(`[data-planche-menu-bandeau-entree="${id}"]`);
+  const options = () => page.evaluate(() => window.fadiPlanche.options());
+  await titre("affichage").click();
+  const liste = racine.locator('[data-planche-menu-bandeau-liste="affichage"]');
+  check(`${contexte} : Affichage ouvre son menu (mode de face Ombré coché, cases Arêtes, Axes, Guides…)`, (await liste.isVisible()) && (await entree("mode-ombre").getAttribute("aria-checked")) === "true" && (await entree("axes").getAttribute("role")) === "menuitemcheckbox", await liste.innerText().catch(() => ""));
+  await entree("mode-filaire").click();
+  const o1 = await options();
+  check(`${contexte} : Affichage ▸ Filaire passe la vue en filaire, le menu reste ouvert`, o1.modeFace === "filaire" && (await liste.isVisible()) && (await entree("mode-filaire").getAttribute("aria-checked")) === "true", o1.modeFace);
+  const axesAvant = (await options()).axes;
+  await entree("axes").click();
+  check(`${contexte} : Affichage ▸ Axes bascule l'option, case mise à jour`, (await options()).axes === !axesAvant && (await entree("axes").getAttribute("aria-checked")) === String(!axesAvant));
+  await entree("axes").click();
+  await entree("mode-ombre").click();
+  await page.screenshot({ path: join(OUT, "sandbox-menu-affichage.png") });
+  await titre("camera").hover();
+  check(`${contexte} : menu ouvert, survoler Caméra ouvre Caméra à sa place`, (await racine.locator('[data-planche-menu-bandeau-liste="camera"]').isVisible()) && (await liste.count()) === 0);
+  await entree("parallele").click();
+  check(`${contexte} : Caméra ▸ Projection parallèle`, (await entree("parallele").getAttribute("aria-checked")) === "true");
+  await entree("perspective").click();
+  await page.keyboard.press("Escape");
+  check(`${contexte} : Échap referme le menu et rend le focus au titre`, (await racine.locator("[data-planche-menu-bandeau-liste]").count()) === 0 && (await titre("camera").evaluate((b) => b === b.ownerDocument.activeElement)));
+  await titre("fenetres").click();
+  await entree("panneau-styles").click();
+  check(`${contexte} : Fenêtres ▸ Styles ouvre le panneau et ferme le menu`, (await racine.locator("[data-planche-panneau-icone='styles']").getAttribute("aria-pressed")) === "true" && (await racine.locator("[data-planche-menu-bandeau-liste]").count()) === 0);
+  await titre("fenetres").click();
+  check(`${contexte} : Fenêtres marque le panneau ouvert`, (await entree("panneau-styles").locator(".planche-bandeau-menu-point").count()) === 1);
+  await entree("panneau-styles").click();
+  await titre("edition").click();
+  check(`${contexte} : Édition — Annuler grisé sans opération, Tout sélectionner offert`, (await entree("annuler").getAttribute("aria-disabled")) === "true" && (await entree("tout-selectionner").isVisible()) && /Ctrl/.test(await entree("tout-selectionner").innerText()));
+  await page.mouse.click(700, 600);
+  check(`${contexte} : un clic ailleurs referme le menu`, (await racine.locator("[data-planche-menu-bandeau-liste]").count()) === 0);
+  // Fenêtre plus étroite (1100 px) : un seul « Menus ▾ », qui reprend les quatre menus en sections.
+  const vp = page.viewportSize();
+  await page.setViewportSize({ width: 1100, height: vp.height });
+  await titre("menus").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  const replies = await racine.locator('[data-planche-menus-bandeau] > .planche-bandeau-menu > button').count();
+  await titre("menus").click().catch(() => undefined);
+  const sections = await racine.locator('[data-planche-menu-bandeau-liste="menus"] .planche-bandeau-menu-titre').allInnerTexts().catch(() => []);
+  check(`${contexte} : sous 1180 px, un seul « Menus ▾ » en sections`, replies === 1 && ["Édition", "Affichage", "Caméra", "Fenêtres"].every((x) => sections.includes(x)), JSON.stringify({ replies, sections }));
+  await page.keyboard.press("Escape");
+  await page.setViewportSize(vp);
+  await titre("edition").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
 }
 
 /** Lot 6 : raccourcis harmonisés avec SketchUp — recherche Maj+S, Zoom étendu Maj+Z, Texte 3D Alt+Maj+Z, Diviser Maj+D. */

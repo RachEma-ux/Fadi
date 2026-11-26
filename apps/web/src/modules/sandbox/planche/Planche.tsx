@@ -213,6 +213,7 @@ import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type Options
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
 import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
+import { MenusBandeau, type EntreeMenuBandeau, type MenuBandeau } from "../panneaux/MenusBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
 import { largeurVueEcranLarge } from "./ecran-large";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
@@ -491,6 +492,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [outilsReplies, setOutilsReplies] = useState(true);
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  // Menus du bandeau (26 novembre 2026) : sous 1180 px de large, les quatre menus se rangent sous « Menus ▾ ».
+  const [menusReplies, setMenusReplies] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches);
   const colonneRef = useRef<HTMLElement | null>(null);
   // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
   const prefsSandbox = usePreferencesSandbox();
@@ -1762,7 +1765,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     };
     if (mq.matches !== etroitRef.current) maj();
     mq.addEventListener("change", maj);
-    return () => mq.removeEventListener("change", maj);
+    const mqMenus = hote.matchMedia("(max-width: 1180px)");
+    const majMenus = () => setMenusReplies(mqMenus.matches);
+    majMenus();
+    mqMenus.addEventListener("change", majMenus);
+    return () => {
+      mq.removeEventListener("change", maj);
+      mqMenus.removeEventListener("change", majMenus);
+    };
   }, [detache]);
 
   // --- Vue three.js : créée une fois, détruite au démontage.
@@ -3671,6 +3681,89 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     detache === "fenetre"
       ? { id: "fermer-rattacher", picto: "fermer" as const, libelle: t("planche.fermer-rattacher"), titre: t("planche.fermer-rattacher"), onClick: rattacher, attributs: { "data-planche-detacher": "", "data-planche-fermer-rattacher": "" } }
       : actionDetacher;
+  /**
+   * Menus du bandeau (26 novembre 2026, ordinateur) : Édition, Affichage, Caméra, Fenêtres. Chaque entrée appelle une
+   * fonction que la Planche offre déjà (raccourci, clic droit, panneaux Styles / Affichage / Scènes, colonne) ; rien de
+   * nouveau n'est écrit dans la Planche par Affichage et Caméra (R10).
+   */
+  const nbSelection = selectionRef.current.length;
+  const occsSelection = selectionDe("occurrences").length;
+  const cmd = (id: string, libelle: string, onClick: () => void, extra: { raccourci?: string; disabled?: boolean; coche?: boolean } = {}): EntreeMenuBandeau => ({ genre: "commande", id, libelle, onClick, ...extra });
+  const caseAffichage = (id: string, libelle: string, cle: "aretes" | "aretesArriere" | "rayonsX" | "sol" | "axes" | "guides" | "plansDeCoupe" | "couleurParBalise" | "objetsMasques"): EntreeMenuBandeau => ({ genre: "case", id, libelle, coche: options[cle], onClick: () => majOptions({ [cle]: !options[cle] }) });
+  const scenesModele = Object.values(hist.present.modele.annotations?.scenes ?? {});
+  const outilZoomEtendu = outilParId("zoom-etendu");
+  const menusBandeau: readonly MenuBandeau[] = [
+    {
+      id: "edition",
+      libelle: t("planche.menus.edition"),
+      entrees: [
+        cmd("annuler", t("planche.annuler"), annulerPas, { raccourci: afficherRaccourci("Ctrl+Z"), disabled: readOnly || opAnnuler === null }),
+        cmd("retablir", t("planche.retablir"), retablirPas, { raccourci: afficherRaccourci("Ctrl+Y"), disabled: readOnly || opRetablir === null }),
+        { genre: "separateur" },
+        cmd("couper", t("planche.menus.couper"), () => copierSelection(true), { raccourci: afficherRaccourci("Ctrl+X"), disabled: readOnly || nbSelection === 0 }),
+        cmd("copier", t("planche.menus.copier"), () => copierSelection(false), { raccourci: afficherRaccourci("Ctrl+C"), disabled: nbSelection === 0 }),
+        cmd("coller", t("planche.menu.coller"), collerSelection, { raccourci: afficherRaccourci("Ctrl+V"), disabled: readOnly }),
+        { genre: "separateur" },
+        cmd("tout-selectionner", t("planche.menus.tout-selectionner"), () => etendre("tout"), { raccourci: afficherRaccourci("Ctrl+A") }),
+        cmd("inverser-selection", t("planche.menu.sel.inverser"), () => etendre("inverser"), { raccourci: afficherRaccourci("Ctrl+Maj+I") }),
+        cmd("meme-balise", t("planche.menu.sel.balise"), () => etendre("meme-balise"), { disabled: occsSelection === 0 }),
+        cmd("meme-materiau", t("planche.menu.sel.materiau"), () => etendre("meme-materiau"), { disabled: nbSelection === 0 }),
+        { genre: "separateur" },
+        cmd("effacer", t("planche.menu.effacer"), effacerSelection, { disabled: readOnly || nbSelection === 0 }),
+        cmd("masquer", t("planche.menu.masquer"), masquerSelection, { disabled: readOnly || nbSelection === 0 }),
+        cmd("verrouiller", t("planche.menu.verrouiller"), () => verrouillerSelection(true), { disabled: readOnly || occsSelection === 0 }),
+        cmd("deverrouiller", t("planche.menu.deverrouiller"), () => verrouillerSelection(false), { disabled: readOnly || occsSelection === 0 }),
+      ],
+    },
+    {
+      id: "affichage",
+      libelle: t("planche.menus.affichage"),
+      entrees: [
+        { genre: "titre", libelle: t("planche.styles.mode") },
+        ...(["ombre", "monochrome", "filaire", "lignes-cachees"] as const).map((m): EntreeMenuBandeau => ({ genre: "radio", id: `mode-${m}`, libelle: t(`planche.styles.mode.${m}`), coche: options.modeFace === m, onClick: () => majOptions({ modeFace: m }) })),
+        { genre: "separateur" },
+        caseAffichage("aretes", t("planche.styles.aretes"), "aretes"),
+        caseAffichage("aretes-arriere", t("planche.styles.aretes-arriere"), "aretesArriere"),
+        caseAffichage("rayons-x", t("planche.styles.rayons-x"), "rayonsX"),
+        caseAffichage("sol", t("planche.styles.sol"), "sol"),
+        { genre: "separateur" },
+        caseAffichage("axes", t("planche.affichage.axes"), "axes"),
+        caseAffichage("guides", t("planche.affichage.guides"), "guides"),
+        caseAffichage("plans", t("planche.affichage.plans"), "plansDeCoupe"),
+        caseAffichage("couleur-balise", t("planche.affichage.couleur-balise"), "couleurParBalise"),
+        caseAffichage("objets-masques", t("planche.affichage.objets-masques"), "objetsMasques"),
+        { genre: "separateur" },
+        cmd("reafficher-tout", t("planche.menus.reafficher-tout"), () => reafficher("tout"), { disabled: readOnly }),
+        cmd("plus-affichage", t("planche.menus.plus-options"), () => setPanneau("affichage")),
+      ],
+    },
+    {
+      id: "camera",
+      libelle: t("planche.menus.camera"),
+      entrees: [
+        { genre: "titre", libelle: t("planche.scenes.vues") },
+        ...(["dessus", "sud", "est", "nord", "ouest", "dessous", "iso"] as const).map((v) => cmd(`vue-${v}`, t(`planche.scenes.vue.${v}`), () => vueStandard(v))),
+        { genre: "separateur" },
+        { genre: "radio", id: "perspective", libelle: t("planche.scenes.perspective"), coche: camera.projection === "perspective", onClick: () => poserProjection("perspective") },
+        { genre: "radio", id: "parallele", libelle: t("planche.scenes.parallele"), coche: camera.projection === "parallele", onClick: () => poserProjection("parallele") },
+        cmd("champ", `${t("planche.scenes.champ")}…`, () => setPanneau("scenes")),
+        { genre: "separateur" },
+        cmd("zoom-selection", t("planche.menu.zoom-selection"), zoomSelection, { disabled: nbSelection === 0 }),
+        ...(outilZoomEtendu ? [cmd("zoom-etendu", nomOutil(outilZoomEtendu), () => choisirOutil("zoom-etendu"), { raccourci: afficherRaccourci(raccourciOutil(outilZoomEtendu)!) })] : []),
+        ...(scenesModele.length > 0 ? [{ genre: "separateur" } as const, { genre: "titre", libelle: t("planche.scenes.mes") } as const, ...scenesModele.map((sc) => cmd(`scene-${sc.id}`, sc.nom, () => appliquerScene(sc)))] : []),
+      ],
+    },
+    {
+      id: "fenetres",
+      libelle: t("planche.menus.fenetres"),
+      entrees: [
+        ...COLONNE.filter(({ id }) => !masquees.has(`panneau:${id}`)).map(({ id }) => cmd(`panneau-${id}`, t(`panneau.${id}` as "panneau.info-entite"), () => setPanneau(panneau === id ? null : id), { coche: panneau === id })),
+        ...(panneauxInstalles.length > 0
+          ? [{ genre: "titre", libelle: t("planche.menus.extensions") } as const, ...panneauxInstalles.map((x) => cmd(`panneau-${x.cle}`, x.titre, () => setPanneauExtension(panneauExtensionOuvert?.cle === x.cle ? null : { extension: x.paquet.fiche.id, panneau: x.id }), { coche: panneauExtensionOuvert?.cle === x.cle }))]
+          : []),
+      ],
+    },
+  ];
   const barreActions = etroit ? (
     <BarreActions
       // Téléphone : même barre flottante, même ordre qu'avant.
@@ -3770,6 +3863,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
           <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
         </p>
+        {!etroit && <MenusBandeau menus={menusBandeau} replie={menusReplies} />}
         {!etroit && <ActionsBandeau groupes={[groupeHistorique, groupeVue]} />}
         {!etroit && (
           <div className="planche-bandeau-droite" data-planche-bandeau-droite>

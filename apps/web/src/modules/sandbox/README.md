@@ -56,6 +56,14 @@ comportement ni d'apparence.
   Zoom (Z), enfoncé quand il est l'outil courant. Les commandes de groupe (Grouper, Composant, Éclater, Unique, Diviser,
   Diviser la courbe, Isoler) quittent le bandeau sans disparaître : barre « Groupe » de la liste Outils, clic droit et
   clavier. Téléphone : barre flottante inchangée.
+- **Menus du bandeau** (26 novembre 2026, `panneaux/MenusBandeau.tsx`) : Édition, Affichage, Caméra et Fenêtres juste
+  après le nom ; ☰ reste le menu Fichier. Aucune fonction nouvelle : Édition (Annuler, Rétablir, Couper, Copier, Coller,
+  sélection, Effacer, Masquer, Verrouiller), Affichage (panneaux Styles et Affichage réunis : mode de face, arêtes,
+  X-ray, sol, axes, guides, plans de coupe, couleur par balise, objets masqués, Réafficher tout), Caméra (vues standard,
+  perspective / parallèle, champ de vision, zoom, Mes scènes), Fenêtres (chaque panneau de la colonne, panneaux des
+  extensions actives). Motif « Menubar » : clic, survol d'un titre voisin, flèches, Échap, clic ailleurs ; une case ou
+  un choix radio laisse le menu ouvert. Sous 1180 px de large, un seul « Menus ▾ » en sections. Rien n'est écrit dans
+  la Planche par Affichage et Caméra (R10).
 - **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
   déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
 - **Fenêtre détachée** (24 novembre 2026) : « Détacher » ouvre toujours la fenêtre « image dans l'image » (Document
