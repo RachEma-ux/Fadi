@@ -364,7 +364,7 @@ try {
   // 7. Changement d'utilisateur sur le même navigateur.
   const emailB = `studio-hors-ligne-b-${Date.now()}@example.com`;
   const inscriptionB = await browser.newContext();
-  if (!(await inscrireAvecContexte(inscriptionB.request, BASE, { email: emailB, password: "studio-hors-ligne-ci-123" })).status === 201) throw new Error("inscription de B");
+  if ((await inscrireAvecContexte(inscriptionB.request, BASE, { email: emailB, password: "studio-hors-ligne-ci-123" })).status !== 201) throw new Error("inscription de B");
   // Phase 3 : B accepte l'invitation (aucun ajout direct) avant de quitter sa session d'inscription.
   if (!(await inviterEtAccepter(appelPlaywright(context.request, BASE), appelPlaywright(inscriptionB.request, BASE), projet.id, emailB, "editeur")).ok) throw new Error("invitation de B");
   await inscriptionB.close();
