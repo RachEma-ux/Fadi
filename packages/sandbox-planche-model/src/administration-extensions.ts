@@ -137,7 +137,9 @@ export function controlesPaquet(brouillon: PaquetExtension, autres: readonly Paq
   controles.push({ genre: "fiche", ok: manque === "", detail: manque });
   const entrees = [...f.commandes, ...f.outils];
   const sansIcone = entrees.find((e) => !estDessinSvg(brouillon.pages[e.icone] ?? "") || e.raccourci.trim().length === 0 || !rempli(e.libelle));
-  controles.push({ genre: "commandes", ok: f.commandes.length > 0 && !sansIcone, detail: sansIcone ? sansIcone.id : String(f.commandes.length) });
+  // Une extension faite seulement d'outils ou de panneaux est valable : l'import l'accepte, l'éditeur aussi.
+  const contributions = entrees.length + f.panneaux.length;
+  controles.push({ genre: "commandes", ok: contributions > 0 && !sansIcone, detail: sansIcone ? sansIcone.id : String(entrees.length) });
   const jugement = jugerImportPaquet(brouillon, autres);
   const raccourci = !jugement.ok && jugement.erreur === "raccourci_refuse";
   controles.push({ genre: "raccourcis", ok: !raccourci, detail: raccourci ? jugement.detail : "" });
@@ -150,6 +152,7 @@ export function controlesPaquet(brouillon: PaquetExtension, autres: readonly Paq
 
 export const controlesReussis = (controles: readonly ControlePaquet[]): boolean => controles.every((c) => c.ok);
 
+const estObjet = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const texteDe = (v: unknown): string => (typeof v === "string" ? v : "");
 const bilingueDe = (v: unknown): TexteBilingue => ({ fr: texteDe((v as TexteBilingue | null)?.fr), en: texteDe((v as TexteBilingue | null)?.en) });
 
@@ -183,9 +186,11 @@ export function lireBrouillonPaquet(v: unknown): PaquetExtension | null {
       protocole: texteDe(fiche["protocole"]) || VERSION_PROTOCOLE,
       permissions: tableau<string>(fiche["permissions"]).filter((x): x is PaquetExtension["fiche"]["permissions"][number] => (PERMISSIONS_EXTENSION as readonly string[]).includes(x)),
       commandes: tableau<unknown>(fiche["commandes"]).map(entree),
-      outils: tableau<PaquetExtension["fiche"]["outils"][number]>(fiche["outils"]),
-      panneaux: tableau<PaquetExtension["fiche"]["panneaux"][number]>(fiche["panneaux"]),
-      abonnements: tableau<PaquetExtension["fiche"]["abonnements"][number]>(fiche["abonnements"]),
+      // Une entrée abîmée (nulle, d'un autre type) n'atteint jamais l'éditeur : un outil est remis en forme, un panneau
+      // ou un abonnement illisible est écarté.
+      outils: tableau<unknown>(fiche["outils"]).filter(estObjet).map((e) => ({ ...entree(e), ...(typeof e["curseur"] === "string" ? { curseur: e["curseur"] } : {}) }) as PaquetExtension["fiche"]["outils"][number]),
+      panneaux: tableau<unknown>(fiche["panneaux"]).filter(estObjet) as unknown as PaquetExtension["fiche"]["panneaux"],
+      abonnements: tableau<unknown>(fiche["abonnements"]).filter((x) => typeof x === "string") as unknown as PaquetExtension["fiche"]["abonnements"],
     },
     code: texteDe(p["code"]),
     pages,

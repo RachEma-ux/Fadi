@@ -15,9 +15,9 @@ import { t } from "../../modules/sandbox/messages";
 /** Lit le code sans l'exécuter : `null` s'il s'écrit correctement, sinon le message de l'erreur. */
 export function erreurEcritureCode(code: string): string | null {
   try {
-    // Construire la fonction ne l'appelle pas : seul l'analyseur du navigateur lit le texte.
-    const Asynchrone = Object.getPrototypeOf(async () => undefined).constructor as new (...args: string[]) => unknown;
-    new Asynchrone("planche", code);
+    // Construire la fonction ne l'appelle pas : seul l'analyseur du navigateur lit le texte. Même forme que le
+    // chargement d'une extension (`creerExecutantExtension`) : fonction ordinaire, en mode strict.
+    new Function("planche", `"use strict";\n${code}`);
     return null;
   } catch (e) {
     return e instanceof Error ? e.message : String(e);

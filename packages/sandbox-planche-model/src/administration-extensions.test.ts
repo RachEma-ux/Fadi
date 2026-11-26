@@ -74,5 +74,19 @@ describe("administration des extensions ajoutées", () => {
     expect(lu.code).toBe("");
     expect(lu.pages).toEqual({ "a.svg": "<svg></svg>" });
     for (const v of [null, "texte", [], { code: "x" }]) expect(lireBrouillonPaquet(v)).toBeNull();
+    // Des entrées abîmées n'atteignent pas l'éditeur : les contrôles se lisent sans erreur.
+    const troue = lireBrouillonPaquet({ fiche: { id: "troue", outils: [null, 3, { id: "trait", curseur: "croix" }], panneaux: [null, { id: "p" }], abonnements: [null, "selection"] }, code: "" })!;
+    expect(troue.fiche.outils).toEqual([{ id: "trait", libelle: { fr: "", en: "" }, icone: "", raccourci: "", curseur: "croix" }]);
+    expect(troue.fiche.panneaux).toEqual([{ id: "p" }]);
+    expect(troue.fiche.abonnements).toEqual(["selection"]);
+    expect(() => controlesPaquet(troue, [], null)).not.toThrow();
+  });
+
+  it("une extension faite d'un seul outil passe les contrôles", () => {
+    const p = essai();
+    const outil = { ...p.fiche.commandes[0]!, id: "trait" };
+    const seul = { ...p, fiche: { ...p.fiche, commandes: [], outils: [outil], permissions: [...new Set([...p.fiche.permissions, "outil" as const])] } };
+    expect(controlesPaquet(seul, [], null).find((c) => c.genre === "commandes")).toMatchObject({ ok: true, detail: "1" });
+    expect(controlesPaquet({ ...seul, fiche: { ...seul.fiche, outils: [] } }, [], null).find((c) => c.genre === "commandes")?.ok).toBe(false);
   });
 });
