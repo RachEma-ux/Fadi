@@ -12,6 +12,7 @@
 - [ ] DESIGN-L3 — Étape : saisie invalide sans effacement (#416), PR #421.
 - [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 remise (#417), branche `design/l4-action-utile`.
 - [ ] DESIGN-L5 — Navigation téléphone : préparation masquée (#429).
+- [ ] DESIGN-L6 — Navigation téléphone : barre du bas active, rail masqué (#430).
 
 ## Terminé
 

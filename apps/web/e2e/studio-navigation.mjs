@@ -1676,12 +1676,12 @@ try {
   mobile.setDefaultTimeout(20000);
   mobile.on("pageerror", (e) => erreurs.push(`mobile : ${e.message}`));
   await mobile.goto(`${BASE}/accueil`);
-  const entreeMobile = mobile.locator("#workspace-navigation a[data-nav-studio]");
+  // Lot Design L6 : au téléphone (≤ 700 px), la navigation de Fadi est la barre du bas ; « Studio » y est un lien vers
+  // l'accueil Studio (`/studio`), qui propose les quatre domaines. Le menu dépliable des domaines reste au rail du bureau.
+  const entreeMobile = mobile.locator('[data-fd-barre-bas] [data-fd-entree="studio"]');
   await entreeMobile.waitFor({ state: "visible" }).catch(() => {});
-  check("NAV-001 mobile : entrée Studio présente et visible", await entreeMobile.isVisible());
-  const basculeMobile = mobile.locator("[data-studio-menu-lateral-bascule]");
-  await basculeMobile.tap();
-  check("menu Studio (tactile) : le chevron déplie les quatre domaines", (await basculeMobile.getAttribute("aria-expanded")) === "true" && (await mobile.locator("[data-studio-menu-domaine]:visible").count()) === 4);
+  check("NAV-001 mobile : entrée Studio présente et visible (barre du bas)", await entreeMobile.isVisible() && await entreeMobile.getAttribute("href") === "/studio");
+  check("NAV-001 mobile : rail et son menu des domaines masqués au téléphone", !(await mobile.locator("#workspace-navigation a[data-nav-studio]").isVisible()) && (await mobile.locator("[data-studio-menu-lateral-bascule]:visible").count()) === 0);
   await entreeMobile.tap();
   await mobile.waitForURL(`${BASE}/studio`);
   await mobile.goto(`${base}?domaine=documentation`);

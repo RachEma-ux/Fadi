@@ -331,10 +331,11 @@ try {
   check("I-5 : téléphone, boutons de planche de 44 px ; échelle dans la barre d'état", m.planches.length === 3 && m.planches.every((h) => h >= 44) && m.echelle, m.planches.join(","));
   // RISQ-02 : l'ancien mode immersif (qui supprimait la barre latérale) n'est pas réemployé par Studio, au gabarit téléphone.
   const immersif = await mobile.evaluate(() => {
-    const barre = document.querySelector(".app-sidebar"), r = barre?.getBoundingClientRect();
+    // Lot Design L6 : au téléphone, la navigation de Fadi est la barre du bas (le rail est masqué sous 700 px).
+    const barre = document.querySelector("[data-fd-barre-bas]"), r = barre?.getBoundingClientRect();
     return { immersif: document.body.classList.contains("atelier-immersive"), barre: !!barre && getComputedStyle(barre).display !== "none" && getComputedStyle(barre).visibility !== "hidden" && !!r && r.width > 0 && r.height > 0 };
   });
-  check("RISQ-02 téléphone : sur la planche de Studio, la barre latérale de Fadi reste affichée, aucun mode immersif", !immersif.immersif && immersif.barre && await mobile.locator(".app-sidebar").isVisible(), JSON.stringify(immersif));
+  check("RISQ-02 téléphone : sur la planche de Studio, la navigation de Fadi (barre du bas) reste affichée, aucun mode immersif", !immersif.immersif && immersif.barre && await mobile.locator("[data-fd-barre-bas]").isVisible(), JSON.stringify(immersif));
   const menu = mobile.locator("[data-studio-domaines-menu]");
   check("téléphone : le menu nomme le domaine affiché", ((await menu.textContent()) ?? "").includes("Dessin et modélisation") && (await menu.getAttribute("aria-expanded")) === "false");
   await menu.focus();

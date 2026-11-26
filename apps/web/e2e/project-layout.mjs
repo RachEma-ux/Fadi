@@ -59,7 +59,7 @@ async function measure(label, module, width, expanded) {
     const content = [...document.querySelectorAll(selector)].map(box);
     const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter"));
     return { topbar: box(document.querySelector(".fadi-topbar")), nav: box(nav), workspace: box(workspace), main: box(main), content,
-      gutter, sidebar: box(document.querySelector(".app-sidebar")),
+      gutter, sidebar: box(document.querySelector(".app-sidebar")), barreBas: box(document.querySelector("[data-fd-barre-bas]")),
       railState: document.querySelector(".fadi-shell")?.getAttribute("data-sidebar"),
       immersive: document.body.classList.contains("atelier-immersive"),
       documentWidth: document.documentElement.scrollWidth, viewport: innerWidth,
@@ -72,7 +72,9 @@ async function measure(label, module, width, expanded) {
   check(label + ": navigation immédiatement sous l'en-tête", data.topbar?.height > 0 && data.nav?.height > 0 && near(data.nav.top, data.topbar.bottom), data);
   check(label + ": gabarit pleine largeur", data.main && near(data.main.left, data.workspace.left) && near(data.main.right, data.workspace.right), data);
   check(label + ": cartes chargées et étendues entre les marges communes", data.content.length > 0 && data.content.every((card) => card.height > 0 && near(card.left, data.workspace.left + data.gutter) && near(card.right, data.workspace.right - data.gutter)), data);
-  check(label + ": barre latérale conservée", data.sidebar?.width > 0 && data.sidebar?.height > 0 && data.railState === (expanded ? "expanded" : "collapsed"), data);
+  // Lot Design L6 : rail au-dessus de 700 px, barre du bas en dessous ; jamais les deux.
+  if (width <= 700) check(label + ": barre du bas affichée, rail masqué", data.barreBas?.height > 0 && !(data.sidebar?.width > 0), data);
+  else check(label + ": barre latérale conservée, barre du bas masquée", data.sidebar?.width > 0 && data.sidebar?.height > 0 && !(data.barreBas?.height > 0) && data.railState === (expanded ? "expanded" : "collapsed"), data);
   check(label + ": aucun débordement horizontal de la page", data.documentWidth <= data.viewport + 1, data.overflow);
   check(label + ": aucun plein écran automatique", !data.immersive);
   if (module === "atelier") {
@@ -98,7 +100,7 @@ try {
   if (!initialStepsResponse.ok()) throw new Error("Lecture des étapes de la référence de test impossible");
   const initialSteps = await initialStepsResponse.json();
   const url = (module) => module === "pilotage" ? `${root}/pilotage` : module === "accueil" ? root : `${root}?module=${module}`;
-  const cases = [[1920, 1080, false], [1920, 1080, true], [1440, 900, false], [1440, 900, true], [1024, 768, false], [768, 1024, false], [390, 844, false]];
+  const cases = [[1920, 1080, false], [1920, 1080, true], [1440, 900, false], [1440, 900, true], [1024, 768, false], [768, 1024, false], [701, 900, false], [700, 900, false], [412, 839, false], [390, 844, false]];
   for (const [width, height, expanded] of cases) {
     await page.setViewportSize({ width, height });
     for (const [module] of modules) {
