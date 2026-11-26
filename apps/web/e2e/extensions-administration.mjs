@@ -90,17 +90,37 @@ try {
   check("liste : sous-titre, créer, importer, bilan", /ce que la plateforme propose à tous les comptes/.test(await racine.innerText()) && (await racine.locator("[data-admin-creer]").textContent()) === "+ Créer une extension" && (await racine.locator("[data-admin-importer]").textContent()) === "Importer un fichier…" && new RegExp(`${fadi} fournies par Fadi`).test(await racine.locator("[data-admin-bilan]").textContent()));
   await page.screenshot({ path: join(OUT, "1-administration-liste.png") });
 
-  // Réglage d'une extension fournie par Fadi : gardé au rechargement.
-  await ligne("emplacement").locator("[data-admin-etat]").selectOption("experimentale");
-  await page.waitForFunction(() => document.querySelector('[data-admin-extension="emplacement"] [data-admin-etat]')?.value === "experimentale" && !document.querySelector('[data-admin-extension="emplacement"] [data-admin-etat]').disabled);
-  await ligne("emplacement").locator("[data-admin-origine]").click();
-  await ligne("emplacement").locator('[data-admin-origine][aria-checked="true"]').waitFor();
+  // Réglage d'une extension fournie par Fadi : gardé au rechargement. L'état de départ dépend de ce que les recettes
+  // précédentes ont laissé en base : il est lu, changé pour son contraire, puis remis.
+  const pret = (id) => page.waitForFunction((x) => { const l = document.querySelector(`[data-admin-extension="${x}"]`); return !!l && !l.querySelector("[data-admin-etat]").disabled && !l.querySelector("[data-admin-origine]").disabled; }, id);
+  const reglerEtat = async (id, etat) => {
+    await pret(id);
+    if ((await ligne(id).locator("[data-admin-etat]").inputValue()) === etat) return;
+    const reponse = page.waitForResponse((r) => r.request().method() === "PATCH" && /\/admin\/addons\//.test(r.url()));
+    await ligne(id).locator("[data-admin-etat]").selectOption(etat);
+    await reponse;
+    await page.waitForFunction(([x, e]) => document.querySelector(`[data-admin-extension="${x}"] [data-admin-etat]`)?.value === e, [id, etat]);
+    await pret(id);
+  };
+  const reglerOrigine = async (id, voulu) => {
+    await pret(id);
+    if ((await ligne(id).locator("[data-admin-origine]").getAttribute("aria-checked")) === String(voulu)) return;
+    const reponse = page.waitForResponse((r) => r.request().method() === "PATCH" && /\/admin\/addons\//.test(r.url()));
+    await ligne(id).locator("[data-admin-origine]").click();
+    await reponse;
+    await ligne(id).locator(`[data-admin-origine][aria-checked="${voulu}"]`).waitFor();
+    await pret(id);
+  };
+  const etatDepart = await ligne("emplacement").locator("[data-admin-etat]").inputValue();
+  const origineDepart = (await ligne("emplacement").locator("[data-admin-origine]").getAttribute("aria-checked")) === "true";
+  const etatVoulu = etatDepart === "experimentale" ? "disponible" : "experimentale";
+  await reglerEtat("emplacement", etatVoulu);
+  await reglerOrigine("emplacement", !origineDepart);
   await ouvrirAdministration();
-  check("extension fournie par Fadi : état et « installée d'origine » réglés, gardés au rechargement", (await ligne("emplacement").locator("[data-admin-etat]").inputValue()) === "experimentale" && (await ligne("emplacement").locator("[data-admin-origine]").getAttribute("aria-checked")) === "true");
-  await ligne("emplacement").locator("[data-admin-origine]").click();
-  await ligne("emplacement").locator('[data-admin-origine][aria-checked="false"]').waitFor();
-  await ligne("emplacement").locator("[data-admin-etat]").selectOption("disponible");
-  await page.waitForFunction(() => document.querySelector('[data-admin-extension="emplacement"] [data-admin-etat]')?.value === "disponible" && !document.querySelector('[data-admin-extension="emplacement"] [data-admin-etat]').disabled);
+  await pret("emplacement");
+  check("extension fournie par Fadi : état et « installée d'origine » réglés, gardés au rechargement", (await ligne("emplacement").locator("[data-admin-etat]").inputValue()) === etatVoulu && (await ligne("emplacement").locator("[data-admin-origine]").getAttribute("aria-checked")) === String(!origineDepart));
+  await reglerOrigine("emplacement", origineDepart);
+  await reglerEtat("emplacement", etatDepart);
 
   // ——— 2. Import accepté : rien n'est installé avant l'accord.
   await racine.locator("[data-admin-fichier]").setInputFiles(fichier(bon, `${ID}.fadi-addon.json`));
