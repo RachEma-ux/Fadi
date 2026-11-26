@@ -21,7 +21,7 @@ describe("icônes de la barre latérale", () => {
     expect(debut).toBeGreaterThan(0);
     expect(fin).toBeGreaterThan(debut);
     expect(liste.map((e) => e.libelle).sort()).toEqual(
-      ["Accueil", "Administration", "Bibliothèque", "Collaboration", "Console", "Extensions", "Organisations", "Paramètres", "Projets", "Revues externes", "Studio"].sort());
+      ["Accueil", "Administration", "Bibliothèque", "Collaboration", "Console", "Extensions", "Harmonie", "Organisations", "Paramètres", "Projets", "Revues externes", "Studio"].sort());
   });
 
   it("donne à chaque entrée une icône qui n'appartient qu'à elle", () => {
@@ -32,5 +32,6 @@ describe("icônes de la barre latérale", () => {
     expect(liste.find((e) => e.libelle === "Collaboration")?.icone).toBe("people");
     expect(liste.find((e) => e.libelle === "Organisations")?.icone).toBe("organization");
     expect(liste.find((e) => e.libelle === "Extensions")?.icone).toBe("puzzle");
+    expect(liste.find((e) => e.libelle === "Harmonie")?.icone).toBe("sparkle");
   });
 });
