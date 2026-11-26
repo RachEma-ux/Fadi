@@ -11125,6 +11125,8 @@
 "Compte anonymisé par l’administration": "Account anonymised by the administration",
 "Promotion administrateur par le script d’exploitation": "Promoted to administrator by the operations script",
 "Réglage d’une extension modifié": "Add-on setting changed",
+"Extension importée": "Add-on imported",
+"Extension retirée de la plateforme": "Add-on removed from the platform",
 "Extensions": "Add-ons",
 "Fonctions supplémentaires de la Planche. Vos choix suivent votre compte.": "Extra features for the board. Your choices follow your account.",
 "Hors connexion : installer ou désinstaller une extension exige le réseau.": "Offline: installing or uninstalling an add-on needs the network.",

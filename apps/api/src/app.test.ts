@@ -3090,6 +3090,105 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(Number((await pool.query("SELECT count(*)::int AS n FROM addon_platform_settings")).rows[0].n)).toBe(0);
       expect(await auditCount("admin.addon.updated", "bois")).toBe(0);
     });
+
+    describe("extensions installées (protocole des extensions, lot 3)", () => {
+      const paquet = (): { fiche: { id: string; version: string; commandes: { raccourci: string }[] }; code: string; pages: Record<string, string> } =>
+        JSON.parse(readFileSync(new URL("../../web/e2e/donnees/essai-commandes.fadi-addon.json", import.meta.url), "utf8"));
+      const nombre = async () => Number((await pool.query("SELECT count(*)::int AS n FROM addon_packages")).rows[0].n);
+
+      it("réservé à l'administrateur ; la lecture par un compte exige une session", async () => {
+        const plain = await account("paquets-simple");
+        expect((await plain.a.get("/admin/addons/paquets")).status).toBe(404);
+        expect((await plain.a.post("/admin/addons/paquets").send(paquet())).status).toBe(404);
+        expect((await plain.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(404);
+        expect((await agent().post("/admin/addons/paquets").send(paquet())).status).toBe(404);
+        expect((await agent().get("/sandbox/preferences/extensions")).status).toBe(401);
+        expect((await plain.a.get("/sandbox/preferences/extensions")).body).toEqual({ extensions: [] });
+        expect(await nombre()).toBe(0);
+      });
+
+      it("import : validé, rangé, journalisé, puis rendu entier à tout compte ; un second import remplace", async () => {
+        const boss = await admin();
+        const importe = await boss.a.post("/admin/addons/paquets").send(paquet());
+        expect(importe.status).toBe(201);
+        expect(importe.body.paquet).toMatchObject({ id: "essai-commandes", version: "1.0.0", auteur: "Fadi", commandes: 5, servie: true, importedBy: boss.id, nom: { fr: "Essai des commandes" } });
+        expect(JSON.stringify(importe.body)).not.toContain("planche.sur(");
+        expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(1);
+
+        const liste = await boss.a.get("/admin/addons/paquets");
+        expect(liste.body.paquets.map((f: { id: string }) => f.id)).toEqual(["essai-commandes"]);
+        const user = await account("paquets-compte");
+        const recu = await user.a.get("/sandbox/preferences/extensions");
+        expect(recu.status).toBe(200);
+        expect(recu.headers["cache-control"]).toBe("private, no-store");
+        expect(recu.body.extensions).toHaveLength(1);
+        expect(recu.body.extensions[0]).toEqual(paquet());
+
+        const suivant = paquet();
+        suivant.fiche.version = "1.1.0";
+        const remplace = await boss.a.post("/admin/addons/paquets").send(suivant);
+        expect(remplace.status).toBe(200);
+        expect(remplace.body.paquet.version).toBe("1.1.0");
+        expect(await nombre()).toBe(1);
+        const journal = (await pool.query("SELECT actor_id, target_type, metadata FROM admin.audit_log WHERE action = 'admin.addon.package.imported' AND target_id = 'essai-commandes' ORDER BY id")).rows;
+        expect(journal).toHaveLength(2);
+        expect(journal[0]).toMatchObject({ actor_id: boss.id, target_type: "addon", metadata: { version: "1.0.0", versionRemplacee: null, auteur: "Fadi", commandes: 5 } });
+        expect(journal[1].metadata).toMatchObject({ version: "1.1.0", versionRemplacee: "1.0.0" });
+        // Le journal ne garde pas le code.
+        expect(JSON.stringify(journal)).not.toContain("planche.sur(");
+        expect((await user.a.get("/sandbox/preferences/extensions")).body.extensions[0].fiche.version).toBe("1.1.0");
+      });
+
+      it("refus motivés : rien n'est rangé ni journalisé", async () => {
+        const boss = await admin();
+        const refus = async (corps: unknown, motif: string) => {
+          const r = await boss.a.post("/admin/addons/paquets").send(corps as object);
+          expect(r.status, motif).toBe(400);
+          expect(r.body, motif).toMatchObject({ error: "invalid_package", motif });
+          expect(typeof r.body.detail, motif).toBe("string");
+        };
+        await refus({ format: "fadi-addon/1" }, "forme_invalide");
+        await refus({ ...paquet(), format: "fadi-addon/9" }, "version_non_prise_en_charge");
+        await refus({ ...paquet(), code: "x".repeat(200_001) }, "hors_bornes");
+        const reserve = paquet();
+        reserve.fiche.id = "bois";
+        await refus(reserve, "identifiant_reserve");
+        const pris = paquet();
+        pris.fiche.commandes[0]!.raccourci = "Ctrl+G";
+        await refus(pris, "raccourci_refuse");
+        const icone = paquet();
+        icone.pages["poser-boite.svg"] = "<p>pas un dessin</p>";
+        await refus(icone, "icone_invalide");
+        expect(await nombre()).toBe(0);
+        // Un raccourci déjà tenu par une autre extension installée est refusé lui aussi.
+        expect((await boss.a.post("/admin/addons/paquets").send(paquet())).status).toBe(201);
+        const autre = paquet();
+        autre.fiche.id = "autre-essai";
+        await refus(autre, "raccourci_refuse");
+        expect(await nombre()).toBe(1);
+        expect(await auditCount("admin.addon.package.imported", "autre-essai")).toBe(0);
+      });
+
+      it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
+        const boss = await admin();
+        const gros = paquet();
+        gros.pages["notice.txt"] = "a".repeat(1_000_000 - gros.code.length - Object.values(gros.pages).reduce((n, t) => n + t.length, 0));
+        expect((await boss.a.post("/admin/addons/paquets").send(gros)).status).toBe(201);
+        gros.pages["trop.txt"] = "a".repeat(400_000);
+        expect((await boss.a.post("/admin/addons/paquets").send(gros)).status).toBe(413);
+      });
+
+      it("retrait : l'extension n'est plus rendue aux comptes ; journalisé ; inconnue → 404", async () => {
+        const boss = await admin();
+        expect((await boss.a.post("/admin/addons/paquets").send(paquet())).status).toBe(201);
+        expect((await boss.a.delete("/admin/addons/paquets/fantome")).status).toBe(404);
+        expect((await boss.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(204);
+        expect(await nombre()).toBe(0);
+        expect(await auditCount("admin.addon.package.removed", "essai-commandes")).toBe(1);
+        expect((await boss.a.get("/sandbox/preferences/extensions")).body).toEqual({ extensions: [] });
+        expect((await boss.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(404);
+      });
+    });
   });
 
   describe("10. revue Multi-Arena du module comptes (26 novembre 2026)", () => {

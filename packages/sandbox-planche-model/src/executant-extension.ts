@@ -25,6 +25,12 @@
  *   planche.operation.abandonner()        n'applique rien
  *   planche.selection.lire() / .definir(ids)
  * Une modification faite sans opération ouverte reçoit une opération automatique, validée à la fin du traitement.
+ *
+ * Lot 3 — commandes, avis, saisies. La Planche lance une commande déclarée dans la fiche par la demande
+ * « commande.<id> », avec `{ langue }` (« fr » ou « en ») ; l'extension la traite par `planche.sur("commande.<id>", …)`.
+ *   planche.message.afficher(texte, genre)   avis au-dessus de la barre d'état ; genre « info » (défaut) ou « alerte »
+ *   planche.saisie.demander(titre, champs)   fenêtre de saisie ; rend { <id> : valeur… }, ou `null` si elle est annulée.
+ *                                            Le temps passé devant la fenêtre ne compte pas dans le délai de la commande.
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -94,6 +100,12 @@ export function creerExecutantExtension(
     selection: Object.freeze({
       lire: () => demander("selection.lire"),
       definir: (ids: unknown) => demander("selection.definir", { ids }),
+    }),
+    message: Object.freeze({
+      afficher: (texte: unknown, genre: unknown = "info") => demander("message.afficher", { texte, genre }),
+    }),
+    saisie: Object.freeze({
+      demander: (titre: unknown, champs: unknown) => demander("saisie.demander", { titre, champs }),
     }),
     protocole: VERSION_PROTOCOLE,
     extension: Object.freeze({ id: extension.fiche.id, version: extension.fiche.version }),

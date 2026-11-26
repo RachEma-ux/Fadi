@@ -337,7 +337,8 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
 
 /**
  * Demandes qu'une extension peut adresser à la Planche, avec la permission exigée (`null` : aucune). Lot 1 : le
- * journal ; lot 2 : lecture du modèle, opération, sélection (`services-extensions.ts`). Chaque lot suivant complète
+ * journal ; lot 2 : lecture du modèle, opération, sélection (`services-extensions.ts`) ; lot 3 : avis et saisie
+ * (`saisies-extensions.ts`). Chaque lot suivant complète
  * cette table, et rien d'autre n'est accepté.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
@@ -349,6 +350,8 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "operation.abandonner": "modele.modifier",
   "selection.lire": "selection",
   "selection.definir": "selection",
+  "message.afficher": "messages",
+  "saisie.demander": "messages",
 };
 
 /** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */
