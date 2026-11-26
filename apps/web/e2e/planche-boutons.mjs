@@ -133,7 +133,21 @@ async function auditer(nom, vp, tactile) {
   const T = (sel) => p.locator(sel).first();
 
   // 1. Disposition : aucun bouton recouvert (après défilement dans sa zone), cibles ≥ 44 px au toucher (≥ 36 px dans la bande du bas, volontairement compacte).
-  if (tactile) { const e = await ecran({ x: -3, y: -3, z: 0 }, p); await p.touchscreen.tap(e.x, e.y); }
+  // Premier toucher dans le vide (mode tactile) : sur un point du canevas sans rien par-dessus. Depuis la barre du bas
+  // (L6, #430), la vue du téléphone est plus courte et un point du repère fixé d'avance tombait sur la bascule de la palette.
+  if (tactile) {
+    const vide = await p.evaluate(() => {
+      const cv = document.querySelector("[data-planche-vue] canvas");
+      const b = cv.getBoundingClientRect();
+      for (const fy of [0.25, 0.75, 0.5]) for (const fx of [0.75, 0.25, 0.5]) {
+        const x = b.x + b.width * fx, y = b.y + b.height * fy;
+        if (document.elementFromPoint(x, y) === cv) return { x, y };
+      }
+      return null;
+    });
+    check(`${nom} : un point libre du canevas pour le premier toucher`, !!vide);
+    if (vide) await p.touchscreen.tap(vide.x, vide.y);
+  }
   const boutons = await p.locator("[data-planche] button:visible, [data-planche] input:visible, [data-planche] select:visible").count();
   const defauts = [];
   for (let i = 0; i < boutons; i++) {
