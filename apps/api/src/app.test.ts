@@ -3171,11 +3171,14 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
 
       it("écran d'administration : essai sans écriture, réglage à l'ajout, réglage modifié et journalisé, paquet entier", async () => {
         const boss = await admin();
+        // Le journal garde les lignes des essais précédents : les comptes se lisent par rapport au départ.
+        const importsAvant = await auditCount("admin.addon.package.imported", "essai-commandes");
+        const reglagesAvant = await auditCount("admin.addon.package.updated", "essai-commandes");
         const essai = await boss.a.post("/admin/addons/paquets?essai=1").send(paquet());
         expect(essai.status).toBe(200);
         expect(essai.body.paquet).toMatchObject({ id: "essai-commandes", commandes: 7, remplace: false });
         expect(await nombre()).toBe(0);
-        expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(0);
+        expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(importsAvant);
         expect((await boss.a.post("/admin/addons/paquets?essai=1").send({ format: "fadi-addon/1" })).body).toMatchObject({ error: "invalid_package", motif: "forme_invalide" });
         for (const q of ["etat=retiree", "origine=ailleurs", "installee=peut-etre", "essai=2"]) expect((await boss.a.post(`/admin/addons/paquets?${q}`).send(paquet())).status, q).toBe(400);
         expect(await nombre()).toBe(0);
@@ -3190,9 +3193,9 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
 
         const regle = await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "experimentale", activeParDefaut: true });
         expect(regle.body.paquet).toMatchObject({ etat: "experimentale", activeParDefaut: true, origine: "creee", servie: true });
-        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(1);
+        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(reglagesAvant + 1);
         expect((await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "experimentale" })).status).toBe(200);
-        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(1);
+        expect(await auditCount("admin.addon.package.updated", "essai-commandes")).toBe(reglagesAvant + 1);
         expect((await boss.a.patch("/admin/addons/paquets/essai-commandes").send({ etat: "retiree" })).status).toBe(400);
         expect((await boss.a.patch("/admin/addons/paquets/fantome").send({ etat: "disponible" })).status).toBe(404);
         // Un remplacement garde le réglage en place et l'origine.
