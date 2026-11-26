@@ -5,7 +5,7 @@
  * qu'un mock masquerait. Nécessite une TEST_DATABASE_URL attestée et
  * un schéma déjà provisionné ; essais DB-3 soumis à autorisation distincte.
  */
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { accepterEnBase, exportAccordeEnBase, partager, partagerEnBase } from "./test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
@@ -16,6 +16,8 @@ import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
 import { base32Decode, hotp, stepAt } from "./lib/security/totp.js";
 import { inscrire } from "./test-helpers/inscription.js";
+import { REGISTER_ANSWER } from "./routes/auth.js";
+import { resetMailRuntime } from "./lib/mailer/index.js";
 
 const app = createApp();
 
@@ -147,8 +149,9 @@ describe("auth", () => {
     expect((await pool.query("SELECT count(*)::int AS n FROM users WHERE email = 'nouveau-bob@example.com'")).rows[0].n).toBe(0);
     const inv = (await pool.query("SELECT purpose, invited_by, grant_platform_role, status FROM auth.invitations WHERE email = 'nouveau-bob@example.com'")).rows;
     expect(inv).toEqual([{ purpose: "platform_account", invited_by: null, grant_platform_role: null, status: "pending" }]);
-    // Adresse connue : aucune invitation, un courriel « compte existant » à sa boîte.
-    expect((await pool.query("SELECT count(*)::int AS n FROM auth.invitations WHERE email = 'bob@example.com'")).rows[0].n).toBe(0);
+    // Adresse connue : aucune invitation nouvelle (seule celle, acceptée, de sa propre inscription), un courriel « compte
+    // existant » à sa boîte.
+    expect((await pool.query("SELECT status FROM auth.invitations WHERE email = 'bob@example.com'")).rows).toEqual([{ status: "accepted" }]);
     expect((await pool.query("SELECT template FROM admin.mail_outbox WHERE to_address = 'bob@example.com' ORDER BY created_at DESC LIMIT 1")).rows[0].template).toBe("signup_existing");
     // Une seconde demande renouvelle la même invitation (nouveau lien), sans doublon.
     expect((await fresh.post("/auth/register").send({ email: "nouveau-bob@example.com" })).status).toBe(202);
@@ -158,6 +161,30 @@ describe("auth", () => {
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ email: "nouveau-bob@example.com", platformRole: "user", emailVerified: true });
     expect((await fresh.get("/auth/me")).status).toBe(200);
+  });
+
+  it("inscription : quota du destinataire atteint, le dernier lien délivré reste valable et le refus est journalisé (revue Codex de la PR #428)", async () => {
+    vi.stubEnv("MAIL_TRANSPORT", "console");
+    vi.stubEnv("MAIL_RECIPIENT_HOURLY_LIMIT", "2");
+    resetMailRuntime();
+    try {
+      const email = "quota-bob@example.com";
+      const hash = async () => (await pool.query("SELECT token_hash FROM auth.invitations WHERE email = $1 AND status = 'pending'", [email])).rows.map((r) => r.token_hash);
+      expect((await agent().post("/auth/register").send({ email })).status).toBe(202);
+      expect((await agent().post("/auth/register").send({ email })).status).toBe(202);
+      const delivre = await hash();
+      expect(delivre).toHaveLength(1);
+      const refuse = await agent().post("/auth/register").send({ email });
+      expect(refuse.status).toBe(202);
+      expect(refuse.body).toEqual(REGISTER_ANSWER);
+      expect(await hash()).toEqual(delivre);
+      const derniere = (await pool.query("SELECT status, payload, last_error FROM admin.mail_outbox WHERE to_address = $1 ORDER BY created_at DESC LIMIT 1", [email])).rows[0];
+      expect(derniere).toEqual({ status: "skipped", payload: {}, last_error: "recipient_limit" });
+      expect((await pool.query("SELECT count(*)::int AS n FROM admin.audit_log WHERE action = 'mail.quota_exceeded'")).rows[0].n).toBeGreaterThanOrEqual(1);
+    } finally {
+      vi.unstubAllEnvs();
+      resetMailRuntime();
+    }
   });
 
   it("rejects login with a wrong password using the same error as an unknown user", async () => {

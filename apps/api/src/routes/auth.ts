@@ -135,6 +135,9 @@ const publicUser = (u: ReturnType<typeof toSessionUser>) => {
 const registerSchema = z.object({ email: emailSchema, locale: z.enum(["fr", "en"]).optional() });
 export const REGISTER_ANSWER = { accepted: true, message: "Si cette adresse peut recevoir un nouveau compte, un courriel vient de lui être envoyé : suivez son lien pour choisir votre mot de passe." } as const;
 
+/** Annule le renouvellement du lien d'inscription quand son courriel n'est pas mis en file. */
+const SIGNUP_NOT_SENT = new Error("signup_not_sent");
+
 authRouter.post("/register", perIdentifier(10), async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -150,9 +153,21 @@ authRouter.post("/register", perIdentifier(10), async (req, res) => {
       await audit(tx, { actorId: null, action: "auth.register.existing_account", target: { type: "user", id: existing.id }, metadata: { sent: mail.queued, reason: mail.reason }, ip: clientIp(req) });
       return;
     }
-    const created = await createOrRenewInvitation(tx, { purpose: "platform_account", email, invitedBy: null, ip: clientIp(req) });
-    const mail = await sendAccountMail(email, "signup", { link: publicLink(PUBLIC_PATHS.signup, created.token), expiresAt: formatDate(created.invitation.expiresAt, locale) }, locale, tx);
-    await audit(tx, { actorId: null, action: "auth.register.requested", target: { type: "invitation", id: created.invitation.id }, metadata: { emailHash: emailHash(email), sent: mail.queued, reason: mail.reason }, ip: clientIp(req) });
+    // Quota du destinataire ou du jour atteint (revue Codex de la PR #428) : le renouvellement est annulé, le dernier lien
+    // délivré reste valable ; le refus est consigné hors de la partie annulée (ligne « skipped » sans lien, journal du quota).
+    let outcome: { invitationId: string | null; sent: boolean; reason: string | null } = { invitationId: null, sent: false, reason: null };
+    try {
+      await tx.transaction(async (sp) => {
+        const created = await createOrRenewInvitation(sp, { purpose: "platform_account", email, invitedBy: null, ip: clientIp(req) });
+        const mail = await sendAccountMail(email, "signup", { link: publicLink(PUBLIC_PATHS.signup, created.token), expiresAt: formatDate(created.invitation.expiresAt, locale) }, locale, sp);
+        outcome = { invitationId: created.invitation.id, sent: mail.queued, reason: mail.reason };
+        if (mail.reason === "daily_quota" || mail.reason === "recipient_limit") throw SIGNUP_NOT_SENT;
+      });
+    } catch (e) {
+      if (e !== SIGNUP_NOT_SENT) throw e;
+      outcome = { invitationId: null, sent: false, reason: (await sendAccountMail(email, "signup", {}, locale, tx)).reason };
+    }
+    await audit(tx, { actorId: null, action: "auth.register.requested", target: outcome.invitationId ? { type: "invitation", id: outcome.invitationId } : undefined, metadata: { emailHash: emailHash(email), sent: outcome.sent, reason: outcome.reason }, ip: clientIp(req) });
   });
   res.status(202).json(REGISTER_ANSWER);
 });
