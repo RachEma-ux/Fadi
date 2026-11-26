@@ -112,7 +112,7 @@ try {
     // La promotion ferme les sessions : reconnexion, puis double authentification activée depuis cette session (UM-18).
     const login = await api(admin.ctx, "post", "/auth/login", { email: admin.email, password: admin.password });
     const setup = await api(admin.ctx, "post", "/auth/me/mfa/setup");
-    const enabled = await api(admin.ctx, "post", "/auth/me/mfa/enable", { code: totp(setup.body?.secret ?? "") });
+    const enabled = await api(admin.ctx, "post", "/auth/me/mfa/enable", { password: admin.password, code: totp(setup.body?.secret ?? "") });
     adminReady = login.status === 200 && enabled.status === 200;
     check("administrateur promu, double authentification activée depuis sa session", adminReady, `${login.status} ${setup.status} ${enabled.status}`);
   } else console.log("administrateur : NON EXÉCUTÉ (DATABASE_URL absente pour create-admin.mjs) — couvert par app.test.ts (DB-3).");

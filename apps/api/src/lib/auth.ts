@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { serialize } from "cookie";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { sessions, users, type AccountStatus, type PlatformRole } from "../db/schema.js";
+import { sessions, studioAgentTokens, users, type AccountStatus, type PlatformRole } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { MFA_PENDING_MS, newSessionTimes, SESSION_TOUCH_MS, sessionMfaVerified, sessionValid, slideExpiry } from "./security/auth-policy.js";
 export { sessionMfaVerified };
@@ -122,6 +122,17 @@ export async function revokeUserSessions(userId: string, exceptSessionId: string
     : and(eq(sessions.userId, userId), isNull(sessions.revokedAt));
   const rows = await executor.update(sessions).set({ revokedAt: new Date() }).where(where).returning({ id: sessions.id });
   for (const r of rows) signalerTempsReel({ type: "session-compte", sessionId: r.id });
+  return rows.length;
+}
+
+/**
+ * Révoque tous les jetons d'agent de Studio encore actifs d'un compte (changement ou réinitialisation du mot de passe,
+ * suspension, suppression programmée, anonymisation) : un jeton (jusqu'à 90 jours) ne survit jamais à la perte de
+ * confiance dans le compte. Renvoie le nombre de jetons révoqués.
+ */
+export async function revokeUserAgentTokens(userId: string, executor: Pick<typeof db, "update"> = db): Promise<number> {
+  const rows = await executor.update(studioAgentTokens).set({ revokedAt: new Date() })
+    .where(and(eq(studioAgentTokens.userId, userId), isNull(studioAgentTokens.revokedAt))).returning({ id: studioAgentTokens.id });
   return rows.length;
 }
 

@@ -7,7 +7,10 @@
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { STUDIO_EXTENSION_MCP, studioEvaluerExtension } from "@parcours/atelier-model/studio-agents";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+import { verifyPassword } from "../lib/auth.js";
 import { loadProjectAccess } from "../lib/owned-project.js";
 import { assertAccess, StudioRequestError } from "../lib/studio-commands.js";
 import { avecContrat } from "../lib/studio-contrats.js";
@@ -29,6 +32,11 @@ studioAgentsRouter.get("/agents/jetons", avecContrat(CONTRAT_AGENTS_JETONS_LISTE
 studioAgentsRouter.post("/agents/jetons", avecContrat(CONTRAT_AGENTS_JETON_CREER), endpoint(async (req, res) => {
   const parsed = studioJetonSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const [compte] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, req.user!.id)).limit(1);
+  if (!compte?.passwordHash || !(await verifyPassword(compte.passwordHash, parsed.data.motDePasse))) {
+    res.status(403).json({ error: "invalid_password", message: "Mot de passe incorrect." });
+    return;
+  }
   res.status(201).json(await creerJetonAgent(projet(req), req.user!.id, parsed.data.nom, parsed.data.joursValidite));
 }));
 studioAgentsRouter.post("/agents/jetons/:tokenId/revoquer", avecContrat(CONTRAT_AGENTS_JETON_REVOQUER), endpoint(async (req, res) => { res.json(await revoquerJetonAgent(projet(req), req.user!.id, req.params["tokenId"] as string)); }));

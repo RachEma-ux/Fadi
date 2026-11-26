@@ -353,6 +353,9 @@ par la session d'exploitation du VPS.
 
 ## Points ouverts
 
+- UM-32 (Issue #422) : correctifs livrés en PR, non fusionnés. Reste ouvert : l'inscription répond 409 pour une adresse
+  connue et 201 sinon (énumération par le code, plus par le temps) ; la recherche de participants et l'aperçu d'invitation
+  disent si une adresse a un compte, à des utilisateurs authentifiés (voulu pour inviter, à confirmer).
 - UM-27 : fusionné (PR #270, `2cc038a`) ; aucun déploiement en production.
 - UM-SERVICE : mise en service et recette en préproduction (RUNBOOK §3 bis, §5 à §9) non consignées. Contrôles à relever
   sur le VPS : `fadi-preprod status` (commit en ligne), `/version`, `PREPROD_FADI_ADMIN_ENABLED=true` présent dans

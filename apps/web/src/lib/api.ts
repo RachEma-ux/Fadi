@@ -484,7 +484,7 @@ export const accountApi = {
   revokeOtherSessions: () => request<{ revoked: number }>("/auth/me/sessions", { method: "DELETE" }),
   mfaStatus: () => request<MfaStatus>("/auth/me/mfa"),
   mfaSetup: () => request<MfaSetup>("/auth/me/mfa/setup", { method: "POST" }),
-  mfaEnable: (code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json(withLocale({ code }))),
+  mfaEnable: (password: string, code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json(withLocale({ password, code }))),
   mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json(withLocale({ password, code }))),
   mfaRecoveryCodes: (password: string, code: string) => request<{ recoveryCodes: string[] }>("/auth/me/mfa/recovery-codes", json({ password, code })),
   exportUrl: "/auth/me/export",
