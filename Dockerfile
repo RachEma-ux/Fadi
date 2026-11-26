@@ -51,7 +51,8 @@ COPY --from=build /src/apps/api/scripts/create-admin.mjs ./apps/api/scripts/crea
 COPY --from=build /src/apps/web/dist ./apps/web/dist
 # Volume du terrain haute résolution (TER-02, TER-D5) : point de montage possédé par le compte applicatif, pour qu'un
 # volume nommé vide en hérite (originaux, dérivés, dépôt) ; aucun montage de l'hôte.
-RUN mkdir -p /data/terrain && chown node:node /data/terrain
+# Copie des courriels de recette (préproduction seulement, MAIL_CAPTURE_RECETTE) : même principe, volume nommé.
+RUN mkdir -p /data/terrain /data/courriels && chown node:node /data/terrain /data/courriels
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD ["node", "-e", "fetch('http://localhost:3001/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
