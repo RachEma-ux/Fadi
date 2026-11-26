@@ -54,3 +54,4 @@ Mis à jour : 2026-11-26 (UTC).
 ## Préconditions de clôture
 
 - Critères de chaque Issue de lot testés et documentés ; acceptation du maître d'ouvrage consignée.
+- 2026-11-26 : main b286441e intégré à la pile L0 → L9 avant fusion ; `design-plafonds.json` remesuré sur ce main (couleurs opaques 584, avec alpha 619 : les 6 de plus viennent de #428 / #438). Plafonds verts sur L0.
