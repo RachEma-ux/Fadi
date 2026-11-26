@@ -22,6 +22,8 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Temps réel (Real-time Collaboration) | **Cadrage RTC-0** (documentaire) ; RT-D1 à RT-D3 (Studio seul, canal propre) ; aucun code ; RTC-1 attend les phases 3 et 4 d'Organisations et la PR #282 | [real-time-collaboration/](real-time-collaboration/CONTEXT.md) | [Issue #283](https://github.com/RachEma-ux/Fadi/issues/283) |
 | Axes et repères | **En cours** sous délégation totale (AX-D1) : lots AX-0 à AX-5, Sandbox seul (AX-D2) | [axes/](axes/CONTEXT.md) | [Issue #296](https://github.com/RachEma-ux/Fadi/issues/296) · concept [#260](https://github.com/RachEma-ux/Fadi/issues/260) |
 | Bases de données | **En cours** : analyse et plan (BD-1 à BD-11) ; PR de remédiation ; BD-7 à BD-9 attendent le maître d'ouvrage | [bases-de-donnees/](bases-de-donnees/CONTEXT.md) · [plan](bases-de-donnees/PLAN.md) | [Issue #379](https://github.com/RachEma-ux/Fadi/issues/379) |
+| Design WebApp | **En cours** : conception validée (équipe A), lots L0 à L4 autorisés le 26-11-2026, PR empilées ; aucune acceptation | [design/](design/CONTEXT.md) · [lots](design/PLAN-LOTS.md) | [Issue #412](https://github.com/RachEma-ux/Fadi/issues/412) |
+| Design | À définir | [design/](design/CONTEXT.md) | [Issue #412](https://github.com/RachEma-ux/Fadi/issues/412) |
 
 ## Ouvrir un chantier
 

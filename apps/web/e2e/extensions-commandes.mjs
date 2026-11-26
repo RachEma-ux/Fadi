@@ -47,6 +47,7 @@ async function ouvrir(langue) {
   page.setDefaultTimeout(30000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   if (!enBase) await page.route("**/sandbox/preferences/extensions", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ extensions: [paquet] }) }));
+  // Inscription par le lien du courriel (#428) : adresse sur /inscription, mot de passe sur la page du lien.
   await inscrireDansLaPage(page, `extcmd-${langue}-${Date.now()}@example.com`, "extensions-commandes-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   if (langue === "en") await page.evaluate(() => window.localStorage.setItem("fadi.langue", "en"));
