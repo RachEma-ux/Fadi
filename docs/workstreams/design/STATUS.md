@@ -45,3 +45,4 @@ Mis à jour : 2026-11-26 (UTC).
 - Critères de chaque Issue de lot testés et documentés ; acceptation du maître d'ouvrage consignée.
 - 2026-11-26 : main b286441e intégré à la pile L0 → L9 avant fusion ; `design-plafonds.json` remesuré sur ce main (couleurs opaques 584, avec alpha 619 : les 6 de plus viennent de #428 / #438). Plafonds verts sur L0.
 - 2026-11-26 : `design-releve.mjs` s'inscrit par le lien du courriel (`inscrireDansLaPage`, #428), comme les recettes de main.
+- 2026-11-26 : `extensions-commandes.mjs` (venue de #438) passe aussi à `inscrireDansLaPage` : sur main, elle remplissait encore le mot de passe sur /inscription et échouait (shard planche).
