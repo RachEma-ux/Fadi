@@ -14,6 +14,7 @@
  * Tant qu'une opération est ouverte, l'extension lit son modèle de travail (elle voit ses propres changements) ;
  * l'utilisateur, lui, ne voit rien avant la validation.
  */
+import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
 import { contexte, type Id, type Modele } from "./geometrie-libre.js";
 import { FONCTIONS_MODIFICATION, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
@@ -97,7 +98,7 @@ const estObjet = (v: unknown): v is Record<string, unknown> => !!v && typeof v =
 const refus = (erreur: ErreurProtocole, detail = ""): ReponseService => ({ ok: false, erreur, detail });
 const rendu = (resultat: unknown = null): ReponseService => ({ ok: true, resultat });
 
-export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions">, acces: AccesPlanche): ServicesExtension {
+export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions" | "id">, acces: AccesPlanche): ServicesExtension {
   let operation: Operation | null = null;
   let appel: string | null = null;
 
@@ -176,6 +177,42 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu();
   };
 
+  const erreurDonnees = (motif: MotifDonnees, detail: string): ReponseService => refus(motif === "introuvable" ? "objet_introuvable" : "argument_invalide", detail);
+
+  /** `donnees.lire` : sur le modèle de travail pendant une opération (l'extension relit ce qu'elle vient d'écrire). */
+  const lireDonnees = (donnees: unknown): ReponseService => {
+    const cible = estObjet(donnees) ? lireCibleDonnees(donnees["cible"]) : null;
+    if (!cible) return refus("argument_invalide", "cible : « projet », un identifiant d'objet ou { composant } attendu");
+    const cle = (donnees as Record<string, unknown>)["cle"];
+    if (cle !== undefined && !estCleDonnee(cle)) return refus("argument_invalide", `cle : lettres, chiffres, « . », « _ » ou « - », ${BORNES_DONNEES.cle} caractères au plus`);
+    const lu = lireDonneesExtension(vue().modele(), fiche.id, cible, operation ? operation.dans : acces.dans());
+    if (!lu.ok) return erreurDonnees(lu.motif, lu.detail);
+    if (cle === undefined) return rendu(lu.valeur);
+    return rendu(Object.prototype.hasOwnProperty.call(lu.valeur, cle) ? lu.valeur[cle] : null);
+  };
+
+  /** `donnees.ecrire` et `donnees.effacer` : une modification du dessin, dans l'opération ouverte ou automatique. */
+  const changerDonnees = (donnees: unknown, ecrire: boolean): ReponseService => {
+    const cible = estObjet(donnees) ? lireCibleDonnees(donnees["cible"]) : null;
+    if (!cible) return refus("argument_invalide", "cible : « projet », un identifiant d'objet ou { composant } attendu");
+    const d = donnees as Record<string, unknown>;
+    const cle = d["cle"];
+    if ((ecrire || cle !== undefined) && !estCleDonnee(cle)) return refus("argument_invalide", `cle : lettres, chiffres, « . », « _ » ou « - », ${BORNES_DONNEES.cle} caractères au plus`);
+    const valeur = ecrire ? lireValeurDonnee(d["valeur"]) : undefined;
+    if (ecrire && !valeur) return refus("argument_invalide", `valeur : des données seulement, ${BORNES_DONNEES.valeur} caractères au plus une fois écrites`);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const r = changerDonneesExtension(op.travail.modele(), fiche.id, cible, { ...(typeof cle === "string" ? { cle } : {}), ...(valeur ? { valeur } : {}) }, op.dans);
+    if (!r.ok) return erreurDonnees(r.motif, r.detail);
+    if (r.valeur) {
+      try {
+        op.travail.appliquer(r.valeur);
+      } catch (e) {
+        return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+      }
+    }
+    return rendu();
+  };
+
   return {
     debutAppel: (nom) => {
       appel = nom;
@@ -217,6 +254,12 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
         }
         case "selection.definir":
           return definirSelection(donnees);
+        case "donnees.lire":
+          return lireDonnees(donnees);
+        case "donnees.ecrire":
+          return changerDonnees(donnees, true);
+        case "donnees.effacer":
+          return changerDonnees(donnees, false);
         default:
           return refus("demande_inconnue", nom);
       }

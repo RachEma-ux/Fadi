@@ -135,6 +135,8 @@ export interface ReglagesPlanche {
   readonly alignerCote: "dessus" | "centre" | "exterieur" | "ecran";
   /** (Extension « Emplacement ») Position saisie de la Planche et nord vrai ; absent = non renseigné. */
   readonly emplacement?: Emplacement;
+  /** (Protocole des extensions, lot 5) Données attachées au projet par les extensions : `{ <extension> : { <clé> : valeur } }`. */
+  readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 }
 export const REGLAGES_DEFAUT: ReglagesPlanche = { accrochageLongueur: 0.01, accrochageAngle: 15, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre" };
 

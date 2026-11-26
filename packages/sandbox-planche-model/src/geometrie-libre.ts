@@ -124,6 +124,8 @@ export interface Occurrence {
   readonly balise?: string;
   /** Nom de l'occurrence (Info entité, lot 5). */
   readonly nom?: string;
+  /** (Protocole des extensions, lot 5) Données attachées par les extensions, rangées par extension ; suivent l'objet copié. */
+  readonly donnees?: DonneesExtensions;
   /** Masquée (lot 5) : ni affichée, ni accrochée, ni sélectionnable, jusqu'à « Réafficher ». */
   readonly masquee?: boolean;
   /** Verrouillée (lot 5) : aucune transformation, aucun effacement, aucune édition tant que le verrou tient. */
@@ -143,8 +145,17 @@ export interface Contexte {
 export type GenreDefinition = "groupe" | "composant";
 
 /** Options de la boîte « Créer un composant » (§5.6) ; `collerA` et les interrupteurs sont conservés tels quels (effets nv, déclarés). */
+/**
+ * (Protocole des extensions, lot 5) Données attachées par les extensions : `{ <extension> : { <clé> : valeur } }`.
+ * Des données seulement (texte, nombre, booléen, `null`, listes et objets de ceux-ci) ; formes jugées par
+ * `donnees-extensions.ts`.
+ */
+export type DonneesExtensions = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+
 export interface MetadonneesDefinition {
   readonly description?: string;
+  /** (Protocole des extensions, lot 5) Données attachées au composant par les extensions. */
+  readonly donnees?: DonneesExtensions;
   readonly collerA?: "aucun" | "tout" | "horizontal" | "vertical" | "incline";
   readonly decouperOuverture?: boolean;
   readonly faceCamera?: boolean;
@@ -616,7 +627,7 @@ interface DefTravail extends MetadonneesDefinition {
   contenu: Ctx;
 }
 
-const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera", "piece", "dynamique"] as const;
+const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera", "piece", "dynamique", "donnees"] as const;
 function metaDe(d: MetadonneesDefinition): MetadonneesDefinition {
   const r: Record<string, unknown> = {};
   for (const k of META_DEF) if (d[k] !== undefined) r[k] = d[k];
@@ -4147,6 +4158,27 @@ export function renommerOccurrence(m: Modele, id: Id, nom: string, o: OptionsCon
     const { nom: _ancien, ...reste } = occ;
     c.occurrences.set(id, n ? { ...reste, nom: n } : reste);
   });
+}
+
+/** (Protocole des extensions, lot 5) Pose (ou retire, `undefined`) les données d'extensions d'un objet du contexte. */
+export function definirDonneesOccurrence(m: Modele, id: Id, donnees: DonneesExtensions | undefined, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    const occ = c.occurrences.get(id);
+    if (!occ) throw new Error(`Occurrence inconnue : ${id}`);
+    const { donnees: _anciennes, ...reste } = occ;
+    c.occurrences.set(id, donnees ? { ...reste, donnees } : reste);
+  });
+}
+
+/** (Protocole des extensions, lot 5) Pose (ou retire, `undefined`) les données d'extensions d'une définition. */
+export function definirDonneesDefinition(m: Modele, definition: Id, donnees: DonneesExtensions | undefined): Resultat {
+  const t = new Travail(m);
+  const d = t.definitions.get(definition);
+  if (!d) throw new Error(`Définition inconnue : ${definition}`);
+  const { donnees: _anciennes, ...reste } = d;
+  t.definitions.set(definition, donnees ? { ...reste, donnees } : reste);
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele) };
 }
 
 /** Nom, description et options d'une définition (boîte « Modifier les détails du composant », Info entité). */

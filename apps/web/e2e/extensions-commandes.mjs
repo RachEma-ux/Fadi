@@ -3,7 +3,7 @@
  * plateforme (paquet d'essai `donnees/essai-commandes.fadi-addon.json`) apporte ses commandes à la Planche —
  * famille à son nom et pastille « extension » dans la liste « Outils », icône, raccourci, barre ; la commande dessine en
  * un seul pas d'annulation et pose la sélection ; avis au-dessus de la barre d'état ; fenêtre de saisie (valeurs
- * validées, annulation) ; commande qui échoue ou ne répond plus : arrêtée, rien d'appliqué, avis rouge ; anglais.
+ * validées, annulation) ; données attachées à un objet, à son composant et au projet (lot 5) ; commande qui échoue ou ne répond plus : arrêtée, rien d'appliqué, avis rouge ; anglais.
  *
  * L'extension est installée en base (`addon_packages`) quand `DATABASE_URL` désigne une base locale jetable — le
  * serveur la relit et la sert ; sinon (préproduction), la réponse de `GET /sandbox/preferences/extensions` est fournie
@@ -90,10 +90,10 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   check("la famille de l'extension vient après les groupes livrés", groupes.at(-1) === `installee:${ID}`, groupes.slice(-3).join(" · "));
   await tete.click();
   const lignes = await famille.locator("[data-outils-commande]").evaluateAll((l) => l.map((b) => ({ id: b.dataset.outilsCommande, nom: b.querySelector(".planche-outils-libelle")?.textContent, raccourci: b.querySelector("kbd")?.textContent, image: b.querySelector("img.planche-extension-icone")?.getAttribute("src") ?? "" })));
-  check("cinq commandes, chacune avec son nom, son raccourci et sa propre icône (image du paquet)", lignes.length === 5 && lignes.every((l) => l.nom && l.raccourci && l.image.startsWith("data:image/svg+xml;charset=utf-8,%3Csvg")) && new Set(await famille.locator("img.planche-extension-icone").evaluateAll((l) => l.map((i) => i.getAttribute("src")))).size === 5, lignes.map((l) => `${l.nom} (${l.raccourci})`).join(" · "));
+  check("sept commandes, chacune avec son nom, son raccourci et sa propre icône (image du paquet)", lignes.length === 7 && lignes.every((l) => l.nom && l.raccourci && l.image.startsWith("data:image/svg+xml;charset=utf-8,%3Csvg")) && new Set(await famille.locator("img.planche-extension-icone").evaluateAll((l) => l.map((i) => i.getAttribute("src")))).size === 7, lignes.map((l) => `${l.nom} (${l.raccourci})`).join(" · "));
   check("l'icône est une image : rien du dessin SVG n'entre dans la page", (await famille.locator(".planche-outils-nom svg path[d^='M4 8l8-4']").count()) === 0);
   const etiquette = famille.locator(`[data-outils-etiquette="extension:${ID}"]`).first();
-  check("chaque ligne porte l'étiquette de la barre de l'extension", (await famille.locator(`[data-outils-etiquette="extension:${ID}"]`).count()) === 5 && /Essai des commandes/.test(await etiquette.textContent()) && (await etiquette.getAttribute("aria-checked")) === "false");
+  check("chaque ligne porte l'étiquette de la barre de l'extension", (await famille.locator(`[data-outils-etiquette="extension:${ID}"]`).count()) === 7 && /Essai des commandes/.test(await etiquette.textContent()) && (await etiquette.getAttribute("aria-checked")) === "false");
   await famille.scrollIntoViewIfNeeded();
   await page.screenshot({ path: join(OUT, "1-famille-dans-outils.png") });
 
@@ -101,7 +101,7 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   await etiquette.click();
   const barre = page.locator(`[data-barre-outils="extension:${ID}"]`);
   await barre.waitFor();
-  check("l'étiquette affiche la barre de l'extension : cinq boutons, icônes du paquet", (await barre.locator("[data-barre-outils-entree]").count()) === 5 && (await barre.locator("img.planche-extension-icone").count()) === 5 && (await etiquette.getAttribute("aria-checked")) === "true");
+  check("l'étiquette affiche la barre de l'extension : sept boutons, icônes du paquet", (await barre.locator("[data-barre-outils-entree]").count()) === 7 && (await barre.locator("img.planche-extension-icone").count()) === 7 && (await etiquette.getAttribute("aria-checked")) === "true");
   await page.locator("[data-outils-recherche]").fill("boite mesure");
   check("recherche : la commande de l'extension est trouvée par son nom", (await page.locator("[data-planche-outils-liste] [data-outils-commande]").count()) === 1 && (await commande(page, "boite-sur-mesure").count()) === 1);
   await page.locator("[data-outils-recherche]").fill("");
@@ -173,6 +173,38 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   a = await dernierAvis(page);
   check("Échap annule la saisie : l'extension reçoit « rien », rien n'est dessiné", (await dialogue.count()) === 0 && a.genre === "alerte" && a.texte === "Saisie annulée : rien n'a été dessiné." && (await etat(page)).pas === apresSaisie.pas, JSON.stringify(a));
   await fermerAvis(page);
+
+  // Lot 5 — données attachées : objet, composant, projet ; un seul pas d'annulation ; relues par l'extension.
+  await page.locator("[data-planche-vue]").focus();
+  await page.keyboard.press("Alt+Shift+F2");
+  await attendreAvis(page, 1);
+  await fermerAvis(page);
+  const etiquetee = (await etat(page)).selection[0];
+  const donnees = () => page.evaluate(([ext, id]) => {
+    const P = window.fadiPlanche;
+    const m = P.modele();
+    const occ = m.racine.occurrences[id];
+    return { objet: occ?.donnees?.[ext] ?? null, composant: (occ && m.definitions[occ.definition]?.donnees?.[ext]) ?? null, projet: m.annotations?.reglages?.donneesExtensions?.[ext] ?? null, pas: P.pas() };
+  }, [ID, etiquetee]);
+  const avantEtiquette = await donnees();
+  await page.locator("[data-planche-vue]").focus();
+  await page.keyboard.press("Alt+Shift+F8");
+  await attendreAvis(page, 1);
+  a = await dernierAvis(page);
+  const etiquete = await donnees();
+  check("« Étiqueter l'objet » : la donnée est posée sur l'objet, sur son composant et sur le projet, en un seul pas", a.texte === "Étiquette posée : E-1" && etiquete.pas === avantEtiquette.pas + 1 && etiquete.objet?.etiquette === "E-1" && etiquete.composant?.releve?.fois === 1 && etiquete.projet?.compteur === 1, `${a.texte} · ${JSON.stringify(etiquete)}`);
+  await fermerAvis(page);
+  await page.keyboard.press("Alt+Shift+F9");
+  await attendreAvis(page, 1);
+  a = await dernierAvis(page);
+  check("« Lire l'étiquette » : l'extension relit ses données, sans rien modifier", a.texte === "Étiquette : E-1 · 1 étiquette(s) dans ce dessin." && (await donnees()).pas === etiquete.pas, a.texte);
+  await fermerAvis(page);
+  await page.locator("[data-planche-vue]").focus();
+  await page.keyboard.press("Control+z");
+  const defait = await donnees();
+  check("Ctrl+Z retire les trois données d'un coup", defait.pas === avantEtiquette.pas && defait.objet === null && defait.composant === null && defait.projet === null, JSON.stringify(defait));
+  await page.keyboard.press("Control+y");
+  check("Ctrl+Y les rétablit", (await donnees()).objet?.etiquette === "E-1");
 
   // Échec et délai : rien n'est appliqué, l'avis le dit.
   const avantEchec = await etat(page);

@@ -3111,7 +3111,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         const boss = await admin();
         const importe = await boss.a.post("/admin/addons/paquets").send(paquet());
         expect(importe.status).toBe(201);
-        expect(importe.body.paquet).toMatchObject({ id: "essai-commandes", version: "1.0.0", auteur: "Fadi", commandes: 5, servie: true, importedBy: boss.id, nom: { fr: "Essai des commandes" } });
+        expect(importe.body.paquet).toMatchObject({ id: "essai-commandes", version: "1.0.0", auteur: "Fadi", commandes: 7, servie: true, importedBy: boss.id, nom: { fr: "Essai des commandes" } });
         expect(JSON.stringify(importe.body)).not.toContain("planche.sur(");
         expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(1);
 
@@ -3132,7 +3132,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect(await nombre()).toBe(1);
         const journal = (await pool.query("SELECT actor_id, target_type, metadata FROM admin.audit_log WHERE action = 'admin.addon.package.imported' AND target_id = 'essai-commandes' ORDER BY id")).rows;
         expect(journal).toHaveLength(2);
-        expect(journal[0]).toMatchObject({ actor_id: boss.id, target_type: "addon", metadata: { version: "1.0.0", versionRemplacee: null, auteur: "Fadi", commandes: 5 } });
+        expect(journal[0]).toMatchObject({ actor_id: boss.id, target_type: "addon", metadata: { version: "1.0.0", versionRemplacee: null, auteur: "Fadi", commandes: 7 } });
         expect(journal[1].metadata).toMatchObject({ version: "1.1.0", versionRemplacee: "1.0.0" });
         // Le journal ne garde pas le code.
         expect(JSON.stringify(journal)).not.toContain("planche.sur(");

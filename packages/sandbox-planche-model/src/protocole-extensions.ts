@@ -352,6 +352,9 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "selection.definir": "selection",
   "message.afficher": "messages",
   "saisie.demander": "messages",
+  "donnees.lire": "donnees",
+  "donnees.ecrire": "donnees",
+  "donnees.effacer": "donnees",
 };
 
 /** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */
