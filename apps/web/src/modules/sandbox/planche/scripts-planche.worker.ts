@@ -11,6 +11,7 @@
  *     (seul moyen en développement, où le fichier est servi sans cette politique).
  */
 import { executerScript, type Modele, type ResultatScript } from "@parcours/sandbox-planche-model";
+import { RETIRES, fermerLecteurs, retirer } from "./isolement-worker";
 
 export interface DemandeScript {
   readonly code: string;
@@ -20,38 +21,6 @@ export interface DemandeScript {
 }
 /** Réponse : le modèle n'est renvoyé que s'il a changé. */
 export type ReponseScript = Omit<ResultatScript, "modele"> & { readonly modele: Modele | null };
-
-/** Fonctions retirées au script : réseau, stockage, autres Workers, chargement de code, exécution différée. */
-const RETIRES = [
-  "fetch", "XMLHttpRequest", "WebSocket", "WebSocketStream", "WebTransport", "EventSource", "RTCPeerConnection", "RTCDataChannel",
-  "importScripts", "Worker", "SharedWorker", "BroadcastChannel", "MessageChannel", "indexedDB", "caches", "cookieStore",
-  "Request", "Response", "setTimeout", "setInterval", "queueMicrotask", "requestAnimationFrame", "navigator",
-] as const;
-
-function retirer(nom: string): void {
-  for (let o: object | null = self; o && o !== Object.prototype; o = Object.getPrototypeOf(o) as object | null) {
-    if (!Object.prototype.hasOwnProperty.call(o, nom)) continue;
-    try {
-      Object.defineProperty(o, nom, { value: undefined, writable: false, configurable: false });
-    } catch {
-      // Propriété non reconfigurable sur ce navigateur : la politique de contenu du fichier reste la barrière.
-    }
-  }
-}
-
-/** Après la lecture du script : plus aucun moyen de lire d'autre code (`Function`, `eval`, fonctions asynchrones ou génératrices). */
-function fermerLecteurs(): void {
-  const constructeurs = [function () {}, async function () {}, function* () {}, async function* () {}].map((f) => Object.getPrototypeOf(f) as object);
-  for (const p of constructeurs) {
-    try {
-      Object.defineProperty(p, "constructor", { value: undefined, writable: false, configurable: false });
-    } catch {
-      // Voir `retirer`.
-    }
-  }
-  retirer("Function");
-  retirer("eval");
-}
 
 const porte = self as unknown as { onmessage: ((e: MessageEvent<DemandeScript>) => void) | null; postMessage(m: ReponseScript): void };
 const repondre = porte.postMessage.bind(self);

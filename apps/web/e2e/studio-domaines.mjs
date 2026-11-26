@@ -25,6 +25,7 @@
  */
 import { chromium } from "playwright";
 import { randomUUID } from "node:crypto";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const erreurs = [];
@@ -49,10 +50,7 @@ try {
   page.on("pageerror", (e) => erreurs.push(e.message));
   const dialogues = [];
   page.on("dialog", (d) => { dialogues.push(d.message()); void d.dismiss(); });
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-domaines-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-domaines-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-domaines-${Date.now()}@example.com`, "studio-domaines-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

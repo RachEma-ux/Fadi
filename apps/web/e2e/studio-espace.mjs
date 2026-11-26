@@ -19,6 +19,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { createHash } from "node:crypto";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const DOMAINES = ["dessin", "bim", "visualisation", "documentation"];
@@ -43,10 +44,7 @@ async function compte(nom, viewport = { width: 1440, height: 900 }) {
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
   page.on("pageerror", (e) => erreurs.push(`${nom} : ${e.message}`));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-espace-${nom}-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-espace-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-espace-${nom}-${Date.now()}@example.com`, "studio-espace-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? { timeout: 120000 } : { data, timeout: 120000 });

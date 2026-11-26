@@ -157,8 +157,61 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
 ## Frontières
 
 - Le Sandbox n'importe ni le Studio, ni l'Atelier, ni `@parcours/atelier-model`, ni `@parcours/planche-model`, ni le
-  client d'API général (seul `preferences/client.ts` appelle `/sandbox/preferences`) ; aucun fichier du Studio n'importe le Sandbox (la carte « 00 Sandbox » est un lien d'adresse).
+  client d'API général (seul `preferences/client.ts` appelle `/sandbox/preferences` et `/sandbox/preferences/extensions`) ; aucun fichier du Studio n'importe le Sandbox (la carte « 00 Sandbox » est un lien d'adresse).
 - Contrôles : `independance.test.ts` (bidirectionnel) et `scripts/frontieres.json` (`npm run typecheck`).
+- **Protocole des extensions, version 1.0 — lot 1** (proposition validée par le maître d'ouvrage le 25 novembre 2026,
+  Issue #410 ; socle sans interface) : une extension est un **paquet de texte** `fadi-addon/1` (fiche, code JavaScript,
+  pages des panneaux — jamais de code compilé), validé strictement par `validerPaquetExtension`
+  (`packages/sandbox-planche-model/src/protocole-extensions.ts` : fiche, neuf permissions, commandes avec icône et
+  raccourci obligatoires, bornes de 200 000 caractères de code et 1 Mo par paquet, version du protocole acceptée ou
+  refusée avec son motif). Le code tourne dans **un Web Worker par extension**, qui reste en vie pendant la séance
+  (`planche/extension-planche.worker.ts`, isolé comme celui des scripts par `planche/isolement-worker.ts` et par la même
+  politique de contenu) ; l'hôte (`planche/hote-extensions.ts`) le démarre au premier appel, lui adresse demandes et
+  événements un par un, et l'arrête au-delà de 5 s pour une demande ou de 1 s pour un événement — l'extension
+  redémarre alors à neuf. Messages de trois sortes (demande, réponse, événement), erreurs nommées
+  (`ERREURS_PROTOCOLE`) ; une demande de l'extension n'est servie que si elle figure à la table `DEMANDES_EXTENSION`
+  (ce lot : le journal seulement). Extension d'essai : `apps/web/e2e/donnees/essai-socle.fadi-addon.json`. Le
+  branchement dans la Planche (commandes, panneau, outil, modèle) vient avec les lots suivants : rien n'est encore
+  visible, et le Worker des extensions n'est pas encore chargé par l'application.
+- **Protocole des extensions, version 1.0 — lot 2** (toujours sans interface) : la Planche sert à une extension la
+  **lecture complète du modèle** (« modele.lire » : faces, arêtes, objets du contexte, en mètres), l'**opération
+  explicite** (« operation.ouvrir / valider / abandonner », « modele.modifier » avec les dix fonctions de dessin d'un
+  script personnel) et la **sélection** (« selection.lire / definir »), chacune derrière sa permission
+  (`packages/sandbox-planche-model/src/services-extensions.ts`, `creerServicesExtension`). Une opération travaille sur
+  une copie : rien n'est visible avant la validation, qui applique l'ensemble en **un seul pas d'annulation** sous le nom
+  donné ; une seconde opération est l'erreur « operation_deja_ouverte » ; une modification sans opération reçoit une
+  opération automatique au nom de la commande, validée à la fin de l'appel ; si le dessin a changé entre-temps, rien
+  n'est appliqué (« operation_refusee ») ; un appel en échec, hors délai ou arrêté abandonne l'opération. Côté
+  extension, chaque demande rend une promesse (`planche.modele.*`, `planche.operation.*`, `planche.selection.*`,
+  `planche.demander`) et un traitement peut être `async`. Les fonctions de dessin sont celles des scripts
+  (`creerFonctionsPlanche`, extraite de `executerScript` sans changement de comportement). L'hôte reçoit l'accès à la
+  Planche par `acces` (`AccesPlanche`) ; le branchement réel (modèle et annulation de la Planche) vient avec le lot des
+  commandes. Extension d'essai : `apps/web/e2e/donnees/essai-modele.fadi-addon.json`.
+- **Protocole des extensions, version 1.0 — lot 3** (premier lot visible ; images validées par le maître d'ouvrage le
+  26 novembre 2026, Issue #435) : **extensions installées, commandes, avis, saisies**.
+  - *Base de données* : une extension installée est un paquet rangé en base (`addon_packages`), jamais dans le code.
+    L'administrateur l'importe par `POST /admin/addons/paquets` (liste `GET`, retrait `DELETE /admin/addons/paquets/:id`,
+    journalisés ; pas encore d'écran) ; le serveur la juge (`jugerImportPaquet`,
+    `packages/sandbox-planche-model/src/extensions-installees.ts` : forme du paquet, identifiant non réservé, raccourcis
+    avec modificateur ou touche de fonction et pris par personne — Planche, navigateur, autre extension —, icônes en
+    SVG), la range, et la rend aux comptes par `GET /sandbox/preferences/extensions` ; il ne l'exécute jamais. Le
+    navigateur repasse les mêmes règles à la réception (`lirePaquetsInstalles`).
+  - *Interface* : chaque extension installée a sa **famille** dans la liste « Outils », à son nom, avec la pastille
+    « extension » ; chaque commande y garde son icône (une image du paquet, `<img>` : rien du dessin ne s'exécute), son
+    nom et son raccourci, et l'étiquette de la **barre** de l'extension (`extension:<id>`). Une commande lancée (liste,
+    barre, clavier) adresse « commande.<id> » à l'extension avec `{ langue }` ; la Planche lui prête son modèle, sa
+    sélection et son historique (`AccesPlanche` dans `Planche.tsx`) : une opération validée est **un pas d'annulation**.
+    Une commande à la fois par extension.
+  - *Avis et saisies* (permission « messages », `saisies-extensions.ts`) : « message.afficher » pose un avis au-dessus
+    de la barre d'état, au nom de l'extension ; « saisie.demander » ouvre une fenêtre dessinée par la Planche (champs
+    texte, nombre, choix, case), rend des valeurs validées ou `null` si elle est annulée, et **suspend le délai** de la
+    commande tant qu'elle est ouverte. Une commande qui échoue, dépasse 5 s ou ne démarre pas pose un avis rouge qui
+    dit ce qui a été gardé (`planche/extensions-installees.tsx`). Les textes d'une extension sont toujours posés comme
+    du texte.
+  - Limites de ce lot : toute extension installée est offerte à tous les comptes (le choix par compte et l'écran
+    d'administration viennent ensuite) ; hors connexion, aucune extension installée n'est offerte.
+  - Extension d'essai : `apps/web/e2e/donnees/essai-commandes.fadi-addon.json` ; recette
+    `apps/web/e2e/extensions-commandes.mjs` (CI, tranche `planche`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

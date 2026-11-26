@@ -24,6 +24,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/geodata";
@@ -41,10 +42,7 @@ const AVEC_WEBGL = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "-
 const lancer = (args) => chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args });
 
 async function inscrire(page, email) {
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', MDP);
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, email, MDP, BASE);
   await page.waitForURL(/\/(accueil|projets)/);
 }
 async function connecter(page, email) {
@@ -1496,9 +1494,7 @@ const en = await (await navigateur.newContext({ viewport: { width: 1440, height:
 await en.goto(`${BASE}/inscription`);
 await en.locator("[data-choix-langue]").selectOption("en");
 await en.waitForFunction(() => document.documentElement.lang === "en");
-await en.fill('input[name="email"]', `gd-en-${suffixe}@example.test`);
-await en.fill('input[name="password"]', MDP);
-await en.click('button[type="submit"]');
+await inscrireDansLaPage(en, `gd-en-${suffixe}@example.test`, MDP, BASE, { dejaSurLaPage: true });
 await en.waitForURL(/\/(accueil|projets)/);
 const FR = /[éèêàùçœ«»]|\b(le|la|les|des|du|une|est|sont|pour|avec|aucun|aucune|sans|dans|sur|au|aux|et|ou|ce|cette|vos|votre|carte|couche|valeur)\b/i;
 const residus = new Set();

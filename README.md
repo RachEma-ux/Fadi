@@ -94,7 +94,8 @@ End-to-end scenario (Playwright, Chromium), against the built API serving the bu
 `WEB_DIST`; `vite preview` is no longer needed):
 
 ```sh
-WEB_DIST=apps/web/dist node apps/api/dist/server.js &   # DATABASE_URL, WEB_ORIGIN=http://localhost:3001, PORT=3001
+WEB_DIST=apps/web/dist MAIL_TRANSPORT=console node apps/api/dist/server.js > api.log 2>&1 &   # DATABASE_URL, WEB_ORIGIN=http://localhost:3001, PORT=3001
+export API_LOG=api.log   # sign-up goes through the emailed link (Issue #425): the recipes read it here (or MAILPIT_URL)
 BASE_URL=http://localhost:3001 node apps/web/e2e/parcours-scenario.mjs   # ~330 checks incl. axe-core and the P.118 Atelier acceptance; writes docs/migration/captures/webapp/
 BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-nouveau.mjs     # Atelier (plan, 3D, sync, exports)
 BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-documents.mjs   # derived documents (views, sheets, PDF, schedules)

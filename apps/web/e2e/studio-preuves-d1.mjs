@@ -24,6 +24,7 @@
  */
 import { chromium } from "playwright";
 import { accepterInvitation } from "./lib-invitations.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 import { randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -44,10 +45,13 @@ async function session(nom, { email, password, inscrire = true, viewport = { wid
   const dialogues = [];
   page.on("dialog", (d) => { dialogues.push(d.message()); void d.accept(); });
   const cred = { email: email ?? `studio-d1-${nom}-${Date.now()}-${randomUUID().slice(0, 6)}@example.com`, password: password ?? `studio-d1-${randomUUID()}` };
-  await page.goto(`${BASE}/${inscrire ? "inscription" : "connexion"}`);
-  await page.fill('input[name="email"]', cred.email);
-  await page.fill('input[name="password"]', cred.password);
-  await page.click('button[type="submit"]');
+  if (inscrire) await inscrireDansLaPage(page, cred.email, cred.password, BASE);
+  else {
+    await page.goto(`${BASE}/connexion`);
+    await page.fill('input[name="email"]', cred.email);
+    await page.fill('input[name="password"]', cred.password);
+    await page.click('button[type="submit"]');
+  }
   await page.waitForURL(/\/(accueil|projets)$/);
   const brut = async (method, path, data) => {
     const r = await context.request.fetch(`${BASE}${path}`, { method, headers: { origin: BASE, "content-type": "application/json" }, ...(data === undefined ? {} : { data }) });

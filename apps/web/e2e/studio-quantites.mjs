@@ -17,6 +17,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
+import { inscrire, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const erreurs = [];
@@ -51,10 +52,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   const email = `studio-quantites-${Date.now()}@example.com`;
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', "studio-quantites-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, email, "studio-quantites-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
@@ -143,7 +141,7 @@ try {
   check("refus : auteur et date ne se saisissent pas (400)", forge.status === 400, JSON.stringify(forge.body));
   const lecteur = client();
   const lc = credentials();
-  await lecteur("POST", "/auth/register", lc);
+  await inscrire(lecteur, lc, "POST");
   const ajout = await inviterEtAccepter((m, p, b) => api(m.toLowerCase(), p, b), lecteur, projet.id, lc.email, "lecteur");
   const lecture = await lecteur("GET", ajustements);
   const ecriture = await lecteur("POST", ajustements, { ...base, motif: "Relevé du lecteur" });
