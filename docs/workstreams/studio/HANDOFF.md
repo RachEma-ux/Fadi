@@ -1,5 +1,13 @@
 # Reprise — Studio
 
+## Checkpoint 2026-11-26 (heure suisse 04:45) — libellés NAV-001 mobile et RISQ-02 suivent la barre du bas (chantier Design L6)
+
+- PR #436 (chantier `design`, lot L6) : au téléphone, la navigation de Fadi passe du rail à la barre du bas. Les contrôles
+  cités par le registre sont renommés dans `studio-navigation.mjs` (« NAV-001 mobile : entrée Studio présente et visible
+  (barre du bas) ») et `studio-domaines.mjs` (« RISQ-02 téléphone : … la navigation de Fadi (barre du bas) reste affichée,
+  aucun mode immersif ») ; `task-register.json` cite les nouveaux libellés, documents d'état régénérés
+  (`etat-studio.mjs --ecrire`). Aucun statut du registre changé ; compteurs inchangés.
+
 ## Checkpoint 2026-11-02 (heure suisse 05:45) — journal des publications : base d'autorité (règles communes CR-C2)
 
 - PR #282 reprise sur `main` (chantier `collaboration-rules`, CR-C2) : chaque nouvelle entrée de
