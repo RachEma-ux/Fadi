@@ -26,6 +26,9 @@ Mis à jour : 2026-11-26 (UTC).
   Planche s'arrêtent maintenant au-dessus de la barre ; `select` des options de Collaboration à 44 px.
 - L6b : PR #437 (rail du bureau dans l'ordre de la barre puis de « Plus » ; Harmonie ajoutée).
 
+- Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
+  (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
+
 ## Prochaine action
 
 - Suivre la CI des PR L0 à L9 ; fusion dans l'ordre par le maître d'ouvrage, après captures sur un vrai téléphone.
