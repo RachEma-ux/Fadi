@@ -16,6 +16,9 @@ Mis à jour : 2026-11-26 (UTC).
   voir `STATUS.md`. Les constats de revue Codex sur #418 et #420 sont corrigés et propagés par fusion dans les branches
   supérieures (jamais de rebase ni de push forcé).
 
+- Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
+  (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
+
 ## Prochaine action
 
 - Suivre la CI des cinq PR ; fusion dans l'ordre L0 → L4 par le maître d'ouvrage, après captures sur un vrai téléphone.
