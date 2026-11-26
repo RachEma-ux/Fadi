@@ -3997,6 +3997,33 @@
   color: var(--atelier-doux);
   text-align: left;
 }
+.sandbox-planche .planche-panneau-extension-cadre {
+  display: block;
+  width: 100%;
+  border: 1px dashed var(--atelier-ligne);
+  border-radius: 10px;
+  background: var(--plan-fond);
+}
+.sandbox-planche .planche-panneau-extension-note {
+  margin: 10px 2px 0;
+}
+.sandbox-planche .planche-panneau-extension-titre {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-panneau-extension-titre .planche-outils-pastille-extension {
+  margin-left: 0;
+}
+.sandbox-planche .planche-panneau-extension-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  padding-left: 16px;
+}
 .sandbox-planche .planche-saisie-erreur {
   margin: 0;
   color: #b3261e;

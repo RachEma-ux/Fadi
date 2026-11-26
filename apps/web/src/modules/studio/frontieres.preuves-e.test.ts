@@ -64,11 +64,22 @@ describe("ARC-10 — ni iframe de l'Atelier, ni carte mentale HTML comme module 
   });
 
   it("ARC-10 [+] dépôt réel : aucune iframe ne vise l'Atelier ; Studio n'emploie aucune iframe ; seule l'iframe déclarée de l'outil Parcelle existe", () => {
+    // Titre gardé tel quel : il est cité par le registre des tâches du Studio. Depuis le lot 4 des extensions de la
+    // Planche, une seconde iframe est déclarée ci-dessous.
     const src = fichiers(WEB_SRC, source);
     const trouves = iframes(src, (f) => readFileSync(f, "utf8"));
     expect(trouves.filter((t) => viseAtelier(t.extrait)).map((t) => relative(RACINE, t.fichier))).toEqual([]);
     expect(trouves.filter((t) => t.fichier.includes(`${join("modules", "studio")}`)).map((t) => relative(RACINE, t.fichier))).toEqual([]);
-    expect([...new Set(trouves.map((t) => relative(RACINE, t.fichier)))]).toEqual(["apps/web/src/modules/projets-sources/ParcelleTool.tsx"]);
+    // Iframes déclarées : l'outil Parcelle, et le cadre sans origine ni réseau où la Planche affiche la page du panneau
+    // d'une extension (protocole des extensions, section 10 : « une page isolée »). Ni l'une ni l'autre ne vise l'Atelier.
+    expect([...new Set(trouves.map((t) => relative(RACINE, t.fichier)))].sort()).toEqual(["apps/web/src/modules/projets-sources/ParcelleTool.tsx", "apps/web/src/modules/sandbox/planche/extensions-installees.tsx"]);
+    // Le cadre du panneau n'a ni adresse ni origine : contenu fourni en `srcDoc`, scripts seulement.
+    const cadrePanneau = trouves.filter((t) => t.fichier.endsWith(join("planche", "extensions-installees.tsx")));
+    expect(cadrePanneau).toHaveLength(1);
+    expect(cadrePanneau[0]!.extrait).toMatch(/sandbox="allow-scripts"/);
+    expect(cadrePanneau[0]!.extrait).not.toMatch(/allow-same-origin|\ssrc=/);
+    // Sa page ne peut pas non plus conduire le cadre vers une autre origine (fuite par l'adresse) : règle de l'application.
+    expect(readFileSync(join(RACINE, "apps/web/index.html"), "utf8")).toMatch(/http-equiv="Content-Security-Policy" content="frame-src 'self'"/);
   });
 
   it("ARC-10 [+] dépôt réel : aucune carte mentale HTML de Studio/ n'est importée, chargée ni servie par l'application", () => {

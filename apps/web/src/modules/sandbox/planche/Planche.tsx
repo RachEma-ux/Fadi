@@ -65,6 +65,7 @@ import {
   clesMasquees,
   idBarreExtension,
   imageIcone,
+  nomAppelPanneau,
   nomAppelCommande,
   destinatairesEvenement,
   resumerChangement,
@@ -191,7 +192,7 @@ import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, su
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
-import { AvisExtensions, DialogueFichierExtension, DialogueSaisieExtension, ajouterAvis, retirerFichier, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
+import { AvisExtensions, CadrePanneauExtension, DialogueFichierExtension, DialogueSaisieExtension, IconeExtension, ajouterAvis, clePanneauExtension, retirerFichier, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type FichierDemande, type ReponseActionPanneau, type SaisieOuverte } from "./extensions-installees";
 import { creerHoteExtension, type HoteExtension, type IssueAppelExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
@@ -376,9 +377,32 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Panneaux exclusifs, fermés à l'ouverture (comme le Canevas, D-156) : le dessin reste dégagé.
   const [panneau, setPanneauEtat] = useState<Panneau | null>(null);
   const panneauRef = useRef<Panneau | null>(null);
+  /** Panneau d'une extension installée (lot 4) : exclusif des panneaux de la Planche, dans la même colonne. */
+  const [panneauExtension, setPanneauExtensionEtat] = useState<{ readonly extension: string; readonly panneau: string } | null>(null);
+  const panneauExtensionRef = useRef<{ readonly extension: string; readonly panneau: string } | null>(null);
   const setPanneau = useCallback((p: Panneau | null) => {
     panneauRef.current = p;
     setPanneauEtat(p);
+    if (p !== null) {
+      panneauExtensionRef.current = null;
+      setPanneauExtensionEtat(null);
+    }
+  }, []);
+  const setPanneauExtension = useCallback((x: { readonly extension: string; readonly panneau: string } | null) => {
+    if (x !== null) {
+      panneauRef.current = null;
+      setPanneauEtat(null);
+    }
+    panneauExtensionRef.current = x;
+    setPanneauExtensionEtat(x);
+  }, []);
+  /** Ce que l'extension envoie à la page de son panneau ouvert. */
+  const canalPanneauRef = useRef<((donnees: unknown) => void) | null>(null);
+  const brancherPanneau = useCallback((recevoir: (donnees: unknown) => void) => {
+    canalPanneauRef.current = recevoir;
+    return () => {
+      if (canalPanneauRef.current === recevoir) canalPanneauRef.current = null;
+    };
   }, []);
   // Lot 5 (objets, §5.8 / §6) : options d'affichage de la vue (R10 : jamais écrites dans la Planche), menu contextuel,
   // boîte « Créer un composant », presse-papiers (ids + contexte), dernières entités masquées (« Réafficher ▸ Dernier »).
@@ -2714,6 +2738,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
       libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
+      panneau: {
+        // Données remises à la page du panneau s'il est ouvert ; sinon l'extension apprend qu'elles sont perdues.
+        envoyer: (panneauId, donnees) => {
+          const ouvert = panneauExtensionRef.current;
+          if (!plancheMontee.current || !canalPanneauRef.current || ouvert?.extension !== id || ouvert.panneau !== panneauId) return false;
+          canalPanneauRef.current(donnees);
+          return true;
+        },
+        ouvrir: (panneauId) => {
+          if (!plancheMontee.current) return false;
+          setPanneauExtension({ extension: id, panneau: panneauId });
+          return true;
+        },
+      },
       fichiers: {
         ouvrir: (demande) => fenetreFichier<FichierLu | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
         enregistrer: (demande) =>
@@ -2820,6 +2858,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         poserAvisExtension(nom, `${texte} ${suite}`, "arret");
       });
   };
+  /** Action nommée appelée par la page d'un panneau : une demande adressée à l'extension, comme une commande. */
+  const appelerPanneauExtension = (p: PaquetExtension, panneauId: string, titre: string, action: string, donnees: unknown): Promise<ReponseActionPanneau> => {
+    const nomAppel = nomAppelPanneau(panneauId, action);
+    if (nomAppel === null) return Promise.resolve({ ok: false, erreur: "argument_invalide", detail: "action" });
+    const nom = texteFiche(p.fiche.nom);
+    return hoteExtension(p)
+      .appeler("demande", nomAppel, donnees, t("extensions.panneau.operation", { extension: nom, panneau: titre }))
+      .then((i): ReponseActionPanneau => {
+        if (i.genre === "fini") return { ok: true, resultat: i.resultat };
+        if (plancheMontee.current) {
+          // L'extension arrêtée d'office ou en panne est dite à l'utilisateur ; une erreur ordinaire revient à la page.
+          if (i.genre === "delai") poserAvisExtension(nom, `${t("extensions.avis.delai", { secondes: String(Math.round(BORNES_EXTENSION.delaiCommandeMs / 1000)) })} ${t("extensions.avis.intact")}`, "arret");
+          else if (i.genre === "panne") poserAvisExtension(nom, t("extensions.avis.panne"), "arret");
+        }
+        return i.genre === "erreur" ? { ok: false, erreur: i.nom, detail: i.detail } : { ok: false, erreur: i.genre, detail: "" };
+      });
+  };
+  /** Panneaux des extensions installées, à la suite de ceux de la Planche dans la colonne. */
+  const panneauxInstalles = paquetsInstalles.flatMap((p) => p.fiche.panneaux.map((x) => ({ paquet: p, id: x.id, cle: clePanneauExtension(p.fiche.id, x.id), titre: texteFiche(x.titre), image: imageIcone(p, x.icone) })));
+  const panneauExtensionOuvert = panneauExtension ? (panneauxInstalles.find((x) => x.paquet.fiche.id === panneauExtension.extension && x.id === panneauExtension.panneau) ?? null) : null;
   /** Familles des extensions installées (liste « Outils ») : une par extension qui déclare des commandes. */
   const famillesInstallees: FamilleExtension[] = paquetsInstalles
     .filter((p) => p.fiche.commandes.length > 0)
@@ -3694,6 +3752,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
           </button>
         ))}
+        {panneauxInstalles.map((x) => (
+          <button key={x.cle} type="button" className="canevas-icone planche-colonne-bas" aria-pressed={panneauExtensionOuvert?.cle === x.cle} onClick={() => setPanneauExtension(panneauExtensionOuvert?.cle === x.cle ? null : { extension: x.paquet.fiche.id, panneau: x.id })} title={x.titre} data-planche-panneau-icone={x.cle}>
+            {x.image ? <IconeExtension image={x.image} className="canevas-picto" /> : <Pictogramme className="canevas-picto" picto={PICTO_EXTENSION_INSTALLEE} />}
+            <span className="canevas-etiquette">{x.titre}</span>
+          </button>
+        ))}
       </nav>
       {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; avec une souris, il apparaît
           au survol de la colonne ou du chevron et au clavier (focus) ; sur écran tactile (pas de survol), un toucher sur la
@@ -3782,6 +3846,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 appliquer({ etat: null, modele: r.modele }, t("planche.balise.nouvelle"));
                 setBalise(r.extra);
               }}
+            />
+          </div>
+        </section>
+      )}
+
+      {panneauExtensionOuvert && (
+        <section className="planche-panneau" aria-label={panneauExtensionOuvert.titre} data-planche-panneau={panneauExtensionOuvert.cle}>
+          <header className="canevas-panneau-tete planche-panneau-extension-tete">
+            <h3 className="planche-panneau-extension-titre"><span>{panneauExtensionOuvert.titre}</span><span className="planche-outils-pastille-extension" data-planche-panneau-pastille>{t("extensions.panneau.pastille")}</span></h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneauExtension(null)} aria-label={t("panneau.fermer", { titre: panneauExtensionOuvert.titre })}><IconeSandbox nom="fermer" /></button>
+          </header>
+          <div className="canevas-panneau-corps">
+            <CadrePanneauExtension
+              key={panneauExtensionOuvert.cle}
+              paquet={panneauExtensionOuvert.paquet}
+              panneau={panneauExtensionOuvert.id}
+              titre={panneauExtensionOuvert.titre}
+              appeler={(action, donnees) => appelerPanneauExtension(panneauExtensionOuvert.paquet, panneauExtensionOuvert.id, panneauExtensionOuvert.titre, action, donnees)}
+              brancher={brancherPanneau}
             />
           </div>
         </section>

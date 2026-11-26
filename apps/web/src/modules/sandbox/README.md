@@ -254,6 +254,21 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     accepte. L'extension ne lit ni ne choisit aucun emplacement. Extension d'essai :
     `apps/web/e2e/donnees/essai-fichiers.fadi-addon.json` ; recette `apps/web/e2e/extensions-fichiers.mjs` (CI,
     tranche `planche`).
+  - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
+    un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
+    et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,
+    affiché dans un cadre **sans origine** (`sandbox="allow-scripts"`) et **sans réseau** (règle de contenu
+    `CSP_PAGE_PANNEAU`) : elle ne voit ni la Planche, ni le compte, ni l'enregistrement local. Elle ne peut pas davantage
+    conduire son cadre vers une autre adresse : `apps/web/index.html` porte la règle `frame-src 'self'`, qui refuse à
+    tout cadre de l'application une navigation vers une autre origine. Les styles, scripts et
+    dessins du paquet qu'elle cite par leur nom y sont recopiés (`composerPagePanneau`). Dans la page :
+    `fadi.action(nom, donnees)` appelle une action nommée de l'extension et rend sa réponse, `fadi.surDonnees(fn)`
+    reçoit ses envois, `fadi.langue`. Dans l'extension : `planche.panneau.sur(panneau, action, fn)`,
+    `planche.panneau.envoyer(panneau, donnees)` (faux si le panneau est fermé), `planche.panneau.ouvrir(panneau)`.
+    Une action est une demande comme une commande (5 s, opération automatique : un seul pas d'annulation) ; il ne
+    passe que des données, 20 000 caractères au plus. Extension d'essai :
+    `apps/web/e2e/donnees/essai-panneau.fadi-addon.json` ; recette `apps/web/e2e/extensions-panneau.mjs` (CI, tranche
+    `planche`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

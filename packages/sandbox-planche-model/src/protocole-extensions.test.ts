@@ -66,8 +66,11 @@ describe("paquet d'extension fadi-addon/1", () => {
   });
 
   it("une déclaration sans sa permission est refusée ; avec, elle est acceptée", () => {
-    const panneau = { id: "reglages", titre: { fr: "Réglages", en: "Settings" }, page: "reglages.html" };
-    const pages = { "saluer.svg": ICONE, "reglages.html": "<p>Réglages</p>" };
+    const panneau = { id: "reglages", titre: { fr: "Réglages", en: "Settings" }, page: "reglages.html", icone: "reglages.svg" };
+    const pages = { "saluer.svg": ICONE, "reglages.svg": ICONE, "reglages.html": "<p>Réglages</p>" };
+    // Règle d'or : le panneau a sa propre icône, présente dans le paquet, jamais celle d'une commande.
+    expect(refuse(paquet({ pages }, { panneaux: [{ ...panneau, icone: "absente.svg" }], permissions: ["panneau"] }))).toMatch(/icône absente du paquet/);
+    expect(refuse(paquet({ pages }, { panneaux: [{ ...panneau, icone: "saluer.svg" }], permissions: ["panneau"] }))).toMatch(/icônes : « saluer\.svg » déclaré deux fois/);
     expect(refuse(paquet({ pages }, { panneaux: [panneau] }))).toMatch(/sans la permission « panneau »/);
     expect(refuse(paquet({ pages }, { panneaux: [panneau], permissions: ["panneau"] }))).toBe("accepté");
     expect(refuse(paquet({}, { panneaux: [{ ...panneau, page: "absente.html" }], permissions: ["panneau"] }))).toMatch(/page absente du paquet/);

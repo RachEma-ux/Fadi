@@ -31,6 +31,11 @@
  *   planche.message.afficher(texte, genre)   avis au-dessus de la barre d'état ; genre « info » (défaut) ou « alerte »
  *   planche.saisie.demander(titre, champs)   fenêtre de saisie ; rend { <id> : valeur… }, ou `null` si elle est annulée.
  *                                            Le temps passé devant la fenêtre ne compte pas dans le délai de la commande.
+ *
+ * Lot 4 (permission « panneau ») — voir `panneaux-extensions.ts` :
+ *   planche.panneau.sur(panneau, action, fn)   traite une action appelée par la page du panneau
+ *   planche.panneau.envoyer(panneau, donnees)  envoie des données à la page ; faux si le panneau est fermé
+ *   planche.panneau.ouvrir(panneau)            ouvre le panneau dans la colonne
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -144,6 +149,19 @@ export function creerExecutantExtension(
       ouvrir: (types?: unknown) => demander("fichiers.ouvrir", types === undefined ? {} : { types: typeof types === "string" ? [types] : types }),
       /** Propose à l'utilisateur d'enregistrer un fichier texte : `true`, ou `false` s'il renonce. */
       enregistrer: (nom: unknown, texte: unknown) => demander("fichiers.enregistrer", { nom, texte }),
+    }),
+    panneau: Object.freeze({
+      /** Envoie des données à la page du panneau ; rend faux si le panneau n'est pas ouvert. */
+      envoyer: (panneau: unknown, donneesEnvoyees: unknown = null) => demander("panneau.envoyer", { panneau, donnees: donneesEnvoyees }),
+      /** Ouvre le panneau dans la colonne de la Planche. */
+      ouvrir: (panneau: unknown) => demander("panneau.ouvrir", { panneau }),
+      /** Traite une action nommée, appelée par la page du panneau (`fadi.action`). */
+      sur: (panneau: unknown, action: unknown, fonction: unknown): void => {
+        const nom = `panneau.${String(panneau)}.${String(action)}`;
+        if (!MOTIF_NOM.test(nom)) throw new TypeError("planche.panneau.sur : panneau ou action mal nommé");
+        if (typeof fonction !== "function") throw new TypeError("planche.panneau.sur : fonction attendue");
+        traitements.set(nom, fonction as (d: unknown) => unknown);
+      },
     }),
     protocole: VERSION_PROTOCOLE,
     extension: Object.freeze({ id: extension.fiche.id, version: extension.fiche.version }),
