@@ -18,6 +18,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let failures = 0;
@@ -44,7 +45,7 @@ const credentials = () => ({ email: `studio-catalogue-${randomUUID().replaceAll(
 
 const owner = client(), reader = client();
 const ownerCredentials = credentials(), readerCredentials = credentials();
-check("comptes créés", (await owner("POST", "/auth/register", ownerCredentials)).status === 201 && (await reader("POST", "/auth/register", readerCredentials)).status === 201);
+check("comptes créés", (await inscrire(owner, ownerCredentials, "POST")).status === 201 && (await inscrire(reader, readerCredentials, "POST")).status === 201);
 const project = await owner("POST", "/projects", { code: "P.STU.CATALOGUE", name: "Studio — catalogue d'outils" });
 const projectId = project.body.id;
 check("lecteur invité, invitation acceptée (phase 3)", (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, "lecteur")).ok);

@@ -28,6 +28,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const require = createRequire(import.meta.url);
@@ -90,7 +91,7 @@ async function account(tag, { register = true, viewport = desktop } = {}) {
     return { status: r.status(), body: await r.json().catch(() => null) };
   };
   if (register) {
-    const r = await call("post", "/auth/register", { email, password: PASSWORD });
+    const r = await inscrire(call, { email, password: PASSWORD }, "post");
     if (r.status !== 201) throw new Error(`inscription ${tag} : ${r.status}`);
   }
   const me = register ? (await call("get", "/auth/me")).body : null;

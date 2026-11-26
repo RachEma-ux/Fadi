@@ -77,8 +77,8 @@ function MfaSection() {
   };
   const start = useMutation({ mutationFn: accountApi.mfaSetup, onSuccess: (s) => { setSetup(s); setMsg(null); }, onError: (err) => setMsg({ ok: false, text: apiMessage(err, "L’enrôlement n’a pas pu commencer.") }) });
   const enable = useMutation({
-    mutationFn: () => accountApi.mfaEnable(code.replace(/\s/g, "")),
-    onSuccess: (r) => { setCodes(r.recoveryCodes); setSetup(null); setCode(""); setMsg({ ok: true, text: "Double authentification activée." }); void refresh(true); },
+    mutationFn: () => accountApi.mfaEnable(password, code.replace(/\s/g, "")),
+    onSuccess: (r) => { setCodes(r.recoveryCodes); setSetup(null); setCode(""); setPassword(""); setMsg({ ok: true, text: "Double authentification activée." }); void refresh(true); },
     onError: (err) => setMsg({ ok: false, text: apiMessage(err, "Code refusé.") }),
   });
   const confirm = useMutation({
@@ -114,7 +114,9 @@ function MfaSection() {
           <p>Clé : <code translate="no" data-mfa-secret>{setup.secret}</code></p>
           <label htmlFor="mfa-code">2. Code à 6 chiffres affiché par l’application</label>
           <input id="mfa-code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={8} required value={code} onChange={(e) => setCode(e.target.value)} />
-          <button type="submit" className="button-primary" disabled={!online || enable.isPending || !code.trim()}>Confirmer l’activation</button>
+          <label htmlFor="mfa-enable-password">3. Votre mot de passe, pour confirmer</label>
+          <input id="mfa-enable-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button type="submit" className="button-primary" disabled={!online || enable.isPending || !code.trim() || !password}>Confirmer l’activation</button>
         </form>
       )}
       {s?.enabled && !mode && (

@@ -9,6 +9,7 @@
 import { createRequire } from "node:module";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { chromium } from "playwright";
+import { inscrireAvecContexte, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -55,10 +56,7 @@ const message = async () => {
 
 // Compte, exemple P.118, copie de travail.
 const email = `auto-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "automatisation-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "automatisation-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · automatisation" })).body.id;
@@ -113,7 +111,7 @@ check("journal : « Assistant : … » puis « Script « Trame de poteaux » v1 
 
 // Même refus qu'un geste : niveau verrouillé par un autre compte.
 const second = await browser.newContext();
-await second.request.post(`${BASE}/auth/register`, { data: { email: `auto-autre-${Date.now()}@example.com`, password: "automatisation-456" } });
+await inscrireAvecContexte(second.request, BASE, { email: `auto-autre-${Date.now()}@example.com`, password: "automatisation-456" });
 const emailAutre = (await (await second.request.get(`${BASE}/auth/me`)).json()).email;
 check("second compte invité éditeur, invitation acceptée (phase 3)", (await inviterEtAccepter(appelPlaywright(page.request, BASE), appelPlaywright(second.request, BASE), pid, emailAutre, "editeur")).ok);
 check("le second compte verrouille le RDC", (await api("post", `/projects/${pid}/atelier/verrous`, { cles: ["niveau:rdc"], minutes: 5 }, second.request)).status === 201);

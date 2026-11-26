@@ -11,6 +11,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { chromium } from "playwright";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let failures = 0;
@@ -40,7 +41,7 @@ const ofProject = (r, id) => (r.body?.items ?? []).filter((i) => i.projectId ===
 
 const owner = client(), member = client(), stranger = client(), anonymous = client();
 const ownerC = credentials("a"), memberC = credentials("b");
-check("comptes créés par l'API", (await owner("POST", "/auth/register", ownerC)).status === 201 && (await member("POST", "/auth/register", memberC)).status === 201 && (await stranger("POST", "/auth/register", credentials("c"))).status === 201);
+check("comptes créés par l'API", (await inscrire(owner, ownerC, "POST")).status === 201 && (await inscrire(member, memberC, "POST")).status === 201 && (await inscrire(stranger, credentials("c"), "POST")).status === 201);
 const tag = randomUUID().slice(0, 6);
 const p1 = (await owner("POST", "/projects", { code: `NP1_${tag}`, name: "Notifications — projet un" })).body;
 const p2 = (await owner("POST", "/projects", { code: `NP2_${tag}`, name: "Notifications — projet deux" })).body;

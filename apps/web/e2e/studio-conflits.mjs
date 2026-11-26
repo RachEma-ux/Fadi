@@ -22,6 +22,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomUUID } from "node:crypto";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const erreurs = [];
@@ -97,8 +98,8 @@ const versEcran = (page, point) => page.getByRole("group", { name: "Planche de d
 const A = await session("A"), B = await session("B");
 try {
   const credA = identifiants("a"), credB = identifiants("b");
-  check("compte A (propriétaire) créé", (await A.brut("POST", "/auth/register", credA)).status === 201);
-  check("compte B (éditeur) créé", (await B.brut("POST", "/auth/register", credB)).status === 201);
+  check("compte A (propriétaire) créé", (await inscrire((m, p, b) => A.brut(m, p, b), credA, "POST")).status === 201);
+  check("compte B (éditeur) créé", (await inscrire((m, p, b) => B.brut(m, p, b), credB, "POST")).status === 201);
   const projet = await A.api("POST", "/projects", { code: `P.STU.CF${Date.now() % 100000}`, name: "Studio — conflits" });
   check("B ajouté au projet comme éditeur", (await inviterEtAccepter(A.brut, B.brut, projet.id, credB.email, "editeur")).ok);
   const etude = await A.api("POST", `/projects/${projet.id}/studio/studies`, { name: "Étude conflits" });

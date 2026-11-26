@@ -20,7 +20,7 @@ import { STUDIO_CONTRACT, type StudioCommand } from "@parcours/atelier-model";
 import { studioAgentEvents, studioAgentProposals, studioAgentTokens, studioRevisions, studioVariants } from "../db/schema.js";
 import { studioMcpRouter } from "./mcp-studio.js";
 import { studioRouter } from "./studio.js";
-import { banc, initialiserProjet, type Acteur } from "../testing/studio-base-simulee.js";
+import { banc, initialiserProjet, MOT_DE_PASSE_ESSAI, type Acteur } from "../testing/studio-base-simulee.js";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +36,7 @@ const nbRevisions = () => banc.lignes.get(studioRevisions)!.length;
 const tete = () => banc.lignes.get(studioVariants)!.find((v) => v.id === "v")!["headRevisionId"] as string;
 
 async function jeton(a: Acteur): Promise<string> {
-  const r = await humain(a).post(`${S}/agents/jetons`, { nom: "Agent d’essai" });
+  const r = await humain(a).post(`${S}/agents/jetons`, { nom: "Agent d’essai", motDePasse: MOT_DE_PASSE_ESSAI });
   expect(r.status).toBe(201);
   return r.body.jeton as string;
 }
@@ -47,6 +47,26 @@ const proposition = (requestId: string, commands: StudioCommand[] = [ligne("agen
 
 beforeEach(() => { initialiserProjet(); n = 0; });
 afterEach(() => vi.unstubAllEnvs());
+
+describe("création d'un jeton d'agent : le mot de passe du compte est redemandé (Issue #422)", () => {
+  it("sans mot de passe : 400 ; mot de passe faux : 403 invalid_password, aucun jeton ; bon mot de passe : 201", async () => {
+    expect((await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent" })).status).toBe(400);
+    const faux = await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: "pas-le-bon" });
+    expect(faux.status).toBe(403);
+    expect(faux.body.error).toBe("invalid_password");
+    expect(banc.lignes.get(studioAgentTokens) ?? []).toHaveLength(0);
+    expect((await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI })).status).toBe(201);
+  });
+  it("les mots de passe faux sont comptés par compte : au-delà de 10 refus en 15 min, 429 même avec le bon mot de passe ; un autre compte n'est pas touché", async () => {
+    const statuts: number[] = [];
+    for (let i = 0; i < 10; i++) statuts.push((await humain("proprietaire").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: `faux-${i}` })).status);
+    expect(statuts.every((s) => s === 403)).toBe(true);
+    const bloque = await humain("proprietaire").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI });
+    expect(bloque.status).toBe(429);
+    expect(bloque.body.error).toBe("too_many_attempts");
+    expect((await humain("editeur").post(`${S}/agents/jetons`, { nom: "Agent", motDePasse: MOT_DE_PASSE_ESSAI })).status).toBe(201);
+  });
+});
 
 describe("TEST-033 — appel MCP sur une commande protégée : même schéma, mêmes droits, confirmation et idempotence que l'interface humaine", () => {
   it("TEST-033 [+] F.3-02 [+] l'agent propose, rien n'est écrit ; la personne confirme dans Studio ; la révision est celle que la route humaine écrit pour la même enveloppe", async () => {

@@ -32,6 +32,7 @@ import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? null;
@@ -60,7 +61,7 @@ function client() {
 const credentials = (n) => ({ email: `com-${n}-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") });
 const owner = client(), editor = client(), reader = client(), outsider = client();
 const cOwner = credentials("p"), cEditor = credentials("e"), cReader = credentials("l"), cOutsider = credentials("x");
-for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [outsider, cOutsider]]) check(`compte créé (${cred.email.split("-")[1]})`, (await c("POST", "/auth/register", cred)).status === 201);
+for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [outsider, cOutsider]]) check(`compte créé (${cred.email.split("-")[1]})`, (await inscrire(c, cred, "POST")).status === 201);
 const idOf = async (c) => { const me = (await c("GET", "/auth/me")).body; return me?.user?.id ?? me?.id; };
 const ids = { owner: await idOf(owner), editor: await idOf(editor), reader: await idOf(reader), outsider: await idOf(outsider) };
 const code = `COM_${randomUUID().slice(0, 6)}`;

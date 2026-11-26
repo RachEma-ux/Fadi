@@ -23,6 +23,7 @@ import { chargerRegistrePrix } from "../lib/geodata/prix/registre.js";
 import { restaurerPrix, sauvegarderPrix } from "../lib/geodata/prix/sauvegarde.js";
 import { horlogePrix } from "./geodata/prix.js";
 import type { FicheSource } from "../db/geodata-reference.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 /**
  * Contexte d'essai. `reinitialiser` vide la base par le seul moyen admis par la garde DB-3 (`resetTestDatabase` sur
@@ -47,7 +48,7 @@ type Agent = ReturnType<typeof request.agent>;
 
 async function compte(ctx: ContexteEssai, email: string, ...roles: string[]): Promise<{ client: Agent; id: string }> {
   const client = request.agent(ctx.app);
-  const r = await client.post("/auth/register").send({ email, password: PASSWORD });
+  const r = await inscrire(client, email, PASSWORD);
   assert.equal(r.status, 201, `inscription ${email}`);
   for (const role of roles) await ctx.pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, $2)", [r.body.id, role]);
   return { client, id: r.body.id as string };
