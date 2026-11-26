@@ -26,6 +26,7 @@ import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { partagerEnBase, retirerPartagesEnBase } from './lib-partage-sql.mjs';
 import { execFileSync } from 'node:child_process';
 import pg from 'pg';
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 const dbUrl = process.env.DATABASE_URL ?? '';
@@ -94,7 +95,7 @@ async function nextCode(acct) {
 async function register(tag) {
   const acct = { email: mail(tag), password: strong() };
   acct.a = agent();
-  const r = await acct.a.call('POST', '/auth/register', { email: acct.email, password: acct.password });
+  const r = await inscrire((m, p, b) => acct.a.call(m, p, b), { email: acct.email, password: acct.password }, "POST");
   if (r.status !== 201) throw new Error(`inscription ${tag} : ${r.status}`);
   acct.id = r.body.id;
   return acct;
@@ -119,7 +120,7 @@ async function enableMfa(acct, client) {
   if (s.status !== 200) throw new Error(`mfa/setup : ${s.status} ${JSON.stringify(s.body)}`);
   acct.secret = s.body.secret;
   acct.lastStep = undefined;
-  const e = await client.call('POST', '/auth/me/mfa/enable', { code: await nextCode(acct) });
+  const e = await client.call('POST', '/auth/me/mfa/enable', { password: acct.password, code: await nextCode(acct) });
   if (e.status !== 200) throw new Error(`mfa/enable : ${e.status} ${JSON.stringify(e.body)}`);
   acct.recovery = e.body.recoveryCodes;
   return e;

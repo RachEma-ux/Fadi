@@ -16,6 +16,7 @@ import { ecrireVersion } from "../lib/geodata/versions.js";
 import { chargerTerritoires } from "../lib/geodata/territoires.js";
 import { importerDecoupage } from "../lib/geodata/decoupage.js";
 import { archiverFichiers } from "../lib/geodata/archive-fichiers.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 // `users` en CASCADE vide aussi toutes les tables geodata_* (espaces → sources → versions → couches…), liste fermée de la garde inchangée.
@@ -26,7 +27,7 @@ const PASSWORD = "correct-horse-battery";
 const API = "/geodata/api";
 async function compte(email: string) {
   const client = request.agent(app);
-  const r = await client.post("/auth/register").send({ email, password: PASSWORD });
+  const r = await inscrire(client, email, PASSWORD);
   expect(r.status).toBe(201);
   return { client, id: r.body.id as string };
 }

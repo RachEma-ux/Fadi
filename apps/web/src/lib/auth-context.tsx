@@ -15,7 +15,8 @@ interface AuthState {
   loginMfa(input: { code: string } | { recoveryCode: string }): Promise<void>;
   /** Session ouverte par une autre voie (activation d'une invitation) : adoptée comme une connexion. */
   adoptSession(u: CurrentUser): Promise<void>;
-  register(email: string, password: string): Promise<void>;
+  /** Demande d'inscription : aucun compte ni session ici, le lien de création part par courriel. */
+  register(email: string): Promise<void>;
   logout(): Promise<void>;
   /** Nom affiché (Paramètres → Compte) ; null pour l'effacer. */
   updateProfile(displayName: string | null): Promise<void>;
@@ -133,8 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await adopt(await accountApi.loginMfa(input));
     },
     adoptSession: adopt,
-    async register(email, password) {
-      await adopt(await api.register(email, password));
+    async register(email) {
+      await api.register(email);
     },
     async updateProfile(displayName) {
       const u = await api.updateProfile(displayName);

@@ -36,6 +36,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-rend";
@@ -104,10 +105,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-rend-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-rend-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-rend-${Date.now()}@example.com`, "studio-rend-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

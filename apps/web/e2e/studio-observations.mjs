@@ -21,6 +21,7 @@
 import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -49,7 +50,7 @@ const j = (v) => JSON.stringify(v);
 
 const owner = client(), editor = client(), reader = client(), foreign = client(), anonymous = client();
 const cOwner = credentials("p"), cEditor = credentials("e"), cReader = credentials("l");
-for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [foreign, credentials("x")]]) check(`compte créé (${cred.email.split("-")[2]})`, (await c("POST", "/auth/register", cred)).status === 201);
+for (const [c, cred] of [[owner, cOwner], [editor, cEditor], [reader, cReader], [foreign, credentials("x")]]) check(`compte créé (${cred.email.split("-")[2]})`, (await inscrire(c, cred, "POST")).status === 201);
 const ids = {};
 for (const [k, c] of [["owner", owner], ["editor", editor], ["reader", reader]]) ids[k] = (await c("GET", "/auth/me")).body?.user?.id ?? (await c("GET", "/auth/me")).body?.id;
 const project = await owner("POST", "/projects", { code: `SO_${randomUUID().slice(0, 8)}`, name: "Studio — observations (recette synthétique)" });

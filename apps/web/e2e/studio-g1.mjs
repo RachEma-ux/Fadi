@@ -24,6 +24,7 @@ import { chromium } from "playwright";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-g1";
@@ -47,10 +48,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', motDePasse);
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, email, motDePasse, BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const brut = async (ctx, method, path, data) => {
     const r = await ctx.request.fetch(`${BASE}${path}`, { method, headers: { origin: BASE, "content-type": "application/json" }, ...(data === undefined ? {} : { data }) });

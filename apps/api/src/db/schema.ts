@@ -1471,6 +1471,18 @@ export const addonPlatformSettings = pgTable("addon_platform_settings", {
 });
 
 /**
+ * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3) : un paquet `fadi-addon/1` par ligne,
+ * importé par l'administrateur et validé par le serveur (`lib/addon-paquets.ts`). Rangé et rendu, jamais exécuté ici.
+ */
+export const addonPackages = pgTable("addon_packages", {
+  addonId: text("addon_id").primaryKey(),
+  version: text("version").notNull(),
+  package: jsonb("package").$type<Record<string, unknown>>().notNull(),
+  importedBy: text("imported_by").references(() => users.id, { onDelete: "set null" }),
+  importedAt: timestamp("imported_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
  * Exigences Studio (E.1-02 à E.1-06, lib/studio-exigences.ts) : versions append-only d'un jeu d'exigences par étude
  * (UPDATE refusée par déclencheur, init.sql) et résultats de contrôle liés à la révision et à la version examinées
  * (FK composites et contrôles dans init.sql). Aucune exigence n'est fournie par Fadi.

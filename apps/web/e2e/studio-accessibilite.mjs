@@ -13,6 +13,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-accessibilite";
@@ -61,10 +62,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-a11y-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-accessibilite-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-a11y-${Date.now()}@example.com`, "studio-accessibilite-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

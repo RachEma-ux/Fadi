@@ -58,7 +58,8 @@ export interface SectionNommee {
 
 export interface BarreNommee {
   readonly id: IdBarre;
-  readonly origine: "livree" | "personnelle";
+  /** `extension` : barre d'une extension installée sur la plateforme, à son nom (protocole des extensions, lot 3). */
+  readonly origine: "livree" | "personnelle" | "extension";
   /** Barre livrée : clé du nom au catalogue de messages. */
   readonly nomCle?: CleMessage;
   /** Barre personnelle : nom saisi par l'utilisateur. */
@@ -114,7 +115,7 @@ export function barreDeLOutil(outil: string): IdBarre | null {
  * barre de son objet) ; il devient l'identifiant de cette barre. Un identifiant de barre est rendu tel quel.
  */
 export function idBarreCanonique(id: string): IdBarre {
-  if (id === ID_PREMIERS_PAS || id.startsWith("objet:") || id.startsWith("groupe:")) return id;
+  if (id === ID_PREMIERS_PAS || id.startsWith("objet:") || id.startsWith("groupe:") || id.startsWith("extension:")) return id;
   return barreDeLOutil(id) ?? id;
 }
 

@@ -26,6 +26,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const ICI = dirname(fileURLToPath(import.meta.url));
@@ -71,7 +72,7 @@ async function api(method, path, body) {
 
 check("plan S6 synthétique (fixture du corpus)", plan.scene === "S6" && plan.synthetique === true && /synthétique/.test(plan.licence));
 const compte = { email: `corpus-s6-${randomUUID().slice(0, 8)}@example.test`, password: randomBytes(18).toString("hex") };
-const inscrit = await api("POST", "/auth/register", compte);
+const inscrit = await inscrire(api, compte, "POST");
 exiger("compte inscrit", inscrit.status === 201, `${inscrit.status} ${court(inscrit.body)}`);
 const projetCree = await api("POST", "/projects", { code: `P.S6.${randomUUID().slice(0, 6)}`, name: "Corpus S6 (synthétique)" });
 exiger("projet créé", projetCree.status === 201 && projetCree.body?.id, `${projetCree.status} ${court(projetCree.body)}`);

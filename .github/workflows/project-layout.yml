@@ -39,6 +39,9 @@ jobs:
       WEB_DIST: apps/web/dist
       PORT: '3001'
       AUTH_RATE_LIMIT: '500'
+      # Issue #425 : l'inscription passe par le lien du courriel ; la recette le lit dans le journal de l'API.
+      MAIL_TRANSPORT: console
+      API_LOG: api.log
       API_RATE_LIMIT: '5000'
       BASE_URL: http://localhost:3001
       OUT: atelier-captures/project-layout

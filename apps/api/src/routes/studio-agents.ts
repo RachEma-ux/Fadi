@@ -7,7 +7,11 @@
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { STUDIO_EXTENSION_MCP, studioEvaluerExtension } from "@parcours/atelier-model/studio-agents";
+import { eq } from "drizzle-orm";
+import rateLimit from "express-rate-limit";
 import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+import { verifyPassword } from "../lib/auth.js";
 import { loadProjectAccess } from "../lib/owned-project.js";
 import { assertAccess, StudioRequestError } from "../lib/studio-commands.js";
 import { avecContrat } from "../lib/studio-contrats.js";
@@ -25,10 +29,30 @@ const endpoint = (h: (req: Request, res: Response) => Promise<void>) => async (r
   try { res.setHeader("Cache-Control", "private, no-store"); await h(req, res); } catch (e) { if (e instanceof StudioRequestError) res.status(e.status).json(e.body); else next(e); }
 };
 
+/**
+ * Mot de passe redemandé à la création d'un jeton (revue Codex de la PR #423) : les essais faux sont comptés **par compte**
+ * (10 par 15 min, seuls les refus comptent), en plus de la limite par IP de l'API, pour qu'une session volée ne puisse pas
+ * deviner le mot de passe à l'abri du verrouillage de la connexion.
+ */
+const essaisMotDePasse = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `jeton-agent:${req.user?.id ?? ""}`,
+  message: { error: "too_many_attempts", message: "Trop de mots de passe essayés : réessayez dans quelques minutes." },
+});
+
 studioAgentsRouter.get("/agents/jetons", avecContrat(CONTRAT_AGENTS_JETONS_LISTER), endpoint(async (req, res) => { res.json(await listerJetonsAgent(projet(req), req.user!.id)); }));
-studioAgentsRouter.post("/agents/jetons", avecContrat(CONTRAT_AGENTS_JETON_CREER), endpoint(async (req, res) => {
+studioAgentsRouter.post("/agents/jetons", essaisMotDePasse, avecContrat(CONTRAT_AGENTS_JETON_CREER), endpoint(async (req, res) => {
   const parsed = studioJetonSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const [compte] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, req.user!.id)).limit(1);
+  if (!compte?.passwordHash || !(await verifyPassword(compte.passwordHash, parsed.data.motDePasse))) {
+    res.status(403).json({ error: "invalid_password", message: "Mot de passe incorrect." });
+    return;
+  }
   res.status(201).json(await creerJetonAgent(projet(req), req.user!.id, parsed.data.nom, parsed.data.joursValidite));
 }));
 studioAgentsRouter.post("/agents/jetons/:tokenId/revoquer", avecContrat(CONTRAT_AGENTS_JETON_REVOQUER), endpoint(async (req, res) => { res.json(await revoquerJetonAgent(projet(req), req.user!.id, req.params["tokenId"] as string)); }));

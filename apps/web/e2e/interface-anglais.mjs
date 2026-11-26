@@ -8,6 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { allerEnPlan, basculerCanevas } from "./lib-barre.mjs";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -35,9 +36,7 @@ await page.locator("[data-choix-langue]").selectOption("en");
 await page.waitForFunction(() => document.documentElement.lang === "en");
 check("choix de la langue : la page se recharge en anglais (html lang=en)", await page.evaluate(() => document.documentElement.lang) === "en");
 check("inscription : titre en anglais", (await page.locator("h1").textContent())?.trim() === "Create an account");
-await page.fill('input[name="email"]', `en-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "english-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `en-${Date.now()}@example.com`, "english-pass-123", BASE, { dejaSurLaPage: true });
 await page.waitForURL(/\/(projets|accueil)/);
 const ref = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${ref}/copies`, { name: "P.118 · EN" })).body.id;

@@ -24,6 +24,7 @@ import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -73,7 +74,7 @@ async function person(role) {
   const ctx = await browser.newContext(desktop);
   contexts.push(ctx);
   const cred = { email: email(role), password: password() };
-  const r = await api(ctx, "post", "/auth/register", cred);
+  const r = await inscrire((m, p, b) => api(ctx, m, p, b), cred, "post");
   if (r.status !== 201) throw new Error(`inscription ${role} : ${r.status}`);
   const me = await api(ctx, "get", "/auth/me");
   return { ctx, ...cred, id: me.body?.id };
@@ -112,7 +113,7 @@ try {
     // La promotion ferme les sessions : reconnexion, puis double authentification activée depuis cette session (UM-18).
     const login = await api(admin.ctx, "post", "/auth/login", { email: admin.email, password: admin.password });
     const setup = await api(admin.ctx, "post", "/auth/me/mfa/setup");
-    const enabled = await api(admin.ctx, "post", "/auth/me/mfa/enable", { code: totp(setup.body?.secret ?? "") });
+    const enabled = await api(admin.ctx, "post", "/auth/me/mfa/enable", { password: admin.password, code: totp(setup.body?.secret ?? "") });
     adminReady = login.status === 200 && enabled.status === 200;
     check("administrateur promu, double authentification activée depuis sa session", adminReady, `${login.status} ${setup.status} ${enabled.status}`);
   } else console.log("administrateur : NON EXÉCUTÉ (DATABASE_URL absente pour create-admin.mjs) — couvert par app.test.ts (DB-3).");
