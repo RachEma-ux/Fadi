@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bornerPosition, ICONES, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
+import { bornerPosition, HAUTEUR_UTILE_MIN, ICONES, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
 
 describe("barre d'outils flottante GeoData", () => {
   it("position par défaut : à droite, en haut", () => expect(POSITION_PAR_DEFAUT).toEqual({ droite: 10, haut: 10 }));
@@ -8,6 +8,13 @@ describe("barre d'outils flottante GeoData", () => {
     expect(bornerPosition({ droite: -50, haut: -20 }, carte, barre)).toEqual({ droite: 4, haut: 4 });
     expect(bornerPosition({ droite: 2000, haut: 2000 }, carte, barre)).toEqual({ droite: 756, haut: 96 });
     expect(bornerPosition({ droite: 30, haut: 50 }, { largeur: 30, hauteur: 300 }, barre)).toEqual({ droite: 4, haut: 4 });
+  });
+  it("colonne déjà réduite : la position garde toujours HAUTEUR_UTILE_MIN visibles (jamais une colonne de hauteur nulle)", () => {
+    const carte = { largeur: 400, hauteur: 600 };
+    // Barre mesurée à 20 px parce que sa hauteur maximale l'a déjà écrasée : la position est ramenée, pas conservée.
+    const r = bornerPosition({ droite: 10, haut: 590 }, carte, { largeur: 40, hauteur: 20 });
+    expect(r.haut).toBe(600 - HAUTEUR_UTILE_MIN - 4);
+    expect(carte.hauteur - r.haut - 4).toBeGreaterThanOrEqual(HAUTEUR_UTILE_MIN);
   });
   it("chaque outil a sa propre icône et chaque commande sa propre touche (lecture de l'emprise, D-GD-40)", () => {
     const traces = Object.values(ICONES);

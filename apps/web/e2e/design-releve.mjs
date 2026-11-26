@@ -35,13 +35,13 @@ const session = await amorce.storageState();
 await amorce.close();
 
 const ECRANS = [
-  { cle: "connexion", chemin: "/connexion", public: true },
-  { cle: "accueil", chemin: "/accueil" },
-  { cle: "projets", chemin: "/projets" },
-  { cle: "projet", chemin: `/projets/${projet}` },
-  { cle: "parcours", chemin: `/projets/${projet}?module=parcours` },
-  { cle: "geodata", chemin: "/geodata" },
-  { cle: "parametres", chemin: "/parametres" },
+  { cle: "connexion", chemin: "/connexion", public: true, pret: "main.auth-page" },
+  { cle: "accueil", chemin: "/accueil", pret: "main.fadi-home" },
+  { cle: "projets", chemin: "/projets", pret: "main.projects-page" },
+  { cle: "projet", chemin: `/projets/${projet}`, pret: ".dossier-overview" },
+  { cle: "parcours", chemin: `/projets/${projet}?module=parcours`, pret: "main.module-content-parcours" },
+  { cle: "geodata", chemin: "/geodata", pret: "[data-geodata-page]" },
+  { cle: "parametres", chemin: "/parametres", pret: "main.settings-page" },
 ];
 
 const rapport = { base: BASE, date: new Date().toISOString(), bloquant: BLOQUANT, ecrans: [] };
@@ -51,7 +51,13 @@ for (const [code, largeur] of Object.entries(LARGEURS)) {
     const page = await contexte.newPage();
     const erreurs = [];
     page.on("pageerror", (e) => erreurs.push(e.message));
-    await page.goto(`${BASE}${ecran.chemin}`, { waitUntil: "networkidle" }).catch(() => {});
+    // Un écran non chargé n'est jamais audité : l'échec de navigation ou l'absence du repère propre à l'écran arrête la recette
+    // (sinon axe et le reflow mesureraient une page vide ou une redirection, et le relevé serait faux sans le dire).
+    const reponse = await page.goto(`${BASE}${ecran.chemin}`, { waitUntil: "domcontentloaded" });
+    if (!reponse || !reponse.ok()) throw new Error(`${ecran.cle} · ${code} : navigation en échec (${reponse?.status() ?? "aucune réponse"}).`);
+    await page.locator(ecran.pret).first().waitFor({ state: "visible", timeout: 30_000 })
+      .catch(() => { throw new Error(`${ecran.cle} · ${code} : repère « ${ecran.pret} » absent à ${page.url().replace(BASE, "")}, écran non chargé.`); });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
     await page.waitForTimeout(800);
     const violations = await axe(page);
     const nouvelles = nouvellesGraves(violations, ecran.cle);
