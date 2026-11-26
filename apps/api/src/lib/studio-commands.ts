@@ -3,7 +3,7 @@ import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioBlender, exportStudioDxf, exportStudioGltf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioFusionRevision, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -503,8 +503,11 @@ export async function ecrireRevisionFusionStudio(scope: StudioScope, actorId: st
   });
 }
 
-/** Formats d'export d'une révision : dessin (SVG, DXF), maquette (IFC) et géométrie 3D (OBJ, STL, STEP — E.6-04). */
-export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc", "obj", "stl", "step"] as const;
+/**
+ * Formats d'export d'une révision : dessin (SVG, DXF), maquette (IFC), géométrie 3D (OBJ, STL, STEP — E.6-04) et rendu
+ * dans Blender (glTF 2.0 avec matériaux d'affichage et caméras des scènes ; script Blender qui l'importe).
+ */
+export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc", "obj", "stl", "step", "gltf", "blender"] as const;
 /** Formats couverts par le rapport de fidélité (E.6-03) ; les exports 3D ont leur bilan (`studioBilanExport3d`). */
 export const STUDIO_RAPPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
 export type StudioExportFormat = (typeof STUDIO_EXPORT_FORMATS)[number];
@@ -517,6 +520,13 @@ export const STUDIO_EXPORT_CONTENT_TYPES: Readonly<Record<StudioExportFormat, st
   obj: "model/obj",
   stl: "model/stl",
   step: "model/step",
+  // glTF 2.0 JSON (UTF-8, tampon intégré en base64) ; script Blender : Python ASCII.
+  gltf: "model/gltf+json",
+  blender: "text/x-python; charset=utf-8",
+});
+/** Extension du fichier servi (le format « blender » est un script Python). */
+export const STUDIO_EXPORT_EXTENSIONS: Readonly<Record<StudioExportFormat, string>> = Object.freeze({
+  svg: "svg", dxf: "dxf", ifc: "ifc", obj: "obj", stl: "stl", step: "step", gltf: "gltf", blender: "py",
 });
 export interface StudioExportFile { format: StudioExportFormat; contentType: string; filename: string; revisionId: string; body: string }
 
@@ -537,6 +547,8 @@ export async function exportStudioVariant(q: Querier, scope: StudioScope, actorI
   else if (format === "dxf") body = exportStudioDxf(doc);
   else if (format === "obj") body = exportStudioObj(doc);
   else if (format === "stl") body = exportStudioStl(doc);
+  else if (format === "gltf") body = exportStudioGltf(doc);
+  else if (format === "blender") body = exportStudioBlender(doc, [studioFileSegment(context.study.name, "etude"), studioFileSegment(context.variant.name, "variante")].join("-"));
   else if (format === "step") {
     const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
     if (!row) return notFound();
@@ -556,7 +568,7 @@ export async function exportStudioVariant(q: Querier, scope: StudioScope, actorI
   const filename = [
     studioFileSegment(context.study.name, "etude"), studioFileSegment(context.variant.name, "variante"),
     studioFileSegment(context.revision.id.slice(-8), "revision"),
-  ].join("-") + `.${format}`;
+  ].join("-") + `.${STUDIO_EXPORT_EXTENSIONS[format]}`;
   return { format, contentType: STUDIO_EXPORT_CONTENT_TYPES[format], filename, revisionId: context.revision.id, body };
 }
 

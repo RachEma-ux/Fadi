@@ -14,3 +14,6 @@
 .studio-vue3d-couverture ul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
 .studio-vue3d-qualite{margin:0 0 8px}
 .studio-vue3d-case{flex-direction:row!important;align-items:center;gap:6px!important;margin:0!important}.studio-vue3d-case input{width:auto!important}
+/* Pousser / tirer : distance du geste en cours, près du pointeur (aperçu, jamais une donnée du document). */
+.studio-vue3d-pousser-etiquette{position:absolute;left:0;top:0;pointer-events:none;display:grid;gap:2px;font-size:12px;font-weight:600;padding:2px 6px;background:var(--surface);color:var(--forest-900);border:1px solid var(--gold);border-radius:4px;white-space:nowrap;margin:14px 0 0 14px}
+.studio-vue3d-pousser-etiquette small{font-weight:400;color:var(--muted)}

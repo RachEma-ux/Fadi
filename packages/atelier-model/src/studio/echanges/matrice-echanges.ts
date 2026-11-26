@@ -16,7 +16,9 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
  *   test recoupe avec la sortie réelle de `exportStudioIfc` ;
  * - OBJ, STL et STEP exportés (E.6-04) : chacun son contrat (`export-3d.ts`, noyau exact pour STEP), ses entités et ses
  *   preuves ; leur lecture n'est pas livrée (entrées d'import « non livré », chacune sa raison) ;
- * - un format reporté (DWG, DGN, glTF…) est inscrit « non livré » avec sa raison et sa source (E.6-04, E.6-05) ;
+ * - glTF 2.0 et script Blender exportés (rendu dans Blender, révision 13) : maillage nommé, matériaux tirés des apparences
+ *   d'affichage, caméras des scènes (`export-gltf.ts`) ; leur lecture n'est pas livrée ;
+ * - un format reporté (DWG, DGN…) est inscrit « non livré » avec sa raison et sa source (E.6-04, E.6-05) ;
  *   « renoncé » exige une décision **Studio** admise (`STUDIO_DECISIONS_RENONCEMENT`, vide aujourd'hui). DWG : la
  *   décision approuvée D-179 (`docs/atelier/decisions.md`) y renonce ; Studio la cite et ne la contourne pas — DWG reste
  *   inscrit « non livré » avec cette source ;
@@ -34,9 +36,9 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 12 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 13 as const;
 /** Date de l'audit qui a établi la révision courante. */
-export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-26" as const;
+export const STUDIO_MATRICE_ECHANGES_DATE = "2026-11-26" as const;
 
 /**
  * Décisions **Studio** admises pour un statut « renoncé » : vide aujourd'hui (aucune décision du maître d'ouvrage ne
@@ -103,7 +105,7 @@ export interface StudioEntreeEchange {
   /** Export SVG, DXF ou IFC du document : couverture par type = rapport de fidélité de ce format. */
   fidelite?: StudioFormatEchange;
   /** Export 3D d'une révision (E.6-04) : format servi par la route d'export, couverture déclarée par `entites`. */
-  export3d?: "obj" | "stl" | "step";
+  export3d?: "obj" | "stl" | "step" | "gltf" | "blender";
   /** Export IFC : entités et jeux de propriétés réellement écrits par `exportStudioIfc` (recoupés par test). */
   ecritureIfc?: { elements: readonly StudioEcritureIfc[]; jeuxDeProprietes: readonly StudioJeuProprietesIfc[] };
   /** Contrôle effectivement exécuté (tests, recette, validation externe) ; absent = aucun contrôle propre. */
@@ -459,6 +461,48 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/atelier/decisions.md, D-177", "Noyau exact OCCT, composant LGPL chargé à part")],
   },
   {
+    id: "maquette-gltf", format: "glTF 2.0", versionFormat: "glTF 2.0 (JSON .gltf, tampon intégré en base64), studio-export-gltf/1", sens: "export", famille: "maquette",
+    objet: "Maillage 3D d’une révision, apparences d’affichage et scènes, pour le rendu (Blender et autres moteurs)", taches: ["E.6-04", "E.6-05"], statut: "livre", export3d: "gltf",
+    limite: "Mètres ; repère local-3d converti explicitement (x, y, z) → (x, z, −y), y vers le haut comme l’exige glTF (l’importeur de Blender rend les coordonnées de Studio) ; maillage de la vue 3D, courbes discrétisées, positions en flottants 32 bits relatives au coin de chaque élément ; matériaux d’affichage seulement (jamais constructifs) ; aucune normale écrite (normales plates calculées par le lecteur).",
+    entites: [
+      { entite: "Objets extrudés, solides libres, solides exacts, murs, échelles d’accès, poteaux, poutres, dalles, occurrences de composants, surfaces", couverture: "partielle", detail: "Un nœud par élément nommé par son identifiant Studio (identité, catégorie, calque dans extras), triangles orientés ; volume relu égal à celui du modèle ; courbes discrétisées." },
+      { entite: "Calques", couverture: "portee", detail: "Un nœud par calque, parent de ses éléments ; un calque masqué est écrit et signalé (extras)." },
+      { entite: "Apparences d’affichage (lot E.5)", couverture: "partielle", detail: "Un matériau par apparence : couleur convertie en facteur linéaire, finition rendue en rugosité, métal et opacité de la vue 3D, verre en KHR_materials_transmission ; un calque sans apparence reçoit un matériau nommé, sans couleur déclarée." },
+      { entite: "Scènes enregistrées", couverture: "partielle", detail: "Une caméra par scène : position, cible, champ de vision vertical ou hauteur vue ; calques montrés et mode d’affichage non portés." },
+      { entite: "Contours non extrudés", couverture: "partielle", detail: "Lignes (LINE_LOOP fermé, LINE_STRIP ouvert) à z = 0, courbes discrétisées." },
+      { entite: "Ouvertures", couverture: "partielle", detail: "Vide dans le maillage du mur ; l’ouverture n’est pas un nœud (comptée)." },
+      { entite: "Cotes, annotations, graphismes, propriétés, éléments non natifs", couverture: "absente", detail: "Comptés dans le bilan (asset.extras), jamais écrits." },
+    ],
+    controle: "Tests du modèle (glTF relu : nœuds, parents uniques, repère retrouvé, volumes égaux au modèle, matériaux, caméras, bilan) ; import réel dans Blender 5.3 (bpy) relevé à la livraison ; route servie ; règle d’or de la commande « Exporter glTF ».",
+    route: `GET ${ROUTE_VARIANTE}/export?format=gltf`,
+    preuves: {
+      code: [p(`${M}export-gltf.ts`, "exportStudioGltf"), p(`${M}export-gltf.ts`, "studioDocumentGltf"), p(`${M}export-gltf.ts`, "studioBilanExportGltf"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
+      tests: [p(`${M}export-gltf.test.ts`, "glTF 2.0 déterministe : un nœud par calque"), p(`${API}routes/studio-export-3d.test.ts`, "Export Blender route : glTF 2.0"), p(`${E2E}studio-echanges.mjs`, "check(\"Exporter glTF : fichier servi")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
+      interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download={actif ? \"\" : undefined}"), p(`${WEB}VariantWorkspace.tsx`, "\"exporter-gltf\": studioExportUrl(")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/workstreams/studio/HANDOFF.md, checkpoint 2026-11-26", "Demande du maître d’ouvrage : pousser / tirer à la SketchUp et export direct vers Blender pour le rendu")],
+  },
+  {
+    id: "maquette-blender", format: "Script Blender (Python)", versionFormat: "Python 3 pour Blender 3.6 et suivants (bpy), studio-export-blender/1, glTF 2.0 embarqué", sens: "export", famille: "maquette",
+    objet: "Scène Blender prête à rendre d’une révision : le glTF de la révision, importé et préparé", taches: ["E.6-04", "E.6-05"], statut: "livre", export3d: "blender",
+    limite: "Le script embarque exactement le glTF de la révision (mêmes entités, mêmes limites) ; il l’importe, règle les unités en mètres, choisit Cycles, active la première caméra de scène, sinon pose une caméra de cadrage déclarée, et enregistre le .blend sur demande (-- --blend). Fichier neuf : seuls les objets d’usine sont retirés ; un fichier de l’utilisateur n’est jamais vidé. Aucune lumière ni aucun matériau inventés (monde gris uniforme d’appoint si la scène n’en a pas).",
+    entites: [
+      { entite: "Maillage, calques, apparences d’affichage, scènes", couverture: "partielle", detail: "Ceux du glTF embarqué (maquette-gltf), retrouvés dans Blender : objets nommés par identifiant, collections de nœuds par calque, matériaux Principled, caméras." },
+      { entite: "Caméra de cadrage", couverture: "partielle", detail: "Posée seulement sans scène enregistrée ; nommée « Camera de cadrage »." },
+      { entite: "Cotes, annotations, graphismes, propriétés, éléments non natifs", couverture: "absente", detail: "Comptés en en-tête du script, jamais écrits." },
+    ],
+    controle: "Tests du modèle (glTF embarqué identique, ASCII, aucune remise à zéro du fichier de l’utilisateur) ; exécution réelle dans Blender 5.3 (bpy) relevée à la livraison : objets, coordonnées, volumes, matériaux, caméra, .blend enregistré ; route servie ; règle d’or de la commande « Exporter vers Blender ».",
+    route: `GET ${ROUTE_VARIANTE}/export?format=blender`,
+    preuves: {
+      code: [p(`${M}export-gltf.ts`, "exportStudioBlender"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
+      tests: [p(`${M}export-gltf.test.ts`, "le script embarque exactement le glTF"), p(`${API}routes/studio-export-3d.test.ts`, "script Blender (text/x-python, .py)"), p(`${E2E}studio-echanges.mjs`, "check(\"Exporter vers Blender : script .py servi")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
+      interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download={actif ? \"\" : undefined}"), p(`${WEB}VariantWorkspace.tsx`, "\"exporter-blender\": studioExportUrl(")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/workstreams/studio/HANDOFF.md, checkpoint 2026-11-26", "Demande du maître d’ouvrage : pousser / tirer à la SketchUp et export direct vers Blender pour le rendu")],
+  },
+  {
     id: "dessin-dxf-import", format: "DXF ASCII", versionFormat: "R12 et suivantes (codes de groupe), CRLF ou LF ; DXF binaire refusé", sens: "import", famille: "dessin",
     objet: "Plan 2D ajouté au brouillon d’une variante, par commandes", taches: ["E.6-03"], statut: "livre",
     limite: "5 Mo au plus ; unité lue dans $INSUNITS (16 codes reconnus ; tout autre code, 0 ou absent : unité inconnue, choisie par l’utilisateur, jamais devinée) ; un calque déjà verrouillé dans le document (calque implicite compris) qui recevrait des objets fait échouer l’import ; Z ignoré (compté) ; tout le reste compté par type dans le rapport d’import, jamais écarté en silence.",
@@ -798,8 +842,8 @@ const REPORTS: readonly Report[] = [
     sources: [S_PLAN, S_LISTE("E.6-04")],
   },
   {
-    id: "gltf", format: "glTF", versionFormat: "non évaluée (2.0)", sens: ["export"], famille: "maquette", objet: "Maillage 3D et apparences d’affichage", taches: ["E.6-04", "E.6-05"],
-    raison: `${RAISON_SANS_CONTRAT} Aucun écrivain glTF.`,
+    id: "gltf", format: "glTF", versionFormat: "non évaluée (2.0)", sens: ["import"], famille: "maquette", objet: "Maillage 3D et apparences d’affichage", taches: ["E.6-04", "E.6-05"],
+    raison: "Lecture non livrée : studio-document/1 n’a pas de maillage libre pour recevoir un glTF lu. L’export glTF 2.0 est livré (maquette-gltf), comme le script Blender (maquette-blender).",
     sources: [S_PLAN, S_LISTE("E.6-04")],
   },
   {
@@ -997,7 +1041,11 @@ export const STUDIO_CAPACITES_PAR_SENS: readonly StudioCapacitesFormat[] = geler
   },
   nonLivreTous("dwg", "DWG", ["dwg-import", "dwg-export"], "Non livré, déclaré : décision approuvée D-179 (docs/atelier/decisions.md), que Studio ne contourne pas."),
   nonLivreTous("dgn", "DGN", ["dgn-import", "dgn-export"], "Non livré, déclaré : décision approuvée D-179 (docs/atelier/decisions.md)."),
-  nonLivreTous("gltf", "glTF", ["gltf-export"], "Aucun écrivain ni lecteur glTF."),
+  {
+    id: "gltf", format: "glTF 2.0", entrees: ["maquette-gltf", "gltf-import"],
+    sens: { lecture: nonLivre("Aucun lecteur glTF : studio-document/1 n’a pas de maillage libre."), consultation: nonLivre(SANS_LECTEUR), edition: nonLivre(SANS_LECTEUR), export: livre("Maillage nommé, matériaux d’affichage et caméras des scènes d’une révision."), "aller-retour": nonLivre(AR_SANS_LECTEUR) },
+  },
+  exportSeul("blender", "Script Blender (Python)", ["maquette-blender"], "Scène Blender prête à rendre : glTF de la révision importé, unités, caméra, Cycles, .blend sur demande."),
   nonLivreTous("nuage-points", "Nuage de points (LAS, E57, LAZ)", ["nuage-points-import"], "Aucun lecteur de nuage de points dans Studio."),
 ]);
 
