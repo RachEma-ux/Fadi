@@ -623,7 +623,7 @@ export const CONTRAT_AGENTS_JETONS_LISTER = contratRoute({
 });
 export const CONTRAT_AGENTS_JETON_CREER = contratRoute({
   id: "studio-api-agents-jeton-creer/1", routes: ["POST /agents/jetons"], objet: "Création d'un jeton d'agent, montré une seule fois.",
-  entree: "Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90).", statuts: [201], corps: "json", reponse: z.strictObject({ id: ident, nom: z.string(), jeton: z.string().startsWith("fadi_mcp_"), expireLe: instant }),
+  entree: "Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90, motDePasse du compte).", statuts: [201], corps: "json", reponse: z.strictObject({ id: ident, nom: z.string(), jeton: z.string().startsWith("fadi_mcp_"), expireLe: instant }),
 });
 export const CONTRAT_AGENTS_JETON_REVOQUER = contratRoute({
   id: "studio-api-agents-jeton-revoquer/1", routes: ["POST /agents/jetons/:tokenId/revoquer"], objet: "Révocation d'un jeton d'agent du compte.",

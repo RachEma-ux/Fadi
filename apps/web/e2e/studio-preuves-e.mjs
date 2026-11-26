@@ -17,6 +17,7 @@
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { chromium } from "playwright";
+import { inscrire, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const DB = process.env.DATABASE_URL;
@@ -37,10 +38,7 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `preuves-e-${randomUUID().slice(0, 8)}@example.com`);
-  await page.fill('input[name="password"]', "studio-preuves-e-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `preuves-e-${randomUUID().slice(0, 8)}@example.com`, "studio-preuves-e-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data, headers) => {
     const r = await page.request.fetch(`${BASE}${path}`, { method, data, headers: { origin: BASE, ...(headers ?? {}) } });
@@ -173,7 +171,7 @@ async function reouverture() {
   try {
     check("J2 : API de réouverture démarrée sur la même base", await demarrer());
     const compte = { email: `reouverture-${randomUUID().slice(0, 8)}@example.test`, password: `reouverture-${randomUUID()}` };
-    check("J2 : compte inscrit", (await appel("POST", "/auth/register", compte)).status === 201);
+    check("J2 : compte inscrit", (await inscrire(appel, compte, "POST")).status === 201);
     const pr = await appel("POST", "/projects", { code: `RO_${randomUUID().slice(0, 6)}`, name: "Studio — réouverture (recette synthétique)" });
     const racine = `/projects/${pr.body?.id}/studio`;
     const etude = await appel("POST", `${racine}/studies`, { name: "Étude durable" });

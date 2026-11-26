@@ -13,6 +13,7 @@
  */
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -69,10 +70,7 @@ const boite = (p, sel) => p.locator(sel).first().boundingBox();
 const dansEcran = (b, vp) => !!b && b.x >= 0 && b.y >= 0 && b.x + b.width <= vp.width + 0.5 && b.y + b.height <= vp.height + 0.5;
 
 const email = `planche-barre-outils-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "planche-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "planche-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · barres d'outils" })).body.id;

@@ -18,6 +18,7 @@
 import { chromium } from "playwright";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-w3a";
@@ -38,10 +39,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-w3a-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-w3a-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-w3a-${Date.now()}@example.com`, "studio-w3a-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const appel = async (method, path, data) => context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
   const api = async (method, path, data) => {

@@ -1,0 +1,40 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-modele",
+    "nom": {
+      "fr": "Essai du modèle",
+      "en": "Model trial"
+    },
+    "description": {
+      "fr": "Extension d'essai du lot 2 : elle lit le modèle, pose une boîte dans une opération et la sélectionne.",
+      "en": "Trial add-on for lot 2: it reads the model, places a box in one operation and selects it."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "selection"
+    ],
+    "commandes": [
+      {
+        "id": "poser-boite",
+        "libelle": {
+          "fr": "Poser une boîte",
+          "en": "Place a box"
+        },
+        "icone": "poser-boite.svg",
+        "raccourci": "Alt+Maj+F10"
+      }
+    ],
+    "outils": [],
+    "panneaux": [],
+    "abonnements": []
+  },
+  "code": "// Extension d'essai du lot 2 (protocole 1.0) : lecture du modèle, opération explicite, sélection.\nplanche.sur(\"commande.poser-boite\", async () => {\n  await planche.operation.ouvrir(\"Poser une boîte\");\n  const elements = await planche.modele.boite([0, 0, 0], 1, 1, 1);\n  const objet = await planche.modele.grouper(elements, \"Boîte d'essai\");\n  await planche.selection.definir([objet]);\n  const fin = await planche.operation.valider();\n  return { objet, crees: fin.crees.length };\n});\nplanche.sur(\"commande.compter\", async () => {\n  const m = await planche.modele.lire();\n  const selection = await planche.selection.lire();\n  return { faces: m.faces.length, aretes: m.aretes.length, objets: m.objets.length, selection: selection.length };\n});\nplanche.sur(\"commande.sans-operation\", async () => {\n  await planche.modele.rectangle([5, 5, 0], [1, 0, 0], [0, 1, 0]);\n  return \"fait\";\n});\nplanche.sur(\"commande.deux-operations\", async () => {\n  await planche.operation.ouvrir(\"Première\");\n  try {\n    await planche.operation.ouvrir(\"Seconde\");\n  } catch (e) {\n    await planche.operation.abandonner();\n    return e.name;\n  }\n  return \"aucune erreur\";\n});\nplanche.sur(\"commande.echouer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [9, 9, 9]);\n  throw new Error(\"raté\");\n});\nplanche.sur(\"commande.trainer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [7, 7, 7]);\n  for (;;) {}\n});\n",
+  "pages": {
+    "poser-boite.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M4 8l8-4 8 4v8l-8 4-8-4z\" fill=\"none\" stroke=\"currentColor\"/></svg>"
+  }
+}

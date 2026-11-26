@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, sql } from "drizzle-orm";
 import { CAPACITE_DU_BESOIN, capaciteDansPortee, type AttributionPortee, type CiblePortee } from "@parcours/domain-model";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
@@ -179,6 +179,9 @@ export async function activeSupportGrant(projectId: string, userId: string, exec
       gt(projectSupportGrants.expiresAt, new Date()),
       eq(users.platformRole, "admin"),
       eq(users.status, "active"),
+      // Un accès support n'est utilisable que par un administrateur dont la double authentification est active : un mot
+      // de passe d'administrateur volé ne suffit pas à lire un projet client (revue Multi-Arena, faille 1).
+      isNotNull(users.totpEnabledAt),
     ))
     .limit(1);
   return rows[0] ?? null;

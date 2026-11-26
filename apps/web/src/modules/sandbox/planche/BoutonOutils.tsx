@@ -7,6 +7,8 @@
  * groupe par famille du catalogue (flèche + nom) et une ligne par outil — cliquer la ligne ACTIVE l'outil et ferme la
  * liste ; l'étiquette en bout de ligne nomme la barre où l'outil est rangé et l'affiche ou la masque. Les commandes
  * suivent, en trois groupes : « Groupe », « Repères » et « Bois » (Zoom avant / arrière sont rangés avec « Caméra »).
+ * Chaque extension installée sur la plateforme (protocole des extensions, lot 3) a ensuite sa propre famille, à son nom,
+ * marquée d'une pastille « extension » : ses commandes, avec leur icône, leur raccourci et l'étiquette de sa barre.
  *
  * En pied, « ⚙ Barres d'outils » : chaque barre nommée (`barres-nommees.ts`) y figure UNE fois, avec son aperçu et son
  * interrupteur ; « Mes barres » liste les barres personnelles (regroupements du compte), « Nouvelle barre… » en crée une,
@@ -20,11 +22,14 @@ import { groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { t } from "../messages";
 import { afficherRaccourci, nomOutil, pictoOutil, raccourciOutil } from "./outils-planche";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import { IconeExtension } from "./extensions-installees";
 
 /** Aperçu d'une entrée dans la ligne d'une barre (icône seule ; le nom sert d'infobulle). */
 export interface ApercuBarre {
   readonly cle: string;
   readonly picto: DescriptionPictogramme;
+  /** Commande d'une extension installée : son icône (image du paquet). */
+  readonly image?: string;
   readonly nom: string;
 }
 
@@ -32,7 +37,8 @@ export interface ApercuBarre {
 export interface LigneBarre {
   readonly id: string;
   readonly nom: string;
-  readonly origine: "livree" | "personnelle";
+  /** `extension` : barre d'une extension installée (ni dupliquée, ni modifiée). */
+  readonly origine: "livree" | "personnelle" | "extension";
   /** Barre personnelle : identifiant de son regroupement (« Modifier »). */
   readonly groupe?: string;
   readonly affichee: boolean;
@@ -78,11 +84,24 @@ export interface PropsBoutonOutils {
    * catalogue. La recherche et les familles ne montrent que ceux-là.
    */
   catalogue?: readonly Outil[];
+  /** Extensions installées sur la plateforme : une famille par extension, à son nom, après les groupes livrés. */
+  famillesExtensions?: readonly FamilleExtension[];
+}
+
+/** Famille d'une extension installée : ses commandes, et sa barre (affichée ou masquée par l'étiquette de chaque ligne). */
+export interface FamilleExtension {
+  readonly id: string;
+  readonly nom: string;
+  /** Identifiant de sa barre d'outils. */
+  readonly barre: string;
+  readonly commandes: readonly CommandeListe[];
 }
 
 export interface CommandeListe {
   readonly id: string;
   readonly picto: DescriptionPictogramme;
+  /** Commande d'une extension installée : son icône (image du paquet), affichée à la place du pictogramme. */
+  readonly image?: string;
   readonly nom: string;
   readonly raccourci: string;
   /** Motif d'indisponibilité (`null` = disponible). */
@@ -116,7 +135,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS, famillesExtensions = [] }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   // Groupes dépliés : familles d'outils et groupes de commandes (« groupe », « reperes », « bois »).
@@ -131,10 +150,13 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
   const groupes = useMemo(() => groupesOutils(requete, catalogue), [requete, catalogue]);
   const filtre = requete.trim() !== "";
   const motsRequete = requete.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/\s+/).filter(Boolean);
-  const commandesRetenues = commandes.filter((c) => {
-    const texte = `${c.nom} ${c.raccourci} ${c.id}`.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const retient = (...textes: string[]) => {
+    const texte = textes.join(" ").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
     return motsRequete.every((m) => texte.includes(m));
-  });
+  };
+  const commandesRetenues = commandes.filter((c) => retient(c.nom, c.raccourci, c.id));
+  // Extensions installées : une commande est retenue par son nom, son raccourci ou le nom de son extension.
+  const famillesRetenues = famillesExtensions.map((f) => ({ ...f, commandes: f.commandes.filter((c) => retient(c.nom, c.raccourci, f.nom)) })).filter((f) => f.commandes.length > 0);
 
   const fermer = (rendreFocus = true) => {
     setOuvert(false);
@@ -250,8 +272,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
     }
   };
 
-  /** Ligne d'une commande : icône, nom, raccourci ; grisée, son titre dit pourquoi. */
-  const ligneCommande = (c: CommandeListe) => (
+  /** Ligne d'une commande : icône, nom, raccourci ; grisée, son titre dit pourquoi. `barre` : étiquette de la barre d'une extension installée. */
+  const ligneCommande = (c: CommandeListe, barre?: { id: string; nom: string }) => (
     <div key={c.id} className="planche-outils-ligne" role="none" data-outils-ligne={c.id}>
       <div className="planche-outils-tete" role="none">
         <button
@@ -268,11 +290,19 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
             c.executer();
           }}
         >
-          <Pictogramme picto={c.picto} className="planche-outils-picto" />
+          {c.image ? <IconeExtension image={c.image} className="planche-outils-picto" /> : <Pictogramme picto={c.picto} className="planche-outils-picto" />}
           <span className="planche-outils-libelle">{c.nom}</span>
           <span aria-hidden="true"> · </span>
           <kbd>{afficherRaccourci(c.raccourci)}</kbd>
         </button>
+        {barre && (() => {
+          const affichee = barres.some((b) => b.id === barre.id && b.affichee);
+          return (
+            <button type="button" role="menuitemcheckbox" className="planche-outils-etiquette" aria-checked={affichee} aria-label={t("outils.afficher.aide", { outil: barre.nom })} title={t("outils.afficher.aide", { outil: barre.nom })} data-outils-nav data-outils-etiquette={barre.id} onClick={() => onAfficherBarre(barre.id, !affichee)}>
+              {t("outils.etiquette", { barre: barre.nom })}
+            </button>
+          );
+        })()}
       </div>
     </div>
   );
@@ -280,7 +310,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
   const commandesCamera = commandesDe("camera");
   // Une famille sans outil retenu garde son groupe si une de ses commandes l'est (Zoom avant / arrière sous « Caméra »).
   const groupesAffiches = commandesCamera.length > 0 && !groupes.some((g) => g.famille === FAMILLE_DES_COMMANDES_CAMERA) ? [...groupes, { famille: FAMILLE_DES_COMMANDES_CAMERA, libelle: t("outils.famille.camera"), outils: [] as Outil[] }] : groupes;
-  const livrees = barres.filter((b) => b.origine === "livree");
+  const livrees = barres.filter((b) => b.origine !== "personnelle");
   const personnelles = barres.filter((b) => b.origine === "personnelle");
   const APERCU_MAX = 6;
   /** Ligne d'une barre nommée : interrupteur (toute la ligne), nom, aperçu des icônes, puis Dupliquer ou Modifier. */
@@ -301,7 +331,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
         <span className="planche-outils-barre-apercu" aria-hidden="true">
           {b.apercu.slice(0, APERCU_MAX).map((a) => (
             <span key={a.cle} title={a.nom}>
-              <Pictogramme picto={a.picto} />
+              {a.image ? <IconeExtension image={a.image} /> : <Pictogramme picto={a.picto} />}
             </span>
           ))}
           {b.apercu.length > APERCU_MAX && <span className="planche-outils-barre-reste">+{b.apercu.length - APERCU_MAX}</span>}
@@ -382,7 +412,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
             />
           </div>
           <div id={idListe} className="planche-outils-arbre" role="menu" aria-label={t("outils.menu")}>
-            {filtre && groupes.length === 0 && commandesRetenues.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
+            {filtre && groupes.length === 0 && commandesRetenues.length === 0 && famillesRetenues.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
             {groupesAffiches.map((g) => {
               const deplie = filtre || familles.has(g.famille);
               return (
@@ -420,7 +450,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
                         </div>
                       );
                     })}
-                  {deplie && g.famille === FAMILLE_DES_COMMANDES_CAMERA && commandesCamera.map(ligneCommande)}
+                  {deplie && g.famille === FAMILLE_DES_COMMANDES_CAMERA && commandesCamera.map((c) => ligneCommande(c))}
                 </div>
               );
             })}
@@ -434,7 +464,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
                     <IconeSandbox nom={deplie ? "menu" : "sousMenu"} className="planche-outils-fleche" />
                     {t(g.cle)}
                   </button>
-                  {deplie && lignes.map(ligneCommande)}
+                  {deplie && lignes.map((c) => ligneCommande(c))}
                 </div>
               );
             })}
@@ -459,12 +489,27 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
                           <span className="planche-outils-libelle">{x.nom}</span>
                           <span className="planche-outils-interrupteur" aria-hidden="true" data-actif={x.active ? "" : undefined} />
                         </button>
-                        {x.active && <div className="planche-outils-extension-commandes" role="none">{lignes.filter((c) => c.extension === x.id).map(ligneCommande)}</div>}
+                        {x.active && <div className="planche-outils-extension-commandes" role="none">{lignes.filter((c) => c.extension === x.id).map((c) => ligneCommande(c))}</div>}
                       </div>
                     ))}
                 </div>
               );
             })()}
+            {famillesRetenues.map((f) => {
+              // Famille d'une extension installée : son nom, la pastille « extension », puis ses commandes.
+              const cle = `installee:${f.id}`;
+              const deplie = filtre || familles.has(cle);
+              return (
+                <div key={cle} className="planche-outils-groupe" role="group" aria-label={t("extensions.installee.groupe", { extension: f.nom })} data-outils-groupe={cle} data-outils-extension-installee={f.id}>
+                  <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={deplie} data-outils-nav data-outils-famille={cle} onClick={() => !filtre && basculerFamille(cle)}>
+                    <IconeSandbox nom={deplie ? "menu" : "sousMenu"} className="planche-outils-fleche" />
+                    {f.nom}
+                    <span className="planche-outils-pastille-extension" data-outils-pastille-extension>{t("extensions.installee.pastille")}</span>
+                  </button>
+                  {deplie && f.commandes.map((c) => ligneCommande(c, { id: f.barre, nom: f.nom }))}
+                </div>
+              );
+            })}
             <div className="planche-outils-pied" role="group" aria-label={t("outils.pied")} data-outils-reglages>
               <span className="planche-outils-pied-titre" aria-hidden="true">
                 <IconeSandbox nom="reglages" /> {t("outils.pied")}

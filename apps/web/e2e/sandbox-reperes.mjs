@@ -16,6 +16,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/sandbox-reperes";
@@ -67,10 +68,7 @@ async function png() {
 }
 
 try {
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `reperes-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "sandbox-reperes-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `reperes-${Date.now()}@example.com`, "sandbox-reperes-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   await ouvrir();
 

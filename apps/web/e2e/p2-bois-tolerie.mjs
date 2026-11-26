@@ -11,6 +11,7 @@
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -28,10 +29,7 @@ const api = async (m, c, d) => { const r = await page.request[m](`${BASE}${c}`, 
 const navigations = [];
 page.on("framenavigated", (f) => { if (f === page.mainFrame()) navigations.push(f.url()); });
 
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `p2-bois-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "bois-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `p2-bois-${Date.now()}@example.com`, "bois-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const ref = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${ref}/copies`, { name: "P.118-B" })).body.id;

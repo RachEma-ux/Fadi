@@ -19,6 +19,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/sandbox";
@@ -49,10 +50,7 @@ async function nouvellePage(viewport, options = {}) {
 }
 
 async function inscrire(page) {
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `sandbox-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "sandbox-module-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `sandbox-${Date.now()}@example.com`, "sandbox-module-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
 }
 
@@ -328,7 +326,9 @@ try {
 
   // 4. Échec du chargement de la Planche : limite d'erreur du Sandbox, navigation de Fadi gardée, « Réessayer » recharge.
   {
-    const { context: c2, page: p2 } = await nouvellePage({ width: 1440, height: 900 });
+    // Service worker bloqué (comme studio-chargement) : un morceau servi par lui échapperait à `route` et l'échec ne serait
+    // jamais simulé ; l'inscription par lien (deux pages) lui laisse le temps de prendre la main.
+    const { context: c2, page: p2 } = await nouvellePage({ width: 1440, height: 900 }, { serviceWorkers: "block" });
     await inscrire(p2);
     const morceau = /\/assets\/SandboxPlanche-[^/]+\.js$/;
     await p2.route(morceau, (r) => r.abort());
@@ -624,8 +624,9 @@ try {
         const courant = (await api("get")).corps;
         const sans = await api("put", { profil: courant.profil, barrePersonnelle: courant.barrePersonnelle, favoris: courant.favoris, regroupements: courant.regroupements, extensions: courant.extensions });
         check("scripts : un enregistrement sans le champ « scripts » (ancienne version) garde les scripts du compte", sans.statut === 200 && sans.corps.scripts?.length === 1, JSON.stringify(sans.corps.scripts));
-        const refus = await api("put", { ...courant, format: undefined, compte: undefined, updatedAt: undefined, scripts: [{ id: "Mauvais Id", nom: "x", code: "" }] });
-        check("scripts : une liste de scripts invalide est refusée (400 invalid_input)", refus.statut === 400 && refus.corps.error === "invalid_input", JSON.stringify(refus.corps));
+        const refus = await api("put", { ...courant, format: undefined, compte: undefined, updatedAt: undefined, catalogue: undefined, scripts: [{ id: "Mauvais Id", nom: "x", code: "" }] });
+        // Le refus doit venir des scripts eux-mêmes, pas d'un autre champ du corps (le catalogue n'est pas renvoyé au serveur).
+        check("scripts : une liste de scripts invalide est refusée (400 invalid_input)", refus.statut === 400 && refus.corps.error === "invalid_input" && /script/.test(String(refus.corps.detail)), JSON.stringify(refus.corps));
       }
       await p3.reload();
       await plancheChargee(p3, "scripts enregistrés");
