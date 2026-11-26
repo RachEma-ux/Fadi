@@ -8,6 +8,20 @@ import { creerFonctionsPlanche } from "./scripts.js";
 const paquet = (id: string, abonnements: string[], permissions: string[] = ["evenements"]) => ({ fiche: { id, permissions, abonnements } }) as unknown as PaquetExtension;
 
 describe("résumé d'un changement du modèle", () => {
+  it("une arête ou une face déplacée est « modifiée », même si seuls ses sommets ont bougé", () => {
+    const f = creerFonctionsPlanche(modeleVide());
+    const arete = (f.api.ligne([0, 0, 0], [1, 0, 0]) as Id[])[0]!;
+    const face = f.api.rectangle([5, 0, 0], [1, 0, 0], [0, 1, 0]) as Id;
+    const m1 = f.modele();
+    f.api.deplacer([arete], [0, 0, 1]);
+    const m2 = f.modele();
+    expect(resumerChangement(m1, m2, "utilisateur")).toMatchObject({ ajoutes: [], modifies: [arete], supprimes: [] });
+    f.api.deplacer([face], [0, 0, 1]);
+    const c = resumerChangement(m2, f.modele(), "utilisateur")!;
+    expect(c.modifies).toContain(face);
+    expect(c.modifies).not.toContain(arete);
+  });
+
   it("ajouts, modifications et suppressions du contexte racine ; rien si rien ne change", () => {
     const m0 = modeleVide();
     expect(resumerChangement(m0, m0, "utilisateur")).toBeNull();

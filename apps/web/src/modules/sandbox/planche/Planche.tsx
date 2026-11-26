@@ -502,6 +502,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   /** Journal des modifications de la Planche courante (page Informations) ; écrit avec le dessin. */
   const journalRef = useRef<EntreeJournal[]>([]);
   const [chargeId, setChargeId] = useState(0);
+  /** Avance à la fin de chaque chargement de dessin (annonce « projet.ouvert » aux extensions). */
+  const [dessinCharge, setDessinCharge] = useState(0);
   const [sauvegarde] = useState(() =>
     creerSauvegardeBrouillon(setEtatSauvegarde, async (modele) => {
       const id = indexRef.current.courante;
@@ -1785,6 +1787,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         // Contexte de travail de cette Planche : celui de ce navigateur, sinon l'ancien repère du document (AX-D4).
         poserContextes(historiqueContextes(contexteMemorise(idx.courante) ?? contexteDepuisDocument(histRef.current.present.modele.annotations?.repere)));
         setBrouillonCharge(true);
+        setDessinCharge((n) => n + 1);
         rafraichir();
       } catch {
         if (!annule) setEtatSauvegarde("erreur");
@@ -2609,27 +2612,39 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   paquetsRef.current = paquetsInstalles;
   /** Extension à l'origine du changement en cours d'application, et son rang dans la chaîne de réactions. */
   const causeChangementRef = useRef<CauseEvenement | null>(null);
+  /** Cause du dernier changement du dessin : l'enregistrement qu'il déclenche est annoncé avec elle (pas de boucle). */
+  const causeDernierChangementRef = useRef<CauseEvenement | null>(null);
+  /** Vrai pendant une annulation ou un rétablissement. */
+  const gesteFigeRef = useRef(false);
   const emettreEvenementRef = useRef<(nom: EvenementExtension, donnees: unknown, cause?: CauseEvenement, fige?: boolean) => void>(() => {});
   signalerModeleRef.current = (avant, apres) => {
     // Chargement d'un dessin (historique neuf) : annoncé par « projet.ouvert », pas comme un changement.
     if (apres.passe.length === 0 && apres.futur.length === 0 && apres.present.operation === null) return;
     const cause = causeChangementRef.current;
     const origine = cause ? "extension" : apres.futur.length > avant.futur.length ? "annulation" : avant.futur[0] === apres.present && apres.passe.length > avant.passe.length ? "retablissement" : "utilisateur";
+    causeDernierChangementRef.current = cause;
+    const fige = origine === "annulation" || origine === "retablissement";
+    if (fige) {
+      // La sélection vidée par le même geste est annoncée avec la même réserve.
+      gesteFigeRef.current = true;
+      window.setTimeout(() => (gesteFigeRef.current = false), 0);
+    }
     const changement = resumerChangement(avant.present.modele, apres.present.modele, origine);
     // Après une annulation ou un rétablissement, une réaction ne modifie pas le dessin : elle déferait le geste.
-    if (changement) emettreEvenementRef.current("modele.change", changement, cause ?? { rebond: 0 }, origine === "annulation" || origine === "retablissement");
+    if (changement) emettreEvenementRef.current("modele.change", changement, cause ?? { rebond: 0 }, fige);
   };
   const selectionAnnoncee = useRef<readonly string[]>([]);
   const causeSelectionRef = useRef<CauseEvenement | null>(null);
   signalerSelectionRef.current = () => {
     // Plusieurs changements dans le même geste : un seul événement, avec la sélection finale.
     const cause = causeSelectionRef.current ?? causeChangementRef.current;
+    const fige = gesteFigeRef.current;
     window.setTimeout(() => {
       const s = selectionRef.current;
       const a = selectionAnnoncee.current;
       if (!plancheMontee.current || (a.length === s.length && a.every((id, i) => id === s[i]))) return;
       selectionAnnoncee.current = s;
-      emettreEvenementRef.current("selection.change", { selection: [...s] }, cause ?? { rebond: 0 });
+      emettreEvenementRef.current("selection.change", { selection: [...s] }, cause ?? { rebond: 0 }, fige);
     }, 0);
   };
   /** Ce que la Planche prête à une extension : lu à chaque appel, pour suivre le dessin, la sélection et le contexte courants. */
@@ -2642,7 +2657,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
       const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
-      if (contexteAppel?.discrete === true && marque?.fige === true) return false;
+      // Réaction à une annulation ou à un rétablissement, ou tant qu'il reste un pas à rétablir : elle déferait le geste.
+      if (contexteAppel?.discrete === true && (marque?.fige === true || histRef.current.futur.length > 0)) return false;
       causeChangementRef.current = { extension: id, rebond: typeof marque?.rebond === "number" ? marque.rebond : 0 };
       // Opération discrète (réaction à un événement) : rattachée au pas d'annulation de l'utilisateur, qui garde son nom.
       const h0 = histRef.current;
@@ -2719,15 +2735,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   // « projet.ouvert » : à chaque dessin chargé, une fois les extensions connues ; « projet.enregistre » : après chaque
   // enregistrement du dessin.
+  const ouvertureAnnoncee = useRef(0);
   useEffect(() => {
-    if (!brouillonCharge || paquetsInstalles.length === 0) return;
+    // `dessinCharge` avance à la fin de chaque chargement : jamais avant que le nouveau dessin soit en place, et une
+    // seule annonce par dessin chargé, même si la liste des extensions arrive après.
+    if (dessinCharge === 0 || paquetsInstalles.length === 0 || ouvertureAnnoncee.current === dessinCharge) return;
+    ouvertureAnnoncee.current = dessinCharge;
+    causeDernierChangementRef.current = null;
     emettreEvenementRef.current("projet.ouvert", { nom: nomAffiche(plancheDe(indexRef.current)) });
-  }, [brouillonCharge, chargeId, paquetsInstalles]);
+  }, [dessinCharge, paquetsInstalles]);
   const sauvegardeVue = useRef<EtatSauvegarde>(etatSauvegarde);
   useEffect(() => {
     const avant = sauvegardeVue.current;
     sauvegardeVue.current = etatSauvegarde;
-    if (etatSauvegarde === "enregistre" && (avant === "enregistrement" || avant === "attente")) emettreEvenementRef.current("projet.enregistre", null);
+    if (etatSauvegarde === "enregistre" && (avant === "enregistrement" || avant === "attente")) emettreEvenementRef.current("projet.enregistre", null, causeDernierChangementRef.current ?? { rebond: 0 });
   }, [etatSauvegarde]);
   const lancerCommandeExtension = (p: PaquetExtension, c: EntreeDeclaree) => {
     const id = p.fiche.id;
