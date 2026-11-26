@@ -173,6 +173,20 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   (ce lot : le journal seulement). Extension d'essai : `apps/web/e2e/donnees/essai-socle.fadi-addon.json`. Le
   branchement dans la Planche (commandes, panneau, outil, modèle) vient avec les lots suivants : rien n'est encore
   visible, et le Worker des extensions n'est pas encore chargé par l'application.
+- **Protocole des extensions, version 1.0 — lot 2** (toujours sans interface) : la Planche sert à une extension la
+  **lecture complète du modèle** (« modele.lire » : faces, arêtes, objets du contexte, en mètres), l'**opération
+  explicite** (« operation.ouvrir / valider / abandonner », « modele.modifier » avec les dix fonctions de dessin d'un
+  script personnel) et la **sélection** (« selection.lire / definir »), chacune derrière sa permission
+  (`packages/sandbox-planche-model/src/services-extensions.ts`, `creerServicesExtension`). Une opération travaille sur
+  une copie : rien n'est visible avant la validation, qui applique l'ensemble en **un seul pas d'annulation** sous le nom
+  donné ; une seconde opération est l'erreur « operation_deja_ouverte » ; une modification sans opération reçoit une
+  opération automatique au nom de la commande, validée à la fin de l'appel ; si le dessin a changé entre-temps, rien
+  n'est appliqué (« operation_refusee ») ; un appel en échec, hors délai ou arrêté abandonne l'opération. Côté
+  extension, chaque demande rend une promesse (`planche.modele.*`, `planche.operation.*`, `planche.selection.*`,
+  `planche.demander`) et un traitement peut être `async`. Les fonctions de dessin sont celles des scripts
+  (`creerFonctionsPlanche`, extraite de `executerScript` sans changement de comportement). L'hôte reçoit l'accès à la
+  Planche par `acces` (`AccesPlanche`) ; le branchement réel (modèle et annulation de la Planche) vient avec le lot des
+  commandes. Extension d'essai : `apps/web/e2e/donnees/essai-modele.fadi-addon.json`.
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants
