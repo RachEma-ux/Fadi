@@ -1,0 +1,67 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-evenements",
+    "nom": {
+      "fr": "Essai des événements",
+      "en": "Events trial"
+    },
+    "description": {
+      "fr": "Extension d'essai du lot 7 : elle suit le dessin, la sélection et le projet, arme un rappel et lit les unités, les matières et les balises.",
+      "en": "Trial add-on for lot 7: it follows the drawing, the selection and the project, sets a reminder and reads units, materials and tags."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "messages",
+      "evenements",
+      "donnees"
+    ],
+    "commandes": [
+      {
+        "id": "etat",
+        "libelle": {
+          "fr": "État du suivi",
+          "en": "Tracking status"
+        },
+        "icone": "etat.svg",
+        "raccourci": "Alt+Maj+F1"
+      },
+      {
+        "id": "rappel",
+        "libelle": {
+          "fr": "Armer un rappel",
+          "en": "Set a reminder"
+        },
+        "icone": "rappel.svg",
+        "raccourci": "Alt+Maj+F11"
+      },
+      {
+        "id": "mesurer",
+        "libelle": {
+          "fr": "Unités, matières et balises",
+          "en": "Units, materials and tags"
+        },
+        "icone": "mesurer.svg",
+        "raccourci": "Alt+Maj+F12"
+      }
+    ],
+    "outils": [],
+    "panneaux": [],
+    "abonnements": [
+      "projet.ouvert",
+      "projet.enregistre",
+      "modele.change",
+      "selection.change"
+    ]
+  },
+  "code": "// Extension d'essai du lot 7 (protocole 1.0) : événements, minuteries, matières, balises, unités.\nlet selection = 0;\nlet dessin = null;\nlet ouvertures = 0;\nlet enregistrements = 0;\nconst origines = [];\n\nplanche.sur(\"projet.ouvert\", (d) => {\n  ouvertures += 1;\n  dessin = d && d.nom;\n});\nplanche.sur(\"projet.enregistre\", () => {\n  enregistrements += 1;\n});\nplanche.sur(\"selection.change\", (d) => {\n  selection = d.selection.length;\n});\n// Chaque changement du dessin est compté dans les données du projet : l'écriture se rattache au pas de l'utilisateur.\nplanche.sur(\"modele.change\", async (d) => {\n  origines.push(d.origine);\n  if (d.origine === \"annulation\" || d.origine === \"retablissement\") {\n    // Essai : après une annulation, la Planche refuse toute modification faite en réaction.\n    await planche.modele.ligne([0, 0, 0], [9, 9, 9]);\n    return;\n  }\n  const n = ((await planche.donnees.lire(\"projet\", \"changements\")) || 0) + 1;\n  await planche.donnees.ecrire(\"projet\", \"changements\", n);\n});\n\nplanche.sur(\"commande.etat\", async () => {\n  const changements = (await planche.donnees.lire(\"projet\", \"changements\")) || 0;\n  const etat = { changements, selection, dessin, ouvertures, enregistrements, origines: origines.slice(-6) };\n  await planche.message.afficher(\"changements=\" + changements + \" selection=\" + selection + \" ouvertures=\" + ouvertures + \" enregistrements=\" + enregistrements + \" origines=\" + etat.origines.join(\",\"));\n  return etat;\n});\n\nplanche.sur(\"commande.rappel\", async (d) => {\n  const en = d && d.langue === \"en\";\n  await planche.minuterie.dans(400, async () => {\n    await planche.modele.ligne([0, 0, 2], [1, 0, 2]);\n    await planche.message.afficher(en ? \"Reminder: a line was drawn.\" : \"Rappel : une ligne a été tracée.\");\n  });\n  await planche.message.afficher(en ? \"Reminder set.\" : \"Rappel armé.\");\n  return true;\n});\n\nplanche.sur(\"commande.mesurer\", async () => {\n  const u = await planche.unites.lire();\n  const matieres = await planche.matieres.lire();\n  const balises = await planche.balises.lire();\n  const texte = (await planche.unites.formater(1.5)) + \" · \" + (await planche.unites.formater(2.25, \"aire\")) + \" · \" + matieres.length + \" matière(s) · \" + balises.length + \" balise(s)\";\n  await planche.message.afficher(texte);\n  return { unites: u, matieres: matieres.length, balises: balises.length };\n});\n",
+  "pages": {
+    "etat.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19V5M4 19h16\"/><path d=\"M8 15l3-4 3 2 4-6\"/></svg>",
+    "rappel.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"13\" r=\"7\"/><path d=\"M12 9v4l2.5 1.5M9 3h6\"/></svg>",
+    "mesurer.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 16L16 3l5 5L8 21z\"/><path d=\"M7 12l2 2M10 9l2 2M13 6l2 2\"/></svg>"
+  }
+}

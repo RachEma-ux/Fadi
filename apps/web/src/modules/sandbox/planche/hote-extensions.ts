@@ -19,8 +19,8 @@
  * Aucune interface ici : la Planche fournit l'accès au modèle, l'affichage des avis et la fenêtre de saisie.
  */
 import {
-  BORNES_EXTENSION, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
-  lireAvisExtension, lireDemandeSaisie, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeSaisie,
+  BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
+  lireAvisExtension, lireDelaiMinuterie, lireDemandeSaisie, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeSaisie,
   type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
 import type { DemarrageExtension, DemarrageRendu } from "./extension-planche.worker";
@@ -51,7 +51,7 @@ export interface HoteExtension {
    * Adresse une demande (commande) ou un événement à l'extension ; la démarre au besoin. `libelle` nomme l'opération
    * automatique éventuelle dans l'historique (défaut : le nom de l'appel).
    */
-  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown, libelle?: string) => Promise<IssueAppelExtension>;
+  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown, libelle?: string, marque?: unknown) => Promise<IssueAppelExtension>;
   /** Arrête l'espace isolé ; l'appel en cours et ceux qui attendaient rendent « arrete ». Un appel fait ensuite la redémarre. */
   readonly arreter: () => void;
   readonly enMarche: () => boolean;
@@ -65,6 +65,10 @@ export interface OptionsHoteExtension {
   readonly surJournal?: (ligne: string) => void;
   /** Ce que la Planche prête à l'extension (modèle, sélection). Absent : seules les demandes sans modèle sont servies. */
   readonly acces?: AccesPlanche;
+  /** Issue d'une échéance de minuterie (lot 7) : la Planche prévient l'utilisateur si l'extension a été arrêtée. */
+  readonly surEcheance?: (issue: IssueAppelExtension) => void;
+  /** Nom, dans l'historique, du pas que fait une échéance qui modifie le dessin (défaut : le nom de l'événement). */
+  readonly libelleEcheance?: string;
   /** Avis demandé par l'extension (`message.afficher`). Absent : la demande est refusée. */
   readonly surAvis?: (avis: AvisExtension) => void;
   /**
@@ -93,6 +97,11 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   let lignes = 0;
   /** Appel en cours : au plus un, les autres attendent dans `file`. */
   const services = o.acces ? creerServicesExtension(paquet.fiche, o.acces) : null;
+  /** Minuteries armées par l'extension (lot 7) : numéro → minuterie du navigateur ; perdues à l'arrêt de l'espace isolé. */
+  const minuteries = new Map<number, ReturnType<typeof setTimeout>>();
+  let numeroMinuterie = 0;
+  /** Marque de l'appel en cours (rang dans une chaîne de réactions) : une minuterie armée pendant cet appel la garde. */
+  let marqueEnCours: unknown;
   let enCours: { readonly id: number | "demarrage"; readonly sorte: "demande" | "evenement" | "demarrage"; readonly clore: (i: IssueAppelExtension | DemarrageRendu) => void; readonly suspendre: () => void; readonly reprendre: () => void } | null = null;
   let avis = 0;
   /** Fenêtre de saisie ouverte pour l'appel en cours : au plus une. */
@@ -107,6 +116,8 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   let epoque = 0;
 
   const eteindre = () => {
+    for (const m of minuteries.values()) clearTimeout(m);
+    minuteries.clear();
     if (!w) return;
     w.onmessage = null;
     w.onerror = null;
@@ -147,11 +158,38 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     });
   };
 
+  /** Minuteries : armées pendant un appel seulement ; à l'échéance, l'extension reçoit « minuterie.echeance ». */
+  const servirMinuterie = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
+    if (m.nom === "minuterie.annuler") {
+      const id = (m.donnees as { id?: unknown } | null)?.id;
+      if (typeof id === "number" && minuteries.has(id)) {
+        clearTimeout(minuteries.get(id));
+        minuteries.delete(id);
+      }
+      return void w?.postMessage(reponseProtocole(m.id));
+    }
+    if (!enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+    const delai = lireDelaiMinuterie(m.donnees);
+    if (delai === null) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", `delaiMs : de 0 à ${BORNES_MINUTERIE.delaiMaxMs} millisecondes`));
+    if (minuteries.size >= BORNES_MINUTERIE.actives) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", `${BORNES_MINUTERIE.actives} minuteries au plus à la fois`));
+    const id = ++numeroMinuterie;
+    const marque = marqueEnCours;
+    minuteries.set(
+      id,
+      setTimeout(() => {
+        if (!minuteries.delete(id)) return;
+        void appeler("evenement", "minuterie.echeance", { id }, o.libelleEcheance, marque).then((issue) => o.surEcheance?.(issue));
+      }, delai),
+    );
+    w?.postMessage(reponseProtocole(m.id, id));
+  };
+
   /** Sert une demande de l'extension : journal, avis et saisie ici ; modèle, opération et sélection par les services. */
   const servir = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
     const jugement = jugerDemandeExtension(paquet.fiche, m.nom);
     if (!jugement.ok) return void w?.postMessage(refusProtocole(m.id, jugement.erreur, jugement.detail));
     if (m.nom === "message.afficher" || m.nom === "saisie.demander") return servirMessages(m);
+    if (m.nom === "minuterie.armer" || m.nom === "minuterie.annuler") return servirMinuterie(m);
     if (m.nom !== "journal.afficher") {
       // Hors d'un appel (aucune commande ni événement en cours), une extension ne lit ni ne modifie rien.
       if (!services || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
@@ -235,7 +273,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     return { genre: "demarrage", erreur: r.erreur! };
   };
 
-  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null, libelle = nom) => {
+  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null, libelle = nom, marque = undefined) => {
     const demandeA = epoque;
     const suite = file.then(async (): Promise<IssueAppelExtension> => {
       if (demandeA !== epoque) return { genre: "arrete" };
@@ -245,9 +283,13 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       if (refusDemarrage) return refusDemarrage;
       if (demandeA !== epoque) return { genre: "arrete" };
       const id = ++numero;
-      services?.debutAppel(libelle);
+      // Une réaction à un événement qui modifie le dessin le fait dans une opération discrète, rattachée au pas de
+      // l'utilisateur ; l'échéance d'une minuterie, qui arrive plus tard, fait son propre pas.
+      services?.debutAppel(libelle, { discrete: sorte === "evenement" && nom !== "minuterie.echeance", marque });
+      marqueEnCours = marque;
       const issue = await attendre<IssueAppelExtension>(id, sorte, delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
       // Fin de l'appel : l'opération automatique est validée s'il a réussi, toute opération est abandonnée sinon.
+      marqueEnCours = undefined;
       if (services && !services.finAppel(issue.genre === "fini")) return { genre: "erreur", nom: "operation_refusee", detail: "le dessin a changé pendant la commande" };
       return issue;
     });

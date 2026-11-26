@@ -373,3 +373,110 @@ planche.sur("commande.bavarde", async () => { for (let i = 0; i < 9; i++) await 
     expect(await nue.appeler("demande", "commande.avis-vide")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : message.afficher" });
   });
 });
+
+describe("événements et minuteries (lot 7)", () => {
+  /** Planche de remplacement qui retient le contexte de chaque application (discrète ou non, marque). */
+  function plancheSuivie() {
+    const etat = { modele: modeleVide() as Modele, applications: [] as { nom: string; discrete: boolean; marque: unknown }[] };
+    const acces: AccesPlanche = {
+      modele: () => etat.modele,
+      selection: () => [],
+      dans: () => undefined,
+      appliquer: (travail, nom, _crees, contexte) => {
+        etat.modele = travail;
+        etat.applications.push({ nom, discrete: contexte?.discrete === true, marque: contexte?.marque });
+        return true;
+      },
+      selectionner: () => {},
+    };
+    return { etat, acces };
+  }
+  const PERMISSIONS = ["modele.lire", "modele.modifier", "evenements"] as const;
+  const attendreQue = async (f: () => boolean) => {
+    for (let i = 0; i < 300 && !f(); i++) await pause(2);
+  };
+
+  it("une réaction à un événement modifie le dessin dans une opération discrète, avec la marque de l'appel", async () => {
+    const p = plancheSuivie();
+    const code = 'planche.sur("modele.change", async () => { await planche.modele.ligne([0, 0, 0], [1, 0, 0]); });\nplanche.sur("commande.tracer", async () => { await planche.modele.ligne([0, 0, 0], [0, 1, 0]); });';
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, acces: p.acces });
+    expect((await h.appeler("demande", "commande.tracer", null, "Tracer")).genre).toBe("fini");
+    expect((await h.appeler("evenement", "modele.change", null, "Réaction", { rebond: 2 })).genre).toBe("fini");
+    expect(p.etat.applications).toEqual([
+      { nom: "Tracer", discrete: false, marque: undefined },
+      { nom: "Réaction", discrete: true, marque: { rebond: 2 } },
+    ]);
+  });
+
+  it("une minuterie appelle sa fonction une fois, après la commande ; elle garde la marque et fait son propre pas", async () => {
+    const p = plancheSuivie();
+    const journal: string[] = [];
+    const echeances: string[] = [];
+    const code = 'planche.sur("commande.differer", async () => { const id = await planche.minuterie.dans(20, async () => { planche.afficher("échéance"); await planche.modele.ligne([0, 0, 0], [1, 1, 0]); }); planche.afficher("armée " + id); return id; });';
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, acces: p.acces, surJournal: (l) => journal.push(l), surEcheance: (i) => echeances.push(i.genre), libelleEcheance: "Action différée" });
+    expect(await h.appeler("demande", "commande.differer", null, "Différer", { rebond: 1 })).toEqual({ genre: "fini", resultat: 1 });
+    expect(journal).toEqual(["armée 1"]);
+    await attendreQue(() => echeances.length > 0);
+    expect(echeances).toEqual(["fini"]);
+    expect(journal).toEqual(["armée 1", "échéance"]);
+    expect(p.etat.applications).toEqual([{ nom: "Action différée", discrete: false, marque: { rebond: 1 } }]);
+    await pause(40);
+    expect(echeances).toHaveLength(1);
+  });
+
+  it("une minuterie annulée ou perdue à l'arrêt ne sonne pas", async () => {
+    const echeances: string[] = [];
+    const journal: string[] = [];
+    const code = 'planche.sur("commande.armer-puis-annuler", async () => { const id = await planche.minuterie.dans(15, () => planche.afficher("ne doit pas sonner")); await planche.minuterie.annuler(id); return id; });\nplanche.sur("commande.armer", () => planche.minuterie.dans(15, () => planche.afficher("ne doit pas sonner")));';
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, surJournal: (l) => journal.push(l), surEcheance: (i) => echeances.push(i.genre) });
+    expect((await h.appeler("demande", "commande.armer-puis-annuler")).genre).toBe("fini");
+    expect((await h.appeler("demande", "commande.armer")).genre).toBe("fini");
+    h.arreter();
+    await pause(60);
+    expect(echeances).toEqual([]);
+    expect(journal).toEqual([]);
+    expect(h.enMarche()).toBe(false);
+  });
+
+  it("refus nommés : sans la permission « evenements », délai hors bornes, onze minuteries", async () => {
+    const nom = 'async (f) => { try { await f(); return "aucune erreur"; } catch (e) { return e.name + " : " + e.message; } }';
+    const code = `const essayer = ${nom};
+planche.sur("commande.armer", () => essayer(() => planche.minuterie.dans(10000, () => {})));
+planche.sur("commande.trop-long", () => essayer(() => planche.minuterie.dans(600001, () => {})));
+planche.sur("commande.negatif", () => essayer(() => planche.minuterie.dans(-1, () => {})));
+planche.sur("commande.onze", () => essayer(async () => { for (let i = 0; i < 11; i++) await planche.minuterie.dans(10000, () => {}); }));`;
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer });
+    expect(await h.appeler("demande", "commande.trop-long")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : delaiMs/) });
+    expect(await h.appeler("demande", "commande.negatif")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : delaiMs/) });
+    expect(await h.appeler("demande", "commande.onze")).toMatchObject({ genre: "fini", resultat: "argument_invalide : 10 minuteries au plus à la fois" });
+    h.arreter();
+    const sans = creerHoteExtension(avecCode(code, ["modele.lire"]), { creer: faux().creer });
+    expect(await sans.appeler("demande", "commande.armer")).toMatchObject({ genre: "fini", resultat: "permission_refusee : evenements" });
+    sans.arreter();
+  });
+
+  it("l'extension d'essai du lot 7 est admise ; elle compte les changements et lit les unités", async () => {
+    const lu7 = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-evenements.fadi-addon.json", import.meta.url)), "utf8")));
+    if (!lu7.ok) throw new Error(`extension d'essai du lot 7 refusée : ${lu7.detail}`);
+    expect(lu7.paquet.fiche.abonnements).toEqual(["projet.ouvert", "projet.enregistre", "modele.change", "selection.change"]);
+    const p = plancheSuivie();
+    const avis: AvisExtension[] = [];
+    const h = creerHoteExtension(lu7.paquet, { creer: faux().creer, acces: { ...p.acces, separateur: () => "." }, surAvis: (a) => avis.push(a) });
+    expect((await h.appeler("evenement", "modele.change", { ajoutes: [], modifies: [], supprimes: [], origine: "utilisateur", tronque: false }, "Réaction")).genre).toBe("fini");
+    expect(p.etat.applications).toEqual([{ nom: "Réaction", discrete: true, marque: undefined }]);
+    expect(await h.appeler("demande", "commande.etat")).toMatchObject({ genre: "fini", resultat: { changements: 1, origines: ["utilisateur"] } });
+    expect(await h.appeler("demande", "commande.mesurer")).toMatchObject({ genre: "fini", resultat: { unites: { longueur: "m", separateur: "." }, matieres: 0, balises: 0 } });
+    expect(avis.at(-1)?.texte).toBe("1.50 m · 2.25 m² · 0 matière(s) · 0 balise(s)");
+    h.arreter();
+  });
+
+  it("une échéance qui ne rend pas la main est arrêtée au délai d'un événement", async () => {
+    const echeances: string[] = [];
+    const code = 'planche.sur("commande.armer", () => planche.minuterie.dans(5, () => new Promise(() => {})));';
+    const h = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer, delaiEvenementMs: 40, surEcheance: (i) => echeances.push(i.genre) });
+    expect((await h.appeler("demande", "commande.armer")).genre).toBe("fini");
+    await attendreQue(() => echeances.length > 0);
+    expect(echeances).toEqual(["delai"]);
+    expect(h.enMarche()).toBe(false);
+  });
+});
