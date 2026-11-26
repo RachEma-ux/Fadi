@@ -549,6 +549,8 @@ try {
   await page.getByRole("dialog").waitFor();
   check("L9 · Historique s’ouvre depuis « Autres actions », qui se replie", (await autres.getAttribute("aria-expanded")) === "false");
   await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  check("L9 · fermer l’Historique rend le focus à « Autres actions » (bouton visible)", await autres.evaluate((el) => el === document.activeElement));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.waitForTimeout(150);
   const bureau = await entete();

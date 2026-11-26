@@ -33,7 +33,13 @@ export function HomeTopbar({ projectId }: { projectId?: string }) {
     document.addEventListener("keydown", echap);
     return () => { document.removeEventListener("pointerdown", dehors); document.removeEventListener("keydown", echap); };
   }, [autres]);
-  const ouvrir = (d: "history" | "status") => { setAutres(false); setDialog(d); };
+  // Au téléphone, le bouton cliqué disparaît avec le panneau : le focus passe d'abord à « Autres actions », que le dialogue
+  // mémorise et retrouve à sa fermeture (au bureau, le bouton reste visible et garde le focus).
+  const ouvrir = (d: "history" | "status") => {
+    if (autres) autresBouton.current?.focus();
+    setAutres(false);
+    setDialog(d);
+  };
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId!), enabled: !!projectId, staleTime: 30_000, retry: (count, e) => !denied(e) && count < 1 });
   // Studio sous un projet (`/studio/projets/:id…`) : l'en-tête nomme le projet et le module, sans lire le Parcours ni le
   // programme, ni les alertes du dossier de la cloche (ADR-STUDIO-NAV-01, C-B / NAV-002 : Studio ne passe pas par le Parcours).
