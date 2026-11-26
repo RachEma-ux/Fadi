@@ -1,8 +1,9 @@
 {
   "$commentaire": "Plafonds de dispersion du design (chantier docs/workstreams/design, lot L0). Cliquet : une valeur mesurée au-dessus du plafond fait échouer src/design/plafonds.test.ts ; une valeur en dessous aussi, pour que le plafond soit abaissé dans la même PR. Les plafonds ne peuvent que baisser.",
   "mesureLe": "2026-11-26",
-  "base": "main 470e99f",
-  "couleursHexOpaques": 581,
-  "couleursHexAvecAlpha": 616,
-  "pointsDeRupturePx": 20
+  "base": "main b286441e",
+  "couleursHexOpaques": 584,
+  "couleursHexAvecAlpha": 619,
+  "pointsDeRupturePx": 20,
+  "$rebase": "2026-11-26 : base remesurée sur main b286441e, intégré à la pile Design avant fusion ; les 3 + 3 couleurs de plus viennent de main (#428, #438, ajoutés avant le cliquet), aucune d'un lot Design."
 }
