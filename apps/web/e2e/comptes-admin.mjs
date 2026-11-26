@@ -26,6 +26,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { CHEMIN_INSCRIPTION, inscrire, inscrireDansLaPage, lienAttendu, liensAvant } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -114,7 +115,7 @@ async function pendingDeletion(tag) {
   const ctx = await browser.newContext(desktop);
   const page = await ctx.newPage();
   const mail = email(tag), pass = password();
-  await apiOf(page, "post", "/auth/register", { email: mail, password: pass });
+  await inscrire((m, p, b) => apiOf(page, m, p, b), { email: mail, password: pass }, "post");
   const r = await apiOf(page, "delete", "/auth/me", { password: pass, confirm: "SUPPRIMER" });
   await ctx.close();
   if (r.status !== 202) throw new Error(`suppression programmée ${tag} : ${r.status}`);
@@ -146,15 +147,25 @@ try {
   const adminMail = email("admin"), adminPass = password();
   const adminCtx = await browser.newContext(desktop);
   const admin = await adminCtx.newPage(); track(admin);
+  // Issue #425 : l'adresse seule sur /inscription, puis le mot de passe sur la page du lien reçu par courriel.
   await admin.goto(`${BASE}/inscription`);
-  await admin.fill('input[name="email"]', adminMail);
-  await admin.fill('input[name="password"]', "court");
-  check("inscription : indicateur de robustesse affiché", (await admin.locator(".pw-meter[data-strength='trop-court']").count()) === 1);
-  await admin.click('button[type="submit"]');
-  check("inscription : moins de 12 caractères refusé côté interface", await admin.locator("p[role=alert]").isVisible());
   await axe(admin, "inscription (bureau)");
-  await admin.fill('input[name="password"]', adminPass);
+  const avantAdmin = await liensAvant(adminMail);
+  await admin.fill('input[name="email"]', adminMail);
   await admin.click('button[type="submit"]');
+  await admin.locator("[data-register-sent]").waitFor();
+  check("inscription : même message pour toute adresse, aucun compte avant le lien", /un courriel vient de lui être envoyé/.test(await admin.locator("[data-register-sent]").textContent()));
+  await axe(admin, "inscription — lien envoyé (bureau)");
+  await admin.goto(`${BASE}${CHEMIN_INSCRIPTION}#jeton=${encodeURIComponent(await lienAttendu(adminMail, avantAdmin))}`);
+  await admin.locator("form[data-activate]").waitFor();
+  await admin.fill("#inv-password", "court");
+  check("création du compte : indicateur de robustesse affiché", (await admin.locator(".pw-meter[data-strength='trop-court']").count()) === 1);
+  await admin.check('input[name="acceptTerms"]');
+  await admin.click('form[data-activate] button[type="submit"]');
+  check("création du compte : moins de 12 caractères refusé côté interface", await admin.locator("p[role=alert]").isVisible());
+  await axe(admin, "création du compte par le lien (bureau)");
+  await admin.fill("#inv-password", adminPass);
+  await admin.click('form[data-activate] button[type="submit"]');
   await admin.waitForURL(/\/accueil/);
   const out = execFileSync(process.execPath, [CREATE_ADMIN, adminMail], { env: { ...process.env, DATABASE_URL: process.env.CREATE_ADMIN_DATABASE_URL ?? process.env.DATABASE_URL }, encoding: "utf8" });
   check("create-admin.mjs : compte promu, aucun secret affiché", /promu administrateur/.test(out) && !/jeton|#jeton|password/i.test(out), out.trim());
@@ -363,7 +374,7 @@ try {
   const reset = await resetCtx.newPage(); track(reset);
   // Compte neuf : l'adresse invitée a déjà atteint la limite de 5 courriels par heure (elle ne recevrait rien, à juste titre).
   const forgetful = email("oubli");
-  check("compte neuf pour la réinitialisation", (await apiOf(reset, "post", "/auth/register", { email: forgetful, password: password() })).status === 201);
+  check("compte neuf pour la réinitialisation", (await inscrire((m, p, b) => apiOf(reset, m, p, b), { email: forgetful, password: password() }, "post")).status === 201);
   await apiOf(reset, "post", "/auth/logout");
   await reset.goto(`${BASE}/compte/mot-de-passe-oublie`);
   await axe(reset, "mot de passe oublié (bureau)");
@@ -386,9 +397,7 @@ try {
   const shared = await browser.newContext(desktop);
   const tab = await shared.newPage(); track(tab);
   const aMail = email("a"), aPass = password(), bMail = email("b"), bPass = password();
-  await tab.goto(`${BASE}/inscription`);
-  await tab.fill('input[name="email"]', aMail); await tab.fill('input[name="password"]', aPass);
-  await tab.click('button[type="submit"]'); await tab.waitForURL(/\/accueil/);
+  await inscrireDansLaPage(tab, aMail, aPass, BASE); await tab.waitForURL(/\/accueil/);
   const secretName = `Secret de A ${uid()}`;
   const created = await apiOf(tab, "post", "/projects", { code: "A-01", name: secretName });
   check("A crée un projet", created.status === 201, String(created.status));
@@ -405,9 +414,7 @@ try {
   await tab.waitForURL(/\/connexion/);
   check("session révoquée : retour à la connexion", true);
   check("après 401 : utilisateur mémorisé oublié", (await tab.evaluate(() => localStorage.getItem("fadi.lastUser"))) === null);
-  await tab.goto(`${BASE}/inscription`);
-  await tab.fill('input[name="email"]', bMail); await tab.fill('input[name="password"]', bPass);
-  await tab.click('button[type="submit"]'); await tab.waitForURL(/\/accueil/);
+  await inscrireDansLaPage(tab, bMail, bPass, BASE); await tab.waitForURL(/\/accueil/);
   await tab.goto(`${BASE}/projets`);
   await tab.waitForLoadState("networkidle");
   check("B connecté sur le même navigateur : aucune donnée de A visible", (await tab.getByText(secretName).count()) === 0);
@@ -429,9 +436,7 @@ try {
   const ownerCtx = await browser.newContext(desktop);
   const owner = await ownerCtx.newPage(); track(owner);
   const oMail = email("proprio"), oPass = password();
-  await owner.goto(`${BASE}/inscription`);
-  await owner.fill('input[name="email"]', oMail); await owner.fill('input[name="password"]', oPass);
-  await owner.click('button[type="submit"]'); await owner.waitForURL(/\/accueil/);
+  await inscrireDansLaPage(owner, oMail, oPass, BASE); await owner.waitForURL(/\/accueil/);
   const proj = (await apiOf(owner, "post", "/projects", { code: "SUP-01", name: `Projet support ${uid()}` })).body;
   await owner.goto(`${BASE}/projets/${proj.id}?module=collaboration`);
   await owner.locator(".members-invite input[type=email]").fill(email("sans-compte"));

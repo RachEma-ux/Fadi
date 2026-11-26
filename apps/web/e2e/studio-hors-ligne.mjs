@@ -27,6 +27,7 @@ import { chromium } from "playwright";
 import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { inscrireAvecContexte, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-hors-ligne";
@@ -107,11 +108,8 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
   const emailA = `studio-hors-ligne-${Date.now()}@example.com`;
-  await page.fill('input[name="email"]', emailA);
-  await page.fill('input[name="password"]', "studio-hors-ligne-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, emailA, "studio-hors-ligne-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
@@ -366,7 +364,7 @@ try {
   // 7. Changement d'utilisateur sur le même navigateur.
   const emailB = `studio-hors-ligne-b-${Date.now()}@example.com`;
   const inscriptionB = await browser.newContext();
-  if (!(await inscriptionB.request.post(`${BASE}/auth/register`, { data: { email: emailB, password: "studio-hors-ligne-ci-123" } })).ok()) throw new Error("inscription de B");
+  if ((await inscrireAvecContexte(inscriptionB.request, BASE, { email: emailB, password: "studio-hors-ligne-ci-123" })).status !== 201) throw new Error("inscription de B");
   // Phase 3 : B accepte l'invitation (aucun ajout direct) avant de quitter sa session d'inscription.
   if (!(await inviterEtAccepter(appelPlaywright(context.request, BASE), appelPlaywright(inscriptionB.request, BASE), projet.id, emailB, "editeur")).ok) throw new Error("invitation de B");
   await inscriptionB.close();

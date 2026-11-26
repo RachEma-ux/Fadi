@@ -25,6 +25,8 @@ export type AuditAction =
   | "auth.mfa.recovery_used"
   | "auth.email.verified"
   | "auth.register"
+  | "auth.register.requested"
+  | "auth.register.existing_account"
   | "account.activated"
   | "account.export"
   | "account.deletion.requested"

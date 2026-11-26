@@ -22,6 +22,7 @@ import { invaliderCaches, publierVersion } from "../lib/geodata/terrain/services
 import { traiterUnExport } from "../lib/geodata/terrain/exports.js";
 import { ecrireFixture, ficheSynthetique, type OptionsFixture } from "../lib/geodata/terrain/fixtures-synthetiques.js";
 import { newId } from "../lib/ids.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 const API = "/geodata/api/terrain";
@@ -47,7 +48,7 @@ afterAll(async () => { await pool.end(); });
 
 async function compte(email: string, role?: string) {
   const client = request.agent(app);
-  const r = await client.post("/auth/register").send({ email, password: PASSWORD });
+  const r = await inscrire(client, email, PASSWORD);
   expect(r.status).toBe(201);
   if (role) await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, $2)", [r.body.id, role]);
   return client;

@@ -9,6 +9,7 @@
 import { createRequire } from "node:module";
 import { allerEnPlan } from "./lib-barre.mjs";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -86,10 +87,7 @@ const attendreObjet = async (f, nom) => {
 const pid = () => url.split("/").pop();
 
 // Compte, exemple, copie de travail par un premier niveau d'essai.
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `docs-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "documents-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `docs-${Date.now()}@example.com`, "documents-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 await page.goto(`${BASE}/projets`);
 await page.locator('.example-card button:has-text("Importer")').first().click();

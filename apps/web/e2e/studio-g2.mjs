@@ -21,6 +21,7 @@ import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { randomBytes, randomUUID } from "node:crypto";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-g2";
@@ -42,10 +43,7 @@ async function compte(prefixe) {
   page.on("pageerror", (e) => erreurs.push(`${prefixe} : ${e.message}`));
   page.on("dialog", (d) => void d.accept());
   const email = `${prefixe}-${randomUUID().slice(0, 8)}@example.com`;
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', randomBytes(12).toString("hex"));
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, email, randomBytes(12).toString("hex"), BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const appel = async (method, path, body) => {
     const r = await context.request.fetch(`${BASE}${path}`, { method, headers: { origin: BASE }, ...(body === undefined ? {} : { data: body }) });

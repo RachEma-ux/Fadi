@@ -79,6 +79,8 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "auth.mfa.recovery_used": "Code de secours utilisé",
   "auth.email.verified": "Adresse confirmée",
   "auth.register": "Inscription",
+  "auth.register.requested": "Inscription demandée (lien envoyé)",
+  "auth.register.existing_account": "Inscription demandée avec l’adresse d’un compte existant",
   "account.activated": "Compte activé par invitation",
   "account.export": "Export des données personnelles",
   "account.deletion.requested": "Suppression du compte programmée",

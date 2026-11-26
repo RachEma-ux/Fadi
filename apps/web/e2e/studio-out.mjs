@@ -15,6 +15,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -42,7 +43,7 @@ const identifiants = () => ({ email: `studio-out-${randomUUID().replaceAll("-", 
 // ——— Profils d'outils (API, base réelle) ———
 const proprio = client(), editeur = client();
 const idProprio = identifiants(), idEditeur = identifiants();
-check("comptes créés", (await proprio("POST", "/auth/register", idProprio)).status === 201 && (await editeur("POST", "/auth/register", idEditeur)).status === 201);
+check("comptes créés", (await inscrire(proprio, idProprio, "POST")).status === 201 && (await inscrire(editeur, idEditeur, "POST")).status === 201);
 const projet = (await proprio("POST", "/projects", { code: "P.STU.OUT", name: "Studio — lot OUT" })).body;
 check("éditeur invité, invitation acceptée", (await inviterEtAccepter(proprio, editeur, projet.id, idEditeur.email, "editeur")).ok);
 const P = `/projects/${projet.id}/studio/preferences/outils`;
@@ -89,10 +90,7 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-out-ui-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-out-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-out-ui-${Date.now()}@example.com`, "studio-out-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

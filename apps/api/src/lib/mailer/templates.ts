@@ -4,6 +4,8 @@
  */
 export type MailTemplate =
   | "invitation"
+  | "signup"
+  | "signup_existing"
   | "verify_email"
   | "reset_password"
   | "password_changed"
@@ -31,6 +33,27 @@ const COPY: Record<MailLocale, Record<MailTemplate, Copy>> = {
       ],
       action: "Accepter l'invitation",
       link: (d) => d["link"],
+    },
+    signup: {
+      subject: "Créez votre compte Fadi",
+      lines: (d) => [
+        "Une inscription à Fadi a été demandée avec cette adresse. Suivez le lien pour choisir votre mot de passe et créer votre compte.",
+        `Le lien est personnel et expire le ${d["expiresAt"] ?? ""}.`,
+        "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : aucun compte n'est créé sans votre action.",
+      ],
+      action: "Créer mon compte",
+      link: (d) => d["link"],
+    },
+    signup_existing: {
+      subject: "Vous avez déjà un compte Fadi",
+      lines: (d) => [
+        "Une inscription à Fadi a été demandée avec cette adresse, mais un compte existe déjà : aucun nouveau compte n'a été créé.",
+        `Connectez-vous : ${d["loginLink"] ?? ""}`,
+        `Mot de passe oublié : ${d["resetLink"] ?? ""}`,
+        "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : rien n'a changé sur votre compte.",
+      ],
+      action: "Se connecter",
+      link: (d) => d["loginLink"],
     },
     verify_email: {
       subject: "Confirmez votre adresse e-mail",
@@ -86,6 +109,27 @@ const COPY: Record<MailLocale, Record<MailTemplate, Copy>> = {
       ],
       action: "Accept the invitation",
       link: (d) => d["link"],
+    },
+    signup: {
+      subject: "Create your Fadi account",
+      lines: (d) => [
+        "A Fadi sign-up was requested with this address. Follow the link to choose your password and create your account.",
+        `The link is personal and expires on ${d["expiresAt"] ?? ""}.`,
+        "If you did not request this, ignore this message: no account is created without your action.",
+      ],
+      action: "Create my account",
+      link: (d) => d["link"],
+    },
+    signup_existing: {
+      subject: "You already have a Fadi account",
+      lines: (d) => [
+        "A Fadi sign-up was requested with this address, but an account already exists: no new account was created.",
+        `Sign in: ${d["loginLink"] ?? ""}`,
+        `Forgot your password: ${d["resetLink"] ?? ""}`,
+        "If you did not request this, ignore this message: nothing changed on your account.",
+      ],
+      action: "Sign in",
+      link: (d) => d["loginLink"],
     },
     verify_email: {
       subject: "Confirm your email address",

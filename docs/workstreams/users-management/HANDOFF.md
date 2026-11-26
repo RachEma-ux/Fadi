@@ -26,6 +26,9 @@ Mis à jour : 2026-10-24 (UTC).
   jetons d'agent révoqués (mot de passe, réinitialisation, suspension, suppression, anonymisation) et créés avec mot de
   passe, temps d'inscription égalisé. Tests en suite DB-3 (`app.test.ts`, section 10), donc vérifiés en CI seulement.
   Décision ouverte : supprimer la connexion automatique à l'inscription (seule façon d'ôter le 409 / 201 révélateur).
+- **UM-33 (2026-11-26)** : branche `fix/inscription-sans-enumeration` (depuis `main` à `470e99f`), PR vers `main` **non
+  fusionnée** ([Issue #425](https://github.com/RachEma-ux/Fadi/issues/425)) — inscription sans énumération : 202 pour toute
+  adresse, compte créé par le lien du courriel (DECISIONS.md UM-33). Contient la PR #423 (UM-32, 5 failles), fusionnée dans la branche pour une CI commune.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié

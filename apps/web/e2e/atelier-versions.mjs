@@ -12,6 +12,7 @@ import { allerEnPlan } from "./lib-barre.mjs";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inscrireAvecContexte, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -68,10 +69,7 @@ const m = (value) => ({ value, unit: "m" });
 
 // Compte, exemple P.118, copie de travail (le tronc).
 const email = `versions-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "versions-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "versions-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · versions" })).body.id;
@@ -120,7 +118,7 @@ check("modification dans la variante (deux murs)", (await lot(vid, `var-${Date.n
 // Un second compte, éditeur du tronc, modifie le mur B : conflit explicite.
 const second = await browser.newContext();
 const autre = second.request;
-await autre.post(`${BASE}/auth/register`, { data: { email: `versions-autre-${Date.now()}@example.com`, password: "versions-pass-456" } });
+await inscrireAvecContexte(autre, BASE, { email: `versions-autre-${Date.now()}@example.com`, password: "versions-pass-456" });
 const moi = (await api("get", "/auth/me")).body;
 void moi;
 const emailAutre = (await (await autre.get(`${BASE}/auth/me`)).json()).email;

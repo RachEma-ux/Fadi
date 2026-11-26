@@ -7,6 +7,7 @@
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "atelier-captures/project-layout";
@@ -84,10 +85,7 @@ async function measure(label, module, width, expanded) {
 }
 
 try {
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `project-layout-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "project-layout-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `project-layout-${Date.now()}@example.com`, "project-layout-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   await page.goto(`${BASE}/projets`);
   await page.locator('.example-card button:has-text("Importer")').first().click();
