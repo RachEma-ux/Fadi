@@ -25,7 +25,7 @@ describe("extensions installées — lignes de la base", () => {
     expect(paquetsDeLignes(lignes).map((p) => p.fiche.id)).toEqual(["essai-commandes"]);
     const fiches = fichesAdminPaquets(lignes);
     expect(fiches.map((f) => [f.id, f.servie])).toEqual([["casse", false], ["essai-commandes", true], ["zz-conflit", false]]);
-    expect(fiches[1]).toMatchObject({ nom: { fr: "Essai des commandes", en: "Commands trial" }, version: "1.0.0", auteur: "Fadi", protocole: "1.0", commandes: 5, outils: 0, panneaux: 0, importedAt: at.toISOString(), importedBy: "u1" });
+    expect(fiches[1]).toMatchObject({ nom: { fr: "Essai des commandes", en: "Commands trial" }, version: "1.0.0", auteur: "Fadi", protocole: "1.0", commandes: 7, outils: 0, panneaux: 0, importedAt: at.toISOString(), importedBy: "u1" });
     expect(fiches[1]!.permissions).toEqual(["modele.lire", "modele.modifier", "selection", "messages"]);
     expect(fiches[0]).toMatchObject({ nom: { fr: "casse", en: "casse" }, commandes: 0 });
     // Jamais de code ni de pages dans une fiche d'administration.
