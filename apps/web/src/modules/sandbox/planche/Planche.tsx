@@ -3588,20 +3588,32 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   );
 
   /**
-   * Commandes de la barre d'actions (D-195), en trois groupes : Cadrer (et zoom − / + au toucher) ; Grouper, Composant,
-   * Éclater, Unique ; puis Diviser, Diviser la courbe et Isoler selon la sélection. À l'ordinateur, elles vivent au centre
-   * du bandeau d'en-tête (24 novembre 2026) et « Détacher » à sa droite ; au téléphone, la barre flottante est inchangée.
+   * Commandes de la barre d'actions (D-195). À l'ordinateur, le centre du bandeau d'en-tête ne porte que ce qui sert quel
+   * que soit l'outil (26 novembre 2026, maquette validée par le maître d'ouvrage) : Annuler · Rétablir | Cadrer · Zoom ;
+   * les commandes de groupe (Grouper, Composant, Éclater, Unique, Diviser, Isoler) restent dans la barre « Groupe » de la
+   * liste Outils, au clic droit et au clavier. « Détacher » à droite du bandeau. Au téléphone, la barre flottante est
+   * inchangée (Cadrer, zoom − / +, commandes de groupe, Détacher).
    */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
-  const groupeVue: ActionBarre[] = [
-    // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
-    { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
+  const actionCadrer: ActionBarre = { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } };
+  // Bandeau (26 novembre 2026) : Annuler / Rétablir du brouillon (Ctrl Z / Ctrl Y), grisés quand il n'y a rien à faire ;
+  // l'infobulle nomme l'opération ; l'outil Zoom (Z) à côté de Cadrer, enfoncé quand il est l'outil courant.
+  const opAnnuler = operationAAnnuler(histRef.current);
+  const opRetablir = operationARetablir(histRef.current);
+  const groupeHistorique: ActionBarre[] = [
+    { id: "annuler", picto: "annuler" as const, libelle: t("planche.annuler"), texte: t("planche.annuler"), titre: opAnnuler ? t("planche.annuler.titre", { operation: opAnnuler }) : `${t("planche.annuler")} — ${t("planche.rien.annuler")}`, onClick: annulerPas, disabled: readOnly || opAnnuler === null, attributs: { "data-planche-annuler": "" } },
+    { id: "retablir", picto: "retablir" as const, libelle: t("planche.retablir"), texte: t("planche.retablir"), titre: opRetablir ? t("planche.retablir.titre", { operation: opRetablir }) : `${t("planche.retablir")} — ${t("planche.rien.retablir")}`, onClick: retablirPas, disabled: readOnly || opRetablir === null, attributs: { "data-planche-retablir": "" } },
+  ];
+  const actionZoom: ActionBarre[] = ((o) =>
+    o ? [{ id: "zoom", picto: pictoOutil(o.id), libelle: nomOutil(o), texte: nomOutil(o), titre: `${nomOutil(o)} (${afficherRaccourci(raccourciOutil(o)!)})`, onClick: () => choisirOutil(o.id), pressed: outilId === o.id, attributs: { "data-planche-action-outil": o.id } }] : [])(outilParId("zoom"));
+  const zoomPas: ActionBarre[] = [
     ...(tactile || etroit || pointeurGrossier
       ? (["zoom-moins", "zoom-plus"] as const)
           .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
           .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
       : []),
   ];
+  const groupeVue: ActionBarre[] = [actionCadrer, ...actionZoom, ...zoomPas];
   const commandeObjet = (c: (typeof COMMANDES_OBJETS)[number]): ActionBarre[] => {
     const d = disponibiliteObjet(c.id, etatSelectionObjets());
     // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -3619,7 +3631,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       attributs: { "data-planche-commande": c.id },
     }];
   };
-  const groupeObjets: ActionBarre[] = COMMANDES_OBJETS.filter((c) => !c.contextuelle).flatMap(commandeObjet);
   const actionDiviser: ActionBarre[] = [
     // Lot 6 : arête sélectionnée → l'outil Diviser (Maj+D), qui remplace la commande en double du même nom.
     ...(((o) => {
@@ -3645,7 +3656,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         attributs: { "data-planche-commande": c.id },
       })),
   ];
-  const groupeSelection: ActionBarre[] = [...actionDiviser, ...COMMANDES_OBJETS.filter((c) => c.contextuelle).flatMap(commandeObjet), ...actionIsoler];
   const actionDetacher: ActionBarre = {
     id: "detacher",
     picto: detache === "non" ? "detacher" : "rattacher",
@@ -3664,7 +3674,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const barreActions = etroit ? (
     <BarreActions
       // Téléphone : même barre flottante, même ordre qu'avant.
-      autres={[...groupeVue, ...actionDiviser, ...COMMANDES_OBJETS.flatMap(commandeObjet), ...actionIsoler, actionDetacher]}
+      autres={[actionCadrer, ...zoomPas, ...actionDiviser, ...COMMANDES_OBJETS.flatMap(commandeObjet), ...actionIsoler, actionDetacher]}
       reference={racineRef}
       reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils, .planche-recherche-carte, [data-planche-menu-principal]" }}
       fenetreCle={`${detache}|${hautDocquee ?? ""}`}
@@ -3760,7 +3770,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
           <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
         </p>
-        {!etroit && <ActionsBandeau groupes={[groupeVue, groupeObjets, groupeSelection]} />}
+        {!etroit && <ActionsBandeau groupes={[groupeHistorique, groupeVue]} />}
         {!etroit && (
           <div className="planche-bandeau-droite" data-planche-bandeau-droite>
             <BoutonBandeau a={actionBandeauDroite} />

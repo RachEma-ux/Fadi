@@ -3497,8 +3497,8 @@
     grid-area: vue;
   }
 }
-/* Barre d'actions intégrée au bandeau (24 novembre 2026, ordinateur) : Cadrer, Grouper, Composant, Éclater, Unique, puis
-   Diviser, Diviser la courbe et Isoler selon la sélection, au centre du bandeau ; « Détacher » (page) ou ✕ « Fermer et
+/* Barre d'actions intégrée au bandeau (24 novembre 2026, ordinateur ; centre réduit le 26 novembre 2026 à Annuler ·
+   Rétablir | Cadrer · Zoom, les commandes de groupe restant dans la barre « Groupe ») ; « Détacher » (page) ou ✕ « Fermer et
    rattacher » (fenêtre détachée) à droite. Texte clair sur le fond sombre, commandes grisées atténuées, Isoler enfoncé
    sur fond #393939 ; fenêtre étroite : icônes seules, le nom reste en infobulle. Téléphone : barre flottante inchangée. */
 .sandbox-planche .planche-bandeau-actions,
@@ -3565,13 +3565,15 @@
     font-size: 0.68rem;
     color: #c6c6c6;
   }
-  /* Cadrer et Détacher : nom à côté de l'icône, comme sur l'image validée. */
+  /* Cadrer, Zoom et Détacher : nom à côté de l'icône, comme sur les images validées ; Annuler / Rétablir : icône seule. */
   .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer],
+  .sandbox-planche .planche-bandeau-actions button[data-action="zoom"],
   .sandbox-planche .planche-bandeau-droite button {
     flex-direction: row;
     gap: 0.5rem;
   }
   .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer] .barre-actions-texte,
+  .sandbox-planche .planche-bandeau-actions button[data-action="zoom"] .barre-actions-texte,
   .sandbox-planche .planche-bandeau-droite .barre-actions-texte {
     font-size: 0.875rem;
     color: #f4f4f4;
@@ -3603,6 +3605,13 @@
   .sandbox-planche .planche-bandeau-droite [data-planche-fermer-rattacher] .barre-actions-picto {
     width: 20px;
     height: 20px;
+  }
+}
+/* Annuler / Rétablir : icône seule à la souris (image validée du 26 novembre 2026) ; au toucher, nom visible (AGENTS.md). */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .sandbox-planche .planche-bandeau-actions [data-planche-annuler] .barre-actions-texte,
+  .sandbox-planche .planche-bandeau-actions [data-planche-retablir] .barre-actions-texte {
+    display: none;
   }
 }
 /* Icônes seules seulement à la souris : au toucher, chaque bouton garde son nom visible (AGENTS.md). */

@@ -50,6 +50,12 @@ comportement ni d'apparence.
   « Détacher » dans la page ; dans la fenêtre détachée, plus de « Rattacher » : ✕ « Fermer et rattacher ». Position
   mémorisée, poignée et masquage de l'ancienne barre ne s'appliquent plus à l'ordinateur. Téléphone : barre flottante
   inchangée.
+- **Centre du bandeau : Annuler · Rétablir | Cadrer · Zoom** (26 novembre 2026, maquette validée par le maître
+  d'ouvrage) : le centre ne garde que ce qui sert quel que soit l'outil. Annuler (Ctrl Z) et Rétablir (Ctrl Y) du
+  brouillon, grisés quand il n'y a rien à faire, l'infobulle nomme l'opération ; Cadrer (Maj Z) ; Zoom choisit l'outil
+  Zoom (Z), enfoncé quand il est l'outil courant. Les commandes de groupe (Grouper, Composant, Éclater, Unique, Diviser,
+  Diviser la courbe, Isoler) quittent le bandeau sans disparaître : barre « Groupe » de la liste Outils, clic droit et
+  clavier. Téléphone : barre flottante inchangée.
 - **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
   déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
 - **Fenêtre détachée** (24 novembre 2026) : « Détacher » ouvre toujours la fenêtre « image dans l'image » (Document
