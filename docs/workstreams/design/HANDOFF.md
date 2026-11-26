@@ -25,6 +25,9 @@ Mis à jour : 2026-11-26 (UTC).
   exact (16 m²). Correctif CI : la hauteur de la barre était lue à 0 (`offsetParent` est nul en `position: fixed`) ; l'Atelier et la
   Planche s'arrêtent maintenant au-dessus de la barre ; `select` des options de Collaboration à 44 px.
 
+- Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
+  (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
+
 ## Prochaine action
 
 - Suivre la CI des PR L0 à L9 ; fusion dans l'ordre par le maître d'ouvrage, après captures sur un vrai téléphone.
