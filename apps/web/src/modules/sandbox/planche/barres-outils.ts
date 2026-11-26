@@ -53,7 +53,7 @@ export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, rea
     mesurer: ["metre", "cotation", "plan-de-coupe", "texte"],
   },
   selection: {
-    creer: ["selection", "lasso"],
+    creer: ["selection", "lasso", "interagir"],
     modifier: ["deplacer", "faire-pivoter", "echelle", "retourner", "peinture", "gomme"],
     mesurer: ["metre", "rapporteur", "cotation", "texte", "balise"],
   },
@@ -88,6 +88,7 @@ export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, rea
 export const OBJET_DE: Readonly<Record<string, ObjetBarre>> = {
   selection: "selection",
   lasso: "selection",
+  interagir: "selection",
   deplacer: "selection",
   "faire-pivoter": "selection",
   echelle: "selection",

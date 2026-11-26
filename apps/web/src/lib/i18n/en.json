@@ -14789,5 +14789,15 @@
 "Caméra de cadrage": "Framing camera",
 "Posée seulement sans scène enregistrée ; nommée « Camera de cadrage ».": "Placed only when no scene is saved; named “Camera de cadrage”.",
 "Comptés en en-tête du script, jamais écrits.": "Counted in the script header, never written.",
-"Lecture non livrée : studio-document/1 n’a pas de maillage libre pour recevoir un glTF lu. L’export glTF 2.0 est livré (maquette-gltf), comme le script Blender (maquette-blender).": "Reading not delivered: studio-document/1 has no free mesh to receive a glTF that is read. The glTF 2.0 export is delivered (maquette-gltf), as is the Blender script (maquette-blender)."
+"Lecture non livrée : studio-document/1 n’a pas de maillage libre pour recevoir un glTF lu. L’export glTF 2.0 est livré (maquette-gltf), comme le script Blender (maquette-blender).": "Reading not delivered: studio-document/1 has no free mesh to receive a glTF that is read. The glTF 2.0 export is delivered (maquette-gltf), as is the Blender script (maquette-blender).",
+"Interagir": "Interact",
+"Cliquez un composant dynamique pour déclencher son action au clic.": "Click a dynamic component to trigger its on-click action.",
+"Le composant visé le plus profond qui porte une action au clic l'exécute : chaque paramètre nommé passe à la valeur suivante de sa liste, puis le composant est redessiné. Un clic = un pas ; une action en erreur ne change rien.": "The deepest targeted component that carries an on-click action runs it: each named parameter moves to the next value in its list, then the component is redrawn. One click = one step; an action in error changes nothing.",
+"Cet objet ne réagit pas au clic : aucun composant dynamique avec une action au clic.": "This object does not react to clicks: no dynamic component with an on-click action.",
+"Lecture seule : l'action au clic modifierait la Planche.": "Read-only: the on-click action would modify the Board.",
+"Le champ Mesures n'est pas utilisé par l'outil Interagir.": "The Measurements box is not used by the Interact tool.",
+"Action au clic inconnue : « {0} » (SET ou ALTER attendus).": "Unknown on-click action: “{0}” (SET or ALTER expected).",
+"Action au clic illisible : « {0} ».": "Unreadable on-click action: “{0}”.",
+"{0} : « {1} » n'est pas un paramètre du composant.": "{0}: “{1}” is not a parameter of the component.",
+"Ce composant n'a pas d'action au clic.": "This component has no on-click action."
 }

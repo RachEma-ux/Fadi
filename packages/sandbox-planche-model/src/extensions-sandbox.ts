@@ -85,7 +85,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     description: "Composants paramétrés : options à choisir, tailles, positions et répétitions calculées par formules.",
     pictogramme: "commande:composant-dynamique",
     activeParDefaut: false,
-    entrees: ["commande:composant-dynamique", "commande:redessiner-composant", "panneau:dynamique"],
+    entrees: ["outil:interagir", "commande:composant-dynamique", "commande:redessiner-composant", "panneau:dynamique"],
   },
   {
     // D'après Add Location et Solar North de SketchUp, fusionnés (décision du 25 novembre 2026).

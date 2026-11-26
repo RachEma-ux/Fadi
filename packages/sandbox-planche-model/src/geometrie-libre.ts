@@ -176,8 +176,11 @@ export interface ParametreDynamique {
   readonly valeur: string;
   readonly option?: OptionDynamique;
 }
-/** Attributs prédéfinis qu'une règle peut fixer sur un objet enfant (noms de SketchUp ; longueurs en mètres, angles en degrés). */
-export const ATTRIBUTS_DYNAMIQUES = ["X", "Y", "Z", "LenX", "LenY", "LenZ", "RotZ", "Hidden", "Material", "Copies"] as const;
+/**
+ * Attributs prédéfinis qu'une règle peut fixer sur un objet enfant (noms de SketchUp ; longueurs en mètres, angles en
+ * degrés). RotX et RotY : phase 1, lot 1 (26 novembre 2026).
+ */
+export const ATTRIBUTS_DYNAMIQUES = ["X", "Y", "Z", "LenX", "LenY", "LenZ", "RotX", "RotY", "RotZ", "Hidden", "Material", "Copies"] as const;
 export type AttributDynamique = (typeof ATTRIBUTS_DYNAMIQUES)[number];
 /** Règle : l'attribut d'un objet enfant (occurrence du contenu du composant) donné par une valeur ou une formule. */
 export interface RegleDynamique {
@@ -190,6 +193,11 @@ export interface ComposantDynamique {
   readonly regles: readonly RegleDynamique[];
   /** Copies tenues par le moteur (attribut `Copies`) : objet d'origine → ses copies, dans l'ordre. */
   readonly copies?: Readonly<Record<Id, readonly Id[]>>;
+  /**
+   * (Phase 1, lot 1) Action au clic de l'outil Interagir (« onClick » de SketchUp) : `SET("Nom", v1, v2…)` ou
+   * `ALTER("Nom", v1, v2…)`, plusieurs actions séparées par « ; ». Absent = le composant ne réagit pas au clic.
+   */
+  readonly surClic?: string;
 }
 
 /** (Lot L11) Métadonnées d'une pièce de profilé, portées par sa définition (composant). */
@@ -804,7 +812,7 @@ function reporterDynamique<D extends MetadonneesDefinition>(d: D, map: ReadonlyM
   if (!dyn) return d;
   const neuf = (id: Id): Id => map.get(id) ?? id;
   const copies = dyn.copies ? Object.fromEntries(Object.entries(dyn.copies).map(([o, ids]) => [neuf(o), ids.map(neuf)])) : undefined;
-  return { ...d, dynamique: { parametres: dyn.parametres, regles: dyn.regles.map((r) => ({ ...r, objet: neuf(r.objet) })), ...(copies ? { copies } : {}) } };
+  return { ...d, dynamique: { parametres: dyn.parametres, regles: dyn.regles.map((r) => ({ ...r, objet: neuf(r.objet) })), ...(copies ? { copies } : {}), ...(dyn.surClic !== undefined ? { surClic: dyn.surClic } : {}) } };
 }
 
 function cloner(t: Travail, c: Ctx, map: Map<Id, Id> = new Map()): Ctx {
