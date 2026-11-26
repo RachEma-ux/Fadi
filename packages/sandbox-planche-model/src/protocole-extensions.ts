@@ -65,6 +65,8 @@ export interface PanneauDeclare {
   readonly titre: TexteBilingue;
   /** Nom de la page du paquet affichée dans le panneau. */
   readonly page: string;
+  /** Icône du panneau dans la colonne de la Planche : un dessin SVG du paquet, propre à ce panneau (règle d'or). */
+  readonly icone: string;
 }
 
 export interface FicheExtension {
@@ -229,15 +231,19 @@ export function validerPaquetExtension(v: unknown): ValidationPaquet {
     sansDoublon([...commandes, ...outils].map((x) => x.icone), "icônes");
     const panneaux = liste(f["panneaux"], "panneaux", BORNES_EXTENSION.panneaux).map((p): PanneauDeclare => {
       if (!estObjet(p)) return refuser("panneau : objet attendu");
-      const horsP = clesHors(p, ["id", "titre", "page"]);
+      const horsP = clesHors(p, ["id", "titre", "page", "icone"]);
       if (horsP) return refuser(`panneau : champ inconnu « ${horsP} »`);
       const pid = p["id"];
       if (typeof pid !== "string" || !MOTIF_ID_ENTREE.test(pid) || pid.length > 40) return refuser("panneau : identifiant mal formé");
       const page = p["page"];
       if (typeof page !== "string" || !Object.prototype.hasOwnProperty.call(pages, page)) return refuser(`panneau « ${pid} » : page absente du paquet`);
-      return { id: pid, titre: bilingue(p["titre"], `panneau « ${pid} » : titre`, BORNES_EXTENSION.libelle), page };
+      const icone = p["icone"];
+      if (typeof icone !== "string" || !Object.prototype.hasOwnProperty.call(pages, icone)) return refuser(`panneau « ${pid} » : icône absente du paquet`);
+      return { id: pid, titre: bilingue(p["titre"], `panneau « ${pid} » : titre`, BORNES_EXTENSION.libelle), page, icone };
     });
     sansDoublon(panneaux.map((p) => p.id), "panneaux");
+    // Un panneau a lui aussi sa propre icône, jamais celle d'une commande, d'un outil ou d'un autre panneau.
+    sansDoublon([...commandes, ...outils, ...panneaux].map((x) => x.icone), "icônes");
 
     // Une déclaration sans la permission qui la porte est une incohérence de la fiche, pas une demande implicite.
     if (outils.length > 0 && !permissions.includes("outil")) return refuser("fiche : un outil est déclaré sans la permission « outil »");
@@ -365,6 +371,8 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",
   "fichiers.enregistrer": "fichiers",
+  "panneau.envoyer": "panneau",
+  "panneau.ouvrir": "panneau",
 };
 
 /** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */

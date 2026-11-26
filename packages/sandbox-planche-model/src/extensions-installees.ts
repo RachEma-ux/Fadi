@@ -57,6 +57,9 @@ export function jugerImportPaquet(v: unknown, installees: readonly PaquetExtensi
     if (preneur) return { ok: false, erreur: "raccourci_refuse", detail: `« ${e.id} » : ${e.raccourci} est déjà pris par ${preneur}` };
     if (!e.icone.endsWith(".svg") || !estDessinSvg(p.pages[e.icone] ?? "")) return { ok: false, erreur: "icone_invalide", detail: `« ${e.id} » : l'icône doit être un dessin SVG du paquet (fichier .svg)` };
   }
+  for (const x of p.fiche.panneaux) {
+    if (!x.icone.endsWith(".svg") || !estDessinSvg(p.pages[x.icone] ?? "")) return { ok: false, erreur: "icone_invalide", detail: `panneau « ${x.id} » : l'icône doit être un dessin SVG du paquet (fichier .svg)` };
+  }
   return { ok: true, paquet: p };
 }
 

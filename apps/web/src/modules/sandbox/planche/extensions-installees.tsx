@@ -9,11 +9,13 @@
  *    quand une commande échoue, dépasse son délai ou ne peut pas démarrer) ;
  *  - `DialogueSaisieExtension` : la fenêtre de saisie demandée par une extension ; la Planche la dessine, l'extension
  *    n'en fournit que les textes et reçoit des valeurs validées (`validerSaisie`).
+ *  - `CadrePanneauExtension` (lot 4) : la page du panneau d'une extension, dans un cadre sans origine et sans réseau ;
+ *    il ne passe entre elle et la Planche que des messages relus (`lireMessagePagePanneau`).
  *
  * Les textes venus d'une extension sont toujours posés comme du texte, jamais comme du balisage.
  */
-import { useEffect, useRef, useState } from "react";
-import { BORNES_FICHIER, lireNombreSaisi, typeDeFichier, valeursInitiales, validerSaisie, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichierLu, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BORNES_FICHIER, BORNES_PANNEAU, composerPagePanneau, donneesPanneau, lireMessagePagePanneau, lireNombreSaisi, typeDeFichier, valeursInitiales, validerSaisie, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichierLu, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { IconeSandbox } from "../pictogrammes/Pictogramme";
 import { lireExtensionsServeur } from "../preferences/client";
@@ -263,5 +265,67 @@ export function DialogueFichierExtension({ fichier }: { fichier: FichierDemande 
         </div>
       </form>
     </div>
+  );
+}
+
+/** Clé d'un panneau d'extension dans la colonne de la Planche. */
+export const clePanneauExtension = (extension: string, panneau: string): string => `extension:${extension}:${panneau}`;
+
+/** Réponse de l'extension à une action de la page de son panneau. */
+export type ReponseActionPanneau = { readonly ok: true; readonly resultat: unknown } | { readonly ok: false; readonly erreur: string; readonly detail: string };
+
+/**
+ * Page du panneau d'une extension (lot 4, image 16). Le cadre n'a pas d'origine (`sandbox="allow-scripts"`, sans
+ * `allow-same-origin`) : la page ne voit ni la Planche, ni le compte, ni l'enregistrement local ; sa règle de contenu
+ * interdit tout réseau. `appeler` adresse une action nommée à l'extension ; `brancher` reçoit ce que l'extension envoie.
+ */
+export function CadrePanneauExtension({ paquet, panneau, titre, appeler, brancher }: {
+  paquet: PaquetExtension;
+  panneau: string;
+  titre: string;
+  appeler: (action: string, donnees: unknown) => Promise<ReponseActionPanneau>;
+  brancher: (recevoir: (donnees: unknown) => void) => () => void;
+}) {
+  const cadre = useRef<HTMLIFrameElement>(null);
+  const [hauteur, setHauteur] = useState<number>(BORNES_PANNEAU.hauteurMin);
+  const page = useMemo(() => composerPagePanneau(paquet, panneau, LANGUE_INTERFACE), [paquet, panneau]);
+  const appelerRef = useRef(appeler);
+  appelerRef.current = appeler;
+  useEffect(() => {
+    let monte = true;
+    let enAttente = 0;
+    const poster = (m: unknown) => monte && cadre.current?.contentWindow?.postMessage(m, "*");
+    const recevoir = (e: MessageEvent) => {
+      // Seule la page de ce cadre est écoutée ; ce qu'elle dit est relu avant tout usage.
+      if (!cadre.current || e.source !== cadre.current.contentWindow) return;
+      const m = lireMessagePagePanneau(e.data);
+      if (!m) return;
+      if (m.sorte === "hauteur") return setHauteur(m.px);
+      const refuser = (detail: string) => poster({ fadi: "reponse", id: m.id, ok: false, erreur: "argument_invalide", detail });
+      if (m.donnees === undefined) return void refuser(`donnees : des données seulement, ${BORNES_PANNEAU.donnees} caractères au plus`);
+      if (enAttente >= BORNES_PANNEAU.enAttente) return void refuser("trop d'actions en attente");
+      enAttente++;
+      void appelerRef.current(m.nom, m.donnees).then((r) => {
+        enAttente--;
+        if (!r.ok) return void poster({ fadi: "reponse", id: m.id, ok: false, erreur: r.erreur, detail: r.detail });
+        const resultat = donneesPanneau(r.resultat);
+        if (resultat === undefined) return void refuser("réponse trop grande");
+        poster({ fadi: "reponse", id: m.id, ok: true, resultat });
+      });
+    };
+    window.addEventListener("message", recevoir);
+    const debrancher = brancher((donnees) => poster({ fadi: "donnees", donnees }));
+    return () => {
+      monte = false;
+      window.removeEventListener("message", recevoir);
+      debrancher();
+    };
+  }, [brancher, page]);
+  if (page === null) return null;
+  return (
+    <>
+      <iframe ref={cadre} className="planche-panneau-extension-cadre" title={titre} sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={page} style={{ height: hauteur }} data-planche-panneau-cadre />
+      <p className="planche-fichier-note planche-panneau-extension-note" data-planche-panneau-note>{t("extensions.panneau.note")}</p>
+    </>
   );
 }

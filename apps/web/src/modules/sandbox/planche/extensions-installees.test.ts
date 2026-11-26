@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { REGISTRE_SANDBOX, jugerImportPaquet, normaliserRaccourci, type PaquetExtension } from "@parcours/sandbox-planche-model";
-import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, apercuFichier, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
+import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, apercuFichier, clePanneauExtension, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
 import { idBarreCanonique, normaliserBarres } from "./barres-nommees";
 
 describe("avis des extensions", () => {
@@ -71,5 +71,26 @@ describe("fenêtres de fichier des extensions (lot 7)", () => {
     const pris = new Set(REGISTRE_SANDBOX.flatMap((e) => (e.raccourci ? [normaliserRaccourci(e.raccourci)] : [])));
     expect(new Set(essai.fiche.commandes.map((c) => c.icone)).size).toBe(essai.fiche.commandes.length);
     for (const c of essai.fiche.commandes) expect(pris.has(normaliserRaccourci(c.raccourci)), c.id).toBe(false);
+  });
+});
+
+describe("panneau d'une extension (lot 4)", () => {
+  const essai = JSON.parse(readFileSync(new URL("../../../../e2e/donnees/essai-panneau.fadi-addon.json", import.meta.url), "utf8")) as PaquetExtension;
+
+  it("règle d'or : le paquet d'essai est accepté, le panneau a sa propre icône, le raccourci de la commande est libre", () => {
+    expect(jugerImportPaquet(essai).ok).toBe(true);
+    const icones = [...essai.fiche.commandes, ...essai.fiche.panneaux].map((x) => x.icone);
+    expect(new Set(icones).size).toBe(icones.length);
+    const pris = new Set(REGISTRE_SANDBOX.flatMap((e) => (e.raccourci ? [normaliserRaccourci(e.raccourci)] : [])));
+    for (const c of essai.fiche.commandes) expect(pris.has(normaliserRaccourci(c.raccourci)), c.id).toBe(false);
+  });
+
+  it("une icône de panneau qui n'est pas un dessin SVG est refusée à l'import", () => {
+    const sans = { ...essai, pages: { ...essai.pages, "releve.svg": "<p>pas un dessin</p>" } };
+    expect(jugerImportPaquet(sans)).toMatchObject({ ok: false, erreur: "icone_invalide" });
+  });
+
+  it("la clé du panneau dans la colonne nomme l'extension et le panneau", () => {
+    expect(clePanneauExtension("essai-panneau", "releve")).toBe("extension:essai-panneau:releve");
   });
 });

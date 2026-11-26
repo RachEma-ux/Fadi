@@ -16,11 +16,14 @@
  *    `saisir`) ; pendant qu'une fenêtre de saisie est ouverte, le délai de la commande est suspendu — le temps de
  *    l'utilisateur n'est pas celui de l'extension. La fin de l'appel, quelle qu'elle soit, referme la fenêtre.
  *
+ *  - lot 4 : panneau (permission « panneau »). L'extension envoie des données à la page de son panneau ou l'ouvre ;
+ *    une action de la page est une demande comme une commande (`appeler("demande", "panneau.<id>.<action>", …)`).
+ *
  * Aucune interface ici : la Planche fournit l'accès au modèle, l'affichage des avis et la fenêtre de saisie.
  */
 import {
   BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
-  lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie,
+  lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireEnvoiPanneau, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie,
   type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
 import type { DemarrageExtension, DemarrageRendu } from "./extension-planche.worker";
@@ -85,6 +88,15 @@ export interface OptionsHoteExtension {
   readonly fichiers?: {
     readonly ouvrir: (demande: DemandeOuverture) => { readonly reponse: Promise<unknown>; readonly fermer: () => void };
     readonly enregistrer: (demande: DemandeEnregistrement) => { readonly reponse: Promise<boolean>; readonly fermer: () => void };
+  };
+  /**
+   * Panneau (lot 4, permission « panneau ») : `envoyer` remet des données à la page du panneau et rend faux s'il n'est
+   * pas ouvert ; `ouvrir` l'ouvre dans la colonne. L'identifiant est déjà relu : c'est un panneau de la fiche. Absent :
+   * les demandes sont refusées.
+   */
+  readonly panneau?: {
+    readonly envoyer: (panneau: string, donnees: unknown) => boolean;
+    readonly ouvrir: (panneau: string) => boolean;
   };
 }
 
@@ -205,6 +217,14 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     });
   };
 
+  /** Panneau : données envoyées à la page, ouverture — pendant un appel seulement, comme toute demande. */
+  const servirPanneau = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
+    if (!o.panneau || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+    const lu = lireEnvoiPanneau(paquet.fiche, m.donnees);
+    if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
+    w?.postMessage(reponseProtocole(m.id, m.nom === "panneau.ouvrir" ? o.panneau.ouvrir(lu.panneau) : o.panneau.envoyer(lu.panneau, lu.donnees)));
+  };
+
   /** Minuteries : armées pendant un appel seulement ; à l'échéance, l'extension reçoit « minuterie.echeance ». */
   const servirMinuterie = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
     if (m.nom === "minuterie.annuler") {
@@ -238,6 +258,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     if (m.nom === "message.afficher" || m.nom === "saisie.demander") return servirMessages(m);
     if (m.nom === "minuterie.armer" || m.nom === "minuterie.annuler") return servirMinuterie(m);
     if (m.nom === "fichiers.ouvrir" || m.nom === "fichiers.enregistrer") return servirFichiers(m);
+    if (m.nom === "panneau.envoyer" || m.nom === "panneau.ouvrir") return servirPanneau(m);
     if (m.nom !== "journal.afficher") {
       // Hors d'un appel (aucune commande ni événement en cours), une extension ne lit ni ne modifie rien.
       if (!services || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));

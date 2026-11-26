@@ -1,0 +1,57 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-panneau",
+    "nom": {
+      "fr": "Essai du panneau",
+      "en": "Panel trial"
+    },
+    "description": {
+      "fr": "Extension d'essai du panneau : sa page trace une ligne par une action nommée et affiche un relevé du dessin, tenu à jour par l'extension.",
+      "en": "Trial add-on for the panel: its page draws a line through a named action and shows a count of the drawing, kept up to date by the add-on."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "panneau",
+      "evenements"
+    ],
+    "commandes": [
+      {
+        "id": "ouvrir-releve",
+        "libelle": {
+          "fr": "Ouvrir le relevé",
+          "en": "Open the count"
+        },
+        "icone": "ouvrir-releve.svg",
+        "raccourci": "Ctrl+Alt+R"
+      }
+    ],
+    "outils": [],
+    "panneaux": [
+      {
+        "id": "releve",
+        "titre": {
+          "fr": "Relevé",
+          "en": "Count"
+        },
+        "page": "releve.html",
+        "icone": "releve.svg"
+      }
+    ],
+    "abonnements": [
+      "modele.change"
+    ]
+  },
+  "code": "// Extension d'essai du panneau (protocole 1.0, lot 4) : un relevé du dessin, tenu à jour dans la page du panneau.\nconst etat = async () => {\n  const m = await planche.modele.lire();\n  return { aretes: m.aretes.length, faces: m.faces.length };\n};\n// Actions nommées, appelées par la page (fadi.action).\nplanche.panneau.sur(\"releve\", \"etat\", etat);\nplanche.panneau.sur(\"releve\", \"tracer\", async (d) => {\n  const longueur = Number(String(d && d.longueur).replace(\",\", \".\"));\n  if (!Number.isFinite(longueur) || longueur <= 0) throw new Error(d && d.langue === \"en\" ? \"Enter a length greater than zero.\" : \"Indiquez une longueur supérieure à zéro.\");\n  await planche.modele.ligne([0, 0, 0], [longueur, 0, 0]);\n  return etat();\n});\n// Le dessin change (geste de l'utilisateur, annulation) : la page reçoit le nouveau relevé.\nplanche.sur(\"modele.change\", async () => {\n  await planche.panneau.envoyer(\"releve\", await etat());\n});\nplanche.sur(\"commande.ouvrir-releve\", () => planche.panneau.ouvrir(\"releve\"));\n",
+  "pages": {
+    "ouvrir-releve.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 5h16v14H4z\"/><path d=\"M14 5v14\"/><path d=\"M7 12h4M9 10l2 2-2 2\"/></svg>",
+    "releve.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 4h14v16H5z\"/><path d=\"M8 9h8M8 13h8M8 17h5\"/></svg>",
+    "releve.html": "<link rel=\"stylesheet\" href=\"releve.css\">\n<h4 id=\"titre-trace\"></h4>\n<label for=\"longueur\" id=\"libelle-longueur\"></label>\n<input id=\"longueur\" value=\"2\" inputmode=\"decimal\" autocomplete=\"off\">\n<button id=\"tracer\" type=\"button\"></button>\n<p id=\"erreur\" role=\"alert\" hidden></p>\n<h4 id=\"titre-releve\"></h4>\n<dl>\n  <div><dt id=\"libelle-aretes\"></dt><dd id=\"aretes\">–</dd></div>\n  <div><dt id=\"libelle-faces\"></dt><dd id=\"faces\">–</dd></div>\n</dl>\n<img id=\"ailleurs\" src=\"https://exemple.invalid/image.png\" alt=\"\" hidden>\n<script src=\"releve.js\"></script>\n",
+    "releve.css": "body{padding:14px}\nh4{margin:0 0 10px;font-size:14px;font-weight:600}\nh4+dl,dl{margin:0}\nlabel{display:block;font-size:12.5px;color:#4d665f;margin-bottom:3px}\ninput{display:block;width:100%;border:1px solid #b9c5bd;border-radius:8px;padding:7px 9px;margin-bottom:12px;font:inherit;color:inherit;background:#fff}\nbutton{display:block;width:100%;border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;color:#fff;background:#1b4d42;cursor:pointer}\n#erreur{margin:8px 0 0;font-size:12.5px;color:#b3261e}\n#titre-releve{margin-top:14px;margin-bottom:6px}\ndl div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e6ebe7}\ndl div:last-child{border-bottom:0}\ndd{margin:0;font-weight:700}\n",
+    "releve.js": "(function () {\n  var en = fadi.langue === \"en\";\n  var element = function (id) { return document.getElementById(id); };\n  element(\"titre-trace\").textContent = en ? \"Draw a line\" : \"Tracer une ligne\";\n  element(\"libelle-longueur\").textContent = en ? \"Length (m)\" : \"Longueur (m)\";\n  element(\"tracer\").textContent = en ? \"Draw from the origin\" : \"Tracer depuis l'origine\";\n  element(\"titre-releve\").textContent = en ? \"In this drawing\" : \"Dans ce dessin\";\n  element(\"libelle-aretes\").textContent = en ? \"Edges\" : \"Arêtes\";\n  element(\"libelle-faces\").textContent = \"Faces\";\n  var montrer = function (e) {\n    if (!e) return;\n    element(\"aretes\").textContent = String(e.aretes);\n    element(\"faces\").textContent = String(e.faces);\n  };\n  // Données envoyées par l'extension quand le dessin change.\n  fadi.surDonnees(montrer);\n  fadi.action(\"etat\").then(montrer);\n  element(\"tracer\").addEventListener(\"click\", function () {\n    element(\"erreur\").hidden = true;\n    fadi.action(\"tracer\", { longueur: element(\"longueur\").value, langue: fadi.langue }).then(montrer, function (e) {\n      element(\"erreur\").textContent = e.message;\n      element(\"erreur\").hidden = false;\n    });\n  });\n})();\n"
+  }
+}

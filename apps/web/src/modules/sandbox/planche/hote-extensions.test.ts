@@ -565,3 +565,44 @@ planche.sur("modele.change", () => essayer(() => planche.fichiers.ouvrir()).then
     nue.arreter();
   });
 });
+
+describe("panneau d'une extension (lot 4)", () => {
+  const PANNEAU = { id: "reglages", titre: { fr: "Réglages", en: "Settings" }, page: "reglages.html", icone: "reglages.svg" };
+  const avecPanneau = (code: string, permissions: readonly string[] = ["modele.lire", "panneau"]): PaquetExtension => {
+    const p = avecCode(code, permissions as PaquetExtension["fiche"]["permissions"]);
+    return { ...p, fiche: { ...p.fiche, panneaux: [PANNEAU] }, pages: { ...p.pages, "reglages.html": "<p>Réglages</p>", "reglages.svg": "<svg></svg>" } };
+  };
+  const nom = 'async (f) => { try { return await f(); } catch (e) { return e.name + " : " + e.message; } }';
+  const code = `const essayer = ${nom};
+planche.panneau.sur("reglages", "poser", (d) => essayer(async () => ({ envoye: await planche.panneau.envoyer("reglages", { recu: d }) })));
+planche.sur("commande.ouvrir", () => essayer(() => planche.panneau.ouvrir("reglages")));
+planche.sur("commande.autre", () => essayer(() => planche.panneau.envoyer("autre", 1)));`;
+
+  it("une action de la page est une demande ; l'extension envoie des données à la page et ouvre le panneau", async () => {
+    const recus: unknown[] = [];
+    const ouverts: string[] = [];
+    let ouvert = false;
+    const panneau = { envoyer: (id: string, d: unknown) => (ouvert ? (recus.push([id, d]), true) : false), ouvrir: (id: string) => (ouverts.push(id), (ouvert = true)) };
+    const h = creerHoteExtension(avecPanneau(code), { creer: faux().creer, panneau });
+    expect(await h.appeler("demande", "panneau.reglages.poser", { h: 1 })).toEqual({ genre: "fini", resultat: { envoye: false } });
+    expect(await h.appeler("demande", "commande.ouvrir")).toEqual({ genre: "fini", resultat: true });
+    expect(ouverts).toEqual(["reglages"]);
+    expect(await h.appeler("demande", "panneau.reglages.poser", { h: 2 })).toEqual({ genre: "fini", resultat: { envoye: true } });
+    expect(recus).toEqual([["reglages", { recu: { h: 2 } }]]);
+    expect(await h.appeler("demande", "panneau.reglages.inconnue")).toMatchObject({ genre: "erreur", nom: "demande_inconnue" });
+    h.arreter();
+  });
+
+  it("refus nommés : panneau hors de la fiche, sans la permission, Planche sans panneau", async () => {
+    const panneau = { envoyer: () => true, ouvrir: () => true };
+    const h = creerHoteExtension(avecPanneau(code), { creer: faux().creer, panneau });
+    expect(await h.appeler("demande", "commande.autre")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : panneau/) });
+    h.arreter();
+    const sans = creerHoteExtension(avecPanneau(code, ["modele.lire"]), { creer: faux().creer, panneau });
+    expect(await sans.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "permission_refusee : panneau" });
+    sans.arreter();
+    const nue = creerHoteExtension(avecPanneau(code), { creer: faux().creer });
+    expect(await nue.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : panneau.ouvrir" });
+    nue.arreter();
+  });
+});

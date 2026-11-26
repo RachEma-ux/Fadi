@@ -38,3 +38,4 @@ export * from "./personnalisation-sandbox.js";
 export * from "./donnees-extensions.js";
 export * from "./evenements-extensions.js";
 export * from "./fichiers-extensions.js";
+export * from "./panneaux-extensions.js";
