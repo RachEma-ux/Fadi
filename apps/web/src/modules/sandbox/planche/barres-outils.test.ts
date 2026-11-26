@@ -1,7 +1,7 @@
 import { COMMANDES_REPERES } from "./commandes-reperes";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/sandbox-planche-model";
+import { OUTILS, RACCOURCIS_NAVIGATEUR, normaliserRaccourci, outilParId } from "@parcours/sandbox-planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
 import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, commandeObjet, raccourcisObjets } from "./commandes-objets";
@@ -114,8 +114,10 @@ describe("Couche de raccourcis Fadi (écart déclaré, D-198)", () => {
     for (const [id, r] of Object.entries(RACCOURCIS_FADI)) {
       const e = evenement(r);
       expect(commenceSaisie(e.key), `${id} : ${r} commencerait une saisie`).toBe(false);
-      // Forme : Maj + lettre ou Alt + Maj + lettre.
-      expect(/^(Alt\+)?Maj\+[A-Z]$/.test(r), r).toBe(true);
+      // Forme : Maj + lettre ou Alt + Maj + lettre ; Ctrl + Maj + lettre depuis la phase 1 (lot 1, outil Interagir),
+      // toutes les lettres des deux premières formes étant prises — jamais une combinaison que garde le navigateur.
+      expect(/^((Alt|Ctrl)\+)?Maj\+[A-Z]$/.test(r), r).toBe(true);
+      expect(RACCOURCIS_NAVIGATEUR, `${id} : ${r}`).not.toContain(r);
     }
   });
 

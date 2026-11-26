@@ -1,8 +1,10 @@
 /**
  * Panneau « Composant dynamique » (extension, 25 novembre 2026 ; d'après les Dynamic Components de SketchUp). Pour le
  * composant sélectionné : ses **options** (ce que l'utilisateur choisit), puis, repliés, ses **paramètres** (valeur ou
- * formule, montrés ou non comme option) et les **règles** de ses objets contenus (X, Y, Z, LenX, LenY, LenZ, RotZ,
- * Hidden, Material, Copies). Chaque changement est une opération de la Planche (Annuler). Aucun code : des formules.
+ * formule, montrés ou non comme option), les **règles** de ses objets contenus (X, Y, Z, LenX, LenY, LenZ, RotX, RotY,
+ * RotZ, Hidden, Material, Copies ; une formule lit « Parent! » ou un autre objet, « Pied!LenZ ») et son action **au clic**
+ * (SET / ALTER, déclenchée par l'outil Interagir — phase 1, lot 1). Chaque changement est une opération de la Planche
+ * (Annuler). Aucun code : des formules.
  */
 import { ATTRIBUTS_DYNAMIQUES, type AttributDynamique, type ComposantDynamique, type ErreurDynamique, type Id, type Modele, type ParametreDynamique, estComposantDynamique, evaluerParametres, nomParametreValide, nombreInstances, objetsPilotables } from "@parcours/sandbox-planche-model";
 import { useState } from "react";
@@ -208,6 +210,22 @@ export function PanneauDynamique({
             </button>
           </div>
         )}
+      </details>
+      <details className="planche-dynamique-bloc" data-planche-dynamique-clic open={dyn.surClic ? true : undefined}>
+        <summary>{t("planche.dynamique.clic")}</summary>
+        <p className="inspecteur-aide">{t("planche.dynamique.clic.aide")}</p>
+        <Champ
+          valeur={dyn.surClic ?? ""}
+          onValider={(v) => {
+            const { surClic: _s, ...sans } = dyn;
+            onDefinir(v.trim() ? { ...dyn, surClic: v.trim() } : sans);
+          }}
+          disabled={lecture}
+          maxLength={500}
+          aria-label={t("planche.dynamique.clic")}
+          placeholder={'ALTER("Ouverture", 0, 90)'}
+          data-planche-dynamique-surclic=""
+        />
       </details>
       <div className="planche-debit-barre">
         <button type="button" disabled={lecture} onClick={() => onDefinir(null)} data-planche-dynamique-retirer>{t("planche.dynamique.retirer")}</button>

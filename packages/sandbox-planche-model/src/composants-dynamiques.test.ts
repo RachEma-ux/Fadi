@@ -1,8 +1,8 @@
 /** Extension « Composants dynamiques » : formules, paramètres, options, règles appliquées aux objets enfants, copies. */
 import { describe, expect, it } from "vitest";
-import { COPIES_MAX, boiteDefinition, definirDynamique, definirParametre, estComposantDynamique, evaluerFormule, evaluerParametres, evaluerSaisie, nomParametreValide, objetsPilotables, redessinerDynamique } from "./composants-dynamiques.js";
+import { COPIES_MAX, anglesRotation, axesRotation, boiteDefinition, cliquerDynamique, definitionInteractive, lireSurClic, definirDynamique, definirParametre, estComposantDynamique, evaluerFormule, evaluerParametres, evaluerSaisie, nomParametreValide, objetsPilotables, redessinerDynamique } from "./composants-dynamiques.js";
 import { differencePlanche, appliquerDeltaPlanche, lireModelePlanche } from "./delta.js";
-import { type ComposantDynamique, type Id, type Modele, ajouterRectangle, appliquer, contexte, copier, grouper, modeleVide, modifierAnnotations, pousserTirer, rendreUnique } from "./geometrie-libre.js";
+import { type ComposantDynamique, type Id, type Modele, ajouterRectangle, appliquer, contexte, copier, grouper, modeleVide, modifierAnnotations, pousserTirer, renommerOccurrence, rendreUnique } from "./geometrie-libre.js";
 import { v3 } from "./vecteur.js";
 
 const VIDE = { valeur: () => undefined };
@@ -50,7 +50,8 @@ describe("Composants dynamiques — formules", () => {
     expect(() => f("1 / 0")).toThrow(/Division par zéro/);
     expect(() => f("RAND()")).toThrow(/Fonction inconnue/);
     expect(() => f("(1 + 2")).toThrow(/Parenthèse/);
-    expect(() => f("Porte!LenX")).toThrow(/Parent!/);
+    // Un paramètre ne lit pas les objets (phase 1, lot 1 : seules les règles le peuvent).
+    expect(() => f("Porte!LenX")).toThrow(/un paramètre ne lit pas les objets/);
   });
 
   it("saisie : formule, nombre à virgule ou texte", () => {
@@ -206,5 +207,148 @@ describe("Composants dynamiques — règles appliquées aux objets enfants", () 
     const sans = definirDynamique(r, e.definition, null).modele;
     expect(sans.definitions[e.definition]!.dynamique).toBeUndefined();
     expect(sans.definitions[e.definition]!.contenu).toBe(r.definitions[e.definition]!.contenu);
+  });
+});
+
+/** Une « Table » qui contient deux objets : la planche d'origine (« Planche ») et sa copie renommée « Pied ». */
+function table(nomPied = "Pied"): { m: Modele; parent: Id; definition: Id; plateau: Id; pied: Id } {
+  let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 0.3, 0)).modele;
+  m = pousserTirer(m, Object.keys(m.racine.faces)[0]!, 0.02).modele;
+  const plateau = grouper(m, [...Object.keys(m.racine.aretes), ...Object.keys(m.racine.faces)], { genre: "composant", nom: "Planche" });
+  m = copier(plateau.modele, [plateau.occurrence], v3(2, 0, 0)).modele;
+  const pied = Object.keys(m.racine.occurrences).find((id) => id !== plateau.occurrence)!;
+  m = renommerOccurrence(m, pied, nomPied).modele;
+  const parent = grouper(m, [plateau.occurrence, pied], { genre: "composant", nom: "Table" });
+  return { m: parent.modele, parent: parent.occurrence, definition: parent.definition, plateau: plateau.occurrence, pied };
+}
+const arrondi = (xs: readonly number[]) => xs.map((x) => (Math.abs(x) < 1e-9 ? 0 : Number(x.toFixed(6))));
+const colonneDe = (m: Modele, parent: Id, objet: Id, c: number) => {
+  const M = contexte(m, parent).occurrences[objet]!.transformation;
+  return arrondi([M[c] as number, M[4 + c] as number, M[8 + c] as number]);
+};
+
+describe("Composants dynamiques — phase 1, lot 1 : RotX et RotY", () => {
+  it("RotX, RotY puis RotZ, dans cet ordre, autour des axes du composant", () => {
+    const e = etagere();
+    const rx = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotX", formule: "90" }] });
+    expect(rx.erreurs).toEqual([]);
+    expect(colonneDe(rx.modele, e.parent, e.planche, 1)).toEqual([0, 0, 1]);
+    expect(colonneDe(rx.modele, e.parent, e.planche, 2)).toEqual([0, -1, 0]);
+    const ry = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotY", formule: "=45*2" }] });
+    expect(colonneDe(ry.modele, e.parent, e.planche, 0)).toEqual([0, 0, -1]);
+    const xz = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotX", formule: "90" }, { objet: e.planche, attribut: "RotZ", formule: "90" }] });
+    expect(colonneDe(xz.modele, e.parent, e.planche, 0)).toEqual([0, 1, 0]);
+    expect(colonneDe(xz.modele, e.parent, e.planche, 1)).toEqual([0, 0, 1]);
+    // La taille suit les axes tournés : LenY reste la longueur le long de l'axe Y de l'objet.
+    const etire = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotX", formule: "90" }, { objet: e.planche, attribut: "LenY", formule: "0,6" }] });
+    expect(colonneDe(etire.modele, e.parent, e.planche, 1)).toEqual([0, 0, 2]);
+  });
+
+  it("angles relus des axes : aller-retour exact ; un angle sans règle garde sa valeur actuelle", () => {
+    expect(arrondi(anglesRotation(axesRotation(10, 20, 30)))).toEqual([10, 20, 30]);
+    expect(arrondi(anglesRotation(axesRotation(0, 0, -135)))).toEqual([0, 0, -135]);
+    const e = etagere();
+    const tourne = definirDynamique(e.m, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotZ", formule: "90" }] }).modele;
+    // Règle RotZ retirée, règle RotX ajoutée : la rotation de 90° autour de Z (actuelle) est gardée.
+    const puis = definirDynamique(tourne, e.definition, { parametres: [], regles: [{ objet: e.planche, attribut: "RotX", formule: "90" }] });
+    expect(puis.erreurs).toEqual([]);
+    expect(colonneDe(puis.modele, e.parent, e.planche, 0)).toEqual([0, 1, 0]);
+    expect(colonneDe(puis.modele, e.parent, e.planche, 1)).toEqual([0, 0, 1]);
+  });
+});
+
+describe("Composants dynamiques — phase 1, lot 1 : une règle lit un autre objet", () => {
+  it("« Pied!LenZ » lit la valeur de la règle de l'autre objet ; « Pied!X » sa valeur actuelle sans règle", () => {
+    const e = table();
+    const r = definirDynamique(e.m, e.definition, {
+      parametres: [{ nom: "Hauteur", valeur: "0,75" }],
+      regles: [
+        { objet: e.plateau, attribut: "Z", formule: "=Pied!LenZ" },
+        { objet: e.plateau, attribut: "X", formule: "=pied!x - 1" },
+        { objet: e.pied, attribut: "LenZ", formule: "=Hauteur" },
+      ],
+    });
+    expect(r.erreurs).toEqual([]);
+    const o = contexte(r.modele, e.parent).occurrences[e.plateau]!;
+    expect(arrondi([o.transformation[3] as number, o.transformation[11] as number])).toEqual([1, 0.75]);
+    expect(taille(r.modele, e.parent, e.pied)).toEqual([1, 0.3, 0.75]);
+    // L'ordre des règles ne compte pas : une référence calcule la règle lue si elle ne l'est pas encore.
+    const inverse = definirDynamique(e.m, e.definition, { ...r.modele.definitions[e.definition]!.dynamique!, regles: [...r.modele.definitions[e.definition]!.dynamique!.regles].reverse() });
+    expect(contexte(inverse.modele, e.parent).occurrences[e.plateau]!.transformation).toEqual(o.transformation);
+  });
+
+  it("refus nommés : objet inconnu, nom en double, attribut inconnu, boucle, règle lue en erreur, paramètre", () => {
+    const e = table();
+    const essai = (regles: ComposantDynamique["regles"], parametres: ComposantDynamique["parametres"] = []) => definirDynamique(e.m, e.definition, { parametres, regles }).erreurs.map((x) => [x.ou, x.cle]);
+    expect(essai([{ objet: e.plateau, attribut: "Z", formule: "=Porte!LenZ" }])).toEqual([["Planche.Z", "reference"]]);
+    expect(essai([{ objet: e.plateau, attribut: "Z", formule: "=Pied!Largeur" }])).toEqual([["Planche.Z", "reference-attribut"]]);
+    expect(essai([{ objet: e.plateau, attribut: "Z", formule: "=Pied!Z" }, { objet: e.pied, attribut: "Z", formule: "=Planche!Z" }]).map((x) => x[1])).toContain("circulaire");
+    expect(essai([{ objet: e.plateau, attribut: "Z", formule: "=Pied!LenZ" }, { objet: e.pied, attribut: "LenZ", formule: "=1/0" }])).toEqual([["Pied.LenZ", "division"], ["Planche.Z", "reference-erreur"]]);
+    expect(essai([], [{ nom: "A", valeur: "=Pied!LenZ" }])).toEqual([["A", "reference-parametre"]]);
+    const double = table("Planche");
+    const ambigu = definirDynamique(double.m, double.definition, { parametres: [], regles: [{ objet: double.plateau, attribut: "Z", formule: "=Planche!Z" }] });
+    expect(ambigu.erreurs.map((x) => x.cle)).toEqual(["reference-ambigue"]);
+  });
+});
+
+describe("Composants dynamiques — phase 1, lot 1 : action au clic (outil Interagir)", () => {
+  const porte = (e: ReturnType<typeof etagere>, surClic: string): Modele =>
+    definirDynamique(e.m, e.definition, { parametres: [{ nom: "Ouverture", valeur: "0" }, { nom: "Teinte", valeur: "Blanc" }], regles: [{ objet: e.planche, attribut: "RotZ", formule: "=Ouverture" }], surClic }).modele;
+
+  it("ALTER passe à la valeur suivante de la liste, en boucle, et le composant est redessiné", () => {
+    const e = etagere();
+    const m = porte(e, 'ALTER("Ouverture", 0, 90)');
+    const un = cliquerDynamique(m, e.definition);
+    expect(un.erreurs).toEqual([]);
+    expect(un.modele.definitions[e.definition]!.dynamique!.parametres[0]!.valeur).toBe("90");
+    expect(colonneDe(un.modele, e.parent, e.planche, 0)).toEqual([0, 1, 0]);
+    const deux = cliquerDynamique(un.modele, e.definition);
+    expect(deux.modele.definitions[e.definition]!.dynamique!.parametres[0]!.valeur).toBe("0");
+    expect(colonneDe(deux.modele, e.parent, e.planche, 0)).toEqual([1, 0, 0]);
+  });
+
+  it("SET à une valeur la pose ; plusieurs actions séparées par « ; » ; valeur absente de la liste = la première", () => {
+    const e = etagere();
+    const m = porte(e, 'SET("Teinte", "Rouge ; vif") ; set(Ouverture, 30, 60)');
+    expect(lireSurClic('SET("Teinte", "Rouge ; vif") ; set(Ouverture, 30, 60)').map((a) => [a.action, a.parametre, a.valeurs.length])).toEqual([["SET", "Teinte", 1], ["SET", "Ouverture", 2]]);
+    const r = cliquerDynamique(m, e.definition);
+    expect(r.erreurs).toEqual([]);
+    expect(r.modele.definitions[e.definition]!.dynamique!.parametres.map((p) => p.valeur)).toEqual(["30", "Rouge ; vif"]);
+    const encore = cliquerDynamique(r.modele, e.definition);
+    expect(encore.modele.definitions[e.definition]!.dynamique!.parametres[0]!.valeur).toBe("60");
+  });
+
+  it("refus nommés, et rien n'est modifié : action inconnue, paramètre inconnu, forme illisible, aucune action", () => {
+    const e = etagere();
+    for (const [surClic, cle] of [['ANIMATE("Ouverture", 0, 90)', "action"], ['ALTER("Largeur", 1, 2)', "action-parametre"], ["ALTER(Ouverture)", "action-forme"], ["Ouverture = 90", "action-forme"]] as const) {
+      const m = porte(e, surClic);
+      const r = cliquerDynamique(m, e.definition);
+      expect(r.erreurs.map((x) => x.cle)).toEqual([cle]);
+      expect(r.modele).toBe(m);
+    }
+    const sans = definirDynamique(e.m, e.definition, { parametres: [], regles: [] }).modele;
+    expect(cliquerDynamique(sans, e.definition).erreurs.map((x) => x.cle)).toEqual(["sans-clic"]);
+    expect(cliquerDynamique(e.m, e.definition).erreurs.map((x) => x.cle)).toEqual(["pas-dynamique"]);
+  });
+
+  it("l'objet visé répond par le composant le plus profond qui a une action au clic", () => {
+    const e = etagere();
+    const m = porte(e, 'ALTER("Ouverture", 0, 90)');
+    expect(definitionInteractive(m, [e.parent, e.planche])).toBe(e.definition);
+    expect(definitionInteractive(e.m, [e.parent, e.planche])).toBeNull();
+    const planche = contexte(m, e.parent).occurrences[e.planche]!.definition;
+    const deux = definirDynamique(m, planche, { parametres: [{ nom: "A", valeur: "0" }], regles: [], surClic: 'SET("A", 1)' }).modele;
+    expect(definitionInteractive(deux, [e.parent, e.planche])).toBe(planche);
+  });
+
+  it("l'action suit les copies et « Rendre unique », se relit, et sa longueur est bornée", () => {
+    const e = etagere();
+    const m = porte(e, 'ALTER("Ouverture", 0, 90)');
+    const deux = copier(m, [e.parent], v3(3, 0, 0)).modele;
+    const copie = Object.keys(deux.racine.occurrences).find((id) => id !== e.parent)!;
+    const unique = rendreUnique(deux, copie).modele;
+    expect(unique.definitions[unique.racine.occurrences[copie]!.definition]!.dynamique!.surClic).toBe('ALTER("Ouverture", 0, 90)');
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(m)))).not.toBeNull();
+    expect(estComposantDynamique({ parametres: [], regles: [], surClic: "x".repeat(501) })).toBe(false);
   });
 });

@@ -101,6 +101,7 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   "allonger-piece": "fadi:allonger",
   "aligner-face": "fadi:aligner",
   epaissir: "fadi:epaissir",
+  interagir: "hand-click",
   "pousser-tirer": "fadi:pousser",
   deplacer: "arrows-move",
   "faire-pivoter": "rotate-3d",
@@ -140,7 +141,8 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
  * outil dont le `raccourci` relevé vaut `null` reçoit ici une combinaison qui ne recouvre aucun raccourci relevé, ni
  * une touche de la Planche (G, K, Ctrl…, Maj + -), ni la frappe au champ Mesures (X et x en sont, donc Maj + X est
  * exclu) : **Maj + lettre** pour le dessin, la modification, les solides, la matière, la mesure et l'annotation ;
- * **Alt + Maj + lettre** pour les trois outils de caméra restants et les outils propres à Fadi.
+ * **Alt + Maj + lettre** pour les trois outils de caméra restants et les outils propres à Fadi ; **Ctrl + Maj + lettre**
+ * (hors combinaisons du navigateur) une fois ces lettres épuisées (phase 1, lot 1).
  */
 export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   arc: "Maj+A",
@@ -180,6 +182,9 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   "aligner-face": "Alt+Maj+F",
   // Lot L21 (D-202) : outil propre à Fadi.
   epaissir: "Alt+Maj+J",
+  // Phase 1, lot 1 : outil de l'extension « Composants dynamiques » (Interact de SketchUp n'a pas de raccourci par
+  // défaut). Alt+Maj+F1…F12 restent aux extensions ajoutées ; toutes les lettres avec Maj ou Alt+Maj sont prises.
+  interagir: "Ctrl+Maj+F",
 };
 
 /**
@@ -224,6 +229,9 @@ function emplacementOutil(id: string, releve: EmplacementOutil): EmplacementOuti
   return releve === "barre" ? "grille" : releve;
 }
 
+/** Outils d'une extension : hors du catalogue de base (comme les commandes et panneaux des extensions). */
+const OUTILS_HORS_CATALOGUE: ReadonlySet<string> = new Set(["interagir"]);
+
 const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   nature: "outil",
   id: o.id,
@@ -232,6 +240,7 @@ const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   raccourci: RACCOURCIS_HARMONISES[o.id] ?? o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
   emplacement: emplacementOutil(o.id, o.emplacement),
   disponibilite: "livree",
+  ...(OUTILS_HORS_CATALOGUE.has(o.id) ? { horsCatalogue: true as const } : {}),
 }));
 
 const c = (id: string, famille: FamilleCommandeSandbox, picto: string, raccourci: string, emplacement: EmplacementEntree, horsCatalogue = false): EntreeSandbox => ({

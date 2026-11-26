@@ -2,12 +2,19 @@
  * Extension « Composants dynamiques » (25 novembre 2026), d'après les Dynamic Components de SketchUp : un composant
  * porte des **paramètres** (valeur ou formule de tableur « =… »), dont certains sont montrés comme **options** (zone de
  * texte ou liste), et des **règles** qui fixent par formule les attributs prédéfinis de ses objets enfants — position
- * (X, Y, Z), taille (LenX, LenY, LenZ), rotation (RotZ), masquage (Hidden), matière (Material), répétition (Copies, avec
- * la variable Copy). Pur : ni React, ni DOM, aucun code exécuté — les formules sont lues par l'interpréteur ci-dessous.
+ * (X, Y, Z), taille (LenX, LenY, LenZ), rotation (RotX, RotY, RotZ), masquage (Hidden), matière (Material), répétition
+ * (Copies, avec la variable Copy). Pur : ni React, ni DOM, aucun code exécuté — les formules sont lues par
+ * l'interpréteur ci-dessous.
+ *
+ * Phase 1, lot 1 (26 novembre 2026) : RotX et RotY ; une règle lit l'attribut d'un autre objet du composant
+ * (« Pied!LenZ ») ; action au clic de l'outil Interagir (`surClic`, « onClick » de SketchUp : SET et ALTER).
  *
  * Écarts déclarés avec SketchUp : longueurs en **mètres** (SketchUp : pouces) ; tout est rangé sur la définition du
- * composant, donc une option change toutes ses instances (« Rendre unique » pour en détacher une) ; pas d'outil
- * Interagir ni d'onClick, pas de RotX / RotY, pas de référence d'un enfant à un autre, pas de fonction aléatoire.
+ * composant, donc une option change toutes ses instances (« Rendre unique » pour en détacher une) ; rotation composée
+ * dans l'ordre fixé par Fadi, RotX puis RotY puis RotZ autour des axes du composant ; un objet est désigné par son nom
+ * (un seul mot : lettres, chiffres, « _ ») et seuls ses attributs prédéfinis se lisent ; au clic, SET et ALTER passent
+ * tous deux à la valeur suivante de leur liste, sans animation (ni ANIMATE, ni REDRAW, ni GOTOSCENE) ; pas de fonction
+ * aléatoire.
  */
 import { annotationsDe } from "./annotations.js";
 import { ATTRIBUTS_DYNAMIQUES, type AttributDynamique, type ComposantDynamique, type Contexte, type Id, type Matrice4, type Modele, type Occurrence, type ParametreDynamique, type RegleDynamique, appliquer } from "./geometrie-libre.js";
@@ -21,7 +28,15 @@ export type ValeurDynamique = number | string;
 export const MESSAGES_ERREUR_DYNAMIQUE = {
   "nombre-illisible": "Nombre illisible à la position {position}.",
   guillemet: "Guillemet non fermé.",
-  reference: "Référence « {nom}! » : seule « Parent! » est admise (pas de référence à un autre objet).",
+  reference: "Référence « {nom}! » : aucun objet de ce nom dans le composant.",
+  "reference-ambigue": "Référence « {nom}! » : plusieurs objets du composant portent ce nom.",
+  "reference-attribut": "Référence « {nom}!{attribut} » : attribut inconnu (X, Y, Z, LenX, LenY, LenZ, RotX, RotY, RotZ, Hidden, Material, Copies).",
+  "reference-parametre": "Référence « {nom}! » : un paramètre ne lit pas les objets ; seule une règle le peut.",
+  "reference-erreur": "Référence « {nom}!{attribut} » : la règle de cet attribut est en erreur.",
+  action: "Action au clic inconnue : « {nom} » (SET ou ALTER attendus).",
+  "action-forme": "Action au clic illisible : « {texte} ».",
+  "action-parametre": "{action} : « {nom} » n'est pas un paramètre du composant.",
+  "sans-clic": "Ce composant n'a pas d'action au clic.",
   caractere: "Caractère inattendu « {texte} ».",
   "nombre-vide": "Nombre attendu ({quoi}), texte vide reçu.",
   "nombre-attendu": "Nombre attendu ({quoi}), « {texte} » reçu.",
@@ -62,7 +77,13 @@ const refus = (cle: CleErreurDynamique, args: ArgsErreur = {}): never => {
 
 // ————————————————————————————————————————————————————————————————————————————————— Formules
 
-type Jeton = { readonly t: "nombre"; readonly v: number } | { readonly t: "texte"; readonly v: string } | { readonly t: "nom"; readonly v: string } | { readonly t: "op"; readonly v: string };
+type Jeton =
+  | { readonly t: "nombre"; readonly v: number }
+  | { readonly t: "texte"; readonly v: string }
+  | { readonly t: "nom"; readonly v: string }
+  | { readonly t: "op"; readonly v: string }
+  /** « Objet!Attribut » : attribut prédéfini d'un autre objet du composant. */
+  | { readonly t: "ref"; readonly v: string; readonly attribut: string };
 
 function decouper(source: string): Jeton[] {
   const jetons: Jeton[] = [];
@@ -91,9 +112,14 @@ function decouper(source: string): Jeton[] {
       const m = /^[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*/.exec(source.slice(i)) as RegExpExecArray;
       i += m[0].length;
       // « Parent!nom » (écriture de SketchUp) désigne un paramètre du composant : le préfixe est admis et ignoré.
+      // « Objet!Attribut » lit un attribut prédéfini d'un autre objet du composant (phase 1, lot 1).
       if (source[i] === "!") {
-        if (m[0].toLowerCase() !== "parent") refus("reference", { nom: m[0] });
         i++;
+        if (m[0].toLowerCase() === "parent") continue;
+        const a = /^[A-Za-z_][A-Za-z0-9_]*/.exec(source.slice(i));
+        if (!a) refus("reference-attribut", { nom: m[0], attribut: "" });
+        i += (a as RegExpExecArray)[0].length;
+        jetons.push({ t: "ref", v: m[0], attribut: (a as RegExpExecArray)[0] });
         continue;
       }
       jetons.push({ t: "nom", v: m[0] });
@@ -113,6 +139,8 @@ export interface EnvironnementFormule {
   readonly valeur: (nom: string) => ValeurDynamique | undefined;
   /** Paramètre à liste : rang (1…) et libellé du choix courant, pour OPTIONINDEX / OPTIONLABEL. */
   readonly option?: (nom: string) => { readonly rang: number; readonly libelle: string } | undefined;
+  /** (Phase 1, lot 1) Attribut d'un autre objet du composant (« Pied!LenZ ») ; absent = refusé (formule d'un paramètre). */
+  readonly reference?: (objet: string, attribut: string) => ValeurDynamique;
 }
 
 const nombre = (v: ValeurDynamique, quoi = "valeur"): number => {
@@ -162,6 +190,7 @@ export function evaluerFormule(source: string, env: EnvironnementFormule): Valeu
     const x = j[i++];
     if (!x) return refus("incomplete");
     if (x.t === "nombre" || x.t === "texte") return x.v;
+    if (x.t === "ref") return env.reference ? env.reference(x.v, x.attribut) : refus("reference-parametre", { nom: x.v });
     if (x.t === "op" && x.v === "(") {
       const v = comparaison();
       if (!vu(")")) refus("parenthese");
@@ -337,6 +366,28 @@ export interface ResultatDynamique {
   readonly erreurs: ErreurDynamique[];
 }
 
+/** Attributs qu'une règle peut lire sur un autre objet du composant (« Pied!LenZ ») : les prédéfinis de SketchUp. */
+export const ATTRIBUTS_LISIBLES: readonly AttributDynamique[] = ATTRIBUTS_DYNAMIQUES;
+
+/** Axes d'une rotation RotX puis RotY puis RotZ (degrés, ordre fixé par Fadi) : colonnes de Rz · Ry · Rx. */
+export function axesRotation(rx: number, ry: number, rz: number): [Vec3, Vec3, Vec3] {
+  const [ca, sa, cb, sb, cg, sg] = [Math.cos(rx * RAD), Math.sin(rx * RAD), Math.cos(ry * RAD), Math.sin(ry * RAD), Math.cos(rz * RAD), Math.sin(rz * RAD)];
+  return [
+    { x: cg * cb, y: sg * cb, z: -sb },
+    { x: cg * sb * sa - sg * ca, y: sg * sb * sa + cg * ca, z: cb * sa },
+    { x: cg * sb * ca + sg * sa, y: sg * sb * ca - cg * sa, z: cb * ca },
+  ];
+}
+
+/** Angles (degrés) RotX, RotY, RotZ d'axes unitaires orthogonaux, inverse de `axesRotation`. */
+export function anglesRotation(axes: readonly [Vec3, Vec3, Vec3]): [number, number, number] {
+  const [u, v, w] = axes;
+  const ry = Math.asin(Math.max(-1, Math.min(1, -u.z)));
+  const propre = (x: number): number => (Math.abs(x) < 1e-9 ? 0 : Number(x.toFixed(9)));
+  if (Math.abs(Math.cos(ry)) < 1e-9) return [propre(Math.atan2(-w.y, v.y) / RAD), propre(ry / RAD), 0];
+  return [propre(Math.atan2(v.z, w.z) / RAD), propre(ry / RAD), propre(Math.atan2(u.y, u.x) / RAD)];
+}
+
 /**
  * Redessine un composant dynamique : évalue ses paramètres puis applique ses règles à ses objets enfants. Une règle en
  * erreur est rapportée et laissée sans effet ; si un paramètre est en erreur, rien n'est modifié.
@@ -359,27 +410,86 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
   for (const [objet, ids] of Object.entries(anciennes)) {
     if (!occurrences[objet] || !(parObjet.get(objet) ?? []).some((r) => r.attribut === "Copies")) for (const id of ids) delete occurrences[id];
   }
+  // Une même erreur (même règle, même message) n'est rapportée qu'une fois, qu'elle vienne de l'objet, d'une copie ou d'une référence.
+  const signaler = (e: ErreurDynamique): void => {
+    if (!erreurs.some((x) => x.ou === e.ou && x.message === e.message)) erreurs.push(e);
+  };
+  const pilotables = objetsPilotables(m, definition);
+  const etiquetteDe = (o: Occurrence): string => o.nom ?? m.definitions[o.definition]?.nom ?? o.id;
+
+  /** Géométrie actuelle d'un objet : translation, axes unitaires, échelles, boîte naturelle de sa définition. */
+  const geometrie = (o: Occurrence) => {
+    const M = o.transformation;
+    const cols: [Vec3, Vec3, Vec3] = [colonne(M, 0), colonne(M, 1), colonne(M, 2)];
+    const ech: [number, number, number] = [norme(cols[0]), norme(cols[1]), norme(cols[2])];
+    const unites = cols.map((c, k) => ((ech[k] as number) > 1e-12 ? { x: c.x / (ech[k] as number), y: c.y / (ech[k] as number), z: c.z / (ech[k] as number) } : c)) as [Vec3, Vec3, Vec3];
+    const boite = boiteDefinition(m, o.definition);
+    const naturel = (["x", "y", "z"] as const).map((c) => (boite ? boite.max[c] - boite.min[c] : 0)) as [number, number, number];
+    return { M, ech, unites, naturel };
+  };
+  /** Valeur actuelle d'un attribut, pour un objet sans règle sur cet attribut. */
+  const actuelle = (o: Occurrence, attribut: AttributDynamique): ValeurDynamique => {
+    const g = geometrie(o);
+    const angles = anglesRotation(g.unites);
+    switch (attribut) {
+      case "X": return g.M[3] as number;
+      case "Y": return g.M[7] as number;
+      case "Z": return g.M[11] as number;
+      case "LenX": return g.ech[0] * g.naturel[0];
+      case "LenY": return g.ech[1] * g.naturel[1];
+      case "LenZ": return g.ech[2] * g.naturel[2];
+      case "RotX": return angles[0];
+      case "RotY": return angles[1];
+      case "RotZ": return angles[2];
+      case "Hidden": return o.masquee ? 1 : 0;
+      case "Material": return o.materiau ? (materiaux.find((x) => x.id === o.materiau)?.nom ?? o.materiau) : "";
+      case "Copies": return (anciennes[o.id] ?? []).length;
+    }
+  };
+
+  // Valeurs des règles pour l'objet d'origine (Copy = 0), calculées une fois : une référence les relit.
+  const memo = new Map<string, { v: ValeurDynamique | undefined }>();
+  const enCours = new Set<string>();
+  const calculer = (objet: Id, attribut: AttributDynamique, copy: number): ValeurDynamique | undefined => {
+    const r = (parObjet.get(objet) ?? []).find((x) => x.attribut === attribut);
+    if (!r) return undefined;
+    const cle = `${objet}:${attribut}`;
+    if (copy === 0 && memo.has(cle)) return (memo.get(cle) as { v: ValeurDynamique | undefined }).v;
+    const base = def.contenu.occurrences[objet] as Occurrence;
+    if (copy === 0) enCours.add(cle);
+    let v: ValeurDynamique | undefined;
+    try {
+      v = evaluerSaisie(r.formule, { valeur: (nom) => (nom.toLowerCase() === "copy" ? copy : p.env.valeur(nom)), ...(p.env.option ? { option: p.env.option } : {}), reference });
+    } catch (e) {
+      signaler(depuis(`${etiquetteDe(base)}.${attribut}`, e));
+      v = undefined;
+    } finally {
+      if (copy === 0) enCours.delete(cle);
+    }
+    if (copy === 0) memo.set(cle, { v });
+    return v;
+  };
+  function reference(nom: string, attribut: string): ValeurDynamique {
+    const a = ATTRIBUTS_LISIBLES.find((x) => x.toLowerCase() === attribut.toLowerCase());
+    if (!a) return refus("reference-attribut", { nom, attribut });
+    const trouves = pilotables.filter((o) => etiquetteDe(o).toLowerCase() === nom.toLowerCase());
+    if (trouves.length === 0) return refus("reference", { nom });
+    if (trouves.length > 1) return refus("reference-ambigue", { nom });
+    const o = trouves[0] as Occurrence;
+    if (!(parObjet.get(o.id) ?? []).some((x) => x.attribut === a)) return actuelle(o, a);
+    if (enCours.has(`${o.id}:${a}`)) return refus("circulaire", { nom: `${nom}!${a}` });
+    const v = calculer(o.id, a, 0);
+    return v === undefined ? refus("reference-erreur", { nom, attribut: a }) : v;
+  }
+
   for (const [objet, regles] of parObjet) {
     const base = def.contenu.occurrences[objet];
     if (!base) {
       erreurs.push(erreur(objet, "objet"));
       continue;
     }
-    const etiquette = base.nom ?? m.definitions[base.definition]?.nom ?? objet;
-    // Une même erreur (même règle, même message) n'est rapportée qu'une fois, qu'elle vienne de l'objet ou d'une de ses copies.
-    const signaler = (e: ErreurDynamique): void => {
-      if (!erreurs.some((x) => x.ou === e.ou && x.message === e.message)) erreurs.push(e);
-    };
-    const calcul = (attribut: AttributDynamique, copy: number): ValeurDynamique | undefined => {
-      const r = regles.find((x) => x.attribut === attribut);
-      if (!r) return undefined;
-      try {
-        return evaluerSaisie(r.formule, { valeur: (nom) => (nom.toLowerCase() === "copy" ? copy : p.env.valeur(nom)), ...(p.env.option ? { option: p.env.option } : {}) });
-      } catch (e) {
-        signaler(depuis(`${etiquette}.${attribut}`, e));
-        return undefined;
-      }
-    };
+    const etiquette = etiquetteDe(base);
+    const calcul = (attribut: AttributDynamique, copy: number): ValeurDynamique | undefined => calculer(objet, attribut, copy);
     const num = (attribut: AttributDynamique, copy: number): number | undefined => {
       const v = calcul(attribut, copy);
       if (v === undefined) return undefined;
@@ -405,24 +515,26 @@ export function redessinerDynamique(m: Modele, definition: Id): ResultatDynamiqu
       while (ids.length < n) ids.push(`o${prochain++}`);
       if (ids.length) copies[objet] = ids;
     }
-    const boite = boiteDefinition(m, base.definition);
-    const M = base.transformation;
-    const cols: [Vec3, Vec3, Vec3] = [colonne(M, 0), colonne(M, 1), colonne(M, 2)];
-    const ech: [number, number, number] = [norme(cols[0]), norme(cols[1]), norme(cols[2])];
-    const unites = cols.map((c, k) => (ech[k] as number) > 1e-12 ? { x: c.x / (ech[k] as number), y: c.y / (ech[k] as number), z: c.z / (ech[k] as number) } : c) as [Vec3, Vec3, Vec3];
+    const { M, ech, unites, naturel } = geometrie(base);
+    const anglesActuels = anglesRotation(unites);
+    const tourne = regles.some((r) => r.attribut === "RotX" || r.attribut === "RotY" || r.attribut === "RotZ");
     for (let k = 0; k <= n; k++) {
       const id = k === 0 ? objet : ((copies[objet] as readonly Id[])[k - 1] as Id);
-      const rot = num("RotZ", k);
-      const axes: [Vec3, Vec3, Vec3] = rot === undefined ? unites : [{ x: Math.cos(rot * RAD), y: Math.sin(rot * RAD), z: 0 }, { x: -Math.sin(rot * RAD), y: Math.cos(rot * RAD), z: 0 }, { x: 0, y: 0, z: 1 }];
+      // Rotation : un angle sans règle (ou en erreur) garde sa valeur actuelle ; sans aucune règle d'angle, les axes restent.
+      let axes = unites;
+      if (tourne) {
+        const [rx, ry, rz] = (["RotX", "RotY", "RotZ"] as const).map((a, i) => num(a, k) ?? (anglesActuels[i] as number));
+        axes = axesRotation(rx as number, ry as number, rz as number);
+      }
       const echelles = (["LenX", "LenY", "LenZ"] as const).map((a, axe) => {
         const voulu = num(a, k);
         if (voulu === undefined) return ech[axe] as number;
-        const naturel = boite ? (["x", "y", "z"] as const).map((c) => boite.max[c] - boite.min[c])[axe] as number : 0;
-        if (voulu <= 0 || naturel <= 1e-9) {
+        const nat = naturel[axe] as number;
+        if (voulu <= 0 || nat <= 1e-9) {
           signaler(voulu <= 0 ? erreur(`${etiquette}.${a}`, "longueur", { attribut: a, recu: String(voulu) }) : erreur(`${etiquette}.${a}`, "epaisseur", { attribut: a }));
           return ech[axe] as number;
         }
-        return voulu / naturel;
+        return voulu / nat;
       }) as [number, number, number];
       const t = { x: num("X", k) ?? (M[3] as number), y: num("Y", k) ?? (M[7] as number), z: num("Z", k) ?? (M[11] as number) };
       const { masquee: _m, materiau: _mat, ...reste } = k === 0 ? base : { ...base, id };
@@ -473,6 +585,96 @@ export function definirParametre(m: Modele, definition: Id, nom: string, valeur:
   return definirDynamique(m, definition, { ...dyn, parametres: dyn.parametres.map((p): ParametreDynamique => (p.nom === nom ? { ...p, valeur } : p)) });
 }
 
+// ————————————————————————————————————————————————————————————————————————————————— Au clic (outil Interagir)
+
+/** Découpe au premier niveau (hors guillemets et parenthèses) selon `sep`. */
+function decouperHaut(source: string, sep: string): string[] {
+  const morceaux: string[] = [];
+  let profondeur = 0;
+  let guillemet = false;
+  let debut = 0;
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i];
+    if (guillemet) {
+      if (c === "\\") i++;
+      else if (c === '"') guillemet = false;
+    } else if (c === '"') guillemet = true;
+    else if (c === "(") profondeur++;
+    else if (c === ")") profondeur--;
+    else if (c === sep && profondeur === 0) {
+      morceaux.push(source.slice(debut, i));
+      debut = i + 1;
+    }
+  }
+  morceaux.push(source.slice(debut));
+  return morceaux.map((x) => x.trim()).filter((x) => x !== "");
+}
+
+/** Actions au clic lues : verbe (SET ou ALTER), paramètre visé et formules des valeurs, dans l'ordre. */
+export function lireSurClic(source: string): { readonly action: "SET" | "ALTER"; readonly parametre: string; readonly valeurs: readonly string[] }[] {
+  const texteSource = source.trim().replace(/^=/, "");
+  return decouperHaut(texteSource, ";").map((a) => {
+    const m = /^([A-Za-z]+)\s*\(([\s\S]*)\)$/.exec(a);
+    if (!m) return refus("action-forme", { texte: a });
+    const action = (m[1] as string).toUpperCase();
+    if (action !== "SET" && action !== "ALTER") return refus("action", { nom: m[1] as string });
+    const args = decouperHaut(m[2] as string, ",");
+    if (args.length < 2) return refus("action-forme", { texte: a });
+    const cible = (args[0] as string).replace(/^"(.*)"$/, "$1").trim();
+    return { action, parametre: cible, valeurs: args.slice(1) };
+  });
+}
+
+const memeValeur = (a: ValeurDynamique, b: ValeurDynamique): boolean => (typeof a === "number" && typeof b === "number" ? Math.abs(a - b) < 1e-9 : texte(a) === texte(b));
+
+/**
+ * Clic de l'outil Interagir sur un composant dynamique : chaque action fait passer son paramètre à la valeur qui suit
+ * la valeur actuelle dans sa liste (la première si l'actuelle n'y est pas ; une seule valeur = la poser), puis le
+ * composant est redessiné. Une action en erreur annule tout le clic : rien n'est modifié.
+ */
+export function cliquerDynamique(m: Modele, definition: Id): ResultatDynamique {
+  const def = m.definitions[definition];
+  const dyn = def?.dynamique;
+  if (!def) return { modele: m, erreurs: [erreur(definition, "composant")] };
+  if (!dyn) return { modele: m, erreurs: [erreur(def.nom, "pas-dynamique")] };
+  if (!dyn.surClic?.trim()) return { modele: m, erreurs: [erreur(def.nom, "sans-clic")] };
+  let suite: ComposantDynamique = dyn;
+  try {
+    for (const a of lireSurClic(dyn.surClic)) {
+      const p = evaluerParametres(suite);
+      if (p.erreurs.length) return { modele: m, erreurs: p.erreurs };
+      const i = suite.parametres.findIndex((x) => x.nom.toLowerCase() === a.parametre.toLowerCase());
+      if (i < 0) return refus("action-parametre", { action: a.action, nom: a.parametre });
+      const actuelle = p.valeurs[(suite.parametres[i] as ParametreDynamique).nom];
+      const valeurs = a.valeurs.map((v) => evaluerFormule(v, p.env));
+      const rang = actuelle === undefined ? -1 : valeurs.findIndex((v) => memeValeur(v, actuelle));
+      const v = valeurs[(rang + 1) % valeurs.length] as ValeurDynamique;
+      suite = { ...suite, parametres: suite.parametres.map((x, k) => (k === i ? { ...x, valeur: texte(v) } : x)) };
+    }
+  } catch (e) {
+    return { modele: m, erreurs: [depuis(`${def.nom}.surClic`, e)] };
+  }
+  return definirDynamique(m, definition, suite);
+}
+
+/**
+ * Composant qui répond au clic sous un chemin d'occurrences (racine → objet visé) : le plus profond dont la définition
+ * porte une action au clic, sinon `null`.
+ */
+export function definitionInteractive(m: Modele, chemin: readonly Id[]): Id | null {
+  const defs: Id[] = [];
+  let c: Contexte = m.racine;
+  for (const id of chemin) {
+    const o = c.occurrences[id];
+    const d = o ? m.definitions[o.definition] : undefined;
+    if (!o || !d) break;
+    defs.push(d.id);
+    c = d.contenu;
+  }
+  for (let k = defs.length - 1; k >= 0; k--) if (m.definitions[defs[k] as Id]?.dynamique?.surClic?.trim()) return defs[k] as Id;
+  return null;
+}
+
 /** Objets enfants d'un composant que des règles peuvent piloter : ses occurrences, hors copies tenues par le moteur. */
 export function objetsPilotables(m: Modele, definition: Id): Occurrence[] {
   const def = m.definitions[definition];
@@ -496,6 +698,7 @@ export function estComposantDynamique(v: unknown): v is ComposantDynamique {
     if (o["choix"] !== undefined && !(Array.isArray(o["choix"]) && o["choix"].length <= 50 && o["choix"].every((c) => objet(c) && court(c["libelle"], 80) && court(c["valeur"], 200)))) return false;
   }
   for (const r of v["regles"]) if (!objet(r) || !court(r["objet"], 64) || !(ATTRIBUTS_DYNAMIQUES as readonly unknown[]).includes(r["attribut"]) || !court(r["formule"])) return false;
+  if (v["surClic"] !== undefined && !court(v["surClic"])) return false;
   const c = v["copies"];
   return c === undefined || (objet(c) && Object.values(c).every((l) => Array.isArray(l) && l.length <= COPIES_MAX && l.every((id) => court(id, 64))));
 }

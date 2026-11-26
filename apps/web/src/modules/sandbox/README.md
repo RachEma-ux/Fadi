@@ -83,12 +83,16 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   `packages/sandbox-planche-model/src/composants-dynamiques.ts`, `planche/panneau-dynamique.tsx`) : un composant porte
   des **paramètres** (valeur ou formule de tableur « =… »), montrés ou non comme **options** (zone de texte ou liste), et
   des **règles** qui fixent par formule les attributs de ses objets contenus : `X`, `Y`, `Z`, `LenX`, `LenY`, `LenZ`,
-  `RotZ`, `Hidden`, `Material`, `Copies` (avec la variable `Copy`). Aucun code n'est exécuté : les formules sont lues par
-  un interpréteur pur (fonctions listées par `FONCTIONS_DYNAMIQUES`). Tout est rangé sur la définition du composant
-  (`dynamique`), vérifié à la relecture. Commandes : panneau (Maj + F7), Redessiner (Maj + F11). Écarts déclarés avec
-  SketchUp : longueurs en mètres (SketchUp : pouces) ; une option change toutes les instances du composant (« Rendre
-  unique » en détache une) ; pas d'outil Interagir ni d'`onClick`, pas de `RotX` / `RotY`, pas de référence d'un objet à
-  un autre, pas de fonction aléatoire. Jeu d'essai de la recette : `apps/web/e2e/donnees/sandbox-etagere-dynamique.json`.
+  `RotX`, `RotY`, `RotZ` (appliqués dans cet ordre), `Hidden`, `Material`, `Copies` (avec la variable `Copy`). Une
+  formule de règle lit le composant (`Parent!LenX`) ou un autre objet contenu par son nom (`Porte!LenX`). Le champ
+  **Au clic** porte des actions `SET("Nom", v1, v2…)` / `ALTER(…)`, déclenchées par l'outil **Interagir** (main qui
+  clique, Ctrl + Maj + F) : chaque clic fait passer le paramètre à la valeur suivante (phase 1, lot 1, 26 novembre 2026 ;
+  `outils/interagir.ts`, fiche `docs/planche/reference/ecarts-fadi-dynamiques.md`). Aucun code n'est exécuté : les
+  formules sont lues par un interpréteur pur (fonctions listées par `FONCTIONS_DYNAMIQUES`). Tout est rangé sur la
+  définition du composant (`dynamique`), vérifié à la relecture. Commandes : panneau (Maj + F7), Redessiner (Maj + F11).
+  Écarts déclarés avec SketchUp : longueurs en mètres (SketchUp : pouces) ; une option change toutes les instances du
+  composant (« Rendre unique » en détache une) ; SET et ALTER passent tous deux à la valeur suivante, sans animation ;
+  pas d'ANIMATE, REDRAW ni GOTOSCENE ; pas de fonction aléatoire. Jeu d'essai de la recette : `apps/web/e2e/donnees/sandbox-etagere-dynamique.json`.
 - **Extension « Emplacement »** (à activer ; réunit Add Location et Solar North de SketchUp ;
   `packages/sandbox-planche-model/src/emplacement.ts`, `planche/panneau-emplacement.tsx`) : la position du projet est
   **saisie** (latitude, longitude, altitude facultative, nom libre) et rangée dans les réglages de la Planche

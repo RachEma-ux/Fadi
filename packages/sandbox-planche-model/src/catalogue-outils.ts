@@ -868,6 +868,33 @@ export const OUTILS: readonly Outil[] = [
     statutReleve: "fadi",
   },
 
+  // Phase 1, lot 1 (26 novembre 2026) : outil de l'extension « Composants dynamiques », d'après Interact de SketchUp
+  // (non relevé en direct : écart Fadi déclaré).
+  {
+    id: "interagir",
+    libelle: "Interagir",
+    libelleSketchUp: "Interact",
+    famille: "selection",
+    raccourci: null,
+    emplacement: "grille",
+    etapes: [
+      e(
+        "Click a dynamic component to trigger its on-click action.",
+        "Cliquez un composant dynamique pour déclencher son action au clic.",
+        null,
+        null,
+        "aucune",
+      ),
+    ],
+    modificateurs: [],
+    inferences: [],
+    apresFin:
+      "Le composant visé le plus profond qui porte une action au clic l'exécute : chaque paramètre nommé passe à la valeur suivante de sa liste, puis le composant est redessiné. Un clic = un pas ; une action en erreur ne change rien.",
+    offre: "gratuite",
+    sourceReference: "ecarts-fadi-dynamiques.md § 1",
+    statutReleve: "fadi",
+  },
+
   // ----- Modification
   {
     id: "pousser-tirer",
