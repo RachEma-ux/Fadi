@@ -1,7 +1,7 @@
 # Rapprochements d'agrégation des recettes Studio
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` (module `scripts/registre/rattachements-studio.mjs`) ;
-> la CI le recalcule à chaque commit. Registre SHA-256 `450796d12bc4512ead8a767952806afea28bd09953a7cb7c3372ad181d092a34`.
+> la CI le recalcule à chaque commit. Registre SHA-256 `eabef879ec245011802b3c0862927424638b7577dfdc439cecd0e84739dbed4e`.
 
 Pour chaque agrégat (A.2-09, REC-A-02, REC-B-01, REC-C-02, REC-E-01, REC-E-02, F.3-04, J6), chaque TEST-xxx / AC-xxx cité
 (relu dans la description du registre ; facettes déclarées pour REC-B-01 et J6, qui n'en citent pas) est rapproché de

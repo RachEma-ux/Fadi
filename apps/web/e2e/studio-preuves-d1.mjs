@@ -156,11 +156,11 @@ try {
     await page.keyboard.press("Shift+Tab");
     await page.keyboard.press("ArrowLeft");
     check("I.5-02 : flèche gauche replie le menu, le focus reste sur le chevron", (await focusChevron()) === "false" && !(await page.locator("#studio-menu-domaines").isVisible()));
-    // Lot Design L6b : GeoData suit Studio dans le rail (ordre de la barre du bas), avant Collaboration.
+    // Demande du 27-11-2026 : Collaboration suit Studio dans le rail, GeoData ouvre le groupe secondaire.
     const apresRepli = [];
     for (let i = 0; i < 3; i++) { await page.keyboard.press("Tab"); apresRepli.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label"))); }
     // Console est dans le sous-menu depuis la capture de référence du 26-11-2026 : masquée avec lui.
-    check("I.5-02 : menu replié — Tab saute les entrées masquées (GeoData, Collaboration, puis Bibliothèque)", apresRepli.join(" → ") === "GeoData → Collaboration → Bibliothèque", apresRepli.join(" → "));
+    check("I.5-02 : menu replié — Tab saute les entrées masquées (Collaboration, GeoData, puis Bibliothèque)", apresRepli.join(" → ") === "Collaboration → GeoData → Bibliothèque", apresRepli.join(" → "));
     await page.locator("[data-studio-menu-lateral-bascule]").click();
     check("I.5-02 : un clic sur le chevron le déplie et lui laisse le focus", (await focusChevron()) === "true");
     await page.locator("[data-studio-menu-lateral-bascule]").click();

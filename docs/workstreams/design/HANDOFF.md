@@ -57,3 +57,4 @@ Mis à jour : 2026-11-26 (UTC).
 ## Arrêt sûr
 
 - Aucune fusion ni déploiement sans le maître d'ouvrage ; jamais la production.
+- 2026-11-27 (demande du maître d'ouvrage) : rail du bureau, Collaboration remonte sous Studio dans la navigation principale et GeoData ouvre le groupe secondaire ; barre du bas et feuille « Plus » inchangées. Recettes parcours-scenario (R11) et studio-preuves-d1 (I.5-02) alignées.
