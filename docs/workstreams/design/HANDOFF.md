@@ -19,6 +19,8 @@ Mis à jour : 2026-11-26 (UTC).
 - Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
   (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
 
+- `design-releve.mjs` passe à l'inscription par lien (#428) depuis l'intégration de main.
+
 ## Prochaine action
 
 - Suivre la CI des cinq PR ; fusion dans l'ordre L0 → L4 par le maître d'ouvrage, après captures sur un vrai téléphone.
