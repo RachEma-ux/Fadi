@@ -65,6 +65,9 @@ comportement ni d'apparence.
   extensions actives). Motif « Menubar » : clic, survol d'un titre voisin, flèches, Échap, clic ailleurs ; une case ou
   un choix radio laisse le menu ouvert. Les quatre titres restent visibles à toute largeur, comme sur la maquette (resserrés sous 1180 px). Rien n'est écrit dans
   la Planche par Affichage et Caméra (R10).
+- **Nom de la Planche dans le fil d'Ariane** (26 novembre 2026, maquette validée, `fil-ariane-planche.ts`) : dans la
+  page, le bandeau ne porte que « Planche » ; le nom de la Planche ouverte termine le fil « Studio / Console / Sandbox /
+  <nom> ». Détachée (fenêtre ou plein écran), la Planche remet son nom dans son bandeau.
 - **Téléphone** : pas de bandeau ; ☰ reste une carte flottante en haut à gauche, qu'un appui maintenu 2 s rend
   déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce navigateur ; Alt + flèches au clavier).
 - **Fenêtre détachée** (24 novembre 2026) : « Détacher » ouvre toujours la fenêtre « image dans l'image » (Document
