@@ -43,6 +43,8 @@ Mis à jour : 2026-11-26 (UTC).
 
 - L6 (#430) : sous 700 px, la barre du bas (Accueil, Projets, Studio, GeoData, Plus) remplace le rail ; à 701 px le rail revient seul (vérifié). Feuille « Plus » : focus au titre, entrées ≥ 48 px, Échap et Retour la ferment sans changer d'adresse, focus rendu à « Plus » ; un choix remplace l'entrée d'historique. `accueils-design.mjs` : 94 contrôles verts en local ; `project-layout.mjs` : 830 / 831 (le seul échec attend la parcelle de l'iframe à 701 px, sans lien avec la navigation). GeoData garde sa barre propre en attendant L7.
 
+- L6b (#431) : rail du bureau : Accueil, Projets, Studio, GeoData, puis Collaboration, Bibliothèque, Harmonie (ajoutée), Revues externes, Organisations, Extensions, Paramètres ; ordre Tab relevé à 1 440 px identique à l'ordre visuel (16 arrêts).
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.

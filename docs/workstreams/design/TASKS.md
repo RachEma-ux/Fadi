@@ -13,6 +13,7 @@
 - [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 remise (#417), branche `design/l4-action-utile`.
 - [ ] DESIGN-L5 — Navigation téléphone : préparation masquée (#429).
 - [ ] DESIGN-L6 — Navigation téléphone : barre du bas active, rail masqué (#430).
+- [ ] DESIGN-L6b — Rail du bureau dans l'ordre de « Plus » (#431).
 
 ## Terminé
 
