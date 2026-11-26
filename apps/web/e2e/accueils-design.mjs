@@ -517,6 +517,44 @@ try {
   await checkComposition(b.id, "application-mobile", true);
   await axe("application-mobile");
 
+  // Lot Design L9 (M21) : au téléphone, en-tête d'une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche),
+  // sans icône Accueil (la barre du bas l'a) ; Historique, État et Langue sous « Autres actions » ; au bureau, inchangé.
+  const entete = async () => page.evaluate(() => {
+    const t = document.querySelector(".fadi-topbar"), vis = (s) => { const e = t?.querySelector(s); return !!e && e.getBoundingClientRect().width > 0; };
+    // Une rangée : les boîtes visibles du titre et des actions se recouvrent toutes verticalement.
+    const boites = [...(t?.querySelectorAll(".fadi-topbar-title h1, .fadi-topbar-actions > *") ?? [])].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+    const uneRangee = boites.length > 0 && Math.max(...boites.map((r) => r.top)) < Math.min(...boites.map((r) => r.bottom));
+    return { hauteur: t ? t.getBoundingClientRect().height : 0, rangees: uneRangee ? 1 : 2, accueil: vis(".topbar-home"), autres: vis(".topbar-autres"), historique: vis(".history-trigger"), etat: vis(".topbar-state"), langue: vis("[data-choix-langue]"), cloche: vis(".notification-bell"), debord: document.documentElement.scrollWidth > innerWidth + 1 };
+  });
+  for (const largeur of [412, 320]) {
+    await page.setViewportSize({ width: largeur, height: 844 });
+    await page.waitForTimeout(150);
+    const e = await entete();
+    check(`L9 · ${largeur} px : en-tête d’une rangée ≤ 64 px, sans icône Accueil ; Rechercher, Autres actions et Cloche visibles`, e.hauteur <= 64 && e.rangees === 1 && !e.accueil && e.autres && e.cloche && !e.historique && !e.etat && !e.langue && !e.debord, JSON.stringify(e));
+  }
+  const autres = page.getByRole("button", { name: "Autres actions", exact: true });
+  await autres.click();
+  await page.locator("#fadi-topbar-autres[data-ouvert]").waitFor();
+  const ouvert = await entete();
+  check("L9 · « Autres actions » développe Historique, État et Langue (cibles ≥ 48 px)", (await autres.getAttribute("aria-expanded")) === "true" && ouvert.historique && ouvert.etat && ouvert.langue
+    && (await page.locator("#fadi-topbar-autres > button").evaluateAll((bs) => bs.every((b) => b.getBoundingClientRect().height >= 48))), JSON.stringify(ouvert));
+  await axe("entete-autres-mobile");
+  await page.screenshot({ path: join(OUT, "l9-entete-autres-320.png") });
+  await page.keyboard.press("Escape");
+  check("L9 · Échap replie « Autres actions » et rend le focus au bouton", (await autres.getAttribute("aria-expanded")) === "false" && await autres.evaluate((el) => el === document.activeElement));
+  await autres.click();
+  await page.getByRole("button", { name: "Historique de la plateforme", exact: true }).click();
+  await page.getByRole("dialog").waitFor();
+  check("L9 · Historique s’ouvre depuis « Autres actions », qui se replie", (await autres.getAttribute("aria-expanded")) === "false");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  check("L9 · fermer l’Historique rend le focus à « Autres actions » (bouton visible)", await autres.evaluate((el) => el === document.activeElement));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(150);
+  const bureau = await entete();
+  check("L9 · bureau : en-tête inchangé (Accueil, Historique, État, Langue en ligne ; pas de bouton « Autres actions »)", bureau.accueil && bureau.historique && bureau.etat && bureau.langue && !bureau.autres, JSON.stringify(bureau));
+  await page.setViewportSize({ width: 390, height: 844 });
+
   // Copie des préférences du navigateur, mais aucune session : un autre compte
   // ne doit pas hériter de la consultation de son prédécesseur.
   const storage = await context.storageState();

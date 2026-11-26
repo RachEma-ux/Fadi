@@ -14,10 +14,23 @@ export function useImmersive(active: boolean): void {
     document.body.classList.add(IMMERSIVE_CLASS);
     const workspace = document.getElementById("workspace-content");
     let frame = 0;
+    let observed: HTMLElement | null = null;
+    let attempts = 0;
     const measure = () => {
       frame = 0;
       const editor = workspace?.querySelector<HTMLElement>(".atelier-n");
-      if (!workspace || !editor) return;
+      // Lazy editor not mounted yet: try again on the next frames (bounded). Without this, when no observed element
+      // changes size afterwards (one-row phone header, Design L9), the menu offsets were never set and the level list
+      // opened over the mode strip, hiding Planche / 3D.
+      if (!workspace || !editor) {
+        if (attempts++ < 600) schedule();
+        return;
+      }
+      attempts = 0;
+      if (observed !== editor) {
+        observed = editor;
+        observer.observe(editor);
+      }
       // Document-relative top remains stable when the page is scrolled.
       // Minimum height preserves a usable drawing area on short/mobile screens.
       const top = editor.getBoundingClientRect().top + window.scrollY;

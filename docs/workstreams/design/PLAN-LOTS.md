@@ -16,7 +16,7 @@ production. Cycle Issue → branche → PR (`AGENTS.md`). Seuls les lots marqué
 | L6b | Rail bureau : ordre des entrées | L6 | ordre Tab = ordre visuel | autorisé (#431, 26-11-2026) |
 | L7 | Fusion des barres GeoData (5ᵉ bouton « Plus ») | L1, L2, L6 | une seule barre fixe | autorisé (#432, 26-11-2026) |
 | L8 | Paysage, clavier virtuel, Atelier | L6 | — | à autoriser |
-| L9 | En-tête d'une rangée, un seul `h1`, titres de page | L6 | — | à autoriser |
+| L9 | En-tête d'une rangée, un seul `h1`, titres de page | L6 | — | autorisé (#433, 26-11-2026) |
 | L10a-d | États : page introuvable, erreur / hors-ligne / droits séparés, Projets, Administration | L0 | — | à autoriser |
 | L11a-b | Formulaires : champ + résumé d'erreurs | L0 | — | à autoriser |
 | L12 | Carte accessible : liste des couches, objet sélectionné, légende non chromatique | L7 | — | à autoriser |

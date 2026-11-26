@@ -60,12 +60,32 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .fadi-topbar-title .home-name-edit { color: #fff; background: transparent; border: 1px solid #ffffff45; width: 44px; height: 44px; margin: -10px 0; vertical-align: middle; }
 .fadi-topbar-title .home-name-edit:hover { color: #fff; background: #ffffff15; }
 .fadi-topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.fadi-topbar-actions > button, .fadi-topbar-actions .notification-bell > button { border: 1px solid #ffffff45; color: white; background: #ffffff0c; min-height: 44px; border-radius: 8px; }
-.fadi-topbar-actions > button:hover { background: #ffffff20; }
+.fadi-topbar-autres { display: contents; }
+.fadi-topbar .topbar-icon.topbar-autres, .fadi-topbar .topbar-autres-libelle { display: none; }
+.fadi-topbar-actions > button, .fadi-topbar-autres > button, .fadi-topbar-actions .notification-bell > button { border: 1px solid #ffffff45; color: white; background: #ffffff0c; min-height: 44px; border-radius: 8px; }
+.fadi-topbar-actions > button:hover, .fadi-topbar-autres > button:hover { background: #ffffff20; }
 .fadi-topbar .topbar-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; flex: 0 0 44px; padding: 0; font-weight: 700; font-size: 18px; }
 .fadi-topbar .topbar-home { color: #fff; text-decoration: none; min-height: 44px; border: 1px solid #ffffff45; border-radius: 8px; }
 .fadi-topbar .topbar-state { font-size: 13px; font-weight: 600; padding: 10px 13px; }
 .fadi-topbar-actions .choix-langue { color: #fff; }
+/* Téléphone (chantier Design L9, M21) : une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche) ; pas
+   d'icône Accueil (la barre du bas l'a) ; Historique, État et Langue dans le panneau « Autres actions ». */
+@media (max-width: 700px) {
+  html body:not(.atelier-immersive) .fadi-shell .fadi-topbar { flex-wrap: nowrap; min-height: 0; padding: 8px 12px; gap: 8px; position: relative; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title { flex: 1 1 auto; min-width: 0; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title h1 { margin: 0; font-size: 18px; line-height: 44px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title .home-name-edit { margin: 0; border-color: transparent; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title p { display: none; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-actions { flex: none; flex-wrap: nowrap; gap: 6px; }
+  .fadi-topbar .topbar-home { display: none; }
+  .fadi-topbar .topbar-icon.topbar-autres { display: inline-flex; }
+  .fadi-topbar .topbar-autres[aria-expanded="true"] { background: #ffffff21; }
+  .fadi-topbar-autres { display: none; }
+  .fadi-topbar-autres[data-ouvert] { display: flex; flex-direction: column; align-items: stretch; gap: 8px; position: absolute; z-index: 25; top: calc(100% + 4px); right: 8px; min-width: 220px; max-width: calc(100vw - 16px); padding: 10px; box-sizing: border-box; background: var(--forest-900); border: 1px solid #ffffff26; border-radius: 10px; box-shadow: 0 8px 22px #102b2480; }
+  .fadi-topbar-autres[data-ouvert] > button, .fadi-topbar-autres[data-ouvert] .choix-langue select { width: 100%; min-height: 48px; }
+  .fadi-topbar-autres[data-ouvert] .history-trigger { flex: none; width: 100%; font-size: 14px; justify-content: flex-start; gap: 10px; padding: 0 12px; }
+  .fadi-topbar-autres[data-ouvert] .topbar-autres-libelle { display: inline; font-size: 14px; font-weight: 500; }
+}
 .fadi-topbar-actions .choix-langue select { min-height: 44px; }
 .fadi-topbar :focus-visible { outline-color: #f0dba3; }
 .fadi-topbar .notification-panel { color: var(--ink); }

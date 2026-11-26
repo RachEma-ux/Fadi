@@ -47,6 +47,8 @@ Mis à jour : 2026-11-26 (UTC).
 
 - L7 (#432) : L7 (#432) : GeoData garde une seule barre du bas, à 5 boutons (Carte, Chercher, Couches, Enregistrer, Plus) ; « Plus » ouvre la feuille de l'application (navigation principale en tête) par l'événement fadi:ouvrir-plus ; même hauteur (64 px) et même fond que la barre globale ; recette geodata.mjs 276/276 en local.
 
+- L9 (#433) : L9 (#433) : au téléphone (≤ 700 px), l'en-tête tient sur une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche) ; plus d'icône Accueil (la barre du bas l'a) ; Historique, État et Langue sous « Autres actions » ; bureau inchangé ; recette accueils-design.mjs verte en local avec 6 contrôles L9.
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.
@@ -65,3 +67,4 @@ Mis à jour : 2026-11-26 (UTC).
 - 2026-11-26 : `extensions-commandes.mjs` (venue de #438) passe aussi à `inscrireDansLaPage` : sur main, elle remplissait encore le mot de passe sur /inscription et échouait (shard planche).
 - 2026-11-26 : `studio-preuves-d1.mjs` (I.5-02) suit le nouvel ordre du rail : après le menu Studio replié, Tab passe par Console, GeoData puis Collaboration.
 - 2026-11-26 : `studio-navigation.mjs` (NAV-001) lit Collaboration dans `.app-nav-secondary` (L6b l'a sortie de la navigation principale).
+- 2026-11-26 : `use-immersive` réessaie la mesure tant que l'Atelier n'est pas monté et observe l'éditeur : avec l'en-tête L9 sur une rangée, aucun bloc observé ne changeait de taille, `--atelier-menu-top` restait vide et la liste des niveaux de « Plan » couvrait Planche / 3D au téléphone (recette planche-boutons, shard p2).

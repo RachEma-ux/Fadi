@@ -15,6 +15,7 @@
 - [ ] DESIGN-L6 — Navigation téléphone : barre du bas active, rail masqué (#430).
 - [ ] DESIGN-L6b — Rail du bureau dans l'ordre de « Plus » (#431).
 - [ ] DESIGN-L7 — L7 GeoData barre unique (#432) : PR ouverte, en attente de CI et de fusion par Roch (#432).
+- [ ] DESIGN-L9 — L9 en-tête d'une rangée (#433) : PR ouverte, en attente de CI et de fusion par Roch (#433).
 
 ## Terminé
 
