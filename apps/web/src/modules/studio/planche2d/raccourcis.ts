@@ -17,7 +17,7 @@ export type IdCommandeEditeur =
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche" | "accrochage-cible-suivante"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
-  | "exporter-obj" | "exporter-stl" | "exporter-step"
+  | "exporter-obj" | "exporter-stl" | "exporter-step" | "exporter-gltf" | "exporter-blender"
   | "exporter-png" | "echanges"
   | "illustration" | "agents"
   | "outils" | "palette"
@@ -34,7 +34,7 @@ export type IconeCommande =
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest" | "studio-snap-next"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
-  | "studio-export-obj" | "studio-export-stl" | "studio-export-step"
+  | "studio-export-obj" | "studio-export-stl" | "studio-export-step" | "studio-export-gltf" | "studio-export-blender"
   | "studio-export-png" | "studio-exchanges"
   | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
@@ -55,7 +55,7 @@ export interface CommandeEditeur {
   /** Bascule (bouton enfoncé ou non) : accrochages. */
   readonly bascule?: boolean;
   /** Téléchargement par un lien (export) plutôt qu'une action de la page. */
-  readonly telechargement?: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step";
+  readonly telechargement?: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step" | "gltf" | "blender";
   /** Le raccourci reste actif quand le focus est dans un champ de saisie. */
   readonly dansUnChamp?: boolean;
 }
@@ -131,6 +131,13 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-obj", libelleFR: "Exporter OBJ", raccourci: "Ctrl+Shift+F7", iconeSymbolique: "studio-export-obj", groupe: "export", ecrit: false, telechargement: "obj" },
   { id: "exporter-stl", libelleFR: "Exporter STL", raccourci: "Ctrl+Shift+F8", iconeSymbolique: "studio-export-stl", groupe: "export", ecrit: false, telechargement: "stl" },
   { id: "exporter-step", libelleFR: "Exporter STEP", raccourci: "Ctrl+Shift+F10", iconeSymbolique: "studio-export-step", groupe: "export", ecrit: false, telechargement: "step" },
+  // Rendu dans Blender : glTF 2.0 (maillage nommé, matériaux tirés des apparences d'affichage, caméras des scènes) et
+  // script Blender qui l'importe et prépare la scène (unités, caméra, Cycles, .blend sur demande). Ctrl+Maj+F5 (F5 seul,
+  // Maj+F5 et Ctrl+F5 rechargent la page ; la variante Ctrl+Maj reste à la page) et Ctrl+Maj+B (B comme Blender), libres
+  // et non réservés. Barre Visualisation, à côté du rendu PNG (ce sont des exports pour le rendu). Lecture admise : un
+  // lecteur télécharge.
+  { id: "exporter-gltf", libelleFR: "Exporter glTF", raccourci: "Ctrl+Shift+F5", iconeSymbolique: "studio-export-gltf", groupe: "visualisation", ecrit: false, telechargement: "gltf" },
+  { id: "exporter-blender", libelleFR: "Exporter vers Blender", raccourci: "Ctrl+Shift+B", iconeSymbolique: "studio-export-blender", groupe: "visualisation", ecrit: false, telechargement: "blender" },
   // Matrice d'échanges (E.6-01 à E.6-05), en lecture seule : Q, dernière lettre seule libre (non réservée, hors des
   // lettres d'outils) ; toutes les combinaisons Maj+lettre sont prises. Lecture admise.
   { id: "echanges", libelleFR: "Matrice d’échanges", raccourci: "Q", iconeSymbolique: "studio-exchanges", groupe: "export", ecrit: false },

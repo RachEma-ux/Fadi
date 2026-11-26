@@ -63,6 +63,25 @@ describe("E.6-04 — route d'export 3D (OBJ, STL, STEP)", () => {
     expect(lues[2]!.volume).toBeCloseTo(6 * 0.2 * 3 - 1 * 2.1 * 0.2, 6);
   });
 
+  it("Export Blender route : glTF 2.0 (model/gltf+json, .gltf) et script Blender (text/x-python, .py) servis au lecteur, même glTF embarqué", async () => {
+    poserSolides();
+    const g = await lire("lecteur", "gltf");
+    expect(g.status).toBe(200);
+    expect(g.headers["content-type"]).toBe("model/gltf+json");
+    expect(g.headers["content-disposition"]).toBe('attachment; filename="etude-variante-r1.gltf"');
+    const gltf = JSON.parse(g.body as string) as { asset: { version: string }; nodes: { name: string; mesh?: number }[] };
+    expect(gltf.asset.version).toBe("2.0");
+    expect(gltf.nodes.filter((n) => n.mesh !== undefined).map((n) => n.name)).toEqual(["dalle", "boite", "mur"]);
+    const py = await lire("lecteur", "blender");
+    expect(py.status).toBe(200);
+    expect(py.headers["content-type"]).toBe("text/x-python; charset=utf-8");
+    expect(py.headers["content-disposition"]).toBe('attachment; filename="etude-variante-r1.py"');
+    const b64 = [...(py.body as string).matchAll(/^ {4}"([A-Za-z0-9+/=]+)"$/gm)].map((m) => m[1]).join("");
+    expect(Buffer.from(b64, "base64").toString("utf8")).toBe(g.body);
+    expect(py.body).toContain('NOM = "etude-variante"');
+    expect((await lire("autre", "blender")).status).toBe(404);
+  });
+
   it("E.6-04 route : STEP d'une révision sans solide refusé (422 nothing_to_export) ; rapport de fidélité réservé à SVG, DXF et IFC ; compte hors projet 404", async () => {
     const vide = await lire("lecteur", "step");
     expect(vide.status).toBe(422);
@@ -73,6 +92,6 @@ describe("E.6-04 — route d'export 3D (OBJ, STL, STEP)", () => {
     const rapport = await request(app).get(`${V}/export/rapport?format=obj`).set("x-acteur", "lecteur");
     expect(rapport.status).toBe(400);
     expect((await lire("autre", "obj")).status).toBe(404);
-    expect((await lire("lecteur", "gltf")).status).toBe(400);
+    expect((await lire("lecteur", "fbx")).status).toBe(400);
   });
 });

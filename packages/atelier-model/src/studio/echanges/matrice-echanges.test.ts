@@ -120,6 +120,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // de SVG / DXF / IFC / STL), raison « surface-libre-hors-export » ; catégorie « subdivisions » (surfaces de subdivision :
       // OBJ et STL maillés — STL si fermées —, STEP une fois solidifiées), raison « surface-subdivision-hors-export ».
       12: "cc5c28cbb4b8d490f3be39efe30821648282a2732e34206d394d799645ebf5ed",
+      // Rendu dans Blender (2026-11-26) : exports glTF 2.0 (maquette-gltf : maillage nommé, matériaux d'affichage, caméras
+      // des scènes) et script Blender (maquette-blender) livrés ; lecture glTF non livrée (gltf-import).
+      13: "0e519e4a7710b27012ebfdfe0c865009583658ed3dedcd9b38938365458ea519",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -141,7 +144,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       expect(e?.preuves).toBeUndefined();
     }
     for (const id of ["maquette-step", "maquette-obj", "maquette-stl"]) expect(entree(id).statut, id).toBe("livre");
-    expect(entree("gltf-export").statut).toBe("non-livre");
+    // Depuis la révision 13, l'export glTF 2.0 est livré (rendu dans Blender) ; sa lecture reste non livrée.
+    expect(entree("maquette-gltf").statut).toBe("livre");
+    expect(entree("gltf-import").statut).toBe("non-livre");
     // D-179 (décision approuvée) est citée pour DWG, jamais contournée : DWG reste « non livré », jamais « renoncé » sans
     // décision Studio admise, jamais livré.
     const dwg = entree("dwg-export");
@@ -500,7 +505,7 @@ describe("Matrice et code réel : relecture du dépôt", () => {
   });
 
   it("aucun écrivain ni lecteur du modèle Studio sans entrée (façades de studio/)", () => {
-    const facades = ["export.ts", "export-3d.ts", "ifc.ts", "feuille.ts", "dossier-conception.ts", "import-dxf.ts", "mesh-3d.ts"].map((f) => `packages/atelier-model/src/studio/${f}`);
+    const facades = ["export.ts", "export-3d.ts", "export-gltf.ts", "ifc.ts", "feuille.ts", "dossier-conception.ts", "import-dxf.ts", "mesh-3d.ts"].map((f) => `packages/atelier-model/src/studio/${f}`);
     const ecrivains = facades.flatMap((f) => fonctionsExportees(lire(f)).filter((n) => /^(export\w+|lire\w+|pdf\w+|\w+(Svg|Pdf|Dxf|Ifc|Csv|Png|Step|Obj|Stl|Gltf))$/.test(n)).map((n) => `${f}#${n}`));
     expect(ecrivains.length).toBeGreaterThan(5);
     const connus = new Set(cites("code").map((x) => `${x.fichier}#${x.motif}`));

@@ -74,6 +74,8 @@ export type IconName =
   | "studio-export-obj"
   | "studio-export-stl"
   | "studio-export-step"
+  | "studio-export-gltf"
+  | "studio-export-blender"
   | "studio-export-ifc"
   | "studio-catalog"
   | "studio-palette"
@@ -242,6 +244,10 @@ const PATHS: Record<IconName, string> = {
   "studio-export-obj": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6v6H8ZM8 15l6-6M8 9l3 6M17 15v6M14 18l3 3 3-3",
   "studio-export-stl": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M7 16l4-8 4 8ZM11 8v8M9 12h4M17 15v6M14 18l3 3 3-3",
   "studio-export-step": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h4a2 2 0 0 1 2 2v4H8ZM12 9v2h2M17 15v6M14 18l3 3 3-3",
+  // Rendu dans Blender : fichier et flèche de téléchargement, avec une sphère à méridien (glTF : maillage et matériaux)
+  // ou une caméra de rendu (script Blender : scène prête à rendre).
+  "studio-export-gltf": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0ZM8 12h6M11 9c-1.2 1.8-1.2 4.2 0 6M17 15v6M14 18l3 3 3-3",
+  "studio-export-blender": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M7 10h5v5H7ZM12 11.5l2.5-1.5v5L12 13.5M8.5 8.5h2M17 15v6M14 18l3 3 3-3",
   "studio-catalog": "M4 4h7v7H4ZM13 4h7v7h-7ZM4 13h7v7H4ZM13 16.5h7M16.5 13v7",
   "studio-palette": "M3 5h18v14H3ZM3 9h18M6 13l3 2-3 2M11 17h5",
   "studio-extrude": "M4 20h11l5-4H9l-5 4ZM9 16V6M12 3 9 6 6 3M15 20V10M20 16V6",

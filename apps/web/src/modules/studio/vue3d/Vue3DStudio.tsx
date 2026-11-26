@@ -8,6 +8,11 @@
  * saisies ; Prisme sur profil copie le contour d'une polyligne fermée, posé à la cote saisie ; un clic sur un solide
  * libre (ou la liste des solides) le sélectionne pour le déplacer (dx, dy, dz) ou le supprimer. Chaque geste passe par
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
+ * Pousser / tirer interactif (geste à la SketchUp, `pousser-tirer.ts`) : avec l'outil « Pousser / tirer la face », la face
+ * survolée s'allume ; on la glisse (ou clic, déplacer, clic) le long de sa normale avec un aperçu du volume, accrochée
+ * aux plans des faces parallèles et au sol, sinon au centimètre ; une distance tapée est exacte, un double-clic répète
+ * la dernière, Échap annule. Hors d'une face, le glisser reste l'orbite. Le geste n'envoie que les commandes existantes
+ * (`studio.solide.face-decaler`, `studio.objet.extruder`).
  * Lot F1 : le prisme demande sa relation à la polyligne (référence liée, associé, copie indépendante) et sa direction
  * (+Z, −Z, vecteur) ; le solide sélectionné se modifie par ses faces (pousser / tirer, diviser), pivote autour de son axe
  * vertical, et son lien au profil (relation, état « à jour » ou « à résoudre ») est affiché et se résout explicitement.
@@ -77,6 +82,10 @@ import {
   type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
 } from "./volume-libre";
 import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
+import {
+  apercuPousser, centreFace, cleFace, commandePousserTirer, facesPoussables, inferer, lireDistanceSaisie, positionSurNormale, toucherFace,
+  type FacePoussable, type P3, type Rayon,
+} from "./pousser-tirer";
 import { descriptionOperande, PanneauBooleen } from "./PanneauBooleen";
 import { PanneauSurfaces } from "./PanneauSurfaces";
 import { PanneauSubdivisions } from "./PanneauSubdivisions";
@@ -156,6 +165,8 @@ interface Moteur {
   /** Murs (vides compris) et ouvertures (A.4), désignables. */
   architecture: THREE.Group;
   surimpression: THREE.Group;
+  /** Aperçu du pousser / tirer (face survolée, face déplacée), jamais une donnée du document. */
+  apercu: THREE.Group;
   /** Pointeurs des autres participants (session en direct). */
   presence: THREE.Group;
   /** Scènes de rendu incrémentales (C.2) des trois groupes. */
@@ -222,6 +233,80 @@ function poserCamera(m: Moteur, c: StudioCameraScene) {
 }
 
 /** Surimpression dérivée de la coupe : segments à la cote du plan, toujours visibles, jamais sélectionnables. */
+/** Geste de pousser / tirer en cours : face saisie, point et position de départ le long de la normale, distance. */
+interface GestePousser {
+  face: FacePoussable;
+  point: P3;
+  s0: number;
+  distance: number;
+  reference: string | null;
+  /** « glisser » : bouton tenu ; « suivi » : après un clic, la face suit le pointeur jusqu'au clic suivant. */
+  mode: "glisser" | "suivi";
+  x0: number;
+  y0: number;
+  /** Position du pointeur dans le canevas (étiquette de distance). */
+  ecran: { x: number; y: number };
+}
+interface GestionPousser {
+  enGeste: () => boolean;
+  bas: (e: PointerEvent) => boolean;
+  bouge: (e: PointerEvent) => void;
+  haut: (e: PointerEvent) => boolean;
+  double: (e: MouseEvent) => void;
+}
+const ecranDe = (m: Moteur, e: { clientX: number; clientY: number }) => {
+  const r = m.renderer.domElement.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+};
+
+/** Triangles d'un polygone plan (projeté sur son plan, triangulé par three) : remplissage de l'aperçu. */
+function remplissagePolygone(pts: readonly P3[], n: P3): THREE.BufferGeometry {
+  const N = new THREE.Vector3(n.x, n.y, n.z).normalize();
+  const a = Math.abs(N.z) < 0.9 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+  const u = new THREE.Vector3().crossVectors(a, N).normalize(), v = new THREE.Vector3().crossVectors(N, u);
+  const plans = pts.map((p) => { const w = new THREE.Vector3(p.x, p.y, p.z); return new THREE.Vector2(w.dot(u), w.dot(v)); });
+  const tri = THREE.ShapeUtils.triangulateShape(plans, []);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts.flatMap((p) => [p.x, p.y, p.z])), 3));
+  g.setIndex(tri.flat());
+  return g;
+}
+
+/** Aperçu du pousser / tirer : face visée allumée (rouge si refusée), ou face d'arrivée et volume balayé du geste. */
+function construireApercu(m: Moteur, visee: FacePoussable | null, geste: GestePousser | null) {
+  vider(m.apercu);
+  const face = geste?.face ?? visee;
+  if (!face) return;
+  const couleur = face.refus ? 0xc0392b : 0x1f6feb;
+  const ligne = (pts: readonly P3[], c: number, fermee = true) => {
+    const g = new THREE.BufferGeometry().setFromPoints(pts.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
+    const l = fermee ? new THREE.LineLoop(g, new THREE.LineBasicMaterial({ color: c, depthTest: false })) : new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: c, depthTest: false }));
+    l.renderOrder = 10;
+    m.apercu.add(l);
+  };
+  const remplir = (pts: readonly P3[], n: P3, opacite: number) => {
+    const mat = new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const o = new THREE.Mesh(remplissagePolygone(pts, n), mat);
+    o.renderOrder = 9;
+    m.apercu.add(o);
+  };
+  if (!geste) { remplir(face.polygone, face.normale, 0.3); ligne(face.polygone, couleur); return; }
+  const { depart, arrivee } = apercuPousser(face, geste.distance);
+  ligne(depart, 0x6b7a80);
+  remplir(arrivee, face.normale, 0.35);
+  ligne(arrivee, couleur);
+  if (geste.distance !== 0) {
+    // Faces balayées (volume ajouté ou retiré) et arêtes qui relient la face de départ à la face d'arrivée.
+    for (let i = 0; i < depart.length; i++) {
+      const j = (i + 1) % depart.length, quad = [depart[i]!, depart[j]!, arrivee[j]!, arrivee[i]!];
+      const e1 = new THREE.Vector3(quad[1]!.x - quad[0]!.x, quad[1]!.y - quad[0]!.y, quad[1]!.z - quad[0]!.z), e2 = new THREE.Vector3(quad[3]!.x - quad[0]!.x, quad[3]!.y - quad[0]!.y, quad[3]!.z - quad[0]!.z);
+      const nq = new THREE.Vector3().crossVectors(e1, e2);
+      if (nq.lengthSq() > 0) remplir(quad, { x: nq.x, y: nq.y, z: nq.z }, 0.15);
+    }
+    ligne(depart.flatMap((p, i) => [p, arrivee[i]!]), couleur, false);
+  }
+}
+
 function construireCoupe(m: Moteur, coupe: StudioCoupe | null) {
   vider(m.surimpression);
   if (!coupe || !coupe.segments.length) return;
@@ -431,6 +516,144 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const facesChoisi = choisi ? facesDe(choisi) : [];
   const resultatCoupe = useMemo(() => (coupe && Number.isFinite(coteCoupe) ? couperStudio(doc, { z: coteCoupe }) : null), [doc, coupe, coteCoupe]);
   const profils = profilsFermes(doc);
+  // ——— Pousser / tirer interactif (geste à la SketchUp) ———
+  const pousserActif = outil === "studio.solide.face-decaler" && modifiable;
+  const facesPousser = useMemo(() => (pousserActif ? facesPoussables(doc, mesh) : []), [pousserActif, doc, mesh]);
+  const facesPousserRef = useRef(facesPousser);
+  facesPousserRef.current = facesPousser;
+  const [geste, setGeste] = useState<GestePousser | null>(null);
+  const gesteRef = useRef<GestePousser | null>(null);
+  const [visee, setVisee] = useState<FacePoussable | null>(null);
+  const viseeRef = useRef<FacePoussable | null>(null);
+  const [derniere, setDerniere] = useState<number | null>(null);
+  const [saisiePousser, setSaisiePousser] = useState("");
+  const champPousser = useRef<HTMLInputElement>(null);
+  const poserGeste = (g: GestePousser | null) => { gesteRef.current = g; setGeste(g); };
+  const viser = (f: FacePoussable | null) => {
+    if (viseeRef.current && f && cleFace(viseeRef.current.cible) === cleFace(f.cible)) return;
+    if (!f && !viseeRef.current) return;
+    viseeRef.current = f; setVisee(f);
+  };
+  /** Fin du geste (validé ou annulé) : l'orbite reprend, l'aperçu s'efface. */
+  const finirGeste = () => { poserGeste(null); const m = moteur.current; if (m?.controls) m.controls.enabled = true; };
+  function validerPousser(face: FacePoussable, d: number) {
+    finirGeste();
+    envoyer(commandePousserTirer(doc, face, d), () => {
+      setDerniere(d); setSaisiePousser("");
+      if (face.cible.genre === "solide") surSelection?.(face.cible.id);
+    });
+  }
+  /** Rayon du pointeur dans le repère `local-3d` (celui de la scène three.js). */
+  const rayonDe = (m: Moteur, e: { clientX: number; clientY: number }): Rayon => {
+    const r = m.renderer.domElement.getBoundingClientRect();
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), m.camera);
+    const o = rc.ray.origin, d = rc.ray.direction;
+    return { origine: { x: o.x, y: o.y, z: o.z }, direction: { x: d.x, y: d.y, z: d.z } };
+  };
+  /** Tolérance d'inférence : 10 pixels à l'écran, ramenés en mètres au point saisi. */
+  const tolerance = (m: Moteur, p: P3): number => {
+    const h = Math.max(m.renderer.domElement.clientHeight, 1);
+    if (m.camera === m.plan) return (10 * (m.plan.top - m.plan.bottom)) / m.plan.zoom / h;
+    const dist = m.perspective.position.distanceTo(new THREE.Vector3(p.x, p.y, p.z));
+    return (10 * 2 * dist * Math.tan((m.perspective.fov * Math.PI) / 360)) / h;
+  };
+  const gestionPousser = useRef<GestionPousser>({ enGeste: () => false, bas: () => false, bouge: () => {}, haut: () => false, double: () => {} });
+  gestionPousser.current = {
+    enGeste: () => gesteRef.current !== null,
+    bas(e) {
+      const m = moteur.current;
+      if (!pousserActif || !m || e.button !== 0) return false;
+      if (gesteRef.current?.mode === "suivi") return true; // le clic qui suit valide (au relâchement)
+      const t = toucherFace(facesPousserRef.current, rayonDe(m, e));
+      if (!t) return false;
+      if (t.face.refus) { setErreur(t.face.refus); return true; }
+      setErreur("");
+      if (m.controls) m.controls.enabled = false;
+      const s0 = positionSurNormale(rayonDe(m, e), t.point, t.face.normale) ?? 0;
+      (e.target as Element | null)?.setPointerCapture?.(e.pointerId);
+      poserGeste({ face: t.face, point: t.point, s0, distance: 0, reference: null, mode: "glisser", x0: e.clientX, y0: e.clientY, ecran: ecranDe(m, e) });
+      return true;
+    },
+    bouge(e) {
+      const m = moteur.current;
+      if (!m) return;
+      const g = gesteRef.current;
+      if (g) {
+        const s = positionSurNormale(rayonDe(m, e), g.point, g.face.normale);
+        const inf = s === null ? { distance: g.distance, reference: g.reference } : inferer(g.face, s - g.s0, facesPousserRef.current, tolerance(m, g.point));
+        poserGeste({ ...g, distance: inf.distance, reference: inf.reference, ecran: ecranDe(m, e) });
+        return;
+      }
+      if (!pousserActif || e.buttons) return;
+      const t = toucherFace(facesPousserRef.current, rayonDe(m, e));
+      viser(t?.face ?? null);
+      // Sur une face, le geste est le pousser / tirer ; ailleurs, le glisser reste l'orbite.
+      if (m.controls) m.controls.enabled = !t;
+    },
+    haut(e) {
+      const g = gesteRef.current;
+      if (!g || e.button !== 0) return false;
+      const deplace = Math.hypot(e.clientX - g.x0, e.clientY - g.y0) >= 5;
+      // Un clic sans glisser passe en suivi : la face suit le pointeur jusqu'au clic suivant (geste de SketchUp).
+      if (g.mode === "glisser" && !deplace) { poserGeste({ ...g, mode: "suivi" }); return true; }
+      if (g.distance === 0) { finirGeste(); return true; }
+      validerPousser(g.face, g.distance);
+      return true;
+    },
+    double(e) {
+      const m = moteur.current;
+      if (!pousserActif || !m || derniere === null) return;
+      const t = toucherFace(facesPousserRef.current, rayonDe(m, e));
+      if (t && !t.face.refus) validerPousser(t.face, derniere);
+    },
+  };
+  // L'outil quitté (ou la lecture seule) : geste annulé, orbite rendue, plus de face visée.
+  useEffect(() => {
+    if (pousserActif) return;
+    if (gesteRef.current) finirGeste();
+    viser(null);
+    const m = moteur.current; if (m?.controls) m.controls.enabled = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pousserActif]);
+  // Clavier pendant l'outil (capture : avant les raccourcis de l'éditeur) : un chiffre ouvre la saisie de la distance
+  // (« - » aussi pendant un geste : hors geste, il reste le zoom arrière) ; Échap annule le geste en cours.
+  useEffect(() => {
+    if (!pousserActif) return;
+    const touche = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "Escape" && gesteRef.current) { e.preventDefault(); e.stopPropagation(); finirGeste(); return; }
+      if ((e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable=true],[role=dialog]")) return;
+      if (/^[0-9.,]$/.test(e.key) || (e.key === "-" && gesteRef.current)) {
+        e.preventDefault(); e.stopPropagation();
+        setSaisiePousser(e.key);
+        champPousser.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", touche, true);
+    return () => window.removeEventListener("keydown", touche, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pousserActif]);
+  // Aperçu : face visée allumée, ou face déplacée avec le volume balayé.
+  useEffect(() => {
+    const m = moteur.current; if (!m) return;
+    construireApercu(m, geste ? null : visee, geste);
+    m.rendre();
+  }, [geste, visee]);
+  function saisirPousser(e: FormEvent) {
+    e.preventDefault();
+    const d = lireDistanceSaisie(saisiePousser);
+    if (d === null) { setErreur("Distance non reconnue : tapez par exemple 1,20 ou 120 cm (négative : vers l’intérieur)."); return; }
+    const face = gesteRef.current?.face ?? viseeRef.current;
+    if (!face) { setErreur("Survolez d’abord, dans la vue 3D, la face à pousser ou à tirer."); return; }
+    validerPousser(face, d);
+  }
+  function repeterPousser() {
+    const face = viseeRef.current;
+    if (derniere === null || !face) { setErreur("Survolez d’abord la face à laquelle répéter la dernière distance."); return; }
+    validerPousser(face, derniere);
+  }
+
   // Le clic sur la planche lit l'état courant (outil, droits) sans réinstaller les écouteurs.
   const clic = useRef<(e: PointerEvent) => void>(() => {});
   clic.current = (e: PointerEvent) => {
@@ -489,10 +712,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const grille = new THREE.GridHelper(40, 40, 0xbfcfd3, 0xdde6e8);
     grille.rotation.x = Math.PI / 2; // plan XY du repère local-3d
     scene.add(grille);
-    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group(), presence = new THREE.Group();
-    scene.add(contenu, libres, architecture, surimpression, presence);
+    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group(), presence = new THREE.Group(), apercu = new THREE.Group();
+    scene.add(contenu, libres, architecture, surimpression, presence, apercu);
     const m: Moteur = {
-      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, presence,
+      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, presence, apercu,
       rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
       qualite: ETAT_QUALITE_INITIAL, reglage: PALIERS_QUALITE[0]!, presentation: null, qualiteTenue: false, charge: 0,
       // Réglages de présentation seulement : ni le document, ni la désignation, ni aucune tolérance ne sont touchés.
@@ -557,8 +780,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     };
     // Un clic (sans glisser) pose ou sélectionne ; un glisser reste un geste de navigation.
     let bas: { x: number; y: number } | null = null;
-    const pointeurBas = (e: PointerEvent) => { bas = { x: e.clientX, y: e.clientY }; };
+    // Pousser / tirer : saisi en phase de capture, avant l'orbite, pour qu'une face saisie ne fasse pas tourner la vue.
+    const pousserBas = (e: PointerEvent) => { if (gestionPousser.current.bas(e)) { e.stopImmediatePropagation(); bas = null; } };
+    const pousserBouge = (e: PointerEvent) => gestionPousser.current.bouge(e);
+    const pousserDouble = (e: MouseEvent) => gestionPousser.current.double(e);
+    const pointeurBas = (e: PointerEvent) => { if (!gestionPousser.current.enGeste()) bas = { x: e.clientX, y: e.clientY }; };
     const pointeurHaut = (e: PointerEvent) => {
+      if (gestionPousser.current.haut(e)) { bas = null; return; }
       if (bas && e.button === 0 && Math.hypot(e.clientX - bas.x, e.clientY - bas.y) < 5) clic.current(e);
       bas = null;
     };
@@ -585,6 +813,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (!imagePrevue) imagePrevue = requestAnimationFrame(calculerPointeur);
     };
     const pointeurSorti = () => { dernierEvenement = null; if (imagePrevue) { cancelAnimationFrame(imagePrevue); imagePrevue = 0; } surPointeur3dRef.current?.(null); };
+    renderer.domElement.addEventListener("pointerdown", pousserBas, true);
+    renderer.domElement.addEventListener("pointermove", pousserBouge);
+    renderer.domElement.addEventListener("dblclick", pousserDouble);
     renderer.domElement.addEventListener("pointermove", pointeurBouge);
     renderer.domElement.addEventListener("pointerleave", pointeurSorti);
     renderer.domElement.addEventListener("pointerdown", pointeurBas);
@@ -595,6 +826,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     return () => {
       obs?.disconnect();
       if (imagePrevue) cancelAnimationFrame(imagePrevue);
+      renderer.domElement.removeEventListener("pointerdown", pousserBas, true);
+      renderer.domElement.removeEventListener("pointermove", pousserBouge);
+      renderer.domElement.removeEventListener("dblclick", pousserDouble);
       renderer.domElement.removeEventListener("pointermove", pointeurBouge);
       renderer.domElement.removeEventListener("pointerleave", pointeurSorti);
       renderer.domElement.removeEventListener("pointerdown", pointeurBas);
@@ -606,7 +840,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const partagees = texturesPartagees(renderer, [scene]);
       m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
       m.presentation?.liberer(); m.presentation = null;
-      vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence);
+      vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence); vider(apercu);
       libererObjet(grille);
       libererTexturesPartagees(partagees);
       renderer.forceContextLoss();
@@ -696,10 +930,18 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       charge: (ms: number) => { const m = moteur.current; if (m) m.charge = Number.isFinite(ms) && ms > 0 ? ms : 0; },
       qualite: () => { const m = moteur.current; return m ? { palier: m.qualite.palier, changements: m.qualite.changements, ...m.reglage, pixelRatio: m.renderer.getPixelRatio() } : null; },
       rendre: (n = 1) => { const m = moteur.current; for (let i = 0; i < n && m; i++) m.rendre(); },
+      // Recette du pousser / tirer : faces saisissables (clé, libellé, refus) et position à l'écran du centre d'une face.
+      facesPousser: () => facesPousserRef.current.map((f) => ({ cle: cleFace(f.cible), libelle: f.libelle, refus: f.refus ?? null })),
+      facePousser: (cle: string) => {
+        const m = moteur.current, f = facesPousserRef.current.find((x) => cleFace(x.cible) === cle);
+        if (!m || !f) return null;
+        const c = centreFace(f), v = new THREE.Vector3(c.x, c.y, c.z).project(m.camera), r = m.renderer.domElement.getBoundingClientRect();
+        return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+      },
     };
     (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d = crochet;
     return () => { if ((globalThis as { __fadiVue3d?: unknown }).__fadiVue3d === crochet) delete (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d; };
-  }, [mesh, doc]);
+  }, [mesh, doc, facesPousser]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -934,6 +1176,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}>
         {(pointeurs3d ?? []).map((p) => <span key={p.userId} className="studio-vue3d-pointeur" data-tr-pointeur-3d={p.userId} aria-hidden="true" translate="no"
           style={{ color: teintePresence(p.userId), display: "none" }} ref={(el) => { if (el) etiquettes.current.set(p.userId, el); else etiquettes.current.delete(p.userId); }}>{p.nom}</span>)}
+        {geste && <span className="studio-vue3d-pousser-etiquette" data-studio-pousser-etiquette={geste.distance} aria-hidden="true"
+          style={{ transform: `translate(${geste.ecran.x}px, ${geste.ecran.y}px)` }}>{`${nombre(geste.distance)} m`}{geste.reference && <small>{geste.reference}</small>}</span>}
       </div>
       {!remplir && <p className="studio-hint">{navigation === "plan"
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
@@ -1010,7 +1254,26 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       <PanneauSubdivisions doc={doc} outil={outil} revision={empreinte.revision} modifiable={modifiable} selection={selection} {...(layerId ? { layerId } : {})}
         sommet={sommetSubdivision} surSommet={setSommetSubdivision} {...(surCommandes ? { surCommandes } : {})} {...(surSelection ? { surSelection } : {})} />
 
-      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
+      {outil === "studio.solide.face-decaler" && <form className="studio-vue3d-formulaire" onSubmit={saisirPousser} data-studio-pousser-tirer aria-labelledby="studio-pousser-titre">
+        <h3 id="studio-pousser-titre"><Icon name="studio-solid-push-pull" size={18} /> Pousser / tirer</h3>
+        <p className="studio-hint">Survolez une face : elle s’allume. Glissez-la le long de sa normale (ou cliquez, déplacez, cliquez) : elle s’accroche aux plans des autres faces et au sol, sinon avance au centimètre. Tapez une distance puis Entrée pour une valeur exacte ; double-cliquez une face pour répéter la dernière distance ; Échap annule. Un contour fermé à plat tiré devient un objet extrudé. Hors d’une face, le glisser fait tourner la vue.</p>
+        <p role="status" data-studio-pousser-etat={geste ? "geste" : visee ? "visee" : "aucune"}>{geste
+          ? `${geste.face.libelle} : ${nombre(geste.distance)} m${geste.reference ? ` · ${geste.reference}` : ""}`
+          : visee ? `Face visée : ${visee.libelle}${visee.refus ? ` — ${visee.refus}` : ""}` : "Aucune face visée."}</p>
+        <fieldset disabled={!modifiable}>
+          <legend>Distance, en mètres</legend>
+          <label>Distance (positive vers l’extérieur ; « 1,20 », « 120 cm », « -0,5 »)
+            <input ref={champPousser} name="pousser-distance" value={saisiePousser} inputMode="decimal" autoComplete="off" spellCheck={false} data-studio-pousser-saisie
+              onChange={(e) => setSaisiePousser(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setSaisiePousser(""); finirGeste(); champPousser.current?.blur(); } }} />
+          </label>
+          <button type="submit" data-studio-pousser-valider><Icon name="studio-solid-push-pull" size={18} /> Appliquer la distance</button>
+          <button type="button" onClick={repeterPousser} disabled={derniere === null} data-studio-pousser-repeter>{derniere === null ? "Répéter la dernière distance" : `Répéter la dernière distance (${nombre(derniere)} m)`}</button>
+          {geste && <button type="button" onClick={finirGeste} data-studio-pousser-annuler>Annuler le geste</button>}
+        </fieldset>
+      </form>}
+
+      {!choisi && outil && ["studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
       {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>

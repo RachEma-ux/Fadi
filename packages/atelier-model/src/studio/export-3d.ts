@@ -41,7 +41,11 @@ import { studioPointOccurrence } from "./batiment/composants.js";
  * texte octet pour octet. Ni React, ni DOM, ni WebAssembly.
  */
 
-export const STUDIO_FORMATS_3D = Object.freeze(["obj", "stl", "step"] as const);
+/**
+ * Formats 3D : OBJ, STL, STEP (E.6-04) ; glTF 2.0 et script Blender (`export-gltf.ts`) : maillage, matériaux tirés des
+ * apparences d'affichage et caméras des scènes, pour le rendu dans Blender.
+ */
+export const STUDIO_FORMATS_3D = Object.freeze(["obj", "stl", "step", "gltf", "blender"] as const);
 export type StudioFormat3d = (typeof STUDIO_FORMATS_3D)[number];
 
 /** Échappement réversible d'un identifiant pour OBJ et STEP : ASCII imprimable gardé (sauf espace, `~`, `'`, `\`). */
@@ -60,7 +64,7 @@ export function studioIdDepuisNom3d(nom: string): string {
 }
 
 /** Document dont tous les calques sont visibles : les exports 3D n'écartent aucun calque masqué. */
-function toutVisible(doc: StudioDocument): { doc: StudioDocument; masques: Set<string> } {
+export function studioToutVisibleExport3d(doc: StudioDocument): { doc: StudioDocument; masques: Set<string> } {
   const masques = new Set((doc.layers ?? []).filter((l) => !l.visible).map((l) => l.id));
   return { doc: masques.size ? { ...doc, layers: doc.layers!.map((l) => (l.visible ? l : { ...l, visible: true })) } : doc, masques };
 }
@@ -76,10 +80,12 @@ export interface StudioBilanExport3d {
   nonEcrits: Readonly<Record<string, number>>;
 }
 
-interface Element3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "echelle" | "structure" | "occurrence" | "surface" | "surface-libre" | "subdivision-fermee" | "subdivision-ouverte"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
+/** Élément 3D écrit par les exports maillés (OBJ, STL, glTF) : identité, calque, catégorie, maillage. */
+export interface StudioElementExport3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "echelle" | "structure" | "occurrence" | "surface" | "surface-libre" | "subdivision-fermee" | "subdivision-ouverte"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
 
-function elements3d(mesh: StudioMesh3d): Element3d[] {
-  const out: Element3d[] = [];
+/** Éléments maillés du maillage de la vue 3D, dans l'ordre d'écriture des exports (ouvertures exclues : vide du mur). */
+export function studioElementsExport3d(mesh: StudioMesh3d): StudioElementExport3d[] {
+  const out: StudioElementExport3d[] = [];
   const lay = (l: string | undefined) => (l !== undefined ? { layerId: l } : {});
   for (const s of mesh.solids) out.push({ id: s.id, ...lay(s.layerId), categorie: s.kind === "prism" ? "objet" : "surface", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.freeSolids ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "solide", vertices: s.vertices, triangles: s.triangles });
@@ -96,7 +102,7 @@ function elements3d(mesh: StudioMesh3d): Element3d[] {
 }
 
 /** Éléments du document qui ne sont pas des géométries 3D (comptés, jamais écrits). */
-function horsGeometrie(doc: StudioDocument): Record<string, number> {
+export function studioHorsGeometrie3d(doc: StudioDocument): Record<string, number> {
   const c: Record<string, number> = {};
   const n = (k: string, v: number) => { if (v > 0) c[k] = (c[k] ?? 0) + v; };
   n("cote", doc.dimensions?.length ?? 0);
@@ -120,13 +126,17 @@ const bilanEntete = (b: StudioBilanExport3d): string[] => [
 export function studioBilanExport3d(document: StudioDocument, format: StudioFormat3d): StudioBilanExport3d {
   const doc = validateStudioDocument(document);
   if (format === "step") return studioPiecesStep(doc).bilan;
-  const { doc: d, masques } = toutVisible(doc);
+  const { doc: d, masques } = studioToutVisibleExport3d(doc);
   const mesh = studioMesh3d(d);
-  const els = elements3d(mesh);
-  const nonEcrits = horsGeometrie(doc);
+  const els = studioElementsExport3d(mesh);
+  const nonEcrits = studioHorsGeometrie3d(doc);
   const ajouter = (k: string, v: number) => { if (v > 0) nonEcrits[k] = (nonEcrits[k] ?? 0) + v; };
-  let ecrits: Element3d[];
-  if (format === "obj") {
+  let ecrits: StudioElementExport3d[];
+  if (format === "gltf" || format === "blender") {
+    // glTF : scènes (caméras) et apparences (matériaux) sont écrites ; tout le maillage OBJ aussi, contours compris.
+    delete nonEcrits["visualisation"];
+    ecrits = els;
+  } else if (format === "obj") {
     ecrits = els;
   } else {
     ecrits = els.filter((e) => e.categorie !== "surface" && e.categorie !== "surface-libre" && e.categorie !== "subdivision-ouverte");
@@ -135,8 +145,9 @@ export function studioBilanExport3d(document: StudioDocument, format: StudioForm
     ajouter("surface-subdivision-ouverte", els.filter((e) => e.categorie === "subdivision-ouverte").length);
     ajouter("contour-non-extrude", mesh.outlines.length);
   }
-  const lignes = format === "obj" ? mesh.outlines.length : 0;
-  return { format, ecrits: ecrits.length + lignes, masques: [...ecrits, ...(format === "obj" ? mesh.outlines : [])].filter((e) => e.layerId !== undefined && masques.has(e.layerId)).length, nonEcrits };
+  const avecLignes = format === "obj" || format === "gltf" || format === "blender";
+  const lignes = avecLignes ? mesh.outlines.length : 0;
+  return { format, ecrits: ecrits.length + lignes, masques: [...ecrits, ...(avecLignes ? mesh.outlines : [])].filter((e) => e.layerId !== undefined && masques.has(e.layerId)).length, nonEcrits };
 }
 
 /**
@@ -145,7 +156,7 @@ export function studioBilanExport3d(document: StudioDocument, format: StudioForm
  */
 export function exportStudioObj(document: StudioDocument): string {
   const doc0 = validateStudioDocument(document);
-  const { doc, masques } = toutVisible(doc0);
+  const { doc, masques } = studioToutVisibleExport3d(doc0);
   const mesh = studioMesh3d(doc);
   const bilan = studioBilanExport3d(doc0, "obj");
   const l: string[] = [
@@ -163,7 +174,7 @@ export function exportStudioObj(document: StudioDocument): string {
     l.push(`o ${studioNomEchange3d(id)}`);
     if (layerId !== undefined && masques.has(layerId)) l.push("# calque masque dans Studio");
   };
-  for (const e of elements3d(mesh)) {
+  for (const e of studioElementsExport3d(mesh)) {
     ouvrir(e.id, e.layerId);
     for (const v of e.vertices) l.push(`v ${nb(v.x)} ${nb(v.y)} ${nb(v.z)}`);
     for (const [a, b, c] of e.triangles) l.push(`f ${a + base} ${b + base} ${c + base}`);
@@ -195,13 +206,13 @@ function normale(a: StudioPoint3, b: StudioPoint3, c: StudioPoint3): StudioPoint
  */
 export function exportStudioStl(document: StudioDocument): string {
   const doc0 = validateStudioDocument(document);
-  const { doc } = toutVisible(doc0);
+  const { doc } = studioToutVisibleExport3d(doc0);
   const mesh = studioMesh3d(doc);
   // STL n'a pas de commentaire : le bilan (`studioBilanExport3d`) est servi à part, jamais mêlé aux facettes.
   const nom = `fadi-studio ${studioNomEchange3d(doc0.id)}`;
   const l: string[] = [`solid ${nom}`];
   const p = (v: StudioPoint3) => `${nb(v.x)} ${nb(v.y)} ${nb(v.z)}`;
-  for (const e of elements3d(mesh)) {
+  for (const e of studioElementsExport3d(mesh)) {
     if (e.categorie === "surface" || e.categorie === "surface-libre" || e.categorie === "subdivision-ouverte") continue;
     for (const [a, b, c] of e.triangles) {
       const A = e.vertices[a]!, B = e.vertices[b]!, C = e.vertices[c]!;
@@ -237,7 +248,7 @@ export function studioPiecesStep(document: StudioDocument): { pieces: StudioPiec
   const doc = validateStudioDocument(document);
   const masques = new Set((doc.layers ?? []).filter((l) => !l.visible).map((l) => l.id));
   const pieces: StudioPieceStep[] = [];
-  const nonEcrits = horsGeometrie(doc);
+  const nonEcrits = studioHorsGeometrie3d(doc);
   const ajouter = (k: string) => { nonEcrits[k] = (nonEcrits[k] ?? 0) + 1; };
   let nMasques = 0;
   const poser = (p: StudioPieceStep, layerId: string | undefined) => { pieces.push(p); if (layerId !== undefined && masques.has(layerId)) nMasques++; };

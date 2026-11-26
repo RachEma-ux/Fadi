@@ -274,6 +274,18 @@ try {
   const step = readFileSync(await dStep.path(), "utf8");
   check("Exporter STEP : fichier servi par le raccourci Ctrl+Maj+F10 — ISO 10303-21, millimètres déclarés, un produit nommé par solide",
     /\.step$/.test(dStep.suggestedFilename()) && step.startsWith("ISO-10303-21;") && /SI_UNIT\(\.MILLI\.,\.METRE\.\)/.test(step) && step.includes("PRODUCT('dalle-3d'") && step.includes("PRODUCT('boite-3d'"), dStep.suggestedFilename());
+  // Rendu dans Blender : glTF 2.0 (nœud nommé par élément) et script Blender qui embarque ce même glTF.
+  const gltf = await telecharger("exporter-gltf");
+  const gltfLu = JSON.parse(gltf.texte);
+  const noeudsGltf = gltfLu.nodes.filter((n) => n.mesh !== undefined).map((n) => n.name);
+  check("Exporter glTF : fichier servi par la barre — glTF 2.0, un nœud nommé par élément, tampon intégré",
+    /\.gltf$/.test(gltf.nom) && gltfLu.asset.version === "2.0" && noeudsGltf.join() === "dalle-3d,boite-3d" && /^data:application\/octet-stream;base64,/.test(gltfLu.buffers[0].uri), `${gltf.nom} ${noeudsGltf.join()}`);
+  check("Exporter glTF : raccourci Ctrl+Maj+F5 annoncé", (await (await lien("exporter-gltf")).getAttribute("aria-keyshortcuts")) === "Control+Shift+F5");
+  const blender = await telecharger("exporter-blender");
+  const b64 = [...blender.texte.matchAll(/^ {4}"([A-Za-z0-9+/=]+)"$/gm)].map((m) => m[1]).join("");
+  check("Exporter vers Blender : script .py servi par la barre — importe le glTF embarqué, identique au glTF exporté",
+    /\.py$/.test(blender.nom) && blender.texte.includes("bpy.ops.import_scene.gltf") && Buffer.from(b64, "base64").toString("utf8") === gltf.texte, blender.nom);
+  check("Exporter vers Blender : raccourci Ctrl+Maj+B annoncé", (await (await lien("exporter-blender")).getAttribute("aria-keyshortcuts")) === "Control+Shift+B");
 
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
 } finally {

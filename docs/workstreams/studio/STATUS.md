@@ -1,5 +1,23 @@
 # État — Studio
 
+## Checkpoint 2026-11-26 (heure suisse 16:10) — Planche 3D : pousser / tirer à la SketchUp et export direct vers Blender
+
+- Demande du maître d’ouvrage : pousser / tirer à la SketchUp et export direct vers Blender pour le rendu.
+- Pousser / tirer interactif (`apps/web/src/modules/studio/vue3d/pousser-tirer.ts`, pur, et `Vue3DStudio.tsx`) : l’outil
+  `studio.solide.face-decaler` saisit au pointeur une face d’un solide libre, la face haute ou basse d’un objet extrudé ou un
+  contour fermé à plat ; glisser (ou clic, déplacement, clic) le long de la normale, inférence sur le plan des faces
+  parallèles et sur le sol, sinon pas de 1 cm ; distance au clavier (m / cm / mm, virgule ou point), double-clic = répéter
+  la dernière distance, Échap = annuler. Aucune commande nouvelle : `studio.solide.face-decaler` et `studio.objet.extruder`
+  (direction donnée par le geste). Tests : `pousser-tirer.test.ts` (7).
+- Export glTF 2.0 (`packages/atelier-model/src/studio/export-gltf.ts`, contrat `studio-export-gltf/1`) : maillage par calque,
+  matériaux tirés des apparences, caméras des scènes, contours en lignes ; et script Blender `.py` (glTF embarqué, unités
+  métriques, Cycles, caméra active, `-- --blend chemin` enregistre le `.blend`). Route `GET …/export-3d?format=gltf|blender` ;
+  commandes « Exporter glTF » (Ctrl+Maj+F5) et « Exporter vers Blender » (Ctrl+Maj+B), icônes propres. Matrice des échanges
+  révision 13 (`maquette-gltf`, `maquette-blender` livrés ; import glTF non livré).
+- Validé dans Blender 5.3 réel (module `bpy`) : coordonnées Studio conservées, volumes justes, matériaux (verre transmissif),
+  caméra de scène, `.blend` enregistré. Recette navigateur du geste non jouée dans cette session (déclarée).
+- Aucun statut du registre changé ; compteurs inchangés.
+
 ## Checkpoint 2026-11-26 (heure suisse 04:45) — libellés NAV-001 mobile et RISQ-02 suivent la barre du bas (chantier Design L6)
 
 - PR #436 (chantier `design`, lot L6) : au téléphone, la navigation de Fadi passe du rail à la barre du bas. Les contrôles

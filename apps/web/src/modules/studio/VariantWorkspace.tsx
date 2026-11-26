@@ -192,7 +192,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents", "approuver", "fusionner-variantes", "annuler-fusion"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "exporter-gltf", "exporter-blender", "dossier", "modeles-externes", "illustration", "agents", "approuver", "fusionner-variantes", "annuler-fusion"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -727,6 +727,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     "exporter-obj": studioExportUrl(projectId, studyId, variantId, "obj", revisionId),
     "exporter-stl": studioExportUrl(projectId, studyId, variantId, "stl", revisionId),
     "exporter-step": studioExportUrl(projectId, studyId, variantId, "step", revisionId),
+    "exporter-gltf": studioExportUrl(projectId, studyId, variantId, "gltf", revisionId),
+    "exporter-blender": studioExportUrl(projectId, studyId, variantId, "blender", revisionId),
   };
   function runCommand(id: CommandeEditeur["id"]) {
     switch (id) {
@@ -753,7 +755,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "coupe-3d": ouvrir3d(); return setCoupe3d(v => !(vue3d && v));
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
-      case "exporter-svg": case "exporter-dxf": case "exporter-ifc": case "exporter-obj": case "exporter-stl": case "exporter-step":
+      case "exporter-svg": case "exporter-dxf": case "exporter-ifc": case "exporter-obj": case "exporter-stl": case "exporter-step": case "exporter-gltf": case "exporter-blender":
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
@@ -782,6 +784,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
+    if (id === "exporter-gltf" || id === "exporter-blender") {
+      // Rendu dans Blender : maillage, apparences d'affichage (matériaux) et scènes (caméras) de la révision enregistrée.
+      setInfo(id === "exporter-blender"
+        ? "Script Blender de la révision enregistrée affichée : ouvrez-le dans Blender (Scripting, Exécuter) ou lancez « blender --python fichier.py » ; il importe le modèle, ses apparences et ses scènes, prêt à rendre (Cycles)."
+        : "glTF 2.0 de la révision enregistrée affichée : maillage par élément, apparences d’affichage en matériaux, scènes en caméras ; cotes et textes n’y sont pas écrits (matrice d’échanges).");
+      setExportsLances((n) => n + 1);
+      return;
+    }
     if (id === "exporter-obj" || id === "exporter-stl" || id === "exporter-step") {
       // Exports 3D (E.6-04) : la géométrie 3D seulement ; leur bilan est dans la matrice d’échanges (rien n’est écarté en silence).
       setInfo("L’export 3D porte sur la révision enregistrée affichée ; cotes, textes et graphismes, qui ne sont pas des géométries 3D, n’y sont pas écrits (matrice d’échanges).");
