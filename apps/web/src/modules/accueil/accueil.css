@@ -182,9 +182,20 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .search-results small { display: block; }
 .fadi-home summary:focus-visible, .fadi-dialog summary:focus-visible { outline: 3px solid #1683df; outline-offset: 3px; }
 @media (min-width: 1700px) { .dossier-grid { grid-template-columns: minmax(0, 1fr) 330px; } }
+/* Tâche 3 (lot Design L4) : l'action utile de la Vue d'ensemble, couleurs reprises de la feuille (cliquet des plafonds). */
+.dossier-primary-action { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; padding: 16px; border: 1px solid #d1e0d6; background: #f0f5ef; border-radius: 9px; }
+.dossier-primary-action > div { flex: 1 1 220px; min-width: 0; }
+.dossier-primary-action strong { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.dossier-primary-action p { font-size: 13px; line-height: 1.5; margin: 5px 0 0; overflow-wrap: anywhere; }
+.dossier-primary-action .button-primary { flex-shrink: 0; max-width: 48%; justify-content: center; min-height: 46px; white-space: normal; text-align: center; }
+.dossier-primary-action > .dossier-notice { flex-basis: 100%; margin: 0; }
+@media (max-width: 1280px) { .dossier-primary-action .button-primary { max-width: 100%; } }
 @media (max-width: 1280px) { .fadi-home { padding: 26px 26px 36px; } .dossier-grid { grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; } .dossier-overview { padding: 19px; } }
 @media (max-width: 1100px) { .dossier-grid { grid-template-columns: minmax(0, 1fr); } .dossier-modules > div { grid-template-columns: minmax(0, 1fr); } .workspace-dossier-aside { display: none; } }
 @media (max-width: 700px) {
+  .dossier-primary-action { flex-direction: column; align-items: stretch; padding: 13px; gap: 13px; }
+  .dossier-primary-action > div { flex-basis: auto; }
+  .dossier-primary-action .button-primary { width: 100%; max-width: none; min-height: 48px; padding: 12px; }
   .app-shell.fadi-shell, .app-shell.fadi-shell[data-sidebar="expanded"] { grid-template-columns: 60px minmax(0, 1fr); --sidebar-width: 60px; }
   .app-shell.fadi-shell[data-sidebar="expanded"] { --sidebar-width: 240px; }
   body:not(.atelier-immersive) .fadi-shell .app-sidebar { padding: 10px 6px; }
@@ -203,6 +214,10 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
   .dossier-section-heading .button-secondary { align-self: flex-start; }
   .dossier-status-strip { grid-template-columns: minmax(0, 1fr); }
   .dossier-status-strip > div { padding: 11px 13px; }
+  /* Lot Design L4 : au téléphone, chaque suivi tient sur une ligne (intitulé puis état) pour que l'action utile de la
+     Vue d'ensemble reste visible sans défiler à 412 × 839 ; le détail éventuel passe à la ligne, rien n'est masqué. */
+  .dossier-status-strip > div { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 2px; padding: 8px 13px; }
+  .dossier-status-strip small { flex-basis: 100%; }
   .dossier-overview { padding: 18px; }
   .dossier-preview-placeholder { min-height: 210px; padding: 24px 14px; }
   .dossier-preview-svg { min-height: 190px; }

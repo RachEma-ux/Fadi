@@ -12,7 +12,9 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Dernier état vérifié
 
-- L0 : PR #418. L1 : PR #419. L2 : PR #420. L3 : contrôles de saisie verts en local ; voir `STATUS.md`.
+- L0 : PR #418. L1 : PR #419. L2 : PR #420. L3 : PR #421. L4 : action utile remise, `accueils-design.mjs` vert en local ;
+  voir `STATUS.md`. Les constats de revue Codex sur #418 et #420 sont corrigés et propagés par fusion dans les branches
+  supérieures (jamais de rebase ni de push forcé).
 
 - Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
   (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
@@ -22,7 +24,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Prochaine action
 
-- Faire passer la CI de la PR L0, puis traiter L1 à L4 dans l'ordre ([PLAN-LOTS.md](PLAN-LOTS.md)).
+- Suivre la CI des cinq PR ; fusion dans l'ordre L0 → L4 par le maître d'ouvrage, après captures sur un vrai téléphone.
 
 ## Tests et preuves
 
@@ -33,7 +35,8 @@ Mis à jour : 2026-11-26 (UTC).
 - Le scénario `parcours-scenario.mjs` complet n'a pas pu finir sur la stack locale (serveur de développement Vite) : il
   s'arrête aussi sur `main`, à un autre endroit ; la CI (application construite) fait foi.
 
-- Les recettes `accueils-design.mjs` exigent l'absence de l'action utile : le lot L4 les modifie avec le code.
+- L4 change `accueils-design.mjs` et `parcours-scenario.mjs` (l'action est de nouveau exigée) ; le Design Historique § 7
+  porte l'amendement du 26-11-2026.
 
 ## Arrêt sûr
 

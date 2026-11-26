@@ -248,6 +248,18 @@ On small screens the journals retain their four-column relationship in a horizon
 
 **Status: approved design, awaiting implementation in Fadi at the creation of this record.** The following requirement takes precedence over the archived HTML’s footer-based step dialog.
 
+> **Amendment — 13 October and 26 November 2026 (chantier `docs/workstreams/design`, lot L4, Issue #417).** On
+> 13 October 2026 the project owner removed the contextual action area from the “Vue d’ensemble” card in commit
+> [`6c558ec9`](https://github.com/RachEma-ux/Fadi/commit/6c558ec9903f405e460cddfc5fd084daa8a8eada) (« Déplacer les
+> alertes actives dans la cloche et alléger la vue d’ensemble »): active alerts moved to the notification bell. On
+> 26 November 2026 the owner decided to **restore the action** (lot Design L4). Sections 7.1 to 7.3 are again the current
+> requirement for the action itself, with three differences: the detailed alerts stay in the notification bell (the card
+> carries only the action and, after a failed recovery, its error); “review conflicts” opens the comparison through the
+> address (`?conflits=1`), as the bell does; the card footer « Informations du dossier » is not restored. On phones the
+> status strip shows each tracking on one line so that the action stays visible without scrolling at 412 × 839 on the
+> project Home (checked by `apps/web/e2e/accueils-design.mjs`); on the application Home it is recorded, not required,
+> until the header lot L9.
+
 ### 7.1 Placement and composition
 
 Use one compact contextual action area **inside the shared “Vue d’ensemble” card, after its title and description and before the preview**. Application Home and project Home use the same component and policy, passing the dossier explicitly.
