@@ -61,6 +61,13 @@ export function resumerChangement(avant: Modele, apres: Modele, origine: Origine
       else ajoutes.push(id);
     }
   }
+  // Un sommet déplacé change les arêtes et les faces qui s'y appuient, sans toucher leur enregistrement.
+  const sommets = new Set(Object.keys(delta.racine?.sommets ?? {}));
+  if (sommets.size) {
+    const connu = (table: "aretes" | "faces", id: Id) => Object.prototype.hasOwnProperty.call(avant.racine[table], id);
+    for (const a of Object.values(apres.racine.aretes)) if (connu("aretes", a.id) && (sommets.has(a.a) || sommets.has(a.b))) modifies.add(a.id);
+    for (const f of Object.values(apres.racine.faces)) if (connu("faces", f.id) && (f.exterieur.some((id) => sommets.has(id)) || f.trous.some((t) => t.some((id) => sommets.has(id))))) modifies.add(f.id);
+  }
   const definitions = new Set(Object.keys(delta.definitions ?? {}));
   if (definitions.size) for (const o of Object.values(apres.racine.occurrences)) if (definitions.has(o.definition) && !ajoutes.includes(o.id)) modifies.add(o.id);
   const couper = (l: readonly Id[]) => l.slice(0, MAX_IDS_EVENEMENT);
