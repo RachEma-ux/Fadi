@@ -3624,6 +3624,142 @@
   }
 }
 
+/* Menus du bandeau (26 novembre 2026, ordinateur) : Édition, Affichage, Caméra, Fenêtres juste après le nom ; liste
+   claire sous le titre (gris 10 de Carbon) ; cases, choix radio, raccourcis à droite ; sous 1180 px, un seul « Menus ▾ ».
+   Téléphone : pas de menus (pas de bandeau). */
+.sandbox-planche .planche-bandeau-menus {
+  display: none;
+}
+@media (min-width: 761px) {
+  .sandbox-planche .planche-bandeau-menus {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+  }
+  .sandbox-planche .planche-bandeau-menu {
+    position: relative;
+    display: flex;
+  }
+  .sandbox-planche .planche-bandeau-menu > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: calc(var(--bandeau-h) - 1px);
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #f4f4f4;
+    font: inherit;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .sandbox-planche .planche-bandeau-menu > button:hover {
+    background: #2c2c2c;
+  }
+  .sandbox-planche .planche-bandeau-menu > button[aria-expanded="true"] {
+    background: #393939;
+    box-shadow: inset 0 -2px 0 #1a5fd6;
+  }
+  .sandbox-planche .planche-bandeau-menu > button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+  }
+  .sandbox-planche .planche-bandeau-menu-chevron {
+    width: 16px;
+    height: 16px;
+  }
+  .sandbox-planche .planche-bandeau-menu-liste {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    z-index: 60;
+    min-width: 17rem;
+    max-height: calc(100vh - var(--bandeau-h) - 2rem);
+    overflow-y: auto;
+    padding: 0.35rem 0;
+    background: #ffffff;
+    color: #161616;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    font-size: 0.875rem;
+  }
+  .sandbox-planche .planche-bandeau-menu-titre {
+    padding: 0.5rem 1rem 0.2rem;
+    color: #6b7672;
+    font-size: 0.75rem;
+  }
+  .sandbox-planche .planche-bandeau-menu-separateur {
+    height: 1px;
+    margin: 0.3rem 0;
+    background: #dce5df;
+  }
+  .sandbox-planche .planche-bandeau-menu-entree {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2rem;
+    padding: 0 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sandbox-planche .planche-bandeau-menu-entree:hover,
+  .sandbox-planche .planche-bandeau-menu-entree:focus {
+    background: #e9edeb;
+    outline: none;
+  }
+  .sandbox-planche .planche-bandeau-menu-entree:focus-visible {
+    outline: 2px solid #1a5fd6;
+    outline-offset: -2px;
+  }
+  .sandbox-planche .planche-bandeau-menu-entree[aria-disabled="true"] {
+    color: #8d8d8d;
+    cursor: default;
+  }
+  .sandbox-planche .planche-bandeau-menu-entree[aria-disabled="true"]:hover {
+    background: transparent;
+  }
+  .sandbox-planche .planche-bandeau-menu-marque {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+  }
+  .sandbox-planche .planche-bandeau-menu-marque .sandbox-picto {
+    width: 16px;
+    height: 16px;
+    color: #161616;
+  }
+  .sandbox-planche .planche-bandeau-menu-radio {
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid #161616;
+    border-radius: 50%;
+    box-sizing: border-box;
+  }
+  .sandbox-planche .planche-bandeau-menu-radio.coche {
+    background: radial-gradient(circle, #161616 0 3px, transparent 3.5px);
+  }
+  .sandbox-planche .planche-bandeau-menu-point {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1a5fd6;
+  }
+  .sandbox-planche .planche-bandeau-menu-raccourci {
+    color: #6b7672;
+    font-size: 0.75rem;
+  }
+}
+/* Au toucher, les entrées gardent la hauteur d'une cible confortable (44 px). */
+@media (min-width: 761px) and (pointer: coarse) {
+  .sandbox-planche .planche-bandeau-menu-entree {
+    min-height: 44px;
+  }
+}
+
 /* Extension « Contrôle et nettoyage » : relevé à cocher et barre du panneau (mêmes boutons que la liste de débit). */
 .sandbox-planche .planche-controle {
   display: flex;
