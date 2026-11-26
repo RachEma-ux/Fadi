@@ -82,6 +82,11 @@ export function MenusBandeau({ menus, replie }: { menus: readonly MenuBandeau[];
     if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
+      // Menu déjà ouvert (ouvert à la souris) : l'effet sur `ouvert` ne repasserait pas, le focus y entre tout de suite.
+      if (ouvert === id) {
+        entreesActives(liste.current)[0]?.focus();
+        return;
+      }
       focaliserPremiere.current = true;
       setOuvert(id);
     } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {

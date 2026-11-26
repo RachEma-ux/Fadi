@@ -252,6 +252,8 @@ async function menusBandeau(page, racine, contexte, ba) {
   await entree("panneau-styles").click();
   await titre("edition").click();
   check(`${contexte} : Édition — Annuler grisé sans opération, Tout sélectionner offert`, (await entree("annuler").getAttribute("aria-disabled")) === "true" && (await entree("tout-selectionner").isVisible()) && /Ctrl/.test(await entree("tout-selectionner").innerText()));
+  await page.keyboard.press("ArrowDown");
+  check(`${contexte} : menu ouvert à la souris, Flèche bas fait entrer le focus dans le menu`, await page.evaluate(() => /^menuitem/.test(document.activeElement?.getAttribute("role") ?? "") && !!document.activeElement?.closest('[data-planche-menu-bandeau-liste="edition"]')));
   await page.mouse.click(700, 600);
   check(`${contexte} : un clic ailleurs referme le menu`, (await racine.locator("[data-planche-menu-bandeau-liste]").count()) === 0);
   // Fenêtre plus étroite (1100 px) : un seul « Menus ▾ », qui reprend les quatre menus en sections.
