@@ -12,7 +12,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Dernier état vérifié
 
-- L0 : PR #418. L1 : recette GeoData verte en local ; voir `STATUS.md`.
+- L0 : PR #418. L1 : PR #419. L2 : recette GeoData verte en local ; voir `STATUS.md`.
 
 ## Prochaine action
 

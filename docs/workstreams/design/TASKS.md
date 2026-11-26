@@ -2,14 +2,14 @@
 
 ## À faire
 
-- [ ] DESIGN-L2 — GeoData : colonne d'outils défilable (#415).
 - [ ] DESIGN-L3 — Étape : saisie invalide sans effacement (#416).
 - [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 (#417).
 
 ## En cours
 
 - [ ] DESIGN-L0 — Outillage de recette design (#413), PR #418.
-- [ ] DESIGN-L1 — GeoData : seuil 700 px et « Carte » lisible (#414), branche `design/l1-geodata-seuil`.
+- [ ] DESIGN-L1 — GeoData : seuil 700 px et « Carte » lisible (#414), PR #419.
+- [ ] DESIGN-L2 — GeoData : colonne d'outils défilable (#415), branche `design/l2-geodata-outils`.
 
 ## Terminé
 

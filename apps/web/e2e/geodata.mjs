@@ -1165,6 +1165,45 @@ for (const survol of [false, true]) {
 }
 await page.screenshot({ path: join(OUT, "design-l1-carte-pressee-412.png") });
 
+// --- Design L2 : au téléphone (Pixel 7, tactile), la colonne d'outils s'arrête au-dessus de la barre du bas et défile au doigt ---
+{
+  const { devices } = await import("playwright");
+  const tactile = await navigateur.newContext({ ...devices["Pixel 7"], storageState: await contexte.storageState(), permissions: ["clipboard-read", "clipboard-write"] });
+  const tel = await tactile.newPage();
+  await tel.goto(`${BASE}/geodata`);
+  await tel.locator("[data-gd-barre-outils]").waitFor();
+  await tel.waitForTimeout(500);
+  const g = await tel.evaluate(() => {
+    const col = document.querySelector("[data-gd-barre-outils]"), poignee = document.querySelector("[data-gd-poignee]");
+    const r = col.getBoundingClientRect(), barre = document.querySelector("[data-gd-barre-bas-nav]").getBoundingClientRect();
+    const mini = document.querySelector("[data-gd-barre-recherche]").getBoundingClientRect();
+    return { bas: r.bottom, miniBas: mini.bottom, barreHaut: barre.top, defile: col.scrollHeight > col.clientHeight, ta: getComputedStyle(col).touchAction, taPoignee: getComputedStyle(poignee).touchAction, hPoignee: poignee.getBoundingClientRect().height };
+  });
+  check("DESIGN L2 · téléphone : colonne d'outils et mini-barre au-dessus de la barre du bas (aucun outil caché dessous)", g.bas <= g.barreHaut && g.miniBas <= g.barreHaut, JSON.stringify(g));
+  check("DESIGN L2 · téléphone : la colonne défile au doigt (pan-y), la poignée seule capte le glisser (≥ 24 px)", g.ta === "pan-y" && g.taPoignee === "none" && g.hPoignee >= 24, JSON.stringify(g));
+  // Geste tactile réel (événements tactiles CDP) : un balayage vers le haut dans la colonne la fait défiler. Avec
+  // `touch-action: none` (avant le lot), le même geste ne la fait pas bouger.
+  const col = await tel.locator("[data-gd-barre-outils]").boundingBox();
+  const cdp = await tactile.newCDPSession(tel);
+  const x = Math.round(col.x + col.width / 2), y0 = Math.round(col.y + col.height - 30);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: y0 }] });
+  for (let y = y0 - 10; y >= y0 - 200; y -= 10) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y }] }); await tel.waitForTimeout(16); }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await tel.waitForTimeout(400);
+  const defilement = await tel.locator("[data-gd-barre-outils]").evaluate((c) => c.scrollTop);
+  check("DESIGN L2 · téléphone : un balayage du doigt fait défiler la colonne d'outils", !g.defile || defilement > 0, `scrollTop=${defilement}`);
+  // Le dernier outil (« Copier l'adresse de cette vue ») est atteignable et répond au toucher.
+  const lien = tel.locator("[data-gd-barre-outil='lien']");
+  await lien.scrollIntoViewIfNeeded();
+  const bl = await lien.boundingBox();
+  await lien.tap();
+  await tel.waitForTimeout(300);
+  const annonce = await tel.getByText(/Adresse de la vue copiée|Copiez l'adresse de la vue/).count();
+  check("DESIGN L2 · téléphone : « Copier l'adresse de cette vue » visible au-dessus de la barre et activé par tap()", !!bl && bl.y + bl.height <= g.barreHaut && annonce > 0, JSON.stringify(bl));
+  await tel.screenshot({ path: join(OUT, "design-l2-outils-defiles-412.png") });
+  await tactile.close();
+}
+
 // --- GEO 12 : téléphone, un seul panneau ouvert à la fois ---
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${BASE}/geodata`);

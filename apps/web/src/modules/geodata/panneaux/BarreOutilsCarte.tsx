@@ -90,9 +90,12 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
   const [position, setPosition] = useState<PositionBarre>(lirePosition);
   const glisse = useRef<{ x: number; y: number; depart: PositionBarre } | null>(null);
   const borner = (q: PositionBarre) => {
-    const parent = barre.current?.parentElement?.getBoundingClientRect();
+    const el = barre.current?.parentElement;
+    const parent = el?.getBoundingClientRect();
     const b = barre.current?.getBoundingClientRect();
-    return parent && b ? bornerPosition(q, { largeur: parent.width, hauteur: parent.height }, { largeur: b.width, hauteur: b.height }) : q;
+    // Hauteur utile : la marge basse de la carte est occupée par la barre du bas au téléphone (lot Design L2).
+    const utile = parent && el ? parent.height - (parseFloat(getComputedStyle(el).paddingBottom) || 0) : 0;
+    return parent && b ? bornerPosition(q, { largeur: parent.width, hauteur: utile }, { largeur: b.width, hauteur: b.height }) : q;
   };
   // Carte redimensionnée (rotation, plein écran) : la barre reste visible.
   useEffect(() => {
@@ -134,7 +137,7 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
   };
   const trace = (o: Exclude<OutilCarte, "navigation">, libelle: string, d: string) => bouton(o, libelle, d, () => p.onOutil(p.outil === o ? "navigation" : o), { pressed: p.outil === o, disabled: !p.carteDisponible });
   return (
-    <nav ref={barre} className="gd-barre-outils" aria-label="Outils de la carte" style={{ right: position.droite, top: position.haut }} data-gd-barre-outils>
+    <nav ref={barre} className="gd-barre-outils" aria-label="Outils de la carte" style={{ right: position.droite, top: position.haut, maxHeight: `calc(100% - ${position.haut}px - var(--gd-barre-bas, 0px) - 4px)` }} data-gd-barre-outils>
       <button type="button" className="gd-poignee" title="Déplacer la barre d'outils (glisser ou flèches ; double-clic : position par défaut)" aria-label="Déplacer la barre d'outils" {...poignee} data-gd-poignee>
         <svg viewBox="0 0 24 24" width="18" height="10" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="7" cy="9" r="1.6" /><circle cx="12" cy="9" r="1.6" /><circle cx="17" cy="9" r="1.6" /><circle cx="7" cy="15" r="1.6" /><circle cx="12" cy="15" r="1.6" /><circle cx="17" cy="15" r="1.6" /></svg>
       </button>

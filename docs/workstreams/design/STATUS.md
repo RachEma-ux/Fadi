@@ -4,7 +4,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## État
 
-**En cours** — lots L0 (PR #418) et L1 implémentés sur branches empilées ; non acceptés.
+**En cours** — lots L0 (PR #418), L1 (PR #419) et L2 implémentés sur branches empilées ; non acceptés.
 
 ## Faits vérifiés
 
@@ -18,6 +18,11 @@ Mis à jour : 2026-11-26 (UTC).
 - L1 (#414) : GeoData bascule à 700 px (CSS et `PageGeoData.tsx`), plus aucun 760 px dans le module ; « Carte » pressé
   et survolé à 5,23:1 (au lieu de 1,00:1). `e2e/geodata.mjs` : 269 contrôles verts en local, dont 4 nouveaux
   (`DESIGN L1`). Points de rupture : plafond inchangé à 19 (700 existait déjà ; 701 écrit `not all and (max-width:700px)`).
+
+- L2 (#415) : au téléphone (Pixel 7), la colonne d'outils GeoData s'arrête à 777 px, au-dessus de la barre du bas
+  (781 px) ; avant, elle descendait à 841 px et cinq outils étaient cachés dessous. Elle défile au doigt (`pan-y`,
+  balayage tactile CDP : `scrollTop` 178) ; la poignée (24 px, collante) garde seule le glisser. `e2e/geodata.mjs` :
+  273 contrôles verts en local, dont 4 nouveaux (`DESIGN L2`).
 
 ## Points ouverts
 
