@@ -212,6 +212,16 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     d'administration viennent ensuite) ; hors connexion, aucune extension installée n'est offerte.
   - Extension d'essai : `apps/web/e2e/donnees/essai-commandes.fadi-addon.json` ; recette
     `apps/web/e2e/extensions-commandes.mjs` (CI, tranche `planche`).
+- **Protocole des extensions, version 1.0 — lot 5** (Issue #441 ; aucun changement visible) : **données attachées**.
+  Une extension pose ses propres clés et valeurs sur un objet, sur un composant ou sur le projet (permission
+  « donnees ») : `planche.donnees.lire(cible, cle?)`, `.ecrire(cible, cle, valeur)`, `.effacer(cible, cle?)` ; la cible
+  est `"projet"`, l'identifiant d'un objet, ou `{ composant: <objet> }`. *Base de données* : ces données font partie du
+  dessin et s'enregistrent avec lui — champ `donnees` de l'occurrence et de la définition, `reglages.donneesExtensions`
+  pour le projet — rangées par identifiant d'extension : une extension ne voit ni ne touche celles d'une autre. Écrire
+  est une modification : opération ouverte ou automatique, un seul pas d'annulation. Les données d'un objet le suivent
+  quand il est copié. Valeurs : des données seulement, 4 000 caractères et 100 clés par cible au plus
+  (`packages/sandbox-planche-model/src/donnees-extensions.ts`). Essai : commandes « Étiqueter l'objet » et « Lire
+  l'étiquette » du paquet d'essai, contrôlées par `apps/web/e2e/extensions-commandes.mjs`.
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

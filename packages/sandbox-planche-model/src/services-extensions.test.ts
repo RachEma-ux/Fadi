@@ -34,11 +34,11 @@ const ok = (r: { ok: boolean; resultat?: unknown }) => {
 describe("services d'une extension — table et permissions", () => {
   it("chaque demande de la table est servie, et chacune exige sa permission", () => {
     const { acces } = planche();
-    const sans = creerServicesExtension({ permissions: [] }, acces);
+    const sans = creerServicesExtension({ id: "essai", permissions: [] }, acces);
     for (const [nom, permission] of Object.entries(DEMANDES_EXTENSION)) {
       if (permission === null) continue;
       expect(sans.servir(nom, null), nom).toEqual({ ok: false, erreur: "permission_refusee", detail: permission });
-      const r = creerServicesExtension({ permissions: TOUTES }, acces).servir(nom, null);
+      const r = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces).servir(nom, null);
       expect(r.ok === false && r.erreur === "demande_inconnue", nom).toBe(false);
     }
     expect(sans.servir("serveur.appeler", null)).toEqual({ ok: false, erreur: "demande_inconnue", detail: "serveur.appeler" });
@@ -55,7 +55,7 @@ describe("services d'une extension — lecture complète du modèle", () => {
   it("rend faces, arêtes et objets du contexte, en mètres, sans rien modifier", () => {
     const { etat, acces } = planche(carre());
     const avant = etat.modele;
-    const lu = ok(creerServicesExtension({ permissions: ["modele.lire"] }, acces).servir("modele.lire", null)) as ModeleLu;
+    const lu = ok(creerServicesExtension({ id: "essai", permissions: ["modele.lire"] }, acces).servir("modele.lire", null)) as ModeleLu;
     expect(lu.faces).toHaveLength(1);
     expect(lu.faces[0]).toMatchObject({ trous: 0 });
     expect(lu.faces[0]!.aire).toBeCloseTo(1, 9);
@@ -72,7 +72,7 @@ describe("services d'une extension — lecture complète du modèle", () => {
 describe("services d'une extension — opération", () => {
   it("opération explicite : rien n'est visible avant la validation, puis un seul pas d'annulation au nom donné", () => {
     const { etat, acces } = planche();
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Poser une boîte" }));
     const elements = ok(s.servir("modele.modifier", { fonction: "boite", arguments: [[0, 0, 0], 1, 1, 1] })) as Id[];
     const objet = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [elements, "Boîte"] })) as Id;
@@ -89,7 +89,7 @@ describe("services d'une extension — opération", () => {
   });
 
   it("une seule opération à la fois : la seconde est une erreur nommée, la première reste ouverte", () => {
-    const s = creerServicesExtension({ permissions: TOUTES }, planche().acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, planche().acces);
     ok(s.servir("operation.ouvrir", { nom: "Première" }));
     expect(s.servir("operation.ouvrir", { nom: "Seconde" })).toEqual({ ok: false, erreur: "operation_deja_ouverte", detail: "Première" });
     expect(s.operationOuverte()).toBe(true);
@@ -98,7 +98,7 @@ describe("services d'une extension — opération", () => {
 
   it("abandon : rien n'est appliqué ; valider ou abandonner sans opération est une erreur nommée", () => {
     const { etat, acces } = planche();
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     expect(s.servir("operation.valider", null)).toMatchObject({ ok: false, erreur: "operation_absente" });
     expect(s.servir("operation.abandonner", null)).toMatchObject({ ok: false, erreur: "operation_absente" });
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
@@ -110,7 +110,7 @@ describe("services d'une extension — opération", () => {
 
   it("dessin changé depuis l'ouverture : l'opération est refusée par son nom, rien n'est appliqué", () => {
     const { etat, acces } = planche();
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
     ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[0, 0, 0], [1, 0, 0]] }));
     const autre = carre();
@@ -124,7 +124,7 @@ describe("services d'une extension — opération", () => {
   it("la Planche peut refuser d'appliquer : erreur nommée", () => {
     const { etat, acces } = planche();
     etat.refuser = true;
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
     ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[0, 0, 0], [1, 0, 0]] }));
     expect(s.servir("operation.valider", null)).toMatchObject({ ok: false, erreur: "operation_refusee" });
@@ -132,7 +132,7 @@ describe("services d'une extension — opération", () => {
 
   it("modification sans opération : opération automatique au nom de l'appel, validée à la fin de l'appel", () => {
     const { etat, acces } = planche();
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     s.debutAppel("commande.tracer");
     ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[0, 0, 0], [1, 0, 0]] }));
     ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[1, 0, 0], [1, 1, 0]] }));
@@ -144,7 +144,7 @@ describe("services d'une extension — opération", () => {
 
   it("appel en échec : l'opération en cours est abandonnée, automatique ou explicite ; réussi, l'explicite reste ouverte", () => {
     const { etat, acces } = planche();
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     s.debutAppel("commande.tracer");
     ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[0, 0, 0], [1, 0, 0]] }));
     expect(s.finAppel(false)).toBe(true);
@@ -159,7 +159,7 @@ describe("services d'une extension — opération", () => {
   });
 
   it("arguments refusés : erreur nommée, l'opération reste ouverte et le modèle de travail intact", () => {
-    const s = creerServicesExtension({ permissions: TOUTES }, planche().acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, planche().acces);
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
     expect(s.servir("modele.modifier", { fonction: "afficher", arguments: ["x"] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
     expect(s.servir("modele.modifier", { fonction: "boite", arguments: [[0, 0, 0], -1, 1, 1] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
@@ -184,7 +184,7 @@ describe("services d'une extension — remarques de relecture", () => {
 
     // Par le service : une boîte dont la base tombe sur une face existante trace sa base puis est refusée.
     const { etat, acces } = planche(carre());
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
     expect(s.servir("modele.modifier", { fonction: "boite", arguments: [[0, 0, 0], 1, 1, 1] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
     ok(s.servir("operation.valider", null));
@@ -195,7 +195,7 @@ describe("services d'une extension — remarques de relecture", () => {
     const { etat, acces } = planche(carre());
     const face = Object.keys(etat.modele.racine.faces)[0]!;
     etat.selection = [face];
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Essai" }));
     const objet = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [[face], "G"] })) as Id;
     ok(s.servir("selection.definir", { ids: [objet] }));
@@ -208,7 +208,7 @@ describe("services d'une extension — remarques de relecture", () => {
   it("opération qui ne change que la sélection : refusée si le dessin a changé, la sélection n'est pas posée", () => {
     const { etat, acces } = planche(carre());
     const face = Object.keys(etat.modele.racine.faces)[0]!;
-    const s = creerServicesExtension({ permissions: TOUTES }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: TOUTES }, acces);
     ok(s.servir("operation.ouvrir", { nom: "Choisir" }));
     ok(s.servir("selection.definir", { ids: [face] }));
     etat.modele = modeleVide(); // l'utilisateur a effacé la face entre-temps
@@ -230,7 +230,7 @@ describe("services d'une extension — sélection", () => {
     const { etat, acces } = planche(carre());
     const face = Object.keys(etat.modele.racine.faces)[0]!;
     etat.selection = [face, "disparu"];
-    const s = creerServicesExtension({ permissions: ["selection"] }, acces);
+    const s = creerServicesExtension({ id: "essai", permissions: ["selection"] }, acces);
     expect(ok(s.servir("selection.lire", null))).toEqual([face]);
     expect(s.servir("selection.definir", { ids: ["disparu"] })).toEqual({ ok: false, erreur: "objet_introuvable", detail: "disparu" });
     expect(s.servir("selection.definir", { ids: "x" })).toMatchObject({ ok: false, erreur: "argument_invalide" });

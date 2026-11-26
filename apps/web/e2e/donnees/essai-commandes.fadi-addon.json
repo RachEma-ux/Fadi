@@ -7,8 +7,8 @@
       "en": "Commands trial"
     },
     "description": {
-      "fr": "Extension d'essai du lot 3 : cinq commandes qui dessinent, comptent, demandent une saisie, échouent ou ne répondent plus.",
-      "en": "Trial add-on for lot 3: five commands that draw, count, ask for input, fail or stop responding."
+      "fr": "Extension d'essai des lots 3 et 5 : sept commandes qui dessinent, comptent, demandent une saisie, étiquettent, échouent ou ne répondent plus.",
+      "en": "Trial add-on for lots 3 and 5: seven commands that draw, count, ask for input, label, fail or stop responding."
     },
     "version": "1.0.0",
     "auteur": "Fadi",
@@ -17,7 +17,8 @@
       "modele.lire",
       "modele.modifier",
       "selection",
-      "messages"
+      "messages",
+      "donnees"
     ],
     "commandes": [
       {
@@ -48,6 +49,24 @@
         "raccourci": "Alt+Maj+F4"
       },
       {
+        "id": "etiqueter",
+        "libelle": {
+          "fr": "Étiqueter l'objet",
+          "en": "Label the object"
+        },
+        "icone": "etiqueter.svg",
+        "raccourci": "Alt+Maj+F8"
+      },
+      {
+        "id": "lire-etiquette",
+        "libelle": {
+          "fr": "Lire l'étiquette",
+          "en": "Read the label"
+        },
+        "icone": "lire-etiquette.svg",
+        "raccourci": "Alt+Maj+F9"
+      },
+      {
         "id": "trainer",
         "libelle": {
           "fr": "Ne plus répondre (essai)",
@@ -70,11 +89,13 @@
     "panneaux": [],
     "abonnements": []
   },
-  "code": "// Extension d'essai du lot 3 (protocole 1.0) : commandes déclarées, avis, saisie.\nconst textes = {\n  fr: { posee: \"Boîte posée.\", annulee: \"Saisie annulée : rien n'a été dessiné.\", titre: \"Dimensions de la boîte\", largeur: \"Largeur\", profondeur: \"Profondeur\", hauteur: \"Hauteur\", forme: \"Forme\", pleine: \"Pleine\", base: \"Base seule\", grouper: \"Grouper la boîte\", nom: \"Nom du groupe\", defaut: \"Boîte\", faite: \"Boîte dessinée : \", compte: \" face(s), \" , aretes: \" arête(s), \", objets: \" objet(s).\" },\n  en: { posee: \"Box placed.\", annulee: \"Input cancelled: nothing was drawn.\", titre: \"Box dimensions\", largeur: \"Width\", profondeur: \"Depth\", hauteur: \"Height\", forme: \"Shape\", pleine: \"Solid\", base: \"Base only\", grouper: \"Group the box\", nom: \"Group name\", defaut: \"Box\", faite: \"Box drawn: \", compte: \" face(s), \", aretes: \" edge(s), \", objets: \" object(s).\" },\n};\nconst t = (d) => textes[d && d.langue === \"en\" ? \"en\" : \"fr\"];\n\nplanche.sur(\"commande.poser-boite\", async (d) => {\n  await planche.operation.ouvrir(\"Poser une boîte\");\n  const elements = await planche.modele.boite([0, 0, 0], 1, 1, 1);\n  const objet = await planche.modele.grouper(elements, t(d).defaut);\n  await planche.selection.definir([objet]);\n  await planche.operation.valider();\n  await planche.message.afficher(t(d).posee);\n  return objet;\n});\n\nplanche.sur(\"commande.boite-sur-mesure\", async (d) => {\n  const x = t(d);\n  const v = await planche.saisie.demander(x.titre, [\n    { id: \"nom\", libelle: x.nom, genre: \"texte\", valeur: x.defaut },\n    { id: \"largeur\", libelle: x.largeur, genre: \"nombre\", valeur: 2, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"profondeur\", libelle: x.profondeur, genre: \"nombre\", valeur: 1, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"hauteur\", libelle: x.hauteur, genre: \"nombre\", valeur: 0.5, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"forme\", libelle: x.forme, genre: \"choix\", valeur: \"pleine\", choix: [{ valeur: \"pleine\", libelle: x.pleine }, { valeur: \"base\", libelle: x.base }] },\n    { id: \"grouper\", libelle: x.grouper, genre: \"case\", valeur: true },\n  ]);\n  if (v === null) {\n    await planche.message.afficher(x.annulee, \"alerte\");\n    return null;\n  }\n  const elements = v.forme === \"pleine\" ? await planche.modele.boite([3, 0, 0], v.largeur, v.profondeur, v.hauteur) : await planche.modele.rectangle([3, 0, 0], [v.largeur, 0, 0], [0, v.profondeur, 0]);\n  if (v.grouper) await planche.selection.definir([await planche.modele.grouper(elements, v.nom || x.defaut)]);\n  await planche.message.afficher(x.faite + v.largeur + \" × \" + v.profondeur + \" × \" + v.hauteur + \" m\");\n  return v;\n});\n\nplanche.sur(\"commande.compter\", async (d) => {\n  const m = await planche.modele.lire();\n  await planche.message.afficher(m.faces.length + t(d).compte + m.aretes.length + t(d).aretes + m.objets.length + t(d).objets);\n  return { faces: m.faces.length, aretes: m.aretes.length, objets: m.objets.length };\n});\n\nplanche.sur(\"commande.trainer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [7, 7, 7]);\n  for (;;) {}\n});\n\nplanche.sur(\"commande.echouer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [9, 9, 9]);\n  throw new Error(\"essai d'échec\");\n});\n",
+  "code": "// Extension d'essai des lots 3 et 5 (protocole 1.0) : commandes déclarées, avis, saisie, données attachées.\nconst textes = {\n  fr: { posee: \"Boîte posée.\", annulee: \"Saisie annulée : rien n'a été dessiné.\", titre: \"Dimensions de la boîte\", largeur: \"Largeur\", profondeur: \"Profondeur\", hauteur: \"Hauteur\", forme: \"Forme\", pleine: \"Pleine\", base: \"Base seule\", grouper: \"Grouper la boîte\", nom: \"Nom du groupe\", defaut: \"Boîte\", faite: \"Boîte dessinée : \", compte: \" face(s), \" , aretes: \" arête(s), \", objets: \" objet(s).\" },\n  en: { posee: \"Box placed.\", annulee: \"Input cancelled: nothing was drawn.\", titre: \"Box dimensions\", largeur: \"Width\", profondeur: \"Depth\", hauteur: \"Height\", forme: \"Shape\", pleine: \"Solid\", base: \"Base only\", grouper: \"Group the box\", nom: \"Group name\", defaut: \"Box\", faite: \"Box drawn: \", compte: \" face(s), \", aretes: \" edge(s), \", objets: \" object(s).\" },\n};\nconst t = (d) => textes[d && d.langue === \"en\" ? \"en\" : \"fr\"];\n\nplanche.sur(\"commande.poser-boite\", async (d) => {\n  await planche.operation.ouvrir(\"Poser une boîte\");\n  const elements = await planche.modele.boite([0, 0, 0], 1, 1, 1);\n  const objet = await planche.modele.grouper(elements, t(d).defaut);\n  await planche.selection.definir([objet]);\n  await planche.operation.valider();\n  await planche.message.afficher(t(d).posee);\n  return objet;\n});\n\nplanche.sur(\"commande.boite-sur-mesure\", async (d) => {\n  const x = t(d);\n  const v = await planche.saisie.demander(x.titre, [\n    { id: \"nom\", libelle: x.nom, genre: \"texte\", valeur: x.defaut },\n    { id: \"largeur\", libelle: x.largeur, genre: \"nombre\", valeur: 2, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"profondeur\", libelle: x.profondeur, genre: \"nombre\", valeur: 1, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"hauteur\", libelle: x.hauteur, genre: \"nombre\", valeur: 0.5, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"forme\", libelle: x.forme, genre: \"choix\", valeur: \"pleine\", choix: [{ valeur: \"pleine\", libelle: x.pleine }, { valeur: \"base\", libelle: x.base }] },\n    { id: \"grouper\", libelle: x.grouper, genre: \"case\", valeur: true },\n  ]);\n  if (v === null) {\n    await planche.message.afficher(x.annulee, \"alerte\");\n    return null;\n  }\n  const elements = v.forme === \"pleine\" ? await planche.modele.boite([3, 0, 0], v.largeur, v.profondeur, v.hauteur) : await planche.modele.rectangle([3, 0, 0], [v.largeur, 0, 0], [0, v.profondeur, 0]);\n  if (v.grouper) await planche.selection.definir([await planche.modele.grouper(elements, v.nom || x.defaut)]);\n  await planche.message.afficher(x.faite + v.largeur + \" × \" + v.profondeur + \" × \" + v.hauteur + \" m\");\n  return v;\n});\n\nplanche.sur(\"commande.compter\", async (d) => {\n  const m = await planche.modele.lire();\n  await planche.message.afficher(m.faces.length + t(d).compte + m.aretes.length + t(d).aretes + m.objets.length + t(d).objets);\n  return { faces: m.faces.length, aretes: m.aretes.length, objets: m.objets.length };\n});\n\n// Lot 5 : données attachées à un objet, à son composant et au projet.\nplanche.sur(\"commande.etiqueter\", async (d) => {\n  const en = d && d.langue === \"en\";\n  const objets = (await planche.modele.lire()).objets.map((o) => o.id);\n  const choisis = (await planche.selection.lire()).filter((id) => objets.includes(id));\n  if (choisis.length === 0) {\n    await planche.message.afficher(en ? \"Select an object first.\" : \"Sélectionnez d'abord un objet.\", \"alerte\");\n    return null;\n  }\n  const n = ((await planche.donnees.lire(\"projet\", \"compteur\")) || 0) + 1;\n  const etiquette = \"E-\" + n;\n  await planche.operation.ouvrir(en ? \"Label the object\" : \"Étiqueter l'objet\");\n  await planche.donnees.ecrire(choisis[0], \"etiquette\", etiquette);\n  await planche.donnees.ecrire({ composant: choisis[0] }, \"releve\", { par: planche.extension.id, fois: n });\n  await planche.donnees.ecrire(\"projet\", \"compteur\", n);\n  await planche.operation.valider();\n  await planche.message.afficher((en ? \"Label set: \" : \"Étiquette posée : \") + etiquette);\n  return etiquette;\n});\n\nplanche.sur(\"commande.lire-etiquette\", async (d) => {\n  const en = d && d.langue === \"en\";\n  const objets = (await planche.modele.lire()).objets.map((o) => o.id);\n  const choisis = (await planche.selection.lire()).filter((id) => objets.includes(id));\n  const etiquette = choisis.length ? await planche.donnees.lire(choisis[0], \"etiquette\") : null;\n  const n = (await planche.donnees.lire(\"projet\", \"compteur\")) || 0;\n  await planche.message.afficher((en ? \"Label: \" : \"Étiquette : \") + (etiquette === null ? (en ? \"none\" : \"aucune\") : etiquette) + \" · \" + n + (en ? \" label(s) in this drawing.\" : \" étiquette(s) dans ce dessin.\"));\n  return { etiquette, compteur: n };\n});\n\nplanche.sur(\"commande.trainer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [7, 7, 7]);\n  for (;;) {}\n});\n\nplanche.sur(\"commande.echouer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [9, 9, 9]);\n  throw new Error(\"essai d'échec\");\n});\n",
   "pages": {
     "poser-boite.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 8l8-4 8 4v8l-8 4-8-4z\"/><path d=\"M4 8l8 4 8-4M12 12v8\"/></svg>",
     "boite-sur-mesure.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 9l7-3.5 7 3.5v7l-7 3.5-7-3.5z\"/><path d=\"M4 9l7 3.5 7-3.5\"/><path d=\"M20 4v5M17.5 6.5h5\"/></svg>",
     "compter.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 9h2M8 15h2M14 9h2M14 15h2\"/></svg>",
+    "etiqueter.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h8l8 8-8 8-8-8z\"/><circle cx=\"8.5\" cy=\"8.5\" r=\"1.3\"/></svg>",
+    "lire-etiquette.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4h7l7 7-4 4\"/><circle cx=\"8\" cy=\"8\" r=\"1.2\"/><circle cx=\"14\" cy=\"16\" r=\"3.5\"/><path d=\"M16.5 18.5L20 22\"/></svg>",
     "trainer.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v4l3 2\"/></svg>",
     "echouer.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4l9 16H3z\"/><path d=\"M12 10v4M12 17v.01\"/></svg>"
   }

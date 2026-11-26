@@ -104,6 +104,11 @@ export function creerExecutantExtension(
     message: Object.freeze({
       afficher: (texte: unknown, genre: unknown = "info") => demander("message.afficher", { texte, genre }),
     }),
+    donnees: Object.freeze({
+      lire: (cible: unknown, cle?: unknown) => demander("donnees.lire", cle === undefined ? { cible } : { cible, cle }),
+      ecrire: (cible: unknown, cle: unknown, valeur: unknown) => demander("donnees.ecrire", { cible, cle, valeur }),
+      effacer: (cible: unknown, cle?: unknown) => demander("donnees.effacer", cle === undefined ? { cible } : { cible, cle }),
+    }),
     saisie: Object.freeze({
       demander: (titre: unknown, champs: unknown) => demander("saisie.demander", { titre, champs }),
     }),
