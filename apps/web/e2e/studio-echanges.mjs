@@ -23,6 +23,7 @@
 import { chromium } from "playwright";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const RECETTE_IFC = readFileSync(new URL("../../../packages/atelier-model/src/studio/import-ifc/fixtures/recette-ifc2x3.ifc", import.meta.url), "utf8");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -39,10 +40,7 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-echanges-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-echanges-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-echanges-${Date.now()}@example.com`, "studio-echanges-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

@@ -26,6 +26,7 @@
  */
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
@@ -54,10 +55,7 @@ try {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-chargement-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-chargement-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-chargement-${Date.now()}@example.com`, "studio-chargement-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

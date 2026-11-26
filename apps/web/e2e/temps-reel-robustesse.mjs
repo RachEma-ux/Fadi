@@ -15,6 +15,7 @@ import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -70,7 +71,7 @@ async function axe(page, nom) {
 const A = await compte("proprietaire"), B = await compte("lecteur");
 try {
   const cA = credentials("p"), cB = credentials("l");
-  check("comptes créés", (await A.api("POST", "/auth/register", cA)).status === 201 && (await B.api("POST", "/auth/register", cB)).status === 201);
+  check("comptes créés", (await inscrire((m, p, b) => A.api(m, p, b), cA, "POST")).status === 201 && (await inscrire((m, p, b) => B.api(m, p, b), cB, "POST")).status === 201);
   const projet = (await A.api("POST", "/projects", { code: `TRB_${randomUUID().slice(0, 6)}`, name: "Robustesse (recette synthétique)" })).body;
   // Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
   check("lecteur ajouté", (await inviterEtAccepter(A.api, B.api, projet.id, cB.email, "lecteur")).ok);

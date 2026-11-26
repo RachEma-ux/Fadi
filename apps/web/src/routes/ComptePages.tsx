@@ -182,10 +182,10 @@ export function InvitationPage() {
   };
 
   return (
-    <PublicPage title="Invitation">
+    <PublicPage title={inv.selfSignup ? "Créer un compte" : "Invitation"}>
       <dl data-invitation>
         <dt>Pour</dt><dd translate="no">{inv.email}</dd>
-        <dt>De la part de</dt><dd translate="no">{inv.invitedBy || "—"}</dd>
+        {!inv.selfSignup && <><dt>De la part de</dt><dd translate="no">{inv.invitedBy || "—"}</dd></>}
         {inv.purpose === "organization_membership" ? (
           <>
             <dt>Organisation</dt><dd translate="no">{inv.organizationName ?? "—"}</dd>
@@ -210,7 +210,7 @@ export function InvitationPage() {
         ) : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}
         <dt>Valable jusqu’au</dt><dd>{dateLong(inv.expiresAt)}</dd>
       </dl>
-      <p className="h7-muted">Une invitation est une proposition : rien n’est créé ni partagé tant que vous ne l’acceptez pas.</p>
+      <p className="h7-muted">{inv.selfSignup ? "Ce lien vient de votre demande d’inscription : aucun compte n’est créé tant que vous ne choisissez pas votre mot de passe." : "Une invitation est une proposition : rien n’est créé ni partagé tant que vous ne l’acceptez pas."}</p>
       {inv.purpose === "review_package" && <p className="h7-muted" data-invitation-review>Une invitation de revue donne accès à ce paquet seulement : ni au projet, ni à l’organisation qui l’a préparé.</p>}
       {inv.purpose === "organization_membership" && <p className="h7-muted" data-invitation-organization>Une adhésion à une organisation n’ouvre aucun projet : chaque projet vous invite séparément.</p>}
       {declined ? <p role="status">Invitation déclinée. Aucun accès n’a été donné.</p>
@@ -242,18 +242,18 @@ export function InvitationPage() {
           </form>
         ) : (
           <form onSubmit={activate} noValidate data-activate>
-            <p>Créez votre compte pour accepter l’invitation. L’adresse est celle de l’invitation.</p>
+            <p>{inv.selfSignup ? "Choisissez votre mot de passe pour créer votre compte. L’adresse est celle qui a reçu ce lien." : "Créez votre compte pour accepter l’invitation. L’adresse est celle de l’invitation."}</p>
             <label htmlFor="inv-name">Nom affiché (facultatif)</label>
             <input id="inv-name" name="displayName" type="text" maxLength={60} autoComplete="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             <PasswordField id="inv-password" label="Mot de passe (12 caractères minimum)" value={password} onChange={setPassword} />
             <label className="h7-checkbox">
               <input type="checkbox" name="acceptTerms" checked={terms} onChange={(e) => setTerms(e.target.checked)} /> J’accepte les conditions d’utilisation de Fadi
             </label>
-            <button type="submit" disabled={busy}>{busy ? "Création…" : "Créer mon compte et accepter"}</button>
+            <button type="submit" disabled={busy}>{busy ? "Création…" : inv.selfSignup ? "Créer mon compte" : "Créer mon compte et accepter"}</button>
           </form>
         )}
       {error && <p role="alert" className="form-error">{error}</p>}
-      {!declined && !blocking && !wrongAccount && (
+      {!declined && !blocking && !wrongAccount && !inv.selfSignup && (
         <p>
           <button type="button" className="link-button" disabled={busy} onClick={() => void run(async () => { await accountApi.declineInvitation(token); setDeclined(true); })}>
             Décliner l’invitation

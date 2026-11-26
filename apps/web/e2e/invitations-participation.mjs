@@ -22,6 +22,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import pg from "pg";
 import { jetonDuCourriel, verifierAdresse } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -55,8 +56,10 @@ const adresse = (n) => `invitations-${n}-${uid()}@example.test`;
 const credentials = (n) => ({ email: adresse(n), password: randomBytes(18).toString("hex") });
 async function compte(n, { verifie = true } = {}) {
   const c = client(), cred = credentials(n);
-  check(`compte créé (${n})`, (await c("POST", "/auth/register", cred)).status === 201);
+  check(`compte créé (${n})`, (await inscrire(c, cred, "POST")).status === 201);
   if (verifie) check(`adresse vérifiée (${n})`, (await verifierAdresse(c, cred.email)).status === 200);
+  // Compte antérieur à l'inscription par lien (Issue #425), dont l'adresse n'a jamais été confirmée.
+  else await sql.query("UPDATE users SET email_verified_at = NULL WHERE email = $1", [cred.email]);
   const me = (await c("GET", "/auth/me")).body;
   return { call: c, ...cred, id: me?.user?.id ?? me?.id };
 }

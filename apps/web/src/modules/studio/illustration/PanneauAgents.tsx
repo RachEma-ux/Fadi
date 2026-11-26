@@ -20,6 +20,7 @@ export function PanneauAgents({ projectId, surFermer }: { projectId: string; sur
   const [journal, setJournal] = useState<EvenementAgent[]>([]);
   const [nouveau, setNouveau] = useState<{ nom: string; jeton: string } | null>(null);
   const [nom, setNom] = useState("");
+  const [motDePasse, setMotDePasse] = useState("");
   const [erreur, setErreur] = useState("");
   const [info, setInfo] = useState("");
   const charger = useCallback(async () => {
@@ -54,9 +55,10 @@ export function PanneauAgents({ projectId, surFermer }: { projectId: string; sur
         </section>
         <section aria-labelledby="studio-agents-jetons">
           <h3 id="studio-agents-jetons">Jetons d’agent</h3>
-          <form onSubmit={(e) => { e.preventDefault(); if (nom.trim()) void agir(async () => { const r = await apiAgents.creerJeton(projectId, nom.trim(), 30); setNouveau({ nom: r.nom, jeton: r.jeton }); setNom(""); }, "Jeton créé : copiez-le maintenant, il ne sera plus montré."); }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (nom.trim() && motDePasse) void agir(async () => { const r = await apiAgents.creerJeton(projectId, nom.trim(), 30, motDePasse); setNouveau({ nom: r.nom, jeton: r.jeton }); setNom(""); setMotDePasse(""); }, "Jeton créé : copiez-le maintenant, il ne sera plus montré."); }}>
             <label>Nom du jeton <input value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} data-studio-jeton-nom /></label>
-            <button type="submit" disabled={!nom.trim()} data-studio-jeton-creer><Icon name="studio-agents" size={16} /> Créer un jeton (30 jours)</button>
+            <label>Votre mot de passe <input type="password" autoComplete="current-password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} data-studio-jeton-mot-de-passe /></label>
+            <button type="submit" disabled={!nom.trim() || !motDePasse} data-studio-jeton-creer><Icon name="studio-agents" size={16} /> Créer un jeton (30 jours)</button>
           </form>
           {nouveau && <p data-studio-jeton-nouveau>Jeton « {nouveau.nom} » : <code translate="no" data-studio-jeton-valeur>{nouveau.jeton}</code></p>}
           <p className="studio-hint">Serveur MCP (HTTP) : <code translate="no">{adresseMcp(typeof location === "undefined" ? "" : location.origin)}</code> · relais stdio : <code translate="no">FADI_MCP_URL=… FADI_MCP_JETON=… node apps/api/scripts/studio-mcp-stdio.mjs</code></p>

@@ -21,6 +21,7 @@ import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-exact";
@@ -53,10 +54,7 @@ try {
   const requetesExact = [];
   context.on("request", (r) => { if (/occt-wasm[^/]*\.wasm|noyau-exact\.worker/.test(r.url())) requetesExact.push(new URL(r.url()).pathname); });
   const wasmDemandes = () => requetesExact.filter((u) => u.endsWith(".wasm")).length;
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-exact-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-exact-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-exact-${Date.now()}@example.com`, "studio-exact-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

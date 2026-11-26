@@ -17,12 +17,15 @@ import { borner, placerBarre, positionDefautBarre, positionDocquee, type Positio
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { rectZoneDessin } from "./zone-dessin";
+import { IconeExtension } from "./extensions-installees";
 
 /** Bouton d'une barre : un outil (surligné quand il est actif) ou une commande ; grisé, son titre dit pourquoi. */
 export interface BoutonBarre {
   /** Clé d'entrée du registre (`outil:<id>`, `commande:<id>`). */
   cle: string;
   picto: DescriptionPictogramme;
+  /** Commande d'une extension installée : son icône (image du paquet), affichée à la place du pictogramme. */
+  image?: string;
   /** « Nom — raccourci », suivi du motif d'indisponibilité s'il y en a un (infobulle et nom accessible). */
   titre: string;
   actif: boolean;
@@ -262,7 +265,7 @@ export function BarreOutilsFlottante({ id, nom, sections, rang, telephone, onFer
                   data-barre-outils-entree={b.cle}
                   onClick={b.executer}
                 >
-                  <Pictogramme picto={b.picto} />
+                  {b.image ? <IconeExtension image={b.image} /> : <Pictogramme picto={b.picto} />}
                 </button>
               ))}
             </div>

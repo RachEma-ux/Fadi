@@ -18,6 +18,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -82,7 +83,7 @@ const comptes = [];
 for (let i = 0; i < PARTICIPANTS; i++) {
   const c = client();
   const cred = credentials(`c${i}`);
-  if ((await c("POST", "/auth/register", cred)).status !== 201) { check(`compte ${i} créé`, false); process.exit(1); }
+  if ((await inscrire(c, cred, "POST")).status !== 201) { check(`compte ${i} créé`, false); process.exit(1); }
   comptes.push({ c, email: cred.email });
 }
 check(`${PARTICIPANTS} comptes créés`, true);

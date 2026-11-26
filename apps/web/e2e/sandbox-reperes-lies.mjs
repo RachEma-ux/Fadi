@@ -12,6 +12,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/sandbox-reperes-lies";
@@ -64,10 +65,7 @@ async function exporterObj() {
 }
 
 try {
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `lies-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "sandbox-lies-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `lies-${Date.now()}@example.com`, "sandbox-lies-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   await page.goto(`${BASE}/sandbox`);
   await page.waitForSelector("[data-planche-vue] canvas", { timeout: 60000 });
