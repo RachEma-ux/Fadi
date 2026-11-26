@@ -45,6 +45,8 @@ Mis à jour : 2026-11-26 (UTC).
 
 - L6b (#431) : rail du bureau : Accueil, Projets, Studio, GeoData, puis Collaboration, Bibliothèque, Harmonie (ajoutée), Revues externes, Organisations, Extensions, Paramètres ; ordre Tab relevé à 1 440 px identique à l'ordre visuel (16 arrêts).
 
+- L7 (#432) : L7 (#432) : GeoData garde une seule barre du bas, à 5 boutons (Carte, Chercher, Couches, Enregistrer, Plus) ; « Plus » ouvre la feuille de l'application (navigation principale en tête) par l'événement fadi:ouvrir-plus ; même hauteur (64 px) et même fond que la barre globale ; recette geodata.mjs 276/276 en local.
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.

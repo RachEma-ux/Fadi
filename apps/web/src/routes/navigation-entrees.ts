@@ -70,3 +70,5 @@ export function entreeActive(pathname: string, search: string): CleEntree | null
 
 /** Événement par lequel GeoData (qui n'importe rien de la coquille) demande l'ouverture de la feuille « Plus » (lot L7). */
 export const EVENEMENT_OUVRIR_PLUS = "fadi:ouvrir-plus";
+/** Réponse de la coquille à la fermeture de cette feuille, pour que le bouton « Plus » de GeoData remette `aria-expanded`. */
+export const EVENEMENT_PLUS_FERME = "fadi:plus-ferme";
