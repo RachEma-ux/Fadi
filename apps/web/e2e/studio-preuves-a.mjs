@@ -127,9 +127,14 @@ try {
     JSON.stringify(apresMaj?.plan));
 
   // 4. Envoi rétabli, page rouverte sous le nouveau service worker : l'enveloppe part, une seule fois.
-  bloque = false;
+  // L'envoi n'est rétabli qu'une fois l'ancienne page quittée : sans cela, la sonde de joignabilité de l'ancienne page
+  // (3 s → 30 s) pouvait la réveiller entre le déblocage et le rechargement ; elle envoyait alors l'enveloppe elle-même,
+  // et la page rouverte trouvait la file déjà vide (« Version serveur chargée ») — échec aléatoire, attente de 40 s.
   envois.length = 0;
-  await page.reload();
+  const rechargement = page.reload();
+  await page.waitForEvent("framenavigated", { predicate: (f) => f === page.mainFrame() });
+  bloque = false;
+  await rechargement;
   await outils.waitFor();
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor({ timeout: 40000 });
   await attendreEtat("en-ligne");

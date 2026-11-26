@@ -224,9 +224,21 @@ await page.evaluate(() => document.activeElement?.blur());
 await page.keyboard.press("Alt+o");
 // Vue élargie (zoom 12 centré sur 7° E, 47° N) : un point à l'ouest du centre est hors de la couverture fictive
 // (6,99–7,03° E) ; le panneau Données couvre le bord gauche de la carte.
-await page.locator("[data-gd-barre-outil='zoom-moins']").click();
-await page.locator("[data-gd-barre-outil='zoom-moins']").click();
-await page.waitForTimeout(800);
+// La caméra est lue dans l'adresse (D-GD-40) : on attend que chaque recul de zoom soit appliqué et la carte immobile, au
+// lieu d'un délai fixe — sur un banc lent, l'animation du double-clic du profil ou d'un recul n'était pas finie et le clic
+// tombait encore dans la couverture (6,99° E).
+const zoomAdresse = () => page.evaluate(() => Number(new URLSearchParams(window.location.hash.slice(1)).get("v")?.split(",")[2]));
+const cameraImmobile = async () => {
+  let avant = null;
+  for (let i = 0; i < 40; i++) { const h = await page.evaluate(() => window.location.hash); if (h === avant) return; avant = h; await page.waitForTimeout(500); }
+};
+await cameraImmobile();
+const zoomDepart = await zoomAdresse();
+for (const recul of [1, 2]) {
+  await page.locator("[data-gd-barre-outil='zoom-moins']").click();
+  await page.waitForFunction((z) => Number(new URLSearchParams(window.location.hash.slice(1)).get("v")?.split(",")[2]) <= z, zoomDepart - recul + 0.01, { timeout: 15000 });
+}
+await cameraImmobile();
 await page.mouse.click(canevas.x + 420, canevas.y + 300);
 await page.waitForTimeout(800);
 const indispo = page.locator("[data-gd-terrain-point] [data-gd-terrain-indisponible]");
@@ -248,9 +260,14 @@ await page.locator("[data-gd-terrain-produit='MNT']").check();
 
 // ——— Terrain désactivé côté serveur ———
 terrainActif = false;
+// La première page n'est plus lue : elle est fermée avant d'ouvrir la suivante. Sa carte WebGL (rendu logiciel
+// SwiftShader) restait active et disputait les deux cœurs du banc à la nouvelle page, qui ne s'affichait parfois pas
+// dans les 30 s (attente de [data-geodata-page] en échec, sans autre erreur).
+await page.close();
 const p2 = await ctx.newPage();
+p2.on("pageerror", (e) => erreurs.push(e.message));
 await p2.goto(`${BASE}/geodata`);
-await p2.locator("[data-geodata-page]").waitFor();
+await p2.locator("[data-geodata-page]").waitFor({ timeout: 60000 });
 await p2.locator("[data-gd-terrain-bouton]").click();
 await p2.locator("[data-gd-terrain-erreur]").waitFor();
 check("terrain désactivé : message du serveur, aucune valeur", /pas activé/.test(await p2.locator("[data-gd-terrain-erreur]").textContent()));

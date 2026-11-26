@@ -289,6 +289,9 @@ try {
   check("barre latérale : entrée « Organisations » avec son icône", (await nav.count()) === 1 && (await nav.locator("svg").count()) === 1);
   await nav.click();
   await ui.waitForSelector("[data-organisations] h1");
+  // Le titre s'affiche avant la réponse de la liste (ou depuis le cache persistant, antérieur à l'organisation créée
+  // par l'API) : on attend la ligne (15 s au plus) avant de compter, au lieu de lire la page au premier rendu.
+  await ui.locator(`[data-organisation="${orgId}"]`).first().waitFor({ timeout: 15000 }).catch(() => undefined);
   check("page Organisations : l'organisation est listée", (await ui.locator(`[data-organisation="${orgId}"]`).count()) === 1);
   await axe(ui, "liste des organisations (bureau)");
   await ui.fill('input[name="orgName"]', `Bureau Sud ${RUN}`);
