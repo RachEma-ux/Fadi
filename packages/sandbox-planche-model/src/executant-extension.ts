@@ -72,6 +72,8 @@ export function creerExecutantExtension(
   options: { readonly avantExecution?: () => void } = {},
 ): ExecutantExtension {
   const traitements = new Map<string, (donneesRecues: unknown) => unknown>();
+  /** Fonctions différées par `planche.minuterie.dans`, par numéro de minuterie. */
+  const minuteries = new Map<number, (donneesRecues: unknown) => unknown>();
   let numero = 0;
   let demarree = false;
   /** Demandes adressées à la Planche, en attente de leur réponse. */
@@ -103,6 +105,31 @@ export function creerExecutantExtension(
     }),
     message: Object.freeze({
       afficher: (texte: unknown, genre: unknown = "info") => demander("message.afficher", { texte, genre }),
+    }),
+    matieres: Object.freeze({
+      lire: () => demander("matieres.lire"),
+      appliquer: (ids: unknown, matiere: unknown = null) => demander("matieres.appliquer", { ids: typeof ids === "string" ? [ids] : ids, matiere }),
+    }),
+    balises: Object.freeze({
+      lire: () => demander("balises.lire"),
+      appliquer: (ids: unknown, balise: unknown = null) => demander("balises.appliquer", { ids: typeof ids === "string" ? [ids] : ids, balise }),
+    }),
+    unites: Object.freeze({
+      lire: () => demander("unites.lire"),
+      formater: (valeur: unknown, genre: unknown = "longueur") => demander("unites.formater", { valeur, genre }),
+    }),
+    minuterie: Object.freeze({
+      /** Action différée : `fonction` est appelée une fois, après `delaiMs` ; rend le numéro de la minuterie. */
+      dans: async (delaiMs: unknown, fonction: unknown): Promise<number> => {
+        if (typeof fonction !== "function") throw new TypeError("planche.minuterie.dans : fonction attendue");
+        const id = (await demander("minuterie.armer", { delaiMs })) as number;
+        minuteries.set(id, fonction as (d: unknown) => unknown);
+        return id;
+      },
+      annuler: (id: unknown) => {
+        if (typeof id === "number") minuteries.delete(id);
+        return demander("minuterie.annuler", { id });
+      },
     }),
     donnees: Object.freeze({
       lire: (cible: unknown, cle?: unknown) => demander("donnees.lire", cle === undefined ? { cible } : { cible, cle }),
@@ -156,7 +183,11 @@ export function creerExecutantExtension(
         else attente.rejeter(Object.assign(new Error(m.erreur!.detail || m.erreur!.nom), { name: m.erreur!.nom }));
         return;
       }
-      const traitement = traitements.get(m.nom);
+      // Échéance d'une minuterie : la fonction donnée à `planche.minuterie.dans`, appelée une seule fois.
+      const echeance = m.nom === "minuterie.echeance" ? (m.donnees as { id?: unknown } | null)?.id : undefined;
+      const differee = typeof echeance === "number" ? minuteries.get(echeance) : undefined;
+      if (typeof echeance === "number") minuteries.delete(echeance);
+      const traitement = differee ?? traitements.get(m.nom);
       if (!traitement) {
         // Un événement sans traitement est simplement accusé ; une demande sans traitement est une erreur nommée.
         poster(m.sorte === "evenement" ? reponseProtocole(m.id) : refusProtocole(m.id, "demande_inconnue", m.nom));

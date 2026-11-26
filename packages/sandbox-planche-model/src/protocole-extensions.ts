@@ -355,6 +355,14 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "donnees.lire": "donnees",
   "donnees.ecrire": "donnees",
   "donnees.effacer": "donnees",
+  "matieres.lire": "modele.lire",
+  "matieres.appliquer": "modele.modifier",
+  "balises.lire": "modele.lire",
+  "balises.appliquer": "modele.modifier",
+  "unites.lire": null,
+  "unites.formater": null,
+  "minuterie.armer": "evenements",
+  "minuterie.annuler": "evenements",
 };
 
 /** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */

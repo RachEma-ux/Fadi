@@ -15,7 +15,9 @@
  * l'utilisateur, lui, ne voit rien avant la validation.
  */
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
-import { contexte, type Id, type Modele } from "./geometrie-libre.js";
+import { baliserOccurrences, contexte, peindreFaces, peindreOccurrences, type Id, type Modele } from "./geometrie-libre.js";
+import { formaterLongueur } from "./outils/commun-formes.js";
+import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
 
@@ -26,8 +28,22 @@ export interface AccesPlanche {
   /** Occurrence ouverte en édition ; `undefined` = racine. */
   readonly dans: () => Id | undefined;
   /** Applique un modèle de travail en un seul pas d'annulation nommé ; `false` si la Planche le refuse. */
-  readonly appliquer: (travail: Modele, nom: string, crees: readonly Id[]) => boolean;
-  readonly selectionner: (ids: readonly Id[]) => void;
+  readonly appliquer: (travail: Modele, nom: string, crees: readonly Id[], contexte?: ContexteApplication) => boolean;
+  readonly selectionner: (ids: readonly Id[], contexte?: ContexteApplication) => void;
+  /** Séparateur décimal de l'interface (lot 7, « unites ») ; absent = virgule. */
+  readonly separateur?: () => "." | ",";
+}
+
+/** Dans quel appel une opération est appliquée (lot 7). */
+export interface ContexteApplication {
+  /** Vrai pendant un événement : l'opération se rattache au pas d'annulation de l'utilisateur, sans en créer un. */
+  readonly discrete: boolean;
+  /** Ce que la Planche a joint à l'appel (rang dans une chaîne de réactions) ; rendu tel quel. */
+  readonly marque: unknown;
+}
+export interface OptionsAppel {
+  readonly discrete?: boolean;
+  readonly marque?: unknown;
 }
 
 /** Les fonctions de « modele.modifier » sont bien des fonctions d'un script personnel (contrôle de type). */
@@ -45,6 +61,8 @@ export interface FaceLue {
   readonly trous: number;
   /** Aire en m². */
   readonly aire: number;
+  /** (Lot 7) Matière du recto, ou `null`. */
+  readonly matiere: Id | null;
 }
 export interface AreteLue {
   readonly id: Id;
@@ -56,6 +74,17 @@ export interface ObjetLu {
   readonly id: Id;
   readonly nom: string;
   readonly genre: "groupe" | "composant";
+  /** (Lot 7) Matière et balise posées sur l'objet, ou `null`. */
+  readonly matiere: Id | null;
+  readonly balise: Id | null;
+}
+
+/** (Lot 7) Unités de la Planche : le dessin est en mètres ; l'affichage suit la langue de l'interface. */
+export interface UnitesLues {
+  readonly longueur: "m";
+  readonly aire: "m²";
+  readonly decimales: number;
+  readonly separateur: "." | ",";
 }
 /** Rendu par « modele.lire » : tout le contexte courant (la racine, ou l'objet ouvert en édition). */
 export interface ModeleLu {
@@ -70,7 +99,7 @@ export type ReponseService = { readonly ok: true; readonly resultat: unknown } |
 
 export interface ServicesExtension {
   /** Début d'un appel adressé à l'extension (commande ou événement) : `nom` nomme l'opération automatique éventuelle. */
-  readonly debutAppel: (nom: string) => void;
+  readonly debutAppel: (nom: string, options?: OptionsAppel) => void;
   /**
    * Fin de l'appel. `reussi` faux (erreur, délai, arrêt) : l'opération en cours est abandonnée, quelle qu'elle soit.
    * `reussi` vrai : l'opération automatique est validée ; une opération explicite reste ouverte. Rend `false` si une
@@ -101,6 +130,8 @@ const rendu = (resultat: unknown = null): ReponseService => ({ ok: true, resulta
 export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions" | "id">, acces: AccesPlanche): ServicesExtension {
   let operation: Operation | null = null;
   let appel: string | null = null;
+  let optionsAppel: OptionsAppel = {};
+  const contexteCourant = (): ContexteApplication => ({ discrete: optionsAppel.discrete === true, marque: optionsAppel.marque });
 
   const fonctions = (modele: Modele, dans: Id | undefined): FonctionsPlanche => creerFonctionsPlanche(modele, { selection: acces.selection(), ...(dans !== undefined ? { dans } : {}) });
   /** Fonctions de lecture : sur le modèle de travail si une opération est ouverte, sinon sur le modèle de la Planche. */
@@ -122,8 +153,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     // Le dessin ou le contexte d'édition a changé depuis l'ouverture : rien n'est appliqué, ni dessin ni sélection
     // (une sélection retenue pendant l'opération désigne des objets du modèle d'alors).
     if ((travail !== op.base || op.selection) && (acces.modele() !== op.base || acces.dans() !== op.dans)) return refus("operation_refusee", "le dessin a changé depuis l'ouverture de l'opération");
-    if (travail !== op.base && !acces.appliquer(travail, op.nom, crees)) return refus("operation_refusee", "la Planche a refusé l'opération");
-    if (op.selection) acces.selectionner(op.selection.filter((id) => op.travail.existe(id)));
+    if (travail !== op.base && !acces.appliquer(travail, op.nom, crees, contexteCourant())) return refus("operation_refusee", "la Planche a refusé l'opération");
+    if (op.selection) acces.selectionner(op.selection.filter((id) => op.travail.existe(id)), contexteCourant());
     return rendu({ crees });
   };
 
@@ -138,9 +169,9 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (faces.length + aretes.length + objets.length > MAX_ENTITES_LECTURE) return refus("argument_invalide", `modèle de plus de ${MAX_ENTITES_LECTURE} entités`);
     const points = (id: Id) => f.api.points(id) as [number, number, number][];
     const lu: ModeleLu = {
-      faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number })),
+      faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null })),
       aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number })),
-      objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe" })),
+      objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe", matiere: occ.materiau ?? null, balise: occ.balise ?? null })),
       enOperation: operation !== null,
     };
     return rendu(lu);
@@ -173,8 +204,52 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (absent !== undefined) return refus("objet_introuvable", absent);
     const uniques = [...new Set(ids)];
     if (operation) operation.selection = uniques;
-    else acces.selectionner(uniques);
+    else acces.selectionner(uniques, contexteCourant());
     return rendu();
+  };
+
+  /** `matieres.appliquer` et `balises.appliquer` : une modification, dans l'opération ouverte ou automatique. */
+  const appliquerAttribut = (donnees: unknown, quoi: "matiere" | "balise"): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const ids = d ? d["ids"] : null;
+    const valeur = d ? d[quoi] : undefined;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SELECTION_EXTENSION || !ids.every((x): x is string => typeof x === "string")) return refus("argument_invalide", "ids : liste d'identifiants attendue");
+    if (valeur !== null && typeof valeur !== "string") return refus("argument_invalide", `${quoi} : identifiant, ou null pour retirer`);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const m = op.travail.modele();
+    const table = quoi === "matiere" ? m.annotations?.materiaux : m.annotations?.balises;
+    if (valeur !== null && !(table && Object.prototype.hasOwnProperty.call(table, valeur))) return refus("objet_introuvable", valeur);
+    const c = contexte(m, op.dans);
+    const uniques = [...new Set(ids)];
+    const faces = uniques.filter((id) => c.faces[id]);
+    const objets = uniques.filter((id) => c.occurrences[id]);
+    const absent = uniques.find((id) => !c.faces[id] && !c.occurrences[id]);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    if (quoi === "balise" && faces.length) return refus("argument_invalide", "une balise se pose sur un objet, pas sur une face");
+    const o = op.dans !== undefined ? { dans: op.dans } : {};
+    const revenir = op.travail.figer();
+    try {
+      if (quoi === "balise") op.travail.appliquer(baliserOccurrences(m, objets, valeur, o));
+      else {
+        if (faces.length) op.travail.appliquer(peindreFaces(op.travail.modele(), faces, valeur, o));
+        if (objets.length) op.travail.appliquer(peindreOccurrences(op.travail.modele(), objets, valeur, o));
+      }
+    } catch (e) {
+      revenir();
+      return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+    }
+    return rendu();
+  };
+
+  const unites = (): UnitesLues => ({ longueur: "m", aire: "m²", decimales: 2, separateur: acces.separateur?.() ?? "," });
+  const formater = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const valeur = d ? d["valeur"] : null;
+    const genre = d ? (d["genre"] ?? "longueur") : null;
+    if (typeof valeur !== "number" || !Number.isFinite(valeur)) return refus("argument_invalide", "valeur : nombre attendu, en mètres ou en mètres carrés");
+    if (genre !== "longueur" && genre !== "aire") return refus("argument_invalide", "genre : « longueur » ou « aire »");
+    const sep = unites().separateur;
+    return rendu(genre === "aire" ? formaterAire(valeur, sep) : formaterLongueur(valeur, sep));
   };
 
   const erreurDonnees = (motif: MotifDonnees, detail: string): ReponseService => refus(motif === "introuvable" ? "objet_introuvable" : "argument_invalide", detail);
@@ -214,17 +289,22 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
   };
 
   return {
-    debutAppel: (nom) => {
+    debutAppel: (nom, options = {}) => {
       appel = nom;
+      optionsAppel = options;
     },
     finAppel: (reussi) => {
       appel = null;
-      if (!operation) return true;
-      if (!reussi) {
-        operation = null;
-        return true;
+      try {
+        if (!operation) return true;
+        if (!reussi) {
+          operation = null;
+          return true;
+        }
+        return operation.automatique ? valider().ok : true;
+      } finally {
+        optionsAppel = {};
       }
-      return operation.automatique ? valider().ok : true;
     },
     servir: (nom, donnees) => {
       const jugement = jugerDemandeExtension(fiche, nom);
@@ -254,6 +334,18 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
         }
         case "selection.definir":
           return definirSelection(donnees);
+        case "matieres.lire":
+          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur })));
+        case "matieres.appliquer":
+          return appliquerAttribut(donnees, "matiere");
+        case "balises.lire":
+          return rendu(Object.values(vue().modele().annotations?.balises ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, visible: x.visible })));
+        case "balises.appliquer":
+          return appliquerAttribut(donnees, "balise");
+        case "unites.lire":
+          return rendu(unites());
+        case "unites.formater":
+          return formater(donnees);
         case "donnees.lire":
           return lireDonnees(donnees);
         case "donnees.ecrire":

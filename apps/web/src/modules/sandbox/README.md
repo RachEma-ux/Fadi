@@ -222,6 +222,29 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   quand il est copié. Valeurs : des données seulement, 4 000 caractères et 100 clés par cible au plus
   (`packages/sandbox-planche-model/src/donnees-extensions.ts`). Essai : commandes « Étiqueter l'objet » et « Lire
   l'étiquette » du paquet d'essai, contrôlées par `apps/web/e2e/extensions-commandes.mjs`.
+- **Protocole des extensions, version 1.0 — lot 7, première et deuxième parties** (Issue #445 ; aucun changement
+  visible) : **matières, balises, unités, événements, minuteries**.
+  - *Matières et balises* : `planche.matieres.lire()` et `planche.balises.lire()` (permission « modele.lire ») rendent
+    celles du dessin ; `planche.matieres.appliquer(ids, matiere)` (faces et objets) et
+    `planche.balises.appliquer(ids, balise)` (objets) les posent ou les retirent (`null`), comme toute modification :
+    une opération, un pas d'annulation. « modele.lire » rend la matière de chaque face, la matière et la balise de
+    chaque objet. Une extension ne crée pas de matière ni de balise : elle emploie celles du dessin.
+  - *Unités* (sans permission) : `planche.unites.lire()` rend les unités et le séparateur décimal de l'interface ;
+    `planche.unites.formater(valeur, "longueur" | "aire")` écrit une valeur comme la Planche l'écrit.
+  - *Événements* (permission « evenements », `evenements-extensions.ts`) : « projet.ouvert » `{ nom }`,
+    « projet.enregistre », « modele.change » `{ ajoutes, modifies, supprimes, origine, tronque }` (origine :
+    `utilisateur`, `extension`, `annulation`, `retablissement`) et « selection.change » `{ selection }`, adressés aux
+    seules extensions qui les déclarent dans `abonnements`. Un événement n'arrive jamais au milieu d'une opération : il
+    attend derrière l'appel en cours de l'extension, avec 1 s pour répondre. Une extension n'est pas prévenue de ses
+    propres changements ; une chaîne de réactions entre extensions est coupée au troisième rebond. Une réaction qui
+    modifie le dessin le fait dans une opération **discrète**, rattachée au pas d'annulation de l'utilisateur (Ctrl+Z
+    défait le geste et la réaction d'un coup) ; après une annulation ou un rétablissement, une telle modification est
+    refusée — elle déferait le geste de l'utilisateur. Une réaction arrêtée au délai pose un avis rouge.
+  - *Minuteries* (même permission) : `planche.minuterie.dans(delaiMs, fonction)` appelle `fonction` une fois, après la
+    commande (10 minutes et 10 minuteries au plus) ; `planche.minuterie.annuler(id)`. Une échéance qui modifie le
+    dessin fait son propre pas ; les minuteries sont perdues quand l'extension s'arrête.
+  - Extension d'essai : `apps/web/e2e/donnees/essai-evenements.fadi-addon.json` ; recette
+    `apps/web/e2e/extensions-evenements.mjs` (CI, tranche `planche`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

@@ -66,6 +66,10 @@ import {
   idBarreExtension,
   imageIcone,
   nomAppelCommande,
+  destinatairesEvenement,
+  resumerChangement,
+  type CauseEvenement,
+  type EvenementExtension,
   type AccesPlanche,
   type EntreeDeclaree,
   type PaquetExtension,
@@ -187,7 +191,7 @@ import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, i
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
 import { AvisExtensions, DialogueSaisieExtension, ajouterAvis, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
-import { creerHoteExtension, type HoteExtension } from "./hote-extensions";
+import { creerHoteExtension, type HoteExtension, type IssueAppelExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, serialiserBrouillon } from "./brouillon";
@@ -498,6 +502,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   /** Journal des modifications de la Planche courante (page Informations) ; écrit avec le dessin. */
   const journalRef = useRef<EntreeJournal[]>([]);
   const [chargeId, setChargeId] = useState(0);
+  /** Avance à la fin de chaque chargement de dessin (annonce « projet.ouvert » aux extensions). */
+  const [dessinCharge, setDessinCharge] = useState(0);
   const [sauvegarde] = useState(() =>
     creerSauvegardeBrouillon(setEtatSauvegarde, async (modele) => {
       const id = indexRef.current.courante;
@@ -539,8 +545,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setTexteEtat(v);
   }, []);
   // La sélection est tenue par l'interface (ContexteOutil.selection) ; son affichage passe par `rafraichir`.
+  /** Extensions (protocole, lot 7) : annonces du dessin et de la sélection, branchées plus bas, une fois les hôtes connus. */
+  const signalerModeleRef = useRef<(avant: Historique, apres: Historique) => void>(() => {});
+  const signalerSelectionRef = useRef<() => void>(() => {});
   const setSelection = useCallback((s: readonly string[]) => {
+    const avant = selectionRef.current;
     selectionRef.current = s;
+    if (avant !== s && (avant.length !== s.length || avant.some((id, i) => id !== s[i]))) signalerSelectionRef.current();
   }, []);
   const setMateriau = useCallback((id: string | null) => {
     materiauRef.current = id;
@@ -602,7 +613,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, [dans]);
 
   const poserHistorique = useCallback((h: Historique, _options: { libelle?: string; envoyer?: boolean } = {}) => {
-    const changeModele = h.present.modele !== histRef.current.present.modele;
+    const avantHist = histRef.current;
+    const changeModele = h.present.modele !== avantHist.present.modele;
     histRef.current = h;
     setHist(h);
     if (changeModele) {
@@ -610,6 +622,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       // Journal : opération faite, annulée ou rétablie (jamais le chargement du dessin, qui n'a pas d'opération).
       const description = _options.libelle ?? h.present.operation;
       if (description) journalRef.current = ajouterEntree(journalRef.current, { a: new Date().toISOString(), auteur: t("planche.sb.auteur"), description });
+      signalerModeleRef.current(avantHist, h);
     }
   }, []);
 
@@ -1774,6 +1787,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         // Contexte de travail de cette Planche : celui de ce navigateur, sinon l'ancien repère du document (AX-D4).
         poserContextes(historiqueContextes(contexteMemorise(idx.courante) ?? contexteDepuisDocument(histRef.current.present.modele.annotations?.repere)));
         setBrouillonCharge(true);
+        setDessinCharge((n) => n + 1);
         rafraichir();
       } catch {
         if (!annule) setEtatSauvegarde("erreur");
@@ -2593,22 +2607,74 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     };
   }, []);
   const poserAvisExtension = (extension: string, texte: string, genre: AvisAffiche["genre"]) => setAvisExtensions((liste) => ajouterAvis(liste, { cle: ++cleExtensions.current, extension, texte, genre }));
+  // ——— Événements adressés aux extensions (lot 7) : dessin, sélection, projet.
+  const paquetsRef = useRef(paquetsInstalles);
+  paquetsRef.current = paquetsInstalles;
+  /** Extension à l'origine du changement en cours d'application, et son rang dans la chaîne de réactions. */
+  const causeChangementRef = useRef<CauseEvenement | null>(null);
+  /** Cause du dernier changement du dessin : l'enregistrement qu'il déclenche est annoncé avec elle (pas de boucle). */
+  const causeDernierChangementRef = useRef<CauseEvenement | null>(null);
+  /** Vrai pendant une annulation ou un rétablissement. */
+  const gesteFigeRef = useRef(false);
+  const emettreEvenementRef = useRef<(nom: EvenementExtension, donnees: unknown, cause?: CauseEvenement, fige?: boolean) => void>(() => {});
+  signalerModeleRef.current = (avant, apres) => {
+    // Chargement d'un dessin (historique neuf) : annoncé par « projet.ouvert », pas comme un changement.
+    if (apres.passe.length === 0 && apres.futur.length === 0 && apres.present.operation === null) return;
+    const cause = causeChangementRef.current;
+    const origine = cause ? "extension" : apres.futur.length > avant.futur.length ? "annulation" : avant.futur[0] === apres.present && apres.passe.length > avant.passe.length ? "retablissement" : "utilisateur";
+    causeDernierChangementRef.current = cause;
+    const fige = origine === "annulation" || origine === "retablissement";
+    if (fige) {
+      // La sélection vidée par le même geste est annoncée avec la même réserve.
+      gesteFigeRef.current = true;
+      window.setTimeout(() => (gesteFigeRef.current = false), 0);
+    }
+    const changement = resumerChangement(avant.present.modele, apres.present.modele, origine);
+    // Après une annulation ou un rétablissement, une réaction ne modifie pas le dessin : elle déferait le geste.
+    if (changement) emettreEvenementRef.current("modele.change", changement, cause ?? { rebond: 0 }, fige);
+  };
+  const selectionAnnoncee = useRef<readonly string[]>([]);
+  const causeSelectionRef = useRef<CauseEvenement | null>(null);
+  signalerSelectionRef.current = () => {
+    // Plusieurs changements dans le même geste : un seul événement, avec la sélection finale.
+    const cause = causeSelectionRef.current ?? causeChangementRef.current;
+    const fige = gesteFigeRef.current;
+    window.setTimeout(() => {
+      const s = selectionRef.current;
+      const a = selectionAnnoncee.current;
+      if (!plancheMontee.current || (a.length === s.length && a.every((id, i) => id === s[i]))) return;
+      selectionAnnoncee.current = s;
+      emettreEvenementRef.current("selection.change", { selection: [...s] }, cause ?? { rebond: 0 }, fige);
+    }, 0);
+  };
   /** Ce que la Planche prête à une extension : lu à chaque appel, pour suivre le dessin, la sélection et le contexte courants. */
   const accesExtensionRef = useRef<(id: string) => AccesPlanche>(() => ({ modele: () => histRef.current.present.modele, selection: () => [], dans: () => undefined, appliquer: () => false, selectionner: () => {} }));
   accesExtensionRef.current = (id) => ({
     modele: () => histRef.current.present.modele,
     selection: () => selectionRef.current,
     dans: () => dansRef.current,
-    appliquer: (travail, nom) => {
+    separateur: () => (LANGUE_INTERFACE === "en" ? "." : ","),
+    appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
-      poserHistorique(enregistrer(histRef.current, travail, nom, false));
+      const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
+      // Réaction à une annulation ou à un rétablissement, ou tant qu'il reste un pas à rétablir : elle déferait le geste.
+      if (contexteAppel?.discrete === true && (marque?.fige === true || histRef.current.futur.length > 0)) return false;
+      causeChangementRef.current = { extension: id, rebond: typeof marque?.rebond === "number" ? marque.rebond : 0 };
+      // Opération discrète (réaction à un événement) : rattachée au pas d'annulation de l'utilisateur, qui garde son nom.
+      const h0 = histRef.current;
+      const discrete = contexteAppel?.discrete === true && h0.passe.length > 0;
+      poserHistorique(enregistrer(h0, travail, discrete ? (h0.present.operation ?? nom) : nom, discrete));
+      causeChangementRef.current = null;
       applicationsExtensions.current.set(id, (applicationsExtensions.current.get(id) ?? 0) + 1);
       etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
       rafraichir();
       return true;
     },
-    selectionner: (ids) => {
+    selectionner: (ids, contexteAppel) => {
+      const marque = contexteAppel?.marque as { rebond?: unknown } | undefined;
+      causeSelectionRef.current = { extension: id, rebond: typeof marque?.rebond === "number" ? marque.rebond : 0 };
       setSelection(ids);
+      causeSelectionRef.current = null;
       rafraichir();
     },
   });
@@ -2620,7 +2686,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const nom = texteFiche(p.fiche.nom);
     const acces = (): AccesPlanche => accesExtensionRef.current(id);
     const hote = creerHoteExtension(p, {
-      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (ids) => acces().selectionner(ids) },
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? "," },
+      surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
+      libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
@@ -2652,6 +2720,36 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     hotesExtensions.current.set(id, { paquet: p, hote });
     return hote;
   };
+  /** Une réaction (événement, minuterie) arrêtée d'office ou en panne est dite à l'utilisateur ; une erreur ordinaire reste au journal de l'extension. */
+  const signalerArretReaction = (nom: string, i: IssueAppelExtension) => {
+    if (i.genre === "delai") poserAvisExtension(nom, t("extensions.avis.reaction.delai", { secondes: String(Math.round(BORNES_EXTENSION.delaiEvenementMs / 1000)) }), "arret");
+    else if (i.genre === "panne") poserAvisExtension(nom, t("extensions.avis.panne"), "arret");
+  };
+  emettreEvenementRef.current = (evenement, donnees, cause = { rebond: 0 }, fige = false) => {
+    for (const p of destinatairesEvenement(paquetsRef.current, evenement, cause)) {
+      const nom = texteFiche(p.fiche.nom);
+      void hoteExtension(p)
+        .appeler("evenement", evenement, donnees, t("extensions.installee.reaction", { extension: nom }), { rebond: cause.rebond + 1, fige })
+        .then((i) => plancheMontee.current && signalerArretReaction(nom, i));
+    }
+  };
+  // « projet.ouvert » : à chaque dessin chargé, une fois les extensions connues ; « projet.enregistre » : après chaque
+  // enregistrement du dessin.
+  const ouvertureAnnoncee = useRef(0);
+  useEffect(() => {
+    // `dessinCharge` avance à la fin de chaque chargement : jamais avant que le nouveau dessin soit en place, et une
+    // seule annonce par dessin chargé, même si la liste des extensions arrive après.
+    if (dessinCharge === 0 || paquetsInstalles.length === 0 || ouvertureAnnoncee.current === dessinCharge) return;
+    ouvertureAnnoncee.current = dessinCharge;
+    causeDernierChangementRef.current = null;
+    emettreEvenementRef.current("projet.ouvert", { nom: nomAffiche(plancheDe(indexRef.current)) });
+  }, [dessinCharge, paquetsInstalles]);
+  const sauvegardeVue = useRef<EtatSauvegarde>(etatSauvegarde);
+  useEffect(() => {
+    const avant = sauvegardeVue.current;
+    sauvegardeVue.current = etatSauvegarde;
+    if (etatSauvegarde === "enregistre" && (avant === "enregistrement" || avant === "attente")) emettreEvenementRef.current("projet.enregistre", null, causeDernierChangementRef.current ?? { rebond: 0 });
+  }, [etatSauvegarde]);
   const lancerCommandeExtension = (p: PaquetExtension, c: EntreeDeclaree) => {
     const id = p.fiche.id;
     if (extensionsEnCoursRef.current.has(id)) return;

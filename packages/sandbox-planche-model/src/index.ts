@@ -36,3 +36,4 @@ export * from "./extensions-installees.js";
 export * from "./saisies-extensions.js";
 export * from "./personnalisation-sandbox.js";
 export * from "./donnees-extensions.js";
+export * from "./evenements-extensions.js";
