@@ -446,3 +446,4 @@ Seuls les processus/ressources créés et identifiés par le profil peuvent êtr
 
 
 - 2026-11-26 (lot Design L6b) : libellé I.5-02 du registre (`task-register.json`) aligné sur la recette `studio-preuves-d1.mjs` ; le rail place GeoData entre Studio et Collaboration. Aucun autre changement Studio.
+- 2026-11-26 (menu Studio, capture de référence du maître d'ouvrage) : sous-menu de la barre latérale réordonné — Console (entrée du sous-menu, masquée avec lui), 01 à 04, « Choisir une étude » (icône document), trait de fin ; ligne « Accueil Studio » retirée (l'accueil reste l'entrée « Studio », `/studio`) ; chevron ˅/˄. Recettes `studio-navigation.mjs` et `studio-preuves-d1.mjs` (I.5-02) et libellés du registre alignés. Captures : `captures/menu-studio/`.

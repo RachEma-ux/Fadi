@@ -102,8 +102,11 @@ try {
     ["dessin", "01 · Dessin et modélisation", "01 · Dessin et modélisation"], ["bim", "02 · BIM et coordination", "02 · BIM et coordination"],
     ["visualisation", "03 · Visualisation, rendu et immersion", "03 · Visualisation, rendu et immersion"], ["documentation", "04 · Documentation, métrés et collaboration", "04 · Documentation, métrés et collaboration"],
   ]), JSON.stringify(entreesDomaines));
-  check("menu Studio : accès permanents à l'accueil et au choix des études ; aucune planche en entrée", (await page.locator("[data-studio-menu-accueil]").getAttribute("href")) === "/studio"
-    && (await page.locator("[data-studio-menu-etudes]").count()) === 1 && !(((await sousMenu.textContent()) ?? "").match(/Planche|Double vue/)));
+  const ordreSousMenu = await sousMenu.locator("a").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
+  check("menu Studio : sous-menu dans l'ordre de la capture de référence (Console, 01 à 04, Choisir une étude) ; aucune planche en entrée",
+    JSON.stringify(ordreSousMenu) === JSON.stringify(["Console", "01 · Dessin et modélisation", "02 · BIM et coordination", "03 · Visualisation, rendu et immersion", "04 · Documentation, métrés et collaboration", "Choisir une étude"])
+    && !(((await sousMenu.textContent()) ?? "").match(/Planche|Double vue/)), JSON.stringify(ordreSousMenu));
+  check("menu Studio : l'accueil de Studio reste l'entrée « Studio » (/studio)", (await page.locator("#workspace-navigation a[data-nav-studio]").getAttribute("href")) === "/studio");
   check("menu Studio : hors d'une variante, chaque domaine passe par l'accueil (aucune variante ouverte d'office)", (await page.locator('[data-studio-menu-domaine="bim"]').getAttribute("href")) === "/studio?domaine=bim");
   await page.keyboard.press("ArrowLeft");
   check("menu Studio : flèche gauche le replie", (await bascule.getAttribute("aria-expanded")) === "false" && !(await sousMenu.isVisible()));

@@ -3,14 +3,15 @@
  * « 01 · Dessin et modélisation », « 02 · BIM et coordination », « 03 · Visualisation, rendu et immersion »,
  * « 04 · Documentation, métrés et collaboration » — ni ajout, ni renommage, ni abréviation ; `DOMAINES_STUDIO`).
  *
- * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
- *   une étude » (études du projet affiché, sinon l'accueil), en plus des quatre domaines.
+ * - Ordre du sous-menu (capture de référence du maître d'ouvrage, 26 novembre 2026) : « Console », « 01 » à « 04 », « Choisir
+ *   une étude » (document) ; un trait le ferme. L'accueil de Studio (`/studio` : reprise suggérée, choix explicite, nouvelle
+ *   étude) reste l'entrée « Studio » elle-même ; il n'a plus de ligne propre dans le sous-menu.
  * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » (lien vers le module Sandbox, `/sandbox`) et les outils des quatre
- *   domaines, ouverts SANS charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur
- *   toutes ses pages et sur `/sandbox`, comme avant le lot 1 (apparence inchangée).
+ *   domaines, ouverts SANS charger de projet) ouvre le sous-menu ; surlignée sur toutes ses pages et sur `/sandbox`.
+ * - « Choisir une étude » : études du projet affiché, sinon l'accueil.
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
- *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme
- *   « Projets › ». Barre repliée : chaque entrée montre son numéro, nom exact en infobulle et en nom accessible.
+ *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche ; ˅ replié, ˄ déplié) déplie ou replie le
+ *   sous-menu. Quand une entrée du sous-menu est marquée, « Studio » ne garde que son trait vert (parent de l'entrée). Barre repliée : chaque entrée montre son numéro, nom exact en infobulle et en nom accessible.
  * - Chaque entrée ouvre l'espace de travail de ce domaine : dans la variante affichée (même adresse, `?domaine=`,
  *   révision et commentaires gardés, sans garde de navigation : on ne quitte pas la variante) ; sinon par l'accueil
  *   (`/studio?domaine=`), qui propose la dernière variante autorisée (suggestion vérifiée par le serveur) et le choix
@@ -67,22 +68,17 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
       <NavLink to="/studio" className={({ isActive }) => isActive || surSandbox ? "active" : undefined} title="Studio" aria-label="Studio" data-nav-studio onClick={surNavigation}><Icon name="studio" /><span className="sidebar-label">Studio</span></NavLink>
       <button type="button" className="sidebar-studio-bascule" aria-expanded={ouvert} aria-controls="studio-menu-domaines" onClick={() => setOuvert((o) => !o)} onKeyDown={touches}
         aria-label={ouvert ? "Replier les domaines du Studio" : "Déplier les domaines du Studio"} title={ouvert ? "Replier les domaines du Studio" : "Déplier les domaines du Studio"} data-studio-menu-lateral-bascule>
-        <Icon name="chevron-right" size={14} />
+        <Icon name="chevron-down" size={14} />
       </button>
     </div>
-    {/* « Console » : article principal de Studio, hors du sous-menu (visible replié ou non). « Console » est aussi le nom anglais : le
-        dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où translate="no". */}
-    {/* Lien simple (pas NavLink) : son état actif suit `surConsole`, qui couvre aussi `/sandbox`, hors des adresses de la Console. */}
-    <Link to={cheminConsoleStudio()} className={surConsole ? "active" : undefined} aria-current={surConsole ? "page" : undefined}
-      title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" /><span className="sidebar-label">Console</span></Link>
+    {/* Sous-menu (capture de référence du 26 novembre 2026) : « Console », les quatre domaines numérotés, puis « Choisir une
+        étude » ; un trait le sépare des entrées suivantes. L'accueil de Studio reste l'entrée « Studio » elle-même (`/studio`). */}
     <div id="studio-menu-domaines" className="sidebar-studio-sous-menu" hidden={!ouvert}>
-    <ul className="sidebar-studio-acces" aria-label="Accès Studio">
-      <li><Link to={cheminAccueilStudio()} aria-current={pathname === "/studio" ? "page" : undefined} title="Accueil Studio" aria-label="Accueil Studio" data-studio-menu-accueil onClick={surNavigation}>
-        <Icon name="home" size={16} /><span className="sidebar-label">Accueil Studio</span></Link></li>
-      <li><Link to={etudes.href} aria-current={etudes.courant ? "page" : undefined} title="Choisir une étude" aria-label="Choisir une étude" data-studio-menu-etudes onClick={surNavigation}>
-        <Icon name="folder" size={16} /><span className="sidebar-label">Choisir une étude</span></Link></li>
-    </ul>
-    <ul className="sidebar-studio-domaines" aria-label="Domaines du Studio">
+    {/* « Console » est aussi le nom anglais : le dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où
+        translate="no". Lien simple (pas NavLink) : son état actif suit `surConsole`, qui couvre aussi `/sandbox`. */}
+    <ul className="sidebar-studio-entrees" aria-label="Accès Studio">
+      <li><Link to={cheminConsoleStudio()} className={surConsole ? "active" : undefined} aria-current={surConsole ? "page" : undefined}
+        title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" size={18} /><span className="sidebar-label">Console</span></Link></li>
       {DOMAINES_STUDIO.map((d) => {
         const { href, memeVariante } = cibleDomaineStudio(pathname, search, d.id);
         const nom = libelleNumeroteDomaine(d);
@@ -93,6 +89,8 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
           </Link>
         </li>;
       })}
+      <li><Link to={etudes.href} aria-current={etudes.courant ? "page" : undefined} title="Choisir une étude" aria-label="Choisir une étude" data-studio-menu-etudes onClick={surNavigation}>
+        <Icon name="file" size={18} /><span className="sidebar-label">Choisir une étude</span></Link></li>
     </ul>
     </div>
   </div>;

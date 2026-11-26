@@ -1,6 +1,6 @@
 /**
- * Menu « Studio » de la barre latérale : quatre domaines exacts (REF-01 §02, format « 01 · … »), accès permanents
- * (accueil, choix d'une étude), cibles dérivées de l'adresse (même lecture que l'espace : aucun état parallèle).
+ * Menu « Studio » de la barre latérale : Console, quatre domaines exacts (REF-01 §02, format « 01 · … »), choix d'une
+ * étude, dans l'ordre de la capture de référence du 26-11-2026 ; cibles dérivées de l'adresse (même lecture que l'espace : aucun état parallèle).
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -12,13 +12,16 @@ const V = "/studio/projets/p/etudes/s/variantes/v";
 const rendre = (adresse: string) => renderToStaticMarkup(createElement(MemoryRouter, { initialEntries: [adresse] }, createElement(MenuStudio)));
 
 describe("menu « Studio » de la barre latérale", () => {
-  it("quatre entrées de domaine, dans l'ordre officiel et sous leur libellé exact ; accueil et choix d'une étude en plus", () => {
+  it("quatre entrées de domaine, dans l'ordre officiel et sous leur libellé exact ; Console avant, choix d'une étude après", () => {
     const html = rendre(V);
     const libelles = [...html.matchAll(/data-studio-menu-domaine="[^"]+"[^>]*>|aria-label="([^"]+)"[^>]*data-studio-menu-domaine/g)].map((m) => m[1]).filter(Boolean);
     expect(libelles).toEqual(["01 · Dessin et modélisation", "02 · BIM et coordination", "03 · Visualisation, rendu et immersion", "04 · Documentation, métrés et collaboration"]);
     expect(html.match(/data-studio-menu-domaine=/g)).toHaveLength(4);
-    expect(html).toContain("data-studio-menu-accueil");
-    expect(html).toContain("data-studio-menu-etudes");
+    // Ordre du sous-menu : Console, 01 à 04, Choisir une étude ; l'accueil de Studio est l'entrée « Studio » elle-même.
+    const ordre = [...html.matchAll(/data-studio-menu-(console|domaine="[a-z]+"|etudes)/g)].map((m) => m[1]);
+    expect(ordre).toEqual(["console", 'domaine="dessin"', 'domaine="bim"', 'domaine="visualisation"', 'domaine="documentation"', "etudes"]);
+    expect(html).not.toContain("data-studio-menu-accueil");
+    expect(/<a [^>]*data-nav-studio[^>]*>/.exec(html)?.[0]).toContain('href="/studio"');
     // Les planches ne sont pas des entrées du menu.
     expect(html).not.toMatch(/Planche 2D|Planche 3D|Double vue/);
     // Déplié sur une route Studio ; le chevron porte aria-expanded.
@@ -55,10 +58,10 @@ describe("menu « Studio » de la barre latérale", () => {
     // Nom exact et non traduit (« Console » est traduit ailleurs en « Bracket » par le dictionnaire).
     expect(entree(html)).toContain('aria-label="Console"');
     expect(entree(html)).toContain('translate="no"');
-    // Article principal de Studio : hors du sous-menu (donc hors de « Accès Studio », où reste « Choisir une étude »).
+    // Première entrée du sous-menu (capture de référence du 26-11-2026), avant les quatre domaines.
     const h0 = rendre("/studio");
-    expect(h0.indexOf("data-studio-menu-console")).toBeLessThan(h0.indexOf('id="studio-menu-domaines"'));
-    expect(h0.indexOf("data-studio-menu-console")).toBeGreaterThan(h0.indexOf("data-studio-menu-lateral-bascule"));
+    expect(h0.indexOf("data-studio-menu-console")).toBeGreaterThan(h0.indexOf('id="studio-menu-domaines"'));
+    expect(h0.indexOf("data-studio-menu-console")).toBeLessThan(h0.indexOf("data-studio-menu-domaine="));
     // `/sandbox` (module Sandbox, lot 1) garde « Console » marqué et le menu déplié, comme l'ancienne adresse.
     for (const adresse of ["/studio/console", "/studio/console/sandbox", "/studio/console/outil?domaine=bim", "/sandbox"]) {
       const h = rendre(adresse);
