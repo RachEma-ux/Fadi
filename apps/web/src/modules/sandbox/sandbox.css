@@ -3473,7 +3473,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* « Planche » ne s'abrège jamais ; seul le nom de la Planche ouverte cède la place. */
   .sandbox-planche .planche-bandeau-prefixe {
+    flex: none;
     font-weight: 600;
   }
   /* Plus de carte ☰ au-dessus de la loupe : la loupe, la barre d'outils et la colonne remontent de 54 px + 0,35 rem. */
@@ -3508,14 +3510,14 @@
 @media (min-width: 761px) {
   .sandbox-planche .planche-bandeau-nom {
     flex: 0 1 auto;
+    min-width: 6rem;
   }
+  /* Le centre ne se rogne jamais : sur fenêtre étroite, c'est le nom de la Planche qui s'abrège. */
   .sandbox-planche .planche-bandeau-actions {
     display: flex;
-    flex: 1 1 auto;
+    flex: 1 0 auto;
     justify-content: center;
     align-items: stretch;
-    min-width: 0;
-    overflow: hidden;
   }
   .sandbox-planche .planche-bandeau-groupe {
     display: flex;
@@ -3607,15 +3609,46 @@
     height: 20px;
   }
 }
-/* Annuler / Rétablir : icône seule à la souris (image validée du 26 novembre 2026) ; au toucher, nom visible (AGENTS.md). */
-@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
+/* Annuler / Rétablir : icône seule, à la souris comme au toucher (maquette validée du 26 novembre 2026) ; le nom reste
+   en infobulle et pour les lecteurs d'écran. */
+@media (min-width: 761px) {
   .sandbox-planche .planche-bandeau-actions [data-planche-annuler] .barre-actions-texte,
   .sandbox-planche .planche-bandeau-actions [data-planche-retablir] .barre-actions-texte {
     display: none;
   }
 }
-/* Icônes seules seulement à la souris : au toucher, chaque bouton garde son nom visible (AGENTS.md). */
-@media (min-width: 761px) and (max-width: 1180px) and (hover: hover) and (pointer: fine) {
+/* Fenêtre étroite : les quatre titres de menus se resserrent. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  .sandbox-planche .planche-bandeau-menu > button {
+    padding: 0 0.5rem;
+  }
+  .sandbox-planche .planche-bandeau-nom {
+    padding-right: 0.75rem;
+  }
+}
+/* Fenêtre très étroite : « Détacher » en icône seule (nom en infobulle), pour que tout tienne sur une ligne. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .sandbox-planche .planche-bandeau-droite .barre-actions-texte {
+    display: none;
+  }
+  .sandbox-planche .planche-bandeau-droite button {
+    padding: 0 0.6rem;
+  }
+  .sandbox-planche .planche-bandeau-menu > button {
+    padding: 0 0.4rem;
+  }
+  .sandbox-planche .planche-bandeau .planche-bandeau-actions button {
+    min-width: 40px;
+    padding: 0 0.5rem;
+  }
+  .sandbox-planche .planche-bandeau-nom {
+    min-width: 5.25rem;
+    padding-left: 0.75rem;
+  }
+}
+/* Fenêtre étroite : les quatre boutons du centre en icônes seules, à la souris comme au toucher (maquette validée) ; le nom
+   reste en infobulle et pour les lecteurs d'écran. */
+@media (min-width: 761px) and (max-width: 1180px) {
   .sandbox-planche .planche-bandeau-actions .barre-actions-texte {
     display: none;
   }
@@ -3625,7 +3658,8 @@
 }
 
 /* Menus du bandeau (26 novembre 2026, ordinateur) : Édition, Affichage, Caméra, Fenêtres juste après le nom ; liste
-   claire sous le titre (gris 10 de Carbon) ; cases, choix radio, raccourcis à droite ; sous 1180 px, un seul « Menus ▾ ».
+   claire sous le titre (gris 10 de Carbon) ; cases, choix radio, raccourcis à droite ; les quatre titres restent visibles
+   à toute largeur (maquette validée), resserrés sous 1180 px.
    Téléphone : pas de menus (pas de bandeau). */
 .sandbox-planche .planche-bandeau-menus {
   display: none;
@@ -3665,10 +3699,6 @@
   .sandbox-planche .planche-bandeau-menu > button:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: -2px;
-  }
-  .sandbox-planche .planche-bandeau-menu-chevron {
-    width: 16px;
-    height: 16px;
   }
   .sandbox-planche .planche-bandeau-menu-liste {
     position: absolute;

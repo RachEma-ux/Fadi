@@ -1279,7 +1279,6 @@ const FR = {
   "planche.fermer-rattacher": "Fermer et rattacher",
   // Menus du bandeau (26 novembre 2026).
   "planche.menus.barre": "Menus de la Planche",
-  "planche.menus.replie": "Menus",
   "planche.menus.edition": "Édition",
   "planche.menus.affichage": "Affichage",
   "planche.menus.camera": "Caméra",
@@ -2660,7 +2659,6 @@ const EN: Record<CleMessage, string> = {
   "planche.fermer-rattacher": "Close and reattach",
   // Board header menus (26 November 2026).
   "planche.menus.barre": "Board menus",
-  "planche.menus.replie": "Menus",
   "planche.menus.edition": "Edit",
   "planche.menus.affichage": "View",
   "planche.menus.camera": "Camera",

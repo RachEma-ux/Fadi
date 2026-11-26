@@ -492,8 +492,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [outilsReplies, setOutilsReplies] = useState(true);
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
-  // Menus du bandeau (26 novembre 2026) : sous 1180 px de large, les quatre menus se rangent sous « Menus ▾ ».
-  const [menusReplies, setMenusReplies] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches);
   const colonneRef = useRef<HTMLElement | null>(null);
   // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
   const prefsSandbox = usePreferencesSandbox();
@@ -1765,13 +1763,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     };
     if (mq.matches !== etroitRef.current) maj();
     mq.addEventListener("change", maj);
-    const mqMenus = hote.matchMedia("(max-width: 1180px)");
-    const majMenus = () => setMenusReplies(mqMenus.matches);
-    majMenus();
-    mqMenus.addEventListener("change", majMenus);
     return () => {
       mq.removeEventListener("change", maj);
-      mqMenus.removeEventListener("change", majMenus);
     };
   }, [detache]);
 
@@ -3623,7 +3616,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
       : []),
   ];
-  const groupeVue: ActionBarre[] = [actionCadrer, ...actionZoom, ...zoomPas];
+  // Maquette validée : Cadrer · Zoom seulement ; zoom − / + restent dans la barre flottante du téléphone.
+  const groupeVue: ActionBarre[] = [actionCadrer, ...actionZoom];
   const commandeObjet = (c: (typeof COMMANDES_OBJETS)[number]): ActionBarre[] => {
     const d = disponibiliteObjet(c.id, etatSelectionObjets());
     // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -3863,7 +3857,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
           <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
         </p>
-        {!etroit && <MenusBandeau menus={menusBandeau} replie={menusReplies} />}
+        {!etroit && <MenusBandeau menus={menusBandeau} />}
         {!etroit && <ActionsBandeau groupes={[groupeHistorique, groupeVue]} />}
         {!etroit && (
           <div className="planche-bandeau-droite" data-planche-bandeau-droite>

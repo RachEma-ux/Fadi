@@ -216,7 +216,7 @@ async function bandeau(page, racine, contexte) {
 /**
  * Menus du bandeau (26 novembre 2026) : Édition, Affichage, Caméra, Fenêtres après le nom de la Planche, avant le centre ;
  * chaque entrée appelle une fonction existante ; une case laisse le menu ouvert, une commande le ferme ; survoler un
- * autre titre l'ouvre à sa place ; Échap referme ; sous 1180 px, un seul « Menus ▾ » en sections.
+ * autre titre l'ouvre à sa place ; Échap referme ; à 1100 px, les quatre titres restent visibles.
  */
 async function menusBandeau(page, racine, contexte, ba) {
   const titres = await racine.locator('[data-planche-menus-bandeau] > .planche-bandeau-menu > button').evaluateAll((l) => l.map((b) => ({ id: b.getAttribute("data-planche-menu-bandeau"), texte: b.textContent.trim(), r: b.getBoundingClientRect().right, l: b.getBoundingClientRect().left })));
@@ -256,17 +256,14 @@ async function menusBandeau(page, racine, contexte, ba) {
   check(`${contexte} : menu ouvert à la souris, Flèche bas fait entrer le focus dans le menu`, await page.evaluate(() => /^menuitem/.test(document.activeElement?.getAttribute("role") ?? "") && !!document.activeElement?.closest('[data-planche-menu-bandeau-liste="edition"]')));
   await page.mouse.click(700, 600);
   check(`${contexte} : un clic ailleurs referme le menu`, (await racine.locator("[data-planche-menu-bandeau-liste]").count()) === 0);
-  // Fenêtre plus étroite (1100 px) : un seul « Menus ▾ », qui reprend les quatre menus en sections.
+  // Fenêtre plus étroite (1100 px) : les quatre titres restent visibles (maquette validée), sans « Menus ▾ » ni zoom − / +.
   const vp = page.viewportSize();
   await page.setViewportSize({ width: 1100, height: vp.height });
-  await titre("menus").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
-  const replies = await racine.locator('[data-planche-menus-bandeau] > .planche-bandeau-menu > button').count();
-  await titre("menus").click().catch(() => undefined);
-  const sections = await racine.locator('[data-planche-menu-bandeau-liste="menus"] .planche-bandeau-menu-titre').allInnerTexts().catch(() => []);
-  check(`${contexte} : sous 1180 px, un seul « Menus ▾ » en sections`, replies === 1 && ["Édition", "Affichage", "Caméra", "Fenêtres"].every((x) => sections.includes(x)), JSON.stringify({ replies, sections }));
-  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
+  const etroits = await racine.locator('[data-planche-menus-bandeau] > .planche-bandeau-menu > button').evaluateAll((l) => l.map((b) => ({ texte: b.textContent.trim(), visible: b.getBoundingClientRect().width > 0 })));
+  check(`${contexte} : à 1100 px, Édition, Affichage, Caméra, Fenêtres restent visibles`, JSON.stringify(etroits.map((x) => x.texte)) === JSON.stringify(["Édition", "Affichage", "Caméra", "Fenêtres"]) && etroits.every((x) => x.visible), JSON.stringify(etroits));
+  check(`${contexte} : pas de zoom − / + dans le bandeau`, (await racine.locator("[data-planche-bandeau-actions] [data-planche-zoom]").count()) === 0);
   await page.setViewportSize(vp);
-  await titre("edition").waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
 }
 
 /** Lot 6 : raccourcis harmonisés avec SketchUp — recherche Maj+S, Zoom étendu Maj+Z, Texte 3D Alt+Maj+Z, Diviser Maj+D. */
