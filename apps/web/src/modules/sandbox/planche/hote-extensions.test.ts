@@ -2,12 +2,32 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { creerExecutantExtension, validerPaquetExtension, type ExecutantExtension, type PaquetExtension } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type ExecutantExtension, type Id, type Modele, type PaquetExtension } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const lu = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-socle.fadi-addon.json", import.meta.url)), "utf8")));
 if (!lu.ok) throw new Error(`extension d'essai refusée : ${lu.detail}`);
 const ESSAI: PaquetExtension = lu.paquet;
+const lu2 = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-modele.fadi-addon.json", import.meta.url)), "utf8")));
+if (!lu2.ok) throw new Error(`extension d'essai du lot 2 refusée : ${lu2.detail}`);
+const ESSAI_MODELE: PaquetExtension = lu2.paquet;
+
+/** Planche de remplacement : un modèle, une sélection, et les pas d'annulation appliqués. */
+function plancheFausse() {
+  const etat = { modele: modeleVide() as Modele, selection: [] as Id[], pas: [] as string[] };
+  const acces: AccesPlanche = {
+    modele: () => etat.modele,
+    selection: () => etat.selection,
+    dans: () => undefined,
+    appliquer: (travail, nom) => {
+      etat.modele = travail;
+      etat.pas.push(nom);
+      return true;
+    },
+    selectionner: (ids) => void (etat.selection = [...ids]),
+  };
+  return { etat, acces };
+}
 
 /**
  * Worker de remplacement : le vrai exécutant, dans le même fil, avec des messages différés comme entre deux fils.
@@ -162,3 +182,68 @@ describe("hôte d'une extension — l'extension d'essai du socle", () => {
     expect(recus).toEqual([{ protocole: "1.0", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
   });
 });
+
+describe("hôte d'une extension — lot 2 : modèle, opération, sélection", () => {
+  it("opération explicite : la boîte est posée en un seul pas d'annulation, groupée et sélectionnée", async () => {
+    const p = plancheFausse();
+    const h = creerHoteExtension(ESSAI_MODELE, { creer: faux().creer, acces: p.acces });
+    const r = await h.appeler("demande", "commande.poser-boite");
+    expect(r).toMatchObject({ genre: "fini", resultat: { crees: 1 } });
+    expect(p.etat.pas).toEqual(["Poser une boîte"]);
+    const objets = Object.keys(p.etat.modele.racine.occurrences);
+    expect(objets).toHaveLength(1);
+    expect(p.etat.selection).toEqual(objets);
+    expect(await h.appeler("demande", "commande.compter")).toEqual({ genre: "fini", resultat: { faces: 0, aretes: 0, objets: 1, selection: 1 } });
+  });
+
+  it("modification sans opération : une opération automatique au nom de la commande, validée à la fin", async () => {
+    const p = plancheFausse();
+    const h = creerHoteExtension(ESSAI_MODELE, { creer: faux().creer, acces: p.acces });
+    expect(await h.appeler("demande", "commande.sans-operation")).toEqual({ genre: "fini", resultat: "fait" });
+    expect(p.etat.pas).toEqual(["commande.sans-operation"]);
+    expect(Object.keys(p.etat.modele.racine.faces)).toHaveLength(1);
+  });
+
+  it("seconde opération : l'extension reçoit l'erreur par son nom ; commande en échec ou arrêtée au délai : rien n'est appliqué", async () => {
+    const p = plancheFausse();
+    const h = creerHoteExtension(ESSAI_MODELE, { creer: faux({ muet: ["commande.trainer"], journal: [] }).creer, acces: p.acces, delaiCommandeMs: 40 });
+    expect(await h.appeler("demande", "commande.deux-operations")).toEqual({ genre: "fini", resultat: "operation_deja_ouverte" });
+    expect(await h.appeler("demande", "commande.echouer")).toMatchObject({ genre: "erreur", nom: "echec_extension" });
+    expect(await h.appeler("demande", "commande.trainer")).toEqual({ genre: "delai" });
+    expect(p.etat.pas).toEqual([]);
+    expect(Object.keys(p.etat.modele.racine.aretes)).toHaveLength(0);
+    // L'extension repart à neuf et sert de nouveau.
+    expect(await h.appeler("demande", "commande.sans-operation")).toEqual({ genre: "fini", resultat: "fait" });
+  });
+
+  it("dessin changé pendant une commande sans opération : la commande rend « operation_refusee », rien n'est appliqué", async () => {
+    const p = plancheFausse();
+    const f = faux();
+    // L'utilisateur dessine juste après que l'extension a ouvert son opération (première lecture du modèle par l'hôte).
+    const autre = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(2, 0, 0), v3(0, 2, 0)).modele;
+    let lectures = 0;
+    const acces: AccesPlanche = {
+      ...p.acces,
+      modele: () => {
+        const m = p.etat.modele;
+        if (++lectures === 1) queueMicrotask(() => void (p.etat.modele = autre));
+        return m;
+      },
+    };
+    const h = creerHoteExtension(ESSAI_MODELE, { creer: f.creer, acces });
+    const enCours = h.appeler("demande", "commande.sans-operation");
+    expect(await enCours).toMatchObject({ genre: "erreur", nom: "operation_refusee" });
+    expect(p.etat.modele).toBe(autre);
+    expect(p.etat.pas).toEqual([]);
+  });
+
+  it("sans accès à la Planche, ou sans la permission : la demande est refusée par son nom", async () => {
+    const sansAcces = creerHoteExtension(ESSAI_MODELE, { creer: faux().creer });
+    expect(await sansAcces.appeler("demande", "commande.compter")).toMatchObject({ genre: "erreur", nom: "echec_extension", detail: expect.stringContaining("demande_inconnue") as unknown });
+    const p = plancheFausse();
+    const sansPermission = creerHoteExtension({ ...ESSAI_MODELE, fiche: { ...ESSAI_MODELE.fiche, permissions: ["modele.lire"] } }, { creer: faux().creer, acces: p.acces });
+    expect(await sansPermission.appeler("demande", "commande.sans-operation")).toMatchObject({ genre: "erreur", nom: "echec_extension", detail: expect.stringContaining("permission_refusee") as unknown });
+    expect(p.etat.pas).toEqual([]);
+  });
+});
+

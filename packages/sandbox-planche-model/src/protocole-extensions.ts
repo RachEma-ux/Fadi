@@ -272,6 +272,8 @@ export const ERREURS_PROTOCOLE = {
   objet_introuvable: "Objet introuvable.",
   argument_invalide: "Argument invalide.",
   operation_deja_ouverte: "Une opération est déjà ouverte.",
+  operation_absente: "Aucune opération n'est ouverte.",
+  operation_refusee: "Opération refusée : rien n'a été appliqué.",
   delai_depasse: "Délai dépassé : l'extension a été arrêtée.",
   version_non_prise_en_charge: "Version du protocole non prise en charge.",
   demande_inconnue: "Demande inconnue : « {nom} ».",
@@ -334,12 +336,24 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
 // ————————————————————————————————————————————————————————————— Demandes d'une extension à la Planche
 
 /**
- * Demandes qu'une extension peut adresser à la Planche, avec la permission exigée (`null` : aucune). Ce lot ne livre
- * que le journal ; chaque lot suivant complète cette table, et rien d'autre n'est accepté.
+ * Demandes qu'une extension peut adresser à la Planche, avec la permission exigée (`null` : aucune). Lot 1 : le
+ * journal ; lot 2 : lecture du modèle, opération, sélection (`services-extensions.ts`). Chaque lot suivant complète
+ * cette table, et rien d'autre n'est accepté.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
+  "modele.lire": "modele.lire",
+  "modele.modifier": "modele.modifier",
+  "operation.ouvrir": "modele.modifier",
+  "operation.valider": "modele.modifier",
+  "operation.abandonner": "modele.modifier",
+  "selection.lire": "selection",
+  "selection.definir": "selection",
 };
+
+/** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */
+export const FONCTIONS_MODIFICATION = ["ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer"] as const;
+export type FonctionModification = (typeof FONCTIONS_MODIFICATION)[number];
 
 /** Juge une demande d'extension : inconnue, refusée faute de permission, ou admise. */
 export function jugerDemandeExtension(fiche: Pick<FicheExtension, "permissions">, nom: string): { readonly ok: true } | { readonly ok: false; readonly erreur: "demande_inconnue" | "permission_refusee"; readonly detail: string } {

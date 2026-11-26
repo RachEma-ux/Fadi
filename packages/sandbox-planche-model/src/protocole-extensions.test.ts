@@ -163,6 +163,30 @@ describe("espace d'exécution d'une extension", () => {
     expect(recus).toEqual([]);
   });
 
+  it("lot 2 — demandes à la Planche : promesse tenue par la réponse, rejetée par l'erreur nommée ; un traitement async clôt l'appel à sa fin", async () => {
+    const { x, recus } = lancer('planche.sur("commande.lire", async () => { const m = await planche.modele.lire(); try { await planche.operation.ouvrir("A"); } catch (e) { return [m.faces.length, e.name]; } });');
+    expect(x.demarrer()).toBeNull();
+    x.recevoir(demandeProtocole(7, "commande.lire"));
+    expect(recus).toMatchObject([{ sorte: "demande", nom: "modele.lire" }]);
+    x.recevoir(reponseProtocole(recus[0]!.id, { faces: [1, 2], aretes: [], objets: [], enOperation: false }));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(recus[1]).toMatchObject({ sorte: "demande", nom: "operation.ouvrir", donnees: { nom: "A" } });
+    x.recevoir(refusProtocole(recus[1]!.id, "permission_refusee", "modele.modifier"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(recus[2]).toEqual(reponseProtocole(7, [2, "permission_refusee"]));
+  });
+
+  it("lot 2 — l'objet planche offre les dix fonctions de dessin, l'opération et la sélection ; un traitement async qui échoue est rendu par son nom", async () => {
+    const { x, recus } = lancer('planche.sur("commande.noms", () => [Object.keys(planche.modele), Object.keys(planche.operation), Object.keys(planche.selection)]); planche.sur("commande.rate", async () => { throw new Error("raté"); });');
+    expect(x.demarrer()).toBeNull();
+    x.recevoir(demandeProtocole(1, "commande.noms"));
+    expect(recus[0]).toEqual(reponseProtocole(1, [["lire", "ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer"], ["ouvrir", "valider", "abandonner"], ["lire", "definir"]]));
+    x.recevoir(demandeProtocole(2, "commande.rate"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(recus[1]).toEqual(refusProtocole(2, "echec_extension", "raté"));
+  });
+
   it("un message illisible est ignoré", () => {
     const { x, recus } = lancer('planche.sur("commande.saluer", () => "bonjour");');
     x.demarrer();
