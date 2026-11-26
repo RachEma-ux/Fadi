@@ -484,6 +484,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/accueils-design node apps/web/e2e/accueils-design.mjs 2>&1 | tee e2e.log
+      # Chantier Design (docs/workstreams/design, lot L0) : relevé axe, reflow et cibles 2.5.8 des écrans de niveau A à
+      # 412 px (Android), 1 440 px et 320 px, planches « avant ». Mode relevé : bloquant seulement sur erreur de la recette.
+      - name: Recette Design — relevé des écrans de niveau A (apps/web/e2e/design-releve.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/design node apps/web/e2e/design-releve.mjs 2>&1 | tee -a e2e.log
       - name: Scénario Playwright
         if: ${{ matrix.shard == 'parcours' }}
         run: |
