@@ -22,6 +22,7 @@ Mis à jour : 2026-11-26 (UTC).
 - L6b : PR #437 (rail du bureau dans l'ordre de la barre puis de « Plus » ; Harmonie ajoutée).
 - L7 : PR #439 (GeoData : une seule barre du bas, 5ᵉ bouton « Plus » par l'événement `fadi:ouvrir-plus`) ;
   `geodata.mjs` 276/276 en local.
+- L9 : PR #440 (en-tête d'une rangée au téléphone, menu « Autres actions ») ; L8 et L9b restent à autoriser.
 
 ## Prochaine action
 
