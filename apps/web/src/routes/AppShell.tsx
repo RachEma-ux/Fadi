@@ -41,10 +41,11 @@ export function AppShell() {
   const barreBas = useRef<HTMLElement>(null);
   // Hauteur réelle de la barre (elle grandit avec la police) recopiée sur <html> : le contenu, `scroll-padding-bottom` et
   // les éléments fixés au bas la lisent ; 0 quand la barre n'est pas affichée (au-dessus de 700 px, GeoData).
+  // `getClientRects()` et non `offsetParent` : ce dernier vaut toujours null pour un élément en `position: fixed`.
   useEffect(() => {
     const barre = barreBas.current;
     const racine = document.documentElement;
-    const recopier = () => racine.style.setProperty("--fd-barre-bas-reelle", `${barre && barre.offsetParent !== null ? barre.offsetHeight : 0}px`);
+    const recopier = () => racine.style.setProperty("--fd-barre-bas-reelle", `${barre && barre.getClientRects().length > 0 ? barre.offsetHeight : 0}px`);
     recopier();
     const observateur = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(recopier);
     if (barre) observateur?.observe(barre);

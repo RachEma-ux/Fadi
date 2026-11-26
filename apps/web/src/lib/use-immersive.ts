@@ -21,13 +21,17 @@ export function useImmersive(active: boolean): void {
       // Document-relative top remains stable when the page is scrolled.
       // Minimum height preserves a usable drawing area on short/mobile screens.
       const top = editor.getBoundingClientRect().top + window.scrollY;
-      const height = `${Math.max(360, Math.floor(window.innerHeight - top - 24))}px`;
+      // Téléphone (chantier Design L6) : la barre du bas fixe de Fadi couvre le bas de l'écran ; l'espace de travail
+      // s'arrête au-dessus d'elle (hauteur réelle recopiée par la coquille, 0 quand la barre n'est pas affichée).
+      const barreBas = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fd-barre-bas-reelle")) || 0;
+      const visible = window.innerHeight - barreBas;
+      const height = `${Math.max(360, Math.floor(visible - top - 24))}px`;
       if (workspace.style.getPropertyValue("--atelier-workspace-height") !== height) {
         workspace.style.setProperty("--atelier-workspace-height", height);
       }
       const bar = editor.querySelector<HTMLElement>(".atelier-n-barre");
       if (bar) {
-        const bottom = Math.min(window.innerHeight, editor.getBoundingClientRect().bottom);
+        const bottom = Math.min(visible, editor.getBoundingClientRect().bottom);
         workspace.style.setProperty("--atelier-menu-top", `${Math.ceil(bar.getBoundingClientRect().bottom + 4)}px`);
         workspace.style.setProperty("--atelier-menu-max-height", `${Math.max(88, Math.floor(bottom - bar.getBoundingClientRect().bottom - 12))}px`);
       }
@@ -39,7 +43,7 @@ export function useImmersive(active: boolean): void {
     // The workspace resizes when the lazy editor arrives. No mutation observer
     // over drawing geometry is needed during pointer movements.
     for (const element of [workspace, document.querySelector(".fadi-topbar"),
-      document.querySelector(".module-nav"), document.querySelector(".project-header")]) {
+      document.querySelector(".module-nav"), document.querySelector(".project-header"), document.getElementById("fd-navigation-bas")]) {
       if (element) observer.observe(element);
     }
     window.addEventListener("resize", schedule);
