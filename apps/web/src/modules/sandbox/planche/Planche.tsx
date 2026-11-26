@@ -186,7 +186,7 @@ import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, su
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
-import { AvisExtensions, DialogueSaisieExtension, ajouterAvis, texteFiche, useExtensionsInstallees, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
+import { AvisExtensions, DialogueSaisieExtension, ajouterAvis, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
 import { creerHoteExtension, type HoteExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
@@ -2573,7 +2573,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
    */
   const paquetsInstalles = useExtensionsInstallees();
   const [avisExtensions, setAvisExtensions] = useState<readonly AvisAffiche[]>([]);
-  const [saisieExtension, setSaisieExtension] = useState<SaisieOuverte | null>(null);
+  // File des fenêtres de saisie : deux extensions peuvent en demander une en même temps ; la première demandée est
+  // affichée, les suivantes attendent leur tour (leur commande reste suspendue, jamais oubliée).
+  const [saisiesExtensions, setSaisiesExtensions] = useState<readonly SaisieOuverte[]>([]);
   const [extensionsEnCours, setExtensionsEnCours] = useState<ReadonlySet<string>>(() => new Set());
   const extensionsEnCoursRef = useRef<Set<string>>(new Set());
   const hotesExtensions = useRef(new Map<string, { readonly paquet: PaquetExtension; readonly hote: HoteExtension }>());
@@ -2623,9 +2625,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
         let close = false;
-        const retirer = () => setSaisieExtension((x) => (x?.cle === cle ? null : x));
+        const retirer = () => setSaisiesExtensions((file) => retirerSaisie(file, cle));
         const reponse = new Promise<ValeursSaisie | null>((resolve) => {
-          setSaisieExtension({
+          const saisie: SaisieOuverte = {
             cle,
             extension: nom,
             demande,
@@ -2635,7 +2637,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               retirer();
               resolve(valeurs);
             },
-          });
+          };
+          setSaisiesExtensions((file) => [...file, saisie]);
         });
         return {
           reponse,
@@ -3790,7 +3793,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           onAnnuler={() => setDialogueDeplacer(null)}
         />
       )}
-      {saisieExtension && <DialogueSaisieExtension key={saisieExtension.cle} saisie={saisieExtension} />}
+      {saisiesExtensions[0] && <DialogueSaisieExtension key={saisiesExtensions[0].cle} saisie={saisiesExtensions[0]} />}
       {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
         <div ref={coupeRef} onKeyDown={naviguerCoupe} className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>

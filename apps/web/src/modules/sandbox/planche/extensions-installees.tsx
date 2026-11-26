@@ -81,6 +81,9 @@ export interface SaisieOuverte {
   readonly repondre: (valeurs: ValeursSaisie | null) => void;
 }
 
+/** File des fenêtres de saisie sans celle de clé `cle` ; rend la même file si elle n'y est pas. */
+export const retirerSaisie = (file: readonly SaisieOuverte[], cle: number): readonly SaisieOuverte[] => (file.some((x) => x.cle === cle) ? file.filter((x) => x.cle !== cle) : file);
+
 const nombreAffiche = (n: number): string => String(n).replace(".", LANGUE_INTERFACE === "en" ? "." : ",");
 
 export function DialogueSaisieExtension({ saisie }: { saisie: SaisieOuverte }) {

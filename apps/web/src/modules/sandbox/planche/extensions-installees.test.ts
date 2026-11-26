@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { REGISTRE_SANDBOX, jugerImportPaquet, normaliserRaccourci, type PaquetExtension } from "@parcours/sandbox-planche-model";
-import { MAX_AVIS_AFFICHES, ajouterAvis, type AvisAffiche } from "./extensions-installees";
+import { MAX_AVIS_AFFICHES, ajouterAvis, retirerSaisie, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
 import { idBarreCanonique, normaliserBarres } from "./barres-nommees";
 
 describe("avis des extensions", () => {
@@ -11,6 +11,16 @@ describe("avis des extensions", () => {
     for (let cle = 1; cle <= 5; cle++) liste = ajouterAvis(liste, { cle, extension: "Essai", texte: `avis ${cle}`, genre: "info" });
     expect(liste.map((a) => a.cle)).toEqual([3, 4, 5]);
     expect(liste).toHaveLength(MAX_AVIS_AFFICHES);
+  });
+});
+
+describe("fenêtres de saisie de plusieurs extensions", () => {
+  it("elles font la file : la première demandée reste affichée, aucune n'est remplacée ni perdue", () => {
+    const saisie = (cle: number): SaisieOuverte => ({ cle, extension: `E${cle}`, demande: { titre: "T", champs: [] }, repondre: () => {} });
+    const file = [saisie(1), saisie(2), saisie(3)];
+    expect(retirerSaisie(file, 2).map((x) => x.cle)).toEqual([1, 3]);
+    expect(retirerSaisie(file, 1)[0]!.cle).toBe(2);
+    expect(retirerSaisie(file, 9)).toBe(file);
   });
 });
 
