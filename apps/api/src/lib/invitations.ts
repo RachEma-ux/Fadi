@@ -33,8 +33,9 @@ export async function findInvitationByToken(token: string, executor: Pick<typeof
 
 /** L'invitant a-t-il encore l'autorité de cette invitation ? */
 export async function inviterStillAuthorized(inv: Pick<InvitationRow, "purpose" | "invitedBy" | "projectId" | "grantPlatformRole" | "organizationId" | "reviewAssignmentId">, executor: Pick<typeof db, "select"> = db): Promise<boolean> {
-  // Invitation d'amorçage (script opérateur `create-admin.mjs`) : l'autorité est celle de l'exploitant du serveur.
-  if (!inv.invitedBy) return inv.purpose === "platform_account" && inv.grantPlatformRole === "admin";
+  // Sans invitant : invitation d'amorçage (script opérateur `create-admin.mjs`, l'autorité est celle de l'exploitant du
+  // serveur) ou inscription libre (`POST /auth/register`, aucun rôle accordé : la personne s'invite elle-même).
+  if (!inv.invitedBy) return inv.purpose === "platform_account";
   // Adhésion à une organisation (phase 5) : administrateur actif d'une organisation active, jamais le rôle plateforme.
   if (inv.purpose === "organization_membership") return organizationInviterStillAuthorized(inv, executor);
   // Paquet de revue (phase 4) : invitant toujours expéditeur autorisé du projet, affectation attendue, paquet partagé.
@@ -51,7 +52,7 @@ export interface CreatedInvitation { invitation: InvitationRow; token: string; r
 /** Crée l'invitation, ou renouvelle celle déjà en attente pour la même adresse / finalité / projet. */
 export async function createOrRenewInvitation(
   tx: Tx,
-  input: { purpose: InvitationPurpose; email: string; projectId?: string | null; projectRole?: "lecteur" | "editeur" | null; invitedBy: string; ip?: string | null },
+  input: { purpose: InvitationPurpose; email: string; projectId?: string | null; projectRole?: "lecteur" | "editeur" | null; invitedBy: string | null; ip?: string | null },
 ): Promise<CreatedInvitation> {
   const token = randomToken();
   const now = new Date();
@@ -64,7 +65,8 @@ export async function createOrRenewInvitation(
     sql`coalesce(${invitations.projectId}, '') = ${input.projectId ?? ""}`,
   )).limit(1).for("update");
   if (existing) {
-    const [row] = await tx.update(invitations).set({ tokenHash: sha256Hex(token), expiresAt, projectRole: input.projectRole ?? existing.projectRole, invitedBy: input.invitedBy })
+    // Une inscription libre renouvelle le lien d'une invitation en attente sans en effacer l'invitant ni le rôle accordé.
+    const [row] = await tx.update(invitations).set({ tokenHash: sha256Hex(token), expiresAt, projectRole: input.projectRole ?? existing.projectRole, invitedBy: input.invitedBy ?? existing.invitedBy })
       .where(eq(invitations.id, existing.id)).returning();
     await audit(tx, { actorId: input.invitedBy, action: "invitation.resent", target: { type: "invitation", id: existing.id }, metadata: { purpose: input.purpose, projectId: input.projectId ?? null }, ip: input.ip });
     return { invitation: row!, token, resent: true };
@@ -98,6 +100,8 @@ export async function activateInvitation(tx: Tx, inv: InvitationRow, userId: str
 export interface InvitationView {
   id: string; purpose: InvitationPurpose; email: string; status: InvitationStatus; expiresAt: string; accessExpiresAt: string | null;
   createdAt: string; projectId: string | null; projectName: string | null; projectRole: "lecteur" | "editeur" | null; invitedBy: string;
+  /** Inscription libre (Issue #425) : lien demandé par la personne elle-même, sans invitant ni rôle. */
+  selfSignup: boolean;
   /** Finalité `organization_membership` (phase 5) : organisation, rôle et fonction proposés. */
   organizationId: string | null; organizationName: string | null; organizationRole: "administrateur" | "membre" | null; organizationJobTitle: string | null;
   /** Finalité `review_package` (phase 4) : paquet visé, projet, responsabilité et fin d'accès — le paquet seul, aucun accès au projet. */
@@ -114,6 +118,7 @@ export function invitationView(inv: InvitationRow, extra: { projectName?: string
     id: inv.id, purpose: inv.purpose, email: inv.email, status: expired ? "expired" : inv.status,
     expiresAt: inv.expiresAt.toISOString(), accessExpiresAt: inv.accessExpiresAt?.toISOString() ?? null, createdAt: inv.createdAt.toISOString(),
     projectId: inv.projectId, projectName: extra.projectName ?? null, projectRole: inv.projectRole ?? null, invitedBy: extra.inviterName ?? "",
+    selfSignup: inv.purpose === "platform_account" && !inv.invitedBy && !inv.grantPlatformRole,
     organizationId: inv.organizationId ?? null, organizationName: extra.organizationName ?? null, organizationRole: inv.organizationRole ?? null,
     organizationJobTitle: inv.organizationJobTitle ?? null, reviewPackage: extra.reviewPackage ?? null,
     participationId: inv.participationId ?? null, roles: inv.purpose === "project_participation" ? rolesOf(inv) : null,

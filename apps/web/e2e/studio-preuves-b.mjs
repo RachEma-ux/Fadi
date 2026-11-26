@@ -21,6 +21,7 @@
 import { chromium } from "playwright";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/studio-preuves-b";
@@ -72,10 +73,7 @@ async function inscrire(context, prefixe) {
   page.setDefaultTimeout(20000);
   page.on("pageerror", (e) => erreurs.push(`${prefixe} : ${e.message}`));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `${prefixe}-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', `${prefixe}-ci-123`);
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `${prefixe}-${Date.now()}@example.com`, `${prefixe}-ci-123`, BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

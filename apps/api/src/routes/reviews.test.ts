@@ -12,6 +12,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
@@ -21,7 +22,7 @@ const PASSWORD = "correct-horse-battery";
 const sha = (b: Buffer) => createHash("sha256").update(b).digest("hex");
 async function account(email: string) {
   const client = request.agent(app);
-  const result = await client.post("/auth/register").send({ email, password: PASSWORD });
+  const result = await inscrire(client, email, PASSWORD);
   expect(result.status).toBe(201);
   return { client, id: result.body.id as string, email };
 }

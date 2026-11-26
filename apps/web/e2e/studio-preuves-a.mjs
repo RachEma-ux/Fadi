@@ -17,6 +17,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-preuves-a.mjs
  */
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -61,10 +62,7 @@ try {
   const erreurs = [];
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `studio-preuves-a-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "studio-preuves-a-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `studio-preuves-a-${Date.now()}@example.com`, "studio-preuves-a-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => {
     const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });

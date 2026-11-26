@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 import { allerEnPlan, ouvrirExports } from "./lib-barre.mjs";
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -48,10 +49,7 @@ async function axe(nom) {
   check(`axe ${nom} : aucune violation critique ou sérieuse`, r.length === 0, r.join(" ; "));
 }
 
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `atelier-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "atelier-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `atelier-${Date.now()}@example.com`, "atelier-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 await page.goto(`${BASE}/projets`);
 await page.locator('.example-card button:has-text("Importer")').first().click();

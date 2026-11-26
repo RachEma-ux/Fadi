@@ -12,6 +12,7 @@ import { execSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import { inviterEtAccepter } from "./lib-invitations.mjs";
+import { inscrire } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -70,7 +71,7 @@ const credentials = (n) => ({ email: `trd-${n}-${randomUUID().replaceAll("-", ""
 if (!process.env.REDEMARRER) { console.log("REDEMARRER (commande shell) est requise."); process.exit(2); }
 const hote = client(), lecteur = client();
 const cH = credentials("h"), cL = credentials("l");
-check("comptes créés", (await hote("POST", "/auth/register", cH)).status === 201 && (await lecteur("POST", "/auth/register", cL)).status === 201);
+check("comptes créés", (await inscrire(hote, cH, "POST")).status === 201 && (await inscrire(lecteur, cL, "POST")).status === 201);
 const projet = (await hote("POST", "/projects", { code: `TRD_${randomUUID().slice(0, 6)}`, name: "Redémarrage (recette synthétique)" })).body;
 // Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
 check("lecteur ajouté", (await inviterEtAccepter(hote, lecteur, projet.id, cL.email, "lecteur")).ok);

@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { inscrire } from "./lib-inscription.mjs";
 
 const profilePath = process.env.STUDIO_TEST_PROFILE;
 assert(profilePath, 'An explicit A6 disposable profile is required before any request');
@@ -115,7 +116,7 @@ try {
     const credentials = { email: `studio-${suffix}@example.test`, password: randomBytes(24).toString('hex') };
     const otherCredentials = { email: `studio-other-${suffix}@example.test`, password: randomBytes(24).toString('hex') };
     for (const [c, credentialsForUser] of [[owner, credentials], [foreign, otherCredentials]]) {
-      const r = await api(c, 'post', '/auth/register', credentialsForUser);
+      const r = await inscrire((m, p, b) => api(c, m, p, b), credentialsForUser, "post");
       assert.equal(r.status, 201, 'Real API creates synthetic fixture account');
     }
     const project = await api(owner, 'post', '/projects', { code: `SV1_${suffix.slice(0, 12)}`, name: 'Studio QA synthetic project' });

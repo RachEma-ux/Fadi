@@ -14,6 +14,7 @@ import { createRequire } from "node:module";
 import { allerEnPlan, ecarterBarreActions } from "./lib-barre.mjs";
 import { revelerPointPlanche } from "./lib-canvas-targets.mjs";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -107,10 +108,7 @@ const plus = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const consigne = (p = page) => p.locator("[data-planche-etat]").textContent().then((t) => t ?? "");
 
 const email = `planche-${Date.now()}@example.com`;
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', email);
-await page.fill('input[name="password"]', "planche-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, email, "planche-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 const reference = (await api("post", "/examples/p118-exemple-complet/import")).body.id;
 const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · planche" })).body.id;

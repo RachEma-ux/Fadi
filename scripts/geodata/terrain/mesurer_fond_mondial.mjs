@@ -10,6 +10,7 @@
  * `phase` : libellé de la mesure (« froid », « cache-disque », « cache-memoire »…), repris dans la sortie JSON.
  */
 import { randomBytes } from "node:crypto";
+import { inscrire } from "../../../apps/web/e2e/lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const PHASE = process.argv[2] ?? "mesure";
@@ -32,8 +33,14 @@ async function appeler(chemin, init = {}) {
 
 async function connecter() {
   const email = `mesure-terrain-${Date.now().toString(36)}@example.test`;
-  const r = await fetch(`${BASE}/auth/register`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password: randomBytes(18).toString("base64url") }) });
-  cookie = (r.headers.getSetCookie?.() ?? []).map((c) => c.split(";")[0]).join("; ");
+  // Issue #425 : demande d'inscription, puis création du compte par le lien du courriel (MAILPIT_URL ou API_LOG).
+  const call = async (method, chemin, body) => {
+    const r = await fetch(`${BASE}${chemin}`, { method, headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) }, body: JSON.stringify(body) });
+    const recu = (r.headers.getSetCookie?.() ?? []).map((c) => c.split(";")[0]).join("; ");
+    if (recu) cookie = recu;
+    return { status: r.status, body: await r.json().catch(() => null) };
+  };
+  const r = await inscrire(call, { email, password: randomBytes(18).toString("base64url") });
   if (r.status !== 201) throw new Error(`inscription : HTTP ${r.status}`);
 }
 

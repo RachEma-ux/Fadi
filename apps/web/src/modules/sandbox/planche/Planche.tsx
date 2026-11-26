@@ -58,8 +58,18 @@ import {
   OUTILS,
   barreGaucheSandbox,
   basculerExtension,
+  BORNES_EXTENSION,
+  normaliserRaccourci,
   choixEffectif,
+  cleCommandeExtension,
   clesMasquees,
+  idBarreExtension,
+  imageIcone,
+  nomAppelCommande,
+  type AccesPlanche,
+  type EntreeDeclaree,
+  type PaquetExtension,
+  type ValeursSaisie,
   contenuExtension,
   entreeDeCle,
   extensionActive,
@@ -175,12 +185,14 @@ import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillage
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
-import { CATALOGUE, type CleMessage, t } from "../messages";
+import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
+import { AvisExtensions, DialogueSaisieExtension, ajouterAvis, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type SaisieOuverte } from "./extensions-installees";
+import { creerHoteExtension, type HoteExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, serialiserBrouillon } from "./brouillon";
 import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brouillon";
-import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { type ActionBarre, BarreActions } from "../panneaux/BarreActions";
@@ -206,7 +218,7 @@ import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
-import { BoutonOutils, titreOperation, type LigneBarre } from "./BoutonOutils";
+import { BoutonOutils, titreOperation, type CommandeListe, type FamilleExtension, type LigneBarre } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -250,6 +262,8 @@ export interface PropsPlanche {
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+/** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
+const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
 function telechargerFichier(blob: Blob, nom: string): void {
   const url = URL.createObjectURL(blob);
@@ -880,6 +894,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
   const executerVueRef = useRef<(id: IdCommandeVue) => void>(() => {});
   const executerCommandeRef = useRef<(c: EntreeRegistre) => void>(() => {});
+  const commandeExtensionDuClavierRef = useRef<(e: KeyboardEvent) => CommandeListe | null>(() => null);
   /** Chantier Axes (AX-4) : ouverture de l'édition d'origine du composant (menu contextuel, barre, Maj + F4). */
   const ouvrirOrigineRef = useRef<() => void>(() => {});
   const etatVueRef = useRef<() => { entites: number; isole: boolean; dansObjet: boolean }>(() => ({ entites: 0, isole: false, dansObjet: false }));
@@ -2004,6 +2019,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         executerCommandeRef.current(commande);
         return;
       }
+      // Protocole des extensions, lot 3 : raccourci d'une commande d'extension installée, après ceux de la Planche.
+      const commandeExtension = dansMesures ? null : commandeExtensionDuClavierRef.current(e);
+      if (commandeExtension) {
+        e.preventDefault();
+        if (!commandeExtension.motif) commandeExtension.executer();
+        return;
+      }
       // Lot 5 (objets) : G composant, K arêtes arrière, Ctrl + A tout, Ctrl + Maj + I inverser, Ctrl + C / X / V presse-papiers.
       if (!mod && !e.altKey && !e.shiftKey && cle === "g" && !dansMesures && !texteRef.current) {
         e.preventDefault();
@@ -2543,6 +2565,149 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   };
 
+  /**
+   * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3). Chaque extension a son hôte
+   * (`creerHoteExtension`), créé à sa première commande : son code tourne dans un Web Worker isolé et ne touche le
+   * dessin que par les services de la Planche — une opération est appliquée d'un bloc, en un seul pas d'historique.
+   * Une commande à la fois par extension ; un avis dit ce qui s'est passé quand elle échoue ou ne répond plus.
+   */
+  const paquetsInstalles = useExtensionsInstallees();
+  const [avisExtensions, setAvisExtensions] = useState<readonly AvisAffiche[]>([]);
+  // File des fenêtres de saisie : deux extensions peuvent en demander une en même temps ; la première demandée est
+  // affichée, les suivantes attendent leur tour (leur commande reste suspendue, jamais oubliée).
+  const [saisiesExtensions, setSaisiesExtensions] = useState<readonly SaisieOuverte[]>([]);
+  const [extensionsEnCours, setExtensionsEnCours] = useState<ReadonlySet<string>>(() => new Set());
+  const extensionsEnCoursRef = useRef<Set<string>>(new Set());
+  const hotesExtensions = useRef(new Map<string, { readonly paquet: PaquetExtension; readonly hote: HoteExtension }>());
+  /** Opérations appliquées au dessin par chaque extension : sert à dire, après un échec, si quelque chose a été gardé. */
+  const applicationsExtensions = useRef(new Map<string, number>());
+  const cleExtensions = useRef(0);
+  const plancheMontee = useRef(true);
+  useEffect(() => {
+    plancheMontee.current = true;
+    const hotes = hotesExtensions.current;
+    return () => {
+      plancheMontee.current = false;
+      for (const { hote } of hotes.values()) hote.arreter();
+      hotes.clear();
+    };
+  }, []);
+  const poserAvisExtension = (extension: string, texte: string, genre: AvisAffiche["genre"]) => setAvisExtensions((liste) => ajouterAvis(liste, { cle: ++cleExtensions.current, extension, texte, genre }));
+  /** Ce que la Planche prête à une extension : lu à chaque appel, pour suivre le dessin, la sélection et le contexte courants. */
+  const accesExtensionRef = useRef<(id: string) => AccesPlanche>(() => ({ modele: () => histRef.current.present.modele, selection: () => [], dans: () => undefined, appliquer: () => false, selectionner: () => {} }));
+  accesExtensionRef.current = (id) => ({
+    modele: () => histRef.current.present.modele,
+    selection: () => selectionRef.current,
+    dans: () => dansRef.current,
+    appliquer: (travail, nom) => {
+      if (readOnly) return false;
+      poserHistorique(enregistrer(histRef.current, travail, nom, false));
+      applicationsExtensions.current.set(id, (applicationsExtensions.current.get(id) ?? 0) + 1);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      rafraichir();
+      return true;
+    },
+    selectionner: (ids) => {
+      setSelection(ids);
+      rafraichir();
+    },
+  });
+  const hoteExtension = (p: PaquetExtension): HoteExtension => {
+    const id = p.fiche.id;
+    const connu = hotesExtensions.current.get(id);
+    if (connu?.paquet === p) return connu.hote;
+    connu?.hote.arreter();
+    const nom = texteFiche(p.fiche.nom);
+    const acces = (): AccesPlanche => accesExtensionRef.current(id);
+    const hote = creerHoteExtension(p, {
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (ids) => acces().selectionner(ids) },
+      surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
+      saisir: (demande) => {
+        const cle = ++cleExtensions.current;
+        let close = false;
+        const retirer = () => setSaisiesExtensions((file) => retirerSaisie(file, cle));
+        const reponse = new Promise<ValeursSaisie | null>((resolve) => {
+          const saisie: SaisieOuverte = {
+            cle,
+            extension: nom,
+            demande,
+            repondre: (valeurs) => {
+              if (close) return;
+              close = true;
+              retirer();
+              resolve(valeurs);
+            },
+          };
+          setSaisiesExtensions((file) => [...file, saisie]);
+        });
+        return {
+          reponse,
+          fermer: () => {
+            close = true;
+            if (plancheMontee.current) retirer();
+          },
+        };
+      },
+    });
+    hotesExtensions.current.set(id, { paquet: p, hote });
+    return hote;
+  };
+  const lancerCommandeExtension = (p: PaquetExtension, c: EntreeDeclaree) => {
+    const id = p.fiche.id;
+    if (extensionsEnCoursRef.current.has(id)) return;
+    const marquer = (enCours: boolean) => {
+      if (enCours) extensionsEnCoursRef.current.add(id);
+      else extensionsEnCoursRef.current.delete(id);
+      if (plancheMontee.current) setExtensionsEnCours(new Set(extensionsEnCoursRef.current));
+    };
+    marquer(true);
+    const nom = texteFiche(p.fiche.nom);
+    const commande = texteFiche(c.libelle);
+    const appliqueesAvant = applicationsExtensions.current.get(id) ?? 0;
+    void hoteExtension(p)
+      .appeler("demande", nomAppelCommande(c.id), { langue: LANGUE_INTERFACE }, t("extensions.installee.operation", { extension: nom, commande }))
+      .then((i) => {
+        marquer(false);
+        if (!plancheMontee.current || i.genre === "fini" || i.genre === "arrete") return;
+        // Un échec n'applique jamais une opération à moitié ; ce que la commande avait validé avant reste, et se défait.
+        const suite = t((applicationsExtensions.current.get(id) ?? 0) === appliqueesAvant ? "extensions.avis.intact" : "extensions.avis.partiel");
+        const phrase = (x: string) => `${x.trim().replace(/[.!?…]+$/, "")}.`;
+        let texte: string;
+        if (i.genre === "delai") texte = t("extensions.avis.delai", { secondes: String(Math.round(BORNES_EXTENSION.delaiCommandeMs / 1000)) });
+        else if (i.genre === "panne") texte = t("extensions.avis.panne");
+        else if (i.genre === "demarrage") texte = i.erreur.genre === "import" ? t("extensions.avis.demarrage.import") : phrase(t("extensions.avis.demarrage", { detail: i.erreur.texte }));
+        else if (i.nom === "operation_refusee") texte = t(readOnly ? "extensions.avis.lecture" : "extensions.avis.refusee", { commande });
+        else texte = phrase(t("extensions.avis.erreur", { commande, detail: i.detail || i.nom }));
+        poserAvisExtension(nom, `${texte} ${suite}`, "arret");
+      });
+  };
+  /** Familles des extensions installées (liste « Outils ») : une par extension qui déclare des commandes. */
+  const famillesInstallees: FamilleExtension[] = paquetsInstalles
+    .filter((p) => p.fiche.commandes.length > 0)
+    .map((p) => ({
+      id: p.fiche.id,
+      nom: texteFiche(p.fiche.nom),
+      barre: idBarreExtension(p.fiche.id),
+      commandes: p.fiche.commandes.map((c): CommandeListe => {
+        const image = imageIcone(p, c.icone);
+        return {
+          id: cleCommandeExtension(p.fiche.id, c.id),
+          picto: PICTO_EXTENSION_INSTALLEE,
+          ...(image ? { image } : {}),
+          nom: texteFiche(c.libelle),
+          raccourci: c.raccourci,
+          motif: extensionsEnCours.has(p.fiche.id) ? t("extensions.installee.encours") : null,
+          executer: () => lancerCommandeExtension(p, c),
+        };
+      }),
+    }));
+  const commandesInstallees = famillesInstallees.flatMap((f) => f.commandes);
+  /** Raccourci d'une commande d'extension : résolu après ceux de la Planche (refusés à l'import s'ils se recouvrent). */
+  commandeExtensionDuClavierRef.current = (e) => {
+    const r = raccourciClavier(e);
+    return (r && commandesInstallees.find((c) => normaliserRaccourci(c.raccourci) === r)) || null;
+  };
+
   /** Extension « Composants dynamiques » : définition du composant sélectionné seul dans le contexte ouvert, ou `null`. */
   const composantSelectionne = (): string | null => {
     const sel = vue.selection ?? selectionRef.current;
@@ -2952,7 +3117,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
   // ——— Barres d'outils nommées (25 novembre 2026, `barres-nommees.ts`) : livrées et personnelles, chacune une fois.
   const regroupements = prefsSandbox.preferences.regroupements;
-  const barresNommees: BarreNommee[] = [...barresLivrees(masquees), ...barresPersonnelles(regroupements, masquees)];
+  const barresNommees: BarreNommee[] = [
+    ...barresLivrees(masquees),
+    // Une barre par extension installée, à son nom : ses commandes, dans l'ordre de sa fiche.
+    ...famillesInstallees.map((f): BarreNommee => ({ id: f.barre, origine: "extension", nom: f.nom, sections: [{ cle: "commandes", entrees: f.commandes.map((c) => c.id) }] })),
+    ...barresPersonnelles(regroupements, masquees),
+  ];
   const nomBarre = (b: BarreNommee) => b.nom ?? (b.nomCle ? t(b.nomCle) : b.id);
   const etatBarres = normaliserBarres(ui.barresOutils);
   /** Bouton d'une entrée de barre : outil du catalogue offert ou commande livrée ; une entrée inconnue n'est pas rendue. */
@@ -2963,9 +3133,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const r = raisonDe(o);
       return { cle, picto: pictoOutil(o.id), titre: titreOperation(o, r), actif: o.id === outilId, indisponible: r !== null, executer: () => choisirOutil(o.id) };
     }
-    const c = cle.startsWith("commande:") ? commandesListe.find((x) => x.id === cle.slice(9)) : undefined;
+    const c: CommandeListe | undefined = cle.startsWith("commande:") ? commandesListe.find((x) => x.id === cle.slice(9)) : cle.startsWith("extension:") ? commandesInstallees.find((x) => x.id === cle) : undefined;
     if (!c) return null;
-    return { cle, picto: c.picto, titre: c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`, actif: false, indisponible: c.motif !== null, executer: () => { if (!c.motif) c.executer(); } };
+    return { cle, picto: c.picto, ...(c.image ? { image: c.image } : {}), titre: c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`, actif: false, indisponible: c.motif !== null, executer: () => { if (!c.motif) c.executer(); } };
   };
   /** Barres flottantes : affichées par leur interrupteur de la liste « Outils » ; au téléphone, la dernière seulement, rangée en bas. */
   // Seules les barres qui existent encore et portent au moins un bouton sont montées : une barre supprimée dont
@@ -3002,7 +3172,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     apercu: entreesDe(b)
       .map(boutonDeBarre)
       .filter((x): x is BoutonBarre => x !== null)
-      .map((x) => ({ cle: x.cle, picto: x.picto, nom: x.titre })),
+      .map((x) => ({ cle: x.cle, picto: x.picto, nom: x.titre, ...(x.image ? { image: x.image } : {}) })),
   }));
   const etiquetteOutil = (id: string) => {
     const b = barresNommees.find((x) => x.id === barreDeLOutil(id));
@@ -3058,6 +3228,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       variante={variante}
       catalogue={outilsOfferts}
       commandes={commandesListe}
+      famillesExtensions={famillesInstallees}
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}
@@ -3234,6 +3405,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
         </div>
+        <AvisExtensions avis={avisExtensions} onFermer={(cle) => setAvisExtensions((liste) => liste.filter((a) => a.cle !== cle))} />
       </div>
 
       {/* Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon, sans logo ni marque) : 48 px sombres en
@@ -3621,6 +3793,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           onAnnuler={() => setDialogueDeplacer(null)}
         />
       )}
+      {saisiesExtensions[0] && <DialogueSaisieExtension key={saisiesExtensions[0].cle} saisie={saisiesExtensions[0]} />}
       {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
         <div ref={coupeRef} onKeyDown={naviguerCoupe} className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>

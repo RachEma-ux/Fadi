@@ -15,6 +15,7 @@
  */
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
+import { inscrireAvecContexte } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -31,7 +32,7 @@ try {
   const ctx = await browser.newContext();
   const http = ctx.request;
   const cred = { email: `doublons-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") };
-  check("compte créé", (await http.post(`${BASE}/auth/register`, { data: cred })).status() === 201);
+  check("compte créé", (await inscrireAvecContexte(http, BASE, cred)).status === 201);
   const projet = await http.post(`${BASE}/projects`, { data: { code: `DB_${randomUUID().slice(0, 6)}`, name: "Appels en double (recette synthétique)" } });
   check("projet créé", projet.status() === 201, String(projet.status()));
   const pid = (await projet.json()).id;

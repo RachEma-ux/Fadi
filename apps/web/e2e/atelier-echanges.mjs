@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -56,10 +57,7 @@ const fermerRapport = async () => {
 };
 
 // Compte, exemple P.118 (référence protégée), copie de travail.
-await page.goto(`${BASE}/inscription`);
-await page.fill('input[name="email"]', `echanges-${Date.now()}@example.com`);
-await page.fill('input[name="password"]', "echanges-pass-123");
-await page.click('button[type="submit"]');
+await inscrireDansLaPage(page, `echanges-${Date.now()}@example.com`, "echanges-pass-123", BASE);
 await page.waitForURL(/\/(projets|accueil)/);
 await page.goto(`${BASE}/projets`);
 await page.locator('.example-card button:has-text("Importer")').first().click();
