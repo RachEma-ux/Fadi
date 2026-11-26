@@ -1,4 +1,5 @@
 {
+"Page actuelle : {0}": "Current page: {0}",
 "Nombre attendu, par exemple 12,5. La valeur enregistrée n'a pas changé.": "A number is expected, for example 12.5. The saved value has not changed.",
 "Date incomplète ou invalide. La valeur enregistrée n'a pas changé.": "Incomplete or invalid date. The saved value has not changed.",
 "Ce lien vient de votre demande d’inscription : aucun compte n’est créé tant que vous ne choisissez pas votre mot de passe.": "This link comes from your sign-up request: no account is created until you choose your password.",

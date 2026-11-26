@@ -11,6 +11,10 @@ import { HomeTopbar } from "../modules/accueil/HomeTopbar";
 import { denied } from "../modules/accueil/dossier-data";
 import { MenuStudio } from "./MenuStudio";
 import { useAdminEnabled } from "../lib/use-platform-role";
+import { BarreBasGlobale } from "./BarreBasGlobale";
+import { FeuillePlus } from "./FeuillePlus";
+import { entreeActive, entreesPlus } from "./navigation-entrees";
+import "./barre-bas.css";
 
 export { initialsFrom, shownName } from "../lib/user-display";
 
@@ -33,6 +37,9 @@ export function AppShell() {
   const flyout = useRef<HTMLDivElement>(null);
   const focusedProjectItem = useRef<HTMLElement | null>(null);
   const account = useRef<HTMLDivElement>(null);
+  // Navigation au téléphone (chantier Design, lots L5-L7) : barre du bas et feuille « Plus ».
+  const [plus, setPlus] = useState<{ declencheur: HTMLElement | null } | null>(null);
+  const barreBas = useRef<HTMLElement>(null);
   const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
   const collaborationActive = location.pathname === "/collaboration" || !!projectId && new URLSearchParams(location.search).get("module") === "collaboration";
 
@@ -82,6 +89,9 @@ export function AppShell() {
     if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
   }
   const collaborationLink = projectId || last?.projectId ? `/projets/${projectId ?? last?.projectId}?module=collaboration` : "/collaboration";
+  const active = entreeActive(location.pathname, location.search);
+  const entreesFeuille = entreesPlus({ administration: adminEnabled, collaboration: collaborationLink });
+  const pageDansPlus = entreesFeuille.find((e) => e.cle === active)?.libelle ?? null;
   return <WorkspaceNavigation.Provider value={{ openProjects }}>
     <div className="app-shell fadi-shell" data-sidebar={expanded ? "expanded" : "collapsed"}>
       <a className="fadi-skip" href="#workspace-content">Aller au contenu</a>
@@ -124,7 +134,10 @@ export function AppShell() {
         {!denied(projects.error) && projects.data?.map((p) => <Link key={p.id} role="menuitem" to={`/projets/${p.id}`} aria-current={projectId === p.id ? "page" : undefined} className="project-menu-item"><Icon name="folder" size={18} /><span translate="no"><strong>{p.code}</strong><span>{p.name}</span></span>{projectId === p.id && <Icon name="check" size={18} />}</Link>)}
         <Link role="menuitem" className="projects-flyout-all" to="/projets"><Icon name="plus" size={18} />Tous les projets / Créer un projet</Link>
       </div>}
-      <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div></div>
+      <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div>
+        <BarreBasGlobale ref={barreBas} active={active} pageDansPlus={pageDansPlus} plusOuvert={!!plus} onPlus={() => setPlus(plus ? null : { declencheur: barreBas.current?.querySelector<HTMLElement>('[data-fd-entree="plus"]') ?? null })} />
+      </div>
+      {plus && <FeuillePlus entrees={entreesFeuille} active={active} navigationPrincipale={false} nom={user ? shownName(user) : ""} declencheur={plus.declencheur} onFermer={() => setPlus(null)} onDeconnexion={() => { setPlus(null); void logout(); }} />}
     </div>
   </WorkspaceNavigation.Provider>;
 }

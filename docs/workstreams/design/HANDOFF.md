@@ -24,7 +24,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## Prochaine action
 
-- Suivre la CI des cinq PR ; fusion dans l'ordre L0 → L4 par le maître d'ouvrage, après captures sur un vrai téléphone.
+- Suivre la CI des PR L0 à L9 ; fusion dans l'ordre par le maître d'ouvrage, après captures sur un vrai téléphone.
 
 ## Tests et preuves
 

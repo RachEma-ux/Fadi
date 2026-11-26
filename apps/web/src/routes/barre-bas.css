@@ -1,0 +1,30 @@
+/*
+ * Barre du bas et feuille « Plus » (chantier Design, lots L5-L7 ; `ai/reprise-barre-bas.md` § 1.3).
+ * Lot L5 : préparées et masquées partout ; l'activation sous 700 px vient avec le lot L6.
+ * Couleurs reprises du rail (cliquet des plafonds : aucune nouvelle couleur).
+ */
+.fadi-shell { --fd-barre-bas-hauteur: 64px; }
+.fd-barre-bas { display: none; }
+.fd-barre-bas-entree { flex: 1 1 0; min-width: 0; min-height: var(--fd-barre-bas-hauteur); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 2px; color: #edf3ee; background: transparent; border: 0; border-radius: 0; font: inherit; font-size: .75rem; line-height: 1.2; text-align: center; text-decoration: none; overflow-wrap: anywhere; box-shadow: none; }
+.fd-barre-bas-entree svg { flex: none; }
+.fd-barre-bas-entree:hover { background: #ffffff16; color: #fff; }
+.fd-barre-bas-entree[aria-current="page"], .fd-barre-bas-entree[data-page-dans-plus], .fd-barre-bas-entree[aria-expanded="true"] { color: #fff; font-weight: 700; background: #ffffff21; box-shadow: inset 0 3px #d6de8b; }
+.fd-barre-bas :focus-visible { outline: 3px solid #f0dba3; outline-offset: -3px; }
+
+.fd-feuille-plus { width: 100%; max-width: 100%; max-height: 85dvh; margin: auto 0 0; padding: 0; border: 0; border-radius: 14px 14px 0 0; color: var(--ink); background: #fff; overflow-y: auto; overflow-x: hidden; }
+.fd-feuille-plus::backdrop { background: #102b2480; }
+.fd-feuille-corps { padding: 0 12px calc(12px + env(safe-area-inset-bottom)); }
+.fd-feuille-tete { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 4px 8px; background: #fff; }
+.fd-feuille-tete h2 { margin: 0; font-size: 1.25rem; }
+.fd-feuille-tete h2:focus { outline: none; }
+.fd-feuille-tete h2:focus-visible { outline: 3px solid var(--forest-900); outline-offset: 2px; }
+.fd-feuille-fermer { width: 48px; height: 48px; flex: none; display: grid; place-items: center; padding: 0; font-size: 26px; line-height: 1; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.fd-feuille-plus h3 { margin: 10px 8px 4px; color: var(--muted); font-size: .8125rem; font-weight: 600; }
+.fd-feuille-plus ul { list-style: none; margin: 0; padding: 0; }
+.fd-feuille-entree { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 48px; padding: 10px 12px; color: var(--ink); background: none; border: 0; border-radius: 8px; font: inherit; font-size: 1rem; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
+.fd-feuille-entree:hover { background: #f0f5ef; }
+.fd-feuille-entree[aria-current="page"] { font-weight: 700; background: var(--home-wash, #e9f1ea); box-shadow: inset 3px 0 var(--forest-900); }
+.fd-feuille-compte { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.fd-feuille-compte p { margin: 6px 12px; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) { .fd-feuille-plus[open] { animation: fd-feuille-entree .18s ease-out; } }
+@keyframes fd-feuille-entree { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
