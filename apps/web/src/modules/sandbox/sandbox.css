@@ -3609,9 +3609,9 @@
     height: 20px;
   }
 }
-/* Annuler / Rétablir : icône seule, à la souris comme au toucher (maquette validée du 26 novembre 2026) ; le nom reste
-   en infobulle et pour les lecteurs d'écran. */
-@media (min-width: 761px) {
+/* Annuler / Rétablir : icône seule à la souris (maquette validée du 26 novembre 2026) ; au toucher, nom visible sous
+   l'icône (AGENTS.md : bouton nommé visible au toucher). */
+@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
   .sandbox-planche .planche-bandeau-actions [data-planche-annuler] .barre-actions-texte,
   .sandbox-planche .planche-bandeau-actions [data-planche-retablir] .barre-actions-texte {
     display: none;
@@ -3619,36 +3619,57 @@
 }
 /* Fenêtre étroite : les quatre titres de menus se resserrent. */
 @media (min-width: 761px) and (max-width: 1180px) {
-  .sandbox-planche .planche-bandeau-menu > button {
+  .sandbox-planche .planche-bandeau .planche-bandeau-menu > button {
     padding: 0 0.5rem;
   }
   .sandbox-planche .planche-bandeau-nom {
     padding-right: 0.75rem;
   }
 }
-/* Fenêtre très étroite : « Détacher » en icône seule (nom en infobulle), pour que tout tienne sur une ligne. */
-@media (min-width: 761px) and (max-width: 900px) {
+/* Fenêtre étroite, au toucher : chaque bouton garde son nom visible (AGENTS.md), en petit sous l'icône comme Annuler et
+   Rétablir, pour que tout tienne sur une ligne. */
+@media (min-width: 761px) and (max-width: 1180px) and (pointer: coarse) {
+  .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer],
+  .sandbox-planche .planche-bandeau-actions button[data-action="zoom"],
+  .sandbox-planche .planche-bandeau-droite button {
+    flex-direction: column;
+    gap: 1px;
+  }
+  .sandbox-planche .planche-bandeau-actions button[data-planche-cadrer] .barre-actions-texte,
+  .sandbox-planche .planche-bandeau-actions button[data-action="zoom"] .barre-actions-texte,
+  .sandbox-planche .planche-bandeau-droite .barre-actions-texte {
+    font-size: 0.68rem;
+    color: #c6c6c6;
+  }
+}
+/* Fenêtre très étroite : à la souris, « Détacher » en icône seule (nom en infobulle) ; menus et boutons resserrés. */
+@media (min-width: 761px) and (max-width: 900px) and (hover: hover) and (pointer: fine) {
   .sandbox-planche .planche-bandeau-droite .barre-actions-texte {
     display: none;
   }
+}
+@media (min-width: 761px) and (max-width: 900px) {
   .sandbox-planche .planche-bandeau-droite button {
-    padding: 0 0.6rem;
+    padding: 0 0.5rem;
   }
-  .sandbox-planche .planche-bandeau-menu > button {
+  .sandbox-planche .planche-bandeau .planche-bandeau-menu > button {
     padding: 0 0.4rem;
   }
   .sandbox-planche .planche-bandeau .planche-bandeau-actions button {
     min-width: 40px;
-    padding: 0 0.5rem;
+    padding: 0 0.35rem;
   }
   .sandbox-planche .planche-bandeau-nom {
-    min-width: 5.25rem;
+    min-width: 4.5rem;
     padding-left: 0.75rem;
+    padding-right: 0.5rem;
+  }
+  .sandbox-planche .planche-bandeau .planche-bandeau-menu > button {
+    font-size: 0.8125rem;
   }
 }
-/* Fenêtre étroite : les quatre boutons du centre en icônes seules, à la souris comme au toucher (maquette validée) ; le nom
-   reste en infobulle et pour les lecteurs d'écran. */
-@media (min-width: 761px) and (max-width: 1180px) {
+/* Fenêtre étroite, à la souris : les quatre boutons du centre en icônes seules (maquette validée), nom en infobulle. */
+@media (min-width: 761px) and (max-width: 1180px) and (hover: hover) and (pointer: fine) {
   .sandbox-planche .planche-bandeau-actions .barre-actions-texte {
     display: none;
   }

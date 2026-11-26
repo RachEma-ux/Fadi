@@ -14,3 +14,4 @@
 .sandbox-page :focus-visible{outline:3px solid #c77b35;outline-offset:3px}
 @media(max-width:900px){.sandbox-page{padding:20px 14px}}
 @media(max-width:540px){.sandbox-page .sandbox-page-erreur{padding:18px}}
+.sandbox-page .sandbox-page-fil-planche{display:inline-block;max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;font-weight:600;color:var(--sandbox-ink)}

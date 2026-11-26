@@ -172,7 +172,9 @@ async function bandeau(page, racine, contexte) {
   }
   check(`${contexte} : bandeau d'en-tête de 48 px, sombre (#161616), en haut de la Planche, pleine largeur`, Math.round(m.bandeau.h) === 48 && Math.abs(m.bandeau.t - m.planche.t) <= 1 && Math.abs(m.bandeau.w - m.planche.w) <= 1 && m.fond === "rgb(22, 22, 22)", JSON.stringify({ b: m.bandeau, f: m.fond }));
   check(`${contexte} : ☰ dans le carré gauche du bandeau (48 × 48 px), non déplaçable`, Math.abs(m.bouton.l - m.planche.l) <= 1 && Math.abs(m.bouton.t - m.planche.t) <= 1 && Math.round(m.bouton.w) === 48 && m.bouton.h >= 46 && m.deplacable === "false", JSON.stringify(m.bouton));
-  check(`${contexte} : le bandeau porte « Planche » et le nom de la Planche`, /^Planche\s+\S/.test(m.nom) && m.nomVisible, m.nom);
+  // Maquette du 26 novembre 2026 : dans la page, le bandeau ne porte que « Planche » ; le nom termine le fil d'Ariane.
+  const fil = (await page.locator("[data-sandbox-page] [data-sandbox-fil-planche]").textContent().catch(() => "")) ?? "";
+  check(`${contexte} : le bandeau porte « Planche » seul, le nom de la Planche termine le fil d'Ariane`, m.nom === "Planche" && m.nomVisible && fil.trim() === "Brouillon Sandbox", JSON.stringify({ nom: m.nom, fil }));
   check(`${contexte} : le dessin commence sous le bandeau ; la loupe remonte juste dessous`, Math.abs(m.cadre.t - m.bandeau.b) <= 1 && m.loupe.t >= m.bandeau.b && m.loupe.t - m.bandeau.b <= 16, JSON.stringify({ cadre: m.cadre.t, loupe: m.loupe.t, bandeau: m.bandeau.b }));
   // Barre d'actions intégrée au bandeau (24 novembre 2026) : au centre, dans les 48 px ; « Détacher » à droite ; plus
   // aucune barre flottante sur le dessin.
@@ -314,7 +316,10 @@ async function fenetreDetachee(page, context) {
     fermer: document.querySelector("[data-planche-bandeau-droite] [data-planche-fermer-rattacher]")?.getAttribute("title") ?? null,
     rattacher: [...document.querySelectorAll("[data-planche-bandeau] button")].some((b) => /Rattacher/.test(b.textContent ?? "")),
     flottantes: document.querySelectorAll(".barre-actions").length,
+    nom: document.querySelector("[data-planche-bandeau-nom]")?.textContent?.trim() ?? "",
   }));
+  const filPage = await page.locator("[data-sandbox-page] [data-sandbox-fil-planche]").count();
+  check("fenêtre détachée : le nom de la Planche revient dans son bandeau, le fil de la page s'arrête à Sandbox", /^Planche\s+Brouillon Sandbox$/.test(m.nom) && filPage === 0, JSON.stringify({ nom: m.nom, filPage }));
   check("fenêtre détachée : barre d'actions au centre du bandeau, plus de barre flottante", m.actions.join(",") === "annuler,retablir,cadrer,zoom" && m.flottantes === 0, JSON.stringify(m));
   check("fenêtre détachée : plus de « Rattacher » ; ✕ « Fermer et rattacher » à droite", m.fermer === "Fermer et rattacher" && !m.rattacher, JSON.stringify(m));
   await w.screenshot({ path: join(OUT, "sandbox-fenetre-detachee.png") });
@@ -354,7 +359,7 @@ try {
   check("/sandbox : l'adresse reste /sandbox", new URL(page.url()).pathname === "/sandbox", page.url());
   await plancheChargee(page, "/sandbox");
   const fil = page.locator('[data-sandbox-page] nav[aria-label="Fil d’Ariane Studio"]');
-  check("/sandbox : fil d'Ariane « Studio / Console / Sandbox »", (await fil.innerText()).replace(/\s+/g, " ").trim() === "Studio / Console / Sandbox", await fil.innerText());
+  check("/sandbox : fil d'Ariane « Studio / Console / Sandbox / Brouillon Sandbox »", (await fil.innerText()).replace(/\s+/g, " ").trim() === "Studio / Console / Sandbox / Brouillon Sandbox", await fil.innerText());
   check("/sandbox : « Console » marquée dans la barre latérale", (await page.locator("[data-studio-menu-console]").getAttribute("aria-current")) === "page");
   check("/sandbox : hors de l'enveloppe du Studio", (await page.locator(".studio-shell").count()) === 0);
   await disposition(page, "ordinateur");

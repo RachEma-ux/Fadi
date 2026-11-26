@@ -6,7 +6,7 @@
  * cette interface ne fait que traduire pointeur et clavier en `EvenementOutil`, appeler `traiter`, puis afficher
  * `vue()`. Brouillon LOCAL (C6) : aucun envoi au serveur, aucune commande ; annuler / rétablir local.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   COULEUR_MATERIAU_DEFAUT,
@@ -160,6 +160,7 @@ import {
   idRegroupement,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
+import { FilArianePlanche } from "../fil-ariane-planche";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type ExtensionsMenu, type FormatEchange, type UniteFichier } from "./menu-planche";
 import {
   type ContexteTravail,
@@ -532,6 +533,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Planches nommées de ce navigateur (menu de la Planche) : l'index dit laquelle est ouverte ; l'enregistrement
   // automatique écrit toujours dans la Planche courante et met sa date à jour.
   const [indexPlanches, setIndexPlanches] = useState<IndexPlanches>(() => indexInitial());
+  // Nom de la Planche ouverte (26 novembre 2026, maquette validée) : dans le fil d'Ariane de la page tant que la Planche
+  // y est rattachée, le bandeau ne portant alors que « Planche » ; détachée (fenêtre ou plein écran), le nom revient
+  // dans le bandeau. Sans fil d'Ariane fourni par la page, le nom reste dans le bandeau.
+  const signalerNomFil = useContext(FilArianePlanche);
+  const nomCourant = nomAffiche(plancheDe(indexPlanches));
+  const nomDansFil = signalerNomFil !== null && detache === "non";
+  useEffect(() => {
+    signalerNomFil?.(nomDansFil ? nomCourant : null);
+  }, [signalerNomFil, nomDansFil, nomCourant]);
+  useEffect(() => () => signalerNomFil?.(null), [signalerNomFil]);
   const indexRef = useRef<IndexPlanches>(indexPlanches);
   /** Le prochain chargement remplace le dessin et l'historique (changement de Planche), au lieu de reprendre le brouillon. */
   const remplacerRef = useRef(false);
@@ -3855,7 +3866,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <div className="planche-bandeau" role="group" aria-label={t("planche.bandeau")} data-planche-bandeau>
         <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} extensions={extensionsMenu} deplacable={etroit} />
         <p className="planche-bandeau-nom" data-planche-bandeau-nom>
-          <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span> <span>{nomAffiche(plancheDe(indexPlanches))}</span>
+          <span className="planche-bandeau-prefixe" translate="no">{t("planche.bandeau.prefixe")}</span>{!nomDansFil && <> <span>{nomCourant}</span></>}
         </p>
         {!etroit && <MenusBandeau menus={menusBandeau} />}
         {!etroit && <ActionsBandeau groupes={[groupeHistorique, groupeVue]} />}
