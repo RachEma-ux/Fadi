@@ -159,6 +159,20 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
 - Le Sandbox n'importe ni le Studio, ni l'Atelier, ni `@parcours/atelier-model`, ni `@parcours/planche-model`, ni le
   client d'API général (seul `preferences/client.ts` appelle `/sandbox/preferences`) ; aucun fichier du Studio n'importe le Sandbox (la carte « 00 Sandbox » est un lien d'adresse).
 - Contrôles : `independance.test.ts` (bidirectionnel) et `scripts/frontieres.json` (`npm run typecheck`).
+- **Protocole des extensions, version 1.0 — lot 1** (proposition validée par le maître d'ouvrage le 25 novembre 2026,
+  Issue #410 ; socle sans interface) : une extension est un **paquet de texte** `fadi-addon/1` (fiche, code JavaScript,
+  pages des panneaux — jamais de code compilé), validé strictement par `validerPaquetExtension`
+  (`packages/sandbox-planche-model/src/protocole-extensions.ts` : fiche, neuf permissions, commandes avec icône et
+  raccourci obligatoires, bornes de 200 000 caractères de code et 1 Mo par paquet, version du protocole acceptée ou
+  refusée avec son motif). Le code tourne dans **un Web Worker par extension**, qui reste en vie pendant la séance
+  (`planche/extension-planche.worker.ts`, isolé comme celui des scripts par `planche/isolement-worker.ts` et par la même
+  politique de contenu) ; l'hôte (`planche/hote-extensions.ts`) le démarre au premier appel, lui adresse demandes et
+  événements un par un, et l'arrête au-delà de 5 s pour une demande ou de 1 s pour un événement — l'extension
+  redémarre alors à neuf. Messages de trois sortes (demande, réponse, événement), erreurs nommées
+  (`ERREURS_PROTOCOLE`) ; une demande de l'extension n'est servie que si elle figure à la table `DEMANDES_EXTENSION`
+  (ce lot : le journal seulement). Extension d'essai : `apps/web/e2e/donnees/essai-socle.fadi-addon.json`. Le
+  branchement dans la Planche (commandes, panneau, outil, modèle) vient avec les lots suivants : rien n'est encore
+  visible, et le Worker des extensions n'est pas encore chargé par l'application.
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants
