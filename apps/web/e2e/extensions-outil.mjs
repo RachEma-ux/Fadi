@@ -127,6 +127,11 @@ const cliquer = async (page, fx, fy) => {
   const e1 = await etiquettes(page);
   check("pendant le tracé : zone de saisie « Longueur » et étiquette de l'aperçu, rendues par l'outil et tenues à jour", m1.libelle === "Longueur" && /^\d+,\d\d m$/.test(m1.valeur) && e1.includes(m1.valeur) && (await vueDessin(page).evaluate((el) => getComputedStyle(el).cursor)) === "cell", `${m1.libelle} ${m1.valeur} · ${e1.join(" | ")}`);
   check("rien n'est créé tant que le second point n'est pas cliqué", (await etat(page)).aretes === avant.aretes && (await etat(page)).pas === avant.pas);
+  // Rechoisir l'outil déjà actif ne remet rien à zéro : l'état de la Planche et celui de l'extension restent accordés.
+  await page.keyboard.press("Control+Alt+t");
+  await page.waitForTimeout(400);
+  const m2 = await mesures(page);
+  check("rechoisir l'outil actif garde le tracé en cours (saisie et aperçu)", (await outilActif(page)) === CLE && m2.libelle === "Longueur" && m2.valeur === m1.valeur && (await etiquettes(page)).includes(m1.valeur), `${m2.libelle} ${m2.valeur}`);
   await page.waitForTimeout(300);
   await page.screenshot({ path: join(OUT, "1-outil-extension.png") });
 

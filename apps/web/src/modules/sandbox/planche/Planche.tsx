@@ -799,6 +799,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       // Outil d'une extension installée (lot 6) : il n'est pas au catalogue, sa machine fait le lien avec l'extension.
       if (lireCleOutilExtension(id)) {
         if (!outilExtensionDeclareRef.current(id)) return;
+        // Rechoisir l'outil déjà actif ne change rien : son état ici et celui de l'extension restent accordés.
+        if (id === outilRef.current) return;
         setGrille(false);
         setEdition(null);
         const avant = outilRef.current;
@@ -2910,15 +2912,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return paquet && declare ? { paquet, declare } : null;
   };
   outilExtensionDeclareRef.current = (cle) => outilExtensionDe(cle) !== null;
-  /** Déplacements : un seul en vol par outil, on ne garde que le dernier — la file ne peut pas enfler. */
-  const deplacementOutilRef = useRef<{ enVol: boolean; suivant: Readonly<Record<string, unknown>> | null }>({ enVol: false, suivant: null });
+  /**
+   * Déplacements : un seul en vol par outil, on ne garde que le dernier — la file ne peut pas enfler. Un autre événement
+   * (clic, saisie…) fait d'abord partir le déplacement gardé, pour que l'extension reçoive tout dans l'ordre.
+   */
+  const deplacementOutilRef = useRef<{ enVol: number; suivant: Readonly<Record<string, unknown>> | null }>({ enVol: 0, suivant: null });
   transmettreOutilRef.current = (cle, nom, donnees) => {
     const x = outilExtensionDe(cle);
     if (!x) return;
     const file = deplacementOutilRef.current;
     if (nom === "deplacement") {
-      if (file.enVol) return void (file.suivant = donnees);
-      file.enVol = true;
+      if (file.enVol > 0) return void (file.suivant = donnees);
+      file.enVol++;
+    } else if (file.suivant) {
+      const garde = file.suivant;
+      file.suivant = null;
+      const enVol = file.enVol;
+      file.enVol = 0;
+      transmettreOutilRef.current(cle, "deplacement", garde);
+      file.enVol += enVol;
     }
     const extension = texteFiche(x.paquet.fiche.nom);
     const outilNom = texteFiche(x.declare.libelle);
@@ -2926,10 +2938,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       .appeler("demande", nomAppelOutil(x.declare.id, nom), { ...donnees, langue: LANGUE_INTERFACE }, t("extensions.installee.operation", { extension, commande: outilNom }), undefined, BORNES_OUTIL.delaiMs)
       .then((i) => {
         if (nom === "deplacement") {
-          file.enVol = false;
-          const suivant = file.suivant;
-          file.suivant = null;
-          if (suivant && outilRef.current === cle) transmettreOutilRef.current(cle, "deplacement", suivant);
+          file.enVol = Math.max(0, file.enVol - 1);
+          if (file.enVol === 0) {
+            const suivant = file.suivant;
+            file.suivant = null;
+            if (suivant && outilRef.current === cle) transmettreOutilRef.current(cle, "deplacement", suivant);
+          }
         }
         if (!plancheMontee.current || outilRef.current !== cle) return;
         // Un événement que l'outil ne traite pas est simplement sans effet.
