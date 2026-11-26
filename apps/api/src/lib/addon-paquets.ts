@@ -4,7 +4,7 @@
  * (`jugerImportPaquet`) : les mêmes que dans le navigateur. Le serveur range et rend un paquet ; il ne l'exécute jamais.
  * Pur : aucune base (lectures dans `lib/addon-paquets-lecture.ts`, écritures dans `routes/admin/addons.ts`).
  */
-import { lirePaquetsInstalles, type PaquetExtension, type PermissionExtension, type TexteBilingue } from "@parcours/sandbox-planche-model";
+import { lirePaquetsInstalles, paquetInstalle, type ChoixPaquets, type EtatPaquet, type FichePaquetCompte, type OriginePaquet, type PaquetExtension, type PermissionExtension, type TexteBilingue } from "@parcours/sandbox-planche-model";
 import type { addonPackages } from "../db/schema.js";
 
 export type LignePaquet = typeof addonPackages.$inferSelect;
@@ -34,6 +34,22 @@ export interface FicheAdminPaquet {
   readonly servie: boolean;
   readonly importedAt: string;
   readonly importedBy: string | null;
+  readonly etat: EtatPaquet;
+  /** « Installée d'origine » : suivi par tout compte qui n'a rien choisi. */
+  readonly activeParDefaut: boolean;
+  readonly origine: OriginePaquet;
+}
+
+/** Paquets rendus à un compte : ceux qu'il a installés (son choix, sinon le réglage d'origine). */
+export function paquetsDuCompte(lignes: readonly LignePaquet[], choix: ChoixPaquets): readonly PaquetExtension[] {
+  const installees = new Set(lignes.filter((l) => paquetInstalle(l.addonId, choix, l.defaultActive)).map((l) => l.addonId));
+  // Le jugement des raccourcis se fait entre les paquets que le compte reçoit vraiment.
+  return paquetsDeLignes(lignes.filter((l) => installees.has(l.addonId)));
+}
+
+/** Fiches, sans code, des extensions ajoutées que la plateforme propose à un compte (celles qui passent les règles). */
+export function fichesComptePaquets(lignes: readonly LignePaquet[], choix: ChoixPaquets): readonly FichePaquetCompte[] {
+  return fichesAdminPaquets(lignes).filter((f) => f.servie).map((f) => ({ id: f.id, nom: f.nom, description: f.description, version: f.version, etat: f.etat, commandes: f.commandes, outils: f.outils, panneaux: f.panneaux, installee: paquetInstalle(f.id, choix, f.activeParDefaut) }));
 }
 
 export function fichesAdminPaquets(lignes: readonly LignePaquet[]): readonly FicheAdminPaquet[] {
@@ -58,6 +74,9 @@ export function fichesAdminPaquets(lignes: readonly LignePaquet[]): readonly Fic
         servie: p !== undefined,
         importedAt: l.importedAt.toISOString(),
         importedBy: l.importedBy,
+        etat: l.state,
+        activeParDefaut: l.defaultActive,
+        origine: l.origin,
       };
     });
 }

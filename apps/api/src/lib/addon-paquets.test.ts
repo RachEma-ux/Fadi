@@ -1,11 +1,11 @@
 /** Extensions installées côté serveur : lignes → paquets servis et fiches d'administration (pur, sans base). */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { fichesAdminPaquets, paquetsDeLignes, type LignePaquet } from "./addon-paquets.js";
+import { fichesAdminPaquets, fichesComptePaquets, paquetsDeLignes, paquetsDuCompte, type LignePaquet } from "./addon-paquets.js";
 
 const essai = (): Record<string, unknown> => JSON.parse(readFileSync(new URL("../../../web/e2e/donnees/essai-commandes.fadi-addon.json", import.meta.url), "utf8")) as Record<string, unknown>;
 const at = new Date("2026-11-26T02:00:00Z");
-const ligne = (addonId: string, paquet: Record<string, unknown>): LignePaquet => ({ addonId, version: "1.0.0", package: paquet, importedBy: "u1", importedAt: at });
+const ligne = (addonId: string, paquet: Record<string, unknown>, reglage: Partial<Pick<LignePaquet, "state" | "defaultActive" | "origin">> = {}): LignePaquet => ({ addonId, version: "1.0.0", package: paquet, importedBy: "u1", importedAt: at, state: "experimentale", defaultActive: true, origin: "importee", ...reglage });
 const renomme = (id: string, raccourcis: (i: number) => string): Record<string, unknown> => {
   const p = essai() as { fiche: { id: string; commandes: { raccourci: string }[] } };
   p.fiche.id = id;
@@ -34,5 +34,20 @@ describe("extensions installées — lignes de la base", () => {
 
   it("une ligne dont l'identifiant ne correspond pas à sa fiche n'est pas servie", () => {
     expect(paquetsDeLignes([ligne("autre-nom", essai())])).toEqual([]);
+  });
+
+  it("écran d'administration : le réglage paraît dans la fiche ; un compte ne reçoit que ce qu'il a installé", () => {
+    const lignes = [ligne("essai-commandes", essai(), { state: "disponible", defaultActive: false, origin: "creee" })];
+    expect(fichesAdminPaquets(lignes)[0]).toMatchObject({ etat: "disponible", activeParDefaut: false, origine: "creee", servie: true });
+    expect(paquetsDuCompte(lignes, {})).toEqual([]);
+    expect(paquetsDuCompte(lignes, { "essai-commandes": true }).map((p) => p.fiche.id)).toEqual(["essai-commandes"]);
+    expect(fichesComptePaquets(lignes, {})).toEqual([expect.objectContaining({ id: "essai-commandes", etat: "disponible", installee: false, commandes: 7 })]);
+    expect(fichesComptePaquets(lignes, { "essai-commandes": true })[0]?.installee).toBe(true);
+    // Installée d'origine : reçue sans geste, et le compte peut la désinstaller.
+    const origine = [ligne("essai-commandes", essai())];
+    expect(paquetsDuCompte(origine, {})).toHaveLength(1);
+    expect(paquetsDuCompte(origine, { "essai-commandes": false })).toEqual([]);
+    // Une ligne qui ne passe plus les règles n'est pas proposée aux comptes.
+    expect(fichesComptePaquets([ligne("casse", { format: "autre" })], {})).toEqual([]);
   });
 });

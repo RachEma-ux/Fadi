@@ -46,6 +46,7 @@ export type AuditAction =
   // Extensions installées (lot 3 du protocole) : cible = l'extension ; métadonnées = version, auteur, permissions.
   | "admin.addon.package.imported"
   | "admin.addon.package.removed"
+  | "admin.addon.package.updated"
   | "invitation.created"
   | "invitation.resent"
   | "invitation.cancelled"

@@ -283,6 +283,20 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     cours, le dernier en attente). Un outil qui échoue ou dépasse son délai rend la main à Sélection, avec un avis.
     Extension d'essai : `apps/web/e2e/donnees/essai-outil.fadi-addon.json` ; recette
     `apps/web/e2e/extensions-outil.mjs` (CI, tranche `planche`).
+  - *Administration* (onglet « Administration » de la page Extensions, réservé à l'administrateur de la plateforme) :
+    la liste réunit les extensions fournies par Fadi (réglables, jamais modifiables) et les extensions ajoutées
+    (importées ou créées ici), avec leur état (disponible, expérimentale), leur réglage « installée d'origine » et les
+    actions Modifier, Exporter, Retirer (confirmée ; les dessins ne sont jamais touchés). Un fichier importé est
+    d'abord **jugé sans rien écrire** (`POST /admin/addons/paquets?essai=1`) : accepté, il montre sa fiche, ses
+    commandes et ce qu'il demande avant « Installer » ; refusé, il liste ses motifs. L'éditeur
+    (`routes/addons/EditeurExtension.tsx`) crée ou modifie la fiche, les commandes (icône, libellés français et
+    anglais, raccourci) et le code ; les contrôles avant d'enregistrer (`controlesPaquet`, logique pure du paquet
+    `sandbox-planche-model`) vérifient la fiche, les commandes, les raccourcis libres, la réponse du code à chaque
+    commande et l'écriture du code — le code est lu, jamais exécuté dans la page. Le serveur rejuge toujours le
+    paquet entier. Chaque compte installe ou désinstalle une extension ajoutée depuis « Disponibles » / « Installées »
+    (`GET /sandbox/preferences/extensions/catalogue`, `PUT /sandbox/preferences/extensions/:id`) ; la Planche ne
+    reçoit que les extensions installées par le compte (son choix, sinon le réglage d'origine). Recette
+    `apps/web/e2e/extensions-administration.mjs` (CI, tranche `planche` ; base jetable, hors préproduction).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
 ## Lots suivants

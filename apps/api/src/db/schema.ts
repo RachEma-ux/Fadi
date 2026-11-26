@@ -1454,6 +1454,8 @@ export const sandboxToolPreferences = pgTable("sandbox_tool_preferences", {
   extensions: jsonb("extensions").$type<Record<string, boolean>>().notNull().default({}),
   /** « Mes scripts » (extension Scripts, 25 novembre 2026) : `[{ id, nom, code }]` ; texte rangé, jamais exécuté ici. */
   scripts: jsonb("scripts").$type<{ id: string; nom: string; code: string }[]>().notNull().default([]),
+  /** Choix du compte parmi les extensions ajoutées à la plateforme : `{ <id>: booléen }` ; vide = réglages d'origine. */
+  packages: jsonb("packages").$type<Record<string, boolean>>().notNull().default({}),
   format: text("format").notNull().default("sandbox-preferences/1"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1480,6 +1482,10 @@ export const addonPackages = pgTable("addon_packages", {
   package: jsonb("package").$type<Record<string, unknown>>().notNull(),
   importedBy: text("imported_by").references(() => users.id, { onDelete: "set null" }),
   importedAt: timestamp("imported_at", { withTimezone: true }).defaultNow().notNull(),
+  /** Écran d'administration (26 novembre 2026) : état, « installée d'origine », origine (importée ou créée ici). */
+  state: text("state").$type<"disponible" | "experimentale">().notNull().default("experimentale"),
+  defaultActive: boolean("default_active").notNull().default(true),
+  origin: text("origin").$type<"importee" | "creee">().notNull().default("importee"),
 });
 
 /**

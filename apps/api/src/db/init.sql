@@ -1003,6 +1003,21 @@ CREATE TABLE IF NOT EXISTS addon_packages (
   imported_by text REFERENCES users(id) ON DELETE SET NULL,
   imported_at timestamptz NOT NULL DEFAULT now()
 );
+-- Écran d'administration des extensions (26 novembre 2026, images 12 à 15) : réglage d'une extension ajoutée — son état,
+-- « installée d'origine » (suivi par tout compte qui n'a rien choisi) et son origine (importée d'un fichier ou créée
+-- dans l'éditeur). Les lignes d'avant ce lot restent rendues à tous les comptes (`default_active` vrai). Additive.
+ALTER TABLE addon_packages ADD COLUMN IF NOT EXISTS state text NOT NULL DEFAULT 'experimentale';
+ALTER TABLE addon_packages ADD COLUMN IF NOT EXISTS default_active boolean NOT NULL DEFAULT true;
+ALTER TABLE addon_packages ADD COLUMN IF NOT EXISTS origin text NOT NULL DEFAULT 'importee';
+ALTER TABLE addon_packages DROP CONSTRAINT IF EXISTS addon_packages_state_check,
+  ADD CONSTRAINT addon_packages_state_check CHECK (state IN ('disponible', 'experimentale'));
+ALTER TABLE addon_packages DROP CONSTRAINT IF EXISTS addon_packages_origin_check,
+  ADD CONSTRAINT addon_packages_origin_check CHECK (origin IN ('importee', 'creee'));
+-- Choix d'un compte parmi les extensions ajoutées : `{ <identifiant>: booléen }`, ses écarts au réglage d'origine.
+-- Rangé à part du choix des extensions fournies par Fadi (`extensions`), que la Planche réécrit en entier. Additive.
+ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS packages jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_packages_check,
+  ADD CONSTRAINT sandbox_tool_preferences_packages_check CHECK (jsonb_typeof(packages) = 'object');
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route
