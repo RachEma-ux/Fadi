@@ -444,3 +444,5 @@ Le premier lancement a révélé un oracle SVG de hauteur nulle puis une icône 
 
 Seuls les processus/ressources créés et identifiés par le profil peuvent être arrêtés. La base locale et son volume ont été conservés pour inspection ; credentials en fichiers600 hors Git. Si l'état privé de session n'est plus accessible, le déclarer et recréer un profil neuf ; ne pas inventer une récupération. Conserver #169/#172/#181 et les décisions historiques ; aucun push direct main, administration, migration sur cible existante, suppression de données ou production. La fusion autorisée passe par #181 et les protections GitHub effectives.
 
+
+- 2026-11-26 (lot Design L6b) : libellé I.5-02 du registre (`task-register.json`) aligné sur la recette `studio-preuves-d1.mjs` ; le rail place GeoData entre Studio et Collaboration. Aucun autre changement Studio.
