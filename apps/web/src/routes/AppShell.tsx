@@ -119,11 +119,13 @@ export function AppShell() {
             <Icon name="folder" /><span className="sidebar-label">Projets</span><Icon name="chevron-right" size={14} className="sidebar-label" />
           </button>
           <MenuStudio surNavigation={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); }} />
-          <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
+          {/* Lot Design L6b : rail dans l'ordre de la barre du bas (Accueil, Projets, Studio, GeoData) puis de la feuille « Plus ». */}
+          <NavLink to="/geodata" title="GeoData" aria-label="GeoData" className={({ isActive }) => isActive ? "active" : undefined} data-nav-geodata><Icon name="map" /><span className="sidebar-label" translate="no">GeoData</span></NavLink>
         </nav>
         <div className="app-nav-secondary">
-          <NavLink to="/geodata" title="GeoData" aria-label="GeoData" className={({ isActive }) => isActive ? "active" : undefined} data-nav-geodata><Icon name="map" /><span className="sidebar-label" translate="no">GeoData</span></NavLink>
+          <Link data-nav-collaboration to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
           <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
+          <NavLink to="/harmonie" title="Harmonie" aria-label="Harmonie" className={({ isActive }) => isActive ? "active" : undefined} data-nav-harmonie><Icon name="sparkle" /><span className="sidebar-label">Harmonie</span></NavLink>
           {/* Espace d'organisation (concept partie 5) : équipe interne, groupes, gabarits ; n'ouvre aucun projet. */}
           {/* Revue externe (phase 4) : paquets partagés nominativement ; n'ouvre aucun projet. */}
           <NavLink to="/revues" title="Revues externes" aria-label="Revues externes" className={({ isActive }) => isActive ? "active" : undefined} data-nav-revues><Icon name="review" /><span className="sidebar-label">Revues externes</span></NavLink>

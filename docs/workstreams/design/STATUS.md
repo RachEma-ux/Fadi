@@ -43,6 +43,8 @@ Mis à jour : 2026-11-26 (UTC).
 
 - L6 (#430) : sous 700 px, la barre du bas (Accueil, Projets, Studio, GeoData, Plus) remplace le rail ; à 701 px le rail revient seul (vérifié). Feuille « Plus » : focus au titre, entrées ≥ 48 px, Échap et Retour la ferment sans changer d'adresse, focus rendu à « Plus » ; un choix remplace l'entrée d'historique. `accueils-design.mjs` : 94 contrôles verts en local ; `project-layout.mjs` : 830 / 831 (le seul échec attend la parcelle de l'iframe à 701 px, sans lien avec la navigation). GeoData garde sa barre propre en attendant L7. Recette `planche.mjs` au téléphone : premier toucher sur un point libre du canevas (la vue plus courte le plaçait sous la palette d'outils), arête au doigt annulée avant le carré exact ; verte en local. Plancher de l'espace de travail à 480 px avec la barre du bas (palette de la Planche utilisable au téléphone) ; `planche-boutons.mjs` et `planche.mjs` verts en local.
 
+- L6b (#431) : rail du bureau : Accueil, Projets, Studio, GeoData, puis Collaboration, Bibliothèque, Harmonie (ajoutée), Revues externes, Organisations, Extensions, Paramètres ; ordre Tab relevé à 1 440 px identique à l'ordre visuel (16 arrêts).
+
 ## Points ouverts
 
 - Capture sur un vrai téléphone Android à joindre par le maître d'ouvrage avant fusion.
@@ -59,3 +61,5 @@ Mis à jour : 2026-11-26 (UTC).
 - 2026-11-26 : main b286441e intégré à la pile L0 → L9 avant fusion ; `design-plafonds.json` remesuré sur ce main (couleurs opaques 584, avec alpha 619 : les 6 de plus viennent de #428 / #438). Plafonds verts sur L0.
 - 2026-11-26 : `design-releve.mjs` s'inscrit par le lien du courriel (`inscrireDansLaPage`, #428), comme les recettes de main.
 - 2026-11-26 : `extensions-commandes.mjs` (venue de #438) passe aussi à `inscrireDansLaPage` : sur main, elle remplissait encore le mot de passe sur /inscription et échouait (shard planche).
+- 2026-11-26 : `studio-preuves-d1.mjs` (I.5-02) suit le nouvel ordre du rail : après le menu Studio replié, Tab passe par Console, GeoData puis Collaboration.
+- 2026-11-26 : `studio-navigation.mjs` (NAV-001) lit Collaboration dans `.app-nav-secondary` (L6b l'a sortie de la navigation principale).

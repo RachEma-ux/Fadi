@@ -24,12 +24,15 @@ Mis à jour : 2026-11-26 (UTC).
   palette d'outils ; il vise maintenant un point libre du canevas, et l'arête tracée au doigt est annulée avant le carré
   exact (16 m²). Correctif CI : la hauteur de la barre était lue à 0 (`offsetParent` est nul en `position: fixed`) ; l'Atelier et la
   Planche s'arrêtent maintenant au-dessus de la barre ; `select` des options de Collaboration à 44 px.
+- L6b : PR #437 (rail du bureau dans l'ordre de la barre puis de « Plus » ; Harmonie ajoutée).
 
 - Fusion autorisée par Roch (26-11-2026, 04:58 et 05:03, heure suisse) : #418 → #440 dans l'ordre, L6 vert. main
   (b286441e) intégré à toute la pile ; plafonds de couleurs remesurés sur ce main (584 / 619, couleurs venues de main).
 
 - `design-releve.mjs` passe à l'inscription par lien (#428) depuis l'intégration de main.
 - `extensions-commandes.mjs` (venue de main, #438) passe aussi à l'inscription par lien : sur main elle échouait au champ mot de passe.
+- `studio-preuves-d1.mjs` (I.5-02, shard complements) attend GeoData entre Console et Collaboration depuis L6b (libellé repris dans `docs/workstreams/studio/task-register.json`).
+- `studio-navigation.mjs` (NAV-001, shard parcours) cherche Collaboration dans le groupe secondaire, où L6b l'a placée.
 
 ## Prochaine action
 
