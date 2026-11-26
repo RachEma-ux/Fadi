@@ -67,3 +67,4 @@ Mis à jour : 2026-11-26 (UTC).
 - 2026-11-26 : `extensions-commandes.mjs` (venue de #438) passe aussi à `inscrireDansLaPage` : sur main, elle remplissait encore le mot de passe sur /inscription et échouait (shard planche).
 - 2026-11-26 : `studio-preuves-d1.mjs` (I.5-02) suit le nouvel ordre du rail : après le menu Studio replié, Tab passe par Console, GeoData puis Collaboration.
 - 2026-11-26 : `studio-navigation.mjs` (NAV-001) lit Collaboration dans `.app-nav-secondary` (L6b l'a sortie de la navigation principale).
+- 2026-11-26 : `use-immersive` réessaie la mesure tant que l'Atelier n'est pas monté et observe l'éditeur : avec l'en-tête L9 sur une rangée, aucun bloc observé ne changeait de taille, `--atelier-menu-top` restait vide et la liste des niveaux de « Plan » couvrait Planche / 3D au téléphone (recette planche-boutons, shard p2).

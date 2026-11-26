@@ -36,6 +36,7 @@ Mis à jour : 2026-11-26 (UTC).
 - `extensions-commandes.mjs` (venue de main, #438) passe aussi à l'inscription par lien : sur main elle échouait au champ mot de passe.
 - `studio-preuves-d1.mjs` (I.5-02, shard complements) attend GeoData entre Console et Collaboration depuis L6b (libellé repris dans `docs/workstreams/studio/task-register.json`).
 - `studio-navigation.mjs` (NAV-001, shard parcours) cherche Collaboration dans le groupe secondaire, où L6b l'a placée.
+- L9 : `use-immersive` mesure aussi quand l'éditeur arrive tard ; sans quoi, au téléphone, la liste des niveaux du bouton Plan couvrait Planche (planche-boutons, p2).
 
 ## Prochaine action
 
