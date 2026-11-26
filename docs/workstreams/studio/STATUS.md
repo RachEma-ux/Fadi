@@ -437,3 +437,5 @@ La validation personnelle et l'accès distant à la démo ne sont pas acquis. L'
 
 Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et recueillir son acceptation. Fusion de #181 autorisée explicitement par le propriétaire après vérification du candidat réconcilié ; cette autorisation ne vaut pas constat d’une recette personnelle ni clôture du MVP. Le SQL Studio est appliqué uniquement à la base neuve attestée ; aucun migrateur, schéma existant, sauvegarde, réglage GitHub ou déploiement de production n'est autorisé implicitement.
 
+
+- 2026-11-26 (lot Design L6b) : libellé I.5-02 du registre (`task-register.json`) aligné sur la recette `studio-preuves-d1.mjs` ; le rail place GeoData entre Studio et Collaboration. Aucun autre changement Studio.
