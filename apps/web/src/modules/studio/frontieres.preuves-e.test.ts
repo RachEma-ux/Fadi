@@ -78,6 +78,8 @@ describe("ARC-10 — ni iframe de l'Atelier, ni carte mentale HTML comme module 
     expect(cadrePanneau).toHaveLength(1);
     expect(cadrePanneau[0]!.extrait).toMatch(/sandbox="allow-scripts"/);
     expect(cadrePanneau[0]!.extrait).not.toMatch(/allow-same-origin|\ssrc=/);
+    // Sa page ne peut pas non plus conduire le cadre vers une autre origine (fuite par l'adresse) : règle de l'application.
+    expect(readFileSync(join(RACINE, "apps/web/index.html"), "utf8")).toMatch(/http-equiv="Content-Security-Policy" content="frame-src 'self'"/);
   });
 
   it("ARC-10 [+] dépôt réel : aucune carte mentale HTML de Studio/ n'est importée, chargée ni servie par l'application", () => {

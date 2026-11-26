@@ -258,7 +258,9 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,
     affiché dans un cadre **sans origine** (`sandbox="allow-scripts"`) et **sans réseau** (règle de contenu
-    `CSP_PAGE_PANNEAU`) : elle ne voit ni la Planche, ni le compte, ni l'enregistrement local. Les styles, scripts et
+    `CSP_PAGE_PANNEAU`) : elle ne voit ni la Planche, ni le compte, ni l'enregistrement local. Elle ne peut pas davantage
+    conduire son cadre vers une autre adresse : `apps/web/index.html` porte la règle `frame-src 'self'`, qui refuse à
+    tout cadre de l'application une navigation vers une autre origine. Les styles, scripts et
     dessins du paquet qu'elle cite par leur nom y sont recopiés (`composerPagePanneau`). Dans la page :
     `fadi.action(nom, donnees)` appelle une action nommée de l'extension et rend sa réponse, `fadi.surDonnees(fn)`
     reçoit ses envois, `fadi.langue`. Dans l'extension : `planche.panneau.sur(panneau, action, fn)`,
