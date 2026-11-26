@@ -653,6 +653,8 @@ courriel() {  # $1 = libellé, $2 = attendu (python), reste = variables PREPROD_
 }
 courriel "sans PREPROD_MAIL_TRANSPORT : aucun envoi, quota 50 / 24 h, 5 / h / destinataire" \
   "a['MAIL_TRANSPORT'] == '' and a['MAIL_DAILY_LIMIT'] == '50' and a['MAIL_RECIPIENT_HOURLY_LIMIT'] == '5' and a['SMTP_SECURE'] == 'true' and a['SMTP_PASS'] == ''"
+courriel "recettes (Issue #425) : liens des domaines réservés copiés par app, lus par la recette en lecture seule" \
+  "a['MAIL_CAPTURE_RECETTE'] == r['API_LOG'] == '/data/courriels/recette.jsonl' and any(v['source'] == 'fadi-preprod-courriels' and v['target'] == '/data/courriels' and not v.get('read_only') for v in s['app']['volumes']) and any(v['source'] == 'fadi-preprod-courriels' and v.get('read_only') for v in s['recette']['volumes'])"
 env FADI_SRC="$REPO" FADI_COMMIT=x PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$REPO/deploy/preprod/compose.yml" --profile terrain config --format json 2>/dev/null \
   | python3 -I -c "import json, sys; s = json.load(sys.stdin)['services']; sys.exit(0 if s['app']['environment']['GEODATA_TERRAIN_QUOTA_GO'] == '30' and s['terrain-import']['environment']['GEODATA_TERRAIN_QUOTA_GO'] == '30' else 1)" \

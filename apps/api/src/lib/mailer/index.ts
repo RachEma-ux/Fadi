@@ -8,6 +8,9 @@
  *                 déclarée, jamais simulée).
  * En SMTP, un destinataire de domaine réservé (RFC 2606 / 6761 : example.com, *.test, *.invalid…) n'est jamais envoyé
  * (`reserved_domain`, UM-28), sauf `MAIL_ALLOW_RESERVED_DOMAINS=true` (Mailpit en CI / dev), refusé en production.
+ * `MAIL_CAPTURE_RECETTE` (chemin absolu, préproduction seulement) : chaque courriel destiné à un domaine réservé, donc
+ * jamais remis, est aussi écrit dans ce fichier (une ligne JSON, format du transport `console`) pour que les recettes
+ * lisent leurs liens (`API_LOG`) ; une adresse réelle n'y est jamais écrite.
  * Bascule vers un fournisseur transactionnel UE : changement de variables seulement.
  */
 import nodemailer from "nodemailer";
@@ -31,6 +34,8 @@ export interface MailConfig {
   /** Domaines réservés envoyés quand même (serveur de capture Mailpit) ; jamais en production. */
   allowReservedDomains: boolean;
   publicUrl: string;
+  /** Fichier où sont copiés les courriels des domaines réservés (préproduction, `MAIL_CAPTURE_RECETTE`) ; sinon null. */
+  captureRecette: string | null;
 }
 
 /** Lit et valide la configuration ; lève `MailConfigError` (l'API refuse alors de démarrer). */
@@ -48,9 +53,12 @@ export function readMailConfig(env: Record<string, string | undefined> = process
   if (allowRaw !== "" && allowRaw !== "true" && allowRaw !== "false") throw new MailConfigError(`MAIL_ALLOW_RESERVED_DOMAINS invalide : ${allowRaw} (true | false)`);
   const allowReservedDomains = allowRaw === "true";
   if (allowReservedDomains && production) throw new MailConfigError("MAIL_ALLOW_RESERVED_DOMAINS=true est interdit en production");
+  const captureRaw = (env["MAIL_CAPTURE_RECETTE"] ?? "").trim();
+  if (captureRaw !== "" && !captureRaw.startsWith("/")) throw new MailConfigError(`MAIL_CAPTURE_RECETTE doit être un chemin absolu : ${captureRaw}`);
+  const captureRecette = captureRaw || null;
   const publicUrl = (env["APP_PUBLIC_URL"] ?? env["WEB_ORIGIN"]?.split(",")[0] ?? "http://localhost:5173").trim().replace(/\/$/, "");
   const from = (env["MAIL_FROM"] ?? "").trim();
-  if (transport !== "smtp") return { transport, from: from || "Fadi <noreply@localhost>", dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl };
+  if (transport !== "smtp") return { transport, from: from || "Fadi <noreply@localhost>", dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl, captureRecette };
   const missing = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "MAIL_FROM", ...(production ? ["SMTP_PASS", "APP_PUBLIC_URL"] : [])].filter((k) => !env[k]);
   if (missing.length) throw new MailConfigError(`MAIL_TRANSPORT=smtp : variable(s) manquante(s) : ${missing.join(", ")}`);
   const user = env["SMTP_USER"]!.trim();
@@ -58,7 +66,7 @@ export function readMailConfig(env: Record<string, string | undefined> = process
   const port = Number(env["SMTP_PORT"]);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new MailConfigError("SMTP_PORT invalide");
   return {
-    transport, from, dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl,
+    transport, from, dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl, captureRecette,
     smtp: { host: env["SMTP_HOST"]!, port, secure: (env["SMTP_SECURE"] ?? "true") === "true", user, pass: env["SMTP_PASS"] || undefined },
   };
 }
@@ -72,7 +80,7 @@ export function createMailer(config: MailConfig, log: (line: string) => void = (
       transport: "console",
       async send(m) {
         const r: RenderedMail = renderMail(m.template, m.data, m.locale);
-        log(JSON.stringify({ level: "info", message: "mail (console)", to: m.to, subject: r.subject, text: r.text }));
+        log(ligneCourriel(m.to, r));
       },
     };
   }
@@ -90,6 +98,10 @@ export function createMailer(config: MailConfig, log: (line: string) => void = (
     },
   };
 }
+
+/** Ligne JSON d'un courriel (transport `console` et copie de recette), lue par `apps/web/e2e/lib-invitations.mjs`. */
+export const ligneCourriel = (to: string, r: RenderedMail) =>
+  JSON.stringify({ level: "info", message: "mail (console)", to, subject: r.subject, text: r.text });
 
 let current: { config: MailConfig; mailer: Mailer } | null = null;
 /** Configuration et transport du processus (lus une fois). */

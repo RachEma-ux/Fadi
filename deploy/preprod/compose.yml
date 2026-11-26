@@ -112,6 +112,9 @@ services:
       MAIL_FROM: ${PREPROD_MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${PREPROD_MAIL_DAILY_LIMIT:-50}
       MAIL_RECIPIENT_HOURLY_LIMIT: ${PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT:-5}
+      # Recettes (inscription par lien, Issue #425) : les courriels des domaines réservés, jamais remis, sont copiés dans
+      # ce fichier du volume fadi-preprod-courriels, lu par la recette (API_LOG). Jamais une adresse réelle ; jamais en production.
+      MAIL_CAPTURE_RECETTE: /data/courriels/recette.jsonl
       # Organisations-participation (OP-5) : effacement automatique des contacts sans compte 2 ans après la clôture de
       # tous leurs projets — réserve d'OP-2 levée par le maître d'ouvrage ; activé en préproduction (données synthétiques).
       CONTACT_RETENTION_ENABLED: ${PREPROD_CONTACT_RETENTION_ENABLED:-1}
@@ -138,6 +141,7 @@ services:
       GEODATA_TERRAIN_DEROGATION_TER_D26: ${PREPROD_GEODATA_TERRAIN_DEROGATION_TER_D26:-non}
     volumes:
       - fadi-preprod-terrain:/data/terrain:ro
+      - fadi-preprod-courriels:/data/courriels
     ports:
       - "127.0.0.1:3101:3001"
     networks:
@@ -176,10 +180,13 @@ services:
       ARCHIVE_SIGNING_KEY: ${PREPROD_ARCHIVE_SIGNING_KEY}
       AUTH_RATE_LIMIT: ${PREPROD_AUTH_RATE_LIMIT:-500}
       API_RATE_LIMIT: ${PREPROD_API_RATE_LIMIT:-5000}
+      # Liens d'inscription et d'invitation des comptes de recette, copiés par l'application (MAIL_CAPTURE_RECETTE).
+      API_LOG: /data/courriels/recette.jsonl
     # Rapports et sauvegardes dans des volumes nommés (jamais l'hôte) ; `fadi-preprod` en extrait les fichiers ordinaires.
     volumes:
       - fadi-preprod-out:/out
       - fadi-preprod-backups:/backups
+      - fadi-preprod-courriels:/data/courriels:ro
     mem_limit: 3g
     cpus: 2
     logging: *logging
@@ -277,6 +284,8 @@ volumes:
     name: fadi-preprod-out
   fadi-preprod-terrain:
     name: fadi-preprod-terrain
+  fadi-preprod-courriels:
+    name: fadi-preprod-courriels
 
 networks:
   internal:

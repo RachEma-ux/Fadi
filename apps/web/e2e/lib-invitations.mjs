@@ -7,7 +7,7 @@
  *
  * `call` : toute fonction `(méthode, chemin, corps?) => Promise<{ status, body }>` portant la session du compte.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const MAILPIT = process.env.MAILPIT_URL?.replace(/\/$/, "");
 const API_LOG = process.env.API_LOG;
@@ -39,7 +39,8 @@ export async function jetonsDuCourriel(to, chemin) {
     const list = await (await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)).json();
     for (const msg of list.messages ?? []) text += `${(await (await fetch(`${MAILPIT}/api/v1/message/${msg.ID}`)).json()).Text ?? ""}\n`;
   } else {
-    text = readFileSync(API_LOG, "utf8").split("\n").filter((l) => l.includes(`"to":"${to}"`)).map((l) => { try { return JSON.parse(l).text; } catch { return ""; } }).join("\n");
+    // Préproduction : fichier de copie de l'API (MAIL_CAPTURE_RECETTE), absent tant qu'aucun courriel n'y est écrit.
+    text = !existsSync(API_LOG) ? "" : readFileSync(API_LOG, "utf8").split("\n").filter((l) => l.includes(`"to":"${to}"`)).map((l) => { try { return JSON.parse(l).text; } catch { return ""; } }).join("\n");
   }
   const links = [...text.matchAll(/https?:\/\/\S+#jeton=([A-Za-z0-9_%-]+)/g)].filter((m) => m[0].includes(chemin)).map((m) => decodeURIComponent(m[1]));
   // Mailpit rend les messages du plus récent au plus ancien ; le journal de l'API, dans l'ordre d'écriture.
