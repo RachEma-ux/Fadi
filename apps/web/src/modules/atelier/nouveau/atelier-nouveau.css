@@ -14,7 +14,7 @@
     "outils outils outils"
     "gauche travail droite"
     "etat etat etat";
-  height: calc(100dvh - 120px);
+  height: calc(100dvh - 120px - var(--fd-barre-bas-reelle, 0px));
   min-height: 520px;
   background: var(--surface, #fff);
   color: var(--atelier-encre);
@@ -785,7 +785,7 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;
     grid-template-areas: "barre" "outils" "panneau" "etat" "onglets";
-    height: calc(100dvh - 90px);
+    height: calc(100dvh - 90px - var(--fd-barre-bas-reelle, 0px));
     border-radius: 0;
     border-left: 0;
     border-right: 0;

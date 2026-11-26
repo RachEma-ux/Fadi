@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `7e5c46c6cfc0183cb31860034456319f6478af15a2160b9c8d5e2e0fa3dfc017` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `158bb37161db697f5c9608b4cfe655267d9961aeaf29c4710b055fcf60c04324` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle

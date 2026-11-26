@@ -62,20 +62,23 @@ async function checkComposition(id, label, mobile = false) {
   await page.evaluate(() => window.scrollTo(0, 0));
   const geometry = await overview(id).evaluate((card) => {
     const action = card.querySelector(".dossier-primary-action"), preview = card.querySelector(".dossier-preview");
-    const control = action?.querySelector("a,button"), rail = document.querySelector(".app-sidebar");
+    const control = action?.querySelector("a,button"), rail = document.querySelector(".app-sidebar"), barre = document.querySelector("[data-fd-barre-bas]");
     if (!action || !preview || !control || !rail) return null;
     const a = action.getBoundingClientRect(), p = preview.getBoundingClientRect(), c = control.getBoundingClientRect(), r = rail.getBoundingClientRect();
+    const b = barre?.getBoundingClientRect(), barreVisible = !!b && b.width > 0 && b.height > 0;
     const style = getComputedStyle(action);
     return {
       sourceOrder: !!(action.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING),
-      beforePreview: a.bottom <= p.top + 2, controlHeight: c.height, controlInView: c.top >= 0 && c.bottom <= innerHeight, footer: !!card.querySelector(".dossier-card-footer"),
-      railVisible: r.width > 0 && r.height > 0,
+      beforePreview: a.bottom <= p.top + 2, controlHeight: c.height, controlInView: c.top >= 0 && c.bottom <= (barreVisible ? b.top : innerHeight), footer: !!card.querySelector(".dossier-card-footer"),
+      railVisible: r.width > 0 && r.height > 0, barreVisible,
       noOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
       buttonWidth: c.width, availableWidth: action.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
     };
   });
   check(label + " : action utile dans la carte, avant l’aperçu (ordre source et visuel), sans pied « Informations du dossier »", !!geometry?.sourceOrder && geometry.beforePreview && !geometry.footer);
-  check(label + " : barre verticale conservée sans débordement horizontal", !!geometry?.railVisible && !!geometry.noOverflow);
+  // Lot Design L6 : rail au bureau, barre du bas au téléphone (≤ 700 px), jamais les deux.
+  if (mobile) check(label + " : barre du bas affichée, rail masqué, sans débordement horizontal", !!geometry?.barreVisible && !geometry.railVisible && !!geometry.noOverflow);
+  else check(label + " : barre verticale conservée, barre du bas masquée, sans débordement horizontal", !!geometry?.railVisible && !geometry.barreVisible && !!geometry.noOverflow);
   if (mobile) check(label + " : action pleine largeur et cible tactile d’au moins 44 px", geometry.controlHeight >= 44 && geometry.buttonWidth >= geometry.availableWidth - 2, `hauteur ${geometry?.controlHeight}`);
   // Critère du lot L4 : sur l'accueil du projet, l'action est visible sans défiler au téléphone. L'accueil de l'application
   // ajoute au-dessus les entrées Importer / Nouveau projet et le titre du dossier de reprise (en-tête : lot L9) ; il est relevé, pas exigé.
@@ -467,11 +470,48 @@ try {
   await axe("cockpit-mobile");
   await page.screenshot({ path: join(OUT, "cockpit-mobile-r3.png"), fullPage: true });
   await openHome(b.id);
-  await selector.click();
-  await menu.waitFor();
-  const menuBounds = await menu.boundingBox(), railBounds = await page.locator(".app-sidebar").boundingBox();
-  check("téléphone : le sous-menu s’ouvre à droite de la barre et tient dans l’écran", menuBounds && railBounds && menuBounds.x >= railBounds.x + railBounds.width - 2 && menuBounds.x + menuBounds.width <= 391);
+  // Lot Design L6 : au téléphone, « Projets » est un lien de la barre du bas vers /projets (le volant reste au bureau).
+  const barre = page.locator("[data-fd-barre-bas]");
+  const entreesBarre = (await barre.locator("[data-fd-entree]").allTextContents()).map((t) => t.trim()).join("|");
+  check("téléphone : barre du bas Accueil, Projets, Studio, GeoData, Plus ; Projets mène à /projets", entreesBarre === "Accueil|Projets|Studio|GeoData|Plus" && await barre.locator('[data-fd-entree="projets"]').getAttribute("href") === "/projets" && await selector.count() === 0, entreesBarre);
+  const plus = barre.locator('[data-fd-entree="plus"]');
+  const urlAvantPlus = page.url();
+  await plus.click();
+  const feuille = page.locator("dialog[open][data-fd-feuille-plus]");
+  await feuille.waitFor();
+  const entreesFeuille = (await feuille.locator("a[data-fd-entree]").allTextContents()).map((t) => t.trim()).join("|");
+  check("feuille « Plus » : focus au titre, entrées dans l’ordre du groupe secondaire, « Plus » développé", await page.evaluate(() => document.activeElement?.id) === "fd-feuille-plus-titre" && entreesFeuille.startsWith("Collaboration|Bibliothèque|Harmonie|Revues externes|Organisations|Extensions|Paramètres") && await plus.getAttribute("aria-expanded") === "true", entreesFeuille);
+  const hauteurs = await feuille.locator(".fd-feuille-entree").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+  check("feuille « Plus » : chaque entrée mesure au moins 48 px de haut", hauteurs.length > 0 && hauteurs.every((h) => h >= 48), hauteurs.join(","));
+  await page.waitForTimeout(400); // fin de l’animation d’entrée (0,18 s) avant le calcul des contrastes
+  await axe("feuille-plus-mobile");
   await page.keyboard.press("Escape");
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForTimeout(200);
+  check("feuille « Plus » : Échap ferme, focus rendu à « Plus », adresse inchangée", await page.evaluate(() => document.activeElement?.getAttribute("data-fd-entree")) === "plus" && page.url() === urlAvantPlus && await plus.getAttribute("aria-expanded") === "false");
+  await plus.click();
+  await feuille.waitFor();
+  await page.goBack();
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForTimeout(200);
+  check("feuille « Plus » : Retour la ferme sans quitter la page", page.url() === urlAvantPlus);
+  await plus.click();
+  await feuille.locator('[data-fd-entree="parametres"]').click();
+  await page.waitForURL(`${BASE}/parametres`);
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForFunction(() => document.querySelector('[data-fd-barre-bas] [data-fd-entree="plus"]')?.hasAttribute("aria-describedby"), null, { timeout: 5000 }).catch(() => {});
+  const decrit = await plus.getAttribute("aria-describedby");
+  check("feuille « Plus » : un choix ouvre la page, la feuille se ferme, « Plus » signale la page courante", decrit === "fd-plus-page" && (await page.locator("#fd-plus-page").textContent()) === "Page actuelle : Paramètres", String(decrit));
+  await page.goBack();
+  await page.waitForURL(urlAvantPlus);
+  check("feuille « Plus » : Retour après un choix revient à la page d’origine (aucune entrée d’historique en trop)", page.url() === urlAvantPlus);
+  for (const [largeur, barreAttendue] of [[700, true], [701, false]]) {
+    await page.setViewportSize({ width: largeur, height: 844 });
+    await page.waitForTimeout(150);
+    const etat = await page.evaluate(() => ({ barre: getComputedStyle(document.querySelector("[data-fd-barre-bas]")).display !== "none", rail: getComputedStyle(document.querySelector(".app-sidebar")).display !== "none" }));
+    check(`${largeur} px : ${barreAttendue ? "barre du bas seule" : "rail seul"}`, etat.barre === barreAttendue && etat.rail === !barreAttendue, JSON.stringify(etat));
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   await openHome();
   await overview(b.id).waitFor();
   await checkComposition(b.id, "application-mobile", true);

@@ -4361,6 +4361,9 @@ fieldset.access-fieldset:disabled {
 .com-refs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
 .com-ref-fermee { opacity: 0.75; font-style: italic; }
 .com-options { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+/* Chantier Design L6 : sans le rail, la ligne d'options s'élargit au téléphone et un `select` de 19 px y côtoyait les filtres
+   (axe target-size, WCAG 2.5.8) ; cible d'au moins 44 px de haut. */
+.com-options select { min-height: 44px; }
 .com-options label { flex-direction: row !important; align-items: center; gap: 6px; font-weight: 400 !important; }
 .com-options input[type="checkbox"], .com-participants-choix input, .com-message input[type="checkbox"] { min-width: 24px; min-height: 24px; }
 .com-commande { display: inline-flex; align-items: center; }
