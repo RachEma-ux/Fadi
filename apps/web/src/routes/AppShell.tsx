@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useMatch } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { useLastDossier } from "../lib/last-dossier";
@@ -11,13 +11,16 @@ import { HomeTopbar } from "../modules/accueil/HomeTopbar";
 import { denied } from "../modules/accueil/dossier-data";
 import { MenuStudio } from "./MenuStudio";
 import { useAdminEnabled } from "../lib/use-platform-role";
+import { BarreBasGlobale } from "./BarreBasGlobale";
+import { FeuillePlus } from "./FeuillePlus";
+import { entreeActive, entreesPlus, EVENEMENT_OUVRIR_PLUS, EVENEMENT_PLUS_FERME } from "./navigation-entrees";
+import "./barre-bas.css";
 
 export { initialsFrom, shownName } from "../lib/user-display";
 
 export function AppShell() {
   const { user, logout } = useAuth();
   const adminEnabled = useAdminEnabled();
-  const navigate = useNavigate();
   const location = useLocation();
   const projectMatch = useMatch("/projets/:projectId");
   const cockpitMatch = useMatch("/projets/:projectId/pilotage");
@@ -33,6 +36,37 @@ export function AppShell() {
   const flyout = useRef<HTMLDivElement>(null);
   const focusedProjectItem = useRef<HTMLElement | null>(null);
   const account = useRef<HTMLDivElement>(null);
+  // Navigation au téléphone (chantier Design, lots L5-L7) : barre du bas et feuille « Plus ».
+  const [plus, setPlus] = useState<{ declencheur: HTMLElement | null } | null>(null);
+  const barreBas = useRef<HTMLElement>(null);
+  // Hauteur réelle de la barre (elle grandit avec la police) recopiée sur <html> : le contenu, `scroll-padding-bottom` et
+  // les éléments fixés au bas la lisent ; 0 quand la barre n'est pas affichée (au-dessus de 700 px, GeoData).
+  // `getClientRects()` et non `offsetParent` : ce dernier vaut toujours null pour un élément en `position: fixed`.
+  useEffect(() => {
+    const barre = barreBas.current;
+    const racine = document.documentElement;
+    const recopier = () => racine.style.setProperty("--fd-barre-bas-reelle", `${barre && barre.getClientRects().length > 0 ? barre.offsetHeight : 0}px`);
+    recopier();
+    const observateur = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(recopier);
+    if (barre) observateur?.observe(barre);
+    window.addEventListener("resize", recopier);
+    return () => { observateur?.disconnect(); window.removeEventListener("resize", recopier); racine.style.removeProperty("--fd-barre-bas-reelle"); };
+  });
+  // GeoData garde sa propre barre (lot L7) : son bouton « Plus » demande la feuille par un événement du navigateur.
+  const [plusGeoData, setPlusGeoData] = useState(false);
+  useEffect(() => {
+    const ouvrir = (e: Event) => {
+      const declencheur = (e as CustomEvent<{ declencheur?: HTMLElement | null }>).detail?.declencheur ?? null;
+      setPlusGeoData(true);
+      setPlus({ declencheur });
+    };
+    window.addEventListener(EVENEMENT_OUVRIR_PLUS, ouvrir);
+    return () => window.removeEventListener(EVENEMENT_OUVRIR_PLUS, ouvrir);
+  }, []);
+  const fermerPlus = () => {
+    setPlus(null);
+    if (plusGeoData) { setPlusGeoData(false); window.dispatchEvent(new CustomEvent(EVENEMENT_PLUS_FERME)); }
+  };
   const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
   const collaborationActive = location.pathname === "/collaboration" || !!projectId && new URLSearchParams(location.search).get("module") === "collaboration";
 
@@ -82,9 +116,13 @@ export function AppShell() {
     if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
   }
   const collaborationLink = projectId || last?.projectId ? `/projets/${projectId ?? last?.projectId}?module=collaboration` : "/collaboration";
+  const active = entreeActive(location.pathname, location.search);
+  const entreesFeuille = entreesPlus({ administration: adminEnabled, collaboration: collaborationLink });
+  const pageDansPlus = entreesFeuille.find((e) => e.cle === active)?.libelle ?? null;
   return <WorkspaceNavigation.Provider value={{ openProjects }}>
     <div className="app-shell fadi-shell" data-sidebar={expanded ? "expanded" : "collapsed"}>
       <a className="fadi-skip" href="#workspace-content">Aller au contenu</a>
+      {active !== "geodata" && <a className="fadi-skip fd-skip-navigation" href="#fd-navigation-bas">Aller à la navigation</a>}
       <aside className="app-sidebar" aria-label="Barre latérale">
         <Link to="/accueil" className="app-brand" aria-label="Fadi · Accueil" title="Fadi · Accueil"><Icon name="home" size={28} /><span className="sidebar-label app-brand-text" translate="no">Fadi</span></Link>
         <button type="button" className="sidebar-toggle" aria-expanded={expanded} aria-controls="workspace-navigation" aria-label={expanded ? "Replier la barre latérale" : "Déplier la barre latérale"} title={expanded ? "Replier la barre latérale" : "Déplier la barre latérale"} onClick={() => { setExpanded(!expanded); closeProjects(false); }}>
@@ -96,11 +134,13 @@ export function AppShell() {
             <Icon name="folder" /><span className="sidebar-label">Projets</span><Icon name="chevron-right" size={14} className="sidebar-label" />
           </button>
           <MenuStudio surNavigation={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); }} />
-          <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
+          {/* Lot Design L6b : rail dans l'ordre de la barre du bas (Accueil, Projets, Studio, GeoData) puis de la feuille « Plus ». */}
+          <NavLink to="/geodata" title="GeoData" aria-label="GeoData" className={({ isActive }) => isActive ? "active" : undefined} data-nav-geodata><Icon name="map" /><span className="sidebar-label" translate="no">GeoData</span></NavLink>
         </nav>
         <div className="app-nav-secondary">
-          <NavLink to="/geodata" title="GeoData" aria-label="GeoData" className={({ isActive }) => isActive ? "active" : undefined} data-nav-geodata><Icon name="map" /><span className="sidebar-label" translate="no">GeoData</span></NavLink>
+          <Link data-nav-collaboration to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
           <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
+          <NavLink to="/harmonie" title="Harmonie" aria-label="Harmonie" className={({ isActive }) => isActive ? "active" : undefined} data-nav-harmonie><Icon name="sparkle" /><span className="sidebar-label">Harmonie</span></NavLink>
           {/* Espace d'organisation (concept partie 5) : équipe interne, groupes, gabarits ; n'ouvre aucun projet. */}
           {/* Revue externe (phase 4) : paquets partagés nominativement ; n'ouvre aucun projet. */}
           <NavLink to="/revues" title="Revues externes" aria-label="Revues externes" className={({ isActive }) => isActive ? "active" : undefined} data-nav-revues><Icon name="review" /><span className="sidebar-label">Revues externes</span></NavLink>
@@ -113,7 +153,7 @@ export function AppShell() {
         </div>
         <div className="app-user" ref={account} onKeyDown={(e) => { if (e.key === "Escape") { setAccountOpen(false); account.current?.querySelector("button")?.focus(); } }}>
           <button type="button" title={user ? shownName(user) : "Compte"} aria-label="Compte" aria-expanded={accountOpen} onClick={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); setAccountOpen(!accountOpen); setProjectsOpen(false); }}><span className="avatar" aria-hidden="true">{user ? initialsFrom(user) : ""}</span><span className="sidebar-label app-user-name" translate="no">{user ? shownName(user) : ""}</span></button>
-          {accountOpen && <div className="app-user-menu"><button type="button" onClick={() => navigate("/parametres")}>Paramètres du compte</button><button type="button" onClick={() => void logout()}>Se déconnecter</button></div>}
+          {accountOpen && <div className="app-user-menu"><button type="button" onClick={() => void logout()}>Se déconnecter</button></div>}
         </div>
       </aside>
       {projectsOpen && <div id="projects-menu" className="projects-flyout" role="menu" aria-label="Projets" ref={flyout} style={{ left: menuPosition.left, top: menuPosition.top, maxWidth: `calc(100vw - ${menuPosition.left + 10}px)`, maxHeight: `calc(100dvh - ${menuPosition.top + 12}px)` }} onKeyDown={menuKeys} onFocusCapture={(event) => { focusedProjectItem.current = event.target.closest<HTMLElement>('[role="menuitem"]'); }}>
@@ -124,7 +164,11 @@ export function AppShell() {
         {!denied(projects.error) && projects.data?.map((p) => <Link key={p.id} role="menuitem" to={`/projets/${p.id}`} aria-current={projectId === p.id ? "page" : undefined} className="project-menu-item"><Icon name="folder" size={18} /><span translate="no"><strong>{p.code}</strong><span>{p.name}</span></span>{projectId === p.id && <Icon name="check" size={18} />}</Link>)}
         <Link role="menuitem" className="projects-flyout-all" to="/projets"><Icon name="plus" size={18} />Tous les projets / Créer un projet</Link>
       </div>}
-      <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div></div>
+      <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div>
+        {/* GeoData porte sa propre barre du bas (lot L7 : « Plus » en 5ᵉ) : une seule barre fixe par écran. */}
+        {active !== "geodata" && <BarreBasGlobale ref={barreBas} active={active} pageDansPlus={pageDansPlus} plusOuvert={!!plus} onPlus={() => plus ? fermerPlus() : setPlus({ declencheur: barreBas.current?.querySelector<HTMLElement>('[data-fd-entree="plus"]') ?? null })} />}
+      </div>
+      {plus && <FeuillePlus entrees={entreesFeuille} active={active} navigationPrincipale={plusGeoData} nom={user ? shownName(user) : ""} declencheur={plus.declencheur} onFermer={fermerPlus} onDeconnexion={() => { fermerPlus(); void logout(); }} />}
     </div>
   </WorkspaceNavigation.Provider>;
 }

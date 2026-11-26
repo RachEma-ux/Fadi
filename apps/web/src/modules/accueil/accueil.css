@@ -60,12 +60,32 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .fadi-topbar-title .home-name-edit { color: #fff; background: transparent; border: 1px solid #ffffff45; width: 44px; height: 44px; margin: -10px 0; vertical-align: middle; }
 .fadi-topbar-title .home-name-edit:hover { color: #fff; background: #ffffff15; }
 .fadi-topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.fadi-topbar-actions > button, .fadi-topbar-actions .notification-bell > button { border: 1px solid #ffffff45; color: white; background: #ffffff0c; min-height: 44px; border-radius: 8px; }
-.fadi-topbar-actions > button:hover { background: #ffffff20; }
+.fadi-topbar-autres { display: contents; }
+.fadi-topbar .topbar-icon.topbar-autres, .fadi-topbar .topbar-autres-libelle { display: none; }
+.fadi-topbar-actions > button, .fadi-topbar-autres > button, .fadi-topbar-actions .notification-bell > button { border: 1px solid #ffffff45; color: white; background: #ffffff0c; min-height: 44px; border-radius: 8px; }
+.fadi-topbar-actions > button:hover, .fadi-topbar-autres > button:hover { background: #ffffff20; }
 .fadi-topbar .topbar-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; flex: 0 0 44px; padding: 0; font-weight: 700; font-size: 18px; }
 .fadi-topbar .topbar-home { color: #fff; text-decoration: none; min-height: 44px; border: 1px solid #ffffff45; border-radius: 8px; }
 .fadi-topbar .topbar-state { font-size: 13px; font-weight: 600; padding: 10px 13px; }
 .fadi-topbar-actions .choix-langue { color: #fff; }
+/* Téléphone (chantier Design L9, M21) : une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche) ; pas
+   d'icône Accueil (la barre du bas l'a) ; Historique, État et Langue dans le panneau « Autres actions ». */
+@media (max-width: 700px) {
+  html body:not(.atelier-immersive) .fadi-shell .fadi-topbar { flex-wrap: nowrap; min-height: 0; padding: 8px 12px; gap: 8px; position: relative; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title { flex: 1 1 auto; min-width: 0; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title h1 { margin: 0; font-size: 18px; line-height: 44px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title .home-name-edit { margin: 0; border-color: transparent; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-title p { display: none; }
+  html .fadi-shell .fadi-topbar .fadi-topbar-actions { flex: none; flex-wrap: nowrap; gap: 6px; }
+  .fadi-topbar .topbar-home { display: none; }
+  .fadi-topbar .topbar-icon.topbar-autres { display: inline-flex; }
+  .fadi-topbar .topbar-autres[aria-expanded="true"] { background: #ffffff21; }
+  .fadi-topbar-autres { display: none; }
+  .fadi-topbar-autres[data-ouvert] { display: flex; flex-direction: column; align-items: stretch; gap: 8px; position: absolute; z-index: 25; top: calc(100% + 4px); right: 8px; min-width: 220px; max-width: calc(100vw - 16px); padding: 10px; box-sizing: border-box; background: var(--forest-900); border: 1px solid #ffffff26; border-radius: 10px; box-shadow: 0 8px 22px #102b2480; }
+  .fadi-topbar-autres[data-ouvert] > button, .fadi-topbar-autres[data-ouvert] .choix-langue select { width: 100%; min-height: 48px; }
+  .fadi-topbar-autres[data-ouvert] .history-trigger { flex: none; width: 100%; font-size: 14px; justify-content: flex-start; gap: 10px; padding: 0 12px; }
+  .fadi-topbar-autres[data-ouvert] .topbar-autres-libelle { display: inline; font-size: 14px; font-weight: 500; }
+}
 .fadi-topbar-actions .choix-langue select { min-height: 44px; }
 .fadi-topbar :focus-visible { outline-color: #f0dba3; }
 .fadi-topbar .notification-panel { color: var(--ink); }
@@ -182,9 +202,20 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .search-results small { display: block; }
 .fadi-home summary:focus-visible, .fadi-dialog summary:focus-visible { outline: 3px solid #1683df; outline-offset: 3px; }
 @media (min-width: 1700px) { .dossier-grid { grid-template-columns: minmax(0, 1fr) 330px; } }
+/* Tâche 3 (lot Design L4) : l'action utile de la Vue d'ensemble, couleurs reprises de la feuille (cliquet des plafonds). */
+.dossier-primary-action { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; padding: 16px; border: 1px solid #d1e0d6; background: #f0f5ef; border-radius: 9px; }
+.dossier-primary-action > div { flex: 1 1 220px; min-width: 0; }
+.dossier-primary-action strong { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.dossier-primary-action p { font-size: 13px; line-height: 1.5; margin: 5px 0 0; overflow-wrap: anywhere; }
+.dossier-primary-action .button-primary { flex-shrink: 0; max-width: 48%; justify-content: center; min-height: 46px; white-space: normal; text-align: center; }
+.dossier-primary-action > .dossier-notice { flex-basis: 100%; margin: 0; }
+@media (max-width: 1280px) { .dossier-primary-action .button-primary { max-width: 100%; } }
 @media (max-width: 1280px) { .fadi-home { padding: 26px 26px 36px; } .dossier-grid { grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; } .dossier-overview { padding: 19px; } }
 @media (max-width: 1100px) { .dossier-grid { grid-template-columns: minmax(0, 1fr); } .dossier-modules > div { grid-template-columns: minmax(0, 1fr); } .workspace-dossier-aside { display: none; } }
 @media (max-width: 700px) {
+  .dossier-primary-action { flex-direction: column; align-items: stretch; padding: 13px; gap: 13px; }
+  .dossier-primary-action > div { flex-basis: auto; }
+  .dossier-primary-action .button-primary { width: 100%; max-width: none; min-height: 48px; padding: 12px; }
   .app-shell.fadi-shell, .app-shell.fadi-shell[data-sidebar="expanded"] { grid-template-columns: 60px minmax(0, 1fr); --sidebar-width: 60px; }
   .app-shell.fadi-shell[data-sidebar="expanded"] { --sidebar-width: 240px; }
   body:not(.atelier-immersive) .fadi-shell .app-sidebar { padding: 10px 6px; }
@@ -203,6 +234,10 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
   .dossier-section-heading .button-secondary { align-self: flex-start; }
   .dossier-status-strip { grid-template-columns: minmax(0, 1fr); }
   .dossier-status-strip > div { padding: 11px 13px; }
+  /* Lot Design L4 : au téléphone, chaque suivi tient sur une ligne (intitulé puis état) pour que l'action utile de la
+     Vue d'ensemble reste visible sans défiler à 412 × 839 ; le détail éventuel passe à la ligne, rien n'est masqué. */
+  .dossier-status-strip > div { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 2px; padding: 8px 13px; }
+  .dossier-status-strip small { flex-basis: 100%; }
   .dossier-overview { padding: 18px; }
   .dossier-preview-placeholder { min-height: 210px; padding: 24px 14px; }
   .dossier-preview-svg { min-height: 190px; }

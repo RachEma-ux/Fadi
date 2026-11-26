@@ -42,6 +42,8 @@ async function api(method, path, data) {
 const dossierPath = (id) => `/projets/${id}`;
 const overview = (id) => page.locator(`.dossier-overview[data-project-id="${id}"]`);
 const bell = () => page.locator(".notification-bell > button");
+// Tâche 3 (lot Design L4) : l’action utile de la Vue d’ensemble, rendue de nouveau (décision du 26 novembre 2026).
+const primary = (id) => overview(id).locator(".dossier-primary-action");
 async function openHome(id) {
   await page.goto(`${BASE}${id ? dossierPath(id) : "/accueil"}`);
   await page.locator(`[data-home="${id ? "project" : "application"}"]`).waitFor();
@@ -56,18 +58,32 @@ async function axe(label) {
   const serious = violations.filter((v) => ["critical", "serious"].includes(v.impact));
   check(`accessibilité · ${label} : aucune violation critique ou sérieuse`, serious.length === 0, serious.map((v) => v.id).join(", "));
 }
-async function checkComposition(id, label) {
+async function checkComposition(id, label, mobile = false) {
+  await page.evaluate(() => window.scrollTo(0, 0));
   const geometry = await overview(id).evaluate((card) => {
-    const preview = card.querySelector(".dossier-preview"), rail = document.querySelector(".app-sidebar");
-    if (!preview || !rail) return null;
-    const rect = rail.getBoundingClientRect();
-    return { extraBlocks: !!card.querySelector(".dossier-primary-action, .dossier-card-footer"),
-      previewVisible: preview.getBoundingClientRect().width > 0,
-      railVisible: rect.width > 0 && rect.height > 0,
-      noOverflow: document.documentElement.scrollWidth <= innerWidth + 1 };
+    const action = card.querySelector(".dossier-primary-action"), preview = card.querySelector(".dossier-preview");
+    const control = action?.querySelector("a,button"), rail = document.querySelector(".app-sidebar"), barre = document.querySelector("[data-fd-barre-bas]");
+    if (!action || !preview || !control || !rail) return null;
+    const a = action.getBoundingClientRect(), p = preview.getBoundingClientRect(), c = control.getBoundingClientRect(), r = rail.getBoundingClientRect();
+    const b = barre?.getBoundingClientRect(), barreVisible = !!b && b.width > 0 && b.height > 0;
+    const style = getComputedStyle(action);
+    return {
+      sourceOrder: !!(action.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING),
+      beforePreview: a.bottom <= p.top + 2, controlHeight: c.height, controlInView: c.top >= 0 && c.bottom <= (barreVisible ? b.top : innerHeight), footer: !!card.querySelector(".dossier-card-footer"),
+      railVisible: r.width > 0 && r.height > 0, barreVisible,
+      noOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
+      buttonWidth: c.width, availableWidth: action.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+    };
   });
-  check(label + " : aucun bloc « Prochaine action » ni pied « Informations du dossier »", !!geometry && !geometry.extraBlocks && geometry.previewVisible);
-  check(label + " : barre verticale conservée sans débordement horizontal", !!geometry?.railVisible && !!geometry.noOverflow);
+  check(label + " : action utile dans la carte, avant l’aperçu (ordre source et visuel), sans pied « Informations du dossier »", !!geometry?.sourceOrder && geometry.beforePreview && !geometry.footer);
+  // Lot Design L6 : rail au bureau, barre du bas au téléphone (≤ 700 px), jamais les deux.
+  if (mobile) check(label + " : barre du bas affichée, rail masqué, sans débordement horizontal", !!geometry?.barreVisible && !geometry.railVisible && !!geometry.noOverflow);
+  else check(label + " : barre verticale conservée, barre du bas masquée, sans débordement horizontal", !!geometry?.railVisible && !geometry.barreVisible && !!geometry.noOverflow);
+  if (mobile) check(label + " : action pleine largeur et cible tactile d’au moins 44 px", geometry.controlHeight >= 44 && geometry.buttonWidth >= geometry.availableWidth - 2, `hauteur ${geometry?.controlHeight}`);
+  // Critère du lot L4 : sur l'accueil du projet, l'action est visible sans défiler au téléphone. L'accueil de l'application
+  // ajoute au-dessus les entrées Importer / Nouveau projet et le titre du dossier de reprise (en-tête : lot L9) ; il est relevé, pas exigé.
+  if (mobile && label.startsWith("projet-")) check(label + " : action visible sans défiler", geometry.controlInView);
+  else if (mobile) console.log(`  ${label} : action ${geometry.controlInView ? "visible" : "sous la ligne de flottaison"} sans défiler (relevé, lot L9)`);
   await page.screenshot({ path: join(OUT, label + ".png"), fullPage: true });
 }
 async function register(target, email) {
@@ -122,8 +138,8 @@ try {
   check("sélection : destination native vers l’accueil du dossier", await aLink.getAttribute("href") === dossierPath(a.id));
   await aLink.click();
   await page.waitForURL(`${BASE}${dossierPath(a.id)}`);
-  await overview(a.id).waitFor();
-  check("dossier vierge : action retirée de la carte", await overview(a.id).locator(".dossier-primary-action").count() === 0);
+  await primary(a.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  check("dossier vierge confirmé : Commencer le Parcours mène à 01", (await primary(a.id).getByRole("link").getAttribute("href")) === `${dossierPath(a.id)}?module=parcours&etape=1`);
   check("dossier vierge : parcelle non renseignée, sans surface zéro présentée comme un relevé", (await overview(a.id).locator(".dossier-facts > div").first().textContent()).includes("Parcelle non renseignée"));
   check("aperçu absent : aucune date de génération d’image annoncée", !(await overview(a.id).locator(".dossier-preview figcaption").textContent()).includes("Généré le"));
   check("accueil du projet : identité explicite, sans salut de l’application", (await page.locator(".fadi-topbar-title h1").textContent()).includes(a.code) && !(await page.locator('[data-home="project"]').textContent()).includes("Bienvenue dans Fadi"));
@@ -138,6 +154,9 @@ try {
   const continueLink = page.locator(".dossier-journey .dossier-all-steps");
   await page.locator(`.dossier-journey .dossier-all-steps[href="${dossierPath(b.id)}?module=parcours"]`).waitFor();
   check("l’accès aux 21 étapes reste disponible", await continueLink.count() === 1 && (await continueLink.getAttribute("href")) === `${dossierPath(b.id)}?module=parcours`);
+  const resumeLink = primary(b.id).getByRole("link", { name: "Poursuivre le Parcours", exact: true });
+  await resumeLink.waitFor();
+  check("travail non séquentiel : la reprise vise l’étape 09 réellement en cours", await resumeLink.getAttribute("href") === `${dossierPath(b.id)}?module=parcours&etape=9`);
   const stepsBefore = await api("get", `/projects/${b.id}/steps`);
   await checkComposition(b.id, "projet-desktop");
   check("la cloche expose le nombre d’alertes du dossier", (await bell().getAttribute("data-alert-count")) !== null);
@@ -252,7 +271,7 @@ try {
   check("Accueil ne duplique ni le parcours complet ni les modules et documents du dossier", await page.locator(".overview-step,.module-nav,.dossier-journey,.dossier-modules,.dossier-resources").count() === 0);
   await page.reload();
   await overview(b.id).waitFor();
-  check("rechargement d’Accueil : même dossier sans commande dupliquée", await overview(b.id).count() === 1 && await overview(b.id).locator(".dossier-primary-action").count() === 0);
+  check("rechargement d’Accueil : même dossier, une seule action, explicitement rattachée", await overview(b.id).count() === 1 && await primary(b.id).count() === 1 && (await primary(b.id).getByRole("link").getAttribute("href")).startsWith(`${dossierPath(b.id)}?module=parcours`));
   await checkComposition(b.id, "application-desktop");
   await axe("application-desktop");
 
@@ -293,7 +312,7 @@ try {
 
   // The useful action resumes an explicitly opened workspace, never a module
   // inferred from a stale review or a preview warning.
-  for (const [work, query] of [
+  for (const [work, query, actionLabel] of [
     ["programme", "module=programmation", "Ouvrir le programme"],
     ["atelier", "module=atelier", "Ouvrir l’Atelier"],
     ["review", "module=parcours&etape=11&bilan=1", "Consulter la revue"],
@@ -304,14 +323,14 @@ try {
       try { const value = JSON.parse(localStorage.getItem(key)); return value?.projectId === projectId && value?.currentWork === work; } catch { return false; }
     }), { projectId: b.id, work });
     await openHome();
-    const workLink = overview(b.id);
+    const workLink = primary(b.id).getByRole("link", { name: actionLabel, exact: true });
     await workLink.waitFor();
-    check(`travail explicitement consulté · ${work} : la commande de la carte est bien supprimée`, await workLink.locator(".dossier-primary-action").count() === 0);
+    check(`travail explicitement consulté · ${work} : reprise du même module et du même dossier`, await workLink.getAttribute("href") === `${dossierPath(b.id)}?${query}`);
   }
   await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours&etape=9`);
   await page.locator(".top-stage").filter({ hasText: "ÉTAPE 09" }).waitFor();
   await openHome();
-  await overview(b.id).waitFor();
+  await primary(b.id).getByRole("link", { name: "Poursuivre le Parcours", exact: true }).waitFor();
 
   // Première lecture retenue, puis échec explicite : jamais 0/21 à partir d’une absence de réponse.
   let releaseSteps;
@@ -329,7 +348,8 @@ try {
   });
   await openHome(c.id);
   await overview(c.id).waitFor();
-  check("chargement : aucun faux compteur 0/21", !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
+  await primary(c.id).getByRole("button", { name: /Chargement du Parcours/ }).waitFor();
+  check("chargement : action en attente et aucun faux compteur 0/21", await primary(c.id).getByRole("button").isDisabled() && !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
   check("programme en chargement : pas de fausse donnée indisponible", !(await overview(c.id).locator(".dossier-facts").textContent()).includes("Information indisponible"));
   releaseSteps();
   const retrySteps = page.locator(".notification-bell .notification-alerts button").filter({ hasText: "Actualiser l’avancement" });
@@ -340,6 +360,9 @@ try {
   await retrySteps.click();
   await page.locator('[data-alert-id="steps-read"]').waitFor({ state: "hidden" });
   check("reprise réussie : avertissement d’avancement retiré", await page.locator('[data-alert-id="steps-read"]').count() === 0);
+  await page.keyboard.press("Escape");
+  await primary(c.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  check("reprise réussie : le vrai dossier vide peut alors proposer l’étape 01", (await primary(c.id).getByRole("link").getAttribute("href")).endsWith("&etape=1"));
   await page.unroute(stepsUrl);
   await page.unroute(initialProgrammeUrl);
 
@@ -359,8 +382,8 @@ try {
     }
   });
   await openHome(unknown.id);
-  await overview(unknown.id).waitFor();
-  check("rôle inconnu : pas de commande de progression dans la carte", await overview(unknown.id).locator(".dossier-primary-action").count() === 0);
+  await primary(unknown.id).getByRole("button", { name: "Vérifier l’accès au dossier", exact: true }).waitFor();
+  check("rôle inconnu : pas d’action d’écriture ou de progression supposée autorisée", await primary(unknown.id).getByRole("link").count() === 0);
   // Seule interception de page encore active ici (les précédentes sont retirées, la suivante n'est pas posée) :
   // `unrouteAll({ behavior: "wait" })` la retire puis attend la fin de tout gestionnaire en cours (route.fetch /
   // route.fulfill), sans quoi sa réponse pouvait arriver sur une requête déjà rendue au réseau (« Route is already
@@ -447,15 +470,90 @@ try {
   await axe("cockpit-mobile");
   await page.screenshot({ path: join(OUT, "cockpit-mobile-r3.png"), fullPage: true });
   await openHome(b.id);
-  await selector.click();
-  await menu.waitFor();
-  const menuBounds = await menu.boundingBox(), railBounds = await page.locator(".app-sidebar").boundingBox();
-  check("téléphone : le sous-menu s’ouvre à droite de la barre et tient dans l’écran", menuBounds && railBounds && menuBounds.x >= railBounds.x + railBounds.width - 2 && menuBounds.x + menuBounds.width <= 391);
+  // Lot Design L6 : au téléphone, « Projets » est un lien de la barre du bas vers /projets (le volant reste au bureau).
+  const barre = page.locator("[data-fd-barre-bas]");
+  const entreesBarre = (await barre.locator("[data-fd-entree]").allTextContents()).map((t) => t.trim()).join("|");
+  check("téléphone : barre du bas Accueil, Projets, Studio, GeoData, Plus ; Projets mène à /projets", entreesBarre === "Accueil|Projets|Studio|GeoData|Plus" && await barre.locator('[data-fd-entree="projets"]').getAttribute("href") === "/projets" && await selector.count() === 0, entreesBarre);
+  const plus = barre.locator('[data-fd-entree="plus"]');
+  const urlAvantPlus = page.url();
+  await plus.click();
+  const feuille = page.locator("dialog[open][data-fd-feuille-plus]");
+  await feuille.waitFor();
+  const entreesFeuille = (await feuille.locator("a[data-fd-entree]").allTextContents()).map((t) => t.trim()).join("|");
+  check("feuille « Plus » : focus au titre, entrées dans l’ordre du groupe secondaire, « Plus » développé", await page.evaluate(() => document.activeElement?.id) === "fd-feuille-plus-titre" && entreesFeuille.startsWith("Collaboration|Bibliothèque|Harmonie|Revues externes|Organisations|Extensions|Paramètres") && await plus.getAttribute("aria-expanded") === "true", entreesFeuille);
+  const hauteurs = await feuille.locator(".fd-feuille-entree").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+  check("feuille « Plus » : chaque entrée mesure au moins 48 px de haut", hauteurs.length > 0 && hauteurs.every((h) => h >= 48), hauteurs.join(","));
+  await page.waitForTimeout(400); // fin de l’animation d’entrée (0,18 s) avant le calcul des contrastes
+  await axe("feuille-plus-mobile");
   await page.keyboard.press("Escape");
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForTimeout(200);
+  check("feuille « Plus » : Échap ferme, focus rendu à « Plus », adresse inchangée", await page.evaluate(() => document.activeElement?.getAttribute("data-fd-entree")) === "plus" && page.url() === urlAvantPlus && await plus.getAttribute("aria-expanded") === "false");
+  await plus.click();
+  await feuille.waitFor();
+  await page.goBack();
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForTimeout(200);
+  check("feuille « Plus » : Retour la ferme sans quitter la page", page.url() === urlAvantPlus);
+  await plus.click();
+  await feuille.locator('[data-fd-entree="parametres"]').click();
+  await page.waitForURL(`${BASE}/parametres`);
+  await feuille.waitFor({ state: "detached" });
+  await page.waitForFunction(() => document.querySelector('[data-fd-barre-bas] [data-fd-entree="plus"]')?.hasAttribute("aria-describedby"), null, { timeout: 5000 }).catch(() => {});
+  const decrit = await plus.getAttribute("aria-describedby");
+  check("feuille « Plus » : un choix ouvre la page, la feuille se ferme, « Plus » signale la page courante", decrit === "fd-plus-page" && (await page.locator("#fd-plus-page").textContent()) === "Page actuelle : Paramètres", String(decrit));
+  await page.goBack();
+  await page.waitForURL(urlAvantPlus);
+  check("feuille « Plus » : Retour après un choix revient à la page d’origine (aucune entrée d’historique en trop)", page.url() === urlAvantPlus);
+  for (const [largeur, barreAttendue] of [[700, true], [701, false]]) {
+    await page.setViewportSize({ width: largeur, height: 844 });
+    await page.waitForTimeout(150);
+    const etat = await page.evaluate(() => ({ barre: getComputedStyle(document.querySelector("[data-fd-barre-bas]")).display !== "none", rail: getComputedStyle(document.querySelector(".app-sidebar")).display !== "none" }));
+    check(`${largeur} px : ${barreAttendue ? "barre du bas seule" : "rail seul"}`, etat.barre === barreAttendue && etat.rail === !barreAttendue, JSON.stringify(etat));
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   await openHome();
   await overview(b.id).waitFor();
   await checkComposition(b.id, "application-mobile", true);
   await axe("application-mobile");
+
+  // Lot Design L9 (M21) : au téléphone, en-tête d'une rangée de 64 px au plus (titre, Rechercher, Autres actions, Cloche),
+  // sans icône Accueil (la barre du bas l'a) ; Historique, État et Langue sous « Autres actions » ; au bureau, inchangé.
+  const entete = async () => page.evaluate(() => {
+    const t = document.querySelector(".fadi-topbar"), vis = (s) => { const e = t?.querySelector(s); return !!e && e.getBoundingClientRect().width > 0; };
+    // Une rangée : les boîtes visibles du titre et des actions se recouvrent toutes verticalement.
+    const boites = [...(t?.querySelectorAll(".fadi-topbar-title h1, .fadi-topbar-actions > *") ?? [])].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+    const uneRangee = boites.length > 0 && Math.max(...boites.map((r) => r.top)) < Math.min(...boites.map((r) => r.bottom));
+    return { hauteur: t ? t.getBoundingClientRect().height : 0, rangees: uneRangee ? 1 : 2, accueil: vis(".topbar-home"), autres: vis(".topbar-autres"), historique: vis(".history-trigger"), etat: vis(".topbar-state"), langue: vis("[data-choix-langue]"), cloche: vis(".notification-bell"), debord: document.documentElement.scrollWidth > innerWidth + 1 };
+  });
+  for (const largeur of [412, 320]) {
+    await page.setViewportSize({ width: largeur, height: 844 });
+    await page.waitForTimeout(150);
+    const e = await entete();
+    check(`L9 · ${largeur} px : en-tête d’une rangée ≤ 64 px, sans icône Accueil ; Rechercher, Autres actions et Cloche visibles`, e.hauteur <= 64 && e.rangees === 1 && !e.accueil && e.autres && e.cloche && !e.historique && !e.etat && !e.langue && !e.debord, JSON.stringify(e));
+  }
+  const autres = page.getByRole("button", { name: "Autres actions", exact: true });
+  await autres.click();
+  await page.locator("#fadi-topbar-autres[data-ouvert]").waitFor();
+  const ouvert = await entete();
+  check("L9 · « Autres actions » développe Historique, État et Langue (cibles ≥ 48 px)", (await autres.getAttribute("aria-expanded")) === "true" && ouvert.historique && ouvert.etat && ouvert.langue
+    && (await page.locator("#fadi-topbar-autres > button").evaluateAll((bs) => bs.every((b) => b.getBoundingClientRect().height >= 48))), JSON.stringify(ouvert));
+  await axe("entete-autres-mobile");
+  await page.screenshot({ path: join(OUT, "l9-entete-autres-320.png") });
+  await page.keyboard.press("Escape");
+  check("L9 · Échap replie « Autres actions » et rend le focus au bouton", (await autres.getAttribute("aria-expanded")) === "false" && await autres.evaluate((el) => el === document.activeElement));
+  await autres.click();
+  await page.getByRole("button", { name: "Historique de la plateforme", exact: true }).click();
+  await page.getByRole("dialog").waitFor();
+  check("L9 · Historique s’ouvre depuis « Autres actions », qui se replie", (await autres.getAttribute("aria-expanded")) === "false");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  check("L9 · fermer l’Historique rend le focus à « Autres actions » (bouton visible)", await autres.evaluate((el) => el === document.activeElement));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(150);
+  const bureau = await entete();
+  check("L9 · bureau : en-tête inchangé (Accueil, Historique, État, Langue en ligne ; pas de bouton « Autres actions »)", bureau.accueil && bureau.historique && bureau.etat && bureau.langue && !bureau.autres, JSON.stringify(bureau));
+  await page.setViewportSize({ width: 390, height: 844 });
 
   // Copie des préférences du navigateur, mais aucune session : un autre compte
   // ne doit pas hériter de la consultation de son prédécesseur.

@@ -15779,7 +15779,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "ligne": 1543,
-          "controle": "NAV-001 mobile : entrée Studio présente et visible",
+          "controle": "NAV-001 mobile : entrée Studio présente et visible (barre du bas)",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur.",
           "commit": "779e082a6680631fbcb290d159138f0b356d005d",
           "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/39165297189/job/117787319169",
@@ -18032,7 +18032,7 @@
             "I.5-02 : flèche droite déplie le menu, le focus reste sur le chevron",
             "I.5-02 : menu déplié — Tab atteint « Console » puis « Accueil Studio »",
             "I.5-02 : flèche gauche replie le menu, le focus reste sur le chevron",
-            "I.5-02 : menu replié — Tab saute les entrées masquées (Console, puis Collaboration)",
+            "I.5-02 : menu replié — Tab saute les entrées masquées (Console, GeoData, puis Collaboration)",
             "I.5-02 : un clic sur le chevron le déplie et lui laisse le focus",
             "I.5-02 : un second clic le replie, focus gardé",
             "I.5-02 : Entrée sur l'entrée Studio ouvre l'accueil Studio ; l'entrée devient active (aria-current)"
@@ -71207,7 +71207,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-domaines.mjs",
           "controles": [
-            "RISQ-02 téléphone : sur la planche de Studio, la barre latérale de Fadi reste affichée, aucun mode immersif"
+            "RISQ-02 téléphone : sur la planche de Studio, la navigation de Fadi (barre du bas) reste affichée, aucun mode immersif"
           ],
           "rapport": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Test ajouté ou relu le 25 octobre 2026 ; libellés relus mot pour mot dans leur fichier ou dans le journal de la recette ; recettes rejouées sur base neuve puis en CI.",

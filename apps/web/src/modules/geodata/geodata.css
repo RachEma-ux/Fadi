@@ -78,7 +78,7 @@
 .geodata-page .gd-mesure{background:#fff;border:1px solid var(--gd-accent);border-radius:6px;padding:6px 8px}
 .geodata-page .gd-analyse{border:1px solid var(--gd-ligne);border-radius:8px;padding:8px;margin:8px 0}
 .geodata-page .maplibregl-ctrl-attrib{font-size:11px;max-width:70%}
-@media(max-width:760px){
+@media(max-width:700px){
   .geodata-page .gd-barre{padding:6px}
   .geodata-page .gd-enregistrement{margin-left:0}
   .geodata-page .gd-menu{margin-left:auto}
@@ -98,8 +98,8 @@
 
 /* Barre d'outils verticale flottante (à droite par défaut, déplaçable) et bouton « Données » (organisation de Kharita). */
 .geodata-page .gd-bouton-donnees{position:absolute;left:10px;top:10px;z-index:5;display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:999px;padding:6px 14px;box-shadow:0 2px 10px rgba(23,59,67,.18)}
-.geodata-page .gd-barre-outils{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;max-height:calc(100% - 8px);overflow:auto;touch-action:none}
-.geodata-page .gd-poignee{width:40px;min-height:22px;height:22px;padding:0;display:flex;align-items:center;justify-content:center;cursor:grab;border-radius:6px;box-shadow:0 2px 10px rgba(23,59,67,.14)}
+.geodata-page .gd-barre-outils{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;max-height:calc(100% - 8px);overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+.geodata-page .gd-poignee{position:sticky;top:0;z-index:1;touch-action:none;flex:none;width:40px;min-height:24px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;cursor:grab;border-radius:6px;box-shadow:0 2px 10px rgba(23,59,67,.14)}
 .geodata-page .gd-poignee:active{cursor:grabbing}
 /* Mini-barre de recherche (loupe) sous la barre d'outils, même style ; barre de recherche flottante à sa gauche. */
 .geodata-page .gd-barre-recherche{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center}
@@ -192,10 +192,10 @@
 /* Panneau Données ouvert (360 px à gauche) : la mini-carte se place à sa droite, jamais dessous. */
 .geodata-page .gd-mini-carte.gd-mini-decalee{left:380px}
 /* Téléphone (même seuil que le panneau, posé en bas sur 62 % de la carte) : mini-carte réduite, au-dessus du panneau. */
-@media (max-width:760px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px)}}
+@media (max-width:700px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px)}}
 /* Lot H (D-GD-28) : barre territoriale permanente — listes des niveaux dans la pastille de navigation. */
 .geodata-page .gd-territoires select{max-width:13rem;border:1px solid #c9d6d1;border-radius:6px;padding:2px 4px;background:#fff;font:inherit;color:inherit}
-@media (max-width:760px){.geodata-page .gd-territoires select{max-width:8rem}}
+@media (max-width:700px){.geodata-page .gd-territoires select{max-width:8rem}}
 /* Barre d'onglets (D-GD-37) : remplace la barre blanche ; ☰ reste à droite. Défilement horizontal sur téléphone. */
 .geodata-page .gd-barre{flex-wrap:nowrap;padding-top:0;padding-bottom:0}
 .geodata-page .gd-barre-onglets{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
@@ -257,7 +257,7 @@
 .geodata-page .gd-liste-concepts dd{margin:0}
 .geodata-page .gd-liste-concepts dd p{margin:0 0 4px}
 .geodata-page .gd-liste-concepts[dir="rtl"]{font-family:"Noto Naskh Arabic","Geeza Pro",Arial,sans-serif}
-@media (max-width:760px){
+@media (max-width:700px){
   .geodata-page .gd-tableau-bord{padding:10px 10px 28px}
   .geodata-page .gd-onglet-page{padding:0 10px;font-size:13px}
   .geodata-page .gd-chiffre-valeur{font-size:22px}
@@ -282,7 +282,7 @@
 .geodata-page .gd-synthese-stats dt{font-weight:600}
 .geodata-page .gd-synthese-stats dd{margin:0;display:flex;flex-wrap:wrap;gap:0 .35em}
 .geodata-page .gd-zoom-affiche{position:absolute;left:10px;bottom:6px;margin:0;z-index:3;background:rgba(255,255,255,.9);border:1px solid var(--gd-ligne);border-radius:6px;padding:1px 8px;font-size:.78rem;pointer-events:none}
-@media (max-width:760px){
+@media (max-width:700px){
   .geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{left:10px;right:10px;width:auto;bottom:34px;max-height:40%}
   .geodata-page .gd-synthese.gd-synthese-haute{bottom:134px}
 }
@@ -295,7 +295,7 @@
 .geodata-page .gd-pastille-cat{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
 .geodata-page .gd-part{display:block;height:3px;border-radius:2px;margin-top:2px;margin-left:auto;opacity:.85}
 .geodata-page .gd-croise-bloc .gd-alerte{font-size:.82rem;margin:4px 0 0}
-@media (max-width:760px){.geodata-page .gd-croise{font-size:.8rem}.geodata-page .gd-croise th,.geodata-page .gd-croise td{padding:3px 4px}}
+@media (max-width:700px){.geodata-page .gd-croise{font-size:.8rem}.geodata-page .gd-croise th,.geodata-page .gd-croise td{padding:3px 4px}}
 /* Zone d'étude qui filtre (D-GD-41) : puce en haut au centre de la carte, × pour retirer le filtre. */
 .geodata-page .gd-puce-zone{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:.35em;max-width:min(420px,70%);background:#fff7ed;border:1px solid #c77b35;border-radius:999px;padding:3px 4px 3px 12px;box-shadow:0 2px 8px rgba(23,59,67,.12);font-size:.86rem;white-space:nowrap;overflow:hidden}
 .geodata-page .gd-puce-zone span[translate="no"]{overflow:hidden;text-overflow:ellipsis;font-weight:600}
@@ -312,7 +312,7 @@
 .geodata-page .gd-pastille-badge{min-width:1.4em;text-align:center;border-radius:999px;padding:0 6px;background:#e8f0f0;color:var(--gd-encre);font-size:.78rem;font-weight:600}
 .geodata-page .gd-theme-affiche .gd-pastille-badge{background:#fff}
 .geodata-page .gd-puce-zone{top:52px}
-@media (max-width:760px){.geodata-page .gd-pastilles{left:10px;top:52px;max-width:calc(100% - 70px)}.geodata-page .gd-puce-zone{top:94px}}
+@media (max-width:700px){.geodata-page .gd-pastilles{left:10px;top:52px;max-width:calc(100% - 70px)}.geodata-page .gd-puce-zone{top:94px}}
 /* À proximité (D-GD-49) : objet le plus proche cliquable, ouvert dans la fiche. */
 .geodata-page .gd-proximite .gd-lien{border:0;background:none;padding:0;cursor:pointer;color:var(--gd-accent);text-decoration:underline;font:inherit}
 .geodata-page .gd-proximite li{display:block;padding:3px 0}
@@ -325,18 +325,25 @@
 .geodata-page .gd-echelle dt{font-weight:600}
 .geodata-page .gd-echelle dd{margin:0}
 @media print{.geodata-page .gd-echelle-barre{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-/* Barre du bas (D-GD-52) : téléphone seulement ; panneaux, volets, échelle et encarts remontent de sa hauteur. */
+/* Barre du bas (D-GD-52) : téléphone seulement ; panneaux, volets, échelle et encarts remontent de sa hauteur.
+   Chantier Design, lot L7 : seule barre du bas sur GeoData, même hauteur (au moins 64 px, elle grandit avec la police) et
+   même fond que la barre de l'application, pour qu'on passe d'un écran à l'autre sans voir la barre changer. */
 .geodata-page .gd-barre-bas{display:none}
-@media (max-width:760px){
-  .geodata-page{--gd-barre-bas:58px}
-  .geodata-page .gd-barre-bas{position:absolute;left:0;right:0;bottom:0;height:var(--gd-barre-bas);z-index:7;display:flex;justify-content:space-around;align-items:stretch;background:#fff;border-top:1px solid var(--gd-ligne);box-shadow:0 -2px 10px rgba(23,59,67,.10)}
-  .geodata-page .gd-barre-bas-bouton{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;font:inherit;font-size:.72rem;color:var(--gd-encre);min-height:44px;padding:4px 0}
-  .geodata-page .gd-barre-bas-bouton[aria-pressed="true"]{color:var(--gd-accent);font-weight:600}
+@media (max-width:700px){
+  .geodata-page{--gd-barre-bas:calc(var(--fd-barre-bas-hauteur,64px) + env(safe-area-inset-bottom,0px))}
+  .geodata-page .gd-barre-bas{position:absolute;left:0;right:0;bottom:0;min-height:var(--gd-barre-bas);z-index:7;display:flex;justify-content:space-around;align-items:stretch;box-sizing:border-box;background:var(--forest-900);border-top:1px solid #ffffff26;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .geodata-page .gd-barre-bas-bouton{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:0;background:transparent;font:inherit;font-size:.72rem;color:#f0f5ef;min-height:48px;padding:4px 0}
+  /* (0,5,0) : au-dessus de la règle générique `.geodata-page button:hover:not(:disabled)` (fond presque blanc). */
+  .geodata-page .gd-barre-bas .gd-barre-bas-bouton:hover:not(:disabled){background:#ffffff16;color:#fff}
+  .geodata-page .gd-barre-bas-bouton:focus-visible{outline:2px solid #d6de8b;outline-offset:-4px}
+  /* État pressé : règle unique de spécificité (0,4,0), au-dessus de la règle générique `button[aria-pressed]` (l. 12) et de son
+     survol. Sans elle, le fond prenait l'accent et le texte aussi : libellé « Carte » à 1,00:1 (WCAG 1.4.3). */
+  .geodata-page .gd-barre-bas .gd-barre-bas-bouton[aria-pressed="true"],.geodata-page .gd-barre-bas .gd-barre-bas-bouton[aria-pressed="true"]:hover{color:#fff;background:#ffffff21;border-color:transparent;font-weight:600;box-shadow:inset 0 3px 0 #d6de8b}
   .geodata-page .gd-barre-bas-bouton:disabled{opacity:.45}
   .geodata-page .gd-panneau,.geodata-page .gd-volet{bottom:var(--gd-barre-bas)}
   .geodata-page .gd-carte{padding-bottom:var(--gd-barre-bas);box-sizing:border-box}
 }
-@media (max-width:760px){.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px + var(--gd-barre-bas))}.geodata-page .gd-mini-carte{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese.gd-synthese-haute{bottom:calc(134px + var(--gd-barre-bas))}.geodata-page .gd-zoom-affiche{bottom:calc(6px + var(--gd-barre-bas))}}
+@media (max-width:700px){.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px + var(--gd-barre-bas))}.geodata-page .gd-mini-carte{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese,.geodata-page .gd-synthese.gd-synthese-decalee{bottom:calc(34px + var(--gd-barre-bas))}.geodata-page .gd-synthese.gd-synthese-haute{bottom:calc(134px + var(--gd-barre-bas))}.geodata-page .gd-zoom-affiche{bottom:calc(6px + var(--gd-barre-bas))}}
 /* Prix immobiliers (lot P7) : état = icône + texte (jamais la couleur seule), tableaux sans défilement horizontal
    (texte replié, colonnes resserrées), couleurs de la palette partagée. */
 .geodata-page .gd-prix{display:flex;flex-direction:column;gap:8px;margin:4px 0 8px}
@@ -374,7 +381,7 @@
 .geodata-page .gd-prix-carte{border:1px solid var(--gd-ligne);border-radius:8px;background:var(--surface);padding:8px 10px;margin:10px 0}
 .geodata-page .gd-prix-carte h5{margin-top:0}
 .geodata-page .gd-prix-carte ul{margin:4px 0;padding-left:18px;font-size:12px}
-@media (max-width:760px){
+@media (max-width:700px){
   .geodata-page .gd-prix-table{font-size:.76rem}
   .geodata-page .gd-prix-table th,.geodata-page .gd-prix-table td{padding:3px 3px}
   .geodata-page .gd-prix-table thead th{font-size:.7rem}
@@ -385,8 +392,8 @@
 .geodata-page .gd-legende-indicateur h3{margin:0 0 4px;font-size:.84rem}
 .geodata-page .gd-legende-indicateur .gd-entrees{list-style:none;margin:0;padding:0}
 .geodata-page .gd-legende-indicateur p{margin:4px 0 0}
-@media (min-width:761px){.geodata-page .gd-legende-indicateur.gd-legende-decalee{left:380px}}
-@media (max-width:760px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}
+@media not all and (max-width:700px){.geodata-page .gd-legende-indicateur.gd-legende-decalee{left:380px}}
+@media (max-width:700px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}
 /* Terrain haute résolution (TER-05) : bouton « Terrain » à droite de « Données », panneau Terrain, légendes, profil. */
 .geodata-page .gd-bouton-terrain{left:142px}
 .geodata-page .gd-terrain fieldset{border:1px solid var(--gd-ligne);border-radius:8px;margin:8px 0;padding:6px 8px}

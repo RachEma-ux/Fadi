@@ -2,14 +2,20 @@
 
 ## À faire
 
-- [ ] DESIGN-L1 — GeoData : seuil 700 px et « Carte » lisible (#414).
-- [ ] DESIGN-L2 — GeoData : colonne d'outils défilable (#415).
-- [ ] DESIGN-L3 — Étape : saisie invalide sans effacement (#416).
-- [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 (#417).
+- Lots L8 et suivants (sauf L9) : à autoriser ([PLAN-LOTS.md](PLAN-LOTS.md)).
 
 ## En cours
 
-- [ ] DESIGN-L0 — Outillage de recette design (#413), branche `design/l0-outillage`.
+- [ ] DESIGN-L0 — Outillage de recette design (#413), PR #418.
+- [ ] DESIGN-L1 — GeoData : seuil 700 px et « Carte » lisible (#414), PR #419.
+- [ ] DESIGN-L2 — GeoData : colonne d'outils défilable (#415), PR #420.
+- [ ] DESIGN-L3 — Étape : saisie invalide sans effacement (#416), PR #421.
+- [ ] DESIGN-L4 — Vue d'ensemble : action utile de la Tâche 3 remise (#417), branche `design/l4-action-utile`.
+- [ ] DESIGN-L5 — Navigation téléphone : préparation masquée (#429).
+- [ ] DESIGN-L6 — Navigation téléphone : barre du bas active, rail masqué (#430).
+- [ ] DESIGN-L6b — Rail du bureau dans l'ordre de « Plus » (#431).
+- [ ] DESIGN-L7 — L7 GeoData barre unique (#432) : PR ouverte, en attente de CI et de fusion par Roch (#432).
+- [ ] DESIGN-L9 — L9 en-tête d'une rangée (#433) : PR ouverte, en attente de CI et de fusion par Roch (#433).
 
 ## Terminé
 

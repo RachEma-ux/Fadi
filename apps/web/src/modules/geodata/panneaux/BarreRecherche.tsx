@@ -129,7 +129,8 @@ export function BarreRecherche(p: ProprietesRecherche) {
   mesurer.current = () => {
     const m = mini.current, carte = m?.parentElement;
     if (!m || !carte || !p.outils) return;
-    const dims = { largeur: carte.clientWidth, hauteur: carte.clientHeight };
+    // Hauteur utile : sans la marge basse réservée à la barre du bas au téléphone (lot Design L2).
+    const dims = { largeur: carte.clientWidth, hauteur: carte.clientHeight - (parseFloat(getComputedStyle(carte).paddingBottom) || 0) };
     const bas = carte.querySelector<HTMLElement>(".maplibregl-ctrl-bottom-right");
     // Les contrôles du bas (échelle, sources) apparaissent et grandissent quand MapLibre les remplit : suivis dès qu'ils existent.
     if (bas && basObserve.current !== bas) { basObserve.current = bas; observateur.current?.observe(bas); }
@@ -141,7 +142,7 @@ export function BarreRecherche(p: ProprietesRecherche) {
     setPanneau((a) => (a && a.gauche === r.gauche && a.haut === r.haut && a.largeur === r.largeur && a.resultatsVersLeHaut === r.resultatsVersLeHaut ? a : r));
     const d = boutonFond.current?.offsetTop ?? 0;
     setDecalageFond((a) => (a === d ? a : d));
-    setHauteurCarte((a) => (a === dims.hauteur ? a : dims.hauteur));
+    setHauteurCarte((a) => (a === carte.clientHeight ? a : carte.clientHeight));
     setLargeurCarte((a) => (a === dims.largeur ? a : dims.largeur));
     const dn = boutonNavigation.current?.offsetTop ?? 0;
     setDecalageNavigation((a) => (a === dn ? a : dn));
