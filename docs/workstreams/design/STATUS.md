@@ -4,7 +4,7 @@ Mis à jour : 2026-11-26 (UTC).
 
 ## État
 
-**En cours** — lots L0 (PR #418), L1 (PR #419) et L2 implémentés sur branches empilées ; non acceptés.
+**En cours** — lots L0 (PR #418), L1 (PR #419), L2 (PR #420) et L3 implémentés sur branches empilées ; non acceptés.
 
 ## Faits vérifiés
 
@@ -23,6 +23,12 @@ Mis à jour : 2026-11-26 (UTC).
   (781 px) ; avant, elle descendait à 841 px et cinq outils étaient cachés dessous. Elle défile au doigt (`pan-y`,
   balayage tactile CDP : `scrollTop` 178) ; la poignée (24 px, collante) garde seule le glisser. `e2e/geodata.mjs` :
   273 contrôles verts en local, dont 4 nouveaux (`DESIGN L2`).
+
+- L3 (#416) : un champ nombre d'étape est un texte à clavier décimal ; « 12,5 » est enregistré 12,5 ; « 1e » et
+  « abc » gardent le texte, affichent un message relié au champ (`aria-invalid`, `aria-describedby`) et n'envoient
+  aucune écriture ; « -3 » reste accepté. Avant : « 1e » effaçait en silence une valeur enregistrée (500 relu vide
+  après rechargement, vérifié). Date incomplète : même règle. `parcours-scenario.mjs` : 5 contrôles `DESIGN L3` verts
+  en local ; vitest `lireNombre` : 3 tests.
 
 ## Points ouverts
 

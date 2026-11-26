@@ -17,6 +17,21 @@ function toInputValue(v: ParcoursFieldValue | undefined): string {
   return String(v);
 }
 
+/**
+ * Lecture d'un nombre saisi (lot Design L3, arbitrage 11) : virgule ou point décimal, espaces de milliers tolérées.
+ * Toute autre saisie (« 1e », « abc », « 12,5,3 ») est refusée : `null`, jamais une valeur devinée. Le signe est libre :
+ * aucune règle métier nouvelle (« -3 » reste accepté, comme avant).
+ */
+export function lireNombre(saisie: string): number | null {
+  const s = saisie.replace(/[\s\u00a0\u202f]/g, "");
+  if (!/^[-+]?(\d+([.,]\d*)?|[.,]\d+)$/.test(s)) return null;
+  const n = Number(s.replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+const MESSAGE_NOMBRE = "Nombre attendu, par exemple 12,5. La valeur enregistrée n'a pas changé.";
+const MESSAGE_DATE = "Date incomplète ou invalide. La valeur enregistrée n'a pas changé.";
+
 function Field({
   field,
   value,
@@ -27,51 +42,61 @@ function Field({
   onCommit: (key: string, value: ParcoursFieldValue) => void;
 }) {
   const [draft, setDraft] = useState(toInputValue(value));
-  useEffect(() => setDraft(toInputValue(value)), [value]);
+  const [erreur, setErreur] = useState<string | null>(null);
+  useEffect(() => { setDraft(toInputValue(value)); setErreur(null); }, [value]);
   const id = `biz-${field.key}`;
+  const idErreur = `${id}-erreur`;
 
-  function commit() {
+  // Une saisie invalide n'est jamais enregistrée ni effacée en silence : le texte reste, un message relié au champ
+  // l'explique (WCAG 3.3.1), et la valeur enregistrée ne change pas.
+  function commit(saisieInvalide = false) {
+    if (saisieInvalide) { setErreur(MESSAGE_DATE); return; }
     const trimmed = draft.trim();
     const current = toInputValue(value);
-    if (trimmed === current) return;
+    if (trimmed === current) { setErreur(null); return; }
     if (trimmed === "") {
+      setErreur(null);
       onCommit(field.key, null);
       return;
     }
     if (field.type === "number") {
-      const n = Number(trimmed.replace(",", "."));
-      if (!Number.isFinite(n)) {
-        setDraft(current);
-        return;
-      }
-      onCommit(field.key, n);
+      const n = lireNombre(trimmed);
+      if (n === null) { setErreur(MESSAGE_NOMBRE); return; }
+      setErreur(null);
+      if (toInputValue(n) !== current) onCommit(field.key, n);
       return;
     }
+    setErreur(null);
     onCommit(field.key, trimmed);
   }
 
   const wide = field.type === "textarea";
+  const nombre = field.type === "number";
   return (
     <div className={`biz-field${wide ? " wide" : ""}`}>
       <label htmlFor={id}>{field.label}</label>
       {wide ? (
-        <textarea id={id} value={draft} placeholder="À documenter…" onChange={(e) => setDraft(e.target.value)} onBlur={commit} rows={4} />
+        <textarea id={id} value={draft} placeholder="À documenter…" onChange={(e) => setDraft(e.target.value)} onBlur={() => commit()} rows={4} />
       ) : (
         <input
           id={id}
-          type={field.type}
-          inputMode={field.type === "number" ? "decimal" : undefined}
-          min={field.type === "number" ? 0 : undefined}
-          step={field.type === "number" ? "any" : undefined}
+          // Champ nombre en texte + clavier décimal : `type="number"` lisait « 12,5 » comme 125 ou rendait une valeur vide.
+          type={nombre ? "text" : field.type}
+          inputMode={nombre ? "decimal" : undefined}
+          autoComplete={nombre ? "off" : undefined}
           value={draft}
           placeholder={field.type === "text" ? "À documenter…" : undefined}
+          aria-invalid={erreur ? true : undefined}
+          aria-describedby={erreur ? idErreur : undefined}
+          data-biz-erreur={erreur ? "" : undefined}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={(e) => commit(field.type === "date" && e.currentTarget.validity.badInput)}
           onKeyDown={(e) => {
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           }}
         />
       )}
+      {erreur && <p id={idErreur} className="biz-erreur" role="alert">{erreur}</p>}
     </div>
   );
 }
