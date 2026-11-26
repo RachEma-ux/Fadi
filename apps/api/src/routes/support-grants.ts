@@ -10,7 +10,7 @@
  * téléchargement — refusés par le besoin déclaré de chaque route (`export`, `write`…) et, en plus, par `supportReadOnlyGuard`. Chaque accord, révocation et ouverture du projet est journalisé.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { auditLog, projectSupportGrants, users } from "../db/schema.js";
@@ -19,6 +19,7 @@ import { activeSupportGrant, projectOr404, SUPPORT_NO_EXPORT, SUPPORT_READ_ONLY 
 import { audit, clientIp } from "../lib/audit.js";
 import { newId } from "../lib/ids.js";
 import { EXPORT_PATH, supportTarget } from "../lib/support-path.js";
+import { platformRefusal } from "../lib/platform-access.js";
 
 export const supportGrantsRouter = Router({ mergeParams: true });
 supportGrantsRouter.use(requireAuth);
@@ -49,7 +50,9 @@ supportGrantsRouter.get("/", async (req, res) => {
     .groupBy(sql`${auditLog.metadata}->>'grantId'`);
   const last = new Map(access.map((a) => [a.grantId, a.at ? new Date(a.at) : null]));
   const admins = await db.select({ id: users.id, email: users.email, displayName: users.displayName }).from(users)
-    .where(and(eq(users.platformRole, "admin"), eq(users.status, "active"), isNull(users.deletionRequestedAt))).orderBy(users.email);
+    // Seuls les administrateurs dont la double authentification est active sont proposés : les autres ne pourraient pas
+    // utiliser l'accès (lib/owned-project.ts, activeSupportGrant).
+    .where(and(eq(users.platformRole, "admin"), eq(users.status, "active"), isNull(users.deletionRequestedAt), isNotNull(users.totpEnabledAt))).orderBy(users.email);
   res.json({ you: "owner", grants: rows.map((r) => grantView(r.grant, r, last.get(r.grant.id) ?? null)), admins, maxHours: SUPPORT_MAX_HOURS });
 });
 
@@ -66,6 +69,10 @@ supportGrantsRouter.post("/", async (req, res) => {
   const [admin] = await db.select().from(users).where(and(eq(users.id, parsed.data.adminId), eq(users.platformRole, "admin"), eq(users.status, "active"), isNull(users.deletionRequestedAt))).limit(1);
   if (!admin) {
     res.status(422).json({ error: "not_an_admin", message: "Seul un administrateur actif de la plateforme peut recevoir un accès support." });
+    return;
+  }
+  if (!admin.totpEnabledAt) {
+    res.status(422).json({ error: "admin_without_mfa", message: "Cet administrateur n'a pas activé la double authentification : il ne peut pas recevoir d'accès support." });
     return;
   }
   if (admin.id === req.user!.id) {
@@ -118,6 +125,12 @@ export async function supportReadOnlyGuard(req: Request, res: Response, next: Ne
   if (!row || row.owner || row.member) { next(); return; }
   const grant = await activeSupportGrant(projectId, user.id);
   if (!grant) { next(); return; }
+  // La session doit avoir prouvé le code de double authentification, comme pour l'administration (UM-18).
+  const refusal = platformRefusal(user, "admin", true);
+  if (refusal && refusal.status === 403) {
+    res.status(403).json(refusal.body);
+    return;
+  }
   if (req.method !== "GET" && req.method !== "HEAD" && sub !== "/support-grants") {
     res.status(403).json(SUPPORT_READ_ONLY);
     return;

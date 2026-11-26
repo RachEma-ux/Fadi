@@ -556,11 +556,15 @@ const documentInitial = (id: string, longueur: number) => applyStudioCommands(ne
  * commentaire `c1` de l'éditeur. Projet `q` d'un autre compte (`autre`) : étude `sq`, variante `vq`, tête `rq1`, aucun
  * acteur de `p` n'y est membre. Remet les relevés à zéro.
  */
+/** Mot de passe de chaque acteur simulé (création de jeton d'agent) et son hachage Argon2id aux paramètres courants. */
+export const MOT_DE_PASSE_ESSAI = "mot-de-passe-essai";
+const HASH_MOT_DE_PASSE_ESSAI = "$argon2id$v=19$m=19456,t=2,p=1$WcCe9BqG+kHu4u+cvV01EQ$257Bf4fyyGLO7JaafJmhJrAGsjMRKOPztS9a0UWFUhg";
+
 export function initialiserProjet(): void {
   const maintenant = new Date();
   banc.lignes = new Map<unknown, Ligne[]>([
     // `selfControlAllowed` : valeur par défaut de la colonne (OP-6), que la base simulée n'applique pas d'elle-même.
-    [users, [...ACTEURS, "autre"].map((id) => ({ id, email: `${id}@exemple.test`, displayName: null, status: "active", deletionRequestedAt: null, selfControlAllowed: true }))],
+    [users, [...ACTEURS, "autre"].map((id) => ({ id, email: `${id}@exemple.test`, displayName: null, status: "active", deletionRequestedAt: null, selfControlAllowed: true, passwordHash: HASH_MOT_DE_PASSE_ESSAI }))],
     [projects, [
       { id: "p", ownerId: "proprietaire", code: "P", name: "Projet", exampleMode: null, editingLock: null },
       { id: "q", ownerId: "autre", code: "Q", name: "Autre projet", exampleMode: null, editingLock: null },

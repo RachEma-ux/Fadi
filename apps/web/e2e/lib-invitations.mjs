@@ -20,18 +20,10 @@ const API_LOG = process.env.API_LOG;
  */
 export async function jetonDuCourriel(to, chemin, { tentatives = 60, attendus = 1 } = {}) {
   let dernier = null;
-  if (!MAILPIT && !API_LOG) throw new Error("lib-invitations : MAILPIT_URL ou API_LOG requis pour lire les courriels de la recette");
   for (let i = 0; i < tentatives; i++) {
-    let text = "";
-    if (MAILPIT) {
-      const list = await (await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)).json();
-      for (const msg of list.messages ?? []) text += `${(await (await fetch(`${MAILPIT}/api/v1/message/${msg.ID}`)).json()).Text ?? ""}\n`;
-    } else {
-      text = readFileSync(API_LOG, "utf8").split("\n").filter((l) => l.includes(`"to":"${to}"`)).map((l) => { try { return JSON.parse(l).text; } catch { return ""; } }).join("\n");
-    }
-    const links = [...text.matchAll(/https?:\/\/\S+#jeton=([A-Za-z0-9_%-]+)/g)].filter((m) => m[0].includes(chemin));
+    const links = await jetonsDuCourriel(to, chemin);
     if (links.length) {
-      dernier = decodeURIComponent(links[MAILPIT ? 0 : links.length - 1][1]);
+      dernier = links[0];
       if (links.length >= attendus) return dernier;
     }
     await new Promise((r) => setTimeout(r, 500));
@@ -39,8 +31,29 @@ export async function jetonDuCourriel(to, chemin, { tentatives = 60, attendus = 
   return dernier;
 }
 
-/** Confirme l'adresse du compte (lien de vérification reçu à l'inscription). */
+/** Jetons des liens `…<chemin>#jeton=…` déjà reçus à cette adresse, du plus récent au plus ancien (une seule lecture). */
+export async function jetonsDuCourriel(to, chemin) {
+  if (!MAILPIT && !API_LOG) throw new Error("lib-invitations : MAILPIT_URL ou API_LOG requis pour lire les courriels de la recette");
+  let text = "";
+  if (MAILPIT) {
+    const list = await (await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)).json();
+    for (const msg of list.messages ?? []) text += `${(await (await fetch(`${MAILPIT}/api/v1/message/${msg.ID}`)).json()).Text ?? ""}\n`;
+  } else {
+    text = readFileSync(API_LOG, "utf8").split("\n").filter((l) => l.includes(`"to":"${to}"`)).map((l) => { try { return JSON.parse(l).text; } catch { return ""; } }).join("\n");
+  }
+  const links = [...text.matchAll(/https?:\/\/\S+#jeton=([A-Za-z0-9_%-]+)/g)].filter((m) => m[0].includes(chemin)).map((m) => decodeURIComponent(m[1]));
+  // Mailpit rend les messages du plus récent au plus ancien ; le journal de l'API, dans l'ordre d'écriture.
+  return MAILPIT ? links : links.reverse();
+}
+
+/**
+ * Confirme l'adresse du compte. Depuis l'inscription par lien (Issue #425), un compte créé par le lien a déjà son adresse
+ * vérifiée : 200 sans courriel. Sinon (compte antérieur), lien de vérification demandé puis suivi.
+ */
 export async function verifierAdresse(call, email) {
+  const me = await call("GET", "/auth/me");
+  if (me.status === 200 && me.body?.emailVerified) return { status: 200, body: { verified: true, already: true } };
+  await call("POST", "/auth/verify-email/request", {});
   const token = await jetonDuCourriel(email, "/compte/verifier-email");
   if (!token) return { status: 0, body: { error: "verification_mail_missing" } };
   return call("POST", "/auth/verify-email/confirm", { token });

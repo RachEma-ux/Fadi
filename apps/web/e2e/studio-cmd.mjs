@@ -18,6 +18,7 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import { chromium } from "playwright";
+import { inscrire, inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -43,7 +44,7 @@ function client() {
 }
 const identifiants = () => ({ email: `studio-cmd-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") });
 const proprio = client(), autre = client();
-check("comptes créés par l'API", (await proprio("POST", "/auth/register", identifiants())).status === 201 && (await autre("POST", "/auth/register", identifiants())).status === 201);
+check("comptes créés par l'API", (await inscrire(proprio, identifiants(), "POST")).status === 201 && (await inscrire(autre, identifiants(), "POST")).status === 201);
 const projet = (await proprio("POST", "/projects", { code: `CMD_${randomUUID().slice(0, 6)}`, name: "Studio — recette CMD (synthétique)" })).body;
 const P = `/projects/${projet.id}/studio`;
 const etude = (await proprio("POST", `${P}/studies`, { name: "Étude CMD" })).body;
@@ -140,10 +141,7 @@ try {
   page.setDefaultTimeout(25000);
   page.on("pageerror", (e) => erreurs.push(e.message));
   page.on("dialog", (d) => void d.accept());
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', identifiants().email);
-  await page.fill('input[name="password"]', "studio-cmd-ci-123456");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, identifiants().email, "studio-cmd-ci-123456", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   const api = async (method, path, data) => { const r = await context.request[method](`${BASE}${path}`, data === undefined ? undefined : { data }); return r.json(); };
   const pj = await api("post", "/projects", { code: `CMDUI_${randomUUID().slice(0, 5)}`, name: "Studio — recette CMD navigateur" });

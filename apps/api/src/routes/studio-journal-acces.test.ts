@@ -11,6 +11,7 @@ import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { db, pool } from "../db/client.js";
 import { studioAccessEvents, studioAccessPurges } from "../db/schema.js";
 import { runStudioAccessRetentionJob } from "../lib/studio-journal-acces.js";
+import { inscrire } from "../test-helpers/inscription.js";
 
 const app = createApp();
 beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
@@ -18,7 +19,7 @@ afterAll(async () => { await pool.end(); });
 
 async function compte(email: string) {
   const client = request.agent(app);
-  const r = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
+  const r = await inscrire(client, email, "correct-horse-battery");
   expect(r.status).toBe(201);
   return { client, id: r.body.id as string };
 }

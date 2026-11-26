@@ -18,6 +18,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/sandbox-axes";
@@ -100,10 +101,7 @@ const ligneEtat = (page) => page.locator("[data-reperes-etat]").textContent();
 try {
   // ———————————————————————————————————————————————————————————— Ordinateur
   const { context, page } = await nouvellePage({ width: 1440, height: 900 });
-  await page.goto(`${BASE}/inscription`);
-  await page.fill('input[name="email"]', `axes-${Date.now()}@example.com`);
-  await page.fill('input[name="password"]', "sandbox-axes-ci-123");
-  await page.click('button[type="submit"]');
+  await inscrireDansLaPage(page, `axes-${Date.now()}@example.com`, "sandbox-axes-ci-123", BASE);
   await page.waitForURL(/\/(accueil|projets)$/);
   await ouvrirSandbox(page);
   const { cliquer, touche, saisir } = await outils(page);
@@ -262,10 +260,7 @@ try {
   // ———————————————————————————————————————————————————————————— Téléphone
   const tel = await nouvellePage({ width: 390, height: 844 });
   await tel.page.goto(`${BASE}/connexion`).catch(() => undefined);
-  await tel.page.goto(`${BASE}/inscription`);
-  await tel.page.fill('input[name="email"]', `axes-tel-${Date.now()}@example.com`);
-  await tel.page.fill('input[name="password"]', "sandbox-axes-ci-123");
-  await tel.page.click('button[type="submit"]');
+  await inscrireDansLaPage(tel.page, `axes-tel-${Date.now()}@example.com`, "sandbox-axes-ci-123", BASE);
   await tel.page.waitForURL(/\/(accueil|projets)$/);
   await ouvrirSandbox(tel.page);
   await tel.page.keyboard.press("Alt+Shift+Digit1");

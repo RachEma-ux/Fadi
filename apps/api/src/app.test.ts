@@ -5,7 +5,7 @@
  * qu'un mock masquerait. Nécessite une TEST_DATABASE_URL attestée et
  * un schéma déjà provisionné ; essais DB-3 soumis à autorisation distincte.
  */
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { accepterEnBase, exportAccordeEnBase, partager, partagerEnBase } from "./test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
@@ -15,6 +15,9 @@ import { resetTestDatabase } from "./testing/guarded-test-pool.js";
 import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
 import { base32Decode, hotp, stepAt } from "./lib/security/totp.js";
+import { inscrire } from "./test-helpers/inscription.js";
+import { REGISTER_ANSWER } from "./routes/auth.js";
+import { resetMailRuntime } from "./lib/mailer/index.js";
 
 const app = createApp();
 
@@ -51,7 +54,7 @@ function agent() {
 
 async function registerAndLogin(email: string) {
   const client = agent();
-  const res = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
+  const res = await inscrire(client, email, "correct-horse-battery");
   expect(res.status).toBe(201);
   return client;
 }
@@ -101,8 +104,11 @@ describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => 
 
 describe("auth", () => {
   it("rejects a password shorter than 12 characters (D-6, gestion des comptes)", async () => {
-    const res = await agent().post("/auth/register").send({ email: "a@example.com", password: "short" });
+    // Le mot de passe se choisit sur la page du lien (Issue #425) : c'est l'activation qui le refuse.
+    const res = await inscrire(agent(), "a@example.com", "short");
     expect(res.status).toBe(400);
+    expect(res.body.error).toBe("weak_password");
+    expect((await pool.query("SELECT count(*)::int AS n FROM users WHERE email = 'a@example.com'")).rows[0].n).toBe(0);
   });
 
   it("registers, sets a session cookie, and exposes /auth/me", async () => {
@@ -127,11 +133,58 @@ describe("auth", () => {
     expect((await agent().patch("/auth/me").send({ displayName: "Roch" })).status).toBe(401);
   });
 
-  it("rejects a duplicate registration with a generic error", async () => {
+  it("inscription : même réponse pour une adresse connue ou nouvelle, aucune session, aucun compte avant le lien (Issue #425)", async () => {
     await registerAndLogin("bob@example.com");
-    // Mot de passe conforme (12 caractères au moins, D-6) : le refus vient bien du doublon, pas de la politique.
-    const res = await agent().post("/auth/register").send({ email: "bob@example.com", password: "whatever-12345" });
-    expect(res.status).toBe(409);
+    const known = agent();
+    const fresh = agent();
+    const a = await known.post("/auth/register").send({ email: "bob@example.com", password: "whatever-12345" });
+    const b = await fresh.post("/auth/register").send({ email: "nouveau-bob@example.com", password: "whatever-12345" });
+    expect([a.status, b.status]).toEqual([202, 202]);
+    expect(a.body).toEqual(b.body);
+    expect(a.headers["set-cookie"]).toBeUndefined();
+    expect(b.headers["set-cookie"]).toBeUndefined();
+    expect((await known.get("/auth/me")).status).toBe(401);
+    expect((await fresh.get("/auth/me")).status).toBe(401);
+    // Adresse nouvelle : aucune ligne de compte, une invitation de création de compte (sans invitant, sans rôle).
+    expect((await pool.query("SELECT count(*)::int AS n FROM users WHERE email = 'nouveau-bob@example.com'")).rows[0].n).toBe(0);
+    const inv = (await pool.query("SELECT purpose, invited_by, grant_platform_role, status FROM auth.invitations WHERE email = 'nouveau-bob@example.com'")).rows;
+    expect(inv).toEqual([{ purpose: "platform_account", invited_by: null, grant_platform_role: null, status: "pending" }]);
+    // Adresse connue : aucune invitation nouvelle (seule celle, acceptée, de sa propre inscription), un courriel « compte
+    // existant » à sa boîte.
+    expect((await pool.query("SELECT status FROM auth.invitations WHERE email = 'bob@example.com'")).rows).toEqual([{ status: "accepted" }]);
+    expect((await pool.query("SELECT template FROM admin.mail_outbox WHERE to_address = 'bob@example.com' ORDER BY created_at DESC LIMIT 1")).rows[0].template).toBe("signup_existing");
+    // Une seconde demande renouvelle la même invitation (nouveau lien), sans doublon.
+    expect((await fresh.post("/auth/register").send({ email: "nouveau-bob@example.com" })).status).toBe(202);
+    expect((await pool.query("SELECT count(*)::int AS n FROM auth.invitations WHERE email = 'nouveau-bob@example.com' AND status = 'pending'")).rows[0].n).toBe(1);
+    // Le lien crée le compte, adresse vérifiée d'office, rôle utilisateur ; la connexion marche ensuite.
+    const created = await inscrire(fresh, "nouveau-bob@example.com", "whatever-12345");
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ email: "nouveau-bob@example.com", platformRole: "user", emailVerified: true });
+    expect((await fresh.get("/auth/me")).status).toBe(200);
+  });
+
+  it("inscription : quota du destinataire atteint, le dernier lien délivré reste valable et le refus est journalisé (revue Codex de la PR #428)", async () => {
+    vi.stubEnv("MAIL_TRANSPORT", "console");
+    vi.stubEnv("MAIL_RECIPIENT_HOURLY_LIMIT", "2");
+    resetMailRuntime();
+    try {
+      const email = "quota-bob@example.com";
+      const hash = async () => (await pool.query("SELECT token_hash FROM auth.invitations WHERE email = $1 AND status = 'pending'", [email])).rows.map((r) => r.token_hash);
+      expect((await agent().post("/auth/register").send({ email })).status).toBe(202);
+      expect((await agent().post("/auth/register").send({ email })).status).toBe(202);
+      const delivre = await hash();
+      expect(delivre).toHaveLength(1);
+      const refuse = await agent().post("/auth/register").send({ email });
+      expect(refuse.status).toBe(202);
+      expect(refuse.body).toEqual(REGISTER_ANSWER);
+      expect(await hash()).toEqual(delivre);
+      const derniere = (await pool.query("SELECT status, payload, last_error FROM admin.mail_outbox WHERE to_address = $1 ORDER BY created_at DESC LIMIT 1", [email])).rows[0];
+      expect(derniere).toEqual({ status: "skipped", payload: {}, last_error: "recipient_limit" });
+      expect((await pool.query("SELECT count(*)::int AS n FROM admin.audit_log WHERE action = 'mail.quota_exceeded'")).rows[0].n).toBeGreaterThanOrEqual(1);
+    } finally {
+      vi.unstubAllEnvs();
+      resetMailRuntime();
+    }
   });
 
   it("rejects login with a wrong password using the same error as an unknown user", async () => {
@@ -2260,7 +2313,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
     expect(setup.status).toBe(200);
     acct.secret = setup.body.secret;
     acct.lastStep = undefined;
-    const enabled = await client.post("/auth/me/mfa/enable").send({ code: await nextCode(acct) });
+    const enabled = await client.post("/auth/me/mfa/enable").send({ password: PASSWORD, code: await nextCode(acct) });
     expect(enabled.status).toBe(200);
     acct.recovery = enabled.body.recoveryCodes;
     return enabled;
@@ -3037,6 +3090,223 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(Number((await pool.query("SELECT count(*)::int AS n FROM addon_platform_settings")).rows[0].n)).toBe(0);
       expect(await auditCount("admin.addon.updated", "bois")).toBe(0);
     });
+
+    describe("extensions installées (protocole des extensions, lot 3)", () => {
+      const paquet = (): { fiche: { id: string; version: string; commandes: { raccourci: string }[] }; code: string; pages: Record<string, string> } =>
+        JSON.parse(readFileSync(new URL("../../web/e2e/donnees/essai-commandes.fadi-addon.json", import.meta.url), "utf8"));
+      const nombre = async () => Number((await pool.query("SELECT count(*)::int AS n FROM addon_packages")).rows[0].n);
+
+      it("réservé à l'administrateur ; la lecture par un compte exige une session", async () => {
+        const plain = await account("paquets-simple");
+        expect((await plain.a.get("/admin/addons/paquets")).status).toBe(404);
+        expect((await plain.a.post("/admin/addons/paquets").send(paquet())).status).toBe(404);
+        expect((await plain.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(404);
+        expect((await agent().post("/admin/addons/paquets").send(paquet())).status).toBe(404);
+        expect((await agent().get("/sandbox/preferences/extensions")).status).toBe(401);
+        expect((await plain.a.get("/sandbox/preferences/extensions")).body).toEqual({ extensions: [] });
+        expect(await nombre()).toBe(0);
+      });
+
+      it("import : validé, rangé, journalisé, puis rendu entier à tout compte ; un second import remplace", async () => {
+        const boss = await admin();
+        const importe = await boss.a.post("/admin/addons/paquets").send(paquet());
+        expect(importe.status).toBe(201);
+        expect(importe.body.paquet).toMatchObject({ id: "essai-commandes", version: "1.0.0", auteur: "Fadi", commandes: 5, servie: true, importedBy: boss.id, nom: { fr: "Essai des commandes" } });
+        expect(JSON.stringify(importe.body)).not.toContain("planche.sur(");
+        expect(await auditCount("admin.addon.package.imported", "essai-commandes")).toBe(1);
+
+        const liste = await boss.a.get("/admin/addons/paquets");
+        expect(liste.body.paquets.map((f: { id: string }) => f.id)).toEqual(["essai-commandes"]);
+        const user = await account("paquets-compte");
+        const recu = await user.a.get("/sandbox/preferences/extensions");
+        expect(recu.status).toBe(200);
+        expect(recu.headers["cache-control"]).toBe("private, no-store");
+        expect(recu.body.extensions).toHaveLength(1);
+        expect(recu.body.extensions[0]).toEqual(paquet());
+
+        const suivant = paquet();
+        suivant.fiche.version = "1.1.0";
+        const remplace = await boss.a.post("/admin/addons/paquets").send(suivant);
+        expect(remplace.status).toBe(200);
+        expect(remplace.body.paquet.version).toBe("1.1.0");
+        expect(await nombre()).toBe(1);
+        const journal = (await pool.query("SELECT actor_id, target_type, metadata FROM admin.audit_log WHERE action = 'admin.addon.package.imported' AND target_id = 'essai-commandes' ORDER BY id")).rows;
+        expect(journal).toHaveLength(2);
+        expect(journal[0]).toMatchObject({ actor_id: boss.id, target_type: "addon", metadata: { version: "1.0.0", versionRemplacee: null, auteur: "Fadi", commandes: 5 } });
+        expect(journal[1].metadata).toMatchObject({ version: "1.1.0", versionRemplacee: "1.0.0" });
+        // Le journal ne garde pas le code.
+        expect(JSON.stringify(journal)).not.toContain("planche.sur(");
+        expect((await user.a.get("/sandbox/preferences/extensions")).body.extensions[0].fiche.version).toBe("1.1.0");
+      });
+
+      it("refus motivés : rien n'est rangé ni journalisé", async () => {
+        const boss = await admin();
+        const refus = async (corps: unknown, motif: string) => {
+          const r = await boss.a.post("/admin/addons/paquets").send(corps as object);
+          expect(r.status, motif).toBe(400);
+          expect(r.body, motif).toMatchObject({ error: "invalid_package", motif });
+          expect(typeof r.body.detail, motif).toBe("string");
+        };
+        await refus({ format: "fadi-addon/1" }, "forme_invalide");
+        await refus({ ...paquet(), format: "fadi-addon/9" }, "version_non_prise_en_charge");
+        await refus({ ...paquet(), code: "x".repeat(200_001) }, "hors_bornes");
+        const reserve = paquet();
+        reserve.fiche.id = "bois";
+        await refus(reserve, "identifiant_reserve");
+        const pris = paquet();
+        pris.fiche.commandes[0]!.raccourci = "Ctrl+G";
+        await refus(pris, "raccourci_refuse");
+        const icone = paquet();
+        icone.pages["poser-boite.svg"] = "<p>pas un dessin</p>";
+        await refus(icone, "icone_invalide");
+        expect(await nombre()).toBe(0);
+        // Un raccourci déjà tenu par une autre extension installée est refusé lui aussi.
+        expect((await boss.a.post("/admin/addons/paquets").send(paquet())).status).toBe(201);
+        const autre = paquet();
+        autre.fiche.id = "autre-essai";
+        await refus(autre, "raccourci_refuse");
+        expect(await nombre()).toBe(1);
+        expect(await auditCount("admin.addon.package.imported", "autre-essai")).toBe(0);
+      });
+
+      it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
+        const boss = await admin();
+        const gros = paquet();
+        gros.pages["notice.txt"] = "a".repeat(1_000_000 - gros.code.length - Object.values(gros.pages).reduce((n, t) => n + t.length, 0));
+        expect((await boss.a.post("/admin/addons/paquets").send(gros)).status).toBe(201);
+        gros.pages["trop.txt"] = "a".repeat(400_000);
+        expect((await boss.a.post("/admin/addons/paquets").send(gros)).status).toBe(413);
+      });
+
+      it("retrait : l'extension n'est plus rendue aux comptes ; journalisé ; inconnue → 404", async () => {
+        const boss = await admin();
+        expect((await boss.a.post("/admin/addons/paquets").send(paquet())).status).toBe(201);
+        expect((await boss.a.delete("/admin/addons/paquets/fantome")).status).toBe(404);
+        expect((await boss.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(204);
+        expect(await nombre()).toBe(0);
+        expect(await auditCount("admin.addon.package.removed", "essai-commandes")).toBe(1);
+        expect((await boss.a.get("/sandbox/preferences/extensions")).body).toEqual({ extensions: [] });
+        expect((await boss.a.delete("/admin/addons/paquets/essai-commandes")).status).toBe(404);
+      });
+    });
+  });
+
+  describe("10. revue Multi-Arena du module comptes (26 novembre 2026)", () => {
+    const agentTokens = async (id: string) => (await pool.query("SELECT count(*)::int AS n FROM studio_agent_tokens WHERE user_id = $1 AND revoked_at IS NULL", [id])).rows[0].n as number;
+    async function projetAvecJeton(acct: Account) {
+      const pid = (await acct.a.post("/projects").send({ code: `AG.${n}`, name: "Agents" })).body.id as string;
+      const refus = await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent", motDePasse: "pas-le-bon-mot-de-passe" });
+      expect(refus.status).toBe(403);
+      expect(refus.body.error).toBe("invalid_password");
+      expect((await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent" })).status).toBe(400);
+      const ok = await acct.a.post(`/projects/${pid}/studio/agents/jetons`).send({ nom: "Agent", motDePasse: PASSWORD });
+      expect(ok.status).toBe(201);
+      expect(await agentTokens(acct.id)).toBe(1);
+      return ok.body.jeton as string;
+    }
+
+    it("accès support : un administrateur sans double authentification n'est ni proposé ni accordé ; une session sans preuve ne lit rien", async () => {
+      const owner = await account("arena-proprio");
+      const pid = (await owner.a.post("/projects").send({ code: "AR.1", name: "Support" })).body.id as string;
+      const sansMfa = await account("arena-admin-sans");
+      await promoteInDb(sansMfa.id);
+      const avecMfa = await account("arena-admin-avec");
+      await enableMfa(avecMfa, avecMfa.a);
+      await promoteInDb(avecMfa.id);
+      const liste = await owner.a.get(`/projects/${pid}/support-grants`);
+      const proposes = (liste.body.admins as { id: string }[]).map((a) => a.id);
+      expect(proposes).toContain(avecMfa.id);
+      expect(proposes).not.toContain(sansMfa.id);
+      const refus = await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: sansMfa.id, hours: 1, purpose: "Diagnostic" });
+      expect(refus.status).toBe(422);
+      expect(refus.body.error).toBe("admin_without_mfa");
+      // Un accès accordé en base à un administrateur sans TOTP (état antérieur) n'ouvre rien.
+      await pool.query("INSERT INTO project_support_grants (id, project_id, admin_id, granted_by, purpose, granted_at, expires_at) VALUES ($1, $2, $3, $4, 'ancien', now(), now() + interval '1 hour')", [`sg_arena_${n}`, pid, sansMfa.id, owner.id]);
+      expect((await sansMfa.a.get(`/projects/${pid}`)).status).toBe(404);
+      // Administrateur avec TOTP : la session prouvée lit ; une session sans preuve (héritée) est refusée.
+      expect((await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: avecMfa.id, hours: 1, purpose: "Diagnostic" })).status).toBe(201);
+      expect((await avecMfa.a.get(`/projects/${pid}`)).status).toBe(200);
+      await pool.query("UPDATE sessions SET mfa_verified_at = NULL WHERE user_id = $1", [avecMfa.id]);
+      const sansPreuve = await avecMfa.a.get(`/projects/${pid}`);
+      expect(sansPreuve.status).toBe(403);
+      expect(sansPreuve.body.error).toBe("mfa_session_required");
+    });
+
+    it("code TOTP : chaque code faux compte sur le compte, le bon mot de passe ne remet pas le compteur à zéro, le compte se verrouille", async () => {
+      const acct = await account("arena-totp");
+      await enableMfa(acct, acct.a);
+      for (let i = 0; i < 4; i++) {
+        const { c, r } = await passwordLogin(acct);
+        expect(r.status).toBe(202);
+        expect((await c.post("/auth/login/mfa").send({ code: "000000" })).status).toBe(401);
+      }
+      expect((await pool.query("SELECT failed_login_count FROM users WHERE id = $1", [acct.id])).rows[0].failed_login_count).toBe(4);
+      const { c, r } = await passwordLogin(acct);
+      expect(r.status).toBe(202);
+      expect((await c.post("/auth/login/mfa").send({ code: "000000" })).status).toBe(401);
+      const etat = (await pool.query("SELECT failed_login_count, locked_until FROM users WHERE id = $1", [acct.id])).rows[0];
+      expect(etat.failed_login_count).toBe(5);
+      expect(new Date(etat.locked_until).getTime()).toBeGreaterThan(Date.now());
+      // Étape en cours close, et un bon code n'ouvre plus rien tant que le compte est verrouillé.
+      expect((await c.post("/auth/login/mfa").send({ code: await nextCode(acct) })).body.error).toBe("mfa_session_expired");
+      expect((await passwordLogin(acct)).r.status).toBe(401);
+      expect(await auditCount("auth.login.locked", acct.id)).toBeGreaterThanOrEqual(1);
+      // Après le verrouillage, un bon code remet le compteur à zéro.
+      await pool.query("UPDATE users SET locked_until = NULL WHERE id = $1", [acct.id]);
+      await mfaLogin(acct);
+      expect((await pool.query("SELECT failed_login_count FROM users WHERE id = $1", [acct.id])).rows[0].failed_login_count).toBe(0);
+    });
+
+    it("activation du TOTP : le mot de passe est redemandé", async () => {
+      const acct = await account("arena-enable");
+      const setup = await acct.a.post("/auth/me/mfa/setup");
+      acct.secret = setup.body.secret;
+      expect((await acct.a.post("/auth/me/mfa/enable").send({ code: await nextCode(acct) })).status).toBe(400);
+      const faux = await acct.a.post("/auth/me/mfa/enable").send({ password: "pas-le-bon-mot-de-passe", code: await nextCode(acct) });
+      expect(faux.status).toBe(403);
+      expect(faux.body.error).toBe("invalid_password");
+      expect((await pool.query("SELECT totp_enabled_at FROM users WHERE id = $1", [acct.id])).rows[0].totp_enabled_at).toBeNull();
+      expect((await acct.a.post("/auth/me/mfa/enable").send({ password: PASSWORD, code: await nextCode(acct) })).status).toBe(200);
+    });
+
+    it("jetons d'agent de Studio : mot de passe à la création, révoqués au changement ou à la réinitialisation du mot de passe, à la suspension et à la suppression", async () => {
+      // Changement du mot de passe.
+      const a = await account("arena-jeton-a");
+      const jeton = await projetAvecJeton(a);
+      expect((await a.a.post("/auth/me/password").send({ currentPassword: PASSWORD, newPassword: "une-autre-phrase-solide" })).status).toBe(200);
+      expect(await agentTokens(a.id)).toBe(0);
+      expect((await request(app).post("/mcp/studio").set("Authorization", `Bearer ${jeton}`).send({ jsonrpc: "2.0", id: 1, method: "tools/list" })).status).toBe(401);
+      // Réinitialisation par lien.
+      const b = await account("arena-jeton-b");
+      await projetAvecJeton(b);
+      const brut = `arena-reset-${n}-${randomBytes(8).toString("hex")}`;
+      const { createHash } = await import("node:crypto");
+      await pool.query("INSERT INTO auth.account_tokens (id, user_id, purpose, token_hash, expires_at) VALUES ($1, $2, 'reset_password', $3, now() + interval '1 hour')", [`tok_arena_${n}`, b.id, createHash("sha256").update(brut).digest("hex")]);
+      expect((await request(app).post("/auth/reset-password").send({ token: brut, password: "une-autre-phrase-solide" })).status).toBe(200);
+      expect(await agentTokens(b.id)).toBe(0);
+      // Suppression programmée.
+      const c = await account("arena-jeton-c");
+      await projetAvecJeton(c);
+      expect((await c.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" })).status).toBeLessThan(300);
+      expect(await agentTokens(c.id)).toBe(0);
+      // Suspension par l'administration.
+      const d = await account("arena-jeton-d");
+      await projetAvecJeton(d);
+      const boss = await account("arena-jeton-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      expect((await boss.a.post(`/admin/users/${d.id}/suspend`).send({ reason: "Recette" })).status).toBeLessThan(300);
+      expect(await agentTokens(d.id)).toBe(0);
+    });
+
+    it("inscription : une adresse connue répond comme une adresse nouvelle, sans mot de passe ni hachage (UM-33)", async () => {
+      // L'inscription par lien (Issue #425) remplace l'égalisation du hachage : aucune des deux branches ne hache plus.
+      const known = await account("arena-connu");
+      const connu = await request(app).post("/auth/register").send({ email: known.email });
+      const nouveau = await request(app).post("/auth/register").send({ email: "arena-nouveau@example.com" });
+      expect([connu.status, nouveau.status]).toEqual([202, 202]);
+      expect(connu.body).toEqual(nouveau.body);
+    });
   });
 });
 
@@ -3466,6 +3736,8 @@ describe("Invitations acceptées liées à une participation — fin de l'ajout 
     expect((await x.get("/notifications")).body.items.some((i: { invitation?: { id: string } }) => i.invitation?.id === id)).toBe(true);
     // Une autre adresse ne la voit pas ; une adresse non vérifiée ne l'accepte pas depuis la notification.
     expect((await accept(other, id)).status).toBe(404);
+    // Compte antérieur à l'inscription par lien (Issue #425) : adresse jamais confirmée.
+    await pool.query("UPDATE users SET email_verified_at = NULL WHERE email = $1", ["p3-x@example.com"]);
     expect((await accept(x, id)).body.error).toBe("email_unverified");
     await verify("p3-x@example.com");
     // Double soumission simultanée : une seule activation.

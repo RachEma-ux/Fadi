@@ -1,0 +1,81 @@
+{
+  "format": "fadi-addon/1",
+  "fiche": {
+    "id": "essai-commandes",
+    "nom": {
+      "fr": "Essai des commandes",
+      "en": "Commands trial"
+    },
+    "description": {
+      "fr": "Extension d'essai du lot 3 : cinq commandes qui dessinent, comptent, demandent une saisie, échouent ou ne répondent plus.",
+      "en": "Trial add-on for lot 3: five commands that draw, count, ask for input, fail or stop responding."
+    },
+    "version": "1.0.0",
+    "auteur": "Fadi",
+    "protocole": "1.0",
+    "permissions": [
+      "modele.lire",
+      "modele.modifier",
+      "selection",
+      "messages"
+    ],
+    "commandes": [
+      {
+        "id": "poser-boite",
+        "libelle": {
+          "fr": "Poser une boîte",
+          "en": "Place a box"
+        },
+        "icone": "poser-boite.svg",
+        "raccourci": "Alt+Maj+F2"
+      },
+      {
+        "id": "boite-sur-mesure",
+        "libelle": {
+          "fr": "Boîte sur mesure…",
+          "en": "Custom box…"
+        },
+        "icone": "boite-sur-mesure.svg",
+        "raccourci": "Alt+Maj+F3"
+      },
+      {
+        "id": "compter",
+        "libelle": {
+          "fr": "Compter le dessin",
+          "en": "Count the drawing"
+        },
+        "icone": "compter.svg",
+        "raccourci": "Alt+Maj+F4"
+      },
+      {
+        "id": "trainer",
+        "libelle": {
+          "fr": "Ne plus répondre (essai)",
+          "en": "Stop responding (trial)"
+        },
+        "icone": "trainer.svg",
+        "raccourci": "Alt+Maj+F6"
+      },
+      {
+        "id": "echouer",
+        "libelle": {
+          "fr": "Échouer (essai)",
+          "en": "Fail (trial)"
+        },
+        "icone": "echouer.svg",
+        "raccourci": "Alt+Maj+F7"
+      }
+    ],
+    "outils": [],
+    "panneaux": [],
+    "abonnements": []
+  },
+  "code": "// Extension d'essai du lot 3 (protocole 1.0) : commandes déclarées, avis, saisie.\nconst textes = {\n  fr: { posee: \"Boîte posée.\", annulee: \"Saisie annulée : rien n'a été dessiné.\", titre: \"Dimensions de la boîte\", largeur: \"Largeur\", profondeur: \"Profondeur\", hauteur: \"Hauteur\", forme: \"Forme\", pleine: \"Pleine\", base: \"Base seule\", grouper: \"Grouper la boîte\", nom: \"Nom du groupe\", defaut: \"Boîte\", faite: \"Boîte dessinée : \", compte: \" face(s), \" , aretes: \" arête(s), \", objets: \" objet(s).\" },\n  en: { posee: \"Box placed.\", annulee: \"Input cancelled: nothing was drawn.\", titre: \"Box dimensions\", largeur: \"Width\", profondeur: \"Depth\", hauteur: \"Height\", forme: \"Shape\", pleine: \"Solid\", base: \"Base only\", grouper: \"Group the box\", nom: \"Group name\", defaut: \"Box\", faite: \"Box drawn: \", compte: \" face(s), \", aretes: \" edge(s), \", objets: \" object(s).\" },\n};\nconst t = (d) => textes[d && d.langue === \"en\" ? \"en\" : \"fr\"];\n\nplanche.sur(\"commande.poser-boite\", async (d) => {\n  await planche.operation.ouvrir(\"Poser une boîte\");\n  const elements = await planche.modele.boite([0, 0, 0], 1, 1, 1);\n  const objet = await planche.modele.grouper(elements, t(d).defaut);\n  await planche.selection.definir([objet]);\n  await planche.operation.valider();\n  await planche.message.afficher(t(d).posee);\n  return objet;\n});\n\nplanche.sur(\"commande.boite-sur-mesure\", async (d) => {\n  const x = t(d);\n  const v = await planche.saisie.demander(x.titre, [\n    { id: \"nom\", libelle: x.nom, genre: \"texte\", valeur: x.defaut },\n    { id: \"largeur\", libelle: x.largeur, genre: \"nombre\", valeur: 2, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"profondeur\", libelle: x.profondeur, genre: \"nombre\", valeur: 1, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"hauteur\", libelle: x.hauteur, genre: \"nombre\", valeur: 0.5, min: 0.01, max: 100, unite: \"m\" },\n    { id: \"forme\", libelle: x.forme, genre: \"choix\", valeur: \"pleine\", choix: [{ valeur: \"pleine\", libelle: x.pleine }, { valeur: \"base\", libelle: x.base }] },\n    { id: \"grouper\", libelle: x.grouper, genre: \"case\", valeur: true },\n  ]);\n  if (v === null) {\n    await planche.message.afficher(x.annulee, \"alerte\");\n    return null;\n  }\n  const elements = v.forme === \"pleine\" ? await planche.modele.boite([3, 0, 0], v.largeur, v.profondeur, v.hauteur) : await planche.modele.rectangle([3, 0, 0], [v.largeur, 0, 0], [0, v.profondeur, 0]);\n  if (v.grouper) await planche.selection.definir([await planche.modele.grouper(elements, v.nom || x.defaut)]);\n  await planche.message.afficher(x.faite + v.largeur + \" × \" + v.profondeur + \" × \" + v.hauteur + \" m\");\n  return v;\n});\n\nplanche.sur(\"commande.compter\", async (d) => {\n  const m = await planche.modele.lire();\n  await planche.message.afficher(m.faces.length + t(d).compte + m.aretes.length + t(d).aretes + m.objets.length + t(d).objets);\n  return { faces: m.faces.length, aretes: m.aretes.length, objets: m.objets.length };\n});\n\nplanche.sur(\"commande.trainer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [7, 7, 7]);\n  for (;;) {}\n});\n\nplanche.sur(\"commande.echouer\", async () => {\n  await planche.modele.ligne([0, 0, 0], [9, 9, 9]);\n  throw new Error(\"essai d'échec\");\n});\n",
+  "pages": {
+    "poser-boite.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 8l8-4 8 4v8l-8 4-8-4z\"/><path d=\"M4 8l8 4 8-4M12 12v8\"/></svg>",
+    "boite-sur-mesure.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 9l7-3.5 7 3.5v7l-7 3.5-7-3.5z\"/><path d=\"M4 9l7 3.5 7-3.5\"/><path d=\"M20 4v5M17.5 6.5h5\"/></svg>",
+    "compter.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 9h2M8 15h2M14 9h2M14 15h2\"/></svg>",
+    "trainer.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><path d=\"M12 8v4l3 2\"/></svg>",
+    "echouer.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1f2933\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4l9 16H3z\"/><path d=\"M12 10v4M12 17v.01\"/></svg>"
+  }
+}
