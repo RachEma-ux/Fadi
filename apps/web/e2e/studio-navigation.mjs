@@ -87,7 +87,7 @@ try {
   check("NAV-001 : entrée Studio dans la navigation principale", await entree.isVisible());
   check("NAV-001 : nom accessible et infobulle « Studio »", (await entree.getAttribute("aria-label")) === "Studio" && (await entree.getAttribute("title")) === "Studio");
   const position = await page.evaluate(() => {
-    const e = document.querySelector("#workspace-navigation a[data-nav-studio]"), p = document.querySelector("#workspace-navigation .sidebar-projects"), c = document.querySelector('#workspace-navigation a[aria-label="Collaboration"]');
+    const e = document.querySelector("#workspace-navigation a[data-nav-studio]"), p = document.querySelector("#workspace-navigation .sidebar-projects"), c = document.querySelector('.app-nav-secondary a[aria-label="Collaboration"]');
     return { apresProjets: !!(p.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING), avantCollaboration: !!(e.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) };
   });
   check("NAV-001 : Studio placé après Projets (et avant Collaboration)", position.apresProjets && position.avantCollaboration, JSON.stringify(position));
