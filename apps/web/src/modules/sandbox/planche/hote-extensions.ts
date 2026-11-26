@@ -12,12 +12,16 @@
  *    (`creerServicesExtension`). Une opération automatique est validée à la fin de l'appel ; un appel qui échoue, dépasse
  *    son délai ou est arrêté abandonne l'opération en cours — rien n'est appliqué à moitié.
  *
- * Aucune interface ici : le branchement dans la Planche (commandes, journal affiché) arrive avec le lot des commandes.
+ *  - lot 3 : avis et saisie (permission « messages »). L'hôte relit la demande et la confie à la Planche (`surAvis`,
+ *    `saisir`) ; pendant qu'une fenêtre de saisie est ouverte, le délai de la commande est suspendu — le temps de
+ *    l'utilisateur n'est pas celui de l'extension. La fin de l'appel, quelle qu'elle soit, referme la fenêtre.
+ *
+ * Aucune interface ici : la Planche fournit l'accès au modèle, l'affichage des avis et la fenêtre de saisie.
  */
 import {
-  BORNES_EXTENSION, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
-  lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole,
-  type PaquetExtension,
+  BORNES_EXTENSION, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
+  lireAvisExtension, lireDemandeSaisie, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeSaisie,
+  type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
 import type { DemarrageExtension, DemarrageRendu } from "./extension-planche.worker";
 
@@ -43,8 +47,11 @@ export interface WorkerExtension {
 }
 
 export interface HoteExtension {
-  /** Adresse une demande (commande) ou un événement à l'extension ; la démarre au besoin. */
-  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown) => Promise<IssueAppelExtension>;
+  /**
+   * Adresse une demande (commande) ou un événement à l'extension ; la démarre au besoin. `libelle` nomme l'opération
+   * automatique éventuelle dans l'historique (défaut : le nom de l'appel).
+   */
+  readonly appeler: (sorte: "demande" | "evenement", nom: string, donnees?: unknown, libelle?: string) => Promise<IssueAppelExtension>;
   /** Arrête l'espace isolé ; l'appel en cours et ceux qui attendaient rendent « arrete ». Un appel fait ensuite la redémarre. */
   readonly arreter: () => void;
   readonly enMarche: () => boolean;
@@ -58,6 +65,13 @@ export interface OptionsHoteExtension {
   readonly surJournal?: (ligne: string) => void;
   /** Ce que la Planche prête à l'extension (modèle, sélection). Absent : seules les demandes sans modèle sont servies. */
   readonly acces?: AccesPlanche;
+  /** Avis demandé par l'extension (`message.afficher`). Absent : la demande est refusée. */
+  readonly surAvis?: (avis: AvisExtension) => void;
+  /**
+   * Fenêtre de saisie demandée par l'extension (`saisie.demander`) : `reponse` rend les valeurs, ou `null` si
+   * l'utilisateur annule ; `fermer` la retire quand l'appel prend fin avant la réponse. Absent : la demande est refusée.
+   */
+  readonly saisir?: (demande: DemandeSaisie) => { readonly reponse: Promise<ValeursSaisie | null>; readonly fermer: () => void };
 }
 
 const creerWorkerExtension = (): WorkerExtension => new Worker(new URL("./extension-planche.worker.ts", import.meta.url), { type: "module", name: "fadi-planche-extension" }) as unknown as WorkerExtension;
@@ -79,7 +93,15 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   let lignes = 0;
   /** Appel en cours : au plus un, les autres attendent dans `file`. */
   const services = o.acces ? creerServicesExtension(paquet.fiche, o.acces) : null;
-  let enCours: { readonly id: number | "demarrage"; readonly clore: (i: IssueAppelExtension | DemarrageRendu) => void } | null = null;
+  let enCours: { readonly id: number | "demarrage"; readonly sorte: "demande" | "evenement" | "demarrage"; readonly clore: (i: IssueAppelExtension | DemarrageRendu) => void; readonly suspendre: () => void; readonly reprendre: () => void } | null = null;
+  let avis = 0;
+  /** Fenêtre de saisie ouverte pour l'appel en cours : au plus une. */
+  let saisie: { readonly fermer: () => void } | null = null;
+  const fermerSaisie = () => {
+    const s = saisie;
+    saisie = null;
+    s?.fermer();
+  };
   let file: Promise<unknown> = Promise.resolve();
   /** Avance à chaque arrêt demandé : un appel mis en file avant l'arrêt ne relance pas l'extension. */
   let epoque = 0;
@@ -92,10 +114,44 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     w = null;
   };
 
-  /** Sert une demande de l'extension (ce lot : le journal seulement). */
+  /** Avis et saisie : servis pendant un appel seulement, relus avant d'atteindre la Planche. */
+  const servirMessages = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
+    const appel = enCours;
+    if (!appel || appel.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+    if (m.nom === "message.afficher") {
+      if (!o.surAvis) return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+      const lu = lireAvisExtension(m.donnees);
+      if (!lu) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", `avis : texte de 1 à ${BORNES_SAISIE.texte} caractères, genre « info » ou « alerte »`));
+      // Avis bornés par appel, comme le journal : au-delà, ils sont ignorés.
+      if (avis++ < BORNES_SAISIE.avisParAppel) o.surAvis(lu);
+      return void w?.postMessage(reponseProtocole(m.id));
+    }
+    if (!o.saisir) return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
+    if (appel.sorte !== "demande") return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "saisie : pendant une commande seulement"));
+    if (saisie) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "saisie : une fenêtre est déjà ouverte"));
+    const lu = lireDemandeSaisie(m.donnees);
+    if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
+    appel.suspendre();
+    const ouverte = o.saisir(lu.demande);
+    saisie = ouverte;
+    void ouverte.reponse.then(
+      (valeurs) => valeurs,
+      () => null,
+    ).then((valeurs) => {
+      // Appel déjà clos (arrêt, panne) : la fenêtre a été refermée, la réponse n'intéresse plus personne.
+      if (saisie !== ouverte) return;
+      saisie = null;
+      if (enCours !== appel) return;
+      appel.reprendre();
+      w?.postMessage(reponseProtocole(m.id, valeurs));
+    });
+  };
+
+  /** Sert une demande de l'extension : journal, avis et saisie ici ; modèle, opération et sélection par les services. */
   const servir = (m: Extract<MessageProtocole, { sorte: "demande" }>) => {
     const jugement = jugerDemandeExtension(paquet.fiche, m.nom);
     if (!jugement.ok) return void w?.postMessage(refusProtocole(m.id, jugement.erreur, jugement.detail));
+    if (m.nom === "message.afficher" || m.nom === "saisie.demander") return servirMessages(m);
     if (m.nom !== "journal.afficher") {
       // Hors d'un appel (aucune commande ni événement en cours), une extension ne lit ni ne modifie rien.
       if (!services || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
@@ -123,7 +179,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   };
 
   /** Attend une issue du Worker, bornée par `delai` ; au dépassement ou à la panne, l'espace isolé est arrêté. */
-  const attendre = <T extends IssueAppelExtension | DemarrageRendu>(id: number | "demarrage", delai: number, envoyer: () => void): Promise<T | IssueAppelExtension> =>
+  const attendre = <T extends IssueAppelExtension | DemarrageRendu>(id: number | "demarrage", sorte: "demande" | "evenement" | "demarrage", delai: number, envoyer: () => void): Promise<T | IssueAppelExtension> =>
     new Promise((resolve) => {
       let fini = false;
       const clore = (i: T | IssueAppelExtension) => {
@@ -131,13 +187,27 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
         fini = true;
         clearTimeout(minuterie);
         enCours = null;
+        fermerSaisie();
         resolve(i);
       };
-      const minuterie = setTimeout(() => {
+      const depasser = () => {
         eteindre();
         clore({ genre: "delai" });
-      }, delai);
-      enCours = { id, clore: clore as (i: IssueAppelExtension | DemarrageRendu) => void };
+      };
+      // Le délai ne court que pendant que l'extension travaille : une fenêtre de saisie ouverte le suspend.
+      let reste = delai;
+      let depuis = Date.now();
+      let minuterie = setTimeout(depasser, reste);
+      const suspendre = () => {
+        clearTimeout(minuterie);
+        reste = Math.max(0, reste - (Date.now() - depuis));
+      };
+      const reprendre = () => {
+        if (fini) return;
+        depuis = Date.now();
+        minuterie = setTimeout(depasser, reste);
+      };
+      enCours = { id, sorte, clore: clore as (i: IssueAppelExtension | DemarrageRendu) => void, suspendre, reprendre };
       try {
         envoyer();
       } catch {
@@ -158,24 +228,25 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       eteindre();
       enCours?.clore({ genre: "panne" });
     };
-    const r = await attendre<DemarrageRendu>("demarrage", delais.demande, () => w!.postMessage({ demarrer: { fiche: { id: paquet.fiche.id, version: paquet.fiche.version }, code: paquet.code } }));
+    const r = await attendre<DemarrageRendu>("demarrage", "demarrage", delais.demande, () => w!.postMessage({ demarrer: { fiche: { id: paquet.fiche.id, version: paquet.fiche.version }, code: paquet.code } }));
     if ("genre" in r) return r;
     if (r.demarre) return null;
     eteindre();
     return { genre: "demarrage", erreur: r.erreur! };
   };
 
-  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null) => {
+  const appeler: HoteExtension["appeler"] = (sorte, nom, donnees = null, libelle = nom) => {
     const demandeA = epoque;
     const suite = file.then(async (): Promise<IssueAppelExtension> => {
       if (demandeA !== epoque) return { genre: "arrete" };
       lignes = 0;
+      avis = 0;
       const refusDemarrage = await demarrer();
       if (refusDemarrage) return refusDemarrage;
       if (demandeA !== epoque) return { genre: "arrete" };
       const id = ++numero;
-      services?.debutAppel(nom);
-      const issue = await attendre<IssueAppelExtension>(id, delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
+      services?.debutAppel(libelle);
+      const issue = await attendre<IssueAppelExtension>(id, sorte, delais[sorte], () => w!.postMessage(sorte === "demande" ? demandeProtocole(id, nom, donnees) : evenementProtocole(id, nom, donnees)));
       // Fin de l'appel : l'opération automatique est validée s'il a réussi, toute opération est abandonnée sinon.
       if (services && !services.finAppel(issue.genre === "fini")) return { genre: "erreur", nom: "operation_refusee", detail: "le dessin a changé pendant la commande" };
       return issue;

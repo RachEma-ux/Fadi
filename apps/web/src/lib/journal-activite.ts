@@ -93,6 +93,8 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "admin.user.anonymized_now": "Compte anonymisé par l’administration",
   "admin.user.promoted_by_script": "Promotion administrateur par le script d’exploitation",
   "admin.addon.updated": "Réglage d’une extension modifié",
+  "admin.addon.package.imported": "Extension importée",
+  "admin.addon.package.removed": "Extension retirée de la plateforme",
   "invitation.created": "Invitation envoyée",
   "invitation.resent": "Invitation renouvelée",
   "invitation.cancelled": "Invitation annulée",

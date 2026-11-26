@@ -1,11 +1,14 @@
 /**
- * Client minimal des préférences d'outils du Sandbox (lot 5) : les deux seules requêtes serveur du Sandbox,
- * `GET` et `PUT /sandbox/preferences`, sur la session du compte. Le test d'indépendance n'autorise que ce fichier à
- * appeler le serveur, et seulement cette adresse ; le client API général de Fadi n'est jamais importé.
+ * Client minimal des préférences d'outils du Sandbox (lot 5) : les seules requêtes serveur du Sandbox, sur la session
+ * du compte — `GET` et `PUT /sandbox/preferences`, et (protocole des extensions, lot 3) `GET
+ * /sandbox/preferences/extensions`, la liste des extensions installées sur la plateforme. Le test d'indépendance
+ * n'autorise que ce fichier à appeler le serveur, et seulement ces deux adresses ; le client API général de Fadi n'est
+ * jamais importé.
  */
-import { lireCatalogue, lirePreferencesSandbox, type FicheCatalogue, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { lireCatalogue, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 
 export const ADRESSE_PREFERENCES = "/sandbox/preferences";
+export const ADRESSE_EXTENSIONS = "/sandbox/preferences/extensions";
 
 export interface PreferencesRecues {
   readonly preferences: PreferencesSandbox;
@@ -41,3 +44,18 @@ async function appeler(init?: RequestInit): Promise<PreferencesRecues> {
 export const lirePreferencesServeur = (): Promise<PreferencesRecues> => appeler();
 export const enregistrerPreferencesServeur = (p: PreferencesSandbox): Promise<PreferencesRecues> =>
   appeler({ method: "PUT", body: JSON.stringify({ profil: p.profil, barrePersonnelle: p.barrePersonnelle, favoris: p.favoris, regroupements: p.regroupements, extensions: p.extensions, scripts: p.scripts }) });
+
+/**
+ * Extensions installées sur la plateforme : chaque paquet reçu repasse les règles d'import dans le navigateur
+ * (`lirePaquetsInstalles`) ; un paquet qui ne les passe pas est écarté.
+ */
+export async function lireExtensionsServeur(): Promise<readonly PaquetExtension[]> {
+  let r: Response;
+  try {
+    r = await fetch(ADRESSE_EXTENSIONS, { credentials: "include", headers: { Accept: "application/json" } });
+  } catch {
+    throw new ErreurPreferences(0);
+  }
+  if (!r.ok) throw new ErreurPreferences(r.status);
+  return lirePaquetsInstalles(((await r.json()) as { extensions?: unknown }).extensions);
+}

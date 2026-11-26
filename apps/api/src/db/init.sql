@@ -991,6 +991,18 @@ CREATE TABLE IF NOT EXISTS addon_platform_settings (
   updated_by text REFERENCES users(id) ON DELETE SET NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+-- Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3, 26 novembre 2026) : un paquet
+-- `fadi-addon/1` par ligne (fiche, code en texte, pages), importé par l'administrateur après validation par le serveur
+-- (`jugerImportPaquet`) ; le serveur le range et le rend aux comptes, il ne l'exécute jamais. Une extension de même
+-- identifiant est remplacée. Chaque import et chaque retrait est journalisé (`admin.addon.package.imported`,
+-- `admin.addon.package.removed`). Additive.
+CREATE TABLE IF NOT EXISTS addon_packages (
+  addon_id text PRIMARY KEY CONSTRAINT addon_packages_id_check CHECK (addon_id ~ '^[a-z0-9-]{1,40}$'),
+  version text NOT NULL,
+  package jsonb NOT NULL CONSTRAINT addon_packages_package_check CHECK (jsonb_typeof(package) = 'object'),
+  imported_by text REFERENCES users(id) ON DELETE SET NULL,
+  imported_at timestamptz NOT NULL DEFAULT now()
+);
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

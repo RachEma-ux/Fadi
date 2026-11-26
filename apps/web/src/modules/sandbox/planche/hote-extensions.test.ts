@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type ExecutantExtension, type Id, type Modele, type PaquetExtension } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type AvisExtension, type DemandeSaisie, type ValeursSaisie, type ExecutantExtension, type Id, type Modele, type PaquetExtension } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const lu = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-socle.fadi-addon.json", import.meta.url)), "utf8")));
@@ -11,6 +11,31 @@ const ESSAI: PaquetExtension = lu.paquet;
 const lu2 = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-modele.fadi-addon.json", import.meta.url)), "utf8")));
 if (!lu2.ok) throw new Error(`extension d'essai du lot 2 refusée : ${lu2.detail}`);
 const ESSAI_MODELE: PaquetExtension = lu2.paquet;
+const lu3 = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-commandes.fadi-addon.json", import.meta.url)), "utf8")));
+if (!lu3.ok) throw new Error(`extension d'essai du lot 3 refusée : ${lu3.detail}`);
+const ESSAI_COMMANDES: PaquetExtension = lu3.paquet;
+/** Même extension d'essai, avec un autre code (essais des refus). */
+const avecCode = (code: string, permissions = ESSAI_COMMANDES.fiche.permissions): PaquetExtension => ({ ...ESSAI_COMMANDES, fiche: { ...ESSAI_COMMANDES.fiche, permissions }, code });
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Fenêtre de saisie de remplacement : retient les demandes, la recette répond ou laisse l'hôte la fermer. */
+function saisieFausse() {
+  const ouvertes: { demande: DemandeSaisie; repondre: (v: ValeursSaisie | null) => void; fermee: boolean }[] = [];
+  const saisir = (demande: DemandeSaisie) => {
+    let repondre: (v: ValeursSaisie | null) => void = () => {};
+    const reponse = new Promise<ValeursSaisie | null>((r) => (repondre = r));
+    const x = { demande, repondre, fermee: false };
+    ouvertes.push(x);
+    return { reponse, fermer: () => void (x.fermee = true) };
+  };
+  /** Attend la prochaine fenêtre (une de plus qu'à l'appel). */
+  const attendre = async () => {
+    const avant = ouvertes.length;
+    for (let i = 0; i < 200 && ouvertes.length === avant; i++) await pause(2);
+    return ouvertes[ouvertes.length - 1]!;
+  };
+  return { ouvertes, saisir, attendre };
+}
 
 /** Planche de remplacement : un modèle, une sélection, et les pas d'annulation appliqués. */
 function plancheFausse() {
@@ -247,3 +272,104 @@ describe("hôte d'une extension — lot 2 : modèle, opération, sélection", ()
   });
 });
 
+
+describe("hôte d'une extension — lot 3 : commandes, avis, saisie", () => {
+  it("une commande reçoit la langue, dessine dans une opération et pose un avis ; le libellé nomme l'opération automatique", async () => {
+    const p = plancheFausse();
+    const avis: AvisExtension[] = [];
+    const h = creerHoteExtension(ESSAI_COMMANDES, { creer: faux().creer, acces: p.acces, surAvis: (a) => avis.push(a) });
+    expect((await h.appeler("demande", "commande.poser-boite", { langue: "en" })).genre).toBe("fini");
+    expect(p.etat.pas).toEqual(["Poser une boîte"]);
+    expect(avis).toEqual([{ texte: "Box placed.", genre: "info" }]);
+    expect(await h.appeler("demande", "commande.compter", { langue: "fr" })).toMatchObject({ genre: "fini", resultat: { objets: 1 } });
+    expect(avis[1]!.texte).toMatch(/1 objet\(s\)\.$/);
+    // Opération automatique : nommée par le libellé donné à l'appel, pas par le nom technique de la demande.
+    const q = plancheFausse();
+    const g = creerHoteExtension(avecCode('planche.sur("commande.trait", async () => { await planche.modele.ligne([0, 0, 0], [1, 0, 0]); });'), { creer: faux().creer, acces: q.acces });
+    expect((await g.appeler("demande", "commande.trait", null, "Essai : Tracer")).genre).toBe("fini");
+    expect(q.etat.pas).toEqual(["Essai : Tracer"]);
+  });
+
+  it("saisie : l'extension reçoit les valeurs, ou « rien » si la fenêtre est annulée", async () => {
+    const p = plancheFausse();
+    const s = saisieFausse();
+    const avis: AvisExtension[] = [];
+    const h = creerHoteExtension(ESSAI_COMMANDES, { creer: faux().creer, acces: p.acces, surAvis: (a) => avis.push(a), saisir: s.saisir });
+    const appel = h.appeler("demande", "commande.boite-sur-mesure", { langue: "fr" });
+    const fenetre = await s.attendre();
+    expect(fenetre.demande.titre).toBe("Dimensions de la boîte");
+    expect(fenetre.demande.champs.map((c) => `${c.id}:${c.genre}`)).toEqual(["nom:texte", "largeur:nombre", "profondeur:nombre", "hauteur:nombre", "forme:choix", "grouper:case"]);
+    fenetre.repondre({ nom: "Socle", largeur: 2.5, profondeur: 1, hauteur: 0.5, forme: "pleine", grouper: true });
+    expect(await appel).toMatchObject({ genre: "fini", resultat: { nom: "Socle", largeur: 2.5 } });
+    expect(p.etat.pas).toHaveLength(1);
+    expect(p.etat.selection).toHaveLength(1);
+    expect(avis.at(-1)).toEqual({ texte: "Boîte dessinée : 2.5 × 1 × 0.5 m", genre: "info" });
+
+    const annulee = h.appeler("demande", "commande.boite-sur-mesure", { langue: "fr" });
+    (await s.attendre()).repondre(null);
+    expect(await annulee).toEqual({ genre: "fini", resultat: null });
+    expect(p.etat.pas).toHaveLength(1);
+    expect(avis.at(-1)).toEqual({ texte: "Saisie annulée : rien n'a été dessiné.", genre: "alerte" });
+  });
+
+  it("le délai de la commande ne court pas pendant la saisie ; il reprend ensuite, avec ce qu'il restait", async () => {
+    const s = saisieFausse();
+    const code = 'planche.sur("commande.demander", async () => { const v = await planche.saisie.demander("T", [{ id: "a", libelle: "A", genre: "case" }]); return v; });\nplanche.sur("commande.puis-trainer", async () => { await planche.saisie.demander("T", [{ id: "a", libelle: "A", genre: "case" }]); await new Promise(() => {}); });';
+    const h = creerHoteExtension(avecCode(code), { creer: faux().creer, delaiCommandeMs: 60, saisir: s.saisir });
+    const appel = h.appeler("demande", "commande.demander");
+    const fenetre = await s.attendre();
+    await pause(150);
+    expect(h.enMarche()).toBe(true);
+    fenetre.repondre({ a: true });
+    expect(await appel).toEqual({ genre: "fini", resultat: { a: true } });
+    // Après la réponse, l'extension qui ne rend plus la main est arrêtée au délai, comme toute commande.
+    const lente = h.appeler("demande", "commande.puis-trainer");
+    (await s.attendre()).repondre({ a: false });
+    expect(await lente).toEqual({ genre: "delai" });
+    expect(h.enMarche()).toBe(false);
+  });
+
+  it("l'arrêt pendant une saisie referme la fenêtre ; une réponse tardive n'atteint plus personne", async () => {
+    const s = saisieFausse();
+    const h = creerHoteExtension(ESSAI_COMMANDES, { creer: faux().creer, acces: plancheFausse().acces, surAvis: () => {}, saisir: s.saisir });
+    const appel = h.appeler("demande", "commande.boite-sur-mesure", { langue: "fr" });
+    const fenetre = await s.attendre();
+    h.arreter();
+    expect(await appel).toEqual({ genre: "arrete" });
+    expect(fenetre.fermee).toBe(true);
+    fenetre.repondre({ nom: "x", largeur: 1, profondeur: 1, hauteur: 1, forme: "pleine", grouper: false });
+    await pause(10);
+    expect(h.enMarche()).toBe(false);
+  });
+
+  it("refus nommés : sans la permission « messages », forme invalide, seconde fenêtre, saisie dans un événement, avis bornés", async () => {
+    const s = saisieFausse();
+    const avis: AvisExtension[] = [];
+    const nom = 'async (f) => { try { await f(); return "aucune erreur"; } catch (e) { return e.name + " : " + e.message; } }';
+    const code = `const essayer = ${nom};
+planche.sur("commande.avis-vide", () => essayer(() => planche.message.afficher("")));
+planche.sur("commande.saisie-vide", () => essayer(() => planche.saisie.demander("T", [])));
+planche.sur("commande.deux", () => essayer(async () => { planche.saisie.demander("T", [{ id: "a", libelle: "A", genre: "case" }]); await planche.saisie.demander("U", [{ id: "b", libelle: "B", genre: "case" }]); }));
+planche.sur("modele.change", () => essayer(() => planche.saisie.demander("T", [{ id: "a", libelle: "A", genre: "case" }])).then((r) => planche.afficher(r)));
+planche.sur("commande.bavarde", async () => { for (let i = 0; i < 9; i++) await planche.message.afficher("avis " + i); return "fait"; });`;
+    const journal: string[] = [];
+    const h = creerHoteExtension(avecCode(code), { creer: faux().creer, surAvis: (a) => avis.push(a), saisir: s.saisir, surJournal: (l) => journal.push(l) });
+    expect(await h.appeler("demande", "commande.avis-vide")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : avis/) });
+    expect(await h.appeler("demande", "commande.saisie-vide")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : saisie : de 1 à 12 champs/) });
+    const deux = h.appeler("demande", "commande.deux");
+    expect(await deux).toMatchObject({ genre: "fini", resultat: "argument_invalide : saisie : une fenêtre est déjà ouverte" });
+    // La fin de la commande referme la fenêtre restée ouverte.
+    expect(s.ouvertes).toHaveLength(1);
+    expect(s.ouvertes[0]!.fermee).toBe(true);
+    expect((await h.appeler("evenement", "modele.change")).genre).toBe("fini");
+    expect(journal).toEqual(["argument_invalide : saisie : pendant une commande seulement"]);
+    expect(await h.appeler("demande", "commande.bavarde")).toEqual({ genre: "fini", resultat: "fait" });
+    expect(avis.map((a) => a.texte)).toEqual(["avis 0", "avis 1", "avis 2", "avis 3", "avis 4"]);
+
+    const sans = creerHoteExtension(avecCode(code, ["modele.lire"]), { creer: faux().creer, surAvis: (a) => avis.push(a), saisir: s.saisir });
+    expect(await sans.appeler("demande", "commande.avis-vide")).toMatchObject({ genre: "fini", resultat: "permission_refusee : messages" });
+    // Planche sans affichage branché (aucun `surAvis`) : la demande n'existe pas pour l'extension.
+    const nue = creerHoteExtension(avecCode(code), { creer: faux().creer });
+    expect(await nue.appeler("demande", "commande.avis-vide")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : message.afficher" });
+  });
+});
