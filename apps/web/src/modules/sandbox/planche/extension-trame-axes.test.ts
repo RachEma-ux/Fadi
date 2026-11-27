@@ -128,6 +128,8 @@ describe("extension « Trame d'axes »", () => {
     expect(Object.keys(contexte(m, undefined).aretes)).toHaveLength(0);
     expect(m.annotations?.balises[g!.balise!]?.nom).toBe("Trame");
     expect(m.definitions[g!.definition]!.nom).toBe("Trame A–D / 1–7");
+    // Bulles et cotes sur la balise de la trame : cachées avec elle.
+    for (const x of [...Object.values(m.annotations!.textes), ...Object.values(m.annotations!.cotes)]) expect((x as { balise?: string }).balise).toBe(g!.balise);
     const textes = Object.values(m.annotations!.textes).map((x) => (x.genre === "repere" ? x.texte : ""));
     expect(textes).toEqual(["A", "B", "C", "D", "1", "2", "3", "4", "5", "6", "7"]);
     const cotes = Object.values(m.annotations!.cotes).flatMap((c) => (c.genre === "lineaire" ? [Math.hypot(c.b.x - c.a.x, c.b.y - c.a.y)] : []));
@@ -151,6 +153,21 @@ describe("extension « Trame d'axes »", () => {
     expect(sommetsDe(p.etat.modele, g!).some((q) => Math.abs(q.x + 2) < 1e-9 && Math.abs(q.y - 1.5) < 1e-9)).toBe(true);
     // Le rectangle d'origine n'est pas soudé à la trame.
     expect(Object.keys(contexte(p.etat.modele, undefined).faces)).toHaveLength(1);
+  });
+
+  it("dans un groupe ouvert, la pose et la modification sont refusées, rien n'est posé", async () => {
+    const f = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const p = planche(f);
+    await p.outil("activation", {}, [REGLAGES]);
+    await p.outil("clic", souris([0, 0, 0]));
+    const [g] = occurrences(p.etat.modele);
+    p.etat.selection = [g!.id];
+    p.etat.dans = g!.id;
+    const avant = p.etat.modele;
+    await p.outil("clic", souris([5, 5, 0]));
+    expect(await p.commande("modifier", REGLAGES)).toBe(false);
+    expect(p.etat.modele).toBe(avant);
+    expect(p.textes().filter((x) => x.startsWith("Fermez le groupe"))).toHaveLength(2);
   });
 
   it("la précision du projet règle l'affichage de l'origine", async () => {

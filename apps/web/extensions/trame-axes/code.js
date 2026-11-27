@@ -180,10 +180,11 @@ async function poser(r, o, en) {
   await planche.modele.deplacer([groupe], fois(ecart, -1));
   const balise = await planche.balises.creer(t(en, "Trame", "Grid"), "#c0392b");
   await planche.balises.appliquer([groupe], balise);
+  // Bulles et cotes sur la même balise que les files : la trame cachée l'est en entier.
   const textes = [];
-  for (const b of p.bulles) textes.push(await planche.textes.creer(b.centre, b.centre, b.texte));
+  for (const b of p.bulles) textes.push(await planche.textes.creer(b.centre, b.centre, b.texte, balise));
   const cotes = [];
-  for (const c of p.cotes) cotes.push(await planche.cotes.creer(c.a, c.b, c.position));
+  for (const c of p.cotes) cotes.push(await planche.cotes.creer(c.a, c.b, c.position, undefined, balise));
   await planche.donnees.ecrire(groupe, CLE, { ...r, origine: o, annotations: [...textes, ...cotes] });
   await planche.objets.verrouiller([groupe], true);
   await planche.selection.definir([groupe]);
@@ -226,7 +227,16 @@ async function activer(d) {
   return repos(en);
 }
 
+/** La trame se pose à la racine : bulles et cotes sont dans les coordonnées du modèle (protocole 1.3, `dans`). */
+async function horsRacine(en) {
+  const lu = await planche.modele.lire();
+  if (!lu.dans) return false;
+  await planche.message.afficher(t(en, "Fermez le groupe ou le composant ouvert pour poser ou modifier une trame.", "Close the open group or component to place or edit a grid."), "alerte");
+  return true;
+}
+
 async function poserIci(o, en) {
+  if (await horsRacine(en)) return repos(en);
   await planche.operation.ouvrir(t(en, "Trame d'axes", "Grid lines"));
   const { p } = await poser(reglages, o, en);
   await planche.operation.valider();
@@ -267,6 +277,7 @@ planche.outil.sur("poser", "saisie", async (d) => {
 planche.sur("commande.modifier", async (d) => {
   const en = d && d.langue === "en";
   unites = await planche.unites.lire();
+  if (await horsRacine(en)) return false;
   const sel = await planche.selection.lire();
   const lu = sel.length === 1 ? await planche.donnees.lire(sel[0], CLE) : null;
   if (!lu || !lu.origine) {
