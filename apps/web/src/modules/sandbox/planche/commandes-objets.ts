@@ -587,13 +587,18 @@ export const COMMANDES_ECHANGE: readonly CommandeLot4<IdCommandeEchange>[] = (["
 /** Le fichier natif et l'image se lisent et s'écrivent toujours, même en consultation. */
 export const disponibiliteEchange = (_id: IdCommandeEchange): Disponibilite => ({ disponible: true, motif: null });
 /** Cas 2, lot 7 : versions, jalons et brouillon (raccourcis en deux temps : Ctrl+Maj+Espace, puis une touche). */
-export type IdCommandeVersion = "versions" | "poser-jalon" | "consultation" | "comparer" | "brouillon" | "fiche-projet";
-export const COMMANDES_VERSION: readonly CommandeLot4<IdCommandeVersion>[] = (["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet"] as const).map(lot4<IdCommandeVersion>("version"));
+export type IdCommandeVersion = "versions" | "poser-jalon" | "consultation" | "comparer" | "brouillon" | "fiche-projet" | "appliquer-brouillon" | "garder-brouillon" | "abandonner-brouillon";
+export const COMMANDES_VERSION: readonly CommandeLot4<IdCommandeVersion>[] = (["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon"] as const).map(lot4<IdCommandeVersion>("version"));
 /**
  * Poser un jalon écrit dans le registre de la Planche : refusé en lecture (consultation comprise). Les panneaux s'ouvrent
  * toujours ; la consultation se quitte toujours.
  */
-export function disponibiliteVersion(id: IdCommandeVersion, s: { readonly lecture: boolean }): Disponibilite {
+export function disponibiliteVersion(id: IdCommandeVersion, s: { readonly lecture: boolean; readonly brouillon?: boolean }): Disponibilite {
+  if (id === "appliquer-brouillon" || id === "garder-brouillon" || id === "abandonner-brouillon") {
+    if (!s.brouillon) return { disponible: false, motif: "planche.brouillon.motif.aucun" };
+    if (s.lecture && id !== "abandonner-brouillon") return { disponible: false, motif: "planche.debit.motif.lecture" };
+    return { disponible: true, motif: null };
+  }
   if (id === "poser-jalon" && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   return { disponible: true, motif: null };
 }

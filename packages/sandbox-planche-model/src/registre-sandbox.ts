@@ -394,6 +394,10 @@ const commandes: EntreeSandbox[] = [
   c("comparer", "version", "git-compare", "Ctrl+Maj+Espace, Q", "panneau-comparer", true),
   c("brouillon", "version", "git-branch", "Ctrl+Maj+Espace, Maj+V", "panneau-brouillon", true),
   c("fiche-projet", "version", "id-badge-2", "Ctrl+Maj+Espace, Maj+F", "panneau-fiche-projet", true),
+  // Brouillon ouvert (revue de #514, règle d'or) : appliquer, garder comme variante, abandonner.
+  c("appliquer-brouillon", "version", "git-merge", "Ctrl+Maj+Espace, Maj+A", "panneau-brouillon", true),
+  c("garder-brouillon", "version", "git-fork", "Ctrl+Maj+Espace, Maj+G", "panneau-brouillon", true),
+  c("abandonner-brouillon", "version", "git-branch-deleted", "Ctrl+Maj+Espace, Maj+Z", "panneau-brouillon", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

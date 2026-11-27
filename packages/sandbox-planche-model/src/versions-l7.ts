@@ -14,7 +14,7 @@
  */
 import { REGLAGES_DEFAUT } from "./annotations.js";
 import { sha256Hex } from "./empreinte.js";
-import { type Contexte, type Id, type Matrice4, type Modele, type Resultat, appliquer, composer, matriceMonde, modifierAnnotations } from "./geometrie-libre.js";
+import { type Contexte, type Definition, type Id, type Matrice4, type Modele, type Resultat, appliquer, composer, matriceMonde, modifierAnnotations } from "./geometrie-libre.js";
 import type { Vec3 } from "./vecteur.js";
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -274,6 +274,8 @@ function objetsDe(m: Modele): Map<Id, Fiche> {
   for (const [id, o] of Object.entries(m.racine.occurrences)) {
     const d = m.definitions[o.definition];
     const { transformation, materiau, balise, nom, donnees, definition: _d, id: _i, ...etat } = o;
+    // Métadonnées de la définition (nom, description, données…) : un composant renommé ou décrit autrement est « modifié ».
+    const { contenu: _c, id: _di, nom: nomDefinition, genre: _g, ...meta } = d ?? ({} as Partial<Definition>);
     r.set(id, {
       nom: nom || d?.nom || id,
       genre: d?.genre ?? "groupe",
@@ -281,8 +283,8 @@ function objetsDe(m: Modele): Map<Id, Fiche> {
         geometrie: texteCanonique({ t: transformation, contenu: d ? contenuDeveloppe(m, d.contenu) : null }),
         matiere: texteCanonique(materiau ?? null),
         balise: texteCanonique(balise ?? null),
-        nom: texteCanonique(nom ?? null),
-        donnees: texteCanonique({ o: donnees ?? null, d: d?.donnees ?? null }),
+        nom: texteCanonique({ o: nom ?? null, d: nomDefinition ?? null }),
+        donnees: texteCanonique({ o: donnees ?? null, d: meta }),
         etat: texteCanonique(etat),
       },
     });

@@ -52,7 +52,7 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   it("raccourcis en deux temps : Ctrl+Maj+Espace est l'entrée, la seconde touche (avec ou sans Maj) résout la commande", () => {
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: true, altKey: false })).toBe(true);
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: false, altKey: false })).toBe(false);
-    expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet"]);
+    expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon"]);
     for (const c of COMMANDES_DEUX_TEMPS) {
       const s = secondTemps(c.raccourci)!;
       const maj = s.startsWith("Maj+");

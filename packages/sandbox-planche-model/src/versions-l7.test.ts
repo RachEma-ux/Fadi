@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, grouper, modeleVide, peindreOccurrences, pousserTirer, type Modele } from "./geometrie-libre.js";
+import { ajouterRectangle, grouper, modeleVide, modifierDefinition, peindreOccurrences, pousserTirer, type Modele } from "./geometrie-libre.js";
 import { exporterIfc } from "./echanges-ifc.js";
 import { lireGabarit } from "./balises-l4.js";
 import { projeterPlan, svgPlan } from "./plan-vectoriel.js";
@@ -139,6 +139,13 @@ describe("cas 2, lot 7 — comparaison objet par objet (n° 33, 41, 48)", () => 
     expect([s.ajoutes.length, s.modifies.length, s.supprimes.length]).toEqual([12, 12, 12]);
     expect(Math.min(...s.supprimes.flat().map((p) => p.x))).toBeCloseTo(5, 9);
     expect(Math.min(...s.ajoutes.flat().map((p) => p.x))).toBeCloseTo(10, 9);
+  });
+
+  it("composant renommé ou décrit (métadonnées de sa définition) : « modifié »", () => {
+    const a = deux();
+    const abri = idDe(a, "Abri");
+    const b = modifierDefinition(a, a.racine.occurrences[abri]!.definition, { nom: "Après", description: "Description modifiée" }).modele;
+    expect(comparerModeles(a, b).modifies.map((o) => [o.id, o.aspects])).toEqual([[abri, ["nom", "donnees"]]]);
   });
 
   it("géométrie libre de la racine comptée à part", () => {

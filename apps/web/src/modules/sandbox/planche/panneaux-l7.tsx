@@ -275,6 +275,7 @@ export function PanneauBrouillon({
   variantes,
   nomJalon,
   onOuvrir,
+  disponibilite,
 }: {
   brouillon: EtatBrouillon | null;
   nomPlanche: string;
@@ -286,6 +287,7 @@ export function PanneauBrouillon({
   variantes: readonly VarianteAffichee[];
   nomJalon: (id: string) => string;
   onOuvrir: (id: string) => void;
+  disponibilite: (id: IdCommandeVersion) => Disponibilite;
 }) {
   return (
     <div className="planche-accrochage planche-versions" data-planche-brouillon>
@@ -297,9 +299,9 @@ export function PanneauBrouillon({
             <div className="planche-accrochage-ligne"><dt>{t("planche.brouillon.changements")}</dt><dd data-planche-brouillon-changements>{t("planche.brouillon.resume", { ajoutes: String(brouillon.ajoutes), modifies: String(brouillon.modifies), supprimes: String(brouillon.supprimes) })}</dd></div>
           </dl>
           <div className="planche-debit-barre planche-gabarit-barre" role="toolbar" aria-label={t("panneau.brouillon")}>
-            <button type="button" className="planche-bouton-principal" disabled={lecture} onClick={onAppliquer} data-planche-brouillon-appliquer>{t("planche.brouillon.appliquer")}</button>
-            <button type="button" disabled={lecture} onClick={onGarder} data-planche-brouillon-garder>{t("planche.brouillon.garder")}</button>
-            <button type="button" onClick={onAbandonner} data-planche-brouillon-abandonner>{t("planche.brouillon.abandonner")}</button>
+            <BoutonVersion id="appliquer-brouillon" libelle={t("planche.brouillon.appliquer")} principal d={disponibilite("appliquer-brouillon")} onClick={onAppliquer} attribut="data-planche-brouillon-appliquer" />
+            <BoutonVersion id="garder-brouillon" libelle={t("planche.brouillon.garder")} d={disponibilite("garder-brouillon")} onClick={onGarder} attribut="data-planche-brouillon-garder" />
+            <BoutonVersion id="abandonner-brouillon" libelle={t("planche.brouillon.abandonner")} d={disponibilite("abandonner-brouillon")} onClick={onAbandonner} attribut="data-planche-brouillon-abandonner" />
           </div>
         </>
       ) : (

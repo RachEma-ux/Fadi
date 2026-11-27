@@ -4257,6 +4257,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     if (lectureProp) return;
     if (!jalon) {
       if (consultationRef.current) return;
+      // L'état courant est écrit d'abord (revue de #514) : rien de ce qui était en cours n'est perdu en consultation.
+      try {
+        await actionsVersions.ecrire();
+      } catch (e) {
+        setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) }));
+        return;
+      }
       const c = { jalon: null, retour: null };
       consultationRef.current = c;
       setConsultation(c);
@@ -4266,7 +4273,14 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const m = await chargerJalon(indexRef.current.courante, jalon);
     if (!m) return setMessage(t("planche.version.jalon-refuse", { nom: jalon.nom }));
     // L'état courant est écrit avant d'être mis de côté : rien de ce qui était en cours n'est perdu.
-    if (!consultationRef.current) await actionsVersions.ecrire().catch(() => undefined);
+    if (!consultationRef.current) {
+      try {
+        await actionsVersions.ecrire();
+      } catch (e) {
+        setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) }));
+        return;
+      }
+    }
     const c = { jalon, retour: consultationRef.current?.retour ?? histRef.current };
     consultationRef.current = c;
     setConsultation(c);
@@ -4401,8 +4415,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     rafraichir();
   }, [panneau, comparaison, surlignerDifferences, rafraichir]);
 
+  const disponibiliteCommandeVersion = (id: IdCommandeVersion) => disponibiliteVersion(id, { lecture: readOnly, brouillon: originalBrouillon !== null });
   const executerVersion = (id: IdCommandeVersion) => {
-    const d = disponibiliteVersion(id, { lecture: readOnly });
+    const d = disponibiliteCommandeVersion(id);
     if (!d.disponible) return setMessage(t(d.motif ?? "planche.lecture.message"));
     const basculer = (p: Panneau) => setPanneau(panneauRef.current === p ? null : p);
     if (id === "versions") return basculer("versions-jalons");
@@ -4418,6 +4433,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     }
     if (id === "comparer") return basculer("comparer");
     if (id === "brouillon") return basculer("brouillon");
+    if (id === "appliquer-brouillon") return void actionsVersions.appliquer();
+    if (id === "garder-brouillon") return void actionsVersions.garder();
+    if (id === "abandonner-brouillon") return void actionsVersions.abandonner();
     basculer("fiche-projet");
   };
   const raccourciConsultation = COMMANDES_VERSION.find((c) => c.id === "consultation")!.raccourci;
@@ -5275,7 +5293,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_ECHANGE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: null, executer: () => executerEchange(c.id) })),
         // Cas 2, lot 7 : versions, jalons, comparaison, brouillon, fiche du projet.
         ...COMMANDES_VERSION.map((c) => {
-          const d = disponibiliteVersion(c.id, { lecture: readOnly });
+          const d = disponibiliteCommandeVersion(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.lecture"), executer: () => executerVersion(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
@@ -6188,7 +6206,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onDestinataire={(id, d) => poserRegistre(declarerDestinataire(registreRef.current, id, d))}
                 origine={origineCourante ? (origineCourante.nomJalon ? t("planche.version.origine-jalon", { planche: origineCourante.nomPlanche, jalon: origineCourante.nomJalon }) : t("planche.version.origine", { planche: origineCourante.nomPlanche })) : null}
                 onOuvrirOrigine={origineCourante && indexPlanches.planches.some((p) => p.id === origineCourante.planche) ? () => void actionsMenu.ouvrir(origineCourante.planche) : null}
-                disponibilite={(id) => disponibiliteVersion(id, { lecture: readOnly })}
+                disponibilite={disponibiliteCommandeVersion}
               />
             )}
             {panneau === "comparer" && (
@@ -6220,6 +6238,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 variantes={variantesDe(indexPlanches, originalBrouillon?.id ?? plancheCourante).map(varianteAffichee)}
                 nomJalon={(id) => registre.jalons.find((j) => j.id === id)?.nom ?? id}
                 onOuvrir={(id) => void actionsMenu.ouvrir(id)}
+                disponibilite={disponibiliteCommandeVersion}
               />
             )}
             {panneau === "fiche-projet" && <PanneauFicheProjet fiche={ficheDe(hist.present.modele)} lecture={readOnly} onFiche={poserUneFiche} />}

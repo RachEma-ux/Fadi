@@ -20,7 +20,7 @@ lot 7 (`analyses/catalogue-extensions/cas-2/lot-7/lot7-1..4.png`) validées par 
 
 ## Règle d'or
 
-Famille `version`, six commandes, chacune avec son icône Tabler, la barre de son panneau et un raccourci en deux temps
+Famille `version`, neuf commandes, chacune avec son icône Tabler, la barre de son panneau et un raccourci en deux temps
 (Ctrl+Maj+Espace, puis une touche ; mécanisme repris tel quel du cas 4, PR #510, pour que la fusion soit sans écart) :
 
 | Commande | Icône | Raccourci |
@@ -31,9 +31,13 @@ Famille `version`, six commandes, chacune avec son icône Tabler, la barre de so
 | `comparer` — Comparer deux états | `git-compare` | Ctrl+Maj+Espace, Q |
 | `brouillon` — Essayer en brouillon | `git-branch` | Ctrl+Maj+Espace, Maj+V |
 | `fiche-projet` — Fiche du projet | `id-badge-2` | Ctrl+Maj+Espace, Maj+F |
+| `appliquer-brouillon` — Appliquer le brouillon à l'original | `git-merge` | Ctrl+Maj+Espace, Maj+A |
+| `garder-brouillon` — Garder le brouillon comme variante | `git-fork` | Ctrl+Maj+Espace, Maj+G |
+| `abandonner-brouillon` — Abandonner le brouillon | `git-branch-deleted` | Ctrl+Maj+Espace, Maj+Z |
 
 Ctrl+Maj+Espace affiche l'encadré des secondes touches. Consultation : du jalon choisi quand « Versions et jalons » est
-ouvert, sinon de la Planche courante ; la même commande en sort.
+ouvert, sinon de la Planche courante (écrite d'abord) ; la même commande en sort. Les trois commandes du brouillon
+ouvert (ajoutées à la revue de #514) portent leur icône sur les boutons du panneau « Brouillon ».
 
 ## Écarts déclarés par rapport aux maquettes
 
