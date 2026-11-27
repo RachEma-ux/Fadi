@@ -3545,7 +3545,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [uniteReference, setUniteReference] = useState<UniteReference>("m");
   /** Triangles relus de chaque fichier (unité du fichier), par empreinte ; « lecture » / « introuvable » sinon. */
   const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
-  const [recolement, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[] } | null>(null);
+  const [recolementBrut, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[]; modele: unknown } | null>(null);
+  // Le résultat ne vaut que pour le modèle contrôlé : placement, tolérance, version ou dessin modifiés le rendent périmé.
+  const recolement = recolementBrut && recolementBrut.modele === hist.present.modele ? recolementBrut : null;
   const importReferenceRef = useRef<HTMLInputElement | null>(null);
   const modeImportReference = useRef<"charger" | "recharger">("charger");
   const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
@@ -3627,7 +3629,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
     const m = histRef.current.present.modele;
     if (mode === "recharger" && referenceChoisie) {
-      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, fichier, echelle, triangles, date: dateDuJour() });
+      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
       setRecolement(null);
       return operationReference(r, t("planche.references.recharger-reference"), r.ok ? t("planche.references.note.rechargee", { version: String(referenceChoisie.version + 1), triangles: triangles.toLocaleString(LOCALE) }) : null);
     }
@@ -3660,7 +3662,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const resultat = controlerRecolement(points, trianglesAuProjet(referenceChoisie, f.positions), referenceChoisie.tolerance);
       setErreurReference(null);
       setNoteReference(null);
-      setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
+      setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, modele: m, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
     }
   };
   const reservesListe = reservesDe(hist.present.modele);

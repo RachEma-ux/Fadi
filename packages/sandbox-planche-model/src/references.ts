@@ -9,8 +9,8 @@
  * de récolement) et signale ceux qui dépassent la tolérance déclarée ; sans tolérance déclarée, rien n'est jugé.
  * Préfixe d'identifiant « u ».
  */
-import type { Id, Modele } from "./geometrie-libre.js";
-import { modifierAnnotations } from "./geometrie-libre.js";
+import type { Contexte, Id, Matrice4, Modele } from "./geometrie-libre.js";
+import { appliquer, composer, modifierAnnotations } from "./geometrie-libre.js";
 import { maillagesPlanche } from "./representation.js";
 
 export type FormatReference = "obj" | "stl" | "ifc";
@@ -129,12 +129,14 @@ export function ajouterReference(m: Modele, v: { readonly nom: string; readonly 
  * Recharge une référence avec une nouvelle version de son fichier : placement, verrou, affichage et tolérance gardés.
  * Le même fichier (même empreinte) n'est pas une nouvelle version : refusé (« fichier »).
  */
-export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string }): ResultatReference =>
+export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly format?: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string }): ResultatReference =>
   modifierReference(m, id, (r) => {
     if (!estFichierReference(v.fichier) || v.fichier.empreinte === r.fichier.empreinte || !Number.isInteger(v.triangles) || v.triangles < 0) return "fichier";
     if (!estEchelle(v.echelle)) return "echelle";
     if (!estDate(v.date)) return "date";
-    return { ...r, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
+    if (v.format !== undefined && v.format !== "obj" && v.format !== "stl" && v.format !== "ifc") return "fichier";
+    // Le format suit le nouveau fichier : la relecture à l'ouverture emploie le bon lecteur.
+    return { ...r, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, format: v.format ?? r.format, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
   }, false);
 
 export const deplacerReference = (m: Modele, id: Id, placement: PlacementReference): ResultatReference => modifierReference(m, id, (r) => (estPlacementReference(placement) ? { ...r, placement } : "position"), true);
@@ -170,6 +172,22 @@ export function sommetsDuDessin(m: Modele): [number, number, number][] {
     sortie.push([x, y, z]);
   };
   for (const s of Object.values(m.racine.sommets)) ajouter(s.position.x, s.position.y, s.position.z);
+  // Sommets des groupes et composants visibles (arêtes sans face comprises), dans leur repère monde composé.
+  const parcourir = (ctx: Contexte, parent: Matrice4 | null, prof: number): void => {
+    if (prof > 32) return;
+    for (const o of Object.values(ctx.occurrences)) {
+      if (o.masquee) continue;
+      const def = m.definitions[o.definition];
+      if (!def) continue;
+      const monde = parent ? composer(parent, o.transformation) : o.transformation;
+      for (const s of Object.values(def.contenu.sommets)) {
+        const p = appliquer(monde, s.position);
+        ajouter(p.x, p.y, p.z);
+      }
+      parcourir(def.contenu, monde, prof + 1);
+    }
+  };
+  parcourir(m.racine, null, 0);
   for (const mm of maillagesPlanche(m)) for (let i = 0; i + 2 < mm.positions.length; i += 3) ajouter(mm.positions[i]!, mm.positions[i + 1]!, mm.positions[i + 2]!);
   return sortie;
 }
