@@ -25,6 +25,9 @@ N-D10-1, D10-R-002, D10-R-006, N-D10-2, D10-F14-124.
 - IFC2X3 exige un historique (IfcOwnerHistory) : application « Fadi Planche », personne « Non renseigné ».
 - `.ifczip` : archive ZIP **stockée** (sans compression : aucune dépendance ajoutée). Fichier reproductible : même
   modèle et même date, mêmes octets.
+  Écart accepté par le maître d'ouvrage le 27 novembre 2026 (22 h 41) avec une suite prévue : ajouter plus tard une
+  bibliothèque de compression (deflate) pour compresser le `.ifczip` à l'export et remplacer le lecteur maison
+  `inflate.ts` ; ce sera une PR distincte, la dépendance et sa licence étant soumises à son accord.
 - Contrôle avant émission : constats seulement (géoréférencement, objets sans niveau, niveaux vides, objets non étanches,
   classes ramenées) ; seul un modèle vide bloque l'export. Rien n'est corrigé.
 
