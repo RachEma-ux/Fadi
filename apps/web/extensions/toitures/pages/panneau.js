@@ -79,8 +79,17 @@
   // Le formulaire n'est redessiné qu'au changement d'onglet ou de champs : la saisie en cours n'est jamais écrasée.
   var dessinerFormulaire = function (champs) {
     var f = el("formulaire");
-    var cle = onglet + ":" + champs.map(function (c) { return c.id + (c.choix ? c.choix.length : ""); }).join(",");
-    if (formulaireDe === cle) return;
+    // La clé tient compte des options de chaque liste (leurs valeurs) : une liste dont les options changent est redessinée.
+    var cle = onglet + ":" + champs.map(function (c) { return c.id + (c.choix ? "[" + c.choix.map(function (o) { return o.valeur; }).join("|") + "]" : ""); }).join(",");
+    if (formulaireDe === cle) {
+      // Mêmes champs : les valeurs ramenées par l'extension (une liste recalée sur une option existante) sont reprises,
+      // sauf dans le champ en cours de saisie.
+      champs.forEach(function (c) {
+        var i = el("champ-" + c.id);
+        if (i && i !== document.activeElement && i.value !== c.valeur) i.value = c.valeur;
+      });
+      return;
+    }
     formulaireDe = cle;
     f.textContent = "";
     champs.forEach(function (c) {

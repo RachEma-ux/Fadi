@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, ajouterSegment, appliquer, contexte, creerExecutantExtension, jugerImportPaquet, modeleVide, modifierAnnotations, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, ajouterSegment, appliquer, contexte, creerExecutantExtension, creerFonctionsPlanche, jugerImportPaquet, modeleVide, modifierAnnotations, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/toitures/";
@@ -394,6 +394,46 @@ describe("extension « Toitures et combles » — ligne 1,80 m (n° 4)", () => {
     expect(p.derniereAlerte()).toMatch(/Sélectionnez une toiture générée/);
     expect(e.resultats[0]).toMatchObject({ ton: "alerte" });
     expect(p.etat.pas).toEqual([]);
+  });
+});
+
+describe("extension « Toitures et combles » — retours de relecture", () => {
+  it("un contour avec une ouverture est refusé, rien n'est posé", async () => {
+    const depart = contour(12, 9, 6.1);
+    const m = ajouterRectangle(depart.modele, v3(4, 3, 6.1), v3(2, 0, 0), v3(0, 2, 0)).modele;
+    const p = planche(m);
+    p.etat.selection = [depart.face];
+    await p.action("generer-toiture", { onglet: "pans", valeurs: PANS });
+    expect(p.derniereAlerte()).toBe("Le contour a une ouverture : les surfaces et le comble ne la prendraient pas en compte. Choisissez une face sans ouverture.");
+    expect(occurrences(p.etat.modele)).toHaveLength(0);
+  });
+
+  it("une table aux libellés longs se garde par morceaux bornés en taille", async () => {
+    const entrees = Array.from({ length: 20 }, (_, i) => ({ materiau: `${"M".repeat(56)} ${i}`, zone: "Z".repeat(40), situation: "S".repeat(60), pente: 30, unite: "%", source: "F".repeat(160), relu: true }));
+    const p = planche(modeleVide());
+    await chargerTable(p, { format: "fadi-regles-pentes/1", entrees });
+    expect(p.derniereAlerte()).toBe("");
+    expect(p.etat.pas).toEqual(["Table des pentes minimales"]);
+  });
+
+  it("une toiture déplacée et tournée avec la Planche : la ligne se trace à sa place actuelle", async () => {
+    const depart = contour(12, 9, 6.1);
+    const p = planche(depart.modele);
+    p.etat.selection = [depart.face];
+    await p.action("generer-toiture", { onglet: "pans", valeurs: { type: "2", pente: "45", unite: "°", debord: "" } });
+    const toit = p.etat.selection[0]!;
+    const f = creerFonctionsPlanche(p.etat.modele);
+    f.api.tourner([toit], [0, 0, 0], [0, 0, 1], 90);
+    f.api.deplacer([toit], [20, 5, 0]);
+    p.etat.modele = f.modele();
+    p.etat.selection = [toit];
+    await p.action("tracer-ligne", { onglet: "ligne", valeurs: { hauteur: "1,80", matiere: "" } });
+    expect(p.derniereAlerte()).toBe("");
+    const ligne = occurrences(p.etat.modele).find((o) => o.id !== toit)!;
+    const haute = facesMonde(p.etat.modele, ligne.id).find((x) => x.groupe.startsWith("Comble à"))!;
+    const xs = haute.points.map((q) => Math.round(q[0] * 1e6) / 1e6);
+    const ys = haute.points.map((q) => Math.round(q[1] * 1e6) / 1e6);
+    expect([Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]).toEqual([12.8, 18.2, 5, 17]);
   });
 });
 

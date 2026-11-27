@@ -15,7 +15,7 @@ var FORMAT_TABLE = "fadi-regles-pentes/1";
 var TYPES = ["2", "4", "1"];
 var MAX_ENTREES = 200;
 var MAX_VARIANTES = 8;
-var PAR_MORCEAU = 20;
+var TAILLE_MORCEAU = 3800;
 var LIGNES_PAR_PAGE = 80;
 var EPS = 1e-6;
 var LETTRES = "ABCDEFGH";
@@ -63,7 +63,10 @@ var T = {
       pasFace: "Sélectionnez une seule face : le contour à couvrir.",
       pasHorizontal: "Le contour doit être une face horizontale.",
       pasRectangle: "Le contour doit être un rectangle : les contours en L ou en T, qui demandent des noues, ne sont pas encore pris en charge.",
+      trous: "Le contour a une ouverture : les surfaces et le comble ne la prendraient pas en compte. Choisissez une face sans ouverture.",
     },
+    placementInconnu: "La place de cette toiture n'est plus reconnue (copiée ou modifiée) : générez-la de nouveau sur son contour.",
+    toitureInclinee: "Cette toiture a été basculée hors de l'horizontale : générez-la de nouveau sur son contour.",
     videVariantes: "Aucune variante : sélectionnez le contour, puis « Comparer une autre pente ».",
     note: {
       pans: "La toiture est posée sur le contour sélectionné, dans un groupe nommé qui garde ses paramètres. Couverture : surface en pente, débords compris ; comble : volume sous la toiture, au-dessus du contour, entre les murs. Altitudes relatives à l'origine du dessin.",
@@ -134,7 +137,10 @@ var T = {
       pasFace: "Select a single face: the outline to cover.",
       pasHorizontal: "The outline must be a horizontal face.",
       pasRectangle: "The outline must be a rectangle: L or T outlines, which need valleys, are not supported yet.",
+      trous: "The outline has an opening: the areas and the attic would not account for it. Choose a face without an opening.",
     },
+    placementInconnu: "This roof's placement is no longer recognised (copied or changed): generate it again on its outline.",
+    toitureInclinee: "This roof was tilted out of the horizontal: generate it again on its outline.",
     videVariantes: "No variant: select the outline, then « Compare another pitch ».",
     note: {
       pans: "The roof is laid on the selected outline, in a named group that keeps its parameters. Roof area: sloped area, overhangs included; attic: volume under the roof, above the outline, between the walls. Levels relative to the drawing origin.",
@@ -237,13 +243,94 @@ function rectangleDe(points) {
 var monde = function (R, s, r, z) { return [R.o[0] + s * R.u[0] + r * R.v[0], R.o[1] + s * R.u[1] + r * R.v[1], z]; };
 var local = function (R, q) { var d = sous(q, R.o); return { s: scal(d, R.u), r: scal(d, R.v), z: q[2] }; };
 
+// ——————————————————————————————————————————————— Placement d'un objet généré, suivi après déplacement
+
+var r_moins = function (a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; };
+var r_vect = function (a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; };
+var r_unit = function (a) { var l = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); return l > 0 ? [a[0] / l, a[1] / l, a[2] / l] : null; };
+
+/**
+ * Repère d'un objet qui vient d'être posé : une face de son contenu (identifiée par son chemin d'occurrences et son
+ * identifiant, qui ne changent pas quand l'objet est déplacé ou tourné) et trois de ses sommets, en coordonnées du dessin.
+ */
+async function repereDe(g) {
+  var m = await planche.modele.lire({ portee: "monde" });
+  var f = m.faces.filter(function (y) { return y.chemin[0] === g && y.points.length >= 3; })[0];
+  if (!f) return null;
+  // Trois sommets formant le plus grand triangle : jamais alignés.
+  var best = null;
+  for (var i = 0; i < f.points.length; i++) for (var j = i + 1; j < f.points.length; j++) for (var k = j + 1; k < f.points.length; k++) {
+    var n = r_vect(r_moins(f.points[j], f.points[i]), r_moins(f.points[k], f.points[i]));
+    var a = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
+    if (!best || a > best.a) best = { a: a, k: [i, j, k] };
+  }
+  if (!best || best.a < 1e-12) return null;
+  return { chemin: f.chemin.slice(1), face: f.id, indices: best.k, points: best.k.map(function (i) { return f.points[i]; }) };
+}
+
+var r_cadre = function (p) {
+  var e1 = r_unit(r_moins(p[1], p[0]));
+  var e3 = e1 && r_unit(r_vect(e1, r_moins(p[2], p[0])));
+  return e1 && e3 ? [e1, r_vect(e3, e1), e3] : null;
+};
+
+/**
+ * Rotation R et translation t qui mènent le repère gardé à la position actuelle de l'objet `id` :
+ * `{ R, t, axe, degres }`, `{ immobile: true }` s'il n'a pas bougé, `{ inconnu: true }` si son contenu n'est plus
+ * reconnu (copie, contenu modifié).
+ */
+async function deplacementDepuis(id, r) {
+  if (!r || !Array.isArray(r.points) || !Array.isArray(r.indices)) return { inconnu: true };
+  var m = await planche.modele.lire({ portee: "monde" });
+  var chemin = [id].concat(r.chemin || []);
+  var f = m.faces.filter(function (y) { return y.id === r.face && y.chemin.length === chemin.length && y.chemin.every(function (c, i) { return c === chemin[i]; }); })[0];
+  if (!f) return { inconnu: true };
+  var q = r.indices.map(function (i) { return f.points[i]; });
+  if (q.some(function (v) { return !v; })) return { inconnu: true };
+  var A = r_cadre(r.points);
+  var B = r_cadre(q);
+  if (!A || !B) return { inconnu: true };
+  var R = [0, 1, 2].map(function (i) { return [0, 1, 2].map(function (j) { return B[0][i] * A[0][j] + B[1][i] * A[1][j] + B[2][i] * A[2][j]; }); });
+  var t = r_moins(q[0], appliquerR(R, r.points[0]));
+  var c = Math.max(-1, Math.min(1, (R[0][0] + R[1][1] + R[2][2] - 1) / 2));
+  var angle = Math.acos(c);
+  if (angle < 1e-9 && Math.abs(t[0]) + Math.abs(t[1]) + Math.abs(t[2]) < 1e-9) return { immobile: true };
+  var axe = [0, 0, 1];
+  if (angle > 1e-9) {
+    var u = Math.sin(angle) > 1e-6 ? r_unit([R[2][1] - R[1][2], R[0][2] - R[2][0], R[1][0] - R[0][1]]) : null;
+    if (u) axe = u;
+    else {
+      // Demi-tour : l'axe est la colonne la plus forte de (R + I) / 2.
+      var cols = [0, 1, 2].map(function (j) { return [0, 1, 2].map(function (i) { return (R[i][j] + (i === j ? 1 : 0)) / 2; }); });
+      cols.sort(function (a, b) { return (b[0] * b[0] + b[1] * b[1] + b[2] * b[2]) - (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); });
+      axe = r_unit(cols[0]) || [0, 0, 1];
+    }
+  }
+  return { R: R, t: t, axe: axe, degres: (angle * 180) / Math.PI };
+}
+function appliquerR(R, p) { return [0, 1, 2].map(function (i) { return R[i][0] * p[0] + R[i][1] * p[1] + R[i][2] * p[2]; }); }
+
 /** Toiture générée par cette extension, sélectionnée seule ; null sinon. */
 async function toitureChoisie(m, sel) {
   var objets = m.objets.filter(function (o) { return sel.indexOf(o.id) >= 0; });
   if (sel.length !== 1 || objets.length !== 1) return null;
   var d = await planche.donnees.lire(objets[0].id, "toiture");
   if (!d || TYPES.indexOf(d.type) < 0 || !d.rect) return null;
-  return { id: objets[0].id, nom: objets[0].nom, p: d };
+  // Toiture déplacée, tournée ou copiée avec la Planche : son rectangle suit sa place actuelle, ou elle est refusée
+  // pour tout ce qui en dépend (tracé de la ligne, nouvelle toiture sur son contour).
+  var dep = await deplacementDepuis(objets[0].id, d.repere);
+  var placement = null;
+  if (dep.inconnu) placement = tx().placementInconnu;
+  else if (dep.R) {
+    var R = d.rect;
+    var u = appliquerR(dep.R, R.u);
+    var v = appliquerR(dep.R, R.v);
+    var o = appliquerR(dep.R, R.o);
+    o = [o[0] + dep.t[0], o[1] + dep.t[1], o[2] + dep.t[2]];
+    if (Math.abs(u[2]) > 1e-6 || Math.abs(v[2]) > 1e-6) placement = tx().toitureInclinee;
+    else d.rect = { o: o, u: u, v: v, L: R.L, W: R.W, z: o[2] };
+  }
+  return { id: objets[0].id, nom: objets[0].nom, p: d, placement: placement };
 }
 
 /** Contour courant : la face sélectionnée, ou le contour de la toiture sélectionnée ; { R, face } ou { erreur }. */
@@ -252,10 +339,12 @@ async function contourCourant() {
   var m = await planche.modele.lire();
   var sel = await planche.selection.lire();
   var toit = await toitureChoisie(m, sel);
-  if (toit) return { R: toit.p.rect, toiture: toit };
+  if (toit) return toit.placement ? { erreur: toit.placement } : { R: toit.p.rect, toiture: toit };
   if (!sel.length) return { erreur: x.selectionnerContour };
   var faces = m.faces.filter(function (f) { return sel.indexOf(f.id) >= 0; });
   if (sel.length !== 1 || faces.length !== 1) return { erreur: x.contourRefuse.pasFace };
+  // Une ouverture dans le contour n'est pas prise en compte par les calculs : le contour est refusé.
+  if (faces[0].trous > 0) return { erreur: x.contourRefuse.trous };
   var R = rectangleDe(faces[0].points);
   if (R.erreur) return R;
   return { R: R, face: faces[0].id };
@@ -355,7 +444,7 @@ async function poserToiture(R, p) {
   var sep = (await planche.unites.lire()).separateur;
   var g = await planche.modele.grouper(r.faces.map(function (f) { return f.id; }), x.nomToiture(x.types[p.type], penteTexte(p, sep)));
   await planche.modele.deplacer([g], [-r.X, 0, 0]);
-  await planche.donnees.ecrire(g, "toiture", { type: p.type, t: p.t, valeur: p.valeur, unite: p.unite, d: p.d, rect: R });
+  await planche.donnees.ecrire(g, "toiture", { type: p.type, t: p.t, valeur: p.valeur, unite: p.unite, d: p.d, rect: R, repere: await repereDe(g) });
   return g;
 }
 
@@ -489,7 +578,13 @@ async function chargerTable() {
   if (r.erreur) return alerte(x.tableRefusee + r.erreur);
   var anciennes = await tableGardee();
   var morceaux = [];
-  for (var i = 0; i < r.entrees.length; i += PAR_MORCEAU) morceaux.push(r.entrees.slice(i, i + PAR_MORCEAU));
+  // Morceaux bornés par leur taille écrite (une valeur gardée fait 4 000 caractères au plus), pas par un nombre de lignes.
+  var courant = [];
+  r.entrees.forEach(function (e) {
+    if (courant.length && JSON.stringify(courant.concat([e])).length > TAILLE_MORCEAU) { morceaux.push(courant); courant = []; }
+    courant.push(e);
+  });
+  if (courant.length) morceaux.push(courant);
   await planche.operation.ouvrir(x.opTable);
   try {
     for (var j = 0; j < morceaux.length; j++) await planche.donnees.ecrire("projet", "pentes." + j, morceaux[j]);
@@ -547,6 +642,7 @@ async function tracerLigne() {
   var m = await planche.modele.lire();
   var toit = await toitureChoisie(m, await planche.selection.lire());
   if (!toit) return alerte(x.aucuneToiture);
+  if (toit.placement) return alerte(toit.placement);
   var H = lireNombre(valeurs.hauteur);
   if (!(H > 0)) return alerte(x.hauteurInvalide);
   var R = toit.p.rect;
