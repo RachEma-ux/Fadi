@@ -1434,12 +1434,12 @@ check("GEO 11 · sans WebGL : recherche et fiche restent utilisables", true);
 // Correction de la porte dev → tests (P2) : sans WebGL, une couche s'ajoute et sa table liste ses lignes.
 await onglet(p2, "catalogue");
 await p2.locator("[data-gd-entete-categorie='test']").click();
-// La couche peut déjà être sur la carte (carte rouverte de la session) : on ne l'ajoute que si le bouton le permet.
-const ajoutSansWebgl = p2.locator("[data-gd-couche-catalogue]").filter({ hasText: "Unités synthétiques (test)" }).locator("[data-gd-ajouter]");
-await ajoutSansWebgl.waitFor();
-if (await ajoutSansWebgl.isEnabled()) await ajoutSansWebgl.click();
+const ajouterSansGl = p2.locator("[data-gd-couche-catalogue]").filter({ hasText: "Unités synthétiques (test)" }).locator("[data-gd-ajouter]");
+await ajouterSansGl.waitFor();
+// La dernière carte rouverte peut déjà porter la couche (« Déjà sur la carte ») : l'ajout n'est fait que s'il est offert.
+if (await ajouterSansGl.isEnabled()) await ajouterSansGl.click();
 await onglet(p2, "couches");
-await p2.locator("[data-gd-couche-active]").first().getByRole("button", { name: "Table" }).click();
+await p2.locator("[data-gd-couche-active]").filter({ hasText: "Unités synthétiques" }).first().getByRole("button", { name: "Table" }).click();
 await p2.waitForFunction(() => document.querySelectorAll("[data-gd-table] [data-gd-ligne]").length > 0, null, { timeout: 10_000 }).catch(() => undefined);
 check("GEO 11 · sans WebGL : catalogue, ajout d'une couche et table de ses lignes utilisables", (await p2.locator("[data-gd-table] [data-gd-ligne]").count()) > 0 && (await p2.locator("[data-gd-moteur]").getAttribute("data-gd-etat-moteur")) === "sans-webgl");
 await sansGl.close();
