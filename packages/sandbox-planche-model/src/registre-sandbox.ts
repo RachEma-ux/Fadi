@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "numerotation";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "numerotation";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -322,6 +322,13 @@ const commandes: EntreeSandbox[] = [
   // Cas 2 du catalogue, lot 1 (27 novembre 2026) : numérotation en série, barre de son panneau, hors des 86 entrées.
   c("numerotation", "numerotation", "numbers", "Alt+F6", "panneau-numerotation", true),
   c("numeroter-serie", "numerotation", "sort-ascending-numbers", "Alt+F7", "panneau-numerotation", true),
+  // Niveaux d'étage (cas 4 du catalogue, étape 1, 27 novembre 2026) : barre du panneau « Niveaux », hors des 86 entrées
+  // du catalogue. Combinaisons libres : Ctrl + Maj + L et Ctrl + Maj + X (aucune n'est réservée par le navigateur),
+  // Maj + F5 et Maj + F10 (dernières Maj + F libres).
+  c("niveaux", "niveau", "stack-2", "Ctrl+Maj+L", "panneau-niveaux", true),
+  c("ajouter-niveau", "niveau", "stack-push", "Maj+F5", "panneau-niveaux", true),
+  c("travailler-niveau", "niveau", "stack-front", "Maj+F10", "panneau-niveaux", true),
+  c("rattacher-niveau", "niveau", "layers-linked", "Ctrl+Maj+X", "panneau-niveaux", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
@@ -360,6 +367,8 @@ const panneaux: EntreeSandbox[] = [
   p("dynamique", "math-function", "colonne", true),
   // Extension « Emplacement » : position saisie de la Planche et nord vrai.
   p("emplacement", "map-pin", "colonne", true),
+  // Niveaux d'étage (cas 4, étape 1) : niveaux nommés, altitude NGF, niveau de travail ; fonction du noyau, pas une extension.
+  p("niveaux", "stack-2", "colonne", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -381,6 +390,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:emplacement", "panneau:emplacement"],
   ["commande:scripts", "panneau:scripts"],
   ["commande:numerotation", "panneau:numerotation"],
+  ["commande:niveaux", "panneau:niveaux"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

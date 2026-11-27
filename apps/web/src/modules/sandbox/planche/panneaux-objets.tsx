@@ -6,7 +6,7 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
@@ -201,10 +201,38 @@ export interface ActionsInfoEntite extends ActionsInfoCote {
   materiauFace(id: Id, cote: "recto" | "verso", materiau: Id | null): void;
   materiauObjet(id: Id, materiau: Id | null): void;
   balise(id: Id, balise: Id | null): void;
+  /** (Cas 4, niveaux d'étage) Rattache l'objet de la racine à un niveau, ou l'en détache (`null`). */
+  niveau(id: Id, niveau: Id | null): void;
   renommerPlan(id: Id, nom: string): void;
 }
 
-export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite }) {
+/** (Cas 4, niveaux d'étage) Niveau d'un objet de la racine et son altitude (NGF quand le niveau de référence est déclaré). */
+function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: { modele: Modele; occ: { readonly niveau?: Id }; lecture: boolean; separateur: "." | ","; reference: number | null; onNiveau: (v: Id | null) => void }) {
+  const niveaux = niveauxTries(modele);
+  const n = occ.niveau ? modele.annotations?.niveaux?.[occ.niveau] : undefined;
+  const ngf = n ? altitudeNGF(n.altitude, reference) : null;
+  return (
+    <>
+      <dt>{t("planche.info.niveau")}</dt>
+      <dd>
+        <select value={n?.id ?? ""} disabled={lecture} aria-label={t("planche.info.niveau")} onChange={(e) => onNiveau(e.target.value || null)} data-planche-info-niveau>
+          <option value="">{t("planche.info.sans-niveau")}</option>
+          {niveaux.map((x) => (
+            <option key={x.id} value={x.id}>{`${x.nom} (${texteAltitude(x.altitude, separateur)} m)`}</option>
+          ))}
+        </select>
+      </dd>
+      {n && (
+        <>
+          <dt>{t("planche.info.altitude-niveau")}</dt>
+          <dd data-planche-info-niveau-altitude>{`${texteAltitude(n.altitude, separateur)} m${ngf === null ? "" : ` · ${ngf.toFixed(2).replace(".", separateur)} m NGF`}`}</dd>
+        </>
+      )}
+    </>
+  );
+}
+
+export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null }) {
   const c = contexte(modele, dans);
   const materiaux = Object.values(modele.annotations?.materiaux ?? {});
   const balises = Object.values(modele.annotations?.balises ?? {});
@@ -338,6 +366,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
         <dd>{choixMateriau(occ.materiau, (v) => actions.materiauObjet(id, v), t("planche.info.materiau"))}</dd>
         <dt>{t("planche.info.balise")}</dt>
         <dd>{choixBalise(occ.balise, (v) => actions.balise(id, v))}</dd>
+        {dans === undefined && <InfoNiveau modele={modele} occ={occ} lecture={lecture} separateur={separateur} reference={referenceNiveaux} onNiveau={(v) => actions.niveau(id, v)} />}
         <dt>{t("planche.info.ombres")}</dt>
         <dd />
         <dt>

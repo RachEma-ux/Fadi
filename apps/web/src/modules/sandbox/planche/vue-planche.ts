@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { controlerCotes, dessinerCote, directionNord, soleil } from "@parcours/sandbox-planche-model";
+import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, soleil, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -43,6 +43,8 @@ const COULEUR_HORS_CONTEXTE = "#c3c9c5";
 const COULEUR_ARETE_HORS_CONTEXTE = "#a9b2ac";
 const COULEUR_CONTEXTE = "#5b6b63";
 const COULEUR_SELECTION = "#1a5fd6";
+/** Plans de niveau (cas 4, niveaux d'étage) : même bleu que les étiquettes de niveau. */
+const COULEUR_NIVEAU = "#1a5fd6";
 const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
@@ -701,6 +703,16 @@ export class VuePlanche {
         el.textContent = t.texte;
         this.etiquettesDom.append(el);
         this.etiquettesFixes.push({ el, ecran: t.ecran });
+      }
+    }
+    // Niveaux d'étage (cas 4) : plan de chaque niveau en pointillé autour du dessin, nom et altitude à son coin.
+    const niveaux = niveauxTries(modele);
+    if (niveaux.length > 0) {
+      const e = empriseNiveaux(modele);
+      for (const n of niveaux) {
+        const z = n.altitude;
+        this.groupeAnnotations.add(tirets(COULEUR_NIVEAU, [{ x: e.min.x, y: e.min.y, z }, { x: e.max.x, y: e.min.y, z }, { x: e.max.x, y: e.max.y, z }, { x: e.min.x, y: e.max.y, z }, { x: e.min.x, y: e.min.y, z }], 7));
+        etiquette(`${n.nom}  ${texteAltitude(n.altitude)}`, { x: e.min.x, y: e.min.y, z }, "planche-etiquette-niveau");
       }
     }
     for (const p of Object.values(a.plansDeCoupe)) {

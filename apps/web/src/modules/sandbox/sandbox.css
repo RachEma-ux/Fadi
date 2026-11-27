@@ -4304,3 +4304,66 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Niveaux d'étage (cas 4 du catalogue, étape 1) : panneau « Niveaux » et étiquettes des plans de niveau dans la vue. */
+.sandbox-planche .planche-niveaux-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: var(--atelier-survol, #eef4f0);
+  font-size: 0.8rem;
+}
+.sandbox-planche .planche-niveaux .planche-niveaux-reference label {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-niveaux .planche-niveaux-reference input {
+  width: 5.5rem;
+  min-width: 0;
+}
+.sandbox-planche .planche-niveaux-reference-aide {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-niveaux-table tbody tr.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-niveaux-table tbody tr.est-travail td:first-child {
+  font-weight: 700;
+}
+.sandbox-planche .planche-niveaux-point {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: #1a5fd6;
+}
+.sandbox-planche .planche-niveaux-formulaire {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-niveaux-formulaire input {
+  width: 100%;
+  min-width: 0;
+}
+.sandbox-planche .planche-etiquette.planche-etiquette-niveau {
+  transform: translate(0, -100%);
+  color: #ffffff;
+  background: #1a5fd6;
+  font-weight: 700;
+}
+.sandbox-planche .planche-niveaux .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}

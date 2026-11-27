@@ -178,6 +178,18 @@ import {
   CONTEXTE_MODELE,
   contextePrecedent,
   contexteTemporaire,
+  contexteDuModele,
+  ajouterNiveau,
+  lireSaisieNiveau,
+  modifierNiveau,
+  niveauSuivant,
+  niveauxTries,
+  rattacherAuNiveau,
+  rattacherNouveauxObjets,
+  repereDuNiveau,
+  supprimerNiveau,
+  texteAltitude,
+  type ErreurNiveau,
   deplacerOrigine,
   pivoterRepere,
   type BaseAxe,
@@ -232,7 +244,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -241,6 +253,7 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
@@ -305,7 +318,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "numerotation";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "numerotation";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -671,8 +684,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     vueRef.current?.majModele(histRef.current.present.modele);
   }, [dans]);
 
-  const poserHistorique = useCallback((h: Historique, _options: { libelle?: string; envoyer?: boolean } = {}) => {
+  /** Niveaux d'étage (cas 4) : niveau de travail, auquel les objets créés à la racine sont rattachés. État d'interface. */
+  const niveauTravailRef = useRef<string | null>(null);
+  const poserHistorique = useCallback((h0: Historique, _options: { libelle?: string; envoyer?: boolean } = {}) => {
     const avantHist = histRef.current;
+    // Niveau de travail : une opération nouvelle (ni annulation ni rétablissement, ni chargement) rattache les objets
+    // qu'elle crée à la racine au niveau de travail, dans le même pas d'historique.
+    let h = h0;
+    const niveau = niveauTravailRef.current;
+    if (niveau && h0.present.operation !== null && h0.futur.length === 0 && h0.present !== avantHist.futur[0] && h0.present.modele !== avantHist.present.modele) {
+      const rattache = rattacherNouveauxObjets(avantHist.present.modele, h0.present.modele, niveau);
+      if (rattache !== h0.present.modele) h = { ...h0, present: { ...h0.present, modele: rattache } };
+    }
     const changeModele = h.present.modele !== avantHist.present.modele;
     histRef.current = h;
     setHist(h);
@@ -1661,6 +1684,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       materiauFace: (id: string, cote: "recto" | "verso", materiau: string | null) => operer(t("planche.info.materiau"), (m) => ({ modele: peindreFacesCote(m, [id], cote, materiau, o()).modele })),
       materiauObjet: (id: string, materiau: string | null) => operer(t("planche.info.materiau"), (m) => ({ modele: peindreOccurrences(m, [id], materiau, o()).modele })),
       balise: (id: string, balise: string | null) => operer(t("planche.info.balise"), (m) => ({ modele: baliserOccurrences(m, [id], balise, o()).modele })),
+      niveau: (id: string, niveau: string | null) =>
+        operer(t("planche.info.niveau"), (m) => {
+          const r = rattacherAuNiveau(m, [id], niveau);
+          return "erreur" in r ? null : { modele: r.modele };
+        }),
       renommerPlan: (id: string, nom: string) => operer(t("planche.info.nom"), () => ({ modele: modifierPlanDeCoupe(contexte(), id, { nom }).modele ?? histRef.current.present.modele })),
       // Cas 2, lot 1 : texte forcé, style, direction, plage gardée d'une cote ; cote pilotante ; cotes orphelines.
       modifierCote: (id: string, patch: { texteForce?: string | null; style?: string | null; direction?: DirectionCote; plage?: { min?: number; max?: number } | null }) =>
@@ -2774,6 +2802,109 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
   };
   /**
+   * Niveaux d'étage (cas 4 du catalogue, étape 1) : niveaux du document, niveau choisi dans le panneau, niveau de
+   * travail (plan de travail à son altitude, nouveaux objets rattachés : `niveauTravailRef`, lu par `poserHistorique`).
+   * Le niveau de référence est celui de la Planche (index des Planches) : l'altitude NGF du ±0,00.
+   */
+  const niveaux = niveauxTries(hist.present.modele);
+  const objetsParNiveau: Record<string, number> = {};
+  for (const occ of Object.values(hist.present.modele.racine.occurrences)) if (occ.niveau) objetsParNiveau[occ.niveau] = (objetsParNiveau[occ.niveau] ?? 0) + 1;
+  const [niveauChoisiEtat, setNiveauChoisi] = useState<string | null>(null);
+  const niveauChoisi = niveaux.some((n) => n.id === niveauChoisiEtat) ? niveauChoisiEtat : (niveaux[0]?.id ?? null);
+  const [niveauTravail, setNiveauTravailEtat] = useState<string | null>(null);
+  const niveauTravailValide = niveaux.some((n) => n.id === niveauTravail) ? niveauTravail : null;
+  niveauTravailRef.current = niveauTravailValide;
+  const [erreurNiveau, setErreurNiveau] = useState<ErreurNiveau | "reference" | null>(null);
+  const [noteNiveau, setNoteNiveau] = useState<string | null>(null);
+  const referenceNiveaux = plancheDe(indexPlanches).altitudeRef;
+  const nomNiveau = (id: string): string => niveaux.find((n) => n.id === id)?.nom ?? "";
+  const ajouterUnNiveau = (saisie: SaisieNiveau | null) => {
+    const v = saisie ? lireSaisieNiveau(saisie) : null;
+    if (v && "erreur" in v) return setErreurNiveau(v.erreur);
+    const valeurs = v ? v.valeurs : niveauSuivant(hist.present.modele);
+    if (!valeurs) return setErreurNiveau("hauteur");
+    const r = ajouterNiveau(hist.present.modele, valeurs);
+    if (!r.ok) return setErreurNiveau(r.erreur);
+    setErreurNiveau(null);
+    setNoteNiveau(t("planche.niveaux.note.ajoute", { nom: valeurs.nom }));
+    operer(t("planche.niveaux.ajouter"), () => ({ modele: r.modele }));
+    setNiveauChoisi(r.id);
+  };
+  const modifierUnNiveau = (id: string, saisie: SaisieNiveau) => {
+    const v = lireSaisieNiveau(saisie);
+    if ("erreur" in v) return setErreurNiveau(v.erreur);
+    const r = modifierNiveau(hist.present.modele, id, v.valeurs);
+    if (!r.ok) return setErreurNiveau(r.erreur);
+    setErreurNiveau(null);
+    setNoteNiveau(t("planche.niveaux.note.modifie", { nom: v.valeurs.nom }));
+    operer(t("planche.niveaux.ouvrir"), () => ({ modele: r.modele }));
+    // Le niveau de travail suit sa nouvelle altitude.
+    if (id === niveauTravailValide) changerContexte({ ...contexteTemporaire(histContexte.courant, repereDuNiveau({ id, ...v.valeurs })), plan: "xy" });
+  };
+  const supprimerUnNiveau = (id: string) => {
+    const nom = nomNiveau(id);
+    const nombre = objetsParNiveau[id] ?? 0;
+    const r = supprimerNiveau(hist.present.modele, id);
+    if (!r.ok) return setErreurNiveau(r.erreur);
+    setErreurNiveau(null);
+    setNoteNiveau(t("planche.niveaux.note.supprime", { nom, nombre: String(nombre) }));
+    if (id === niveauTravailValide) {
+      setNiveauTravailEtat(null);
+      niveauTravailRef.current = null;
+      changerContexte(contexteDuModele());
+    }
+    operer(t("planche.niveaux.supprimer"), () => ({ modele: r.modele }));
+  };
+  const poserReferenceNiveaux = (texte: string) => {
+    const brut = texte.trim().replace(/\s/g, "").replace(",", ".");
+    const valeur = brut === "" ? null : Number(brut);
+    if (valeur !== null && !Number.isFinite(valeur)) return setErreurNiveau("reference");
+    setErreurNiveau(null);
+    const idx = avecInfo(indexRef.current, indexRef.current.courante, { altitudeRef: valeur, modifieA: new Date().toISOString() });
+    indexRef.current = idx;
+    setIndexPlanches(idx);
+    void enregistrerIndex(idx).catch(() => undefined);
+    setNoteNiveau(t("planche.niveaux.note.reference"));
+  };
+  const disponibiliteCommandeNiveau = (id: IdCommandeNiveau) => {
+    const s = etatSelectionObjets();
+    return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly });
+  };
+  const executerNiveau = (id: IdCommandeNiveau) => {
+    if (!disponibiliteCommandeNiveau(id).disponible) return;
+    if (id === "niveaux") {
+      setPanneau("niveaux");
+      return;
+    }
+    if (id === "ajouter-niveau") {
+      if (niveaux.length === 0) setPanneau("niveaux");
+      else ajouterUnNiveau(null);
+      return;
+    }
+    const n = niveaux.find((x) => x.id === niveauChoisi);
+    if (!n) return;
+    if (id === "travailler-niveau") {
+      if (niveauTravailValide === n.id) {
+        setNiveauTravailEtat(null);
+        niveauTravailRef.current = null;
+        changerContexte(contexteDuModele());
+        setNoteNiveau(t("planche.niveaux.note.travail.fin"));
+      } else {
+        setNiveauTravailEtat(n.id);
+        niveauTravailRef.current = n.id;
+        changerContexte({ ...contexteTemporaire(histContexte.courant, repereDuNiveau(n)), plan: "xy" });
+        setNoteNiveau(t("planche.niveaux.note.travail", { nom: n.nom, altitude: texteAltitude(n.altitude, SEPARATEUR_DECIMAL) }));
+      }
+      return;
+    }
+    const objets = selectionRef.current.filter((x) => hist.present.modele.racine.occurrences[x]);
+    const r = rattacherAuNiveau(hist.present.modele, objets, n.id);
+    if ("erreur" in r) return setErreurNiveau(r.erreur);
+    setErreurNiveau(null);
+    setNoteNiveau(t("planche.niveaux.note.rattache", { nombre: String(r.nombre), nom: n.nom }));
+    operer(t("planche.niveaux.rattacher"), () => ({ modele: r.modele }));
+  };
+  /**
    * Extension « Scripts » : le script affiché (gardé quand le panneau se ferme), l'exécution en cours et sa dernière
    * issue. Le script tourne dans un Web Worker sur une copie du modèle ; son résultat n'est appliqué que si le dessin
    * n'a pas changé entre-temps, en un seul pas d'historique.
@@ -3608,6 +3739,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
     else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
+    else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -3663,6 +3795,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_NUMEROTATION.map((c) => {
           const d = disponibiliteCommandeNumerotation(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.numeroter.motif.selection"), executer: () => executerNumerotation(c.id) };
+        }),
+        // Niveaux d'étage (cas 4) : mêmes disponibilités et exécution que la barre du panneau Niveaux.
+        ...COMMANDES_NIVEAUX.map((c) => {
+          const d = disponibiliteCommandeNiveau(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4350,6 +4487,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => { nordSaisiRef.current = true; poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire")); }} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
                 geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }} />
             )}
+            {panneau === "niveaux" && (
+              <PanneauNiveaux
+                niveaux={niveaux}
+                objets={objetsParNiveau}
+                choisi={niveauChoisi}
+                travail={niveauTravailValide}
+                reference={referenceNiveaux}
+                lecture={readOnly}
+                onChoisir={(id) => { setNiveauChoisi(id); setErreurNiveau(null); }}
+                onModifier={modifierUnNiveau}
+                onAjouter={ajouterUnNiveau}
+                onSupprimer={supprimerUnNiveau}
+                onReference={poserReferenceNiveaux}
+                executer={executerNiveau}
+                disponibilite={disponibiliteCommandeNiveau}
+                erreur={erreurNiveau}
+                note={noteNiveau}
+              />
+            )}
             {panneau === "scripts" && (
               <PanneauScripts
                 scripts={prefsSandbox.preferences.scripts}
@@ -4373,7 +4529,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "controle" && rapportControle && (
               <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
             )}
-            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} />}
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef} />}
             {panneau === "composants" && (
               <PanneauComposants
                 modele={hist.present.modele}
