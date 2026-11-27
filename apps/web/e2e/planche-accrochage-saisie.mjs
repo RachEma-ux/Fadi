@@ -14,6 +14,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { pointVisiblePlanche } from "./lib-cible-planche.mjs";
 import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -47,11 +48,12 @@ const cy = boite.y + boite.height * 0.6;
 const fermer = (id) => page.locator(`[data-planche-panneau='${id}'] .canevas-fermer`).evaluate((b) => b.click());
 
 // --- Panneau « Accrochage » ---------------------------------------------------------------------------------------------
+const panneauxColonne = await page.locator("[data-planche-panneau-icone]").count();
 await vue.focus();
 await page.keyboard.press("Alt+F8");
 const acc = page.locator("[data-planche-panneau='accrochage']");
 await acc.waitFor();
-check("Alt+F8 ouvre « Accrochage » : sept genres actifs, aucun panneau ajouté à la colonne", (await acc.locator("[data-planche-accrochage-genre]").count()) === 7 && (await page.locator("[data-planche-panneau-icone]").count()) === 17);
+check("Alt+F8 ouvre « Accrochage » : sept genres actifs, aucun panneau ajouté à la colonne", (await acc.locator("[data-planche-accrochage-genre]").count()) === 7 && (await page.locator("[data-planche-panneau-icone]").count()) === panneauxColonne, `${panneauxColonne} panneaux`);
 await vue.focus();
 await page.keyboard.press("Alt+3");
 await page.waitForFunction(() => document.querySelector("[data-planche-panneau='accrochage'] [data-planche-commande='forcer-intersection']")?.getAttribute("aria-pressed") === "true");
@@ -141,7 +143,8 @@ await page.waitForFunction((n) => Object.keys(window.fadiPlanche.modele().annota
 await page.keyboard.press(" ");
 let selArete = [];
 for (const t of [0.25, 0.5, 0.75, 0.4]) {
-  const ecran = await page.evaluate((p) => window.fadiPlanche.versEcran(p), { x: pa.x + (pb.x - pa.x) * t, y: pa.y + (pb.y - pa.y) * t, z: pa.z + (pb.z - pa.z) * t });
+  // `versEcran` donne des coordonnées dans le canevas : l'aide commune y ajoute la position du canevas dans la page.
+  const ecran = await pointVisiblePlanche(page, { x: pa.x + (pb.x - pa.x) * t, y: pa.y + (pb.y - pa.y) * t, z: pa.z + (pb.z - pa.z) * t });
   await page.mouse.move(ecran.x, ecran.y, { steps: 4 });
   await page.mouse.click(ecran.x, ecran.y);
   await page.waitForTimeout(150);
