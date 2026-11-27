@@ -176,6 +176,15 @@ import {
   modifierNiveau,
   niveauSuivant,
   niveauxTries,
+  tableauLocaux,
+  localDeLaFace,
+  numeroSuivant,
+  creerLocal,
+  modifierLocal,
+  supprimerLocal,
+  lireSaisieLocal,
+  type SaisieLocal,
+  type ErreurLocal,
   rattacherAuNiveau,
   rattacherNouveauxObjets,
   repereDuNiveau,
@@ -236,7 +245,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -246,6 +255,7 @@ import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
+import { PanneauLocaux } from "./panneau-locaux";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
@@ -311,7 +321,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -2850,6 +2860,60 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     void enregistrerIndex(idx).catch(() => undefined);
     setNoteNiveau(t("planche.niveaux.note.reference"));
   };
+  /**
+   * Locaux (cas 4 du catalogue, étape 3) : pièces appuyées sur une face de sol de la racine ; mesures recalculées depuis
+   * la géométrie à chaque rendu (elles suivent les parois). Créer prend la face choisie seule.
+   */
+  const tableLocaux = tableauLocaux(hist.present.modele);
+  const [localChoisiEtat, setLocalChoisi] = useState<string | null>(null);
+  const localChoisi = tableLocaux.lignes.some((l) => l.local.id === localChoisiEtat) ? localChoisiEtat : (tableLocaux.lignes[0]?.local.id ?? null);
+  const [erreurLocal, setErreurLocal] = useState<ErreurLocal | null>(null);
+  const [noteLocal, setNoteLocal] = useState<string | null>(null);
+  const faceDeLocal = (): { face: string | null; etat: "aucune" | "horizontale" | "inclinee" | "prise" } => {
+    const faces = selectionRef.current.filter((x) => hist.present.modele.racine.faces[x]);
+    if (faces.length !== 1) return { face: null, etat: "aucune" };
+    const f = hist.present.modele.racine.faces[faces[0]!]!;
+    if (Math.abs(f.normale.z) < 1 - 1e-6) return { face: f.id, etat: "inclinee" };
+    return { face: f.id, etat: localDeLaFace(hist.present.modele, f.id) ? "prise" : "horizontale" };
+  };
+  const disponibiliteCommandeLocal = (id: IdCommandeLocal) => disponibiliteLocal(id, { face: faceDeLocal().etat, dansObjet: dans !== undefined, lecture: readOnly, choisi: localChoisi !== null });
+  const executerLocal = (id: IdCommandeLocal) => {
+    if (id === "locaux") {
+      setPanneau("locaux");
+      return;
+    }
+    if (!disponibiliteCommandeLocal(id).disponible) return;
+    if (id === "supprimer-local") return localChoisi ? supprimerUnLocal(localChoisi) : undefined;
+    const { face } = faceDeLocal();
+    if (!face) return;
+    const numero = numeroSuivant(hist.present.modele);
+    const r = creerLocal(hist.present.modele, face, { numero, nom: t("planche.locaux.nom-defaut", { numero }) });
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    setLocalChoisi(r.id);
+    setPanneau("locaux");
+    const message = t("planche.locaux.note.cree", { numero });
+    setNoteLocal(message);
+    operer(t("planche.locaux.creer"), () => ({ modele: r.modele, message }));
+  };
+  const modifierUnLocal = (id: string, saisie: SaisieLocal) => {
+    const v = lireSaisieLocal(saisie);
+    if ("erreur" in v) return setErreurLocal(v.erreur);
+    const r = modifierLocal(hist.present.modele, id, v.valeurs);
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    setNoteLocal(null);
+    operer(t("planche.locaux.ouvrir"), () => ({ modele: r.modele }));
+  };
+  const supprimerUnLocal = (id: string) => {
+    const numero = hist.present.modele.annotations?.locaux?.[id]?.numero ?? "";
+    const r = supprimerLocal(hist.present.modele, id);
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    const message = t("planche.locaux.note.supprime", { numero });
+    setNoteLocal(message);
+    operer(t("planche.locaux.supprimer"), () => ({ modele: r.modele, message }));
+  };
   const disponibiliteCommandeNiveau = (id: IdCommandeNiveau) => {
     const s = etatSelectionObjets();
     return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly });
@@ -3672,6 +3736,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
+    else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -3727,6 +3792,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_NIVEAUX.map((c) => {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
+        }),
+        ...COMMANDES_LOCAUX.map((c) => {
+          const d = disponibiliteCommandeLocal(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.locaux.motif.face"), executer: () => executerLocal(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4431,6 +4500,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "locaux" && (
+              <PanneauLocaux
+                lignes={tableLocaux.lignes}
+                total={tableLocaux.total}
+                evalues={tableLocaux.evalues}
+                choisi={localChoisi}
+                lecture={readOnly}
+                onChoisir={(id) => { setLocalChoisi(id); setErreurLocal(null); }}
+                onModifier={modifierUnLocal}
+                executer={executerLocal}
+                disponibilite={disponibiliteCommandeLocal}
+                erreur={erreurLocal}
+                note={noteLocal}
               />
             )}
             {panneau === "scripts" && (

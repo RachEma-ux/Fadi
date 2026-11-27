@@ -81,7 +81,12 @@ export interface EvenementsMoteur {
   surTrace(outil: OutilCarte, sommets: readonly [number, number][]): void;
   /** Tracé terminé (double-clic, Entrée ou « Terminer »). */
   surTraceTermine(outil: OutilCarte, sommets: readonly [number, number][]): void;
+  /** Panne du rendu (perte du contexte WebGL) : la carte ne dessine plus jusqu'à `surRestauration`. */
   surErreur(message: string): void;
+  /** Contexte WebGL restauré (P2) : la page repose l'état sur la carte (couches, outil, terrain…). */
+  surRestauration?(): void;
+  /** Tuiles d'une couche refusées (403 / 404) : avis non bloquant sur cette couche, la carte reste utilisable (P2). */
+  surRefusTuiles?(sourceId: string, statut: number): void;
   /** Tuiles du fond refusées (clé absente, invalide, quota) : avis non bloquant, la carte reste utilisable. */
   surErreurFond?(message: string): void;
   /**

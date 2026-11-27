@@ -681,7 +681,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -790,6 +790,7 @@ class Travail {
       ...(Object.keys(a.reperes).length ? { reperes: Object.freeze({ ...a.reperes }) } : {}),
       ...(Object.keys(a.correspondances).length ? { correspondances: Object.freeze({ ...a.correspondances }) } : {}),
       ...(Object.keys(a.niveaux).length ? { niveaux: Object.freeze({ ...a.niveaux }) } : {}),
+      ...(Object.keys(a.locaux).length ? { locaux: Object.freeze({ ...a.locaux }) } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -855,7 +856,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));

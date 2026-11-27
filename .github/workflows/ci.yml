@@ -1090,6 +1090,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-point-de-base node apps/web/e2e/planche-point-de-base.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des locaux (cas 4, étape 3) — local sur face de sol, surface qui suit la paroi, contour ouvert (apps/web/e2e/planche-locaux.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-locaux node apps/web/e2e/planche-locaux.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

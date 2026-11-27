@@ -11,7 +11,7 @@
  * qui ouvre en surimpression le catalogue rangé par catégorie (Catalogue / Couches / Légende) ; menu hamburger en haut à
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
@@ -33,6 +33,7 @@ import { BarreBas } from "./panneaux/BarreBas";
 import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
+import { etatInitial, generationMoteur, messageMoteur, noterRefus, oublierAvis, transitionMoteur, type AvisCouches } from "./carte/etat-moteur";
 import { carteVide, consigneVisible, niveauAccueil } from "./etat/accueil-ops";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
@@ -118,9 +119,15 @@ export function PageGeoData() {
   const derniereZone = useRef<string | null>(null);
   const [codesZone, setCodesZone] = useState<{ zone: string; couches: Map<string, { codes: string[]; tronque: boolean } | { erreur: string }> } | null>(null);
   const [analysesIds, setAnalysesIds] = useState<string[]>([]);
-  const [webgl] = useState(webglDisponible);
-  const [erreurCarte, setErreurCarte] = useState<string | null>(webgl ? null : "WebGL n'est pas disponible dans ce navigateur : la carte ne peut pas s'afficher. La recherche, le catalogue, la table et les fiches restent utilisables.");
-  const [chargementMoteur, setChargementMoteur] = useState(webgl);
+  // État du moteur (P2) : chargement, prêt, sans WebGL, échec de démarrage, contexte perdu — jamais une tuile refusée.
+  const [etatMoteur, envoyerMoteur] = useReducer(transitionMoteur, undefined, () => etatInitial(webglDisponible()));
+  const webgl = etatMoteur.cas !== "sans-webgl";
+  /** Message de l'alerte de la carte ; null = carte disponible (prête ou en chargement), outils et raccourcis actifs. */
+  const erreurCarte = messageMoteur(etatMoteur);
+  /** Change à la création du moteur et à la restauration du contexte : les effets qui posent l'état sur la carte en dépendent. */
+  const generation = generationMoteur(etatMoteur);
+  // Couches dont les tuiles sont refusées (P2) : avis non bloquant par couche.
+  const [avisCouches, setAvisCouches] = useState<AvisCouches>(new Map());
   const [recherche, setRecherche] = useState("");
   const [resultats, setResultats] = useState<ResultatRecherche[] | null>(null);
   const [avisRecherche, setAvisRecherche] = useState<string | null>(null);
@@ -311,6 +318,8 @@ export function PageGeoData() {
   useEffect(() => setAvisFond(null), [fond.id]);
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
+  // Avis de tuiles refusées (P2) : oubliés quand leur couche quitte la carte ou est masquée.
+  useEffect(() => { setAvisCouches((a) => oublierAvis(a, new Set(compositionAffichee.couches.filter((k) => k.visible).map((k) => k.coucheId)))); }, [compositionAffichee]);
   // Carte d'arrivée (P1, E-01, Q1) : carte vide → contour du niveau le plus global du découpage lu en base, avec sa source.
   const etatArrivee = { ongletCartes: ongletPage === "cartes", carteOuverte: !!carte, couchesVisibles: compositionAffichee.couches.filter((k) => k.visible).length };
   const vide = carteVide(etatArrivee);
@@ -438,7 +447,7 @@ export function PageGeoData() {
   const jetonVue = useRef(0);
   const cleCouchesSynthese = couchesSynthese.map((k) => `${k.coucheId}@${k.versionId}`).join(",");
   useEffect(() => {
-    if (!syntheseOuverte || chargementMoteur) return;
+    if (!syntheseOuverte || etatMoteur.cas !== "pret") return;
     const jeton = ++jetonVue.current;
     const minuterie = window.setTimeout(() => {
       const emprise = moteur.current?.emprise();
@@ -453,7 +462,7 @@ export function PageGeoData() {
     }, 250);
     return () => window.clearTimeout(minuterie);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syntheseOuverte, chargementMoteur, composition.camera, cleCouchesSynthese, versionEmprise]);
+  }, [syntheseOuverte, etatMoteur.cas, generation, composition.camera, cleCouchesSynthese, versionEmprise]);
   // Terrain (TER-09, « comme une carte normale ») : le jeu affiché suit le centre de la vue (levé local sur son emprise,
   // sinon fond mondial), tant qu'aucun jeu n'a été choisi à la main.
   useEffect(() => { terrainRef.current.suivreVue(moteur.current?.emprise() ?? null, composition.camera.zoom); }, [composition.camera, versionEmprise]);
@@ -595,26 +604,28 @@ export function PageGeoData() {
             if (o === "altitude" || o === "profil") { setTrace(null); terrainRef.current.surTrace(o, s); return; }
             setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] });
           },
-          surErreur: (m) => setErreurCarte(m),
+          // Seule cause signalée par surErreur : la perte du contexte WebGL ; sa restauration rend la carte (P2).
+          surErreur: () => envoyerMoteur({ type: "contexte-perdu" }),
+          surRestauration: () => envoyerMoteur({ type: "contexte-restaure" }),
+          surRefusTuiles: (source, statut) => setAvisCouches((a) => noterRefus(a, source, statut)),
           surErreurFond: (m) => setAvisFond(m),
         });
-        setChargementMoteur(false);
+        envoyerMoteur({ type: "cree" });
       } catch (e) {
-        setErreurCarte(`La carte n'a pas pu démarrer (${message(e)}). La recherche, la table et les fiches restent utilisables.`);
-        setChargementMoteur(false);
+        envoyerMoteur({ type: "echec-creation", detail: message(e) });
       }
-    }).catch(() => { setErreurCarte("Le moteur cartographique n'a pas pu être chargé (réseau ?). La recherche, la table et les fiches restent utilisables."); setChargementMoteur(false); });
+    }).catch(() => envoyerMoteur({ type: "echec-import" }));
     // Une animation de chargement ne reste jamais affichée indéfiniment.
-    const garde = setTimeout(() => setChargementMoteur(false), 15_000);
+    const garde = setTimeout(() => envoyerMoteur({ type: "delai-depasse" }), 15_000);
     return () => { detruit = true; clearTimeout(garde); moteur.current?.detruire(); moteur.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webgl]);
 
   useEffect(() => {
     moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres: filtresAffiches, selection, zones: zonesGeo, attributions, valeursAffichees, couleursIndicateur });
-  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, valeursAffichees, couleursIndicateur, chargementMoteur]);
-  useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
-  useEffect(() => { moteur.current?.afficherTerrain(terrain.affichage); }, [terrain.affichage, chargementMoteur]);
+  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, valeursAffichees, couleursIndicateur, generation]);
+  useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, generation]);
+  useEffect(() => { moteur.current?.afficherTerrain(terrain.affichage); }, [terrain.affichage, generation]);
 
   compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
@@ -987,7 +998,8 @@ export function PageGeoData() {
   const imageAutorisee = async (analyseIds: string[]) => {
     const r = await api.exporter(carte!.id, carte!.revision, analyseIds);
     if (r.etat !== "autorise") return { r, png: null };
-    if (!moteur.current) throw new Error("Export autorisé, mais la carte n'est pas affichée (WebGL indisponible) : seule la fiche de sources est produite.");
+    // Moteur absent, ou présent mais sans rendu (contexte perdu, P2) : aucune image tentée.
+    if (!moteur.current || etatMoteur.cas !== "pret") throw new Error("Export autorisé, mais la carte n'est pas affichée (WebGL indisponible) : seule la fiche de sources est produite.");
     // Le contour de la barre territoriale est une aide de navigation, hors de la carte enregistrée : il n'entre ni dans
     // l'image ni dans ses attributions (l'export n'autorise que les couches de la carte).
     const m = moteur.current;
@@ -1077,10 +1089,10 @@ export function PageGeoData() {
     const parRang = vecteurs.filter((k) => rangs.has(k.coucheId)).sort((a, b) => rangs.get(a.coucheId)! - rangs.get(b.coucheId)!);
     return (parRang[0] ?? vecteurs[0])?.coucheId ?? null;
   }, [compositionAffichee, rasters, rangs]);
-  useEffect(() => { moteur.current?.afficherTerritoire(contourTerritoire?.contour ?? null); }, [contourTerritoire, chargementMoteur]);
-  useEffect(() => { moteur.current?.afficherAccueil(coucheArrivee); }, [coucheArrivee, chargementMoteur]);
-  useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, chargementMoteur]);
-  useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, chargementMoteur]);
+  useEffect(() => { moteur.current?.afficherTerritoire(contourTerritoire?.contour ?? null); }, [contourTerritoire, generation]);
+  useEffect(() => { moteur.current?.afficherAccueil(coucheArrivee); }, [coucheArrivee, generation]);
+  useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, generation]);
+  useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, generation]);
 
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
@@ -1163,7 +1175,7 @@ export function PageGeoData() {
           </div>
           <div id="gd-panneau-contenu" role="tabpanel" aria-labelledby={`gd-onglet-${onglet}`} className="gd-contenu">
               {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} indicateurs={{ liste: indicateursCatalogue, actif: indicateurActif, onChoix: choisirIndicateur }} niveaux={decoupage.niveaux} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
-              {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} etats={etatsCouches} nombres={nombresVus} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur} colorationsCoupees={colorationsCoupees} onColorerIndicateur={colorerIndicateur}
+              {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} etats={etatsCouches} refusees={avisCouches} nombres={nombresVus} indicateurs={indicateursParCouche} masques={indicateursMasques} onAfficherIndicateur={afficherIndicateur} colorationsCoupees={colorationsCoupees} onColorerIndicateur={colorerIndicateur}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))} onRegrouper={(id) => setComposition((c) => basculerRegroupement(c, id))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
@@ -1171,7 +1183,7 @@ export function PageGeoData() {
           </div>
         </aside>}
         <main className="gd-carte" aria-label="Carte" data-gd-zoom={composition.camera.zoom.toFixed(2)}>
-          <div ref={conteneurCarte} className="gd-moteur" data-gd-moteur />
+          <div ref={conteneurCarte} className="gd-moteur" data-gd-moteur data-gd-etat-moteur={etatMoteur.cas} />
           <button type="button" className="gd-bouton-donnees" aria-pressed={panneauOuvert && onglet === "catalogue"} onClick={basculerDonnees} data-gd-donnees>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg>
             <span>Données</span>
@@ -1207,7 +1219,12 @@ export function PageGeoData() {
           {consigne && <ConsigneAccueil contour={coucheArrivee && niveauArrivee ? { niveau: niveauArrivee.pluriel, pays: paysListe?.find((x) => x.code === paysCourant)?.nom ?? paysCourant ?? "" } : null}
             decalee={panneauOuvert} onFermer={() => setConsigneEcartee(true)}
             onCatalogue={() => { setConsigneEcartee(true); ouvrirOnglet("catalogue"); }} onChercher={() => { setConsigneEcartee(true); basculerRecherche(true); }} />}
-          {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
+          {etatMoteur.cas === "chargement" && etatMoteur.animation && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
+          {avisCouches.size > 0 && <div role="status" className="gd-sur-carte gd-alerte gd-avis-couches" data-gd-avis-couches={[...avisCouches.keys()].join(" ")}>
+            <p>Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.</p>
+            <ul>{[...avisCouches.keys()].map((id) => <li key={id} translate="no">{couchesConnues.get(id)?.titre ?? id}</li>)}</ul>
+            <div className="gd-actions"><button type="button" onClick={() => setAvisCouches(new Map())} data-gd-fermer-avis-couches>Fermer</button></div>
+          </div>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}
           {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : outil === "profil" ? "Double-clic ou Entrée pour tracer le profil." : ""}</p>}

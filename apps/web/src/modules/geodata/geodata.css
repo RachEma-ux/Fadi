@@ -35,7 +35,9 @@
 .geodata-page .gd-contenu{overflow:auto;padding:8px;flex:1;min-height:0}
 .geodata-page .gd-carte{flex:1;position:relative;min-width:0;min-height:0}
 .geodata-page .gd-moteur{position:absolute;inset:0}
-.geodata-page .gd-sur-carte{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;padding:8px 12px;margin:0;max-width:min(560px,90%);z-index:3;box-shadow:0 4px 14px rgba(23,59,67,.12)}
+.geodata-page .gd-sur-carte{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;padding:8px 12px;margin:0;max-width:min(560px,90%);z-index:3;box-shadow:0 4px 14px rgba(23,59,67,.12)}
+/* Avis sur la carte : sous les deux rangées de boutons (Données, Terrain ; thèmes) du téléphone. */
+@media (max-width:700px){.geodata-page .gd-sur-carte{top:104px}}
 .geodata-page .gd-volet{flex:0 0 360px;max-width:44vw;background:#fff;border-left:1px solid var(--gd-ligne);overflow:auto;padding:8px 10px;min-height:0}
 .geodata-page .gd-volet h2{font-size:16px;margin:4px 0}
 .geodata-page .gd-volet h3,.geodata-page .gd-contenu h3{font-size:14px;margin:10px 0 4px}
@@ -455,3 +457,4 @@
   .geodata-page .gd-accueil .gd-accueil-contour{display:none}
   .geodata-page .gd-accueil .gd-actions button,.geodata-page .gd-accueil-fermer{min-height:32px;padding:3px 8px;font-size:13px}
 }
+.geodata-page .gd-avis-couches ul{margin:4px 0;padding-left:18px}
