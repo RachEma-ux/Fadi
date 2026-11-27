@@ -186,6 +186,11 @@ import {
   niveauSuivant,
   niveauxTries,
   tableauLocaux,
+  poserMurs,
+  chainesDAretes,
+  lireNombreSaisi,
+  type JonctionMur,
+  type ReferenceMur,
   localDeLaFace,
   numeroSuivant,
   creerLocal,
@@ -254,7 +259,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -265,6 +270,7 @@ import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
+import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
@@ -274,6 +280,7 @@ import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils, titreOperation, type CommandeListe, type FamilleExtension, type LigneBarre } from "./BoutonOutils";
+import { archiverFichierExtension } from "../preferences/client";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -480,6 +487,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [balise, setBaliseEtat] = useState<string | null>(null);
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
+  // Cas 4, étape 4 : épaisseur et hauteur de l'outil Mur (barre d'options), relues par la machine dans son contexte.
+  const murRef = useRef<{ epaisseur: number; hauteur: number } | null>({ epaisseur: 0.2, hauteur: 2.5 });
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "saisie", dimensions: { forme: "rectangle", largeur: "", hauteur: "", epaisseur: "", epaisseurAile: "", segments: "" } });
   const [angleRotation, setAngleRotation] = useState("90");
   const [erreurFace, setErreurFace] = useState<string | null>(null);
@@ -662,6 +671,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
+      ...(murRef.current ? { parametresMur: murRef.current } : {}),
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
@@ -2974,6 +2984,42 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setNoteLocal(message);
     operer(t("planche.locaux.supprimer"), () => ({ modele: r.modele, message }));
   };
+  /**
+   * Murs à épaisseur (cas 4 du catalogue, étape 4) : épaisseur et hauteur saisies dans la barre d'options de l'outil Mur
+   * (valeurs de départ de l'outil, jamais une donnée du projet) ; « Murs depuis les arêtes » pose un mur par chaîne
+   * d'arêtes horizontales choisies, en un pas. Jonctions non raccordées signalées, jamais corrigées.
+   */
+  const [saisieMur, setSaisieMur] = useState({ epaisseur: "0,20", hauteur: "2,50" });
+  const [noteMur, setNoteMur] = useState<string | null>(null);
+  const parametresMur = (() => {
+    const e = lireNombreSaisi(saisieMur.epaisseur);
+    const h = lireNombreSaisi(saisieMur.hauteur);
+    return e !== null && e > 0 && h !== null && h > 0 ? { epaisseur: e, hauteur: h } : null;
+  })();
+  useEffect(() => {
+    murRef.current = parametresMur;
+    rafraichir();
+  }, [parametresMur?.epaisseur, parametresMur?.hauteur, rafraichir]); // eslint-disable-line react-hooks/exhaustive-deps
+  const aretesDeMur = (): string[] => {
+    const c = hist.present.modele.racine;
+    return selectionRef.current.filter((x) => c.aretes[x] && Math.abs(c.sommets[c.aretes[x]!.a]!.position.z - c.sommets[c.aretes[x]!.b]!.position.z) < 1e-6);
+  };
+  const referenceMur = (): ReferenceMur => (outilRef.current === "mur" ? ((etatMachineRef.current as { reference?: ReferenceMur } | null)?.reference ?? "axe") : "axe");
+  const disponibiliteCommandeMur = (id: IdCommandeMur) => disponibiliteMur(id, { aretes: aretesDeMur().length, parametres: parametresMur !== null, dansObjet: dans !== undefined, lecture: readOnly });
+  const noteJonctions = (n: number, j: readonly JonctionMur[]): string =>
+    [t("planche.mur.note.poses", { nombre: String(n) }), ...(j.includes("croisement") ? [t("planche.mur.note.croisement")] : []), ...(j.includes("voisin-modifie") ? [t("planche.mur.note.voisin-modifie")] : [])].join(" ");
+  const executerMur = (id: IdCommandeMur) => {
+    if (!disponibiliteCommandeMur(id).disponible || !parametresMur) return;
+    const reference = referenceMur();
+    const traces = chainesDAretes(hist.present.modele, aretesDeMur());
+    const r = poserMurs(hist.present.modele, traces, { ...parametresMur, reference });
+    if (!r.ok) return setNoteMur(t(`planche.mur.erreur.${r.erreur}`));
+    const message = noteJonctions(r.ids.length, r.jonctions);
+    setNoteMur(message);
+    const occ = r.ids.map((w) => r.modele.annotations?.murs?.[w]?.occurrence).filter((x): x is string => !!x);
+    operer(t("planche.mur.depuis-aretes"), () => ({ modele: r.modele, selection: occ, message }));
+    if (outilRef.current === "mur") configurerOutil("reference", reference);
+  };
   const disponibiliteCommandeNiveau = (id: IdCommandeNiveau) => {
     const s = etatSelectionObjets();
     return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly });
@@ -3252,7 +3298,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         },
       },
       fichiers: {
-        ouvrir: (demande) => fenetreFichier<FichierLu | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
+        ouvrir: (demande) => fenetreFichier<(FichierLu & { readonly octets?: Uint8Array }) | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
         enregistrer: (demande) =>
           fenetreFichier<boolean>(
             (cle, repondre) => ({
@@ -3266,7 +3312,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 repondre(accepte);
               },
             }),
-          ),
+          ),        // (Protocole 1.2) Fichier de données ouvert avec « archiver » : rangé tel quel en base, au nom du compte.
+        archiver: (fichier, octets) => archiverFichierExtension(id, fichier, octets),
       },
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
@@ -3850,6 +3897,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
+    else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -3914,6 +3962,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_LOCAUX.map((c) => {
           const d = disponibiliteCommandeLocal(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.locaux.motif.face"), executer: () => executerLocal(c.id) };
+        }),
+        ...COMMANDES_MUR.map((c) => {
+          const d = disponibiliteCommandeMur(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.mur.motif.aretes"), executer: () => executerMur(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4978,7 +5030,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           />
         </div>
       )}
-      {vue.options && vue.options.length > 0 && (
+      {outilId === "mur" && (
+        <BarreMur
+          saisie={saisieMur}
+          onSaisie={setSaisieMur}
+          valide={parametresMur !== null}
+          reference={referenceMur()}
+          onReference={(v) => configurerOutil("reference", v)}
+          lecture={readOnly}
+          disponibilite={disponibiliteCommandeMur}
+          executer={executerMur}
+          note={noteMur}
+        />
+      )}
+      {outilId !== "mur" && vue.options && vue.options.length > 0 && (
         <div ref={optionsRef} onKeyDown={naviguerOptions} className="planche-options-outil" role="toolbar" aria-label={t("planche.options")} data-planche-options>
           {/* Écran étroit : seuls les groupes utilisables pour la cible courante (sinon trois rangées au téléphone). */}
           {vue.options.filter((o) => !etroit || o.valeurs.some((v) => v.disponible)).map((o) => (

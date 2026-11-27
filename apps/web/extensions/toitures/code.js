@@ -93,6 +93,8 @@ var T = {
     contourDisparu: "Le contour des variantes n'est plus dans le dessin : sélectionnez-le à nouveau.",
     toitureNonFormee: "La toiture n'a pas pu être formée sur ce contour.",
     tableRefusee: "Table refusée : ",
+    archiveRefusee: "Chargement refusé : le fichier n'a pas pu être archivé en base (",
+    motifsArchive: { indisponible: "archivage indisponible dans cette Planche", impossible: "archivage impossible", reseau: "réseau indisponible", connexion: "connexion requise", extension_inconnue: "extension non installée pour ce compte", trop_lourd: "fichier trop lourd", serveur: "refus du serveur", illisible: "réponse du serveur illisible" },
     tableEnregistree: "Table des pentes chargée : ",
     modeleEnregistre: "Modèle de table enregistré : remplissez-le, citez chaque source, puis chargez-le.",
     fichierModele: "modele-pentes-minimales.json",
@@ -167,6 +169,8 @@ var T = {
     contourDisparu: "The variants' outline is no longer in the drawing: select it again.",
     toitureNonFormee: "The roof could not be formed on this outline.",
     tableRefusee: "Table refused: ",
+    archiveRefusee: "Loading refused: the file could not be archived in the database (",
+    motifsArchive: { indisponible: "archiving unavailable in this Planche", impossible: "archiving failed", reseau: "network unavailable", connexion: "sign-in required", extension_inconnue: "extension not installed for this account", trop_lourd: "file too large", serveur: "refused by the server", illisible: "unreadable server response" },
     tableEnregistree: "Pitch table loaded: ",
     modeleEnregistre: "Table template saved: fill it in, cite each source, then load it.",
     fichierModele: "minimum-pitch-template.json",
@@ -572,8 +576,10 @@ async function tableGardee() {
 
 async function chargerTable() {
   var x = tx();
-  var f = await planche.fichiers.ouvrir([".json"]);
+  // Protocole 1.2 : le fichier chargé est archivé tel quel en base ; sans archive, il n'est pas chargé.
+  var f = await planche.fichiers.ouvrir([".json"], { archiver: true });
   if (!f) return;
+  if (!f.archive) return alerte(x.archiveRefusee + (x.motifsArchive[f.archiveRefus] || x.motifsArchive.impossible) + ")");
   var r = lireTable(f.texte);
   if (r.erreur) return alerte(x.tableRefusee + r.erreur);
   var anciennes = await tableGardee();
@@ -590,6 +596,7 @@ async function chargerTable() {
     for (var j = 0; j < morceaux.length; j++) await planche.donnees.ecrire("projet", "pentes." + j, morceaux[j]);
     for (var k = morceaux.length; k < anciennes.cles.length; k++) await planche.donnees.effacer("projet", "pentes." + k);
     await planche.donnees.ecrire("projet", "pentes-fichier", texte(f.nom).slice(0, 80));
+    await planche.donnees.ecrire("projet", "pentes-archive", { id: f.archive.id, empreinte: f.archive.empreinte, nom: texte(f.nom).slice(0, 80) });
     await planche.operation.valider();
   } catch (e) {
     await planche.operation.abandonner();

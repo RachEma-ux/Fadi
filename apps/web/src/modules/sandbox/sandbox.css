@@ -4456,3 +4456,53 @@
     gap: 4px;
   }
 }
+/* Cas 4, étape 4 : barre d'options de l'outil Mur (maquette etape-4-murs.png). */
+.sandbox-planche .planche-mur-nom {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sandbox-planche .planche-mur-barre .planche-mur-champ {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+.sandbox-planche .planche-mur-barre .planche-mur-champ input {
+  width: 4.2rem;
+  min-height: 32px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  font: inherit;
+}
+.sandbox-planche .planche-mur-barre .planche-mur-champ input[aria-invalid="true"] {
+  border-color: rgba(180, 35, 24, 0.85);
+}
+.sandbox-planche .planche-mur-commande {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 0.55rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1b4d42;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sandbox-planche .planche-mur-commande:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sandbox-planche .planche-mur-erreur {
+  color: rgba(180, 35, 24, 1);
+  font-size: 0.8rem;
+}
+.sandbox-planche .planche-mur-note {
+  font-size: 0.8rem;
+  color: var(--atelier-texte-doux, #4b5a52);
+}

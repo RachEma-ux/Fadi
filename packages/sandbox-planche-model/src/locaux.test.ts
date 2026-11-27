@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { appliquerDeltaPlanche, differencePlanche, empreintePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
-import { type Modele, ajouterRectangle, deplacer, effacerEntites, modeleVide } from "./geometrie-libre.js";
+import { type Modele, ajouterRectangle, deplacer, effacerEntites, masquerEntites, modeleVide } from "./geometrie-libre.js";
 import { creerLocal, estLocal, lireSaisieLocal, localDeLaFace, mesurerLocal, modifierLocal, numeroSuivant, supprimerLocal, tableauLocaux } from "./locaux.js";
 import { ajouterNiveau } from "./niveaux.js";
 import { v3 } from "./vecteur.js";
@@ -55,6 +55,9 @@ describe("locaux", () => {
     expect(l.hauteur).toBeCloseTo(2.5, 9);
     expect(l.origineHauteur).toBe("mesuree");
     expect(l.volume).toBeCloseTo(50, 9);
+    // Masquer le plafond (pour voir le plan) ne change ni la hauteur ni le volume (relecture de la PR #483).
+    const masque = tableauLocaux(masquerEntites(m, [plafond.face]).modele).lignes[0]!;
+    expect([masque.hauteur, masque.volume]).toEqual([l.hauteur, l.volume]);
     m = ok(modifierLocal(m, l.local.id, { numero: "1", nom: "Séjour", hauteur: 2.4 })).modele;
     l = tableauLocaux(m).lignes[0]!;
     expect(l.origineHauteur).toBe("declaree");

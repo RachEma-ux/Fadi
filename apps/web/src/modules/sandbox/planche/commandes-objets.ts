@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -428,6 +428,26 @@ export function disponibiliteNumerotation(id: IdCommandeNumerotation, s: { reado
   if (id === "numerotation") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   return s.objets > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.numeroter.motif.selection" };
+}
+
+/** Murs à épaisseur (cas 4 du catalogue, étape 4) : Murs depuis les arêtes, dans la barre d'options de l'outil Mur. */
+export type IdCommandeMur = "murs-depuis-aretes";
+export interface CommandeMur {
+  readonly id: IdCommandeMur;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_MUR: readonly CommandeMur[] = [{ id: "murs-depuis-aretes", ...depuisRegistre("murs-depuis-aretes"), libelle: "planche.mur.depuis-aretes", court: "planche.mur.court.depuis-aretes" }];
+
+/** Disponibilité : hors lecture, à la racine, des arêtes horizontales choisies, une épaisseur et une hauteur valides. */
+export function disponibiliteMur(_id: IdCommandeMur, s: { readonly aretes: number; readonly parametres: boolean; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (s.dansObjet) return { disponible: false, motif: "planche.mur.motif.racine" };
+  if (s.aretes === 0) return { disponible: false, motif: "planche.mur.motif.aretes" };
+  if (!s.parametres) return { disponible: false, motif: "planche.mur.motif.parametres" };
+  return { disponible: true, motif: null };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */

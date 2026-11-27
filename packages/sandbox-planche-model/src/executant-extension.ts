@@ -48,6 +48,7 @@
  *   planche.modele.cercle(centre, rayon, normale, cotes)
  *   planche.balises.creer(nom, couleur)         rend l'identifiant (celui de la balise du même nom si elle existe)
  *   planche.fichiers.ouvrir(types, { flux: true })   { nom, taille, lire(debut, longueur), texte() }, ou `null`
+ *   planche.fichiers.ouvrir(types, { archiver: true }) (1.2) { nom, texte, archive }, archivé tel quel en base
  *   planche.fichiers.enregistrer(nom, texte)    au-delà de 1 000 000 caractères, envoyé par morceaux sans rien changer
  *                                               pour l'extension
  */
@@ -168,6 +169,9 @@ export function creerExecutantExtension(
       ouvrir: async (types?: unknown, options?: unknown): Promise<unknown> => {
         const liste = types === undefined || types === null ? {} : { types: typeof types === "string" ? [types] : types };
         const flux = !!options && typeof options === "object" && (options as { flux?: unknown }).flux === true;
+        // (1.2) `{ archiver: true }` : la Planche range le fichier tel quel en base et rend `archive` (ou `archiveRefus`).
+        const archiver = !!options && typeof options === "object" && (options as { archiver?: unknown }).archiver === true;
+        if (archiver) return demander("fichiers.ouvrir", { ...liste, archiver: true, ...(flux ? { flux: true } : {}) });
         if (!flux) return demander("fichiers.ouvrir", liste);
         const f = (await demander("fichiers.ouvrir", { ...liste, flux: true })) as { nom: string; taille: number; jeton: number } | null;
         if (!f) return null;

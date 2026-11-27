@@ -129,12 +129,15 @@ function centreEtiquette(pos: { exterieur: Vec3[]; trous: Vec3[][] }, z: number)
   return { x: p[0]!.x, y: p[0]!.y, z };
 }
 
-/** Hauteur mesurée : distance jusqu'à la face horizontale de la racine la plus proche au-dessus du point ; `null` sinon. */
+/**
+ * Hauteur mesurée : distance jusqu'à la face horizontale de la racine la plus proche au-dessus du point ; `null` sinon.
+ * Une face masquée compte : masquer le plafond pour voir le plan ne change ni la hauteur ni le volume du local.
+ */
 export function hauteurMesuree(m: Modele, point: Vec3, sauf: Id): number | null {
   const c = m.racine;
   let meilleure: number | null = null;
   for (const f of Object.values(c.faces)) {
-    if (f.id === sauf || f.masquee || !horizontale(f)) continue;
+    if (f.id === sauf || !horizontale(f)) continue;
     const pos = positionsFace(c, f);
     const z = pos.exterieur[0]?.z;
     if (z === undefined || z <= point.z + EPS_NIVEAU) continue;

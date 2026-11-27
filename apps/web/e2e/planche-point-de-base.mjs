@@ -68,7 +68,9 @@ await page.keyboard.press("Control+Shift+B");
 const section = page.locator("[data-planche-point-de-base]");
 await section.waitFor();
 check("Ctrl+Maj+B ouvre le panneau Emplacement sur le point de base", (await page.evaluate(() => window.fadiPlanche.panneau())) === "emplacement");
-check("le champ E reçoit le focus", await page.evaluate(() => document.activeElement?.getAttribute("data-planche-point-de-base-champ") === "e"));
+// Le focus est donné après le rendu de la section (effet) : on l'attend, borné, plutôt que de le lire à l'instant.
+const focusE = await page.waitForFunction(() => document.activeElement?.getAttribute("data-planche-point-de-base-champ") === "e", null, { timeout: 3000 }).then(() => true, () => false);
+check("le champ E reçoit le focus", focusE);
 check("sans point de base : la section le dit", (await section.getAttribute("data-planche-point-de-base")) === "absent" && (await section.locator("[data-planche-point-de-base-absent]").count()) === 1);
 check("H non évaluée sans niveau de référence", (await section.locator("[data-planche-point-de-base-h]").getAttribute("data-planche-point-de-base-h")) === "non-evaluee");
 check("la commande a sa place dans la barre du panneau", (await page.locator("[data-planche-commande='point-de-base']").count()) === 1);

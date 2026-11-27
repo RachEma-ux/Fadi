@@ -162,6 +162,8 @@ export interface ContexteOutil {
   readonly lecture?: boolean;
   /** (Lot L12) Section choisie pour les outils Profilé (catalogue sourcé, dimensions saisies ou face) ; absent = aucune. */
   readonly sectionCourante?: SectionCourante;
+  /** (Cas 4, étape 4) Épaisseur et hauteur du mur, saisies dans la barre d'options de l'outil Mur ; absent = saisie invalide. */
+  readonly parametresMur?: { readonly epaisseur: number; readonly hauteur: number };
 }
 
 /** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */

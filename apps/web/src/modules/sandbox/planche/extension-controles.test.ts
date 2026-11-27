@@ -72,6 +72,9 @@ function planche(modele: Modele) {
   const etat = { modele, selection: [] as Id[], pas: [] as string[], avis: [] as AvisExtension[], fichiers: [] as { nom: string; texte: string }[], envois: [] as unknown[], ouverts: [] as string[] };
   let reponses: (ValeursSaisie | null)[] = [];
   let aOuvrir: { nom: string; texte: string } | null = null;
+  // Protocole 1.2 : archivage en base du fichier chargé, réussi par défaut, refusé à la demande.
+  let refusArchive: "connexion" | null = null;
+  const archives: string[] = [];
   const titres: string[] = [];
   const acces: AccesPlanche = {
     modele: () => etat.modele,
@@ -94,6 +97,10 @@ function planche(modele: Modele) {
     },
     fichiers: {
       ouvrir: () => ({ reponse: Promise.resolve(aOuvrir), fermer: () => {} }),
+      archiver: async (f) => {
+        archives.push(f.nom);
+        return refusArchive === null ? { ok: true as const, archive: { id: `sbxfic_${archives.length}`, empreinte: "c".repeat(64), ajouteLe: "2026-11-27T12:00:00.000Z" } } : { ok: false as const, motif: refusArchive };
+      },
       enregistrer: (d) => {
         etat.fichiers.push({ nom: d.nom, texte: d.texte });
         return { reponse: Promise.resolve(true), fermer: () => {} };
@@ -113,6 +120,8 @@ function planche(modele: Modele) {
     titres,
     repondre: (r: (ValeursSaisie | null)[]) => void (reponses = r),
     fichierAOuvrir: (f: { nom: string; texte: string } | null) => void (aOuvrir = f),
+    refuserArchive: (motif: "connexion" | null) => void (refusArchive = motif),
+    archives,
     derniereAlerte: () => etat.avis.filter((a) => a.genre === "alerte").at(-1)?.texte ?? "",
   };
 }
@@ -327,5 +336,21 @@ describe("extension « Contrôles réglementaires et accessibilité » — comma
       expect(p.etat.envois.at(-1)).toMatchObject({ onglet: o });
     }
     expect(p.etat.envois.at(-1)).toMatchObject({ colonnes: ["Date", "Rule", "Object", "Verdict"], vide: "Empty register: « Add to the register » from a check tab." });
+  });
+});
+
+describe("extension « Contrôles réglementaires » — archivage en base du fichier chargé (protocole 1.2)", () => {
+  it("le fichier est archivé avant d'être chargé ; sans archive, il n'est pas chargé et le motif est donné", async () => {
+    expect(PAQUET.fiche.protocole).toBe("1.2");
+    expect(PAQUET.code).toContain("{ archiver: true }");
+    const p = planche(modeleVide());
+    await chargerRegles(p);
+    expect(p.archives).toEqual(["regles.json"]);
+    expect(p.derniereAlerte()).toBe("");
+    const q = planche(modeleVide());
+    q.refuserArchive("connexion");
+    await chargerRegles(q);
+    expect(q.derniereAlerte()).toBe("Chargement refusé : le fichier n'a pas pu être archivé en base (connexion requise)");
+    expect(q.etat.avis.some((a) => a.texte.startsWith("Table chargée"))).toBe(false);
   });
 });
