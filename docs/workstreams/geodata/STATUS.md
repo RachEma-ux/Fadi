@@ -9,7 +9,10 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
-- Améliorations équipe A, jalon D P6-P7 clavier (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+- Améliorations équipe A, jalon E P8-P10 légende (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+  accepté. Version et couverture dans l'API, légende lue (modèle pur testé), hachures de la valeur absente (contrôles
+  « P8 » à « P10 » de `geodata.mjs`), captures `captures/p9/`.
+- Améliorations équipe A, jalon D P6-P7 clavier (PR #491, fusionnée) : **implémenté et vérifié**, non
   accepté. Outils extraits (tests purs), saisie de coordonnées et voie clavier (contrôles « P7 » de `geodata.mjs`),
   captures `captures/p7/`.
 - Améliorations équipe A, jalon C P3-P5 commandes (PR #487, fusionnée) : **implémenté et vérifié**, non
