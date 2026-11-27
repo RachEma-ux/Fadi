@@ -28,6 +28,7 @@ import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
 import { PastillesThemes, type PastilleTheme } from "./panneaux/PastillesThemes";
+import { BoutonSites } from "./panneaux/BoutonSites";
 import { BarreBas } from "./panneaux/BarreBas";
 import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
@@ -1173,7 +1174,8 @@ export function PageGeoData() {
               contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />
           {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {syntheseOuverte && !erreurCarte && <SyntheseVue lignes={lignesSynthese} zoom={composition.camera.zoom} zone={zoneActive?.nom ?? null} decalee={panneauOuvert} haute={miniCarte} onFermer={basculerSynthese} />}
-          {!erreurCarte && <PastillesThemes pastilles={pastilles} ouverte={pastillesOuvertes} decalee={panneauOuvert} onBasculer={basculerPastilles} onTheme={basculerThemeCarte} />}
+          {!erreurCarte && <PastillesThemes pastilles={pastilles} ouverte={pastillesOuvertes} decalee={panneauOuvert} onBasculer={basculerPastilles} onTheme={basculerThemeCarte}
+            apres={<BoutonSites centre={() => { const e = moteur.current?.emprise(); return e ? { lon: (e[0] + e[2]) / 2, lat: (e[1] + e[3]) / 2 } : null; }} allerA={(c) => moteur.current?.allerA(c)} onAnnonce={setAnnonce} />} />}
           {zoneActive && <div className="gd-puce-zone" role="status" data-gd-puce-zone={zoneActive.id}>
             <span>Zone d'étude :</span> <span translate="no">{zoneActive.nom}</span>{zonePartielle && <span> (partiel)</span>}
             {zoneEnCalcul && <span data-gd-zone-calcul> (calcul…)</span>}

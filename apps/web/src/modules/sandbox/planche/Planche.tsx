@@ -232,6 +232,7 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
@@ -2600,6 +2601,47 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         message,
       };
     });
+  // Menu « Sites » (27 novembre 2026) : site de projet de la base dédiée, rattaché à la Planche courante. Sauvegarder y
+  // écrit l'Emplacement (position, nord, altitude, lieu, source « Emplacement de la Planche ») ; Ouvrir et Importer posent
+  // la position du site comme Emplacement (un pas d'historique : Annuler le retire) et activent l'extension au besoin.
+  const SOURCE_EMPLACEMENT = "Emplacement de la Planche";
+  // Nord non évalué : un site sans nord ouvert dans la Planche lui laisse 0° pour ses ombres, mais ce 0° n'est pas une
+  // déclaration. Tant que la personne n'a pas enregistré l'Emplacement elle-même, Sauvegarder n'écrit pas un nord de 0°
+  // dans un site qui n'en a pas : il y reste « non évalué » (réouverture de la Planche comprise).
+  const nordSaisiRef = useRef(false);
+  const nordSuppose = (nord: number) => !nordSaisiRef.current && nord === 0 && (sitesProjetRef.current?.site?.observations.nord ?? null) === null;
+  const sitesProjetRef = useRef<{ site: { observations: { nord: unknown } } | null } | null>(null);
+  const sitesProjet = useSitesProjet({
+    lien: readOnly ? null : { genre: "planche", cible: indexPlanches.courante },
+    etatModule: () => {
+      if (!emplacement) return {};
+      return {
+        observations: {
+          geographic: { longitude: emplacement.longitude, latitude: emplacement.latitude, source: SOURCE_EMPLACEMENT },
+          ...(nordSuppose(emplacement.nord) ? {} : { nord: { valeur: emplacement.nord, source: SOURCE_EMPLACEMENT } }),
+          ...(emplacement.altitude !== undefined ? { altitudeReference: { valeur: emplacement.altitude, source: SOURCE_EMPLACEMENT } } : {}),
+        },
+        ...(emplacement.lieu ? { lieu: emplacement.lieu } : {}),
+      };
+    },
+    onOuvert: (site) => {
+      const e = emplacementDepuisSite(site, site.position);
+      if (!e) {
+        setMessage(t("planche.sites.note.sans-position", { nom: site.fiche.nom }));
+        return;
+      }
+      const { nordEvalue, lieu, ...reste } = e;
+      if (readOnly) return;
+      if (!nordEvalue) nordSaisiRef.current = false;
+      poserEmplacement({ ...reste, ...(lieu ? { lieu } : {}) }, t(nordEvalue ? "planche.sites.note.ouvert" : "planche.sites.note.nord-non-evalue", { nom: site.fiche.nom }));
+      if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+      setPanneau("emplacement");
+    },
+  });
+  sitesProjetRef.current = sitesProjet;
+  useEffect(() => {
+    if (sitesProjet.note) setMessage(sitesProjet.note.texte);
+  }, [sitesProjet.note]);
   // « Emplacements Projets » (27 novembre 2026) : emplacements enregistrés dans GeoData, lus à la demande, posés comme
   // Emplacement de la Planche (un pas d'historique : Annuler le retire).
   const [geodataListe, setGeodataListe] = useState<readonly EmplacementGeoDataLu[] | null>(null);
@@ -3811,6 +3853,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           : []),
       ],
     },
+    {
+      id: "sites",
+      libelle: t("planche.menus.sites"),
+      entrees: ORDRE_ARTICLES.map((a): EntreeMenuBandeau =>
+        a === "separateur" ? { genre: "separateur" } : cmd(`sites-${a}`, t(`planche.sites.${a}` as "planche.sites.nouveau"), sitesProjet.actions[a as ArticleSites], { disabled: !sitesProjet.disponible[a as ArticleSites] || sitesProjet.occupe || (readOnly && a !== "exporter") }),
+      ),
+    },
   ];
   const barreActions = etroit ? (
     <BarreActions
@@ -4178,7 +4227,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
             )}
             {panneau === "emplacement" && (
-              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
+              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => { nordSaisiRef.current = true; poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire")); }} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
                 geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }} />
             )}
             {panneau === "scripts" && (
@@ -4631,6 +4680,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           }}
         />
       )}
+      {sitesProjet.fenetres}
     </div>
   );
 

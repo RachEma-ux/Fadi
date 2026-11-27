@@ -426,3 +426,12 @@
 .geodata-page .gd-profil-lacune{fill:#9e9e9e;opacity:.25}
 .geodata-page .gd-profil-transition{stroke:#5b3a8c;stroke-width:1.5;stroke-dasharray:2 2}
 .geodata-page .gd-profil-texte{font-size:10px;fill:var(--gd-encre)}
+/* Bouton « Sites » (27 novembre 2026), à côté de « Thèmes » : même pastille, menu des sites de la base dédiée. */
+.geodata-page .gd-sites{position:relative;flex:none}
+.geodata-page .gd-pastilles .gd-sites-ouvert,.geodata-page .gd-pastilles .gd-sites-ouvert:hover:not(:disabled){background:var(--gd-encre);color:#fff;border-color:var(--gd-encre)}
+.geodata-page .gd-sites-chevron{font-size:.7rem}
+.geodata-page .gd-sites-menu{position:fixed;z-index:20;min-width:250px;margin-top:6px;padding:6px 0;background:#fff;border:1px solid var(--gd-ligne);border-radius:10px;box-shadow:0 6px 20px rgba(23,59,67,.18);color:var(--gd-encre)}
+.geodata-page .gd-sites-menu [role="menuitem"]{padding:9px 16px;cursor:pointer;white-space:nowrap}
+.geodata-page .gd-sites-menu [role="menuitem"]:hover,.geodata-page .gd-sites-menu [role="menuitem"]:focus{background:#edf5f3;outline:none}
+.geodata-page .gd-sites-menu [aria-disabled="true"]{opacity:.45;cursor:default}
+.geodata-page .gd-sites-separateur{border-top:1px solid var(--gd-ligne);margin:6px 0}

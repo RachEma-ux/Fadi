@@ -17,6 +17,7 @@ import { comGlobalRouter } from "./routes/com.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
 import { geodataRouter } from "./routes/geodata/index.js";
+import { sitesRouter } from "./routes/sites.js";
 import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
 import { organizationsRouter } from "./routes/organizations.js";
@@ -26,7 +27,7 @@ import { studioMcpRouter } from "./routes/mcp-studio.js";
 import { surveillanceStudio } from "./lib/studio-surveillance.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews|mcp)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|sites\/api|version|reviews|mcp)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -99,6 +100,8 @@ export function createApp() {
   // ont leur propre limite (une carte en demande des dizaines par déplacement).
   const tuilesLimiter = rateLimit({ windowMs: 60 * 1000, limit: Number(process.env["GEODATA_TILE_RATE_LIMIT"] ?? 3000), standardHeaders: true, legacyHeaders: false });
   app.use("/geodata/api", (req, res, next) => (req.path.startsWith("/tuiles/") ? tuilesLimiter : apiLimiter)(req, res, next), geodataRouter);
+  // Sites de projet (27 novembre 2026) : base dédiée `sites_*`, servie à la Planche, à GeoData et à l'étape 01.
+  app.use("/sites/api", apiLimiter, sitesRouter);
 
   // Sonde de vie (hébergement, sonde de joignabilité du client) : l'API et sa base répondent-elles ? 503 sinon.
   app.get("/health", async (_req, res) => {

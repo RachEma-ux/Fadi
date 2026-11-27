@@ -28,7 +28,12 @@ import {
   type ParcoursStepStatus,
   type SiteObservations,
   cibleDocument,
+  contenuDepuisEtape01,
+  DEFAULT_SITE_OBSERVATIONS,
+  validerContenuSite,
 } from "@parcours/domain-model";
+import { creerSite, lireSite, listerSites, sauvegarderSite, transaction as transactionSites } from "../lib/sites/depot.js";
+import { loadSiteParcel } from "../lib/site-context.js";
 import { db } from "../db/client.js";
 import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -465,4 +470,50 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
     }
     throw err;
   }
+});
+
+// --- Site de projet (base dédiée `sites_*`, 27 novembre 2026) -------------------
+//
+// L'étape 01 sert la base des sites : « Enregistrer comme site de projet » range la parcelle, les données du site et
+// l'altimétrie du projet dans un site du compte, rattaché au projet (un site par projet et par compte, mis à jour s'il
+// existe : fiche, nord et altitude de référence déclarés ailleurs sont gardés). Les droits sont ceux du projet.
+
+/** Le site rattaché à ce projet pour le compte connecté, ou `null`. */
+parcoursStepsRouter.get("/:stepNumber/site/site-projet", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  if (stepOr404(req.params["stepNumber"] as string, res)?.number !== 1) return void (res.headersSent || res.status(404).json({ error: "not_found" }));
+  const [site] = await listerSites(req.user!.id, { genre: "projet", cible: project.id });
+  res.json({ site: site ?? null });
+});
+
+parcoursStepsRouter.post("/:stepNumber/site/site-projet", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  if (stepOr404(req.params["stepNumber"] as string, res)?.number !== 1) return void (res.headersSent || res.status(404).json({ error: "not_found" }));
+  const parcelle = await loadSiteParcel(db, project.id);
+  const observations = { ...DEFAULT_SITE_OBSERVATIONS, ...((project.siteObservations ?? {}) as Partial<SiteObservations>) } as SiteObservations;
+  const brut = contenuDepuisEtape01(project.name, parcelle, observations);
+  // Repassé par les contrôles de la base dédiée : ce qui n'y entre pas n'est pas recopié (jamais inventé).
+  const v = validerContenuSite(JSON.parse(JSON.stringify(brut)));
+  if (!v.ok) {
+    res.status(422).json({ error: "invalid_site", message: `Les données de l'étape 01 ne forment pas un site valide (${v.champ}).`, champs: [v.champ] });
+    return;
+  }
+  const proprietaire = req.user!.id;
+  const [existant] = await listerSites(proprietaire, { genre: "projet", cible: project.id });
+  const resultat = await transactionSites(async (tx) => {
+    if (!existant) return { id: await creerSite(proprietaire, v.valeur, [{ genre: "projet", cible: project.id }], tx), cree: true };
+    const actuel = await lireSite(proprietaire, existant.id, tx);
+    if (!actuel) return null;
+    const contenu = { ...v.valeur, fiche: actuel.fiche, zone: actuel.zone, observations: { ...v.valeur.observations, nord: actuel.observations.nord, altitudeReference: actuel.observations.altitudeReference } };
+    const r = await sauvegarderSite(proprietaire, actuel.id, actuel.revision, contenu, tx);
+    return typeof r === "number" ? { id: actuel.id, cree: false } : null;
+  });
+  if (!resultat) {
+    res.status(409).json({ error: "revision_conflict", message: "Le site de projet a changé pendant l'enregistrement : recommencez." });
+    return;
+  }
+  const site = await lireSite(proprietaire, resultat.id);
+  res.status(resultat.cree ? 201 : 200).json({ site: site ? { id: site.id, nom: site.fiche.nom, nature: site.fiche.nature, lieu: site.fiche.lieu, revision: site.revision, modifieLe: site.modifieLe } : null, cree: resultat.cree });
 });

@@ -4314,6 +4314,66 @@ CREATE TABLE IF NOT EXISTS admin.atelier_mesures_verrou (
   mesure_le timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS atelier_mesures_verrou_le_idx ON admin.atelier_mesures_verrou (mesure_le);
+-- Sites de projet (27 novembre 2026, demande du maître d'ouvrage) : base dédiée à l'emplacement géographique où un
+-- projet immobilier sera construit ou rénové. Elle sert l'étape 01 du Parcours, GeoData et l'Emplacement de la Planche
+-- (API `/sites/api`) ; ses champs reprennent ceux de l'étape 01 (parcelle, données du site, altimétrie). Un site
+-- appartient au compte qui l'a créé ; un projet, une Planche ou une zone GeoData s'y rattachent par `sites_liens`.
+CREATE TABLE IF NOT EXISTS sites_projet (
+  id text PRIMARY KEY,
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  nature text CHECK (nature IN ('construction', 'renovation')),
+  lieu text NOT NULL DEFAULT '' CHECK (length(lieu) <= 120),
+  -- Zone indicative en WGS 84 (jamais une parcelle cadastrale) et sa provenance.
+  zone geometry(Polygon, 4326),
+  zone_provenance text CHECK (zone_provenance IN ('dessin', 'import', 'coordonnees', 'vue')),
+  revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  modifie_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT sites_projet_zone_ck CHECK ((zone IS NULL) = (zone_provenance IS NULL))
+);
+CREATE INDEX IF NOT EXISTS sites_projet_proprietaire_idx ON sites_projet (proprietaire_id, modifie_le DESC);
+-- Parcelle de l'étape 01 (`SiteParcel` : sommets dans le repère cadastral, CRS déclaré, numéro, commune, fichier
+-- source), une ligne par révision du site qui l'a changée ; la parcelle courante est celle de plus haute révision.
+CREATE TABLE IF NOT EXISTS sites_parcelles (
+  site_id text NOT NULL REFERENCES sites_projet (id) ON DELETE CASCADE,
+  revision integer NOT NULL CHECK (revision >= 1),
+  donnees jsonb,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (site_id, revision)
+);
+-- Données du site déclarées (`SiteObservations` de l'étape 01) + nord vrai et altitude de référence, avec leur source.
+CREATE TABLE IF NOT EXISTS sites_observations (
+  site_id text PRIMARY KEY REFERENCES sites_projet (id) ON DELETE CASCADE,
+  donnees jsonb NOT NULL,
+  modifie_le timestamptz NOT NULL DEFAULT now()
+);
+-- Altimétrie collectée (`SiteElevation`) : « Modèle de terrain · non relevé topographique ».
+CREATE TABLE IF NOT EXISTS sites_altimetrie (
+  site_id text PRIMARY KEY REFERENCES sites_projet (id) ON DELETE CASCADE,
+  donnees jsonb NOT NULL,
+  modifie_le timestamptz NOT NULL DEFAULT now()
+);
+-- Fichiers importés, archivés tels quels (fichier de site, règle « chaque fichier de données est archivé en base »).
+CREATE TABLE IF NOT EXISTS sites_fichiers (
+  id text PRIMARY KEY,
+  site_id text NOT NULL REFERENCES sites_projet (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(nom) BETWEEN 1 AND 200),
+  type text NOT NULL CHECK (length(type) <= 120),
+  taille integer NOT NULL CHECK (taille >= 0),
+  contenu bytea NOT NULL,
+  ajoute_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS sites_fichiers_site_idx ON sites_fichiers (site_id);
+-- Qui utilise le site : un projet Parcours (étape 01), une Planche du Sandbox, une zone d'étude GeoData.
+CREATE TABLE IF NOT EXISTS sites_liens (
+  site_id text NOT NULL REFERENCES sites_projet (id) ON DELETE CASCADE,
+  genre text NOT NULL CHECK (genre IN ('projet', 'planche', 'zone-geodata')),
+  cible text NOT NULL CHECK (length(cible) BETWEEN 1 AND 200),
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (site_id, genre, cible)
+);
+CREATE INDEX IF NOT EXISTS sites_liens_cible_idx ON sites_liens (genre, cible);
 DO $$
 DECLARE
   r record;

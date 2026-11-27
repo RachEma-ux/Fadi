@@ -4,6 +4,7 @@
  * la vue (thème affiché) ou combien de couches il compte (thème absent). Les limites administratives n'ont pas de pastille :
  * on y navigue par la barre territoriale. Bande repliable par son bouton « Thèmes » ou Alt+T.
  */
+import type { ReactNode } from "react";
 import { formatNombre } from "@parcours/geodata-model";
 
 export interface PastilleTheme {
@@ -17,14 +18,16 @@ export interface PastilleTheme {
 
 const THEMES = "M4 6h7v5H4zM13 6h7v5h-7zM4 13h7v5H4zM13 13h7v5h-7z";
 
-export function PastillesThemes(p: { pastilles: readonly PastilleTheme[]; ouverte: boolean; decalee: boolean; onBasculer(): void; onTheme(cle: string): void }) {
-  if (!p.pastilles.length) return null;
+export function PastillesThemes(p: { pastilles: readonly PastilleTheme[]; ouverte: boolean; decalee: boolean; onBasculer(): void; onTheme(cle: string): void; apres?: ReactNode }) {
+  // Le bouton « Sites » (`apres`) suit « Thèmes » ; il reste affiché même quand le catalogue n'a encore aucun thème.
+  if (!p.pastilles.length && !p.apres) return null;
   return (
     <div className={`gd-pastilles${p.decalee ? " gd-pastilles-decalee" : ""}`} role="group" aria-label="Thèmes" data-gd-pastilles={p.ouverte ? "ouvertes" : "repliees"}>
-      <button type="button" className="gd-pastilles-bascule" aria-expanded={p.ouverte} aria-keyshortcuts="Alt+T" title={p.ouverte ? "Replier les thèmes (Alt+T)" : "Afficher les thèmes (Alt+T)"} onClick={p.onBasculer} data-gd-pastilles-bascule>
+      {p.pastilles.length > 0 && <button type="button" className="gd-pastilles-bascule" aria-expanded={p.ouverte} aria-keyshortcuts="Alt+T" title={p.ouverte ? "Replier les thèmes (Alt+T)" : "Afficher les thèmes (Alt+T)"} onClick={p.onBasculer} data-gd-pastilles-bascule>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><path d={THEMES} /></svg>
         <span>Thèmes</span>
-      </button>
+      </button>}
+      {p.apres}
       {p.ouverte && p.pastilles.map((t) => (
         <button key={t.cle} type="button" className={`gd-pastille-theme gd-theme-${t.etat}`} aria-pressed={t.etat === "affiche" ? true : t.etat === "partiel" ? "mixed" : false}
           title={t.etat === "absent" ? `Afficher le thème « ${t.libelle} » (${t.couches} couche(s))` : `Masquer le thème « ${t.libelle} »`} onClick={() => p.onTheme(t.cle)} data-gd-pastille-theme={t.cle}>

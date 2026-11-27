@@ -1656,6 +1656,10 @@ export const api = {
   /** « Essayer une autre répartition en copie » (`copy()` de l'exemple résolu) : un nouveau projet modifiable, la référence intacte. */
   copyProject: (projectId: string, name?: string) =>
     request<{ id: string; code: string; name: string; warnings: string[] }>(`/projects/${projectId}/copies`, { method: "POST", body: JSON.stringify(name ? { name } : {}) }),
+  /** Site de projet (base dédiée `sites_*`) rattaché au projet pour le compte connecté, ou `null`. */
+  getSiteProjet: (projectId: string) => request<{ site: SiteProjetResume | null }>(`/projects/${projectId}/steps/1/site/site-projet`),
+  /** « Enregistrer comme site de projet » : parcelle, données du site et altimétrie de l'étape 01 rangées dans la base des sites. */
+  enregistrerSiteProjet: (projectId: string) => request<{ site: SiteProjetResume | null; cree: boolean }>(`/projects/${projectId}/steps/1/site/site-projet`, { method: "POST", body: "{}" }),
   putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
   /** « Collecter centre + sommets » : les altitudes reçues du service (contrôlées par le navigateur) deviennent l'altimétrie du site. */
@@ -2181,3 +2185,13 @@ export const comApi = {
   transitionDemande: (projectId: string, id: string, input: { action: "repondre" | "cloturer" | "rouvrir" | "reattribuer"; body?: string; responderId?: string }) =>
     request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}/transitions`, { method: "POST", ...corpsJson(input) }),
 };
+
+/** Résumé d'un site de projet (base dédiée `sites_*`, 27 novembre 2026). */
+export interface SiteProjetResume {
+  id: string;
+  nom: string;
+  nature: string | null;
+  lieu: string;
+  revision: number;
+  modifieLe: string;
+}
