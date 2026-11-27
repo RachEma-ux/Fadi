@@ -509,6 +509,8 @@ export interface Gabarit {
   readonly scenesTypes?: readonly SceneType[];
   readonly stylesCote?: readonly Omit<StyleCote, "id">[];
   readonly parametres?: readonly { readonly nom: string; readonly valeur: number }[];
+  /** (Cas 2, lot 7) Statuts de la Planche proposés par l'agence (« Esquisse », « Permis »…), dans l'ordre. */
+  readonly statuts?: readonly string[];
 }
 export interface GabaritApplique {
   readonly nom: string;
@@ -575,6 +577,9 @@ export function lireGabarit(texte: string): { readonly ok: true; readonly gabari
   const pa = j["parametres"];
   if (pa !== undefined && (!Array.isArray(pa) || pa.some((p) => !estObjet(p) || typeof p["nom"] !== "string" || !nomParametreProjetValide(p["nom"].trim()) || typeof p["valeur"] !== "number" || !Number.isFinite(p["valeur"]))))
     return { ok: false, erreur: "Paramètres : nom (une lettre, puis lettres, chiffres ou « _ ») et valeur (m) attendus." };
+  const stt = j["statuts"];
+  if (stt !== undefined && (!Array.isArray(stt) || stt.some((x) => typeof x !== "string" || !x.trim() || x.trim().length > 60)))
+    return { ok: false, erreur: "Statuts : liste de libellés (60 caractères au plus) attendue." };
   return {
     ok: true,
     gabarit: {
@@ -588,6 +593,7 @@ export function lireGabarit(texte: string): { readonly ok: true; readonly gabari
       ...(st !== undefined ? { scenesTypes: (st as SceneType[]).map((s) => ({ genre: s.genre, ...(s.echelle ? { echelle: s.echelle } : {}) })) } : {}),
       ...(sc !== undefined ? { stylesCote: sc as NonNullable<Gabarit["stylesCote"]> } : {}),
       ...(pa !== undefined ? { parametres: (pa as { nom: string; valeur: number }[]).map((p) => ({ nom: p.nom.trim(), valeur: p.valeur })) } : {}),
+      ...(stt !== undefined ? { statuts: [...new Set((stt as string[]).map((x) => x.trim()))] } : {}),
     },
   };
 }

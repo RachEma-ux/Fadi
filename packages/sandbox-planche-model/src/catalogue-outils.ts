@@ -2399,8 +2399,22 @@ const SYNONYMES: Readonly<Record<string, string>> = {
 };
 const AFFICHAGE: Readonly<Record<string, string>> = { ctrl: "Ctrl", alt: "Alt", maj: "Maj", espace: "Espace" };
 
-/** Forme canonique d'un raccourci : modificateurs dans l'ordre Ctrl, Alt, Maj, puis la touche (`Ctrl+Maj+E`). */
+/**
+ * Raccourcis en deux temps (décision du maître d'ouvrage, 27 novembre 2026) : les touches libres étant épuisées, une
+ * commande peut se taper en deux temps, la touche d'entrée puis une touche (« Ctrl+Maj+Espace, R »).
+ */
+export const ENTREE_DEUX_TEMPS = "Ctrl+Maj+Espace";
+/** Seconde touche d'un raccourci en deux temps (« R », « Maj+R »), sinon null. */
+export function secondTemps(r: string): string | null {
+  const [a, b, ...reste] = r.split(",");
+  if (b === undefined || reste.length > 0) return null;
+  return normaliserRaccourci(a!) === ENTREE_DEUX_TEMPS ? normaliserRaccourci(b) : null;
+}
+
+/** Forme canonique d'un raccourci : modificateurs dans l'ordre Ctrl, Alt, Maj, puis la touche (`Ctrl+Maj+E`) ; en deux
+ * temps, chaque temps sous cette forme, séparés par « , » (`Ctrl+Maj+Espace, R`). */
 export function normaliserRaccourci(r: string): string {
+  if (r.includes(",")) return r.split(",").map((x) => normaliserRaccourci(x)).join(", ");
   const morceaux = r
     .split("+")
     .map((x) => x.trim())

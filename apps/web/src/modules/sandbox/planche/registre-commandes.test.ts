@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "@parcours/sandbox-planche-model";
-import { REGISTRE_COMMANDES, commandeDuClavier, routeeParLeRegistre } from "./registre-commandes";
+import { COMMANDES_DEUX_TEMPS, REGISTRE_COMMANDES, commandeDuClavier, commandeDuSecondTemps, estEntreeDeuxTemps, routeeParLeRegistre } from "./registre-commandes";
+import { secondTemps } from "@parcours/sandbox-planche-model";
 import { pictoOutil, raccourciOutil, type Cle } from "./outils-planche";
 import { clePictogramme, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 
@@ -40,12 +41,27 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   });
 
   it("chaque commande routée par le registre se retrouve depuis son événement clavier, y compris sous macOS (Option)", () => {
-    for (const c of REGISTRE_COMMANDES.filter(routeeParLeRegistre)) {
+    for (const c of REGISTRE_COMMANDES.filter((x) => routeeParLeRegistre(x) && secondTemps(x.raccourci) === null)) {
       expect(commandeDuClavier(evenement(c.raccourci))?.id, c.raccourci).toBe(c.id);
       if (c.raccourci.includes("Alt")) expect(commandeDuClavier(evenement(c.raccourci, true))?.id, `${c.raccourci} (macOS)`).toBe(c.id);
     }
     // Les commandes à touche nue ou à Échap / Origine gardent leur garde dans la Planche.
     expect(REGISTRE_COMMANDES.filter((c) => !routeeParLeRegistre(c)).map((c) => c.id).sort()).toEqual(["composant", "fermer", "fermer-tout"]);
+  });
+
+  it("raccourcis en deux temps : Ctrl+Maj+Espace est l'entrée, la seconde touche (avec ou sans Maj) résout la commande", () => {
+    expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: true, altKey: false })).toBe(true);
+    expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: false, altKey: false })).toBe(false);
+    expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet"]);
+    for (const c of COMMANDES_DEUX_TEMPS) {
+      const s = secondTemps(c.raccourci)!;
+      const maj = s.startsWith("Maj+");
+      const lettre = s.slice(maj ? 4 : 0);
+      expect(commandeDuSecondTemps({ key: maj ? lettre : lettre.toLowerCase(), code: `Key${lettre}`, ctrlKey: false, shiftKey: maj, altKey: false })?.id, c.raccourci).toBe(c.id);
+    }
+    expect(commandeDuClavier({ key: " ", ctrlKey: true, shiftKey: true, altKey: false }), "l'entrée seule n'exécute rien").toBeNull();
+    expect(commandeDuSecondTemps({ key: "v", code: "KeyV", ctrlKey: false, shiftKey: false, altKey: false })?.id).toBe("versions");
+    expect(commandeDuSecondTemps({ key: "V", code: "KeyV", ctrlKey: false, shiftKey: true, altKey: false })?.id).toBe("brouillon");
   });
 
   it("une touche sans commande ne résout rien", () => {

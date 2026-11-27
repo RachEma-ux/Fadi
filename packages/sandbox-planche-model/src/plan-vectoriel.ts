@@ -14,6 +14,7 @@ import type { FamilleHachure, Materiau, MotifHachure, PlanDeCoupe } from "./anno
 import { type Id, type Modele, modifierAnnotations } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
 import { tiretsDuTrait } from "./balises-l4.js";
+import { ficheDe, lignesFiche, revisionDe, texteRevision } from "./versions-l7.js";
 import { type Vec3, add, cross, dot, len, normalize, scale, sub } from "./vecteur.js";
 
 export type ClasseTrait = "coupe" | "vu" | "cache";
@@ -476,8 +477,14 @@ export function svgPlan(plan: PlanProjete, m: Modele, o: OptionsSvg): string {
     const tirets = tiretsDuTrait(b.trait, e);
     return `<g id="vu-${id}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(e)}" stroke-linecap="round"${tirets.length ? ` stroke-dasharray="${tirets.map(n3).join(" ")}"` : ""}>${lignes(plan.traits.filter((t) => propre(t) && t.balise === id))}</g>`;
   });
+  // (Cas 2, lot 7, n° 109) Fiche du projet et révision reprises dans le fichier (titre et description du SVG).
+  const xml = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fiche = ficheDe(m);
+  const revision = texteRevision(revisionDe(m));
+  const cartouche = `<title>${xml(fiche.projet ?? "non renseigné")}</title><desc>${xml([...lignesFiche(fiche).map(([l, v]) => `${l} : ${v}`), ...(revision ? [`Révision : ${revision}`] : [])].join("\n"))}</desc>`;
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${n3(larg)}mm" height="${n3(haut)}mm" viewBox="0 0 ${n3(larg)} ${n3(haut)}">`,
+    cartouche,
     defs.length ? `<defs>${defs.join("")}</defs>` : "",
     `<g id="poche">${corps.join("")}</g>`,
     groupe("vu", ""),

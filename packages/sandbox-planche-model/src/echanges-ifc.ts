@@ -85,9 +85,15 @@ export function exporterIfc(m: Modele, nom = "Planche", maintenant: Date = new D
   const corps = e(`IFCGEOMETRICREPRESENTATIONSUBCONTEXT('Body','Model',*,*,*,*,#${contexte},$,.MODEL_VIEW.,$)`);
   const longueur = e("IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.)");
   const unites = e(`IFCUNITASSIGNMENT((#${longueur}))`);
-  const projet = e(`IFCPROJECT('${guidIfc("projet")}',$,${chaineIfc(nom)},$,$,$,$,(#${contexte}),#${unites})`);
+  // (Cas 2, lot 7, n° 109) Fiche du projet et révision reprises ; un champ non renseigné est écrit absent ($), jamais inventé.
+  const fiche = m.annotations?.reglages?.ficheProjet ?? {};
+  const rev = m.annotations?.reglages?.revision;
+  const ou = (v: string | undefined | null) => (v ? chaineIfc(v) : "$");
+  const description = [fiche.maitreOuvrage ? `Maître d'ouvrage : ${fiche.maitreOuvrage}` : "", fiche.auteur ? `Auteur du projet : ${fiche.auteur}` : ""].filter(Boolean).join(" ; ");
+  const phase = rev ? [rev.statut, rev.indice ? `indice ${rev.indice}` : ""].filter(Boolean).join(" ") : "";
+  const projet = e(`IFCPROJECT('${guidIfc("projet")}',$,${chaineIfc(fiche.projet || nom)},${ou(description)},$,${ou(fiche.numero)},${ou(phase)},(#${contexte}),#${unites})`);
   const placementSite = e(`IFCLOCALPLACEMENT($,#${axes})`);
-  const site = e(`IFCSITE('${guidIfc("site")}',$,'Sandbox',$,$,#${placementSite},$,$,.ELEMENT.,$,$,$,$,$)`);
+  const site = e(`IFCSITE('${guidIfc("site")}',$,${fiche.parcelle ? chaineIfc(fiche.parcelle) : "'Sandbox'"},${ou(fiche.adresse)},$,#${placementSite},$,$,.ELEMENT.,$,$,$,$,$)`);
   e(`IFCRELAGGREGATES('${guidIfc("agrege")}',$,$,$,#${projet},(#${site}))`);
   const produits: number[] = [];
   let triangles = 0;

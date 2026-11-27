@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -577,7 +577,7 @@ export interface CommandeLot4<I extends string> {
   readonly court: CleMessage;
   readonly raccourci: string;
 }
-const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit" | "echange") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
+const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit" | "echange" | "version") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
 export const COMMANDES_BALISE: readonly CommandeLot4<IdCommandeBalise>[] = (["verrouiller-balise", "balises-phase", "classer-selection", "vue-etat"] as const).map(lot4<IdCommandeBalise>("balise"));
 export const COMMANDES_SCENE: readonly CommandeLot4<IdCommandeScene>[] = (["scenes-types", "avancer-coupe", "reculer-coupe", "scene-face-coupe"] as const).map(lot4<IdCommandeScene>("scene"));
 export const COMMANDES_GABARIT: readonly CommandeLot4<IdCommandeGabarit>[] = (["gabarit", "importer-gabarit", "enregistrer-gabarit", "creer-planche-gabarit"] as const).map(lot4<IdCommandeGabarit>("gabarit"));
@@ -586,6 +586,17 @@ export type IdCommandeEchange = "natif-image";
 export const COMMANDES_ECHANGE: readonly CommandeLot4<IdCommandeEchange>[] = (["natif-image"] as const).map(lot4<IdCommandeEchange>("echange"));
 /** Le fichier natif et l'image se lisent et s'écrivent toujours, même en consultation. */
 export const disponibiliteEchange = (_id: IdCommandeEchange): Disponibilite => ({ disponible: true, motif: null });
+/** Cas 2, lot 7 : versions, jalons et brouillon (raccourcis en deux temps : Ctrl+Maj+Espace, puis une touche). */
+export type IdCommandeVersion = "versions" | "poser-jalon" | "consultation" | "comparer" | "brouillon" | "fiche-projet";
+export const COMMANDES_VERSION: readonly CommandeLot4<IdCommandeVersion>[] = (["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet"] as const).map(lot4<IdCommandeVersion>("version"));
+/**
+ * Poser un jalon écrit dans le registre de la Planche : refusé en lecture (consultation comprise). Les panneaux s'ouvrent
+ * toujours ; la consultation se quitte toujours.
+ */
+export function disponibiliteVersion(id: IdCommandeVersion, s: { readonly lecture: boolean }): Disponibilite {
+  if (id === "poser-jalon" && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return { disponible: true, motif: null };
+}
 
 /** Balises : verrouiller la balise courante ; classer une sélection ; balises de phase et vues d'état sur un dessin modifiable. */
 export function disponibiliteBalise(id: IdCommandeBalise, s: { readonly lecture: boolean; readonly courante: boolean; readonly selection: number; readonly phases: boolean }): Disponibilite {
