@@ -33,6 +33,7 @@ import { BarreBas } from "./panneaux/BarreBas";
 import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
+import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
 import { etatInitial, generationMoteur, messageMoteur, noterRefus, oublierAvis, transitionMoteur, type AvisCouches } from "./carte/etat-moteur";
 import { carteVide, consigneVisible, niveauAccueil } from "./etat/accueil-ops";
 import { lireFondsNavigateur } from "./fonds-navigateur";
@@ -871,40 +872,41 @@ export function PageGeoData() {
   // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
   const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
   raccourcisNiveaux.current = (e) => {
-    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); const refus = refusImpressionFiche(fiche); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
+    // Table unique des raccourcis (P3, `raccourcis.ts`) : la commande d'une touche dépend du contexte, jamais d'une cascade.
     const cible = e.target as HTMLElement | null;
-    const saisie = !!cible?.closest("input, select, textarea, [contenteditable='true']");
-    // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).
-    if (e.altKey && (e.key === "m" || e.key === "M" || e.code === "KeyM") && !saisie && !erreurCarte) { e.preventDefault(); basculerMiniCarte(); return; }
-    if (e.altKey && (e.key === "i" || e.key === "I" || e.code === "KeyI") && !saisie && !erreurCarte) { e.preventDefault(); imprimerCarte(); return; }
-    // Alt+R : barre de recherche de la carte ouverte ou fermée (loupe de la mini-barre) ; aussi depuis son propre champ.
-    if (e.altKey && (e.key === "r" || e.key === "R" || e.code === "KeyR") && (!saisie || !!cible?.closest("[data-gd-recherche-flottante]"))) { e.preventDefault(); basculerRecherche(!rechercheOuverte); return; }
-    // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
-    if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
-    // Lecture de l'emprise (D-GD-40) : Alt+V synthèse de la vue, Alt+G regroupement des points, Alt+K adresse de la vue.
-    if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
-    if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
-    if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
-    // Barre du bas (D-GD-52) : Alt+X carte seule, Alt+C panneau Couches, Alt+E enregistrer.
-    if (e.altKey && (e.key === "x" || e.key === "X" || e.code === "KeyX") && !saisie) { e.preventDefault(); afficherCarteSeule(); return; }
-    if (e.altKey && (e.key === "c" || e.key === "C" || e.code === "KeyC") && !saisie) { e.preventDefault(); basculerCouches(); return; }
-    if (e.altKey && (e.key === "e" || e.key === "E" || e.code === "KeyE") && !saisie) { e.preventDefault(); if (!enregistrementImpossible) void enregistrer(); return; }
-    // Alt+T : bande des pastilles de thème repliée ou affichée (D-GD-48).
-    if (e.altKey && (e.key === "t" || e.key === "T" || e.code === "KeyT") && !saisie) { e.preventDefault(); basculerPastilles(); return; }
-    // Alt+S : vue plan ↔ vue satellite (D-GD-46).
-    if (e.altKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && !saisie && !erreurCarte) { e.preventDefault(); basculerPlanSatellite(); return; }
-    // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
-    if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
-    // Terrain haute résolution (TER-05) : Alt+H panneau Terrain, Alt+O altitude au point, Alt+U profil du terrain.
-    // Alt+J : volet « Emplacements Projets » (bouton du bas de la mini-barre).
-    if (e.altKey && (e.key === "j" || e.key === "J" || e.code === "KeyJ") && !saisie) { e.preventDefault(); basculerEmplacements(); return; }
-    if (e.altKey && (e.key === "h" || e.key === "H" || e.code === "KeyH") && !saisie) { e.preventDefault(); basculerTerrain(); return; }
-    if (e.altKey && (e.key === "o" || e.key === "O" || e.code === "KeyO") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("altitude"); return; }
-    if (e.altKey && (e.key === "u" || e.key === "U" || e.code === "KeyU") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("profil"); return; }
-    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-    if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
-    if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
-    if (e.key === "ArrowDown" && volet === "fiche" && fiche && descentePossible(fiche)) { e.preventDefault(); descendre(fiche); }
+    const commande = commandeDeTouche(e, {
+      saisie: !!cible?.closest("input, select, textarea, [contenteditable='true']"),
+      dansRecherche: !!cible?.closest("[data-gd-recherche-flottante]"),
+      carteDisponible: !erreurCarte,
+      ficheOuverte: volet === "fiche" && !!fiche,
+      niveauChoisi: chemin.length > 0,
+      descentePossible: volet === "fiche" && !!fiche && !!descentePossible(fiche),
+    });
+    if (!commande) return;
+    e.preventDefault();
+    const actions: Record<CommandeClavier, () => void> = {
+      "imprimer-fiche": () => { const refus = refusImpressionFiche(fiche!); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); },
+      "mini-carte": basculerMiniCarte,
+      imprimer: imprimerCarte,
+      recherche: () => basculerRecherche(!rechercheOuverte),
+      libelles: basculerLibelles,
+      synthese: basculerSynthese,
+      regrouper: basculerRegroupements,
+      lien: () => void copierLien(),
+      "carte-seule": afficherCarteSeule,
+      couches: basculerCouches,
+      enregistrer: () => { if (!enregistrementImpossible) void enregistrer(); },
+      pastilles: basculerPastilles,
+      "plan-satellite": basculerPlanSatellite,
+      zone: basculerFiltreZone,
+      emplacements: basculerEmplacements,
+      terrain: basculerTerrain,
+      altitude: () => basculerOutilTerrain("altitude"),
+      profil: () => basculerOutilTerrain("profil"),
+      remonter,
+      descendre: () => descendre(fiche!),
+    };
+    actions[commande]();
   };
   useEffect(() => {
     const ecouter = (e: globalThis.KeyboardEvent) => raccourcisNiveaux.current(e);

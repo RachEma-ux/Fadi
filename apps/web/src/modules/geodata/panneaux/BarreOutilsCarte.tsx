@@ -55,7 +55,9 @@ export const ICONES = {
 } as const;
 
 /** Raccourcis des commandes de la barre (Alt + lettre), contrôlés par test : une commande, une touche. */
-export const RACCOURCIS_BARRE = { etiquettes: "Alt+L", "mini-carte": "Alt+M", imprimer: "Alt+I", synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" } as const;
+/** Dérivée de la table unique des raccourcis (P3). */
+export { RACCOURCIS_BARRE } from "../raccourcis";
+import { RACCOURCIS_BARRE } from "../raccourcis";
 
 function Pictogramme({ d }: { d: string }) {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
