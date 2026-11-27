@@ -8,6 +8,7 @@
  * Les opérations sont dans `geometrie-libre.ts` (`modifierAnnotations`, `peindreFaces`, `peindreOccurrences`,
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
+import type { Reserve } from "./reserves.js";
 import type { Emplacement } from "./emplacement.js";
 import type { PointDeBase } from "./point-de-base.js";
 import type { RepereEnregistre } from "./reperes.js";
@@ -399,6 +400,8 @@ export interface Annotations {
   readonly murs?: Readonly<Record<Id, Mur>>;
   readonly motifs?: Readonly<Record<Id, MotifHachure>>;
   readonly feuilles?: Readonly<Record<Id, Feuille>>;
+  /** (Cas 4, étape 7b) Réserves de chantier épinglées ; absent = aucune. */
+  readonly reserves?: Readonly<Record<Id, Reserve>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -430,6 +433,7 @@ export interface AnnotationsMutables {
   murs: Record<Id, Mur>;
   motifs: Record<Id, MotifHachure>;
   feuilles: Record<Id, Feuille>;
+  reserves: Record<Id, Reserve>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

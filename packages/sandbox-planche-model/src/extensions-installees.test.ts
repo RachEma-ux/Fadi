@@ -38,7 +38,7 @@ describe("import d'un paquet d'extension", () => {
       expect(j, r).toMatchObject({ ok: false, erreur: "raccourci_refuse" });
       if (!j.ok) expect(j.detail, r).toContain(r);
     }
-    for (const r of ["Alt+Maj+F11", "Ctrl+Alt+9", "Alt+F5"]) expect(raccourci(r).ok, r).toBe(true);
+    for (const r of ["Alt+Maj+F11", "Ctrl+Alt+Q", "Alt+F5"]) expect(raccourci(r).ok, r).toBe(true);
     // Une autre extension installée tient déjà Alt+Maj+F2 ; la même extension, réimportée, se remplace.
     const autre = avec((p) => void (p.fiche.id = "autre")) as PaquetExtension;
     expect(jugerImportPaquet(essai(), [autre])).toMatchObject({ ok: false, erreur: "raccourci_refuse" });
@@ -64,7 +64,7 @@ describe("relecture de la liste reçue du serveur", () => {
   it("garde les paquets valides dans l'ordre, écarte les autres et les doublons", () => {
     const autre = avec((p) => {
       p.fiche.id = "autre";
-      p.fiche.commandes.forEach((c, i) => void (c.raccourci = `Ctrl+Alt+${i + 1}`));
+      p.fiche.commandes.forEach((c, i) => void (c.raccourci = `Ctrl+Alt+${"KJYZXWT"[i]}`));
     });
     const conflit = avec((p) => void (p.fiche.id = "conflit"));
     expect(lirePaquetsInstalles([essai(), { format: "x" }, autre, essai(), conflit, null]).map((p) => p.fiche.id)).toEqual(["essai-commandes", "autre"]);

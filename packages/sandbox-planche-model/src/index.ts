@@ -48,3 +48,4 @@ export * from "./fichiers-extensions.js";
 export * from "./panneaux-extensions.js";
 export * from "./plan-vectoriel.js";
 export * from "./feuilles.js";
+export * from "./reserves.js";

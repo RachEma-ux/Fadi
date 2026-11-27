@@ -801,6 +801,13 @@ export class VuePlanche {
       if (l.centre === null || l.surface === null) continue;
       etiquette(`${l.local.numero} · ${l.local.nom}\n${l.surface.toFixed(2).replace(".", ",")} m²`, { ...l.centre, z: l.centre.z + 0.01 }, "planche-etiquette-local");
     }
+    // Réserves de chantier (cas 4, étape 7b) : épingle numérotée (ouverte / levée), le numéro toujours écrit.
+    for (const r of Object.values(a.reserves ?? {})) {
+      etiquette(String(r.numero), r.point, `planche-etiquette-reserve est-${r.statut}${sel.has(r.id) ? " est-selectionne" : ""}`);
+      const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+      el.dataset["reserve"] = r.id;
+      el.dataset["statut"] = r.statut;
+    }
     for (const p of Object.values(a.plansDeCoupe)) {
       if (!this.options.plansDeCoupe) break;
       const couleur = sel.has(p.id) ? "#e8891c" : "#8a8a8a";
