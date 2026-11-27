@@ -16,6 +16,8 @@ const UNITES = {
 };
 const REPRIS = ["LINE", "LWPOLYLINE", "POLYLINE", "ARC", "CIRCLE", "INSERT"];
 const EPS = 1e-9;
+/** Segments envoyés par appel à « lignes » : la borne du protocole 1.1 (MAX_SEGMENTS_APPEL). */
+const LOT_SEGMENTS = 20000;
 
 // ————————————————————————————————————————————— Lecture du DXF —————————————————————————————————————————————
 
@@ -113,6 +115,7 @@ function lireDxf(texte) {
     }
     if (c === 8) ent.calque = v;
     else if (c === 2) ent.nom = v;
+    else if ((c === 10 || c === 20) && ent.type === "POLYLINE") continue; // point factice de l'en-tête : les sommets sont les VERTEX
     else if (c === 10) ent.pts.push([Number(v), 0]), ent.bombes.push(0);
     else if (c === 20 && ent.pts.length) ent.pts[ent.pts.length - 1][1] = Number(v);
     else if (c === 11) ent.fin = [Number(v), 0];
@@ -163,6 +166,25 @@ function milieuBombe(a, b, bombe) {
   const fleche = (bombe * Math.hypot(dx, dy)) / 2;
   const n = Math.hypot(dx, dy) || 1;
   return [mx + (dy / n) * fleche, my - (dx / n) * fleche];
+}
+
+/** Points d'un arc de cercle passant par a, m et b (plan), pour le poser en segments (24 par tour au moins). */
+function pointsArc(a, m, b) {
+  const d = 2 * (a[0] * (m[1] - b[1]) + m[0] * (b[1] - a[1]) + b[0] * (a[1] - m[1]));
+  if (Math.abs(d) < EPS) return [a, b];
+  const n2 = (p) => p[0] * p[0] + p[1] * p[1];
+  const c = [(n2(a) * (m[1] - b[1]) + n2(m) * (b[1] - a[1]) + n2(b) * (a[1] - m[1])) / d, (n2(a) * (b[0] - m[0]) + n2(m) * (a[0] - b[0]) + n2(b) * (m[0] - a[0])) / d];
+  const r = Math.hypot(a[0] - c[0], a[1] - c[1]);
+  const ang = (p) => Math.atan2(p[1] - c[1], p[0] - c[0]);
+  const tour = 2 * Math.PI;
+  const n = (v) => ((v % tour) + tour) % tour;
+  // Sens : celui qui passe par m.
+  const ccw = n(ang(m) - ang(a)) <= n(ang(b) - ang(a));
+  const balayage = ccw ? n(ang(b) - ang(a)) || tour : -(n(ang(a) - ang(b)) || tour);
+  const k = Math.max(2, Math.ceil((Math.abs(balayage) / tour) * 24));
+  const pts = [];
+  for (let i = 0; i <= k; i++) pts.push(i === k ? b : [c[0] + r * Math.cos(ang(a) + (balayage * i) / k), c[1] + r * Math.sin(ang(a) + (balayage * i) / k)]);
+  return pts;
 }
 
 // ——————————————————————————————————————————————— Reprise d'un plan ———————————————————————————————————————————————
@@ -237,15 +259,25 @@ planche.sur("commande.importer", async (d) => {
   let arcs = 0;
   let blocs = 0;
   let eclates = 0;
+  let enSegments = 0;
   const omis = {};
   // Tracés différés, par calque : chaque calque est tracé puis groupé aussitôt, pour qu'il ne se fonde pas aux autres.
   let parCalque = {};
   const du = (c) => (parCalque[c] ||= { segs: [], courbes: [], objets: [] });
 
-  /** Range une entité dans le calque `calque`, à travers la transformation 2D `T`. */
-  const dessiner = (e, calque, T, profondeur) => {
+  /**
+   * Range une entité dans le calque `calque`, à travers la transformation 2D `T`. `deforme` : une insertion en amont
+   * a des échelles X et Y différentes ; un cercle n'y reste pas un cercle, les courbes sont alors posées en segments.
+   */
+  const dessiner = (e, calque, T, profondeur, deforme = false) => {
     const q = (p) => P(T(p));
     const x = du(calque);
+    const courbe = (a, m, b) => {
+      if (!deforme) return void x.courbes.push(["arc", q(a), q(m), q(b)]);
+      const pts = pointsArc(a, m, b);
+      for (let i = 0; i + 1 < pts.length; i++) x.segs.push([q(pts[i]), q(pts[i + 1])]);
+      enSegments++;
+    };
     if (e.type === "LINE") {
       if (e.pts[0] && e.fin) x.segs.push([q(e.pts[0]), q(e.fin)]), traits++;
       return;
@@ -258,7 +290,7 @@ planche.sur("commande.importer", async (d) => {
         const a = p[i];
         const b = p[(i + 1) % p.length];
         const bombe = e.bombes[i] || 0;
-        if (Math.abs(bombe) > EPS) x.courbes.push(["arc", q(a), q(milieuBombe(a, b, bombe)), q(b)]), arcs++;
+        if (Math.abs(bombe) > EPS) courbe(a, milieuBombe(a, b, bombe), b), arcs++;
         else x.segs.push([q(a), q(b)]);
       }
       traits++;
@@ -267,7 +299,11 @@ planche.sur("commande.importer", async (d) => {
     if (e.type === "CIRCLE" || e.type === "ARC") {
       const c = e.pts[0] || [0, 0];
       const pt = (a) => [c[0] + e.r * Math.cos(a), c[1] + e.r * Math.sin(a)];
-      if (e.type === "CIRCLE") {
+      if (e.type === "CIRCLE" && deforme) {
+        courbe(pt(0), pt(Math.PI / 2), pt(Math.PI));
+        courbe(pt(Math.PI), pt((3 * Math.PI) / 2), pt(2 * Math.PI));
+        enSegments--;
+      } else if (e.type === "CIRCLE") {
         // Centre et un point du cercle, transformés : le rayon suit une insertion à l'échelle uniforme.
         const p0 = q(pt(0));
         const pc = q(c);
@@ -276,7 +312,7 @@ planche.sur("commande.importer", async (d) => {
         const a0 = ((e.a0 || 0) * Math.PI) / 180;
         let a1 = ((e.a1 === undefined ? 360 : e.a1) * Math.PI) / 180;
         if (a1 <= a0) a1 += 2 * Math.PI;
-        x.courbes.push(["arc", q(pt(a0)), q(pt((a0 + a1) / 2)), q(pt(a1))]);
+        courbe(pt(a0), pt((a0 + a1) / 2), pt(a1));
       }
       arcs++;
       return;
@@ -288,7 +324,8 @@ planche.sur("commande.importer", async (d) => {
         return;
       }
       const tr = { base: b.base, pos: e.pts[0] || [0, 0], ex: e.ex ?? 1, ey: e.ey ?? e.ex ?? 1, rot: ((e.a0 || 0) * Math.PI) / 180 };
-      for (const s of b.entites) dessiner(s, s.calque === "0" ? calque : s.calque, composer(T, (p) => transformer(p, tr)), profondeur + 1);
+      const autre = deforme || Math.abs(Math.abs(tr.ex) - Math.abs(tr.ey)) > EPS;
+      for (const s of b.entites) dessiner(s, s.calque === "0" ? calque : s.calque, composer(T, (p) => transformer(p, tr)), profondeur + 1, autre);
       return;
     }
     omis[e.type] = (omis[e.type] || 0) + 1;
@@ -306,7 +343,7 @@ planche.sur("commande.importer", async (d) => {
       if (c[0] === "arc") await planche.modele.arc(c[1], c[2], c[3]);
       else await planche.modele.cercle(c[1], c[2], c[3]);
     }
-    if (x.segs.length) await planche.modele.lignes(x.segs);
+    for (let i = 0; i < x.segs.length; i += LOT_SEGMENTS) await planche.modele.lignes(x.segs.slice(i, i + LOT_SEGMENTS));
     return [...(await libres())].filter((id) => !avant.has(id));
   };
 
@@ -370,6 +407,7 @@ planche.sur("commande.importer", async (d) => {
   await planche.message.afficher(
     t(fr, "Plan repris : ", "Plan imported: ") + traits + t(fr, " traits, ", " lines, ") + arcs + t(fr, " arcs et cercles, ", " arcs and circles, ") + blocs + t(fr, " blocs, ", " blocks, ") + n + t(fr, " calques en balises.", " layers as tags."),
   );
+  if (enSegments) await planche.message.afficher(enSegments + t(fr, " courbe(s) de blocs déformés (échelles X et Y différentes) : posée(s) en segments.", " curve(s) in distorted blocks (different X and Y scales): placed as segments."), "alerte");
   if (eclates) await planche.message.afficher(eclates + t(fr, " bloc(s) inséré(s) à une échelle autre que 1 : posé(s) éclaté(s).", " block(s) inserted at a scale other than 1: placed exploded."), "alerte");
   const o = Object.entries(omis).map(([type, nb]) => nb + " " + type).join(", ");
   if (o) await planche.message.afficher(t(fr, "Non repris : ", "Not imported: ") + o + t(fr, " (textes, hachures et cotes : à venir).", " (texts, hatches and dimensions: to come)."), "alerte");
@@ -414,7 +452,9 @@ planche.sur("commande.exporter", async (d) => {
   let aretes = m.aretes;
   if (r.contenu === "selection") {
     const sel = new Set(await planche.selection.lire());
-    aretes = aretes.filter((a) => (a.chemin.length ? sel.has(a.chemin[0]) : sel.has(a.id)));
+    // Sélection faite à la racine ou dans un groupe ouvert : une arête est retenue si elle-même ou l'une des
+    // occurrences de son chemin est sélectionnée.
+    aretes = aretes.filter((a) => sel.has(a.id) || a.chemin.some((o) => sel.has(o)));
   }
   if (!aretes.length) {
     await planche.message.afficher(t(fr, "Rien à écrire : aucune arête dans le contenu choisi.", "Nothing to write: no edge in the chosen content."), "alerte");

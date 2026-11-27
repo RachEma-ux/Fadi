@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterSegment, appliquer, composer, contexte, creerExecutantExtension, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Matrice4, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { MAX_SEGMENTS_APPEL, ajouterRectangle, ajouterSegment, appliquer, composer, contexte, creerExecutantExtension, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Matrice4, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/echanges-dxf/";
@@ -44,14 +44,14 @@ function creerFaux(): WorkerExtension {
 }
 
 function planche(modele: Modele = modeleVide()) {
-  const etat = { modele, selection: [] as Id[], pas: [] as string[], avis: [] as AvisExtension[], fichiers: [] as { nom: string; texte: string }[] };
+  const etat = { modele, selection: [] as Id[], dans: undefined as Id | undefined, pas: [] as string[], avis: [] as AvisExtension[], fichiers: [] as { nom: string; texte: string }[] };
   let reponses: (ValeursSaisie | null)[] = [];
   let aOuvrir: { nom: string; texte: string } | null = null;
   const saisies: { titre: string; champs: unknown }[] = [];
   const acces: AccesPlanche = {
     modele: () => etat.modele,
     selection: () => etat.selection,
-    dans: () => undefined,
+    dans: () => etat.dans,
     appliquer: (travail, nom) => {
       etat.modele = travail;
       etat.pas.push(nom);
@@ -233,6 +233,34 @@ describe("extension « Échanges DXF » — importer", () => {
     expect(Math.max(...s.map((q) => Math.abs(q[0]!)))).toBeCloseTo(0, 9);
   });
 
+  it("polyligne ancienne (POLYLINE / VERTEX) : le point factice de l'en-tête n'est pas un sommet", async () => {
+    const p = planche();
+    const v = (x: number, y: number) => [0, "VERTEX", 8, "A", 10, x, 20, y];
+    p.fichier(dxf(entete(6), entites([0, "POLYLINE", 8, "A", 66, 1, 70, 1, 10, 0, 20, 0], v(10, 10), v(20, 10), v(20, 20), [0, "SEQEND", 8, "A"])));
+    await p.commande("importer", IMPORT6);
+    const s = sommets(p.etat.modele);
+    expect(s).toHaveLength(3);
+    expect(Math.min(...s.map((q) => q[0]!))).toBeCloseTo(10, 9);
+  });
+
+  it("bloc déformé (échelles X et Y différentes) : ses courbes sont posées en segments, pas en faux cercles", async () => {
+    const p = planche();
+    const blocs = [0, "SECTION", 2, "BLOCKS", 0, "BLOCK", 8, "0", 2, "ROND", 10, 0, 20, 0, 0, "CIRCLE", 8, "0", 10, 0, 20, 0, 40, 1, 0, "ENDBLK", 0, "ENDSEC"];
+    p.fichier(dxf(entete(6), blocs, entites([0, "INSERT", 8, "A", 2, "ROND", 10, 0, 20, 0, 41, 2, 42, 1])));
+    await p.commande("importer", IMPORT6);
+    const s = sommets(p.etat.modele);
+    expect(Math.max(...s.map((q) => q[0]!))).toBeCloseTo(2, 9);
+    expect(Math.max(...s.map((q) => q[1]!))).toBeCloseTo(1, 9);
+    const d = p.etat.modele.definitions[occurrences(p.etat.modele)[0]!.definition]!;
+    expect(Object.values(d.contenu.courbes).filter((c) => c.genre === "cercle")).toEqual([]);
+    expect(p.textes()).toContain("1 courbe(s) de blocs déformés (échelles X et Y différentes) : posée(s) en segments.");
+  });
+
+  it("les segments sont envoyés par lots à la borne du protocole", () => {
+    expect(PAQUET.code).toContain(`const LOT_SEGMENTS = ${MAX_SEGMENTS_APPEL};`);
+    expect(PAQUET.code).toMatch(/for \(let i = 0; i < x\.segs\.length; i \+= LOT_SEGMENTS\) await planche\.modele\.lignes\(x\.segs\.slice\(i, i \+ LOT_SEGMENTS\)\)/);
+  });
+
   it("annuler la saisie ne touche pas au modèle", async () => {
     const p = planche();
     p.fichier(dxf(entete(4), entites(ligne("0", [0, 0], [1, 0]))));
@@ -282,6 +310,20 @@ describe("extension « Échanges DXF » — exporter et plan masse", () => {
     await q.commande("importer", IMPORT);
     expect(q.textes()[0]).toBe("Plan repris : 4 traits, 2 arcs et cercles, 0 blocs, 3 calques en balises.");
     expect(Math.max(...sommets(q.etat.modele).map((s) => s[0]!))).toBeCloseTo(4, 6);
+  });
+
+  it("sélection faite dans un groupe ouvert : l'arête choisie est écrite, seule", async () => {
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
+    const p = planche(m);
+    p.fichier(dxf(entete(6), entites(ligne("MURS", [10, 0], [14, 0]), ligne("MURS", [10, 1], [14, 1]))));
+    await p.commande("importer", IMPORT6);
+    m = p.etat.modele;
+    const g = occurrences(m).find((o) => m.definitions[o.definition]!.nom === "MURS")!;
+    const dedans = Object.keys(m.definitions[g.definition]!.contenu.aretes);
+    p.etat.dans = g.id;
+    p.etat.selection = [dedans[0]!];
+    await p.commande("exporter", { contenu: "selection", unite: "6", calques: true, arcs: true, nom: "un.dxf" });
+    expect(types(p.etat.fichiers.at(-1)!.texte)).toEqual(["LINE"]);
   });
 
   it("sans vrais arcs, les courbes sont écrites en segments ; sans balises, tout va au calque 0", async () => {
