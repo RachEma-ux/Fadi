@@ -1560,6 +1560,9 @@ export function construireMaillageImporte(nom: string, triangles: readonly (read
     tris.push({ s, n: normalize(n) });
     if (progression && (i + 1) % 2000 === 0) progression(i + 1, total);
   }
+  // Jonctions en T : une arête bordée d'un seul triangle sur laquelle tombent des sommets d'autres arêtes libres est
+  // découpée (éventail depuis le sommet opposé), comme le faisait l'insertion arête par arête de `ajouterTriangles`.
+  scinderJonctionsT(tris, position0(sommets));
   // Arêtes (paires de sommets) et triangles qui les bordent.
   const parArete = new Map<string, number[]>();
   tris.forEach((tr, i) => {
@@ -1702,6 +1705,92 @@ export function construireMaillageImporte(nom: string, triangles: readonly (read
   progression?.(total, total);
   const ctx: Ctx = { sommets, aretes: new Map([...aretes.values()].map((a) => [a.id, a])), faces, courbes: new Map(), occurrences: new Map() };
   return { nom, contenu: versContexte(ctx), triangles: tris.length };
+}
+
+const position0 =
+  (sommets: ReadonlyMap<Id, Sommet>) =>
+  (s: Id): Vec3 =>
+    (sommets.get(s) as Sommet).position;
+
+/**
+ * Découpe en place les triangles dont une arête libre (bordée d'un seul triangle) porte en son intérieur des sommets
+ * d'autres arêtes libres (jonction en T). Candidats rangés dans une grille de pas égal à la longueur moyenne des arêtes
+ * libres ; une arête dont la boîte couvre plus de cases qu'il n'y a de candidats les parcourt directement.
+ */
+function scinderJonctionsT(tris: { s: [Id, Id, Id]; n: Vec3 }[], position: (s: Id) => Vec3): void {
+  const compte = new Map<string, number>();
+  for (const tr of tris) for (let k = 0; k < 3; k++) {
+    const c = cle(tr.s[k] as Id, tr.s[(k + 1) % 3] as Id);
+    compte.set(c, (compte.get(c) ?? 0) + 1);
+  }
+  const libres: [Id, Id][] = [];
+  const candidats = new Set<Id>();
+  for (const tr of tris) for (let k = 0; k < 3; k++) {
+    const u = tr.s[k] as Id;
+    const w = tr.s[(k + 1) % 3] as Id;
+    if (compte.get(cle(u, w)) !== 1) continue;
+    libres.push([u, w]);
+    candidats.add(u);
+    candidats.add(w);
+  }
+  if (libres.length < 3) return;
+  let somme = 0;
+  for (const [u, w] of libres) somme += len(sub(position(w), position(u)));
+  const pas = Math.max(somme / libres.length, TOL * 4);
+  const grille = new Map<string, Id[]>();
+  const cellule = (p: Vec3) => [Math.floor(p.x / pas), Math.floor(p.y / pas), Math.floor(p.z / pas)] as const;
+  for (const c of candidats) {
+    const [x, y, z] = cellule(position(c));
+    const k = `${x},${y},${z}`;
+    (grille.get(k) ?? grille.set(k, []).get(k) as Id[]).push(c);
+  }
+  const toutes = [...candidats];
+  const interieurs = new Map<string, Id[]>();
+  for (const [u, w] of libres) {
+    const U = position(u);
+    const d = sub(position(w), U);
+    const l2 = dot(d, d);
+    const a = cellule({ x: Math.min(U.x, U.x + d.x) - TOL, y: Math.min(U.y, U.y + d.y) - TOL, z: Math.min(U.z, U.z + d.z) - TOL });
+    const b = cellule({ x: Math.max(U.x, U.x + d.x) + TOL, y: Math.max(U.y, U.y + d.y) + TOL, z: Math.max(U.z, U.z + d.z) + TOL });
+    const cases = (b[0] - a[0] + 1) * (b[1] - a[1] + 1) * (b[2] - a[2] + 1);
+    const pres: Id[] = [];
+    if (cases > toutes.length) pres.push(...toutes);
+    else
+      for (let x = a[0]; x <= b[0]; x++)
+        for (let y = a[1]; y <= b[1]; y++)
+          for (let z = a[2]; z <= b[2]; z++) {
+            const l = grille.get(`${x},${y},${z}`);
+            if (l) pres.push(...l);
+          }
+    const sur: { id: Id; t: number }[] = [];
+    for (const c of pres) {
+      if (c === u || c === w) continue;
+      const v = sub(position(c), U);
+      const t = dot(v, d) / l2;
+      if (t * Math.sqrt(l2) <= TOL || (1 - t) * Math.sqrt(l2) <= TOL) continue;
+      if (len(sub(v, scale(d, t))) > TOL) continue;
+      sur.push({ id: c, t });
+    }
+    if (sur.length) interieurs.set(`${u}>${w}`, sur.sort((p, q) => p.t - q.t).map((x) => x.id));
+  }
+  if (!interieurs.size) return;
+  const resultat: { s: [Id, Id, Id]; n: Vec3 }[] = [];
+  const decouper = (tr: { s: [Id, Id, Id]; n: Vec3 }, profondeur: number): void => {
+    for (let k = 0; k < 3 && profondeur < 3; k++) {
+      const u = tr.s[k] as Id;
+      const w = tr.s[(k + 1) % 3] as Id;
+      const c = tr.s[(k + 2) % 3] as Id;
+      const pts = interieurs.get(`${u}>${w}`);
+      if (!pts) continue;
+      const chaine = [u, ...pts, w];
+      for (let i = 0; i + 1 < chaine.length; i++) decouper({ s: [chaine[i] as Id, chaine[i + 1] as Id, c], n: tr.n }, profondeur + 1);
+      return;
+    }
+    resultat.push(tr);
+  };
+  for (const tr of tris) decouper(tr, 0);
+  tris.length = 0;
+  tris.push(...resultat);
 }
 
 /** Pose des maillages construits hors du modèle : un groupe chacun (origine du contexte), identifiants renumérotés, une seule opération. */
