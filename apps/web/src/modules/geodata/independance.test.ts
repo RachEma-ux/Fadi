@@ -25,7 +25,8 @@ describe("GeoData — module autonome (GEO 04)", () => {
   it("aucun import de projet, du client d'API général, ni d'un autre module", () => {
     for (const f of sources) for (const i of imports(f)) {
       expect(i, `${rel(f)} → ${i}`).not.toMatch(/modules\/(atelier|studio|parcours|sandbox|projets-sources|pilotage|collaboration|programmation|analyses|documents|bibliotheque)|routes\/|lib\/api|@parcours\/(atelier-model|planche-model|sandbox-planche-model|domain-model)/);
-      if (i.startsWith(".")) expect(relative(SRC, resolve(dirname(f), i)).split(sep).join("/"), `${rel(f)} → ${i}`).toMatch(/^modules\/geodata(\/|$)/);
+      // Bouton « Sites » (27 novembre 2026) : seul module partagé admis, celui des sites (client `/sites/api`, sans projet).
+      if (i.startsWith(".")) expect(relative(SRC, resolve(dirname(f), i)).split(sep).join("/"), `${rel(f)} → ${i}`).toMatch(/^(modules\/geodata(\/|$)|lib\/sites\/menu-sites$)/);
     }
   });
 

@@ -11,9 +11,9 @@
  * Le schéma est calculé par `@parcours/domain-model` sur le contour local
  * servi par l'API ; rien n'est dessiné à partir d'une parcelle inventée.
  */
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { SITE_OBSERVATION_LABELS, SITE_SVG_EMPTY, fmtFr, siteLegend, siteSvg } from "@parcours/domain-model";
-import type { HarmonieProposal, ParcoursStep, SiteObservationsInput, SiteView } from "../../lib/api";
+import { api, type HarmonieProposal, type ParcoursStep, type SiteObservationsInput, type SiteProjetResume, type SiteView } from "../../lib/api";
 import { MapTilerCard } from "./MapTilerCard";
 
 function download(name: string, type: string, text: string) {
@@ -250,7 +250,50 @@ export function SiteDataFold({
             <p className="h7-muted">Un point de centre ne géoréférence pas à lui seul le contour. La conversion du CRS source reste prioritaire.</p>
           </div>
         </details>
+        <SiteProjetBloc projectId={projectId} />
       </div>
     </details>
+  );
+}
+
+/**
+ * Site de projet (base dédiée, 27 novembre 2026) : l'étape 01 range sa parcelle, ses données du site et son altimétrie
+ * dans un site du compte, que la Planche (menu « Sites ») et GeoData (bouton « Sites ») ouvrent ensuite.
+ */
+function SiteProjetBloc({ projectId }: { projectId: string }) {
+  const [site, setSite] = useState<SiteProjetResume | null | undefined>(undefined);
+  const [etat, setEtat] = useState<{ texte: string; erreur: boolean } | null>(null);
+  const [occupe, setOccupe] = useState(false);
+  useEffect(() => {
+    let actif = true;
+    api.getSiteProjet(projectId).then((r) => actif && setSite(r.site), () => actif && setSite(null));
+    return () => {
+      actif = false;
+    };
+  }, [projectId]);
+  const enregistrer = () => {
+    setOccupe(true);
+    setEtat(null);
+    api
+      .enregistrerSiteProjet(projectId)
+      .then((r) => {
+        setSite(r.site);
+        setEtat({ texte: r.cree ? "Site de projet créé : la Planche et GeoData peuvent l'ouvrir (menu « Sites »)." : "Site de projet mis à jour depuis l'étape 01.", erreur: false });
+      }, (e: unknown) => setEtat({ texte: e instanceof Error ? e.message : "Enregistrement impossible.", erreur: true }))
+      .finally(() => setOccupe(false));
+  };
+  return (
+    <div className="h7-site-projet" data-site-projet>
+      <h4>Site de projet</h4>
+      <p className="h7-muted">
+        {site === undefined ? "Lecture du site de projet…" : site ? `Site enregistré : ${site.nom} (révision ${site.revision}).` : "Aucun site de projet enregistré pour ce projet."}
+      </p>
+      <div className="h7-actions">
+        <button type="button" className="button-secondary" disabled={occupe || site === undefined} onClick={enregistrer} data-site-projet-enregistrer>
+          {site ? "Mettre à jour le site de projet" : "Enregistrer comme site de projet"}
+        </button>
+      </div>
+      {etat && <p className={etat.erreur ? "h7-error" : "h7-muted"} role={etat.erreur ? "alert" : "status"}>{etat.texte}</p>}
+    </div>
   );
 }

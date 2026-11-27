@@ -232,6 +232,7 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
@@ -2599,6 +2600,39 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         message,
       };
     });
+  // Menu « Sites » (27 novembre 2026) : site de projet de la base dédiée, rattaché à la Planche courante. Sauvegarder y
+  // écrit l'Emplacement (position, nord, altitude, lieu, source « Emplacement de la Planche ») ; Ouvrir et Importer posent
+  // la position du site comme Emplacement (un pas d'historique : Annuler le retire) et activent l'extension au besoin.
+  const SOURCE_EMPLACEMENT = "Emplacement de la Planche";
+  const sitesProjet = useSitesProjet({
+    lien: readOnly ? null : { genre: "planche", cible: indexPlanches.courante },
+    etatModule: () => {
+      if (!emplacement) return {};
+      return {
+        observations: {
+          geographic: { longitude: emplacement.longitude, latitude: emplacement.latitude, source: SOURCE_EMPLACEMENT },
+          nord: { valeur: emplacement.nord, source: SOURCE_EMPLACEMENT },
+          ...(emplacement.altitude !== undefined ? { altitudeReference: { valeur: emplacement.altitude, source: SOURCE_EMPLACEMENT } } : {}),
+        },
+        ...(emplacement.lieu ? { lieu: emplacement.lieu } : {}),
+      };
+    },
+    onOuvert: (site) => {
+      const e = emplacementDepuisSite(site, site.position);
+      if (!e) {
+        setMessage(t("planche.sites.note.sans-position", { nom: site.fiche.nom }));
+        return;
+      }
+      const { nordEvalue, lieu, ...reste } = e;
+      if (readOnly) return;
+      poserEmplacement({ ...reste, ...(lieu ? { lieu } : {}) }, t(nordEvalue ? "planche.sites.note.ouvert" : "planche.sites.note.nord-non-evalue", { nom: site.fiche.nom }));
+      if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+      setPanneau("emplacement");
+    },
+  });
+  useEffect(() => {
+    if (sitesProjet.note) setMessage(sitesProjet.note.texte);
+  }, [sitesProjet.note]);
   /** Arête sélectionnée seule et non verticale : l'angle du nord qu'elle donnerait, sinon `null`. */
   const nordDeLaSelection = (): number | null => {
     const sel = vue.selection ?? selectionRef.current;
@@ -3768,6 +3802,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           : []),
       ],
     },
+    {
+      id: "sites",
+      libelle: t("planche.menus.sites"),
+      entrees: ORDRE_ARTICLES.map((a): EntreeMenuBandeau =>
+        a === "separateur" ? { genre: "separateur" } : cmd(`sites-${a}`, t(`planche.sites.${a}` as "planche.sites.nouveau"), sitesProjet.actions[a as ArticleSites], { disabled: !sitesProjet.disponible[a as ArticleSites] || sitesProjet.occupe || (readOnly && a !== "exporter") }),
+      ),
+    },
   ];
   const barreActions = etroit ? (
     <BarreActions
@@ -4587,6 +4628,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           }}
         />
       )}
+      {sitesProjet.fenetres}
     </div>
   );
 

@@ -56,6 +56,16 @@ classification where a missing value is never zero, GeoJSON validation, rights b
 loaded on demand and kept out of the initial bundle. PostGIS serves vector tiles (`ST_AsMVT`) and measures on the WGS 84
 ellipsoid; published data versions are immutable. See `docs/geodata/README.md`.
 
+Project sites (owner request of 2026-11-27) are the geographic place where a building project will be built or renovated.
+They live in their own tables (`sites_*`: record, step 01 parcel per revision, declared site data with true north and
+reference altitude, collected elevation, imported files kept as is, links), served by `/sites/api`
+(`apps/api/src/routes/sites.ts`, owner-scoped, expected revision on save). One shared client and menu
+(`apps/web/src/lib/sites/menu-sites.tsx`) gives the Sandbox Planche (bandeau menu « Sites ») and GeoData (« Sites » button next
+to « Thèmes ») the same six items; Parcours step 01 saves its parcel, site data and elevation into a site linked to the project
+through its own project route (`POST /projects/:id/steps/1/site/site-projet`). GeoData stays free of projects: the module
+reaches sites only through that shared file. Pure rules (validation, computed position, exchange file) are in
+`packages/domain-model/src/site-projet.ts`.
+
 Scaffolded as `apps/web/src/modules/<module>/README.md` (one file per module stating its responsibility and
 current status) so the boundary exists in the repository before it exists in the UI, instead of emerging by
 accident from a single `main.tsx`.

@@ -156,6 +156,17 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   au plus, les 5 dernières affichées : `jj.mm.aaaa hh.mm, auteur, description`). L'auteur est « Vous » : le Sandbox ne peut
   pas lire le compte (frontières). Deux entrées identiques à moins d'une minute sont fusionnées.
 
+## Menu « Sites » (sites de projet, 27 novembre 2026)
+
+Après Fenêtres, le bandeau porte le menu « Sites » (maquette validée) : Nouveau site de projet…, Ouvrir un site de
+projet…, Sauvegarder, Sauvegarder sous… | Importer un site…, Exporter le site…. Les sites vivent dans la base dédiée
+`sites_*`, servie par `/sites/api` ; le module partagé `lib/sites/menu-sites.tsx` (seul import hors du dossier admis avec
+`lib/i18n`, `lib/local-store` et `ChoixLangue`) porte l'état, les actions et les fenêtres, et GeoData offre les mêmes articles.
+Un site se rattache à la Planche courante (lien `planche` en base) : à la réouverture, il est retrouvé. Ouvrir ou Importer
+pose sa position comme Emplacement (un pas d'historique) et active l'extension au besoin ; un nord absent du site est dit
+« non évalué » (la Planche garde 0°). Sauvegarder écrit l'Emplacement (position, nord, altitude, lieu) avec la source
+« Emplacement de la Planche ». Comme les autres menus du bandeau, « Sites » n'existe que sur ordinateur.
+
 ## Axes et repères (chantier Axes, `docs/workstreams/axes/`)
 
 - **Contexte de travail** (AX-1, décision AX-D3) : repère de travail, plan de travail (XY / XZ / YZ du repère) et verrou,

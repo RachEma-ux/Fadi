@@ -39,7 +39,8 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
         expect(i, f).not.toMatch(/modules\/(atelier|studio)|@parcours\/atelier-model|@parcours\/planche-model|lib\/api(\/|$)|\/api"/);
         // Hors du dossier, seules les bibliothèques générales de l'application sont admises.
         const c = cible(f, i);
-        if (c !== null && !dansSandbox(f, i)) expect(c, `${f} → ${i}`).toMatch(/^(lib\/(i18n|local-store)|components\/ChoixLangue)$/);
+        // Menu « Sites » (27 novembre 2026) : le module partagé des sites de projet, seul autre client admis (`/sites/api`).
+        if (c !== null && !dansSandbox(f, i)) expect(c, `${f} → ${i}`).toMatch(/^(lib\/(i18n|local-store|sites\/menu-sites)|components\/ChoixLangue)$/);
       }
     }
   });
