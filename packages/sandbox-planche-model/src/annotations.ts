@@ -211,12 +211,17 @@ export interface ReglagesPlanche {
   /** (Protocole des extensions, lot 5) Données attachées au projet par les extensions : `{ <extension> : { <clé> : valeur } }`. */
   readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   /** (Cas 4, étape 2) Point de base du projet : coordonnées projetées déclarées de l'origine ; absent = non déclaré. */
-  readonly pointDeBase?: PointDeBase;  /** (Cas 2, lot 2) Unité d'affichage et de saisie des longueurs ; absent = mètres. Les valeurs stockées restent en mètres. */
+  readonly pointDeBase?: PointDeBase;
+  /** (Cas 2, lot 2) Unité d'affichage et de saisie des longueurs ; absent = mètres. Les valeurs stockées restent en mètres. */
   readonly uniteSaisie?: UniteSaisie;
   /** (Cas 2, lot 2) Paramètres nommés du projet (valeurs saisies par l'utilisateur, en mètres). */
   readonly parametres?: Readonly<Record<Id, ParametreProjet>>;
   /** (Cas 2, lot 2) Ressaut maximal à signaler, saisi par l'utilisateur avec sa source ; absent = « non évalué ». */
   readonly ressautMax?: { readonly valeur: number; readonly source: string };
+  /** (Cas 2, lot 3) Tolérances du relevé du Contrôle, saisies dans le panneau ; absent = tolérances d'origine. */
+  readonly controle?: import("./controle-l3.js").ReglagesControle;
+  /** (Cas 2, lot 3) Fichier de règles des pièces du permis, sourcé, archivé tel quel ; absent = complétude non évaluée. */
+  readonly reglesPieces?: import("./controle-l3.js").ReglesPieces;
 }
 /** (Cas 2, lot 2) Unité d'affichage et de saisie. */
 export type UniteSaisie = "m" | "cm" | "mm" | "pieds-pouces";

@@ -4701,3 +4701,48 @@
 .sandbox-planche .planche-info-large {
   grid-column: 1 / -1;
 }
+/* Cas 2, lot 3 : relevé du Contrôle (tolérances, parcours, correction), fond DAO, pièces du permis. */
+.sandbox-planche .planche-controle-releve {
+  margin: 0 0 6px;
+}
+.sandbox-planche .planche-controle-seuil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-controle-seuil input {
+  width: 4.2em;
+  min-height: 28px;
+  padding: 1px 4px;
+  font: inherit;
+}
+.sandbox-planche .planche-controle-lim {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-controle-position {
+  align-self: center;
+  font-weight: 600;
+}
+.sandbox-planche .planche-debit-barre button.planche-controle-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-controle-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-controle-case,
+.sandbox-planche .planche-controle-fichier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.sandbox-planche .planche-controle-fichier input[type="file"] {
+  max-width: 100%;
+}

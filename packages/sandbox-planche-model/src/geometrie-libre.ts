@@ -134,7 +134,8 @@ export interface Occurrence {
   /** (Lot L14) Repère de pièce (liste de débit) : posé par la renumérotation, gardé par une copie. */
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
-  readonly niveau?: Id;  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
+  readonly niveau?: Id;
+  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
 }
 
