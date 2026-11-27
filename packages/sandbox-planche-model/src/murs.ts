@@ -13,7 +13,7 @@
  * Un mur modifié à la main (sa géométrie n'est plus celle qui a été posée) n'est jamais régénéré.
  */
 import type { Mur } from "./annotations.js";
-import { type Id, type Modele, ajouterSegment, contexte, effacerEntites, grouperVide, modifierAnnotations, pousserTirer, rattacherOccurrencesNiveau } from "./geometrie-libre.js";
+import { type Definition, type Id, type Modele, type Occurrence, ajouterSegment, contexte, effacerEntites, grouperVide, modifierAnnotations, pousserTirer, rattacherOccurrencesNiveau } from "./geometrie-libre.js";
 import { type Vec3, dist } from "./vecteur.js";
 
 export type ReferenceMur = Mur["reference"];
@@ -41,6 +41,8 @@ const norme = (a: P2): number => Math.hypot(a.x, a.y);
 const unit = (a: P2): P2 => fois(a, 1 / norme(a));
 const gauche = (d: P2): P2 => ({ x: -d.y, y: d.x });
 const memePoint = (a: P2, b: P2): boolean => norme(sous(a, b)) <= 1e-4;
+/** Deux murs ne se joignent qu'à la même altitude d'axe (deux étages superposés ne se touchent pas). */
+const memeAltitude = (a: Pick<Mur, "axe">, b: Pick<Mur, "axe">): boolean => Math.abs((a.axe[0]?.z ?? 0) - (b.axe[0]?.z ?? 0)) <= 1e-4;
 
 /** Décalages gauche / droite de l'axe selon la référence (gauche positif). */
 export function decalages(p: ParametresMur): { readonly g: number; readonly d: number } {
@@ -84,7 +86,8 @@ export interface EmpreinteMur {
  * Empreinte d'un mur (pur) d'après son axe, ses paramètres et les murs voisins : onglets aux angles du tracé et aux
  * extrémités jointes à l'extrémité d'un autre mur, arrêt contre la face d'un mur traversé (T), croisements signalés.
  */
-export function empreinteMur(mur: Pick<Mur, "axe" | "ferme" | "epaisseur" | "hauteur" | "reference">, voisins: readonly Pick<Mur, "id" | "axe" | "ferme" | "epaisseur" | "hauteur" | "reference">[] = []): EmpreinteMur {
+export function empreinteMur(mur: Pick<Mur, "axe" | "ferme" | "epaisseur" | "hauteur" | "reference">, tous: readonly Pick<Mur, "id" | "axe" | "ferme" | "epaisseur" | "hauteur" | "reference">[] = []): EmpreinteMur {
+  const voisins = tous.filter((w) => memeAltitude(w, mur));
   const z = mur.axe[0]?.z ?? 0;
   const { g, d } = decalages(mur);
   const segs = segmentsDe(mur);
@@ -170,15 +173,28 @@ export function empreinteMur(mur: Pick<Mur, "axe" | "ferme" | "epaisseur" | "hau
   return { boucles, jonctions: [...notees.values()], erreur };
 }
 
-/** Signature de la géométrie d'un groupe (sommets arrondis au dixième de millimètre) : détecte une modification à la main. */
+const arrondi = (x: number): number => Math.round(x * 1e4);
+
+/**
+ * Signature d'un groupe de mur : sommets (au dixième de millimètre), transformation de l'occurrence, matières des faces et
+ * verrou. Elle détecte une modification à la main (géométrie éditée, objet déplacé / tourné / mis à l'échelle, face peinte,
+ * objet verrouillé) ; un tel mur n'est jamais régénéré. Nom, balise, matière de l'objet et données d'extension n'y entrent
+ * pas : la régénération les garde.
+ */
 export function signatureGroupe(m: Modele, occurrence: Id): string | null {
   const o = m.racine.occurrences[occurrence];
   const def = o ? m.definitions[o.definition] : undefined;
-  if (!def) return null;
-  return Object.values(def.contenu.sommets)
-    .map((s) => `${Math.round(s.position.x * 1e4)},${Math.round(s.position.y * 1e4)},${Math.round(s.position.z * 1e4)}`)
+  if (!o || !def) return null;
+  const sommets = Object.values(def.contenu.sommets)
+    .map((s) => `${arrondi(s.position.x)},${arrondi(s.position.y)},${arrondi(s.position.z)}`)
     .sort()
     .join(";");
+  const matieres = Object.values(def.contenu.faces)
+    .filter((f) => f.materiauRecto !== undefined || f.materiauVerso !== undefined)
+    .map((f) => `${f.materiauRecto ?? ""}/${f.materiauVerso ?? ""}`)
+    .sort()
+    .join(";");
+  return `${sommets}|T${o.transformation.map(arrondi).join(",")}|M${matieres}|${o.verrouille ? "V" : ""}`;
 }
 
 /** Murs du document dont le groupe existe encore (un groupe effacé efface le mur). */
@@ -261,11 +277,15 @@ export function poserMurs(m: Modele, traces: readonly (readonly Vec3[])[], p: Pa
     }).modele;
     ids.push(idMur);
     toutes.push(...emp.jonctions);
-    // Voisins joints en L par une extrémité : régénérés pour l'onglet (s'ils sont intacts).
+    // Voisins à la même altitude joints par une extrémité : en L (extrémités communes, onglet) ou en T (leur extrémité
+    // sur l'axe du nouveau mur, arrêt contre sa face), quel que soit l'ordre de tracé. Régénérés s'ils sont intacts.
+    const segsNouveau = segmentsDe(n);
     for (const w of existants) {
-      if (w.ferme) continue;
-      const touche = [n.axe[0]!, n.axe[n.axe.length - 1]!].some((q) => memePoint(q, w.axe[0]!) || memePoint(q, w.axe[w.axe.length - 1]!));
-      if (!touche || n.ferme) continue;
+      if (w.ferme || !memeAltitude(w, nouveau)) continue;
+      const boutsW = [w.axe[0]!, w.axe[w.axe.length - 1]!];
+      const enL = !n.ferme && [n.axe[0]!, n.axe[n.axe.length - 1]!].some((q) => boutsW.some((b) => memePoint(q, b)));
+      const enT = boutsW.some((b) => segsNouveau.some(([a, c]) => surSegment(b, a, c) !== null));
+      if (!enL && !enT) continue;
       if (!murIntact(modele, w)) {
         toutes.push("voisin-modifie");
         continue;
@@ -276,22 +296,39 @@ export function poserMurs(m: Modele, traces: readonly (readonly Vec3[])[], p: Pa
   return { ok: true, modele, ids, jonctions: toutes };
 }
 
-/** Régénère un mur intact d'après les murs voisins (même identifiant, nouveau groupe, niveau conservé). */
+/**
+ * Régénère un mur intact d'après les murs voisins : même identifiant, nouveau groupe qui garde les attributs de l'ancien
+ * (nom, balise, matière de l'objet, masquage, repère, données d'extension, niveau ; nom et métadonnées de la définition).
+ */
 export function regenerer(m: Modele, id: Id): Modele {
   const w = m.annotations?.murs?.[id];
   if (!w) return m;
   const voisins = mursDuModele(m).filter((x) => x.id !== id);
   const emp = empreinteMur(w, voisins);
   if (emp.erreur) return m;
-  const niveau = m.racine.occurrences[w.occurrence]?.niveau ?? null;
+  const ancienne = m.racine.occurrences[w.occurrence];
+  const ancienneDef = ancienne ? m.definitions[ancienne.definition] : undefined;
+  const niveau = ancienne?.niveau ?? null;
   let modele = effacerEntites(m, [w.occurrence]).modele;
   const c = construire(modele, emp, w.hauteur);
   modele = c.modele;
   if (niveau) modele = rattacherOccurrencesNiveau(modele, [c.occurrence], niveau).modele;
+  modele = reprendreAttributs(modele, c.occurrence, ancienne, ancienneDef);
   const signature = signatureGroupe(modele, c.occurrence) ?? "";
   return modifierAnnotations(modele, (a) => {
     a.murs[id] = { ...w, occurrence: c.occurrence, signature };
   }).modele;
+}
+
+/** Reporte sur le nouveau groupe les attributs de l'ancien (la géométrie et la transformation restent les nouvelles). */
+function reprendreAttributs(m: Modele, occ: Id, ancienne: Occurrence | undefined, ancienneDef: Definition | undefined): Modele {
+  const o = m.racine.occurrences[occ];
+  const def = o ? m.definitions[o.definition] : undefined;
+  if (!o || !def || !ancienne) return m;
+  const { id: _i, definition: _d, transformation: _t, niveau: _n, ...attributs } = ancienne;
+  const occurrence: Occurrence = { ...o, ...attributs };
+  const definition: Definition = ancienneDef ? { ...ancienneDef, id: def.id, genre: def.genre, contenu: def.contenu } : def;
+  return { ...m, racine: { ...m.racine, occurrences: { ...m.racine.occurrences, [occ]: occurrence } }, definitions: { ...m.definitions, [def.id]: definition } };
 }
 
 /** Jonctions d'un mur posé, recalculées d'après ses voisins actuels (Info entité). */

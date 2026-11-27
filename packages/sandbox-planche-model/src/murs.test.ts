@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { appliquerDeltaPlanche, differencePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
-import { type Modele, ajouterSegment, modeleVide, pousserTirer, contexte } from "./geometrie-libre.js";
+import { type Modele, ajouterSegment, contexte, deplacer, modeleVide, peindreFaces, peindreOccurrences, pousserTirer, renommerOccurrence, verrouillerOccurrences } from "./geometrie-libre.js";
 import { chainesDAretes, decalages, empreinteMur, estMur, jonctionsDuMur, longueurAxe, mursDuModele, murIntact, nettoyerAxe, oublierMur, poserMurs } from "./murs.js";
 import { v3 } from "./vecteur.js";
 
@@ -139,6 +139,56 @@ describe("murs : pose dans le modèle", () => {
     const r = ok(poserMurs(m, [[v3(4, 0, 0), v3(4, 3, 0)]], P));
     expect(r.jonctions).toContain("voisin-modifie");
     expect(r.modele.annotations?.murs?.[w!.id]?.signature).toBe(signatureAvant);
+  });
+
+  it("relecture #490 : mur déplacé, face peinte ou verrou = modifié à la main, jamais régénéré", () => {
+    const pose = () => ok(poserMurs(modeleVide(), [[v3(0, 0, 0), v3(4, 0, 0)]], P)).modele;
+    const w = (m: Modele) => mursDuModele(m)[0]!;
+    const deplace = deplacer(pose(), [w(pose()).occurrence], v3(10, 0, 0)).modele;
+    const m0 = pose();
+    const face = Object.keys(contexte(m0, w(m0).occurrence).faces)[0]!;
+    const peinte = peindreFaces(m0, [face], "mat1", { dans: w(m0).occurrence }).modele;
+    const verrou = verrouillerOccurrences(pose(), [w(pose()).occurrence], true).modele;
+    for (const m of [deplace, peinte, verrou]) {
+      expect(murIntact(m, w(m))).toBe(false);
+      const occAvant = w(m).occurrence;
+      const r = ok(poserMurs(m, [[v3(4, 0, 0), v3(4, 3, 0)]], P));
+      expect(r.jonctions).toContain("voisin-modifie");
+      expect(r.modele.annotations?.murs?.[w(m).id]?.occurrence).toBe(occAvant);
+      expect(r.modele.racine.occurrences[occAvant]).toEqual(m.racine.occurrences[occAvant]);
+    }
+  });
+
+  it("relecture #490 : régénéré, le mur garde son nom et sa matière d'objet", () => {
+    let m = ok(poserMurs(modeleVide(), [[v3(0, 0, 0), v3(4, 0, 0)]], P)).modele;
+    const w = mursDuModele(m)[0]!;
+    m = renommerOccurrence(m, w.occurrence, "Mur sud").modele;
+    m = peindreOccurrences(m, [w.occurrence], "mat1").modele;
+    expect(murIntact(m, mursDuModele(m)[0]!)).toBe(true);
+    const r = ok(poserMurs(m, [[v3(4, 0, 0), v3(4, 3, 0)]], P));
+    const apres = r.modele.annotations!.murs![w.id]!;
+    expect(apres.occurrence).not.toBe(w.occurrence);
+    expect(r.modele.racine.occurrences[apres.occurrence]).toMatchObject({ nom: "Mur sud", materiau: "mat1" });
+    expect(sommetsDuMur(r.modele, apres.occurrence).some((p) => proche(p, 4.1, -0.1))).toBe(true);
+  });
+
+  it("relecture #490 : deux murs à des altitudes différentes ne se joignent pas", () => {
+    const m = ok(poserMurs(modeleVide(), [[v3(0, 0, 0), v3(4, 0, 0)]], P)).modele;
+    const avant = mursDuModele(m)[0]!;
+    const r = ok(poserMurs(m, [[v3(4, 0, 3), v3(4, 3, 3)]], P));
+    expect(r.jonctions).toEqual([]);
+    expect(r.modele.annotations!.murs![avant.id]!.occurrence).toBe(avant.occurrence);
+  });
+
+  it("relecture #490 : T dessiné branche d'abord, mur traversant ensuite : la branche s'arrête contre sa face", () => {
+    const m = ok(poserMurs(modeleVide(), [[v3(3, 4, 0), v3(3, 0, 0)]], P)).modele;
+    const branche = mursDuModele(m)[0]!;
+    const r = ok(poserMurs(m, [[v3(0, 0, 0), v3(6, 0, 0)]], P));
+    const apres = r.modele.annotations!.murs![branche.id]!;
+    expect(apres.occurrence).not.toBe(branche.occurrence);
+    const ys = sommetsDuMur(r.modele, apres.occurrence).map((p) => p.y);
+    expect(Math.min(...ys)).toBeCloseTo(0.1, 9);
+    expect(jonctionsDuMur(r.modele, apres).te).toBe(1);
   });
 
   it("mur fermé : un seul groupe annulaire", () => {
