@@ -1170,6 +1170,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-kml node apps/web/e2e/planche-kml.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du redressement d'une photo (cas 4, lot C4, étape 7c) — quatre coins pointés, résidus et alerte de façade non plane, pose dans un plan vertical en un pas, original archivé (apps/web/e2e/planche-redressement.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-redressement node apps/web/e2e/planche-redressement.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

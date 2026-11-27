@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -272,5 +272,16 @@ describe("KML / KMZ (lot C4, étape 7b) : disponibilité des commandes", () => {
     expect(disponibiliteKml("definition-systeme", { ...s, pointDeBase: false }).motif).toBe("planche.kml.motif.point-de-base");
     expect(disponibiliteKml("importer-kml", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteKml("importer-kml", s).disponible).toBe(true);
+  });
+
+  it("redressement (étape 7c) : photo, quatre coins et dimensions avant la pose", () => {
+    const s = { photo: true, points: 4, dimensions: true, lecture: false };
+    expect(disponibiliteRedressement("redresser-photo", { ...s, lecture: true, photo: false }).disponible).toBe(true);
+    expect(disponibiliteRedressement("poser-redressee", { ...s, photo: false }).motif).toBe("planche.redressement.motif.photo");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, points: 3 }).motif).toBe("planche.redressement.motif.points");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, dimensions: false }).motif).toBe("planche.redressement.motif.dimensions");
+    expect(disponibiliteRedressement("effacer-points-redressement", { ...s, points: 0 }).motif).toBe("planche.redressement.motif.aucun-point");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteRedressement("poser-redressee", s).disponible).toBe(true);
   });
 });

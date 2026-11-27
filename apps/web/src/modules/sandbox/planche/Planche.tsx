@@ -301,6 +301,14 @@ import {
   type AxeHaut,
   type FormatFabricant,
   lireKml,
+  homographie,
+  rectangleReference,
+  residusRedressement,
+  cadreRedresse,
+  redresserPixels,
+  type VerticalFond,
+  type PixelFond,
+  IMAGE_FOND_MAX,
   lireKmz,
   pointsKml,
   poserKml,
@@ -406,7 +414,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -427,6 +435,7 @@ import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./pan
 import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./panneau-ifc";
 import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
 import { PanneauKml, type ResumeKml } from "./panneau-kml";
+import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
 import { ErreurProjection, projeterVersSysteme } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
@@ -512,7 +521,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -527,7 +536,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -5325,6 +5334,124 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const compte = (g: string) => luKml.lecture.elements.filter((e) => e.genre === g).length;
     return { nom: luKml.nom, polygones: compte("polygone"), lignes: compte("ligne"), points: compte("point"), omis: luKml.lecture.omis.map((o) => t(`planche.kml.omis.${o}` as CleMessage)) };
   }, [luKml]);
+  // Redressement d'une photo sur quatre points (cas 4, lot C4, étape 7c) : coins pointés dans le panneau, homographie
+  // vers le rectangle saisi, photo rééchantillonnée et posée en fond dans un plan vertical, en un pas.
+  const [photoRedr, setPhotoRedr] = useState<{ readonly nom: string; readonly image: string; readonly largeur: number; readonly hauteur: number; readonly largeurOriginal: number; readonly hauteurOriginal: number; readonly fichier: File } | null>(null);
+  const [pointsRedr, setPointsRedr] = useState<readonly PixelFond[]>([]);
+  const [saisieRedr, setSaisieRedr] = useState<SaisieRedressement>({ largeur: "", hauteur: "", x: "0", y: "0", altitude: "0", azimut: "0", controles: [] });
+  const [erreurRedr, setErreurRedr] = useState<string | null>(null);
+  const [noteRedr, setNoteRedr] = useState<string | null>(null);
+  const importRedrRef = useRef<HTMLInputElement | null>(null);
+  const dimensionsRedr = (() => {
+    const l = lireNombreSaisi(saisieRedr.largeur);
+    const h = lireNombreSaisi(saisieRedr.hauteur);
+    return l !== null && h !== null && l > 0 && h > 0 ? { largeur: l, hauteur: h } : null;
+  })();
+  const disponibiliteCommandeRedr = (id: IdCommandeRedressement) => disponibiliteRedressement(id, { photo: photoRedr !== null, points: pointsRedr.length, dimensions: dimensionsRedr !== null, lecture: readOnly });
+  const homographieRedr = useMemo(() => (dimensionsRedr && pointsRedr.length >= 4 ? homographie(pointsRedr.slice(0, 4), rectangleReference(dimensionsRedr.largeur, dimensionsRedr.hauteur)) : null), [pointsRedr, dimensionsRedr?.largeur, dimensionsRedr?.hauteur]);
+  const controlesRedr = pointsRedr.slice(4).flatMap((pixel, i) => {
+    const c = saisieRedr.controles[i];
+    const s = c ? lireNombreSaisi(c.s) : null;
+    const tt = c ? lireNombreSaisi(c.t) : null;
+    return s !== null && tt !== null ? [{ id: "EFGHIJKL"[i]!, pixel, cible: { x: s, y: tt } }] : [];
+  });
+  const residusRedr = homographieRedr && dimensionsRedr ? residusRedressement(homographieRedr, controlesRedr, dimensionsRedr.largeur, dimensionsRedr.hauteur) : null;
+  const metres = (v: number) => v.toLocaleString(LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  const resumeResidusRedr: ResumeResidus | null = residusRedr
+    ? {
+        moyen: residusRedr.moyen === null ? null : t("planche.redressement.residus.moyen", { moyen: metres(residusRedr.moyen), seuil: metres(residusRedr.seuil) }),
+        points: residusRedr.points.map((d, i) => (d === null ? t("planche.redressement.residus.fuite", { id: controlesRedr[i]!.id }) : t("planche.redressement.residus.point", { id: controlesRedr[i]!.id, ecart: metres(d) }))),
+        nonPlane: residusRedr.nonPlane,
+      }
+    : null;
+  const lirePhotoRedr = async (f: File) => {
+    setPanneau("redressement");
+    setErreurRedr(null);
+    setNoteRedr(null);
+    try {
+      const r = await reduireFond(f, 2048);
+      setPhotoRedr({ nom: f.name, ...r, fichier: f });
+      setPointsRedr([]);
+      setSaisieRedr((s) => ({ ...s, controles: [] }));
+    } catch {
+      setPhotoRedr(null);
+      setErreurRedr(t("planche.redressement.erreur.image"));
+    }
+  };
+  const poserRedressee = async () => {
+    const photo = photoRedr;
+    const dims = dimensionsRedr;
+    if (!photo || !dims || readOnly) return;
+    const h = homographieRedr;
+    if (!h) return setErreurRedr(t("planche.redressement.erreur.degenere"));
+    const x = lireNombreSaisi(saisieRedr.x), y = lireNombreSaisi(saisieRedr.y), z = lireNombreSaisi(saisieRedr.altitude), az = lireNombreSaisi(saisieRedr.azimut);
+    if (x === null || y === null || z === null || az === null) return setErreurRedr(t("planche.redressement.erreur.saisie"));
+    // Rééchantillonnage dans le navigateur (canvas), le calcul restant dans le modèle.
+    let image: string;
+    let cadre: ReturnType<typeof cadreRedresse>;
+    try {
+      const el = new Image();
+      await new Promise<void>((ok, ko) => {
+        el.onload = () => ok();
+        el.onerror = () => ko(new Error("image"));
+        el.src = photo.image;
+      });
+      const c = document.createElement("canvas");
+      c.width = photo.largeur;
+      c.height = photo.hauteur;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(el, 0, 0);
+      const src = ctx.getImageData(0, 0, photo.largeur, photo.hauteur).data;
+      cadre = cadreRedresse(h, photo.largeur, photo.hauteur, dims.largeur, dims.hauteur, 2048);
+      const px = redresserPixels(src, photo.largeur, photo.hauteur, h, cadre);
+      if (!px) return setErreurRedr(t("planche.redressement.erreur.degenere"));
+      const sortie = document.createElement("canvas");
+      sortie.width = cadre.largeurPx;
+      sortie.height = cadre.hauteurPx;
+      sortie.getContext("2d")!.putImageData(new ImageData(px as Uint8ClampedArray<ArrayBuffer>, cadre.largeurPx, cadre.hauteurPx), 0, 0);
+      image = sortie.toDataURL("image/png");
+      if (image.length > IMAGE_FOND_MAX) image = sortie.toDataURL("image/jpeg", 0.85);
+    } catch {
+      return setErreurRedr(t("planche.redressement.erreur.image"));
+    }
+    // La photo d'origine est archivée telle quelle en base avant la pose (D-GD-29).
+    let original: OriginalFond;
+    try {
+      original = { ...(await archiverOriginalFond(photo.fichier)), largeurPx: photo.largeurOriginal, hauteurPx: photo.hauteurOriginal };
+    } catch (e) {
+      return setErreurRedr(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
+    }
+    const f = photo.largeurOriginal / photo.largeur;
+    const vertical: VerticalFond = {
+      x,
+      y,
+      azimut: (az * Math.PI) / 180,
+      redressement: { points: pointsRedr.slice(0, 4).map((p) => ({ u: p.u * f, v: p.v * f })), largeur: dims.largeur, hauteur: dims.hauteur, controles: controlesRedr.length, residu: residusRedr?.moyen ?? null },
+    };
+    const note = t("planche.redressement.note", { largeur: dims.largeur.toLocaleString(LOCALE), hauteur: dims.hauteur.toLocaleString(LOCALE), px: String(cadre.largeurPx) });
+    let refus: string | null = null;
+    operer(t("planche.redressement.nom"), (m) => {
+      const r = importerFond(m, { nom: photo.nom, image, largeurPx: cadre.largeurPx, hauteurPx: cadre.hauteurPx, altitude: z, original, pose: { echelle: cadre.echelle, rotation: 0, x: cadre.sMin, y: cadre.tMax }, vertical });
+      if (!r.ok) {
+        refus = r.erreur;
+        return null;
+      }
+      return { modele: r.modele, message: note };
+    });
+    if (refus) return setErreurRedr(t(`planche.fonds.erreur.${refus}` as CleMessage));
+    setErreurRedr(null);
+    setNoteRedr(note);
+  };
+  const executerRedr = (id: IdCommandeRedressement) => {
+    setPanneau("redressement");
+    if (id === "redresser-photo") return photoRedr ? undefined : importRedrRef.current?.click();
+    if (!disponibiliteCommandeRedr(id).disponible) return;
+    if (id === "effacer-points-redressement") {
+      setPointsRedr([]);
+      return setSaisieRedr((s) => ({ ...s, controles: [] }));
+    }
+    void poserRedressee();
+  };
   const executerTravaux = (id: IdCommandeTravaux) => {
     setPanneau("statut-travaux");
     if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
@@ -5487,6 +5614,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
     else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
     else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
+    else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -5589,6 +5717,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_KML.map((c) => {
           const d = disponibiliteCommandeKml(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
+        }),
+        ...COMMANDES_REDRESSEMENT.map((c) => {
+          const d = disponibiliteCommandeRedr(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.redressement.motif.photo"), executer: () => executerRedr(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -6404,6 +6536,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-import-kml-prj-entree
       />
+      {/* Redressement d'une photo (Ctrl+Maj+Espace, H) : monté hors du panneau. */}
+      <input
+        ref={importRedrRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lirePhotoRedr(f);
+        }}
+        data-planche-redressement-entree
+      />
       {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
       <input
         ref={importPdfRef}
@@ -6541,6 +6686,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onChoisirFichier={() => importKmlRef.current?.click()}
                 erreur={erreurKml}
                 note={noteKml}
+              />
+            )}
+            {panneau === "redressement" && (
+              <PanneauRedressement
+                photo={photoRedr}
+                points={pointsRedr}
+                onPointer={(p) => setPointsRedr((l) => [...l, p])}
+                saisie={saisieRedr}
+                onSaisie={setSaisieRedr}
+                residus={resumeResidusRedr}
+                executer={executerRedr}
+                disponibilite={disponibiliteCommandeRedr}
+                onChoisirFichier={() => importRedrRef.current?.click()}
+                erreur={erreurRedr}
+                note={noteRedr}
+                lecture={readOnly}
               />
             )}
             {panneau === "statut-travaux" && (

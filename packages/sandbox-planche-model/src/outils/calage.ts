@@ -28,7 +28,7 @@ export interface EtatCalage {
 export function fondVise(fonds: readonly Fond[], r: Rayon, prefere?: string): { readonly fond: Fond; readonly u: number; readonly v: number } | null {
   let meilleur: { fond: Fond; u: number; v: number; t: number } | null = null;
   for (const f of fonds) {
-    if (f.verrouille || Math.abs(r.direction.z) < 1e-9) continue;
+    if (f.verrouille || f.vertical || Math.abs(r.direction.z) < 1e-9) continue;
     const t = (f.altitude - r.origine.z) / r.direction.z;
     if (!(t > 0)) continue;
     const px = versPixel(f.pose, { x: r.origine.x + t * r.direction.x, y: r.origine.y + t * r.direction.y });

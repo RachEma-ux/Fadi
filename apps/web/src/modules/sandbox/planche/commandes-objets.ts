@@ -842,3 +842,26 @@ export function disponibiliteKml(id: IdCommandeKml, s: { readonly lu: boolean; r
   if (!s.lu) return { disponible: false, motif: "planche.kml.motif.fichier" };
   return s.pointDeBase ? { disponible: true, motif: null } : { disponible: false, motif: "planche.kml.motif.point-de-base" };
 }
+
+/**
+ * Redressement d'une photo sur quatre points (cas 4, lot C4, étape 7c) : un panneau ; poser exige une photo, les quatre
+ * coins pointés et les dimensions du rectangle saisies.
+ */
+export type IdCommandeRedressement = "redresser-photo" | "poser-redressee" | "effacer-points-redressement";
+export interface CommandeRedressement {
+  readonly id: IdCommandeRedressement;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_REDRESSEMENT: readonly CommandeRedressement[] = (["redresser-photo", "poser-redressee", "effacer-points-redressement"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.redressement.${id}` as CleMessage, court: `planche.redressement.court.${id}` as CleMessage }));
+
+export function disponibiliteRedressement(id: IdCommandeRedressement, s: { readonly photo: boolean; readonly points: number; readonly dimensions: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "redresser-photo") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (!s.photo) return { disponible: false, motif: "planche.redressement.motif.photo" };
+  if (id === "effacer-points-redressement") return s.points > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.redressement.motif.aucun-point" };
+  if (s.points < 4) return { disponible: false, motif: "planche.redressement.motif.points" };
+  return s.dimensions ? { disponible: true, motif: null } : { disponible: false, motif: "planche.redressement.motif.dimensions" };
+}
