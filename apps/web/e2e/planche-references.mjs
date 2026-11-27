@@ -130,6 +130,10 @@ const dist = (p) => Math.hypot(Math.max(0, 1 - p.x, p.x - 11), Math.max(0, 0 - p
 const attendu = sommets.filter((p) => dist(p) > 0.02).length;
 check("Contrôler (…, K) : sommets hors tolérance comptés exactement", attendu > 0 && (await res.getAttribute("data-planche-recolement")) === String(attendu), `${await res.getAttribute("data-planche-recolement")} / ${attendu} · ${await res.textContent()}`);
 await page.screenshot({ path: `${OUT}/recolement.png` });
+await page.locator("[data-planche-reference-tolerance]").fill("3");
+await page.locator("[data-planche-reference-tolerance]").press("Enter");
+await page.waitForFunction(() => Object.values(window.fadiPlanche.modele().annotations.references)[0].tolerance === 0.03);
+check("tolérance changée après le contrôle : résultat périmé retiré", (await res.count()) === 0);
 
 // --- Masquer, recharger, supprimer ------------------------------------------------------------------------------------
 await deuxTemps("m");

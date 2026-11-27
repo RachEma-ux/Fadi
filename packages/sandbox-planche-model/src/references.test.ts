@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ENTREE_DEUX_TEMPS, normaliserRaccourci, secondTemps } from "./catalogue-outils.js";
 import { lireModelePlanche } from "./delta.js";
-import { type Id, modeleVide } from "./geometrie-libre.js";
-import { afficherReference, ajouterReference, controlerRecolement, deplacerReference, distancePointTriangle, estReference, rechargerReference, referencesDe, reglerTolerance, supprimerReference, verrouillerReference, versProjet } from "./references.js";
+import { type Id, ajouterSegments, grouperVide, modeleVide } from "./geometrie-libre.js";
+import { afficherReference, ajouterReference, controlerRecolement, deplacerReference, distancePointTriangle, estReference, rechargerReference, referencesDe, sommetsDuDessin, reglerTolerance, supprimerReference, verrouillerReference, versProjet } from "./references.js";
 
 const F = { id: "sbxref_123e4567-e89b-12d3-a456-426614174000", empreinte: "a".repeat(64), taille: 1234 };
 const ajout = () => {
@@ -58,6 +58,24 @@ describe("Références verrouillées", () => {
 });
 
 describe("Contrôle de récolement", () => {
+  it("rechargée dans un autre format : le format suit le nouveau fichier", () => {
+    const { modele, id } = ajout();
+    const r = rechargerReference(modele, id, { nom: "releve.stl", format: "stl", fichier: { ...F, empreinte: "c".repeat(64) }, echelle: 1, triangles: 4, date: "2026-11-28" });
+    expect(r.ok && r.modele.annotations!.references![id]!.format).toBe("stl");
+  });
+
+  it("sommets du dessin : arêtes sans face d'un groupe visible comprises, dans le repère monde composé", () => {
+    const g = grouperVide(modeleVide());
+    const s = ajouterSegments(g.modele, [[{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }]], { dans: g.occurrence });
+    const o = s.modele.racine.occurrences[g.occurrence]!;
+    const T = [1, 0, 0, 5, 0, 1, 0, 7, 0, 0, 1, 0, 0, 0, 0, 1];
+    const m = { ...s.modele, racine: { ...s.modele.racine, occurrences: { [g.occurrence]: { ...o, transformation: T } } } };
+    const p = sommetsDuDessin(m).map((v) => v.map((c) => Math.round(c * 1e6) / 1e6).join(";")).sort();
+    expect(p).toEqual(["5;7;0", "6;7;0"]);
+    const masque = { ...m, racine: { ...m.racine, occurrences: { [g.occurrence]: { ...o, transformation: T, masquee: true } } } };
+    expect(sommetsDuDessin(masque)).toEqual([]);
+  });
+
   it("distance point-triangle : au-dessus, sur une arête, à un sommet", () => {
     const a = [0, 0, 0] as const, b = [1, 0, 0] as const, c = [0, 1, 0] as const;
     expect(distancePointTriangle([0.2, 0.2, 0.5], a, b, c)).toBeCloseTo(0.5, 12);
