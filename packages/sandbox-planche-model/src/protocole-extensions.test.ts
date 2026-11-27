@@ -1,7 +1,7 @@
 /** Protocole des extensions, lot 1 : paquet, fiche, versions, messages, espace d'exécution. */
 import { describe, expect, it } from "vitest";
 import {
-  BORNES_EXTENSION, FORMAT_PAQUET_EXTENSION, VERSION_PROTOCOLE, creerExecutantExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
+  BORNES_EXTENSION, BORNES_FICHIER, FORMAT_PAQUET_EXTENSION, VERSION_PROTOCOLE, creerExecutantExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
   jugerVersionProtocole, lireMessageProtocole, refusProtocole, reponseProtocole, validerPaquetExtension, type MessageProtocole,
 } from "./index.js";
 
@@ -85,9 +85,11 @@ describe("paquet d'extension fadi-addon/1", () => {
   });
 
   it("versions : la version courante est acceptée, une plus récente ou une trop ancienne est refusée avec son motif", () => {
-    expect(VERSION_PROTOCOLE).toBe("1.0");
+    expect(VERSION_PROTOCOLE).toBe("1.1");
+    expect(jugerVersionProtocole("1.1")).toBe("acceptee");
+    // 1.1 ne fait qu'ajouter : une extension écrite pour 1.0 reste acceptée.
     expect(jugerVersionProtocole("1.0")).toBe("acceptee");
-    expect(jugerVersionProtocole("1.1")).toBe("trop_recente");
+    expect(jugerVersionProtocole("1.2")).toBe("trop_recente");
     expect(jugerVersionProtocole("2.0")).toBe("trop_recente");
     expect(jugerVersionProtocole("0.9")).toBe("trop_ancienne");
     expect(jugerVersionProtocole("un")).toBe("mal_formee");
@@ -95,7 +97,8 @@ describe("paquet d'extension fadi-addon/1", () => {
     expect(jugerVersionProtocole("2.3", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("3.0", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("1.9", "3.1")).toBe("trop_ancienne");
-    expect(refuse(paquet({}, { protocole: "1.1" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.1/);
+    expect(refuse(paquet({}, { protocole: "1.2" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.2/);
+    expect(refuse(paquet({}, { protocole: "1.1" }))).toBe("accepté");
     expect(refuse(paquet({ format: "fadi-addon/2" }))).toMatch(/^version_non_prise_en_charge/);
   });
 });
@@ -136,7 +139,7 @@ describe("espace d'exécution d'une extension", () => {
     expect(x.demarrer()).toBeNull();
     x.recevoir(demandeProtocole(10, "commande.compter"));
     x.recevoir(demandeProtocole(11, "commande.compter"));
-    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.0" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
+    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.1" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
   });
 
   it("demande sans traitement → erreur nommée ; événement sans traitement → simple accusé", () => {
@@ -184,7 +187,7 @@ describe("espace d'exécution d'une extension", () => {
     const { x, recus } = lancer('planche.sur("commande.noms", () => [Object.keys(planche.modele), Object.keys(planche.operation), Object.keys(planche.selection)]); planche.sur("commande.rate", async () => { throw new Error("raté"); });');
     expect(x.demarrer()).toBeNull();
     x.recevoir(demandeProtocole(1, "commande.noms"));
-    expect(recus[0]).toEqual(reponseProtocole(1, [["lire", "ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer"], ["ouvrir", "valider", "abandonner"], ["lire", "definir"]]));
+    expect(recus[0]).toEqual(reponseProtocole(1, [["lire", "ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer", "lignes", "arc", "cercle"], ["ouvrir", "valider", "abandonner"], ["lire", "definir"]]));
     x.recevoir(demandeProtocole(2, "commande.rate"));
     await new Promise((r) => setTimeout(r, 0));
     expect(recus[1]).toEqual(refusProtocole(2, "echec_extension", "raté"));
@@ -196,5 +199,69 @@ describe("espace d'exécution d'une extension", () => {
     x.recevoir({ sorte: "demande", nom: "commande.saluer" });
     x.recevoir("texte");
     expect(recus).toEqual([]);
+  });
+});
+
+describe("espace d'exécution — protocole 1.1", () => {
+  /** Exécutant relié à une Planche de remplacement qui répond à chaque demande par `servir`. */
+  const relier = (code: string, servir: (nom: string, donnees: unknown) => unknown) => {
+    const demandes: { nom: string; donnees: unknown }[] = [];
+    const reponses: MessageProtocole[] = [];
+    let x: ReturnType<typeof creerExecutantExtension>;
+    const poster = (m: MessageProtocole) => {
+      if (m.sorte !== "demande") return void reponses.push(m);
+      demandes.push({ nom: m.nom, donnees: m.donnees });
+      setTimeout(() => x.recevoir(reponseProtocole(m.id, servir(m.nom, m.donnees))), 0);
+    };
+    x = creerExecutantExtension({ fiche: { id: "essai-plan", version: "1.0.0" }, code }, poster);
+    expect(x.demarrer()).toBeNull();
+    const attendre = async () => {
+      for (let i = 0; i < 500 && reponses.length === 0; i++) await new Promise((r) => setTimeout(r, 0));
+      return reponses.shift();
+    };
+    return { x, demandes, attendre };
+  };
+
+  it("fichier ouvert en flux : lu morceau par morceau, recollé à l'identique", async () => {
+    const texte = "0\nLINE\n".repeat(150_000);
+    const { x, demandes, attendre } = relier(
+      'planche.sur("commande.lire", async () => { const f = await planche.fichiers.ouvrir([".dxf"], { flux: true }); const t = await f.texte(); return [f.nom, f.taille, t.length, t.slice(0, 7)]; });',
+      (nom, d) => (nom === "fichiers.ouvrir" ? { nom: "plan.dxf", taille: texte.length, jeton: 3 } : texte.slice((d as { debut: number }).debut, (d as { debut: number }).debut + (d as { longueur: number }).longueur)),
+    );
+    x.recevoir(demandeProtocole(1, "commande.lire"));
+    expect(await attendre()).toEqual(reponseProtocole(1, ["plan.dxf", texte.length, texte.length, "0\nLINE\n"]));
+    expect(demandes[0]).toEqual({ nom: "fichiers.ouvrir", donnees: { types: [".dxf"], flux: true } });
+    expect(demandes.slice(1).every((d) => d.nom === "fichiers.lire" && (d.donnees as { jeton: number }).jeton === 3)).toBe(true);
+    expect(demandes).toHaveLength(1 + Math.ceil(texte.length / BORNES_FICHIER.morceau));
+  });
+
+  it("texte long à enregistrer : préparé, ajouté par morceaux, puis enregistré par son jeton ; un texte court part d'un coup", async () => {
+    const { x, demandes, attendre } = relier(
+      'planche.sur("commande.long", () => planche.fichiers.enregistrer("plan.dxf", "x".repeat(1200000))); planche.sur("commande.court", () => planche.fichiers.enregistrer("plan.dxf", "0\\nEOF\\n"));',
+      (nom) => (nom === "fichiers.preparer" ? 9 : nom === "fichiers.enregistrer" ? true : null),
+    );
+    x.recevoir(demandeProtocole(1, "commande.long"));
+    expect(await attendre()).toEqual(reponseProtocole(1, true));
+    expect(demandes.map((d) => d.nom)).toEqual(["fichiers.preparer", "fichiers.ajouter", "fichiers.ajouter", "fichiers.ajouter", "fichiers.enregistrer"]);
+    expect(demandes.at(-1)!.donnees).toEqual({ nom: "plan.dxf", jeton: 9 });
+    demandes.length = 0;
+    x.recevoir(demandeProtocole(2, "commande.court"));
+    expect(await attendre()).toEqual(reponseProtocole(2, true));
+    expect(demandes).toEqual([{ nom: "fichiers.enregistrer", donnees: { nom: "plan.dxf", texte: "0\nEOF\n" } }]);
+  });
+
+  it("modele.lire transmet sa portée, balises.creer son nom et sa couleur, et les courbes passent par modele.modifier", async () => {
+    const { x, demandes, attendre } = relier(
+      'planche.sur("commande.tout", async () => { await planche.modele.lire({ portee: "monde" }); await planche.modele.lire(); await planche.balises.creer("Murs", "#aa3300"); await planche.modele.arc([1,0,0],[0,1,0],[-1,0,0]); return true; });',
+      () => null,
+    );
+    x.recevoir(demandeProtocole(1, "commande.tout"));
+    expect(await attendre()).toEqual(reponseProtocole(1, true));
+    expect(demandes).toEqual([
+      { nom: "modele.lire", donnees: { portee: "monde" } },
+      { nom: "modele.lire", donnees: null },
+      { nom: "balises.creer", donnees: { nom: "Murs", couleur: "#aa3300" } },
+      { nom: "modele.modifier", donnees: { fonction: "arc", arguments: [[1, 0, 0], [0, 1, 0], [-1, 0, 0]] } },
+    ]);
   });
 });

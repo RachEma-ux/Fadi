@@ -207,14 +207,18 @@ export function DialogueFichierExtension({ fichier }: { fichier: FichierDemande 
     const type = typeDeFichier(f.name);
     if (!type || !fichier.demande.types.includes(type)) return setErreur(t("extensions.fichier.erreur.type", { types: fichier.demande.types.join(", ") }));
     // Un texte ne compte jamais plus de caractères que d'octets : un fichier plus lourd que la borne est refusé sans être lu.
-    if (f.size > BORNES_FICHIER.caracteres * 4) return setErreur(t("extensions.fichier.erreur.taille"));
+    // (Protocole 1.1) Ouvert en flux, le fichier reste dans la Planche et la borne est celle du flux.
+    const flux = fichier.demande.flux === true;
+    const borne = flux ? BORNES_FICHIER.flux : BORNES_FICHIER.caracteres;
+    const trop = flux ? "extensions.fichier.erreur.taille.flux" : "extensions.fichier.erreur.taille";
+    if (f.size > borne * 4) return setErreur(t(trop));
     let texte: string;
     try {
       texte = await f.text();
     } catch {
       return setErreur(t("extensions.fichier.erreur.lecture"));
     }
-    if (texte.length > BORNES_FICHIER.caracteres) return setErreur(t("extensions.fichier.erreur.taille"));
+    if (texte.length > borne) return setErreur(t(trop));
     fichier.repondre({ nom: f.name, texte });
   };
   const titre = t(fichier.sorte === "ouvrir" ? "extensions.fichier.ouvrir.titre" : "extensions.fichier.enregistrer.titre");
@@ -246,7 +250,7 @@ export function DialogueFichierExtension({ fichier }: { fichier: FichierDemande 
           {fichier.sorte === "ouvrir" ? (
             <>
               <div><dt>{t("extensions.fichier.types")}</dt><dd data-planche-fichier-types>{fichier.demande.types.join(", ")}</dd></div>
-              <div><dt>{t("extensions.fichier.taille")}</dt><dd>{t("extensions.fichier.taille.borne")}</dd></div>
+              <div><dt>{t("extensions.fichier.taille")}</dt><dd data-planche-fichier-borne>{t(fichier.demande.flux ? "extensions.fichier.taille.borne.flux" : "extensions.fichier.taille.borne")}</dd></div>
             </>
           ) : (
             <>

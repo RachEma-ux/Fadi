@@ -261,7 +261,7 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     celles du dessin ; `planche.matieres.appliquer(ids, matiere)` (faces et objets) et
     `planche.balises.appliquer(ids, balise)` (objets) les posent ou les retirent (`null`), comme toute modification :
     une opération, un pas d'annulation. « modele.lire » rend la matière de chaque face, la matière et la balise de
-    chaque objet. Une extension ne crée pas de matière ni de balise : elle emploie celles du dessin.
+    chaque objet. Une extension ne crée pas de matière : elle emploie celles du dessin (depuis 1.1, elle peut créer une balise, voir plus bas).
   - *Unités* (sans permission) : `planche.unites.lire()` rend les unités et le séparateur décimal de l'interface ;
     `planche.unites.formater(valeur, "longueur" | "aire")` écrit une valeur comme la Planche l'écrit.
   - *Événements* (permission « evenements », `evenements-extensions.ts`) : « projet.ouvert » `{ nom }`,
@@ -287,6 +287,23 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     accepte. L'extension ne lit ni ne choisit aucun emplacement. Extension d'essai :
     `apps/web/e2e/donnees/essai-fichiers.fadi-addon.json` ; recette `apps/web/e2e/extensions-fichiers.mjs` (CI,
     tranche `planche`).
+  - *Protocole 1.1 — plans reçus (DXF)* (cas 3 du catalogue des extensions, lot 1 ; une version mineure n'ajoute que
+    des fonctions : une extension écrite pour 1.0 reste acceptée et garde exactement ce qu'elle avait). **Fichiers
+    lourds** : `planche.fichiers.ouvrir(types, { flux: true })` rend `{ nom, taille, lire(debut, longueur), texte() }`
+    — le texte (50 000 000 caractères au plus) reste dans la Planche et se lit par morceaux de 500 000 caractères
+    (demandes `fichiers.lire`) ; la fenêtre de la Planche annonce alors « 50 Mo au plus ». `planche.fichiers.enregistrer`
+    envoie un texte de plus de 1 000 000 caractères par morceaux (`fichiers.preparer`, `fichiers.ajouter`, puis
+    `fichiers.enregistrer { nom, jeton }`), sans rien changer pour l'extension. Un jeton ne vaut que pendant sa
+    commande, quatre à la fois au plus (`creerReserveFichiers`). Le type `.svg` est admis. **Dessin** :
+    `planche.modele.lignes([[a, b], …])` (20 000 segments en une opération, `ajouterSegments` du noyau),
+    `planche.modele.arc(depart, milieu, fin, cotes)` et `planche.modele.cercle(centre, rayon, normale, cotes)` (une
+    courbe chacun). **Balises** : `planche.balises.creer(nom, couleur)` rend l'identifiant ; une balise du même nom est
+    reprise, pas doublée. **Lecture** : chaque arête lue dit sa `courbe` (genre, centre, rayon, normale) ;
+    `planche.modele.lire({ portee: "monde" })` rend toutes les faces et arêtes du modèle, en coordonnées du modèle, avec
+    le `chemin` d'occurrences et la `balise` héritée. **Délai** : le temps que la Planche passe à servir une demande ne
+    compte plus dans les 5 s d'une commande. Limite connue, mesurée le 27 novembre 2026 : l'insertion dans le noyau
+    croît à peu près au carré du nombre de segments (1 000 en 0,6 s, 5 000 en 14 s) ; un gros plan attend
+    l'insertion hors du fil principal (D10-F14-027, noyau).
   - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,

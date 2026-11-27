@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.0";
+export const VERSION_PROTOCOLE = "1.1";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -350,7 +350,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * Demandes qu'une extension peut adresser à la Planche, avec la permission exigée (`null` : aucune). Lot 1 : le
  * journal ; lot 2 : lecture du modèle, opération, sélection (`services-extensions.ts`) ; lot 3 : avis et saisie
  * (`saisies-extensions.ts`). Chaque lot suivant complète
- * cette table, et rien d'autre n'est accepté.
+ * cette table, et rien d'autre n'est accepté. Protocole 1.1 (cas 3, lot 1, plans DXF) : `balises.creer`, lecture d'un
+ * fichier en flux (`fichiers.lire`) et enregistrement par morceaux (`fichiers.preparer`, `fichiers.ajouter`). Une
+ * version mineure ne fait qu'ajouter : une extension qui attend « 1.0 » garde exactement ce qu'elle avait.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -370,18 +372,28 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "matieres.appliquer": "modele.modifier",
   "balises.lire": "modele.lire",
   "balises.appliquer": "modele.modifier",
+  "balises.creer": "modele.modifier",
   "unites.lire": null,
   "unites.formater": null,
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",
   "fichiers.enregistrer": "fichiers",
+  "fichiers.lire": "fichiers",
+  "fichiers.preparer": "fichiers",
+  "fichiers.ajouter": "fichiers",
   "panneau.envoyer": "panneau",
   "panneau.ouvrir": "panneau",
 };
 
-/** Fonctions de dessin admises par « modele.modifier » : celles d'un script personnel, à l'identique. */
-export const FONCTIONS_MODIFICATION = ["ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer"] as const;
+/** Fonctions de dessin admises par « modele.modifier » en 1.0 : celles d'un script personnel, à l'identique. */
+export const FONCTIONS_MODIFICATION_SCRIPT = ["ligne", "rectangle", "boite", "pousser", "deplacer", "copier", "tourner", "grouper", "composant", "effacer"] as const;
+/**
+ * Fonctions ajoutées en 1.1 pour les plans reçus (DXF) : plusieurs segments en une opération, arc par trois points,
+ * cercle. Propres aux extensions (un script personnel ne les a pas).
+ */
+export const FONCTIONS_MODIFICATION_1_1 = ["lignes", "arc", "cercle"] as const;
+export const FONCTIONS_MODIFICATION = [...FONCTIONS_MODIFICATION_SCRIPT, ...FONCTIONS_MODIFICATION_1_1] as const;
 export type FonctionModification = (typeof FONCTIONS_MODIFICATION)[number];
 
 /** Juge une demande d'extension : inconnue, refusée faute de permission, ou admise. */

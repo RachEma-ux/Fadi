@@ -15,11 +15,12 @@
  * l'utilisateur, lui, ne voit rien avant la validation.
  */
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
-import { baliserOccurrences, contexte, peindreFaces, peindreOccurrences, type Id, type Modele } from "./geometrie-libre.js";
-import { formaterLongueur } from "./outils/commun-formes.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { arcParTroisPoints, formaterLongueur, pointsArc } from "./outils/commun-formes.js";
 import { formaterAire } from "./outils/metre.js";
-import { FONCTIONS_MODIFICATION, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
+import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
+import { type Vec3, v3 } from "./vecteur.js";
 
 /** Ce que la Planche prête à une extension. Les lectures rendent l'état courant à chaque appel. */
 export interface AccesPlanche {
@@ -46,13 +47,23 @@ export interface OptionsAppel {
   readonly marque?: unknown;
 }
 
-/** Les fonctions de « modele.modifier » sont bien des fonctions d'un script personnel (contrôle de type). */
-FONCTIONS_MODIFICATION satisfies readonly FonctionScript[];
+/** Les fonctions de « modele.modifier » en 1.0 sont bien des fonctions d'un script personnel (contrôle de type). */
+FONCTIONS_MODIFICATION_SCRIPT satisfies readonly FonctionScript[];
 
 export const MAX_NOM_OPERATION = 80;
 /** Au-delà, « modele.lire » est refusé plutôt que de transmettre un modèle démesuré à l'espace isolé. */
 export const MAX_ENTITES_LECTURE = 50_000;
 export const MAX_SELECTION_EXTENSION = 10_000;
+/** (1.1) Segments d'un seul appel « lignes » ; côtés d'un arc ou d'un cercle (bornes de la Planche, 3 à 999). */
+export const MAX_SEGMENTS_APPEL = 20_000;
+export const COTES_ARC_DEFAUT = 12;
+export const COTES_CERCLE_DEFAUT = 24;
+/** (1.1) Nom d'une balise créée par une extension, en caractères. */
+export const MAX_NOM_BALISE = 80;
+/** Couleur d'une balise : « #rrggbb ». */
+const MOTIF_COULEUR = /^#[0-9a-fA-F]{6}$/;
+/** Couleur d'une balise créée sans couleur : celle que propose le panneau Balises de la Planche. */
+export const COULEUR_BALISE_DEFAUT = "#2f7bd6";
 
 export interface FaceLue {
   readonly id: Id;
@@ -69,6 +80,36 @@ export interface AreteLue {
   readonly points: readonly (readonly [number, number, number])[];
   /** Longueur en mètres. */
   readonly longueur: number;
+  /** (1.1) Courbe dont l'arête fait partie (arc, cercle, polygone), pour l'écrire en vrai arc ; `null` = segment simple. */
+  readonly courbe?: CourbeLue | null;
+}
+/** (1.1) Courbe d'une arête, dans les coordonnées de la lecture. */
+export interface CourbeLue {
+  readonly id: Id;
+  readonly genre: "cercle" | "polygone" | "arc";
+  readonly centre: readonly [number, number, number];
+  readonly rayon: number;
+  readonly normale: readonly [number, number, number];
+}
+/**
+ * (1.1) Lecture du modèle entier (`modele.lire({ portee: "monde" })`) : chaque face et chaque arête, à tous les niveaux,
+ * en coordonnées du modèle. `chemin` = occurrences traversées depuis la racine (vide à la racine) : une même arête d'un
+ * composant posé deux fois apparaît deux fois, avec deux chemins. `balise` = celle de l'occurrence la plus proche qui
+ * en porte une ; `null` = aucune.
+ */
+export interface FaceMonde extends FaceLue {
+  readonly chemin: readonly Id[];
+  readonly balise: Id | null;
+}
+export interface AreteMonde extends AreteLue {
+  readonly chemin: readonly Id[];
+  readonly balise: Id | null;
+}
+export interface ModeleLuMonde {
+  readonly portee: "monde";
+  readonly faces: readonly FaceMonde[];
+  readonly aretes: readonly AreteMonde[];
+  readonly enOperation: boolean;
 }
 export interface ObjetLu {
   readonly id: Id;
@@ -127,6 +168,119 @@ const estObjet = (v: unknown): v is Record<string, unknown> => !!v && typeof v =
 const refus = (erreur: ErreurProtocole, detail = ""): ReponseService => ({ ok: false, erreur, detail });
 const rendu = (resultat: unknown = null): ReponseService => ({ ok: true, resultat });
 
+const triplet = (p: Vec3): [number, number, number] => [p.x, p.y, p.z];
+const estPoint = (v: unknown): v is [number, number, number] => Array.isArray(v) && v.length === 3 && v.every((x) => typeof x === "number" && Number.isFinite(x));
+const versVec = (v: readonly [number, number, number]): Vec3 => v3(v[0], v[1], v[2]);
+
+/** Courbe d'une arête d'un contexte, transformée par `M` (lecture du modèle entier) ou telle quelle. */
+function courbeLue(c: Contexte, id: Id | undefined, M: Matrice4 | null): CourbeLue | null {
+  const k = id !== undefined ? c.courbes[id] : undefined;
+  if (!k) return null;
+  if (!M) return { id: k.id, genre: k.genre, centre: triplet(k.centre), rayon: k.rayon, normale: triplet(k.normale) };
+  const centre = appliquer(M, k.centre);
+  const bout = appliquer(M, v3(k.centre.x + k.normale.x, k.centre.y + k.normale.y, k.centre.z + k.normale.z));
+  const n = v3(bout.x - centre.x, bout.y - centre.y, bout.z - centre.z);
+  const ln = Math.hypot(n.x, n.y, n.z) || 1;
+  // Rayon mesuré sur une arête réelle de la courbe : il suit une mise à l'échelle de l'occurrence.
+  const arete = k.aretes.map((a) => c.aretes[a]).find((a) => a !== undefined);
+  const sommet = arete ? c.sommets[arete.a]?.position : undefined;
+  const p = sommet ? appliquer(M, sommet) : undefined;
+  const rayon = p ? Math.hypot(p.x - centre.x, p.y - centre.y, p.z - centre.z) : k.rayon;
+  return { id: k.id, genre: k.genre, centre: triplet(centre), rayon, normale: [n.x / ln, n.y / ln, n.z / ln] };
+}
+
+/**
+ * (1.1) Modèle entier en coordonnées du modèle : racine puis occurrences, descendues avec leur transformation composée
+ * (masquées exclues, comme à l'affichage et à l'export). `null` = plus de `max` entités.
+ */
+function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteMonde[] } | null {
+  const faces: FaceMonde[] = [];
+  const aretes: AreteMonde[] = [];
+  let trop = false;
+  const parcourir = (c: Contexte, M: Matrice4 | null, chemin: readonly Id[], balise: Id | null, profondeur: number): void => {
+    if (trop || profondeur > 32) return;
+    const T = (q: Vec3): [number, number, number] => triplet(M ? appliquer(M, q) : q);
+    for (const f of Object.values(c.faces)) {
+      if (f.masquee) continue;
+      const p = positionsFace(c, f);
+      const pts = p.exterieur.map(T);
+      faces.push({ id: f.id, chemin, balise, points: pts, trous: f.trous.length, aire: aireContour(pts, p.trous.map((t) => t.map(T))), matiere: f.materiauRecto ?? null });
+    }
+    for (const a of Object.values(c.aretes)) {
+      if (a.masquee) continue;
+      const pa = c.sommets[a.a]?.position;
+      const pb = c.sommets[a.b]?.position;
+      if (!pa || !pb) continue;
+      const [qa, qb] = [T(pa), T(pb)];
+      aretes.push({ id: a.id, chemin, balise, points: [qa, qb], longueur: Math.hypot(qb[0] - qa[0], qb[1] - qa[1], qb[2] - qa[2]), courbe: courbeLue(c, a.courbe, M) });
+    }
+    if (faces.length + aretes.length > max) {
+      trop = true;
+      return;
+    }
+    for (const o of Object.values(c.occurrences)) {
+      if (o.masquee) continue;
+      const d = m.definitions[o.definition];
+      if (d) parcourir(d.contenu, M ? composer(M, o.transformation) : o.transformation, [...chemin, o.id], o.balise ?? balise, profondeur + 1);
+    }
+  };
+  parcourir(m.racine, null, [], null, 0);
+  return trop ? null : { faces, aretes };
+}
+
+/**
+ * (1.1) Arguments de « lignes », « arc » et « cercle », en mètres :
+ *   lignes([[a, b], …])                         segments, une seule opération ; rend les éléments créés
+ *   arc(depart, milieu, fin, cotes = 12)        arc passant par trois points, une courbe « arc »
+ *   cercle(centre, rayon, normale = [0, 0, 1], cotes = 24)   cercle, une courbe, face automatique
+ * Rend l'opération du modèle à faire, ou le motif du refus.
+ */
+function lireCourbe(fonction: "lignes" | "arc" | "cercle", args: readonly unknown[]): string | ((m: Modele, dans: Id | undefined) => ReturnType<typeof ajouterSegments>) {
+  const cotes = (v: unknown, defaut: number): number | null => (v === undefined ? defaut : typeof v === "number" && Number.isInteger(v) && v >= 3 && v <= 999 ? v : null);
+  const o = (dans: Id | undefined) => (dans !== undefined ? { dans } : {});
+  if (fonction === "lignes") {
+    const l = args[0];
+    if (!Array.isArray(l) || l.length === 0 || l.length > MAX_SEGMENTS_APPEL || !l.every((s) => Array.isArray(s) && s.length === 2 && estPoint(s[0]) && estPoint(s[1]))) return `lignes : liste de 1 à ${MAX_SEGMENTS_APPEL} segments [[x, y, z], [x, y, z]] attendue`;
+    const segments = (l as [[number, number, number], [number, number, number]][]).map(([a, b]) => [versVec(a), versVec(b)] as const);
+    return (m, dans) => ajouterSegments(m, segments, o(dans));
+  }
+  if (fonction === "arc") {
+    const [a, p, b, n] = args;
+    if (!estPoint(a) || !estPoint(p) || !estPoint(b)) return "arc : trois points [x, y, z] attendus (départ, milieu, fin)";
+    const k = cotes(n, COTES_ARC_DEFAUT);
+    if (k === null) return "arc : côtés, entier de 3 à 999";
+    const g = arcParTroisPoints(versVec(a), versVec(p), versVec(b));
+    if (!g) return "arc : les trois points sont alignés ou confondus";
+    return (m, dans) => ajouterArc(m, pointsArc(g, k), { centre: g.centre, rayon: g.rayon, normale: g.normale }, o(dans));
+  }
+  const [centre, rayon, normale, n] = args;
+  if (!estPoint(centre)) return "cercle : centre [x, y, z] attendu";
+  if (typeof rayon !== "number" || !Number.isFinite(rayon) || rayon <= 0) return "cercle : rayon positif attendu, en mètres";
+  const nn = normale === undefined ? ([0, 0, 1] as [number, number, number]) : normale;
+  if (!estPoint(nn) || Math.hypot(...nn) < 1e-9) return "cercle : normale [x, y, z] non nulle attendue";
+  const k = cotes(n, COTES_CERCLE_DEFAUT);
+  if (k === null) return "cercle : côtés, entier de 3 à 999";
+  return (m, dans) => ajouterPolygone(m, versVec(centre), versVec(nn), rayon, k, { ...o(dans), genre: "cercle" });
+}
+
+/** Aire d'un contour plan (moins ses trous), par le produit vectoriel : vaut aussi après transformation. */
+function aireContour(exterieur: readonly (readonly [number, number, number])[], trous: readonly (readonly (readonly [number, number, number])[])[]): number {
+  const aire = (b: readonly (readonly [number, number, number])[]): number => {
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    for (let i = 0; i < b.length; i++) {
+      const p = b[i]!;
+      const q = b[(i + 1) % b.length]!;
+      x += p[1] * q[2] - p[2] * q[1];
+      y += p[2] * q[0] - p[0] * q[2];
+      z += p[0] * q[1] - p[1] * q[0];
+    }
+    return Math.hypot(x, y, z) / 2;
+  };
+  return Math.max(0, aire(exterieur) - trous.reduce((s, t) => s + aire(t), 0));
+}
+
 export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions" | "id">, acces: AccesPlanche): ServicesExtension {
   let operation: Operation | null = null;
   let appel: string | null = null;
@@ -158,9 +312,17 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu({ crees });
   };
 
-  const lire = (): ReponseService => {
+  const lire = (donnees: unknown): ReponseService => {
+    const portee = estObjet(donnees) ? (donnees["portee"] ?? "contexte") : "contexte";
+    if (portee !== "contexte" && portee !== "monde") return refus("argument_invalide", "portee : « contexte » ou « monde »");
     const f = vue();
     const m = f.modele();
+    if (portee === "monde") {
+      const monde = lireMonde(m, MAX_ENTITES_LECTURE);
+      if (!monde) return refus("argument_invalide", `modèle de plus de ${MAX_ENTITES_LECTURE} entités`);
+      const lu: ModeleLuMonde = { portee: "monde", ...monde, enOperation: operation !== null };
+      return rendu(lu);
+    }
     const dans = operation ? operation.dans : acces.dans();
     const c = contexte(m, dans);
     const faces = Object.keys(c.faces);
@@ -170,7 +332,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const points = (id: Id) => f.api.points(id) as [number, number, number][];
     const lu: ModeleLu = {
       faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null })),
-      aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number })),
+      aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number, courbe: courbeLue(c, c.aretes[id]!.courbe, null) })),
       objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe", matiere: occ.materiau ?? null, balise: occ.balise ?? null })),
       enOperation: operation !== null,
     };
@@ -181,13 +343,22 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (!estObjet(donnees) || typeof donnees["fonction"] !== "string" || !(FONCTIONS_MODIFICATION as readonly string[]).includes(donnees["fonction"])) return refus("argument_invalide", "fonction de dessin inconnue");
     const args = donnees["arguments"] ?? [];
     if (!Array.isArray(args) || args.length > 8) return refus("argument_invalide", "arguments : liste attendue");
+    const fonction = donnees["fonction"] as FonctionModification;
+    // Fonctions de 1.1 : arguments lus ici, avant toute opération (un argument faux n'ouvre rien).
+    let courbe: ((m: Modele, dans: Id | undefined) => { readonly modele: Modele; readonly rapport: { readonly crees: readonly Id[]; readonly supprimes: readonly Id[]; readonly modifies: readonly Id[] } }) | null = null;
+    if (fonction === "lignes" || fonction === "arc" || fonction === "cercle") {
+      const lu = lireCourbe(fonction, args);
+      if (typeof lu === "string") return refus("argument_invalide", lu);
+      courbe = lu;
+    }
     // Sans opération ouverte : opération automatique au nom de l'appel en cours, validée à la fin de l'appel.
     const op = operation ?? ouvrir(appel ?? "extension", true);
     // Une fonction fait parfois plusieurs opérations du modèle (une boîte : sa base, puis son volume) : refusée à
     // mi-chemin, elle ne laisse rien dans le modèle de travail.
     const revenir = op.travail.figer();
     try {
-      return rendu(op.travail.api[donnees["fonction"] as FonctionModification](...(args as unknown[])) ?? null);
+      if (courbe) return rendu(op.travail.appliquer(courbe(op.travail.modele(), op.dans)));
+      return rendu(op.travail.api[fonction as FonctionScript](...(args as unknown[])) ?? null);
     } catch (e) {
       revenir();
       if (e instanceof ErreurScript) return refus(e.cle === "introuvable" ? "objet_introuvable" : "argument_invalide", e.message);
@@ -239,6 +410,29 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
     }
     return rendu();
+  };
+
+  /**
+   * (1.1) `balises.creer { nom, couleur? }` : une balise nouvelle, visible, dans l'opération ouverte ou automatique ;
+   * rend son identifiant. Une balise du même nom existe déjà : son identifiant est rendu, rien n'est créé (un plan
+   * importé deux fois ne double pas ses calques).
+   */
+  const creerBalise = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const nom = d && typeof d["nom"] === "string" ? d["nom"].trim() : "";
+    const couleur = d ? (d["couleur"] ?? COULEUR_BALISE_DEFAUT) : COULEUR_BALISE_DEFAUT;
+    if (nom.length === 0 || nom.length > MAX_NOM_BALISE) return refus("argument_invalide", `nom : texte de 1 à ${MAX_NOM_BALISE} caractères attendu`);
+    if (typeof couleur !== "string" || !MOTIF_COULEUR.test(couleur)) return refus("argument_invalide", "couleur : « #rrggbb » attendue");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const existante = Object.values(op.travail.modele().annotations?.balises ?? {}).find((b) => b.nom === nom);
+    if (existante) return rendu(existante.id);
+    const r = modifierAnnotations(op.travail.modele(), (a, id) => {
+      const k = id("b");
+      a.balises[k] = { id: k, nom, couleur: couleur.toLowerCase(), visible: true };
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
   };
 
   const unites = (): UnitesLues => ({ longueur: "m", aire: "m²", decimales: 2, separateur: acces.separateur?.() ?? "," });
@@ -311,7 +505,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       if (!jugement.ok) return refus(jugement.erreur, jugement.detail);
       switch (nom) {
         case "modele.lire":
-          return lire();
+          return lire(donnees);
         case "modele.modifier":
           return modifier(donnees);
         case "operation.ouvrir": {
@@ -342,6 +536,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return rendu(Object.values(vue().modele().annotations?.balises ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, visible: x.visible })));
         case "balises.appliquer":
           return appliquerAttribut(donnees, "balise");
+        case "balises.creer":
+          return creerBalise(donnees);
         case "unites.lire":
           return rendu(unites());
         case "unites.formater":

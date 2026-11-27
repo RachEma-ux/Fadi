@@ -1461,6 +1461,17 @@ export function ajouterSegment(m: Modele, p: Vec3, q: Vec3, o: OptionsContexte =
   });
 }
 
+/**
+ * (Protocole des extensions 1.1) Plusieurs segments en une seule opération — un plan importé (DXF) en compte des
+ * milliers : un segment par opération recopierait le modèle à chaque fois. Mêmes règles que `ajouterSegment`
+ * (découpe aux croisements, faces automatiques) ; un segment de longueur nulle est ignoré.
+ */
+export function ajouterSegments(m: Modele, segments: readonly (readonly [Vec3, Vec3])[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    insererGeometrie(t, c, segments.filter(([p, q]) => dist(p, q) > TOL).map(([a, b]) => ({ a, b })), [], true);
+  });
+}
+
 /** Rectangle (outil Rectangle) de coins coin, coin+cote1, coin+cote1+cote2, coin+cote2. */
 export function ajouterRectangle(m: Modele, coin: Vec3, cote1: Vec3, cote2: Vec3, o: OptionsContexte = {}): Resultat {
   const p = [coin, add(coin, cote1), add(add(coin, cote1), cote2), add(coin, cote2)];

@@ -1,7 +1,7 @@
 /** Services rendus à une extension (protocole 1.0, lot 2) : lecture du modèle, opération explicite, sélection. */
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, modeleVide, type Id, type Modele } from "./geometrie-libre.js";
-import { DEMANDES_EXTENSION, ERREURS_PROTOCOLE, FONCTIONS_MODIFICATION, type PermissionExtension } from "./protocole-extensions.js";
+import { DEMANDES_EXTENSION, ERREURS_PROTOCOLE, FONCTIONS_MODIFICATION_SCRIPT, type PermissionExtension } from "./protocole-extensions.js";
 import { FONCTIONS_SCRIPT, creerFonctionsPlanche } from "./scripts.js";
 import { creerServicesExtension, type AccesPlanche, type ModeleLu } from "./services-extensions.js";
 import { v3 } from "./vecteur.js";
@@ -45,7 +45,7 @@ describe("services d'une extension — table et permissions", () => {
   });
 
   it("les fonctions de modification sont des fonctions d'un script personnel ; les erreurs nouvelles ont leur texte", () => {
-    for (const f of FONCTIONS_MODIFICATION) expect(FONCTIONS_SCRIPT).toContain(f);
+    for (const f of FONCTIONS_MODIFICATION_SCRIPT) expect(FONCTIONS_SCRIPT).toContain(f);
     expect(ERREURS_PROTOCOLE.operation_absente).toMatch(/opération/);
     expect(ERREURS_PROTOCOLE.operation_refusee).toMatch(/rien n'a été appliqué/);
   });
@@ -238,5 +238,86 @@ describe("services d'une extension — sélection", () => {
     expect(etat.selection).toEqual([face]);
     ok(s.servir("selection.definir", { ids: [] }));
     expect(etat.selection).toEqual([]);
+  });
+});
+
+describe("services d'une extension — protocole 1.1 (plans reçus)", () => {
+  const MODIF: readonly PermissionExtension[] = ["modele.lire", "modele.modifier"];
+  const servir = (acces: AccesPlanche, nom: string, donnees: unknown) => {
+    const s = creerServicesExtension({ id: "essai", permissions: MODIF }, acces);
+    s.debutAppel("commande.importer");
+    const r = s.servir(nom, donnees);
+    s.finAppel(r.ok);
+    return r;
+  };
+
+  it("lignes : des segments en une seule opération, un seul pas d'annulation ; un segment mal formé ne crée rien", () => {
+    const { etat, acces } = planche();
+    const segments = Array.from({ length: 300 }, (_, i) => [[i, 0, 0], [i + 0.5, 1, 0]]);
+    const crees = ok(servir(acces, "modele.modifier", { fonction: "lignes", arguments: [segments] })) as Id[];
+    expect(Object.keys(etat.modele.racine.aretes)).toHaveLength(300);
+    expect(crees.length).toBeGreaterThanOrEqual(300);
+    expect(etat.pas).toEqual(["commande.importer"]);
+    for (const faux of [[], [[[0, 0, 0]]], [[[0, 0, 0], [1, "a", 0]]], "x"]) {
+      expect(servir(acces, "modele.modifier", { fonction: "lignes", arguments: [faux] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    }
+    expect(etat.pas).toHaveLength(1);
+  });
+
+  it("arc par trois points et cercle : une courbe chacun, relue avec son centre et son rayon", () => {
+    const { etat, acces } = planche();
+    ok(servir(acces, "modele.modifier", { fonction: "arc", arguments: [[1, 0, 0], [0, 1, 0], [-1, 0, 0], 8] }));
+    ok(servir(acces, "modele.modifier", { fonction: "cercle", arguments: [[5, 0, 0], 2] }));
+    expect(Object.keys(etat.modele.racine.aretes)).toHaveLength(8 + 24);
+    const lu = ok(servir(acces, "modele.lire", null)) as ModeleLu;
+    const arc = lu.aretes.find((a) => a.courbe?.genre === "arc")!.courbe!;
+    expect(arc.rayon).toBeCloseTo(1, 9);
+    expect(arc.centre.map((x) => Math.round(x * 1e9) / 1e9)).toEqual([0, 0, 0]);
+    expect(lu.aretes.filter((a) => a.courbe?.genre === "cercle")).toHaveLength(24);
+    expect(lu.faces).toHaveLength(1);
+    expect(servir(acces, "modele.modifier", { fonction: "arc", arguments: [[0, 0, 0], [1, 0, 0], [2, 0, 0]] })).toEqual({ ok: false, erreur: "argument_invalide", detail: "arc : les trois points sont alignés ou confondus" });
+    expect(servir(acces, "modele.modifier", { fonction: "cercle", arguments: [[0, 0, 0], -1] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(servir(acces, "modele.modifier", { fonction: "cercle", arguments: [[0, 0, 0], 1, [0, 0, 1], 2] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+  });
+
+  it("balises.creer : une balise visible rendue par son identifiant ; le même nom rend la même balise", () => {
+    const { etat, acces } = planche();
+    const id = ok(servir(acces, "balises.creer", { nom: " Murs ", couleur: "#AA3300" })) as Id;
+    expect(etat.modele.annotations?.balises[id]).toEqual({ id, nom: "Murs", couleur: "#aa3300", visible: true });
+    expect(ok(servir(acces, "balises.creer", { nom: "Murs" }))).toBe(id);
+    const cotes = ok(servir(acces, "balises.creer", { nom: "Cotes" })) as Id;
+    expect(etat.modele.annotations?.balises[cotes]?.couleur).toBe("#2f7bd6");
+    expect(servir(acces, "balises.creer", { nom: "" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(servir(acces, "balises.creer", { nom: "x", couleur: "rouge" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    const sans = creerServicesExtension({ id: "essai", permissions: ["modele.lire"] }, acces);
+    expect(sans.servir("balises.creer", { nom: "x" })).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.modifier" });
+  });
+
+  it("modele.lire en portée « monde » : tout le modèle en coordonnées du modèle, chemin et balise hérités", () => {
+    const { etat, acces } = planche();
+    const s = creerServicesExtension({ id: "essai", permissions: MODIF }, acces);
+    s.debutAppel("commande.preparer");
+    const murs = ok(s.servir("balises.creer", { nom: "Murs" })) as Id;
+    ok(s.servir("modele.modifier", { fonction: "ligne", arguments: [[0, 0, 0], [1, 0, 0]] }));
+    const groupe = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [(ok(s.servir("modele.modifier", { fonction: "rectangle", arguments: [[10, 0, 0], [2, 0, 0], [0, 1, 0]] })) as Id) ] })) as Id;
+    ok(s.servir("balises.appliquer", { ids: [groupe], balise: murs }));
+    ok(s.servir("modele.modifier", { fonction: "deplacer", arguments: [[groupe], [0, 5, 0]] }));
+    s.finAppel(true);
+    const lu = ok(servir(acces, "modele.lire", { portee: "monde" })) as { portee: string; faces: { chemin: Id[]; balise: Id | null; points: number[][]; aire: number }[]; aretes: { chemin: Id[]; balise: Id | null; points: number[][] }[] };
+    expect(lu.portee).toBe("monde");
+    expect(lu.aretes.filter((a) => a.chemin.length === 0)).toHaveLength(1);
+    const dedans = lu.aretes.filter((a) => a.chemin.length === 1);
+    expect(dedans).toHaveLength(4);
+    expect(dedans.every((a) => a.chemin[0] === groupe && a.balise === murs)).toBe(true);
+    // Coordonnées du modèle : le groupe a été déplacé de 5 m en Y.
+    expect(Math.min(...dedans.flatMap((a) => a.points.map((p) => p[1]!)))).toBeCloseTo(5, 9);
+    expect(lu.faces).toHaveLength(1);
+    expect(lu.faces[0]!.aire).toBeCloseTo(2, 9);
+    // La lecture du contexte (1.0) est inchangée : le groupe y est un objet.
+    const ctx = ok(servir(acces, "modele.lire", null)) as ModeleLu;
+    expect(ctx.objets).toHaveLength(1);
+    expect(ctx.aretes).toHaveLength(1);
+    expect(servir(acces, "modele.lire", { portee: "tout" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(etat.modele.annotations?.balises[murs]).toBeDefined();
   });
 });
