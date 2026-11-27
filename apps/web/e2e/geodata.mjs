@@ -816,6 +816,45 @@ await page.mouse.click(boite.x + boite.width * 0.4, boite.y + boite.height * 0.5
 await page.mouse.click(boite.x + boite.width * 0.6, boite.y + boite.height * 0.5);
 await page.locator("[data-gd-mesure]").waitFor();
 check("mesure indicative : distance affichée avec sa méthode", /Distance : .*(m|km)/.test((await page.locator("[data-gd-mesure]").textContent()) ?? "") && ((await page.locator("[data-gd-mesure]").textContent()) ?? "").includes("indicative"));
+// P7 (UX-3) : voie clavier, carte active — Espace ajoute un sommet au centre, Retour arrière retire le dernier.
+await page.locator("[data-gd-outil='navigation']").check();
+await page.locator("[data-gd-outil='distance']").check();
+const ecritsZones = [];
+const noterZone = (r) => { if (r.method() === "POST" && /\/geodata\/api\/zones/.test(r.url())) ecritsZones.push(r.url()); };
+page.on("request", noterZone);
+await page.locator(".maplibregl-canvas").focus();
+await page.keyboard.press("Space");
+await page.keyboard.press("ArrowRight");
+await page.waitForTimeout(700);
+await page.keyboard.press("Space");
+await page.locator("[data-gd-mesure]").waitFor({ timeout: 5000 }).catch(() => undefined);
+check("P7 · voie clavier : Espace pose deux sommets au centre, la distance s'affiche", /Distance : /.test((await page.locator("[data-gd-mesure]").textContent().catch(() => "")) ?? ""));
+await page.keyboard.press("Backspace");
+check("P7 · voie clavier : Retour arrière retire le dernier sommet (plus de mesure à un sommet)", (await page.locator("[data-gd-mesure]").count()) === 0 && ((await page.locator("[role='status'], [aria-live]").allTextContents()).join(" ")).includes("Dernier sommet retiré : 1."));
+// Saisie de coordonnées : distance, surface et annotation sans souris ; aucune écriture avant « Enregistrer ».
+await page.locator("[data-gd-saisie-points]").fill("-7.62 33.59\n-7.60 33.60");
+await page.locator("[data-gd-saisie-valider]").click();
+check("P7 · coordonnées : distance mesurée depuis deux points saisis", /Distance : /.test((await page.locator("[data-gd-mesure]").textContent().catch(() => "")) ?? ""));
+await page.locator("[data-gd-saisie-points]").fill("-7.62 33.59");
+await page.locator("[data-gd-saisie-valider]").click();
+check("P7 · coordonnées : un seul point pour une distance est refusé, avec son motif", ((await page.locator("[data-gd-saisie-erreur]").textContent().catch(() => "")) ?? "").includes("au moins 2 points"));
+await page.locator("[data-gd-outil='surface']").check();
+await page.locator("[data-gd-saisie-points]").fill("-7.62 33.59\n-7.60 33.59\n-7.60 33.61");
+await page.locator("[data-gd-saisie-valider]").click();
+check("P7 · coordonnées : surface mesurée depuis trois points saisis", /Surface : /.test((await page.locator("[data-gd-mesure]").textContent().catch(() => "")) ?? ""));
+await page.locator("[data-gd-outil='annotation']").check();
+await page.locator("[data-gd-saisie-lon]").fill("-7.61");
+await page.locator("[data-gd-saisie-lat]").fill("33.6");
+await page.locator("[data-gd-saisie-valider]").click();
+await page.locator("[data-gd-enregistrer-zone]").waitFor({ timeout: 5000 }).catch(() => undefined);
+check("P7 · coordonnées : l'annotation saisie ouvre le formulaire d'enregistrement existant", (await page.locator("[data-gd-enregistrer-zone]").count()) === 1);
+await page.getByRole("button", { name: "Abandonner" }).click();
+check("P7 · coordonnées : mesures et annotation abandonnée n'écrivent rien en base", ecritsZones.length === 0, ecritsZones.join(", "));
+page.off("request", noterZone);
+await page.addScriptTag({ path: AXE });
+const axeSaisie = await page.evaluate(async () => (await window.axe.run(document.querySelector("[data-gd-saisie-coordonnees]"), { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((v) => `${v.id}:${v.impact}`));
+check("P7 · axe-core sur la saisie de coordonnées : aucune violation, même « moderate » (D2)", axeSaisie.length === 0, axeSaisie.join(" ; "));
+await page.screenshot({ path: join(OUT, "p7-saisie-coordonnees.png") });
 await page.locator("[data-gd-outil='navigation']").check();
 
 // --- GEO 09 : export autorisé (PNG + fiche) ---
@@ -1474,6 +1513,17 @@ await onglet(p2, "couches");
 await p2.locator("[data-gd-couche-active]").filter({ hasText: "Unités synthétiques" }).first().getByRole("button", { name: "Table" }).click();
 await p2.waitForFunction(() => document.querySelectorAll("[data-gd-table] [data-gd-ligne]").length > 0, null, { timeout: 10_000 }).catch(() => undefined);
 check("GEO 11 · sans WebGL : catalogue, ajout d'une couche et table de ses lignes utilisables", (await p2.locator("[data-gd-table] [data-gd-ligne]").count()) > 0 && (await p2.locator("[data-gd-moteur]").getAttribute("data-gd-etat-moteur")) === "sans-webgl");
+// P7 : sans carte, Alt+O ouvre l'altitude au point avec le focus sur la longitude ; la lecture se fait par coordonnées.
+await p2.locator("[data-gd-table]").getByRole("button", { name: "Fermer la table" }).click().catch(() => undefined);
+await p2.locator("body").press("Alt+o");
+await p2.waitForFunction(() => document.activeElement?.hasAttribute("data-gd-saisie-lon"), null, { timeout: 5000 }).catch(() => undefined);
+check("P7 · sans WebGL : Alt+O met le focus sur la longitude de la saisie", await p2.evaluate(() => !!document.activeElement?.hasAttribute("data-gd-saisie-lon")));
+await p2.keyboard.type("-7.6");
+await p2.locator("[data-gd-saisie-lat]").fill("33.5");
+await p2.keyboard.press("Enter");
+await p2.locator("[data-gd-terrain-point]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("P7 · sans WebGL : l'altitude par coordonnées répond (valeur ou motif, jamais estimée)", (await p2.locator("[data-gd-terrain-point]").count()) === 1);
+await p2.screenshot({ path: join(OUT, "p7-sans-webgl-altitude.png") });
 await sansGl.close();
 
 // --- Prix immobiliers (lot P7, Concept Prix v1.1 §4–§6) : panneau du catalogue et section de la fiche ---

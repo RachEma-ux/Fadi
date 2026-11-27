@@ -198,6 +198,16 @@ import {
   niveauSuivant,
   niveauxTries,
   tableauLocaux,
+  ajouterMotifs,
+  associerMotif,
+  familleSimple,
+  lirePat,
+  modifierMotif,
+  planDeCoupeActif,
+  projeterPlan,
+  supprimerMotif,
+  svgPlan,
+  type ResultatMotif,
   poserMurs,
   chainesDAretes,
   lireNombreSaisi,
@@ -271,7 +281,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -282,6 +292,7 @@ import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
+import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
@@ -350,7 +361,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "accrochage" | "metre-mesure";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -3038,6 +3049,101 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     operer(t("planche.locaux.supprimer"), () => ({ modele: r.modele, message }));
   };
   /**
+   * Plan vectoriel (cas 4 du catalogue, étape 5) : projection de la vue en dessin 2D (lignes cachées, coupe pochée),
+   * recalculée à l'ouverture, à chaque réglage et à chaque changement du modèle ; Rafraîchir reprend la caméra courante.
+   * Motifs de hachure : saisis ou lus d'un fichier .pat, jamais fournis.
+   */
+  const [optionsPlan, setOptionsPlan] = useState<OptionsPlan>({ source: "courante", echelle: 50, coupe: null, cachees: "pointille" });
+  const [apercuPlan, setApercuPlan] = useState<ApercuPlan | null>(null);
+  const [motifChoisiEtat, setMotifChoisi] = useState<string | null>(null);
+  const [erreurPlan, setErreurPlan] = useState<string | null>(null);
+  const [notePlan, setNotePlan] = useState<string | null>(null);
+  const [tourPlan, setTourPlan] = useState(0);
+  const titreMotifsRef = useRef<HTMLHeadingElement | null>(null);
+  const importMotifRef = useRef<HTMLInputElement | null>(null);
+  const motifsPlan = Object.values(hist.present.modele.annotations?.motifs ?? {});
+  const motifChoisi = motifsPlan.some((x) => x.id === motifChoisiEtat) ? motifChoisiEtat : (motifsPlan[0]?.id ?? null);
+  const calculerPlan = (o: OptionsPlan = optionsPlan): ApercuPlan => {
+    const m = hist.present.modele;
+    const DIRECTIONS: Record<Exclude<SourcePlan, "courante">, { direction: Vec3; haut?: Vec3 }> = {
+      dessus: { direction: { x: 0, y: 0, z: -1 }, haut: { x: 0, y: 1, z: 0 } },
+      avant: { direction: { x: 0, y: 1, z: 0 } },
+      droite: { direction: { x: -1, y: 0, z: 0 } },
+      arriere: { direction: { x: 0, y: -1, z: 0 } },
+      gauche: { direction: { x: 1, y: 0, z: 0 } },
+    };
+    const cam = vueRef.current?.etatCamera();
+    const vueP = o.source === "courante" ? (cam ? { direction: { x: cam.cible.x - cam.position.x, y: cam.cible.y - cam.position.y, z: cam.cible.z - cam.position.z } } : DIRECTIONS.dessus) : DIRECTIONS[o.source];
+    const plan = o.coupe === "aucune" ? null : o.coupe === null ? planDeCoupeActif(m) : (m.annotations?.plansDeCoupe[o.coupe] ?? planDeCoupeActif(m));
+    const projete = projeterPlan(m, vueP, { plan });
+    const svg = svgPlan(projete, m, { echelle: o.echelle, traits: TRAITS_PLAN, cachees: o.cachees });
+    const classes = new Set(projete.traits.filter((x) => x.classe !== "cache" || o.cachees === "pointille").map((x) => x.classe)).size;
+    const utilises = new Set(projete.poches.map((x) => (x.materiau ? m.annotations?.materiaux[x.materiau]?.motif : undefined)).filter((x) => x !== undefined)).size;
+    return { svg, classes, motifs: utilises, vide: projete.traits.length === 0 };
+  };
+  useEffect(() => {
+    if (panneau !== "plan-vectoriel") return;
+    const minuterie = window.setTimeout(() => setApercuPlan(calculerPlan()), 120);
+    return () => window.clearTimeout(minuterie);
+  }, [panneau, optionsPlan, hist.present.modele, tourPlan]); // eslint-disable-line react-hooks/exhaustive-deps
+  const disponibiliteCommandePlan = (id: IdCommandePlan) => disponibilitePlan(id, { dessin: !(apercuPlan?.vide ?? false), motifChoisi: motifChoisi !== null, lecture: readOnly });
+  const operationMotif = (r: ResultatMotif, libelle: string, message: string | null) => {
+    if (!r.ok) return setErreurPlan(t(`planche.plan.erreur.${r.erreur === "fichier" ? "absent" : r.erreur}`));
+    setErreurPlan(null);
+    setNotePlan(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return r;
+  };
+  const executerPlan = (id: IdCommandePlan) => {
+    if (id === "plan-vectoriel") return setPanneau("plan-vectoriel");
+    if (!disponibiliteCommandePlan(id).disponible) return;
+    if (id === "rafraichir-plan") {
+      setPanneau("plan-vectoriel");
+      return setTourPlan((n) => n + 1);
+    }
+    if (id === "motifs-hachure") {
+      setPanneau("plan-vectoriel");
+      window.setTimeout(() => titreMotifsRef.current?.focus(), 0);
+      return;
+    }
+    if (id === "exporter-plan-svg") {
+      const a = calculerPlan();
+      setApercuPlan(a);
+      if (a.vide) return;
+      const fichier = `${nomCourant.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche"}-1-${optionsPlan.echelle}.svg`;
+      telechargerFichier(new Blob([a.svg], { type: "image/svg+xml;charset=utf-8" }), fichier);
+      setNotePlan(t("planche.plan.note.exporte", { fichier }));
+      return;
+    }
+    setPanneau("plan-vectoriel");
+    if (id === "importer-motif") return importMotifRef.current?.click();
+    if (id === "nouveau-motif") {
+      const nom = t("planche.plan.motif.nom-defaut", { numero: String(motifsPlan.length + 1) });
+      const r = operationMotif(ajouterMotifs(hist.present.modele, [{ nom, familles: [familleSimple(45, 2)], source: { genre: "saisie" } }]), t("planche.plan.nouveau-motif"), t("planche.plan.note.cree", { nom }));
+      if (r) setMotifChoisi(r.ids[0] ?? null);
+      return;
+    }
+    if (id === "supprimer-motif" && motifChoisi) {
+      const nom = hist.present.modele.annotations?.motifs?.[motifChoisi]?.nom ?? "";
+      operationMotif(supprimerMotif(hist.present.modele, motifChoisi), t("planche.plan.supprimer-motif"), t("planche.plan.note.supprime", { nom }));
+    }
+  };
+  const importerMotifs = async (f: File) => {
+    const texte = await f.text();
+    const lu = lirePat(texte);
+    if (!lu.ok) return setErreurPlan(t("planche.plan.erreur.fichier", { ligne: String(lu.ligne) }));
+    const r = operationMotif(ajouterMotifs(hist.present.modele, lu.motifs.map((x) => ({ nom: x.nom, familles: x.familles, source: { genre: "pat" as const, fichier: f.name.slice(0, 200) } }))), t("planche.plan.importer-motif"), t("planche.plan.note.importe", { nombre: String(lu.motifs.length), fichier: f.name }));
+    if (r) setMotifChoisi(r.ids[0] ?? null);
+  };
+  const modifierUnMotif = (id: string, v: SaisieMotif) => {
+    const angle = lireNombreSaisi(v.angle);
+    const pas = lireNombreSaisi(v.pas);
+    if (angle === null) return setErreurPlan(t("planche.plan.erreur.angle"));
+    if (pas === null) return setErreurPlan(t("planche.plan.erreur.pas"));
+    operationMotif(modifierMotif(hist.present.modele, id, { nom: v.nom, angle, pas }), t("planche.plan.motifs-hachure"), null);
+  };
+  const associerUnMotif = (materiau: string, motif: string | null) => operationMotif(associerMotif(hist.present.modele, materiau, motif), t("planche.plan.motifs-hachure"), null);
+  /**
    * Murs à épaisseur (cas 4 du catalogue, étape 4) : épaisseur et hauteur saisies dans la barre d'options de l'outil Mur
    * (valeurs de départ de l'outil, jamais une donnée du projet) ; « Murs depuis les arêtes » pose un mur par chaîne
    * d'arêtes horizontales choisies, en un pas. Jonctions non raccordées signalées, jamais corrigées.
@@ -4032,6 +4138,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
+    else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -4094,6 +4201,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_NIVEAUX.map((c) => {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
+        }),
+        ...COMMANDES_PLAN.map((c) => {
+          const d = disponibiliteCommandePlan(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.plan.motif.vide"), executer: () => executerPlan(c.id) };
         }),
         ...COMMANDES_LOCAUX.map((c) => {
           const d = disponibiliteCommandeLocal(c.id);
@@ -4780,6 +4891,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
+      {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
+      <input
+        ref={importMotifRef}
+        type="file"
+        accept=".pat,text/plain"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerMotifs(f);
+        }}
+        data-planche-motif-fichier
+      />
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
@@ -4812,6 +4936,28 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 erreur={erreurNiveau}
                 note={noteNiveau}
               />
+            )}
+            {panneau === "plan-vectoriel" && (
+              <>
+                <PanneauPlanVectoriel
+                  options={optionsPlan}
+                  plans={Object.values(hist.present.modele.annotations?.plansDeCoupe ?? {})}
+                  apercu={apercuPlan}
+                  motifs={motifsPlan}
+                  matieres={Object.values(hist.present.modele.annotations?.materiaux ?? {})}
+                  choisi={motifChoisi}
+                  lecture={readOnly}
+                  onOptions={setOptionsPlan}
+                  onChoisir={(id) => { setMotifChoisi(id); setErreurPlan(null); }}
+                  onModifierMotif={modifierUnMotif}
+                  onAssocier={associerUnMotif}
+                  executer={executerPlan}
+                  disponibilite={disponibiliteCommandePlan}
+                  refMotifs={titreMotifsRef}
+                  erreur={erreurPlan}
+                  note={notePlan}
+                />
+              </>
             )}
             {panneau === "locaux" && (
               <PanneauLocaux
@@ -5125,6 +5271,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {outilExtensionActif && vue.consigne ? " — " : ""}
             {vue.consigne}
           </span>
+          {panneau === "plan-vectoriel" && apercuPlan && <span className="planche-plan-etat" data-planche-plan-etat>{vue.consigne ? " | " : ""}{t("planche.plan.etat", { echelle: String(optionsPlan.echelle), traits: String(apercuPlan.classes), motifs: String(apercuPlan.motifs) })}</span>}
           {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
           {etatBarre && (() => {

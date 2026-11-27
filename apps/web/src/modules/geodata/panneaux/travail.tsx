@@ -8,6 +8,8 @@ import { aireM2, formatNombre, libelleDistance, libelleSurface, longueurM, METHO
 import { api, ErreurGeoData, type AnalyseRecue, type CarteRecue, type CollectionRecue, type CoucheRecue, type ExportRecu, type ImportRecu, type ResumeCarte, type ZoneRecue } from "../client";
 import { nouvelIdDemande } from "../composition-ops";
 import type { OutilCarte } from "../carte/moteur";
+import { SaisieCoordonnees } from "./SaisieCoordonnees";
+import type { TraceSaisi } from "../etat/outils-ops";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -85,7 +87,8 @@ export function MesCartes(p: { carte: CarteRecue | null; nouvelle: boolean; enre
   );
 }
 
-export interface TraceEnCours { outil: OutilCarte; sommets: readonly [number, number][] }
+/** Tracé en cours ; `provenance` : saisi au clavier (« coordonnees », P7) ou dessiné (par défaut). */
+export interface TraceEnCours { outil: OutilCarte; sommets: readonly [number, number][]; provenance?: "dessin" | "coordonnees" }
 
 /** Mesure indicative d'un tracé (concept § 5.1), méthode affichée. */
 export function mesureDuTrace(t: TraceEnCours | null): string | null {
@@ -97,10 +100,12 @@ export function mesureDuTrace(t: TraceEnCours | null): string | null {
 }
 
 export function Etudes(p: {
-  outil: OutilCarte; trace: TraceEnCours | null; tracePret: { outil: OutilCarte; sommets: readonly [number, number][] } | null; couchesPolygones: CoucheRecue[];
+  outil: OutilCarte; trace: TraceEnCours | null; tracePret: TraceEnCours | null; couchesPolygones: CoucheRecue[];
   onOutil(o: OutilCarte): void; onTerminer(): void; onAnnulerTrace(): void; onZonesChangees(): void; onCentrer(geometrie: { type: string; coordinates: unknown }): void; zones: ZoneRecue[];
   /** Zone qui filtre la carte, la table et la synthèse (D-GD-41) ; `onFiltrerZone(null)` retire le filtre. */
   zoneFiltre?: string | null; onFiltrerZone?(id: string | null): void;
+  /** Tracé saisi au clavier (P7) : même chemin que le tracé dessiné terminé. */
+  onTraceCoordonnees?(t: TraceSaisi): void;
 }) {
   const [analyses, setAnalyses] = useState<AnalyseRecue[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -131,14 +136,15 @@ export function Etudes(p: {
       <fieldset className="gd-outils"><legend>Outil de la carte</legend>
         {OUTILS.map(([o, l]) => <label key={o} className="gd-case"><input type="radio" name="gd-outil" checked={p.outil === o} onChange={() => p.onOutil(o)} data-gd-outil={o} />{l}</label>)}
       </fieldset>
-      {p.outil !== "navigation" && <p className="gd-discret">{p.outil === "annotation" ? "Cliquez sur la carte pour poser l'annotation." : "Cliquez pour ajouter des sommets ; double-clic ou « Terminer le tracé » pour finir ; Échap annule."}</p>}
+      {p.outil !== "navigation" && <p className="gd-discret">{p.outil === "annotation" ? "Cliquez sur la carte pour poser l'annotation." : "Cliquez pour ajouter des sommets (au clavier, carte active : Espace au centre, Retour arrière retire le dernier) ; double-clic, Entrée ou « Terminer le tracé » pour finir ; Échap annule."}</p>}
       {p.outil !== "navigation" && p.outil !== "annotation" && <div className="gd-actions"><button type="button" onClick={p.onTerminer}>Terminer le tracé</button><button type="button" onClick={p.onAnnulerTrace}>Annuler le tracé</button></div>}
+      {p.onTraceCoordonnees && p.outil !== "navigation" && <SaisieCoordonnees key={p.outil} outil={p.outil} onTrace={p.onTraceCoordonnees} />}
       {mesure && <p role="status" className="gd-mesure" data-gd-mesure>{mesure}<br /><span className="gd-discret">{METHODE_MESURE_INDICATIVE}</span></p>}
       {p.tracePret && (p.tracePret.outil === "zone" || p.tracePret.outil === "annotation") && (
         <form className="gd-formulaire" onSubmit={(e) => {
           e.preventDefault();
           const s = p.tracePret!.sommets;
-          void enregistrer(p.tracePret!.outil === "zone" ? "zone" : "annotation", p.tracePret!.outil === "zone" ? { type: "Polygon", coordinates: [[...s, s[0]]] } : { type: "Point", coordinates: s[0] }, "dessin");
+          void enregistrer(p.tracePret!.outil === "zone" ? "zone" : "annotation", p.tracePret!.outil === "zone" ? { type: "Polygon", coordinates: [[...s, s[0]]] } : { type: "Point", coordinates: s[0] }, p.tracePret!.provenance ?? "dessin");
         }}>
           <h3>{p.tracePret.outil === "zone" ? "Enregistrer la zone dessinée" : "Enregistrer l'annotation"}</h3>
           <label className="gd-champ">Nom<input value={nom} onChange={(e) => setNom(e.target.value)} maxLength={120} data-gd-nom-zone /></label>

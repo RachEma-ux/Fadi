@@ -47,3 +47,4 @@ export * from "./donnees-extensions.js";
 export * from "./evenements-extensions.js";
 export * from "./fichiers-extensions.js";
 export * from "./panneaux-extensions.js";
+export * from "./plan-vectoriel.js";

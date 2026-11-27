@@ -12,8 +12,8 @@ aucune donnée dans le code (D-GD-29).
 | --- | --- | --- | --- |
 | P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (PR #472) |
 | P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (PR #482) |
-| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (cette PR) |
-| P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | à faire |
+| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (PR #487) |
+| P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | livrée (cette PR) |
 | P8-P10 | E Légende | Version et couverture, légende complète, hachures | à faire |
 | P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | à faire |
 
@@ -71,7 +71,26 @@ aucune donnée dans le code (D-GD-29).
 - **P5, comportement** : la colonne d'outils garde zoom avant / arrière et range le reste en deux groupes nommés à
   divulgation, « Mesurer et tracer » (Alt+N) et « Affichage » (Alt+A), avec la lettre d'accès de chaque entrée ; Échap
   ferme le groupe et rend le focus à son bouton. « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique.
+- Revue de la PR #487 : le panneau d'un groupe s'ouvre du côté où il tient dans la carte (`placementPanneauGroupe`,
+  testé), même quand la barre est déplacée contre le bord gauche.
 - Écart connu : l'ordre de tabulation de la colonne n'a pas été réordonné (inchangé par rapport à l'existant).
 - Captures : `captures/p5/` (groupe « Affichage » ouvert et aide des raccourcis au bureau 1440 px ; groupe ouvert sur
   Pixel 7), données réelles du Maroc, build final de la feuille de route.
 - Recette : contrôles « P5 » de `geodata.mjs` (colonne, Alt+N et focus, axe-core moderate, Échap, aide « ? »).
+
+## P6-P7 · Clavier (jalon D : E-05)
+
+- **P6, extraction sans changement visible** : `etat/outils-ops.ts` (`voletDeOutil`, `outilTerrain`, `outilQuiEnregistre`,
+  `zoneActiveDe`, `zoneARetablir`, purs et testés) et `etat/useOutilsZones.ts` (outil, tracé, zones d'étude, filtre).
+- **P7, comportement** : tout outil de tracé se sert sans souris.
+  - Saisie de coordonnées (`panneaux/SaisieCoordonnees.tsx`, WGS 84 en degrés décimaux) : longitude et latitude pour
+    un outil à un point, un point par ligne sinon ; nombre de sommets vérifié avec son motif (`traceDepuisCoordonnees`,
+    pur). Présente dans le volet Études et dans le panneau Terrain.
+  - Le tracé saisi suit le chemin commun (même mesure, même formulaire d'enregistrement) ; sa provenance
+    (« coordonnées » ou « dessin ») est gardée.
+  - Voie clavier sur la carte active : Espace pose un sommet au centre, Retour arrière retire le dernier, avec annonce.
+  - Alt+O (altitude) et Alt+U (profil) sans carte (sans WebGL) ouvrent l'outil et mettent le focus sur la saisie.
+- Limite inchangée : une mesure terminée n'est pas dessinée sur la carte (comportement antérieur, au clic comme au clavier).
+- Captures : `captures/p7/`, distance Casablanca → Rabat saisie par coordonnées (86,8 km), bureau 1440 px et Pixel 7.
+- Recette : contrôles « P7 » de `geodata.mjs` (voie clavier, distance, surface, refus motivé, annotation, rien écrit en
+  base, axe-core moderate, sans WebGL : Alt+O et altitude par coordonnées).

@@ -132,6 +132,8 @@ export interface Materiau {
   readonly id: Id;
   readonly nom: string;
   readonly couleur: string;
+  /** (Cas 4, étape 5) Motif de hachure de la matière coupée (`annotations.motifs`) ; absent = aplat gris. */
+  readonly motif?: Id;
 }
 
 export interface Balise {
@@ -327,6 +329,27 @@ export interface Mur {
   readonly signature: string;
 }
 
+/**
+ * (Cas 4 du catalogue, étape 5 : D7-S-001) Famille de lignes d'un motif de hachure, en mm papier : angle (degrés), point
+ * de départ, décalage entre lignes (dx le long, dy perpendiculaire) et tirets (positif trait, négatif blanc ; vide = trait
+ * continu) — la forme des fichiers .pat. Aucun motif n'est fourni par Fadi : chacun est saisi ou importé.
+ */
+export interface FamilleHachure {
+  readonly angle: number;
+  readonly x0: number;
+  readonly y0: number;
+  readonly dx: number;
+  readonly dy: number;
+  readonly tirets: readonly number[];
+}
+export interface MotifHachure {
+  readonly id: Id;
+  readonly nom: string;
+  readonly familles: readonly FamilleHachure[];
+  /** Origine : saisi dans le panneau, ou importé d'un fichier .pat (nom du fichier). */
+  readonly source: { readonly genre: "saisie" } | { readonly genre: "pat"; readonly fichier: string };
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -357,6 +380,7 @@ export interface Annotations {
   readonly locaux?: Readonly<Record<Id, Local>>;
   /** (Cas 4, étape 4) Murs à épaisseur : tracé d'axe et paramètres, géométrie dans un groupe de la racine. */
   readonly murs?: Readonly<Record<Id, Mur>>;
+  readonly motifs?: Readonly<Record<Id, MotifHachure>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -386,6 +410,7 @@ export interface AnnotationsMutables {
   niveaux: Record<Id, Niveau>;
   locaux: Record<Id, Local>;
   murs: Record<Id, Mur>;
+  motifs: Record<Id, MotifHachure>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

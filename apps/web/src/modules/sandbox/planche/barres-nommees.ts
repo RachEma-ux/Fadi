@@ -161,7 +161,7 @@ export function groupeDeCommande(id: string): GroupeCommande {
   if (id === "zoom-plus" || id === "zoom-moins") return "camera";
   if (extensionDeLaCommande(id)) return "extensions";
   const famille = entreeSandbox("commande", id)?.famille;
-  if (famille === "repere" || famille === "emplacement" || famille === "niveau" || famille === "local" || famille === "mur") return "reperes";
+  if (famille === "repere" || famille === "emplacement" || famille === "niveau" || famille === "local" || famille === "mur" || famille === "plan") return "reperes";
   if (famille === "debit" || famille === "piece") return "bois";
   return "groupe";
 }

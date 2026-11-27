@@ -17,9 +17,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 - Améliorations selon l'équipe A (Multi-Arena du 27 novembre 2026, feuille de route en 14 PR) : **P1 carte d'arrivée** fusionnée
   (PR #472), **P2 carte robuste** (PR #482), **jalon C P3-P5
-  commandes** sur `claude/project-thread-q30312` (compte rendu `AMELIORATIONS-EQUIPE-A.md`, décisions
+  commandes** (PR #487), **jalon D P6-P7 clavier** sur `claude/project-thread-q30312` (compte rendu `AMELIORATIONS-EQUIPE-A.md`, décisions
   D1 et D2 prises selon la recommandation). Le maître d'ouvrage a délégué la fusion de chaque jalon CI verte et captures
-  jointes (27 novembre 2026). Prochaine action : jalon D (P6-P7, clavier) après fusion du jalon C.
+  jointes (27 novembre 2026). Prochaine action : jalon E (P8-P10, légende) après fusion du jalon D.
 - Terrain TER-09 (fond mondial à la demande, Issue #381) : **fusionné** (PR #391, `dce8066`, 4 novembre 2026), aucun
   déploiement. Décisions TER-D22 à TER-D28 **acceptées** le 4 novembre 2026 (recommandations). Prochaine étape, sur le VPS
   par l'administrateur, après déploiement : réinstaller `/usr/local/sbin/fadi-preprod` (SHA-256

@@ -1100,6 +1100,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-murs node apps/web/e2e/planche-murs.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du plan vectoriel (cas 4, étape 5) — projection, coupe pochée, export SVG, motifs de hachure (apps/web/e2e/planche-plan-vectoriel.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-plan-vectoriel node apps/web/e2e/planche-plan-vectoriel.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

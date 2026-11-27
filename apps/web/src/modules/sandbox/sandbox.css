@@ -4470,12 +4470,12 @@
     width: min(38rem, calc(100% - var(--colonne-l) - 5rem));
   }
 }
-/* Dix-sept panneaux dans la colonne (Niveaux et Locaux du cas 4, Numérotation du cas 2 lot 1). Sur écran tactile large
-   (téléphone détaché couché, tablette), l'écart entre boutons passe de 12 à 4 px pour que la colonne tienne entière
-   sans défiler ni cacher de panneau. */
+/* Dix-huit panneaux dans la colonne (Niveaux, Locaux et Plan vectoriel du cas 4, Numérotation du cas 2 lot 1). Sur écran
+   tactile large (téléphone détaché couché, tablette), l'écart entre boutons passe de 12 à 2 px pour que la colonne
+   tienne entière sans défiler ni cacher de panneau. */
 @media (min-width: 761px) and (hover: none) and (pointer: coarse) {
   .sandbox-planche .planche-colonne {
-    gap: 4px;
+    gap: 2px;
   }
 }
 /* Cas 4, étape 4 : barre d'options de l'outil Mur (maquette etape-4-murs.png). */
@@ -4527,6 +4527,121 @@
 .sandbox-planche .planche-mur-note {
   font-size: 0.8rem;
   color: var(--atelier-texte-doux, #4b5a52);
+}
+/* Cas 4, étape 5 : plan vectoriel (réglages, traits, aperçu, motifs de hachure). */
+@media (min-width: 64rem) {
+  .sandbox-planche .planche-panneau[data-planche-panneau="plan-vectoriel"] {
+    width: min(40rem, calc(100% - var(--colonne-l) - 5rem));
+  }
+}
+.sandbox-planche .planche-plan-reglages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.9rem;
+}
+.sandbox-planche .planche-plan-champ {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+}
+.sandbox-planche .planche-plan-champ select {
+  min-width: 0;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 0.4rem;
+  border: 1px solid rgba(27, 77, 66, 0.35);
+  border-radius: 6px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-plan-traits {
+  margin: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.sandbox-planche .planche-plan-trait {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) 5rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+.sandbox-planche .planche-plan-trait dt {
+  font-weight: 700;
+}
+.sandbox-planche .planche-plan-trait dd {
+  margin: 0;
+  text-align: right;
+}
+.sandbox-planche .planche-plan-trait-echantillon {
+  height: 0;
+  width: 70%;
+  border-top: 1px solid rgba(0, 0, 0, 1);
+}
+.sandbox-planche .planche-plan-trait-echantillon.est-coupe {
+  border-top-width: 3px;
+}
+.sandbox-planche .planche-plan-trait-echantillon.est-cache {
+  border-top-style: dashed;
+}
+.sandbox-planche .planche-plan-apercu {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  max-height: 16rem;
+  padding: 0.6rem;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.sandbox-planche .planche-plan-apercu img {
+  max-width: 100%;
+  max-height: 14.5rem;
+  object-fit: contain;
+}
+.sandbox-planche .planche-plan .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-plan-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.4rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(27, 77, 66, 0.2);
+  color: #1b4d42;
+  font-size: 1.05rem;
+}
+.sandbox-planche .planche-plan-titre-raccourci {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(27, 77, 66, 0.75);
+}
+.sandbox-planche .planche-plan-table .planche-locaux-n {
+  text-align: right;
+}
+.sandbox-planche .planche-plan-table tbody tr.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-plan-table input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 3.5rem;
+  min-height: 28px;
+  padding: 0 0.3rem;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-plan-vignette {
+  display: block;
+  color: rgba(0, 0, 0, 0.8);
+}
+.sandbox-planche .planche-plan-matieres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
 }
 /* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
 .sandbox-planche .planche-accrochage h4,
