@@ -73,7 +73,7 @@ function planche(modele: Modele) {
   let reponses: (ValeursSaisie | null)[] = [];
   let aOuvrir: { nom: string; texte: string } | null = null;
   // Protocole 1.2 : archivage en base du fichier chargé, réussi par défaut, refusé à la demande.
-  let refusArchive: string | null = null;
+  let refusArchive: "connexion" | null = null;
   const archives: string[] = [];
   const titres: string[] = [];
   const acces: AccesPlanche = {
@@ -120,7 +120,7 @@ function planche(modele: Modele) {
     titres,
     repondre: (r: (ValeursSaisie | null)[]) => void (reponses = r),
     fichierAOuvrir: (f: { nom: string; texte: string } | null) => void (aOuvrir = f),
-    refuserArchive: (motif: string | null) => void (refusArchive = motif),
+    refuserArchive: (motif: "connexion" | null) => void (refusArchive = motif),
     archives,
     derniereAlerte: () => etat.avis.filter((a) => a.genre === "alerte").at(-1)?.texte ?? "",
   };
@@ -472,7 +472,7 @@ describe("extension « Toitures et combles » — archivage en base du fichier c
     expect(p.archives).toEqual(["pentes.json"]);
     expect(p.derniereAlerte()).toBe("");
     const q = planche(modeleVide());
-    q.refuserArchive("connexion requise");
+    q.refuserArchive("connexion");
     await chargerTable(q);
     expect(q.derniereAlerte()).toBe("Chargement refusé : le fichier n'a pas pu être archivé en base (connexion requise)");
     expect(q.etat.avis.some((a) => a.texte.startsWith("Table des pentes chargée"))).toBe(false);

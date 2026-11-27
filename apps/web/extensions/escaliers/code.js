@@ -81,6 +81,7 @@ var T = {
     reglesChargees: "Règles chargées : ",
     reglesRefusees: "Fichier de règles refusé : ",
     archiveRefusee: "Chargement refusé : le fichier n'a pas pu être archivé en base (",
+    motifsArchive: { indisponible: "archivage indisponible dans cette Planche", impossible: "archivage impossible", reseau: "réseau indisponible", connexion: "connexion requise", extension_inconnue: "extension non installée pour ce compte", trop_lourd: "fichier trop lourd", serveur: "refus du serveur", illisible: "réponse du serveur illisible" },
     modeleEnregistre: "Modèle de fichier de règles enregistré : à remplir avec les valeurs et leurs sources.",
     titreAccessibilite: "Accessibilité de l'escalier",
     accessibiliteEnregistree: "Accessibilité déclarée pour l'escalier.",
@@ -146,6 +147,7 @@ var T = {
     reglesChargees: "Rules loaded: ",
     reglesRefusees: "Rules file refused: ",
     archiveRefusee: "Loading refused: the file could not be archived in the database (",
+    motifsArchive: { indisponible: "archiving unavailable in this Planche", impossible: "archiving failed", reseau: "network unavailable", connexion: "sign-in required", extension_inconnue: "extension not installed for this account", trop_lourd: "file too large", serveur: "refused by the server", illisible: "unreadable server response" },
     modeleEnregistre: "Rules file template saved: fill it in with the values and their sources.",
     titreAccessibilite: "Stair accessibility",
     accessibiliteEnregistree: "Accessibility declared for the stair.",
@@ -233,7 +235,7 @@ async function chargerRegles() {
   // Protocole 1.2 : le fichier chargé est archivé tel quel en base ; sans archive, il n'est pas chargé.
   var f = await planche.fichiers.ouvrir([".json"], { archiver: true });
   if (!f) return;
-  if (!f.archive) return alerte(x.archiveRefusee + (f.archiveRefus || "") + ")");
+  if (!f.archive) return alerte(x.archiveRefusee + (x.motifsArchive[f.archiveRefus] || x.motifsArchive.impossible) + ")");
   var r = lireRegles(f.texte);
   if (r.erreur) return alerte(x.reglesRefusees + r.erreur);
   var anciennes = await reglesGardees();
