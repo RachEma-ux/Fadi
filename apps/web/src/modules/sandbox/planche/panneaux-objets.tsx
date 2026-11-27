@@ -6,7 +6,7 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, murDeOccurrence, murIntact, jonctionsDuMur, longueurAxe, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
@@ -238,6 +238,30 @@ function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: {
   );
 }
 
+/** (Cas 4, étape 4) Mur à épaisseur : paramètres, longueur d'axe et jonctions recalculées (croisements signalés). */
+function InfoMur({ modele, occurrence, separateur }: { modele: Modele; occurrence: Id; separateur: "." | "," }) {
+  const w = murDeOccurrence(modele, occurrence);
+  if (!w) return null;
+  const m = (v: number) => `${v.toFixed(2).replace(".", separateur)} m`;
+  const j = jonctionsDuMur(modele, w);
+  return (
+    <>
+      <dt>{t("planche.info.mur")}</dt>
+      <dd data-planche-info-mur={murIntact(modele, w) ? "intact" : "modifie"}>{murIntact(modele, w) ? "" : t("planche.info.mur.modifie")}</dd>
+      <dt>{t("planche.mur.epaisseur")}</dt>
+      <dd data-planche-info-mur-epaisseur={w.epaisseur}>{m(w.epaisseur)}</dd>
+      <dt>{t("planche.mur.hauteur")}</dt>
+      <dd>{m(w.hauteur)}</dd>
+      <dt>{t("planche.mur.reference")}</dt>
+      <dd>{t(`planche.option.mur.reference.${w.reference}`)}</dd>
+      <dt>{t("planche.info.mur.longueur")}</dt>
+      <dd data-planche-info-mur-longueur={longueurAxe(w)}>{m(longueurAxe(w))}</dd>
+      <dt>{t("planche.info.mur.jonctions")}</dt>
+      <dd data-planche-info-mur-jonctions={`${j.angle}/${j.te}/${j.croisement}`}>{t("planche.info.mur.jonctions.valeur", { angle: String(j.angle), te: String(j.te), croisement: String(j.croisement) })}</dd>
+    </>
+  );
+}
+
 export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null }) {
   const c = contexte(modele, dans);
   const materiaux = Object.values(modele.annotations?.materiaux ?? {});
@@ -360,6 +384,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
             <dd data-planche-info-source {...(d.piece.source.genre === "saisie" ? {} : { translate: "no" as const })}>{d.piece.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSource(d.piece.source)}</dd>
           </>
         )}
+        {dans === undefined && <InfoMur modele={modele} occurrence={id} separateur={separateur} />}
         <dt>{t("planche.info.occurrence")}</dt>
         <dd>
           <input value={occ.nom ?? ""} disabled={lecture} placeholder={occ.id} aria-label={t("planche.info.occurrence")} onChange={(e) => actions.renommerOccurrence(id, e.target.value)} data-planche-info-occurrence />

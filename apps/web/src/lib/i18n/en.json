@@ -14917,5 +14917,20 @@
 "Remonter d'un niveau": "Go up one level",
 "Descendre d'un niveau": "Go down one level",
 "Ouvrir le groupe « Mesurer et tracer »": "Open the “Measure and draw” group",
-"Ouvrir le groupe « Affichage »": "Open the “Display” group"
+"Ouvrir le groupe « Affichage »": "Open the “Display” group",
+"Cliquez le début de l'axe du mur.": "Click the start of the wall axis.",
+"Cliquez le point suivant ou tapez une longueur ; Entrée ou double-clic termine, Échap annule le segment en cours.": "Click the next point or type a length; Enter or double-click ends, Esc cancels the current segment.",
+"Tapez d'abord une épaisseur et une hauteur positives dans la barre d'options.": "First type a positive thickness and height in the options bar.",
+"{0} Tapez d'abord une épaisseur et une hauteur positives dans la barre d'options.": "{0} First type a positive thickness and height in the options bar.",
+"Un mur se pose dans le modèle : sortez d'abord du groupe ou du composant ouvert.": "A wall is placed in the model: first leave the open group or component.",
+"Axe trop court : placez au moins deux points distincts.": "Axis too short: place at least two distinct points.",
+"Épaisseur : tapez une valeur positive.": "Thickness: type a positive value.",
+"Hauteur : tapez une valeur positive.": "Height: type a positive value.",
+"Angle trop aigu entre deux segments : le mur ne peut pas être raccordé.": "Angle too sharp between two segments: the wall cannot be joined.",
+"Mur introuvable.": "Wall not found.",
+"Placez d'abord le début de l'axe.": "First place the start of the axis.",
+"Orientez le curseur pour donner la direction du mur.": "Move the cursor to give the wall's direction.",
+"Fait défiler le côté de référence : axe, nu intérieur, nu extérieur.": "Cycles the reference side: axis, inner face, outer face.",
+"Le mur (un groupe extrudé de sa hauteur, onglets en L, arrêt en T) est posé et sélectionné en un pas ; l'outil revient à l'étape 1.": "The wall (a group extruded to its height, mitred L corners, T stops) is placed and selected in one step; the tool returns to step 1.",
+"épaisseur et hauteur saisies dans la barre d'options": "thickness and height entered in the options bar"
 }

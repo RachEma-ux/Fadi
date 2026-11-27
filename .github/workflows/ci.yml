@@ -1095,6 +1095,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-locaux node apps/web/e2e/planche-locaux.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des murs (cas 4, étape 4) — outil Mur, barre d'options, jonction en L, murs depuis les arêtes (apps/web/e2e/planche-murs.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-murs node apps/web/e2e/planche-murs.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

@@ -11,9 +11,9 @@ import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCO
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
 describe("registre du Sandbox — contenu", () => {
-  it("85 entrées du catalogue : 52 outils, 20 commandes, 13 panneaux (la sous-liste « Objets et vue » a disparu, lot 4)", () => {
-    expect(catalogue).toHaveLength(85);
-    expect(catalogue.filter((e) => e.nature === "outil")).toHaveLength(52);
+  it("86 entrées du catalogue : 53 outils (Mur compris, cas 4), 20 commandes, 13 panneaux (la sous-liste « Objets et vue » a disparu, lot 4)", () => {
+    expect(catalogue).toHaveLength(86);
+    expect(catalogue.filter((e) => e.nature === "outil")).toHaveLength(53);
     expect(catalogue.filter((e) => e.nature === "commande")).toHaveLength(20);
     expect(catalogue.filter((e) => e.nature === "panneau")).toHaveLength(13);
     expect(entreeSandbox("panneau", "objets")).toBeUndefined();
@@ -21,7 +21,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
     // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.famille !== "numerotation" && e.id !== "numerotation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.famille !== "numerotation" && e.id !== "numerotation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
     // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["controler", true, "panneau-controle"], ["nettoyer", true, "panneau-controle"]]);
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
