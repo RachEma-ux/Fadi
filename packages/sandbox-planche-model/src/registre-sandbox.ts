@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -98,6 +98,7 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   "profiles-aretes": "frame",
   mur: "wall",
   reserve: "pin",
+  calage: "crosshair",
   onglet: "fadi:onglet",
   "coupe-profil": "fadi:coupe-profil",
   "allonger-piece": "fadi:allonger",
@@ -184,6 +185,9 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   // Ctrl+Alt+Maj+9, forme refusée aux outils) ; parmi les lettres libres de Ctrl+Maj, V est la seule que le navigateur
   // ne garde pas (A, O, P et Q ouvrent ou ferment une fenêtre du navigateur).
   reserve: "Ctrl+Maj+V",
+  // Cas 4, lot C4, étape 1 : calage d'image. Toutes les lettres des outils sont prises ; Ctrl+Alt+Maj+F1 à F12 sont la
+  // dernière famille libre du cœur (Ctrl+Alt+lettre reste aux extensions).
+  calage: "Ctrl+Alt+Maj+F2",
   onglet: "Alt+Maj+O",
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
@@ -377,6 +381,14 @@ const commandes: EntreeSandbox[] = [
   c("creer-lien", "consultation", "link-plus", "Ctrl+Alt+Maj+9", "panneau-consultations", true),
   c("copier-lien", "consultation", "copy", "Ctrl+Alt+9", "panneau-consultations", true),
   c("revoquer-lien", "consultation", "link-off", "Ctrl+Alt+8", "panneau-consultations", true),
+  // Fonds calés (cas 4, lot C4, étape 1) : panneau hors colonne (Fichier ▸ Importer un fond, Outils ▾ et raccourci),
+  // outil Calage (Ctrl+Alt+Maj+F2) ; Ctrl+Alt+Maj+F1 à F12, dernière famille libre du cœur.
+  c("fonds", "fond", "photo", "Ctrl+Alt+Maj+F1", "outils", true),
+  c("importer-fond", "fond", "photo-plus", "Ctrl+Alt+Maj+F3", "panneau-fonds", true),
+  c("caler-fond", "fond", "ruler-measure-2", "Ctrl+Alt+Maj+F4", "panneau-fonds", true),
+  c("verrouiller-fond", "fond", "lock-square", "Ctrl+Alt+Maj+F5", "panneau-fonds", true),
+  c("supprimer-point-calage", "fond", "point-off", "Ctrl+Alt+Maj+F6", "panneau-fonds", true),
+  c("supprimer-fond", "fond", "photo-x", "Ctrl+Alt+Maj+F7", "panneau-fonds", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
@@ -429,6 +441,8 @@ const panneaux: EntreeSandbox[] = [
   p("enveloppe", "home-shield", "outils", true),
   // Liens de consultation (cas 4, étape 7d) : hors de la colonne (pleine).
   p("consultations", "link", "outils", true),
+  // Fonds calés (cas 4, lot C4, étape 1) : hors de la colonne (pleine).
+  p("fonds", "photo", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -457,6 +471,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:reserves", "panneau:reserves"],
   ["commande:enveloppe", "panneau:enveloppe"],
   ["commande:partager-lien", "panneau:consultations"],
+  ["commande:fonds", "panneau:fonds"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

@@ -39,6 +39,7 @@ export const ICONES_INTERFACE = {
   menuLienConsultation: "link",
   menuExporter: "file-export",
   menuImporter: "file-import",
+  menuImporterFond: "photo-up",
   menuInformations: "info-circle",
   menuImage: "photo-down",
   menuExtensions: "puzzle",

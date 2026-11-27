@@ -200,7 +200,7 @@ async function bandeau(page, racine, contexte) {
   await menusBandeau(page, racine, contexte, ba);
   await racine.locator("[data-planche-menu-ouvrir]").click();
   const liste = await racine.locator(".planche-menu-liste").evaluate((e) => { const b = e.getBoundingClientRect(); return { t: b.top, l: b.left, items: e.querySelectorAll("[data-planche-menu-item]").length }; });
-  check(`${contexte} : ☰ ouvre le menu sous le bandeau, treize entrées (Extensions en dernier)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 13, JSON.stringify(liste));
+  check(`${contexte} : ☰ ouvre le menu sous le bandeau, quatorze entrées (Extensions en dernier)`, liste.t >= m.bandeau.b - 1 && liste.t - m.bandeau.b <= 4 && Math.abs(liste.l - m.planche.l) <= 1 && liste.items === 14, JSON.stringify(liste));
   // Les couleurs claires du bandeau ne fuient ni dans le menu ni dans la page Informations (rendus dans le bandeau).
   const couleurMenu = await racine.locator(".planche-menu-liste [data-planche-menu-item='informations']").evaluate((e) => getComputedStyle(e).color);
   await racine.locator("[data-planche-menu-item='informations']").click();

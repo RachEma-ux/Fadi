@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -780,6 +780,20 @@ export class VuePlanche {
   }
 
   /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */
+  /** Textures des fonds calés (cas 4, lot C4, étape 1), gardées d'une mise à jour à l'autre tant que l'image ne change pas. */
+  private texturesFonds = new Map<string, { cle: string; texture: THREE.Texture }>();
+
+  private textureFond(id: string, image: string): THREE.Texture {
+    const cle = `${image.length}:${image.slice(-48)}`;
+    const deja = this.texturesFonds.get(id);
+    if (deja && deja.cle === cle) return deja.texture;
+    deja?.texture.dispose();
+    const texture = new THREE.TextureLoader().load(image, () => this.rendre());
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.texturesFonds.set(id, { cle, texture });
+    return texture;
+  }
+
   private majAnnotations(modele: Modele, selection: readonly string[]): void {
     vider(this.groupeAnnotations);
     for (const e of this.etiquettesFixes) e.el.remove();
@@ -861,6 +875,28 @@ export class VuePlanche {
     for (const l of tableauLocaux(modele).lignes) {
       if (l.centre === null || l.surface === null) continue;
       etiquette(`${l.local.numero} · ${l.local.nom}\n${l.surface.toFixed(2).replace(".", ",")} m²`, { ...l.centre, z: l.centre.z + 0.01 }, "planche-etiquette-local");
+    }
+    // Fonds calés (cas 4, lot C4, étape 1) : image à plat à son altitude, sous le dessin ; points de calage en lettres.
+    const fonds = Object.values(a.fonds ?? {});
+    for (const id of [...this.texturesFonds.keys()]) if (!fonds.some((f) => f.id === id)) { this.texturesFonds.get(id)!.texture.dispose(); this.texturesFonds.delete(id); }
+    for (const f of fonds) {
+      const [hg, hd, bd, bg] = coinsFond(f);
+      const z = f.altitude - 0.002;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute([bg!.x, bg!.y, z, bd!.x, bd!.y, z, hd!.x, hd!.y, z, hg!.x, hg!.y, z], 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const mat = new THREE.MeshBasicMaterial({ map: this.textureFond(f.id, f.image), transparent: true, opacity: f.opacite, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+      const mesh = new THREE.Mesh(g, mat);
+      mesh.renderOrder = -1;
+      mesh.userData["fond"] = f.id;
+      this.groupeAnnotations.add(mesh);
+      for (const p of f.points) {
+        const q = versPlan(f.pose, p.pixel);
+        etiquette(p.id, { x: q.x, y: q.y, z: f.altitude }, "planche-etiquette-calage");
+        const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+        el.dataset["calage"] = `${f.id}:${p.id}`;
+      }
     }
     // Réserves de chantier (cas 4, étape 7b) : épingle numérotée (ouverte / levée), le numéro toujours écrit.
     for (const r of Object.values(a.reserves ?? {})) {

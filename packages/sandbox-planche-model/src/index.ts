@@ -49,4 +49,5 @@ export * from "./panneaux-extensions.js";
 export * from "./plan-vectoriel.js";
 export * from "./feuilles.js";
 export * from "./reserves.js";
+export * from "./fonds.js";
 export * from "./enveloppe.js";

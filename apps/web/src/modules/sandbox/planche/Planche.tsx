@@ -243,6 +243,18 @@ import {
   repereDepuisFace,
   repereDuContexte,
   ID_RESERVE,
+  ID_CALAGE,
+  calerFond,
+  choisirMethode,
+  fondsDe,
+  importerFond,
+  reglerOpacite,
+  saisirCible,
+  saisirLongueur,
+  supprimerFond,
+  supprimerPointCalage,
+  verrouillerFond,
+  type ResultatFond,
   filtrerReserves,
   leverReserve,
   lotsDesReserves,
@@ -306,7 +318,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -321,6 +333,7 @@ import { PanneauFeuilles } from "./panneau-feuilles";
 import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
+import { PanneauFonds, reduireFond } from "./panneau-fonds";
 import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
 import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
@@ -396,7 +409,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -411,7 +424,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -491,6 +504,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [importCours, setImportCours] = useState<(EtatImport & { readonly fichier: string; readonly octets: number }) | null>(null);
   const annulerImportRef = useRef<(() => void) | null>(null);
   const surReservePoseeRef = useRef<(id: string) => void>(() => {});
+  const surPointCalagePoseRef = useRef<(fond: string, point: string) => void>(() => {});
   const importActif = importCours !== null;
   useEffect(() => {
     if (!importActif) return;
@@ -845,6 +859,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       // Cas 4, étape 7b : la réserve épinglée s'ouvre dans le panneau Réserves.
       const posee = (tr.etat as { posee?: string | null } | null)?.posee;
       if (outilRef.current === ID_RESERVE && posee && posee !== (avant as { posee?: string | null } | null)?.posee) surReservePoseeRef.current(posee);
+      // Cas 4, lot C4, étape 1 : le point de calage posé ouvre le panneau Fonds calés sur son fond.
+      const pose = (tr.etat as { pose?: { fond: string; point: string } | null } | null)?.pose;
+      if (outilRef.current === ID_CALAGE && pose && pose !== (avant as { pose?: unknown } | null)?.pose) surPointCalagePoseRef.current(pose.fond, pose.point);
       if (tr.dans !== undefined) {
         poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
@@ -2247,6 +2264,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       },
       exporter: async (format) => exporter(format),
       liensConsultation: async () => setPanneau("consultations"),
+      importerFond: async () => {
+        setPanneau("fonds");
+        importFondRef.current?.click();
+      },
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
         if (annulerImportRef.current) return;
         try {
@@ -3237,6 +3258,81 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   /**
    * Réserves de chantier (cas 4 du catalogue, étape 7b) : panneau hors colonne, outil Réserve, fiche saisie, levée datée.
    */
+  /**
+   * Fonds calés (cas 4 du catalogue, lot C4, étape 1) : panneau hors colonne, outil Calage, import d'une image, calage
+   * sur deux points de longueur connue ou sur des paires de points, verrouillage.
+   */
+  const fondsListe = fondsDe(hist.present.modele);
+  const [fondChoisiEtat, setFondChoisi] = useState<string | null>(null);
+  const fondChoisi = fondsListe.find((f) => f.id === fondChoisiEtat) ?? fondsListe[0] ?? null;
+  const [pointChoisiEtat, setPointChoisi] = useState<string | null>(null);
+  const pointChoisi = fondChoisi?.points.some((p) => p.id === pointChoisiEtat) ? pointChoisiEtat : null;
+  const [erreurFond, setErreurFond] = useState<string | null>(null);
+  const [noteFond, setNoteFond] = useState<string | null>(null);
+  const importFondRef = useRef<HTMLInputElement | null>(null);
+  surPointCalagePoseRef.current = (fond, point) => {
+    setFondChoisi(fond);
+    setPointChoisi(point);
+    setErreurFond(null);
+    setNoteFond(null);
+    setPanneau("fonds");
+  };
+  const disponibiliteCommandeFond = (id: IdCommandeFond) => disponibiliteFond(id, { fond: fondChoisi !== null, verrouille: fondChoisi?.verrouille ?? false, point: pointChoisi !== null, lecture: readOnly });
+  const operationFond = (r: ResultatFond, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+    setErreurFond(null);
+    setNoteFond(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  const importerUnFond = async (f: File) => {
+    // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
+    const planche = indexRef.current.courante;
+    let image: Awaited<ReturnType<typeof reduireFond>>;
+    try {
+      image = await reduireFond(f);
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.image"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
+    let pose: string | null = null;
+    let erreur: string | null = null;
+    operer(t("planche.fonds.importer-fond"), (m) => {
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0 });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      pose = r.id;
+      return { modele: r.modele, message: t("planche.fonds.note.importe", { nom: f.name }) };
+    });
+    if (erreur) return setErreurFond(t(`planche.fonds.erreur.${erreur}`));
+    setErreurFond(null);
+    setNoteFond(t("planche.fonds.note.importe", { nom: f.name }));
+    if (pose) {
+      setFondChoisi(pose);
+      setPointChoisi(null);
+    }
+    setPanneau("fonds");
+  };
+  const executerFond = (id: IdCommandeFond) => {
+    if (id === "fonds") return setPanneau("fonds");
+    if (!disponibiliteCommandeFond(id).disponible) return;
+    setPanneau("fonds");
+    if (id === "importer-fond") return importFondRef.current?.click();
+    if (!fondChoisi) return;
+    const m = hist.present.modele;
+    if (id === "caler-fond") return operationFond(calerFond(m, fondChoisi.id), t("planche.fonds.caler-fond"), t("planche.fonds.note.cale", { nom: fondChoisi.nom }));
+    if (id === "verrouiller-fond") return operationFond(verrouillerFond(m, fondChoisi.id, !fondChoisi.verrouille), t(fondChoisi.verrouille ? "planche.fonds.deverrouiller" : "planche.fonds.verrouiller-fond"), t(fondChoisi.verrouille ? "planche.fonds.note.deverrouille" : "planche.fonds.note.verrouille"));
+    if (id === "supprimer-point-calage" && pointChoisi) {
+      operationFond(supprimerPointCalage(m, fondChoisi.id, pointChoisi), t("planche.fonds.supprimer-point-calage"), t("planche.fonds.note.point-supprime", { point: pointChoisi }));
+      return setPointChoisi(null);
+    }
+    if (id === "supprimer-fond") {
+      operationFond(supprimerFond(m, fondChoisi.id), t("planche.fonds.supprimer-fond"), t("planche.fonds.note.supprime", { nom: fondChoisi.nom }));
+      setFondChoisi(null);
+    }
+  };
   const reservesListe = reservesDe(hist.present.modele);
   const [reserveChoisieEtat, setReserveChoisie] = useState<string | null>(null);
   const reserveChoisie = reservesListe.find((r) => r.id === reserveChoisieEtat) ?? null;
@@ -4400,6 +4496,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
     else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
     else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
+    else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -4469,6 +4566,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_RESERVES.map((c) => {
           const d = disponibiliteCommandeReserve(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
+        }),
+        ...COMMANDES_FONDS.map((c) => {
+          const d = disponibiliteCommandeFond(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fonds.motif.fond"), executer: () => executerFond(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -5162,6 +5263,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
+      {/* Image d'un fond : montée hors du panneau pour que « Importer un fond » (Fichier, Ctrl+Alt+Maj+F3) l'ouvre partout. */}
+      <input
+        ref={importFondRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerUnFond(f);
+        }}
+        data-planche-fond-fichier
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -5210,6 +5324,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "fonds" && (
+              <PanneauFonds
+                fonds={fondsListe}
+                choisi={fondChoisi}
+                point={pointChoisi}
+                lecture={readOnly}
+                onChoisir={(id) => { setFondChoisi(id); setPointChoisi(null); setErreurFond(null); setNoteFond(null); }}
+                onChoisirPoint={setPointChoisi}
+                onMethode={(v) => fondChoisi && operationFond(choisirMethode(hist.present.modele, fondChoisi.id, v), t("planche.fonds.methode"), null)}
+                onLongueur={(v) => fondChoisi && operationFond(saisirLongueur(hist.present.modele, fondChoisi.id, v), t("planche.fonds.longueur"), null)}
+                onCible={(p, v) => fondChoisi && operationFond(saisirCible(hist.present.modele, fondChoisi.id, p, v), t("planche.fonds.position-de", { point: p }), null)}
+                onOpacite={(v) => fondChoisi && operationFond(reglerOpacite(hist.present.modele, fondChoisi.id, v), t("planche.fonds.opacite"), null)}
+                executer={executerFond}
+                disponibilite={disponibiliteCommandeFond}
+                erreur={erreurFond}
+                note={noteFond}
               />
             )}
             {panneau === "consultations" && (

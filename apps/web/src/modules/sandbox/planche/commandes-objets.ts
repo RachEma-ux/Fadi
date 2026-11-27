@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -565,6 +565,32 @@ export function disponibiliteConsultation(id: IdCommandeConsultation, s: { reado
   if (id === "creer-lien") return { disponible: true, motif: null };
   if (!s.lien) return { disponible: false, motif: "planche.consultation.motif.lien" };
   if (!s.actif) return { disponible: false, motif: "planche.consultation.motif.inactif" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Fonds calés (cas 4 du catalogue, lot C4, étape 1) : ouvrir le panneau, importer un fond, caler, verrouiller, supprimer
+ * le point ou le fond choisi (règle d'or : icône, barre, raccourci). L'outil Calage pose les points (registre des outils).
+ */
+export type IdCommandeFond = "fonds" | "importer-fond" | "caler-fond" | "verrouiller-fond" | "supprimer-point-calage" | "supprimer-fond";
+export interface CommandeFond {
+  readonly id: IdCommandeFond;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_FONDS: readonly CommandeFond[] = (["fonds", "importer-fond", "caler-fond", "verrouiller-fond", "supprimer-point-calage", "supprimer-fond"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.fonds.${id}` as CleMessage, court: `planche.fonds.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; importer hors lecture ; le reste sur le fond choisi (déverrouillé, sauf verrouiller). */
+export function disponibiliteFond(id: IdCommandeFond, s: { readonly fond: boolean; readonly verrouille: boolean; readonly point: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "fonds") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "importer-fond") return { disponible: true, motif: null };
+  if (!s.fond) return { disponible: false, motif: "planche.fonds.motif.fond" };
+  if (id === "verrouiller-fond" || id === "supprimer-fond") return { disponible: true, motif: null };
+  if (s.verrouille) return { disponible: false, motif: "planche.fonds.motif.verrouille" };
+  if (id === "supprimer-point-calage" && !s.point) return { disponible: false, motif: "planche.fonds.motif.point" };
   return { disponible: true, motif: null };
 }
 
