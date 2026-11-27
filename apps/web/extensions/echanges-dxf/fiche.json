@@ -1,0 +1,53 @@
+{
+  "id": "echanges-dxf",
+  "nom": {
+    "fr": "Échanges DXF",
+    "en": "DXF exchange"
+  },
+  "description": {
+    "fr": "Reprend un plan DXF à l'échelle (calques en balises, arcs, blocs en composants) et écrit le modèle en DXF ou un plan masse en figure-fond (SVG ou DXF).",
+    "en": "Imports a DXF plan to scale (layers as tags, arcs, blocks as components) and writes the model to DXF or a figure-ground site plan (SVG or DXF)."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.1",
+  "permissions": [
+    "modele.lire",
+    "modele.modifier",
+    "selection",
+    "messages",
+    "fichiers"
+  ],
+  "commandes": [
+    {
+      "id": "importer",
+      "libelle": {
+        "fr": "Importer un plan DXF…",
+        "en": "Import a DXF plan…"
+      },
+      "icone": "importer.svg",
+      "raccourci": "Ctrl+Alt+Maj+I"
+    },
+    {
+      "id": "exporter",
+      "libelle": {
+        "fr": "Exporter en DXF…",
+        "en": "Export to DXF…"
+      },
+      "icone": "exporter.svg",
+      "raccourci": "Ctrl+Alt+Maj+X"
+    },
+    {
+      "id": "figure-fond",
+      "libelle": {
+        "fr": "Plan masse en figure-fond…",
+        "en": "Figure-ground site plan…"
+      },
+      "icone": "figure-fond.svg",
+      "raccourci": "Ctrl+Alt+Maj+M"
+    }
+  ],
+  "outils": [],
+  "panneaux": [],
+  "abonnements": []
+}
