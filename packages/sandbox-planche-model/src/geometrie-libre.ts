@@ -88,6 +88,8 @@ export interface Arete {
   readonly masquee?: boolean;
   /** Courbe d'appartenance (cercle, polygone, arc) : la gomme efface la courbe entière. */
   readonly courbe?: Id;
+  /** (Cas 2, lot 4) Balise de l'arête nue (balise courante à la création ou classement). */
+  readonly balise?: Id;
 }
 
 export interface Face {
@@ -99,6 +101,8 @@ export interface Face {
   readonly materiauVerso?: string;
   /** Masquée (menu contextuel « Masquer », lot 5) : ni affichée, ni accrochée, ni sélectionnable. */
   readonly masquee?: boolean;
+  /** (Cas 2, lot 4) Balise de la face nue. */
+  readonly balise?: Id;
 }
 
 export type GenreCourbe = "cercle" | "polygone" | "arc";
@@ -3302,6 +3306,30 @@ export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise
       const { balise: _ancienne, ...reste } = occ;
       c.occurrences.set(id, balise ? { ...reste, balise } : reste);
     }
+  });
+}
+
+/**
+ * (Cas 2, lot 4) Balise posée (ou retirée, `null`) sur des entités du contexte : arêtes et faces nues comme objets. Rend le
+ * nombre d'entités touchées.
+ */
+export function baliserEntites(m: Modele, ids: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    let n = 0;
+    const poser = <T extends { readonly balise?: Id }>(x: T): T => {
+      n++;
+      const { balise: _ancienne, ...reste } = x;
+      return (balise ? { ...reste, balise } : reste) as T;
+    };
+    for (const id of ids) {
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, poser(a));
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, poser(f));
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, poser(occ));
+    }
+    return n;
   });
 }
 

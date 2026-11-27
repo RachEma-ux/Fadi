@@ -28,6 +28,8 @@ export type Guide =
  * ouvert à la création (association aux sommets d'un groupe ou d'un composant ouvert ; absent = racine).
  */
 export interface ChampsCote {
+  /** (Cas 2, lot 4) Balise de la cote (balise courante ou réservée aux cotes à la création). */
+  readonly balise?: Id;
   readonly texteForce?: string;
   readonly style?: Id;
   readonly chemin?: readonly Id[];
@@ -108,9 +110,11 @@ export type TexteAnnotation =
       readonly position: Vec3;
       readonly texte: string;
       readonly etiquettePiece?: boolean;
+      /** (Cas 2, lot 4) Balise du texte. */
+      readonly balise?: Id;
     }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
-  | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string };
+  | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string; readonly balise?: Id };
 
 export interface PlanDeCoupe {
   readonly id: Id;
@@ -125,6 +129,10 @@ export interface PlanDeCoupe {
   readonly actif: boolean;
   readonly inverse: boolean;
   readonly nom: string;
+  /** (Cas 2, lot 4) Profondeur vue au-delà de la coupe (m) : plus loin, rien n'est dessiné ; absente = sans limite. */
+  readonly profondeur?: number;
+  /** (Cas 2, lot 4) Balise du plan de coupe. */
+  readonly balise?: Id;
 }
 
 /** Matière d'apparence : nom et couleur unie (`#rrggbb`), jamais une donnée de projet (C15, P-8). */
@@ -143,6 +151,14 @@ export interface Balise {
   readonly visible: boolean;
   /** (Cas 2, lot 2) Balise exclue de l'accrochage : ses objets restent affichés, rien ne s'y accroche. */
   readonly horsAccrochage?: boolean;
+  /** (Cas 2, lot 4) Verrouillée : ce qu'elle porte n'est ni sélectionnable ni modifiable (fond de plan protégé). */
+  readonly verrouillee?: boolean;
+  /** (Cas 2, lot 4) Épaisseur de trait en mm papier, saisie ou reprise du gabarit ; absente = épaisseur de la sortie. */
+  readonly epaisseur?: number;
+  /** (Cas 2, lot 4) Type de trait des sorties ; absent = continu. */
+  readonly trait?: import("./balises-l4.js").TraitBalise;
+  /** (Cas 2, lot 4) Phase : existant, à démolir ou projeté (vues d'état) ; absente = hors phase. */
+  readonly phase?: import("./balises-l4.js").PhaseBalise;
 }
 
 /** Repère de saisie (outil Axes) : origine et axes unitaires rouge / vert / bleu dans le repère stocké. */
@@ -169,6 +185,12 @@ export interface Scene {
    * scène ne rappelle que la caméra (scènes antérieures inchangées).
    */
   readonly repere?: CaptureRepere;
+  /** (Cas 2, lot 4) État de la vue mémorisé : balises visibles, plans actifs, objets masqués, style ; absent = caméra seule. */
+  readonly etat?: import("./balises-l4.js").EtatScene;
+  /** (Cas 2, lot 4) Échelle nominale (dénominateur, 100 pour 1:100) d'une scène en projection parallèle. */
+  readonly echelle?: number;
+  /** (Cas 2, lot 4) Date et heure du soleil rappelées par la scène (heure locale du projet, saisie). */
+  readonly soleil?: import("./balises-l4.js").SoleilScene;
 }
 
 /**
@@ -222,6 +244,10 @@ export interface ReglagesPlanche {
   readonly controle?: import("./controle-l3.js").ReglagesControle;
   /** (Cas 2, lot 3) Fichier de règles des pièces du permis, sourcé, archivé tel quel ; absent = complétude non évaluée. */
   readonly reglesPieces?: import("./controle-l3.js").ReglesPieces;
+  /** (Cas 2, lot 4) Balises réservées par genre : chaque cote, texte ou plan de coupe créé reçoit la sienne. */
+  readonly balisesReservees?: import("./balises-l4.js").BalisesReservees;
+  /** (Cas 2, lot 4) Gabarit d'agence appliqué à la création de la Planche : fichier archivé tel quel. */
+  readonly gabarit?: import("./balises-l4.js").GabaritApplique;
 }
 /** (Cas 2, lot 2) Unité d'affichage et de saisie. */
 export type UniteSaisie = "m" | "cm" | "mm" | "pieds-pouces";

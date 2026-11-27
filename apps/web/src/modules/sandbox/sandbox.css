@@ -2847,7 +2847,8 @@
   margin: 0;
   color: var(--danger, #a12626);
 }
-.sandbox-planche .planche-info {
+/* Fenêtre « Informations » de la Planche (un div) : à ne pas confondre avec la liste d'Info entité (un dl, même classe). */
+.sandbox-planche div.planche-info {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -4745,4 +4746,62 @@
 }
 .sandbox-planche .planche-controle-fichier input[type="file"] {
   max-width: 100%;
+}
+/* Cas 2, lot 4 : panneau Balises (épaisseur, trait, verrou), panneau Scènes, Info entité · Plan de coupe, Nouvelle Planche. */
+.sandbox-planche .planche-balises h4,
+.sandbox-planche .planche-scenes-l4 h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-balises-tete,
+.sandbox-planche .planche-liste-panneau li.planche-balises-ligne {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) 3.4rem 5.8rem 1rem;
+  align-items: center;
+  gap: 0.25rem;
+}
+.sandbox-planche .planche-balises-ligne .planche-ligne-choix {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-height: 32px;
+  text-align: left;
+}
+.sandbox-planche .planche-balises-tete {
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-balises-ligne input:not([type="checkbox"]),
+.sandbox-planche .planche-balises-ligne select {
+  min-width: 0;
+  width: 100%;
+  min-height: 28px;
+  box-sizing: border-box;
+  font: inherit;
+}
+.sandbox-planche .planche-balises-verrou {
+  display: inline-flex;
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-balises-selection {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 6px 0;
+}
+.sandbox-planche .planche-scenes-l4 .est-actif {
+  font-weight: 600;
+}
+.sandbox-planche .planche-gabarit-barre {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-balises-tete,
+  .sandbox-planche .planche-liste-panneau li.planche-balises-ligne {
+    grid-template-columns: 1.4rem minmax(0, 1fr) 3.2rem 5.4rem 1rem;
+  }
 }

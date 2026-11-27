@@ -1115,6 +1115,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-controle node apps/web/e2e/planche-controle-modele.mjs 2>&1 | tee -a e2e.log
+      - name: Recette balises, scènes et gabarit (cas 2, lot 4) — balise courante, verrou, phases, plan de coupe, scènes, gabarit d'agence (apps/web/e2e/planche-balises-scenes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-balises node apps/web/e2e/planche-balises-scenes.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

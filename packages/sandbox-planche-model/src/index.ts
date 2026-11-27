@@ -49,3 +49,4 @@ export * from "./fichiers-extensions.js";
 export * from "./panneaux-extensions.js";
 export * from "./plan-vectoriel.js";
 export * from "./controle-l3.js";
+export * from "./balises-l4.js";

@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -561,4 +561,47 @@ export function disponibiliteAccrochage(id: IdCommandeAccrochage, s: { readonly 
     return s.selection > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.selection" };
   }
   return s.echelle ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.echelle" };
+}
+
+/**
+ * Cas 2 du catalogue, lot 4 : balises (panneau Balises), scènes et plans de coupe (panneau Scènes, Info entité) et gabarit
+ * d'agence (panneau « Nouvelle Planche »).
+ */
+export type IdCommandeBalise = "verrouiller-balise" | "balises-phase" | "classer-selection" | "vue-etat";
+export type IdCommandeScene = "scenes-types" | "avancer-coupe" | "reculer-coupe" | "scene-face-coupe";
+export type IdCommandeGabarit = "gabarit" | "importer-gabarit" | "enregistrer-gabarit" | "creer-planche-gabarit";
+export interface CommandeLot4<I extends string> {
+  readonly id: I;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
+export const COMMANDES_BALISE: readonly CommandeLot4<IdCommandeBalise>[] = (["verrouiller-balise", "balises-phase", "classer-selection", "vue-etat"] as const).map(lot4<IdCommandeBalise>("balise"));
+export const COMMANDES_SCENE: readonly CommandeLot4<IdCommandeScene>[] = (["scenes-types", "avancer-coupe", "reculer-coupe", "scene-face-coupe"] as const).map(lot4<IdCommandeScene>("scene"));
+export const COMMANDES_GABARIT: readonly CommandeLot4<IdCommandeGabarit>[] = (["gabarit", "importer-gabarit", "enregistrer-gabarit", "creer-planche-gabarit"] as const).map(lot4<IdCommandeGabarit>("gabarit"));
+
+/** Balises : verrouiller la balise courante ; classer une sélection ; balises de phase et vues d'état sur un dessin modifiable. */
+export function disponibiliteBalise(id: IdCommandeBalise, s: { readonly lecture: boolean; readonly courante: boolean; readonly selection: number; readonly phases: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "verrouiller-balise") return s.courante ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.courante" };
+  if (id === "classer-selection") return s.selection > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.selection" };
+  if (id === "vue-etat") return s.phases ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.phases" };
+  return { disponible: true, motif: null };
+}
+
+/** Scènes : scènes types avec un gabarit qui en déclare ; décalage et scène face à la coupe avec un plan de coupe choisi. */
+export function disponibiliteScene(id: IdCommandeScene, s: { readonly lecture: boolean; readonly typesGabarit: number; readonly plan: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "scenes-types") return s.typesGabarit > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.scene.motif.gabarit" };
+  return s.plan ? { disponible: true, motif: null } : { disponible: false, motif: "planche.scene.motif.plan" };
+}
+
+/** Gabarit : le panneau, l'import et la création toujours ; enregistrer avec au moins une balise. */
+export function disponibiliteGabarit(id: IdCommandeGabarit, s: { readonly balises: number; readonly choisi: boolean }): Disponibilite {
+  if (id === "gabarit" || id === "importer-gabarit") return { disponible: true, motif: null };
+  if (id === "enregistrer-gabarit") return s.balises > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.gabarit.motif.balises" };
+  // Créer la Planche : depuis le gabarit choisi, ou vide sans gabarit (« Planche vide »).
+  return { disponible: true, motif: null };
 }

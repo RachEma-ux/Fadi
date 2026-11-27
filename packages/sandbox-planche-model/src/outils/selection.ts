@@ -94,14 +94,18 @@ export function scene(m: Modele): readonly ElementScene[] {
   const c0 = caches.get(m);
   if (c0) return c0;
   const r: ElementScene[] = [];
+  // (Cas 2, lot 4) Ce que porte une balise masquée ou verrouillée n'est pas visé : ni sélection, ni modification.
+  const balises = m.annotations?.balises;
+  const horsVisee = (b: Id | undefined) => !!b && (balises?.[b]?.visible === false || balises?.[b]?.verrouillee === true);
   const parcourir = (c: Contexte, M: Matrice4, chemin: readonly Id[]): void => {
     if (chemin.length > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
     for (const a of Object.values(c.aretes)) {
+      if (horsVisee(a.balise)) continue;
       r.push({ genre: "arete", id: a.id, chemin, a: p(a.a), b: p(a.b), masquee: a.masquee === true, adoucie: a.adoucie === true });
     }
     for (const f of Object.values(c.faces)) {
-      if (f.masquee) continue;
+      if (f.masquee || horsVisee(f.balise)) continue;
       r.push({
         genre: "face",
         id: f.id,
@@ -113,8 +117,7 @@ export function scene(m: Modele): readonly ElementScene[] {
     }
     for (const o of Object.values(c.occurrences)) {
       if (o.masquee) continue;
-      const bal = o.balise ? m.annotations?.balises[o.balise] : undefined;
-      if (bal && !bal.visible) continue;
+      if (horsVisee(o.balise)) continue;
       const d = m.definitions[o.definition];
       if (d) parcourir(d.contenu, composer(M, o.transformation), [...chemin, o.id]);
     }
@@ -143,7 +146,10 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const retenir = (id: Id, t: number): void => {
     if (t > 0 && (!meilleur || t < meilleur.t)) meilleur = { id, t };
   };
+  // (Cas 2, lot 4) Annotation portée par une balise masquée ou verrouillée : jamais visée.
+  const libre = (b: Id | undefined) => !b || (a.balises[b]?.visible !== false && a.balises[b]?.verrouillee !== true);
   for (const p of Object.values(a.plansDeCoupe)) {
+    if (!libre(p.balise)) continue;
     const den = dot(p.normale, V);
     if (Math.abs(den) < 1e-9) continue;
     const t = dot(p.normale, sub(p.origine, r.origine)) / den;
@@ -154,8 +160,9 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const pres = (id: Id, P: Vec3, tol: number): void => {
     if (ecartRayonPointLibre(r, P) <= tol) retenir(id, Math.max(0, dot(sub(P, r.origine), V)));
   };
-  for (const c of Object.values(a.cotes)) pres(c.id, c.position, tolerance * 3);
+  for (const c of Object.values(a.cotes)) if (libre(c.balise)) pres(c.id, c.position, tolerance * 3);
   for (const t of Object.values(a.textes)) {
+    if (!libre(t.balise)) continue;
     if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
     // Texte écran : étiquette posée en pixels depuis son coin haut gauche ; le clic la vise dans une boîte de 160 × 28 px.
     else if (ecran && ecran.x >= t.ecran.x - 4 && ecran.x <= t.ecran.x + 160 && ecran.y >= t.ecran.y - 4 && ecran.y <= t.ecran.y + 28) retenir(t.id, 1e-6);

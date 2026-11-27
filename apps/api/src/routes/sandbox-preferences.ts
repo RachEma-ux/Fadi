@@ -59,6 +59,12 @@ async function choixPaquetsDe(userId: string): Promise<ChoixPaquets> {
 }
 
 /** Version d'une extension livrée du Sandbox si elle est active pour le compte (son choix, sinon le réglage de la plateforme). */
+/**
+ * Fichiers de données du cœur de la Planche (cas 2, lot 4, 27 novembre 2026) : un gabarit d'agence importé est rangé tel
+ * quel en base pour le compte, sous cet identifiant réservé, avec la version de son format.
+ */
+export const FICHIERS_DU_COEUR: Readonly<Record<string, string>> = { "planche-gabarit": "fadi-gabarit/1" };
+
 async function versionExtensionLivreeActive(userId: string, id: string): Promise<string | null> {
   const x = extensionSandbox(id);
   if (!x) return null;
@@ -111,7 +117,7 @@ sandboxPreferencesRouter.post("/fichiers", express.json({ limit: BORNES_ARCHIVE.
   // Seule une extension que ce compte a installée (paquet) ou activée (extension livrée du Sandbox, par exemple « Contrôle
   // et nettoyage » pour ses fichiers de règles des pièces du permis) peut faire archiver ; sa version est gardée avec le fichier.
   const paquet = paquetsDuCompte(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)).find((p) => p.fiche.id === extension);
-  const version = paquet?.fiche.version ?? (await versionExtensionLivreeActive(req.user!.id, extension));
+  const version = paquet?.fiche.version ?? FICHIERS_DU_COEUR[extension] ?? (await versionExtensionLivreeActive(req.user!.id, extension));
   if (!version) return void res.status(404).json({ error: "not_found" });
   const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, version, nom, octets.octets);
   res.status(deja ? 200 : 201).json({ archive });
