@@ -66,10 +66,19 @@ export async function lireExtensionsServeur(): Promise<readonly PaquetExtension[
  * (Protocole 1.2) Archive tel quel en base le fichier qu'une extension vient d'ouvrir. Jamais d'exception : un refus
  * rend son motif, que l'extension montre (connexion absente, extension inconnue de la plateforme, fichier trop lourd).
  */
-export async function archiverFichierExtension(extension: string, fichier: FichierLu): Promise<IssueArchive> {
+/** Octets en base 64, par tranches (une seule chaîne de 800 000 caractères dépasserait la pile d'arguments). */
+export function enBase64(octets: Uint8Array): string {
+  let binaire = "";
+  for (let i = 0; i < octets.length; i += 0x8000) binaire += String.fromCharCode(...octets.subarray(i, i + 0x8000));
+  return btoa(binaire);
+}
+
+/** Les octets d'origine du fichier (sinon son texte encodé en UTF-8) sont envoyés tels quels, en base 64. */
+export async function archiverFichierExtension(extension: string, fichier: FichierLu, octets?: Uint8Array): Promise<IssueArchive> {
   let r: Response;
   try {
-    r = await fetch(ADRESSE_FICHIERS, { method: "POST", credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ extension, nom: fichier.nom, texte: fichier.texte }) });
+    const contenu = enBase64(octets ?? new TextEncoder().encode(fichier.texte));
+    r = await fetch(ADRESSE_FICHIERS, { method: "POST", credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ extension, nom: fichier.nom, contenu }) });
   } catch {
     return { ok: false, motif: "réseau indisponible" };
   }

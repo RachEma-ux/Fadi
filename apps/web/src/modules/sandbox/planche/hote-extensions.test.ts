@@ -576,10 +576,12 @@ planche.sur("commande.flux", () => essayer(() => planche.fichiers.ouvrir([".json
 
   it("le fichier choisi est archivé avant d'être rendu : l'extension reçoit son archive", async () => {
     const recus: unknown[] = [];
-    const fichiers = { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: async (f: unknown) => (recus.push(f), { ok: true as const, archive: ARCHIVE }) };
+    // La fenêtre rend aussi les octets d'origine (marque d'ordre comprise) : l'archive les reçoit tels quels, l'extension jamais.
+    const octets = new Uint8Array([0xef, 0xbb, 0xbf, 0x7b, 0x7d]);
+    const fichiers = { ...choisir({ nom: "regles.json", texte: "{}", octets }), archiver: async (f: unknown, o?: Uint8Array) => (recus.push(f, o), { ok: true as const, archive: ARCHIVE }) };
     const h = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers });
     expect(await h.appeler("demande", "commande.regles")).toEqual({ genre: "fini", resultat: { nom: "regles.json", texte: "{}", archive: ARCHIVE } });
-    expect(recus).toEqual([{ nom: "regles.json", texte: "{}" }]);
+    expect(recus).toEqual([{ nom: "regles.json", texte: "{}" }, octets]);
     h.arreter();
   });
 

@@ -3240,7 +3240,8 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         const boss = await admin();
         expect((await boss.a.post("/admin/addons/paquets?installee=non").send(paquet())).status).toBe(201);
         const user = await account("fichiers-archives");
-        const corps = { extension: "essai-commandes", nom: "regles.json", texte: '{"seuils":[]}' };
+        const b64 = (t: string | Buffer) => (typeof t === "string" ? Buffer.from(t, "utf8") : t).toString("base64");
+        const corps = { extension: "essai-commandes", nom: "regles.json", contenu: b64('{"seuils":[]}') };
         expect((await agent().post("/sandbox/preferences/fichiers").send(corps)).status).toBe(401);
         // Extension ajoutée mais pas installée par ce compte, ou inconnue : 404.
         expect((await user.a.post("/sandbox/preferences/fichiers").send(corps)).status).toBe(404);
@@ -3253,19 +3254,26 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         const encore = await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, nom: "copie.json" });
         expect(encore.status).toBe(200);
         expect(encore.body.archive).toEqual(premier.body.archive);
-        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, texte: "{}" })).status).toBe(201);
+        // Rangé octet pour octet : la marque d'ordre UTF-8 fait un autre fichier, gardée telle quelle.
+        const avecMarque = await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, contenu: b64(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('{"seuils":[]}')])) });
+        expect(avecMarque.status).toBe(201);
+        expect(avecMarque.body.archive.empreinte).not.toBe(premier.body.archive.empreinte);
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${avecMarque.body.archive.id}`)).body).toMatchObject({ contenu: b64(Buffer.from([0xef, 0xbb, 0xbf, ...Buffer.from('{"seuils":[]}')])), taille: 16 });
 
         const liste = await user.a.get("/sandbox/preferences/fichiers?extension=essai-commandes");
         expect(liste.body.archives).toHaveLength(2);
         const lu = await user.a.get(`/sandbox/preferences/fichiers/${premier.body.archive.id}`);
-        expect(lu.body).toMatchObject({ nom: "regles.json", texte: corps.texte, extension: "essai-commandes", version: "1.0.0" });
+        expect(lu.body).toMatchObject({ nom: "regles.json", texte: '{"seuils":[]}', contenu: corps.contenu, extension: "essai-commandes", version: "1.0.0" });
 
         const autre = await account("fichiers-archives-autre");
         expect((await autre.a.get(`/sandbox/preferences/fichiers/${premier.body.archive.id}`)).status).toBe(404);
         expect((await autre.a.get("/sandbox/preferences/fichiers")).body.archives).toEqual([]);
 
-        for (const mauvais of [{}, { ...corps, nom: "../x.json" }, { ...corps, texte: 3 }, { ...corps, autre: 1 }]) expect((await user.a.post("/sandbox/preferences/fichiers").send(mauvais)).status).toBe(400);
-        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, texte: "x".repeat(200_001) })).status).toBe(413);
+        for (const mauvais of [{}, { ...corps, nom: "../x.json" }, { ...corps, contenu: 3 }, { ...corps, contenu: "pas du base 64 !" }, { ...corps, contenu: b64(Buffer.from([0xff, 0xfe, 0x00])) }, { ...corps, texte: "{}" }]) expect((await user.a.post("/sandbox/preferences/fichiers").send(mauvais)).status).toBe(400);
+        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, contenu: b64("x".repeat(200_001)) })).status).toBe(413);
+        // Un fichier dans la borne passe la lecture du corps même quand ses octets dépassent 256 ko : 150 000 « é » font
+        // 300 000 octets, 400 000 caractères en base 64.
+        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, contenu: b64("é".repeat(150_000)) })).status).toBe(201);
       });
 
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
