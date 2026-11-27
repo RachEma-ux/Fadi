@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { appliquerDeltaPlanche, differencePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
 import { ajouterRectangle, deplacer, grouper, masquerEntites, modeleVide, pousserTirer, type Id, type Modele } from "./geometrie-libre.js";
-import { ajouterRegleHauteur, basculerControle, controlerEnveloppe, definirEnveloppe, enveloppeDe, estReglagesEnveloppe, modifierRegleHauteur, supprimerRegleHauteur } from "./enveloppe.js";
+import { REGLES_HAUTEUR_MAX, ajouterRegleHauteur, basculerControle, controlerEnveloppe, definirEnveloppe, enveloppeDe, estReglagesEnveloppe, modifierRegleHauteur, supprimerRegleHauteur } from "./enveloppe.js";
 import { v3 } from "./vecteur.js";
 
 /** Ajoute une boîte (x, y, l, p, h) groupée ; renvoie l'occurrence. */
@@ -136,5 +136,16 @@ describe("Enveloppe : persistance", () => {
     expect(retour.annotations?.enveloppe).toBeNull();
     expect(appliquerDeltaPlanche(a.modele, retour).annotations?.enveloppe).toBeUndefined();
     expect(estDeltaPlanche({ annotations: { enveloppe: { objet: 3 } } })).toBe(false);
+  });
+
+  it("32 règles au plus : la 33e est refusée et le modèle reste lisible", () => {
+    let m = modeleVide();
+    for (let i = 0; i < REGLES_HAUTEUR_MAX; i++) {
+      const r = ajouterRegleHauteur(m, `Règle ${i + 1}`);
+      if (!r.ok) throw new Error(String(i));
+      m = r.modele;
+    }
+    expect(ajouterRegleHauteur(m, "Une de trop")).toEqual({ ok: false, erreur: "limite" });
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(m)))).not.toBeNull();
   });
 });

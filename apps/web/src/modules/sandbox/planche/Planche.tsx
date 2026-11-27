@@ -252,6 +252,7 @@ import {
   type ResultatReserve,
   type StatutReserve,
   ajouterRegleHauteur,
+  REGLES_HAUTEUR_MAX,
   basculerControle,
   definirEnveloppe,
   enveloppeDe,
@@ -3340,7 +3341,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const o = id ? hist.present.modele.racine.occurrences[id] : undefined;
     return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null;
   };
-  const disponibiliteCommandeEnveloppe = (id: IdCommandeEnveloppe) => disponibiliteEnveloppe(id, { objet: objetEnveloppe() !== null, regle: regleChoisie !== null, lecture: readOnly });
+  const disponibiliteCommandeEnveloppe = (id: IdCommandeEnveloppe) => disponibiliteEnveloppe(id, { objet: objetEnveloppe() !== null, regle: regleChoisie !== null, lecture: readOnly, plein: enveloppeDe(hist.present.modele).regles.length >= REGLES_HAUTEUR_MAX });
   const operationEnveloppe = (r: ResultatReglages, libelle: string, message: string | null): boolean => {
     if (!r.ok) {
       setErreurEnveloppe(t(`planche.enveloppe.erreur.${r.erreur}`));

@@ -38,6 +38,8 @@ export interface ReglagesEnveloppe {
 export const ENVELOPPE_VIDE: ReglagesEnveloppe = Object.freeze({ objet: null, controle: false, regles: [] });
 export const LIBELLE_REGLE_MAX = 120;
 export const SOURCE_REGLE_MAX = 200;
+/** Règles de hauteur au plus (même borne que la lecture du modèle). */
+export const REGLES_HAUTEUR_MAX = 32;
 /** Tolérance « sur la surface » (m). */
 export const TOLERANCE_ENVELOPPE = 0.001;
 
@@ -54,12 +56,12 @@ export function estRegleHauteur(v: unknown): v is RegleHauteur {
 export function estReglagesEnveloppe(v: unknown): v is ReglagesEnveloppe {
   if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
   const e = v as Record<string, unknown>;
-  return (e["objet"] === null || typeof e["objet"] === "string") && typeof e["controle"] === "boolean" && Array.isArray(e["regles"]) && e["regles"].length <= 32 && e["regles"].every(estRegleHauteur) && new Set((e["regles"] as RegleHauteur[]).map((r) => r.id)).size === e["regles"].length;
+  return (e["objet"] === null || typeof e["objet"] === "string") && typeof e["controle"] === "boolean" && Array.isArray(e["regles"]) && e["regles"].length <= REGLES_HAUTEUR_MAX && e["regles"].every(estRegleHauteur) && new Set((e["regles"] as RegleHauteur[]).map((r) => r.id)).size === e["regles"].length;
 }
 
 export const enveloppeDe = (m: Modele): ReglagesEnveloppe => m.annotations?.enveloppe ?? ENVELOPPE_VIDE;
 
-export type ErreurEnveloppe = "objet" | "libelle" | "seuil" | "source" | "absent";
+export type ErreurEnveloppe = "objet" | "libelle" | "seuil" | "source" | "absent" | "limite";
 export type ResultatReglages = { readonly ok: true; readonly modele: Modele } | { readonly ok: false; readonly erreur: ErreurEnveloppe };
 
 function poser(m: Modele, e: ReglagesEnveloppe): Modele {
@@ -83,6 +85,7 @@ export function basculerControle(m: Modele): ResultatReglages {
 export function ajouterRegleHauteur(m: Modele, libelle: string): ResultatReglages & { readonly id?: string } {
   const e = enveloppeDe(m);
   if (!texte(libelle, LIBELLE_REGLE_MAX) || libelle.trim() === "") return { ok: false, erreur: "libelle" };
+  if (e.regles.length >= REGLES_HAUTEUR_MAX) return { ok: false, erreur: "limite" };
   let n = 1;
   while (e.regles.some((r) => r.id === `r${n}`)) n++;
   const id = `r${n}`;

@@ -534,12 +534,13 @@ export interface CommandeEnveloppe {
 }
 export const COMMANDES_ENVELOPPE: readonly CommandeEnveloppe[] = (["enveloppe", "definir-enveloppe", "controler-enveloppe", "ajouter-regle-hauteur", "supprimer-regle-hauteur"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.enveloppe.${id}` as CleMessage, court: `planche.enveloppe.court.${id}` as CleMessage }));
 
-/** Disponibilité : ouvrir toujours ; définir avec un seul objet choisi ; supprimer une règle avec une règle choisie ; hors lecture. */
-export function disponibiliteEnveloppe(id: IdCommandeEnveloppe, s: { readonly objet: boolean; readonly regle: boolean; readonly lecture: boolean }): Disponibilite {
+/** Disponibilité : ouvrir toujours ; définir avec un seul objet choisi ; supprimer une règle avec une règle choisie ; ajouter sous 32 règles ; hors lecture. */
+export function disponibiliteEnveloppe(id: IdCommandeEnveloppe, s: { readonly objet: boolean; readonly regle: boolean; readonly lecture: boolean; readonly plein?: boolean }): Disponibilite {
   if (id === "enveloppe") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (id === "definir-enveloppe" && !s.objet) return { disponible: false, motif: "planche.enveloppe.motif.objet" };
   if (id === "supprimer-regle-hauteur" && !s.regle) return { disponible: false, motif: "planche.enveloppe.motif.regle" };
+  if (id === "ajouter-regle-hauteur" && s.plein) return { disponible: false, motif: "planche.enveloppe.motif.plein" };
   return { disponible: true, motif: null };
 }
 
