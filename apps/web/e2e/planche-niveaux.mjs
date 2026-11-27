@@ -106,11 +106,16 @@ await page.waitForFunction((n) => window.fadiPlanche.pas() === n + 1, pasAvant);
 m = await modele();
 const occApres = m.racine.occurrences[occ.id];
 check("changer l'altitude du niveau déplace son objet du même écart (+0,25 m), en un pas", Math.abs(occApres.transformation[11] - zAvant - 0.25) < 1e-9 && (await pas()) === pasAvant + 1, `${zAvant} → ${occApres.transformation[11]}`);
+const zPlan = async () => (await page.evaluate(() => window.fadiPlanche.contexteTravail().contexte)).repere?.origine.z;
+check("le plan de travail suit la nouvelle altitude du niveau de travail (+3,10 m)", Math.abs((await zPlan()) - 3.1) < 1e-9, String(await zPlan()));
 await page.screenshot({ path: `${OUT}/2-niveau-modifie.png` });
 await page.locator("[data-planche-annuler]").click();
 await page.waitForFunction((n) => window.fadiPlanche.pas() === n, pasAvant);
 m = await modele();
 check("Annuler remet le niveau et son objet", Math.abs(m.racine.occurrences[occ.id].transformation[11] - zAvant) < 1e-9 && Math.abs(m.annotations.niveaux[r1.id].altitude - 2.85) < 1e-9);
+await page.waitForFunction(() => Math.abs(window.fadiPlanche.contexteTravail().contexte.repere.origine.z - 2.85) < 1e-9).catch(() => undefined);
+check("Annuler ramène aussi le plan de travail à +2,85 m", Math.abs((await zPlan()) - 2.85) < 1e-9, String(await zPlan()));
+check("« Supprimer le niveau » : commande avec icône et raccourci (Ctrl+Maj+F2)", ((await panneau.locator("[data-planche-commande='supprimer-niveau']").getAttribute("title")) ?? "").includes("Ctrl+Maj+F2") && (await panneau.locator("[data-planche-commande='supprimer-niveau'] svg").count()) === 1);
 
 // --- Info entité : niveau et altitude de l'objet ---------------------------------------------------------------------
 await page.locator("[data-planche-vue]").focus();

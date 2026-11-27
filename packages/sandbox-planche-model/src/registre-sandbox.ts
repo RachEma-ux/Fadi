@@ -327,6 +327,7 @@ const commandes: EntreeSandbox[] = [
   c("ajouter-niveau", "niveau", "stack-push", "Maj+F5", "panneau-niveaux", true),
   c("travailler-niveau", "niveau", "stack-front", "Maj+F10", "panneau-niveaux", true),
   c("rattacher-niveau", "niveau", "layers-linked", "Ctrl+Maj+X", "panneau-niveaux", true),
+  c("supprimer-niveau", "niveau", "stack-pop", "Ctrl+Maj+F2", "panneau-niveaux", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

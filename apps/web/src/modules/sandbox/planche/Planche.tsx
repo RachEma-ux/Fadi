@@ -2783,6 +2783,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [niveauTravail, setNiveauTravailEtat] = useState<string | null>(null);
   const niveauTravailValide = niveaux.some((n) => n.id === niveauTravail) ? niveauTravail : null;
   niveauTravailRef.current = niveauTravailValide;
+  // Le niveau de travail appartient à la Planche ouverte : changer de Planche l'abandonne (les identifiants de niveau
+  // sont propres à chaque document).
+  useEffect(() => {
+    setNiveauTravailEtat(null);
+    niveauTravailRef.current = null;
+  }, [indexPlanches.courante]);
+  // Le plan de travail suit l'altitude du niveau de travail, quelle qu'en soit la cause : modification, Annuler, Rétablir.
+  const niveauDeTravail = niveaux.find((n) => n.id === niveauTravailValide) ?? null;
+  const altitudeSuivieRef = useRef<{ id: string; altitude: number } | null>(null);
+  useEffect(() => {
+    const n = niveauDeTravail;
+    const avant = altitudeSuivieRef.current;
+    altitudeSuivieRef.current = n ? { id: n.id, altitude: n.altitude } : null;
+    if (!n || !avant || avant.id !== n.id || avant.altitude === n.altitude) return;
+    changerContexte({ ...contexteTemporaire(histContexteRef.current.courant, repereDuNiveau(n)), plan: "xy" });
+  }, [niveauDeTravail?.id, niveauDeTravail?.altitude]); // eslint-disable-line react-hooks/exhaustive-deps
   const [erreurNiveau, setErreurNiveau] = useState<ErreurNiveau | "reference" | null>(null);
   const [noteNiveau, setNoteNiveau] = useState<string | null>(null);
   const referenceNiveaux = plancheDe(indexPlanches).altitudeRef;
@@ -2807,8 +2823,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setErreurNiveau(null);
     setNoteNiveau(t("planche.niveaux.note.modifie", { nom: v.valeurs.nom }));
     operer(t("planche.niveaux.ouvrir"), () => ({ modele: r.modele }));
-    // Le niveau de travail suit sa nouvelle altitude.
-    if (id === niveauTravailValide) changerContexte({ ...contexteTemporaire(histContexte.courant, repereDuNiveau({ id, ...v.valeurs })), plan: "xy" });
   };
   const supprimerUnNiveau = (id: string) => {
     const nom = nomNiveau(id);
@@ -2852,6 +2866,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     const n = niveaux.find((x) => x.id === niveauChoisi);
     if (!n) return;
+    if (id === "supprimer-niveau") return supprimerUnNiveau(n.id);
     if (id === "travailler-niveau") {
       if (niveauTravailValide === n.id) {
         setNiveauTravailEtat(null);
@@ -4409,7 +4424,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onChoisir={(id) => { setNiveauChoisi(id); setErreurNiveau(null); }}
                 onModifier={modifierUnNiveau}
                 onAjouter={ajouterUnNiveau}
-                onSupprimer={supprimerUnNiveau}
                 onReference={poserReferenceNiveaux}
                 executer={executerNiveau}
                 disponibilite={disponibiliteCommandeNiveau}

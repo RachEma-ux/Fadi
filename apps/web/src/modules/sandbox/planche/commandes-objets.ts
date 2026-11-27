@@ -347,7 +347,7 @@ export function disponibiliteScripts(id: IdCommandeScripts, s: { readonly vide: 
  * Niveaux d'étage (cas 4 du catalogue, étape 1) : ouvrir le panneau, ajouter un niveau, travailler sur le niveau
  * choisi (plan de travail à son altitude), rattacher la sélection au niveau choisi (règle d'or : icône, barre, raccourci).
  */
-export type IdCommandeNiveau = "niveaux" | "ajouter-niveau" | "travailler-niveau" | "rattacher-niveau";
+export type IdCommandeNiveau = "niveaux" | "ajouter-niveau" | "travailler-niveau" | "rattacher-niveau" | "supprimer-niveau";
 export interface CommandeNiveau {
   readonly id: IdCommandeNiveau;
   readonly picto: Pictogramme;
@@ -360,6 +360,7 @@ export const COMMANDES_NIVEAUX: readonly CommandeNiveau[] = [
   { id: "ajouter-niveau", ...depuisRegistre("ajouter-niveau"), libelle: "planche.niveaux.ajouter", court: "planche.niveaux.court.ajouter" },
   { id: "travailler-niveau", ...depuisRegistre("travailler-niveau"), libelle: "planche.niveaux.travailler", court: "planche.niveaux.court.travailler" },
   { id: "rattacher-niveau", ...depuisRegistre("rattacher-niveau"), libelle: "planche.niveaux.rattacher", court: "planche.niveaux.court.rattacher" },
+  { id: "supprimer-niveau", ...depuisRegistre("supprimer-niveau"), libelle: "planche.niveaux.supprimer.libelle", court: "planche.niveaux.supprimer" },
 ];
 
 /**
@@ -373,6 +374,7 @@ export function disponibiliteNiveau(id: IdCommandeNiveau, s: { readonly choisi: 
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (id === "ajouter-niveau") return { disponible: true, motif: null };
   if (!s.choisi) return { disponible: false, motif: "planche.niveaux.motif.choisi" };
+  if (id === "supprimer-niveau") return { disponible: true, motif: null };
   if (s.dansObjet) return { disponible: false, motif: "planche.niveaux.motif.racine" };
   return s.objets > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.niveaux.motif.objets" };
 }
