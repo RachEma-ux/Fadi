@@ -253,7 +253,7 @@ describe("extension « Plans reçus et présentation » — calques (n° 21) et 
     const dxf = (u: number | null) => {
       const l: (string | number)[] = u === null ? [] : [0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, u, 0, "ENDSEC"];
       l.push(0, "SECTION", 2, "ENTITIES", 0, "LWPOLYLINE", 8, "BATI", 90, 4, 70, 1);
-      for (const [x, y] of [[0, 0], [10000, 0], [10000, 8000], [0, 8000]]) l.push(10, x, 20, y);
+      for (const [x, y] of [[0, 0], [10000, 0], [10000, 8000], [0, 8000]] as const) l.push(10, x, 20, y);
       l.push(0, "ENDSEC", 0, "EOF");
       return l.join("\n") + "\n";
     };
