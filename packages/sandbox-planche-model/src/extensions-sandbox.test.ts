@@ -52,8 +52,8 @@ describe("Extensions du Sandbox — choix du compte", () => {
   it("sans choix, les extensions faites d'outils existants sont actives : personne ne perd un outil", () => {
     expect(extensionsActives({}).map((x) => x.id)).toEqual(["bois", "volumes"]);
     // Seules les extensions nouvelles attendent d'être activées : rien d'existant n'est masqué.
-    expect([...clesMasquees({})].sort()).toEqual(["commande:afficher-nord", "commande:composant-dynamique", "commande:controler", "commande:emplacement", "commande:executer-script", "commande:nettoyer", "commande:nord-arete", "commande:point-de-base", "commande:redessiner-composant", "commande:scripts", "outil:interagir", "panneau:controle", "panneau:dynamique", "panneau:emplacement", "panneau:scripts"]);
-    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length - 15);
+    expect([...clesMasquees({})].sort()).toEqual(["commande:afficher-nord", "commande:composant-dynamique", "commande:controler", "commande:corriger-defaut", "commande:defaut-precedent", "commande:defaut-suivant", "commande:emplacement", "commande:executer-script", "commande:fusionner-volumes", "commande:nettoyer", "commande:nord-arete", "commande:pieces-permis", "commande:point-de-base", "commande:preparer-fond-dao", "commande:redessiner-composant", "commande:scripts", "outil:interagir", "panneau:controle", "panneau:dynamique", "panneau:emplacement", "panneau:scripts"]);
+    expect(entreesOffertes({})).toHaveLength(REGISTRE_SANDBOX.length - 21);
     expect(extensionsActives(basculerExtension({}, "controle", true)).map((x) => x.id)).toEqual(["bois", "volumes", "controle"]);
     expect(basculerExtension({}, "controle", true)).toEqual({ controle: true });
   });
@@ -67,7 +67,7 @@ describe("Extensions du Sandbox — choix du compte", () => {
     expect(entreeOfferte("commande", "liste-debit", choix)).toBe(false);
     expect(entreeOfferte("outil", "union", choix)).toBe(true);
     expect(entreeOfferte("outil", "ligne", choix)).toBe(true);
-    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 15);
+    expect(entreesOffertes(choix)).toHaveLength(REGISTRE_SANDBOX.length - 12 - 21);
   });
 
   it("retient le geste du compte tel quel, même quand il rejoint le réglage d'origine", () => {
