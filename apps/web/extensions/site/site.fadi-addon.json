@@ -40,7 +40,7 @@
      "en": "Terrain from points"
     },
     "icone": "terrain.svg",
-    "raccourci": "Ctrl+Maj+F2"
+    "raccourci": "Ctrl+Maj+F10"
    },
    {
     "id": "courbes",
