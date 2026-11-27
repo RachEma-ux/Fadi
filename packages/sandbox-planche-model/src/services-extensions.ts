@@ -53,6 +53,8 @@ FONCTIONS_MODIFICATION_SCRIPT satisfies readonly FonctionScript[];
 export const MAX_NOM_OPERATION = 80;
 /** Au-delà, « modele.lire » est refusé plutôt que de transmettre un modèle démesuré à l'espace isolé. */
 export const MAX_ENTITES_LECTURE = 50_000;
+/** (1.1) Niveaux d'occurrences imbriquées descendus par la lecture du modèle entier ; au-delà, la lecture est refusée. */
+export const MAX_PROFONDEUR_MONDE = 32;
 export const MAX_SELECTION_EXTENSION = 10_000;
 /** (1.1) Segments d'un seul appel « lignes » ; côtés d'un arc ou d'un cercle (bornes de la Planche, 3 à 999). */
 export const MAX_SEGMENTS_APPEL = 20_000;
@@ -186,19 +188,35 @@ function courbeLue(c: Contexte, id: Id | undefined, M: Matrice4 | null): CourbeL
   const sommet = arete ? c.sommets[arete.a]?.position : undefined;
   const p = sommet ? appliquer(M, sommet) : undefined;
   const rayon = p ? Math.hypot(p.x - centre.x, p.y - centre.y, p.z - centre.z) : k.rayon;
+  // Une mise à l'échelle non uniforme dans le plan de la courbe en fait une ellipse : la courbe n'est alors plus
+  // annoncée (les segments restent seuls exacts).
+  for (const id of k.aretes) {
+    const a = c.aretes[id];
+    for (const s of a ? [a.a, a.b] : []) {
+      const q = c.sommets[s]?.position;
+      if (!q) continue;
+      const t = appliquer(M, q);
+      if (Math.abs(Math.hypot(t.x - centre.x, t.y - centre.y, t.z - centre.z) - rayon) > 1e-6 * Math.max(1, rayon)) return null;
+    }
+  }
   return { id: k.id, genre: k.genre, centre: triplet(centre), rayon, normale: [n.x / ln, n.y / ln, n.z / ln] };
 }
 
 /**
  * (1.1) Modèle entier en coordonnées du modèle : racine puis occurrences, descendues avec leur transformation composée
- * (masquées exclues, comme à l'affichage et à l'export). `null` = plus de `max` entités.
+ * (masquées exclues, comme à l'affichage et à l'export). Rend le motif du refus quand le modèle dépasse `max` entités ou
+ * `MAX_PROFONDEUR_MONDE` niveaux d'imbrication : rien n'est omis en silence.
  */
-function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteMonde[] } | null {
+function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteMonde[] } | string {
   const faces: FaceMonde[] = [];
   const aretes: AreteMonde[] = [];
-  let trop = false;
+  let motif = null as string | null;
   const parcourir = (c: Contexte, M: Matrice4 | null, chemin: readonly Id[], balise: Id | null, profondeur: number): void => {
-    if (trop || profondeur > 32) return;
+    if (motif) return;
+    if (profondeur > MAX_PROFONDEUR_MONDE) {
+      motif = `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`;
+      return;
+    }
     const T = (q: Vec3): [number, number, number] => triplet(M ? appliquer(M, q) : q);
     for (const f of Object.values(c.faces)) {
       if (f.masquee) continue;
@@ -215,7 +233,7 @@ function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteM
       aretes.push({ id: a.id, chemin, balise, points: [qa, qb], longueur: Math.hypot(qb[0] - qa[0], qb[1] - qa[1], qb[2] - qa[2]), courbe: courbeLue(c, a.courbe, M) });
     }
     if (faces.length + aretes.length > max) {
-      trop = true;
+      motif = `modèle de plus de ${max} entités`;
       return;
     }
     for (const o of Object.values(c.occurrences)) {
@@ -225,7 +243,7 @@ function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteM
     }
   };
   parcourir(m.racine, null, [], null, 0);
-  return trop ? null : { faces, aretes };
+  return motif ?? { faces, aretes };
 }
 
 /**
@@ -319,7 +337,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const m = f.modele();
     if (portee === "monde") {
       const monde = lireMonde(m, MAX_ENTITES_LECTURE);
-      if (!monde) return refus("argument_invalide", `modèle de plus de ${MAX_ENTITES_LECTURE} entités`);
+      if (typeof monde === "string") return refus("argument_invalide", monde);
       const lu: ModeleLuMonde = { portee: "monde", ...monde, enOperation: operation !== null };
       return rendu(lu);
     }

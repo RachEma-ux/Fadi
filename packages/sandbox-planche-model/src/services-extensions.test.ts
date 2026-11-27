@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ajouterRectangle, modeleVide, type Id, type Modele } from "./geometrie-libre.js";
 import { DEMANDES_EXTENSION, ERREURS_PROTOCOLE, FONCTIONS_MODIFICATION_SCRIPT, type PermissionExtension } from "./protocole-extensions.js";
 import { FONCTIONS_SCRIPT, creerFonctionsPlanche } from "./scripts.js";
-import { creerServicesExtension, type AccesPlanche, type ModeleLu } from "./services-extensions.js";
+import { MAX_PROFONDEUR_MONDE, creerServicesExtension, type AccesPlanche, type ModeleLu } from "./services-extensions.js";
 import { v3 } from "./vecteur.js";
 
 const TOUTES: readonly PermissionExtension[] = ["modele.lire", "modele.modifier", "selection"];
@@ -319,5 +319,31 @@ describe("services d'une extension — protocole 1.1 (plans reçus)", () => {
     expect(ctx.aretes).toHaveLength(1);
     expect(servir(acces, "modele.lire", { portee: "tout" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
     expect(etat.modele.annotations?.balises[murs]).toBeDefined();
+  });
+  it("modele.lire « monde » : une imbrication trop profonde est refusée, jamais lue en partie", () => {
+    const { acces } = planche();
+    const s = creerServicesExtension({ id: "essai", permissions: MODIF }, acces);
+    s.debutAppel("commande.preparer");
+    let id = ok(s.servir("modele.modifier", { fonction: "cercle", arguments: [[0, 0, 0], 1] })) as Id[] | Id;
+    for (let i = 0; i < MAX_PROFONDEUR_MONDE + 2; i++) id = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [Array.isArray(id) ? id : [id]] })) as Id;
+    s.finAppel(true);
+    expect(servir(acces, "modele.lire", { portee: "monde" })).toMatchObject({ ok: false, erreur: "argument_invalide", detail: expect.stringContaining("niveaux") });
+  });
+
+  it("modele.lire « monde » : un cercle déformé par une échelle non uniforme n'est plus annoncé comme cercle", () => {
+    const { etat, acces } = planche();
+    const s = creerServicesExtension({ id: "essai", permissions: MODIF }, acces);
+    s.debutAppel("commande.preparer");
+    const crees = ok(s.servir("modele.modifier", { fonction: "cercle", arguments: [[0, 0, 0], 1] })) as Id[];
+    const groupe = ok(s.servir("modele.modifier", { fonction: "grouper", arguments: [crees] })) as Id;
+    s.finAppel(true);
+    type Lu = { aretes: { courbe?: { genre: string; rayon: number } | null }[] };
+    const avant = ok(servir(acces, "modele.lire", { portee: "monde" })) as Lu;
+    expect(avant.aretes.every((a) => a.courbe?.genre === "cercle" && Math.abs(a.courbe.rayon - 1) < 1e-9)).toBe(true);
+    const o = etat.modele.racine.occurrences[groupe]!;
+    etat.modele = { ...etat.modele, racine: { ...etat.modele.racine, occurrences: { ...etat.modele.racine.occurrences, [groupe]: { ...o, transformation: [2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] } } } };
+    const apres = ok(servir(acces, "modele.lire", { portee: "monde" })) as Lu;
+    expect(apres.aretes.length).toBe(avant.aretes.length);
+    expect(apres.aretes.every((a) => !a.courbe)).toBe(true);
   });
 });

@@ -300,7 +300,9 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     courbe chacun). **Balises** : `planche.balises.creer(nom, couleur)` rend l'identifiant ; une balise du même nom est
     reprise, pas doublée. **Lecture** : chaque arête lue dit sa `courbe` (genre, centre, rayon, normale) ;
     `planche.modele.lire({ portee: "monde" })` rend toutes les faces et arêtes du modèle, en coordonnées du modèle, avec
-    le `chemin` d'occurrences et la `balise` héritée. **Délai** : le temps que la Planche passe à servir une demande ne
+    le `chemin` d'occurrences et la `balise` héritée ; au-delà de 32 niveaux d'imbrication ou de 50 000 entités, la
+    lecture est refusée (jamais rendue en partie), et une courbe déformée par une échelle non uniforme n'est plus
+    annoncée (ses segments restent). **Délai** : le temps que la Planche passe à servir une demande ne
     compte plus dans les 5 s d'une commande. Limite connue, mesurée le 27 novembre 2026 : l'insertion dans le noyau
     croît à peu près au carré du nombre de segments (1 000 en 0,6 s, 5 000 en 14 s) ; un gros plan attend
     l'insertion hors du fil principal (D10-F14-027, noyau).
