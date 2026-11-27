@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende, legendeLue, type LegendeLue, type ClassificationLue } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ExportRecu } from "./client";
+import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ExportRecu } from "./client";
 import { colorationIndicateur, basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, LegendeIndicateur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
@@ -35,6 +35,8 @@ import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
 import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
 import { useOutilsZones } from "./etat/useOutilsZones";
+import { useSelectionFiche } from "./etat/useSelectionFiche";
+import { decisionPremierClic } from "./etat/selection-ops";
 import { outilQuiEnregistre, outilTerrain, voletDeOutil, zoneARetablir } from "./etat/outils-ops";
 import { focaliserSaisie } from "./panneaux/SaisieCoordonnees";
 import type { TraceSaisi } from "./etat/outils-ops";
@@ -102,14 +104,9 @@ export function PageGeoData() {
   const [valeurs, setValeurs] = useState<Map<string, Map<string, ValeurIndicateur>>>(new Map());
   const [filtres, setFiltres] = useState<Map<string, string[]>>(new Map());
   const [categories, setCategories] = useState<Map<string, Categorie[]>>(new Map());
-  const [valeurPoint, setValeurPoint] = useState<{ titre: string; etat: "chargement" | "erreur" | "ok"; recue?: ValeurRasterRecue; erreur?: string } | null>(null);
-  const [selection, setSelection] = useState<{ coucheId: string; code: string } | null>(null);
-  // Sélection par nombre de clics (D-GD-34) : niveau sélectionné (recette) et contour d'une entité sans couche chargée.
-  const [entite, setEntite] = useState<{ rang: RangAdministratif; code: string; nom: string; coucheId?: string } | null>(null);
-  const [entiteContour, setEntiteContour] = useState<unknown | null>(null);
-  const [fiche, setFiche] = useState<FicheRecue | null>(null);
-  const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
-  const [coucheTable, setCoucheTable] = useState<string | null>(null);
+  // Sélection, fiche, valeur au point et table (P11 : domaine D4 extrait, `etat/useSelectionFiche.ts`).
+  const { valeurPoint, setValeurPoint, selection, setSelection, entite, setEntite, entiteContour, setEntiteContour, fiche, setFiche,
+    ficheEtat, setFicheEtat, coucheTable, setCoucheTable } = useSelectionFiche();
   // Catalogue fermé à chaque ouverture de la page (P1, décision D1 de la feuille de route) : la carte d'arrivée reste
   // dégagée ; le bouton « Données » ou la consigne l'ouvrent.
   // Consigne d'arrivée écartée pour la session : première fiche, premier outil, première recherche ou fermeture (P1).
@@ -535,15 +532,19 @@ export function PageGeoData() {
     }
     // Premier clic : toute fiche différée d'une série précédente est abandonnée.
     annulerFicheDifferee();
+    // Décision du premier clic (P11, `etat/selection-ops.ts`) : objet simple, entité administrative, raster, unités au point.
+    const decision = decisionPremierClic({
+      objets, administratives: admin.map((a) => ({ coucheId: a.k.coucheId, rang: a.rang })),
+      rastersVisibles: composition.couches.filter((k) => k.visible && rs.has(k.coucheId)).map((k) => k.coucheId),
+      pays: paysClic, rangsDuPays: (pays ?? []).filter((x) => x.code === paysClic).flatMap((x) => x.niveaux.map((n) => n.rang)),
+    });
     // Un objet d'une couche qui n'est pas une limite administrative (point d'intérêt, ligne…) garde la sélection simple.
-    const autre = objets.find((o) => !admin.some((a) => a.k.coucheId === o.coucheId));
-    if (autre) { serie.current = null; setEntite(null); setEntiteContour(null); setSelection(autre); void ouvrirFiche(autre.coucheId, autre.code); return; }
+    if (decision.cas === "objet") { const autre = decision.objet; serie.current = null; setEntite(null); setEntiteContour(null); setSelection(autre); void ouvrirFiche(autre.coucheId, autre.code); return; }
     const jeton = ++jetons.current;
-    if (admin.length) {
+    if (decision.cas === "effacer") { effacerSelection(); return; }
+    if (decision.cas === "administratif") {
       // Entité la plus fine touchée parmi les couches chargées (un arrondissement s'il y en a un à cet endroit, sinon la commune…).
-      const touches = objets.flatMap((x) => { const a = admin.find((y) => y.k.coucheId === x.coucheId); return a ? [{ o: x, rang: a.rang }] : []; }).sort((a, b) => b.rang - a.rang);
-      if (!touches.length) { effacerSelection(); return; }
-      const { o, rang: rang0 } = touches[0]!;
+      const { objet: o, rang: rang0 } = decision;
       const charges = admin.map((a) => a.rang);
       // Niveaux provisoires (ceux chargés, à partir de l'entité touchée), précisés par ses ancêtres en base dès leur arrivée.
       const niveaux = niveauxDeSelection(charges.filter((r) => r <= rang0), []);
@@ -567,14 +568,11 @@ export function PageGeoData() {
       return;
     }
     // Aucune couche de limites : une couche raster visible garde la lecture de sa valeur au point (D-GD-13).
-    const haut = [...composition.couches].reverse().find((k) => k.visible && rs.has(k.coucheId));
-    if (haut) { effacerSelection(); void ouvrirValeur(haut.coucheId, couches.get(haut.coucheId)?.titre ?? haut.coucheId, p); return; }
+    if (decision.cas === "raster") { effacerSelection(); void ouvrirValeur(decision.coucheId, couches.get(decision.coucheId)?.titre ?? decision.coucheId, p); return; }
     // Carte vierge : les unités du pays courant (barre territoriale) qui contiennent le point ; hors du pays, aucune sélection.
-    const niveauxBase = (pays ?? []).filter((x) => x.code === paysClic).flatMap((x) => x.niveaux.map((n) => n.rang));
-    if (!paysClic || !niveauxDeSelection([], niveauxBase).length) { effacerSelection(); return; }
     const s: SerieSelection = { niveaux: [], unites: new Map(), attendu: 1, jeton };
     serie.current = s;
-    api.unitesAuPoint(paysClic, p.lon, p.lat).then((r) => {
+    api.unitesAuPoint(decision.pays, p.lon, p.lat).then((r) => {
       if (serie.current !== s) return;
       // Niveaux réels de l'endroit (D-GD-42) : toutes les unités en base qui contiennent le point, de la plus fine à la plus globale.
       const us = r.unites;
