@@ -15,7 +15,7 @@
  * Les coordonnées stockées ne changent jamais.
  */
 import type { Repere } from "../annotations.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { REPERE_DU_MODELE, deplacerOrigine, repereDepuisDirections } from "../reperes.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, len, normalize, sub } from "../vecteur.js";
@@ -37,7 +37,7 @@ export interface EtatAxes {
 const initial = (): EtatAxes => ({ etape: 1, origine: null, x: null, alternatif: false, inference: null, erreur: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
 /** Repère du modèle (conservé pour les appelants du lot 4). */

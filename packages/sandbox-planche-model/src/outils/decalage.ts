@@ -11,7 +11,7 @@
  * (boucles insérées telles quelles). Une correction par le champ Mesures garde le réglage de l'opération corrigée.
  */
 import { type Id, contexte, decaler, decalerAretes, positionsFace } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { baseDuPlan, facesDeLArete } from "../geometrie-libre.js";
@@ -120,7 +120,7 @@ function pointAccroche(e: EtatDecalage, ctx: ContexteOutil, rayon: Rayon, tolera
   const n = e.normale;
   const o = e.origine;
   const surContour = (q: Vec3) => e.contour.some((c) => dist(c, q) <= 1e-6);
-  const g = geometrieVisible(ctx.modele);
+  const g = geometrieVisible(ctx.modele, etatOutil(ctx));
   const aretes = g.aretes.filter((a) => !e.aretes.includes(a.id) && !(e.face && surContour(a.a) && surContour(a.b)));
   const inf = inferer({ rayon, tolerance, geometrie: { ...g, aretes, faces: [] }, ...axesDeSaisie(ctx) });
   if (inf.type === "aucune" || inf.type === "sur-face") return { point: libre, inference: null };
@@ -230,7 +230,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
       case "survol": {
         if (etat.etape !== 2) {
           // Avant le choix de la face ou des arêtes : le curseur montre déjà les inférences de la géométrie visée.
-          const g = geometrieVisible(ctx.modele);
+          const g = geometrieVisible(ctx.modele, etatOutil(ctx));
           const inf = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: { ...g, faces: [] }, ...axesDeSaisie(ctx) });
           return { etat: { ...etat, inference: inf.type === "aucune" ? null : inf, texte: null, erreur: null } };
         }

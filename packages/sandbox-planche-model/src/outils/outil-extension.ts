@@ -22,7 +22,7 @@
  *   curseur    « croix », « fleche », « main » ou « cible »
  *   reference  point de départ de l'accrochage (axes, parallèles), d'ordinaire le dernier point cliqué
  */
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import type { Vec3 } from "../vecteur.js";
 import { axesDeSaisie, contexteSaisie } from "./commun-formes.js";
@@ -183,7 +183,7 @@ const emettre = (e: EtatOutilExtension, nom: EvenementOutilExtension, donnees: R
 });
 
 function accrocher(e: EtatOutilExtension, ctx: ContexteOutil, rayon: Rayon, tolerance: number): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(e.description.reference ? { depart: e.description.reference } : {}), ...axesDeSaisie(ctx) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(e.description.reference ? { depart: e.description.reference } : {}), ...axesDeSaisie(ctx) });
 }
 
 function traiter(e: EtatOutilExtension, ev: EvenementOutil, ctx: ContexteOutil): Transition<EtatOutilExtension> {

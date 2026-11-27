@@ -8,8 +8,9 @@ import { lireModelePlanche } from "./delta.js";
 import { dxfFeuille, dxfVue, nomCalque, relireDxf, texteDxf } from "./dxf-feuilles.js";
 import { ajouterFenetre, composerFeuille, creerFeuille, nomFichierFeuille } from "./feuilles.js";
 import { type Id, type Modele, ajouterRectangle, grouper, modeleVide, modifierAnnotations, peindreOccurrences, pousserTirer, statuerOccurrences, compterStatuts } from "./geometrie-libre.js";
-import { geometrieVisible } from "./inference.js";
-import { familleSimple, projeterPlan } from "./plan-vectoriel.js";
+import { etatOutil, geometrieVisible } from "./inference.js";
+import { scene, viser } from "./outils/selection.js";
+import { familleSimple, projeterPlan, sectionsDeCoupe } from "./plan-vectoriel.js";
 import { v3 } from "./vecteur.js";
 
 const L = { projet: "Projet", phase: "Phase", titre: "Titre", date: "Date", numero: "N°", indice: "Indice", echelles: "Échelles", vueDessus: "Vue de dessus" };
@@ -62,6 +63,29 @@ describe("Statut des travaux", () => {
     expect(sans.racine.occurrences[occ[0]]!.statut).toBeUndefined();
     const p = projeterPlan(m, { direction: v3(0, 0, -1), haut: v3(0, 1, 0) }, { plan: coupe });
     expect(new Set(p.poches.map((x) => `${x.materiau}|${x.statut}`))).toEqual(new Set(["mat1|a-demolir", "null|projete"]));
+  });
+  it("un enfant au statut explicite reste montré sous un parent masqué ; coupe, visée et accrochage suivent l'état", () => {
+    const { m: m0, occ } = modele();
+    // Les deux boîtes réunies dans un groupe parent « à démolir » : la boîte projetée garde son propre statut.
+    const g = grouper(m0, [occ[0], occ[1]]);
+    const m = statuerOccurrences(g.modele, [g.occurrence], "a-demolir").modele;
+    const projete = geometrieVisible(m, { etat: "projete" });
+    expect(projete.faces.length).toBeGreaterThan(0);
+    expect(projete.faces.every((f) => f.statut === "projete")).toBe(true);
+    expect(geometrieVisible(m, { etat: "existant" }).faces.every((f) => f.statut === "a-demolir")).toBe(true);
+    // Poches de coupe : seule la matière montrée par l'état est pochée.
+    expect(sectionsDeCoupe(m, coupe, "projete").map((x) => x.statut)).toEqual(["projete"]);
+    expect(sectionsDeCoupe(m, coupe, "existant").map((x) => x.statut)).toEqual(["a-demolir"]);
+    // Visée (sélection) : un rayon sur la boîte à démolir ne la touche plus en état « projeté ».
+    const rayonA = { origine: v3(2, 1.5, 10), direction: v3(0, 0, -1) };
+    const rayonB = { origine: v3(8, 1.5, 10), direction: v3(0, 0, -1) };
+    expect(viser(m, rayonA, 0.01)).not.toBeNull();
+    expect(viser(m, rayonA, 0.01, undefined, "projete")).toBeNull();
+    expect(viser(m, rayonB, 0.01, undefined, "projete")).not.toBeNull();
+    expect(scene(m, "projete").length).toBeLessThan(scene(m).length);
+    // Accrochage des outils : options d'après le contexte d'outil.
+    expect(etatOutil({ etatTravaux: "projete" })).toEqual({ etat: "projete" });
+    expect(etatOutil({})).toEqual({});
   });
 });
 

@@ -1023,6 +1023,9 @@ export interface OptionsGeometrieVisible {
 export const montreDansEtat = (statut: StatutTravaux | undefined, etat: "existant" | "projete" | undefined): boolean =>
   !etat || !statut || (etat === "existant" ? statut !== "projete" : statut !== "a-demolir");
 
+/** (Cas 4, C4 étape 5) Options de géométrie d'un outil : l'état affiché du contexte d'outil, s'il y en a un. */
+export const etatOutil = (ctx: { readonly etatTravaux?: "existant" | "projete" }): OptionsGeometrieVisible => (ctx.etatTravaux ? { etat: ctx.etatTravaux } : {});
+
 export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {
   const aretes: AreteVisible[] = [];
   const faces: FaceVisible[] = [];
@@ -1069,7 +1072,9 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}), ...(exclu ? { horsAccrochage: true } : {}), ...(statut ? { statut } : {}) };
     // Ni la géométrie d'un contexte traversé pour atteindre l'isolement, ni le reste du modèle quand il est masqué.
     const montrer = (id: Id) => isolement === "libre" || (isolement === "niveau" && retenues.has(id));
-    const rendre = !(o.masquerReste && hors);
+    // (Cas 4, C4 étape 5) Le statut effectif du contexte décide de sa propre géométrie seulement : un enfant au statut
+    // explicite différent est jugé à son tour (le parcours continue).
+    const rendre = !(o.masquerReste && hors) && montreDansEtat(statut, o.etat);
     for (const a of Object.values(c.aretes)) if (!a.masquee && rendre && montrer(a.id)) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
     for (const f of Object.values(c.faces)) {
       if (f.masquee || !rendre || !montrer(f.id)) continue;
@@ -1104,7 +1109,6 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
       if (defOuverte !== undefined && oc.definition === defOuverte && !estOuvert([...pile, oc.id])) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
       const st = oc.statut ?? statut;
-      if (!montreDansEtat(st, o.etat)) continue;
       const d = m.definitions[oc.definition];
       // (Cas 2, lot 2) Objet ou balise exclu de l'accrochage : affiché, marqué `horsAccrochage`.
       const exclut = exclu || oc.horsAccrochage === true || (!!oc.balise && !!balises?.[oc.balise]?.horsAccrochage);

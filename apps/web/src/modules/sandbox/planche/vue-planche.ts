@@ -701,7 +701,7 @@ export class VuePlanche {
       }
       return r;
     };
-    for (const s of sectionsDeCoupe(modele, p)) {
+    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined)) {
       const boucles = s.boucles.map((b) => b.map(vers2));
       // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
       const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);

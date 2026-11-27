@@ -470,6 +470,9 @@ const dateDuJour = (): string => {
 /** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
 const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
+/** (Cas 4, C4 étape 5) État des travaux affiché, pour le contexte d'outil ; « tout » n'en pose aucun. */
+export const etatTravauxOutil = (e: "tout" | "existant" | "projete" | undefined): { etatTravaux?: "existant" | "projete" } => (e && e !== "tout" ? { etatTravaux: e } : {});
+
 function telechargerFichier(blob: Blob, nom: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -849,6 +852,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const contexte = useCallback(
     (): ContexteOutil => ({
       modele: histRef.current.present.modele,
+      // (Cas 4, C4 étape 5) Ce que l'état des travaux masque dans la vue n'est ni visé, ni sélectionné, ni accroché.
+      ...etatTravauxOutil(vueRef.current?.lireOptions().etatTravaux),
       selection: selectionRef.current,
       separateurDecimal: SEPARATEUR_DECIMAL,
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
