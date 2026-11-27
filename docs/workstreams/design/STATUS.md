@@ -68,3 +68,4 @@ Mis à jour : 2026-11-26 (UTC).
 - 2026-11-26 : `studio-preuves-d1.mjs` (I.5-02) suit le nouvel ordre du rail : après le menu Studio replié, Tab passe par Console, GeoData puis Collaboration.
 - 2026-11-26 : `studio-navigation.mjs` (NAV-001) lit Collaboration dans `.app-nav-secondary` (L6b l'a sortie de la navigation principale).
 - 2026-11-26 : `use-immersive` réessaie la mesure tant que l'Atelier n'est pas monté et observe l'éditeur : avec l'en-tête L9 sur une rangée, aucun bloc observé ne changeait de taille, `--atelier-menu-top` restait vide et la liste des niveaux de « Plan » couvrait Planche / 3D au téléphone (recette planche-boutons, shard p2).
+- 2026-11-27 (demande du maître d'ouvrage) : rail du bureau, Collaboration remonte sous Studio dans la navigation principale et GeoData ouvre le groupe secondaire ; barre du bas et feuille « Plus » inchangées. Recettes parcours-scenario (R11) et studio-preuves-d1 (I.5-02) alignées.

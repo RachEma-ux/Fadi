@@ -457,3 +457,5 @@ Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et re
 
 
 - 2026-11-26 (lot Design L6b) : libellé I.5-02 du registre (`task-register.json`) aligné sur la recette `studio-preuves-d1.mjs` ; le rail place GeoData entre Studio et Collaboration. Aucun autre changement Studio.
+- 2026-11-26 (menu Studio, capture de référence du maître d'ouvrage) : sous-menu de la barre latérale réordonné — Console (entrée du sous-menu, masquée avec lui), 01 à 04, « Choisir une étude » (icône document), trait de fin ; ligne « Accueil Studio » retirée (l'accueil reste l'entrée « Studio », `/studio`) ; chevron ˅/˄. Recettes `studio-navigation.mjs` et `studio-preuves-d1.mjs` (I.5-02) et libellés du registre alignés. Captures : `captures/menu-studio/`.
+- 2026-11-27 (demande du maître d'ouvrage) : rail du bureau, Collaboration remonte sous Studio dans la navigation principale et GeoData ouvre le groupe secondaire ; barre du bas et feuille « Plus » inchangées. Recettes parcours-scenario (R11) et studio-preuves-d1 (I.5-02) alignées.

@@ -6,8 +6,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const lire = (nom: string) => readFileSync(new URL(nom, import.meta.url), "utf8");
-// Icône de taille par défaut immédiatement suivie du libellé : une entrée de la barre (les sous-menus portent une taille).
-const ENTREE = /<Icon name="([^"]+)" \/><span className="sidebar-label">([^<]+)<\/span>/g;
+// Icône immédiatement suivie du libellé : une entrée de la barre, sous-menu Studio compris (Console, Choisir une étude).
+const ENTREE = /<Icon name="([^"]+)"(?: size=\{\d+\})? \/><span className="sidebar-label">([^<]+)<\/span>/g;
 const entrees = (source: string) => [...source.matchAll(ENTREE)].map((m) => ({ icone: m[1]!, libelle: m[2]! }));
 
 describe("icônes de la barre latérale", () => {
@@ -21,7 +21,7 @@ describe("icônes de la barre latérale", () => {
     expect(debut).toBeGreaterThan(0);
     expect(fin).toBeGreaterThan(debut);
     expect(liste.map((e) => e.libelle).sort()).toEqual(
-      ["Accueil", "Administration", "Bibliothèque", "Collaboration", "Console", "Extensions", "Harmonie", "Organisations", "Paramètres", "Projets", "Revues externes", "Studio"].sort());
+      ["Accueil", "Administration", "Bibliothèque", "Choisir une étude", "Collaboration", "Console", "Extensions", "Harmonie", "Organisations", "Paramètres", "Projets", "Revues externes", "Studio"].sort());
   });
 
   it("donne à chaque entrée une icône qui n'appartient qu'à elle", () => {
