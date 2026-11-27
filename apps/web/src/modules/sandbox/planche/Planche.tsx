@@ -205,6 +205,12 @@ import {
   nomFichierFeuille,
   numeroFeuilleSuivant,
   pdfFeuilles,
+  dxfFeuille,
+  dxfVue,
+  relireDxf,
+  compterStatuts,
+  statuerOccurrences,
+  type StatutTravaux,
   hachuresTropDenses,
   relirePdf,
   supprimerFenetre,
@@ -363,7 +369,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -380,6 +386,7 @@ import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
 import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
+import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
@@ -427,6 +434,8 @@ interface CrochetRecette {
       menu: () => readonly string[] | null;
       /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
       facesRendues: () => number;
+      /** Cas 4, lot C4, étape 5 : arêtes rendues par statut des travaux. */
+      aretesParStatut: () => Readonly<Record<string, number>>;
       pressePapiers: () => number;
       /** Chantier Axes (AX-1) : contexte de travail courant (repère, plan, verrou) et nombre de contextes précédents. */
       contexteTravail: () => { contexte: ContexteTravail; precedents: number };
@@ -458,7 +467,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "feuilles-dxf" | "statut-travaux";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -473,7 +482,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -2098,6 +2107,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
       facesRendues: () => vueRef.current?.facesRendues() ?? 0,
+      aretesParStatut: () => vueRef.current?.aretesParStatut() ?? {},
       contexteTravail: () => ({ contexte: histContexteRef.current.courant, precedents: histContexteRef.current.precedents.length }),
     };
     return () => {
@@ -3313,7 +3323,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [motifNomsFeuilles, setMotifNomsFeuilles] = useState("{numero}-{nom}-{indice}");
   const [erreurFeuille, setErreurFeuille] = useState<string | null>(null);
   const [noteFeuille, setNoteFeuille] = useState<string | null>(null);
-  const libellesFeuille = (): LibellesFeuille => ({ projet: t("planche.feuilles.cartouche.projet"), phase: t("planche.feuilles.cartouche.phase"), titre: t("planche.feuilles.cartouche.titre"), date: t("planche.feuilles.cartouche.date"), numero: t("planche.feuilles.cartouche.numero"), indice: t("planche.feuilles.cartouche.indice"), echelles: t("planche.feuilles.cartouche.echelles"), vueDessus: t("planche.feuilles.scene.dessus") });
+  const libellesFeuille = (): LibellesFeuille => ({ projet: t("planche.feuilles.cartouche.projet"), phase: t("planche.feuilles.cartouche.phase"), titre: t("planche.feuilles.cartouche.titre"), date: t("planche.feuilles.cartouche.date"), numero: t("planche.feuilles.cartouche.numero"), indice: t("planche.feuilles.cartouche.indice"), echelles: t("planche.feuilles.cartouche.echelles"), vueDessus: t("planche.feuilles.scene.dessus"), separateur: LANGUE_INTERFACE === "en" ? "." : "," });
   const compositionFeuille = useMemo(
     () => (panneau === "feuilles" && feuilleChoisie ? composerFeuille(hist.present.modele, feuilleChoisie, libellesFeuille()) : null),
     [panneau, feuilleChoisie, hist.present.modele], // eslint-disable-line react-hooks/exhaustive-deps
@@ -3341,6 +3351,39 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setErreurFeuille(null);
     telechargerFichier(new Blob([octets as BlobPart], { type: "application/pdf" }), fichier);
     setNoteFeuille(t("planche.feuilles.note.pdf", { pages: String(relu.pages.length), formats: [...new Set(relu.pages.map((p) => `${p.largeur} × ${p.hauteur} mm`))].join(", ") }));
+  };
+  /**
+   * Feuilles en DXF (cas 4, lot C4, étape 5) : un fichier DXF R2000 par feuille cochée (feuille entière en millimètres
+   * papier) ou par vue (en mètres, à l'échelle réelle) ; chaque fichier émis est relu avant d'être téléchargé.
+   */
+  const [decocheesDxf, setDecocheesDxf] = useState<ReadonlySet<string>>(new Set());
+  const cocheesDxf = new Set(feuillesListe.filter((f) => !decocheesDxf.has(f.id)).map((f) => f.id));
+  const [contenuDxf, setContenuDxf] = useState<ContenuDxf>("feuille");
+  const [erreurDxf, setErreurDxf] = useState<string | null>(null);
+  const [noteDxf, setNoteDxf] = useState<string | null>(null);
+  const disponibiliteCommandeDxf = (id: IdCommandeDxf) => disponibiliteDxf(id, { cochees: cocheesDxf.size });
+  const executerDxf = (id: IdCommandeDxf) => {
+    setPanneau("feuilles-dxf");
+    if (id === "feuilles-dxf" || !disponibiliteCommandeDxf(id).disponible) return;
+    const m = hist.present.modele;
+    const fichiers: { nom: string; texte: string }[] = [];
+    let vides = 0;
+    for (const f of feuillesListe.filter((x) => cocheesDxf.has(x.id))) {
+      const base = nomFichierFeuille(motifNomsFeuilles, f, "dxf").replace(/\.dxf$/, "");
+      if (contenuDxf === "feuille") fichiers.push({ nom: `${base}.dxf`, texte: dxfFeuille(composerFeuille(m, f, libellesFeuille())) });
+      else
+        f.fenetres.forEach((w, i) => {
+          const texte = dxfVue(m, f, w.id, { separateur: LANGUE_INTERFACE === "en" ? "." : "," });
+          if (texte === null) vides++;
+          else fichiers.push({ nom: `${base}-v${i + 1}.dxf`, texte });
+        });
+    }
+    if (fichiers.length === 0) return setErreurDxf(t("planche.dxf.erreur.vide"));
+    // Contrôle : chaque fichier est relu (version R2000, calques déclarés) avant d'être téléchargé.
+    if (fichiers.some((x) => relireDxf(x.texte)?.version !== "AC1015")) return setErreurDxf(t("planche.dxf.erreur.relecture"));
+    setErreurDxf(null);
+    for (const x of fichiers) telechargerFichier(new Blob([x.texte], { type: "application/dxf" }), x.nom);
+    setNoteDxf(t(vides ? "planche.dxf.note.vides" : "planche.dxf.note.ecrits", { nombre: String(fichiers.length), noms: fichiers.map((x) => x.nom).join(", "), vides: String(vides) }));
   };
   /**
    * Réserves de chantier (cas 4 du catalogue, étape 7b) : panneau hors colonne, outil Réserve, fiche saisie, levée datée.
@@ -4826,6 +4869,31 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const c = contexteDe(hist.present.modele, dans);
     return selectionRef.current.filter((id) => c.occurrences[id] !== undefined);
   };
+  /**
+   * Statut des travaux (cas 4, lot C4, étape 5) : Existant, À démolir, Projeté posés sur les objets choisis (un second clic
+   * sur le statut commun le retire) ; filtre d'affichage et couleurs de la vue (options d'affichage, hors document).
+   */
+  const [noteTravaux, setNoteTravaux] = useState<string | null>(null);
+  const statutsSelection = () => {
+    const c = contexteDe(hist.present.modele, dans);
+    return occurrencesSelectionnees().map((id) => c.occurrences[id]?.statut ?? null);
+  };
+  const statutCommunSelection = (): StatutTravaux | null => {
+    const l = statutsSelection();
+    return l.length > 0 && l.every((x) => x === l[0]) ? (l[0] ?? null) : null;
+  };
+  const disponibiliteCommandeTravaux = (id: IdCommandeTravaux) => disponibiliteTravaux(id, { objets: occurrencesSelectionnees().length, lecture: readOnly });
+  const executerTravaux = (id: IdCommandeTravaux) => {
+    setPanneau("statut-travaux");
+    if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
+    const statut: StatutTravaux = id === "statut-existant" ? "existant" : id === "statut-a-demolir" ? "a-demolir" : "projete";
+    const ids = occurrencesSelectionnees();
+    const retirer = statutCommunSelection() === statut;
+    const libelle = t(`planche.travaux.${id}`);
+    const message = t(retirer ? "planche.travaux.note.retire" : "planche.travaux.note.pose", { nombre: String(ids.length), statut: t(`planche.travaux.court.${id}`) });
+    setNoteTravaux(message);
+    operer(libelle, (m) => ({ modele: statuerOccurrences(m, ids, retirer ? null : statut, o()).modele, message }));
+  };
   const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
   const [origineOuverte, setOrigineOuverte] = useState(false);
   /** Revue Codex de #303 : chemin complet de chaque objet sélectionné (l'instance ouverte, pas la première rencontrée). */
@@ -4972,6 +5040,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
     else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
     else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
+    else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
+    else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -5053,6 +5123,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_PDF.map((c) => {
           const d = disponibiliteCommandePdf(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.pdf.motif.page"), executer: () => executerPdf(c.id) };
+        }),
+        ...COMMANDES_DXF.map((c) => {
+          const d = disponibiliteCommandeDxf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.dxf.motif.cochees"), executer: () => executerDxf(c.id) };
+        }),
+        ...COMMANDES_TRAVAUX.map((c) => {
+          const d = disponibiliteCommandeTravaux(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.travaux.motif.objets"), executer: () => executerTravaux(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -5873,6 +5951,33 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "feuilles-dxf" && (
+              <PanneauFeuillesDxf
+                feuilles={feuillesListe}
+                cochees={cocheesDxf}
+                onCocher={(id, coche) => setDecocheesDxf((a) => { const n = new Set(a); if (coche) n.delete(id); else n.add(id); return n; })}
+                contenu={contenuDxf}
+                onContenu={setContenuDxf}
+                executer={executerDxf}
+                disponibilite={disponibiliteCommandeDxf}
+                erreur={erreurDxf}
+                note={noteDxf}
+              />
+            )}
+            {panneau === "statut-travaux" && (
+              <PanneauStatutTravaux
+                objets={occurrencesSelectionnees().length}
+                statutCommun={statutCommunSelection()}
+                compte={compterStatuts(hist.present.modele)}
+                etat={options.etatTravaux}
+                onEtat={(etatTravaux) => majOptions({ etatTravaux })}
+                couleurs={options.couleursStatut}
+                onCouleur={(st, couleur) => majOptions({ couleursStatut: { ...options.couleursStatut, [st]: couleur } })}
+                executer={executerTravaux}
+                disponibilite={disponibiliteCommandeTravaux}
+                note={noteTravaux}
               />
             )}
             {panneau === "pdf-recu" && (

@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "dxf" | "travaux";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -416,6 +416,13 @@ const commandes: EntreeSandbox[] = [
   c("confirmer-echelle-pdf", "pdf", "scale", "Ctrl+Maj+Espace, Maj+E", "panneau-pdf-recu", true),
   c("inserer-pdf", "pdf", "arrow-autofit-content", "Ctrl+Maj+Espace, I", "panneau-pdf-recu", true),
   c("poser-fond-pdf", "pdf", "photo-scan", "Ctrl+Maj+Espace, F", "panneau-pdf-recu", true),
+  // Lot C4, étape 5 : feuilles en DXF (un fichier par feuille, calques normalisés) et statut des travaux (SIA 400).
+  c("feuilles-dxf", "dxf", "vector", "Ctrl+Maj+Espace, D", "outils", true),
+  c("exporter-dxf", "dxf", "file-download", "Ctrl+Maj+Espace, Maj+D", "panneau-feuilles-dxf", true),
+  c("statut-travaux", "travaux", "home-cog", "Ctrl+Maj+Espace, T", "outils", true),
+  c("statut-existant", "travaux", "home-check", "Ctrl+Maj+Espace, X", "panneau-statut-travaux", true),
+  c("statut-a-demolir", "travaux", "home-x", "Ctrl+Maj+Espace, A", "panneau-statut-travaux", true),
+  c("statut-projete", "travaux", "home-plus", "Ctrl+Maj+Espace, J", "panneau-statut-travaux", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
@@ -474,6 +481,9 @@ const panneaux: EntreeSandbox[] = [
   p("references", "box-model-2", "outils", true),
   // PDF reçu (cas 4, lot C4, étape 4) : hors de la colonne (pleine).
   p("pdf-recu", "file-arrow-right", "outils", true),
+  // Feuilles en DXF et statut des travaux (cas 4, lot C4, étape 5) : hors de la colonne (pleine).
+  p("feuilles-dxf", "vector", "outils", true),
+  p("statut-travaux", "home-cog", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -505,6 +515,8 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:fonds", "panneau:fonds"],
   ["commande:references", "panneau:references"],
   ["commande:pdf-recu", "panneau:pdf-recu"],
+  ["commande:feuilles-dxf", "panneau:feuilles-dxf"],
+  ["commande:statut-travaux", "panneau:statut-travaux"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

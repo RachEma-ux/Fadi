@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -225,5 +225,17 @@ describe("PDF reçu (lot C4, étape 4) : disponibilité des commandes", () => {
     expect(disponibilitePdf("poser-fond-pdf", { ...s, confirmee: true, image: true }).disponible).toBe(true);
     expect(disponibilitePdf("inserer-pdf", { ...s, confirmee: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibilitePdf("ouvrir-pdf", { ...s, lecture: true }).disponible).toBe(false);
+  });
+});
+
+describe("Feuilles en DXF et statut des travaux (lot C4, étape 5) : disponibilité des commandes", () => {
+  it("exporter seulement des feuilles cochées, même en lecture ; statut sur des objets choisis, hors lecture", () => {
+    expect(disponibiliteDxf("feuilles-dxf", { cochees: 0 }).disponible).toBe(true);
+    expect(disponibiliteDxf("exporter-dxf", { cochees: 0 }).motif).toBe("planche.dxf.motif.cochees");
+    expect(disponibiliteDxf("exporter-dxf", { cochees: 3 }).disponible).toBe(true);
+    expect(disponibiliteTravaux("statut-travaux", { objets: 0, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteTravaux("statut-projete", { objets: 0, lecture: false }).motif).toBe("planche.travaux.motif.objets");
+    expect(disponibiliteTravaux("statut-a-demolir", { objets: 2, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteTravaux("statut-existant", { objets: 2, lecture: false }).disponible).toBe(true);
   });
 });

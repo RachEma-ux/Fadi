@@ -1150,6 +1150,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-pdf-recu node apps/web/e2e/planche-pdf-recu.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des feuilles en DXF et du statut des travaux (cas 4, lot C4, étape 5) — statut existant / à démolir / projeté, filtre d'état, couleurs, un DXF R2000 par feuille ou par vue (apps/web/e2e/planche-dxf.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-dxf node apps/web/e2e/planche-dxf.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

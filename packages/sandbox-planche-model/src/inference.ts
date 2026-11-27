@@ -28,6 +28,7 @@ import {
   type Matrice4,
   type Modele,
   type Occurrence,
+  type StatutTravaux,
   IDENTITE,
   appliquer,
   baseDuPlan,
@@ -112,6 +113,8 @@ export const RANG_POINTS: readonly TypeInference[] = ["extremite", "milieu", "in
 export interface AreteVisible {
   /** Arête adoucie (Adoucir / lisser, lot 5) : non tracée par la vue. */
   readonly adoucie?: boolean;
+  /** (Cas 4, C4 étape 5) Statut des travaux de l'objet le plus proche qui en porte un. */
+  readonly statut?: StatutTravaux;
   readonly id: Id;
   readonly a: Vec3;
   readonly b: Vec3;
@@ -130,6 +133,8 @@ export interface FaceVisible {
   readonly materiau?: Id;
   /** Balise de l'objet le plus proche qui en porte une (couleur par balise, lot 5). */
   readonly balise?: Id;
+  /** (Cas 4, C4 étape 5) Statut des travaux de l'objet le plus proche qui en porte un. */
+  readonly statut?: StatutTravaux;
   /** Hors du contexte d'édition ouvert (Objets O-2) : affichée délavée. */
   readonly horsContexte?: boolean;
 }
@@ -601,7 +606,16 @@ export interface OptionsGeometrieVisible {
   readonly masquerReste?: boolean;
   /** Masquer les composants semblables (O-5) : dans un composant ouvert, ses autres occurrences ne sont pas rendues. */
   readonly masquerSemblables?: boolean;
+  /**
+   * (Cas 4, C4 étape 5) État affiché : « existant » (existant et à démolir), « projete » (existant et projeté) ; absent =
+   * tout. Ce qui n'a pas de statut est toujours affiché.
+   */
+  readonly etat?: "existant" | "projete";
 }
+
+/** L'objet de ce statut est-il montré dans cet état ? */
+export const montreDansEtat = (statut: StatutTravaux | undefined, etat: "existant" | "projete" | undefined): boolean =>
+  !etat || !statut || (etat === "existant" ? statut !== "projete" : statut !== "a-demolir");
 
 export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {
   const aretes: AreteVisible[] = [];
@@ -640,13 +654,13 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     if (pile.length === n) return "niveau";
     return retenues.has(pile[n] as Id) ? "libre" : "dehors";
   };
-  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = []): void => {
+  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = [], statut?: StatutTravaux): void => {
     if (profondeur > 32) return;
     const isolement = etatIsolement(pile);
     if (isolement === "dehors") return;
     const hors = !dedans(pile);
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
-    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}) };
+    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}), ...(statut ? { statut } : {}) };
     // Ni la géométrie d'un contexte traversé pour atteindre l'isolement, ni le reste du modèle quand il est masqué.
     const montrer = (id: Id) => isolement === "libre" || (isolement === "niveau" && retenues.has(id));
     const rendre = !(o.masquerReste && hors);
@@ -670,8 +684,10 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
       if (oc.masquee) continue;
       if (defOuverte !== undefined && oc.definition === defOuverte && !estOuvert([...pile, oc.id])) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
+      const st = oc.statut ?? statut;
+      if (!montreDansEtat(st, o.etat)) continue;
       const d = m.definitions[oc.definition];
-      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id]);
+      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id], st);
     }
   };
   parcourir(m.racine, IDENTITE, false, 0, undefined, undefined);
