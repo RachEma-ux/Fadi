@@ -95,7 +95,8 @@ export interface OptionsHoteExtension {
     readonly ouvrir: (demande: DemandeOuverture) => { readonly reponse: Promise<unknown>; readonly fermer: () => void };
     readonly enregistrer: (demande: DemandeEnregistrement) => { readonly reponse: Promise<boolean>; readonly fermer: () => void };
     /** (1.2) Range tel quel en base le fichier choisi ; absent : l'extension reçoit `archive: null` et son motif. */
-    readonly archiver?: (fichier: FichierLu) => Promise<IssueArchive>;
+    /** `octets` : le fichier tel qu'il a été lu sur le disque, quand la fenêtre les rend (sinon le texte encodé en UTF-8). */
+    readonly archiver?: (fichier: FichierLu, octets?: Uint8Array) => Promise<IssueArchive>;
   };
   /**
    * Panneau (lot 4, permission « panneau ») : `envoyer` remet des données à la page du panneau et rend faux s'il n'est
@@ -214,7 +215,8 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
           const f = fichier.fichier;
           const archiver = o.fichiers?.archiver;
           if (!archiver) return reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage indisponible dans cette Planche" }));
-          return archiver(f).then((issue) => reponseProtocole(m.id, fichierArchive(f, issue)), () => reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage impossible" })));
+          const brut = (valeur as { octets?: unknown } | null)?.octets;
+          return archiver(f, brut instanceof Uint8Array ? brut : undefined).then((issue) => reponseProtocole(m.id, fichierArchive(f, issue)), () => reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage impossible" })));
         }
         if (!lu.demande.flux || !fichier.fichier) return reponseProtocole(m.id, fichier.fichier);
         // En flux, l'extension reçoit un jeton : le texte reste ici jusqu'à la fin de l'appel.

@@ -28,7 +28,7 @@
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
  */
-import { Router } from "express";
+import express, { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { sandboxToolPreferences } from "../db/schema.js";
@@ -38,7 +38,7 @@ import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
 import { basculerPaquet, lireChoixPaquets, type ChoixPaquets } from "@parcours/sandbox-planche-model";
 import { fichesComptePaquets, paquetsDuCompte } from "../lib/addon-paquets.js";
 import { lireLignesPaquets } from "../lib/addon-paquets-lecture.js";
-import { archiverFichierExtension, BORNES_ARCHIVE, estNomArchive, lireArchive, listerArchives } from "../lib/sandbox-fichiers.js";
+import { archiverFichierExtension, BORNES_ARCHIVE, estNomArchive, lireArchive, lireOctetsArchive, listerArchives } from "../lib/sandbox-fichiers.js";
 
 export const sandboxPreferencesRouter = Router();
 sandboxPreferencesRouter.use(requireAuth);
@@ -80,22 +80,27 @@ sandboxPreferencesRouter.put("/extensions/:id", async (req, res) => {
 
 /**
  * Protocole des extensions 1.2 (27 novembre 2026) — fichiers de données ouverts par une extension, archivés tels quels :
- *   POST /fichiers { extension, nom, texte } → 201 { archive } (200 si ce même fichier était déjà rangé) ; extension
- *        que le compte n'a pas installée → 404 ; forme invalide → 400 ; texte de plus de 200 000 caractères → 413.
+ *   POST /fichiers { extension, nom, contenu (octets du fichier en base 64) } → 201 { archive } (200 si ce même fichier était déjà rangé) ; extension
+ *        que le compte n'a pas installée → 404 ; forme invalide ou texte non UTF-8 → 400 ; plus de 200 000 caractères
+ *        ou de 800 000 octets → 413. Les octets sont rangés tels quels (marque d'ordre comprise) et l'empreinte est la leur.
  *   GET  /fichiers[?extension=…] → { archives: [{ id, extension, version, nom, taille, empreinte, ajouteLe }] }
- *   GET  /fichiers/:id → l'archive et son `texte` tel qu'il a été rangé ; 404 si elle n'est pas au compte.
+ *   GET  /fichiers/:id → l'archive, ses octets tels qu'ils ont été rangés (`contenu`, base 64) et leur `texte` ; 404 si elle
+ *        n'est pas au compte.
  */
-sandboxPreferencesRouter.post("/fichiers", async (req, res) => {
+// Corps lu ici (limite dédiée, app.ts l'exempte de la limite générale de 256 ko) : les octets d'un fichier de
+// 200 000 caractères peuvent dépasser 256 ko une fois en base 64.
+sandboxPreferencesRouter.post("/fichiers", express.json({ limit: BORNES_ARCHIVE.corps }), async (req, res) => {
   const corps = req.body as Record<string, unknown> | null;
-  const { extension, nom, texte } = corps ?? {};
-  if (!corps || typeof corps !== "object" || Object.keys(corps).some((k) => !["extension", "nom", "texte"].includes(k)) || typeof extension !== "string" || !/^[a-z0-9-]{1,40}$/.test(extension) || !estNomArchive(nom) || typeof texte !== "string") {
-    return void res.status(400).json({ error: "invalid_input", detail: `{ extension, nom (${BORNES_ARCHIVE.nom} caractères au plus, sans chemin), texte }` });
+  const { extension, nom, contenu } = corps ?? {};
+  if (!corps || typeof corps !== "object" || Object.keys(corps).some((k) => !["extension", "nom", "contenu"].includes(k)) || typeof extension !== "string" || !/^[a-z0-9-]{1,40}$/.test(extension) || !estNomArchive(nom)) {
+    return void res.status(400).json({ error: "invalid_input", detail: `{ extension, nom (${BORNES_ARCHIVE.nom} caractères au plus, sans chemin), contenu (base 64) }` });
   }
-  if (texte.length > BORNES_ARCHIVE.texte) return void res.status(413).json({ error: "too_large", detail: `${BORNES_ARCHIVE.texte} caractères au plus` });
+  const octets = lireOctetsArchive(contenu);
+  if (!octets.ok) return void res.status(octets.statut).json({ error: octets.statut === 413 ? "too_large" : "invalid_input", detail: octets.detail });
   // Seule une extension que ce compte a installée peut faire archiver ; sa version est gardée avec le fichier.
   const paquet = paquetsDuCompte(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)).find((p) => p.fiche.id === extension);
   if (!paquet) return void res.status(404).json({ error: "not_found" });
-  const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, paquet.fiche.version, nom, texte);
+  const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, paquet.fiche.version, nom, octets.octets);
   res.status(deja ? 200 : 201).json({ archive });
 });
 

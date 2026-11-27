@@ -3075,7 +3075,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         },
       },
       fichiers: {
-        ouvrir: (demande) => fenetreFichier<FichierLu | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
+        ouvrir: (demande) => fenetreFichier<(FichierLu & { readonly octets?: Uint8Array }) | null>((cle, repondre) => ({ cle, extension: nom, sorte: "ouvrir", demande, repondre })),
         enregistrer: (demande) =>
           fenetreFichier<boolean>(
             (cle, repondre) => ({
@@ -3090,7 +3090,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               },
             }),
           ),        // (Protocole 1.2) Fichier de données ouvert avec « archiver » : rangé tel quel en base, au nom du compte.
-        archiver: (fichier) => archiverFichierExtension(id, fichier),
+        archiver: (fichier, octets) => archiverFichierExtension(id, fichier, octets),
       },
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
