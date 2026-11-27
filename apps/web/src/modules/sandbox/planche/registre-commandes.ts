@@ -48,7 +48,8 @@ export const COMMANDES_DEUX_TEMPS: readonly EntreeRegistre[] = REGISTRE_COMMANDE
 export function commandeDuSecondTemps(c: Cle): EntreeRegistre | null {
   // Cas 2, lot 8 : secondes touches en chiffres, lues sur la touche physique (AZERTY donne « & », Maj donne « ! »).
   const chiffre = c.code && /^(Digit|Numpad)[0-9]$/.test(c.code) ? c.code.slice(-1) : null;
-  const r = raccourciClavier(chiffre ? { ...c, key: chiffre } : c);
+  // Copie champ par champ : un KeyboardEvent étalé (`...e`) perd ses accesseurs (shiftKey, ctrlKey…).
+  const r = raccourciClavier(chiffre ? { key: chiffre, code: c.code, ctrlKey: c.ctrlKey, shiftKey: c.shiftKey, altKey: c.altKey, ...(c.metaKey !== undefined ? { metaKey: c.metaKey } : {}) } : c);
   if (!r) return null;
   return COMMANDES_DEUX_TEMPS.find((e) => secondTemps(e.raccourci) === r) ?? null;
 }

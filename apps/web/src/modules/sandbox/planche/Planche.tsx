@@ -464,6 +464,10 @@ interface CrochetRecette {
       contexteTravail: () => { contexte: ContexteTravail; precedents: number };
       differences: () => { readonly ajoutes: number; readonly modifies: number; readonly supprimes: number } | null;
       consultation: () => string | null;
+      /** Cas 2, lot 8 : choisir des entités (recette), projection rendue (caméra) et modèle affiché par la vue. */
+      choisir: (ids: readonly string[]) => void;
+      projectionRendue: () => string | null;
+      modeleAffiche: () => Modele | null;
 }
 const fenetreRecette = (): { fadiPlanche?: CrochetRecette } => window as unknown as { fadiPlanche?: CrochetRecette };
 
@@ -2253,6 +2257,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       // Cas 2, lot 7 : traits de différence surlignés et consultation en cours (recette).
       differences: () => vueRef.current?.differencesAffichees() ?? null,
       consultation: () => (consultationRef.current ? (consultationRef.current.jalon?.id ?? "courante") : null),
+      choisir: (ids) => {
+        setSelection(ids);
+        rafraichir();
+      },
+      projectionRendue: () => vueRef.current?.cameraRendueType() ?? null,
+      modeleAffiche: () => vueRef.current?.modeleAffiche() ?? null,
     };
     return () => {
       v.detruire();
@@ -4679,8 +4689,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       setNoteL8(null);
       return setPanneau(panneauRef.current === cible ? null : cible);
     }
-    if (panneauRef.current !== cible) setPanneau(cible);
-    if (id === "soustraire-garder" && panneauRef.current !== cible) return setNoteL8(t("planche.l8.note.soustraire-consigne"));
+    const dejaOuvert = panneauRef.current === cible;
+    if (!dejaOuvert) setPanneau(cible);
+    if (id === "soustraire-garder" && !dejaOuvert) return setNoteL8(t("planche.l8.note.soustraire-consigne"));
     if (!d.disponible) return setNoteL8(t(d.motif ?? "planche.lecture.message"));
     const s = selectionL8();
     const sep = SEPARATEUR_DECIMAL;
@@ -6065,7 +6076,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
           // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
-          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
+          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || outilId === ID_CALER || outilId === ID_BOITE ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
           data-planche-curseur={outilId}
         >

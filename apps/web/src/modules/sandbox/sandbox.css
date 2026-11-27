@@ -5089,8 +5089,9 @@
 }
 .sandbox-planche .planche-l8-echelle {
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  /* À droite de la colonne d'outils, au pied du dessin (maquette lot8-4). */
+  left: 76px;
+  bottom: 12px;
   padding: 6px 8px 4px;
   border-radius: 4px;
   background: color-mix(in srgb, #ffffff 85%, transparent);

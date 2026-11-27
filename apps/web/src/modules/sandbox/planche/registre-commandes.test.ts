@@ -72,6 +72,16 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
       }
       expect(commandeDuSecondTemps({ key: maj ? touche : touche.toLowerCase(), code: `Key${touche}`, ctrlKey: false, shiftKey: maj, altKey: false })?.id, c.raccourci).toBe(c.id);
     }
+    // Un vrai KeyboardEvent : ses modificateurs sont des accesseurs du prototype, perdus par un étalement.
+    class Evenement {
+      get key() { return "!"; }
+      get code() { return "Digit1"; }
+      get shiftKey() { return true; }
+      get ctrlKey() { return false; }
+      get altKey() { return false; }
+      get metaKey() { return false; }
+    }
+    expect(commandeDuSecondTemps(new Evenement())?.id, "Maj+1 lu sur un événement à accesseurs").toBe("vue-ortho");
     expect(commandeDuClavier({ key: " ", ctrlKey: true, shiftKey: true, altKey: false }), "l'entrée seule n'exécute rien").toBeNull();
     expect(commandeDuSecondTemps({ key: "v", code: "KeyV", ctrlKey: false, shiftKey: false, altKey: false })?.id).toBe("versions");
     expect(commandeDuSecondTemps({ key: "V", code: "KeyV", ctrlKey: false, shiftKey: true, altKey: false })?.id).toBe("brouillon");

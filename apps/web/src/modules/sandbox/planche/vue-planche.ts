@@ -1502,6 +1502,16 @@ export class VuePlanche {
     return o;
   }
 
+  /** Recette : genre de la caméra qui rend l'image (« OrthographicCamera » en projection parallèle exacte). */
+  cameraRendueType(): string {
+    return this.cameraRendue().type;
+  }
+
+  /** Recette : modèle affiché (le modèle d'affichage dérivé pendant une axonométrie éclatée). */
+  modeleAffiche(): Modele | null {
+    return this.modele ?? null;
+  }
+
   /** Pixels par mètre à l'écran en projection parallèle (échelle graphique, n° 29) ; `null` en perspective. */
   pixelsParMetre(): number | null {
     return this.projectionParallele ? this.hauteur / (2 * this.demiHauteurParallele()) : null;
