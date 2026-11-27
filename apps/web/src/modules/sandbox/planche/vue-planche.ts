@@ -324,8 +324,8 @@ export class VuePlanche {
     this.loupeCanvas.width = TAILLE_LOUPE;
     this.loupeCanvas.height = TAILLE_LOUPE;
     this.loupeCanvas.setAttribute("data-planche-loupe", "");
-    this.loupeCanvas.style.display = "none";
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg, this.loupeCanvas);
+    // Posée dans la surcouche seulement pendant qu'elle sert (un seul canevas dans la vue le reste du temps).
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -1003,9 +1003,10 @@ export class VuePlanche {
   private dessinerLoupe(): void {
     const p = this.loupeEn;
     if (!p) {
-      this.loupeCanvas.style.display = "none";
+      this.loupeCanvas.remove();
       return;
     }
+    if (!this.loupeCanvas.isConnected) this.surcouche.append(this.loupeCanvas);
     const ctx = this.loupeCanvas.getContext("2d");
     if (!ctx) return;
     const ratio = this.canvas.width / Math.max(1, this.canvas.clientWidth);
@@ -1027,12 +1028,12 @@ export class VuePlanche {
     ctx.lineTo(c, c + 10);
     ctx.stroke();
     const haut = p.y - TAILLE_LOUPE - 40 < 0 ? p.y + 40 : p.y - TAILLE_LOUPE - 40;
-    Object.assign(this.loupeCanvas.style, { display: "block", left: `${p.x - TAILLE_LOUPE / 2}px`, top: `${haut}px` });
+    Object.assign(this.loupeCanvas.style, { left: `${p.x - TAILLE_LOUPE / 2}px`, top: `${haut}px` });
   }
 
   private majLoupe(p: Point2 | null): void {
     this.loupeEn = p && this.rappels.loupe?.() ? p : null;
-    if (!this.loupeEn) this.loupeCanvas.style.display = "none";
+    if (!this.loupeEn) this.loupeCanvas.remove();
     this.rendre();
   }
 
