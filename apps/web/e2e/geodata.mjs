@@ -509,6 +509,33 @@ await caseCouleur.check();
 check("coloration selon l'indicateur : recochée, la légende revient", (await page.locator("[data-gd-legende-indicateur]").count()) === 1);
 await onglet(page, "legende");
 check("coloration selon l'indicateur : l'onglet « Légende » donne les mêmes classes", (await page.locator("[data-gd-legende] [data-gd-legende-classes] .gd-entree").count()) === (await legendeIndic.locator(".gd-entree").count()));
+// P9 (légende lue, L1-L4) : période, classification nommée, absences par motif, source et version, sur la carte ET dans l'onglet.
+{
+  const lire = async (racine) => ({
+    periode: await racine.locator("[data-gd-legende-periode]").first().getAttribute("data-gd-legende-periode").catch(() => null),
+    classification: await racine.locator("[data-gd-legende-classification]").first().getAttribute("data-gd-legende-classification").catch(() => null),
+    motifs: await racine.locator("[data-gd-legende-motif]").count(),
+    source: await racine.locator("[data-gd-legende-source] [data-gd-legende-version]").count(),
+    hachure: await racine.locator("[data-gd-legende-classe='absente'] .gd-pastille").first().evaluate((e) => getComputedStyle(e).backgroundImage).catch(() => ""),
+  });
+  const surCarte = await lire(legendeIndic);
+  const dansOnglet = await lire(page.locator("[data-gd-legende]"));
+  check("P9 · légende lue : période, « Quantiles, n classes · Jaune → rouge », motif de l'absence, source et version (carte)", !!surCarte.periode && /^quantiles:\d+:jaune-rouge$/.test(surCarte.classification ?? "") && surCarte.motifs >= 1 && surCarte.source === 1, JSON.stringify(surCarte));
+  check("P9 · onglet « Légende » complet comme la carte (source et version comprises)", JSON.stringify({ ...dansOnglet, hachure: "" }) === JSON.stringify({ ...surCarte, hachure: "" }), JSON.stringify(dansOnglet));
+  check("P9 · pastille de la valeur absente hachurée (pas seulement grise)", surCarte.hachure.includes("repeating-linear-gradient"), surCarte.hachure.slice(0, 60));
+  await page.addScriptTag({ path: AXE });
+  const axeLegende = await page.evaluate(async () => (await window.axe.run(document.querySelector("[data-gd-legende-indicateur]"), { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((v) => `${v.id}:${v.impact}`));
+  check("P9 · axe-core sur la légende de l'indicateur : aucune violation, même « moderate » (D2)", axeLegende.length === 0, axeLegende.join(" ; "));
+  await page.screenshot({ path: join(OUT, "p9-legende.png") });
+}
+// P10 (carto C2) : la valeur absente est hachurée sur la carte elle-même, pas seulement grise ; décochée, plus de hachures.
+check("P10 · hachures de la valeur absente sur la carte (couche colorée)", ((await page.locator("[data-gd-moteur]").getAttribute("data-gd-hachures")) ?? "").trim().length > 0);
+await onglet(page, "couches");
+await caseCouleur.uncheck();
+await page.waitForTimeout(300);
+check("P10 · sans coloration, aucune hachure", ((await page.locator("[data-gd-moteur]").getAttribute("data-gd-hachures")) ?? "").trim() === "");
+await caseCouleur.check();
+await page.waitForTimeout(300);
 await onglet(page, "couches");
 // Les quatre combinaisons nom / valeur : deux cases sans aucun lien entre elles.
 check("nom / valeur : état de départ — noms masqués, valeurs affichées", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()));
@@ -917,6 +944,15 @@ const idRaster = (await legendeRaster.getAttribute("data-gd-legende-couche")) ??
 const valeurRaster = await (await page.request.get(`${BASE}/geodata/api/raster/${idRaster}/valeur?lon=-8.79&lat=30.15`)).json();
 const horsRaster = await (await page.request.get(`${BASE}/geodata/api/raster/${idRaster}/valeur?lon=-8.995&lat=30.295`)).json();
 check("raster : valeur au point exacte ; cellule sans donnée « non évaluée » (null, jamais 0)", valeurRaster.valeur === 225 && horsRaster.valeur === null, `${valeurRaster.valeur} / ${horsRaster.valeur}`);
+// P8 (champs additifs de l'API) : version de la valeur au point ; version et couverture « non évaluée » de la proximité.
+check("P8 · valeur au point : version publiée jointe (empreinte SHA-256)", /^[0-9a-f]{64}$/.test(valeurRaster.version?.empreinte ?? ""), JSON.stringify(valeurRaster.version?.empreinte));
+{
+  const cat = await (await page.request.get(`${BASE}/geodata/api/catalogue`)).json();
+  const unites = cat.couches.find((c) => c.titre === "Unités synthétiques (test)");
+  const prox = unites ? await (await page.request.get(`${BASE}/geodata/api/couches/${unites.id}/objets/001/proximite?rayon=500&couches=${unites.id}`)).json() : null;
+  const c0 = prox?.couches?.[0];
+  check("P8 · proximité : version comptée et couverture du rayon « non évaluée », jamais déduite", /^[0-9a-f]{64}$/.test(c0?.version?.empreinte ?? "") && c0?.couverture?.etat === "non-evaluee" && "declaree" in (c0?.couverture ?? {}), JSON.stringify(c0?.couverture ?? prox));
+}
 await onglet(page, "couches");
 await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
 

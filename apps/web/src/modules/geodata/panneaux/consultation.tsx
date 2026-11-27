@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { type EntreeLegende, arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, libelleAbsence, LIBELLES_METHODES, PALETTES_CLASSES, type LegendeLue, LIBELLES_USAGES, USAGES, type Composition, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue, type VersionRecue } from "../client";
 import { entreesCategories, type Categorie } from "../composition-ops";
 import { PanneauPrix } from "./PrixImmobiliers";
@@ -333,7 +333,7 @@ export function PanneauCouches(p: {
   );
 }
 
-export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]>; /** Couches colorées selon l'indicateur actif (D-GD-55). */ colorations?: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }> }) {
+export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; categories: Map<string, Categorie[]>; /** Couches colorées selon l'indicateur actif (D-GD-55). */ colorations?: ReadonlyMap<string, ColorationLegende> }) {
   const visibles = [...p.composition.couches].reverse().filter((k) => k.visible);
   if (!visibles.length) return <p className="gd-etat">Aucune couche visible.</p>;
   return (
@@ -341,7 +341,7 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
       {visibles.map((k) => {
         const c = p.couches.get(k.coucheId);
         const col = p.colorations?.get(k.coucheId);
-        if (col) return <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId}><h3 translate="no">{c?.titre ?? k.coucheId}</h3><EntreesIndicateur indicateur={col.indicateur} entrees={col.entrees} /></section>;
+        if (col) return <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId}><h3 translate="no">{c?.titre ?? k.coucheId}</h3><EntreesIndicateur indicateur={col.indicateur} entrees={col.entrees} lue={col.lue ?? null} couche={c ?? null} /></section>;
         if (k.style.mode === "simple") return <section key={k.coucheId} className="gd-legende"><h3 translate="no">{c?.titre ?? k.coucheId}</h3><p className="gd-entree"><span className="gd-pastille" style={{ background: k.style.couleur }} />Objets de la couche</p></section>;
         if (k.style.mode === "raster") {
           const r = c?.raster;
@@ -470,15 +470,14 @@ export function FicheValeur(p: { titre: string; etat: "chargement" | "erreur" | 
  * Légende de la coloration selon l'indicateur actif (D-GD-55), sur la carte : indicateur, unité, classes (bornes et nombre
  * d'entités), valeur absente en gris (jamais zéro), source de la couche et son statut provisoire le cas échéant.
  */
-export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }>; couches: ReadonlyMap<string, CoucheRecue>; /** Panneau Données ouvert à gauche (bureau). */ decalee?: boolean }) {
+export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, ColorationLegende>; couches: ReadonlyMap<string, CoucheRecue>; /** Panneau Données ouvert à gauche (bureau). */ decalee?: boolean }) {
   return (
     <section className={`gd-legende-indicateur${p.decalee ? " gd-legende-decalee" : ""}`} aria-label="Légende de l'indicateur" data-gd-legende-indicateur>
       {[...p.colorations].map(([id, c]) => {
         const couche = p.couches.get(id);
         return (
           <div key={id}>
-            <EntreesIndicateur indicateur={c.indicateur} entrees={c.entrees} />
-            {couche && <p className="gd-discret"><span translate="no">{couche.version.attribution}</span>{couche.version.qualification?.etat === "provisoire" && <>{" · "}<span>Source provisoire</span></>}</p>}
+            <EntreesIndicateur indicateur={c.indicateur} entrees={c.entrees} lue={c.lue ?? null} couche={couche ?? null} />
           </div>
         );
       })}
@@ -486,21 +485,80 @@ export function LegendeIndicateur(p: { colorations: ReadonlyMap<string, { indica
   );
 }
 
-/** Classes de la coloration selon l'indicateur (D-GD-55) : titre, unité, bornes, effectifs, valeur absente. */
-function EntreesIndicateur({ indicateur: i, entrees }: { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[] }) {
+/** Coloration d'une couche et sa légende lue (P9) ; `lue` absente tant que la version de la couche n'est pas connue. */
+export type ColorationLegende = { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[]; lue?: LegendeLue | null };
+
+/** Pastille de la valeur absente : hachures sur le gris (la couleur n'est jamais le seul signe, WCAG 1.4.1), comme l'export. */
+const PASTILLE_ABSENTE = "repeating-linear-gradient(45deg, #464646 0 1.5px, #9e9e9e 1.5px 5px)";
+
+/**
+ * Légende lue d'un indicateur coloré (D-GD-55 ; P9, carto-2 L1-L5), identique sur la carte et dans l'onglet : titre et
+ * unité, période (de l'indicateur, sinon de la version, sinon « non évaluée »), classification nommée, classes, valeur
+ * absente hachurée et ventilée par motif (jamais zéro), lieu sélectionné, source et version.
+ */
+function EntreesIndicateur({ indicateur: i, entrees, lue, couche }: { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[]; lue: LegendeLue | null; couche: CoucheRecue | null }) {
+  const lieu = lue?.lieu ?? null;
   return (
     <>
       <h3 translate="no">{i.titre}{i.unite ? ` (${i.unite})` : ""}</h3>
+      {lue && (
+        <p className="gd-discret" data-gd-legende-periode={lue.periode.origine}>
+          {lue.periode.origine === "non-evaluee" ? <span>Période : non évaluée</span>
+            : <><span>Période :</span> <span translate="no">{lue.periode.texte}</span>{lue.periode.origine === "version" && <> <span>(période de la version)</span></>}</>}
+          {lue.nature === "calcule" && <>{" · "}<span>Résultat calculé</span></>}
+        </p>
+      )}
+      {lue && (
+        <p className="gd-discret" data-gd-legende-classification={`${lue.classification.methode}:${lue.classification.classes}:${lue.classification.palette}`}>
+          <span>{LIBELLES_METHODES[lue.classification.methode]}</span>{", "}<span>{`${lue.classification.classes} classes`}</span>{" · "}
+          <span>palette</span> <span>{PALETTES_CLASSES[lue.classification.palette].libelle}</span> <span>{lue.classification.natureP === "sequentielle" ? "(séquentielle)" : "(divergente)"}</span>
+        </p>
+      )}
       <ul className="gd-entrees" data-gd-legende-classes>
-        {entrees.map((e) => (
-          <li key={String(e.classe)} className="gd-entree">
-            <span className="gd-pastille" style={{ background: e.couleur }} />
-            {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
-            <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
-          </li>
-        ))}
+        {entrees.map((e) => {
+          const courante = !!lieu && lieu.classe === e.classe;
+          return [
+            <li key={String(e.classe)} className={`gd-entree${courante ? " gd-entree-courante" : ""}`} aria-current={courante ? "true" : undefined} data-gd-legende-classe={String(e.classe)}>
+              <span className="gd-pastille" style={{ background: e.classe === "absente" ? PASTILLE_ABSENTE : e.couleur }} />
+              {e.classe === "absente" ? <span>Valeur absente</span> : <span translate="no">{e.libelle}</span>}
+              <span className="gd-discret" translate="no">{` (${e.effectif})`}</span>
+            </li>,
+            // Absences ventilées par motif (L3) : hors `.gd-entree`, un motif sans effectif n'a pas de ligne.
+            e.classe === "absente" && lue && lue.absences.parMotif.length > 0 ? (
+              <li key="motifs" className="gd-legende-motifs-ligne">
+                <ul className="gd-legende-motifs" data-gd-legende-motifs>
+                  {lue.absences.parMotif.map((m) => <li key={m.motif} data-gd-legende-motif={m.motif}><span>{libelleAbsence(m.motif)}</span><span className="gd-discret" translate="no">{` (${m.effectif})`}</span></li>)}
+                </ul>
+              </li>
+            ) : null,
+          ];
+        })}
       </ul>
+      {lieu && (
+        <p className="gd-legende-lieu" data-gd-legende-lieu={String(lieu.classe)}>
+          {lieu.classe === "absente" ? <><span>Entité sélectionnée : valeur absente</span>{" — "}<span>{libelleAbsence(lieu.motif ?? "non-evaluee")}</span></> : <span>Entité sélectionnée : dans cette classe</span>}
+        </p>
+      )}
+      {couche && <SourceLegende couche={couche} />}
     </>
   );
 }
+
+/** Source de la légende (L4) : titre, version, attribution, statut provisoire, et la fiche de version dépliable. */
+function SourceLegende({ couche: c }: { couche: CoucheRecue }) {
+  const v = c.version;
+  return (
+    <div className="gd-legende-source" data-gd-legende-source>
+      <p className="gd-discret">
+        <span translate="no">{`${v.source.titre} — ${v.libelle}`}</span><br />
+        <span translate="no">{v.attribution}</span>{v.qualification?.etat === "provisoire" && <>{" · "}<span>Source provisoire</span></>}
+      </p>
+      <details data-gd-legende-version>
+        <summary>Source et version</summary>
+        <FicheVersion couche={c} />
+      </details>
+    </div>
+  );
+}
+
 
