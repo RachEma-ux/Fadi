@@ -319,6 +319,17 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     `planche.objets.verrouiller(ids, verrou)` verrouille ou déverrouille des groupes et composants du contexte ;
     `planche.annotations.lire()` rend les cotes linéaires et les textes avec repère, `planche.annotations.effacer(ids)`
     en efface (un identifiant inconnu : rien n'est effacé). Les écritures passent par l'opération ouverte ou automatique, en un seul pas d'annulation (permission `modele.modifier`).
+  - *Protocole 1.4 — surfaces réglementaires* (cas 3 du catalogue des extensions, lot 3 ; n'ajoute que des fonctions).
+    **Opérations planes**, par le moteur booléen de la Planche (manifold-3d, chargé à la première demande, jamais à
+    l'ouverture ; le temps de chargement ne compte pas dans le délai de l'appel) : `planche.geometrie.coupe(hauteur,
+    objets)` coupe horizontalement les solides à la hauteur z (en mètres), `planche.geometrie.projection(objets)` les
+    projette au sol ; sans `objets`, tout le modèle. Les deux rendent l'union (aucun recouvrement compté deux fois) :
+    `polygones` (contour extérieur, trous, aire nette) et `aire`, puis le détail : `solides` (chaque solide fermé et
+    son aire ; une instance de composant par chemin), `ecartes` (objets qui ne sont pas des solides fermés, avec le
+    motif) et `facesLibres` (faces de la racine hors de tout groupe) — rien n'est omis en silence.
+    `planche.geometrie.union(polygones)` unit des polygones `{ exterieur, trous }` en `[x, y]`. Permission
+    `modele.lire` (l'union n'en demande aucune). Booléen de maillage, jamais exact au sens B-Rep ; aucune règle ni
+    déduction réglementaire n'est faite ici.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,

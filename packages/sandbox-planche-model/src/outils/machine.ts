@@ -171,6 +171,27 @@ export interface AdaptateurBooleens {
   union(a: Maillage, b: Maillage): Maillage;
   difference(a: Maillage, b: Maillage): Maillage;
   intersection(a: Maillage, b: Maillage): Maillage;
+  /** (Protocole 1.4) Opérations planes du même moteur ; absentes = moteur sans opérations planes. */
+  readonly plans?: AdaptateurPlans;
+}
+
+/** Point du plan horizontal (x, y), en mètres, coordonnées monde. */
+export type PointPlan = readonly [number, number];
+/** Polygone du plan : contour extérieur (sens trigonométrique) et trous (sens horaire). */
+export interface PolygonePlan {
+  readonly exterieur: readonly PointPlan[];
+  readonly trous: readonly (readonly PointPlan[])[];
+}
+
+/**
+ * (Protocole 1.4) Opérations planes : coupe horizontale de solides à une hauteur, projection au sol, union de
+ * polygones. Le résultat est toujours l'union (aucun recouvrement compté deux fois) ; « booléen de maillage », jamais
+ * exact au sens B-Rep.
+ */
+export interface AdaptateurPlans {
+  coupe(solides: readonly Maillage[], hauteur: number): PolygonePlan[];
+  projection(solides: readonly Maillage[]): PolygonePlan[];
+  union(polygones: readonly PolygonePlan[]): PolygonePlan[];
 }
 
 export interface Transition<E> {

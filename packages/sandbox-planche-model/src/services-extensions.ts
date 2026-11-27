@@ -17,12 +17,14 @@
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
 import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
 import { reglagesDe } from "./cotes.js";
-import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, matriceMonde, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
 import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
 import { type Vec3, v3 } from "./vecteur.js";
+import { PasUnSolide, maillageDuSolide, motifNonSolide, type Maillage } from "./maillage.js";
+import type { AdaptateurBooleens, PointPlan, PolygonePlan } from "./outils/machine.js";
 
 /** Ce que la Planche prête à une extension. Les lectures rendent l'état courant à chaque appel. */
 export interface AccesPlanche {
@@ -37,6 +39,8 @@ export interface AccesPlanche {
   readonly separateur?: () => "." | ",";
   /** (1.3) Décimales d'affichage des longueurs choisies pour le projet (Info modèle) ; absent = 2. */
   readonly decimales?: () => number;
+  /** (1.4) Moteur booléen chargé (manifold-3d), pour les opérations planes ; absent ou `null` = pas chargé. */
+  readonly booleens?: () => AdaptateurBooleens | null;
 }
 
 /** Dans quel appel une opération est appliquée (lot 7). */
@@ -66,6 +70,76 @@ export const COTES_ARC_DEFAUT = 12;
 export const COTES_CERCLE_DEFAUT = 24;
 /** (1.1) Nom d'une balise créée par une extension, en caractères. */
 export const MAX_NOM_BALISE = 80;
+/** (1.4) Solides d'une coupe ou d'une projection ; polygones et points d'une union ; hauteur de coupe (± m). */
+export const BORNES_PLANS = { solides: 5_000, polygones: 10_000, points: 200_000, hauteur: 10_000 } as const;
+
+/** (1.4) Polygone rendu à l'extension : contour extérieur, trous, aire nette en m². */
+export interface PolygoneLu {
+  readonly exterieur: PointPlan[];
+  readonly trous: PointPlan[][];
+  readonly aire: number;
+}
+/** (1.4) Résultat d'une coupe ou d'une projection : union de tous les solides, puis le détail par solide. */
+export interface PlansLus {
+  readonly polygones: PolygoneLu[];
+  /** Aire de l'union (aucun recouvrement compté deux fois), en m². */
+  readonly aire: number;
+  /** Chaque solide retenu (chemin depuis la racine : une instance de composant par chemin) et sa propre aire. */
+  readonly solides: { readonly id: Id; readonly chemin: Id[]; readonly aire: number }[];
+  /** Objets écartés parce qu'ils ne sont pas des solides fermés, avec le motif : rien n'est omis en silence. */
+  readonly ecartes: { readonly id: Id; readonly chemin: Id[]; readonly motif: string }[];
+  /** Faces posées à la racine hors de tout groupe : jamais comptées (pas un solide). */
+  readonly facesLibres: number;
+}
+
+const aireContourPlan = (c: readonly PointPlan[]): number => {
+  let a = 0;
+  for (let i = 0; i < c.length; i++) {
+    const p = c[i] as PointPlan;
+    const q = c[(i + 1) % c.length] as PointPlan;
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return Math.abs(a) / 2;
+};
+const polygoneLu = (p: PolygonePlan): PolygoneLu => ({
+  exterieur: p.exterieur.map(([x, y]) => [x, y]),
+  trous: p.trous.map((t) => t.map(([x, y]) => [x, y] as PointPlan)),
+  aire: aireContourPlan(p.exterieur) - p.trous.reduce((s, t) => s + aireContourPlan(t), 0),
+});
+const airePolygones = (ps: readonly PolygoneLu[]): number => ps.reduce((s, p) => s + p.aire, 0);
+
+/** (1.4) Polygones passés par une extension : `{ exterieur, trous? }`, points `[x, y]` finis ; message d'erreur sinon. */
+function lirePolygonesPlan(v: unknown): PolygonePlan[] | string {
+  if (!Array.isArray(v) || v.length === 0 || v.length > BORNES_PLANS.polygones) return `polygones : liste de 1 à ${BORNES_PLANS.polygones} polygones attendue`;
+  let points = 0;
+  const contour = (c: unknown): PointPlan[] | null => {
+    if (!Array.isArray(c) || c.length < 3) return null;
+    const pts: PointPlan[] = [];
+    for (const p of c) {
+      if (!Array.isArray(p) || p.length !== 2 || !p.every((x) => typeof x === "number" && Number.isFinite(x))) return null;
+      pts.push([p[0], p[1]]);
+    }
+    points += pts.length;
+    return pts;
+  };
+  const sortie: PolygonePlan[] = [];
+  for (const brut of v) {
+    if (!estObjet(brut)) return "polygone : { exterieur, trous } attendu";
+    const exterieur = contour(brut["exterieur"]);
+    if (!exterieur) return "exterieur : au moins 3 points [x, y] attendus";
+    const t = brut["trous"] ?? [];
+    if (!Array.isArray(t)) return "trous : liste de contours attendue";
+    const trous: PointPlan[][] = [];
+    for (const c of t) {
+      const lu = contour(c);
+      if (!lu) return "trou : au moins 3 points [x, y] attendus";
+      trous.push(lu);
+    }
+    if (points > BORNES_PLANS.points) return `polygones de plus de ${BORNES_PLANS.points} points`;
+    sortie.push({ exterieur, trous });
+  }
+  return sortie;
+}
 /** (1.3) Texte posé par une extension (`textes.creer`), en caractères. */
 export const MAX_TEXTE_EXTENSION = 200;
 /** (1.3) Directions admises d'une cote créée par une extension. */
@@ -624,6 +698,96 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu();
   };
 
+  /** (1.4) Moteur des opérations planes, ou le refus à rendre. */
+  const moteurPlans = () => {
+    const plans = acces.booleens?.()?.plans;
+    return plans ?? refus("argument_invalide", "moteur des opérations planes indisponible (manifold-3d non chargé)");
+  };
+
+  /**
+   * (1.4) Solides du modèle entier (ou des objets nommés), chacun à sa place monde : une instance de composant par
+   * chemin. Un objet qui n'est pas un solide fermé est descendu s'il contient d'autres objets, sinon écarté avec son
+   * motif.
+   */
+  const solidesDe = (m: Modele, objets: unknown): { solides: { id: Id; chemin: Id[]; maillage: Maillage }[]; ecartes: PlansLus["ecartes"]; facesLibres: number } | ReponseService => {
+    const solides: { id: Id; chemin: Id[]; maillage: Maillage }[] = [];
+    const ecartes: { id: Id; chemin: Id[]; motif: string }[] = [];
+    let trop = false;
+    const visiter = (id: Id, M: Matrice4 | null, chemin: Id[], profondeur: number): void => {
+      if (trop) return;
+      if (profondeur > MAX_PROFONDEUR_MONDE) return void ecartes.push({ id, chemin, motif: `imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux` });
+      const motif = motifNonSolide(m, id);
+      if (motif === null) {
+        try {
+          if (solides.length >= BORNES_PLANS.solides) return void (trop = true);
+          return void solides.push({ id, chemin, maillage: maillageDuSolide(m, id, M) });
+        } catch (e) {
+          if (!(e instanceof PasUnSolide)) throw e;
+          return void ecartes.push({ id, chemin, motif: e.message });
+        }
+      }
+      const c = contexte(m, id);
+      const enfants = Object.values(c.occurrences).filter((o) => !o.masquee);
+      if (enfants.length === 0) return void ecartes.push({ id, chemin, motif });
+      const faces = Object.values(c.faces).filter((f) => !f.masquee).length;
+      if (faces > 0) ecartes.push({ id, chemin, motif: `${faces} face(s) hors de tout solide` });
+      for (const o of enfants) visiter(o.id, M ? composer(M, o.transformation) : o.transformation, [...chemin, o.id], profondeur + 1);
+    };
+    let facesLibres = 0;
+    if (objets === undefined || objets === null) {
+      facesLibres = Object.values(m.racine.faces).filter((f) => !f.masquee).length;
+      for (const o of Object.values(m.racine.occurrences)) if (!o.masquee) visiter(o.id, o.transformation, [o.id], 1);
+    } else {
+      if (!Array.isArray(objets) || objets.length === 0 || objets.length > BORNES_PLANS.solides || !objets.every((x) => typeof x === "string")) return refus("argument_invalide", `objets : liste de 1 à ${BORNES_PLANS.solides} identifiants`);
+      for (const id of objets as string[]) {
+        const M = matriceMonde(m, id);
+        if (!M) return refus("objet_introuvable", id);
+        visiter(id, M, [id], 1);
+      }
+    }
+    if (trop) return refus("argument_invalide", `plus de ${BORNES_PLANS.solides} solides`);
+    return { solides, ecartes, facesLibres };
+  };
+
+  /** (1.4) `geometrie.coupe` (hauteur donnée) et `geometrie.projection` (hauteur absente). */
+  const plansDesSolides = (donnees: unknown, coupe: boolean): ReponseService => {
+    const d = estObjet(donnees) ? donnees : {};
+    const h = d["hauteur"];
+    if (coupe && (typeof h !== "number" || !Number.isFinite(h) || Math.abs(h) > BORNES_PLANS.hauteur)) return refus("argument_invalide", `hauteur : nombre de −${BORNES_PLANS.hauteur} à ${BORNES_PLANS.hauteur} m attendu`);
+    const plans = moteurPlans();
+    if ("ok" in plans) return plans;
+    const lu = solidesDe(vue().modele(), d["objets"]);
+    if ("ok" in lu) return lu;
+    const calcul = (ms: readonly Maillage[]) => (coupe ? plans.coupe(ms, h as number) : plans.projection(ms)).map(polygoneLu);
+    try {
+      const polygones = lu.solides.length ? calcul(lu.solides.map((x) => x.maillage)) : [];
+      const resultat: PlansLus = {
+        polygones,
+        aire: airePolygones(polygones),
+        solides: lu.solides.map((x) => ({ id: x.id, chemin: x.chemin, aire: airePolygones(calcul([x.maillage])) })),
+        ecartes: lu.ecartes,
+        facesLibres: lu.facesLibres,
+      };
+      return rendu(resultat);
+    } catch (e) {
+      return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+    }
+  };
+
+  /** (1.4) `geometrie.union` : union de polygones donnés par l'extension. */
+  const unionPlans = (donnees: unknown): ReponseService => {
+    const lu = lirePolygonesPlan(estObjet(donnees) ? donnees["polygones"] : null);
+    if (typeof lu === "string") return refus("argument_invalide", lu);
+    const plans = moteurPlans();
+    if ("ok" in plans) return plans;
+    try {
+      const polygones = plans.union(lu).map(polygoneLu);
+      return rendu({ polygones, aire: airePolygones(polygones) });
+    } catch (e) {
+      return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+    }
+  };
+
   return {
     debutAppel: (nom, options = {}) => {
       appel = nom;
@@ -700,6 +864,12 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return changerDonnees(donnees, true);
         case "donnees.effacer":
           return changerDonnees(donnees, false);
+        case "geometrie.coupe":
+          return plansDesSolides(donnees, true);
+        case "geometrie.projection":
+          return plansDesSolides(donnees, false);
+        case "geometrie.union":
+          return unionPlans(donnees);
         default:
           return refus("demande_inconnue", nom);
       }

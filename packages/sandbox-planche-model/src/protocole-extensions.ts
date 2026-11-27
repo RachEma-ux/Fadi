@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.3";
+export const VERSION_PROTOCOLE = "1.4";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -356,6 +356,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * Protocole 1.3 (cas 3, lot 2, précision et trame) : `cotes.creer` (cote linéaire), `textes.creer` (texte avec
  * repère), `objets.verrouiller`, `annotations.lire` et `annotations.effacer` (cotes et textes) ; `unites.lire` rend la précision réelle du projet et ses pas d'accrochage ; les
  * événements de souris d'un outil portent aussi le point visé (`vise`).
+ * Protocole 1.4 (cas 3, lot 3, surfaces réglementaires) : `geometrie.coupe` (coupe horizontale des solides à une
+ * hauteur), `geometrie.projection` (projection au sol) et `geometrie.union` (union de polygones), par le moteur
+ * booléen de la Planche ; le résultat est toujours une union, sans recouvrement compté deux fois.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -383,6 +386,9 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "annotations.effacer": "modele.modifier",
   "unites.lire": null,
   "unites.formater": null,
+  "geometrie.coupe": "modele.lire",
+  "geometrie.projection": "modele.lire",
+  "geometrie.union": null,
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",
