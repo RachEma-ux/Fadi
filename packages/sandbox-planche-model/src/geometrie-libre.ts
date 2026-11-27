@@ -139,7 +139,22 @@ export interface Occurrence {
   readonly statut?: StatutTravaux;
   /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
+  /**
+   * (Cas 4, lot C4, étape 6) Identité IFC d'un objet importé d'un IFC structuré : classe (« IfcWall ») et GlobalId,
+   * gardés pour le réexport. Absente = objet de la Planche.
+   */
+  readonly ifc?: IdentiteIfc;
 }
+
+/** Identité IFC d'un objet : classe IFC en casse d'origine et GlobalId (22 caractères). */
+export interface IdentiteIfc {
+  readonly classe: string;
+  readonly globalId: string;
+}
+
+/** Identité IFC reçue (document, delta) : jamais crue sur parole. */
+export const estIdentiteIfc = (v: unknown): v is IdentiteIfc =>
+  typeof v === "object" && v !== null && !Array.isArray(v) && typeof (v as Record<string, unknown>)["classe"] === "string" && /^Ifc[A-Za-z0-9]{1,60}$/.test((v as Record<string, string>)["classe"]!) && typeof (v as Record<string, unknown>)["globalId"] === "string" && /^[0-9A-Za-z_$]{22}$/.test((v as Record<string, string>)["globalId"]!);
 
 /** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
 export type StatutTravaux = "existant" | "a-demolir" | "projete";
@@ -3596,6 +3611,16 @@ export function statuerOccurrences(m: Modele, occurrences: readonly Id[], statut
       if (!occ) continue;
       const { statut: _ancien, ...reste } = occ;
       c.occurrences.set(id, statut ? { ...reste, statut } : reste);
+    }
+  });
+}
+
+/** (Cas 4, lot C4, étape 6) Pose l'identité IFC des occurrences de la racine données (import d'un IFC structuré). */
+export function identifierOccurrencesIfc(m: Modele, identites: Readonly<Record<Id, IdentiteIfc>>): Resultat {
+  return operer(m, undefined, (_t, c) => {
+    for (const [id, ifc] of Object.entries(identites)) {
+      const occ = c.occurrences.get(id);
+      if (occ && estIdentiteIfc(ifc)) c.occurrences.set(id, { ...occ, ifc: { classe: ifc.classe, globalId: ifc.globalId } });
     }
   });
 }

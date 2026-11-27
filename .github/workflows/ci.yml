@@ -1155,6 +1155,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-dxf node apps/web/e2e/planche-dxf.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'IFC structuré (cas 4, lot C4, étape 6) — import des étages, de la trame et du géoréférencement, export par classes relu à l'identique, .ifczip, IFC2X3 (apps/web/e2e/planche-ifc.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-ifc node apps/web/e2e/planche-ifc.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

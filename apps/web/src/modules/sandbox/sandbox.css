@@ -5620,3 +5620,74 @@
 .sandbox-planche .planche-info-large {
   grid-column: 1 / -1;
 }
+/* IFC structuré (cas 4, lot C4, étape 6). */
+.sandbox-planche .planche-ifc-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.sandbox-planche .planche-ifc-choix legend {
+  width: 100%;
+}
+.sandbox-planche .planche-ifc-choix label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+.sandbox-planche .planche-ifc input[type="checkbox"],
+.sandbox-planche .planche-ifc input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+.sandbox-planche .planche-ifc-georef,
+.sandbox-planche .planche-ifc-coches label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 6px;
+  margin: 4px 0 0;
+}
+.sandbox-planche .planche-ifc-retrait,
+.sandbox-planche .planche-ifc-coches small {
+  display: block;
+  margin: 0 0 4px 22px;
+  color: rgba(29, 42, 37, 0.7);
+}
+.sandbox-planche .planche-ifc-constats {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+}
+.sandbox-planche .planche-ifc-constats li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.1);
+}
+.sandbox-planche .planche-ifc-constats li:last-child {
+  border-bottom: 0;
+}
+.sandbox-planche .planche-ifc-constats .est-ok svg {
+  color: rgba(46, 125, 50, 1);
+}
+.sandbox-planche .planche-ifc-constats .est-attention svg,
+.sandbox-planche .planche-ifc-constats .est-bloquant svg {
+  color: rgba(178, 106, 0, 1);
+}
+.sandbox-planche .planche-ifc-relu {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(46, 125, 50, 0.35);
+  border-radius: 8px;
+  background: rgba(46, 125, 50, 0.08);
+}
+.sandbox-planche .planche-ifc .planche-dxf-calques div {
+  grid-template-columns: 13em minmax(0, 1fr);
+}

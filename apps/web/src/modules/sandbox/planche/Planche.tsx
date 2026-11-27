@@ -220,6 +220,17 @@ import {
   dxfFeuille,
   dxfVue,
   relireDxf,
+  lireIfcStructure,
+  importerIfcStructure,
+  exporterIfcStructure,
+  ifczip,
+  relireIfcStructure,
+  controlerAvantEmissionIfc,
+  classesAExporter,
+  texteCoordonnee,
+  type ConstatIfc,
+  type LectureIfcStructure,
+  type SchemaIfc,
   compterStatuts,
   statuerOccurrences,
   type StatutTravaux,
@@ -381,7 +392,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -399,6 +410,7 @@ import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
 import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
 import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
+import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./panneau-ifc";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
@@ -483,7 +495,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "ifc-structure" | "import-ifc";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -498,7 +510,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -5023,6 +5035,105 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return l.length > 0 && l.every((x) => x === l[0]) ? (l[0] ?? null) : null;
   };
   const disponibiliteCommandeTravaux = (id: IdCommandeTravaux) => disponibiliteTravaux(id, { objets: occurrencesSelectionnees().length, lecture: readOnly });
+  // IFC structuré (cas 4, lot C4, étape 6) : export par classes, géoréférencé, contrôlé, relu ; import des étages et de la trame.
+  const [schemaIfc, setSchemaIfc] = useState<SchemaIfc>("IFC4");
+  const [formatIfc, setFormatIfc] = useState<FormatFichierIfc>("ifc");
+  const [georefIfc, setGeorefIfc] = useState(true);
+  const [constatsIfc, setConstatsIfc] = useState<readonly ConstatIfc[] | null>(null);
+  const [erreurIfc, setErreurIfc] = useState<string | null>(null);
+  const [noteIfc, setNoteIfc] = useState<string | null>(null);
+  const [luIfc, setLuIfc] = useState<{ readonly nom: string; readonly lecture: LectureIfcStructure; readonly fichier: File } | null>(null);
+  const [choixImportIfc, setChoixImportIfc] = useState({ niveaux: true, trame: true, georef: false });
+  const [erreurImportIfc, setErreurImportIfc] = useState<string | null>(null);
+  const [noteImportIfc, setNoteImportIfc] = useState<string | null>(null);
+  const importIfcRef = useRef<HTMLInputElement | null>(null);
+  const referenceIfc = plancheDe(indexPlanches).altitudeRef;
+  const pointDeBaseIfc = hist.present.modele.annotations?.reglages?.pointDeBase ?? null;
+  const georefIfcTexte = !pointDeBaseIfc
+    ? { possible: false, texte: t("planche.ifc.georef.sans-point") }
+    : referenceIfc === null
+      ? { possible: false, texte: t("planche.ifc.georef.sans-reference") }
+      : { possible: true, texte: t("planche.ifc.georef.valeurs", { systeme: pointDeBaseIfc.systeme, e: texteCoordonnee(pointDeBaseIfc.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(pointDeBaseIfc.n, SEPARATEUR_DECIMAL), h: texteCoordonnee(referenceIfc, SEPARATEUR_DECIMAL), rotation: String(pointDeBaseIfc.rotation).replace(".", SEPARATEUR_DECIMAL) }) };
+  const controlerIfc = () => controlerAvantEmissionIfc(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, reference: referenceIfc });
+  const disponibiliteCommandeIfc = (id: IdCommandeIfc) => disponibiliteIfc(id, { bloquant: id === "exporter-ifc" && controlerIfc().some((c) => c.niveau === "bloquant"), lu: luIfc !== null, lecture: readOnly });
+  const executerIfc = (id: IdCommandeIfc) => {
+    if (id === "import-ifc") return setPanneau("import-ifc");
+    if (id === "importer-ifc") {
+      setPanneau("import-ifc");
+      if (!luIfc) return importIfcRef.current?.click();
+      if (!disponibiliteCommandeIfc(id).disponible) return;
+      void importerIfc();
+      return;
+    }
+    setPanneau("ifc-structure");
+    if (id === "ifc-structure") return;
+    const constats = controlerIfc();
+    setConstatsIfc(constats);
+    if (id === "controler-ifc" || constats.some((c) => c.niveau === "bloquant")) return;
+    const maintenant = new Date();
+    const x = exporterIfcStructure(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, nom: nomAffiche(plancheDe(indexPlanches)) || "planche", maintenant, reference: referenceIfc });
+    const donnees = formatIfc === "ifczip" ? ifczip(x, maintenant) : x.contenu;
+    // Relu avant tout téléchargement : étages, objets, triangles, GlobalId et géoréférencement comparés.
+    const r = relireIfcStructure(x, schemaIfc, donnees);
+    if (!r.identique) {
+      setNoteIfc(null);
+      return setErreurIfc(t("planche.ifc.erreur.relecture", { ecarts: r.ecarts.map((e) => `${e.cle} ${e.attendu} / ${e.lu}`).join(", ") }));
+    }
+    setErreurIfc(null);
+    const nom = formatIfc === "ifczip" ? x.nomFichier.replace(/\.ifc$/, ".ifczip") : x.nomFichier;
+    telechargerFichier(new Blob([typeof donnees === "string" ? donnees : new Uint8Array(donnees)], { type: formatIfc === "ifczip" ? "application/zip" : "application/x-step" }), nom);
+    setNoteIfc(`${t("planche.ifc.relu", { etages: String(r.etages), objets: String(r.objets), triangles: r.triangles.toLocaleString(LOCALE), globalIds: String(x.objets), georef: x.georef ? t("planche.ifc.relu.georef") : "" })} ${t("planche.ifc.note.ecrit", { nom })}`);
+  };
+  const lireFichierIfc = async (f: File) => {
+    setErreurImportIfc(null);
+    setNoteImportIfc(null);
+    setPanneau("import-ifc");
+    try {
+      const lecture = lireIfcStructure(new Uint8Array(await f.arrayBuffer()));
+      if (lecture.objets.length === 0) {
+        setLuIfc(null);
+        return setErreurImportIfc(t("planche.ifc.import.vide"));
+      }
+      setLuIfc({ nom: f.name, lecture, fichier: f });
+      setChoixImportIfc({ niveaux: lecture.etages.length > 0, trame: lecture.axes.length > 0, georef: false });
+    } catch (e) {
+      setLuIfc(null);
+      setErreurImportIfc(t("planche.ifc.import.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  const importerIfc = async () => {
+    if (!luIfc || readOnly) return;
+    // Le fichier reçu est archivé tel quel en base avant toute pose (D-GD-29).
+    const zip = /\.ifczip$/i.test(luIfc.nom);
+    try {
+      await archiverFichierReference(luIfc.fichier, zip ? "ifczip" : "ifc");
+    } catch (e) {
+      return setErreurImportIfc(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    const l = luIfc.lecture;
+    const choix = { ...choixImportIfc, georef: choixImportIfc.georef && !histRef.current.present.modele.annotations?.reglages?.pointDeBase };
+    let resultat: ReturnType<typeof importerIfcStructure> | null = null;
+    operer(t("planche.ifc.import.nom"), (m) => {
+      resultat = importerIfcStructure(m, l, choix, luIfc.nom);
+      const message = t("planche.ifc.import.note", { objets: String(resultat.objets), niveaux: String(resultat.niveaux), axes: String(resultat.axes), georef: resultat.pointDeBase ? t("planche.ifc.import.note-georef") : "" });
+      return { modele: resultat.modele, message };
+    });
+    const r = resultat as ReturnType<typeof importerIfcStructure> | null;
+    if (r) setNoteImportIfc(t("planche.ifc.import.note", { objets: String(r.objets), niveaux: String(r.niveaux), axes: String(r.axes), georef: r.pointDeBase ? t("planche.ifc.import.note-georef") : "" }));
+    setErreurImportIfc(null);
+  };
+  const resumeImportIfc = luIfc
+    ? {
+        nom: luIfc.nom,
+        schema: luIfc.lecture.schema ?? "",
+        objets: luIfc.lecture.objets.length,
+        etages: luIfc.lecture.etages.map((e) => ({ nom: e.nom, altitude: texteAltitude(e.altitude, SEPARATEUR_DECIMAL) })),
+        axes: luIfc.lecture.axes.map((a) => a.etiquette).filter(Boolean),
+        georef: luIfc.lecture.georef ? t("planche.ifc.import.georef-detail", { systeme: luIfc.lecture.georef.systeme, e: texteCoordonnee(luIfc.lecture.georef.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(luIfc.lecture.georef.n, SEPARATEUR_DECIMAL) }) : null,
+        nonLus: Object.keys(luIfc.lecture.nonLus).length > 0 ? t("planche.ifc.import.non-lus", { nombre: String(Object.values(luIfc.lecture.nonLus).reduce((a, b) => a + b, 0)), classes: Object.keys(luIfc.lecture.nonLus).join(", ") }) : null,
+        classes: luIfc.lecture.objets.reduce<Record<string, number>>((acc, o) => ({ ...acc, [o.classe]: (acc[o.classe] ?? 0) + 1 }), {}),
+      }
+    : null;
   const executerTravaux = (id: IdCommandeTravaux) => {
     setPanneau("statut-travaux");
     if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
@@ -5182,6 +5293,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
     else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
     else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
+    else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -5272,6 +5384,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_TRAVAUX.map((c) => {
           const d = disponibiliteCommandeTravaux(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.travaux.motif.objets"), executer: () => executerTravaux(c.id) };
+        }),
+        ...COMMANDES_IFC.map((c) => {
+          const d = disponibiliteCommandeIfc(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.ifc.motif.fichier"), executer: () => executerIfc(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -6036,6 +6152,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-reference-fichier
       />
+      {/* Import IFC structuré (Ctrl+Maj+Espace, O) : monté hors du panneau. */}
+      <input
+        ref={importIfcRef}
+        type="file"
+        accept=".ifc,.ifczip"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierIfc(f);
+        }}
+        data-planche-import-ifc-entree
+      />
       {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
       <input
         ref={importPdfRef}
@@ -6110,6 +6239,42 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeDxf}
                 erreur={erreurDxf}
                 note={noteDxf}
+              />
+            )}
+            {panneau === "ifc-structure" && (
+              <PanneauIfcStructure
+                schema={schemaIfc}
+                onSchema={(x) => {
+                  setSchemaIfc(x);
+                  setConstatsIfc(null);
+                }}
+                format={formatIfc}
+                onFormat={setFormatIfc}
+                georef={georefIfc}
+                onGeoref={(g) => {
+                  setGeorefIfc(g);
+                  setConstatsIfc(null);
+                }}
+                georefTexte={georefIfcTexte}
+                classes={classesAExporter(hist.present.modele)}
+                constats={constatsIfc}
+                executer={executerIfc}
+                disponibilite={disponibiliteCommandeIfc}
+                erreur={erreurIfc}
+                note={noteIfc}
+              />
+            )}
+            {panneau === "import-ifc" && (
+              <PanneauImportIfc
+                lu={resumeImportIfc}
+                choix={choixImportIfc}
+                onChoix={setChoixImportIfc}
+                pointDeBaseExistant={pointDeBaseIfc !== null}
+                executer={executerIfc}
+                disponibilite={disponibiliteCommandeIfc}
+                onChoisirFichier={() => importIfcRef.current?.click()}
+                erreur={erreurImportIfc}
+                note={noteImportIfc}
               />
             )}
             {panneau === "statut-travaux" && (

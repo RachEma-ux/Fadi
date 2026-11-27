@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -237,5 +237,18 @@ describe("Feuilles en DXF et statut des travaux (lot C4, étape 5) : disponibili
     expect(disponibiliteTravaux("statut-projete", { objets: 0, lecture: false }).motif).toBe("planche.travaux.motif.objets");
     expect(disponibiliteTravaux("statut-a-demolir", { objets: 2, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteTravaux("statut-existant", { objets: 2, lecture: false }).disponible).toBe(true);
+  });
+});
+
+describe("IFC structuré (lot C4, étape 6) : disponibilité des commandes", () => {
+  it("ouvrir et contrôler toujours ; exporter sauf modèle vide, même en lecture ; importer un fichier lu, hors lecture", () => {
+    const s = { bloquant: false, lu: false, lecture: false };
+    expect(disponibiliteIfc("ifc-structure", { ...s, bloquant: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("controler-ifc", { ...s, bloquant: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("exporter-ifc", { ...s, bloquant: true }).motif).toBe("planche.ifc.motif.vide");
+    expect(disponibiliteIfc("exporter-ifc", { ...s, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("importer-ifc", s).motif).toBe("planche.ifc.motif.fichier");
+    expect(disponibiliteIfc("importer-ifc", { ...s, lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteIfc("importer-ifc", { ...s, lu: true }).disponible).toBe(true);
   });
 });

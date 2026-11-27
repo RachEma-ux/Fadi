@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "ifc";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-ifc-structure" | "panneau-import-ifc" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -423,6 +423,12 @@ const commandes: EntreeSandbox[] = [
   c("statut-existant", "travaux", "home-check", "Ctrl+Maj+Espace, X", "panneau-statut-travaux", true),
   c("statut-a-demolir", "travaux", "home-x", "Ctrl+Maj+Espace, A", "panneau-statut-travaux", true),
   c("statut-projete", "travaux", "home-plus", "Ctrl+Maj+Espace, J", "panneau-statut-travaux", true),
+  // Lot C4, étape 6 : IFC structuré (export par classes et géoréférencé, contrôle, import des étages et de la trame).
+  c("ifc-structure", "ifc", "building-skyscraper", "Ctrl+Maj+Espace, G", "outils", true),
+  c("exporter-ifc", "ifc", "cube-send", "Ctrl+Maj+Espace, Maj+G", "panneau-ifc-structure", true),
+  c("controler-ifc", "ifc", "list-check", "Ctrl+Maj+Espace, V", "panneau-ifc-structure", true),
+  c("import-ifc", "ifc", "cube-unfolded", "Ctrl+Maj+Espace, O", "outils", true),
+  c("importer-ifc", "ifc", "cube-plus", "Ctrl+Maj+Espace, Maj+O", "panneau-import-ifc", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -498,6 +504,9 @@ const panneaux: EntreeSandbox[] = [
   // Feuilles en DXF et statut des travaux (cas 4, lot C4, étape 5) : hors de la colonne (pleine).
   p("feuilles-dxf", "vector", "outils", true),
   p("statut-travaux", "home-cog", "outils", true),
+  // IFC structuré (cas 4, lot C4, étape 6).
+  p("ifc-structure", "building-skyscraper", "outils", true),
+  p("import-ifc", "cube-unfolded", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -531,6 +540,8 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:pdf-recu", "panneau:pdf-recu"],
   ["commande:feuilles-dxf", "panneau:feuilles-dxf"],
   ["commande:statut-travaux", "panneau:statut-travaux"],
+  ["commande:ifc-structure", "panneau:ifc-structure"],
+  ["commande:import-ifc", "panneau:import-ifc"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */
