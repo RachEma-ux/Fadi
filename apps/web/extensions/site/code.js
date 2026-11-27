@@ -95,6 +95,11 @@ var T = {
     sansReleve: "Chargez d'abord un relevé.",
     dxfCharge: function (n) { return "DXF chargé : " + n + " polylignes."; },
     dxfRefuse: "DXF refusé : ",
+    uniteLue: function (u, declaree) { return "Coordonnées converties en mètres depuis l'unité " + (declaree ? "déclarée par le fichier" : "choisie") + " : " + u + "."; },
+    titreUnite: "Unité du fichier DXF",
+    champUnite: "Unité non déclarée : choisissez-la",
+    unites: { m: "mètre", dm: "décimètre", cm: "centimètre", mm: "millimètre", ft: "pied", in: "pouce" },
+    sansUnite: "l'unité des coordonnées n'est pas déclarée et n'a pas été choisie",
     dxfVide: "aucune ligne ni polyligne dans la section ENTITIES",
     dxfIllisible: "le fichier n'est pas un DXF texte (ASCII) lisible",
     sansDxf: "Chargez d'abord un DXF.",
@@ -205,6 +210,11 @@ var T = {
     sansReleve: "Load a survey first.",
     dxfCharge: function (n) { return "DXF loaded: " + n + " polylines."; },
     dxfRefuse: "DXF refused: ",
+    uniteLue: function (u, declaree) { return "Coordinates converted to metres from the " + (declaree ? "unit declared by the file" : "chosen unit") + ": " + u + "."; },
+    titreUnite: "DXF file unit",
+    champUnite: "Unit not declared: choose it",
+    unites: { m: "metre", dm: "decimetre", cm: "centimetre", mm: "millimetre", ft: "foot", in: "inch" },
+    sansUnite: "the coordinate unit is not declared and was not chosen",
     dxfVide: "no line or polyline in the ENTITIES section",
     dxfIllisible: "the file is not a readable text (ASCII) DXF",
     sansDxf: "Load a DXF first.",
@@ -714,6 +724,10 @@ function etatTerrain(sep) {
 // ——————————————————————————————————————————————— Courbes de niveau DXF (n° 26)
 
 /** Lecteur DXF texte réduit aux lignes et polylignes de la section ENTITIES ; commentaires 999 gardés (repère, source…). */
+/** Unités DXF ($INSUNITS) reconnues : facteur vers le mètre. Toute autre valeur (0 compris) n'est pas une déclaration. */
+var UNITES = { m: 1, dm: 0.1, cm: 0.01, mm: 0.001, ft: 0.3048, in: 0.0254 };
+var INSUNITS = { 1: "in", 2: "ft", 4: "mm", 5: "cm", 6: "m", 14: "dm" };
+
 function lireDxf(nom, brut) {
   var x = tx();
   var l = texte(brut).replace(/^﻿/, "").split(/\r?\n/);
@@ -735,6 +749,12 @@ function lireDxf(nom, brut) {
     else if (/^source/.test(k)) meta.source = m[2].slice(0, 80);
     else if (/^equidistance|^interval/.test(k)) meta.equidistance = m[2].slice(0, 20);
   });
+  // Unité déclarée dans l'en-tête ($INSUNITS) : null si absente ou sans unité.
+  var unite = null;
+  for (var u = 0; u + 1 < paires.length; u++) {
+    if (paires[u][0] === 9 && paires[u][1] === "$INSUNITS" && paires[u + 1][0] === 70) { unite = INSUNITS[Number(paires[u + 1][1])] || null; break; }
+    if (paires[u][0] === 2 && paires[u][1] === "ENTITIES") break;
+  }
   var debut = -1;
   for (var j = 0; j + 1 < paires.length; j++) if (paires[j][0] === 0 && paires[j][1] === "SECTION" && paires[j + 1][0] === 2 && paires[j + 1][1] === "ENTITIES") { debut = j + 2; break; }
   if (debut < 0) return { erreur: x.dxfVide };
@@ -785,7 +805,7 @@ function lireDxf(nom, brut) {
     }
   }
   if (!polylignes.length) return { erreur: x.dxfVide };
-  return { nom: nom, polylignes: polylignes, meta: meta, ignores: ignores, arrondis: arrondis };
+  return { nom: nom, polylignes: polylignes, meta: meta, ignores: ignores, arrondis: arrondis, unite: unite };
 }
 
 async function chargerDxf() {
@@ -794,11 +814,23 @@ async function chargerDxf() {
   if (!f) return;
   var r = lireDxf(f.nom, await f.texte());
   if (r.erreur) return alerte(x.dxfRefuse + r.erreur);
+  // Unité : celle du fichier, sinon un choix explicite ; jamais supposée. Altitudes comprises.
+  var unite = r.unite;
+  if (!unite) {
+    var u = await planche.saisie.demander(x.titreUnite, [
+      { id: "unite", libelle: x.champUnite, genre: "choix", valeur: "-", choix: [{ valeur: "-", libelle: "–" }].concat(Object.keys(UNITES).map(function (k) { return { valeur: k, libelle: x.unites[k] }; })) },
+    ]);
+    if (!u || !UNITES[u.unite]) return alerte(x.dxfRefuse + x.sansUnite);
+    unite = u.unite;
+  }
+  var fu = UNITES[unite];
+  r.polylignes.forEach(function (p) { p.points = p.points.map(function (q) { return [q[0] * fu, q[1] * fu, q[2] * fu]; }); });
   dxf = r;
   valeurs.calque = "";
   var ign = Object.keys(r.ignores).map(function (k) { return r.ignores[k] + " " + k; });
   if (r.arrondis) ign.push(x.arrondis);
   await info(x.dxfCharge(r.polylignes.length));
+  if (unite !== "m" || !r.unite) await info(x.uniteLue(x.unites[unite], !!r.unite));
   if (ign.length) await info(x.ignores(ign.join(", ")));
 }
 

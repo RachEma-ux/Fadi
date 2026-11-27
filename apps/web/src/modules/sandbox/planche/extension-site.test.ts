@@ -250,7 +250,7 @@ describe("extension « Site et terrain » — semis plus dense", () => {
 
 /** DXF à la manière de l'export GeoData : polylignes 3D, deux calques, métadonnées en commentaires. */
 function dxfCourbes(): string {
-  const l: (string | number)[] = [999, "Repere horizontal : EPSG:2056", 999, "Reference verticale : LN02", 999, "Source : Fixture", 999, "Equidistance : 1 m", 0, "SECTION", 2, "ENTITIES"];
+  const l: (string | number)[] = [999, "Repere horizontal : EPSG:2056", 999, "Reference verticale : LN02", 999, "Source : Fixture", 999, "Equidistance : 1 m", 0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, 6, 0, "ENDSEC", 0, "SECTION", 2, "ENTITIES"];
   const poly = (calque: string, z: number, pts: [number, number][], ferme = false) => {
     l.push(0, "POLYLINE", 8, calque, 66, 1, 10, 0, 20, 0, 30, z, 70, 8 | (ferme ? 1 : 0));
     for (const [x, y] of pts) l.push(0, "VERTEX", 8, calque, 10, x, 20, y, 30, z, 70, 32);
@@ -288,6 +288,27 @@ describe("extension « Site et terrain » — courbes de niveau DXF (n° 26)", (
     expect([...new Set(w.aretes.flatMap((a) => a.map((q) => arrondi(q[2]))))].sort()).toEqual([501, 502]);
     const xs = w.aretes.flatMap((a) => a.map((q) => arrondi(q[0])));
     expect([Math.min(...xs), Math.max(...xs)]).toEqual([0, 20]);
+  });
+
+  it("unité : déclarée (mm) convertie en mètres, altitudes comprises ; non déclarée, un choix explicite est exigé", async () => {
+    const p = planche(modeleVide());
+    p.fichierAOuvrir({ nom: "mm.dxf", texte: dxfCourbes().replace("$INSUNITS\r\n70\r\n6", "$INSUNITS\r\n70\r\n4") });
+    const e = await p.action("charger-dxf", { onglet: "courbes" });
+    expect(p.etat.avis.map((a) => a.texte)).toContain("Coordonnées converties en mètres depuis l'unité déclarée par le fichier : millimètre.");
+    expect(e.lignes.map((l) => l.cellules[2])).toEqual(["0,50 – 0,50 m", "0,50 m"]);
+    const q = planche(modeleVide());
+    const sans = dxfCourbes().replace("0\r\nSECTION\r\n2\r\nHEADER\r\n9\r\n$INSUNITS\r\n70\r\n6\r\n0\r\nENDSEC\r\n", "");
+    expect(sans).not.toContain("HEADER");
+    q.fichierAOuvrir({ nom: "sans.dxf", texte: sans });
+    q.repondre([null]);
+    await q.action("charger-dxf", { onglet: "courbes" });
+    expect(q.titres).toEqual(["Unité du fichier DXF"]);
+    expect(q.derniereAlerte()).toBe("DXF refusé : l'unité des coordonnées n'est pas déclarée et n'a pas été choisie");
+    q.repondre([{ unite: "m" }]);
+    const f = await q.action("charger-dxf", { onglet: "courbes" });
+    expect(q.etat.avis.at(-1)!.texte).toBe("Ignorés : 1 CIRCLE.");
+    expect(q.etat.avis.map((a) => a.texte)).toContain("Coordonnées converties en mètres depuis l'unité choisie : mètre.");
+    expect(f.lignes.map((l) => l.cellules[2])).toEqual(["501,00 – 502,00 m", "500,00 m"]);
   });
 
   it("un fichier qui n'est pas un DXF texte est refusé et nommé", async () => {
