@@ -13,7 +13,8 @@ export interface LigneSynthese {
   readonly synthese?: SyntheseCouche;
   /** Plus d'objets dans la vue que la borne lue : comptes et statistiques partiels. */
   readonly tronque?: boolean;
-  readonly indicateur?: { readonly titre: string; readonly unite: string | null } | null;
+  /** `periode` (P9, L6) : période de l'indicateur, dite à côté des statistiques calculées. */
+  readonly indicateur?: { readonly titre: string; readonly unite: string | null; readonly periode?: string | null } | null;
   readonly erreur?: string;
 }
 
@@ -57,6 +58,11 @@ export function SyntheseVue(p: { lignes: readonly LigneSynthese[]; zoom: number;
                       <span>{formatNombre(l.synthese.indicateur.evaluees, 0)}</span>
                       <span>· non évaluées :</span>
                       <span data-gd-synthese-non-evaluees>{formatNombre(l.synthese.indicateur.nonEvaluees, 0)}</span>
+                    </dd>
+                    {/* L6 (P9) : min, moyenne et max sont calculés sur la vue ; rien de calculé ne reçoit de fiabilité. */}
+                    <dd className="gd-discret" data-gd-synthese-lecture>
+                      {l.indicateur.periode ? <><span>Période :</span> <span translate="no">{l.indicateur.periode}</span>{" · "}</> : <><span>Période : non évaluée</span>{" · "}</>}
+                      <span>Fiabilité : non évaluée (valeur calculée)</span>
                     </dd>
                   </dl>
                 )}
