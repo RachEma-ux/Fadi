@@ -201,6 +201,21 @@ export interface Niveau {
   readonly hauteur: number;
 }
 
+/**
+ * (Cas 4 du catalogue, étape 3 : locaux, D9-F10-016) Local (pièce) : numéro, nom, usage, appuyé sur une face de sol de
+ * la racine (`face`). Surface, périmètre, niveau et hauteur sous plafond mesurée sont **calculés** depuis la géométrie
+ * (`locaux.ts`), jamais stockés ; seule une hauteur sous plafond **déclarée** peut l'être.
+ */
+export interface Local {
+  readonly id: Id;
+  readonly numero: string;
+  readonly nom: string;
+  readonly usage?: string;
+  readonly face: Id;
+  /** Hauteur sous plafond déclarée (m) ; absente = mesurée si possible, sinon non évaluée. */
+  readonly hauteur?: number;
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -227,6 +242,8 @@ export interface Annotations {
   readonly pieces?: Readonly<Record<Id, LienPiece>>;
   /** (Cas 4, niveaux d'étage) Niveaux d'étage nommés ; absent = aucun. */
   readonly niveaux?: Readonly<Record<Id, Niveau>>;
+  /** (Cas 4, étape 3) Locaux (pièces) appuyés sur une face de sol de la racine ; absent = aucun. */
+  readonly locaux?: Readonly<Record<Id, Local>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -254,6 +271,7 @@ export interface AnnotationsMutables {
   extrusions: Record<Id, Extrusion>;
   pieces: Record<Id, LienPiece>;
   niveaux: Record<Id, Niveau>;
+  locaux: Record<Id, Local>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

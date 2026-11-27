@@ -12,7 +12,8 @@ import { estPointDeBase } from "./point-de-base.js";
 import { estComposantDynamique } from "./composants-dynamiques.js";
 import { type RepereEnregistre, repereEnregistreValide } from "./reperes.js";
 import { estNiveau } from "./niveaux.js";
-import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Materiau, Niveau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
+import { estLocal } from "./locaux.js";
+import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Local, Materiau, Niveau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
@@ -38,6 +39,7 @@ export interface DeltaAnnotations {
   readonly reperes?: DeltaTable<RepereEnregistre>;
   readonly correspondances?: DeltaTable<CorrespondanceImport>;
   readonly niveaux?: DeltaTable<Niveau>;
+  readonly locaux?: DeltaTable<Local>;
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
@@ -52,7 +54,7 @@ export interface DeltaPlanche {
 }
 
 const CLES_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
-const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes", "correspondances", "niveaux"] as const;
+const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes", "correspondances", "niveaux", "locaux"] as const;
 
 function differenceTable<T>(a: Readonly<Record<Id, T>> | undefined, b: Readonly<Record<Id, T>> | undefined): DeltaTable<T> | undefined {
   if (a === b) return undefined;
@@ -149,6 +151,7 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
     if (an["reperes"] !== undefined && Object.keys(an["reperes"] as object).length === 0) delete an["reperes"];
     if (an["correspondances"] !== undefined && Object.keys(an["correspondances"] as object).length === 0) delete an["correspondances"];
     if (an["niveaux"] !== undefined && Object.keys(an["niveaux"] as object).length === 0) delete an["niveaux"];
+    if (an["locaux"] !== undefined && Object.keys(an["locaux"] as object).length === 0) delete an["locaux"];
     if (delta.annotations.repere !== undefined) {
       if (delta.annotations.repere === null) delete an["repere"];
       else an["repere"] = delta.annotations.repere;
@@ -300,6 +303,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
     if (an["pieces"] !== undefined && !Object.entries(an["pieces"] as object).every(([id, v]) => estLienPiece(id, v))) return null;
     if (an["reperes"] !== undefined && !Object.entries(an["reperes"] as object).every(([id, v]) => repereEnregistreValide(v) && v.id === id)) return null;
     if (an["niveaux"] !== undefined && !Object.entries(an["niveaux"] as object).every(([id, v]) => estNiveau(id, v))) return null;
+    if (an["locaux"] !== undefined && !(estObjet(an["locaux"]) && Object.entries(an["locaux"]).every(([id, v]) => estLocal(id, v)))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
     if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])) && (an["reglages"]["pointDeBase"] === undefined || estPointDeBase(an["reglages"]["pointDeBase"])))) return null;
   }
@@ -317,7 +321,7 @@ export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
     if (!estObjet(an)) return false;
     for (const [k, t] of Object.entries(an)) {
       if ((CLES_ANNOTATIONS as readonly string[]).includes(k)) {
-        if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : k === "reperes" ? table(t, (id, x) => repereEnregistreValide(x) && x.id === id) : k === "niveaux" ? table(t, estNiveau) : table(t))) return false;
+        if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : k === "reperes" ? table(t, (id, x) => repereEnregistreValide(x) && x.id === id) : k === "niveaux" ? table(t, estNiveau) : k === "locaux" ? table(t, estLocal) : table(t))) return false;
       } else if (k === "repere" || k === "reglages") {
         if (!(t === null || estObjet(t))) return false;
       } else return false;

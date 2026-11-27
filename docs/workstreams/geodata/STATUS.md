@@ -9,7 +9,10 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
-- Améliorations équipe A, P1 carte d'arrivée (branche `claude/project-thread-q30312`, PR #472) : **implémenté et vérifié**,
+- Améliorations équipe A, P2 carte robuste (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non accepté.
+  État du moteur pur et testé, avis par couche non bloquant, recette `geodata.mjs` conforme en local (contrôles « P2 »),
+  captures bureau et Pixel 7 avec tuiles refusées (`captures/p2/`).
+- Améliorations équipe A, P1 carte d'arrivée (PR #472, **fusionnée** le 27 novembre 2026, `7fbab00`) : implémenté et vérifié,
   non accepté. Tests web verts, recette `geodata.mjs` conforme en local (contrôles « ARRIVÉE »), captures bureau et
   Pixel 7 sur le découpage réel du Maroc (`captures/p1/`) ; compte rendu `AMELIORATIONS-EQUIPE-A.md`.
 - Terrain TER-09 (fond mondial à la demande, Issue #381) : **fusionné** (PR #391, `dce8066`, 4 novembre 2026, CI verte sur
