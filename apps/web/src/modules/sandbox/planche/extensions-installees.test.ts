@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { REGISTRE_SANDBOX, jugerImportPaquet, normaliserRaccourci, type PaquetExtension } from "@parcours/sandbox-planche-model";
-import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, garderPaquetsInchanges, lignesExtensionsAjoutees, apercuFichier, clePanneauExtension, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
+import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, apercuFichier, clePanneauExtension, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
 import { idBarreCanonique, normaliserBarres } from "./barres-nommees";
 
 describe("avis des extensions", () => {
@@ -107,38 +107,5 @@ describe("outil interactif d'une extension (lot 6)", () => {
       expect(o.icone.endsWith(".svg")).toBe(true);
       expect(o.curseur).toBe("croix");
     }
-  });
-});
-
-describe("extensions ajoutées rangées dans « Extensions » (maquette du 27 novembre 2026)", () => {
-  const fiche = (id: string, fr: string, en: string, installee: boolean) => ({ id, nom: { fr, en }, description: { fr: "", en: "" }, version: "1.0.0", etat: "experimentale" as const, commandes: 1, outils: 0, panneaux: 1, installee });
-  const fiches = [fiche("toitures", "Toitures et combles", "Roofs and attics", true), fiche("escaliers", "Escaliers", "Stairs", false), fiche("controles", "Contrôles réglementaires et accessibilité", "Regulatory and accessibility checks", true)];
-
-  it("une ligne par extension proposée, par ordre alphabétique, cochée selon le choix du compte", () => {
-    expect(lignesExtensionsAjoutees(fiches, [], "fr")).toEqual([
-      { id: "controles", nom: "Contrôles réglementaires et accessibilité", affichee: true },
-      { id: "escaliers", nom: "Escaliers", affichee: false },
-      { id: "toitures", nom: "Toitures et combles", affichee: true },
-    ]);
-    expect(lignesExtensionsAjoutees(fiches, [], "en").map((l) => l.nom)).toEqual(["Regulatory and accessibility checks", "Roofs and attics", "Stairs"]);
-  });
-
-  it("un paquet reçu sans fiche garde sa ligne, cochée", () => {
-    const paquet = { fiche: { id: "site", nom: { fr: "Site et terrain", en: "Site and terrain" } } } as unknown as PaquetExtension;
-    expect(lignesExtensionsAjoutees(fiches, [paquet], "fr").find((l) => l.id === "site")).toEqual({ id: "site", nom: "Site et terrain", affichee: true });
-    expect(lignesExtensionsAjoutees([], [], "fr")).toEqual([]);
-  });
-});
-
-describe("paquets relus après « Afficher / Masquer »", () => {
-  it("un paquet inchangé garde son objet (son hôte n'est pas redémarré) ; un paquet changé est remplacé", () => {
-    const a = { fiche: { id: "a", version: "1.0.0" }, code: "x" } as unknown as PaquetExtension;
-    const b = { fiche: { id: "b", version: "1.0.0" }, code: "y" } as unknown as PaquetExtension;
-    const aRelu = JSON.parse(JSON.stringify(a)) as PaquetExtension;
-    const bChange = { fiche: { id: "b", version: "1.1.0" }, code: "z" } as unknown as PaquetExtension;
-    const r = garderPaquetsInchanges([a, b], [aRelu, bChange]);
-    expect(r[0]).toBe(a);
-    expect(r[1]).toBe(bChange);
-    expect(garderPaquetsInchanges([a, b], [b])).toEqual([b]);
   });
 });

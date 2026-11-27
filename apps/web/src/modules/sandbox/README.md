@@ -231,9 +231,9 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     navigateur repasse les mêmes règles à la réception (`lirePaquetsInstalles`).
   - *Interface* : chaque extension installée a sa **ligne** dans le groupe « Extensions » de la liste « Outils », à son
     nom, sous celles fournies par Fadi (maquette validée le 27 novembre 2026 ; avant, une famille à part avec la pastille
-    « extension »), avec sa case « Afficher / Masquer » : décochée, l'extension est désinstallée pour le compte
-    (`PUT /sandbox/preferences/extensions/:id`, même choix que la page Extensions), ses commandes, son panneau et ses
-    raccourcis disparaissent, le dessin n'est pas touché ; cochée, la ligne se déplie sur ses commandes ; chaque commande y garde son icône (une image du paquet, `<img>` : rien du dessin ne s'exécute), son
+    « extension »), dépliable sur ses commandes, avec sa case « Afficher / Masquer » qui montre ou cache **sa barre**
+    dans la Planche (même état que l'interrupteur de la barre sous « Barres d'outils ») ; la désinstallation reste dans
+    la page Extensions de la barre latérale ; chaque commande y garde son icône (une image du paquet, `<img>` : rien du dessin ne s'exécute), son
     nom et son raccourci, et l'étiquette de la **barre** de l'extension (`extension:<id>`). Une commande lancée (liste,
     barre, clavier) adresse « commande.<id> » à l'extension avec `{ langue }` ; la Planche lui prête son modèle, sa
     sélection et son historique (`AccesPlanche` dans `Planche.tsx`) : une opération validée est **un pas d'annulation**.

@@ -2,9 +2,7 @@
  * Extensions installées dans la Planche (protocole 1.0, lot 3) — ce que la Planche montre pour elles :
  *
  *  - `useExtensionsInstallees` : la liste reçue du serveur à l'ouverture (paquets relus par `lirePaquetsInstalles`) ;
- *    sans réseau ou sans compte, aucune extension installée n'est offerte ; avec elle, les extensions ajoutées que la
- *    plateforme propose au compte (`ajoutees`, cochées ou non dans le groupe « Extensions » de la liste « Outils ») et
- *    le geste « Afficher / Masquer » (`afficher`), qui relit ensuite les paquets ;
+ *    sans réseau ou sans compte, aucune extension installée n'est offerte ;
  *  - `IconeExtension` : l'icône d'une commande, un dessin SVG du paquet affiché comme une **image** (`<img>`) — rien de
  *    ce qu'il contient ne s'exécute ni n'atteint la page ;
  *  - `AvisExtensions` : les avis au-dessus de la barre d'état (demandés par une extension, ou posés par la Planche
@@ -17,103 +15,27 @@
  * Les textes venus d'une extension sont toujours posés comme du texte, jamais comme du balisage.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BORNES_FICHIER, BORNES_PANNEAU, composerPagePanneau, donneesPanneau, lireMessagePagePanneau, lireNombreSaisi, typeDeFichier, valeursInitiales, validerSaisie, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichePaquetCompte, type FichierLu, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { BORNES_FICHIER, BORNES_PANNEAU, composerPagePanneau, donneesPanneau, lireMessagePagePanneau, lireNombreSaisi, typeDeFichier, valeursInitiales, validerSaisie, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichierLu, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { IconeSandbox } from "../pictogrammes/Pictogramme";
-import { choisirExtensionCompte, lireExtensionsServeur, lireFichesExtensionsCompte } from "../preferences/client";
+import { lireExtensionsServeur } from "../preferences/client";
 
 /** Texte d'une fiche dans la langue de l'interface. */
 export const texteFiche = (x: { readonly fr: string; readonly en: string }): string => (LANGUE_INTERFACE === "en" ? x.en : x.fr);
 
-/** Ligne d'une extension ajoutée dans le groupe « Extensions » : son nom et sa case « Afficher / Masquer ». */
-export interface ExtensionAjoutee {
-  readonly id: string;
-  readonly nom: string;
-  /** Cochée : installée pour le compte (ses commandes, son panneau et ses raccourcis sont là). */
-  readonly affichee: boolean;
-}
-
-/**
- * Lignes des extensions ajoutées (pur, testé) : celles que la plateforme propose au compte, par ordre alphabétique. Un
- * paquet reçu sans fiche (catalogue pas encore lu, ou illisible) a quand même sa ligne, cochée : ses commandes ne
- * disparaissent jamais faute de fiche.
- */
-export function lignesExtensionsAjoutees(fiches: readonly FichePaquetCompte[], paquets: readonly PaquetExtension[] = [], langue: "fr" | "en" = LANGUE_INTERFACE === "en" ? "en" : "fr"): readonly ExtensionAjoutee[] {
-  const lignes = fiches.map((f) => ({ id: f.id, nom: f.nom[langue], affichee: f.installee }));
-  for (const p of paquets) if (!lignes.some((l) => l.id === p.fiche.id)) lignes.push({ id: p.fiche.id, nom: p.fiche.nom[langue], affichee: true });
-  return lignes.sort((a, b) => a.nom.localeCompare(b.nom, langue));
-}
-
-export interface ExtensionsDuCompte {
-  /** Paquets installés pour le compte, exécutables par la Planche. */
-  readonly paquets: readonly PaquetExtension[];
-  /** Extensions ajoutées proposées au compte, cochées ou non. */
-  readonly ajoutees: readonly ExtensionAjoutee[];
-  /** Un choix est en route vers le serveur : les cases attendent (le serveur réécrit le choix du compte en entier). */
-  readonly enCours: boolean;
-  /** Coche (`true`) ou décoche une extension ajoutée pour le compte, puis relit les paquets installés. */
-  readonly afficher: (id: string, affichee: boolean) => void;
-}
-
-/**
- * Paquets relus (pur, testé) : un paquet inchangé garde son objet, pour que la Planche ne redémarre pas l'hôte d'une
- * extension (minuteries, état) quand on coche ou décoche une autre extension.
- */
-export function garderPaquetsInchanges(avant: readonly PaquetExtension[], recus: readonly PaquetExtension[]): readonly PaquetExtension[] {
-  return recus.map((n) => {
-    const ancien = avant.find((a) => a.fiche.id === n.fiche.id);
-    return ancien && JSON.stringify(ancien) === JSON.stringify(n) ? ancien : n;
-  });
-}
-
-export function useExtensionsInstallees(): ExtensionsDuCompte {
+export function useExtensionsInstallees(): readonly PaquetExtension[] {
   const [paquets, setPaquets] = useState<readonly PaquetExtension[]>([]);
-  const [fiches, setFiches] = useState<readonly FichePaquetCompte[]>([]);
-  const [enCours, setEnCours] = useState(false);
-  const enCoursRef = useRef(false);
-  const vivant = useRef(true);
-  const relirePaquets = () =>
-    lireExtensionsServeur().then(
-      (p) => vivant.current && setPaquets((avant) => garderPaquetsInchanges(avant, p)),
-      () => undefined,
-    );
   useEffect(() => {
-    vivant.current = true;
-    void relirePaquets();
-    lireFichesExtensionsCompte().then(
-      (f) => vivant.current && setFiches(f),
+    let vivant = true;
+    lireExtensionsServeur().then(
+      (p) => vivant && setPaquets(p),
       () => undefined,
     );
     return () => {
-      vivant.current = false;
+      vivant = false;
     };
   }, []);
-  const ajoutees = useMemo(() => lignesExtensionsAjoutees(fiches, paquets), [fiches, paquets]);
-  const afficher = (id: string, affichee: boolean) => {
-    // Un seul choix à la fois : deux demandes croisées liraient le même choix du compte et s'écraseraient.
-    if (enCoursRef.current) return;
-    enCoursRef.current = true;
-    setEnCours(true);
-    // La case suit le geste tout de suite ; le serveur fait foi ensuite (fiches relues, paquets relus).
-    setFiches((l) => l.map((f) => (f.id === id ? { ...f, installee: affichee } : f)));
-    const fin = () => {
-      enCoursRef.current = false;
-      if (vivant.current) setEnCours(false);
-    };
-    choisirExtensionCompte(id, affichee)
-      .then(
-        (f) => {
-          if (!vivant.current) return;
-          setFiches(f);
-          return relirePaquets();
-        },
-        () => {
-          if (vivant.current) setFiches((l) => l.map((f) => (f.id === id ? { ...f, installee: !affichee } : f)));
-        },
-      )
-      .finally(fin);
-  };
-  return { paquets, ajoutees, enCours, afficher };
+  return paquets;
 }
 
 export function IconeExtension({ image, className }: { image: string; className?: string }) {

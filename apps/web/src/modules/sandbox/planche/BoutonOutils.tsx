@@ -9,7 +9,8 @@
  * suivent, en trois groupes : « Groupe », « Repères » et « Bois » (Zoom avant / arrière sont rangés avec « Caméra »).
  * Les extensions ajoutées à la plateforme (protocole des extensions, lot 3) se rangent dans le groupe « Extensions »
  * (maquette validée le 27 novembre 2026), sous celles fournies par Fadi : une ligne par extension, à son nom, avec sa
- * case « Afficher / Masquer » ; cochée, elle se déplie sur ses commandes, avec leur icône, leur raccourci et
+ * case « Afficher / Masquer », qui montre ou cache **sa barre** dans la Planche (la désinstallation reste dans la page
+ * Extensions de la barre latérale) ; la ligne se déplie sur ses commandes, avec leur icône, leur raccourci et
  * l'étiquette de sa barre.
  *
  * En pied, « ⚙ Barres d'outils » : chaque barre nommée (`barres-nommees.ts`) y figure UNE fois, avec son aperçu et son
@@ -24,7 +25,7 @@ import { groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { t } from "../messages";
 import { afficherRaccourci, nomOutil, pictoOutil, raccourciOutil } from "./outils-planche";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
-import { IconeExtension, type ExtensionAjoutee } from "./extensions-installees";
+import { IconeExtension } from "./extensions-installees";
 
 /** Aperçu d'une entrée dans la ligne d'une barre (icône seule ; le nom sert d'infobulle). */
 export interface ApercuBarre {
@@ -86,14 +87,11 @@ export interface PropsBoutonOutils {
    * catalogue. La recherche et les familles ne montrent que ceux-là.
    */
   catalogue?: readonly Outil[];
-  /** Extensions installées pour le compte : leurs commandes, rangées sous leur ligne du groupe « Extensions ». */
+  /**
+   * Extensions installées pour le compte : une ligne chacune dans le groupe « Extensions », sa case affiche ou masque
+   * sa barre, ses commandes se rangent dessous.
+   */
   famillesExtensions?: readonly FamilleExtension[];
-  /** Extensions ajoutées que la plateforme propose au compte, cochées ou non (groupe « Extensions »). */
-  extensionsAjoutees?: readonly ExtensionAjoutee[];
-  /** Case « Afficher / Masquer » d'une extension ajoutée. */
-  onAfficherExtensionAjoutee?: (id: string, affichee: boolean) => void;
-  /** Un choix « Afficher / Masquer » est en route : les cases attendent. */
-  extensionsAjouteesEnCours?: boolean;
 }
 
 /** Famille d'une extension installée : ses commandes, et sa barre (affichée ou masquée par l'étiquette de chaque ligne). */
@@ -143,7 +141,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS, famillesExtensions = [], extensionsAjoutees = [], onAfficherExtensionAjoutee, extensionsAjouteesEnCours = false }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS, famillesExtensions = [] }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   // Groupes dépliés : familles d'outils et groupes de commandes (« groupe », « reperes », « bois »).
@@ -482,7 +480,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
               const q = filtre ? requete.trim().toLocaleLowerCase("fr") : "";
               const lignes = commandesDe("extensions");
               const retenues = onBasculerExtension ? extensions.filter((x) => !filtre || x.nom.toLocaleLowerCase("fr").includes(q) || lignes.some((c) => c.extension === x.id)) : [];
-              const ajoutees = onAfficherExtensionAjoutee ? extensionsAjoutees.filter((x) => !filtre || retient(x.nom) || famillesRetenues.some((f) => f.id === x.id)) : [];
+              // Extensions installées, par ordre alphabétique ; retenues par leur nom ou par l'une de leurs commandes.
+              const ajoutees = [...famillesExtensions].filter((f) => !filtre || famillesRetenues.some((r) => r.id === f.id)).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
               if (retenues.length === 0 && ajoutees.length === 0) return null;
               const deplie = filtre || familles.has("extensions");
               return (
@@ -510,43 +509,35 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
                   {deplie &&
                     ajoutees.map((x) => {
                       const cle = `installee:${x.id}`;
-                      const famille = (filtre ? famillesRetenues : famillesExtensions).find((f) => f.id === x.id);
-                      const ouvrable = x.affichee && !!famille && famille.commandes.length > 0;
-                      const ouverte = ouvrable && (filtre || familles.has(cle));
+                      const famille = (filtre ? famillesRetenues.find((f) => f.id === x.id) : undefined) ?? x;
+                      // Case « Afficher » : la barre de l'extension est-elle affichée dans la Planche ?
+                      const affichee = barres.some((b) => b.id === x.barre && b.affichee);
+                      const ouverte = filtre || familles.has(cle);
                       return (
-                        <div key={x.id} className="planche-outils-ajoutee" role="none" data-outils-extension-installee={x.id} data-affichee={x.affichee ? "" : undefined}>
+                        <div key={x.id} className="planche-outils-ajoutee" role="none" data-outils-extension-installee={x.id}>
                           <div className="planche-outils-ajoutee-tete" role="none">
-                            {ouvrable ? (
-                              <button type="button" role="menuitem" className="planche-outils-ajoutee-nom" aria-expanded={ouverte} data-outils-nav data-outils-famille={cle} onClick={() => !filtre && basculerFamille(cle)}>
-                                <IconeSandbox nom={ouverte ? "menu" : "sousMenu"} className="planche-outils-fleche" />
-                                <span className="planche-outils-libelle">{x.nom}</span>
-                              </button>
-                            ) : (
-                              <span className="planche-outils-ajoutee-nom" role="none">
-                                <span className="planche-outils-fleche" aria-hidden="true" />
-                                <span className="planche-outils-libelle">{x.nom}</span>
-                              </span>
-                            )}
+                            <button type="button" role="menuitem" className="planche-outils-ajoutee-nom" aria-expanded={ouverte} data-outils-nav data-outils-famille={cle} onClick={() => !filtre && basculerFamille(cle)}>
+                              <IconeSandbox nom={ouverte ? "menu" : "sousMenu"} className="planche-outils-fleche" />
+                              <span className="planche-outils-libelle">{x.nom}</span>
+                            </button>
                             <button
                               type="button"
                               role="menuitemcheckbox"
                               className="planche-outils-case"
-                              aria-checked={x.affichee}
+                              aria-checked={affichee}
                               aria-label={t("outils.extensions.afficher.de", { extension: x.nom })}
-                              title={t(x.affichee ? "outils.extensions.masquer.aide" : "outils.extensions.afficher.aide", { extension: x.nom })}
+                              title={t(affichee ? "outils.extensions.masquer.aide" : "outils.extensions.afficher.aide", { extension: x.nom })}
                               data-outils-nav
                               data-outils-case-extension={x.id}
-                              aria-busy={extensionsAjouteesEnCours || undefined}
-                              disabled={extensionsAjouteesEnCours}
-                              onClick={() => onAfficherExtensionAjoutee?.(x.id, !x.affichee)}
+                              onClick={() => onAfficherBarre(x.barre, !affichee)}
                             >
-                              <span className="planche-outils-case-boite" aria-hidden="true" data-coche={x.affichee ? "" : undefined} />
-                              <span aria-hidden="true">{t(x.affichee ? "outils.extensions.afficher" : "outils.extensions.masquee")}</span>
+                              <span className="planche-outils-case-boite" aria-hidden="true" data-coche={affichee ? "" : undefined} />
+                              <span aria-hidden="true">{t(affichee ? "outils.extensions.afficher" : "outils.extensions.masquee")}</span>
                             </button>
                           </div>
-                          {ouverte && famille && (
-                            <div className="planche-outils-extension-commandes" role="group" aria-label={t("extensions.installee.groupe", { extension: famille.nom })} data-outils-groupe={cle}>
-                              {famille.commandes.map((c) => ligneCommande(c, { id: famille.barre, nom: famille.nom }))}
+                          {ouverte && (
+                            <div className="planche-outils-extension-commandes" role="group" aria-label={t("extensions.installee.groupe", { extension: x.nom })} data-outils-groupe={cle}>
+                              {famille.commandes.map((c) => ligneCommande(c, { id: x.barre, nom: x.nom }))}
                             </div>
                           )}
                         </div>
