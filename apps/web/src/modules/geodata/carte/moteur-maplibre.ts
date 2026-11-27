@@ -16,6 +16,9 @@ setWorkerUrl(urlWorker);
 
 const PREFIXE = "gd-couche-";
 const FOND_NEUTRE = "#eef2f0";
+/** Carte d'arrivée (P1) : source et calques hors composition (jamais enregistrés, jamais exportés). */
+const SOURCE_ACCUEIL = "gd-accueil";
+const CALQUES_ACCUEIL = ["gd-accueil-remplissage", "gd-accueil-contour"] as const;
 
 export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev: EvenementsMoteur): MoteurCarte {
   const carte = new CarteMapLibre({
@@ -73,6 +76,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     // « indisponible » est redemandée automatiquement (trois fois au plus par adresse), jamais remplacée par une valeur.
     const sid = (e as { sourceId?: string }).sourceId ?? "";
     if (sid.startsWith("gd-terrain-")) { terrainEnErreur(sid); return; }
+    // Contour d'arrivée (P1) : hors composition ; une tuile refusée laisse la carte vide, sans la déclarer en panne.
+    if (sid === SOURCE_ACCUEIL) return;
     // Glyphe d'une plage non livrée : le libellé perd ce caractère, la couche reste accessible (pas une erreur de couche).
     if (/\/geodata\/glyphes\//.test(m?.message ?? "")) return;
     if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
@@ -436,6 +441,20 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   }
   let bulleTerrain: Popup | null = null;
 
+  // Carte d'arrivée (P1) : contours d'une couche de limites, sous les zones et le tracé ; recréé seulement si la couche change.
+  let accueilVoulu: string | null = null;
+  let accueilPose: string | null = null;
+  const appliquerAccueil = () => {
+    if (accueilPose === accueilVoulu && (accueilVoulu === null || carte.getSource(SOURCE_ACCUEIL))) return;
+    for (const l of CALQUES_ACCUEIL) if (carte.getLayer(l)) carte.removeLayer(l);
+    if (carte.getSource(SOURCE_ACCUEIL)) carte.removeSource(SOURCE_ACCUEIL);
+    accueilPose = accueilVoulu;
+    if (!accueilVoulu) return;
+    carte.addSource(SOURCE_ACCUEIL, { type: "vector", tiles: [adresseTuiles(accueilVoulu)], minzoom: 0, maxzoom: 14 });
+    carte.addLayer({ id: CALQUES_ACCUEIL[0], type: "fill", source: SOURCE_ACCUEIL, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#1a6b70", "fill-opacity": 0.07 } }, "gd-zones-remplissage");
+    carte.addLayer({ id: CALQUES_ACCUEIL[1], type: "line", source: SOURCE_ACCUEIL, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#29434a", "line-width": 1.2 } }, "gd-zones-remplissage");
+  };
+
   const posees = () => {
     if (carte.getLayer("gd-zones-remplissage")) return;
     carte.addLayer({ id: "gd-zones-remplissage", type: "fill", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#c77b35", "fill-opacity": 0.15 } });
@@ -527,6 +546,10 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       mini = { carte: m, conteneur: conteneurMini, coucheId };
       m.on("load", synchroniserMini);
     },
+    afficherAccueil(coucheId) {
+      accueilVoulu = coucheId;
+      if (pret) { posees(); appliquerAccueil(); } else carte.once("load", () => { posees(); appliquerAccueil(); });
+    },
     afficherTerritoire(contour) {
       const f = () => {
         const src = carte.getSource("gd-territoire") as GeoJSONSource | undefined;
@@ -549,7 +572,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (!pret) return;
       // Le terrain (TER-05) n'appartient pas à la carte enregistrée : ses droits d'export ne sont pas jugés par l'export
       // de la carte, il n'entre donc jamais dans l'image (export PNG, impression).
-      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_ACCUEIL, ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
       await new Promise<void>((resoudre) => {
         const fin = setTimeout(resoudre, 2000);
         carte.once("idle", () => { clearTimeout(fin); resoudre(); });

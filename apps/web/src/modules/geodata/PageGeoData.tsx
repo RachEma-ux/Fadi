@@ -32,6 +32,8 @@ import { BoutonSites } from "./panneaux/BoutonSites";
 import { BarreBas } from "./panneaux/BarreBas";
 import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
+import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
+import { carteVide, consigneVisible, niveauAccueil } from "./etat/accueil-ops";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
@@ -96,7 +98,11 @@ export function PageGeoData() {
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
   const [coucheTable, setCoucheTable] = useState<string | null>(null);
   const [onglet, setOnglet] = useState<Onglet>("catalogue");
-  const [panneauOuvert, setPanneauOuvert] = useState(() => !estTelephone());
+  // Catalogue fermé à chaque ouverture de la page (P1, décision D1 de la feuille de route) : la carte d'arrivée reste
+  // dégagée ; le bouton « Données » ou la consigne l'ouvrent.
+  const [panneauOuvert, setPanneauOuvert] = useState(false);
+  // Consigne d'arrivée écartée pour la session : première fiche, premier outil, première recherche ou fermeture (P1).
+  const [consigneEcartee, setConsigneEcartee] = useState(false);
   const [volet, setVolet] = useState<Volet | null>(null);
   const [outil, setOutil] = useState<OutilCarte>("navigation");
   // Terrain haute résolution (TER-05) : état gardé par la page, les couches restent affichées panneau fermé.
@@ -305,7 +311,18 @@ export function PageGeoData() {
   useEffect(() => setAvisFond(null), [fond.id]);
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
-  const attributions = useMemo(() => [...new Set([...compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution), contourTerritoire?.attribution].filter((x): x is string => !!x))], [compositionAffichee, couchesConnues, contourTerritoire]);
+  // Carte d'arrivée (P1, E-01, Q1) : carte vide → contour du niveau le plus global du découpage lu en base, avec sa source.
+  const etatArrivee = { ongletCartes: ongletPage === "cartes", carteOuverte: !!carte, couchesVisibles: compositionAffichee.couches.filter((k) => k.visible).length };
+  const vide = carteVide(etatArrivee);
+  const niveauArrivee = useMemo(() => niveauAccueil(decoupageRecu?.niveaux), [decoupageRecu]);
+  const coucheArrivee = vide && webgl ? niveauArrivee?.coucheId ?? null : null;
+  const metaArrivee = coucheArrivee ? couchesConnues.get(coucheArrivee) ?? catalogue?.find((c) => c.id === coucheArrivee) ?? null : null;
+  useEffect(() => {
+    // Couche du contour absente du catalogue (non listée) : ses métadonnées sont lues une fois, pour l'attribution.
+    if (coucheArrivee && catalogue && !metaArrivee) api.couche(coucheArrivee).then((c) => connaitre([c])).catch(() => undefined);
+  }, [coucheArrivee, catalogue, metaArrivee, connaitre]);
+  const consigne = consigneVisible({ ...etatArrivee, webgl, ecartee: consigneEcartee });
+  const attributions = useMemo(() => [...new Set([...compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution), contourTerritoire?.attribution, metaArrivee?.version.attribution].filter((x): x is string => !!x))], [compositionAffichee, couchesConnues, contourTerritoire, metaArrivee]);
   // Couches raster (D-GD-13) connues ; référence lue par le moteur (créé une fois) au moment d'un clic.
   const rasters = useMemo(() => new Set([...couchesConnues.values()].filter((c) => c.typeGeometrie === "raster").map((c) => c.id)), [couchesConnues]);
   // Rang administratif des couches de limites (D-GD-16, D-GD-42) : celui de leur niveau dans la table des niveaux en base.
@@ -625,6 +642,7 @@ export function PageGeoData() {
 
   async function ouvrirFiche(coucheId: string, code: string) {
     setVolet("fiche");
+    setConsigneEcartee(true);
     if (estTelephone()) setPanneauOuvert(false);
     setFicheEtat({ chargement: true, erreur: null });
     try { setFiche(await api.fiche(coucheId, code)); setFicheEtat({ chargement: false, erreur: null }); }
@@ -695,6 +713,7 @@ export function PageGeoData() {
   async function lancerRecherche() {
     const q = recherche.trim();
     if (q.length < 2) return;
+    setConsigneEcartee(true);
     setAvisRecherche(null);
     try {
       const r = await api.rechercher(q);
@@ -918,7 +937,7 @@ export function PageGeoData() {
   const afficherCarteSeule = () => { setPanneauOuvert(false); setVolet(null); basculerRecherche(false); };
   const basculerCouches = () => { if (panneauOuvert && onglet === "couches") setPanneauOuvert(false); else ouvrirOnglet("couches"); };
   const basculerLegende = () => { if (panneauOuvert && onglet === "legende") setPanneauOuvert(false); else ouvrirOnglet("legende"); };
-  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
+  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setConsigneEcartee(true); setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
   const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outil === "altitude" || outil === "profil") setOutil("navigation"); } else afficherVolet("terrain"); };
   /** « Emplacements Projets » (Alt+J) : volet des emplacements à ouvrir dans la Planche. */
@@ -1059,6 +1078,7 @@ export function PageGeoData() {
     return (parRang[0] ?? vecteurs[0])?.coucheId ?? null;
   }, [compositionAffichee, rasters, rangs]);
   useEffect(() => { moteur.current?.afficherTerritoire(contourTerritoire?.contour ?? null); }, [contourTerritoire, chargementMoteur]);
+  useEffect(() => { moteur.current?.afficherAccueil(coucheArrivee); }, [coucheArrivee, chargementMoteur]);
   useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, chargementMoteur]);
   useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, chargementMoteur]);
 
@@ -1184,6 +1204,9 @@ export function PageGeoData() {
           </div>}
           {!erreurCarte && colorations.size > 0 && <LegendeIndicateur colorations={colorations} couches={couchesConnues} decalee={panneauOuvert} />}
           {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}
+          {consigne && <ConsigneAccueil contour={coucheArrivee && niveauArrivee ? { niveau: niveauArrivee.pluriel, pays: paysListe?.find((x) => x.code === paysCourant)?.nom ?? paysCourant ?? "" } : null}
+            decalee={panneauOuvert} onFermer={() => setConsigneEcartee(true)}
+            onCatalogue={() => { setConsigneEcartee(true); ouvrirOnglet("catalogue"); }} onChercher={() => { setConsigneEcartee(true); basculerRecherche(true); }} />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}

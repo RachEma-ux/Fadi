@@ -14887,5 +14887,12 @@
 "Seule une cote linéaire peut piloter la géométrie.": "Only a linear dimension can drive the geometry.",
 "Sélectionnez des groupes ou des composants à numéroter.": "Select groups or components to number.",
 "altitude NGF non déclarée (Emplacement)": "NGF elevation not declared (Location)",
-"non évaluable": "not assessable"
+"non évaluable": "not assessable",
+"Bienvenue dans GeoData": "Welcome to GeoData",
+"Fermer la consigne": "Close the hint",
+"Touchez la carte pour lire la fiche d'un territoire, cherchez un lieu, ou ouvrez le catalogue pour ajouter des données.": "Tap the map to read an area's profile, search for a place, or open the catalogue to add data.",
+"Contour affiché :": "Outline shown:",
+"Ouvrir le catalogue": "Open the catalogue",
+"Chercher un lieu": "Search for a place",
+"Chercher un lieu (Alt+R)": "Search for a place (Alt+R)"
 }

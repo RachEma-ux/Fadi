@@ -9,6 +9,9 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
+- Améliorations équipe A, P1 carte d'arrivée (branche `claude/project-thread-q30312`, PR #472) : **implémenté et vérifié**,
+  non accepté. Tests web verts, recette `geodata.mjs` conforme en local (contrôles « ARRIVÉE »), captures bureau et
+  Pixel 7 sur le découpage réel du Maroc (`captures/p1/`) ; compte rendu `AMELIORATIONS-EQUIPE-A.md`.
 - Terrain TER-09 (fond mondial à la demande, Issue #381) : **fusionné** (PR #391, `dce8066`, 4 novembre 2026, CI verte sur
   `9a1c8d2`), non déployé ; porte G3 (appareil Android réel) non passée. Fiches distantes GEDTM30 mondial (MNT) et GLO-30 mondial (MNS, dalles), service
   `terrain-distant` (liste fermée, budget, cache LRU dans le volume), mêmes services et métadonnées pour toute zone, levés
