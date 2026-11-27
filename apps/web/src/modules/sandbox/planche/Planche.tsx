@@ -3373,7 +3373,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
   };
   /** `calage` : orthophoto posée d'après son fichier de calage d'image, dans le système déclaré (déjà comparé au projet). */
-  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string; readonly pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] }, pdf?: { readonly pose: (largeurPx: number, hauteurPx: number) => PoseFond | null; readonly message: string }) => {
+  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string; readonly pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] }, pdf?: { readonly pose: (largeurPx: number, hauteurPx: number) => PoseFond | null; readonly message: string; readonly altitude: number }) => {
     // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
     const planche = indexRef.current.courante;
     let image: Awaited<ReturnType<typeof reduireFond>>;
@@ -3414,7 +3414,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     let erreur: string | null = null;
     const message = pdf ? pdf.message : calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
     operer(t(pdf ? "planche.pdf.poser-fond-pdf" : calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
-      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original, ...(pose ?? {}), ...(posePdf ? { pose: posePdf } : {}) });
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: pdf ? pdf.altitude : (n?.altitude ?? 0), original, ...(pose ?? {}), ...(posePdf ? { pose: posePdf } : {}) });
       if (!r.ok) {
         erreur = r.erreur;
         return null;
@@ -3762,8 +3762,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (!Number.isFinite(x) || !Number.isFinite(y) || originePdf.x.trim() === "" || originePdf.y.trim() === "") return setErreurPdf(t("planche.pdf.erreur.position"));
     const altitude = niveaux.find((n) => n.id === niveauPdf)?.altitude ?? 0;
     const echelleTexte = String(Math.round(echelleConfirmee * 1000) / 1000);
+    // Le PDF d'origine doit être archivé tel quel avant toute pose, tracé inséré comme page posée en fond.
+    if (!pdfRecu?.fichier) return setErreurPdf(t("planche.references.erreur.archive-serveur"));
     if (id === "inserer-pdf") {
-      if (!pdfRecu?.fichier) return setErreurPdf(t("planche.references.erreur.archive-serveur"));
       const nom = t("planche.pdf.groupe", { nom: pdfRecu.nom, numero: String(page.numero) });
       const description = t("planche.pdf.description", { nom: pdfRecu.nom, numero: String(page.numero), echelle: echelleTexte, id: pdfRecu.fichier.id, empreinte: pdfRecu.fichier.empreinte });
       let erreur: string | null = null;
@@ -3801,6 +3802,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           return "pose" in r ? r.pose : null;
         },
         message: t("planche.pdf.note.fond", { numero: String(page.numero), echelle: echelleTexte }),
+        altitude,
       });
     })();
   };

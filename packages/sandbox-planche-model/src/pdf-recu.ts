@@ -421,9 +421,61 @@ function aplatir(p: readonly PointPdf[]): PointPdf[] {
 
 type Element = { readonly k: "l"; readonly a: PointPdf; readonly b: PointPdf } | { readonly k: "c"; readonly p: readonly PointPdf[] };
 
+/** Zone de découpe (W, W*) : rectangle aligné (page, mm) appliqué exactement ; toute autre forme est « non lue ». */
+type Decoupe = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number } | "autre";
+
 interface Etat {
   ctm: M6;
+  decoupe?: Decoupe;
 }
+
+/** Chemin de découpe → rectangle aligné s'il en est un (sous-chemin unique de traits horizontaux et verticaux). */
+function decoupeDuChemin(chemins: readonly (readonly Element[])[]): Decoupe {
+  if (chemins.length !== 1) return "autre";
+  const e = chemins[0]!;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const s of e) {
+    if (s.k !== "l") return "autre";
+    if (Math.abs(s.a.x - s.b.x) > 1e-6 && Math.abs(s.a.y - s.b.y) > 1e-6) return "autre";
+    xs.push(s.a.x, s.b.x);
+    ys.push(s.a.y, s.b.y);
+  }
+  if (!xs.length) return "autre";
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  // Les sommets doivent être les coins du rectangle (un « L » refermé n'en est pas un).
+  const coin = (v: number, a: number, b: number) => Math.abs(v - a) < 1e-6 || Math.abs(v - b) < 1e-6;
+  if (!xs.every((x) => coin(x, x0, x1)) || !ys.every((y) => coin(y, y0, y1)) || e.length < 3) return "autre";
+  return { x0, y0, x1, y1 };
+}
+
+function intersecter(a: Decoupe | undefined, b: Decoupe): Decoupe {
+  if (!a) return b;
+  if (a === "autre" || b === "autre") return "autre";
+  return { x0: Math.max(a.x0, b.x0), y0: Math.max(a.y0, b.y0), x1: Math.min(a.x1, b.x1), y1: Math.min(a.y1, b.y1) };
+}
+
+/** Segment découpé par un rectangle (Liang-Barsky) ; null s'il est entièrement dehors. */
+function decouperSegment(a: PointPdf, b: PointPdf, r: Exclude<Decoupe, "autre">): [PointPdf, PointPdf] | null {
+  if (r.x0 > r.x1 || r.y0 > r.y1) return null;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  let t0 = 0;
+  let t1 = 1;
+  for (const [p, q] of [[-dx, a.x - r.x0], [dx, r.x1 - a.x], [-dy, a.y - r.y0], [dy, r.y1 - a.y]] as const) {
+    if (Math.abs(p) < 1e-12) {
+      if (q < -1e-9) return null;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+    if (t0 > t1) return null;
+  }
+  return [{ x: a.x + t0 * dx, y: a.y + t0 * dy }, { x: a.x + t1 * dx, y: a.y + t1 * dy }];
+}
+
+const dedans = (p: PointPdf, r: Exclude<Decoupe, "autre">) => p.x >= r.x0 - 1e-9 && p.x <= r.x1 + 1e-9 && p.y >= r.y0 - 1e-9 && p.y <= r.y1 + 1e-9;
 
 /** Interprète une page : traits, arcs, aplats, textes et images. */
 function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
@@ -471,7 +523,30 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
     traits.push({ a, b });
   };
 
-  const peindre = (chemins: Element[][]) => {
+  const peindre = (chemins: Element[][], decoupe?: Decoupe) => {
+    if (!chemins.length) return;
+    // Découpe d'une autre forme qu'un rectangle aligné : rien n'est importé de ce tracé, il est compté non lu.
+    if (decoupe === "autre") {
+      nonLus++;
+      return;
+    }
+    if (decoupe) {
+      const r = decoupe;
+      for (const sp of chemins) {
+        const tout = sp.every((e) => (e.k === "l" ? dedans(e.a, r) && dedans(e.b, r) : e.p.every((q) => dedans(q, r))));
+        if (tout) continue;
+        // Tracé coupé par la découpe : seule la partie visible est posée, en traits (courbes posées en segments).
+        for (const e of sp) {
+          const pts = e.k === "l" ? [e.a, e.b] : aplatir(e.p);
+          if (e.k === "c") courbesEnSegments++;
+          for (let i = 1; i < pts.length; i++) {
+            const d = decouperSegment(pts[i - 1]!, pts[i]!, r);
+            if (d) pousser(d[0], d[1]);
+          }
+        }
+      }
+      chemins = chemins.filter((sp) => sp.every((e) => (e.k === "l" ? dedans(e.a, r) && dedans(e.b, r) : e.p.every((q) => dedans(q, r)))));
+    }
     for (const sp of chemins) {
       let courant: ArcPdf | null = null;
       const fermerArc = () => {
@@ -512,11 +587,13 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
     }
   };
 
-  const executer = (contenu: string, ressources: Valeur | undefined, ctm0: M6, prof: number) => {
+  const executer = (contenu: string, ressources: Valeur | undefined, ctm0: M6, prof: number, decoupe0?: Decoupe) => {
     const res = doc.resoudre(ressources);
     const l = new Lecteur(contenu, 0, false);
     const pile: Etat[] = [];
-    let etat: Etat = { ctm: ctm0 };
+    let etat: Etat = decoupe0 ? { ctm: ctm0, decoupe: decoupe0 } : { ctm: ctm0 };
+    // W / W* : le chemin courant devient découpe après l'opérateur de peinture qui le termine.
+    let decoupeEnAttente = false;
     let ops: Valeur[] = [];
     let chemins: Element[][] = [];
     let sp: Element[] = [];
@@ -535,6 +612,10 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
     };
     const vider = () => {
       finSp();
+      if (decoupeEnAttente) {
+        etat = { ...etat, decoupe: intersecter(etat.decoupe, decoupeDuChemin(chemins)) };
+        decoupeEnAttente = false;
+      }
       chemins = [];
       debut = cour = null;
     };
@@ -602,20 +683,20 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
         }
         case "S":
           finSp();
-          peindre(chemins);
+          peindre(chemins, etat.decoupe);
           vider();
           break;
         case "s":
         case "b":
         case "b*":
           fermer();
-          peindre(chemins);
+          peindre(chemins, etat.decoupe);
           vider();
           break;
         case "B":
         case "B*":
           finSp();
-          peindre(chemins);
+          peindre(chemins, etat.decoupe);
           vider();
           break;
         case "f":
@@ -627,6 +708,11 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
           break;
         case "n":
           vider();
+          break;
+        case "W":
+        case "W*":
+          finSp();
+          decoupeEnAttente = true;
           break;
         case "BT":
           enTexte = true;
@@ -666,7 +752,7 @@ function lirePage(doc: Document, page: Dict, numero: number): PagePdf | null {
             }
             const mf = lireM6(doc.resoudre(x.dict.Matrix) as Valeur) ?? ID6;
             const avant = etat;
-            executer(latin1(o), x.dict.Resources ?? ressources, mult(mf, etat.ctm), prof + 1);
+            executer(latin1(o), x.dict.Resources ?? ressources, mult(mf, etat.ctm), prof + 1, etat.decoupe);
             etat = avant;
           } else if (estNom(st) && st.nom === "Image") {
             const img = lireImage(doc, x, etat.ctm);

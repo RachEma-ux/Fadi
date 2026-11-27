@@ -39,14 +39,21 @@ const FIXES = (() => {
   return { lit: arbre(l, 0, 288), dist: arbre(l, 288, 30) };
 })();
 
+/** Levée dès qu'une écriture dépasserait la borne : jamais rattrapée comme un flux tronqué. */
+class Depassement extends Error {}
+
 class Sortie {
   o = new Uint8Array(1 << 16);
   n = 0;
+  constructor(readonly max: number) {}
   octet(b: number): void {
-    if (this.n === this.o.length) this.agrandir(1);
+    if (this.n === this.o.length || this.n >= this.max) this.agrandir(1);
     this.o[this.n++] = b;
   }
+  /** Réserve `k` octets de plus ; la borne est contrôlée avant toute croissance. */
   agrandir(k: number): void {
+    if (this.n + k > this.max) throw new Depassement();
+    if (this.n + k <= this.o.length) return;
     let t = this.o.length * 2;
     while (t < this.n + k) t *= 2;
     const o = new Uint8Array(t);
@@ -87,7 +94,7 @@ export function inflerSync(entree: Uint8Array, max = 512 * 1024 * 1024): Uint8Ar
     }
     throw new RangeError("code");
   };
-  const s = new Sortie();
+  const s = new Sortie(max);
   try {
     for (;;) {
       const fin = lire(1);
@@ -101,7 +108,7 @@ export function inflerSync(entree: Uint8Array, max = 512 * 1024 * 1024): Uint8Ar
         if ((len ^ 0xffff) !== nlen) return null;
         i += 4;
         if (i + len > entree.length) return null;
-        if (s.n + len > s.o.length) s.agrandir(len);
+        s.agrandir(len);
         s.o.set(entree.subarray(i, i + len), s.n);
         s.n += len;
         i += len;
@@ -149,7 +156,7 @@ export function inflerSync(entree: Uint8Array, max = 512 * 1024 * 1024): Uint8Ar
           if (d >= 30) return null;
           const distance = BASE_DISTANCE[d]! + lire(EXTRA_DISTANCE[d]!);
           if (distance > s.n) return null;
-          if (s.n + longueur > s.o.length) s.agrandir(longueur);
+          s.agrandir(longueur);
           const depart = s.n - distance;
           for (let j = 0; j < longueur; j++) s.o[s.n + j] = s.o[depart + j]!;
           s.n += longueur;
@@ -158,7 +165,8 @@ export function inflerSync(entree: Uint8Array, max = 512 * 1024 * 1024): Uint8Ar
       if (s.n > max) return null;
       if (fin) break;
     }
-  } catch {
+  } catch (e) {
+    if (e instanceof Depassement) return null;
     // Flux tronqué : ce qui a été décodé est rendu s'il y a quelque chose (fréquent dans les PDF), sinon rien.
     return s.n > 0 ? s.o.slice(0, s.n) : null;
   }

@@ -20,4 +20,12 @@ describe("Décompression deflate (FlateDecode)", () => {
     }
     expect(inflerSync(Uint8Array.from([0x78, 0x9c, 0xff, 0xff]))).toBeNull();
   });
+
+  it("borne de taille : contrôlée avant toute croissance, y compris sur un flux tronqué", () => {
+    const grand = new Uint8Array(deflateSync(Buffer.alloc(1_000_000, 65)));
+    expect(inflerSync(grand, 100)).toBeNull();
+    expect(inflerSync(grand.subarray(0, grand.length - 5), 100)).toBeNull();
+    expect(inflerSync(grand, 1_000_000)!.length).toBe(1_000_000);
+    expect(inflerSync(new Uint8Array(deflateSync(Buffer.from("abc"))), 3)!.length).toBe(3);
+  });
 });

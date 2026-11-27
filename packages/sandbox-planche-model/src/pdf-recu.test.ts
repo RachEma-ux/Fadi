@@ -63,6 +63,21 @@ describe("Lecture d'un PDF reçu", () => {
     }
   });
 
+  it("découpe (W n) : tracé hors du rectangle écarté, tracé à cheval coupé, restaurée par Q ; autre forme non lue", () => {
+    const k = MM_PAR_POINT;
+    const [dehors] = lire(pdf([{ contenu: "0 0 10 10 re W n 20 20 m 30 20 l S" }]));
+    expect(dehors!.traits).toEqual([]);
+    expect(dehors!.nonLus).toBe(0);
+    const [cheval] = lire(pdf([{ contenu: "q 0 0 10 10 re W n 5 5 m 30 5 l S Q 20 20 m 30 20 l S" }]));
+    expect(cheval!.traits).toHaveLength(2);
+    expect(cheval!.traits[0]!.a.x).toBeCloseTo(5 * k, 6);
+    expect(cheval!.traits[0]!.b.x).toBeCloseTo(10 * k, 6);
+    expect(cheval!.traits[1]!.a.x).toBeCloseTo(20 * k, 6);
+    const [triangle] = lire(pdf([{ contenu: "0 0 m 10 0 l 0 10 l h W n 1 1 m 2 1 l S" }]));
+    expect(triangle!.traits).toEqual([]);
+    expect(triangle!.nonLus).toBe(1);
+  });
+
   it("matrices (cm, q/Q), formulaires (XObject Form avec /Matrix) et rotation de la page", () => {
     const form = "<< /Type /XObject /Subtype /Form /BBox [0 0 100 100] /Matrix [1 0 0 1 10 0] /Length 13 >>\nstream\n0 0 m 10 0 l S\nendstream";
     const ress = `<< /XObject << /F1 ${3 + 2} 0 R >> >>`;
