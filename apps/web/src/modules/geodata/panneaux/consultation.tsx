@@ -263,6 +263,8 @@ export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
   /** État d'affichage de chaque couche visible dans la vue (P3-4). */
   etats?: ReadonlyMap<string, "chargement" | "vide" | "ok">;
+  /** Couches dont les tuiles sont refusées par le serveur (P2) : état « refusée », la carte reste utilisable. */
+  refusees?: ReadonlyMap<string, number>;
   /** Objets distincts dessinés dans la vue, par couche (P3-4). */
   nombres?: ReadonlyMap<string, number>;
   onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onRegrouper?(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
@@ -286,6 +288,7 @@ export function PanneauCouches(p: {
               <label className="gd-case"><input type="checkbox" checked={k.visible} onChange={() => p.onVisibilite(k.coucheId)} /><span translate="no">{c?.titre ?? k.coucheId}</span></label>{c && <BadgeProvisoire version={c.version} />}
             </div>
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
+            {k.visible && p.refusees?.has(k.coucheId) && <p className="gd-alerte" role="status" data-gd-etat-couche="refusee">Tuiles refusées par le serveur : couche inaccessible.</p>}
             {k.visible && p.etats?.get(k.coucheId) === "chargement" && <p className="gd-discret" role="status" data-gd-etat-couche="chargement">Chargement…</p>}
             {k.visible && p.etats?.get(k.coucheId) === "ok" && p.nombres?.has(k.coucheId) && <p className="gd-discret" data-gd-etat-couche="ok"><span>{formatNombre(p.nombres.get(k.coucheId)!, 0)}</span> <span>objet(s) dessiné(s) dans la vue</span></p>}
             {k.visible && p.etats?.get(k.coucheId) === "vide" && <p className="gd-discret" role="status" data-gd-etat-couche="vide">Aucun objet dans la vue : déplacez ou dézoomez la carte.</p>}

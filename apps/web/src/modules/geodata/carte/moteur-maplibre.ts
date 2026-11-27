@@ -80,9 +80,12 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     if (sid === SOURCE_ACCUEIL) return;
     // Glyphe d'une plage non livrée : le libellé perd ce caractère, la couche reste accessible (pas une erreur de couche).
     if (/\/geodata\/glyphes\//.test(m?.message ?? "")) return;
-    if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
+    // Tuiles d'une couche refusées (P2) : avis sur cette couche seulement, jamais une panne de toute la carte.
+    if (m?.status === 404 || m?.status === 403) ev.surRefusTuiles?.(sid, m.status);
   });
   conteneur.addEventListener("webglcontextlost", () => ev.surErreur("Le rendu graphique (WebGL) a été perdu : la recherche, la table et les fiches restent disponibles."), true);
+  // Contexte rendu par le navigateur (P2) : MapLibre le recrée ; la page repose son état par la génération du moteur.
+  carte.on("webglcontextrestored", () => ev.surRestauration?.());
   // État d'affichage par couche (P3-4) : relevé quand la carte est au repos (toutes les tuiles visibles chargées) et quand
   // une source charge ; signalé seulement s'il change. Une couche masquée n'a pas d'état.
   let etatsSignales = "";

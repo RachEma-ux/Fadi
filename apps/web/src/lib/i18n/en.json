@@ -14874,5 +14874,6 @@
 "Contour affiché :": "Outline shown:",
 "Ouvrir le catalogue": "Open the catalogue",
 "Chercher un lieu": "Search for a place",
-"Chercher un lieu (Alt+R)": "Search for a place (Alt+R)"
+"Chercher un lieu (Alt+R)": "Search for a place (Alt+R)",
+"Tuiles refusées par le serveur : couche inaccessible.": "Tiles refused by the server: layer not accessible."
 }
