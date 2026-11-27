@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -252,6 +252,9 @@ export class VuePlanche {
   private readonly groupeSelection = new THREE.Group();
   private readonly groupeApercu = new THREE.Group();
   private readonly groupeAnnotations = new THREE.Group();
+  /** Poché de la matière coupée (cas 4, étape 5), posé sur le plan de coupe actif. */
+  private readonly groupeCoupe = new THREE.Group();
+  private readonly texturesHachure = new Map<string, THREE.Texture>();
   private groupeAxes: THREE.Group;
   private readonly etiquettesDom: HTMLDivElement;
   private readonly triadeSvg: SVGSVGElement;
@@ -354,7 +357,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -629,12 +632,90 @@ export class VuePlanche {
   private majCoupe(modele: Modele): void {
     const actifs = Object.values(modele.annotations?.plansDeCoupe ?? {}).filter((p) => p.actif);
     const p = actifs[actifs.length - 1];
+    vider(this.groupeCoupe);
     if (!p) {
       this.moteur.clippingPlanes = [];
       return;
     }
     const n = v3(p.normale).multiplyScalar(p.inverse ? 1 : -1);
     this.moteur.clippingPlanes = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+    this.majPoche(modele, p);
+  }
+
+  /**
+   * Poché en direct (cas 4, étape 5) : la matière coupée par le plan actif est fermée par un aplat gris, ou hachurée selon
+   * le motif de sa matière (première famille du motif, à l'échelle 1:50 dans la vue 3D). Posé à 1 mm du côté conservé.
+   */
+  private majPoche(modele: Modele, p: NonNullable<Modele["annotations"]>["plansDeCoupe"][string]): void {
+    const o = v3(p.origine);
+    const u = v3(p.u);
+    const w = v3(p.w);
+    const decale = v3(p.normale).multiplyScalar(p.inverse ? 0.001 : -0.001);
+    const vers2 = (q: Vec3) => new THREE.Vector2(v3(q).sub(o).dot(u), v3(q).sub(o).dot(w));
+    const dans = (pt: THREE.Vector2, b: THREE.Vector2[]) => {
+      let r = false;
+      for (let i = 0, j = b.length - 1; i < b.length; j = i++) {
+        const a = b[i]!;
+        const c = b[j]!;
+        if (a.y > pt.y !== c.y > pt.y && pt.x < ((c.x - a.x) * (pt.y - a.y)) / (c.y - a.y) + a.x) r = !r;
+      }
+      return r;
+    };
+    for (const s of sectionsDeCoupe(modele, p)) {
+      const boucles = s.boucles.map((b) => b.map(vers2));
+      // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
+      const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);
+      const aire = (b: THREE.Vector2[]) => Math.abs(THREE.ShapeUtils.area(b));
+      const motifId = s.materiau ? modele.annotations?.materiaux[s.materiau]?.motif : undefined;
+      const famille = motifId ? modele.annotations?.motifs?.[motifId]?.familles[0] : undefined;
+      boucles.forEach((exterieur, i) => {
+        if (profondeur[i]! % 2 === 1) return;
+        const trous = boucles.filter((b, j) => profondeur[j] === profondeur[i]! + 1 && dans(b[0]!, exterieur) && aire(b) < aire(exterieur));
+        const tous = [exterieur, ...trous];
+        const triangles = THREE.ShapeUtils.triangulateShape(exterieur, trous);
+        const plats = tous.flat();
+        const positions: number[] = [];
+        const uvs: number[] = [];
+        // Hachure : pas papier (mm) × 50 / 1000 = pas en mètres à 1:50 ; les lignes suivent l'angle du motif.
+        const pas = famille ? Math.max(Math.abs(famille.dy) * 0.05, 0.005) : 1;
+        const a = famille ? (famille.angle * Math.PI) / 180 : 0;
+        for (const t of triangles)
+          for (const k of t) {
+            const q = plats[k]!;
+            const m3 = o.clone().addScaledVector(u, q.x).addScaledVector(w, q.y).add(decale);
+            positions.push(m3.x, m3.y, m3.z);
+            uvs.push((Math.cos(a) * q.x + Math.sin(a) * q.y) / pas, (-Math.sin(a) * q.x + Math.cos(a) * q.y) / pas);
+          }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+        g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+        const materiau = new THREE.MeshBasicMaterial({ color: famille ? 0xffffff : 0xd9d9d9, map: famille ? this.textureHachure() : null, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+        const mesh = new THREE.Mesh(g, materiau);
+        mesh.renderOrder = 1;
+        this.groupeCoupe.add(mesh);
+      });
+    }
+  }
+
+  /** Texture d'une hachure : une ligne noire par période, répétée. */
+  private textureHachure(): THREE.Texture {
+    const deja = this.texturesHachure.get("ligne");
+    if (deja) return deja;
+    const c = document.createElement("canvas");
+    c.width = 4;
+    c.height = 16;
+    const x = c.getContext("2d");
+    if (x) {
+      x.fillStyle = "rgb(255,255,255)";
+      x.fillRect(0, 0, 4, 16);
+      x.fillStyle = "rgb(0,0,0)";
+      x.fillRect(0, 0, 4, 2);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.magFilter = THREE.NearestFilter;
+    this.texturesHachure.set("ligne", tex);
+    return tex;
   }
 
   /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */
