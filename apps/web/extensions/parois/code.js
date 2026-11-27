@@ -106,6 +106,7 @@ var T = {
     videMetre: "Aucune cloison posée.",
     typesCharges: function (n) { return "Bibliothèque chargée : " + n + (n > 1 ? " types." : " type."); },
     typesRefuses: "Bibliothèque refusée : ",
+    archiveRefusee: "Chargement refusé : le fichier n'a pas pu être archivé en base (",
     modeleEnregistre: "Modèle de bibliothèque enregistré : remplissez-le, puis chargez-le.",
     fichierModele: "modele-types-parois.json",
     erreursTypes: {
@@ -219,6 +220,7 @@ var T = {
     videMetre: "No partition laid.",
     typesCharges: function (n) { return "Library loaded: " + n + (n > 1 ? " types." : " type."); },
     typesRefuses: "Library refused: ",
+    archiveRefusee: "Loading refused: the file could not be archived in the database (",
     modeleEnregistre: "Library template saved: fill it in, then load it.",
     fichierModele: "wall-types-template.json",
     erreursTypes: {
@@ -409,11 +411,16 @@ async function typesGardes() {
 }
 async function chargerTypes() {
   var x = tx();
-  var f = await planche.fichiers.ouvrir([".json"]);
+  // Protocole 1.2 : le fichier chargé est archivé tel quel en base ; sans archive, il n'est pas chargé.
+  var f = await planche.fichiers.ouvrir([".json"], { archiver: true });
   if (!f) return;
+  if (!f.archive) return alerte(x.archiveRefusee + (f.archiveRefus || "") + ")");
   var r = lireTypes(f.texte);
   if (r.erreur) return alerte(x.typesRefuses + r.erreur);
-  await enUnPas(x.opTypes, function () { return planche.donnees.ecrire("projet", "types-parois", r.types); });
+  await enUnPas(x.opTypes, async function () {
+    await planche.donnees.ecrire("projet", "types-parois", r.types);
+    await planche.donnees.ecrire("projet", "types-parois-archive", { id: f.archive.id, empreinte: f.archive.empreinte, nom: String(f.nom || "").slice(0, 80) });
+  });
   if (!r.types.some(function (t) { return t.id === valeurs.type; })) valeurs.type = r.types[0].id;
   return info(x.typesCharges(r.types.length));
 }
