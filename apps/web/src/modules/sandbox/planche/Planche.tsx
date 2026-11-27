@@ -3261,7 +3261,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
    * dessin que par les services de la Planche — une opération est appliquée d'un bloc, en un seul pas d'historique.
    * Une commande à la fois par extension ; un avis dit ce qui s'est passé quand elle échoue ou ne répond plus.
    */
-  const paquetsInstalles = useExtensionsInstallees();
+  const extensionsCompte = useExtensionsInstallees();
+  const paquetsInstalles = extensionsCompte.paquets;
   const [avisExtensions, setAvisExtensions] = useState<readonly AvisAffiche[]>([]);
   // File des fenêtres de saisie : deux extensions peuvent en demander une en même temps ; la première demandée est
   // affichée, les suivantes attendent leur tour (leur commande reste suspendue, jamais oubliée).
@@ -4204,6 +4205,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       catalogue={outilsOfferts}
       commandes={commandesListe}
       famillesExtensions={famillesInstallees}
+      extensionsAjoutees={extensionsCompte.ajoutees}
+      onAfficherExtensionAjoutee={extensionsCompte.afficher}
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}

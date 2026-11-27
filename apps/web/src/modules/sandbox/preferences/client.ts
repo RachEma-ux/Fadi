@@ -4,13 +4,18 @@
  * /sandbox/preferences/extensions`, la liste des extensions installées sur la plateforme. Le test d'indépendance
  * n'autorise que ce fichier à appeler le serveur, et seulement ces adresses ; le client API général de Fadi n'est
  * jamais importé. Protocole des extensions 1.2 : `POST /sandbox/preferences/fichiers` range tel quel en base un fichier
- * de données ouvert par une extension (table de règles, bibliothèque de types).
+ * de données ouvert par une extension (table de règles, bibliothèque de types). Liste « Outils » (27 novembre 2026) :
+ * `GET /sandbox/preferences/extensions/catalogue` (extensions ajoutées que la plateforme propose au compte, installées
+ * ou non) et `PUT /sandbox/preferences/extensions/:id` (« Afficher » / « Masquer » une extension pour le compte).
  */
-import { lireArchiveFichier, lireCatalogue, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type FichierLu, type IssueArchive, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { lireArchiveFichier, lireCatalogue, lireFichesPaquetsCompte, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type FichePaquetCompte, type FichierLu, type IssueArchive, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 
 export const ADRESSE_PREFERENCES = "/sandbox/preferences";
 export const ADRESSE_EXTENSIONS = "/sandbox/preferences/extensions";
 export const ADRESSE_FICHIERS = "/sandbox/preferences/fichiers";
+export const ADRESSE_CATALOGUE_EXTENSIONS = "/sandbox/preferences/extensions/catalogue";
+/** Choix du compte pour une extension ajoutée (`PUT { installee }`). */
+export const adresseExtension = (id: string): string => `${ADRESSE_EXTENSIONS}/${encodeURIComponent(id)}`;
 
 export interface PreferencesRecues {
   readonly preferences: PreferencesSandbox;
@@ -60,6 +65,30 @@ export async function lireExtensionsServeur(): Promise<readonly PaquetExtension[
   }
   if (!r.ok) throw new ErreurPreferences(r.status);
   return lirePaquetsInstalles(((await r.json()) as { extensions?: unknown }).extensions);
+}
+
+/** Fiches (sans code) des extensions ajoutées que la plateforme propose au compte, chacune avec son choix (`installee`). */
+export async function lireFichesExtensionsCompte(): Promise<readonly FichePaquetCompte[]> {
+  let r: Response;
+  try {
+    r = await fetch(ADRESSE_CATALOGUE_EXTENSIONS, { credentials: "include", headers: { Accept: "application/json" } });
+  } catch {
+    throw new ErreurPreferences(0);
+  }
+  if (!r.ok) throw new ErreurPreferences(r.status);
+  return lireFichesPaquetsCompte(((await r.json()) as { paquets?: unknown }).paquets);
+}
+
+/** Affiche (`true`) ou masque (`false`) une extension ajoutée pour le compte ; rend les fiches relues du serveur. */
+export async function choisirExtensionCompte(id: string, affichee: boolean): Promise<readonly FichePaquetCompte[]> {
+  let r: Response;
+  try {
+    r = await fetch(adresseExtension(id), { method: "PUT", credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ installee: affichee }) });
+  } catch {
+    throw new ErreurPreferences(0);
+  }
+  if (!r.ok) throw new ErreurPreferences(r.status);
+  return lireFichesPaquetsCompte(((await r.json()) as { paquets?: unknown }).paquets);
 }
 
 /**

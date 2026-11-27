@@ -15,6 +15,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { inscrireDansLaPage } from "./lib-inscription.mjs";
+import { teteExtension } from "./lib-extensions-liste.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/extensions-outil";
@@ -55,8 +56,7 @@ async function ouvrir(langue) {
   await page.waitForFunction(() => !!window.fadiPlanche);
   await recues;
   await page.locator("[data-planche-recherche]").first().click();
-  const tete = page.locator(`[data-outils-extension-installee="${ID}"] [data-outils-famille]`);
-  await tete.waitFor();
+  const tete = await teteExtension(page, ID);
   await tete.click();
   return page;
 }
@@ -71,8 +71,7 @@ const lancer = async (page, id) => {
   const ligne = page.locator(`[data-outils-commande="extension:${ID}:${id}"]`);
   if ((await ligne.count()) === 0) {
     if ((await page.locator("[data-planche-outils-liste]").count()) === 0) await page.locator("[data-planche-recherche]").first().click();
-    const tete = page.locator(`[data-outils-extension-installee="${ID}"] [data-outils-famille]`);
-    await tete.waitFor();
+    const tete = await teteExtension(page, ID);
     if ((await tete.getAttribute("aria-expanded")) !== "true") await tete.click();
   }
   await ligne.click();
