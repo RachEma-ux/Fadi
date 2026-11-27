@@ -16,7 +16,9 @@ import {
   type UniteSaisie,
   type Vec3,
   REGLAGES_DEFAUT,
+  analyserSaisie,
   changerUnite,
+  uniteDeSaisie,
   decomposerMesure,
   formaterLongueurUnite,
   repartition,
@@ -36,6 +38,11 @@ export const lireNombre = (s: string): number | null => {
 export const lirePoint = (s: string): Vec3 | null => {
   const p = s.split(";").map((x) => lireNombre(x));
   return p.length === 3 && p.every((x) => x !== null) ? { x: p[0]!, y: p[1]!, z: p[2]! } : null;
+};
+/** Longueur saisie dans l'unité du projet (« 240 cm », « 7' 10 1/2" », nombre nu dans l'unité choisie), en mètres. */
+export const lireLongueurUnite = (s: string, unite: UniteSaisie | undefined, sep: "." | ","): number | null => {
+  const r = analyserSaisie(s, { attendu: "longueur", separateurDecimal: sep, uniteModele: uniteDeSaisie(unite) });
+  return r.genre === "longueur" ? r.valeur : null;
 };
 const nb = (v: number, sep: "." | ",", d = 3) => v.toFixed(d).replace(".", sep);
 const textePoint = (p: Vec3, sep: "." | ",") => `${nb(p.x, sep)} ; ${nb(p.y, sep)} ; ${nb(p.z, sep)}`;
@@ -311,7 +318,7 @@ export function SectionAreteSommets({ debut, fin, lecture, separateur, unite, on
     <>
       <dt>{t("planche.info.longueur")}</dt>
       <dd>
-        <ChampValide valeur={formaterLongueurUnite(L, unite, separateur, 3)} lecture={lecture} nom={t("planche.info.longueur")} donnee="arete-longueur" onValider={(s) => { const v = lireNombre(s); if (v !== null && (unite ?? "m") === "m") onLongueur(v); else if (v !== null) onLongueur(unite === "cm" ? v / 100 : unite === "mm" ? v / 1000 : v); }} />
+        <ChampValide valeur={formaterLongueurUnite(L, unite, separateur, 3)} lecture={lecture} nom={t("planche.info.longueur")} donnee="arete-longueur" onValider={(s) => { const v = lireLongueurUnite(s, unite, separateur); if (v !== null) onLongueur(v); }} />
       </dd>
       <dt>{t("planche.arete.direction")}</dt>
       <dd data-planche-arete-direction>{axe ? t("planche.arete.axe", { axe: axe.toUpperCase() }) : t("planche.arete.oblique")}</dd>

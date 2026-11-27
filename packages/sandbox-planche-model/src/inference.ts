@@ -218,6 +218,8 @@ export interface CentreVisible {
   /** (Cas 2, lot 2) Rayon et normale monde du cercle ou de l'arc (quadrants). */
   readonly rayon?: number;
   readonly normale?: Vec3;
+  /** (Cas 2, lot 2) Segments monde de la courbe : un quadrant hors du balayage d'un arc n'est pas proposé. */
+  readonly troncons?: readonly (readonly [Vec3, Vec3])[];
 }
 
 export interface GeometrieVisible {
@@ -513,7 +515,20 @@ function quadrants(k: CentreVisible, axes: AxesModele): Vec3[] {
   if (len(u) < 1e-6) u = sub(axes.y, scale(n, dot(axes.y, n)));
   u = normalize(u);
   const w = normalize(cross(n, u));
-  return [add(k.position, scale(u, k.rayon)), add(k.position, scale(w, k.rayon)), sub(k.position, scale(u, k.rayon)), sub(k.position, scale(w, k.rayon))];
+  const tous = [add(k.position, scale(u, k.rayon)), add(k.position, scale(w, k.rayon)), sub(k.position, scale(u, k.rayon)), sub(k.position, scale(w, k.rayon))];
+  if (!k.troncons || k.troncons.length === 0) return tous;
+  // Un quadrant n'est gardé que s'il tombe dans le balayage d'un des segments de la courbe (arc ouvert).
+  const dans = (q: Vec3): boolean => {
+    const dq = sub(q, k.position);
+    return k.troncons!.some(([a, b]) => {
+      const da = sub(a, k.position);
+      const db = sub(b, k.position);
+      const sens = dot(cross(da, db), n);
+      if (Math.abs(sens) < EPS) return dist(normalize(da), normalize(dq)) < 1e-6 || dist(normalize(db), normalize(dq)) < 1e-6;
+      return dot(cross(da, dq), n) * sens >= -1e-9 && dot(cross(dq, db), n) * sens >= -1e-9 && dot(dq, add(da, db)) > 0;
+    });
+  };
+  return tous.filter(dans);
 }
 
 function droiteDuGuide(g: GuideAccrochable): { o: Vec3; d: Vec3; borne: number | null } {
@@ -1061,7 +1076,13 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
       const nm = normalize(transformerNormale(M, k.normale));
       const base = baseDuPlan(k.normale).u;
       const rayon = dist(appliquer(M, add(k.centre, scale(base, k.rayon))), appliquer(M, k.centre));
-      centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque, rayon, normale: nm });
+      const troncons = k.aretes.flatMap((a) => {
+        const ar = c.aretes[a];
+        const pa = ar ? c.sommets[ar.a]?.position : undefined;
+        const pb = ar ? c.sommets[ar.b]?.position : undefined;
+        return pa && pb ? [[appliquer(M, pa), appliquer(M, pb)] as const] : [];
+      });
+      centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque, rayon, normale: nm, troncons });
     }
     for (const oc of Object.values(c.occurrences)) {
       // Objet masqué (lot 5) ou balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.

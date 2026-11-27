@@ -73,6 +73,17 @@ describe("quadrants (n° 106)", () => {
     expect(tourne.type).toBe("quadrant");
     expect(tourne.point.x).toBeCloseTo(Math.SQRT2);
   });
+  it("arc ouvert 0–90° : seuls les quadrants de son balayage sont proposés", () => {
+    const troncons = Array.from({ length: 8 }, (_, i) => {
+      const t0 = (i * Math.PI) / 16;
+      const t1 = ((i + 1) * Math.PI) / 16;
+      return [v3(Math.cos(t0), Math.sin(t0), 0), v3(Math.cos(t1), Math.sin(t1), 0)] as const;
+    });
+    const g: GeometrieVisible = { aretes: [], faces: [], centres: [{ id: "k", position: v3(0, 0, 0), rayon: 1, normale: v3(0, 0, 1), troncons }] };
+    expect(inferer(base(g, { point: v3(-1.01, 0.01, 0) })).type).not.toBe("quadrant");
+    expect(inferer(base(g, { point: v3(0.01, 1.01, 0) })).type).toBe("quadrant");
+    expect(inferer(base(g, { point: v3(1.01, 0.01, 0) })).type).toBe("quadrant");
+  });
   it("la géométrie visible porte le rayon et la normale des courbes", () => {
     const m = modeleVide();
     expect(geometrieVisible(m).centres).toEqual([]);

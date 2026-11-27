@@ -305,8 +305,8 @@ function lireLongueur(brut: string, loc: Locale): LongueurLue | Erreur | null {
   const gen = /^([\d.\s/]+?)\s*(mm|cm|km|m|in|ft|"|')?$/i.exec(corps);
   if (!gen) return lireExpression(s, loc);
   const n = lireMixte(gen[1] ?? "");
-  if (estErreur(n)) return n;
-  if (n === null) return null;
+  // « 2.4 / 2 » ressemble à une fraction sans en être une : l'expression est essayée avant de refuser.
+  if (estErreur(n) || n === null) return lireExpression(s, loc) ?? n;
   const unite = gen[2] ? uniteDepuisSuffixe(gen[2]) : null;
   const facteur = METRES_PAR_UNITE[unite ?? loc.uniteModele];
   return { metres: k * n * facteur, avecUnite: unite !== null };

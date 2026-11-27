@@ -34,6 +34,9 @@ describe("expressions avec unités dans Mesures (n° 51)", () => {
     expect(L("(1,20 + 35 cm) / 2")).toEqual({ genre: "longueur", valeur: expect.closeTo(0.775, 9) });
     expect(L("3 × 60 cm")).toEqual({ genre: "longueur", valeur: expect.closeTo(1.8, 9) });
     expect(L("2,40 − 20 cm")).toEqual({ genre: "longueur", valeur: expect.closeTo(2.2, 9) });
+    // Retour de revue (#493) : une division qui ressemble à une fraction est calculée, la fraction reste lue.
+    expect(analyserSaisie("2.4 / 2", { attendu: "longueur", separateurDecimal: "." })).toEqual({ genre: "longueur", valeur: expect.closeTo(1.2, 9) });
+    expect(analyserSaisie("1/2", { attendu: "longueur", separateurDecimal: "." })).toEqual({ genre: "longueur", valeur: expect.closeTo(0.5, 9) });
   });
   it("les réseaux x5 et /5 gardent leur sens", () => {
     const r = analyserSaisie("x5", { attendu: "distance-reseau", separateurDecimal: "," });
