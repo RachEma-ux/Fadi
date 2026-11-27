@@ -1100,6 +1100,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-murs node apps/web/e2e/planche-murs.mjs 2>&1 | tee -a e2e.log
+      - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-accrochage node apps/web/e2e/planche-accrochage-saisie.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
