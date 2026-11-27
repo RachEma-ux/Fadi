@@ -60,3 +60,5 @@ export * from "./zip.js";
 export * from "./inflate.js";
 export * from "./references.js";
 export * from "./enveloppe.js";
+export * from "./xml-mini.js";
+export * from "./formats-3d.js";

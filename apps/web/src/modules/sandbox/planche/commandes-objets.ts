@@ -799,3 +799,24 @@ export function disponibiliteIfc(id: IdCommandeIfc, s: { readonly bloquant: bool
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   return s.lu ? { disponible: true, motif: null } : { disponible: false, motif: "planche.ifc.motif.fichier" };
 }
+
+/**
+ * Formats des fabricants et relevé au capteur (cas 4, lot C4, étape 7a) : un panneau, deux poses (objets du dessin ou
+ * référence contrôlée) ; règle d'or : icône, barre, raccourci en deux temps.
+ */
+export type IdCommandeFabricant = "import-fabricant" | "importer-fabricant" | "releve-capteur" | "poser-releve";
+export interface CommandeFabricant {
+  readonly id: IdCommandeFabricant;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_FABRICANT: readonly CommandeFabricant[] = (["import-fabricant", "importer-fabricant", "releve-capteur", "poser-releve"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.fabricant.${id}` as CleMessage, court: `planche.fabricant.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; poser un fichier lu (format accepté), hors lecture. */
+export function disponibiliteFabricant(id: IdCommandeFabricant, s: { readonly lu: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "import-fabricant" || id === "releve-capteur") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.lu ? { disponible: true, motif: null } : { disponible: false, motif: "planche.fabricant.motif.fichier" };
+}

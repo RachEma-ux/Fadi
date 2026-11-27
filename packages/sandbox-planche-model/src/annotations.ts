@@ -182,7 +182,7 @@ export interface Scene {
  */
 export interface CorrespondanceImport {
   readonly id: Id;
-  readonly format: "obj" | "stl" | "ifc";
+  readonly format: "obj" | "stl" | "ifc" | "gltf" | "glb" | "ply" | "3mf" | "dae" | "3ds";
   readonly fichier: string;
   readonly metresParUnite: number;
 }

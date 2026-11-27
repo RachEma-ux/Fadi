@@ -70,6 +70,14 @@ describe("Fichiers des références — /sandbox/references", () => {
     expect(contenuConforme("stl", Buffer.alloc(100))).toBe(false);
     expect(contenuConforme("ifczip", Buffer.from([0x50, 0x4b, 0x03, 0x04, 0]))).toBe(true);
     expect(contenuConforme("ifczip", IFC)).toBe(false);
+    expect(contenuConforme("glb", Buffer.from("glTF\x02\0\0\0\0\0\0\0", "latin1"))).toBe(true);
+    expect(contenuConforme("gltf", Buffer.from('{"asset":{"version":"2.0"}}'))).toBe(true);
+    expect(contenuConforme("ply", Buffer.from("ply\nformat ascii 1.0\n"))).toBe(true);
+    expect(contenuConforme("3mf", Buffer.from([0x50, 0x4b, 0x03, 0x04, 0]))).toBe(true);
+    expect(contenuConforme("dae", Buffer.from('<?xml version="1.0"?><COLLADA version="1.4.1">'))).toBe(true);
+    expect(contenuConforme("3ds", Buffer.from([0x4d, 0x4d, 6, 0, 0, 0]))).toBe(true);
+    expect(contenuConforme("glb", IFC)).toBe(false);
+    expect(contenuConforme("dae", IFC)).toBe(false);
     // PDF reçu (lot C4, étape 4).
     expect(contenuConforme("pdf", Buffer.from("%PDF-1.7\n%\xe2\xe3\n1 0 obj"))).toBe(true);
     expect(contenuConforme("pdf", Buffer.from("PDF ou pas"))).toBe(false);

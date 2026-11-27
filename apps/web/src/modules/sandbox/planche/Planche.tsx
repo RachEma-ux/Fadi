@@ -291,6 +291,16 @@ import {
   controlerRecolement,
   deplacerReference,
   lireMaillages,
+  maillagesReference,
+  formatDuFichier,
+  estFormatRefuse,
+  lireScene,
+  resumerScene,
+  maillagesDeScene,
+  poserScene,
+  type AxeHaut,
+  type FormatFabricant,
+  type LectureScene,
   positionsReference,
   rechargerReference,
   referencesDe,
@@ -301,7 +311,6 @@ import {
   trianglesAuProjet,
   verrouillerReference,
   ErreurImport,
-  type FormatReference,
   type ResultatRecolement,
   type ResultatReference,
   secondTemps,
@@ -392,7 +401,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -411,6 +420,7 @@ import { PanneauFonds, reduireFond } from "./panneau-fonds";
 import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
 import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
 import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./panneau-ifc";
+import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
@@ -495,7 +505,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "ifc-structure" | "import-ifc";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "ifc-structure" | "import-ifc" | "import-fabricant";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -510,7 +520,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -2420,6 +2430,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             setMessage(t("planche.sb.import.erreur", { motif: issue.message }));
             return;
           }
+          if (issue.genre === "fini-scene") return;
           const t0 = performance.now();
           const r = poserImport(histRef.current.present.modele, issue.contenus, issue.ignores, issue.echelle, { format, fichier: fichier.name });
           noterPose(performance.now() - t0);
@@ -3696,7 +3707,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         let etat: { positions: Float32Array } | "introuvable";
         try {
           const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
-          etat = { positions: positionsReference(lireMaillages(r.format, octets).maillages).positions };
+          etat = { positions: positionsReference(maillagesReference(r.format, octets, r.axe ?? "z").maillages).positions };
         } catch {
           etat = "introuvable";
         }
@@ -3720,7 +3731,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
     v.poserReferences(liste, recolement?.points ?? []);
   });
-  const formatDuNom = (nom: string): FormatReference | null => {
+  const formatDuNom = (nom: string): "obj" | "stl" | "ifc" | null => {
     const e = nom.toLowerCase().split(".").pop();
     return e === "obj" || e === "stl" || e === "ifc" ? e : null;
   };
@@ -5134,6 +5145,101 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         classes: luIfc.lecture.objets.reduce<Record<string, number>>((acc, o) => ({ ...acc, [o.classe]: (acc[o.classe] ?? 0) + 1 }), {}),
       }
     : null;
+  // Formats des fabricants et relevé au capteur (cas 4, lot C4, étape 7a) : glTF, GLB, 3MF, COLLADA, 3DS, PLY lus sans
+  // bibliothèque ; unité et axe vertical confirmés ; pose en objets (hors fil) ou en référence contrôlée.
+  const [luFabricant, setLuFabricant] = useState<{ readonly nom: string; readonly format: FormatFabricant; readonly lecture: LectureScene; readonly fichier: File; readonly octets: Uint8Array } | null>(null);
+  const [uniteFabricant, setUniteFabricant] = useState(1);
+  const [axeFabricant, setAxeFabricant] = useState<AxeHaut>("z");
+  const [erreurFabricant, setErreurFabricant] = useState<string | null>(null);
+  const [noteFabricant, setNoteFabricant] = useState<string | null>(null);
+  const [progressionFabricant, setProgressionFabricant] = useState<string | null>(null);
+  const importFabricantRef = useRef<HTMLInputElement | null>(null);
+  const disponibiliteCommandeFabricant = (id: IdCommandeFabricant) => disponibiliteFabricant(id, { lu: luFabricant !== null, lecture: readOnly });
+  const lireFichierFabricant = async (f: File) => {
+    setErreurFabricant(null);
+    setNoteFabricant(null);
+    setPanneau("import-fabricant");
+    const octets = new Uint8Array(await f.arrayBuffer());
+    const format = formatDuFichier(f.name, octets);
+    if (format === null || estFormatRefuse(format)) {
+      setLuFabricant(null);
+      return setErreurFabricant(t(`planche.fabricant.refus.${format ?? "inconnu"}` as CleMessage));
+    }
+    try {
+      const lecture = lireScene(format, octets);
+      setLuFabricant({ nom: f.name, format, lecture, fichier: f, octets });
+      setUniteFabricant(lecture.uniteFichier ?? 1);
+      setAxeFabricant(lecture.axeFichier ?? "z");
+    } catch (e) {
+      setLuFabricant(null);
+      setErreurFabricant(t("planche.fabricant.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  /** Le fichier reçu est archivé tel quel en base avant toute pose (D-GD-29). */
+  const archiverFabricant = async (): Promise<Awaited<ReturnType<typeof archiverFichierReference>> | null> => {
+    if (!luFabricant) return null;
+    try {
+      return await archiverFichierReference(luFabricant.fichier, luFabricant.format);
+    } catch (e) {
+      setErreurFabricant(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+      return null;
+    }
+  };
+  const importerFabricant = async () => {
+    const lu = luFabricant;
+    if (!lu || readOnly || annulerImportRef.current) return;
+    if (!(await archiverFabricant())) return;
+    const echelle = uniteFabricant;
+    const enCours = lancerImport({ genre: "scene", format: lu.format, donnees: lu.octets, echelle, axe: axeFabricant }, (e) => setProgressionFabricant(e.phase === "insertion" && e.total > 0 ? t("planche.fabricant.progression", { fait: e.fait.toLocaleString(LOCALE), total: e.total.toLocaleString(LOCALE) }) : null));
+    annulerImportRef.current = enCours.annuler;
+    const issue = await enCours.issue;
+    annulerImportRef.current = null;
+    setProgressionFabricant(null);
+    if (issue.genre === "annule") return setNoteFabricant(t("planche.fabricant.annule"));
+    if (issue.genre === "trop-gros") return setErreurFabricant(t("planche.fabricant.trop-gros", { triangles: issue.triangles.toLocaleString(LOCALE), borne: issue.borne.toLocaleString(LOCALE) }));
+    if (issue.genre === "erreur") return setErreurFabricant(t("planche.fabricant.erreur", { motif: issue.message }));
+    if (issue.genre !== "fini-scene") return;
+    const t0 = performance.now();
+    const r = poserScene(histRef.current.present.modele, issue.scene, echelle, { format: lu.format, fichier: lu.nom });
+    noterPose(performance.now() - t0);
+    poserHistorique(enregistrer(histRef.current, r.modele, t("planche.fabricant.import.nom", { format: lu.format.toUpperCase() }), false));
+    rafraichir();
+    setErreurFabricant(null);
+    const note = t("planche.fabricant.note.importe", { objets: String(r.occurrences.length), triangles: r.triangles.toLocaleString(LOCALE), composants: String(r.composants), matieres: String(r.matieresCreees) });
+    setNoteFabricant(note);
+    setMessage(note);
+  };
+  const poserReleve = async () => {
+    const lu = luFabricant;
+    if (!lu || readOnly) return;
+    const planche = indexRef.current.courante;
+    const { positions, triangles } = positionsReference(maillagesDeScene(lu.lecture, axeFabricant));
+    if (triangles === 0) return setErreurFabricant(t("planche.references.erreur.lecture"));
+    const fichier = await archiverFabricant();
+    if (!fichier || indexRef.current.courante !== planche) return;
+    setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
+    const r = ajouterReference(histRef.current.present.modele, { nom: lu.nom, format: lu.format, fichier, echelle: uniteFabricant, triangles, date: dateDuJour(), axe: axeFabricant });
+    const note = t("planche.fabricant.note.reference", { nom: lu.nom, triangles: triangles.toLocaleString(LOCALE) });
+    operationReference(r, t("planche.fabricant.poser-releve"), r.ok ? note : null);
+    if (r.ok) {
+      setReferenceChoisie(r.id);
+      setErreurFabricant(null);
+      setNoteFabricant(note);
+    }
+  };
+  const executerFabricant = (id: IdCommandeFabricant) => {
+    setPanneau("import-fabricant");
+    if (id === "import-fabricant" || id === "releve-capteur") return luFabricant ? undefined : importFabricantRef.current?.click();
+    if (!luFabricant) return importFabricantRef.current?.click();
+    if (!disponibiliteCommandeFabricant(id).disponible) return;
+    void (id === "importer-fabricant" ? importerFabricant() : poserReleve());
+  };
+  const resumeFabricant = useMemo((): ResumeFabricant | null => {
+    if (!luFabricant) return null;
+    const r = resumerScene(luFabricant.lecture, uniteFabricant, axeFabricant);
+    const n = (x: number) => x.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
+    return { nom: luFabricant.nom, format: luFabricant.format.toUpperCase(), objets: r.objets, triangles: r.triangles, matieres: r.matieres, repetes: r.repetes, dimensions: `${n(r.dimensions[0])} × ${n(r.dimensions[1])} × ${n(r.dimensions[2])} m`, uniteLue: luFabricant.lecture.uniteFichier !== null, axeLu: luFabricant.lecture.axeFichier !== null, omis: r.omis.map((o) => t(`planche.fabricant.omis.${o}` as CleMessage)) };
+  }, [luFabricant, uniteFabricant, axeFabricant]);
   const executerTravaux = (id: IdCommandeTravaux) => {
     setPanneau("statut-travaux");
     if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
@@ -5294,6 +5400,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
     else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
     else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
+    else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -5388,6 +5495,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_IFC.map((c) => {
           const d = disponibiliteCommandeIfc(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.ifc.motif.fichier"), executer: () => executerIfc(c.id) };
+        }),
+        ...COMMANDES_FABRICANT.map((c) => {
+          const d = disponibiliteCommandeFabricant(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fabricant.motif.fichier"), executer: () => executerFabricant(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -6165,6 +6276,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-import-ifc-entree
       />
+      {/* Formats des fabricants (Ctrl+Maj+Espace, N ou U) : monté hors du panneau. */}
+      <input
+        ref={importFabricantRef}
+        type="file"
+        accept=".glb,.gltf,.3mf,.dae,.3ds,.ply,.fbx,.3dm,.usd,.usda,.usdc,.usdz"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierFabricant(f);
+        }}
+        data-planche-import-fabricant-entree
+      />
       {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
       <input
         ref={importPdfRef}
@@ -6275,6 +6399,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onChoisirFichier={() => importIfcRef.current?.click()}
                 erreur={erreurImportIfc}
                 note={noteImportIfc}
+              />
+            )}
+            {panneau === "import-fabricant" && (
+              <PanneauFabricant
+                lu={resumeFabricant}
+                unite={uniteFabricant}
+                onUnite={setUniteFabricant}
+                axe={axeFabricant}
+                onAxe={setAxeFabricant}
+                executer={executerFabricant}
+                disponibilite={disponibiliteCommandeFabricant}
+                onChoisirFichier={() => importFabricantRef.current?.click()}
+                erreur={erreurFabricant}
+                note={noteFabricant}
+                progression={progressionFabricant}
               />
             )}
             {panneau === "statut-travaux" && (

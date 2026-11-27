@@ -1840,6 +1840,57 @@ export function poserMaillagesImportes(m: Modele, contenus: readonly ContenuImpo
   return { modele: r.modele, rapport: r.rapport, occurrences: r.extra };
 }
 
+/** (Cas 4, lot C4, étape 7) Objet importé prêt à poser : un contenu, une ou plusieurs poses, une matière éventuelle. */
+export interface ObjetImportePose {
+  readonly contenu: ContenuImporte;
+  /** « composant » quand le maillage est posé plusieurs fois (une définition, plusieurs occurrences). */
+  readonly genre: "groupe" | "composant";
+  /** Une transformation par occurrence (mètres, repère du projet). */
+  readonly poses: readonly Matrice4[];
+  /** Clé dans `matieres` (même appel) ; absente = sans matière. */
+  readonly matiere?: string;
+}
+
+/**
+ * (Cas 4, lot C4, étape 7) Pose des objets importés d'une scène (glTF, COLLADA, 3MF, 3DS, PLY) en un seul pas : les
+ * matières lues (nom, couleur) sont ajoutées aux matières du modèle (une matière de même nom et de même couleur déjà
+ * présente est reprise), puis chaque objet devient une définition et ses occurrences, matière posée sur l'objet.
+ */
+export function poserObjetsImportes(m: Modele, objets: readonly ObjetImportePose[], matieres: Readonly<Record<string, { readonly nom: string; readonly couleur: string }>>): Resultat & { readonly occurrences: readonly Id[]; readonly matieresCreees: number } {
+  const r = operer(m, undefined, (t, c) => {
+    const ids = new Map<string, Id>();
+    let creees = 0;
+    for (const [cle, mat] of Object.entries(matieres)) {
+      if (!objets.some((o) => o.matiere === cle)) continue;
+      const existante = Object.values(t.annotations.materiaux).find((x) => x.nom === mat.nom && x.couleur.toLowerCase() === mat.couleur.toLowerCase());
+      if (existante) {
+        ids.set(cle, existante.id);
+        continue;
+      }
+      const id = t.id("m");
+      t.annotations.materiaux[id] = { id, nom: mat.nom, couleur: mat.couleur };
+      t.annotationsSales = true;
+      ids.set(cle, id);
+      creees++;
+    }
+    const occs: Id[] = [];
+    for (const x of objets) {
+      if (Object.keys(x.contenu.contenu.faces).length === 0 || x.poses.length === 0) continue;
+      const g = cloner(t, versCtx(x.contenu.contenu));
+      const def = t.id("d");
+      t.definitions.set(def, { id: def, nom: x.contenu.nom, genre: x.genre, contenu: g });
+      const materiau = x.matiere !== undefined ? ids.get(x.matiere) : undefined;
+      for (const pose of x.poses) {
+        const occ = t.id("o");
+        c.occurrences.set(occ, { id: occ, definition: def, transformation: pose, ...(materiau ? { materiau } : {}) });
+        occs.push(occ);
+      }
+    }
+    return { occs, creees };
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrences: r.extra.occs, matieresCreees: r.extra.creees };
+}
+
 export interface OptionsPolygone extends OptionsContexte {
   /** 'cercle' (outil Cercle) ou 'polygone' (outil Polygone) ; dans les deux cas une seule courbe. */
   readonly genre?: "cercle" | "polygone";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -250,5 +250,15 @@ describe("IFC structuré (lot C4, étape 6) : disponibilité des commandes", () 
     expect(disponibiliteIfc("importer-ifc", s).motif).toBe("planche.ifc.motif.fichier");
     expect(disponibiliteIfc("importer-ifc", { ...s, lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteIfc("importer-ifc", { ...s, lu: true }).disponible).toBe(true);
+  });
+});
+
+describe("Formats des fabricants (lot C4, étape 7a) : disponibilité des commandes", () => {
+  it("ouvrir toujours ; poser un fichier lu, hors lecture", () => {
+    expect(disponibiliteFabricant("import-fabricant", { lu: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteFabricant("releve-capteur", { lu: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteFabricant("importer-fabricant", { lu: false, lecture: false }).motif).toBe("planche.fabricant.motif.fichier");
+    expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: false }).disponible).toBe(true);
   });
 });

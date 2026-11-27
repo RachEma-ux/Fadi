@@ -4,7 +4,7 @@
  * bougé). La borne de l'appareil vient d'un débit mesuré (étalonnage, puis chaque import réel), gardé dans ce navigateur ;
  * elle n'est jamais une valeur fixe du code.
  */
-import type { ContenuImporte, FormatImport } from "@parcours/sandbox-planche-model";
+import type { AxeHaut, ContenuImporte, FormatFabricant, FormatImport, SceneConstruite } from "@parcours/sandbox-planche-model";
 import type { DemandeImport, MessageImport } from "./import-planche.worker";
 
 /** Durée de travail visée pour l'import le plus gros accepté, en secondes. */
@@ -48,6 +48,7 @@ export const borneImport = (trianglesParSeconde: number): number => Math.max(100
 
 export type IssueImport =
   | { readonly genre: "fini"; readonly contenus: readonly ContenuImporte[]; readonly ignores: number; readonly echelle: number; readonly triangles: number }
+  | { readonly genre: "fini-scene"; readonly scene: SceneConstruite; readonly echelle: number; readonly triangles: number }
   | { readonly genre: "trop-gros"; readonly triangles: number; readonly borne: number }
   | { readonly genre: "erreur"; readonly message: string }
   | { readonly genre: "annule" };
@@ -67,7 +68,7 @@ export interface ImportEnCours {
 
 /** Lance un import ; `pose` (fil principal) est mesurée par l'appelant et rapportée par `noterPose` pour affiner le débit. */
 export function lancerImport(
-  demande: { readonly format: FormatImport; readonly donnees: string | Uint8Array; readonly echelle: number | null; readonly nom: string },
+  demande: { readonly format: FormatImport; readonly donnees: string | Uint8Array; readonly echelle: number | null; readonly nom: string } | { readonly genre: "scene"; readonly format: FormatFabricant; readonly donnees: Uint8Array; readonly echelle: number; readonly axe: AxeHaut },
   suivre: (e: EtatImport) => void,
   o: { readonly creer?: () => TravailleurImport } = {},
 ): ImportEnCours {
@@ -92,7 +93,7 @@ export function lancerImport(
   let total = 0;
   const importer = (): void => {
     suivre({ phase: "lecture", fait: 0, total: 0, borne, debit });
-    w.postMessage({ genre: "importer", ...demande, borne: borne as number });
+    w.postMessage("genre" in demande ? { ...demande, borne: borne as number } : { genre: "importer", ...demande, borne: borne as number });
   };
   w.onerror = () => clore({ genre: "erreur", message: "travailleur en panne" });
   w.onmessage = (e) => {
@@ -112,6 +113,9 @@ export function lancerImport(
       // Débit réel de la construction (la pose en ajoute autant environ : compté par `noterPose`).
       if (total >= 1000 && m.ms > 0) dernierImport = { triangles: total, ms: m.ms };
       clore({ genre: "fini", contenus: m.contenus, ignores: m.ignores, echelle: m.echelle, triangles: total });
+    } else if (m.genre === "fini-scene") {
+      if (total >= 1000 && m.ms > 0) dernierImport = { triangles: total, ms: m.ms };
+      clore({ genre: "fini-scene", scene: m.scene, echelle: m.echelle, triangles: total });
     }
   };
   if (borne === null) {
