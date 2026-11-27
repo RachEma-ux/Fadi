@@ -70,6 +70,8 @@
  *                                               chacun), ecartes (non solides, avec le motif), facesLibres }
  *   planche.geometrie.projection(objets)        projection au sol des solides, même résultat
  *   planche.geometrie.union(polygones)          union de polygones { exterieur, trous } en [x, y] : { polygones, aire }
+ *   planche.niveaux.lire()                      { niveaux : [{ id, nom, altitude, hauteur }] du plus haut au plus bas, referenceNGF :
+ *                                               altitude NGF du ±0,00, ou null si elle n'est pas renseignée }
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -168,6 +170,9 @@ export function creerExecutantExtension(
     }),
     objets: Object.freeze({
       verrouiller: (ids: unknown, verrou: unknown = true) => demander("objets.verrouiller", { ids: typeof ids === "string" ? [ids] : ids, verrou }),
+    }),
+    niveaux: Object.freeze({
+      lire: () => demander("niveaux.lire"),
     }),
     geometrie: Object.freeze({
       coupe: (hauteur: unknown, objets?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined ? {} : { objets: typeof objets === "string" ? [objets] : objets }) }),

@@ -358,7 +358,8 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * événements de souris d'un outil portent aussi le point visé (`vise`).
  * Protocole 1.4 (cas 3, lot 3, surfaces réglementaires) : `geometrie.coupe` (coupe horizontale des solides à une
  * hauteur), `geometrie.projection` (projection au sol) et `geometrie.union` (union de polygones), par le moteur
- * booléen de la Planche ; le résultat est toujours une union, sans recouvrement compté deux fois.
+ * booléen de la Planche ; le résultat est toujours une union, sans recouvrement compté deux fois ; `niveaux.lire`
+ * (niveaux d'étage et altitude NGF du ±0,00).
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -389,6 +390,7 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "geometrie.coupe": "modele.lire",
   "geometrie.projection": "modele.lire",
   "geometrie.union": null,
+  "niveaux.lire": "modele.lire",
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",

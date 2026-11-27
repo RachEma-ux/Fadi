@@ -3338,6 +3338,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     separateur: () => (LANGUE_INTERFACE === "en" ? "." : ","),
     decimales: () => precisionRef.current,
     booleens: () => booleensRef.current,
+    referenceNGF: () => plancheDe(indexRef.current).altitudeRef,
     appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
       const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
@@ -3392,7 +3393,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const nom = texteFiche(p.fiche.nom);
     const acces = (): AccesPlanche => accesExtensionRef.current(id);
     const hote = creerHoteExtension(p, {
-      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? ",", decimales: () => acces().decimales?.() ?? 2, booleens: () => acces().booleens?.() ?? null },
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? ",", decimales: () => acces().decimales?.() ?? 2, booleens: () => acces().booleens?.() ?? null, referenceNGF: () => acces().referenceNGF?.() ?? null },
       // (Protocole 1.4) Le moteur des opérations planes est chargé à la première demande `geometrie.*`, jamais à l'ouverture.
       chargerGeometrie: () =>
         booleensRef.current

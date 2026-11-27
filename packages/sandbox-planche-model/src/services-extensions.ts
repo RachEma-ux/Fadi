@@ -23,6 +23,7 @@ import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
 import { type Vec3, v3 } from "./vecteur.js";
+import { niveauxTries } from "./niveaux.js";
 import { PasUnSolide, maillageDuSolide, motifNonSolide, type Maillage } from "./maillage.js";
 import type { AdaptateurBooleens, PointPlan, PolygonePlan } from "./outils/machine.js";
 
@@ -41,6 +42,8 @@ export interface AccesPlanche {
   readonly decimales?: () => number;
   /** (1.4) Moteur booléen chargé (manifold-3d), pour les opérations planes ; absent ou `null` = pas chargé. */
   readonly booleens?: () => AdaptateurBooleens | null;
+  /** (1.4) Altitude NGF du ±0,00 de la planche (Info planche) ; absent ou `null` = non renseignée. */
+  readonly referenceNGF?: () => number | null;
 }
 
 /** Dans quel appel une opération est appliquée (lot 7). */
@@ -870,6 +873,13 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return plansDesSolides(donnees, false);
         case "geometrie.union":
           return unionPlans(donnees);
+        case "niveaux.lire": {
+          const ref = acces.referenceNGF?.() ?? null;
+          return rendu({
+            niveaux: niveauxTries(vue().modele()).map((n) => ({ id: n.id, nom: n.nom, altitude: n.altitude, hauteur: n.hauteur })),
+            referenceNGF: typeof ref === "number" && Number.isFinite(ref) ? ref : null,
+          });
+        }
         default:
           return refus("demande_inconnue", nom);
       }

@@ -4,6 +4,7 @@ import { modeleVide, type Id, type Modele } from "./geometrie-libre.js";
 import type { Maillage } from "./maillage.js";
 import type { AdaptateurBooleens, PolygonePlan } from "./outils/machine.js";
 import { creerFonctionsPlanche } from "./scripts.js";
+import { ajouterNiveau } from "./niveaux.js";
 import { creerServicesExtension, type AccesPlanche, type PlansLus } from "./services-extensions.js";
 
 /** Moteur simulé : chaque solide vaut son rectangle englobant ; l'union simulée garde les polygones tels quels. */
@@ -94,5 +95,19 @@ describe("protocole 1.4 : opérations planes", () => {
     expect(planche(d.modele, false).servir("geometrie.coupe", { hauteur: 1 })).toMatchObject({ ok: false, detail: expect.stringMatching(/manifold-3d/) });
     expect(planche(d.modele, true, []).servir("geometrie.coupe", { hauteur: 1 })).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.lire" });
     expect(planche(d.modele, true, []).servir("geometrie.union", { polygones: [{ exterieur: [[0, 0], [1, 0], [1, 1]] }] })).toMatchObject({ ok: true });
+  });
+  it("niveaux.lire : niveaux du plus haut au plus bas et référence NGF (null si absente ou non finie) ; permission modele.lire", () => {
+    let m = modeleVide();
+    for (const [nom, altitude] of [["R+1", 3], ["RDC", 0]] as const) {
+      const r = ajouterNiveau(m, { nom, altitude, hauteur: 3 });
+      if (!r.ok) throw new Error(r.erreur);
+      m = r.modele;
+    }
+    const lu = (ref?: number | null) =>
+      creerServicesExtension({ id: "essai", permissions: ["modele.lire"] }, { modele: () => m, selection: () => [], dans: () => undefined, appliquer: () => true, selectionner: () => {}, ...(ref === undefined ? {} : { referenceNGF: () => ref }) }).servir("niveaux.lire", null);
+    expect(ok<{ niveaux: { nom: string; altitude: number }[]; referenceNGF: number | null }>(lu(412.5))).toMatchObject({ niveaux: [{ nom: "R+1", altitude: 3, hauteur: 3 }, { nom: "RDC", altitude: 0, hauteur: 3 }], referenceNGF: 412.5 });
+    expect(ok<{ referenceNGF: number | null }>(lu()).referenceNGF).toBeNull();
+    expect(ok<{ referenceNGF: number | null }>(lu(Number.NaN)).referenceNGF).toBeNull();
+    expect(planche(m, true, []).servir("niveaux.lire", null)).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.lire" });
   });
 });

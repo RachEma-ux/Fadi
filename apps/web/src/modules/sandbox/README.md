@@ -328,7 +328,8 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     son aire ; une instance de composant par chemin), `ecartes` (objets qui ne sont pas des solides fermés, avec le
     motif) et `facesLibres` (faces de la racine hors de tout groupe) — rien n'est omis en silence.
     `planche.geometrie.union(polygones)` unit des polygones `{ exterieur, trous }` en `[x, y]`. Permission
-    `modele.lire` (l'union n'en demande aucune). Booléen de maillage, jamais exact au sens B-Rep ; aucune règle ni
+    `modele.lire` (l'union n'en demande aucune). `planche.niveaux.lire()` rend les niveaux d'étage, du plus haut au plus bas (`id`, `nom`,
+    `altitude`, `hauteur`) et `referenceNGF`, l'altitude NGF du ±0,00 de la planche, ou `null`. Booléen de maillage, jamais exact au sens B-Rep ; aucune règle ni
     déduction réglementaire n'est faite ici.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
