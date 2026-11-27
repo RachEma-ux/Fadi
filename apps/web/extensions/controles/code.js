@@ -107,6 +107,8 @@ var T = {
     fichierCsv: function (d) { return "registre-controles-" + d + ".csv"; },
     reglesChargees: function (n) { return "Table chargée : " + n + (n > 1 ? " jeux de règles." : " jeu de règles."); },
     reglesRefusees: "Table refusée : ",
+    archiveRefusee: "Chargement refusé : le fichier n'a pas pu être archivé en base (",
+    motifsArchive: { indisponible: "archivage indisponible dans cette Planche", impossible: "archivage impossible", reseau: "réseau indisponible", connexion: "connexion requise", extension_inconnue: "extension non installée pour ce compte", trop_lourd: "fichier trop lourd", serveur: "refus du serveur", illisible: "réponse du serveur illisible" },
     modeleEnregistre: "Modèle de table enregistré : remplissez-le, citez chaque source, puis chargez-le.",
     fichierModele: "modele-regles-controles.json",
     erreurs: {
@@ -196,6 +198,8 @@ var T = {
     fichierCsv: function (d) { return "checks-register-" + d + ".csv"; },
     reglesChargees: function (n) { return "Table loaded: " + n + (n > 1 ? " rule sets." : " rule set."); },
     reglesRefusees: "Table refused: ",
+    archiveRefusee: "Loading refused: the file could not be archived in the database (",
+    motifsArchive: { indisponible: "archiving unavailable in this Planche", impossible: "archiving failed", reseau: "network unavailable", connexion: "sign-in required", extension_inconnue: "extension not installed for this account", trop_lourd: "file too large", serveur: "refused by the server", illisible: "unreadable server response" },
     modeleEnregistre: "Table template saved: fill it in, cite each source, then load it.",
     fichierModele: "checks-rules-template.json",
     erreurs: {
@@ -292,14 +296,17 @@ async function jeuChoisi() {
 
 async function chargerRegles() {
   var x = tx();
-  var f = await planche.fichiers.ouvrir([".json"]);
+  // Protocole 1.2 : le fichier chargé est archivé tel quel en base ; sans archive, il n'est pas chargé.
+  var f = await planche.fichiers.ouvrir([".json"], { archiver: true });
   if (!f) return;
+  if (!f.archive) return alerte(x.archiveRefusee + (x.motifsArchive[f.archiveRefus] || x.motifsArchive.impossible) + ")");
   var r = lireTable(f.texte);
   if (r.erreur) return alerte(x.reglesRefusees + r.erreur);
   var anciens = await jeuxGardes();
   await enUnPas(x.op.regles, async function () {
     for (var i = 0; i < r.jeux.length; i++) await planche.donnees.ecrire("projet", "regles." + i, r.jeux[i]);
     for (var k = r.jeux.length; k < anciens.cles.length; k++) await planche.donnees.effacer("projet", "regles." + k);
+    await planche.donnees.ecrire("projet", "regles-archive", { id: f.archive.id, empreinte: f.archive.empreinte, nom: String(f.nom || "").slice(0, 80) });
   });
   if (!r.jeux.some(function (j) { return j.id === valeurs.jeu; })) valeurs.jeu = r.jeux[0].id;
   return info(x.reglesChargees(r.jeux.length));

@@ -7,7 +7,7 @@
   },
   "version": "1.0.0",
   "auteur": "Fadi",
-  "protocole": "1.0",
+  "protocole": "1.2",
   "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
   "commandes": [
     { "id": "ouvrir-panneau", "libelle": { "fr": "Parois, baies et structure", "en": "Walls, openings and structure" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+P" },

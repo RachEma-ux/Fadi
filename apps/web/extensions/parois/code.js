@@ -106,6 +106,8 @@ var T = {
     videMetre: "Aucune cloison posée.",
     typesCharges: function (n) { return "Bibliothèque chargée : " + n + (n > 1 ? " types." : " type."); },
     typesRefuses: "Bibliothèque refusée : ",
+    archiveRefusee: "Chargement refusé : le fichier n'a pas pu être archivé en base (",
+    motifsArchive: { indisponible: "archivage indisponible dans cette Planche", impossible: "archivage impossible", reseau: "réseau indisponible", connexion: "connexion requise", extension_inconnue: "extension non installée pour ce compte", trop_lourd: "fichier trop lourd", serveur: "refus du serveur", illisible: "réponse du serveur illisible" },
     modeleEnregistre: "Modèle de bibliothèque enregistré : remplissez-le, puis chargez-le.",
     fichierModele: "modele-types-parois.json",
     erreursTypes: {
@@ -219,6 +221,8 @@ var T = {
     videMetre: "No partition laid.",
     typesCharges: function (n) { return "Library loaded: " + n + (n > 1 ? " types." : " type."); },
     typesRefuses: "Library refused: ",
+    archiveRefusee: "Loading refused: the file could not be archived in the database (",
+    motifsArchive: { indisponible: "archiving unavailable in this Planche", impossible: "archiving failed", reseau: "network unavailable", connexion: "sign-in required", extension_inconnue: "extension not installed for this account", trop_lourd: "file too large", serveur: "refused by the server", illisible: "unreadable server response" },
     modeleEnregistre: "Library template saved: fill it in, then load it.",
     fichierModele: "wall-types-template.json",
     erreursTypes: {
@@ -409,11 +413,16 @@ async function typesGardes() {
 }
 async function chargerTypes() {
   var x = tx();
-  var f = await planche.fichiers.ouvrir([".json"]);
+  // Protocole 1.2 : le fichier chargé est archivé tel quel en base ; sans archive, il n'est pas chargé.
+  var f = await planche.fichiers.ouvrir([".json"], { archiver: true });
   if (!f) return;
+  if (!f.archive) return alerte(x.archiveRefusee + (x.motifsArchive[f.archiveRefus] || x.motifsArchive.impossible) + ")");
   var r = lireTypes(f.texte);
   if (r.erreur) return alerte(x.typesRefuses + r.erreur);
-  await enUnPas(x.opTypes, function () { return planche.donnees.ecrire("projet", "types-parois", r.types); });
+  await enUnPas(x.opTypes, async function () {
+    await planche.donnees.ecrire("projet", "types-parois", r.types);
+    await planche.donnees.ecrire("projet", "types-parois-archive", { id: f.archive.id, empreinte: f.archive.empreinte, nom: String(f.nom || "").slice(0, 80) });
+  });
   if (!r.types.some(function (t) { return t.id === valeurs.type; })) valeurs.type = r.types[0].id;
   return info(x.typesCharges(r.types.length));
 }
