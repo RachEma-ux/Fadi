@@ -69,7 +69,7 @@ describe("administration des extensions ajoutées", () => {
     expect(lireBrouillonPaquet(p)).toEqual(p);
     const abime = { fiche: { id: "trames", nom: { fr: "Trames" }, permissions: ["modele.lire", "reseau"], commandes: [{ id: "tracer", raccourci: "Ctrl+Z" }] }, code: 12, pages: { "a.svg": "<svg></svg>", b: 3 } };
     const lu = lireBrouillonPaquet(abime)!;
-    expect(lu.fiche).toMatchObject({ id: "trames", nom: { fr: "Trames", en: "" }, permissions: ["modele.lire"], protocole: "1.1" });
+    expect(lu.fiche).toMatchObject({ id: "trames", nom: { fr: "Trames", en: "" }, permissions: ["modele.lire"], protocole: "1.2" });
     expect(lu.fiche.commandes).toEqual([{ id: "tracer", libelle: { fr: "", en: "" }, icone: "", raccourci: "Ctrl+Z" }]);
     expect(lu.code).toBe("");
     expect(lu.pages).toEqual({ "a.svg": "<svg></svg>" });

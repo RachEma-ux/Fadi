@@ -173,7 +173,7 @@ export function DialogueSaisieExtension({ saisie }: { saisie: SaisieOuverte }) {
 
 /** Fenêtre de fichier demandée par une extension (lot 7) : l'utilisateur choisit le fichier à ouvrir, ou accepte d'enregistrer. */
 export type FichierDemande =
-  | { readonly cle: number; readonly extension: string; readonly sorte: "ouvrir"; readonly demande: DemandeOuverture; readonly repondre: (fichier: FichierLu | null) => void }
+  | { readonly cle: number; readonly extension: string; readonly sorte: "ouvrir"; readonly demande: DemandeOuverture; readonly repondre: (fichier: (FichierLu & { readonly octets?: Uint8Array }) | null) => void }
   | { readonly cle: number; readonly extension: string; readonly sorte: "enregistrer"; readonly demande: DemandeEnregistrement; readonly repondre: (accepte: boolean) => void };
 
 export const retirerFichier = (file: readonly FichierDemande[], cle: number): readonly FichierDemande[] => (file.some((x) => x.cle === cle) ? file.filter((x) => x.cle !== cle) : file);
@@ -209,17 +209,24 @@ export function DialogueFichierExtension({ fichier }: { fichier: FichierDemande 
     // Un texte ne compte jamais plus de caractères que d'octets : un fichier plus lourd que la borne est refusé sans être lu.
     // (Protocole 1.1) Ouvert en flux, le fichier reste dans la Planche et la borne est celle du flux.
     const flux = fichier.demande.flux === true;
-    const borne = flux ? BORNES_FICHIER.flux : BORNES_FICHIER.caracteres;
+    // (Protocole 1.2) Un fichier à archiver garde ses octets d'origine : l'archive les range tels quels.
+    const archiver = fichier.demande.archiver === true;
+    const borne = flux ? BORNES_FICHIER.flux : archiver ? BORNES_FICHIER.archive : BORNES_FICHIER.caracteres;
     const trop = flux ? "extensions.fichier.erreur.taille.flux" : "extensions.fichier.erreur.taille";
     if (f.size > borne * 4) return setErreur(t(trop));
     let texte: string;
+    let octets: Uint8Array | undefined;
     try {
-      texte = await f.text();
+      if (archiver) {
+        octets = new Uint8Array(await f.arrayBuffer());
+        // Même lecture que File.text() (UTF-8, marque d'ordre retirée du texte, jamais des octets).
+        texte = new TextDecoder("utf-8").decode(octets);
+      } else texte = await f.text();
     } catch {
       return setErreur(t("extensions.fichier.erreur.lecture"));
     }
     if (texte.length > borne) return setErreur(t(trop));
-    fichier.repondre({ nom: f.name, texte });
+    fichier.repondre(octets ? { nom: f.name, texte, octets } : { nom: f.name, texte });
   };
   const titre = t(fichier.sorte === "ouvrir" ? "extensions.fichier.ouvrir.titre" : "extensions.fichier.enregistrer.titre");
   return (

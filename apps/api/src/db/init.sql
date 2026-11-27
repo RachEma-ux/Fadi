@@ -1018,6 +1018,24 @@ ALTER TABLE addon_packages DROP CONSTRAINT IF EXISTS addon_packages_origin_check
 ALTER TABLE sandbox_tool_preferences ADD COLUMN IF NOT EXISTS packages jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_packages_check,
   ADD CONSTRAINT sandbox_tool_preferences_packages_check CHECK (jsonb_typeof(packages) = 'object');
+-- Fichiers de données ouverts par une extension de la Planche (protocole des extensions 1.2, décision du maître
+-- d'ouvrage du 27 novembre 2026, règle « interface ≠ base de données ») : table de règles, bibliothèque de types…,
+-- rangés tels quels avec leur empreinte SHA-256, au nom du compte qui les a ouverts. Le même fichier (même compte, même
+-- extension, même empreinte) n'est rangé qu'une fois. Jamais effacé par l'application ; pas de clé vers
+-- `addon_packages` : retirer une extension ne retire pas ses archives. Additive.
+CREATE TABLE IF NOT EXISTS sandbox_fichiers_extensions (
+  id text PRIMARY KEY,
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  extension_id text NOT NULL CHECK (extension_id ~ '^[a-z0-9-]{1,40}$'),
+  version_extension text NOT NULL CHECK (length(version_extension) BETWEEN 1 AND 40),
+  nom text NOT NULL CHECK (length(nom) BETWEEN 1 AND 80),
+  taille integer NOT NULL CHECK (taille >= 0),
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  contenu bytea NOT NULL,
+  ajoute_le timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (proprietaire_id, extension_id, empreinte)
+);
+CREATE INDEX IF NOT EXISTS sandbox_fichiers_extensions_compte_idx ON sandbox_fichiers_extensions (proprietaire_id, extension_id, ajoute_le DESC);
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route
