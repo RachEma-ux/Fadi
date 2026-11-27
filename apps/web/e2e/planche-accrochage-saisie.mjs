@@ -130,10 +130,24 @@ await page.screenshot({ path: `${OUT}/3-metre-mesure.png` });
 await fermer("metre-mesure");
 
 // --- Info entité d'une arête : longueur saisie --------------------------------------------------------------------------
-await page.locator("[data-planche-outil='selection']").click();
-await page.mouse.move(milieu.x, milieu.y, { steps: 4 });
-await page.mouse.click(milieu.x, milieu.y);
-await page.waitForFunction((id) => window.fadiPlanche.selection().includes(id), Object.entries(m1.racine.aretes).find(([, a]) => a === arete || (a.a === arete.a && a.b === arete.b))[0]);
+// L'arête seule : visée à plusieurs points de sa longueur (les guides du Mètre posés au-dessus du milieu peuvent gagner le
+// pixel visé), sélection vidée entre deux essais.
+const idArete = Object.entries(m1.racine.aretes).find(([, a]) => a.a === arete.a && a.b === arete.b)[0];
+await vue.focus();
+await page.keyboard.press("Escape");
+await page.keyboard.press(" ");
+let selArete = [];
+for (const t of [0.25, 0.5, 0.75, 0.4]) {
+  const ecran = await page.evaluate((p) => window.fadiPlanche.versEcran(p), { x: pa.x + (pb.x - pa.x) * t, y: pa.y + (pb.y - pa.y) * t, z: pa.z + (pb.z - pa.z) * t });
+  await page.mouse.move(ecran.x, ecran.y, { steps: 4 });
+  await page.mouse.click(ecran.x, ecran.y);
+  await page.waitForTimeout(150);
+  selArete = await page.evaluate(() => window.fadiPlanche.selection());
+  if (selArete.includes(idArete)) break;
+  await vue.focus();
+  await page.keyboard.press("Escape");
+}
+check("Sélection : l'arête de 1,20 m est sélectionnée", selArete.includes(idArete), JSON.stringify({ selArete, outil: await page.evaluate(() => window.fadiPlanche.outil()) }));
 await page.locator("[data-planche-panneau-icone='info-entite']").click();
 const ie = page.locator("[data-planche-panneau='info-entite']");
 await ie.locator("[data-planche-arete-longueur]").waitFor();
