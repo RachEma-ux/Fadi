@@ -5,13 +5,14 @@
  * eux-mêmes (la Planche applique les opérations, un pas d'historique chacune).
  */
 import { texteSource } from "./sections-planche";
-import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, murDeOccurrence, murIntact, jonctionsDuMur, longueurAxe, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type DragEvent as EvenementGlisse, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, murDeOccurrence, murIntact, jonctionsDuMur, longueurAxe, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene, type Vec3 } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
 import { afficherRaccourci } from "./outils-planche";
 import { type ActionsInfoCote, PanneauInfoCote } from "./panneau-info-cote";
+import { SectionAccrochageObjet, SectionAreteSommets } from "./panneau-accrochage";
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
@@ -194,6 +195,12 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
 // Info entité
 
 export interface ActionsInfoEntite extends ActionsInfoCote {
+  /** (Cas 2, lot 2, n° 34) Longueur d'une arête de la racine ; coordonnées d'un sommet. */
+  longueurArete?(id: Id, longueur: number): void;
+  placerSommet?(id: Id, position: Vec3): void;
+  /** (Cas 2, lot 2, n° 49) Objet ou balise exclu de l'accrochage, sans être masqué. */
+  exclureAccrochage?(id: Id, exclu: boolean): void;
+  exclureBalise?(id: Id, exclue: boolean): void;
   renommerOccurrence(id: Id, nom: string): void;
   modifierDefinition(def: Id, meta: MetadonneesDefinition & { nom?: string }): void;
   verrouiller(id: Id, verrou: boolean): void;
@@ -262,7 +269,7 @@ function InfoMur({ modele, occurrence, separateur }: { modele: Modele; occurrenc
   );
 }
 
-export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null }) {
+export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null, echelle }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null; /** (Cas 2, lot 2, n° 47) Remise à l'échelle d'un import, posée par la Planche. */ echelle?: ReactNode }) {
   const c = contexte(modele, dans);
   const materiaux = Object.values(modele.annotations?.materiaux ?? {});
   const balises = Object.values(modele.annotations?.balises ?? {});
@@ -348,8 +355,14 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
       <dl className="planche-info" data-planche-info="arete">
         <dt>{t("planche.info.arete")}</dt>
         <dd>{a.masquee ? t("planche.info.masque") : a.adoucie ? t("planche.menu.adoucir") : ""}</dd>
-        <dt>{t("planche.info.longueur")}</dt>
-        <dd>{fmtL(dist(c.sommets[a.a]!.position, c.sommets[a.b]!.position))}</dd>
+        {dans === undefined && actions.longueurArete && actions.placerSommet ? (
+          <SectionAreteSommets debut={{ id: a.a, position: c.sommets[a.a]!.position }} fin={{ id: a.b, position: c.sommets[a.b]!.position }} lecture={lecture} separateur={separateur} unite={modele.annotations?.reglages?.uniteSaisie} onLongueur={(l) => actions.longueurArete!(id, l)} onSommet={(s, p) => actions.placerSommet!(s, p)} />
+        ) : (
+          <>
+            <dt>{t("planche.info.longueur")}</dt>
+            <dd>{fmtL(dist(c.sommets[a.a]!.position, c.sommets[a.b]!.position))}</dd>
+          </>
+        )}
       </dl>
     );
   }
@@ -410,6 +423,17 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
             <input type="checkbox" checked={occ.masquee === true} disabled={lecture} onChange={(e) => actions.masquer([id], e.target.checked)} data-planche-info-masque /> {t("planche.info.masque")}
           </label>
         </dd>
+        {actions.exclureAccrochage && (
+          <SectionAccrochageObjet
+            nom={occ.nom || d?.nom || occ.id}
+            exclu={occ.horsAccrochage === true}
+            balise={occ.balise && modele.annotations?.balises[occ.balise] ? { nom: modele.annotations.balises[occ.balise]!.nom, exclue: modele.annotations.balises[occ.balise]!.horsAccrochage === true } : null}
+            lecture={lecture}
+            onExclure={(v) => actions.exclureAccrochage!(id, v)}
+            onExclureBalise={(v) => occ.balise && actions.exclureBalise?.(occ.balise, v)}
+          />
+        )}
+        {dans === undefined && echelle}
       </dl>
     );
   }
@@ -692,11 +716,17 @@ function enregistrerStyle(r: ReglagesPlanche, nom: string): ReglagesPlanche {
   return { ...r, stylesCote: styles, styleCote: id };
 }
 
-export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages, onAppliquerStyle }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void; onAppliquerStyle?: (style: Id | null) => void }) {
+export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages, onAppliquerStyle, unites, parametres }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void; onAppliquerStyle?: (style: Id | null) => void; /** (Cas 2, lot 2) Unité d'affichage et de saisie, contrôle d'écart. */ unites?: ReactNode; /** (Cas 2, lot 2) Paramètres du projet. */ parametres?: ReactNode }) {
   const r = modele.annotations?.reglages ?? REGLAGES_DEFAUT;
   const [brouillon, setBrouillon] = useState(r);
   const [nomStyle, setNomStyle] = useState("");
-  useEffect(() => setBrouillon(r), [r]);
+  const [ressautTexte, setRessautTexte] = useState(r.ressautMax ? String(r.ressautMax.valeur).replace(".", ",") : "");
+  const [ressautSource, setRessautSource] = useState(r.ressautMax?.source ?? "");
+  useEffect(() => {
+    setBrouillon(r);
+    setRessautTexte(r.ressautMax ? String(r.ressautMax.valeur).replace(".", ",") : "");
+    setRessautSource(r.ressautMax?.source ?? "");
+  }, [r]);
   const controle = useMemo(() => controlerCotes(modele, precision), [modele, precision]);
   const nbCotes = Object.keys(modele.annotations?.cotes ?? {}).length;
   const ext = (valeur: ReglagesPlanche["extremitesCote"], onChange: (v: ReglagesPlanche["extremitesCote"]) => void, nom: string) => (
@@ -712,10 +742,16 @@ export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onR
       data-planche-info-modele
       onSubmit={(e) => {
         e.preventDefault();
-        onReglages(brouillon);
+        // Ressaut maximal : une valeur sans source est refusée (jamais de seuil sans origine) ; vide = non évalué.
+        const v = Number(ressautTexte.trim().replace(",", "."));
+        const { ressautMax: _r, ...sans } = brouillon;
+        if (ressautTexte.trim() === "") onReglages(sans);
+        else if (Number.isFinite(v) && v > 0 && ressautSource.trim() !== "") onReglages({ ...sans, ressautMax: { valeur: v, source: ressautSource.trim() } });
+        else onReglages(brouillon);
       }}
     >
       <h4>{t("planche.infomodele.unites")}</h4>
+      {unites}
       <p className="inspecteur-aide">{t("planche.infomodele.longueur", { precision: `0,${"0".repeat(precision)} m` })}</p>
       <label>
         {t("planche.infomodele.precision")}
@@ -733,6 +769,20 @@ export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onR
         {t("planche.infomodele.accrochage-angle")}
         <input inputMode="decimal" disabled={lecture} value={brouillon.accrochageAngle ?? ""} onChange={(e) => setBrouillon({ ...brouillon, accrochageAngle: e.target.value ? Number(e.target.value.replace(",", ".")) : null })} data-planche-accrochage-angle />
       </label>
+      {parametres}
+      {/* Cas 2, lot 2 (n° 83) : ressaut maximal saisi avec sa source ; aucun seuil fourni par Fadi. */}
+      <h4>{t("planche.ressaut.titre")}</h4>
+      <label>
+        {t("planche.ressaut.max")}
+        <input inputMode="decimal" disabled={lecture} placeholder={t("planche.ressaut.placeholder")} value={ressautTexte} onKeyDown={(e) => e.stopPropagation()} onChange={(e) => setRessautTexte(e.target.value)} data-planche-ressaut-max />
+      </label>
+      {ressautTexte.trim() !== "" && (
+        <label>
+          {t("planche.ressaut.source")}
+          <input disabled={lecture} value={ressautSource} onKeyDown={(e) => e.stopPropagation()} onChange={(e) => setRessautSource(e.target.value)} data-planche-ressaut-source />
+        </label>
+      )}
+      <p className="inspecteur-aide" data-planche-ressaut-aide>{t(brouillon.ressautMax ? "planche.ressaut.saisi" : "planche.ressaut.aide", brouillon.ressautMax ? { valeur: String(brouillon.ressautMax.valeur).replace(".", ","), source: brouillon.ressautMax.source } : {})}</p>
       <h4>{t("planche.infomodele.texte")}</h4>
       <label>
         {t("planche.infomodele.extremites")}
