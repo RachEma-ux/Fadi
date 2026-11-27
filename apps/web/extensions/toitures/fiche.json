@@ -1,0 +1,24 @@
+{
+  "id": "toitures",
+  "nom": { "fr": "Toitures et combles", "en": "Roofs and attics" },
+  "description": {
+    "fr": "Toiture à pans depuis un contour rectangulaire (un, deux ou quatre pans, débords), variantes comparées par surface de couverture et faîtage, pente minimale contrôlée sur une table sourcée, ligne de hauteur sous rampants dans le comble.",
+    "en": "Pitched roof from a rectangular outline (one, two or four slopes, overhangs), variants compared by roof area and ridge, minimum pitch checked against a sourced table, headroom line under the rafters in the attic."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.1",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Toitures et combles", "en": "Roofs and attics" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+T" },
+    { "id": "toiture-pans", "libelle": { "fr": "Toiture à pans", "en": "Pitched roof" }, "icone": "pans.svg", "raccourci": "Ctrl+Alt+Maj+T" },
+    { "id": "variantes", "libelle": { "fr": "Variantes de toiture", "en": "Roof variants" }, "icone": "variantes.svg", "raccourci": "Ctrl+Alt+Maj+W" },
+    { "id": "pente-minimale", "libelle": { "fr": "Pente minimale", "en": "Minimum pitch" }, "icone": "pente.svg", "raccourci": "Ctrl+Alt+Maj+Z" },
+    { "id": "ligne-hauteur", "libelle": { "fr": "Ligne de hauteur sous rampants", "en": "Headroom line under rafters" }, "icone": "ligne.svg", "raccourci": "Ctrl+Alt+Maj+H" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "toitures", "titre": { "fr": "Toitures et combles", "en": "Roofs and attics" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
