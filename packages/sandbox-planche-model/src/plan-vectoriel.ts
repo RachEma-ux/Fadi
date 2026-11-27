@@ -260,8 +260,11 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
 
 // ————————————————————————————————————————————————————————————— Motifs de hachure
 
-export type ErreurMotif = "nom" | "angle" | "pas" | "absent" | "fichier";
+export type ErreurMotif = "nom" | "angle" | "pas" | "absent" | "fichier" | "limite";
 export const NOM_MOTIF_MAX = 60;
+/** Bornes d'un motif enregistré (lecture du document) : appliquées aussi à la saisie et à l'import, pour qu'un motif accepté se relise toujours. */
+export const FAMILLES_MOTIF_MAX = 64;
+export const TIRETS_FAMILLE_MAX = 32;
 
 /** Motif reçu (document, delta) : jamais cru sur parole. */
 export function estMotif(id: Id, v: unknown): v is MotifHachure {
@@ -271,7 +274,7 @@ export function estMotif(id: Id, v: unknown): v is MotifHachure {
   const famille = (f: unknown): boolean => {
     if (typeof f !== "object" || f === null) return false;
     const g = f as Record<string, unknown>;
-    return fini(g["angle"]) && fini(g["x0"]) && fini(g["y0"]) && fini(g["dx"]) && fini(g["dy"]) && g["dy"] !== 0 && Array.isArray(g["tirets"]) && g["tirets"].length <= 32 && g["tirets"].every(fini);
+    return fini(g["angle"]) && fini(g["x0"]) && fini(g["y0"]) && fini(g["dx"]) && fini(g["dy"]) && g["dy"] !== 0 && Array.isArray(g["tirets"]) && g["tirets"].length <= TIRETS_FAMILLE_MAX && g["tirets"].every(fini);
   };
   const s = w["source"] as Record<string, unknown> | undefined;
   return (
@@ -282,7 +285,7 @@ export function estMotif(id: Id, v: unknown): v is MotifHachure {
     w["nom"].length <= NOM_MOTIF_MAX &&
     Array.isArray(w["familles"]) &&
     w["familles"].length >= 1 &&
-    w["familles"].length <= 64 &&
+    w["familles"].length <= FAMILLES_MOTIF_MAX &&
     w["familles"].every(famille) &&
     typeof s === "object" &&
     s !== null &&
@@ -315,6 +318,8 @@ export function lirePat(texte: string): { readonly ok: true; readonly motifs: re
     const courant = motifs[motifs.length - 1];
     const v = l.split(",").map((x) => Number(x.trim()));
     if (!courant || v.length < 5 || v.some((x) => !Number.isFinite(x)) || v[4] === 0) return { ok: false, ligne: i + 1 };
+    // Au-delà des bornes du document, le motif ne se relirait pas : la ligne fautive refuse le fichier.
+    if (courant.familles.length >= FAMILLES_MOTIF_MAX || v.length - 5 > TIRETS_FAMILLE_MAX) return { ok: false, ligne: i + 1 };
     courant.familles.push({ angle: v[0]!, x0: v[1]!, y0: v[2]!, dx: v[3]!, dy: v[4]!, tirets: v.slice(5) });
   }
   if (!motifs.length || motifs.some((x) => x.familles.length === 0)) return { ok: false, ligne: lignes.length };
@@ -329,6 +334,7 @@ export function ajouterMotifs(m: Modele, motifs: readonly Omit<MotifHachure, "id
     if (!x.nom.trim() || x.nom.length > NOM_MOTIF_MAX) return { ok: false, erreur: "nom" };
     if (!x.familles.length || x.familles.some((f) => !Number.isFinite(f.angle))) return { ok: false, erreur: "angle" };
     if (x.familles.some((f) => !Number.isFinite(f.dy) || f.dy === 0)) return { ok: false, erreur: "pas" };
+    if (!estMotif("h0", { ...x, id: "h0" })) return { ok: false, erreur: "limite" };
   }
   const ids: Id[] = [];
   const modele = modifierAnnotations(m, (a, id) => {
@@ -432,9 +438,14 @@ export function svgPlan(plan: PlanProjete, m: Modele, o: OptionsSvg): string {
     const mo = motifs[id]!;
     mo.familles.forEach((f, i) => {
       const pas = Math.abs(f.dy);
-      const tirets = f.tirets.length ? ` stroke-dasharray="${f.tirets.map((t) => n3(Math.max(Math.abs(t), 0.05))).join(" ")}"` : "";
+      const traits = f.tirets.map((t) => Math.max(Math.abs(t), 0.05));
+      const tirets = traits.length ? ` stroke-dasharray="${traits.map(n3).join(" ")}"` : "";
+      // Largeur de la tuile : une période de tirets (sinon 1000 mm) ; décalage dx d'une ligne à la suivante rendu par un
+      // cisaillement (skewX) de la tuile : la ligne de rang k glisse de k·dx le long de sa direction, comme dans le .pat.
+      const periode = traits.length ? traits.reduce((a, b) => a + b, 0) * (traits.length % 2 ? 2 : 1) : 1000;
+      const cisaillement = f.dx !== 0 ? ` skewX(${n3((Math.atan2(f.dx, f.dy) * 180) / Math.PI)})` : "";
       // Le motif est en mm papier : indépendant de l'échelle du dessin.
-      defs.push(`<pattern id="${id}-${i}" patternUnits="userSpaceOnUse" width="1000" height="${n3(pas)}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})"><line x1="0" y1="0" x2="1000" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${tirets}/></pattern>`);
+      defs.push(`<pattern id="${id}-${i}" patternUnits="userSpaceOnUse" width="${n3(periode)}" height="${n3(pas)}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})${cisaillement}"><line x1="0" y1="0" x2="${n3(periode)}" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${tirets}/></pattern>`);
     });
   }
   const groupe = (cl: ClasseTrait, attrs: string) => {

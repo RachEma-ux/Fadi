@@ -156,8 +156,30 @@ describe("Sortie SVG", () => {
     const svg2 = svgPlan(projeterPlan(as.modele, DESSUS, { plan: coupeA1m }), as.modele, OPTIONS);
     expect(svg2).toContain(`<pattern id="${a.ids[0]}-0"`);
     expect(svg2).not.toContain("rgb(217,217,217)");
+    // Relecture #492 : le décalage dx d'une famille tiretée décale les lignes successives (cisaillement de la tuile),
+    // et la tuile fait une période de tirets.
+    const b = ajouterMotifs(modele, [{ nom: "Tirets", familles: [{ angle: 0, x0: 0, y0: 0, dx: 1, dy: 1, tirets: [1, -1] }], source: { genre: "pat", fichier: "t.pat" } }]);
+    if (!b.ok) throw new Error("ajout refusé");
+    const bs = associerMotif(b.modele, matiere, b.ids[0]!);
+    if (!bs.ok) throw new Error("association refusée");
+    const svg3 = svgPlan(projeterPlan(bs.modele, DESSUS, { plan: coupeA1m }), bs.modele, OPTIONS);
+    expect(svg3).toMatch(new RegExp(`<pattern id="${b.ids[0]}-0"[^>]*width="2"[^>]*skewX\\(45\\)`));
     const oblique = projeterPlan(boite(), { direction: v3(-1, -1, -1) }, { plan: null });
     expect(svgPlan(oblique, boite(), OPTIONS)).toContain('<g id="cache"');
     expect(svgPlan(oblique, boite(), { ...OPTIONS, cachees: "masquees" })).not.toContain('<g id="cache"');
+  });
+});
+
+describe("plan vectoriel : relecture #492", () => {
+  it("un .pat au-delà des bornes du document est refusé à sa ligne ; ajouterMotifs refuse aussi", () => {
+    const familles = Array.from({ length: 65 }, () => "0, 0,0, 0,2");
+    const r = lirePat(["*TROP", ...familles].join("\n"));
+    expect(r).toEqual({ ok: false, ligne: 66 });
+    const tirets = lirePat(`*T\n0, 0,0, 0,2, ${Array.from({ length: 33 }, () => "1").join(",")}`);
+    expect(tirets).toEqual({ ok: false, ligne: 2 });
+    const m = ajouterMotifs(modeleVide(), [{ nom: "X", familles: Array.from({ length: 65 }, () => familleSimple(0, 2)), source: { genre: "saisie" } }]);
+    expect(m).toEqual({ ok: false, erreur: "limite" });
+    const ok = lirePat(["*OK", ...familles.slice(0, 64)].join("\n"));
+    expect(ok.ok).toBe(true);
   });
 });

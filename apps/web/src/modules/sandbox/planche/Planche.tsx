@@ -4750,6 +4750,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
+      {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
+      <input
+        ref={importMotifRef}
+        type="file"
+        accept=".pat,text/plain"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerMotifs(f);
+        }}
+        data-planche-motif-fichier
+      />
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
@@ -4802,18 +4815,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                   refMotifs={titreMotifsRef}
                   erreur={erreurPlan}
                   note={notePlan}
-                />
-                <input
-                  ref={importMotifRef}
-                  type="file"
-                  accept=".pat,text/plain"
-                  hidden
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    e.target.value = "";
-                    if (f) void importerMotifs(f);
-                  }}
-                  data-planche-motif-fichier
                 />
               </>
             )}
