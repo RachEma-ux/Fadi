@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, contexte, creerExecutantExtension, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, appliquer, contexte, creerExecutantExtension, creerFonctionsPlanche, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/escaliers/";
@@ -61,6 +61,7 @@ interface Etat {
   colonnes: string[];
   lignes: Ligne[];
   choisie: string | null;
+  cleFormulaire?: string | null;
   vide: string | null;
   page: number;
   pages: number;
@@ -131,6 +132,23 @@ function rectangles(cotes: readonly (readonly [number, number])[]): { modele: Mo
 }
 
 const occurrences = (m: Modele) => Object.values(contexte(m, undefined).occurrences);
+const composer4 = (a: readonly number[], b: readonly number[]) => {
+  const r: number[] = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[i * 4 + k]! * b[k * 4 + j]!; r.push(s); }
+  return r;
+};
+/** Sommets d'une occurrence, en coordonnées du dessin, triés (pour comparer deux escaliers). */
+function sommetsMonde(m: Modele, occ: Id): string[] {
+  const l: string[] = [];
+  const visiter = (o: { definition: Id; transformation: readonly number[] }, M: readonly number[]) => {
+    const c = m.definitions[o.definition]!.contenu;
+    for (const f of Object.values(c.faces)) for (const s of f.exterieur) { const q = appliquer(M, c.sommets[s]!.position); l.push([q.x, q.y, q.z].map((v) => (Math.round(v * 1e6) / 1e6 + 0).toFixed(6)).join(",")); }
+    for (const sous of Object.values(c.occurrences)) visiter(sous, composer4(M, sous.transformation));
+  };
+  const o = contexte(m, undefined).occurrences[occ]!;
+  visiter(o, o.transformation);
+  return [...new Set(l)].sort();
+}
 const valeur = (e: Etat, libelle: string) => e.resultats.find((r) => r.libelle === libelle)?.valeur;
 
 /** Fichier de règles d'essai : valeurs et sources fictives, propres au test (aucune valeur n'est dans l'extension). */
@@ -316,6 +334,46 @@ describe("extension « Escaliers » — accessibilité (n° 22) et rouvrir (n° 
     p.etat.selection = [];
     e = await p.action("etat", { onglet: "rouvrir" });
     expect(e.vide).toMatch(/Sélectionnez un escalier généré/);
+  });
+});
+
+describe("extension « Escaliers » — placement", () => {
+  it("deux escaliers générés dans un dessin vide ne se superposent pas (contenu des groupes compris)", async () => {
+    const p = planche(modeleVide());
+    await p.action("generer-escalier", { onglet: "generer", valeurs: VALEURS });
+    await p.action("generer-escalier", { onglet: "generer", valeurs: VALEURS });
+    const [a, b] = occurrences(p.etat.modele).map((o) => sommetsMonde(p.etat.modele, o.id).map((k) => Number(k.split(",")[0])));
+    expect(Math.min(...b!)).toBeGreaterThanOrEqual(Math.max(...a!) + 2 - 1e-9);
+  });
+
+  it("un escalier déplacé et tourné avec la Planche garde sa place quand il est régénéré", async () => {
+    const p = planche(modeleVide());
+    await p.action("generer-escalier", { onglet: "generer", valeurs: VALEURS });
+    const id = occurrences(p.etat.modele)[0]!.id;
+    const f = creerFonctionsPlanche(p.etat.modele);
+    f.api.tourner([id], [1, 2, 0], [0, 0, 1], 90);
+    f.api.deplacer([id], [5, -3, 1]);
+    p.etat.modele = f.modele();
+    const avant = sommetsMonde(p.etat.modele, id);
+    p.etat.selection = [id];
+    await p.action("etat", { onglet: "rouvrir" });
+    await p.action("regenerer-escalier", { onglet: "rouvrir", valeurs: VALEURS });
+    const [neuf] = occurrences(p.etat.modele);
+    expect(neuf!.id).not.toBe(id);
+    expect(sommetsMonde(p.etat.modele, neuf!.id)).toEqual(avant);
+  });
+
+  it("rouvrir : choisir un autre escalier remplace les paramètres du formulaire", async () => {
+    const p = planche(modeleVide());
+    await p.action("generer-escalier", { onglet: "generer", valeurs: VALEURS });
+    await p.action("generer-escalier", { onglet: "generer", valeurs: { ...VALEURS, nombre: "15" } });
+    const [a, b] = occurrences(p.etat.modele);
+    p.etat.selection = [a!.id];
+    let e = await p.action("etat", { onglet: "rouvrir" });
+    expect([e.cleFormulaire, e.formulaire.find((c) => c.id === "nombre")!.valeur]).toEqual([a!.id, "16"]);
+    p.etat.selection = [b!.id];
+    e = await p.action("etat", { onglet: "rouvrir", valeurs: { ...VALEURS, nombre: "16" } });
+    expect([e.cleFormulaire, e.formulaire.find((c) => c.id === "nombre")!.valeur]).toEqual([b!.id, "15"]);
   });
 });
 

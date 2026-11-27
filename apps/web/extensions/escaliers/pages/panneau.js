@@ -77,9 +77,10 @@
     });
   };
   // Le formulaire n'est redessiné qu'au changement d'onglet ou de champs : la saisie en cours n'est jamais écrasée.
-  var dessinerFormulaire = function (champs) {
+  // Rouvrir : un autre escalier choisi change la clé, et ses paramètres remplacent ceux du précédent.
+  var dessinerFormulaire = function (champs, objet) {
     var f = el("formulaire");
-    var cle = onglet + ":" + champs.map(function (c) { return c.id + (c.choix ? c.choix.length : ""); }).join(",");
+    var cle = onglet + ":" + (objet || "") + ":" + champs.map(function (c) { return c.id + (c.choix ? c.choix.length : ""); }).join(",");
     if (formulaireDe === cle) return;
     formulaireDe = cle;
     f.textContent = "";
@@ -129,7 +130,7 @@
     }
     choisie = e.choisie || null;
     dessinerOnglets();
-    dessinerFormulaire(e.formulaire);
+    dessinerFormulaire(e.formulaire, e.cleFormulaire);
     var r = el("resultats");
     r.textContent = "";
     e.resultats.forEach(function (x) {

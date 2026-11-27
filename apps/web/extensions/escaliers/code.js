@@ -411,12 +411,88 @@ function lireParametres() {
   return p;
 }
 
+/** Abscisse la plus grande de tout le dessin, contenu des groupes compris (lecture du modèle entier, protocole 1.1). */
 async function xMax() {
-  var m = await planche.modele.lire();
+  var m = await planche.modele.lire({ portee: "monde" });
   var v = -Infinity;
   m.faces.forEach(function (f) { f.points.forEach(function (q) { if (q[0] > v) v = q[0]; }); });
   m.aretes.forEach(function (e) { e.points.forEach(function (q) { if (q[0] > v) v = q[0]; }); });
   return v === -Infinity ? 0 : v;
+}
+
+// ——————————————————————————————————————————————— Placement gardé à la régénération
+
+/** Garde le repère de l'escalier posé (avant tout déplacement) avec ses paramètres. */
+async function garderRepere(g) {
+  var d = await planche.donnees.lire(g, "escalier");
+  var r = await repereDe(g);
+  if (d && r) {
+    d.repere = r;
+    await planche.donnees.ecrire(g, "escalier", d);
+  }
+}
+
+var moins = function (a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; };
+var vect = function (a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; };
+var unit = function (a) { var l = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); return l > 0 ? [a[0] / l, a[1] / l, a[2] / l] : null; };
+
+/**
+ * Repère d'un escalier qui vient d'être posé : une face de son contenu (identifiée par son chemin d'occurrences et son
+ * identifiant, qui ne changent pas quand le groupe est déplacé ou tourné) et trois de ses sommets, en coordonnées du dessin.
+ */
+async function repereDe(g) {
+  var m = await planche.modele.lire({ portee: "monde" });
+  var f = m.faces.filter(function (y) { return y.chemin[0] === g && y.points.length >= 3; })[0];
+  if (!f) return null;
+  // Trois sommets formant le plus grand triangle : jamais alignés.
+  var best = null;
+  for (var i = 0; i < f.points.length; i++) for (var j = i + 1; j < f.points.length; j++) for (var k = j + 1; k < f.points.length; k++) {
+    var n = vect(moins(f.points[j], f.points[i]), moins(f.points[k], f.points[i]));
+    var a = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
+    if (!best || a > best.a) best = { a: a, k: [i, j, k] };
+  }
+  if (!best || best.a < 1e-12) return null;
+  return { chemin: f.chemin.slice(1), face: f.id, indices: best.k, points: best.k.map(function (i) { return f.points[i]; }) };
+}
+
+var cadre = function (p) {
+  var e1 = unit(moins(p[1], p[0]));
+  var e3 = e1 && unit(vect(e1, moins(p[2], p[0])));
+  return e1 && e3 ? [e1, vect(e3, e1), e3] : null;
+};
+
+/** Rotation et translation qui mènent le repère gardé à sa position actuelle ; `null` si l'escalier n'a pas bougé. */
+async function deplacementDepuis(id, r) {
+  if (!r || !Array.isArray(r.points) || !Array.isArray(r.indices)) return null;
+  var m = await planche.modele.lire({ portee: "monde" });
+  var chemin = [id].concat(r.chemin || []);
+  var f = m.faces.filter(function (y) { return y.id === r.face && y.chemin.length === chemin.length && y.chemin.every(function (c, i) { return c === chemin[i]; }); })[0];
+  if (!f) return null;
+  var q = r.indices.map(function (i) { return f.points[i]; });
+  if (q.some(function (v) { return !v; })) return null;
+  var A = cadre(r.points);
+  var B = cadre(q);
+  if (!A || !B) return null;
+  // R = B·Aᵀ (colonnes des cadres) ; t = q0 − R·p0.
+  var R = [0, 1, 2].map(function (i) { return [0, 1, 2].map(function (j) { return B[0][i] * A[0][j] + B[1][i] * A[1][j] + B[2][i] * A[2][j]; }); });
+  var Rp = [0, 1, 2].map(function (i) { return R[i][0] * r.points[0][0] + R[i][1] * r.points[0][1] + R[i][2] * r.points[0][2]; });
+  var t = moins(q[0], Rp);
+  var c = Math.max(-1, Math.min(1, (R[0][0] + R[1][1] + R[2][2] - 1) / 2));
+  var angle = Math.acos(c);
+  var axe = [0, 0, 1];
+  if (angle > 1e-9) {
+    var s = [R[2][1] - R[1][2], R[0][2] - R[2][0], R[1][0] - R[0][1]];
+    var u = unit(s);
+    if (u && Math.sin(angle) > 1e-6) axe = u;
+    else {
+      // Demi-tour : l'axe est la colonne la plus forte de (R + I) / 2.
+      var M = [0, 1, 2].map(function (i) { return [0, 1, 2].map(function (j) { return (R[i][j] + (i === j ? 1 : 0)) / 2; }); });
+      var col = [0, 1, 2].map(function (j) { return [M[0][j], M[1][j], M[2][j]]; }).sort(function (a, b) { return (b[0] * b[0] + b[1] * b[1] + b[2] * b[2]) - (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); })[0];
+      axe = unit(col) || [0, 0, 1];
+    }
+  }
+  if (angle < 1e-9 && Math.abs(t[0]) + Math.abs(t[1]) + Math.abs(t[2]) < 1e-9) return null;
+  return { axe: axe, degres: (angle * 180) / Math.PI, t: t };
 }
 
 async function generer() {
@@ -428,6 +504,7 @@ async function generer() {
   var g;
   try {
     g = await dessiner(p, origine);
+    await garderRepere(g);
     await planche.operation.valider();
   } catch (e) {
     await planche.operation.abandonner();
@@ -461,8 +538,15 @@ async function regenerer() {
   await planche.operation.ouvrir(x.opRegenerer);
   var g;
   try {
+    // L'escalier déplacé ou tourné avec les outils de la Planche garde sa place : même rotation, même translation.
+    var bouge = await deplacementDepuis(e.id, e.p.repere);
     await planche.modele.effacer([e.id]);
     g = await dessiner(p, origine);
+    await garderRepere(g);
+    if (bouge) {
+      if (bouge.degres > 1e-9) await planche.modele.tourner([g], [0, 0, 0], bouge.axe, bouge.degres);
+      await planche.modele.deplacer([g], bouge.t);
+    }
     if (acces) await planche.donnees.ecrire(g, "accessibilite", acces);
     await planche.operation.valider();
   } catch (err) {
@@ -745,6 +829,8 @@ async function etat() {
     lignes: lignes.slice(page * LIGNES_PAR_PAGE, (page + 1) * LIGNES_PAR_PAGE),
     vide: e.vide || null,
     choisie: onglet === "solutions" ? choisie : null,
+    // Rouvrir : l'escalier affiché ; le formulaire est redessiné quand il change.
+    cleFormulaire: onglet === "rouvrir" ? choisie : null,
     page: page,
     pages: pages,
   };
