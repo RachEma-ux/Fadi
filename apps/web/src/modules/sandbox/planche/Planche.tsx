@@ -306,7 +306,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -320,6 +320,8 @@ import { PanneauLocaux } from "./panneau-locaux";
 import { PanneauFeuilles } from "./panneau-feuilles";
 import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { PanneauEnveloppe } from "./panneau-enveloppe";
+import { PanneauConsultations } from "./panneau-consultations";
+import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
 import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
@@ -394,7 +396,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -409,7 +411,9 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations"]);
+/** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
+const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
@@ -2242,6 +2246,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }
       },
       exporter: async (format) => exporter(format),
+      liensConsultation: async () => setPanneau("consultations"),
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
         if (annulerImportRef.current) return;
         try {
@@ -3376,6 +3381,66 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const d = 1.5;
     vueRef.current?.cadrer({ min: { x: p.x - d, y: p.y - d, z: p.z - d }, max: { x: p.x + d, y: p.y + d, z: p.z + d } }, margesVue(racineRef.current));
   };
+  /**
+   * Liens de consultation (cas 4 du catalogue, étape 7d) : copie figée de la Planche, lue sans compte par son lien ;
+   * le dessin n'est jamais modifié par le lien. Liste relue à l'ouverture du panneau.
+   */
+  const [liensConsultation, setLiensConsultation] = useState<readonly LienConsultation[]>([]);
+  const [liensCharges, setLiensCharges] = useState(false);
+  const [lienChoisiEtat, setLienChoisi] = useState<string | null>(null);
+  const lienChoisi = liensConsultation.find((l) => l.jeton === lienChoisiEtat) ?? null;
+  const [echeanceLien, setEcheanceLien] = useState("");
+  const [mesureLien, setMesureLien] = useState(true);
+  const [envoiLien, setEnvoiLien] = useState(false);
+  const [erreurLien, setErreurLien] = useState<string | null>(null);
+  const [noteLien, setNoteLien] = useState<string | null>(null);
+  const messageErreurLien = (e: unknown): string => {
+    const code = e instanceof ErreurConsultation ? e.code : "";
+    return t(code === "unauthorized" || (e instanceof ErreurConsultation && e.statut === 401) ? "planche.consultation.erreur.compte" : code === "reseau" ? "planche.consultation.erreur.reseau" : e instanceof ErreurConsultation && e.statut === 413 ? "planche.consultation.erreur.taille" : "planche.consultation.erreur.serveur");
+  };
+  useEffect(() => {
+    if (panneau !== "consultations") return;
+    let annule = false;
+    listerLiens()
+      .then((l) => { if (!annule) { setLiensConsultation(l); setLiensCharges(true); } })
+      .catch((e) => { if (!annule) { setErreurLien(messageErreurLien(e)); setLiensCharges(true); } });
+    return () => { annule = true; };
+  }, [panneau]); // eslint-disable-line react-hooks/exhaustive-deps
+  const disponibiliteCommandeConsultation = (id: IdCommandeConsultation) => disponibiliteConsultation(id, { lien: lienChoisi !== null, actif: lienChoisi !== null && lienActif(lienChoisi, dateDuJour()), occupe: envoiLien });
+  const executerConsultation = (id: IdCommandeConsultation) => {
+    if (id === "partager-lien") return setPanneau("consultations");
+    if (!disponibiliteCommandeConsultation(id).disponible) return;
+    setPanneau("consultations");
+    if (id === "creer-lien") {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void creerLien({ nom: nomCourant, modele: hist.present.modele, echeance: echeanceLien || null, mesure: mesureLien })
+        .then((l) => {
+          setLiensConsultation((x) => [l, ...x]);
+          setLienChoisi(l.jeton);
+          setNoteLien(t("planche.consultation.note.cree"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    } else if (id === "copier-lien" && lienChoisi) {
+      const adresse = adresseLien(lienChoisi.jeton, window.location.origin);
+      if (!navigator.clipboard) setNoteLien(adresse);
+      else void navigator.clipboard.writeText(adresse).then(
+        () => setNoteLien(t("planche.consultation.note.copie", { adresse })),
+        () => setNoteLien(adresse),
+      );
+    } else if (id === "revoquer-lien" && lienChoisi) {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void revoquerLien(lienChoisi.jeton)
+        .then((l) => {
+          setLiensConsultation((x) => x.map((y) => (y.jeton === l.jeton ? l : y)));
+          setNoteLien(t("planche.consultation.note.revoque"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    }
+  };
   const executerFeuille = (id: IdCommandeFeuille) => {
     if (id === "feuilles") return setPanneau("feuilles");
     if (!disponibiliteCommandeFeuille(id).disponible) return;
@@ -4334,6 +4399,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
     else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
     else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
+    else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -4403,6 +4469,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_RESERVES.map((c) => {
           const d = disponibiliteCommandeReserve(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
+        }),
+        ...COMMANDES_CONSULTATION.map((c) => {
+          const d = disponibiliteCommandeConsultation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.consultation.motif.lien"), executer: () => executerConsultation(c.id) };
         }),
         ...COMMANDES_ENVELOPPE.map((c) => {
           const d = disponibiliteCommandeEnveloppe(c.id);
@@ -5112,7 +5182,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
               {t(`panneau.${panneau}` as "panneau.info-entite")}
             </h3>
-            {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", panneau)!.raccourci!)}</span>}
+            {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
@@ -5140,6 +5210,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "consultations" && (
+              <PanneauConsultations
+                liens={liensConsultation}
+                charge={liensCharges}
+                choisi={lienChoisi}
+                echeance={echeanceLien}
+                mesure={mesureLien}
+                aujourdhui={dateDuJour()}
+                origine={window.location.origin}
+                onEcheance={setEcheanceLien}
+                onMesure={setMesureLien}
+                onChoisir={(j) => { setLienChoisi(j); setErreurLien(null); setNoteLien(null); }}
+                executer={executerConsultation}
+                disponibilite={disponibiliteCommandeConsultation}
+                erreur={erreurLien}
+                note={noteLien}
               />
             )}
             {panneau === "enveloppe" && (

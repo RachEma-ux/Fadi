@@ -11,14 +11,14 @@ const SRC = readFileSync(new URL("./menu-planche.tsx", import.meta.url), "utf8")
 const stats = (p: Partial<InformationsPlanche> = {}): InformationsPlanche => ({ octets: 2048, objets: 2, faces: 14, aretes: 30, annotations: 0, aretesLibres: 0, nonEtanches: 0, pasAnnulables: 3, chronologie: [], ...p });
 
 describe("menu de la Planche de Sandbox — entrées demandées", () => {
-  it("dans l'ordre : Ouvrir, Nouvelle | Enregistrer, Enregistrer sous, Renommer | Supprimer | Partager, Exporter, Importer | Informations, PNG | Extensions", () => {
+  it("dans l'ordre : Ouvrir, Nouvelle | Enregistrer, Enregistrer sous, Renommer | Supprimer | Partager, Partager un lien, Exporter, Importer | Informations, PNG | Extensions", () => {
     const cles = [...SRC.matchAll(/\{item\("([a-z-]+)"/g)].map((m) => m[1]);
-    expect(cles).toEqual(["ouvrir", "nouvelle", "enregistrer", "enregistrer-sous", "renommer", "supprimer", "partager", "exporter", "importer", "informations", "png", "extensions"]);
+    expect(cles).toEqual(["ouvrir", "nouvelle", "enregistrer", "enregistrer-sous", "renommer", "supprimer", "partager", "partager-lien", "exporter", "importer", "informations", "png", "extensions"]);
     // Les séparateurs tombent entre les groupes demandés (5 : après Nouvelle, Renommer, Supprimer, Importer, PNG —
     // Extensions, ajoutée le 25 novembre 2026, forme son propre groupe en bas du menu).
     expect(SRC.match(/className="avec-separateur" aria-hidden="true"/g)).toHaveLength(5);
     const ordre = SRC.split("\n").filter((l) => /\{item\(|avec-separateur/.test(l)).map((l) => (l.includes("avec-separateur") ? "|" : /\{item\("([a-z-]+)"/.exec(l)![1]));
-    expect(ordre.join(",")).toBe("ouvrir,nouvelle,|,enregistrer,enregistrer-sous,renommer,|,supprimer,|,partager,exporter,importer,|,informations,png,|,extensions");
+    expect(ordre.join(",")).toBe("ouvrir,nouvelle,|,enregistrer,enregistrer-sous,renommer,|,supprimer,|,partager,partager-lien,exporter,importer,|,informations,png,|,extensions");
   });
   it("Exporter et Importer proposent exactement IFC, OBJ et STL ; le pictogramme du bouton est le hamburger Tabler", () => {
     expect(SRC).toContain('FORMATS_ECHANGE: readonly FormatEchange[] = ["ifc", "obj", "stl"]');
