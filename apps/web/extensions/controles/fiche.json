@@ -1,0 +1,27 @@
+{
+  "id": "controles",
+  "nom": { "fr": "Contrôles réglementaires et accessibilité", "en": "Regulatory and accessibility checks" },
+  "description": {
+    "fr": "Passages utiles, dégagements, rampe par tronçons, vues droites et prospects, distance entre constructions, places fauteuil ; seuils d'une table sourcée et datée, registre exporté pour la notice.",
+    "en": "Clear widths, escape routes, ramp by flights, direct views and height ratios, distance between buildings, wheelchair spaces; thresholds from a sourced and dated table, register exported for the report."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.0",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Contrôles réglementaires et accessibilité", "en": "Regulatory and accessibility checks" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+K" },
+    { "id": "passages", "libelle": { "fr": "Passages utiles", "en": "Clear widths" }, "icone": "passages.svg", "raccourci": "Alt+Maj+F7" },
+    { "id": "degagements", "libelle": { "fr": "Dégagements", "en": "Escape routes" }, "icone": "degagements.svg", "raccourci": "Alt+Maj+F8" },
+    { "id": "rampe", "libelle": { "fr": "Rampe accessible", "en": "Accessible ramp" }, "icone": "rampe.svg", "raccourci": "Alt+Maj+F9" },
+    { "id": "vues-droites", "libelle": { "fr": "Vues droites et prospects", "en": "Direct views and height ratios" }, "icone": "vues.svg", "raccourci": "Alt+Maj+F10" },
+    { "id": "distance-constructions", "libelle": { "fr": "Distance entre constructions", "en": "Distance between buildings" }, "icone": "distance.svg", "raccourci": "Alt+Maj+F11" },
+    { "id": "places-fauteuil", "libelle": { "fr": "Places fauteuil", "en": "Wheelchair spaces" }, "icone": "places.svg", "raccourci": "Alt+Maj+F12" },
+    { "id": "registre", "libelle": { "fr": "Registre des contrôles", "en": "Register of checks" }, "icone": "registre.svg", "raccourci": "Ctrl+Maj+F1" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "controles", "titre": { "fr": "Contrôles réglementaires et accessibilité", "en": "Regulatory and accessibility checks" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

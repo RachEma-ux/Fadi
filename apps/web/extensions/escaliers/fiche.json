@@ -1,0 +1,25 @@
+{
+  "id": "escaliers",
+  "nom": { "fr": "Escaliers", "en": "Stairs" },
+  "description": {
+    "fr": "Escalier paramétrique (droit, à palier, en L, en U, balancé) depuis la hauteur à franchir, solutions classées par confort, vérification, accessibilité et réouverture ; règles chargées d'un fichier sourcé.",
+    "en": "Parametric stair (straight, with landing, L, U, winders) from the height to climb, solutions ranked by comfort, check, accessibility and reopening; rules loaded from a sourced file."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.1",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Escaliers", "en": "Stairs" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+Y" },
+    { "id": "generer-escalier", "libelle": { "fr": "Générer un escalier", "en": "Generate a stair" }, "icone": "generer.svg", "raccourci": "Ctrl+Alt+Maj+G" },
+    { "id": "solutions", "libelle": { "fr": "Solutions dans la règle", "en": "Solutions within the rules" }, "icone": "solutions.svg", "raccourci": "Ctrl+Alt+Maj+S" },
+    { "id": "verifier-escalier", "libelle": { "fr": "Vérifier un escalier", "en": "Check a stair" }, "icone": "verifier.svg", "raccourci": "Ctrl+Alt+Maj+C" },
+    { "id": "accessibilite", "libelle": { "fr": "Accessibilité de l'escalier", "en": "Stair accessibility" }, "icone": "accessibilite.svg", "raccourci": "Ctrl+Alt+Maj+A" },
+    { "id": "rouvrir-escalier", "libelle": { "fr": "Rouvrir l'escalier", "en": "Reopen the stair" }, "icone": "rouvrir.svg", "raccourci": "Ctrl+Alt+Maj+R" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "escaliers", "titre": { "fr": "Escaliers", "en": "Stairs" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

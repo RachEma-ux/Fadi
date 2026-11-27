@@ -10,8 +10,8 @@ aucune donnée dans le code (D-GD-29).
 
 | PR | Jalon | Objet | État |
 | --- | --- | --- | --- |
-| P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (cette PR) |
-| P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | à faire |
+| P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (PR #472) |
+| P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (cette PR) |
 | P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | à faire |
 | P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | à faire |
 | P8-P10 | E Légende | Version et couverture, légende complète, hachures | à faire |
@@ -41,3 +41,19 @@ aucune donnée dans le code (D-GD-29).
 - Captures : `captures/p1/` (bureau 1440 px, Pixel 7), instance locale avec le découpage réel du Maroc.
 - Recette : contrôles « ARRIVÉE » de `geodata.mjs` (consigne, catalogue fermé, contour nommé depuis la base, attribution,
   axe-core moderate, ouverture du catalogue, téléphone ≤ 25 %, anglais).
+
+## P2 · Carte robuste (E-02)
+
+- État du moteur séparé et pur (`apps/web/src/modules/geodata/carte/etat-moteur.ts`, testé) : chargement (animation
+  coupée par la garde de 15 s), prêt, sans WebGL, échec de démarrage, contexte perdu. Avant P2, un seul `erreurCarte`
+  recevait ces quatre causes et n'était jamais remis à zéro : une tuile refusée coupait les commandes jusqu'au
+  rechargement.
+- Une tuile refusée ne change **jamais** l'état du moteur : avis **par couche**, non bloquant, qui nomme la couche
+  (comme l'avis du fond), état « refusée » sur la carte de la couche ; l'avis est oublié quand la couche quitte la carte.
+- Contexte WebGL restauré : la carte revient sans rechargement.
+- Avis sur la carte placés sous les rangées de boutons (Données, Terrain, thèmes), au bureau et au téléphone : avant,
+  la première ligne passait sous les pastilles de thèmes (vu sur les captures).
+- Captures : `captures/p2/` (bureau 1440 px, Pixel 7), tuiles de « RGPH 2024 — régions » refusées (403) sur l'instance
+  locale avec les données réelles du Maroc, build final de la feuille de route.
+- Recette : contrôles « P2 » de `geodata.mjs` (contour refusé sans panne, avis non bloquant, outils disponibles, état
+  « refusée », avis oublié) et GEO 11 sans WebGL.

@@ -306,6 +306,19 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     compte plus dans les 5 s d'une commande. Limite connue, mesurée le 27 novembre 2026 : l'insertion dans le noyau
     croît à peu près au carré du nombre de segments (1 000 en 0,6 s, 5 000 en 14 s) ; un gros plan attend
     l'insertion hors du fil principal (D10-F14-027, noyau).
+  - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
+    `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
+    raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,
+    à choisir), espace objet ou une présentation, pose à plat ou debout sur l'arête sélectionnée ; lignes, polylignes
+    (bombes comprises), arcs et cercles en vraies courbes ; un groupe par calque, balisé du nom du calque ; blocs en
+    composants (une définition, une occurrence par insertion ; une insertion à l'échelle ≠ 1 est posée éclatée et
+    signalée) ; textes, hachures, cotes et autres entités comptés et signalés, jamais perdus en silence ; un seul pas
+    d'annulation. Limite : un plan tracé sur de la géométrie libre existante peut la couper ; les morceaux coupés
+    rejoignent le groupe du calque. **Exporter en DXF** (Ctrl+Alt+Maj+X) : tout le modèle ou la sélection, unité
+    déclarée, un calque par balise, arcs et cercles plans en vrais arcs, sinon en segments. **Plan masse en
+    figure-fond** (Ctrl+Alt+Maj+M) : bâti en noir plein, voirie en trait, parcelles en trait fin, chacun choisi par sa
+    balise ; SVG en mètres (viewBox, sans échelle imposée) ou DXF (calques BATI, VOIRIE, PARCELLES) ; une face percée
+    est remplie sans ses trous, et c'est signalé. Test : `extension-echanges-dxf.test.ts`.
   - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,

@@ -18,6 +18,7 @@ export * from "./reperes.js";
 export * from "./reperes-enregistres.js";
 export * from "./niveaux.js";
 export * from "./point-de-base.js";
+export * from "./locaux.js";
 export * from "./origine-composant.js";
 export * from "./reperes-lies.js";
 export * from "./echanges-coordonnees.js";

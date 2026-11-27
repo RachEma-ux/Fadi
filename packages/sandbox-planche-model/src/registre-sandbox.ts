@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "numerotation";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -331,6 +331,9 @@ const commandes: EntreeSandbox[] = [
   c("travailler-niveau", "niveau", "stack-front", "Maj+F10", "panneau-niveaux", true),
   c("rattacher-niveau", "niveau", "layers-linked", "Ctrl+Maj+X", "panneau-niveaux", true),
   c("supprimer-niveau", "niveau", "stack-pop", "Ctrl+Maj+F2", "panneau-niveaux", true),
+  c("locaux", "local", "layout-board-split", "Ctrl+Maj+U", "panneau-locaux", true),
+  c("creer-local", "local", "square-plus", "Ctrl+Maj+D", "panneau-locaux", true),
+  c("supprimer-local", "local", "square-minus", "Ctrl+Maj+F3", "panneau-locaux", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
@@ -371,6 +374,8 @@ const panneaux: EntreeSandbox[] = [
   p("emplacement", "map-pin", "colonne", true),
   // Niveaux d'étage (cas 4, étape 1) : niveaux nommés, altitude NGF, niveau de travail ; fonction du noyau, pas une extension.
   p("niveaux", "stack-2", "colonne", true),
+  // Locaux (cas 4, étape 3) : pièces appuyées sur une face de sol, mesures calculées ; fonction du noyau.
+  p("locaux", "layout-board-split", "colonne", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -393,6 +398,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:scripts", "panneau:scripts"],
   ["commande:numerotation", "panneau:numerotation"],
   ["commande:niveaux", "panneau:niveaux"],
+  ["commande:locaux", "panneau:locaux"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

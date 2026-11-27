@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, soleil, texteAltitude } from "@parcours/sandbox-planche-model";
+import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -714,6 +714,11 @@ export class VuePlanche {
         this.groupeAnnotations.add(tirets(COULEUR_NIVEAU, [{ x: e.min.x, y: e.min.y, z }, { x: e.max.x, y: e.min.y, z }, { x: e.max.x, y: e.max.y, z }, { x: e.min.x, y: e.max.y, z }, { x: e.min.x, y: e.min.y, z }], 7));
         etiquette(`${n.nom}  ${texteAltitude(n.altitude)}`, { x: e.min.x, y: e.min.y, z }, "planche-etiquette-niveau");
       }
+    }
+    // Locaux (cas 4, étape 3) : étiquette liée au centre de la face de sol (numéro, nom, surface), recalculée avec elle.
+    for (const l of tableauLocaux(modele).lignes) {
+      if (l.centre === null || l.surface === null) continue;
+      etiquette(`${l.local.numero} · ${l.local.nom}\n${l.surface.toFixed(2).replace(".", ",")} m²`, { ...l.centre, z: l.centre.z + 0.01 }, "planche-etiquette-local");
     }
     for (const p of Object.values(a.plansDeCoupe)) {
       if (!this.options.plansDeCoupe) break;
