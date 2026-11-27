@@ -66,8 +66,8 @@
  *   événements de souris d'un outil : `vise`, le point visé avant accrochage sur le plan de travail, ou null
  * Protocole 1.4 (surfaces réglementaires) :
  *   planche.geometrie.coupe(hauteur, objets)    coupe horizontale des solides à la hauteur z (m), tout le modèle ou
- *                                               les objets nommés : { polygones, aire (union), solides (aire de
- *                                               chacun), ecartes (non solides, avec le motif), facesLibres }
+ *                                               les objets nommés : { polygones, aire (union), solides (balise
+ *                                               et aire de chacun), ecartes (non solides, avec le motif), facesLibres }
  *   planche.geometrie.projection(objets)        projection au sol des solides, même résultat
  *   planche.geometrie.union(polygones)          union de polygones { exterieur, trous } en [x, y] : { polygones, aire }
  *   planche.niveaux.lire()                      { niveaux : [{ id, nom, altitude, hauteur }] du plus haut au plus bas, referenceNGF :

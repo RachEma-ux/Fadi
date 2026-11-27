@@ -88,7 +88,7 @@ export interface PlansLus {
   /** Aire de l'union (aucun recouvrement compté deux fois), en m². */
   readonly aire: number;
   /** Chaque solide retenu (chemin depuis la racine : une instance de composant par chemin) et sa propre aire. */
-  readonly solides: { readonly id: Id; readonly chemin: Id[]; readonly aire: number }[];
+  readonly solides: { readonly id: Id; readonly chemin: Id[]; readonly balise: Id | null; readonly aire: number }[];
   /** Objets écartés parce qu'ils ne sont pas des solides fermés, avec le motif : rien n'est omis en silence. */
   readonly ecartes: { readonly id: Id; readonly chemin: Id[]; readonly motif: string }[];
   /** Faces posées à la racine hors de tout groupe : jamais comptées (pas un solide). */
@@ -110,6 +110,21 @@ const polygoneLu = (p: PolygonePlan): PolygoneLu => ({
   aire: aireContourPlan(p.exterieur) - p.trous.reduce((s, t) => s + aireContourPlan(t), 0),
 });
 const airePolygones = (ps: readonly PolygoneLu[]): number => ps.reduce((s, p) => s + p.aire, 0);
+/** Balise d'une occurrence, ou celle du premier objet qui la contient et en porte une (premier chemin trouvé). */
+function baliseDe(m: Modele, id: Id): Id | null {
+  const chercher = (c: Contexte, herite: Id | null, prof: number): Id | null | undefined => {
+    if (prof > MAX_PROFONDEUR_MONDE) return undefined;
+    for (const o of Object.values(c.occurrences)) {
+      const b = o.balise ?? herite;
+      if (o.id === id) return b;
+      const d = m.definitions[o.definition];
+      const r = d ? chercher(d.contenu, b, prof + 1) : undefined;
+      if (r !== undefined) return r;
+    }
+    return undefined;
+  };
+  return chercher(m.racine, null, 0) ?? null;
+}
 
 /** (1.4) Polygones passés par une extension : `{ exterieur, trous? }`, points `[x, y]` finis ; message d'erreur sinon. */
 function lirePolygonesPlan(v: unknown): PolygonePlan[] | string {
@@ -712,18 +727,19 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
    * chemin. Un objet qui n'est pas un solide fermé est descendu s'il contient d'autres objets, sinon écarté avec son
    * motif.
    */
-  const solidesDe = (m: Modele, objets: unknown): { solides: { id: Id; chemin: Id[]; maillage: Maillage }[]; ecartes: PlansLus["ecartes"]; facesLibres: number } | ReponseService => {
-    const solides: { id: Id; chemin: Id[]; maillage: Maillage }[] = [];
+  const solidesDe = (m: Modele, objets: unknown): { solides: { id: Id; chemin: Id[]; balise: Id | null; maillage: Maillage }[]; ecartes: PlansLus["ecartes"]; facesLibres: number } | ReponseService => {
+    const solides: { id: Id; chemin: Id[]; balise: Id | null; maillage: Maillage }[] = [];
     const ecartes: { id: Id; chemin: Id[]; motif: string }[] = [];
     let trop = false;
-    const visiter = (id: Id, M: Matrice4 | null, chemin: Id[], profondeur: number): void => {
+    // La balise d'un objet vaut pour son contenu qui n'a pas la sienne (comme à l'affichage).
+    const visiter = (id: Id, M: Matrice4 | null, chemin: Id[], balise: Id | null, profondeur: number): void => {
       if (trop) return;
       if (profondeur > MAX_PROFONDEUR_MONDE) return void ecartes.push({ id, chemin, motif: `imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux` });
       const motif = motifNonSolide(m, id);
       if (motif === null) {
         try {
           if (solides.length >= BORNES_PLANS.solides) return void (trop = true);
-          return void solides.push({ id, chemin, maillage: maillageDuSolide(m, id, M) });
+          return void solides.push({ id, chemin, balise, maillage: maillageDuSolide(m, id, M) });
         } catch (e) {
           if (!(e instanceof PasUnSolide)) throw e;
           return void ecartes.push({ id, chemin, motif: e.message });
@@ -734,18 +750,18 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       if (enfants.length === 0) return void ecartes.push({ id, chemin, motif });
       const faces = Object.values(c.faces).filter((f) => !f.masquee).length;
       if (faces > 0) ecartes.push({ id, chemin, motif: `${faces} face(s) hors de tout solide` });
-      for (const o of enfants) visiter(o.id, M ? composer(M, o.transformation) : o.transformation, [...chemin, o.id], profondeur + 1);
+      for (const o of enfants) visiter(o.id, M ? composer(M, o.transformation) : o.transformation, [...chemin, o.id], o.balise ?? balise, profondeur + 1);
     };
     let facesLibres = 0;
     if (objets === undefined || objets === null) {
       facesLibres = Object.values(m.racine.faces).filter((f) => !f.masquee).length;
-      for (const o of Object.values(m.racine.occurrences)) if (!o.masquee) visiter(o.id, o.transformation, [o.id], 1);
+      for (const o of Object.values(m.racine.occurrences)) if (!o.masquee) visiter(o.id, o.transformation, [o.id], o.balise ?? null, 1);
     } else {
       if (!Array.isArray(objets) || objets.length === 0 || objets.length > BORNES_PLANS.solides || !objets.every((x) => typeof x === "string")) return refus("argument_invalide", `objets : liste de 1 à ${BORNES_PLANS.solides} identifiants`);
       for (const id of objets as string[]) {
         const M = matriceMonde(m, id);
         if (!M) return refus("objet_introuvable", id);
-        visiter(id, M, [id], 1);
+        visiter(id, M, [id], baliseDe(m, id), 1);
       }
     }
     if (trop) return refus("argument_invalide", `plus de ${BORNES_PLANS.solides} solides`);
@@ -767,7 +783,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       const resultat: PlansLus = {
         polygones,
         aire: airePolygones(polygones),
-        solides: lu.solides.map((x) => ({ id: x.id, chemin: x.chemin, aire: airePolygones(calcul([x.maillage])) })),
+        solides: lu.solides.map((x) => ({ id: x.id, chemin: x.chemin, balise: x.balise, aire: airePolygones(calcul([x.maillage])) })),
         ecartes: lu.ecartes,
         facesLibres: lu.facesLibres,
       };

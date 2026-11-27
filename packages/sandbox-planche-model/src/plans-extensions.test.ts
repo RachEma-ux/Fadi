@@ -1,6 +1,6 @@
 /** Protocole 1.4 : coupe horizontale, projection au sol et union servies à une extension (moteur simulé). */
 import { describe, expect, it } from "vitest";
-import { modeleVide, type Id, type Modele } from "./geometrie-libre.js";
+import { baliserOccurrences, modeleVide, type Id, type Modele } from "./geometrie-libre.js";
 import type { Maillage } from "./maillage.js";
 import type { AdaptateurBooleens, PolygonePlan } from "./outils/machine.js";
 import { creerFonctionsPlanche } from "./scripts.js";
@@ -109,5 +109,12 @@ describe("protocole 1.4 : opérations planes", () => {
     expect(ok<{ referenceNGF: number | null }>(lu()).referenceNGF).toBeNull();
     expect(ok<{ referenceNGF: number | null }>(lu(Number.NaN)).referenceNGF).toBeNull();
     expect(planche(m, true, []).servir("niveaux.lire", null)).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.lire" });
+  });
+  it("chaque solide porte sa balise, ou celle de l'objet qui le contient", () => {
+    const d = depart();
+    const m = baliserOccurrences(baliserOccurrences(d.modele, [d.ensemble], "b-tours").modele, [d.batiment], "b-bati").modele;
+    const r = ok<PlansLus>(planche(m).servir("geometrie.projection", {}));
+    expect(r.solides.map((x) => x.balise)).toEqual(["b-bati", "b-tours", "b-tours"]);
+    expect(ok<PlansLus>(planche(m).servir("geometrie.projection", { objets: [d.tour] })).solides[0]!.balise).toBe("b-tours");
   });
 });
