@@ -137,6 +137,8 @@ export interface Occurrence {
   readonly niveau?: Id;
   /** (Cas 4, lot C4, étape 5) Statut des travaux ; hérité par le contenu ; absent = sans statut. */
   readonly statut?: StatutTravaux;
+  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
+  readonly horsAccrochage?: boolean;
 }
 
 /** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
@@ -4531,6 +4533,16 @@ export function verrouillerOccurrences(m: Modele, ids: readonly Id[], verrou: bo
     for (const id of ids) {
       const occ = c.occurrences.get(id);
       if (occ) c.occurrences.set(id, sansFaux(occ, "verrouille", verrou));
+    }
+  });
+}
+
+/** (Cas 2, lot 2) Exclure des objets de l'accrochage sans les masquer (ou les y rendre). */
+export function exclureDeLAccrochage(m: Modele, ids: readonly Id[], exclu: boolean, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of ids) {
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "horsAccrochage", exclu));
     }
   });
 }

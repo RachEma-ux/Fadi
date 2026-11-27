@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "dxf" | "travaux";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -98,7 +98,7 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   "profiles-aretes": "frame",
   mur: "wall",
   reserve: "pin",
-  calage: "crosshair",
+  calage: "target-arrow",
   onglet: "fadi:onglet",
   "coupe-profil": "fadi:coupe-profil",
   "allonger-piece": "fadi:allonger",
@@ -411,9 +411,9 @@ const commandes: EntreeSandbox[] = [
   // Lot C4, étape 4 : PDF reçu (page vectorielle en arêtes, échelle proposée puis confirmée, page scannée en fond).
   c("pdf-recu", "pdf", "file-arrow-right", "Ctrl+Maj+Espace, P", "outils", true),
   c("ouvrir-pdf", "pdf", "file-upload", "Ctrl+Maj+Espace, Maj+P", "panneau-pdf-recu", true),
-  c("mesurer-pdf", "pdf", "ruler-2", "Ctrl+Maj+Espace, E", "panneau-pdf-recu", true),
-  c("barre-echelle-pdf", "pdf", "ruler-3", "Ctrl+Maj+Espace, B", "panneau-pdf-recu", true),
-  c("confirmer-echelle-pdf", "pdf", "scale", "Ctrl+Maj+Espace, Maj+E", "panneau-pdf-recu", true),
+  c("mesurer-pdf", "pdf", "ruler", "Ctrl+Maj+Espace, E", "panneau-pdf-recu", true),
+  c("barre-echelle-pdf", "pdf", "arrows-horizontal", "Ctrl+Maj+Espace, B", "panneau-pdf-recu", true),
+  c("confirmer-echelle-pdf", "pdf", "checks", "Ctrl+Maj+Espace, Maj+E", "panneau-pdf-recu", true),
   c("inserer-pdf", "pdf", "arrow-autofit-content", "Ctrl+Maj+Espace, I", "panneau-pdf-recu", true),
   c("poser-fond-pdf", "pdf", "photo-scan", "Ctrl+Maj+Espace, F", "panneau-pdf-recu", true),
   // Lot C4, étape 5 : feuilles en DXF (un fichier par feuille, calques normalisés) et statut des travaux (SIA 400).
@@ -423,6 +423,20 @@ const commandes: EntreeSandbox[] = [
   c("statut-existant", "travaux", "home-check", "Ctrl+Maj+Espace, X", "panneau-statut-travaux", true),
   c("statut-a-demolir", "travaux", "home-x", "Ctrl+Maj+Espace, A", "panneau-statut-travaux", true),
   c("statut-projete", "travaux", "home-plus", "Ctrl+Maj+Espace, J", "panneau-statut-travaux", true),
+  // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
+  // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
+  // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
+  c("accrochage", "accrochage", "magnet", "Alt+F8", "panneau-accrochage", true),
+  c("forcer-sommet", "accrochage", "point", "Alt+1", "panneau-accrochage", true),
+  c("forcer-milieu", "accrochage", "circle-half", "Alt+2", "panneau-accrochage", true),
+  c("forcer-intersection", "accrochage", "crosshair", "Alt+3", "panneau-accrochage", true),
+  c("forcer-quadrant", "accrochage", "circle-dot", "Alt+4", "panneau-accrochage", true),
+  c("forcer-axe", "accrochage", "separator-vertical", "Alt+5", "panneau-accrochage", true),
+  c("forcer-guide", "accrochage", "ruler-2", "Alt+6", "panneau-accrochage", true),
+  c("metre-mesure", "accrochage", "ruler-3", "Alt+F9", "panneau-metre", true),
+  c("guide-reseau", "accrochage", "layout-distribute-horizontal", "Alt+F10", "panneau-metre", true),
+  c("repartir", "accrochage", "spacing-horizontal", "Alt+F11", "panneau-metre", true),
+  c("remettre-echelle", "accrochage", "scale", "Alt+F12", "panneau-info-entite", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
