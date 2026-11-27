@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -96,6 +96,7 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   "texte-3d": "badge-3d",
   profile: "fadi:profile",
   "profiles-aretes": "frame",
+  mur: "wall",
   onglet: "fadi:onglet",
   "coupe-profil": "fadi:coupe-profil",
   "allonger-piece": "fadi:allonger",
@@ -176,6 +177,8 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   // Chaîne des profilés (lots L12 et L13, D-215, D-216) : outils propres à Fadi.
   profile: "Maj+Q",
   "profiles-aretes": "Alt+Maj+Q",
+  // Cas 4, étape 4 : murs à épaisseur. Maj+W est le Zoom fenêtre, Maj+X commencerait une saisie : M comme « mur ».
+  mur: "Ctrl+Maj+M",
   onglet: "Alt+Maj+O",
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
@@ -334,6 +337,8 @@ const commandes: EntreeSandbox[] = [
   c("locaux", "local", "layout-board-split", "Ctrl+Maj+U", "panneau-locaux", true),
   c("creer-local", "local", "square-plus", "Ctrl+Maj+D", "panneau-locaux", true),
   c("supprimer-local", "local", "square-minus", "Ctrl+F3", "panneau-locaux", true),
+  // Murs à épaisseur (cas 4, étape 4) : depuis la barre d'options de l'outil Mur.
+  c("murs-depuis-aretes", "mur", "border-outer", "Ctrl+Maj+H", "barre-mur", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

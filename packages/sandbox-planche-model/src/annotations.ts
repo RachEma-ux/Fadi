@@ -296,6 +296,22 @@ export interface Local {
   readonly hauteur?: number;
 }
 
+/**
+ * (Cas 4 du catalogue, étape 4 : murs à épaisseur, D4-F5-003) Mur : axe (polyligne horizontale), épaisseur, hauteur,
+ * côté de référence ; sa géométrie est le groupe `occurrence`, dont `signature` relève les sommets à la pose (un groupe
+ * modifié à la main n'est jamais régénéré). Opérations dans `murs.ts`.
+ */
+export interface Mur {
+  readonly id: Id;
+  readonly axe: readonly Vec3[];
+  readonly ferme: boolean;
+  readonly epaisseur: number;
+  readonly hauteur: number;
+  readonly reference: "axe" | "interieur" | "exterieur";
+  readonly occurrence: Id;
+  readonly signature: string;
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -324,6 +340,8 @@ export interface Annotations {
   readonly niveaux?: Readonly<Record<Id, Niveau>>;
   /** (Cas 4, étape 3) Locaux (pièces) appuyés sur une face de sol de la racine ; absent = aucun. */
   readonly locaux?: Readonly<Record<Id, Local>>;
+  /** (Cas 4, étape 4) Murs à épaisseur : tracé d'axe et paramètres, géométrie dans un groupe de la racine. */
+  readonly murs?: Readonly<Record<Id, Mur>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -352,6 +370,7 @@ export interface AnnotationsMutables {
   pieces: Record<Id, LienPiece>;
   niveaux: Record<Id, Niveau>;
   locaux: Record<Id, Local>;
+  murs: Record<Id, Mur>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;
