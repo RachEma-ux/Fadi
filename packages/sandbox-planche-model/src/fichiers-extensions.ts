@@ -23,7 +23,8 @@
  * 27 novembre 2026) : un fichier de données (table de règles, bibliothèque de types) est archivé tel quel en base.
  *   fichiers.ouvrir     { types?, archiver: true } rend { nom, texte, archive } : `archive` = { id, empreinte, ajouteLe }
  *                                                  du fichier rangé tel quel en base (empreinte SHA-256), ou `null` avec
- *                                                  `archiveRefus` (motif) si la Planche n'a pas pu l'archiver.
+ *                                                  `archiveRefus` si la Planche n'a pas pu l'archiver : un code pris dans
+ *                                                  MOTIFS_REFUS_ARCHIVE, que l'extension traduit dans sa langue.
  * La Planche archive elle-même le texte choisi par l'utilisateur ; l'extension ne parle jamais au serveur. Pas en flux :
  * un fichier archivé tient en 200 000 caractères.
  */
@@ -59,12 +60,20 @@ export interface ArchiveFichier {
   readonly empreinte: string;
   readonly ajouteLe: string;
 }
-/** (1.2) Ce que la Planche obtient en archivant : l'archive, ou le motif du refus (connexion absente, serveur…). */
-export type IssueArchive = { readonly ok: true; readonly archive: ArchiveFichier } | { readonly ok: false; readonly motif: string };
+/**
+ * (1.2) Motifs d'un archivage refusé : des codes stables, jamais une phrase (l'extension les traduit, FR / EN).
+ * indisponible : la Planche n'archive pas (aucun serveur) ; impossible : échec sans autre précision ; reseau : serveur
+ * injoignable ; connexion : compte non connecté ; extension_inconnue : extension non installée par ce compte ;
+ * trop_lourd : fichier au-delà des bornes ; serveur : autre refus du serveur ; illisible : réponse du serveur illisible.
+ */
+export const MOTIFS_REFUS_ARCHIVE = ["indisponible", "impossible", "reseau", "connexion", "extension_inconnue", "trop_lourd", "serveur", "illisible"] as const;
+export type MotifRefusArchive = (typeof MOTIFS_REFUS_ARCHIVE)[number];
+/** (1.2) Ce que la Planche obtient en archivant : l'archive, ou le code du refus. */
+export type IssueArchive = { readonly ok: true; readonly archive: ArchiveFichier } | { readonly ok: false; readonly motif: MotifRefusArchive };
 /** (1.2) Fichier rendu à l'extension quand elle a demandé l'archivage. */
 export interface FichierArchive extends FichierLu {
   readonly archive: ArchiveFichier | null;
-  readonly archiveRefus?: string;
+  readonly archiveRefus?: MotifRefusArchive;
 }
 export type LectureFichier<T> = { readonly ok: true; readonly demande: T } | { readonly ok: false; readonly detail: string };
 
@@ -144,9 +153,10 @@ export function lireArchiveFichier(v: unknown): ArchiveFichier | null {
   if (typeof id !== "string" || id.length < 1 || id.length > 80 || typeof empreinte !== "string" || !MOTIF_EMPREINTE.test(empreinte) || typeof ajouteLe !== "string" || Number.isNaN(Date.parse(ajouteLe))) return null;
   return { id, empreinte, ajouteLe };
 }
-/** (1.2) Fichier rendu à l'extension : avec son archive, ou sans elle et avec le motif (borné). */
+/** (1.2) Fichier rendu à l'extension : avec son archive, ou sans elle et avec le code du refus (« impossible » si inconnu). */
 export function fichierArchive(fichier: FichierLu, issue: IssueArchive): FichierArchive {
-  return issue.ok ? { ...fichier, archive: issue.archive } : { ...fichier, archive: null, archiveRefus: issue.motif.slice(0, 200) || "archivage impossible" };
+  if (issue.ok) return { ...fichier, archive: issue.archive };
+  return { ...fichier, archive: null, archiveRefus: MOTIFS_REFUS_ARCHIVE.includes(issue.motif) ? issue.motif : "impossible" };
 }
 
 // ————————————————————————————————————————————————————————————— Protocole 1.1 : fichiers en flux

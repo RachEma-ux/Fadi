@@ -80,12 +80,12 @@ export async function archiverFichierExtension(extension: string, fichier: Fichi
     const contenu = enBase64(octets ?? new TextEncoder().encode(fichier.texte));
     r = await fetch(ADRESSE_FICHIERS, { method: "POST", credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ extension, nom: fichier.nom, contenu }) });
   } catch {
-    return { ok: false, motif: "réseau indisponible" };
+    return { ok: false, motif: "reseau" };
   }
-  if (r.status === 401) return { ok: false, motif: "connexion requise" };
-  if (r.status === 404) return { ok: false, motif: "extension inconnue de la plateforme" };
-  if (r.status === 413) return { ok: false, motif: "fichier trop lourd" };
-  if (!r.ok) return { ok: false, motif: `réponse ${r.status} du serveur` };
+  if (r.status === 401) return { ok: false, motif: "connexion" };
+  if (r.status === 404) return { ok: false, motif: "extension_inconnue" };
+  if (r.status === 413) return { ok: false, motif: "trop_lourd" };
+  if (!r.ok) return { ok: false, motif: "serveur" };
   const archive = lireArchiveFichier(((await r.json().catch(() => null)) as { archive?: unknown } | null)?.archive);
-  return archive ? { ok: true, archive } : { ok: false, motif: "réponse du serveur illisible" };
+  return archive ? { ok: true, archive } : { ok: false, motif: "illisible" };
 }

@@ -214,9 +214,9 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
           // (1.2) Archivé tel quel avant d'être rendu ; un envoi qui échoue rend le motif, jamais une exception.
           const f = fichier.fichier;
           const archiver = o.fichiers?.archiver;
-          if (!archiver) return reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage indisponible dans cette Planche" }));
+          if (!archiver) return reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "indisponible" }));
           const brut = (valeur as { octets?: unknown } | null)?.octets;
-          return archiver(f, brut instanceof Uint8Array ? brut : undefined).then((issue) => reponseProtocole(m.id, fichierArchive(f, issue)), () => reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage impossible" })));
+          return archiver(f, brut instanceof Uint8Array ? brut : undefined).then((issue) => reponseProtocole(m.id, fichierArchive(f, issue)), () => reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "impossible" })));
         }
         if (!lu.demande.flux || !fichier.fichier) return reponseProtocole(m.id, fichier.fichier);
         // En flux, l'extension reçoit un jeton : le texte reste ici jusqu'à la fin de l'appel.

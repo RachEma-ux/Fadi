@@ -1,6 +1,6 @@
 /** Fichiers demandés par une extension (protocole 1.0, lot 7) : forme des demandes et du fichier choisi. */
 import { describe, expect, it } from "vitest";
-import { BORNES_FICHIER, TYPES_FICHIER_EXTENSION, creerReserveFichiers, fichierArchive, lireArchiveFichier, estNomDeFichier, lireDemandeEnregistrement, lireDemandeOuverture, lireFichierChoisi, typeDeFichier } from "./fichiers-extensions.js";
+import { BORNES_FICHIER, MOTIFS_REFUS_ARCHIVE, TYPES_FICHIER_EXTENSION, creerReserveFichiers, fichierArchive, lireArchiveFichier, estNomDeFichier, lireDemandeEnregistrement, lireDemandeOuverture, lireFichierChoisi, typeDeFichier } from "./fichiers-extensions.js";
 import { DEMANDES_EXTENSION, jugerDemandeExtension } from "./protocole-extensions.js";
 
 describe("fichiers d'une extension", () => {
@@ -108,12 +108,13 @@ describe("fichiers archivés en base (protocole 1.2)", () => {
     expect(lireArchiveFichier(null)).toBeNull();
   });
 
-  it("fichier rendu : avec son archive, ou sans elle avec le motif du refus (borné)", () => {
+  it("fichier rendu : avec son archive, ou sans elle avec le code du refus (liste fermée)", () => {
     const f = { nom: "regles.json", texte: "{}" };
     const archive = { id: "sbxfic_1", empreinte: EMPREINTE, ajouteLe: "2026-11-27T12:00:00.000Z" };
     expect(fichierArchive(f, { ok: true, archive })).toEqual({ ...f, archive });
-    expect(fichierArchive(f, { ok: false, motif: "réseau indisponible" })).toEqual({ ...f, archive: null, archiveRefus: "réseau indisponible" });
-    expect(fichierArchive(f, { ok: false, motif: "" }).archiveRefus).toBe("archivage impossible");
-    expect(fichierArchive(f, { ok: false, motif: "x".repeat(500) }).archiveRefus).toHaveLength(200);
+    expect(fichierArchive(f, { ok: false, motif: "connexion" })).toEqual({ ...f, archive: null, archiveRefus: "connexion" });
+    for (const motif of MOTIFS_REFUS_ARCHIVE) expect(fichierArchive(f, { ok: false, motif }).archiveRefus).toBe(motif);
+    // Une phrase ou un code inconnu (Planche plus récente, valeur abîmée) devient « impossible ».
+    expect(fichierArchive(f, { ok: false, motif: "réseau indisponible" as never }).archiveRefus).toBe("impossible");
   });
 });
