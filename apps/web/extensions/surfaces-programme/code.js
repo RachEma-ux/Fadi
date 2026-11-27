@@ -571,22 +571,26 @@ function xMax(m) {
  * sous `nom`, puis ramène le groupe à sa place. Rend l'identifiant du groupe.
  */
 async function volumeLoin(pts, h, nom, loin) {
+  // Ce qui est nouveau se reconnaît à son identifiant, jamais à sa position : le dessin existant peut être n'importe où.
+  var avant = {};
+  var m0 = await planche.modele.lire();
+  m0.faces.forEach(function (f) { avant[f.id] = true; });
+  m0.aretes.forEach(function (e) { avant[e.id] = true; });
+  var nouveau = function (x) { return !avant[x.id]; };
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i];
     var q = pts[(i + 1) % pts.length];
     await planche.modele.ligne([p[0] + loin, p[1], p[2]], [q[0] + loin, q[1], q[2]]);
   }
   var m = await planche.modele.lire();
-  var dansLoin = function (pp) { return pp.every(function (r) { return r[0] > loin / 2; }); };
-  var face = m.faces.filter(function (f) { return dansLoin(f.points); })[0];
+  var face = m.faces.filter(nouveau)[0];
   if (!face) throw new Error(tx().empriseInvalide);
   if (h > 0) {
     var n = normale(face.points);
     await planche.modele.pousser(face.id, n[2] < 0 ? -h : h);
   }
   var m2 = await planche.modele.lire();
-  var ids = m2.faces.filter(function (f) { return dansLoin(f.points); }).map(function (f) { return f.id; })
-    .concat(m2.aretes.filter(function (e) { return dansLoin(e.points); }).map(function (e) { return e.id; }));
+  var ids = m2.faces.filter(nouveau).map(function (f) { return f.id; }).concat(m2.aretes.filter(nouveau).map(function (e) { return e.id; }));
   var g = await planche.modele.grouper(ids, nom);
   await planche.modele.deplacer([g], [-loin, 0, 0]);
   return g;
@@ -924,7 +928,7 @@ async function effacerCapacite() {
 
 // ——————————————————————————————————————————————— Onglet « Typologies »
 
-// « typologies » : { bibliotheque: [[id, nom, surface, largeur]], unites: [[groupe, id]] }
+// « typologies » : { bibliotheque: [[id, nom, surface, largeur]], unites: [[groupe, id, surface posée]] }
 async function lireTypologies() {
   var t = await lireCle("typologies", {});
   return {
@@ -941,14 +945,22 @@ async function etatTypologies(sep) {
   var t = await lireTypologies();
   if (!t.bibliotheque.length) return { lignes: [], pied: null, vide: x.videTypologies };
   var mo = await lireModele();
+  // Les unités posées gardent la surface de leur pose : modifier la bibliothèque ne change pas ce qui est dessiné.
   var compte = {};
-  t.unites.forEach(function (u) { if (mo.objets[u[0]]) compte[u[1]] = (compte[u[1]] || 0) + 1; });
+  var surfaces = {};
   var n = 0;
   var total = 0;
-  t.bibliotheque.forEach(function (b) { n += compte[b.id] || 0; total += (compte[b.id] || 0) * b.surface; });
+  t.unites.forEach(function (u) {
+    if (!mo.objets[u[0]]) return;
+    var s = typeof u[2] === "number" ? u[2] : 0;
+    compte[u[1]] = (compte[u[1]] || 0) + 1;
+    surfaces[u[1]] = (surfaces[u[1]] || 0) + s;
+    n++;
+    total += s;
+  });
   var lignes = t.bibliotheque.map(function (b) {
     var k = compte[b.id] || 0;
-    return { genre: "ligne", id: b.id, cellules: [b.nom + " · " + m2(b.surface, sep), metre(b.largeur, sep) + " m", String(k), n ? Math.round((100 * k) / n) + " %" : "–", m2(k * b.surface, sep)] };
+    return { genre: "ligne", id: b.id, cellules: [b.nom + " · " + m2(b.surface, sep), metre(b.largeur, sep) + " m", String(k), n ? Math.round((100 * k) / n) + " %" : "–", m2(surfaces[b.id] || 0, sep)] };
   });
   var c = await lireCle("capacite", null);
   var brute = 0;
@@ -1030,7 +1042,7 @@ async function remplirFacade() {
       compteurs[b.id] = (compteurs[b.id] || 0) + 1;
       var g = await volumeLoin(contour, 0, b.nom + " " + compteurs[b.id], loin);
       await planche.donnees.ecrire(g, "typologie", { typologie: b.id, nom: b.nom, surface: b.surface });
-      t.unites.push([g, b.id]);
+      t.unites.push([g, b.id, b.surface]);
       s += b.largeur;
     }
     var presents = (await lireModele()).objets;

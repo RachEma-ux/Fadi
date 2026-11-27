@@ -366,6 +366,18 @@ describe("extension « Surfaces et programme » — capacité (n° 24) et typolo
     expect(occurrences(p.etat.modele)).toHaveLength(0);
   });
 
+  it("une emprise loin sur l'axe X reste intacte : le nouveau se reconnaît à son identifiant, pas à sa position", async () => {
+    const m = ajouterRectangle(modeleVide(), v3(2000, 0, 0), v3(20, 0, 0), v3(0, 10, 0)).modele;
+    const emprise = Object.keys(m.racine.faces)[0]!;
+    const p = planche(m);
+    p.etat.selection = [emprise];
+    p.repondre([{ niveaux: 2, hauteur: 3, retrait: 0, coefficient: 1, terrain: 0, surfaceLogement: 0 }]);
+    const e = await p.action("volumes-capacite", { onglet: "capacite" });
+    expect(Object.keys(p.etat.modele.racine.faces)).toEqual([emprise]);
+    expect(occurrences(p.etat.modele)).toHaveLength(2);
+    expect(e.pied).toEqual(["Surface brute · 2 / 2", "400,00 m²"]);
+  });
+
   it("retrait trop grand pour l'emprise : refus nommé, rien n'est dessiné", async () => {
     const { modele, faces } = rectangles([[4, 3]]);
     const p = planche(modele);
@@ -398,6 +410,11 @@ describe("extension « Surfaces et programme » — capacité (n° 24) et typolo
       ["Part de la surface brute de capacité (estimation)", "non évaluée"],
     ]);
     expect(e.pied).toEqual(["Total · 4 logements", "218,00 m²"]);
+    // Modifier la bibliothèque après la pose ne change pas la surface des unités déjà dessinées.
+    p.repondre([{ nom: "T2", surface: 90, largeur: 6, retirer: false }]);
+    const apres = await p.action("typologie-modifier", { onglet: "typologies", id: e.lignes[0]!.id });
+    expect(apres.pied).toEqual(["Total · 4 logements", "218,00 m²"]);
+    expect(apres.lignes[0]!.cellules).toEqual(["T2 · 90,00 m²", "6,000 m", "2", "50 %", "90,00 m²"]);
     await p.action("typologies-effacer", { onglet: "typologies" });
     expect(occurrences(p.etat.modele)).toHaveLength(0);
   });
