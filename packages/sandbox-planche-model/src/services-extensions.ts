@@ -17,7 +17,7 @@
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
 import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
 import { reglagesDe } from "./cotes.js";
-import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, matriceMonde, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, IDENTITE, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
 import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
@@ -110,20 +110,25 @@ const polygoneLu = (p: PolygonePlan): PolygoneLu => ({
   aire: aireContourPlan(p.exterieur) - p.trous.reduce((s, t) => s + aireContourPlan(t), 0),
 });
 const airePolygones = (ps: readonly PolygoneLu[]): number => ps.reduce((s, p) => s + p.aire, 0);
-/** Balise d'une occurrence, ou celle du premier objet qui la contient et en porte une (premier chemin trouvé). */
-function baliseDe(m: Modele, id: Id): Id | null {
-  const chercher = (c: Contexte, herite: Id | null, prof: number): Id | null | undefined => {
-    if (prof > MAX_PROFONDEUR_MONDE) return undefined;
+/**
+ * Tous les chemins (racine → occurrence) qui mènent à un objet, chacun avec sa matrice monde composée et la balise
+ * héritée (celle de l'objet, sinon du plus proche contenant qui en porte une). Bornés à `BORNES_PLANS.solides`.
+ */
+function cheminsVers(m: Modele, id: Id): { chemin: Id[]; M: Matrice4; balise: Id | null }[] {
+  const trouves: { chemin: Id[]; M: Matrice4; balise: Id | null }[] = [];
+  const chercher = (c: Contexte, M: Matrice4, chemin: Id[], herite: Id | null, prof: number): void => {
+    if (prof > MAX_PROFONDEUR_MONDE || trouves.length >= BORNES_PLANS.solides) return;
     for (const o of Object.values(c.occurrences)) {
+      const M2 = composer(M, o.transformation);
       const b = o.balise ?? herite;
-      if (o.id === id) return b;
+      const ch = [...chemin, o.id];
+      if (o.id === id) trouves.push({ chemin: ch, M: M2, balise: b });
       const d = m.definitions[o.definition];
-      const r = d ? chercher(d.contenu, b, prof + 1) : undefined;
-      if (r !== undefined) return r;
+      if (d) chercher(d.contenu, M2, ch, b, prof + 1);
     }
-    return undefined;
   };
-  return chercher(m.racine, null, 0) ?? null;
+  chercher(m.racine, IDENTITE, [], null, 1);
+  return trouves;
 }
 
 /** (1.4) Polygones passés par une extension : `{ exterieur, trous? }`, points `[x, y]` finis ; message d'erreur sinon. */
@@ -759,9 +764,11 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     } else {
       if (!Array.isArray(objets) || objets.length === 0 || objets.length > BORNES_PLANS.solides || !objets.every((x) => typeof x === "string")) return refus("argument_invalide", `objets : liste de 1 à ${BORNES_PLANS.solides} identifiants`);
       for (const id of objets as string[]) {
-        const M = matriceMonde(m, id);
-        if (!M) return refus("objet_introuvable", id);
-        visiter(id, M, [id], baliseDe(m, id), 1);
+        // Chaque instance de l'objet (un composant placé deux fois donne deux chemins), avec ses ancêtres.
+        const chemins = cheminsVers(m, id);
+        if (chemins.length === 0) return refus("objet_introuvable", id);
+        for (const c of chemins) visiter(id, c.M, c.chemin, c.balise, c.chemin.length);
+        if (trop) break;
       }
     }
     if (trop) return refus("argument_invalide", `plus de ${BORNES_PLANS.solides} solides`);

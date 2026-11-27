@@ -80,6 +80,17 @@ describe("protocole 1.4 : opérations planes", () => {
     expect(r.facesLibres).toBe(0);
     expect(planche(d.modele).servir("geometrie.projection", { objets: ["inconnu"] })).toMatchObject({ ok: false, erreur: "objet_introuvable" });
   });
+  it("objets nommés : un solide imbriqué dans un composant placé deux fois donne ses deux instances, chemin complet depuis la racine", () => {
+    const f = creerFonctionsPlanche(modeleVide());
+    const piece = f.api.grouper(f.api.boite([0, 0, 0], 2, 2, 3) as Id[], "Pièce") as Id;
+    const module = f.api.composant([piece], "Module") as Id;
+    const copie = (f.api.copier(module, [10, 0, 0]) as Id[])[0]!;
+    const m = baliserOccurrences(f.modele(), [copie], "b-copie").modele;
+    const r = ok<PlansLus>(planche(m).servir("geometrie.projection", { objets: [piece] }));
+    expect(r.solides.map((s) => [s.chemin, s.aire, s.balise])).toEqual([[[module, piece], 4, null], [[copie, piece], 4, "b-copie"]]);
+    expect(r.aire).toBeCloseTo(8, 9);
+    expect(r.polygones.map((p) => p.exterieur[0])).toEqual([[0, 0], [10, 0]]);
+  });
   it("union : polygones validés, aire nette (trous déduits) ; arguments faux refusés", () => {
     const s = planche(modeleVide());
     const r = ok<{ aire: number }>(s.servir("geometrie.union", { polygones: [{ exterieur: [[0, 0], [10, 0], [10, 10], [0, 10]], trous: [[[4, 4], [4, 6], [6, 6], [6, 4]]] }] }));
