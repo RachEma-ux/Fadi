@@ -5296,3 +5296,62 @@
 .sandbox-planche .planche-fonds-recue .planche-fonds-longueur input {
   width: 10em;
 }
+/* Raccourcis en deux temps (décision du 27 novembre 2026) : encadré des secondes touches, en bas à gauche de la vue. */
+.sandbox-planche .planche-deux-temps {
+  position: absolute;
+  left: 72px;
+  bottom: 12px;
+  z-index: 30;
+  max-width: min(460px, calc(100% - 96px));
+  max-height: 60%;
+  overflow: auto;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #161616;
+  color: #f4f4f4;
+  font-size: 13px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.sandbox-planche .planche-deux-temps p {
+  margin: 0;
+}
+.sandbox-planche .planche-deux-temps ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 3px 12px;
+}
+.sandbox-planche .planche-deux-temps kbd {
+  font: 600 11.5px inherit;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+}
+/* Références verrouillées (cas 4, lot C4, étape 3) : placement en quatre champs. */
+.sandbox-planche .planche-references-placement {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.sandbox-planche .planche-references-placement label {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  gap: 2px;
+}
+.sandbox-planche .planche-references-placement input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.sandbox-planche .planche-references .planche-fonds-auteur .est-principal {
+  margin-left: auto;
+}

@@ -607,6 +607,32 @@ export function disponibiliteFond(id: IdCommandeFond, s: { readonly fond: boolea
   return { disponible: true, motif: null };
 }
 
+/**
+ * Références verrouillées (cas 4, lot C4, étape 3) : ouvrir le panneau, charger, recharger, verrouiller, masquer,
+ * contrôler le récolement, supprimer (règle d'or : icône, barre, raccourci en deux temps).
+ */
+export type IdCommandeReference = "references" | "charger-reference" | "recharger-reference" | "verrouiller-reference" | "afficher-reference" | "controler-recolement" | "supprimer-reference";
+export interface CommandeReference {
+  readonly id: IdCommandeReference;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_REFERENCES: readonly CommandeReference[] = (["references", "charger-reference", "recharger-reference", "verrouiller-reference", "afficher-reference", "controler-recolement", "supprimer-reference"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.references.${id}` as CleMessage, court: `planche.references.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; charger hors lecture ; le reste sur la référence choisie ; récolement : chargée et visible. */
+export function disponibiliteReference(id: IdCommandeReference, s: { readonly reference: boolean; readonly chargee: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "references") return { disponible: true, motif: null };
+  if (id === "controler-recolement") {
+    if (!s.reference) return { disponible: false, motif: "planche.references.motif.reference" };
+    return s.chargee ? { disponible: true, motif: null } : { disponible: false, motif: "planche.references.motif.chargee" };
+  }
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "charger-reference") return { disponible: true, motif: null };
+  return s.reference ? { disponible: true, motif: null } : { disponible: false, motif: "planche.references.motif.reference" };
+}
+
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */
 export type IdCommandePiece = "piece-section" | "piece-rotation";
 export interface CommandePiece {

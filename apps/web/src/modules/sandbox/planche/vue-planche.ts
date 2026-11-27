@@ -258,6 +258,9 @@ export class VuePlanche {
   private readonly groupeCoupe = new THREE.Group();
   /** Contrôle de l'enveloppe (cas 4, étape 7c) : faces hors enveloppe hachurées et colorées, point le plus défavorable. */
   private readonly groupeEnveloppe = new THREE.Group();
+  /** Références verrouillées (cas 4, lot C4, étape 3) : maquettes reçues dessinées d'un bloc, jamais fusionnées au dessin. */
+  private readonly groupeReferences = new THREE.Group();
+  private geometriesReferences = new Map<string, { cle: string; geometrie: THREE.BufferGeometry }>();
   private etiquettesEnveloppe: Etiquette[] = [];
   private readonly texturesHachure = new Map<string, THREE.Texture>();
   private groupeAxes: THREE.Group;
@@ -362,7 +365,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -700,6 +703,53 @@ export class VuePlanche {
         this.groupeCoupe.add(mesh);
       });
     }
+  }
+
+  /**
+   * Références verrouillées (cas 4, lot C4, étape 3) : chaque maquette reçue (triangles dans l'unité du fichier, 9 nombres
+   * par triangle) est posée par son placement (échelle, rotation autour de la verticale, translation), en gris translucide,
+   * sans écrire la profondeur ni être visée par les outils. Les points hors tolérance du récolement sont marqués en rouge.
+   * La géométrie est gardée tant que le fichier (clé) ne change pas.
+   */
+  poserReferences(liste: readonly { readonly id: string; readonly cle: string; readonly positions: Float32Array; readonly echelle: number; readonly placement: { readonly x: number; readonly y: number; readonly z: number; readonly rotation: number }; readonly visible: boolean; readonly opacite: number }[], horsTolerance: readonly Vec3[]): void {
+    for (const enfant of [...this.groupeReferences.children]) {
+      this.groupeReferences.remove(enfant);
+      const m = (enfant as THREE.Mesh).material as THREE.Material | undefined;
+      m?.dispose();
+      if (enfant instanceof THREE.Points) enfant.geometry.dispose();
+    }
+    for (const [id, g] of [...this.geometriesReferences]) {
+      const r = liste.find((x) => x.id === id);
+      if (!r || r.cle !== g.cle) {
+        g.geometrie.dispose();
+        this.geometriesReferences.delete(id);
+      }
+    }
+    for (const r of liste) {
+      let g = this.geometriesReferences.get(r.id)?.geometrie;
+      if (!g) {
+        g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(r.positions, 3));
+        g.computeVertexNormals();
+        g.computeBoundingSphere();
+        this.geometriesReferences.set(r.id, { cle: r.cle, geometrie: g });
+      }
+      if (!r.visible) continue;
+      const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: COULEUR_HORS_CONTEXTE, side: THREE.DoubleSide, transparent: true, opacity: r.opacite, depthWrite: false }));
+      mesh.position.set(r.placement.x, r.placement.y, r.placement.z);
+      mesh.rotation.set(0, 0, r.placement.rotation);
+      mesh.scale.setScalar(r.echelle);
+      mesh.renderOrder = 1;
+      mesh.userData["reference"] = r.id;
+      this.groupeReferences.add(mesh);
+    }
+    if (horsTolerance.length > 0) {
+      const points = new THREE.Points(new THREE.BufferGeometry().setFromPoints(horsTolerance.map(v3)), new THREE.PointsMaterial({ color: "#b3261e", size: 12, sizeAttenuation: false, depthTest: false }));
+      points.renderOrder = 4;
+      points.name = "hors-tolerance";
+      this.groupeReferences.add(points);
+    }
+    this.rendre();
   }
 
   /**

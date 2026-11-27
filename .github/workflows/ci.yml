@@ -1140,6 +1140,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-fiche-calage node apps/web/e2e/planche-fiche-calage.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des références verrouillées (cas 4, lot C4, étape 3) — raccourcis en deux temps, maquette reçue archivée, verrou, récolement, rechargement (apps/web/e2e/planche-references.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-references node apps/web/e2e/planche-references.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

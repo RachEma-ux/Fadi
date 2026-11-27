@@ -249,6 +249,26 @@ import {
   fondsDe,
   importerFond,
   appliquerFiche,
+  ENTREE_DEUX_TEMPS,
+  afficherReference,
+  ajouterReference,
+  controlerRecolement,
+  deplacerReference,
+  lireMaillages,
+  positionsReference,
+  rechargerReference,
+  referencesDe,
+  reglerOpaciteReference,
+  reglerTolerance,
+  sommetsDuDessin,
+  supprimerReference,
+  trianglesAuProjet,
+  verrouillerReference,
+  ErreurImport,
+  type FormatReference,
+  type ResultatRecolement,
+  type ResultatReference,
+  secondTemps,
   calageImageDuFond,
   comparerFiche,
   ecrireCalageImage,
@@ -330,13 +350,13 @@ import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { MenusBandeau, type EntreeMenuBandeau, type MenuBandeau } from "../panneaux/MenusBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
 import { largeurVueEcranLarge } from "./ecran-large";
-import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
+import { COMMANDES_DEUX_TEMPS, commandeDuClavier, commandeDuSecondTemps, estEntreeDeuxTemps, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -352,6 +372,8 @@ import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
+import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
+import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond } from "./fonds-client";
 import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
 import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
@@ -428,7 +450,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -443,7 +465,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -2349,6 +2371,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     };
   }, [poserHistorique, rafraichir, sauvegarde]);
 
+  // Raccourcis en deux temps : encadré ouvert après la touche d'entrée, refermé à la touche suivante ou après 5 s.
+  const [deuxTemps, setDeuxTemps] = useState(false);
+  const deuxTempsRef = useRef(false);
+  const minuteurDeuxTemps = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finirDeuxTempsRef = useRef(() => {});
+  const ouvrirDeuxTempsRef = useRef(() => {});
+  finirDeuxTempsRef.current = () => {
+    deuxTempsRef.current = false;
+    if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
+    minuteurDeuxTemps.current = null;
+    setDeuxTemps(false);
+  };
+  ouvrirDeuxTempsRef.current = () => {
+    deuxTempsRef.current = true;
+    if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
+    minuteurDeuxTemps.current = setTimeout(() => finirDeuxTempsRef.current(), 5000);
+    setDeuxTemps(true);
+  };
+  useEffect(() => () => void (minuteurDeuxTemps.current && clearTimeout(minuteurDeuxTemps.current)), []);
+
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
   useEffect(() => {
     const surTouche = (e: KeyboardEvent) => {
@@ -2375,6 +2417,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       // Lot 9 (EX-CMD-01) : registre unique — Ctrl + G (Grouper), Ctrl + Maj + G (Éclater), Alt + Maj + lettre (objets,
       // Navigateur, vue, lien) et F2, une seule résolution (touche physique sous Alt pour macOS), la disponibilité de la
       // famille fait foi (un objet verrouillé n'est pas éclaté).
+      // Raccourcis en deux temps (décision du 27 novembre 2026) : la touche d'entrée ouvre l'encadré des secondes
+      // touches ; la touche suivante exécute la commande (Échap, ou une touche sans commande, annule).
+      if (deuxTempsRef.current && !dansMesures) {
+        if (modif === "Maj" || modif === "Ctrl" || modif === "Alt" || e.key === "Meta") return;
+        e.preventDefault();
+        finirDeuxTempsRef.current();
+        if (e.key === "Escape") return;
+        const seconde = commandeDuSecondTemps(e) ?? commandeDuSecondTemps({ key: e.key, code: e.code, ctrlKey: false, metaKey: false, altKey: false, shiftKey: e.shiftKey });
+        if (seconde) executerCommandeRef.current(seconde);
+        return;
+      }
+      if (estEntreeDeuxTemps(e) && !dansMesures) {
+        e.preventDefault();
+        ouvrirDeuxTempsRef.current();
+        return;
+      }
       const commande = commandeDuClavier(e);
       if (commande && routeeParLeRegistre(commande) && !dansMesures) {
         e.preventDefault();
@@ -3470,6 +3528,133 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (id === "supprimer-fond") {
       operationFond(supprimerFond(m, fondChoisi.id), t("planche.fonds.supprimer-fond"), t("planche.fonds.note.supprime", { nom: fondChoisi.nom }));
       setFondChoisi(null);
+    }
+  };
+  // Références verrouillées (lot C4, étape 3) : fiche dans le dessin, fichier archivé en base et relu à l'ouverture.
+  const referencesListe = referencesDe(hist.present.modele);
+  const [referenceChoisieEtat, setReferenceChoisie] = useState<string | null>(null);
+  const referenceChoisie = referencesListe.find((r) => r.id === referenceChoisieEtat) ?? referencesListe[0] ?? null;
+  const [erreurReference, setErreurReference] = useState<string | null>(null);
+  const [noteReference, setNoteReference] = useState<string | null>(null);
+  const [uniteReference, setUniteReference] = useState<UniteReference>("m");
+  /** Triangles relus de chaque fichier (unité du fichier), par empreinte ; « lecture » / « introuvable » sinon. */
+  const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
+  const [recolement, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[] } | null>(null);
+  const importReferenceRef = useRef<HTMLInputElement | null>(null);
+  const modeImportReference = useRef<"charger" | "recharger">("charger");
+  const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
+    const f = fichiersReferences[r.fichier.empreinte];
+    return [r.id, f === undefined || f === "lecture" ? "lecture" : f === "introuvable" ? "introuvable" : "chargee"] as const;
+  }));
+  const disponibiliteCommandeReference = (id: IdCommandeReference) => disponibiliteReference(id, { reference: referenceChoisie !== null, chargee: referenceChoisie !== null && etatsReferences[referenceChoisie.id] === "chargee", lecture: readOnly });
+  const operationReference = (r: ResultatReference, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReference(t(`planche.references.erreur.${r.erreur}`));
+    setErreurReference(null);
+    setNoteReference(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  // Relecture des fichiers absents (ouverture d'un dessin, annulation d'une suppression) : une fois par empreinte.
+  const enLecture = useRef(new Set<string>());
+  useEffect(() => {
+    for (const r of referencesListe) {
+      const cle = r.fichier.empreinte;
+      if (fichiersReferences[cle] !== undefined || enLecture.current.has(cle)) continue;
+      enLecture.current.add(cle);
+      void (async () => {
+        let etat: { positions: Float32Array } | "introuvable";
+        try {
+          const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
+          etat = { positions: positionsReference(lireMaillages(r.format, octets).maillages).positions };
+        } catch {
+          etat = "introuvable";
+        }
+        enLecture.current.delete(cle);
+        setFichiersReferences((a) => ({ ...a, [cle]: etat }));
+      })();
+    }
+  });
+  // Vue mise à jour seulement quand les références, leurs fichiers relus, le récolement ou la vue elle-même changent.
+  const dernierePoseReferences = useRef<{ vue: unknown; refs: unknown; fichiers: unknown; recolement: unknown; cle: string } | null>(null);
+  useEffect(() => {
+    const v = vueRef.current;
+    if (!v) return;
+    const cle = JSON.stringify(referencesListe.map((r) => [r.id, r.fichier.empreinte, r.echelle, r.placement, r.visible, r.opacite]));
+    const d = dernierePoseReferences.current;
+    if (d && d.vue === v && d.cle === cle && d.fichiers === fichiersReferences && d.recolement === recolement) return;
+    dernierePoseReferences.current = { vue: v, refs: null, fichiers: fichiersReferences, recolement, cle };
+    const liste = referencesListe.flatMap((r) => {
+      const f = fichiersReferences[r.fichier.empreinte];
+      return f && typeof f === "object" ? [{ id: r.id, cle: r.fichier.empreinte, positions: f.positions, echelle: r.echelle, placement: r.placement, visible: r.visible, opacite: r.opacite }] : [];
+    });
+    v.poserReferences(liste, recolement?.points ?? []);
+  });
+  const formatDuNom = (nom: string): FormatReference | null => {
+    const e = nom.toLowerCase().split(".").pop();
+    return e === "obj" || e === "stl" || e === "ifc" ? e : null;
+  };
+  const chargerFichierReference = async (f: File) => {
+    const mode = modeImportReference.current;
+    setNoteReference(null);
+    const format = formatDuNom(f.name);
+    if (!format) return setErreurReference(t("planche.references.erreur.format"));
+    const planche = indexRef.current.courante;
+    let octets: Uint8Array;
+    let lu: ReturnType<typeof lireMaillages>;
+    try {
+      octets = new Uint8Array(await f.arrayBuffer());
+      lu = lireMaillages(format, octets);
+    } catch (e) {
+      return setErreurReference(t(e instanceof ErreurImport && e.code === "unite" ? "planche.references.erreur.unite" : "planche.references.erreur.lecture"));
+    }
+    const { positions, triangles } = positionsReference(lu.maillages);
+    if (triangles === 0) return setErreurReference(t("planche.references.erreur.lecture"));
+    const echelle = lu.echelleFichier ?? ECHELLES_UNITE[uniteReference];
+    setNoteReference(t("planche.references.note.archivage"));
+    let fichier: Awaited<ReturnType<typeof archiverFichierReference>>;
+    try {
+      fichier = await archiverFichierReference(f, format);
+    } catch (e) {
+      setNoteReference(null);
+      return setErreurReference(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
+    const m = histRef.current.present.modele;
+    if (mode === "recharger" && referenceChoisie) {
+      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, fichier, echelle, triangles, date: dateDuJour() });
+      setRecolement(null);
+      return operationReference(r, t("planche.references.recharger-reference"), r.ok ? t("planche.references.note.rechargee", { version: String(referenceChoisie.version + 1), triangles: triangles.toLocaleString(LOCALE) }) : null);
+    }
+    const r = ajouterReference(m, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
+    operationReference(r, t("planche.references.charger-reference"), t("planche.references.note.chargee", { nom: f.name, triangles: triangles.toLocaleString(LOCALE) }));
+    if (r.ok) setReferenceChoisie(r.id);
+    setPanneau("references");
+  };
+  const executerReference = (id: IdCommandeReference) => {
+    if (id === "references") return setPanneau("references");
+    if (!disponibiliteCommandeReference(id).disponible) return;
+    setPanneau("references");
+    if (id === "charger-reference" || id === "recharger-reference") {
+      modeImportReference.current = id === "charger-reference" ? "charger" : "recharger";
+      return importReferenceRef.current?.click();
+    }
+    if (!referenceChoisie) return;
+    const m = hist.present.modele;
+    if (id === "verrouiller-reference") return operationReference(verrouillerReference(m, referenceChoisie.id, !referenceChoisie.verrouille), t(referenceChoisie.verrouille ? "planche.references.deverrouiller" : "planche.references.verrouiller-reference"), t(referenceChoisie.verrouille ? "planche.references.note.deverrouillee" : "planche.references.note.verrouillee"));
+    if (id === "afficher-reference") return operationReference(afficherReference(m, referenceChoisie.id, !referenceChoisie.visible), t(referenceChoisie.visible ? "planche.references.afficher-reference" : "planche.references.montrer"), t(referenceChoisie.visible ? "planche.references.note.masquee" : "planche.references.note.affichee"));
+    if (id === "supprimer-reference") {
+      operationReference(supprimerReference(m, referenceChoisie.id), t("planche.references.supprimer-reference"), t("planche.references.note.supprimee", { nom: referenceChoisie.nom }));
+      setRecolement(null);
+      return setReferenceChoisie(null);
+    }
+    if (id === "controler-recolement") {
+      const f = fichiersReferences[referenceChoisie.fichier.empreinte];
+      if (!f || typeof f !== "object") return;
+      const points = sommetsDuDessin(m);
+      const resultat = controlerRecolement(points, trianglesAuProjet(referenceChoisie, f.positions), referenceChoisie.tolerance);
+      setErreurReference(null);
+      setNoteReference(null);
+      setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
     }
   };
   const reservesListe = reservesDe(hist.present.modele);
@@ -4636,6 +4821,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
     else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
     else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
+    else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -4709,6 +4895,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_FONDS.map((c) => {
           const d = disponibiliteCommandeFond(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fonds.motif.fond"), executer: () => executerFond(c.id) };
+        }),
+        ...COMMANDES_REFERENCES.map((c) => {
+          const d = disponibiliteCommandeReference(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.references.motif.reference"), executer: () => executerReference(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -5134,6 +5324,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
         </div>
         <AvisExtensions avis={avisExtensions} onFermer={(cle) => setAvisExtensions((liste) => liste.filter((a) => a.cle !== cle))} />
+        {deuxTemps && (
+          <div className="planche-deux-temps" role="status" aria-live="polite" data-planche-deux-temps>
+            <p>
+              <b>{afficherRaccourci(ENTREE_DEUX_TEMPS)}…</b> {t("planche.deux-temps.puis")}
+            </p>
+            <ul>
+              {COMMANDES_DEUX_TEMPS.map((c) => (
+                <li key={c.id} data-planche-deux-temps-commande={c.id}>
+                  <kbd>{afficherRaccourci(secondTemps(c.raccourci) ?? "")}</kbd> {t(c.libelle)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon, sans logo ni marque) : 48 px sombres en
@@ -5441,6 +5645,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-orthophoto-fichier
       />
+      {/* Fichier d'une référence (Ctrl+Maj+Espace, C ou Maj+C) : monté hors du panneau. */}
+      <input
+        ref={importReferenceRef}
+        type="file"
+        accept=".obj,.stl,.ifc"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void chargerFichierReference(f);
+        }}
+        data-planche-reference-fichier
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -5489,6 +5706,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "references" && (
+              <PanneauReferences
+                references={referencesListe}
+                choisie={referenceChoisie}
+                etats={etatsReferences}
+                lecture={readOnly}
+                unite={uniteReference}
+                recolement={recolement}
+                onChoisir={(id) => { setReferenceChoisie(id); setErreurReference(null); setNoteReference(null); }}
+                onUnite={setUniteReference}
+                onPlacement={(p) => referenceChoisie && operationReference(deplacerReference(hist.present.modele, referenceChoisie.id, p), t("planche.references.placement"), null)}
+                onOpacite={(v) => referenceChoisie && operationReference(reglerOpaciteReference(hist.present.modele, referenceChoisie.id, v), t("planche.references.opacite"), null)}
+                onTolerance={(v) => referenceChoisie && operationReference(reglerTolerance(hist.present.modele, referenceChoisie.id, v), t("planche.references.tolerance"), null)}
+                executer={executerReference}
+                disponibilite={disponibiliteCommandeReference}
+                erreur={erreurReference}
+                note={noteReference}
               />
             )}
             {panneau === "fonds" && (
