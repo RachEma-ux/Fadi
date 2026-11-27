@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -447,6 +447,29 @@ export function disponibiliteMur(_id: IdCommandeMur, s: { readonly aretes: numbe
   if (s.dansObjet) return { disponible: false, motif: "planche.mur.motif.racine" };
   if (s.aretes === 0) return { disponible: false, motif: "planche.mur.motif.aretes" };
   if (!s.parametres) return { disponible: false, motif: "planche.mur.motif.parametres" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Plan vectoriel (cas 4 du catalogue, étape 5) : ouvrir le panneau, exporter le SVG, rafraîchir l'aperçu, aller aux
+ * motifs de hachure, en créer, en importer d'un fichier .pat, en supprimer (règle d'or : icône, barre, raccourci).
+ */
+export type IdCommandePlan = "plan-vectoriel" | "exporter-plan-svg" | "rafraichir-plan" | "motifs-hachure" | "nouveau-motif" | "importer-motif" | "supprimer-motif";
+export interface CommandePlan {
+  readonly id: IdCommandePlan;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_PLAN: readonly CommandePlan[] = (["plan-vectoriel", "exporter-plan-svg", "rafraichir-plan", "motifs-hachure", "nouveau-motif", "importer-motif", "supprimer-motif"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.plan.${id}` as CleMessage, court: `planche.plan.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir, rafraîchir et aller aux motifs toujours ; exporter avec un dessin ; modifier les motifs hors lecture. */
+export function disponibilitePlan(id: IdCommandePlan, s: { readonly dessin: boolean; readonly motifChoisi: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "plan-vectoriel" || id === "rafraichir-plan" || id === "motifs-hachure") return { disponible: true, motif: null };
+  if (id === "exporter-plan-svg") return s.dessin ? { disponible: true, motif: null } : { disponible: false, motif: "planche.plan.motif.vide" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "supprimer-motif" && !s.motifChoisi) return { disponible: false, motif: "planche.plan.motif.choisi" };
   return { disponible: true, motif: null };
 }
 

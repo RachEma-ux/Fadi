@@ -101,7 +101,7 @@ async function disposition(page, contexte, tactile = contexte === "téléphone")
   check(`${contexte} : barre gauche — seize outils dans l'ordre de SketchUp, puis « ⋯ »`, JSON.stringify(barre) === JSON.stringify(attendue), barre.join(", "));
   check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
   const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
-  check(`${contexte} : colonne — chaque panneau à un clic (Repères, Niveaux, Locaux et Numérotation compris), Info modèle en bas`, colonne.length === 17 && colonne.includes("reperes") && colonne.includes("numerotation") && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
+  check(`${contexte} : colonne — chaque panneau à un clic (Repères, Niveaux, Locaux, Numérotation et Plan vectoriel compris), Info modèle en bas`, colonne.length === 18 && colonne.includes("reperes") && colonne.includes("numerotation") && colonne.includes("plan-vectoriel") && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
   check(`${contexte} : menu Planche (pictogramme seul) et loupe ; plus de barre du haut`, (await racine.locator(".planche > [data-planche-bandeau] > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator("[data-planche-recherche]").count() === 1) && (await racine.locator(".planche-haut").count()) === 0 && (await racine.locator("[data-planche-outils-bouton]").count()) === 0);
   await bandeau(page, racine, contexte);
   check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
@@ -790,7 +790,7 @@ try {
       };
     });
     check(`${nom} : la Planche remplit exactement l'écran, rien ne déborde`, Math.abs(mesure.planche[0] - mesure.vue[0]) <= 1 && Math.abs(mesure.planche[1] - mesure.vue[1]) <= 1 && !mesure.deborde, JSON.stringify(mesure));
-    check(`${nom} : mise en page large — bandeau, barre de gauche, colonne avec libellés, bande du bas et Mesures`, mesure.large && mesure.bandeau && mesure.outils >= 6 && mesure.colonne === 17 && mesure.libelles && mesure.pied && mesure.mesures && mesure.colonneDedans && mesure.entieres, JSON.stringify(mesure));
+    check(`${nom} : mise en page large — bandeau, barre de gauche, colonne avec libellés, bande du bas et Mesures`, mesure.large && mesure.bandeau && mesure.outils >= 6 && mesure.colonne === 18 && mesure.libelles && mesure.pied && mesure.mesures && mesure.colonneDedans && mesure.entieres, JSON.stringify(mesure));
     await d.page.screenshot({ path: join(OUT, `sandbox-${nom.replaceAll(" ", "-").normalize("NFD").replace(/[^\w-]/g, "")}.png`) });
     // Le chevron de la colonne se comporte comme dans la page : caché, puis paru au toucher de la colonne.
     const vuChevron = () => rd.locator("[data-planche-colonne-bascule]").evaluate((k) => getComputedStyle(k).visibility === "visible");
