@@ -54,11 +54,13 @@ const sante = async (id) => {
 };
 async function exporterObj() {
   const [dl] = await Promise.all([
-    page.waitForEvent("download", { timeout: 15000 }),
+    page.waitForEvent("download", { timeout: 15000, predicate: (d) => d.suggestedFilename().endsWith(".obj") }),
     (async () => {
       await page.click("[data-planche-menu-ouvrir]");
       await page.click('[data-planche-menu-item="exporter"]');
       await page.click('[data-planche-exporter="obj"]');
+      // Cas 2, lot 6 : le format choisi ouvre le panneau « Exporter » (unité, repère, rapport) ; « Exporter » télécharge.
+      await page.click("[data-planche-echange-exporter]");
     })(),
   ]);
   return readFileSync(await dl.path(), "utf8");
@@ -150,7 +152,7 @@ try {
   const travail = await exporterObj();
   const xs = (t) => t.split("\n").filter((l) => l.startsWith("v ")).map((l) => Number(l.split(" ")[1]));
   check("export OBJ dans le repère de travail (origine x = 10) : en-tête explicite, sommets décalés de −10 en x", /repère de travail/.test(travail.split("\n")[0]) && Math.max(...xs(travail)) <= Math.max(...xs(modele)) - 10 + 1e-6, `${travail.split("\n")[0]} ; max x ${Math.max(...xs(modele))} → ${Math.max(...xs(travail))}`);
-  check("le message d'export annonce les coordonnées utilisées", /repère de travail/.test(await page.locator("[data-planche-message]").innerText().catch(() => "")));
+  check("le message d'export annonce les coordonnées utilisées", /repère écrit : repère de travail/i.test(await page.locator("[data-planche-message]").innerText().catch(() => "")));
   await panneauReperes();
   await page.check('[data-reperes-exports="modele"]');
   await page.screenshot({ path: join(OUT, "reperes-lies.png") });
