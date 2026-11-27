@@ -134,7 +134,8 @@ export interface Occurrence {
   /** (Lot L14) Repère de pièce (liste de débit) : posé par la renumérotation, gardé par une copie. */
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
-  readonly niveau?: Id;
+  readonly niveau?: Id;  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
+  readonly horsAccrochage?: boolean;
 }
 
 export interface Contexte {
@@ -4501,6 +4502,16 @@ export function verrouillerOccurrences(m: Modele, ids: readonly Id[], verrou: bo
     for (const id of ids) {
       const occ = c.occurrences.get(id);
       if (occ) c.occurrences.set(id, sansFaux(occ, "verrouille", verrou));
+    }
+  });
+}
+
+/** (Cas 2, lot 2) Exclure des objets de l'accrochage sans les masquer (ou les y rendre). */
+export function exclureDeLAccrochage(m: Modele, ids: readonly Id[], exclu: boolean, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of ids) {
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "horsAccrochage", exclu));
     }
   });
 }
