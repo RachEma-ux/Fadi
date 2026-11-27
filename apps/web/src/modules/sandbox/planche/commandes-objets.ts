@@ -295,7 +295,7 @@ export function disponibiliteDynamique(id: IdCommandeDynamique, s: { readonly dy
 }
 
 /** Extension « Emplacement » : ouvrir le panneau, aligner le nord sur l'arête sélectionnée, afficher la flèche du nord. */
-export type IdCommandeEmplacement = "emplacement" | "nord-arete" | "afficher-nord";
+export type IdCommandeEmplacement = "emplacement" | "nord-arete" | "afficher-nord" | "point-de-base";
 export interface CommandeEmplacement {
   readonly id: IdCommandeEmplacement;
   readonly picto: Pictogramme;
@@ -307,6 +307,7 @@ export const COMMANDES_EMPLACEMENT: readonly CommandeEmplacement[] = [
   { id: "emplacement", ...depuisRegistre("emplacement"), libelle: "planche.emplacement.ouvrir", court: "planche.emplacement.court.ouvrir" },
   { id: "nord-arete", ...depuisRegistre("nord-arete"), libelle: "planche.emplacement.nord-arete", court: "planche.emplacement.court.nord-arete" },
   { id: "afficher-nord", ...depuisRegistre("afficher-nord"), libelle: "planche.emplacement.afficher-nord", court: "planche.emplacement.court.afficher-nord" },
+  { id: "point-de-base", ...depuisRegistre("point-de-base"), libelle: "planche.point-de-base.ouvrir", court: "planche.point-de-base.court" },
 ];
 
 /** Disponibilité : panneau et flèche toujours ; le nord par une arête hors lecture, avec une seule arête non verticale. */

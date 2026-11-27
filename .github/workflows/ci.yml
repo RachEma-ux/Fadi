@@ -1085,6 +1085,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-niveaux node apps/web/e2e/planche-niveaux.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du point de base du projet (cas 4, étape 2) — section Emplacement, H = niveau de référence, aller-retour, export projeté (apps/web/e2e/planche-point-de-base.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-point-de-base node apps/web/e2e/planche-point-de-base.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

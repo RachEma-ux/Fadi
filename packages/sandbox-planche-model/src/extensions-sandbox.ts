@@ -95,7 +95,7 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     description: "Position saisie de la Planche (latitude, longitude, altitude) et nord vrai ; les ombres les suivent.",
     pictogramme: "commande:emplacement",
     activeParDefaut: false,
-    entrees: ["commande:emplacement", "commande:nord-arete", "commande:afficher-nord", "panneau:emplacement"],
+    entrees: ["commande:emplacement", "commande:nord-arete", "commande:afficher-nord", "commande:point-de-base", "panneau:emplacement"],
   },
   {
     // D'après la console Ruby et les extensions libres de SketchUp (décision du 25 novembre 2026 : scripts libres, intégration simple).

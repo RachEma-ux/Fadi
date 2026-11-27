@@ -130,6 +130,7 @@ import {
   effacerEtiquettesPieces,
   CHOIX_NETTOYAGE_DEFAUT,
   type Emplacement,
+  type PointDeBase,
   nordDepuisArete,
   annotationsDe,
   REGLAGES_DEFAUT,
@@ -244,6 +245,7 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
@@ -1648,7 +1650,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       /* stockage indisponible : la préférence ne survit pas à la session */
     }
   }, []);
-  const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = a.reglages?.emplacement && !r.emplacement ? { ...r, emplacement: a.reglages.emplacement } : r)).modele, message: t("planche.infomodele.enregistre") })), [operer]);
+  const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = { ...r, ...(a.reglages?.emplacement && !r.emplacement ? { emplacement: a.reglages.emplacement } : {}), ...(a.reglages?.pointDeBase && !r.pointDeBase ? { pointDeBase: a.reglages.pointDeBase } : {}) })).modele, message: t("planche.infomodele.enregistre") })), [operer]);
   const actionsInfo = useMemo(
     () => ({
       renommerOccurrence: (id: string, nom: string) => operer(t("planche.info.nom"), (m) => ({ modele: renommerOccurrence(m, id, nom, o()).modele })),
@@ -1955,7 +1957,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const exporter = (format: FormatEchange) => {
       // Chantier Axes (AX-5, AX-D10) : coordonnées choisies explicitement ; un choix non pris en charge est refusé.
       const choix = etatUi.get().coordonneesExport;
-      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere);
+      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere, courante().altitudeRef);
       if (!c.ok) {
         setMessage(c.motif);
         return;
@@ -1967,6 +1969,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
           : choix === "source"
             ? t("planche.export.coordonnees.source", { unite: c.unite })
+            : choix === "projete"
+              ? t("planche.export.coordonnees.projete", { systeme: [histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme, histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systemeVertical].filter(Boolean).join(" / ") })
             : t("planche.export.coordonnees.modele");
       const nom = nomFichier();
       const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(modele, nom);
@@ -2629,6 +2633,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         message,
       };
     });
+  // Point de base du projet (cas 4 du catalogue, étape 2) : coordonnées projetées déclarées de l'origine, un pas d'historique.
+  const pointDeBase = annotationsDe(hist.present.modele.annotations).reglages?.pointDeBase ?? null;
+  const [notePointDeBase, setNotePointDeBase] = useState<string | null>(null);
+  const poserPointDeBase = (p: PointDeBase | null) => {
+    const message = t(p ? "planche.point-de-base.note.enregistre" : "planche.point-de-base.note.retire");
+    operer(t("planche.point-de-base.ouvrir"), (m) => {
+      setNotePointDeBase(message);
+      return {
+        modele: modifierAnnotations(m, (a) => {
+          const { pointDeBase: _ancien, ...reste } = a.reglages ?? REGLAGES_DEFAUT;
+          a.reglages = p ? { ...reste, pointDeBase: p } : reste;
+        }).modele,
+        message,
+      };
+    });
+  };
   // Menu « Sites » (27 novembre 2026) : site de projet de la base dédiée, rattaché à la Planche courante. Sauvegarder y
   // écrit l'Emplacement (position, nord, altitude, lieu, source « Emplacement de la Planche ») ; Ouvrir et Importer posent
   // la position du site comme Emplacement (un pas d'historique : Annuler le retire) et activent l'extension au besoin.
@@ -2731,6 +2751,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setNoteEmplacement(null);
       setPanneau("emplacement");
     } else if (id === "afficher-nord") majOptions({ flecheNord: !options.flecheNord });
+    else if (id === "point-de-base") {
+      setNotePointDeBase(null);
+      setPanneau("emplacement");
+      // La section est en bas du panneau : elle est amenée à la vue et son premier champ reçoit le focus.
+      window.setTimeout(() => {
+        const champ = document.querySelector<HTMLInputElement>("[data-planche-point-de-base-champ='e']");
+        champ?.scrollIntoView({ block: "nearest" });
+        champ?.focus();
+      }, 0);
+    }
     else {
       const nord = nordDeLaSelection();
       if (nord === null) return;
@@ -4367,6 +4397,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => { nordSaisiRef.current = true; poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire")); }} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
                 geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }} />
             )}
+            {panneau === "emplacement" && <SectionPointDeBase point={pointDeBase} reference={referenceNiveaux} lecture={readOnly} onEnregistrer={poserPointDeBase} note={notePointDeBase} />}
             {panneau === "niveaux" && (
               <PanneauNiveaux
                 niveaux={niveaux}
@@ -4469,6 +4500,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 }}
                 onDetacherLien={(id) => muterReperes(detacherRepereLie(histRef.current.present.modele, id), "planche.reperes.operation.detacher")}
                 coordonneesExport={ui.coordonneesExport}
+                referenceAltitude={referenceNiveaux}
                 onCoordonneesExport={(c) => etatUi.set({ coordonneesExport: c })}
               />
             )}

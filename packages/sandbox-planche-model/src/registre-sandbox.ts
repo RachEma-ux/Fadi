@@ -316,6 +316,7 @@ const commandes: EntreeSandbox[] = [
   c("emplacement", "emplacement", "map-pin", "Maj+F1", "panneau-emplacement", true),
   c("nord-arete", "emplacement", "compass", "Maj+F9", "panneau-emplacement", true),
   c("afficher-nord", "emplacement", "navigation-north", "Maj+F12", "panneau-emplacement", true),
+  c("point-de-base", "emplacement", "current-location", "Ctrl+Maj+B", "panneau-emplacement", true),
   // Extension « Scripts » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("scripts", "scripts", "code", "Maj+F3", "panneau-scripts", true),
   c("executer-script", "scripts", "player-play", "Maj+F6", "panneau-scripts", true),

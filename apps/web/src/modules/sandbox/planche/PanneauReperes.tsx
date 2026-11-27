@@ -32,8 +32,10 @@ export interface PropsPanneauReperes {
   onEnregistrerLie: (nom: string) => string | null;
   onMajSource: (id: string) => string | null;
   onDetacherLien: (id: string) => string | null;
-  coordonneesExport: "modele" | "travail" | "source";
-  onCoordonneesExport: (c: "modele" | "travail" | "source") => void;
+  coordonneesExport: "modele" | "travail" | "source" | "projete";
+  onCoordonneesExport: (c: "modele" | "travail" | "source" | "projete") => void;
+  /** Niveau de référence de la Planche (H du choix « projetées ») ; `null` = non déclaré. */
+  referenceAltitude?: number | null;
 }
 
 export function PanneauReperes(p: PropsPanneauReperes) {
@@ -167,8 +169,8 @@ export function PanneauReperes(p: PropsPanneauReperes) {
       {erreur && <p className="planche-reperes-erreur" role="alert" data-reperes-panneau-erreur>{erreur}</p>}
       <fieldset className="planche-reperes-affichage">
         <legend>{t("planche.reperes.exports")}</legend>
-        {(["modele", "travail", "source"] as const).map((c) => {
-          const motif = disponibiliteCoordonnees(p.modele, c, "obj");
+        {(["modele", "travail", "source", "projete"] as const).map((c) => {
+          const motif = disponibiliteCoordonnees(p.modele, c, "obj", p.referenceAltitude ?? null);
           return (
             <label key={c} title={motif ?? undefined}>
               <input type="radio" name="reperes-exports" checked={p.coordonneesExport === c} disabled={motif !== null} onChange={() => p.onCoordonneesExport(c)} data-reperes-exports={c} />
