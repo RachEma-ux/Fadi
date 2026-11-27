@@ -1,0 +1,26 @@
+{
+  "id": "parois",
+  "nom": { "fr": "Parois, baies et structure", "en": "Walls, openings and structure" },
+  "description": {
+    "fr": "Cloisons par types d'agence avec métré, baies traversantes, incidences d'un mur porteur percé, trame de poteaux et poutres par étage, façades mitoyennes et murs en limite. Un avis, jamais une note de calcul.",
+    "en": "Partitions from office wall types with quantities, through openings, consequences of a pierced load-bearing wall, column and beam grid per storey, party facades and boundary walls. An opinion, never a calculation."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.0",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Parois, baies et structure", "en": "Walls, openings and structure" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+P" },
+    { "id": "cloisons", "libelle": { "fr": "Cloisons", "en": "Partitions" }, "icone": "cloisons.svg", "raccourci": "Alt+Maj+F1" },
+    { "id": "baies", "libelle": { "fr": "Percer une baie", "en": "Cut an opening" }, "icone": "baies.svg", "raccourci": "Alt+Maj+F2" },
+    { "id": "mur-porteur", "libelle": { "fr": "Mur porteur percé", "en": "Pierced load-bearing wall" }, "icone": "porteur.svg", "raccourci": "Alt+Maj+F3" },
+    { "id": "poteaux-poutres", "libelle": { "fr": "Poteaux et poutres", "en": "Columns and beams" }, "icone": "structure.svg", "raccourci": "Alt+Maj+F4" },
+    { "id": "fronts-mitoyens", "libelle": { "fr": "Fronts mitoyens", "en": "Party facades" }, "icone": "fronts.svg", "raccourci": "Alt+Maj+F5" },
+    { "id": "mur-limite", "libelle": { "fr": "Mur en limite", "en": "Boundary wall" }, "icone": "limite.svg", "raccourci": "Alt+Maj+F6" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "parois", "titre": { "fr": "Parois, baies et structure", "en": "Walls, openings and structure" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
