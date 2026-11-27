@@ -82,6 +82,15 @@ async function onglet(p, o) { if (!(await p.locator("[data-gd-panneau]").count()
 /** Barre de recherche flottante de la carte, ouverte par la loupe de sa mini-barre si elle est fermée. */
 /** Fil de navigation administrative (D-GD-38) : déplié par ≡ dans la mini-barre (plié par défaut). */
 async function deplierFil(p) { if ((await p.locator("[data-gd-mini-navigation]").getAttribute("aria-expanded")) !== "true") await p.locator("[data-gd-mini-navigation]").click(); await p.locator("[data-gd-territoires]").waitFor(); }
+/** Outil de la colonne (P5) : ouvre son groupe (« Mesurer et tracer », « Affichage ») s'il est rangé et fermé. */
+async function outilBarre(p, cle) {
+  const b = p.locator(`[data-gd-barre-outil='${cle}']`);
+  if (!(await b.isVisible())) {
+    const g = await b.evaluate((x) => x.closest("[data-gd-panneau-groupe]")?.getAttribute("data-gd-panneau-groupe") ?? null);
+    if (g) await p.locator(`[data-gd-groupe='${g}']`).click();
+  }
+  return b;
+}
 async function ouvrirRecherche(p) { if (!(await p.locator("[data-gd-recherche]").count())) await p.locator("[data-gd-loupe]").click(); await p.locator("[data-gd-recherche]").waitFor(); }
 const npmApi = (script, args) => execFileSync("npm", ["run", "-s", script, "--workspace=@fadi/api", "--", ...args], { cwd: RACINE, env: process.env, encoding: "utf8" });
 
@@ -161,7 +170,28 @@ check("ARRIVÉE · « Ouvrir le catalogue » ouvre le catalogue et écarte la co
 
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
-const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+// P5 : la colonne garde ses 16 outils, dont 14 rangés dans deux groupes nommés (« Mesurer et tracer », « Affichage »).
+const outils = await page.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+const colonne = await barreOutils.locator("button[data-gd-barre-outil], button[data-gd-groupe]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-outil") ?? `groupe:${b.getAttribute("data-gd-groupe")}`));
+check("P5 · colonne : zoom avant, zoom arrière, puis deux groupes à divulgation (Alt+N, Alt+A)", colonne.join(",") === "zoom-plus,zoom-moins,groupe:mesurer,groupe:affichage" && (await barreOutils.locator("[data-gd-groupe='mesurer']").getAttribute("aria-keyshortcuts")) === "Alt+N", colonne.join(","));
+await page.keyboard.press("Alt+n");
+await page.locator("[data-gd-panneau-groupe='mesurer']:not([hidden])").waitFor({ timeout: 3000 }).catch(() => undefined);
+const focusMesurer = await page.evaluate(() => document.activeElement?.getAttribute("data-gd-barre-outil"));
+await page.addScriptTag({ path: AXE });
+const axeGroupe = await page.evaluate(async () => (await window.axe.run(document.querySelector("[data-gd-panneau-groupe='mesurer']"), { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((v) => `${v.id}:${v.impact}`));
+check("P5 · Alt+N ouvre « Mesurer et tracer », focus sur sa première entrée ; axe-core sans violation (même moderate, D2)", focusMesurer === "distance" && axeGroupe.length === 0, `${focusMesurer} ; ${axeGroupe.join(" ; ")}`);
+await page.keyboard.press("Escape");
+check("P5 · Échap ferme le groupe et rend le focus à son bouton", (await page.locator("[data-gd-panneau-groupe='mesurer']").isHidden()) && (await page.evaluate(() => document.activeElement?.getAttribute("data-gd-groupe"))) === "mesurer");
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("Shift+Slash");
+await page.locator("[data-gd-aide-raccourcis]").waitFor({ timeout: 3000 }).catch(() => undefined);
+const lignesAide = await page.locator("[data-gd-aide-ligne]").count();
+await page.screenshot({ path: join(OUT, "p5-aide-raccourcis-1440.png") });
+await page.keyboard.press("Escape");
+check("P5 · « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique (23 lignes), Échap la ferme", lignesAide === 23 && (await page.locator("[data-gd-aide-raccourcis]").count()) === 0, `${lignesAide} lignes`);
+await page.locator("[data-gd-groupe='affichage']").click();
+await page.screenshot({ path: join(OUT, "p5-groupe-affichage-1440.png") });
+await page.locator("[data-gd-groupe='affichage']").click();
 check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression, synthèse de la vue, regroupement, adresse de la vue), chaque bouton nommé", outils.length === 16 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
@@ -286,11 +316,11 @@ const canevasRecherche = await page.locator(".maplibregl-canvas").boundingBox();
 await page.mouse.click(canevasRecherche.x + canevasRecherche.width * 0.5, canevasRecherche.y + canevasRecherche.height - 80);
 await page.waitForTimeout(200);
 check("recherche : un clic sur la carte referme la barre", (await flottante.count()) === 0, `${await flottante.count()} ; ${JSON.stringify(canevasRecherche)}`);
-await page.locator("[data-gd-barre-outil='distance']").click();
+await (await outilBarre(page, "distance")).click();
 await loupe.click();
 check("recherche : la loupe reste utilisable avec un outil de mesure actif, sans le désactiver", (await flottante.count()) === 1 && (await page.locator("[data-gd-barre-outil='distance']").getAttribute("aria-pressed")) === "true");
 await loupe.click();
-await page.locator("[data-gd-barre-outil='distance']").click();
+await (await outilBarre(page, "distance")).click();
 // La mini-barre suit la barre d'outils déplacée, puis revient avec elle.
 await page.locator("[data-gd-poignee]").focus();
 await page.keyboard.press("Shift+ArrowLeft");
@@ -365,9 +395,9 @@ const caseLibelles = page.locator("[data-gd-couche-active]").first().locator("[d
 check("libellés : la case « Libellés (nom) » de la couche est cochée (le nom seul, jamais « nom + valeur »)", (await caseLibelles.isChecked()) && ((await caseLibelles.locator("xpath=..").textContent()) ?? "").trim() === "Libellés (nom)");
 await caseLibelles.uncheck();
 check("libellés : décochés sur la couche → bouton non pressé", (await boutonLibelles.getAttribute("aria-pressed")) === "false");
-await boutonLibelles.click();
+await (await outilBarre(page, "etiquettes")).click();
 check("libellés : le bouton les rétablit", (await caseLibelles.isChecked()) && (await boutonLibelles.getAttribute("aria-pressed")) === "true");
-await boutonLibelles.click();
+await (await outilBarre(page, "etiquettes")).click();
 check("libellés : le bouton les masque", !(await caseLibelles.isChecked()));
 page.off("request", surRequete);
 await onglet(page, "legende");
@@ -386,7 +416,7 @@ await page.waitForTimeout(1000);
 await page.screenshot({ path: join(OUT, "01d-mini-carte.png") });
 await page.locator("[data-gd-mini-carte]").click({ position: { x: 20, y: 20 } });
 check("mini-carte : un clic ne provoque aucune erreur de carte", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
-await boutonMini.click();
+await (await outilBarre(page, "mini-carte")).click();
 check("mini-carte : le bouton la masque", (await page.locator("[data-gd-mini-carte]").count()) === 0 && (await boutonMini.getAttribute("aria-pressed")) === "false");
 // --- Lecture de l'emprise (D-GD-40) : zoom affiché, synthèse de la vue (Alt+V), regroupement (Alt+G), adresse (Alt+K) ---
 const zoomAffiche = ((await page.locator("[data-gd-zoom-affiche]").textContent()) ?? "").replace(/\s+/g, " ").trim();
@@ -434,7 +464,7 @@ await page.locator("body").press("Alt+v");
 check("emprise : Alt+V referme la synthèse", (await page.locator("[data-gd-synthese]").count()) === 0 && (await boutonSynthese.getAttribute("aria-pressed")) === "false");
 
 // Impression directe : une carte non enregistrée n'est pas imprimée (mêmes droits que l'export).
-await page.locator("[data-gd-barre-outil='imprimer']").click();
+await (await outilBarre(page, "imprimer")).click();
 check("impression : carte non enregistrée → invitation à l'enregistrer (aucune fenêtre)", ((await annonceGd.textContent()) ?? "").includes("Enregistrez la carte pour l'imprimer"));
 
 // --- Rubrique « Indicateurs » du catalogue (D-GD-31, D-GD-32) : choix dans le catalogue seulement ; valeur affichée en texte propre, jamais de coloration ---
@@ -779,7 +809,7 @@ await volet(page, "etudes");
 // Mesure indicative au tracé.
 // Outil choisi depuis la barre verticale ; le panneau Données est refermé pour dégager la carte.
 if (await page.locator("[data-gd-panneau]").count()) await page.locator("[data-gd-fermer-panneau]").click();
-await page.locator("[data-gd-barre-outil='distance']").click();
+await (await outilBarre(page, "distance")).click();
 check("barre d'outils : « Mesurer une distance » active l'outil et ouvre Études", (await page.locator("[data-gd-barre-outil='distance']").getAttribute("aria-pressed")) === "true" && (await page.locator("[data-gd-outil='distance']").isChecked()));
 const boite = await page.locator(".maplibregl-canvas").boundingBox();
 await page.mouse.click(boite.x + boite.width * 0.4, boite.y + boite.height * 0.5);
@@ -1233,6 +1263,8 @@ await page.screenshot({ path: join(OUT, "design-l1-carte-pressee-412.png") });
   const defilement = await tel.locator("[data-gd-barre-outils]").evaluate((c) => c.scrollTop);
   check("DESIGN L2 · téléphone : un balayage du doigt fait défiler la colonne d'outils", !g.defile || defilement > 0, `scrollTop=${defilement}`);
   // Le dernier outil (« Copier l'adresse de cette vue ») est atteignable et répond au toucher.
+  // P5 : « Copier l'adresse » est rangé dans le groupe « Affichage » de la colonne.
+  await tel.locator("[data-gd-groupe='affichage']").tap();
   const lien = tel.locator("[data-gd-barre-outil='lien']");
   await lien.scrollIntoViewIfNeeded();
   const bl = await lien.boundingBox();

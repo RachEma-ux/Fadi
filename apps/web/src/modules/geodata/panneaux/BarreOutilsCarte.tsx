@@ -158,9 +158,10 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
     onDoubleClick: () => { ecrirePosition(null); setPosition(borner(POSITION_PAR_DEFAUT)); },
   };
   const groupeOuvert = p.groupe;
-  const panneauGroupe = useRef<HTMLDivElement>(null);
+  const panneauxGroupes = useRef<HTMLDivElement>(null);
+  const panneauOuvert = () => panneauxGroupes.current?.querySelector<HTMLDivElement>(`[data-gd-panneau-groupe='${groupeOuvert}']`) ?? null;
   // Groupe ouvert : le focus va sur sa première entrée active (WCAG 2.4.3).
-  useEffect(() => { if (groupeOuvert) panneauGroupe.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus(); }, [groupeOuvert]);
+  useEffect(() => { if (groupeOuvert) panneauOuvert()?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus(); }, [groupeOuvert]);
   const fermerGroupe = (rendreFocus: boolean) => {
     const g = groupeOuvert;
     p.onGroupe(null);
@@ -169,10 +170,11 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
   const bouton = (cle: string, libelle: string, d: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => {
     const raccourci = (RACCOURCIS_BARRE as Record<string, string>)[cle];
     // Entrée d'un groupe ouvert : icône et texte visibles, lettre d'accès à droite (P5).
-    const lettre = groupeOuvert ? LETTRES_GROUPES[groupeOuvert][cle] : undefined;
+    const g = (Object.keys(LETTRES_GROUPES) as GroupeOutils[]).find((x) => LETTRES_GROUPES[x][cle]);
+    const lettre = g ? LETTRES_GROUPES[g][cle] : undefined;
     if (lettre) {
       const activer = () => { action(); if (!BASCULES.has(cle)) fermerGroupe(false); };
-      return <button key={cle} type="button" className="gd-entree-groupe" title={libelle} onClick={activer} aria-pressed={extra.pressed} disabled={extra.disabled} aria-keyshortcuts={[raccourci, lettre].filter(Boolean).join(" ")} data-gd-barre-outil={cle} data-gd-lettre={lettre}>
+      return <button key={cle} type="button" className="gd-entree-groupe" title={libelle} aria-label={libelle} onClick={activer} aria-pressed={extra.pressed} disabled={extra.disabled} aria-keyshortcuts={raccourci ?? lettre} data-gd-barre-outil={cle} data-gd-lettre={lettre}>
         <Pictogramme d={d} /><span className="gd-entree-texte">{libelle}</span><kbd aria-hidden="true">{lettre}</kbd>
       </button>;
     }
@@ -187,7 +189,7 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
   );
   // Dans le groupe ouvert : flèches haut / bas, lettre d'accès, Échap (ferme et rend le focus au bouton du groupe).
   const toucheGroupe = (e: KeyboardEvent<HTMLDivElement>) => {
-    const entrees = [...(panneauGroupe.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [])];
+    const entrees = [...(panneauOuvert()?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [])];
     const i = entrees.indexOf(document.activeElement as HTMLButtonElement);
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); fermerGroupe(true); return; }
     if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); entrees[(i + (e.key === "ArrowDown" ? 1 : -1) + entrees.length) % entrees.length]?.focus(); return; }
@@ -210,15 +212,17 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
         {boutonGroupe("affichage", "Affichage", "Affichage", "Alt+A", ICONES.groupeAffichage)}
       </div>
     </nav>
-    {groupeOuvert && (
-      <div ref={panneauGroupe} id={`gd-groupe-${groupeOuvert}`} className="gd-panneau-groupe" role="group" aria-label={groupeOuvert === "mesurer" ? "Mesurer et tracer" : "Affichage"}
-        style={{ right: position.droite + (barre.current?.offsetWidth ?? 44) + 8, top: position.haut }} onKeyDown={toucheGroupe} data-gd-panneau-groupe={groupeOuvert}>
-        {groupeOuvert === "mesurer" ? <>
+    {/* Panneaux des groupes (P5) : toujours montés, masqués quand le groupe est fermé (états lisibles, un seul ouvert). */}
+    <div ref={panneauxGroupes} onKeyDown={toucheGroupe}>
+      <div id="gd-groupe-mesurer" className="gd-panneau-groupe" role="group" aria-label="Mesurer et tracer" hidden={groupeOuvert !== "mesurer"}
+        style={{ right: position.droite + (barre.current?.offsetWidth ?? 52) + 8, top: position.haut }} data-gd-panneau-groupe="mesurer">
           {trace("distance", "Mesurer une distance", ICONES.distance)}
           {trace("surface", "Mesurer une surface", ICONES.surface)}
           {trace("zone", "Tracer une zone d'étude", ICONES.zone)}
           {trace("annotation", "Poser une annotation", ICONES.annotation)}
-        </> : <>
+        </div>
+      <div id="gd-groupe-affichage" className="gd-panneau-groupe" role="group" aria-label="Affichage" hidden={groupeOuvert !== "affichage"}
+        style={{ right: position.droite + (barre.current?.offsetWidth ?? 52) + 8, top: position.haut }} data-gd-panneau-groupe="affichage">
           <p className="gd-titre-section">Vue</p>
           {bouton("nord", "Remettre le nord en haut", ICONES.nord, p.onNord, { disabled: !p.carteDisponible })}
           {bouton("position", "Ma position (ni enregistrée ni envoyée au serveur)", ICONES.position, p.onPosition, { disabled: !p.carteDisponible })}
@@ -235,9 +239,8 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
           <button type="button" className="gd-entree-groupe" title="Raccourcis clavier (?)" onClick={() => { fermerGroupe(false); p.onAide(); }} aria-keyshortcuts="? Shift+Slash" data-gd-lettre="?" data-gd-aide-ouvrir>
             <Pictogramme d={ICONES.aide} /><span className="gd-entree-texte">Raccourcis clavier</span><kbd aria-hidden="true">?</kbd>
           </button>
-        </>}
-      </div>
-    )}
+        </div>
+    </div>
     </>
   );
 }
