@@ -35,7 +35,7 @@ aucune donnée dans le code (D-GD-29).
 - Consigne (`panneaux/ConsigneAccueil.tsx`) : une seule, avec WebGL seulement (sans WebGL, le message de la page en
   tient lieu). Elle n'ajoute aucune commande : « Ouvrir le catalogue » = bouton « Données », « Chercher un lieu » = loupe
   (Alt+R). Elle est écartée pour la session à la première fiche, au premier outil, à la première recherche ou par ×.
-- Téléphone : consigne en bas, ≤ 25 % de la hauteur de la carte, hors de la colonne d'outils.
+- Téléphone : consigne sous les pastilles, ≤ 25 % de la hauteur de la carte, hors de la colonne d'outils et de la mini-barre.
 - Écart au plan `dev-4` : le contour ne dépend pas de la consigne écartée (une carte vide garde son contour), et
   `CLE_ACCUEIL_VU` n'est pas créée (D1 « à chaque ouverture »).
 - Captures : `captures/p1/` (bureau 1440 px, Pixel 7), instance locale avec le découpage réel du Maroc.
