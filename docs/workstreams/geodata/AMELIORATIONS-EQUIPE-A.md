@@ -11,8 +11,8 @@ aucune donnée dans le code (D-GD-29).
 | PR | Jalon | Objet | État |
 | --- | --- | --- | --- |
 | P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (PR #472) |
-| P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (cette PR) |
-| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | à faire |
+| P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (PR #482) |
+| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (cette PR) |
 | P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | à faire |
 | P8-P10 | E Légende | Version et couverture, légende complète, hachures | à faire |
 | P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | à faire |
@@ -22,6 +22,9 @@ aucune donnée dans le code (D-GD-29).
 - **D1** : catalogue fermé **à chaque ouverture** de la page (pas seulement la première fois). Le bouton « Données » ou la
   consigne l'ouvrent. Revenir à « première fois seulement » = un repère `geodata.accueil-vu` (une ligne).
 - **D2** : axe-core **« moderate » bloquant** sur les écrans nouveaux (ici la consigne) ; l'existant reste à « serious ».
+- **D3** (P5) : une entrée d'un groupe nommé vaut « barre appropriée » au sens de la règle d'or ; contrôlé par test.
+- **D4** (P5) : raccourci d'un groupe = Alt + lettre du groupe, puis la lettre de l'entrée ; les Alt existants restent inchangés.
+- **D5** (P5) : doublons de la mini-barre et « Enregistrer » dans ☰ gardés en l'état.
 
 ## P1 · Carte d'arrivée (E-01, Q1, Q9)
 
@@ -57,3 +60,18 @@ aucune donnée dans le code (D-GD-29).
   locale avec les données réelles du Maroc, build final de la feuille de route.
 - Recette : contrôles « P2 » de `geodata.mjs` (contour refusé sans panne, avis non bloquant, outils disponibles, état
   « refusée », avis oublié) et GEO 11 sans WebGL.
+
+## P3-P5 · Commandes (jalon C : E-03, E-04)
+
+- **P3, extraction sans changement visible** : `raccourcis.ts`, table unique des raccourcis qui remplace la cascade de
+  conditions de la page ; les tables des barres (`RACCOURCIS_BARRE`, `RACCOURCIS_TERRAIN`, `RACCOURCIS_BARRE_BAS`) en
+  sont dérivées ; `commandeDeTouche` pure, testée (même ordre, mêmes conditions que l'ancien gestionnaire).
+- **P4, extraction sans changement visible** : `etat/panneaux-ops.ts` (transitions pures des onglets, du volet de droite
+  et d'Échap ; le téléphone est un paramètre, un seul panneau à la fois, GEO 12) et `etat/usePanneaux.ts`.
+- **P5, comportement** : la colonne d'outils garde zoom avant / arrière et range le reste en deux groupes nommés à
+  divulgation, « Mesurer et tracer » (Alt+N) et « Affichage » (Alt+A), avec la lettre d'accès de chaque entrée ; Échap
+  ferme le groupe et rend le focus à son bouton. « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique.
+- Écart connu : l'ordre de tabulation de la colonne n'a pas été réordonné (inchangé par rapport à l'existant).
+- Captures : `captures/p5/` (groupe « Affichage » ouvert et aide des raccourcis au bureau 1440 px ; groupe ouvert sur
+  Pixel 7), données réelles du Maroc, build final de la feuille de route.
+- Recette : contrôles « P5 » de `geodata.mjs` (colonne, Alt+N et focus, axe-core moderate, Échap, aide « ? »).

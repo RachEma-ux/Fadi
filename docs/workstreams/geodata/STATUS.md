@@ -9,7 +9,10 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
-- Améliorations équipe A, P2 carte robuste (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non accepté.
+- Améliorations équipe A, jalon C P3-P5 commandes (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+  accepté. Table unique des raccourcis et panneaux extraits (tests purs), groupes nommés et aide « ? » (contrôles « P5 » de
+  `geodata.mjs`), captures `captures/p5/` ; décisions D3 à D5 prises selon la recommandation.
+- Améliorations équipe A, P2 carte robuste (PR #482) : **implémenté et vérifié**, non accepté.
   État du moteur pur et testé, avis par couche non bloquant, recette `geodata.mjs` conforme en local (contrôles « P2 »),
   captures bureau et Pixel 7 avec tuiles refusées (`captures/p2/`).
 - Améliorations équipe A, P1 carte d'arrivée (PR #472, **fusionnée** le 27 novembre 2026, `7fbab00`) : implémenté et vérifié,
