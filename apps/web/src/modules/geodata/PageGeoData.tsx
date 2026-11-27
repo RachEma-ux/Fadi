@@ -36,6 +36,8 @@ import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
 import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
 import { useOutilsZones } from "./etat/useOutilsZones";
 import { outilQuiEnregistre, outilTerrain, voletDeOutil, zoneARetablir } from "./etat/outils-ops";
+import { focaliserSaisie } from "./panneaux/SaisieCoordonnees";
+import type { TraceSaisi } from "./etat/outils-ops";
 import { usePanneaux } from "./etat/usePanneaux";
 import { AideRaccourcis } from "./panneaux/AideRaccourcis";
 import { basculerOnglet, basculerVolet, carteSeule, cibleEchap, ouvrirOnglet as ouvrirOngletPur, type EtatPanneaux, type OngletPanneau, type VoletPage } from "./etat/panneaux-ops";
@@ -117,6 +119,7 @@ export function PageGeoData() {
   // Terrain haute résolution (TER-05) : état gardé par la page, les couches restent affichées panneau fermé.
   const terrain = useTerrain(() => moteur.current?.emprise() ?? null);
   const terrainRef = useRef(terrain);
+  const finirTraceRef = useRef<(o: OutilCarte, s: readonly [number, number][], provenance: "dessin" | "coordonnees") => void>(() => undefined);
   terrainRef.current = terrain;
   // État du moteur (P2) : chargement, prêt, sans WebGL, échec de démarrage, contexte perdu — jamais une tuile refusée.
   const [etatMoteur, envoyerMoteur] = useReducer(transitionMoteur, undefined, () => etatInitial(webglDisponible()));
@@ -589,11 +592,7 @@ export function PageGeoData() {
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (objets, p, nbClics) => clicRef.current(objets, p, nbClics),
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
-          surTraceTermine: (o, s) => {
-            // Outils du terrain (TER-05) : le résultat s'affiche dans le panneau Terrain, aucun tracé n'est gardé ici.
-            if (outilTerrain(o)) { setTrace(null); terrainRef.current.surTrace(o, s); return; }
-            setTrace({ outil: o, sommets: [...s] }); if (outilQuiEnregistre(o)) setTracePret({ outil: o, sommets: [...s] });
-          },
+          surTraceTermine: (o, s) => finirTraceRef.current(o, s, "dessin"),
           // Seule cause signalée par surErreur : la perte du contexte WebGL ; sa restauration rend la carte (P2).
           surErreur: () => envoyerMoteur({ type: "contexte-perdu" }),
           surRestauration: () => envoyerMoteur({ type: "contexte-restaure" }),
@@ -890,8 +889,9 @@ export function PageGeoData() {
       zone: basculerFiltreZone,
       emplacements: basculerEmplacements,
       terrain: basculerTerrain,
-      altitude: () => basculerOutilTerrain("altitude"),
-      profil: () => basculerOutilTerrain("profil"),
+      // Sans carte (P7) : l'outil s'ouvre avec sa saisie de coordonnées, qui reçoit le focus.
+      altitude: () => { if (erreurCarte) { choisirOutil("altitude"); focaliserSaisie(); } else basculerOutilTerrain("altitude"); },
+      profil: () => { if (erreurCarte) { choisirOutil("profil"); focaliserSaisie(); } else basculerOutilTerrain("profil"); },
       remonter,
       descendre: () => descendre(fiche!),
       "groupe-mesurer": () => setGroupeOutils((g) => (g === "mesurer" ? null : "mesurer")),
@@ -944,6 +944,15 @@ export function PageGeoData() {
   const afficherCarteSeule = () => { panneaux(carteSeule); basculerRecherche(false); };
   const basculerCouches = () => panneaux((e) => basculerOnglet(e, "couches", estTelephone()));
   const basculerLegende = () => panneaux((e) => basculerOnglet(e, "legende", estTelephone()));
+  /** Tracé terminé, dessiné sur la carte ou saisi au clavier (P7) : mêmes suites, aucune écriture hors zone et annotation. */
+  const finirTrace = (o: OutilCarte, s: readonly [number, number][], provenance: "dessin" | "coordonnees") => {
+    // Outils du terrain (TER-05) : le résultat s'affiche dans le panneau Terrain, aucun tracé n'est gardé ici.
+    if (outilTerrain(o)) { setTrace(null); terrainRef.current.surTrace(o, s); return; }
+    setTrace({ outil: o, sommets: [...s], provenance }); if (outilQuiEnregistre(o)) setTracePret({ outil: o, sommets: [...s], provenance });
+  };
+  finirTraceRef.current = finirTrace;
+  /** Tracé saisi au clavier : le tracé en cours sur la carte est abandonné, puis le tracé saisi suit le chemin commun. */
+  const tracerParCoordonnees = (t: TraceSaisi) => { moteur.current?.annulerTrace(); finirTrace(t.outil, t.sommets, "coordonnees"); };
   const choisirOutil = (o: OutilCarte) => { setOutil(o); const v = voletDeOutil(o); if (v) { setConsigneEcartee(true); setVolet(v); if (estTelephone()) setPanneauOuvert(false); } };
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
   const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outilTerrain(outil)) setOutil("navigation"); } else afficherVolet("terrain"); };
@@ -1090,7 +1099,18 @@ export function PageGeoData() {
   useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, generation]);
   useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, generation]);
 
+  // Voie clavier du tracé (P7, UX-3), carte active : Espace ajoute un sommet au centre, Retour arrière retire le dernier.
+  // Le gestionnaire clavier de MapLibre ne traite ni l'un ni l'autre ; Alt, Ctrl et Méta restent aux raccourcis.
+  const voieClavier = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (outil === "navigation" || e.altKey || e.ctrlKey || e.metaKey || !(e.target as HTMLElement).classList.contains("maplibregl-canvas")) return;
+    if (e.key !== " " && e.key !== "Backspace") return;
+    e.preventDefault();
+    const m = moteur.current; if (!m) return;
+    const n = e.key === " " ? m.ajouterSommet() : m.retirerSommet();
+    setAnnonce(e.key === " " ? (outil === "annotation" || outil === "altitude" ? "Point placé au centre de la carte." : `Sommet ajouté au centre de la carte : ${n}.`) : `Dernier sommet retiré : ${n}.`);
+  };
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
+    voieClavier(e);
     if (e.key === "Escape") {
       // Ordre de fermeture par Échap (P4, `cibleEchap`) : tracé, menu, résultats, panneau de la mini-barre, volet (téléphone).
       const cible = cibleEchap({ traceEnCours: outil !== "navigation" && !!trace, menuOuvert, resultats: !!resultats, panneauMini: !!panneauMini, volet: !!volet, telephone: estTelephone() });
@@ -1243,11 +1263,11 @@ export function PageGeoData() {
               onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); if (collectionId) await collection.rafraichir(collectionId).catch(() => undefined); }} />}
             {volet === "collection" && <PanneauCollection etat={collection} mode={modeCollection} onMode={setModeCollection} carte={carte} onOuvrirCarte={(id) => void ouvrirCarte(id)} onAnnonce={setAnnonce} />}
             {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil} zoneFiltre={zoneFiltre} onFiltrerZone={filtrerZone}
-              onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}
+              onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones} onTraceCoordonnees={tracerParCoordonnees}
               onCentrer={(g) => { const e = empriseGeometrie(g); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "import" && <Import onCoucheImportee={async (id) => { const c = await api.couche(id); connaitre([c]); chargerCatalogue(); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); const e = empriseDe(c.emprise?.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "terrain" && <PanneauTerrain t={terrain} outil={outil} onOutil={choisirOutil} onCentrer={(e) => moteur.current?.allerA({ emprise: e })}
-              vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} zoom={composition.camera.zoom} />}
+              vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} zoom={composition.camera.zoom} onTraceCoordonnees={tracerParCoordonnees} />}
             {volet === "emplacements" && <PanneauEmplacements centre={() => (erreurCarte ? null : { lon: composition.camera.lon, lat: composition.camera.lat })}
               onCentrer={(c) => moteur.current?.allerA({ lon: c.lon, lat: c.lat, zoom: Math.max(composition.camera.zoom, 15) })} onAnnonce={setAnnonce} />}
             {volet === "export" && <Export carte={carte} enregistree={etat.etat === "enregistree"} analyses={analysesIds} onExporter={exporter} />}

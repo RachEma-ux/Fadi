@@ -31,10 +31,11 @@ describe("table unique des raccourcis (P3)", () => {
     expect(commandeDeTouche(alt("p"), libre)).toBeNull();
   });
 
-  it("carte indisponible : M, I, V, G, S, O, U coupées ; les autres restent", () => {
+  it("carte indisponible : M, I, V, G, S coupées ; les autres restent, dont O et U (saisie de coordonnées, P7)", () => {
     const sans = { ...libre, carteDisponible: false };
-    for (const k of ["m", "i", "v", "g", "s", "o", "u"]) expect(commandeDeTouche(alt(k), sans)).toBeNull();
-    for (const k of ["r", "l", "k", "x", "c", "e", "t", "z", "j", "h"]) expect(commandeDeTouche(alt(k), sans)).not.toBeNull();
+    for (const k of ["m", "i", "v", "g", "s"]) expect(commandeDeTouche(alt(k), sans)).toBeNull();
+    for (const k of ["r", "l", "k", "x", "c", "e", "t", "z", "j", "h", "o", "u"]) expect(commandeDeTouche(alt(k), sans)).not.toBeNull();
+    expect(commandeDeTouche(alt("o"), sans)).toBe("altitude");
   });
 
   it("P5 : groupes Alt+N / Alt+A ; « ? » ouvre l'aide hors saisie, sans Alt", () => {

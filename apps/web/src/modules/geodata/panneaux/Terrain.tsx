@@ -13,6 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PALETTE_ALTITUDE, PALETTE_PENTE, type ProduitTerrain } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type AltitudeRecue, type JeuTerrainRecu, type ProfilRecu, type SourceTerrainRecue } from "../client";
 import type { AffichageTerrain, EtatTuilesTerrain, OutilCarte } from "../carte/moteur";
+import type { TraceSaisi } from "../etat/outils-ops";
+import { SaisieCoordonnees } from "./SaisieCoordonnees";
 import {
   degrade, distanceFr, empriseGeometrie, equidistancesProposees, formaterAltitude, graduations, intersectionEmprises, jeuPourVue, lignesSource, longueurApprochee, messageCouverture, nombreFr, resumeSource,
   pasProfil, porteeLegende, traceProfil, type ModeLegende,
@@ -326,8 +328,10 @@ function GraphiqueProfil({ recu, onSurvol }: { recu: ProfilRecu; onSurvol(p: [nu
   );
 }
 
-export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, zoom }: {
+export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, zoom, onTraceCoordonnees }: {
   t: EtatTerrain; outil: OutilCarte; onOutil(o: OutilCarte): void; onCentrer(e: Emprise): void;
+  /** Altitude ou profil saisis au clavier (P7) : même chemin que le clic ou le tracé sur la carte. */
+  onTraceCoordonnees?(t: TraceSaisi): void;
   /** Zoom courant de la carte (fond mondial : zoom minimal d'affichage). */
   zoom?: number | null;
   /** Emprise de la vue courante (message de couverture). */
@@ -419,6 +423,7 @@ export function PanneauTerrain({ t, outil, onOutil, onCentrer, vue, zoneEtude, z
         </div>
         {outil === "altitude" && <p className="gd-discret">Cliquez sur la carte : altitude de la meilleure source publiée au point.</p>}
         {outil === "profil" && <p className="gd-discret">Cliquez les sommets de la ligne ; double-clic ou Entrée pour tracer le profil ; Échap annule.</p>}
+        {onTraceCoordonnees && (outil === "altitude" || outil === "profil") && <SaisieCoordonnees key={outil} outil={outil} onTrace={onTraceCoordonnees} />}
       </fieldset>
       {t.point && (
         <section className="gd-terrain-resultat" aria-label="Altitude au point" data-gd-terrain-point>
