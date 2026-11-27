@@ -311,6 +311,10 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect(proche.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 2 });
     expect(proche.body.couches[0].plusProche.distanceM).toBeGreaterThan(50);
     expect(proche.body.couches[0].plusProche.distanceM).toBeLessThan(500);
+    // P8 (champs additifs) : version comptée (empreinte SHA-256) et couverture du rayon « non évaluée », jamais déduite.
+    expect(proche.body.couches[0].version.empreinte).toMatch(/^[0-9a-f]{64}$/);
+    expect(proche.body.couches[0].couverture).toMatchObject({ etat: "non-evaluee" });
+    expect(proche.body.couches[0].couverture).toHaveProperty("declaree");
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=50&couches=${id}`)).body.couches[0]).toMatchObject({ nombre: 0, plusProche: null });
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=10&couches=${id}`)).status).toBe(400);
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500`)).status).toBe(400);
@@ -545,6 +549,8 @@ describe("Couches raster (D-GD-13)", () => {
     expect(t.headers["content-type"]).toBe("image/png");
     expect((t.body as Buffer).subarray(1, 4).toString("ascii")).toBe("PNG");
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body).toMatchObject({ valeur: 225, unite: "u" });
+    // P8 (additif) : la valeur au point porte sa version publiée.
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body.version.empreinte).toMatch(/^[0-9a-f]{64}$/);
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.995&lat=30.295`)).body.valeur).toBeNull();
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=10&lat=10`)).body.valeur).toBeNull();
     expect((await alice.client.get(`${API}/raster/gdcou_inconnue/0/0/0.png`)).status).toBe(404);

@@ -21,7 +21,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
     // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.famille !== "feuille" && e.famille !== "reserve" && e.famille !== "enveloppe" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.id !== "feuilles" && e.id !== "reserves" && e.famille !== "numerotation" && e.id !== "numerotation" && e.id !== "enveloppe" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.famille !== "feuille" && e.famille !== "accrochage" && e.famille !== "reserve" && e.famille !== "enveloppe" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.id !== "feuilles" && e.id !== "reserves" && e.famille !== "numerotation" && e.id !== "numerotation" && e.id !== "enveloppe" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
     // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["controler", true, "panneau-controle"], ["nettoyer", true, "panneau-controle"]]);
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
@@ -33,6 +33,13 @@ describe("registre du Sandbox — contenu", () => {
     expect(entreePanneau("scripts").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "numerotation").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["numerotation", true, "panneau-numerotation"], ["numeroter-serie", true, "panneau-numerotation"]]);
     expect(entreePanneau("reperes").horsCatalogue).toBe(true);
+    // Cas 2, lot 2 : accrochage et saisie, panneaux contextuels ouverts par leur commande (aucun panneau de colonne ajouté).
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "accrochage").map((e) => [e.id, e.raccourci, e.emplacement])).toEqual([
+      ["accrochage", "Alt+F8", "panneau-accrochage"], ["forcer-sommet", "Alt+1", "panneau-accrochage"], ["forcer-milieu", "Alt+2", "panneau-accrochage"], ["forcer-intersection", "Alt+3", "panneau-accrochage"],
+      ["forcer-quadrant", "Alt+4", "panneau-accrochage"], ["forcer-axe", "Alt+5", "panneau-accrochage"], ["forcer-guide", "Alt+6", "panneau-accrochage"],
+      ["metre-mesure", "Alt+F9", "panneau-metre"], ["guide-reseau", "Alt+F10", "panneau-metre"], ["repartir", "Alt+F11", "panneau-metre"], ["remettre-echelle", "Alt+F12", "panneau-info-entite"],
+    ]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "accrochage").every((e) => e.horsCatalogue)).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "niveau").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["niveaux", true, "panneau-niveaux"], ["ajouter-niveau", true, "panneau-niveaux"], ["travailler-niveau", true, "panneau-niveaux"], ["rattacher-niveau", true, "panneau-niveaux"], ["supprimer-niveau", true, "panneau-niveaux"]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "local").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["locaux", true, "panneau-locaux"], ["creer-local", true, "panneau-locaux"], ["supprimer-local", true, "panneau-locaux"]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "plan").map((e) => [e.id, e.raccourci])).toEqual([["plan-vectoriel", "Ctrl+F7"], ["exporter-plan-svg", "Ctrl+F8"], ["rafraichir-plan", "Ctrl+F1"], ["motifs-hachure", "Ctrl+F9"], ["nouveau-motif", "Ctrl+F10"], ["importer-motif", "Ctrl+F11"], ["supprimer-motif", "Ctrl+F12"]]);

@@ -13,8 +13,8 @@ aucune donnée dans le code (D-GD-29).
 | P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (PR #472) |
 | P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (PR #482) |
 | P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (PR #487) |
-| P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | livrée (cette PR) |
-| P8-P10 | E Légende | Version et couverture, légende complète, hachures | à faire |
+| P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | livrée (PR #491) |
+| P8-P10 | E Légende | Version et couverture, légende complète, hachures | livrée (cette PR) |
 | P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | à faire |
 
 ## Décisions prises pour avancer (recommandations de la feuille de route, réversibles)
@@ -94,3 +94,21 @@ aucune donnée dans le code (D-GD-29).
 - Captures : `captures/p7/`, distance Casablanca → Rabat saisie par coordonnées (86,8 km), bureau 1440 px et Pixel 7.
 - Recette : contrôles « P7 » de `geodata.mjs` (voie clavier, distance, surface, refus motivé, annotation, rien écrit en
   base, axe-core moderate, sans WebGL : Alt+O et altitude par coordonnées).
+
+## P8-P10 · Légende (jalon E : E-06, carto-2 L1-L6)
+
+- **P8, API** : la valeur d'un raster au point joint la version publiée lue (`lireVersion`, avec son empreinte SHA-256) ;
+  la proximité d'objets joint la version comptée et la couverture du rayon « non évaluée » (couverture déclarée de la
+  source rendue telle quelle, jamais déduite). Rien n'est journalisé de plus.
+- **P9, légende lue** (`packages/geodata-model/src/legende-lue.ts`, pur et testé) : identique sur la carte et dans
+  l'onglet « Légende » : titre et unité, période (de l'indicateur, sinon de la version, sinon « non évaluée »),
+  classification nommée (méthode, nombre de classes, palette et sa nature), classes avec effectifs, valeur absente
+  hachurée et ventilée par motif (jamais zéro), entité sélectionnée, source, version et fiche de version dépliable.
+  Au téléphone, la légende de la carte reste bornée à 25 % de la hauteur. La synthèse gagne une ligne de lecture (L6).
+- **P10, hachures** : la valeur absente est hachurée **sur la carte** (motif généré, couche `-absentes`), pas seulement
+  grise (WCAG 1.4.1) ; sans coloration, aucune hachure.
+- Écart connu : la légende du téléphone n'est pas repliée par défaut (choix laissé au maître d'ouvrage).
+- Captures : `captures/p9/`, régions colorées selon « Population légale » (RGPH 2024), onglet « Légende » au bureau
+  1440 px et sur Pixel 7, carte colorée sur Pixel 7.
+- Recette : contrôles « P8 », « P9 », « P10 » de `geodata.mjs` (version et couverture, légende complète, pastille
+  hachurée, axe-core moderate, hachures sur la carte).
