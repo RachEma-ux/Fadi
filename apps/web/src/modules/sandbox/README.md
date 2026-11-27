@@ -330,6 +330,15 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     figure-fond** (Ctrl+Alt+Maj+M) : bâti en noir plein, voirie en trait, parcelles en trait fin, chacun choisi par sa
     balise ; SVG en mètres (viewBox, sans échelle imposée) ou DXF (calques BATI, VOIRIE, PARCELLES) ; une face percée
     est remplie sans ses trous, et c'est signalé. Test : `extension-echanges-dxf.test.ts`.
+  - *Extension « Trame d'axes »* (cas 3, lot 2, D1-F2-030, `apps/web/extensions/trame-axes/`, protocole 1.3 ; maquettes
+    validées le 27 novembre 2026) : l'outil « Trame d'axes » (Ctrl+Alt+A) demande les entraxes en X et en Y (liste
+    « 5,40;5,40;7,20 » ou série « 6x5,40 », 40 files au plus par direction), les repères (lettres ou chiffres, jamais
+    les mêmes dans les deux directions), l'angle et le débord ; l'aperçu suit le pointeur, l'origine s'accroche (point
+    visé arrondi au pas d'accrochage du projet hors accrochage) ou se saisit « x;y ». La trame posée : files en traits
+    accrochables (ni case ni disque) dans un groupe verrouillé sur la balise « Trame », bulles (textes avec repère) et
+    cotes d'entraxe et totales ; ses réglages sont gardés sur le groupe. « Modifier la trame » (Ctrl+Alt+F) rouvre les
+    réglages de la trame sélectionnée et la repose en un seul pas, au même endroit, anciennes bulles et cotes retirées.
+    Aucune valeur imposée : les entraxes sont ceux de l'utilisateur.
   - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,
