@@ -2875,13 +2875,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (Math.abs(f.normale.z) < 1 - 1e-6) return { face: f.id, etat: "inclinee" };
     return { face: f.id, etat: localDeLaFace(hist.present.modele, f.id) ? "prise" : "horizontale" };
   };
-  const disponibiliteCommandeLocal = (id: IdCommandeLocal) => disponibiliteLocal(id, { face: faceDeLocal().etat, dansObjet: dans !== undefined, lecture: readOnly });
+  const disponibiliteCommandeLocal = (id: IdCommandeLocal) => disponibiliteLocal(id, { face: faceDeLocal().etat, dansObjet: dans !== undefined, lecture: readOnly, choisi: localChoisi !== null });
   const executerLocal = (id: IdCommandeLocal) => {
     if (id === "locaux") {
       setPanneau("locaux");
       return;
     }
     if (!disponibiliteCommandeLocal(id).disponible) return;
+    if (id === "supprimer-local") return localChoisi ? supprimerUnLocal(localChoisi) : undefined;
     const { face } = faceDeLocal();
     if (!face) return;
     const numero = numeroSuivant(hist.present.modele);
@@ -4508,7 +4509,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 lecture={readOnly}
                 onChoisir={(id) => { setLocalChoisi(id); setErreurLocal(null); }}
                 onModifier={modifierUnLocal}
-                onSupprimer={supprimerUnLocal}
                 executer={executerLocal}
                 disponibilite={disponibiliteCommandeLocal}
                 erreur={erreurLocal}

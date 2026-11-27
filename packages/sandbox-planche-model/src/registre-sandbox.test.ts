@@ -33,7 +33,7 @@ describe("registre du Sandbox — contenu", () => {
     expect(entreePanneau("scripts").horsCatalogue).toBe(true);
     expect(entreePanneau("reperes").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "niveau").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["niveaux", true, "panneau-niveaux"], ["ajouter-niveau", true, "panneau-niveaux"], ["travailler-niveau", true, "panneau-niveaux"], ["rattacher-niveau", true, "panneau-niveaux"], ["supprimer-niveau", true, "panneau-niveaux"]]);
-    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "local").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["locaux", true, "panneau-locaux"], ["creer-local", true, "panneau-locaux"]]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "local").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["locaux", true, "panneau-locaux"], ["creer-local", true, "panneau-locaux"], ["supprimer-local", true, "panneau-locaux"]]);
     expect(entreePanneau("niveaux").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();

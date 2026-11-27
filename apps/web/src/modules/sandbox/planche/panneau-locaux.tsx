@@ -26,7 +26,6 @@ export function PanneauLocaux({
   lecture,
   onChoisir,
   onModifier,
-  onSupprimer,
   executer,
   disponibilite,
   erreur,
@@ -39,7 +38,6 @@ export function PanneauLocaux({
   lecture: boolean;
   onChoisir: (id: Id) => void;
   onModifier: (id: Id, s: SaisieLocal) => void;
-  onSupprimer: (id: Id) => void;
   executer: (id: IdCommandeLocal) => void;
   disponibilite: (id: IdCommandeLocal) => Disponibilite;
   erreur: ErreurLocal | null;
@@ -105,7 +103,6 @@ export function PanneauLocaux({
             </button>
           );
         })}
-        <button type="button" disabled={lecture || !courant} onClick={() => courant && onSupprimer(courant.local.id)} data-planche-locaux-supprimer>{t("planche.locaux.supprimer")}</button>
       </div>
       {courant && (
         <div className="planche-debit-reglages planche-locaux-formulaire">

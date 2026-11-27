@@ -110,6 +110,7 @@ await champ("hauteur").press("Enter");
 await page.waitForFunction((id) => window.fadiPlanche.modele().annotations.locaux[id].numero === "101", local.id);
 check("formulaire : numéro, nom, usage et hauteur déclarée enregistrés ; volume 30,00 m³", (await ligne.textContent())?.includes("30,00 m³") && (await ligne.locator("[data-planche-local-hauteur]").getAttribute("data-planche-local-hauteur")) === "declaree", (await ligne.textContent()) ?? "");
 await page.screenshot({ path: `${OUT}/1-locaux.png` });
+check("« Supprimer le local » : commande avec icône et raccourci (Ctrl+Maj+F3)", ((await panneau.locator("[data-planche-commande='supprimer-local']").getAttribute("title")) ?? "").includes("Ctrl+Maj+F3") && (await panneau.locator("[data-planche-commande='supprimer-local'] svg").count()) === 1 && !(await panneau.locator("[data-planche-commande='supprimer-local']").isDisabled()));
 
 // --- Paroi déplacée de 0,20 m : la surface suit -----------------------------------------------------------------------
 await page.locator("[data-planche-panneau='locaux'] .canevas-fermer").evaluate((b) => b.click());

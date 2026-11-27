@@ -383,7 +383,7 @@ export function disponibiliteNiveau(id: IdCommandeNiveau, s: { readonly choisi: 
  * Locaux (cas 4 du catalogue, étape 3) : ouvrir le panneau, créer un local sur la face de sol choisie (règle d'or :
  * icône, barre, raccourci).
  */
-export type IdCommandeLocal = "locaux" | "creer-local";
+export type IdCommandeLocal = "locaux" | "creer-local" | "supprimer-local";
 export interface CommandeLocal {
   readonly id: IdCommandeLocal;
   readonly picto: Pictogramme;
@@ -394,12 +394,14 @@ export interface CommandeLocal {
 export const COMMANDES_LOCAUX: readonly CommandeLocal[] = [
   { id: "locaux", ...depuisRegistre("locaux"), libelle: "planche.locaux.ouvrir", court: "planche.locaux.court.ouvrir" },
   { id: "creer-local", ...depuisRegistre("creer-local"), libelle: "planche.locaux.creer", court: "planche.locaux.court.creer" },
+  { id: "supprimer-local", ...depuisRegistre("supprimer-local"), libelle: "planche.locaux.supprimer.libelle", court: "planche.locaux.supprimer" },
 ];
 
 /** Disponibilité : le panneau toujours ; créer hors lecture, à la racine, avec une face de sol (horizontale) sans local choisie seule. */
-export function disponibiliteLocal(id: IdCommandeLocal, s: { readonly face: "aucune" | "horizontale" | "inclinee" | "prise"; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
+export function disponibiliteLocal(id: IdCommandeLocal, s: { readonly face: "aucune" | "horizontale" | "inclinee" | "prise"; readonly dansObjet: boolean; readonly lecture: boolean; readonly choisi?: boolean }): Disponibilite {
   if (id === "locaux") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "supprimer-local") return s.choisi ? { disponible: true, motif: null } : { disponible: false, motif: "planche.locaux.motif.choisi" };
   if (s.dansObjet) return { disponible: false, motif: "planche.locaux.motif.racine" };
   if (s.face === "aucune") return { disponible: false, motif: "planche.locaux.motif.face" };
   if (s.face === "inclinee") return { disponible: false, motif: "planche.locaux.motif.inclinee" };
