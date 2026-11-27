@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -178,6 +178,14 @@ describe("Extension « Scripts » — commandes, erreurs et aide traduites", () 
     expect(disponibiliteScripts("executer-script", { vide: false, enCours: false }).disponible).toBe(true);
     expect(disponibiliteScripts("executer-script", { vide: true, enCours: false }).motif).toBe("planche.scripts.motif.vide");
     expect(disponibiliteScripts("executer-script", { vide: false, enCours: true }).motif).toBe("planche.scripts.motif.encours");
+  });
+
+  it("cas 2, lot 1 : numérotation — le panneau toujours, la série hors lecture avec des objets sélectionnés", () => {
+    expect(disponibiliteNumerotation("numerotation", { objets: 0, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteNumerotation("numeroter-serie", { objets: 3, lecture: false }).disponible).toBe(true);
+    expect(disponibiliteNumerotation("numeroter-serie", { objets: 0, lecture: false }).motif).toBe("planche.numeroter.motif.selection");
+    expect(disponibiliteNumerotation("numeroter-serie", { objets: 3, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(COMMANDES_NUMEROTATION.map((c) => [c.id, c.raccourci])).toEqual([["numerotation", "Alt+F6"], ["numeroter-serie", "Alt+F7"]]);
   });
   it("chaque erreur, chaque fonction et chaque exemple a son texte français et anglais", async () => {
     const { MESSAGES_ERREUR_SCRIPT, FONCTIONS_SCRIPT, EXEMPLES_SCRIPTS } = await import("@parcours/sandbox-planche-model");
