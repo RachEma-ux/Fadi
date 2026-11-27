@@ -65,10 +65,11 @@
  *   planche.annotations.effacer(ids)            efface des cotes et des textes
  *   événements de souris d'un outil : `vise`, le point visé avant accrochage sur le plan de travail, ou null
  * Protocole 1.4 (surfaces réglementaires) :
- *   planche.geometrie.coupe(hauteur, objets)    coupe horizontale des solides à la hauteur z (m), tout le modèle ou
+ *   planche.geometrie.coupe(hauteur, objets, sansBalises)  coupe horizontale des solides à la hauteur z (m), tout le modèle ou
  *                                               les objets nommés : { polygones, aire (union), solides (balise
  *                                               et aire de chacun), ecartes (non solides, avec le motif), facesLibres }
- *   planche.geometrie.projection(objets)        projection au sol des solides, même résultat
+ *   planche.geometrie.projection(objets, sansBalises)  projection au sol des solides, même résultat ;
+ *                                               `sansBalises` : balises dont les solides ne comptent pas
  *   planche.geometrie.union(polygones)          union de polygones { exterieur, trous } en [x, y] : { polygones, aire }
  *   planche.niveaux.lire()                      { niveaux : [{ id, nom, altitude, hauteur }] du plus haut au plus bas, referenceNGF :
  *                                               altitude NGF du ±0,00, ou null si elle n'est pas renseignée }
@@ -175,8 +176,8 @@ export function creerExecutantExtension(
       lire: () => demander("niveaux.lire"),
     }),
     geometrie: Object.freeze({
-      coupe: (hauteur: unknown, objets?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined ? {} : { objets: typeof objets === "string" ? [objets] : objets }) }),
-      projection: (objets?: unknown) => demander("geometrie.projection", objets === undefined ? {} : { objets: typeof objets === "string" ? [objets] : objets }),
+      coupe: (hauteur: unknown, objets?: unknown, sansBalises?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
+      projection: (objets?: unknown, sansBalises?: unknown) => demander("geometrie.projection", { ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       union: (polygones: unknown) => demander("geometrie.union", { polygones }),
     }),
     unites: Object.freeze({

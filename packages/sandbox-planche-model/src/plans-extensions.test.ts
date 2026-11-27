@@ -117,4 +117,12 @@ describe("protocole 1.4 : opérations planes", () => {
     expect(r.solides.map((x) => x.balise)).toEqual(["b-bati", "b-tours", "b-tours"]);
     expect(ok<PlansLus>(planche(m).servir("geometrie.projection", { objets: [d.tour] })).solides[0]!.balise).toBe("b-tours");
   });
+  it("sansBalises : les solides de ces balises ne comptent ni dans l'union ni dans le détail ; liste mal formée refusée", () => {
+    const d = depart();
+    const m = baliserOccurrences(d.modele, [d.ensemble], "b-tours").modele;
+    const r = ok<PlansLus>(planche(m).servir("geometrie.projection", { sansBalises: ["b-tours"] }));
+    expect(r.solides.map((x) => x.id)).toEqual([d.batiment]);
+    expect(r.aire).toBeCloseTo(80, 9);
+    expect(planche(m).servir("geometrie.coupe", { hauteur: 1, sansBalises: "b-tours" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+  });
 });

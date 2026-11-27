@@ -775,8 +775,13 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (coupe && (typeof h !== "number" || !Number.isFinite(h) || Math.abs(h) > BORNES_PLANS.hauteur)) return refus("argument_invalide", `hauteur : nombre de −${BORNES_PLANS.hauteur} à ${BORNES_PLANS.hauteur} m attendu`);
     const plans = moteurPlans();
     if ("ok" in plans) return plans;
-    const lu = solidesDe(vue().modele(), d["objets"]);
-    if ("ok" in lu) return lu;
+    const sans = d["sansBalises"];
+    if (sans !== undefined && (!Array.isArray(sans) || sans.length > 200 || !sans.every((b) => typeof b === "string"))) return refus("argument_invalide", "sansBalises : liste d'identifiants de balises");
+    const lu0 = solidesDe(vue().modele(), d["objets"]);
+    if ("ok" in lu0) return lu0;
+    // Solides dont la balise est écartée : ni comptés ni rendus (l'union reste sans double compte).
+    const ecarter = new Set((sans ?? []) as string[]);
+    const lu = { ...lu0, solides: lu0.solides.filter((x) => x.balise === null || !ecarter.has(x.balise)) };
     const calcul = (ms: readonly Maillage[]) => (coupe ? plans.coupe(ms, h as number) : plans.projection(ms)).map(polygoneLu);
     try {
       const polygones = lu.solides.length ? calcul(lu.solides.map((x) => x.maillage)) : [];

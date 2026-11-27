@@ -323,7 +323,7 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     **Opérations planes**, par le moteur booléen de la Planche (manifold-3d, chargé à la première demande, jamais à
     l'ouverture ; le temps de chargement ne compte pas dans le délai de l'appel) : `planche.geometrie.coupe(hauteur,
     objets)` coupe horizontalement les solides à la hauteur z (en mètres), `planche.geometrie.projection(objets)` les
-    projette au sol ; sans `objets`, tout le modèle. Les deux rendent l'union (aucun recouvrement compté deux fois) :
+    projette au sol ; sans `objets`, tout le modèle ; `sansBalises` écarte les solides de ces balises. Les deux rendent l'union (aucun recouvrement compté deux fois) :
     `polygones` (contour extérieur, trous, aire nette) et `aire`, puis le détail : `solides` (chaque solide fermé, sa balise (la sienne ou celle de l'objet qui le contient) et
     son aire ; une instance de composant par chemin), `ecartes` (objets qui ne sont pas des solides fermés, avec le
     motif) et `facesLibres` (faces de la racine hors de tout groupe) — rien n'est omis en silence.
