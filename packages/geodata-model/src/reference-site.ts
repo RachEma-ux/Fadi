@@ -11,7 +11,7 @@ import type { EntreeSite, LectureSite, Provenance, Rubrique } from "./site.js";
 
 export const FORMAT_REFERENCE_SITE = "geodata.reference-site/1" as const;
 
-export type RubriqueSite = "unites" | "indicateurs" | "services" | "prix" | "terrain";
+export type RubriqueSite = "unites" | "indicateurs" | "services" | "prix" | "grilles" | "terrain";
 
 export interface LectureReferencee {
   readonly rubrique: RubriqueSite; readonly versionId: string; readonly empreinteVersion: string;
@@ -30,7 +30,7 @@ export interface ReferenceSiteGeoData {
 }
 
 const METHODES: Readonly<Record<RubriqueSite, string>> = {
-  unites: "unites-au-point", indicateurs: "fiche-objet", services: "proximite", prix: "agregats-publies", terrain: "terrain-point",
+  unites: "unites-au-point", indicateurs: "fiche-objet", services: "proximite", prix: "agregats-publies", grilles: "valeur-grille-au-point", terrain: "terrain-point",
 };
 
 /** Motif d'exclusion d'une provenance, ou null si elle est transmissible. */
@@ -53,9 +53,11 @@ export function constituerReferenceSite(l: LectureSite, capacitesPrix: readonly 
   const lectures: LectureReferencee[] = [];
   const exclusions: { rubrique: RubriqueSite; versionId: string | null; motif: string }[] = [];
   const parametres = l.entree.rayonM ? { rayonM: l.entree.rayonM } : {};
-  const rubriques: [RubriqueSite, Rubrique<unknown>][] = [["unites", l.unites], ["indicateurs", l.indicateurs], ["services", l.services], ["prix", l.prix], ["terrain", l.terrain]];
+  const rubriques: [RubriqueSite, Rubrique<unknown>][] = [["unites", l.unites], ["indicateurs", l.indicateurs], ["services", l.services], ["prix", l.prix], ["grilles", l.grilles], ["terrain", l.terrain]];
   for (const [rubrique, r] of rubriques) {
     if (r.etat !== "evaluee") continue;
+    // Lecture partielle : chaque couche demandée et non lue est dite, pour distinguer une analyse incomplète.
+    for (const x of r.lacunes ?? []) exclusions.push({ rubrique, versionId: null, motif: `Couche ${x.titre ?? x.coucheId} non lue (inaccessible) : lecture partielle.` });
     if (!r.provenance.length) { exclusions.push({ rubrique, versionId: null, motif: "Version de la lecture non lue : renvoi impossible." }); continue; }
     for (const p of r.provenance) {
       const motif = motifExclusion(p, rubrique, capacitesPrix);

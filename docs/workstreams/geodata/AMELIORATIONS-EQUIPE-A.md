@@ -132,9 +132,20 @@ aucune donnée dans le code (D-GD-29).
   canonique SHA-256 vérifiable (`verifierEmpreinteReference`). Exclusions motivées : source provisoire, données
   personnelles, empreinte ou droits non lus (« droit absent = inconnu »), partage ou export non autorisé, prix sans la
   capacité d'export. Copiée dans le presse-papiers.
-- Écarts connus : les rasters thématiques (I3, I6) n'entrent pas encore dans la lecture de site ; les rubriques dont la
+- Suite (après P14, en attente de fusion) : rubrique « Grilles affichées sur la carte » (I3 population carroyée, I6
+  altitude indicative) : valeur de chaque couche de grille visible au point (`GET /raster/:id/valeur`), avec sa version ;
+  cellule sans donnée ou hors emprise « non évaluée » (jamais 0), aucune grille affichée « aucune couche de grille
+  affichée », couche refusée « couche inaccessible ». Distincte du terrain (I7). La référence renvoie à la version lue
+  (méthode `valeur-grille-au-point`) sans la valeur. Capture `captures/site-grille/`, contrôles « site · grille » de
+  `geodata.mjs`.
+- Revue Codex de la PR #497, deux remarques jaunes reprises : (1) les prix publiés sont cherchés du territoire le plus
+  fin au plus global qui contient le lieu, et l'édition trouvée garde son **périmètre réel** (« périmètre : commune… »),
+  jamais attribuée au territoire plus fin ; (2) lecture partielle : une couche de points ou de grille demandée et non
+  lue (refusée, retirée) reste dite dans le volet (« Lecture partielle : … — Couche inaccessible ») et figure aux
+  exclusions de la référence, au lieu de disparaître d'une rubrique évaluée.
+- Écarts connus : les rubriques dont la
   version n'a pas de droits lus (unités, prix, terrain le plus souvent) sont exclues de la référence avec leur motif.
 - Captures : `captures/p13/`, lecture à Casablanca (−7,6189 ; 33,5731) avec la couche des villes, bureau 1440 px et
   Pixel 7 ; données réelles du Maroc.
-- Recette : contrôles « P13 » et « P14 » de `geodata.mjs` (six rubriques, motifs, signes sur la carte, axe-core
+- Recette : contrôles « P13 » et « P14 » de `geodata.mjs` (sept rubriques depuis la suite, motifs, signes sur la carte, axe-core
   moderate, unités lues en base, sans WebGL, référence sans valeur ni mot « projet », empreinte).

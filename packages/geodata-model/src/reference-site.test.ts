@@ -22,6 +22,26 @@ describe("référence de site (P14, donnees-1 TA-D6)", () => {
     expect(JSON.stringify(r)).not.toContain("\"nombre\"");
     expect(r.entree.geometrie).toEqual({ type: "Point", coordinates: [-7.6, 33.5] });
   });
+  it("grille au point (I3 / I6) : renvoi à la version lue, méthode nommée, jamais la valeur de la cellule", () => {
+    const l = assemblerLectureSite({
+      entree: { nature: "point", repere: "geographic", crs: "EPSG:4326", point: { lon: -7.6, lat: 33.5 } }, maintenant: new Date("2026-11-27T10:00:00Z"),
+      unites: null, fiche: null, prix: null, terrain: null, services: null,
+      grilles: { ok: true, valeur: [{ coucheId: "g", accessible: true, titre: "Grille", grandeur: "population", unite: "hab.", valeur: 4321, classe: null, version: version("vg") }] },
+    });
+    const r = constituerReferenceSite(l, [], t);
+    expect(r.lectures).toMatchObject([{ rubrique: "grilles", versionId: "vg", methode: "valeur-grille-au-point", parametres: {} }]);
+    expect(JSON.stringify(r)).not.toContain("4321");
+  });
+  it("lecture partielle : la couche non lue figure aux exclusions, motivée", () => {
+    const l = assemblerLectureSite({
+      entree: { nature: "point", repere: "geographic", crs: "EPSG:4326", point: { lon: -7.6, lat: 33.5 } }, maintenant: new Date("2026-11-27T10:00:00Z"),
+      unites: null, fiche: null, prix: null, terrain: null,
+      services: { ok: true, valeur: [{ coucheId: "c0", accessible: true, titre: "Écoles", nombre: 1, plusProche: null, version: version("v1") }, { coucheId: "c1", accessible: false, titre: "Retirée" }] },
+    });
+    const r = constituerReferenceSite(l, [], t);
+    expect(r.lectures.map((x) => x.versionId)).toEqual(["v1"]);
+    expect(r.exclusions).toEqual([{ rubrique: "services", versionId: null, motif: "Couche Retirée non lue (inaccessible) : lecture partielle." }]);
+  });
   it("exclut une version provisoire même autorisée, un partage inconnu, une donnée privée — avec leur motif", () => {
     const r = constituerReferenceSite(lecture([
       version("prov", { qualification: { etat: "provisoire", motif: "m", decision: "D-GD-54" } }),

@@ -543,7 +543,7 @@ await page.locator("body").press("Alt+q");
 await page.locator("[data-gd-site='ok']").waitFor({ timeout: 20_000 }).catch(() => undefined);
 {
   const rubriques = await page.locator("[data-gd-site-rubrique]").evaluateAll((rs) => rs.map((r) => `${r.getAttribute("data-gd-site-rubrique")}:${r.getAttribute("data-gd-site-etat")}`));
-  check("P13 · Alt+Q ouvre le volet « Site » et lit six rubriques, chacune évaluée ou non évaluée", (await page.locator("[data-gd-volet-ouvert='site']").count()) === 1 && rubriques.length === 6 && rubriques.every((r) => /:(evaluee|non-evaluee)$/.test(r)), rubriques.join(" "));
+  check("P13 · Alt+Q ouvre le volet « Site » et lit sept rubriques, chacune évaluée ou non évaluée", (await page.locator("[data-gd-volet-ouvert='site']").count()) === 1 && rubriques.length === 7 && rubriques.every((r) => /:(evaluee|non-evaluee)$/.test(r)), rubriques.join(" "));
   check("P13 · parcelle et urbanisme : « Non évalué, source à qualifier », jamais une valeur", (await page.locator("[data-gd-site-rubrique='parcelle'] [data-gd-site-motif='source-a-qualifier']").count()) === 1);
   const nonEvaluees = await page.locator("[data-gd-site-etat='non-evaluee'] [data-gd-site-motif]").allTextContents();
   check("P13 · une rubrique non évaluée dit son motif (aucun « 0 », aucun « — » seul)", nonEvaluees.length > 0 && nonEvaluees.every((t) => t.trim().length > 3 && t.trim() !== "0"), nonEvaluees.join(" | ").slice(0, 200));
@@ -558,7 +558,7 @@ await page.locator("[data-gd-site='ok']").waitFor({ timeout: 20_000 }).catch(() 
   await page.locator("[data-gd-site-coordonnees] button[type='submit']").click();
   await page.waitForFunction(() => document.querySelector("[data-gd-site]")?.getAttribute("data-gd-site") === "ok" && document.querySelector("[data-gd-site-lieu]")?.textContent?.includes("31.4"), null, { timeout: 20_000 }).catch(() => undefined);
   const etatUnites = await page.locator("[data-gd-site-rubrique='unites']").getAttribute("data-gd-site-etat");
-  check("P13 · lieu saisi dans le territoire : unités lues en base (évaluées), chaque rubrique dite", etatUnites === "evaluee" && (await page.locator("[data-gd-site-rubrique]").count()) === 6, `unités : ${etatUnites}`);
+  check("P13 · lieu saisi dans le territoire : unités lues en base (évaluées), chaque rubrique dite", etatUnites === "evaluee" && (await page.locator("[data-gd-site-rubrique]").count()) === 7, `unités : ${etatUnites}`);
   await page.screenshot({ path: join(OUT, "p13-site.png") });
   // P14 : référence du site — renvoi aux versions lues (empreinte), aucune valeur, aucun champ d'un autre module.
   await page.locator("[data-gd-site-copier-reference]").click();
@@ -986,6 +986,28 @@ check("P8 · valeur au point : version publiée jointe (empreinte SHA-256)", /^[
   const prox = unites ? await (await page.request.get(`${BASE}/geodata/api/couches/${unites.id}/objets/001/proximite?rayon=500&couches=${unites.id}`)).json() : null;
   const c0 = prox?.couches?.[0];
   check("P8 · proximité : version comptée et couverture du rayon « non évaluée », jamais déduite", /^[0-9a-f]{64}$/.test(c0?.version?.empreinte ?? "") && c0?.couverture?.etat === "non-evaluee" && "declaree" in (c0?.couverture ?? {}), JSON.stringify(c0?.couverture ?? prox));
+}
+// Grille affichée dans « Que sait-on d'ici ? » (I3 / I6) : valeur de la cellule avec sa version ; cellule sans donnée
+// « non évaluée », jamais 0.
+{
+  const lireSiteA = async (lon, lat) => {
+    await page.locator("[data-gd-site-lon]").fill(String(lon));
+    await page.locator("[data-gd-site-lat]").fill(String(lat));
+    await page.locator("[data-gd-site-coordonnees] button[type='submit']").click();
+    await page.waitForFunction((y) => document.querySelector("[data-gd-site]")?.getAttribute("data-gd-site") === "ok" && document.querySelector("[data-gd-site-lieu]")?.textContent?.includes(y), String(lat), { timeout: 20_000 }).catch(() => undefined);
+  };
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator("body").press("Alt+q");
+  await page.locator("[data-gd-site-lon]").waitFor({ timeout: 5000 }).catch(() => undefined);
+  await lireSiteA(-8.79, 30.15);
+  const grille = page.locator("[data-gd-site-rubrique='grilles']");
+  const texteGrille = ((await grille.textContent()) ?? "").replace(/\s+/g, " ");
+  check("site · grille affichée : valeur de la cellule lue (225) avec sa source", (await grille.getAttribute("data-gd-site-etat")) === "evaluee" && texteGrille.includes("225") && (await grille.locator("[data-gd-site-provenance]").count()) === 1, texteGrille.slice(0, 200));
+  await page.screenshot({ path: join(OUT, "site-grille.png") });
+  await lireSiteA(-8.995, 30.295);
+  check("site · cellule sans donnée : grille « non évaluée » (hors emprise), jamais 0", (await grille.getAttribute("data-gd-site-etat")) === "non-evaluee" && (await grille.locator("[data-gd-site-motif='hors-emprise']").count()) === 1, ((await grille.textContent()) ?? "").slice(0, 200));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator("body").press("Alt+q");
 }
 await onglet(page, "couches");
 await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
@@ -1602,7 +1624,7 @@ await p2.locator("[data-gd-site-lon]").fill("-8.9");
 await p2.locator("[data-gd-site-lat]").fill("30.1");
 await p2.locator("[data-gd-site-coordonnees] button[type='submit']").click();
 await p2.locator("[data-gd-site='ok']").waitFor({ timeout: 20_000 }).catch(() => undefined);
-check("P13 · sans WebGL : lecture de site par coordonnées saisies (six rubriques)", (await p2.locator("[data-gd-site-rubrique]").count()) === 6);
+check("P13 · sans WebGL : lecture de site par coordonnées saisies (sept rubriques)", (await p2.locator("[data-gd-site-rubrique]").count()) === 7);
 await sansGl.close();
 
 // --- Prix immobiliers (lot P7, Concept Prix v1.1 §4–§6) : panneau du catalogue et section de la fiche ---

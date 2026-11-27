@@ -35,6 +35,11 @@ function RubriqueSite<T>({ id, titre, r, rendu }: { id: string; titre: string; r
         <>
           {rendu(r.valeur)}
           {r.nature === "calcule" && <p className="gd-discret">Fiabilité : non évaluée (valeur calculée)</p>}
+          {!!r.lacunes?.length && (
+            <ul className="gd-liste-simple" data-gd-site-lacunes>{r.lacunes.map((l) => (
+              <li key={l.coucheId} className="gd-etat"><span>Lecture partielle :</span> <span translate="no">{l.titre ?? l.coucheId}</span>{" — "}<span>{libelleNonEvalue(l.motif)}</span></li>
+            ))}</ul>
+          )}
         </>
       ) : (
         <p className="gd-etat" data-gd-site-motif={r.motif}><span>{libelleNonEvalue(r.motif)}</span>{r.detail && <>{" — "}<span translate="no">{r.detail}</span></>}</p>
@@ -84,7 +89,14 @@ export function VoletSite(p: {
             ))}</ul>
           )} />
           <RubriqueSite id="prix" titre="Prix publiés" r={s.lecture.prix} rendu={(es) => (
-            <ul className="gd-liste-simple">{es.map((e) => <li key={e.versionId} translate="no">{`${e.editeur} — ${e.libelle}${e.periode ? ` · ${e.periode}` : ""}`}</li>)}</ul>
+            <ul className="gd-liste-simple">{es.map((e) => <li key={e.versionId}><span translate="no">{`${e.editeur} — ${e.libelle}${e.periode ? ` · ${e.periode}` : ""}`}</span>{e.perimetre && <>{" · "}<span>périmètre :</span> <span translate="no">{`${e.perimetre.nom} (${e.perimetre.code})`}</span></>}</li>)}</ul>
+          )} />
+          <RubriqueSite id="grilles" titre="Grilles affichées sur la carte (valeur au point)" r={s.lecture.grilles} rendu={(gs) => (
+            <dl className="gd-site-valeurs">{gs.map((g) => (
+              <div key={g.coucheId} data-gd-site-grille={g.coucheId}><dt translate="no">{`${g.titre} · ${g.grandeur}`}</dt>
+                <dd>{g.valeur === null ? <span data-gd-site-motif="hors-emprise">{libelleNonEvalue("hors-emprise")}</span>
+                  : <span translate="no">{`${g.classe ?? formatNombre(g.valeur, Math.abs(g.valeur) >= 100 ? 0 : 2)}${!g.classe && g.unite ? ` ${g.unite}` : ""}`}</span>}</dd></div>
+            ))}</dl>
           )} />
           <RubriqueSite id="terrain" titre="Altitude du terrain (MNT)" r={s.lecture.terrain} rendu={(t) => <p data-gd-site-altitude translate="no">{`${formatNombre(t.altitude, 1)} m`}</p>} />
           <RubriqueSite id="parcelle" titre="Parcelle, urbanisme, foncier, risques" r={s.lecture.parcelle} rendu={() => null} />

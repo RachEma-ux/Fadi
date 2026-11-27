@@ -36,9 +36,30 @@ describe("lecture de site (P12, donnees-1 TA-D5)", () => {
     expect(assemblerLectureSite({ ...base, terrain: { ok: false, erreur: "Délai dépassé" } }).terrain).toMatchObject({ motif: "lecture-impossible", detail: "Délai dépassé" });
     expect(assemblerLectureSite(base).parcelle).toMatchObject({ etat: "non-evaluee", motif: "source-a-qualifier" });
   });
+  it("grilles (I3 / I6) : aucune couche affichée, inaccessible, hors emprise jamais 0, valeur avec sa version", () => {
+    expect(assemblerLectureSite(base).grilles).toMatchObject({ etat: "non-evaluee", motif: "aucune-couche-raster" });
+    expect(assemblerLectureSite({ ...base, grilles: { ok: true, valeur: [] } }).grilles).toMatchObject({ motif: "aucune-couche-raster" });
+    expect(assemblerLectureSite({ ...base, grilles: { ok: true, valeur: [{ coucheId: "r", accessible: false }] } }).grilles).toMatchObject({ motif: "couche-inaccessible" });
+    const g = (coucheId: string, valeur: number | null) => ({ coucheId, accessible: true as const, titre: coucheId, grandeur: "population", unite: "hab.", valeur, classe: null, version });
+    expect(assemblerLectureSite({ ...base, grilles: { ok: true, valeur: [g("r", null)] } }).grilles).toMatchObject({ etat: "non-evaluee", motif: "hors-emprise", provenance: [{ versionId: "v1" }] });
+    const l = assemblerLectureSite({ ...base, grilles: { ok: true, valeur: [g("r1", 0), g("r2", null)] } });
+    // Une cellule à 0 est une valeur lue ; une cellule hors emprise reste « non évaluée » à côté d'elle.
+    expect(l.grilles).toMatchObject({ etat: "evaluee", nature: "source", valeur: [{ coucheId: "r1", valeur: 0, motif: null }, { coucheId: "r2", valeur: null, motif: "hors-emprise" }] });
+    expect(assemblerLectureSite({ ...base, grilles: { ok: false, erreur: "Délai dépassé" } }).grilles).toMatchObject({ motif: "lecture-impossible", detail: "Délai dépassé" });
+    expect(libelleNonEvalue("aucune-couche-raster")).toBe("Non évalué : aucune couche de grille affichée sur la carte");
+  });
+  it("lecture partielle : une couche demandée et non lue reste dite (lacune), jamais comptée ; périmètre du prix gardé", () => {
+    const l = assemblerLectureSite({ ...base, services: { ok: true, valeur: [{ coucheId: "p", accessible: true, titre: "Écoles", nombre: 2, plusProche: null, version }, { coucheId: "x", accessible: false, titre: "Retirée" }] } });
+    expect(l.services).toMatchObject({ etat: "evaluee", lacunes: [{ coucheId: "x", titre: "Retirée", motif: "couche-inaccessible" }] });
+    expect(l.services.etat === "evaluee" && l.services.valeur.map((x) => x.coucheId)).toEqual(["p"]);
+    const sans = assemblerLectureSite({ ...base, services: { ok: true, valeur: [{ coucheId: "p", accessible: true, titre: "Écoles", nombre: 2, plusProche: null, version }] } });
+    expect(sans.services.etat === "evaluee" && "lacunes" in sans.services).toBe(false);
+    const prix = assemblerLectureSite({ ...base, prix: { ok: true, valeur: [{ versionId: "e", libelle: "T3 2026", editeur: "FeenWay", periode: null, attribution: "a", licence: "l", perimetre: { code: "C1", nom: "Commune" } }] } }).prix;
+    expect(prix).toMatchObject({ etat: "evaluee", valeur: [{ perimetre: { code: "C1", nom: "Commune" } }] });
+  });
   it("aucune rubrique ne vaut 0 sans donnée", () => {
     const l = assemblerLectureSite(base);
-    for (const r of [l.unites, l.indicateurs, l.services, l.prix, l.terrain, l.parcelle]) expect(r.etat).toBe("non-evaluee");
+    for (const r of [l.unites, l.indicateurs, l.services, l.prix, l.grilles, l.terrain, l.parcelle]) expect(r.etat).toBe("non-evaluee");
   });
 });
 

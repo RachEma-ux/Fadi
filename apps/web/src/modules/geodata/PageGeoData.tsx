@@ -982,20 +982,32 @@ export function PageGeoData() {
     const rep = <T,>(x: Promise<T>): Promise<Reponse<T>> => x.then((valeur) => ({ ok: true as const, valeur }), (e: unknown) => ({ ok: false as const, erreur: message(e) }));
     const points = composition.couches.filter((k) => k.visible && couchesPoints.has(k.coucheId)).map((k) => k.coucheId).slice(0, 20);
     const unitesP = paysCourant ? rep(api.unitesAuPoint(paysCourant, lieu.lon, lieu.lat).then((r) => r.unites.map((u) => ({ code: u.code, nom: u.nom, rang: u.rang, coucheId: u.coucheId, versionId: u.versionId })))) : Promise.resolve(null);
-    const servicesP = points.length ? rep(api.proximitePoint(lieu.lon, lieu.lat, RAYON_SITE_M, points).then((r) => r.couches.map((c) => (c.accessible && c.version ? { ...c, version: c.version } : { coucheId: c.coucheId, accessible: false as const })))) : Promise.resolve({ ok: true as const, valeur: [] });
+    const servicesP = points.length ? rep(api.proximitePoint(lieu.lon, lieu.lat, RAYON_SITE_M, points).then((r) => r.couches.map((c) => (c.accessible && c.version ? { ...c, version: c.version } : { coucheId: c.coucheId, accessible: false as const, titre: couchesConnues.get(c.coucheId)?.titre ?? c.coucheId })))) : Promise.resolve({ ok: true as const, valeur: [] });
+    // Grilles affichées (I3 / I6) : valeur au point, chacune rattachée à sa version ; une couche refusée n'est jamais 0.
+    const grillesAffichees = composition.couches.filter((k) => k.visible && rasters.has(k.coucheId)).map((k) => k.coucheId).slice(0, 10);
+    const grillesP = grillesAffichees.length ? rep(Promise.all(grillesAffichees.map((id) => api.valeurRaster(id, Number(lieu.lon.toFixed(6)), Number(lieu.lat.toFixed(6))).then(
+      (v) => (v.version ? { coucheId: id, accessible: true as const, titre: couchesConnues.get(id)?.titre ?? id, grandeur: v.grandeur, unite: v.unite, valeur: v.valeur, classe: v.classe, version: v.version } : { coucheId: id, accessible: false as const, titre: couchesConnues.get(id)?.titre ?? id }),
+      (e: unknown) => { if (e instanceof ErreurGeoData && (e.statut === 404 || e.statut === 403)) return { coucheId: id, accessible: false as const, titre: couchesConnues.get(id)?.titre ?? id }; throw e; })))) : Promise.resolve({ ok: true as const, valeur: [] });
     const terrainP = rep(api.terrainPoint(lieu.lon, lieu.lat, "MNT").then((t) => (t.disponible ? { disponible: true as const, altitude: t.altitude, produit: "MNT", source: { versionId: t.source.versionId, titre: t.source.titre, attribution: t.source.attribution, licence: t.source.licence.nom, date: t.source.date } } : { disponible: false as const, motif: t.motif })));
     void (async () => {
       const unites = await unitesP;
       const fine = unites?.ok ? [...unites.valeur].sort((a, b) => b.rang - a.rang)[0] : undefined;
-      const [fiche, prix, services, terrainLu] = await Promise.all([
+      const [fiche, prix, services, terrainLu, grilles] = await Promise.all([
         fine ? rep(api.fiche(fine.coucheId, fine.code).then((f) => ({ indicateurs: f.indicateurs.map((i) => ({ titre: i.titre, unite: i.unite || null, periode: i.periode, valeur: lireValeur(i.valeur, i.motifAbsence) })), version: f.couche.version }))) : Promise.resolve(null),
-        // Prix : une route absente (module non activé) vaut « aucune source de prix publiée », jamais une valeur.
-        fine ? api.prixAgregats(fine.code).then((r) => ({ ok: true as const, valeur: r.editions.map((x) => ({ versionId: x.versionId, libelle: x.libelle, editeur: x.editeur, periode: typeof x.periode === "string" ? x.periode : x.periode ? `${x.periode.debut} – ${x.periode.fin}` : null, attribution: x.attribution, licence: x.licence })) }),
-          (e: unknown) => (e instanceof ErreurGeoData && e.statut === 404 ? { ok: true as const, valeur: [] } : { ok: false as const, erreur: message(e) })) : Promise.resolve(null),
-        servicesP, terrainP,
+        // Prix : une route absente (module non activé) vaut « aucune source de prix publiée », jamais une valeur. Les
+        // territoires qui contiennent le lieu sont lus du plus fin au plus global : la première édition trouvée garde son
+        // périmètre réel (une édition de la commune n'est jamais attribuée à l'arrondissement).
+        fine && unites?.ok ? (async () => {
+          for (const u of [...unites.valeur].sort((a, b) => b.rang - a.rang)) {
+            const r = await api.prixAgregats(u.code);
+            if (r.editions.length) return { ok: true as const, valeur: r.editions.map((x) => ({ versionId: x.versionId, libelle: x.libelle, editeur: x.editeur, periode: typeof x.periode === "string" ? x.periode : x.periode ? `${x.periode.debut} – ${x.periode.fin}` : null, attribution: x.attribution, licence: x.licence, perimetre: { code: u.code, nom: u.nom } })) };
+          }
+          return { ok: true as const, valeur: [] };
+        })().catch((e: unknown) => (e instanceof ErreurGeoData && e.statut === 404 ? { ok: true as const, valeur: [] } : { ok: false as const, erreur: message(e) })) : Promise.resolve(null),
+        servicesP, terrainP, grillesP,
       ]);
       if (jetonSite.current !== jeton) return;
-      const lecture = assemblerLectureSite({ entree: { nature: "point", repere: "geographic", crs: "EPSG:4326", point: { lon: lieu.lon, lat: lieu.lat }, rayonM: RAYON_SITE_M }, maintenant: new Date(), unites, fiche, services, prix, terrain: terrainLu });
+      const lecture = assemblerLectureSite({ entree: { nature: "point", repere: "geographic", crs: "EPSG:4326", point: { lon: lieu.lon, lat: lieu.lat }, rayonM: RAYON_SITE_M }, maintenant: new Date(), unites, fiche, services, prix, grilles, terrain: terrainLu });
       setSite({ etat: "ok", lieu, lecture });
       setAnnonce("Lecture du site terminée.");
     })();
