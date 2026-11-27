@@ -1,0 +1,26 @@
+{
+  "id": "surfaces-programme",
+  "nom": { "fr": "Surfaces et programme", "en": "Areas and brief" },
+  "description": {
+    "fr": "Locaux déclarés sur leur face de sol, tableau des surfaces par niveau, boîtes de programme, volumes de capacité, typologies le long d'une façade, logements et lots, surface de plancher du permis.",
+    "en": "Rooms declared on their floor face, area schedule by storey, brief boxes, capacity volumes, unit types along a façade, dwellings and lots, permit floor area."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.0",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Surfaces et programme", "en": "Areas and brief" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+S" },
+    { "id": "declarer-local", "libelle": { "fr": "Déclarer un local", "en": "Declare a room" }, "icone": "declarer-local.svg", "raccourci": "Ctrl+Alt+Maj+L" },
+    { "id": "generer-boites", "libelle": { "fr": "Générer les boîtes de programme", "en": "Generate the brief boxes" }, "icone": "generer-boites.svg", "raccourci": "Ctrl+Alt+Maj+B" },
+    { "id": "volumes-capacite", "libelle": { "fr": "Volumes de capacité", "en": "Capacity volumes" }, "icone": "volumes-capacite.svg", "raccourci": "Ctrl+Alt+Maj+V" },
+    { "id": "remplir-facade", "libelle": { "fr": "Remplir le long d'une façade", "en": "Fill along a façade" }, "icone": "remplir-facade.svg", "raccourci": "Ctrl+Alt+Maj+F" },
+    { "id": "creer-lot", "libelle": { "fr": "Créer un logement ou un lot", "en": "Create a dwelling or a lot" }, "icone": "creer-lot.svg", "raccourci": "Ctrl+Alt+Maj+O" },
+    { "id": "qualifier-local", "libelle": { "fr": "Qualifier le local pour le permis", "en": "Qualify the room for the permit" }, "icone": "qualifier-local.svg", "raccourci": "Ctrl+Alt+Maj+Q" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "surfaces", "titre": { "fr": "Surfaces et programme", "en": "Areas and brief" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

@@ -1080,6 +1080,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-effilement-loft node apps/web/e2e/planche-effilement-loft.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des niveaux d'étage (cas 4, étape 1) — panneau Niveaux, altitude NGF, niveau de travail, objets qui suivent leur niveau (apps/web/e2e/planche-niveaux.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-niveaux node apps/web/e2e/planche-niveaux.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

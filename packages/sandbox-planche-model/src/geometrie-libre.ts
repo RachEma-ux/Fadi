@@ -132,6 +132,8 @@ export interface Occurrence {
   readonly verrouille?: boolean;
   /** (Lot L14) Repère de pièce (liste de débit) : posé par la renumérotation, gardé par une copie. */
   readonly repere?: string;
+  /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
+  readonly niveau?: Id;
 }
 
 export interface Contexte {
@@ -679,7 +681,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -787,6 +789,7 @@ class Travail {
       ...(Object.keys(a.pieces).length ? { pieces: Object.freeze({ ...a.pieces }) } : {}),
       ...(Object.keys(a.reperes).length ? { reperes: Object.freeze({ ...a.reperes }) } : {}),
       ...(Object.keys(a.correspondances).length ? { correspondances: Object.freeze({ ...a.correspondances }) } : {}),
+      ...(Object.keys(a.niveaux).length ? { niveaux: Object.freeze({ ...a.niveaux }) } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -852,7 +855,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
@@ -1458,6 +1461,17 @@ function effacerAretesInterne(t: Travail, c: Ctx, ids: readonly Id[]): void {
 export function ajouterSegment(m: Modele, p: Vec3, q: Vec3, o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     insererGeometrie(t, c, [{ a: p, b: q }], [], true);
+  });
+}
+
+/**
+ * (Protocole des extensions 1.1) Plusieurs segments en une seule opération — un plan importé (DXF) en compte des
+ * milliers : un segment par opération recopierait le modèle à chaque fois. Mêmes règles que `ajouterSegment`
+ * (découpe aux croisements, faces automatiques) ; un segment de longueur nulle est ignoré.
+ */
+export function ajouterSegments(m: Modele, segments: readonly (readonly [Vec3, Vec3])[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    insererGeometrie(t, c, segments.filter(([p, q]) => dist(p, q) > TOL).map(([a, b]) => ({ a, b })), [], true);
   });
 }
 
@@ -3233,6 +3247,21 @@ export function baliserDefinition(m: Modele, definition: Id, balise: Id | null):
         touche = true;
       }
       if (touche) t.salir(c);
+    }
+  });
+}
+
+/**
+ * (Cas 4, niveaux d'étage) Rattache (ou détache, `null`) les occurrences données de la racine à un niveau ; les autres
+ * identifiants sont ignorés. Rien ne bouge : seul le rattachement change.
+ */
+export function rattacherOccurrencesNiveau(m: Modele, occurrences: readonly Id[], niveau: Id | null): Resultat {
+  return operer(m, undefined, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { niveau: _ancien, ...reste } = occ;
+      c.occurrences.set(id, niveau ? { ...reste, niveau } : reste);
     }
   });
 }

@@ -39,9 +39,21 @@
  *   planche.panneau.sur(panneau, action, fn)   traite une action appelée par la page du panneau
  *   planche.panneau.envoyer(panneau, donnees)  envoie des données à la page ; faux si le panneau est fermé
  *   planche.panneau.ouvrir(panneau)            ouvre le panneau dans la colonne
+ *
+ * Protocole 1.1 (plans reçus, DXF) :
+ *   planche.modele.lire({ portee: "monde" })    faces et arêtes de tout le modèle, en coordonnées du modèle, avec
+ *                                               chemin d'occurrences et balise ; chaque arête dit sa courbe
+ *   planche.modele.lignes([[a, b], …])          plusieurs segments en une seule opération
+ *   planche.modele.arc(depart, milieu, fin, cotes)   arc par trois points
+ *   planche.modele.cercle(centre, rayon, normale, cotes)
+ *   planche.balises.creer(nom, couleur)         rend l'identifiant (celui de la balise du même nom si elle existe)
+ *   planche.fichiers.ouvrir(types, { flux: true })   { nom, taille, lire(debut, longueur), texte() }, ou `null`
+ *   planche.fichiers.enregistrer(nom, texte)    au-delà de 1 000 000 caractères, envoyé par morceaux sans rien changer
+ *                                               pour l'extension
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
+import { BORNES_FICHIER } from "./fichiers-extensions.js";
 
 export type ErreurDemarrageExtension = { readonly genre: "import" } | { readonly genre: "syntaxe" | "execution"; readonly texte: string };
 
@@ -96,7 +108,7 @@ export function creerExecutantExtension(
       poster(demandeProtocole(id, nom, donnees(donneesEnvoyees)));
     });
 
-  const modele: Record<string, (...a: unknown[]) => Promise<unknown>> = { lire: () => demander("modele.lire") };
+  const modele: Record<string, (...a: unknown[]) => Promise<unknown>> = { lire: (options?: unknown) => demander("modele.lire", options === undefined ? null : options) };
   for (const fonction of FONCTIONS_MODIFICATION) modele[fonction] = (...args) => demander("modele.modifier", { fonction, arguments: args });
 
   const api = Object.freeze({
@@ -121,6 +133,7 @@ export function creerExecutantExtension(
     balises: Object.freeze({
       lire: () => demander("balises.lire"),
       appliquer: (ids: unknown, balise: unknown = null) => demander("balises.appliquer", { ids: typeof ids === "string" ? [ids] : ids, balise }),
+      creer: (nom: unknown, couleur?: unknown) => demander("balises.creer", couleur === undefined ? { nom } : { nom, couleur }),
     }),
     unites: Object.freeze({
       lire: () => demander("unites.lire"),
@@ -148,10 +161,37 @@ export function creerExecutantExtension(
       demander: (titre: unknown, champs: unknown) => demander("saisie.demander", { titre, champs }),
     }),
     fichiers: Object.freeze({
-      /** Fichier texte choisi par l'utilisateur : `{ nom, texte }`, ou `null` s'il renonce. */
-      ouvrir: (types?: unknown) => demander("fichiers.ouvrir", types === undefined ? {} : { types: typeof types === "string" ? [types] : types }),
+      /**
+       * Fichier texte choisi par l'utilisateur : `{ nom, texte }`, ou `null` s'il renonce. (1.1) Avec `{ flux: true }` :
+       * `{ nom, taille, lire(debut, longueur), texte() }`, le texte restant dans la Planche jusqu'à la fin de la commande.
+       */
+      ouvrir: async (types?: unknown, options?: unknown): Promise<unknown> => {
+        const liste = types === undefined || types === null ? {} : { types: typeof types === "string" ? [types] : types };
+        const flux = !!options && typeof options === "object" && (options as { flux?: unknown }).flux === true;
+        if (!flux) return demander("fichiers.ouvrir", liste);
+        const f = (await demander("fichiers.ouvrir", { ...liste, flux: true })) as { nom: string; taille: number; jeton: number } | null;
+        if (!f) return null;
+        const lire = (debut: unknown = 0, longueur: unknown = BORNES_FICHIER.morceau) => demander("fichiers.lire", { jeton: f.jeton, debut, longueur });
+        return Object.freeze({
+          nom: f.nom,
+          taille: f.taille,
+          lire,
+          /** Le texte entier, lu morceau par morceau. */
+          texte: async (): Promise<string> => {
+            const morceaux: string[] = [];
+            for (let debut = 0; debut < f.taille; debut += BORNES_FICHIER.morceau) morceaux.push((await lire(debut)) as string);
+            return morceaux.join("");
+          },
+        });
+      },
       /** Propose à l'utilisateur d'enregistrer un fichier texte : `true`, ou `false` s'il renonce. */
-      enregistrer: (nom: unknown, texte: unknown) => demander("fichiers.enregistrer", { nom, texte }),
+      enregistrer: async (nom: unknown, texte: unknown): Promise<unknown> => {
+        if (typeof texte !== "string" || texte.length <= BORNES_FICHIER.caracteres) return demander("fichiers.enregistrer", { nom, texte });
+        // (1.1) Texte long : préparé par morceaux, puis enregistré par son jeton.
+        const jeton = await demander("fichiers.preparer");
+        for (let debut = 0; debut < texte.length; debut += BORNES_FICHIER.morceau) await demander("fichiers.ajouter", { jeton, texte: texte.slice(debut, debut + BORNES_FICHIER.morceau) });
+        return demander("fichiers.enregistrer", { nom, jeton });
+      },
     }),
     panneau: Object.freeze({
       /** Envoie des données à la page du panneau ; rend faux si le panneau n'est pas ouvert. */

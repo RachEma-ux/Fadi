@@ -1,0 +1,24 @@
+{
+  "id": "releve-exactitude",
+  "nom": { "fr": "Relevé et exactitude", "en": "Survey and accuracy" },
+  "description": {
+    "fr": "Pièce hors d'équerre posée par ses côtés et ses diagonales avec l'écart de fermeture, point par deux distances, provenance de l'existant, bulletin d'exactitude du dessin.",
+    "en": "Out-of-square room laid from its sides and diagonals with the closure gap, point from two distances, provenance of existing elements, drawing accuracy report."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.0",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Relevé et exactitude", "en": "Survey and accuracy" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+R" },
+    { "id": "poser-piece", "libelle": { "fr": "Poser la pièce relevée", "en": "Lay the surveyed room" }, "icone": "poser-piece.svg", "raccourci": "Ctrl+Alt+Maj+P" },
+    { "id": "construire-point", "libelle": { "fr": "Point par deux distances", "en": "Point from two distances" }, "icone": "construire-point.svg", "raccourci": "Ctrl+Alt+Maj+D" },
+    { "id": "marquer-provenance", "libelle": { "fr": "Marquer la provenance", "en": "Mark the provenance" }, "icone": "marquer-provenance.svg", "raccourci": "Ctrl+Alt+Maj+N" },
+    { "id": "controler-dessin", "libelle": { "fr": "Bulletin d'exactitude", "en": "Accuracy report" }, "icone": "bulletin.svg", "raccourci": "Ctrl+Alt+Maj+U" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "releve", "titre": { "fr": "Relevé et exactitude", "en": "Survey and accuracy" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

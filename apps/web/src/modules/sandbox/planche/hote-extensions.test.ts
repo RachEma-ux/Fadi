@@ -204,7 +204,7 @@ describe("hôte d'une extension — l'extension d'essai du socle", () => {
     const h = creerHoteExtension(ESSAI, { creer });
     expect(await h.appeler("demande", "commande.compter")).toEqual({ genre: "fini", resultat: "fait" });
     await new Promise((r) => setTimeout(r, 5));
-    expect(recus).toEqual([{ protocole: "1.0", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
+    expect(recus).toEqual([{ protocole: "1.1", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
   });
 });
 
@@ -563,6 +563,72 @@ planche.sur("modele.change", () => essayer(() => planche.fichiers.ouvrir()).then
     const nue = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer });
     expect(await nue.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : fichiers.ouvrir" });
     nue.arreter();
+  });
+});
+
+describe("fichiers en flux et délai (protocole 1.1)", () => {
+  function fenetres() {
+    const ouvertes: { sorte: string; demande: unknown; repondre: (v: unknown) => void }[] = [];
+    const fenetre = (sorte: string) => (demande: unknown) => {
+      let repondre: (v: unknown) => void = () => {};
+      const reponse = new Promise<unknown>((r) => (repondre = r));
+      ouvertes.push({ sorte, demande, repondre });
+      return { reponse: reponse as Promise<never>, fermer: () => {} };
+    };
+    const attendre = async () => {
+      const avant = ouvertes.length;
+      for (let i = 0; i < 500 && ouvertes.length === avant; i++) await pause(2);
+      return ouvertes[ouvertes.length - 1]!;
+    };
+    return { ouvertes, attendre, fichiers: { ouvrir: fenetre("ouvrir"), enregistrer: fenetre("enregistrer") } };
+  }
+  const essayer = 'const essayer = async (f) => { try { return await f(); } catch (e) { return e.name + " : " + e.message; } };';
+  const code = `${essayer}
+let garde = null;
+planche.sur("commande.lire", () => essayer(async () => { const f = await planche.fichiers.ouvrir([".dxf"], { flux: true }); garde = f; const t = await f.texte(); return [f.nom, f.taille, t.length]; }));
+planche.sur("commande.relire", () => essayer(() => garde.lire(0, 10)));
+planche.sur("commande.ecrire", () => essayer(() => planche.fichiers.enregistrer("plan.dxf", "y".repeat(1300000))));
+planche.sur("commande.modele", () => essayer(async () => (await planche.modele.lire()).faces.length));`;
+
+  it("un plan de plus de 1 000 000 caractères est lu en flux ; le jeton ne survit pas à la commande", async () => {
+    const f = fenetres();
+    const h = creerHoteExtension(avecCode(code, ["modele.lire", "fichiers"]), { creer: faux().creer, fichiers: f.fichiers });
+    const appel = h.appeler("demande", "commande.lire");
+    const fenetre = await f.attendre();
+    expect(fenetre.demande).toEqual({ types: [".dxf"], flux: true });
+    fenetre.repondre({ nom: "plan.dxf", texte: "0\nLINE\n".repeat(200_000) });
+    expect(await appel).toEqual({ genre: "fini", resultat: ["plan.dxf", 1_400_000, 1_400_000] });
+    expect(await h.appeler("demande", "commande.relire")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : jeton/) });
+    h.arreter();
+  });
+
+  it("un texte long est enregistré par morceaux : la fenêtre reçoit le fichier entier", async () => {
+    const f = fenetres();
+    const h = creerHoteExtension(avecCode(code, ["modele.lire", "fichiers"]), { creer: faux().creer, fichiers: f.fichiers });
+    const appel = h.appeler("demande", "commande.ecrire");
+    const fenetre = await f.attendre();
+    expect(fenetre.sorte).toBe("enregistrer");
+    expect((fenetre.demande as { nom: string; texte: string }).texte).toHaveLength(1_300_000);
+    fenetre.repondre(true);
+    expect(await appel).toEqual({ genre: "fini", resultat: true });
+    h.arreter();
+  });
+
+  it("le temps que la Planche passe à servir une demande ne compte pas dans le délai de la commande", async () => {
+    const { acces } = plancheFausse();
+    const lente: AccesPlanche = {
+      ...acces,
+      modele: () => {
+        const fin = Date.now() + 120;
+        while (Date.now() < fin) {
+          /* la Planche travaille (un plan de milliers de segments) */
+        }
+        return acces.modele();
+      },
+    };
+    const h = creerHoteExtension(avecCode(code, ["modele.lire", "fichiers"]), { creer: faux().creer, acces: lente, delaiCommandeMs: 60 });
+    expect(await h.appeler("demande", "commande.modele")).toEqual({ genre: "fini", resultat: 0 });
+    h.arreter();
   });
 });
 
