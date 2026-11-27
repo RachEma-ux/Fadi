@@ -143,6 +143,22 @@ check("GEO 02 · titre du bandeau général : GeoData", ((await page.locator(".f
 await page.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
 check("carte : moteur chargé (canevas MapLibre)", (await page.locator(".maplibregl-canvas").count()) === 1);
 
+// --- Carte d'arrivée (P1, E-01, Q1, D1, D2) : contour du découpage en base, une consigne, catalogue fermé ---
+await page.locator("[data-gd-accueil]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+check("ARRIVÉE · carte vide : une seule consigne, catalogue fermé (D1)", (await page.locator("[data-gd-accueil]").count()) === 1 && (await page.locator("[data-gd-panneau]").count()) === 0);
+await page.locator("[data-gd-accueil-contour]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+const contourArrivee = await page.locator("[data-gd-accueil-contour]").innerText().catch(() => "");
+check("ARRIVÉE · contour du niveau le plus global lu en base (jamais écrit dans le code), nommé", /Régions/.test(contourArrivee) && /Pays synthétique/.test(contourArrivee), contourArrivee);
+await page.waitForTimeout(800);
+const sourcesArrivee = (await page.locator(".maplibregl-ctrl-attrib").innerText().catch(() => "")) ?? "";
+check("ARRIVÉE · le calque d'accueil porte son attribution dans la ligne des sources", /Jeu synthétique GeoData/.test(sourcesArrivee), sourcesArrivee.slice(0, 160));
+await page.addScriptTag({ path: AXE });
+const axeArrivee = await page.evaluate(async () => (await window.axe.run(document.querySelector("[data-gd-accueil]"), { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((v) => `${v.id}:${v.impact}`));
+check("ARRIVÉE · axe-core sur la consigne : aucune violation, même « moderate » (D2)", axeArrivee.length === 0, axeArrivee.join(" ; "));
+await page.screenshot({ path: join(OUT, "arrivee-1440.png") });
+await page.locator("[data-gd-accueil-catalogue]").click();
+check("ARRIVÉE · « Ouvrir le catalogue » ouvre le catalogue et écarte la consigne", (await page.locator("[data-gd-catalogue]").count()) === 1 && (await page.locator("[data-gd-accueil]").count()) === 0);
+
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
 const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
@@ -187,7 +203,8 @@ const basBarre = groupes[groupes.length - 1].bottom;
 // Place : sous la barre d'outils (même bord droit, écart des groupes) quand la carte est assez haute ; sinon, pour ne
 // jamais chevaucher l'échelle ni les sources, à gauche du bas de la barre d'outils (même écart, bas alignés).
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
-const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && Math.abs(boiteLoupe.y + boiteLoupe.height - basBarre) <= 1.5;
+// À côté : bas alignés, ou remontée au-dessus de la ligne des sources quand elle est haute (contour d'arrivée, P1).
+const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && boiteLoupe.y + boiteLoupe.height <= basBarre + 1.5;
 check("mini-barre : séparée de la barre d'outils (qui garde ses 16 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, Plan / Satellite, Emplacements Projets, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
   (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte|Vue satellite indisponible : réglez la clé MapTiler dans Paramètres|Emplacements Projets" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
@@ -282,7 +299,7 @@ const miniSuivie = await miniBarre.boundingBox();
 const barreSuivie = await barreOutils.boundingBox();
 const basSuivi = await barreOutils.locator(".gd-groupe-outils").last().evaluate((g) => g.getBoundingClientRect().bottom);
 const suitDessous = Math.abs(miniSuivie.x + miniSuivie.width - (barreSuivie.x + barreSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y - basSuivi - ecartGroupes) <= 1.5;
-const suitACote = Math.abs(barreSuivie.x - ecartGroupes - (miniSuivie.x + miniSuivie.width)) <= 1.5 && Math.abs(miniSuivie.y + miniSuivie.height - basSuivi) <= 1.5;
+const suitACote = Math.abs(barreSuivie.x - ecartGroupes - (miniSuivie.x + miniSuivie.width)) <= 1.5 && miniSuivie.y + miniSuivie.height <= basSuivi + 1.5;
 check("mini-barre : suit la barre d'outils quand elle est déplacée (dessous, ou à côté de son bas)", (suitDessous || suitACote) && Math.abs(barreSuivie.x - retour.x) > 5, `barre ${retour.x} → ${barreSuivie.x} ; mini ${boiteLoupe.x} → ${miniSuivie.x}`);
 await page.locator("[data-gd-poignee]").dblclick();
 await page.waitForTimeout(100);
@@ -1181,6 +1198,21 @@ await page.screenshot({ path: join(OUT, "design-l1-carte-pressee-412.png") });
   await tel.goto(`${BASE}/geodata`);
   await tel.locator("[data-gd-barre-outils]").waitFor();
   await tel.waitForTimeout(500);
+  // Carte d'arrivée au téléphone (P1, E-03) : carte vide (aucune dernière carte), consigne ≤ 25 % de la hauteur de la
+  // carte, hors de la colonne d'outils.
+  const tel0 = await tactile.newPage();
+  await tel0.addInitScript(() => { try { localStorage.removeItem("geodata.derniere-carte"); } catch { /* sans stockage */ } });
+  await tel0.goto(`${BASE}/geodata`);
+  await tel0.locator("[data-gd-accueil]").waitFor({ timeout: 15_000 }).catch(() => undefined);
+  await tel0.waitForTimeout(800);
+  const a = await tel0.evaluate(() => {
+    const c = document.querySelector("[data-gd-accueil]")?.getBoundingClientRect(), m = document.querySelector("main.gd-carte").getBoundingClientRect();
+    const o = document.querySelector("[data-gd-barre-outils]").getBoundingClientRect();
+    return c ? { part: c.height / m.height, chevauche: c.right > o.left && c.left < o.right && c.bottom > o.top && c.top < o.bottom, largeurCarte: m.width / window.innerWidth, colonne: o.width } : null;
+  });
+  check("ARRIVÉE · téléphone : consigne ≤ 25 % de la carte, sans recouvrir la colonne (≤ 56 px) ; carte ≥ 75 % de la largeur", !!a && a.part <= 0.25 && !a.chevauche && a.largeurCarte >= 0.75 && a.colonne <= 56, JSON.stringify(a));
+  await tel0.screenshot({ path: join(OUT, "arrivee-pixel7.png") });
+  await tel0.close();
   const g = await tel.evaluate(() => {
     const col = document.querySelector("[data-gd-barre-outils]"), poignee = document.querySelector("[data-gd-poignee]");
     const r = col.getBoundingClientRect(), barre = document.querySelector("[data-gd-barre-bas-nav]").getBoundingClientRect();
@@ -1511,6 +1543,8 @@ async function releve() {
 }
 await en.goto(`${BASE}/geodata`);
 await en.locator("[data-geodata-page]").waitFor();
+await en.locator("[data-gd-accueil]").waitFor({ timeout: 10_000 }).catch(() => undefined);
+if (await en.locator("[data-gd-accueil]").count()) check("interface anglaise : consigne d'arrivée traduite (P1)", ((await en.locator("[data-gd-accueil] h2").textContent()) ?? "") === "Welcome to GeoData" && ((await en.locator("[data-gd-accueil-catalogue]").textContent()) ?? "").trim() === "Open the catalogue");
 await releve();
 for (const v of ["donnees", "cartes", "etudes", "import", "export"]) { await volet(en, v); await releve(); }
 for (const e of ["collection:nouveau", "collection:ouvrir"]) { await entreeMenu(en, e); await en.locator("[data-gd-collection-panneau]").waitFor(); await releve(); }

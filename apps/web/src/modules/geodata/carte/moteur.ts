@@ -120,6 +120,11 @@ export interface MoteurCarte {
    * (null : fond seul), emprise de la vue courante en rectangle ; un clic y recentre la carte.
    */
   afficherMiniCarte(conteneur: HTMLElement | null, coucheId: string | null): void;
+  /**
+   * Carte d'arrivée (P1, E-01) : contours des unités de la couche `coucheId` (niveau le plus global du découpage en base),
+   * calque hors composition, jamais enregistré ni exporté ; null : retiré. Une tuile refusée ne bloque pas la carte.
+   */
+  afficherAccueil(coucheId: string | null): void;
   /** Contour de l'unité choisie dans la barre territoriale (lot H), en GeoJSON WGS 84 ; null : retiré. */
   afficherTerritoire(contour: unknown | null): void;
   /** Entité sélectionnée par clic sans couche chargée (D-GD-34) : contour et mise en évidence, ou rien. */
