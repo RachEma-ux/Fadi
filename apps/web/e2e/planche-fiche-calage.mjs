@@ -166,6 +166,7 @@ const y = f.pose.y + f.pose.echelle * (Math.sin(f.pose.rotation) * u - Math.cos(
 check("Poser (Alt+F2) : fond calé et verrouillé d'après le .pgw, 1 px = 20 cm", f.cale && f.verrouille && f.geo?.fichier === "ortho-2024.pgw" && f.geo.systeme === "EPSG:2154" && proche(f.pose.echelle, 0.2, 1e-9), JSON.stringify({ pose: f.pose, geo: f.geo }));
 check("pixel (10 ; 20) au bon point projeté", proche(652410.25 + x, 652400.1 + 2, 1e-4) && proche(6862118.4 + y, 6862130.1 - 4, 1e-4), `${652410.25 + x} ; ${6862118.4 + y}`);
 check("original de l'orthophoto archivé, dimensions relevées", !!f.original && f.original.largeurPx === 800 && f.original.hauteurPx === 600);
+check("world file archivé tel quel avec l'image (D-GD-29)", f.geo?.archives?.length === 1 && f.geo.archives[0].role === "calage" && /^[0-9a-f]{64}$/.test(f.geo.archives[0].empreinte ?? ""), JSON.stringify(f.geo?.archives));
 check("liste : « posé d'après ortho-2024.pgw »", (await page.locator("[data-planche-fond-geo='ortho-2024.pgw']").count()) === 1);
 await page.screenshot({ path: `${OUT}/orthophoto.png` });
 
@@ -177,6 +178,7 @@ check(".prj dans un autre système : refusé, aucune conversion devinée", (awai
 await choisir("Control+Alt+Shift+F10", [{ name: "ortho-b.png", mimeType: "image/png", buffer: image }, fichier("ortho-b.pgw", PGW), fichier("ortho-b.prj", prj("2154"))]);
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().annotations?.fonds ?? {}).length === 2);
 check(".prj au code du projet : posé d'emblée avec le code lu", (await fonds()).some((g) => g.geo?.systeme === "EPSG:2154"));
+check("world file et .prj archivés tels quels", (await fonds()).some((g) => g.geo?.fichier === "ortho-b.pgw" && g.geo.archives?.length === 2 && g.geo.archives.some((p) => p.role === "prj")), JSON.stringify((await fonds()).map((g) => g.geo?.archives)));
 
 // --- Exporter le calage du fond ----------------------------------------------------------------------------------------
 const dl2 = page.waitForEvent("download");

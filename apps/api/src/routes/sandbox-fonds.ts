@@ -21,13 +21,22 @@ import { requireAuth } from "../middleware/require-auth.js";
 
 /** Taille maximale d'un original (choix Fadi : un scan A0 en JPEG ou une orthophoto PNG courante). */
 export const LIMITE_ORIGINAL_FOND = 25 * 1024 * 1024;
-const TYPES = ["image/png", "image/jpeg"] as const;
+const TYPES = ["image/png", "image/jpeg", "text/plain"] as const;
 type TypeFond = (typeof TYPES)[number];
+/** Fichier de calage d'une orthophoto (world file, .prj : D-GD-29, archivé tel quel) : texte court. */
+export const LIMITE_PIECE_CALAGE = 64 * 1024;
 
 /** Type d'après la signature des octets (jamais d'après le seul en-tête). */
 export function typeDesOctets(o: Buffer): TypeFond | null {
   if (o.length >= 8 && o.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
   if (o.length >= 3 && o[0] === 0xff && o[1] === 0xd8 && o[2] === 0xff) return "image/jpeg";
+  // Pièce de calage : six nombres (world file) ou un système en WKT (.prj), texte sans octet nul.
+  if (o.length > 0 && o.length <= LIMITE_PIECE_CALAGE && !o.includes(0)) {
+    const t = o.toString("latin1").trim();
+    const nombres = t.split(/\s+/);
+    if (nombres.length === 6 && nombres.every((x) => /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(x))) return "text/plain";
+    if (/^(PROJCS|GEOGCS|GEOCCS|COMPD_CS|PROJCRS|GEOGCRS|GEODCRS|COMPOUNDCRS)\s*\[/i.test(t)) return "text/plain";
+  }
   return null;
 }
 
@@ -55,7 +64,7 @@ sandboxFondsRouter.post("/", express.raw({ type: () => true, limit: LIMITE_ORIGI
   const annonce = String(req.headers["content-type"] ?? "").split(";")[0]!.trim().toLowerCase();
   const octets = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
   const type = typeDesOctets(octets);
-  if (!TYPES.includes(annonce as TypeFond) || type !== annonce) return void res.status(415).json({ error: "unsupported_media_type", message: "Image PNG ou JPEG attendue." });
+  if (!TYPES.includes(annonce as TypeFond) || type !== annonce) return void res.status(415).json({ error: "unsupported_media_type", message: "Image PNG ou JPEG, ou fichier de calage (world file, .prj) attendu." });
   let nom: string;
   try {
     nom = decodeURIComponent(String(req.headers["x-fadi-nom"] ?? "")).trim();
