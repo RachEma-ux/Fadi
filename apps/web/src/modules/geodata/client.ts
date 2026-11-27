@@ -66,8 +66,13 @@ export type ResultatRecherche =
   | { type: "unite"; code: string; libelle: string; niveau: string | null; coucheId: string; coucheTitre: string; emprise: { coordinates: number[][][] }; centre: { coordinates: [number, number] }; provenance: string };
 export type ProximiteCouche =
   | { coucheId: string; accessible: false }
-  | { coucheId: string; accessible: true; titre: string; nombre: number; plusProche: { code: string; nom: string; distanceM: number } | null };
-export interface ValeurRasterRecue { lon: number; lat: number; valeur: number | null; classe: string | null; unite: string | null; grandeur: string }
+  | {
+    coucheId: string; accessible: true; titre: string; nombre: number; plusProche: { code: string; nom: string; distanceM: number } | null;
+    /** P8 (champs additifs) : version comptée ; couverture du rayon jamais déduite (« non-evaluee »), couverture déclarée. */
+    version?: VersionRecue; couverture?: { etat: "non-evaluee"; declaree: string | null };
+  };
+/** `version` (P8, additif) : version publiée de la couche dont la valeur est lue. */
+export interface ValeurRasterRecue { lon: number; lat: number; valeur: number | null; classe: string | null; unite: string | null; grandeur: string; version?: VersionRecue }
 export interface ValeurRecue { valeur: number | null; motifAbsence: MotifAbsence | null }
 export interface LigneTable { code: string; nom: string | null; niveau: string | null; geometrieReparee: boolean; proprietes: Record<string, unknown>; valeurs: Record<string, ValeurRecue> }
 export interface FicheRecue {

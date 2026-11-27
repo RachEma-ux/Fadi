@@ -4,6 +4,7 @@
  * contexte d'édition, boîte englobante, formatage, verrous par flèches.
  */
 import { type Contexte, type Id, type Modele, contexte } from "../geometrie-libre.js";
+import { saisieDuProjet } from "../saisie-projet.js";
 import { type Inference, type Verrou, geometrieVisible } from "../inference.js";
 import { type ContexteSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, cross, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
@@ -204,7 +205,7 @@ export function vueModif(a: ArgsVue): VueOutil {
   };
 }
 
-export const saisieDe = (attendu: ContexteSaisie["attendu"], ctx: ContexteOutil): ContexteSaisie => ({ attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) });
+export const saisieDe = (attendu: ContexteSaisie["attendu"], ctx: ContexteOutil): ContexteSaisie => ({ ...saisieDuProjet(ctx.modele), attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) });
 
 /** Contour d'un polygone (fermé) et segments reliant deux contours : aperçu d'une extrusion. */
 export function apercuPrisme(contour: readonly Vec3[], dep: Vec3): Apercu {
