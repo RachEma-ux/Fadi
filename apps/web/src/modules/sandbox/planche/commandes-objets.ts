@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -603,4 +603,40 @@ export function disponibiliteVue(id: IdCommandeVue, s: { readonly entites: numbe
   if (id === "zoom-plus" || id === "zoom-moins") return { disponible: true, motif: null };
   if (id === "isoler") return s.isole || s.entites > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.isoler" };
   return s.dansObjet ? { disponible: true, motif: null } : { disponible: false, motif: "planche.contexte.motif" };
+}
+
+/** Cas 2 du catalogue, lot 2 : accrochage et saisie (panneaux « Accrochage » et « Mètre · Mesure », Info entité). */
+export type IdCommandeAccrochage = "accrochage" | "forcer-sommet" | "forcer-milieu" | "forcer-intersection" | "forcer-quadrant" | "forcer-axe" | "forcer-guide" | "metre-mesure" | "guide-reseau" | "repartir" | "remettre-echelle";
+export interface CommandeAccrochage {
+  readonly id: IdCommandeAccrochage;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+const accrochage = (id: IdCommandeAccrochage): CommandeAccrochage => ({ id, ...depuisRegistre(id), libelle: `planche.accrochage.${id}` as CleMessage, court: `planche.accrochage.court.${id}` as CleMessage });
+export const COMMANDES_ACCROCHAGE: readonly CommandeAccrochage[] = (["accrochage", "forcer-sommet", "forcer-milieu", "forcer-intersection", "forcer-quadrant", "forcer-axe", "forcer-guide", "metre-mesure", "guide-reseau", "repartir", "remettre-echelle"] as const).map(accrochage);
+/** Genre forcé par chaque commande « forcer-… » (Alt + 1 à 6). */
+export const GENRE_FORCE: Readonly<Partial<Record<IdCommandeAccrochage, "sommet" | "milieu" | "intersection" | "quadrant" | "axe" | "guide">>> = {
+  "forcer-sommet": "sommet",
+  "forcer-milieu": "milieu",
+  "forcer-intersection": "intersection",
+  "forcer-quadrant": "quadrant",
+  "forcer-axe": "axe",
+  "forcer-guide": "guide",
+};
+
+/**
+ * Disponibilité : les panneaux et le genre forcé toujours ; guide en réseau avec un guide du Mètre ; répartir avec une
+ * mesure du Mètre et une sélection ; remise à l'échelle avec un seul objet choisi et deux distances valides. Hors lecture.
+ */
+export function disponibiliteAccrochage(id: IdCommandeAccrochage, s: { readonly lecture: boolean; readonly guide: boolean; readonly mesure: boolean; readonly selection: number; readonly echelle: boolean }): Disponibilite {
+  if (id === "accrochage" || id === "metre-mesure" || GENRE_FORCE[id]) return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "guide-reseau") return s.guide ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.guide" };
+  if (id === "repartir") {
+    if (!s.mesure) return { disponible: false, motif: "planche.accrochage.motif.mesure" };
+    return s.selection > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.selection" };
+  }
+  return s.echelle ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.echelle" };
 }
