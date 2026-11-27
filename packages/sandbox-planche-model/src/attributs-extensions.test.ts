@@ -18,7 +18,7 @@ function depart() {
   });
   return { modele: r.modele, objet, face, ...r.extra };
 }
-function planche(m: Modele, separateur?: "." | ",") {
+function planche(m: Modele, separateur?: "." | ",", decimales?: number) {
   const etat = { modele: m, pas: [] as string[] };
   const acces: AccesPlanche = {
     modele: () => etat.modele,
@@ -31,6 +31,7 @@ function planche(m: Modele, separateur?: "." | ",") {
     },
     selectionner: () => {},
     ...(separateur ? { separateur: () => separateur } : {}),
+    ...(decimales !== undefined ? { decimales: () => decimales } : {}),
   };
   return { etat, s: creerServicesExtension({ id: "essai", permissions: ["modele.lire", "modele.modifier"] }, acces), acces };
 }
@@ -89,12 +90,76 @@ describe("unités d'une extension", () => {
   it("le dessin est en mètres ; la mise en forme suit le séparateur de l'interface, sans permission", () => {
     const d = depart();
     const sans = creerServicesExtension({ id: "essai", permissions: [] }, planche(d.modele).acces);
-    expect(ok(sans.servir("unites.lire", null))).toEqual({ longueur: "m", aire: "m²", decimales: 2, separateur: "," });
+    expect(ok(sans.servir("unites.lire", null))).toEqual({ longueur: "m", aire: "m²", decimales: 2, separateur: ",", pasLongueur: 0.01, pasAngle: 15, formatCote: "metres" });
     expect(ok(sans.servir("unites.formater", { valeur: 3.6 }))).toBe("3,60 m");
     expect(ok(sans.servir("unites.formater", { valeur: 12.345, genre: "aire" }))).toBe("12,3 m²");
     const point = creerServicesExtension({ id: "essai", permissions: [] }, planche(d.modele, ".").acces);
     expect(ok(point.servir("unites.formater", { valeur: 3.6 }))).toBe("3.60 m");
     expect(sans.servir("unites.formater", { valeur: "3" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
     expect(sans.servir("unites.formater", { valeur: 1, genre: "volume" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+  });
+
+  it("(1.3) la précision réelle du projet et ses pas d'accrochage sont lus, et la mise en forme les suit", () => {
+    const d = depart();
+    const r = modifierAnnotations(d.modele, (a) => {
+      a.reglages = { accrochageLongueur: 0.005, accrochageAngle: null, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre", formatCote: "metres-mm" };
+    });
+    const s = creerServicesExtension({ id: "essai", permissions: [] }, planche(r.modele, ",", 3).acces);
+    expect(ok(s.servir("unites.lire", null))).toEqual({ longueur: "m", aire: "m²", decimales: 3, separateur: ",", pasLongueur: 0.005, pasAngle: null, formatCote: "metres-mm" });
+    expect(ok(s.servir("unites.formater", { valeur: 3.6 }))).toBe("3,600 m");
+    // Une précision hors bornes de la Planche n'est pas transmise : 2 décimales.
+    const hors = creerServicesExtension({ id: "essai", permissions: [] }, planche(d.modele, ",", 9).acces);
+    expect(ok(hors.servir("unites.lire", null))).toMatchObject({ decimales: 2 });
+  });
+});
+
+describe("(1.3) cotes, textes et verrou posés par une extension", () => {
+  it("une cote linéaire et un texte avec repère sont créés en un pas, rendus par leur identifiant", () => {
+    const d = depart();
+    const { etat, s } = planche(d.modele);
+    s.debutAppel("commande.trame");
+    const c = ok(s.servir("cotes.creer", { a: [0, 0, 0], b: [6, 0, 0], position: [0, -1, 0], direction: "horizontale" })) as Id;
+    const t = ok(s.servir("textes.creer", { ancre: [0, 0, 0], position: [0, -2, 0], texte: " A " })) as Id;
+    s.finAppel(true);
+    expect(etat.pas).toEqual(["commande.trame"]);
+    expect(etat.modele.annotations?.cotes[c]).toMatchObject({ genre: "lineaire", a: { x: 0, y: 0, z: 0 }, b: { x: 6, y: 0, z: 0 }, position: { x: 0, y: -1, z: 0 }, direction: "horizontale" });
+    expect(etat.modele.annotations?.textes[t]).toMatchObject({ genre: "repere", texte: "A", position: { x: 0, y: -2, z: 0 } });
+    expect(ok(s.servir("annotations.lire", null))).toEqual({
+      cotes: [{ id: c, a: [0, 0, 0], b: [6, 0, 0], position: [0, -1, 0], direction: "horizontale" }],
+      textes: [{ id: t, ancre: [0, 0, 0], position: [0, -2, 0], texte: "A" }],
+    });
+    expect(s.servir("annotations.effacer", { ids: [c, "absent"] })).toMatchObject({ ok: false, erreur: "objet_introuvable", detail: "absent" });
+    s.debutAppel("effacer");
+    ok(s.servir("annotations.effacer", { ids: [c, t] }));
+    s.finAppel(true);
+    expect(etat.modele.annotations?.cotes[c]).toBeUndefined();
+    expect(etat.modele.annotations?.textes[t]).toBeUndefined();
+  });
+
+  it("arguments faux refusés sans rien ouvrir", () => {
+    const d = depart();
+    const { etat, s } = planche(d.modele);
+    expect(s.servir("cotes.creer", { a: [0, 0, 0], b: [0, 0, 0], position: [0, 1, 0] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(s.servir("cotes.creer", { a: [0, 0, 0], b: [1, 0, 0], position: [0, 1, 0], direction: "oblique" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(s.servir("textes.creer", { ancre: [0, 0, 0], position: [0, 1, 0], texte: "" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(s.servir("textes.creer", { ancre: [0, 0, 0], position: [0, 1, 0], texte: "x".repeat(201) })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(s.operationOuverte()).toBe(false);
+    expect(etat.modele).toBe(d.modele);
+  });
+
+  it("un objet du contexte est verrouillé puis déverrouillé ; un identifiant absent est refusé", () => {
+    const d = depart();
+    const { etat, s } = planche(d.modele);
+    s.debutAppel("verrou");
+    expect(ok(s.servir("objets.verrouiller", { ids: [d.objet], verrou: true }))).toBeNull();
+    s.finAppel(true);
+    expect(contexte(etat.modele, undefined).occurrences[d.objet]?.verrouille).toBe(true);
+    s.debutAppel("deverrou");
+    ok(s.servir("objets.verrouiller", { ids: [d.objet], verrou: false }));
+    s.finAppel(true);
+    expect(contexte(etat.modele, undefined).occurrences[d.objet]?.verrouille ?? false).toBe(false);
+    expect(s.servir("objets.verrouiller", { ids: ["absent"], verrou: true })).toMatchObject({ ok: false, erreur: "objet_introuvable" });
+    expect(s.servir("objets.verrouiller", { ids: [d.objet], verrou: "oui" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(creerServicesExtension({ id: "essai", permissions: ["modele.lire"] }, planche(d.modele).acces).servir("cotes.creer", { a: [0, 0, 0], b: [1, 0, 0], position: [0, 1, 0] })).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.modifier" });
   });
 });

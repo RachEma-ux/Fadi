@@ -490,6 +490,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
+  /** (Protocole 1.3) Précision lue par les extensions à chaque appel (`unites.lire`). */
+  const precisionRef = useRef(precision);
+  precisionRef.current = precision;
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
@@ -3331,6 +3334,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     selection: () => selectionRef.current,
     dans: () => dansRef.current,
     separateur: () => (LANGUE_INTERFACE === "en" ? "." : ","),
+    decimales: () => precisionRef.current,
     appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
       const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
@@ -3385,7 +3389,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const nom = texteFiche(p.fiche.nom);
     const acces = (): AccesPlanche => accesExtensionRef.current(id);
     const hote = creerHoteExtension(p, {
-      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? "," },
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? ",", decimales: () => acces().decimales?.() ?? 2 },
       surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
       libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),

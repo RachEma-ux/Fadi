@@ -51,6 +51,17 @@
  *   planche.fichiers.ouvrir(types, { archiver: true }) (1.2) { nom, texte, archive }, archivé tel quel en base
  *   planche.fichiers.enregistrer(nom, texte)    au-delà de 1 000 000 caractères, envoyé par morceaux sans rien changer
  *                                               pour l'extension
+ *
+ * Protocole 1.3 (précision et trame) :
+ *   planche.unites.lire()                       rend aussi la précision réelle du projet (`decimales`), les pas
+ *                                               d'accrochage (`pasLongueur` en m, `pasAngle` en degrés, ou null) et
+ *                                               le format de cote (`formatCote`)
+ *   planche.cotes.creer(a, b, position, direction)   cote linéaire entre deux points du monde ; rend l'identifiant
+ *   planche.textes.creer(ancre, position, texte)     texte avec repère ; rend l'identifiant
+ *   planche.objets.verrouiller(ids, verrou)     verrouille (vrai) ou déverrouille (faux) des groupes et composants
+ *   planche.annotations.lire()                  { cotes, textes } : cotes linéaires et textes avec repère du dessin
+ *   planche.annotations.effacer(ids)            efface des cotes et des textes
+ *   événements de souris d'un outil : `vise`, le point visé avant accrochage sur le plan de travail, ou null
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -135,6 +146,19 @@ export function creerExecutantExtension(
       lire: () => demander("balises.lire"),
       appliquer: (ids: unknown, balise: unknown = null) => demander("balises.appliquer", { ids: typeof ids === "string" ? [ids] : ids, balise }),
       creer: (nom: unknown, couleur?: unknown) => demander("balises.creer", couleur === undefined ? { nom } : { nom, couleur }),
+    }),
+    cotes: Object.freeze({
+      creer: (a: unknown, b: unknown, position: unknown, direction?: unknown) => demander("cotes.creer", direction === undefined ? { a, b, position } : { a, b, position, direction }),
+    }),
+    textes: Object.freeze({
+      creer: (ancre: unknown, position: unknown, texte: unknown) => demander("textes.creer", { ancre, position, texte }),
+    }),
+    annotations: Object.freeze({
+      lire: () => demander("annotations.lire"),
+      effacer: (ids: unknown) => demander("annotations.effacer", { ids: typeof ids === "string" ? [ids] : ids }),
+    }),
+    objets: Object.freeze({
+      verrouiller: (ids: unknown, verrou: unknown = true) => demander("objets.verrouiller", { ids: typeof ids === "string" ? [ids] : ids, verrou }),
     }),
     unites: Object.freeze({
       lire: () => demander("unites.lire"),

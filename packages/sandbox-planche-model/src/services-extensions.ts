@@ -15,8 +15,10 @@
  * l'utilisateur, lui, ne voit rien avant la validation.
  */
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
-import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
-import { arcParTroisPoints, formaterLongueur, pointsArc } from "./outils/commun-formes.js";
+import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
+import { reglagesDe } from "./cotes.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
 import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
@@ -33,6 +35,8 @@ export interface AccesPlanche {
   readonly selectionner: (ids: readonly Id[], contexte?: ContexteApplication) => void;
   /** Séparateur décimal de l'interface (lot 7, « unites ») ; absent = virgule. */
   readonly separateur?: () => "." | ",";
+  /** (1.3) Décimales d'affichage des longueurs choisies pour le projet (Info modèle) ; absent = 2. */
+  readonly decimales?: () => number;
 }
 
 /** Dans quel appel une opération est appliquée (lot 7). */
@@ -62,6 +66,10 @@ export const COTES_ARC_DEFAUT = 12;
 export const COTES_CERCLE_DEFAUT = 24;
 /** (1.1) Nom d'une balise créée par une extension, en caractères. */
 export const MAX_NOM_BALISE = 80;
+/** (1.3) Texte posé par une extension (`textes.creer`), en caractères. */
+export const MAX_TEXTE_EXTENSION = 200;
+/** (1.3) Directions admises d'une cote créée par une extension. */
+export const DIRECTIONS_COTE: readonly DirectionCote[] = ["alignee", "horizontale", "verticale", "axe-x", "axe-y", "axe-z"];
 /** Couleur d'une balise : « #rrggbb ». */
 const MOTIF_COULEUR = /^#[0-9a-fA-F]{6}$/;
 /** Couleur d'une balise créée sans couleur : celle que propose le panneau Balises de la Planche. */
@@ -128,6 +136,12 @@ export interface UnitesLues {
   readonly aire: "m²";
   readonly decimales: number;
   readonly separateur: "." | ",";
+  /** (1.3) Pas d'accrochage des longueurs saisies (m), ou `null` s'il est coupé. */
+  readonly pasLongueur: number | null;
+  /** (1.3) Pas d'accrochage des angles (degrés), ou `null` s'il est coupé. */
+  readonly pasAngle: number | null;
+  /** (1.3) Format des valeurs de cote du projet. */
+  readonly formatCote: FormatCote;
 }
 /** Rendu par « modele.lire » : tout le contexte courant (la racine, ou l'objet ouvert en édition). */
 export interface ModeleLu {
@@ -453,15 +467,110 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu(r.extra);
   };
 
-  const unites = (): UnitesLues => ({ longueur: "m", aire: "m²", decimales: 2, separateur: acces.separateur?.() ?? "," });
+  const unites = (): UnitesLues => {
+    const r = reglagesDe(vue().modele());
+    const d = acces.decimales?.();
+    return {
+      longueur: "m",
+      aire: "m²",
+      decimales: typeof d === "number" && Number.isInteger(d) && d >= 0 && d <= 6 ? d : 2,
+      separateur: acces.separateur?.() ?? ",",
+      pasLongueur: r.accrochageLongueur,
+      pasAngle: r.accrochageAngle,
+      formatCote: r.formatCote ?? "metres",
+    };
+  };
+
+  /**
+   * (1.3) `cotes.creer { a, b, position, direction? }` : une cote linéaire entre deux points du monde, sa ligne passant
+   * par `position` ; rend son identifiant. La cote n'est pas associée aux sommets : elle garde la valeur mesurée.
+   */
+  const creerCote = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const a = d?.["a"], b = d?.["b"], position = d?.["position"];
+    const direction = d?.["direction"] ?? "alignee";
+    if (!estPoint(a) || !estPoint(b) || !estPoint(position)) return refus("argument_invalide", "a, b et position : points [x, y, z] attendus");
+    if (Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) < 1e-9) return refus("argument_invalide", "a et b confondus");
+    if (typeof direction !== "string" || !(DIRECTIONS_COTE as readonly string[]).includes(direction)) return refus("argument_invalide", `direction : ${DIRECTIONS_COTE.join(", ")}`);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const r = modifierAnnotations(op.travail.modele(), (an, id) => {
+      const k = id("c");
+      const c: Cote = { id: k, genre: "lineaire", a: v3(...a), b: v3(...b), position: v3(...position), ...(direction !== "alignee" ? { direction: direction as DirectionCote } : {}) };
+      an.cotes[k] = c;
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
+  /** (1.3) `textes.creer { ancre, position, texte }` : un texte avec repère (ancre, ligne de rappel, texte) ; rend son identifiant. */
+  const creerTexte = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const ancre = d?.["ancre"], position = d?.["position"];
+    const texte = d && typeof d["texte"] === "string" ? d["texte"].trim() : "";
+    if (!estPoint(ancre) || !estPoint(position)) return refus("argument_invalide", "ancre et position : points [x, y, z] attendus");
+    if (texte.length === 0 || texte.length > MAX_TEXTE_EXTENSION) return refus("argument_invalide", `texte : 1 à ${MAX_TEXTE_EXTENSION} caractères attendus`);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const r = modifierAnnotations(op.travail.modele(), (an, id) => {
+      const k = id("t");
+      an.textes[k] = { id: k, genre: "repere", ancre: v3(...ancre), position: v3(...position), texte };
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
+  /** (1.3) `annotations.lire` : les cotes linéaires et les textes avec repère du dessin (coordonnées du monde). */
+  const lireAnnotations = (): ReponseService => {
+    const a = vue().modele().annotations;
+    const p = (v: Vec3) => [v.x, v.y, v.z];
+    const cotes = Object.values(a?.cotes ?? {}).flatMap((c) => (c.genre === "lineaire" ? [{ id: c.id, a: p(c.a), b: p(c.b), position: p(c.position), direction: c.direction ?? "alignee" }] : []));
+    const textes = Object.values(a?.textes ?? {}).flatMap((x) => (x.genre === "repere" ? [{ id: x.id, ancre: p(x.ancre), position: p(x.position), texte: x.texte }] : []));
+    return rendu({ cotes, textes });
+  };
+
+  /** (1.3) `annotations.effacer { ids }` : efface des cotes et des textes ; un identifiant inconnu est refusé, rien n'est effacé. */
+  const effacerAnnotations = (donnees: unknown): ReponseService => {
+    const ids = estObjet(donnees) ? donnees["ids"] : null;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SELECTION_EXTENSION || !ids.every((x): x is string => typeof x === "string")) return refus("argument_invalide", "ids : liste d'identifiants attendue");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const a = op.travail.modele().annotations;
+    const absent = ids.find((id) => !a?.cotes[id] && !a?.textes[id]);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    op.travail.appliquer(
+      modifierAnnotations(op.travail.modele(), (an) => {
+        for (const id of ids) {
+          delete an.cotes[id];
+          delete an.textes[id];
+        }
+      }),
+    );
+    return rendu();
+  };
+
+  /** (1.3) `objets.verrouiller { ids, verrou }` : verrouille ou déverrouille des groupes et composants du contexte. */
+  const verrouiller = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const ids = d ? d["ids"] : null;
+    const verrou = d ? d["verrou"] : null;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SELECTION_EXTENSION || !ids.every((x): x is string => typeof x === "string")) return refus("argument_invalide", "ids : liste d'identifiants attendue");
+    if (typeof verrou !== "boolean") return refus("argument_invalide", "verrou : vrai ou faux attendu");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const c = contexte(op.travail.modele(), op.dans);
+    const absent = ids.find((id) => !c.occurrences[id]);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    op.travail.appliquer(verrouillerOccurrences(op.travail.modele(), [...new Set(ids)], verrou, op.dans !== undefined ? { dans: op.dans } : {}));
+    return rendu();
+  };
   const formater = (donnees: unknown): ReponseService => {
     const d = estObjet(donnees) ? donnees : null;
     const valeur = d ? d["valeur"] : null;
     const genre = d ? (d["genre"] ?? "longueur") : null;
     if (typeof valeur !== "number" || !Number.isFinite(valeur)) return refus("argument_invalide", "valeur : nombre attendu, en mètres ou en mètres carrés");
     if (genre !== "longueur" && genre !== "aire") return refus("argument_invalide", "genre : « longueur » ou « aire »");
-    const sep = unites().separateur;
-    return rendu(genre === "aire" ? formaterAire(valeur, sep) : formaterLongueur(valeur, sep));
+    const u = unites();
+    // (1.3) Une longueur suit la précision réelle du projet ; une aire garde la forme du Mètre.
+    return rendu(genre === "aire" ? formaterAire(valeur, u.separateur) : `${formaterNombre(valeur, u.decimales, u.separateur)} m`);
   };
 
   const erreurDonnees = (motif: MotifDonnees, detail: string): ReponseService => refus(motif === "introuvable" ? "objet_introuvable" : "argument_invalide", detail);
@@ -556,6 +665,16 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return appliquerAttribut(donnees, "balise");
         case "balises.creer":
           return creerBalise(donnees);
+        case "cotes.creer":
+          return creerCote(donnees);
+        case "textes.creer":
+          return creerTexte(donnees);
+        case "objets.verrouiller":
+          return verrouiller(donnees);
+        case "annotations.lire":
+          return lireAnnotations();
+        case "annotations.effacer":
+          return effacerAnnotations(donnees);
         case "unites.lire":
           return rendu(unites());
         case "unites.formater":
