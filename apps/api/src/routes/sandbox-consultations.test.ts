@@ -4,7 +4,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
-import { ajouterRectangle, modeleVide, v3 } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, ajouterSegments, modeleVide, v3 } from "@parcours/sandbox-planche-model";
 import { createApp } from "../app.js";
 import { LIENS_ACTIFS_MAX } from "./sandbox-consultations.js";
 import { pool } from "../db/client.js";
@@ -75,9 +75,9 @@ describe("Liens de consultation — /sandbox/consultations et /consultation/api"
 
   it("accepte un dessin au-delà de la limite générale de 256 ko", async () => {
     const a = await compte("consult-e@example.com");
-    let m = modeleVide();
-    for (let i = 0; i < 800; i++) m = ajouterRectangle(m, v3(i * 5, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
-    const grand = JSON.parse(JSON.stringify(m));
+    // 800 rectangles posés en une seule opération (un rectangle par opération recopie le modèle : plus de 20 s).
+    const segments = Array.from({ length: 800 }, (_, i) => [v3(i * 5, 0, 0), v3(i * 5 + 4, 0, 0), v3(i * 5 + 4, 3, 0), v3(i * 5, 3, 0)]).flatMap((p) => p.map((a, k) => [a, p[(k + 1) % 4]!] as const));
+    const grand = JSON.parse(JSON.stringify(ajouterSegments(modeleVide(), segments).modele));
     expect(JSON.stringify(grand).length).toBeGreaterThan(256 * 1024);
     const c = await a.post("/sandbox/consultations").send({ nom: "Grand", modele: grand, mesure: true });
     expect(c.status).toBe(201);
