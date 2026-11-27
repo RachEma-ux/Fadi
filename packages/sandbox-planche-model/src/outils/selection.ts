@@ -614,7 +614,10 @@ export type ModeSelectionEtendue = "aretes-bordantes" | "faces-connectees" | "to
 /** Sous-menu « Sélectionner ▸ » du menu contextuel (§5.8) : nouvelle sélection à partir de la sélection courante. */
 export function etendreSelection(m: Modele, selection: readonly Id[], mode: ModeSelectionEtendue, dans?: Id): Id[] {
   const c = contexte(m, dans);
-  const visibles = (ids: Iterable<Id>): Id[] => [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee));
+  // Cas 2, lot 4 (n° 82) : ni les entités masquées, ni celles d'une balise masquée ou verrouillée.
+  const horsBalise = (b: Id | undefined) => b !== undefined && (m.annotations?.balises[b]?.visible === false || m.annotations?.balises[b]?.verrouillee === true);
+  const visibles = (ids: Iterable<Id>): Id[] =>
+    [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee) && !horsBalise((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id])?.balise));
   const tout = visibles([...Object.keys(c.faces), ...Object.keys(c.aretes), ...Object.keys(c.occurrences)]);
   const sel = new Set(selection.filter((id) => c.faces[id] || c.aretes[id] || c.occurrences[id]));
   switch (mode) {

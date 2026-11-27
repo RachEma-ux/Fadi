@@ -2613,15 +2613,19 @@ function fusionnerSommets(c: Ctx, deplaces: ReadonlySet<Id>): void {
 }
 
 /** Un objet verrouillé (§5.6, lot 5) ne se transforme pas, ne se copie pas et ne s'efface pas. */
-function refuserVerrouilles(c: Ctx, entites: readonly Id[]): void {
+function refuserVerrouilles(c: Ctx, entites: readonly Id[], t?: Travail): void {
   for (const id of entites) {
     const occ = c.occurrences.get(id);
     if (occ?.verrouille) throw new Error(`L'objet ${occ.nom ? `« ${occ.nom} » ` : ""}est verrouillé : déverrouillez-le (Info entité ou menu contextuel) pour le modifier.`);
+    // Cas 2, lot 4 (n° 82) : une entité d'une balise verrouillée n'est ni modifiée ni effacée.
+    const b = t ? (occ ?? c.faces.get(id) ?? c.aretes.get(id))?.balise : undefined;
+    const balise = b ? t!.annotations.balises[b] : undefined;
+    if (balise?.verrouillee) throw new Error(`La balise « ${balise.nom} » est verrouillée : déverrouillez-la (panneau Balises) pour modifier ce qu'elle porte.`);
   }
 }
 
 function transformerSurPlace(t: Travail, c: Ctx, entites: readonly Id[], M: Matrice4): void {
-  refuserVerrouilles(c, entites);
+  refuserVerrouilles(c, entites, t);
   const S = sommetsDe(c, entites);
   for (const s of S) c.sommets.set(s, { id: s, position: appliquer(M, pos(c, s)) });
   const det = determinant3(M);
@@ -2961,7 +2965,7 @@ export function eclater(m: Modele, occurrence: Id, o: OptionsContexte = {}): Res
   return operer(m, dans, (t, c) => {
     const occ = c.occurrences.get(occurrence);
     if (!occ) throw new Error(`Occurrence inconnue : ${occurrence}`);
-    refuserVerrouilles(c, [occurrence]);
+    refuserVerrouilles(c, [occurrence], t);
     const def = t.definitions.get(occ.definition);
     if (!def) throw new Error(`Définition inconnue : ${occ.definition}`);
     c.occurrences.delete(occurrence);
@@ -3171,7 +3175,7 @@ export function effacerAretes(m: Modele, aretes: readonly Id[], o: OptionsContex
  */
 export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
-    refuserVerrouilles(c, ids);
+    refuserVerrouilles(c, ids, t);
     for (const id of ids) {
       c.faces.delete(id);
       c.occurrences.delete(id);
@@ -3586,7 +3590,7 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   // un rangement (l'objet bougerait dans toutes) : refus.
   if (t.ouvrir(cible) === src) throw new RangeError(ERREUR_DEPLACER_MEME_CONTENU);
   for (const id of ids) if (!src.occurrences.has(id)) throw new RangeError(`L'objet ${id} n'est pas dans le contexte ouvert : seuls les groupes et composants se déplacent vers un groupe.`);
-  refuserVerrouilles(src, ids);
+  refuserVerrouilles(src, ids, t);
   const occs = ids.map((id) => src.occurrences.get(id) as Occurrence);
   let composantPartage = 0;
   if (cible !== undefined) {

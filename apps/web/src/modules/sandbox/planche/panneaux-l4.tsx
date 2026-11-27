@@ -186,6 +186,7 @@ export function PanneauBalises({
         <BoutonCommande id="balises-phase" disponibilite={disponibilite} executer={executer} plein />
         <BoutonCommande id="classer-selection" disponibilite={disponibilite} executer={() => setClasser((v) => !v)} />
         <BoutonCommande id="verrouiller-balise" disponibilite={disponibilite} executer={executer} libelle={t(cour?.verrouillee ? "planche.balise.deverrouiller" : "planche.balise.court.verrouiller-balise")} />
+        <BoutonCommande id="vue-etat" disponibilite={disponibilite} executer={executer} />
       </div>
       {classer && (
         <ul className="planche-parametres" aria-label={t("planche.balise.classer-selection")} data-planche-balise-classer>

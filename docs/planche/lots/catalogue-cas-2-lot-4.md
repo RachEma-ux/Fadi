@@ -31,7 +31,11 @@ Ctrl+Maj+4, `scenes-types` Ctrl+Maj+5, `avancer-coupe` Ctrl+Maj+6, `reculer-coup
 Ctrl+Maj+8, `gabarit` Ctrl+Maj+9, `importer-gabarit` Ctrl+Maj+0, `enregistrer-gabarit` Alt+7, `creer-planche-gabarit` Alt+8.
 Ctrl+Alt+Maj+F1 à F7 sont pris par le cas 4 (planche/calage), Ctrl+Alt+lettre par les extensions ; Ctrl+Maj+chiffre est lu
 sur la touche physique (`Digit1`…), comme Alt+chiffre, car Maj change le caractère selon la disposition du clavier.
-« Vue d'état » n'a pas de bouton dans la maquette : la commande passe par son raccourci et « Outils ▾ ».
+« Vue d'état » n'avait pas de bouton dans la maquette ; la règle d'or (`AGENTS.md`) en exige un : il est ajouté à la barre
+du panneau Balises (revue de #507), à la suite de « Verrouiller ».
+
+Balise verrouillée (revue de #507) : en plus du pointeur, « Tout sélectionner » et les extensions de sélection l'ignorent, et
+les opérations qui modifient ou effacent (`refuserVerrouilles`) la refusent ; verrouiller retire de la sélection ce qu'elle porte.
 
 ## Données
 

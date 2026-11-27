@@ -28,10 +28,10 @@ import {
   tiretsDuTrait,
   vueEtatCourante,
 } from "./balises-l4.js";
-import { type Modele, ajouterSegments, grouper, modeleVide, modifierAnnotations } from "./geometrie-libre.js";
+import { type Modele, ajouterSegments, deplacer, effacerEntites, grouper, modeleVide, modifierAnnotations } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
 import { ajouterNiveau } from "./niveaux.js";
-import { viser, viserAnnotation } from "./outils/selection.js";
+import { etendreSelection, viser, viserAnnotation } from "./outils/selection.js";
 import { projeterPlan, svgPlan } from "./plan-vectoriel.js";
 import { v3 } from "./vecteur.js";
 
@@ -112,6 +112,12 @@ describe("Cas 2, lot 4 : balises", () => {
     const objet = Object.keys(g1.racine.occurrences)[0]!;
     const g2 = modifierBalise(classerSelection(g1, [objet], bg).modele, bg, { verrouillee: true }).modele;
     expect(viser(g2, { origine: v3(2, 1.5, 10), direction: v3(0, 0, -1) }, 0.05)).toBeNull();
+    // Revue de #507 : « Tout sélectionner » l'ignore, et l'effacer ou le déplacer est refusé.
+    expect(etendreSelection(verrou, [], "tout")).toEqual([]);
+    expect(etendreSelection(r.modele, [], "tout").length).toBe(5);
+    expect(() => effacerEntites(verrou, Object.keys(verrou.racine.faces))).toThrow(/balise « Fond de plan » est verrouillée/);
+    expect(() => deplacer(g2, [objet], v3(1, 0, 0))).toThrow(/verrouillée/);
+    expect(() => effacerEntites(r.modele, Object.keys(r.modele.racine.faces))).not.toThrow();
   });
 
   it("balise courante posée sur ce qui est créé ; balise réservée aux cotes prioritaire ; ce qui a déjà une balise la garde", () => {

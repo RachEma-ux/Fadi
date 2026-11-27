@@ -3657,7 +3657,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (id === "verrouiller-balise") {
       const b = histRef.current.present.modele.annotations?.balises[baliseRef.current!];
       if (!b) return;
-      return operer(t(b.verrouillee ? "planche.balise.deverrouiller" : "planche.balise.verrouiller-balise"), (m) => ({ modele: modifierBalise(m, b.id, { verrouillee: !b.verrouillee }).modele, message: t(b.verrouillee ? "planche.balise.note.deverrouillee" : "planche.balise.note.verrouillee", { nom: b.nom }) }));
+      // Verrouiller retire de la sélection ce que porte la balise (revue de #507) : plus rien ne la vise ni ne la modifie.
+      const garder = (m: Modele, d: string | undefined) => {
+        const c = contexteDe(m, d);
+        const a = m.annotations;
+        return selectionRef.current.filter((id) => ((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id] ?? a?.cotes[id] ?? a?.textes[id] ?? a?.plansDeCoupe[id]) as { balise?: string } | undefined)?.balise !== b.id);
+      };
+      return operer(t(b.verrouillee ? "planche.balise.deverrouiller" : "planche.balise.verrouiller-balise"), (m, d) => ({ modele: modifierBalise(m, b.id, { verrouillee: !b.verrouillee }).modele, ...(b.verrouillee ? {} : { selection: garder(m, d) }), message: t(b.verrouillee ? "planche.balise.note.deverrouillee" : "planche.balise.note.verrouillee", { nom: b.nom }) }));
     }
     if (id === "balises-phase") {
       // Couleurs de départ des balises de phase, modifiables ensuite ; une balise de phase existante garde la sienne.
