@@ -49,17 +49,32 @@ export interface ExtensionsDuCompte {
   readonly paquets: readonly PaquetExtension[];
   /** Extensions ajoutées proposées au compte, cochées ou non. */
   readonly ajoutees: readonly ExtensionAjoutee[];
+  /** Un choix est en route vers le serveur : les cases attendent (le serveur réécrit le choix du compte en entier). */
+  readonly enCours: boolean;
   /** Coche (`true`) ou décoche une extension ajoutée pour le compte, puis relit les paquets installés. */
   readonly afficher: (id: string, affichee: boolean) => void;
+}
+
+/**
+ * Paquets relus (pur, testé) : un paquet inchangé garde son objet, pour que la Planche ne redémarre pas l'hôte d'une
+ * extension (minuteries, état) quand on coche ou décoche une autre extension.
+ */
+export function garderPaquetsInchanges(avant: readonly PaquetExtension[], recus: readonly PaquetExtension[]): readonly PaquetExtension[] {
+  return recus.map((n) => {
+    const ancien = avant.find((a) => a.fiche.id === n.fiche.id);
+    return ancien && JSON.stringify(ancien) === JSON.stringify(n) ? ancien : n;
+  });
 }
 
 export function useExtensionsInstallees(): ExtensionsDuCompte {
   const [paquets, setPaquets] = useState<readonly PaquetExtension[]>([]);
   const [fiches, setFiches] = useState<readonly FichePaquetCompte[]>([]);
+  const [enCours, setEnCours] = useState(false);
+  const enCoursRef = useRef(false);
   const vivant = useRef(true);
   const relirePaquets = () =>
     lireExtensionsServeur().then(
-      (p) => vivant.current && setPaquets(p),
+      (p) => vivant.current && setPaquets((avant) => garderPaquetsInchanges(avant, p)),
       () => undefined,
     );
   useEffect(() => {
@@ -75,20 +90,30 @@ export function useExtensionsInstallees(): ExtensionsDuCompte {
   }, []);
   const ajoutees = useMemo(() => lignesExtensionsAjoutees(fiches, paquets), [fiches, paquets]);
   const afficher = (id: string, affichee: boolean) => {
+    // Un seul choix à la fois : deux demandes croisées liraient le même choix du compte et s'écraseraient.
+    if (enCoursRef.current) return;
+    enCoursRef.current = true;
+    setEnCours(true);
     // La case suit le geste tout de suite ; le serveur fait foi ensuite (fiches relues, paquets relus).
     setFiches((l) => l.map((f) => (f.id === id ? { ...f, installee: affichee } : f)));
-    choisirExtensionCompte(id, affichee).then(
-      (f) => {
-        if (!vivant.current) return;
-        setFiches(f);
-        void relirePaquets();
-      },
-      () => {
-        if (vivant.current) setFiches((l) => l.map((f) => (f.id === id ? { ...f, installee: !affichee } : f)));
-      },
-    );
+    const fin = () => {
+      enCoursRef.current = false;
+      if (vivant.current) setEnCours(false);
+    };
+    choisirExtensionCompte(id, affichee)
+      .then(
+        (f) => {
+          if (!vivant.current) return;
+          setFiches(f);
+          return relirePaquets();
+        },
+        () => {
+          if (vivant.current) setFiches((l) => l.map((f) => (f.id === id ? { ...f, installee: !affichee } : f)));
+        },
+      )
+      .finally(fin);
   };
-  return { paquets, ajoutees, afficher };
+  return { paquets, ajoutees, enCours, afficher };
 }
 
 export function IconeExtension({ image, className }: { image: string; className?: string }) {

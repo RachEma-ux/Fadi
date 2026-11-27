@@ -92,6 +92,8 @@ export interface PropsBoutonOutils {
   extensionsAjoutees?: readonly ExtensionAjoutee[];
   /** Case « Afficher / Masquer » d'une extension ajoutée. */
   onAfficherExtensionAjoutee?: (id: string, affichee: boolean) => void;
+  /** Un choix « Afficher / Masquer » est en route : les cases attendent. */
+  extensionsAjouteesEnCours?: boolean;
 }
 
 /** Famille d'une extension installée : ses commandes, et sa barre (affichée ou masquée par l'étiquette de chaque ligne). */
@@ -141,7 +143,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS, famillesExtensions = [], extensionsAjoutees = [], onAfficherExtensionAjoutee }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, onAfficherBarre, onReinitialiser, reinitialisable, onNouvelleBarre, onDupliquerBarre, onModifierBarre, extensions = [], onBasculerExtension, commandes = [], variante = "outils", catalogue = OUTILS, famillesExtensions = [], extensionsAjoutees = [], onAfficherExtensionAjoutee, extensionsAjouteesEnCours = false }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   // Groupes dépliés : familles d'outils et groupes de commandes (« groupe », « reperes », « bois »).
@@ -534,6 +536,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, etiquette, on
                               title={t(x.affichee ? "outils.extensions.masquer.aide" : "outils.extensions.afficher.aide", { extension: x.nom })}
                               data-outils-nav
                               data-outils-case-extension={x.id}
+                              aria-busy={extensionsAjouteesEnCours || undefined}
+                              disabled={extensionsAjouteesEnCours}
                               onClick={() => onAfficherExtensionAjoutee?.(x.id, !x.affichee)}
                             >
                               <span className="planche-outils-case-boite" aria-hidden="true" data-coche={x.affichee ? "" : undefined} />

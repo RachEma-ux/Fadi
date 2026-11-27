@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { REGISTRE_SANDBOX, jugerImportPaquet, normaliserRaccourci, type PaquetExtension } from "@parcours/sandbox-planche-model";
-import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, lignesExtensionsAjoutees, apercuFichier, clePanneauExtension, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
+import { LIGNES_APERCU_FICHIER, MAX_AVIS_AFFICHES, ajouterAvis, garderPaquetsInchanges, lignesExtensionsAjoutees, apercuFichier, clePanneauExtension, retirerFichier, retirerSaisie, tailleFichier, type AvisAffiche, type FichierDemande, type SaisieOuverte } from "./extensions-installees";
 import { idBarreCanonique, normaliserBarres } from "./barres-nommees";
 
 describe("avis des extensions", () => {
@@ -127,5 +127,18 @@ describe("extensions ajoutées rangées dans « Extensions » (maquette du 27 no
     const paquet = { fiche: { id: "site", nom: { fr: "Site et terrain", en: "Site and terrain" } } } as unknown as PaquetExtension;
     expect(lignesExtensionsAjoutees(fiches, [paquet], "fr").find((l) => l.id === "site")).toEqual({ id: "site", nom: "Site et terrain", affichee: true });
     expect(lignesExtensionsAjoutees([], [], "fr")).toEqual([]);
+  });
+});
+
+describe("paquets relus après « Afficher / Masquer »", () => {
+  it("un paquet inchangé garde son objet (son hôte n'est pas redémarré) ; un paquet changé est remplacé", () => {
+    const a = { fiche: { id: "a", version: "1.0.0" }, code: "x" } as unknown as PaquetExtension;
+    const b = { fiche: { id: "b", version: "1.0.0" }, code: "y" } as unknown as PaquetExtension;
+    const aRelu = JSON.parse(JSON.stringify(a)) as PaquetExtension;
+    const bChange = { fiche: { id: "b", version: "1.1.0" }, code: "z" } as unknown as PaquetExtension;
+    const r = garderPaquetsInchanges([a, b], [aRelu, bChange]);
+    expect(r[0]).toBe(a);
+    expect(r[1]).toBe(bChange);
+    expect(garderPaquetsInchanges([a, b], [b])).toEqual([b]);
   });
 });

@@ -4142,6 +4142,10 @@
   font-size: 0.8rem;
   cursor: pointer;
 }
+.sandbox-planche .planche-outils-liste .planche-outils-case:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
 .sandbox-planche .planche-outils-case-boite {
   position: relative;
   width: 16px;

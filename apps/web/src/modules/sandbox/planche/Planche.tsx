@@ -3284,6 +3284,16 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       hotes.clear();
     };
   }, []);
+  // Une extension masquée (désinstallée pour le compte) est arrêtée : ses minuteries et ses opérations en attente
+  // tombent avec son hôte, elle ne touche plus au dessin.
+  useEffect(() => {
+    const ids = new Set(paquetsInstalles.map((p) => p.fiche.id));
+    for (const [id, { hote }] of hotesExtensions.current) {
+      if (ids.has(id)) continue;
+      hote.arreter();
+      hotesExtensions.current.delete(id);
+    }
+  }, [paquetsInstalles]);
   const poserAvisExtension = (extension: string, texte: string, genre: AvisAffiche["genre"]) => setAvisExtensions((liste) => ajouterAvis(liste, { cle: ++cleExtensions.current, extension, texte, genre }));
   // ——— Événements adressés aux extensions (lot 7) : dessin, sélection, projet.
   const paquetsRef = useRef(paquetsInstalles);
@@ -4207,6 +4217,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       famillesExtensions={famillesInstallees}
       extensionsAjoutees={extensionsCompte.ajoutees}
       onAfficherExtensionAjoutee={extensionsCompte.afficher}
+      extensionsAjouteesEnCours={extensionsCompte.enCours}
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}
