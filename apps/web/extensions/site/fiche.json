@@ -12,10 +12,10 @@
   "commandes": [
     { "id": "ouvrir-panneau", "libelle": { "fr": "Site et terrain", "en": "Site and terrain" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+G" },
     { "id": "terrain", "libelle": { "fr": "Terrain depuis des points", "en": "Terrain from points" }, "icone": "terrain.svg", "raccourci": "Ctrl+Maj+F10" },
-    { "id": "courbes", "libelle": { "fr": "Courbes de niveau", "en": "Contour lines" }, "icone": "courbes.svg", "raccourci": "Ctrl+Maj+F3" },
-    { "id": "unite-fonciere", "libelle": { "fr": "Unité foncière", "en": "Land unit" }, "icone": "unite.svg", "raccourci": "Ctrl+Maj+F4" },
-    { "id": "biotope", "libelle": { "fr": "Pleine terre et biotope", "en": "Open ground and biotope" }, "icone": "biotope.svg", "raccourci": "Ctrl+Maj+F5" },
-    { "id": "volumes", "libelle": { "fr": "Volumes du contexte", "en": "Context volumes" }, "icone": "volumes.svg", "raccourci": "Ctrl+Maj+F6" }
+    { "id": "courbes", "libelle": { "fr": "Courbes de niveau", "en": "Contour lines" }, "icone": "courbes.svg", "raccourci": "Ctrl+Alt+Maj+E" },
+    { "id": "unite-fonciere", "libelle": { "fr": "Unité foncière", "en": "Land unit" }, "icone": "unite.svg", "raccourci": "Ctrl+Alt+Maj+J" },
+    { "id": "biotope", "libelle": { "fr": "Pleine terre et biotope", "en": "Open ground and biotope" }, "icone": "biotope.svg", "raccourci": "Ctrl+Alt+Maj+K" },
+    { "id": "volumes", "libelle": { "fr": "Volumes du contexte", "en": "Context volumes" }, "icone": "volumes.svg", "raccourci": "Ctrl+Alt+Maj+Y" }
   ],
   "outils": [],
   "panneaux": [
