@@ -56,8 +56,10 @@
  *   planche.unites.lire()                       rend aussi la précision réelle du projet (`decimales`), les pas
  *                                               d'accrochage (`pasLongueur` en m, `pasAngle` en degrés, ou null) et
  *                                               le format de cote (`formatCote`)
- *   planche.cotes.creer(a, b, position, direction)   cote linéaire entre deux points du monde ; rend l'identifiant
- *   planche.textes.creer(ancre, position, texte)     texte avec repère ; rend l'identifiant
+ *   planche.cotes.creer(a, b, position, direction, balise)   cote linéaire entre deux points du monde ; rend
+ *                                               l'identifiant ; avec une balise, cachée quand la balise l'est
+ *   planche.textes.creer(ancre, position, texte, balise)     texte avec repère ; rend l'identifiant
+ *   planche.modele.lire()                       dit aussi `dans` : l'objet ouvert en édition, ou null à la racine
  *   planche.objets.verrouiller(ids, verrou)     verrouille (vrai) ou déverrouille (faux) des groupes et composants
  *   planche.annotations.lire()                  { cotes, textes } : cotes linéaires et textes avec repère du dessin
  *   planche.annotations.effacer(ids)            efface des cotes et des textes
@@ -148,10 +150,11 @@ export function creerExecutantExtension(
       creer: (nom: unknown, couleur?: unknown) => demander("balises.creer", couleur === undefined ? { nom } : { nom, couleur }),
     }),
     cotes: Object.freeze({
-      creer: (a: unknown, b: unknown, position: unknown, direction?: unknown) => demander("cotes.creer", direction === undefined ? { a, b, position } : { a, b, position, direction }),
+      creer: (a: unknown, b: unknown, position: unknown, direction?: unknown, balise?: unknown) =>
+        demander("cotes.creer", { a, b, position, ...(direction === undefined ? {} : { direction }), ...(balise === undefined ? {} : { balise }) }),
     }),
     textes: Object.freeze({
-      creer: (ancre: unknown, position: unknown, texte: unknown) => demander("textes.creer", { ancre, position, texte }),
+      creer: (ancre: unknown, position: unknown, texte: unknown, balise?: unknown) => demander("textes.creer", { ancre, position, texte, ...(balise === undefined ? {} : { balise }) }),
     }),
     annotations: Object.freeze({
       lire: () => demander("annotations.lire"),

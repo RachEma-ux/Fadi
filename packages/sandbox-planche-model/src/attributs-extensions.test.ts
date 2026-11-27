@@ -136,6 +136,22 @@ describe("(1.3) cotes, textes et verrou posés par une extension", () => {
     expect(etat.modele.annotations?.textes[t]).toBeUndefined();
   });
 
+  it("une annotation peut porter une balise existante ; modele.lire dit le contexte ouvert", () => {
+    const d = depart();
+    const { etat, s } = planche(d.modele);
+    s.debutAppel("balisee");
+    const c = ok(s.servir("cotes.creer", { a: [0, 0, 0], b: [2, 0, 0], position: [0, -1, 0], balise: d.balise })) as Id;
+    const t = ok(s.servir("textes.creer", { ancre: [0, 0, 0], position: [0, -1, 0], texte: "A", balise: d.balise })) as Id;
+    s.finAppel(true);
+    expect(etat.modele.annotations?.cotes[c]).toMatchObject({ balise: d.balise });
+    expect(etat.modele.annotations?.textes[t]).toMatchObject({ balise: d.balise });
+    expect(s.servir("cotes.creer", { a: [0, 0, 0], b: [2, 0, 0], position: [0, -1, 0], balise: "absente" })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(s.servir("textes.creer", { ancre: [0, 0, 0], position: [0, -1, 0], texte: "A", balise: 3 })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(ok(s.servir("modele.lire", null))).toMatchObject({ dans: null });
+    const dedans = creerServicesExtension({ id: "essai", permissions: ["modele.lire"] }, { ...planche(d.modele).acces, dans: () => d.objet });
+    expect(ok(dedans.servir("modele.lire", null))).toMatchObject({ dans: d.objet });
+  });
+
   it("arguments faux refusés sans rien ouvrir", () => {
     const d = depart();
     const { etat, s } = planche(d.modele);
