@@ -15,7 +15,8 @@ var FORMAT_REGLES = "fadi-regles-controles/1";
 var REGLES = ["passage", "degagement", "rampe", "vuesDroites", "prospect", "distanceConstructions", "placesFauteuil"];
 var MAX_JEUX = 10;
 var MAX_REGISTRE = 200;
-var REGISTRE_PAR_MORCEAU = 25;
+/** Taille sérialisée d'un morceau du registre, sous la borne d'une valeur de données (4 000 caractères). */
+var TAILLE_MORCEAU = 3800;
 var MAX_MESURES = 30;
 var MAX_TRONCONS = 30;
 var LIGNES_PAR_PAGE = 80;
@@ -75,6 +76,7 @@ var T = {
     tropDeMesures: "Trente mesures au plus par onglet.",
     rampeInvalide: "Saisissez le dénivelé, la pente et la largeur (nombres positifs) ; le dévers est facultatif.",
     tropDeTroncons: "Plus de trente tronçons : réduisez le dénivelé ou augmentez la pente admise.",
+    entreeTropLongue: "Une entrée du registre est trop longue : raccourcissez le nom de l'élément ou de la table.",
     troncon: function (i) { return "Tronçon " + i; },
     palier: function (i) { return "Palier " + i; },
     devers: "Dévers",
@@ -163,6 +165,7 @@ var T = {
     tropDeMesures: "Thirty measures at most per tab.",
     rampeInvalide: "Type the height, slope and width (positive numbers); the cross slope is optional.",
     tropDeTroncons: "More than thirty flights: reduce the height or raise the allowed slope.",
+    entreeTropLongue: "A register entry is too long: shorten the element or table name.",
     troncon: function (i) { return "Flight " + i; },
     palier: function (i) { return "Landing " + i; },
     devers: "Cross slope",
@@ -476,6 +479,8 @@ function decouper(r, regle) {
   var tranche = regle ? regle.tranches.filter(function (t) { return r.p <= t.penteMax + EPS; })[0] || null : null;
   if (!tranche) return { total: total, tranche: null, troncons: [total], palier: regle ? regle.palier : null };
   var n = Math.max(1, Math.ceil(total / tranche.longueurMax - 1e-9));
+  // Le nombre de tronçons est borné avant d'en allouer un seul (aperçu compris) : une saisie extrême ne bloque pas.
+  if (!isFinite(n) || n > MAX_TRONCONS) return { total: total, tranche: tranche, troncons: [], palier: regle.palier, trop: true };
   var l = [];
   for (var i = 0; i < n; i++) l.push(total / n);
   return { total: total, tranche: tranche, troncons: l, palier: regle.palier };
@@ -489,7 +494,7 @@ async function poserRampe() {
   var regle = j && j.regles.rampe;
   if (!regle) return alerte(x.rampeSansTable);
   var d = decouper(r, regle);
-  if (d.troncons.length > MAX_TRONCONS) return alerte(x.tropDeTroncons);
+  if (d.trop || d.troncons.length > MAX_TRONCONS) return alerte(x.tropDeTroncons);
   var m = await planche.modele.lire();
   var avant = {};
   m.faces.forEach(function (f) { avant[f.id] = true; });
@@ -575,6 +580,7 @@ async function controles(j, sep) {
       var regle = R.rampe;
       var suffixe = regle && !regle.relu ? " · " + x.aVerifier : "";
       var vPente = !regle ? { texte: x.sansSeuil, ton: "gris" } : d.tranche ? { texte: x.conforme + suffixe, ton: "ok" } : { texte: x.penteHors + suffixe, ton: "alerte" };
+      if (d.trop) lignes.push({ genre: "ligne", ton: "alerte", cellules: [x.tropDeTroncons, "", "", ""] });
       d.troncons.forEach(function (l, i) {
         ajouter(null, x.troncon(i + 1), fixe(l, 2, sep) + " m", d.tranche ? fixe(d.tranche.longueurMax, 2, sep) + " m" : "–", vPente, [x.troncon(i + 1), fixe(l, 2, sep) + " m", fixe(r.p, 1, sep) + " %", vPente.texte]);
         if (i + 1 < d.troncons.length) lignes.push({ genre: "ligne", cellules: [x.palier(i + 1), fixe(d.palier, 2, sep) + " m", "0 %", ""] });
@@ -609,7 +615,21 @@ async function registreGarde() {
 }
 async function ecrireRegistre(l, cles) {
   var n = 0;
-  for (var i = 0; i < l.length; i += REGISTRE_PAR_MORCEAU) await planche.donnees.ecrire("projet", "registre." + n++, l.slice(i, i + REGISTRE_PAR_MORCEAU));
+  var morceau = [];
+  var taille = 2;
+  for (var i = 0; i < l.length; i++) {
+    // Découpe par taille sérialisée : chaque morceau reste sous la borne d'une valeur, quel que soit le nombre d'entrées.
+    var t = JSON.stringify(l[i]).length;
+    if (t + 2 > TAILLE_MORCEAU) throw new Error(tx().entreeTropLongue);
+    if (morceau.length && taille + 1 + t > TAILLE_MORCEAU) {
+      await planche.donnees.ecrire("projet", "registre." + n++, morceau);
+      morceau = [];
+      taille = 2;
+    }
+    taille += (morceau.length ? 1 : 0) + t;
+    morceau.push(l[i]);
+  }
+  if (morceau.length) await planche.donnees.ecrire("projet", "registre." + n++, morceau);
   for (var k = n; k < cles.length; k++) await planche.donnees.effacer("projet", "registre." + k);
 }
 

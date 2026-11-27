@@ -211,6 +211,25 @@ describe("extension « Contrôles réglementaires et accessibilité » — passa
     expect((await p.action("etat", { onglet: "registre" })).vide).toMatch(/^Registre vide/);
   });
 
+  it("un registre de quarante entrées est découpé par taille : chaque morceau reste sous la borne d'une valeur", async () => {
+    const noms = Array.from({ length: 40 }, (_, i) => `P${String(i + 1).padStart(2, "0")} Porte du logement témoin`);
+    const { modele, ids } = objets(noms);
+    const p = planche(modele);
+    p.repondre(ids.map(() => ({ passage: "0,90" })));
+    for (const id of ids) {
+      p.etat.selection = [id];
+      await p.action("declarer-portes", { onglet: "passages" });
+    }
+    await chargerRegles(p);
+    await p.action("ajouter-registre", { onglet: "passages" });
+    expect(p.derniereAlerte()).toBe("");
+    await p.action("ajouter-registre", { onglet: "passages" });
+    expect(p.derniereAlerte()).toBe("");
+    const e = await p.action("etat", { onglet: "registre" });
+    expect(e.lignes).toHaveLength(80);
+    expect(e.lignes.at(-1)!.cellules.slice(1)).toEqual(["Passages utiles", noms[39], "conforme"]);
+    }, 60_000);
+
   it("une table sans source ou sans date est refusée et nommée", async () => {
     const p = planche(modeleVide());
     await chargerRegles(p, { ...REGLES_ESSAI, jeux: [{ ...REGLES_ESSAI.jeux[0], regles: { passage: { min: 0.83, source: "" } } }] });
@@ -255,6 +274,12 @@ describe("extension « Contrôles réglementaires et accessibilité » — déga
     expect(Object.keys(p.etat.modele.definitions[rampe!.definition]!.contenu.faces)).toHaveLength(5);
     e = await p.action("etat", { onglet: "rampe", valeurs: { ...R, pente: "8" } });
     expect(e.lignes[0]!.cellules[3]).toBe("pente au-delà de la table");
+    // Saisie extrême : le nombre de tronçons est borné avant toute allocation, aperçu compris.
+    const X = { ...R, denivele: "1000", pente: "0,0001" };
+    e = await p.action("etat", { onglet: "rampe", valeurs: X });
+    expect(e.lignes.map((l) => [l.cellules[0], l.ton])).toEqual([["Plus de trente tronçons : réduisez le dénivelé ou augmentez la pente admise.", "alerte"], ["Dévers", "alerte"]]);
+    await p.action("poser-rampe", { onglet: "rampe", valeurs: X });
+    expect(p.derniereAlerte()).toBe("Plus de trente tronçons : réduisez le dénivelé ou augmentez la pente admise.");
     const q = planche(modeleVide());
     await q.action("poser-rampe", { onglet: "rampe", valeurs: R });
     expect(q.derniereAlerte()).toMatch(/^Sans table de rampe/);
