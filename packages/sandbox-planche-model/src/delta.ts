@@ -17,6 +17,7 @@ import { estMur } from "./murs.js";
 import { estMotif } from "./plan-vectoriel.js";
 import { estFeuille } from "./feuilles.js";
 import { estReserve, type Reserve } from "./reserves.js";
+import { estReglagesEnveloppe, type ReglagesEnveloppe } from "./enveloppe.js";
 import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Local, Feuille, Materiau, MotifHachure, Mur, Niveau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
 
@@ -51,6 +52,7 @@ export interface DeltaAnnotations {
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
+  readonly enveloppe?: ReglagesEnveloppe | null;
 }
 
 export interface DeltaPlanche {
@@ -135,6 +137,10 @@ export function differencePlanche(avant: Modele, apres: Modele): DeltaPlanche | 
     an.reglages = ab.reglages ?? null;
     a = true;
   }
+  if (!memeValeur(aa.enveloppe, ab.enveloppe)) {
+    an.enveloppe = ab.enveloppe ?? null;
+    a = true;
+  }
   if (a) delta.annotations = an;
   if (avant.prochainId !== apres.prochainId) delta.prochainId = apres.prochainId;
   return Object.keys(delta).length ? delta : null;
@@ -171,6 +177,10 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
     if (delta.annotations.reglages !== undefined) {
       if (delta.annotations.reglages === null) delete an["reglages"];
       else an["reglages"] = delta.annotations.reglages;
+    }
+    if (delta.annotations.enveloppe !== undefined) {
+      if (delta.annotations.enveloppe === null) delete an["enveloppe"];
+      else an["enveloppe"] = delta.annotations.enveloppe;
     }
     annotations = an as unknown as Annotations;
   }
@@ -321,6 +331,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
     if (an["feuilles"] !== undefined && !(estObjet(an["feuilles"]) && Object.entries(an["feuilles"]).every(([id, v]) => estFeuille(id, v)))) return null;
     if (an["reserves"] !== undefined && !(estObjet(an["reserves"]) && Object.entries(an["reserves"]).every(([id, v]) => estReserve(id, v)))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
+    if (an["enveloppe"] !== undefined && !estReglagesEnveloppe(an["enveloppe"])) return null;
     if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])) && (an["reglages"]["pointDeBase"] === undefined || estPointDeBase(an["reglages"]["pointDeBase"])))) return null;
   }
   return brut as unknown as Modele;
@@ -340,6 +351,8 @@ export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
         if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : k === "reperes" ? table(t, (id, x) => repereEnregistreValide(x) && x.id === id) : k === "niveaux" ? table(t, estNiveau) : k === "locaux" ? table(t, estLocal) : k === "murs" ? table(t, estMur) : k === "motifs" ? table(t, estMotif) : k === "feuilles" ? table(t, estFeuille) : k === "reserves" ? table(t, estReserve) : table(t))) return false;
       } else if (k === "repere" || k === "reglages") {
         if (!(t === null || estObjet(t))) return false;
+      } else if (k === "enveloppe") {
+        if (!(t === null || estReglagesEnveloppe(t))) return false;
       } else return false;
     }
   }

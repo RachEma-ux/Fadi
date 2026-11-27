@@ -45,6 +45,8 @@ const COULEUR_CONTEXTE = "#5b6b63";
 const COULEUR_SELECTION = "#1a5fd6";
 /** Plans de niveau (cas 4, niveaux d'étage) : même bleu que les étiquettes de niveau. */
 const COULEUR_NIVEAU = "#1a5fd6";
+/** Faces hors enveloppe (cas 4, étape 7c), toujours avec une hachure. */
+const COULEUR_HORS_ENVELOPPE = "#d6336c";
 const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
@@ -254,6 +256,9 @@ export class VuePlanche {
   private readonly groupeAnnotations = new THREE.Group();
   /** Poché de la matière coupée (cas 4, étape 5), posé sur le plan de coupe actif. */
   private readonly groupeCoupe = new THREE.Group();
+  /** Contrôle de l'enveloppe (cas 4, étape 7c) : faces hors enveloppe hachurées et colorées, point le plus défavorable. */
+  private readonly groupeEnveloppe = new THREE.Group();
+  private etiquettesEnveloppe: Etiquette[] = [];
   private readonly texturesHachure = new Map<string, THREE.Texture>();
   private groupeAxes: THREE.Group;
   private readonly etiquettesDom: HTMLDivElement;
@@ -357,7 +362,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -697,6 +702,62 @@ export class VuePlanche {
     }
   }
 
+  /**
+   * Contrôle de l'enveloppe (cas 4, étape 7c) : les triangles hors enveloppe (monde, 9 nombres chacun) sont couverts d'une
+   * hachure colorée — hachure ET couleur, jamais la couleur seule — ; le point le plus défavorable reçoit un anneau et
+   * une étiquette ; chaque seuil de hauteur saisi est tracé en pointillé à son altitude autour du projet. `null` efface.
+   */
+  poserControleEnveloppe(c: { readonly hors: readonly number[]; readonly point: Vec3 | null; readonly texte: string; readonly seuils: readonly { readonly z: number; readonly texte: string }[]; readonly emprise: { min: Vec3; max: Vec3 } | null } | null): void {
+    vider(this.groupeEnveloppe);
+    for (const e of this.etiquettesEnveloppe) e.el.remove();
+    this.etiquettesEnveloppe = [];
+    if (c) {
+      const etiquette = (texte: string, point: Vec3, classe: string): void => {
+        const el = document.createElement("div");
+        el.className = `planche-etiquette ${classe}`;
+        el.textContent = texte;
+        this.etiquettesDom.append(el);
+        this.etiquettesEnveloppe.push({ el, point });
+      };
+      if (c.hors.length >= 9) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.Float32BufferAttribute([...c.hors], 3));
+        // Coordonnées de hachure : projection sur un plan oblique (pas de 0,25 m), lisible quelle que soit l'orientation.
+        const uvs: number[] = [];
+        for (let i = 0; i < c.hors.length; i += 3) {
+          const x = c.hors[i]!;
+          const y = c.hors[i + 1]!;
+          const z = c.hors[i + 2]!;
+          uvs.push(0, (x + y + z) / 0.25);
+        }
+        g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+        const hachure = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: COULEUR_HORS_ENVELOPPE, map: this.textureHachure(), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+        hachure.renderOrder = 2;
+        hachure.name = "hors-enveloppe";
+        this.groupeEnveloppe.add(hachure);
+      }
+      if (c.point) {
+        const anneau = new THREE.Points(new THREE.BufferGeometry().setFromPoints([v3(c.point)]), new THREE.PointsMaterial({ color: COULEUR_HORS_ENVELOPPE, size: 14, sizeAttenuation: false, depthTest: false }));
+        anneau.renderOrder = 3;
+        this.groupeEnveloppe.add(anneau);
+        etiquette(c.texte, c.point, "planche-etiquette-enveloppe");
+      }
+      if (c.emprise) {
+        const { min, max } = c.emprise;
+        const pas = this.metresParPixel(this.cible);
+        for (const s of c.seuils) {
+          const pts = [v3({ x: min.x, y: min.y, z: s.z }), v3({ x: max.x, y: min.y, z: s.z }), v3({ x: max.x, y: max.y, z: s.z }), v3({ x: min.x, y: max.y, z: s.z }), v3({ x: min.x, y: min.y, z: s.z })];
+          const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: COULEUR_NIVEAU, dashSize: pas * 8, gapSize: pas * 5 }));
+          l.computeLineDistances();
+          l.frustumCulled = false;
+          this.groupeEnveloppe.add(l);
+          etiquette(s.texte, { x: max.x, y: min.y, z: s.z }, "planche-etiquette-seuil");
+        }
+      }
+    }
+    this.rendre();
+  }
+
   /** Texture d'une hachure : une ligne noire par période, répétée. */
   private textureHachure(): THREE.Texture {
     const deja = this.texturesHachure.get("ligne");
@@ -831,7 +892,7 @@ export class VuePlanche {
       if (!p) q.el.style.display = "none";
       else Object.assign(q.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
     }
-    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
+    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu, ...this.etiquettesEnveloppe]) {
       const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
       if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
         e.el.style.display = "none";

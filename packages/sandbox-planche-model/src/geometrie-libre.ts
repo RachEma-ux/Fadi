@@ -682,7 +682,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, reserves: { ...(a.reserves ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, reserves: { ...(a.reserves ?? {}) }, ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}), ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -796,6 +796,7 @@ class Travail {
       ...(Object.keys(a.motifs).length ? { motifs: Object.freeze({ ...a.motifs }) } : {}),
       ...(Object.keys(a.feuilles).length ? { feuilles: Object.freeze({ ...a.feuilles }) } : {}),
       ...(Object.keys(a.reserves).length ? { reserves: Object.freeze({ ...a.reserves }) } : {}),
+      ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}),
     });
     return suivreAnnotations(this.modele, Object.freeze({ ...base, annotations }));
   }
@@ -866,6 +867,7 @@ function aplatir(m: Modele): Map<Id, string> {
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
     if (a.reglages) r.set("reglages", JSON.stringify(a.reglages));
+    if (a.enveloppe) r.set("enveloppe", JSON.stringify(a.enveloppe));
   }
   return r;
 }
