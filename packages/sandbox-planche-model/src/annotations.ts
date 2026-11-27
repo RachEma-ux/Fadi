@@ -9,6 +9,7 @@
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
 import type { Emplacement } from "./emplacement.js";
+import type { PointDeBase } from "./point-de-base.js";
 import type { RepereEnregistre } from "./reperes.js";
 import type { Id } from "./geometrie-libre.js";
 import type { Vec3 } from "./vecteur.js";
@@ -205,6 +206,8 @@ export interface ReglagesPlanche {
   readonly emplacement?: Emplacement;
   /** (Protocole des extensions, lot 5) Données attachées au projet par les extensions : `{ <extension> : { <clé> : valeur } }`. */
   readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  /** (Cas 4, étape 2) Point de base du projet : coordonnées projetées déclarées de l'origine ; absent = non déclaré. */
+  readonly pointDeBase?: PointDeBase;
 }
 /** Format des valeurs de cote : mètres, mètres avec le millimètre en exposant (à la française), centimètres sans unité. */
 export type FormatCote = "metres" | "metres-mm" | "centimetres";

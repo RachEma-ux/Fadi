@@ -46,4 +46,4 @@ export function commandeDuClavier(c: Cle): EntreeRegistre | null {
  * nues (G Créer un composant) et Échap / Origine (Fermer) gardent leur garde propre dans la Planche (saisie en cours,
  * outil Sélection).
  */
-export const routeeParLeRegistre = (e: EntreeRegistre): boolean => /^(Maj\+|Alt\+)?F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z0-9]$/.test(e.raccourci);
+export const routeeParLeRegistre = (e: EntreeRegistre): boolean => /^(Ctrl\+|Alt\+)?(Maj\+)?F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z0-9]$/.test(e.raccourci);

@@ -6,7 +6,7 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
@@ -207,10 +207,13 @@ export interface ActionsInfoEntite extends ActionsInfoCote {
 }
 
 /** (Cas 4, niveaux d'étage) Niveau d'un objet de la racine et son altitude (NGF quand le niveau de référence est déclaré). */
-function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: { modele: Modele; occ: { readonly niveau?: Id }; lecture: boolean; separateur: "." | ","; reference: number | null; onNiveau: (v: Id | null) => void }) {
+const texteProjete = (c: CoordonneesProjetees, sep: "." | ","): string => `E ${texteCoordonnee(c.e, sep)} · N ${texteCoordonnee(c.n, sep)}${c.h === null ? "" : ` · H ${c.h.toFixed(2).replace(".", sep)}`}`;
+
+function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: { modele: Modele; occ: { readonly niveau?: Id; readonly transformation: readonly number[] }; lecture: boolean; separateur: "." | ","; reference: number | null; onNiveau: (v: Id | null) => void }) {
   const niveaux = niveauxTries(modele);
   const n = occ.niveau ? modele.annotations?.niveaux?.[occ.niveau] : undefined;
   const ngf = n ? altitudeNGF(n.altitude, reference) : null;
+  const pb = modele.annotations?.reglages?.pointDeBase;
   return (
     <>
       <dt>{t("planche.info.niveau")}</dt>
@@ -228,6 +231,9 @@ function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: {
           <dd data-planche-info-niveau-altitude>{`${texteAltitude(n.altitude, separateur)} m${ngf === null ? "" : ` · ${ngf.toFixed(2).replace(".", separateur)} m NGF`}`}</dd>
         </>
       )}
+      {/* Cas 4, étape 2 : position projetée de l'origine de l'objet (point de base déclaré ; H avec le niveau de référence). */}
+      <dt>{t("planche.info.position")}</dt>
+      <dd data-planche-info-position={pb ? "projetee" : "non-evaluee"}>{pb ? texteProjete(versProjete(pb, { x: occ.transformation[3] ?? 0, y: occ.transformation[7] ?? 0, z: occ.transformation[11] ?? 0 }, reference), separateur) : t("planche.info.position.non-evaluee")}</dd>
     </>
   );
 }

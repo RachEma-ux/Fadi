@@ -8,6 +8,7 @@
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
 import { estEmplacement } from "./emplacement.js";
+import { estPointDeBase } from "./point-de-base.js";
 import { estComposantDynamique } from "./composants-dynamiques.js";
 import { type RepereEnregistre, repereEnregistreValide } from "./reperes.js";
 import { estNiveau } from "./niveaux.js";
@@ -300,7 +301,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
     if (an["reperes"] !== undefined && !Object.entries(an["reperes"] as object).every(([id, v]) => repereEnregistreValide(v) && v.id === id)) return null;
     if (an["niveaux"] !== undefined && !Object.entries(an["niveaux"] as object).every(([id, v]) => estNiveau(id, v))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
-    if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])))) return null;
+    if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])) && (an["reglages"]["pointDeBase"] === undefined || estPointDeBase(an["reglages"]["pointDeBase"])))) return null;
   }
   return brut as unknown as Modele;
 }
