@@ -90,9 +90,10 @@ const jeton = await page.locator("[data-planche-consultation]").first().getAttri
 check("jeton aléatoire de 32 caractères", /^[A-Za-z0-9_-]{32}$/.test(jeton ?? ""), jeton ?? "");
 await vue.focus();
 await page.keyboard.press("Control+Alt+Digit9");
-await page.waitForSelector("[data-planche-consultations-note]");
-const note = (await page.locator("[data-planche-consultations-note]").textContent()) ?? "";
 const adresse = `${BASE}/consultation/${jeton}`;
+// La note « Lien créé » est déjà affichée : attendre celle de la copie, pas seulement une note.
+await page.waitForFunction((a) => (document.querySelector("[data-planche-consultations-note]")?.textContent ?? "").includes(a), adresse, { timeout: 10000 }).catch(() => {});
+const note = (await page.locator("[data-planche-consultations-note]").textContent()) ?? "";
 check("Ctrl+Alt+9 copie l'adresse du lien", note.includes(adresse), note);
 await page.screenshot({ path: `${OUT}/consultation-panneau.png` });
 
