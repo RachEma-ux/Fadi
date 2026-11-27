@@ -17,7 +17,7 @@ import {
   reglagesControle,
   supprimerFacesInterieures,
 } from "./controle-l3.js";
-import { type Modele, ajouterSegments, estSolide, grouper, modeleVide } from "./geometrie-libre.js";
+import { type Modele, ajouterSegments, estSolide, grouper, modeleVide, peindreFaces } from "./geometrie-libre.js";
 import { type Vec3, v3 } from "./vecteur.js";
 
 const boucle = (ps: Vec3[]) => ps.map((p, i) => [p, ps[(i + 1) % ps.length]!] as const);
@@ -95,6 +95,26 @@ describe("Cas 2, lot 3 : relevé du Contrôle", () => {
     expect(Object.keys(r.racine.faces)).toHaveLength(1);
   });
 
+  it("face percée et face pleine de même contour : jamais proposées comme doubles", () => {
+    let m = face(modeleVide(), [v3(0, 0, 0), v3(4, 0, 0), v3(4, 3, 0), v3(0, 3, 0)]);
+    m = face(m, [v3(1, 1, 0), v3(3, 1, 0), v3(3, 2, 0), v3(1, 2, 0)]);
+    expect(Object.values(m.racine.faces).some((f) => f.trous.length === 1)).toBe(true);
+    m = face(m, [v3(0, 0, 0.0004), v3(4, 0, 0.0004), v3(4, 3, 0.0004), v3(0, 3, 0.0004)]);
+    expect(releverDefauts(m).filter((x) => x.genre === "face-double")).toHaveLength(0);
+  });
+
+  it("face percée presque horizontale : le trou est redressé avec le contour, la face reste plane", () => {
+    const z = (y: number) => (0.05 * y) / 3;
+    let m = face(modeleVide(), [v3(0, 0, z(0)), v3(4, 0, z(0)), v3(4, 3, z(3)), v3(0, 3, z(3))]);
+    m = face(m, [v3(1, 1, z(1)), v3(3, 1, z(1)), v3(3, 2, z(2)), v3(1, 2, z(2))]);
+    const percee = Object.values(m.racine.faces).find((f) => f.trous.length === 1)!;
+    const d = releverDefauts(m).find((x) => x.genre === "presque-horizontale" && x.ids[0] === percee.id)!;
+    expect(d.sommets).toHaveLength(8);
+    const r = corrigerDefaut(m, d).modele;
+    const zs = Object.values(r.racine.sommets).map((s) => s.position.z);
+    expect(Math.max(...zs) - Math.min(...zs)).toBeLessThan(1e-9);
+  });
+
   it("objets : sans balise, hors objet groupé, éloigné de l'origine", () => {
     let m = face(modeleVide(), [v3(0, 0, 0), v3(1, 0, 0), v3(1, 1, 0), v3(0, 1, 0)]);
     const hors = releverDefauts(m).find((x) => x.genre === "hors-objet")!;
@@ -131,6 +151,21 @@ describe("Cas 2, lot 3 : fond DAO, faces intérieures", () => {
     const sansFaces = preparerFondDao(m, { aplatir: true, souder: 0.005, faces: false });
     expect(sansFaces.bilan.faces).toBe(0);
     expect(Object.keys(sansFaces.modele.racine.aretes)).toHaveLength(4);
+  });
+
+  it("fond DAO : une géométrie déjà prête est gardée telle quelle ; une face aplatie garde sa matière", () => {
+    const pret = face(modeleVide(), [v3(0, 0, 0), v3(4, 0, 0), v3(4, 3, 0), v3(0, 3, 0)]);
+    const peint = peindreFaces(pret, Object.keys(pret.racine.faces), "beton").modele;
+    const r = preparerFondDao(peint, { aplatir: true, souder: 0.005, faces: true });
+    expect(r.modele).toBe(peint);
+    expect(r.bilan).toEqual({ aplatis: 0, soudures: 0, faces: 0 });
+    const haut = face(modeleVide(), [v3(0, 0, 0.2), v3(4, 0, 0.2), v3(4, 3, 0.2), v3(0, 3, 0.2)]);
+    const hautPeint = peindreFaces(haut, Object.keys(haut.racine.faces), "beton").modele;
+    const a = preparerFondDao(hautPeint, { aplatir: true, souder: null, faces: true });
+    expect(a.bilan.aplatis).toBe(4);
+    const faces = Object.values(a.modele.racine.faces);
+    expect(faces).toHaveLength(1);
+    expect(faces[0]!.materiauRecto).toBe("beton");
   });
 
   it("faces intérieures retirées : deux boîtes accolées deviennent une seule boîte", () => {

@@ -7,7 +7,7 @@
  * - tolérance d'angle saisie dans le panneau, gardée avec le modèle ;
  * - Ctrl+Maj+F5 : vue « Préparer un fond DAO » ; l'objet sélectionné seul, Préparer en un pas ;
  * - Ctrl+Maj+F12 : vue « Pièces du permis » non évaluée sans fichier ; un fichier de règles d'essai chargé, archivé avec
- *   le modèle, les pièces comptées ; site non rattaché ;
+ *   le modèle et en base, les pièces comptées ; site non rattaché ;
  * - aucune erreur JavaScript. Captures dans OUT.
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/planche-controle node apps/web/e2e/planche-controle-modele.mjs
@@ -96,7 +96,8 @@ check("Ctrl+Maj+F5 : vue « Préparer un fond DAO », titre du panneau complét�
 pas0 = await pas();
 await vueDao.locator("[data-planche-commande='preparer-fond-dao']").click();
 await panneau.locator("[data-planche-controle-note]").waitFor();
-check("Préparer : une opération, le bilan est annoncé", (await pas()) === pas0 + 1, (await panneau.locator("[data-planche-controle-note]").textContent()) ?? "");
+// Le rectangle groupé est déjà plan, soudé et fermé : rien n'est redessiné, aucun pas d'historique inutile.
+check("Préparer : le bilan est annoncé ; une géométrie déjà prête est gardée telle quelle (aucun pas)", (await pas()) === pas0 && ((await panneau.locator("[data-planche-controle-note]").textContent()) ?? "").includes("0"), (await panneau.locator("[data-planche-controle-note]").textContent()) ?? "");
 await panneau.screenshot({ path: `${OUT}/2-fond-dao.png` });
 
 // --- Pièces du permis : non évaluée sans fichier, puis fichier d'essai archivé ----------------------------------------------
@@ -118,6 +119,7 @@ await vuePieces.locator("[data-planche-pieces-charger]").setInputFiles({ name: "
 await page.waitForFunction(() => !!window.fadiPlanche.modele().annotations?.reglages?.reglesPieces);
 const m = await modele();
 check("fichier de règles archivé tel quel avec le modèle, en un pas", m.annotations.reglages.reglesPieces.texte === fichier && (await pas()) === pas0 + 1);
+check("fichier de règles archivé tel quel en base (extension « Contrôle et nettoyage » activée)", m.annotations.reglages.reglesPieces.archive?.empreinte?.length === 64 && (await vuePieces.locator("[data-planche-pieces-archive='oui']").count()) === 1, JSON.stringify(m.annotations.reglages.reglesPieces.refusArchive ?? null));
 check("PC1 0 / 1 (nord non déclaré), PC2 1 / 2 (volumes présents, aucune cote)", ((await vuePieces.locator("[data-planche-piece='PC1']").textContent()) ?? "") === "0 / 1" && ((await vuePieces.locator("[data-planche-piece='PC2']").textContent()) ?? "") === "1 / 2");
 await panneau.screenshot({ path: `${OUT}/3-pieces.png` });
 

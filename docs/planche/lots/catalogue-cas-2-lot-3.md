@@ -33,8 +33,10 @@ par la Planche (d'où l'écart avec la consigne de la maquette, qui disait « F3
 - Les tolérances du relevé (1 mm, 1 mm, 0,5°, 2°, 1 000 m d'origine) sont des tolérances de dessin, modifiables dans le
   panneau et gardées avec le modèle (`reglages.controle`) ; aucun seuil réglementaire.
 - La liste des éléments attendus par pièce n'est pas dans Fadi : elle vient d'un fichier de règles JSON qui cite sa source
-  (`{ source, pieces: [{ code, libelle, attendus: [{ libelle, critere }] }] }`), archivé tel quel avec le modèle
-  (`reglages.reglesPieces.texte`). Sans fichier, la complétude est « non évaluée ». Les critères que la Planche sait
+  (`{ source, pieces: [{ code, libelle, attendus: [{ libelle, critere }] }] }`), archivé tel quel en base
+  (`sandbox_fichiers_extensions`, extension « Contrôle et nettoyage » ; `POST /sandbox/preferences/fichiers` accepte désormais
+  une extension livrée du Sandbox active pour le compte) et avec le modèle (`reglages.reglesPieces.texte`, archive référencée
+  dans `reglesPieces.archive`). Un refus d'archivage en base est montré dans la vue (« non archivé (motif) »). Sans fichier, la complétude est « non évaluée ». Les critères que la Planche sait
   constater : `emplacement`, `nord`, `altitude`, `point-de-base`, `systeme-vertical`, `parcelle`, `cotes`, `niveaux`,
   `textes`, `geometrie` ; tout autre critère est « non évaluable ».
 
@@ -49,8 +51,15 @@ par la Planche (d'où l'écart avec la consigne de la maquette, qui disait « F3
 - Le rattachement au site et la parcelle viennent du site ouvert par le menu « Sites » ; sans site lu, la parcelle est
   « non évaluée ».
 
+## Relecture automatique (27 novembre 2026)
+
+- Faces en double : les trous sont comparés aussi ; une face percée n'est jamais proposée comme double d'une face pleine.
+- Faces presque horizontales / verticales : les sommets des trous sont redressés avec le contour (la face reste plane).
+- Fond DAO : rien d'aplati, de soudé ni de face nouvelle, la géométrie est gardée telle quelle (aucun pas) ; sinon les
+  matières, le masquage, l'adoucissement et la courbe d'appartenance sont reportés sur les faces et arêtes redessinées.
+
 ## Contrôles
 
-`npm run typecheck`, `npm test` (paquets et web ; les tests de l'API demandent une base de test, déclarés non lancés
-localement, lancés par la CI), `npm run build` passés avant le commit ; recette `apps/web/e2e/planche-controle-modele.mjs`
-par la CI de la PR.
+`npm run typecheck`, `npm test` (paquets et web ; les tests de l'API demandent une base de test attestée DB-3, déclarés non
+lancés localement, lancés par la CI), `npm run build` passés avant le commit ; recettes `planche-controle-modele.mjs` et
+`planche-accrochage-saisie.mjs` passées en local sur une base PostGIS, puis par la CI de la PR.

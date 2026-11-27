@@ -3199,6 +3199,27 @@ export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | nul
   });
 }
 
+/** Attributs d'une face ou d'une arête reportés après un redessin (préparation d'un fond DAO, cas 2 lot 3). */
+export type AttributsReportFace = Pick<Face, "materiauRecto" | "materiauVerso" | "masquee">;
+export type AttributsReportArete = Pick<Arete, "adoucie" | "masquee" | "courbe">;
+
+/** Reporte des attributs sur des faces et des arêtes existantes du contexte (les champs absents restent absents). */
+export function reporterAttributs(m: Modele, faces: ReadonlyMap<Id, AttributsReportFace>, aretes: ReadonlyMap<Id, AttributsReportArete>, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const [id, x] of faces) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, { ...f, ...x });
+    }
+    for (const [id, x] of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      // Une courbe disparue entre-temps n'est pas rattachée : l'arête reste libre.
+      const { courbe, ...reste } = x;
+      c.aretes.set(id, { ...a, ...reste, ...(courbe !== undefined && c.courbes.has(courbe) ? { courbe } : {}) });
+    }
+  });
+}
+
 /** Info entité (lot 5) : matière d'un côté donné (recto ou verso) des faces ; `null` rend le côté à la matière par défaut. */
 export function peindreFacesCote(m: Modele, faces: readonly Id[], cote: "recto" | "verso", materiau: Id | null, o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (_t, c) => {

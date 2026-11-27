@@ -331,6 +331,14 @@ function VuePieces(p: ProprietesPanneauControle) {
           <dt>{t("planche.pieces.source")}</dt>
           <dd className={p.regles ? "planche-accrochage-actif" : "planche-controle-lim"} data-planche-pieces-source>{p.regles ? p.regles.source : t("planche.pieces.aucun")}</dd>
         </div>
+        {p.regles && (
+          <div className="planche-accrochage-ligne">
+            <dt>{t("planche.pieces.base")}</dt>
+            <dd className={p.regles.archive ? "planche-accrochage-actif" : "planche-controle-lim"} data-planche-pieces-archive={p.regles.archive ? "oui" : "non"}>
+              {p.regles.archive ? t("planche.pieces.base.archive", { empreinte: p.regles.archive.empreinte.slice(0, 12) }) : t("planche.pieces.base.refus", { motif: t(`planche.pieces.motif.${p.regles.refusArchive ?? "impossible"}` as "planche.pieces.motif.impossible") })}
+            </dd>
+          </div>
+        )}
       </dl>
       <div className="planche-debit-barre">
         <label className="planche-controle-fichier">

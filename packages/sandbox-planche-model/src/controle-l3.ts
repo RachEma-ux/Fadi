@@ -15,6 +15,7 @@
 import { REGLAGES_DEFAUT, type ReglagesPlanche, annotationsDe } from "./annotations.js";
 import {
   type Contexte,
+  type Face,
   type Id,
   type Modele,
   type Resultat,
@@ -29,7 +30,11 @@ import {
   grouper,
   modifierAnnotations,
   ajouterSegments,
+  reporterAttributs,
+  type AttributsReportArete,
+  type AttributsReportFace,
 } from "./geometrie-libre.js";
+import type { ArchiveFichier, MotifRefusArchive } from "./fichiers-extensions.js";
 import { type Vec3, TOL, add, dist, dot, len, normalize, scale, sub, v3 } from "./vecteur.js";
 
 // ————————————————————————————————————————————————————————————— Réglages du contrôle
@@ -148,6 +153,19 @@ function coins(c: Contexte): { s: Id; p: Id; q: Id; face: Id }[] {
   return liste;
 }
 
+/** Deux faces ont les mêmes trous : même nombre, et chaque trou de l'une a son pendant (sommets à moins du seuil) dans l'autre. */
+function memesTrous(c: Contexte, f: Face, g: Face, seuil: number): boolean {
+  if (f.trous.length !== g.trous.length) return false;
+  const restants = g.trous.map((t) => t.map((s) => pos(c, s)));
+  for (const t of f.trous) {
+    const pt = t.map((s) => pos(c, s));
+    const k = restants.findIndex((u) => u.length === pt.length && pt.every((p) => u.some((q) => dist(p, q) <= seuil)));
+    if (k < 0) return false;
+    restants.splice(k, 1);
+  }
+  return true;
+}
+
 /** Relevé de la racine (le contenu des objets n'est pas parcouru) : rien n'est modifié. */
 export function releverDefauts(m: Modele, r: ReglagesControle = reglagesControle(m)): Defaut[] {
   const c = m.racine;
@@ -166,6 +184,8 @@ export function releverDefauts(m: Modele, r: ReglagesControle = reglagesControle
       const pg = g.exterieur.map((s) => pos(c, s));
       if (dist(cf, centre(pg)) > r.superposition + TOL) continue;
       if (!pf.every((p) => pg.some((q) => dist(p, q) <= r.superposition + TOL))) continue;
+      // Les trous comptent aussi : une face percée n'est jamais le double d'une face pleine (suppression proposée).
+      if (!memesTrous(c, f, g, r.superposition + TOL)) continue;
       vuesDoubles.add(g.id);
       const ecart = Math.max(...pf.map((p) => Math.min(...pg.map((q) => dist(p, q)))));
       defauts.push({ genre: "face-double", ids: [f.id, g.id], sommets: [], position: cf, valeur: ecart, correction: "supprimer-double" });
@@ -205,8 +225,10 @@ export function releverDefauts(m: Modele, r: ReglagesControle = reglagesControle
     const versHaut = Math.acos(Math.min(1, Math.abs(n.z))) / RAD; // 0 = horizontale
     const versVertical = 90 - versHaut; // 0 = verticale
     const ps = f.exterieur.map((s) => pos(c, s));
-    if (versHaut > EPS_ANGLE && versHaut <= r.planeite) defauts.push({ genre: "presque-horizontale", ids: [f.id], sommets: [...f.exterieur], position: centre(ps), valeur: versHaut, correction: "redresser-horizontale" });
-    else if (versVertical > EPS_ANGLE && versVertical <= r.planeite) defauts.push({ genre: "presque-verticale", ids: [f.id], sommets: [...f.exterieur], position: centre(ps), valeur: versVertical, correction: "redresser-verticale" });
+    // Tous les contours (extérieur et trous) sont redressés ensemble : la face reste plane.
+    const contours = [...f.exterieur, ...f.trous.flat()];
+    if (versHaut > EPS_ANGLE && versHaut <= r.planeite) defauts.push({ genre: "presque-horizontale", ids: [f.id], sommets: contours, position: centre(ps), valeur: versHaut, correction: "redresser-horizontale" });
+    else if (versVertical > EPS_ANGLE && versVertical <= r.planeite) defauts.push({ genre: "presque-verticale", ids: [f.id], sommets: contours, position: centre(ps), valeur: versVertical, correction: "redresser-verticale" });
   }
   // Objets sans balise.
   for (const o of occs) if (o.balise === undefined) defauts.push({ genre: "sans-balise", ids: [o.id], sommets: [], position: translationDe(o.transformation), valeur: 1, objet: o.id });
@@ -338,21 +360,56 @@ export function preparerFondDao(m: Modele, o: OptionsFondDao, dans?: Id): Result
   const segments = Object.values(c0.aretes)
     .map((a) => [cible.get(a.a)!, cible.get(a.b)!] as const)
     .filter(([p, q]) => dist(p, q) > TOL);
-  let suite: Resultat;
+  let suite: Resultat = { modele: m } as Resultat;
   if (o.faces || aplatis > 0 || soudures > 0) {
     // Redessiner les traits : l'insertion fusionne les extrémités communes et ferme les contours en faces.
     const ids = Object.keys(c0.aretes);
     const vide = ids.length ? effacerAretes(m, ids, opt) : { modele: m };
-    suite = segments.length ? ajouterSegments(vide.modele, segments, opt) : (vide as Resultat);
+    let r: Resultat = segments.length ? ajouterSegments(vide.modele, segments, opt) : (vide as Resultat);
     if (!o.faces) {
       // Faces non demandées : celles que le redessin a créées sont retirées, les traits restent.
       const avant = new Set(Object.keys(c0.faces));
-      const nouvelles = Object.keys(contexte(suite.modele, dans).faces).filter((f) => !avant.has(f));
-      if (nouvelles.length) suite = effacerEntites(suite.modele, nouvelles, opt);
+      const nouvelles = Object.keys(contexte(r.modele, dans).faces).filter((f) => !avant.has(f));
+      if (nouvelles.length) r = effacerEntites(r.modele, nouvelles, opt);
     }
-  } else suite = { modele: m } as Resultat;
+    // Rien d'aplati, de soudé ni de face nouvelle : la géométrie d'origine est gardée telle quelle.
+    if (aplatis > 0 || soudures > 0 || Object.keys(contexte(r.modele, dans).faces).length > faces0) suite = reporterAttributsDao(r, c0, cible, opt);
+  }
   const faces = Math.max(0, Object.keys(contexte(suite.modele, dans).faces).length - faces0);
   return { ...suite, bilan: { aplatis, soudures, faces } };
+}
+
+/** Clé de position d'un point (au dixième de millimètre) pour retrouver une face ou une arête après le redessin. */
+const clePoint = (p: Vec3) => `${Math.round(p.x * 1e4)},${Math.round(p.y * 1e4)},${Math.round(p.z * 1e4)}`;
+const cleContour = (ps: readonly Vec3[]) => ps.map(clePoint).sort().join(";");
+
+/** Matières, masquage, adoucissement et courbe des faces et arêtes d'origine reportés sur leurs homologues redessinées. */
+function reporterAttributsDao(r: Resultat, c0: Contexte, cible: ReadonlyMap<Id, Vec3>, opt: { dans?: Id }): Resultat {
+  const ou = (s: Id) => cible.get(s) ?? pos(c0, s);
+  const facesAvant = new Map<string, AttributsReportFace>();
+  for (const f of Object.values(c0.faces)) {
+    const x: AttributsReportFace = { ...(f.materiauRecto ? { materiauRecto: f.materiauRecto } : {}), ...(f.materiauVerso ? { materiauVerso: f.materiauVerso } : {}), ...(f.masquee ? { masquee: true } : {}) };
+    if (Object.keys(x).length) facesAvant.set(cleContour([...f.exterieur, ...f.trous.flat()].map(ou)), x);
+  }
+  const aretesAvant = new Map<string, AttributsReportArete>();
+  for (const a of Object.values(c0.aretes)) {
+    const x: AttributsReportArete = { ...(a.adoucie ? { adoucie: true } : {}), ...(a.masquee ? { masquee: true } : {}), ...(a.courbe !== undefined ? { courbe: a.courbe } : {}) };
+    if (Object.keys(x).length) aretesAvant.set(cleContour([ou(a.a), ou(a.b)]), x);
+  }
+  if (!facesAvant.size && !aretesAvant.size) return r;
+  const c = contexte(r.modele, opt.dans);
+  const faces = new Map<Id, AttributsReportFace>();
+  for (const f of Object.values(c.faces)) {
+    const x = facesAvant.get(cleContour([...f.exterieur, ...f.trous.flat()].map((s) => pos(c, s))));
+    if (x) faces.set(f.id, x);
+  }
+  const aretes = new Map<Id, AttributsReportArete>();
+  for (const a of Object.values(c.aretes)) {
+    const x = aretesAvant.get(cleContour([pos(c, a.a), pos(c, a.b)]));
+    if (x) aretes.set(a.id, x);
+  }
+  if (!faces.size && !aretes.size) return r;
+  return { ...r, modele: reporterAttributs(r.modele, faces, aretes, opt).modele };
 }
 
 // ————————————————————————————————————————————————————————————— Faces intérieures, volumes fusionnés (n° 113)
@@ -422,6 +479,10 @@ export interface ReglesPieces {
   readonly nomFichier: string;
   readonly texte: string;
   readonly pieces: readonly PieceAttendue[];
+  /** Archive du fichier en base (`sandbox_fichiers_extensions`, D-GD-29), posée par l'interface après l'envoi. */
+  readonly archive?: ArchiveFichier;
+  /** Motif d'un archivage en base refusé : le fichier reste chargé, l'écart est montré. */
+  readonly refusArchive?: MotifRefusArchive;
 }
 
 /** État du site de projet rattaché, lu par l'interface (base `sites_*`) : la Planche ne le devine pas. */

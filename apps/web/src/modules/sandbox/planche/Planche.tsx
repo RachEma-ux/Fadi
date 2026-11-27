@@ -2971,10 +2971,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setNoteControle(lu.erreur);
         return;
       }
-      operer(t("planche.pieces.charger"), (m) => {
-        const message = t("planche.pieces.note.charge", { nom: f.name });
-        setNoteControle(message);
-        return { modele: poserReglesPieces(m, lu.regles).modele, message };
+      // Interface ≠ base de données (D-GD-29) : le fichier est archivé tel quel en base (extension « Contrôle et nettoyage »)
+      // avant d'être posé avec le modèle ; un refus d'archivage est montré, le fichier reste lisible.
+      void archiverFichierExtension("controle", { nom: f.name, texte }).then((issue) => {
+        const regles = issue.ok ? { ...lu.regles, archive: issue.archive } : { ...lu.regles, refusArchive: issue.motif };
+        operer(t("planche.pieces.charger"), (m) => {
+          const message = issue.ok ? t("planche.pieces.note.charge", { nom: f.name }) : t("planche.pieces.note.charge-sans-base", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") });
+          setNoteControle(message);
+          return { modele: poserReglesPieces(m, regles).modele, message };
+        });
       });
     });
   };
