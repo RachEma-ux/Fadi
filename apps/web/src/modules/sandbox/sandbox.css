@@ -190,6 +190,24 @@
   border: 3px solid #fff;
   box-shadow: 0 0 0 1px #00a000;
 }
+.sandbox-planche .planche-marqueur[data-type="quadrant"],
+.sandbox-planche .planche-marqueur[data-type="point-guide"] {
+  background: transparent;
+  border: 2px solid currentColor;
+  box-shadow: none;
+}
+.sandbox-planche .planche-marqueur[data-type="intersection-apparente"],
+.sandbox-planche .planche-marqueur[data-type="croisement"] {
+  background: transparent;
+  border: 2px solid currentColor;
+  box-shadow: none;
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+.sandbox-planche .planche-marqueur[data-type="axe-median"],
+.sandbox-planche .planche-marqueur[data-type="sur-guide"] {
+  border-radius: 0;
+}
 .sandbox-planche .planche-point-reference {
   display: none;
   position: absolute;
@@ -220,6 +238,10 @@
   color: #000;
   font-size: 0.8rem;
   white-space: nowrap;
+}
+.sandbox-planche .planche-infobulle[data-presque] {
+  color: var(--danger, #a12626);
+  border-color: currentColor;
 }
 .sandbox-planche .planche-cadre {
   display: none;
@@ -4620,4 +4642,62 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem 0.6rem;
+}
+/* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
+.sandbox-planche .planche-accrochage h4,
+.sandbox-planche .planche-metre h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-accrochage-genres {
+  margin: 0;
+}
+.sandbox-planche .planche-accrochage-ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0;
+}
+.sandbox-planche .planche-accrochage-ligne dt,
+.sandbox-planche .planche-accrochage-ligne dd {
+  margin: 0;
+}
+.sandbox-planche .planche-accrochage-ligne dd {
+  font-weight: 600;
+  text-align: right;
+}
+.sandbox-planche .planche-accrochage-actif {
+  color: var(--accent, #2f6f4f);
+}
+.sandbox-planche .planche-accrochage-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-accrochage-force button[aria-pressed="true"],
+.sandbox-planche .planche-parametres button[aria-pressed="true"] {
+  background: color-mix(in srgb, #1a5fd6 18%, transparent);
+}
+.sandbox-planche .planche-parametres {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+}
+.sandbox-planche .planche-parametres button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 32px;
+}
+.sandbox-planche .planche-info-titre {
+  margin-top: 8px;
+  font-weight: 600;
+}
+.sandbox-planche .planche-info-large {
+  grid-column: 1 / -1;
 }

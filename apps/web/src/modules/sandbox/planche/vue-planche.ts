@@ -9,8 +9,9 @@
  */
 import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
+import { t } from "../messages";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
@@ -287,6 +288,7 @@ export class VuePlanche {
   private hauteur = 1;
   private demande = 0;
   private inference: Inference | null = null;
+  private presque: Presque | null = null;
   private dernierEcran: Point2 | null = null;
   private pointeurs = new Map<number, Point2>();
   private geste: Geste | null = null;
@@ -895,6 +897,8 @@ export class VuePlanche {
       }
     }
     this.inference = vue?.inference && vue.inference.type !== "aucune" ? vue.inference : null;
+    // (Cas 2, lot 2, n° 17) Presque accroché : signalé près du point, jamais corrigé.
+    this.presque = vue?.inference?.presque ?? null;
     if (vue) {
       const lineaire = vue.inference && INFERENCES_LINEAIRES.has(vue.inference.type);
       const direction = lineaire ? vue.inference!.direction : undefined;
@@ -1058,6 +1062,15 @@ export class VuePlanche {
       return;
     }
     const inf = this.inference;
+    const presque = this.presque;
+    if (presque && this.dernierEcran) {
+      const ecart = presque.genre === "angle-droit" ? `${presque.ecart.toFixed(1).replace(".", ",")}°` : `${Math.round(presque.ecart * 1000)} mm`;
+      this.infobulle.textContent = t(`planche.presque.${presque.genre}`, { ecart });
+      this.infobulle.dataset["presque"] = presque.genre;
+      Object.assign(this.infobulle.style, { display: "block", left: `${this.dernierEcran.x + 16}px`, top: `${this.dernierEcran.y + 18}px` });
+      return;
+    }
+    delete this.infobulle.dataset["presque"];
     if (!inf || !inf.libelle.fr || !this.dernierEcran) {
       this.infobulle.style.display = "none";
       return;
