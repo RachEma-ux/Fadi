@@ -186,6 +186,18 @@ export interface LienPiece {
   readonly haut?: Vec3;
 }
 
+/**
+ * (Cas 4 du catalogue, étape 1 : niveaux d'étage, D4-F5-001) Niveau d'étage nommé : altitude relative au ±0,00 du
+ * dessin (z = 0, en mètres) et hauteur d'étage déclarée. Les objets de la racine qui portent ce niveau
+ * (`Occurrence.niveau`) suivent son altitude. Opérations dans `niveaux.ts`.
+ */
+export interface Niveau {
+  readonly id: Id;
+  readonly nom: string;
+  readonly altitude: number;
+  readonly hauteur: number;
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -210,6 +222,8 @@ export interface Annotations {
   readonly extrusions?: Readonly<Record<Id, Extrusion>>;
   /** (Lot L11) Pièces de profilé liées à leur arête source ; absent = aucune. */
   readonly pieces?: Readonly<Record<Id, LienPiece>>;
+  /** (Cas 4, niveaux d'étage) Niveaux d'étage nommés ; absent = aucun. */
+  readonly niveaux?: Readonly<Record<Id, Niveau>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -236,6 +250,7 @@ export interface AnnotationsMutables {
   reglages?: ReglagesPlanche;
   extrusions: Record<Id, Extrusion>;
   pieces: Record<Id, LienPiece>;
+  niveaux: Record<Id, Niveau>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;
