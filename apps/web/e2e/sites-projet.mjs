@@ -127,7 +127,9 @@ const exemple = page.url().split("?")[0];
 const idExemple = exemple.split("/").pop();
 const copie = await page.evaluate(async (id) => (await fetch(`/projects/${id}/copies`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: "{}" })).json(), idExemple);
 await page.goto(`${exemple.replace(idExemple, copie.id)}?module=parcours&etape=1`);
-await page.waitForFunction(() => !!document.querySelector("[data-site-projet]") || !!document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("[data-site-projet]"), null, { timeout: 60000 });
+// Le panneau Harmonie est d'abord rendu sous l'outil, puis déplacé dans la colonne gauche de l'outil Parcelle (iframe)
+// dès qu'elle est prête : on attend cette place définitive, sinon le bloc disparaît sous le clic.
+await page.waitForFunction(() => !!document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("[data-site-projet]"), null, { timeout: 60000 }).catch(() => undefined);
 const dansCadre = await page.evaluate(() => !document.querySelector("[data-site-projet]"));
 const slot = dansCadre ? page.frameLocator(".parcelle-tool iframe").locator("body") : page.locator("body");
 const pli = slot.locator("details.h7-fold:has(> summary:has-text('Données du site, hypothèses'))").first();

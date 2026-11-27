@@ -11,7 +11,8 @@
  * Le schéma est calculé par `@parcours/domain-model` sur le contour local
  * servi par l'API ; rien n'est dessiné à partir d'une parcelle inventée.
  */
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SITE_OBSERVATION_LABELS, SITE_SVG_EMPTY, fmtFr, siteLegend, siteSvg } from "@parcours/domain-model";
 import { api, type HarmonieProposal, type ParcoursStep, type SiteObservationsInput, type SiteProjetResume, type SiteView } from "../../lib/api";
 import { MapTilerCard } from "./MapTilerCard";
@@ -261,16 +262,14 @@ export function SiteDataFold({
  * dans un site du compte, que la Planche (menu « Sites ») et GeoData (bouton « Sites ») ouvrent ensuite.
  */
 function SiteProjetBloc({ projectId }: { projectId: string }) {
-  const [site, setSite] = useState<SiteProjetResume | null | undefined>(undefined);
+  // Lecture partagée par TanStack Query : un seul appel même si le pli est remonté (recette appels-doublons).
+  const cle = ["site-projet", projectId] as const;
+  const client = useQueryClient();
+  const lecture = useQuery({ queryKey: cle, queryFn: () => api.getSiteProjet(projectId).then((r) => r.site), retry: false });
+  const site: SiteProjetResume | null | undefined = lecture.isPending ? undefined : lecture.isError ? null : lecture.data;
+  const setSite = (s: SiteProjetResume | null) => client.setQueryData(cle, s);
   const [etat, setEtat] = useState<{ texte: string; erreur: boolean } | null>(null);
   const [occupe, setOccupe] = useState(false);
-  useEffect(() => {
-    let actif = true;
-    api.getSiteProjet(projectId).then((r) => actif && setSite(r.site), () => actif && setSite(null));
-    return () => {
-      actif = false;
-    };
-  }, [projectId]);
   const enregistrer = () => {
     setOccupe(true);
     setEtat(null);
