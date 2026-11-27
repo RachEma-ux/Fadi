@@ -264,6 +264,31 @@ describe("extension « Parois, baies et structure » — baies (n° 13) et mur p
     expect([p.etat.pas, q.etat.pas]).toEqual([[], []]);
   });
 
+  it("deux murs alignés qui se touchent par un bord restent deux murs : la qualification de l'un n'est pas prêtée à l'autre", async () => {
+    const a = mur();
+    const b = mur(a.modele, 4, 0, 4);
+    const p = planche(b.modele);
+    p.etat.selection = [a.face];
+    await p.action("marquer-mur", { onglet: "porteur", valeurs: { etat: "existant", porteur: "oui", nom: "Mur sur rue" } });
+    expect(valeur(await p.action("etat", { onglet: "baies", valeurs: BAIE }), "Mur")).toBe("existant, porteur");
+    p.etat.selection = [b.face];
+    expect(valeur(await p.action("etat", { onglet: "baies", valeurs: BAIE }), "Mur")).toBe("non qualifié");
+  });
+
+  it("une face plus proche mais ailleurs (hors de l'étendue du mur) n'est pas prise pour la face opposée", async () => {
+    const { modele, face } = mur();
+    // Panneau à 0,10 m derrière le plan du mur, mais à côté de lui (x de 6 à 8), tourné vers lui.
+    const avec = [ajouterRectangle(modele, v3(6, 0.1, 0), v3(2, 0, 0), v3(0, 0, 2.5)).modele, ajouterRectangle(modele, v3(6, 0.1, 0), v3(0, 0, 2.5), v3(2, 0, 0)).modele];
+    const m = avec.find((x) => Object.entries(x.racine.faces).some(([id, f]) => !modele.racine.faces[id] && f.normale.y > 0.99))!;
+    const p = planche(m);
+    p.etat.selection = [face];
+    const e = await p.action("etat", { onglet: "baies", valeurs: BAIE });
+    expect(valeur(e, "Épaisseur traversée (face opposée)")).toBe("0,30 m");
+    await p.action("percer-baie", { onglet: "baies", valeurs: BAIE });
+    expect(p.derniereAlerte()).toBe("");
+    expect(p.etat.pas).toEqual(["Percer une baie"]);
+  });
+
   it("mur marqué existant et porteur : incidences signalées, intervention consignée, relevé exporté ; la Planche ne calcule rien", async () => {
     const { modele, face } = mur();
     const p = planche(modele);

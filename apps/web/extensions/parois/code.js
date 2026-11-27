@@ -356,8 +356,15 @@ function murDe(murs, face, n) {
   var p = face.points[0];
   return murs.filter(function (r) {
     if (Math.abs(Math.abs(scal(r.n, n)) - 1) > 1e-6 || Math.abs(scal(r.n, sous(p, r.p))) > 1e-4) return false;
-    for (var k = 0; k < 3; k++) if (b.max[k] < r.min[k] - 1e-4 || b.min[k] > r.max[k] + 1e-4) return false;
-    return true;
+    // Recouvrement d'une étendue non nulle dans le plan du mur : deux murs qui se touchent seulement par un bord ou un
+    // coin restent deux murs (une qualification n'est jamais prêtée à un mur qui ne l'a pas reçue).
+    var recouvre = 0;
+    for (var k = 0; k < 3; k++) {
+      var o = Math.min(b.max[k], r.max[k]) - Math.max(b.min[k], r.min[k]);
+      if (o < -1e-4) return false;
+      if (o > 1e-4) recouvre++;
+    }
+    return recouvre >= 2;
   })[0] || null;
 }
 /** Ajoute ou complète le mur qualifié de cette face ; rend la fiche. Appelé dans une opération ouverte. */
@@ -540,6 +547,13 @@ async function preparerBaie(m) {
     if (scal(nf, n) > -1 + 1e-6) return;
     var e = scal(sous(p0, f.points[0]), n);
     if (!(e > EPS) || e > 2) return;
+    // Seule une face qui se trouve derrière celle choisie (recouvrement en plan du mur) peut être son dos.
+    var q = f.points.map(deux);
+    var fs = q.map(function (y) { return y[0]; });
+    var fz = q.map(function (y) { return y[1]; });
+    var zmax = Math.max.apply(null, poly.map(function (y) { return y[1]; }));
+    if (Math.min(smax, Math.max.apply(null, fs)) - Math.max(smin, Math.min.apply(null, fs)) <= EPS) return;
+    if (Math.min(zmax, Math.max.apply(null, fz)) - Math.max(zmin, Math.min.apply(null, fz)) <= EPS) return;
     if (!opposee || e < opposee.e) opposee = { face: f, e: e };
   });
   var g = await mursGardes();
