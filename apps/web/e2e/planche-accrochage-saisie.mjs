@@ -130,11 +130,14 @@ await page.screenshot({ path: `${OUT}/3-metre-mesure.png` });
 await fermer("metre-mesure");
 
 // --- Info entité d'une arête : longueur saisie --------------------------------------------------------------------------
-// L'arête seule : visée à plusieurs points de sa longueur (les guides du Mètre posés au-dessus du milieu peuvent gagner le
-// pixel visé), sélection vidée entre deux essais.
+// Les guides du Mètre gagnent le pixel visé sur l'arête : ils sont retirés par deux annulations (réseau, puis guide) avant
+// de sélectionner l'arête seule, visée à plusieurs points de sa longueur, sélection vidée entre deux essais.
 const idArete = Object.entries(m1.racine.aretes).find(([, a]) => a.a === arete.a && a.b === arete.b)[0];
 await vue.focus();
 await page.keyboard.press("Escape");
+await page.keyboard.press("Control+z");
+await page.keyboard.press("Control+z");
+await page.waitForFunction((n) => Object.keys(window.fadiPlanche.modele().annotations?.guides ?? {}).length === n, g0);
 await page.keyboard.press(" ");
 let selArete = [];
 for (const t of [0.25, 0.5, 0.75, 0.4]) {
