@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -340,6 +340,40 @@ export function disponibiliteScripts(id: IdCommandeScripts, s: { readonly vide: 
   if (id === "scripts") return { disponible: true, motif: null };
   if (s.enCours) return { disponible: false, motif: "planche.scripts.motif.encours" };
   return s.vide ? { disponible: false, motif: "planche.scripts.motif.vide" } : { disponible: true, motif: null };
+}
+
+/**
+ * Niveaux d'étage (cas 4 du catalogue, étape 1) : ouvrir le panneau, ajouter un niveau, travailler sur le niveau
+ * choisi (plan de travail à son altitude), rattacher la sélection au niveau choisi (règle d'or : icône, barre, raccourci).
+ */
+export type IdCommandeNiveau = "niveaux" | "ajouter-niveau" | "travailler-niveau" | "rattacher-niveau";
+export interface CommandeNiveau {
+  readonly id: IdCommandeNiveau;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_NIVEAUX: readonly CommandeNiveau[] = [
+  { id: "niveaux", ...depuisRegistre("niveaux"), libelle: "planche.niveaux.ouvrir", court: "planche.niveaux.court.ouvrir" },
+  { id: "ajouter-niveau", ...depuisRegistre("ajouter-niveau"), libelle: "planche.niveaux.ajouter", court: "planche.niveaux.court.ajouter" },
+  { id: "travailler-niveau", ...depuisRegistre("travailler-niveau"), libelle: "planche.niveaux.travailler", court: "planche.niveaux.court.travailler" },
+  { id: "rattacher-niveau", ...depuisRegistre("rattacher-niveau"), libelle: "planche.niveaux.rattacher", court: "planche.niveaux.court.rattacher" },
+];
+
+/**
+ * Disponibilité : le panneau toujours ; ajouter hors lecture ; travailler avec un niveau choisi (le plan de travail est
+ * un état d'interface, permis en lecture) ; rattacher hors lecture, à la racine, avec un niveau choisi et au moins un
+ * objet (groupe ou composant) sélectionné.
+ */
+export function disponibiliteNiveau(id: IdCommandeNiveau, s: { readonly choisi: boolean; readonly objets: number; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "niveaux") return { disponible: true, motif: null };
+  if (id === "travailler-niveau") return s.choisi ? { disponible: true, motif: null } : { disponible: false, motif: "planche.niveaux.motif.choisi" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "ajouter-niveau") return { disponible: true, motif: null };
+  if (!s.choisi) return { disponible: false, motif: "planche.niveaux.motif.choisi" };
+  if (s.dansObjet) return { disponible: false, motif: "planche.niveaux.motif.racine" };
+  return s.objets > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.niveaux.motif.objets" };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */

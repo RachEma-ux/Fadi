@@ -126,6 +126,19 @@ describe("Extension « Contrôle et nettoyage » — disponibilité des commande
     expect(disponibiliteEmplacement("nord-arete", { arete: false, position: true, lecture: false }).motif).toBe("planche.emplacement.motif.arete");
     expect(disponibiliteEmplacement("nord-arete", { arete: true, position: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
   });
+  it("Niveaux : panneau toujours ; travailler avec un niveau choisi ; ajouter et rattacher hors lecture, rattacher à la racine avec des objets", async () => {
+    const { disponibiliteNiveau } = await import("./commandes-objets");
+    const s = { choisi: true, objets: 2, dansObjet: false, lecture: false };
+    expect(disponibiliteNiveau("niveaux", { ...s, choisi: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteNiveau("travailler-niveau", { ...s, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteNiveau("travailler-niveau", { ...s, choisi: false }).motif).toBe("planche.niveaux.motif.choisi");
+    expect(disponibiliteNiveau("ajouter-niveau", { ...s, choisi: false, objets: 0 }).disponible).toBe(true);
+    expect(disponibiliteNiveau("ajouter-niveau", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteNiveau("rattacher-niveau", s).disponible).toBe(true);
+    expect(disponibiliteNiveau("rattacher-niveau", { ...s, choisi: false }).motif).toBe("planche.niveaux.motif.choisi");
+    expect(disponibiliteNiveau("rattacher-niveau", { ...s, dansObjet: true }).motif).toBe("planche.niveaux.motif.racine");
+    expect(disponibiliteNiveau("rattacher-niveau", { ...s, objets: 0 }).motif).toBe("planche.niveaux.motif.objets");
+  });
 });
 
 describe("Extension « Composants dynamiques » — commandes et liste de choix", () => {
