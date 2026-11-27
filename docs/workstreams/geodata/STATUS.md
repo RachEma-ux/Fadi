@@ -9,7 +9,11 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
-- Améliorations équipe A, jalon E P8-P10 légende (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+- Améliorations équipe A, jalon F P11-P14 site (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+  accepté. Sélection extraite, routes `versions/etats` et `proximite`, lecture de site et référence (modèle pur testé),
+  volet « Que sait-on d'ici ? » (contrôles « P13 », « P14 » de `geodata.mjs`), captures `captures/p13/`. Feuille de
+  route de l'équipe A entièrement livrée.
+- Améliorations équipe A, jalon E P8-P10 légende (PR #494, fusionnée) : **implémenté et vérifié**, non
   accepté. Version et couverture dans l'API, légende lue (modèle pur testé), hachures de la valeur absente (contrôles
   « P8 » à « P10 » de `geodata.mjs`), captures `captures/p9/`.
 - Améliorations équipe A, jalon D P6-P7 clavier (PR #491, fusionnée) : **implémenté et vérifié**, non
