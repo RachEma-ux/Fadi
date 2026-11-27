@@ -119,7 +119,8 @@ export const valeursInitiales = (demande: DemandeSaisie): ValeursSaisie => Objec
 
 /** Lit un nombre saisi (virgule ou point décimal) ; `null` = illisible. */
 export function lireNombreSaisi(texte: string): number | null {
-  const t = texte.trim().replace(/\s/g, "").replace(",", ".");
+  // Le signe moins typographique (U+2212) que rendent les nombres mis en forme est relu comme « - ».
+  const t = texte.trim().replace(/\s/g, "").replace(/\u2212/g, "-").replace(",", ".");
   if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(t)) return null;
   const n = Number(t);
   return Number.isFinite(n) ? n : null;

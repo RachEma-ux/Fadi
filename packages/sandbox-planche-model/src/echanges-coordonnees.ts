@@ -4,14 +4,16 @@
  * Choix explicite : « modèle » (défaut, coordonnées stockées), « travail » (coordonnées exprimées dans le repère de
  * travail : origine et axes du repère, mètres) ou « source » (unité du fichier importé, seulement si une
  * correspondance a été consignée à l'import et qu'elle est unique). Un choix non pris en charge est refusé avec son
- * motif, jamais approché en silence. Le document n'est jamais modifié : on exporte une copie transformée.
+ * motif, jamais approché en silence. Cas 4, étape 2 : « projete » (coordonnées projetées E, N, H : point de base du
+ * projet et niveau de référence déclarés, sinon refus). Le document n'est jamais modifié : on exporte une copie transformée.
  */
 import type { Repere } from "./annotations.js";
 import { type Matrice4, type Modele, appliquer, composer, redimensionner, transformerNormale } from "./geometrie-libre.js";
 import { normalize } from "./vecteur.js";
 import { REPERE_DU_MODELE, validerRepere } from "./reperes.js";
+import { repereProjete } from "./point-de-base.js";
 
-export type CoordonneesExport = "modele" | "travail" | "source";
+export type CoordonneesExport = "modele" | "travail" | "source" | "projete";
 export type FormatExport = "obj" | "stl" | "ifc";
 
 export const MOTIFS_COORDONNEES = Object.freeze({
@@ -19,6 +21,8 @@ export const MOTIFS_COORDONNEES = Object.freeze({
   sourceMultiple: "Plusieurs imports d'unités différentes : aucune coordonnée d'origine unique.",
   sourceIfc: "L'export IFC déclare ses unités (mètres) : un export en unité source y serait faux. Choisissez OBJ ou STL.",
   repere: "Repère de travail invalide.",
+  projete: "Aucun point de base du projet déclaré (panneau Emplacement) : les coordonnées projetées ne sont pas connues.",
+  projeteReference: "Aucun niveau de référence déclaré (panneau Niveaux) : l'altitude H n'est pas connue.",
 });
 
 /** Copie du modèle exprimée dans le repère `r` (monde → local) ; la géométrie stockée n'est pas touchée. */
@@ -43,7 +47,11 @@ export type ResultatCoordonnees =
   | { readonly ok: false; readonly motif: string };
 
 /** Disponibilité d'un choix (motif sinon), pour l'interface. */
-export function disponibiliteCoordonnees(m: Modele, choix: CoordonneesExport, format: FormatExport): string | null {
+export function disponibiliteCoordonnees(m: Modele, choix: CoordonneesExport, format: FormatExport, reference: number | null = null): string | null {
+  if (choix === "projete") {
+    if (!m.annotations?.reglages?.pointDeBase) return MOTIFS_COORDONNEES.projete;
+    return reference === null ? MOTIFS_COORDONNEES.projeteReference : null;
+  }
   if (choix !== "source") return null;
   if (format === "ifc") return MOTIFS_COORDONNEES.sourceIfc;
   const unites = new Set(Object.values(m.annotations?.correspondances ?? {}).map((c) => c.metresParUnite));
@@ -53,9 +61,14 @@ export function disponibiliteCoordonnees(m: Modele, choix: CoordonneesExport, fo
 }
 
 /** Modèle à exporter selon le choix ; refus explicite si le choix n'est pas pris en charge. */
-export function modeleAExporter(m: Modele, choix: CoordonneesExport, format: FormatExport, repereTravail: Repere | null): ResultatCoordonnees {
-  const motif = disponibiliteCoordonnees(m, choix, format);
+export function modeleAExporter(m: Modele, choix: CoordonneesExport, format: FormatExport, repereTravail: Repere | null, reference: number | null = null): ResultatCoordonnees {
+  const motif = disponibiliteCoordonnees(m, choix, format, reference);
   if (motif) return { ok: false, motif };
+  const pb = m.annotations?.reglages?.pointDeBase;
+  if (choix === "projete" && pb && reference !== null) {
+    const r = repereProjete(pb, reference);
+    return { ok: true, modele: modeleDansRepere(m, r), unite: "m", repere: r };
+  }
   if (choix === "modele") return { ok: true, modele: m, unite: "m", repere: null };
   if (choix === "travail") {
     const r = repereTravail ?? REPERE_DU_MODELE;

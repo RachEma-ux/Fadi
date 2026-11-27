@@ -4312,3 +4312,39 @@
   background: #1b4d42;
   border-color: #1b4d42;
 }
+/* Cas 4, étape 2 : point de base du projet (section du panneau Emplacement). */
+.sandbox-planche .planche-point-de-base {
+  border-top: 1px solid rgba(27, 77, 66, 0.18);
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.9rem 0;
+}
+.sandbox-planche .planche-point-de-base h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0.3rem;
+}
+.sandbox-planche .planche-point-de-base h4 small {
+  margin-left: auto;
+  font-weight: 400;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-point-de-base-formulaire {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-point-de-base-formulaire input {
+  width: 100%;
+  min-width: 0;
+}
+.sandbox-planche .planche-point-de-base-h {
+  padding: 0.3rem 0.4rem;
+  border: 1px dashed rgba(27, 77, 66, 0.35);
+  border-radius: 6px;
+}
+.sandbox-planche .planche-point-de-base .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}

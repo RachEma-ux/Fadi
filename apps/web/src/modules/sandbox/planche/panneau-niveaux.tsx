@@ -36,7 +36,6 @@ export function PanneauNiveaux({
   onChoisir,
   onModifier,
   onAjouter,
-  onSupprimer,
   onReference,
   executer,
   disponibilite,
@@ -57,7 +56,6 @@ export function PanneauNiveaux({
   onModifier: (id: Id, s: SaisieNiveau) => void;
   /** Sans niveau, « Ajouter » prend la saisie du formulaire. */
   onAjouter: (s: SaisieNiveau) => void;
-  onSupprimer: (id: Id) => void;
   onReference: (texte: string) => void;
   executer: (id: IdCommandeNiveau) => void;
   disponibilite: (id: IdCommandeNiveau) => Disponibilite;
@@ -127,7 +125,6 @@ export function PanneauNiveaux({
             </button>
           );
         })}
-        <button type="button" disabled={lecture || !courant} onClick={() => courant && onSupprimer(courant.id)} data-planche-niveaux-supprimer>{t("planche.niveaux.supprimer")}</button>
       </div>
       <div className="planche-debit-reglages planche-niveaux-formulaire">
         {CHAMPS.map((c) => (
