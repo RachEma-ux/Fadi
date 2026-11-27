@@ -398,6 +398,13 @@ attendu nz "show : lien symbolique refusé" "chemin refusé" -- fp show "$RUNID"
 printf '{"commit":"%s","resultat":"succes"}\n' "$(git -C "$B/src" rev-parse HEAD)" > "$B/etat.json"
 attendu 0  "status : état du déploiement automatique affiché" '"resultat":"succes"' -- fp status
 attendu 0  "show : état du déploiement automatique affiché" '"resultat":"succes"' -- fp show
+# Verrou (27.11.2026) : un chevauchement bref attend au lieu d'échouer ; aucun processus ne garde le verrou après sync.
+( flock "$B/.verrou" sleep 3 ) & sleep 0.5
+attendu 0  "verrou tenu 3 s : la commande attend puis passe" '"resultat":"succes"' -- fp status
+wait
+grep -q 'flock -w 120 9' "$SCRIPT" && grep -q 'maintenance.auto=false' "$SCRIPT" && grep -q '9>&-' "$SCRIPT" \
+  && { ok=$((ok + 1)); echo "✓ sync : git sans maintenance détachée ni descripteur du verrou"; } \
+  || { ko=$((ko + 1)); echo "✗ sync : git peut garder le verrou après sync"; }
 
 echo "== Terrain haute résolution (fadi-preprod terrain, TER-02)"
 B=$(dispo terrain); : > "$T/trace-terrain"
