@@ -112,6 +112,10 @@ export interface MoteurCarte {
   definirOutil(outil: OutilCarte): void;
   terminerTrace(): void;
   annulerTrace(): void;
+  /** Voie clavier (P7) : ajoute un sommet au tracé, au centre de la carte par défaut (Espace) ; rend le nombre de sommets. */
+  ajouterSommet(point?: readonly [number, number]): number;
+  /** Voie clavier (P7) : retire le dernier sommet (Retour arrière) ; rend le nombre de sommets restants. */
+  retirerSommet(): number;
   /** Toutes les tuiles visibles sont-elles chargées (export sans trou) ? Attend au plus `delaiMs`. */
   attendreChargement(delaiMs: number): Promise<boolean>;
   /** Image de la carte telle qu'affichée (canevas WebGL). */

@@ -130,15 +130,19 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     src.setData({ type: "FeatureCollection", features });
   };
 
+  /** Sommet ajouté par un clic ou par la voie clavier (P7) ; rend le nombre de sommets du tracé en cours. */
+  const ajouter = (lon: number, lat: number): number => {
+    if (outil === "navigation") return 0;
+    sommets.push([Number(lon.toFixed(7)), Number(lat.toFixed(7))]);
+    // Un clic suffit à l'annotation et à l'altitude au point (TER-05).
+    if (outil === "annotation" || outil === "altitude") { ev.surTraceTermine(outil, sommets); sommets = []; dessinerTrace(); return 1; }
+    ev.surTrace(outil, sommets);
+    dessinerTrace();
+    return sommets.length;
+  };
+
   carte.on("click", (e: MapMouseEvent) => {
-    if (outil !== "navigation") {
-      sommets.push([Number(e.lngLat.lng.toFixed(7)), Number(e.lngLat.lat.toFixed(7))]);
-      // Un clic suffit à l'annotation et à l'altitude au point (TER-05).
-      if (outil === "annotation" || outil === "altitude") { ev.surTraceTermine(outil, sommets); sommets = []; }
-      else ev.surTrace(outil, sommets);
-      dessinerTrace();
-      return;
-    }
+    if (outil !== "navigation") { ajouter(e.lngLat.lng, e.lngLat.lat); return; }
     // Instant de l'événement d'entrée (horloge du navigateur), pas celui du traitement : sur téléphone, le rendu de la
     // sélection précédente retarde la remise du clic suivant de plusieurs centaines de millisecondes.
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
@@ -497,6 +501,17 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     },
     terminerTrace: terminer,
     annulerTrace() { sommets = []; dessinerTrace(); },
+    ajouterSommet(point) {
+      const c = point ?? (() => { const m = carte.getCenter(); return [m.lng, m.lat] as const; })();
+      return ajouter(c[0], c[1]);
+    },
+    retirerSommet() {
+      if (outil === "navigation" || !sommets.length) return sommets.length;
+      sommets.pop();
+      ev.surTrace(outil, sommets);
+      dessinerTrace();
+      return sommets.length;
+    },
     async attendreChargement(delaiMs) {
       // Carte principale, puis mini-carte de situation si elle est affichée (elle charge ses tuiles à part) : une image
       // n'est produite que si les deux sont complètes, jamais avec un encart vide.

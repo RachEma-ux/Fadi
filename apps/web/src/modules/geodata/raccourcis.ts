@@ -17,7 +17,8 @@ export type CommandeClavier =
 
 /**
  * Quand une commande répond : `toujours` (même dans un champ de saisie), `hors-saisie`, `hors-saisie-sauf-recherche`
- * (aussi depuis le champ de la recherche flottante) ; `carte` : seulement si la carte est disponible.
+ * (aussi depuis le champ de la recherche flottante) ; `carte` : seulement si la carte est disponible. Altitude et profil
+ * (Alt+O, Alt+U) répondent aussi sans carte depuis P7 : ils ouvrent leur saisie de coordonnées.
  */
 export interface Raccourci {
   readonly commande: CommandeClavier;
@@ -49,8 +50,8 @@ export const RACCOURCIS: readonly Raccourci[] = [
   r("zone", "Alt+Z", "Retirer ou rétablir le filtre de zone"),
   r("emplacements", "Alt+J", LIBELLE_EMPLACEMENTS),
   r("terrain", "Alt+H", "Terrain"),
-  r("altitude", "Alt+O", "Altitude au point", "hors-saisie", true),
-  r("profil", "Alt+U", "Profil du terrain", "hors-saisie", true),
+  r("altitude", "Alt+O", "Altitude au point"),
+  r("profil", "Alt+U", "Profil du terrain"),
   r("remonter", "Alt+ArrowUp", "Remonter d'un niveau"),
   r("descendre", "Alt+ArrowDown", "Descendre d'un niveau"),
   r("groupe-mesurer", "Alt+N", "Ouvrir le groupe « Mesurer et tracer »"),

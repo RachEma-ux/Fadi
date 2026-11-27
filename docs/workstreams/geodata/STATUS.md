@@ -9,7 +9,10 @@ Mis à jour : 2026-11-03 (UTC).
 
 ## Faits vérifiés
 
-- Améliorations équipe A, jalon C P3-P5 commandes (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+- Améliorations équipe A, jalon D P6-P7 clavier (branche `claude/project-thread-q30312`) : **implémenté et vérifié**, non
+  accepté. Outils extraits (tests purs), saisie de coordonnées et voie clavier (contrôles « P7 » de `geodata.mjs`),
+  captures `captures/p7/`.
+- Améliorations équipe A, jalon C P3-P5 commandes (PR #487, fusionnée) : **implémenté et vérifié**, non
   accepté. Table unique des raccourcis et panneaux extraits (tests purs), groupes nommés et aide « ? » (contrôles « P5 » de
   `geodata.mjs`), captures `captures/p5/` ; décisions D3 à D5 prises selon la recommandation.
 - Améliorations équipe A, P2 carte robuste (PR #482) : **implémenté et vérifié**, non accepté.
