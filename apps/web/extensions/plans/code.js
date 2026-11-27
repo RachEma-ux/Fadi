@@ -72,6 +72,13 @@ var T = {
     roleDe: function (c) { return "Rôle du calque « " + c + " »"; },
     champRole: "Rôle",
     dxfCharge: function (n) { return "DXF chargé : " + n + " calques."; },
+    uniteLue: function (u, declaree) { return "Coordonnées converties en mètres depuis l'unité " + (declaree ? "déclarée par le fichier" : "choisie") + " : " + u + "."; },
+    arcsDecoupes: function (n) { return n + (n > 1 ? " segments courbes (renflements) découpés" : " segment courbe (renflement) découpé") + " en cordes de 7,5° au plus."; },
+    titreUnite: "Unité du fichier DXF",
+    champUnite: "Unité non déclarée : choisissez-la",
+    unites: { m: "mètre", dm: "décimètre", cm: "centimètre", mm: "millimètre", ft: "pied", in: "pouce" },
+    sansUnite: "l'unité des coordonnées n'est pas déclarée et n'a pas été choisie",
+    modeleNonGarde: "Correspondance non gardée (place des modèles épuisée) ; la relecture continue.",
     dxfRefuse: "DXF refusé : ",
     dxfVide: "aucune entité dans la section ENTITIES",
     dxfIllisible: "le fichier n'est pas un DXF texte (ASCII) lisible",
@@ -124,6 +131,13 @@ var T = {
     roleDe: function (c) { return "Role of layer « " + c + " »"; },
     champRole: "Role",
     dxfCharge: function (n) { return "DXF loaded: " + n + " layers."; },
+    uniteLue: function (u, declaree) { return "Coordinates converted to metres from the " + (declaree ? "unit declared by the file" : "chosen unit") + ": " + u + "."; },
+    arcsDecoupes: function (n) { return n + (n > 1 ? " curved segments (bulges) split" : " curved segment (bulge) split") + " into chords of 7.5° at most."; },
+    titreUnite: "DXF file unit",
+    champUnite: "Unit not declared: choose it",
+    unites: { m: "metre", dm: "decimetre", cm: "centimetre", mm: "millimetre", ft: "foot", in: "inch" },
+    sansUnite: "the coordinate unit is not declared and was not chosen",
+    modeleNonGarde: "Mapping not kept (template space used up); the review continues.",
     dxfRefuse: "DXF refused: ",
     dxfVide: "no entity in the ENTITIES section",
     dxfIllisible: "the file is not a readable text (ASCII) DXF",
@@ -201,7 +215,48 @@ async function bordDroit() {
 
 // ——————————————————————————————————————————————— Lecture du DXF
 
-/** Lecteur DXF texte : entités comptées par calque ; lignes, polylignes, points et cercles gardés. */
+/** Unités DXF ($INSUNITS) reconnues : facteur vers le mètre. Toute autre valeur (0 compris) n'est pas une déclaration. */
+var UNITES = { m: 1, dm: 0.1, cm: 0.01, mm: 0.001, ft: 0.3048, in: 0.0254 };
+var INSUNITS = { 1: "in", 2: "ft", 4: "mm", 5: "cm", 6: "m", 14: "dm" };
+/** Pas angulaire maximal d'un segment courbe (renflement, code 42) découpé en cordes. */
+var PAS_ARC = Math.PI / 24;
+
+/**
+ * Points d'un segment courbe de a vers b (renflement r = tan(angle / 4), positif dans le sens trigonométrique),
+ * sans a et sans b : cordes d'au plus PAS_ARC.
+ */
+function pointsArc(a, b, r) {
+  var dx = b[0] - a[0], dy = b[1] - a[1];
+  var c = Math.sqrt(dx * dx + dy * dy);
+  var theta = 4 * Math.atan(r);
+  if (!(c > 0) || !isFinite(theta) || Math.abs(theta) < 1e-9) return [];
+  var h = (c / 2) / Math.tan(theta / 2);
+  var cx = (a[0] + b[0]) / 2 - dy / c * h, cy = (a[1] + b[1]) / 2 + dx / c * h;
+  var rayon = Math.sqrt((a[0] - cx) * (a[0] - cx) + (a[1] - cy) * (a[1] - cy));
+  var a0 = Math.atan2(a[1] - cy, a[0] - cx);
+  var n = Math.max(2, Math.ceil(Math.abs(theta) / PAS_ARC));
+  var l = [];
+  for (var i = 1; i < n; i++) {
+    var t = i / n;
+    l.push([cx + rayon * Math.cos(a0 + theta * t), cy + rayon * Math.sin(a0 + theta * t), a[2] + (b[2] - a[2]) * t]);
+  }
+  return l;
+}
+/** Sommets d'une polyligne avec leurs renflements : les segments courbes sont découpés ; rend aussi leur nombre. */
+function deplier(sommets, renflements, ferme) {
+  var pts = [];
+  var arcs = 0;
+  for (var i = 0; i < sommets.length; i++) {
+    pts.push(sommets[i]);
+    var j = i + 1 < sommets.length ? i + 1 : ferme ? 0 : -1;
+    if (j < 0 || !renflements[i]) continue;
+    var q = pointsArc(sommets[i], sommets[j], renflements[i]);
+    if (q.length) { arcs++; pts = pts.concat(q); }
+  }
+  return { points: pts, arcs: arcs };
+}
+
+/** Lecteur DXF texte : entités comptées par calque ; lignes et polylignes gardées, segments courbes découpés. */
 function lireDxf(nom, brut) {
   var x = tx();
   var l = texte(brut).replace(/^﻿/, "").split(/\r?\n/);
@@ -211,6 +266,12 @@ function lireDxf(nom, brut) {
     var c = Number(l[i].trim());
     if (!isFinite(c) || l[i].trim() === "") return { erreur: x.dxfIllisible };
     paires.push([c, l[i + 1].trim()]);
+  }
+  // Unité déclarée dans l'en-tête ($INSUNITS) : null si absente ou sans unité.
+  var unite = null;
+  for (var u = 0; u + 1 < paires.length; u++) {
+    if (paires[u][0] === 9 && paires[u][1] === "$INSUNITS" && paires[u + 1][0] === 70) { unite = INSUNITS[Number(paires[u + 1][1])] || null; break; }
+    if (paires[u][0] === 2 && paires[u][1] === "ENTITIES") break;
   }
   var debut = -1;
   for (var j = 0; j + 1 < paires.length; j++) if (paires[j][0] === 0 && paires[j][1] === "SECTION" && paires[j + 1][0] === 2 && paires[j + 1][1] === "ENTITIES") { debut = j + 2; break; }
@@ -227,6 +288,7 @@ function lireDxf(nom, brut) {
   };
   var val = function (e, code) { for (var i = 0; i < e.g.length; i++) if (e.g[i][0] === code) return e.g[i][1]; return null; };
   var n = 0;
+  var arcs = 0;
   while (k < paires.length) {
     if (paires[k][0] !== 0) { k++; continue; }
     if (paires[k][1] === "ENDSEC" || paires[k][1] === "EOF") break;
@@ -239,23 +301,34 @@ function lireDxf(nom, brut) {
     } else if (e.type === "LWPOLYLINE") {
       var z = num(val(e, 38));
       var pts = [];
+      var bul = [];
       e.g.forEach(function (g) {
-        if (g[0] === 10) pts.push([num(g[1]), 0, z]);
+        if (g[0] === 10) { pts.push([num(g[1]), 0, z]); bul.push(0); }
         else if (g[0] === 20 && pts.length) pts[pts.length - 1][1] = num(g[1]);
+        else if (g[0] === 42 && pts.length) bul[bul.length - 1] = num(g[1]);
       });
-      if (pts.length >= 2) cq.polylignes.push({ ferme: (num(val(e, 70)) & 1) === 1, points: pts });
+      var fermeLw = (num(val(e, 70)) & 1) === 1;
+      var dl = deplier(pts, bul, fermeLw);
+      arcs += dl.arcs;
+      if (pts.length >= 2) cq.polylignes.push({ ferme: fermeLw, points: dl.points });
     } else if (e.type === "POLYLINE") {
       var drap = num(val(e, 70));
       var trois = (drap & 8) === 8;
       var elev = num(val(e, 30));
       var sommets = [];
+      var renf = [];
       while (k < paires.length && paires[k][0] === 0 && paires[k][1] === "VERTEX") {
         var v = entite();
         if ((num(val(v, 70)) & 16) === 16) continue;
         sommets.push([num(val(v, 10)), num(val(v, 20)), trois ? num(val(v, 30)) : elev]);
+        renf.push(num(val(v, 42)));
       }
       if (k < paires.length && paires[k][1] === "SEQEND") entite();
-      if ((drap & (16 | 64)) === 0 && sommets.length >= 2) cq.polylignes.push({ ferme: (drap & 1) === 1, points: sommets });
+      if ((drap & (16 | 64)) === 0 && sommets.length >= 2) {
+        var dp = deplier(sommets, renf, (drap & 1) === 1);
+        arcs += dp.arcs;
+        cq.polylignes.push({ ferme: (drap & 1) === 1, points: dp.points });
+      }
     }
   }
   if (!n) return { erreur: x.dxfVide };
@@ -266,16 +339,60 @@ function lireDxf(nom, brut) {
       if (p.points.length > 3 && Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9 && Math.abs(a[2] - b[2]) < 1e-9) { p.points.pop(); p.ferme = true; }
     });
   });
-  return { nom: nom, calques: calques };
+  return { nom: nom, calques: calques, unite: unite, arcs: arcs };
+}
+/** Met toutes les coordonnées en mètres (facteur de l'unité déclarée ou choisie). */
+function versMetres(d, unite) {
+  var f = UNITES[unite];
+  Object.keys(d.calques).forEach(function (c) {
+    d.calques[c].polylignes.forEach(function (p) { p.points = p.points.map(function (q) { return [q[0] * f, q[1] * f, q[2] * f]; }); });
+  });
 }
 
 var nomsCalques = function () { return dxf ? Object.keys(dxf.calques).sort() : []; };
 
 // ——————————————————————————————————————————————— Rôles des calques (n° 21)
 
+/** Taille sérialisée d'un morceau des modèles, sous la borne d'une valeur de données (4 000 caractères). */
+var TAILLE_MORCEAU = 3800;
+var MAX_MORCEAUX = 40;
+/** Modèles gardés : triplets [nom, calque, rôle] répartis sur des clés « modeles.N » bornées, remis en modèles. */
+async function lireModeles() {
+  var toutes = (await planche.donnees.lire("projet")) || {};
+  var cles = Object.keys(toutes).filter(function (k) { return /^modeles\.\d+$/.test(k); });
+  cles.sort(function (a, b) { return Number(a.slice(8)) - Number(b.slice(8)); });
+  var l = [];
+  var parNom = {};
+  cles.forEach(function (k) {
+    (Array.isArray(toutes[k]) ? toutes[k] : []).forEach(function (t) {
+      if (!Array.isArray(t) || t.length !== 3) return;
+      var m = parNom[t[0]];
+      if (!m) { m = parNom[t[0]] = { nom: t[0], roles: {} }; l.push(m); }
+      m.roles[t[1]] = t[2];
+    });
+  });
+  return { modeles: l, cles: cles };
+}
 async function modelesGardes() {
-  var l = await planche.donnees.lire("projet", "modeles");
-  return Array.isArray(l) ? l : [];
+  return (await lireModeles()).modeles;
+}
+/** Découpe des modèles en morceaux bornés par leur taille sérialisée ; null s'ils ne tiennent pas dans MAX_MORCEAUX. */
+function morceauxModeles(l) {
+  var morceaux = [];
+  var cur = [];
+  var taille = 2;
+  for (var i = 0; i < l.length; i++) {
+    var cs = Object.keys(l[i].roles);
+    for (var j = 0; j < cs.length; j++) {
+      var t = [l[i].nom, cs[j], l[i].roles[cs[j]]];
+      var n = JSON.stringify(t).length;
+      if (cur.length && taille + 1 + n > TAILLE_MORCEAU) { morceaux.push(cur); cur = []; taille = 2; }
+      taille += (cur.length ? 1 : 0) + n;
+      cur.push(t);
+    }
+  }
+  if (cur.length) morceaux.push(cur);
+  return morceaux.length > MAX_MORCEAUX ? null : morceaux;
 }
 
 async function chargerDxf() {
@@ -284,12 +401,24 @@ async function chargerDxf() {
   if (!f) return;
   var r = lireDxf(f.nom, await f.texte());
   if (r.erreur) return alerte(x.dxfRefuse + r.erreur);
+  // Unité : celle du fichier, sinon un choix explicite ; jamais supposée.
+  var unite = r.unite;
+  if (!unite) {
+    var u = await planche.saisie.demander(x.titreUnite, [
+      { id: "unite", libelle: x.champUnite, genre: "choix", valeur: "-", choix: [{ valeur: "-", libelle: "–" }].concat(Object.keys(UNITES).map(function (k) { return { valeur: k, libelle: x.unites[k] }; })) },
+    ]);
+    if (!u || !UNITES[u.unite]) return alerte(x.dxfRefuse + x.sansUnite);
+    unite = u.unite;
+  }
+  versMetres(r, unite);
   dxf = r;
   roles = {};
   relecture = false;
   choisie = null;
   dxf.modele = null;
   await info(x.dxfCharge(nomsCalques().length));
+  if (unite !== "m" || !r.unite) await info(x.uniteLue(x.unites[unite], !!r.unite));
+  if (r.arcs) await info(x.arcsDecoupes(r.arcs));
   // Correspondance reprise : le modèle gardé qui couvre le plus de calques de ce fichier.
   var noms = nomsCalques();
   var meilleur = null;
@@ -323,19 +452,32 @@ async function garderModele() {
   var x = tx();
   var nom = texte(valeurs.modele).trim().slice(0, 60);
   if (!nom || !Object.keys(roles).length) return;
-  var l = (await modelesGardes()).filter(function (m) { return m.nom !== nom; });
+  var g = await lireModeles();
+  var l = g.modeles.filter(function (m) { return m.nom !== nom; });
   var garde = {};
   Object.keys(roles).slice(0, 80).forEach(function (c) { garde[c] = roles[c]; });
   l.push({ nom: nom, roles: garde });
   if (l.length > MAX_MODELES) { l = l.slice(l.length - MAX_MODELES); await info(x.tropModeles); }
-  await enUnPas(x.op.roles, function () { return planche.donnees.ecrire("projet", "modeles", l); });
+  // Les plus anciens cèdent la place tant que l'ensemble ne tient pas dans les clés bornées.
+  var morceaux = morceauxModeles(l);
+  while (!morceaux && l.length > 1) { l = l.slice(1); morceaux = morceauxModeles(l); }
+  if (!morceaux) return info(x.modeleNonGarde);
+  await enUnPas(x.op.roles, async function () {
+    for (var i = 0; i < morceaux.length; i++) await planche.donnees.ecrire("projet", "modeles." + i, morceaux[i]);
+    for (var k = morceaux.length; k < g.cles.length; k++) await planche.donnees.effacer("projet", "modeles." + k);
+  });
   await info(x.modeleGarde(nom));
 }
 
 async function versRelecture() {
   var x = tx();
   if (!dxf) return alerte(x.sansDxf);
-  await garderModele();
+  // Garder le modèle ne bloque jamais la relecture : un échec d'écriture est signalé, la relecture continue.
+  try {
+    await garderModele();
+  } catch (e) {
+    await info(x.modeleNonGarde);
+  }
   relecture = true;
   onglet = "maquette";
   page = 0;

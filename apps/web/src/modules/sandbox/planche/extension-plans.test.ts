@@ -144,7 +144,7 @@ const arrondi = (v: number) => Math.round(v * 1e6) / 1e6;
 
 /** Levé DXF d'essai : courbes 3D, bâti fermé (et un contour ouvert), limite fermée, cartouche en textes, arbres en cercles. */
 function dxfLeve(): string {
-  const l: (string | number)[] = [0, "SECTION", 2, "ENTITIES"];
+  const l: (string | number)[] = [0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, 6, 0, "ENDSEC", 0, "SECTION", 2, "ENTITIES"];
   const lw = (calque: string, pts: [number, number][], ferme: boolean) => {
     l.push(0, "LWPOLYLINE", 8, calque, 90, pts.length, 70, ferme ? 1 : 0, 38, 0);
     for (const [x, y] of pts) l.push(10, x, 20, y);
@@ -248,6 +248,82 @@ describe("extension « Plans reçus et présentation » — calques (n° 21) et 
     expect(w.aretes.some((a) => a.every((q) => arrondi(q[2]) === 412))).toBe(true);
     expect(p.etat.avis.at(-1)!.texte).toBe("Maquette blanche construite : 2 volumes, 6 segments.");
   });
+
+  it("unité : déclarée (mm) convertie en mètres ; non déclarée, un choix explicite est exigé, sinon refus", async () => {
+    const dxf = (u: number | null) => {
+      const l: (string | number)[] = u === null ? [] : [0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, u, 0, "ENDSEC"];
+      l.push(0, "SECTION", 2, "ENTITIES", 0, "LWPOLYLINE", 8, "BATI", 90, 4, 70, 1);
+      for (const [x, y] of [[0, 0], [10000, 0], [10000, 8000], [0, 8000]]) l.push(10, x, 20, y);
+      l.push(0, "ENDSEC", 0, "EOF");
+      return l.join("\n") + "\n";
+    };
+    const p = planche(modeleVide());
+    p.fichierAOuvrir({ nom: "mm.dxf", texte: dxf(4) });
+    await p.action("charger-dxf", { onglet: "calques" });
+    expect(p.etat.avis.map((a) => a.texte)).toContain("Coordonnées converties en mètres depuis l'unité déclarée par le fichier : millimètre.");
+    p.repondre([{ role: "emprise" }]);
+    await p.action("choisir", { onglet: "calques", id: "calque:BATI" });
+    await p.action("relire", { onglet: "calques" });
+    await p.action("construire", { onglet: "maquette", valeurs: { hauteur: "3", recaler: "non" } });
+    expect(p.derniereAlerte()).toBe("");
+    const w = monde(p.etat.modele, occurrences(p.etat.modele)[0]!.id);
+    const pts = w.faces.flat();
+    expect([0, 1, 2].map((k) => [Math.min(...pts.map((q) => arrondi(q[k]!))), Math.max(...pts.map((q) => arrondi(q[k]!)))])).toEqual([[0, 10], [0, 8], [0, 3]]);
+    const q = planche(modeleVide());
+    q.fichierAOuvrir({ nom: "sans.dxf", texte: dxf(null) });
+    q.repondre([null]);
+    await q.action("charger-dxf", { onglet: "calques" });
+    expect(q.titres).toEqual(["Unité du fichier DXF"]);
+    expect(q.derniereAlerte()).toBe("DXF refusé : l'unité des coordonnées n'est pas déclarée et n'a pas été choisie");
+    q.repondre([{ unite: "cm" }]);
+    const e = await q.action("charger-dxf", { onglet: "calques" });
+    expect(e.lignes.map((l) => l.cellules)).toEqual([["BATI", "1", "non affecté"]]);
+    expect(q.etat.avis.at(-1)!.texte).toBe("Coordonnées converties en mètres depuis l'unité choisie : centimètre.");
+  });
+
+  it("un segment courbe (renflement) est découpé en cordes, signalé, et l'emprise garde sa forme", async () => {
+    const l: (string | number)[] = [0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, 6, 0, "ENDSEC", 0, "SECTION", 2, "ENTITIES", 0, "LWPOLYLINE", 8, "BATI", 90, 4, 70, 1];
+    l.push(10, 0, 20, 0, 10, 10, 20, 0, 42, 1, 10, 10, 20, 8, 10, 0, 20, 8, 0, "ENDSEC", 0, "EOF");
+    const p = planche(modeleVide());
+    p.fichierAOuvrir({ nom: "courbe.dxf", texte: l.join("\n") + "\n" });
+    await p.action("charger-dxf", { onglet: "calques" });
+    expect(p.etat.avis.at(-1)!.texte).toBe("1 segment courbe (renflement) découpé en cordes de 7,5° au plus.");
+    p.repondre([{ role: "emprise" }]);
+    await p.action("choisir", { onglet: "calques", id: "calque:BATI" });
+    await p.action("relire", { onglet: "calques" });
+    await p.action("construire", { onglet: "maquette", valeurs: { hauteur: "3", recaler: "non" } });
+    expect(p.derniereAlerte()).toBe("");
+    const pts = monde(p.etat.modele, occurrences(p.etat.modele)[0]!.id).faces.flat();
+    // Demi-cercle de rayon 4 posé sur le côté x = 10 : il atteint x = 14 en y = 4, tous ses points à 4 m du centre.
+    expect(Math.max(...pts.map((q) => arrondi(q[0]!)))).toBe(14);
+    expect(pts.filter((q) => q[0]! > 10 + 1e-6).every((q) => Math.abs(Math.hypot(q[0]! - 10, q[1]! - 4) - 4) < 1e-6)).toBe(true);
+  });
+
+  it("deux modèles de quatre-vingts calques sont gardés malgré la borne d'une valeur, et repris au fichier suivant", async () => {
+    const l: (string | number)[] = [0, "SECTION", 2, "HEADER", 9, "$INSUNITS", 70, 6, 0, "ENDSEC", 0, "SECTION", 2, "ENTITIES"];
+    const noms = Array.from({ length: 80 }, (_, i) => `SURVEY_LAYER_${String(i).padStart(3, "0")}`);
+    noms.forEach((c, i) => l.push(0, "LINE", 8, c, 10, i, 20, 0, 30, 0, 11, i, 21, 1, 31, 0));
+    l.push(0, "ENDSEC", 0, "EOF");
+    const texte = l.join("\n") + "\n";
+    const p = planche(modeleVide());
+    p.fichierAOuvrir({ nom: "a.dxf", texte });
+    await p.action("charger-dxf", { onglet: "calques" });
+    for (const c of noms) {
+      p.repondre([{ role: "limite" }]);
+      await p.action("choisir", { onglet: "calques", id: `calque:${c}` });
+    }
+    let e = await p.action("relire", { onglet: "calques", valeurs: { modele: "Modèle A" } });
+    expect(e.onglet).toBe("maquette");
+    p.fichierAOuvrir({ nom: "b.dxf", texte });
+    await p.action("charger-dxf", { onglet: "calques" });
+    e = await p.action("relire", { onglet: "calques", valeurs: { modele: "Modèle B" } });
+    expect(e.onglet).toBe("maquette");
+    expect(p.derniereAlerte()).toBe("");
+    expect(p.etat.avis.map((a) => a.texte)).toContain("Correspondance gardée comme modèle « Modèle B ».");
+    p.fichierAOuvrir({ nom: "c.dxf", texte });
+    await p.action("charger-dxf", { onglet: "calques" });
+    expect(p.etat.avis.at(-1)!.texte).toMatch(/^Correspondance « Modèle [AB] » reprise : 80 calques\.$/);
+  }, 60_000);
 
   it("annuler la relecture ne construit rien ; un fichier qui n'est pas un DXF est refusé", async () => {
     const p = planche(modeleVide());
