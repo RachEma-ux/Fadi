@@ -164,7 +164,7 @@ describe("extension « Site et terrain » — paquet", () => {
     const icones = [...PAQUET.fiche.commandes.map((c) => c.icone), ...PAQUET.fiche.panneaux.map((p) => p.icone)];
     expect(icones.every((i) => typeof i === "string" && PAQUET.pages[i!]?.startsWith("<svg"))).toBe(true);
     expect(new Set(icones).size).toBe(icones.length);
-    expect(PAQUET.fiche.commandes.map((c) => c.raccourci)).toEqual(["Ctrl+Alt+G", "Ctrl+Maj+F10", "Ctrl+Maj+F3", "Ctrl+Maj+F4", "Ctrl+Maj+F5", "Ctrl+Maj+F6"]);
+    expect(PAQUET.fiche.commandes.map((c) => c.raccourci)).toEqual(["Ctrl+Alt+G", "Ctrl+Maj+F10", "Ctrl+Alt+Maj+E", "Ctrl+Alt+Maj+J", "Ctrl+Alt+Maj+K", "Ctrl+Alt+Maj+Y"]);
   });
 
   it("aucun nom de produit tiers, aucun coefficient ni hauteur dans le code ; chaque bouton a son action", () => {
