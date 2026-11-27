@@ -1386,6 +1386,38 @@ const statutCouche = (await tiers.request.get(`${BASE}/geodata/api/couches/${cou
 const statutFiche = (await tiers.request.get(`${BASE}${lienFiche}`)).status();
 check("GEO 08 · un tiers : carte, couche privée et fiche d'export refusées (404)", statutCarte === 404 && statutCouche === 404 && statutFiche === 404, `${statutCarte}/${statutCouche}/${statutFiche}`);
 
+// --- Carte robuste (P2) : tuiles d'une couche refusées → avis sur cette couche, la carte et ses outils restent ---
+{
+  const ctxRefus = await navigateur.newContext({ viewport: { width: 1440, height: 900 } });
+  const pr = await ctxRefus.newPage();
+  pr.on("pageerror", (e) => erreurs.push(e.message));
+  await connecter(pr, alice);
+  await pr.addInitScript(() => { try { localStorage.removeItem("geodata.derniere-carte"); } catch { /* sans stockage */ } });
+  // Toutes les tuiles vectorielles des couches (et du contour d'arrivée) refusées par « le serveur ».
+  await pr.route("**/geodata/api/tuiles/**", (r) => r.fulfill({ status: 403, body: "" }));
+  await pr.goto(`${BASE}/geodata`);
+  await pr.locator(".maplibregl-canvas").waitFor({ timeout: 20_000 });
+  await pr.waitForFunction(() => document.querySelector("[data-gd-moteur]")?.getAttribute("data-gd-etat-moteur") === "pret", null, { timeout: 20_000 }).catch(() => undefined);
+  check("P2 · contour d'arrivée refusé : aucune panne de la carte", (await pr.locator("[data-gd-erreur-carte]").count()) === 0);
+  await onglet(pr, "catalogue");
+  await pr.locator("[data-gd-entete-categorie='test']").click();
+  const carteRefus = pr.locator("[data-gd-couche-catalogue]").filter({ hasText: "Unités synthétiques (test)" });
+  await carteRefus.waitFor();
+  await carteRefus.locator("[data-gd-ajouter]").click();
+  await pr.locator("[data-gd-avis-couches]").waitFor({ timeout: 15_000 }).catch(() => undefined);
+  const etatMoteur = await pr.locator("[data-gd-moteur]").getAttribute("data-gd-etat-moteur");
+  check("P2 · tuiles d'une couche refusées : avis non bloquant qui nomme la couche, moteur prêt, outils disponibles",
+    (await pr.locator("[data-gd-avis-couches]").count()) === 1 && ((await pr.locator("[data-gd-avis-couches]").textContent()) ?? "").includes("Unités synthétiques") &&
+    (await pr.locator("[data-gd-erreur-carte]").count()) === 0 && etatMoteur === "pret" && !(await pr.locator("[data-gd-barre-outil='zoom-plus']").isDisabled()), `moteur ${etatMoteur}`);
+  await onglet(pr, "couches");
+  check("P2 · panneau Couches : état « refusée » sur la couche", (await pr.locator("[data-gd-etat-couche='refusee']").count()) === 1);
+  await pr.screenshot({ path: join(OUT, "p2-couche-refusee-1440.png") });
+  await pr.locator("[data-gd-couche-active]").first().getByRole("button", { name: "Retirer", exact: true }).click().catch(() => undefined);
+  await pr.waitForTimeout(300);
+  check("P2 · avis oublié quand la couche quitte la carte", (await pr.locator("[data-gd-avis-couches]").count()) === 0);
+  await ctxRefus.close();
+}
+
 // --- GEO 11 : sans WebGL ---
 const sansGl = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--disable-gpu", "--disable-software-rasterizer", "--disable-webgl", "--disable-3d-apis"] });
 const p2 = await (await sansGl.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
@@ -1399,6 +1431,17 @@ await p2.locator("[data-gd-recherche]").press("Enter");
 await p2.locator("[data-gd-resultat='002']").click();
 await p2.locator("[data-gd-fiche='002']").waitFor();
 check("GEO 11 · sans WebGL : recherche et fiche restent utilisables", true);
+// Correction de la porte dev → tests (P2) : sans WebGL, une couche s'ajoute et sa table liste ses lignes.
+await onglet(p2, "catalogue");
+await p2.locator("[data-gd-entete-categorie='test']").click();
+// La couche peut déjà être sur la carte (carte rouverte de la session) : on ne l'ajoute que si le bouton le permet.
+const ajoutSansWebgl = p2.locator("[data-gd-couche-catalogue]").filter({ hasText: "Unités synthétiques (test)" }).locator("[data-gd-ajouter]");
+await ajoutSansWebgl.waitFor();
+if (await ajoutSansWebgl.isEnabled()) await ajoutSansWebgl.click();
+await onglet(p2, "couches");
+await p2.locator("[data-gd-couche-active]").first().getByRole("button", { name: "Table" }).click();
+await p2.waitForFunction(() => document.querySelectorAll("[data-gd-table] [data-gd-ligne]").length > 0, null, { timeout: 10_000 }).catch(() => undefined);
+check("GEO 11 · sans WebGL : catalogue, ajout d'une couche et table de ses lignes utilisables", (await p2.locator("[data-gd-table] [data-gd-ligne]").count()) > 0 && (await p2.locator("[data-gd-moteur]").getAttribute("data-gd-etat-moteur")) === "sans-webgl");
 await sansGl.close();
 
 // --- Prix immobiliers (lot P7, Concept Prix v1.1 §4–§6) : panneau du catalogue et section de la fiche ---
