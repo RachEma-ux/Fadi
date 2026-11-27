@@ -14,9 +14,13 @@
  * de la mini-barre, aligné sur ≡. Plié, le fil reste monté (caché) : il suit la sélection et se retrouve à jour. Un clic
  * sur la carte ne le ferme pas (il met le fil à jour) ; ≡ ou Échap le ferment. Un seul panneau (recherche, fil, fonds)
  * ouvert à la fois : l'état est tenu par la page.
+ *
+ * 27 novembre 2026 : « Emplacements Projets » ferme la mini-barre (Alt+J) et ouvre le volet des emplacements à ouvrir dans
+ * la Planche (`Emplacements.tsx`).
  */
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { ResultatRecherche } from "../client";
+import { ICONE_EMPLACEMENTS, LIBELLE_EMPLACEMENTS, RACCOURCI_EMPLACEMENTS } from "./Emplacements";
 
 /** Écart entre deux groupes de la barre d'outils (px), repris entre la barre d'outils et la mini-barre. */
 export const ECART_GROUPES = 8;
@@ -102,6 +106,8 @@ export interface ProprietesRecherche {
   navigation: { ouverte: boolean; onBasculer(ouverte: boolean): void; contenu: ReactNode };
   /** Bascule Plan / Satellite (D-GD-46) : sens de la bascule ; `null` = aucun fond satellite réglé (bouton désactivé). */
   planSatellite?: { versSatellite: boolean } | null; onPlanSatellite?(): void;
+  /** « Emplacements Projets » (27 novembre 2026) : panneau des emplacements à ouvrir dans la Planche, en bas de la mini-barre. */
+  emplacements?: { ouvert: boolean; onBasculer(): void };
 }
 
 export function BarreRecherche(p: ProprietesRecherche) {
@@ -233,6 +239,12 @@ export function BarreRecherche(p: ProprietesRecherche) {
               </button>
             );
           })()}
+          {p.emplacements && (
+            <button type="button" className="gd-outil" title={`${LIBELLE_EMPLACEMENTS} : enregistrer un emplacement et l'ouvrir dans la Planche (${RACCOURCI_EMPLACEMENTS})`} aria-label={LIBELLE_EMPLACEMENTS}
+              aria-keyshortcuts={RACCOURCI_EMPLACEMENTS} aria-pressed={p.emplacements.ouvert} onClick={p.emplacements.onBasculer} data-gd-mini-emplacements>
+              <Picto d={ICONE_EMPLACEMENTS} />
+            </button>
+          )}
         </div>
       </nav>
       {/* Fil de navigation : toujours monté (il suit la sélection), affiché seulement déplié, à gauche de la mini-barre et

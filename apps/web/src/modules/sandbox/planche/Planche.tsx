@@ -232,6 +232,7 @@ import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panne
 import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
+import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
@@ -2599,6 +2600,48 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         message,
       };
     });
+  // « Emplacements Projets » (27 novembre 2026) : emplacements enregistrés dans GeoData, lus à la demande, posés comme
+  // Emplacement de la Planche (un pas d'historique : Annuler le retire).
+  const [geodataListe, setGeodataListe] = useState<readonly EmplacementGeoDataLu[] | null>(null);
+  const [geodataChargement, setGeodataChargement] = useState(false);
+  const [geodataErreur, setGeodataErreur] = useState<string | null>(null);
+  const chargerEmplacementsGeoData = () => {
+    setGeodataChargement(true);
+    setGeodataErreur(null);
+    listerEmplacementsGeoData()
+      .then(setGeodataListe, () => setGeodataErreur(t("planche.emplacement.geodata.erreur")))
+      .finally(() => setGeodataChargement(false));
+  };
+  const appliquerEmplacementGeoData = (g: EmplacementGeoDataLu) => poserEmplacement(g.emplacement, t("planche.emplacement.note.geodata", { lieu: g.emplacement.lieu ?? `${g.emplacement.latitude} ; ${g.emplacement.longitude}` }));
+  const appliquerGeoDataRef = useRef(appliquerEmplacementGeoData);
+  appliquerGeoDataRef.current = appliquerEmplacementGeoData;
+  // Adresse `/sandbox?emplacement-geodata=<id>` (bouton « Ouvrir dans Planche » de GeoData) : une fois le brouillon chargé,
+  // l'emplacement est lu, posé et le panneau Emplacement s'ouvre ; le paramètre est retiré de l'adresse.
+  const geodataAOuvrir = useRef(typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get(PARAMETRE_EMPLACEMENT_GEODATA));
+  useEffect(() => {
+    const id = geodataAOuvrir.current;
+    if (!brouillonCharge || readOnly || !id) return;
+    geodataAOuvrir.current = null;
+    const adresse = new URL(window.location.href);
+    adresse.searchParams.delete(PARAMETRE_EMPLACEMENT_GEODATA);
+    window.history.replaceState(window.history.state, "", `${adresse.pathname}${adresse.search}${adresse.hash}`);
+    setNoteEmplacement(null);
+    setGeodataErreur(null);
+    setOuvrirEmplacementGeoData(true);
+    lireEmplacementGeoDataParId(id).then(
+      (g) => appliquerGeoDataRef.current(g),
+      (e: unknown) => setGeodataErreur(t(e instanceof ErreurEmplacementsGeoData && e.statut === 404 ? "planche.emplacement.geodata.introuvable" : "planche.emplacement.geodata.erreur")),
+    );
+  }, [brouillonCharge, readOnly]);
+  // Ouverture depuis GeoData : l'extension « Emplacement » est activée si elle ne l'est pas (choix explicite de la personne,
+  // réversible dans Personnaliser), une fois les préférences du compte lues, puis son panneau s'ouvre.
+  const [ouvrirEmplacementGeoData, setOuvrirEmplacementGeoData] = useState(false);
+  useEffect(() => {
+    if (!ouvrirEmplacementGeoData || prefsSandbox.etat === "chargement") return;
+    setOuvrirEmplacementGeoData(false);
+    if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+    setPanneau("emplacement");
+  }, [ouvrirEmplacementGeoData, prefsSandbox, masquees]);
   /** Arête sélectionnée seule et non verticale : l'angle du nord qu'elle donnerait, sinon `null`. */
   const nordDeLaSelection = (): number | null => {
     const sel = vue.selection ?? selectionRef.current;
@@ -4135,7 +4178,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
             )}
             {panneau === "emplacement" && (
-              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement} />
+              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
+                geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }} />
             )}
             {panneau === "scripts" && (
               <PanneauScripts

@@ -12,6 +12,7 @@ import { adminRouter } from "./admin.js";
 import { cartesRouter } from "./cartes.js";
 import { categoriesRouter } from "./categories.js";
 import { consultationRouter } from "./consultation.js";
+import { emplacementsRouter } from "./emplacements.js";
 import { etudesRouter } from "./etudes.js";
 import { exportsRouter } from "./exports.js";
 import { importsRouter } from "./imports.js";
@@ -47,6 +48,8 @@ geodataRouter.use(tableauDeBordRouter);
 geodataRouter.use(categoriesRouter);
 geodataRouter.use(cartesRouter);
 geodataRouter.use(etudesRouter);
+// Emplacements enregistrés (« Emplacements Projets ») : /emplacements — lus aussi par la Planche du Sandbox.
+geodataRouter.use(emplacementsRouter);
 geodataRouter.use(importsRouter);
 geodataRouter.use(exportsRouter);
 // Prix immobiliers (Concept Prix v1.1) : /prix/… — registre, couches, agrégats publiés, cellules, imports, publications.

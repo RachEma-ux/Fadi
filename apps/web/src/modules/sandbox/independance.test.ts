@@ -48,7 +48,12 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
     const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
     // L'isolement des Workers (scripts personnels, extensions) nomme ces fonctions pour les **retirer** : il n'en appelle aucune.
-    expect(appelants).toEqual(["planche/isolement-worker.ts", "preferences/client.ts"]);
+    expect(appelants).toEqual(["planche/emplacements-geodata.ts", "planche/isolement-worker.ts", "preferences/client.ts"]);
+    // « Emplacements Projets » (27 novembre 2026) : lecture seule des emplacements enregistrés dans GeoData, à cette seule adresse.
+    const geodata = code(join(RACINE, "planche/emplacements-geodata.ts"));
+    expect(geodata).toContain('export const ADRESSE_EMPLACEMENTS_GEODATA = "/geodata/api/emplacements";');
+    expect([...geodata.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["adresse"]);
+    expect(geodata).not.toMatch(/https?:\/\/|method:/);
     for (const f of ["planche/scripts-planche.worker.ts", "planche/extension-planche.worker.ts"]) {
       expect(code(join(RACINE, f)), f).toMatch(/for \(const nom of RETIRES\) retirer\(nom\);/);
       expect(code(join(RACINE, f)), f).toMatch(/avantExecution: fermerLecteurs/);

@@ -44,3 +44,17 @@ describe("barre du bas sur téléphone (D-GD-52)", () => {
     expect(new Set(touches).size).toBe(touches.length);
   });
 });
+
+describe("Emplacements Projets (27 novembre 2026)", () => {
+  it("bouton de la mini-barre : sa propre icône et sa propre touche, distinctes de toutes les barres de la carte", async () => {
+    const { ICONE_EMPLACEMENTS, RACCOURCI_EMPLACEMENTS, adressePlanche } = await import("./Emplacements");
+    const { ICONES_BARRE_BAS, RACCOURCIS_BARRE_BAS } = await import("./BarreBas");
+    const { ICONES_TERRAIN, RACCOURCIS_TERRAIN } = await import("./Terrain");
+    const icones = [...Object.values(ICONES), ...Object.values(ICONES_BARRE_BAS), ...Object.values(ICONES_TERRAIN), ICONE_EMPLACEMENTS];
+    expect(new Set(icones).size).toBe(icones.length);
+    // Touches déjà prises sur la carte : barres, terrain, et Alt+S (plan / satellite), Alt+Z (zone), Alt+T (thèmes), Alt+P (fiche).
+    const prises = [...Object.values(RACCOURCIS_BARRE), ...Object.values(RACCOURCIS_BARRE_BAS), ...Object.values(RACCOURCIS_TERRAIN), "Alt+S", "Alt+Z", "Alt+T", "Alt+P", "Alt+A"];
+    expect(prises).not.toContain(RACCOURCI_EMPLACEMENTS);
+    expect(adressePlanche("gdempl_1")).toBe("/sandbox?emplacement-geodata=gdempl_1");
+  });
+});
