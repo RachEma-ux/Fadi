@@ -269,8 +269,10 @@ body.atelier-immersive .fadi-shell .app-main { grid-column: 1; }
 .fadi-shell[data-sidebar="collapsed"] .sidebar-studio-tete{flex-direction:column}
 .fadi-shell[data-sidebar="collapsed"] .app-nav .sidebar-studio-bascule{width:100%;min-height:24px}
 .fadi-shell .sidebar-studio-sous-menu[hidden]{display:none}
-/* Sous-menu (capture de référence du 26-11-2026) : Console, 01 à 04, Choisir une étude, en retrait sous « Studio » ; un trait le ferme. */
-.fadi-shell .sidebar-studio-sous-menu{border-bottom:1px solid #ffffff1f;margin-bottom:6px;padding-bottom:8px}
+/* Sous-menu (capture de référence du 26-11-2026) : Console, 01 à 04, Choisir une étude, en retrait sous « Studio ». */
+.fadi-shell .sidebar-studio-sous-menu{margin-bottom:4px}
+/* Deux sections (demande du 27-11-2026) : le trait ferme la section du haut, sous sa dernière entrée (Collaboration). */
+.fadi-shell .app-nav{border-bottom:1px solid #ffffff1f;padding-bottom:8px}
 .fadi-shell .sidebar-studio-entrees{list-style:none;margin:2px 0 0;padding:0 0 0 34px;display:flex;flex-direction:column;gap:2px}
 .fadi-shell[data-sidebar="collapsed"] .sidebar-studio-entrees{padding:0}
 .fadi-shell .app-nav .sidebar-studio-entrees a{min-height:42px;padding:8px 10px;font-size:14px;gap:12px}
