@@ -4403,3 +4403,11 @@
   background: #1b4d42;
   border-color: #1b4d42;
 }
+
+/* Écran tactile large (tablette, téléphone couché en Planche détachée) : seize panneaux depuis la Numérotation (cas 2,
+   lot 1) ; l'écart entre boutons passe de 12 à 8 px pour que la colonne reste entière, sans défilement ni panneau caché. */
+@media (min-width: 761px) and (hover: none) and (pointer: coarse) {
+  .sandbox-planche .planche-colonne {
+    gap: 8px;
+  }
+}
