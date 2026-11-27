@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende, legendeLue, type LegendeLue, type ClassificationLue } from "@parcours/geodata-model";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende, legendeLue, type LegendeLue, type ClassificationLue, assemblerLectureSite, constituerReferenceSite, type Reponse } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ExportRecu } from "./client";
 import { colorationIndicateur, basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
@@ -39,6 +39,7 @@ import { useSelectionFiche } from "./etat/useSelectionFiche";
 import { decisionPremierClic } from "./etat/selection-ops";
 import { outilQuiEnregistre, outilTerrain, voletDeOutil, zoneARetablir } from "./etat/outils-ops";
 import { focaliserSaisie } from "./panneaux/SaisieCoordonnees";
+import { VoletSite, type EtatSite } from "./panneaux/VoletSite";
 import type { TraceSaisi } from "./etat/outils-ops";
 import { usePanneaux } from "./etat/usePanneaux";
 import { AideRaccourcis } from "./panneaux/AideRaccourcis";
@@ -55,6 +56,8 @@ type Volet = VoletPage;
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
 const ecrireLocal = (k: string, v: string | null) => { try { if (v === null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, v); } catch { /* stockage indisponible : simple confort perdu */ } };
+/** Rayon de lecture des équipements de l'analyse de site (P13), le défaut de la proximité (D-GD-49). */
+const RAYON_SITE_M = 500;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const estTelephone = () => typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches;
 const empriseDe = (coords: number[][][] | undefined): [number, number, number, number] | null => {
@@ -89,6 +92,9 @@ export function PageGeoData() {
   const compositionCourante = useRef<Composition>(COMPOSITION_INITIALE);
   const [hauteurHaut, setHauteurHaut] = useState(62);
   const [espace, setEspace] = useState<EspaceRecu | null>(null);
+  // Analyse de site (P13) : dernière lecture du volet « Site ».
+  const [site, setSite] = useState<EtatSite | null>(null);
+  const jetonSite = useRef(0);
   const [erreurEspace, setErreurEspace] = useState<string | null>(null);
   const [catalogue, setCatalogue] = useState<CoucheRecue[] | null>(null);
   const [erreurCatalogue, setErreurCatalogue] = useState<string | null>(null);
@@ -907,6 +913,7 @@ export function PageGeoData() {
       "groupe-mesurer": () => setGroupeOutils((g) => (g === "mesurer" ? null : "mesurer")),
       "groupe-affichage": () => setGroupeOutils((g) => (g === "affichage" ? null : "affichage")),
       "aide-raccourcis": () => setAideRaccourcis(true),
+      site: basculerSite,
     };
     actions[commande]();
   };
@@ -967,6 +974,53 @@ export function PageGeoData() {
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
   const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outilTerrain(outil)) setOutil("navigation"); } else afficherVolet("terrain"); };
   /** « Emplacements Projets » (Alt+J) : volet des emplacements à ouvrir dans la Planche. */
+  // Analyse de site (P13, UX-6) : « Que sait-on d'ici ? » — lieu = fiche ouverte, sinon centre de la carte, sinon
+  // coordonnées saisies dans le volet. Cinq lectures au plus, toutes en base ; rien n'est écrit, rien n'est estimé.
+  const lireSite = (lieu: { lon: number; lat: number; libelle: string }) => {
+    const jeton = ++jetonSite.current;
+    setSite({ etat: "chargement", lieu });
+    const rep = <T,>(x: Promise<T>): Promise<Reponse<T>> => x.then((valeur) => ({ ok: true as const, valeur }), (e: unknown) => ({ ok: false as const, erreur: message(e) }));
+    const points = composition.couches.filter((k) => k.visible && couchesPoints.has(k.coucheId)).map((k) => k.coucheId).slice(0, 20);
+    const unitesP = paysCourant ? rep(api.unitesAuPoint(paysCourant, lieu.lon, lieu.lat).then((r) => r.unites.map((u) => ({ code: u.code, nom: u.nom, rang: u.rang, coucheId: u.coucheId, versionId: u.versionId })))) : Promise.resolve(null);
+    const servicesP = points.length ? rep(api.proximitePoint(lieu.lon, lieu.lat, RAYON_SITE_M, points).then((r) => r.couches.map((c) => (c.accessible && c.version ? { ...c, version: c.version } : { coucheId: c.coucheId, accessible: false as const })))) : Promise.resolve({ ok: true as const, valeur: [] });
+    const terrainP = rep(api.terrainPoint(lieu.lon, lieu.lat, "MNT").then((t) => (t.disponible ? { disponible: true as const, altitude: t.altitude, produit: "MNT", source: { versionId: t.source.versionId, titre: t.source.titre, attribution: t.source.attribution, licence: t.source.licence.nom, date: t.source.date } } : { disponible: false as const, motif: t.motif })));
+    void (async () => {
+      const unites = await unitesP;
+      const fine = unites?.ok ? [...unites.valeur].sort((a, b) => b.rang - a.rang)[0] : undefined;
+      const [fiche, prix, services, terrainLu] = await Promise.all([
+        fine ? rep(api.fiche(fine.coucheId, fine.code).then((f) => ({ indicateurs: f.indicateurs.map((i) => ({ titre: i.titre, unite: i.unite || null, periode: i.periode, valeur: lireValeur(i.valeur, i.motifAbsence) })), version: f.couche.version }))) : Promise.resolve(null),
+        // Prix : une route absente (module non activé) vaut « aucune source de prix publiée », jamais une valeur.
+        fine ? api.prixAgregats(fine.code).then((r) => ({ ok: true as const, valeur: r.editions.map((x) => ({ versionId: x.versionId, libelle: x.libelle, editeur: x.editeur, periode: typeof x.periode === "string" ? x.periode : x.periode ? `${x.periode.debut} – ${x.periode.fin}` : null, attribution: x.attribution, licence: x.licence })) }),
+          (e: unknown) => (e instanceof ErreurGeoData && e.statut === 404 ? { ok: true as const, valeur: [] } : { ok: false as const, erreur: message(e) })) : Promise.resolve(null),
+        servicesP, terrainP,
+      ]);
+      if (jetonSite.current !== jeton) return;
+      const lecture = assemblerLectureSite({ entree: { nature: "point", repere: "geographic", crs: "EPSG:4326", point: { lon: lieu.lon, lat: lieu.lat }, rayonM: RAYON_SITE_M }, maintenant: new Date(), unites, fiche, services, prix, terrain: terrainLu });
+      setSite({ etat: "ok", lieu, lecture });
+      setAnnonce("Lecture du site terminée.");
+    })();
+  };
+  const lieuParDefaut = (): { lon: number; lat: number; libelle: string } | null => {
+    if (volet === "fiche" && fiche) return { lon: fiche.centre.coordinates[0], lat: fiche.centre.coordinates[1], libelle: fiche.nom ?? fiche.code };
+    if (!erreurCarte) return { lon: composition.camera.lon, lat: composition.camera.lat, libelle: "Centre de la carte" };
+    return null;
+  };
+  const basculerSite = () => {
+    if (volet === "site") { setVolet(null); return; }
+    setConsigneEcartee(true);
+    const lieu = lieuParDefaut();
+    afficherVolet("site");
+    if (lieu) lireSite(lieu);
+  };
+  /** Référence du site (P14) : renvoi aux versions lues, aucune valeur ; copiée dans le presse-papiers. */
+  const copierReferenceSite = async (): Promise<string> => {
+    if (site?.etat !== "ok") return "Aucune lecture à référencer.";
+    const ref = constituerReferenceSite(site.lecture, espace?.capacites ?? [], new Date());
+    // Dernière référence constituée, lisible par la recette (aucune donnée envoyée).
+    (window as unknown as { __referenceSite?: unknown }).__referenceSite = ref;
+    try { await navigator.clipboard.writeText(JSON.stringify(ref, null, 2)); } catch { return "Copie refusée par le navigateur."; }
+    return `Référence du site copiée : ${ref.lectures.length} lecture(s), ${ref.exclusions.length} exclusion(s).`;
+  };
   const basculerEmplacements = () => { if (volet === "emplacements") setVolet(null); else afficherVolet("emplacements"); };
   const basculerOutilTerrain = (o: "altitude" | "profil") => choisirOutil(outil === o ? "navigation" : o);
   const localiser = () => {
@@ -1106,6 +1160,8 @@ export function PageGeoData() {
   }, [compositionAffichee, rasters, rangs]);
   useEffect(() => { moteur.current?.afficherTerritoire(contourTerritoire?.contour ?? null); }, [contourTerritoire, generation]);
   useEffect(() => { moteur.current?.afficherAccueil(coucheArrivee); }, [coucheArrivee, generation]);
+  // Signes du lieu lu (P13) : seulement volet « Site » ouvert ; jamais enregistrés ni exportés.
+  useEffect(() => { moteur.current?.afficherSite(volet === "site" && site ? { lon: site.lieu.lon, lat: site.lieu.lat, rayonM: RAYON_SITE_M } : null); }, [volet, site, generation]);
   useEffect(() => { moteur.current?.afficherEntite(entiteContour); }, [entiteContour, generation]);
   useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, generation]);
 
@@ -1222,7 +1278,7 @@ export function PageGeoData() {
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
             synthese={syntheseOuverte} onSynthese={basculerSynthese} onCopierLien={() => void copierLien()}
             regroupement={composition.couches.some((k) => k.visible && couchesPoints.has(k.coucheId)) ? regroupementsTousActifs(composition, couchesPoints) : null} onRegroupement={basculerRegroupements}
-            groupe={groupeOutils} onGroupe={setGroupeOutils} onAide={() => setAideRaccourcis(true)}
+            groupe={groupeOutils} onGroupe={setGroupeOutils} onAide={() => setAideRaccourcis(true)} site={volet === "site"} onSite={basculerSite}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende}
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
@@ -1263,8 +1319,8 @@ export function PageGeoData() {
           enregistrementImpossible={enregistrementImpossible} enregistrementLibelle="Enregistrer"
           onCarte={afficherCarteSeule} onChercher={() => basculerRecherche(!rechercheOuverte)} onCouches={basculerCouches} onEnregistrer={() => void enregistrer()} />
         {volet && (
-          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter", terrain: "Terrain", emplacements: LIBELLE_EMPLACEMENTS })[volet]} data-gd-volet-ouvert={volet}>
-            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter", terrain: "Terrain haute résolution", emplacements: LIBELLE_EMPLACEMENTS })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter", terrain: "Terrain", emplacements: LIBELLE_EMPLACEMENTS, site: "Que sait-on d'ici ?" })[volet]} data-gd-volet-ouvert={volet}>
+            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter", terrain: "Terrain haute résolution", emplacements: LIBELLE_EMPLACEMENTS, site: "Que sait-on d'ici ?" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
             {volet === "fiche" && <FicheObjet indicateurActif={indicateurActif} proximite={composition.couches.filter((k) => k.visible && couchesPoints.has(k.coucheId)).map((k) => ({ id: k.coucheId, titre: couchesConnues.get(k.coucheId)?.titre ?? k.coucheId }))} subdivisions={fiche ? subdivisionsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
@@ -1280,6 +1336,7 @@ export function PageGeoData() {
               vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} zoom={composition.camera.zoom} onTraceCoordonnees={tracerParCoordonnees} />}
             {volet === "emplacements" && <PanneauEmplacements centre={() => (erreurCarte ? null : { lon: composition.camera.lon, lat: composition.camera.lat })}
               onCentrer={(c) => moteur.current?.allerA({ lon: c.lon, lat: c.lat, zoom: Math.max(composition.camera.zoom, 15) })} onAnnonce={setAnnonce} />}
+            {volet === "site" && <VoletSite site={site} rayonM={RAYON_SITE_M} onLire={lireSite} onCopierReference={copierReferenceSite} />}
             {volet === "export" && <Export carte={carte} enregistree={etat.etat === "enregistree"} analyses={analysesIds} onExporter={exporter} />}
           </aside>
         )}
