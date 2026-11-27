@@ -306,6 +306,19 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     compte plus dans les 5 s d'une commande. Limite connue, mesurée le 27 novembre 2026 : l'insertion dans le noyau
     croît à peu près au carré du nombre de segments (1 000 en 0,6 s, 5 000 en 14 s) ; un gros plan attend
     l'insertion hors du fil principal (D10-F14-027, noyau).
+  - *Protocole 1.3 — précision et trame* (cas 3 du catalogue des extensions, lot 2 ; n'ajoute que des fonctions).
+    **Unités** : `planche.unites.lire()` rend la précision réelle du projet (`decimales`, choisie dans Info modèle, au
+    lieu de 2 figé), les pas d'accrochage (`pasLongueur` en mètres, `pasAngle` en degrés, `null` s'ils sont coupés) et
+    le format de cote (`formatCote`) ; `unites.formater` met une longueur à cette précision. **Outil** : chaque
+    événement de souris porte aussi `vise`, le point visé avant accrochage (le rayon coupe le plan de travail, le sol
+    à défaut), ou `null`. **Annotations** : `planche.cotes.creer(a, b, position, direction)` pose une cote linéaire
+    entre deux points du monde (direction « alignee », « horizontale », « verticale », « axe-x », « axe-y » ou
+    « axe-z ») ; `planche.textes.creer(ancre, position, texte)` pose un texte avec repère (200 caractères au plus) ;
+    l'une et l'autre acceptent une balise existante en dernier argument : la balise cachée, l'annotation l'est aussi ;
+    `planche.modele.lire()` dit `dans`, l'objet ouvert en édition (`null` à la racine) ;
+    `planche.objets.verrouiller(ids, verrou)` verrouille ou déverrouille des groupes et composants du contexte ;
+    `planche.annotations.lire()` rend les cotes linéaires et les textes avec repère, `planche.annotations.effacer(ids)`
+    en efface (un identifiant inconnu : rien n'est effacé). Les écritures passent par l'opération ouverte ou automatique, en un seul pas d'annulation (permission `modele.modifier`).
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,
