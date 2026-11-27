@@ -4552,11 +4552,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const m = histRef.current.present.modele;
     const c = contexteDe(m, dansRef.current);
     const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
-    return { m, ids, faces: ids.filter((id) => c.faces[id]), aretes: ids.filter((id) => c.aretes[id]), objets: ids.filter((id) => c.occurrences[id]) };
+    // `tous` garde aussi les annotations choisies (cotes, textes) : le miroir lisible les retourne avec la géométrie.
+    return { m, ids, tous: [...selectionRef.current], faces: ids.filter((id) => c.faces[id]), aretes: ids.filter((id) => c.aretes[id]), objets: ids.filter((id) => c.occurrences[id]) };
   };
   const disponibiliteCommandeModelisation = (id: IdCommandeModelisation) => {
     const s = selectionL8();
-    return disponibiliteModelisation(id, { lecture: readOnly, faces: s.faces.length, aretes: s.aretes.length, objets: s.objets.length, selection: s.ids.length, panneau: panneau === PANNEAU_L8[id] });
+    return disponibiliteModelisation(id, { lecture: readOnly, faces: s.faces.length, aretes: s.aretes.length, objets: s.objets.length, selection: id === "miroir-lisible" ? s.tous.length : s.ids.length, panneau: panneau === PANNEAU_L8[id] });
   };
   /** Une modification du lot 8 : calculée d'abord (l'erreur reste dans le panneau), puis posée en un pas. */
   const faireL8 = (nom: string, fn: (m: Modele) => { readonly modele: Modele; readonly selection?: readonly string[]; readonly note: string }) => {
@@ -4596,7 +4597,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     for (const [k, texte] of Object.entries(saisiesL8.valeurs)) {
       if (!texte.trim()) continue;
       const x = lireNombreSaisi(texte);
-      if (x === null || !(x > 0)) throw new ErreurComposant("valeur", { nom: t(`planche.l8.composant.${k}` as CleMessage) });
+      // L'allège peut valoir 0 (baie à ras du sol) ; les autres valeurs sont strictement positives.
+      if (x === null || !(k === "allege" ? x >= 0 : x > 0)) throw new ErreurComposant("valeur", { nom: t(`planche.l8.composant.${k}` as CleMessage) });
       v[k] = x;
     }
     return v;
@@ -4652,7 +4654,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       const l = texte !== null ? lireFichierComposant(texte) : null;
       if (l?.ok) lus.push({ id: a.id, nom: a.nom, fichier: l.fichier, texte: texte! });
     }
-    setFichiersAgence((avant) => [...lus, ...avant.filter((x) => x.id.startsWith("local:") && !lus.some((l) => l.nom === x.nom))]);
+    setFichiersAgence(lus);
     if (lus.length) poserSaisiesL8({ composant: lus[0]!.id });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -4662,11 +4664,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     void f.text().then((texte) => {
       const l = lireFichierComposant(texte);
       if (!l.ok) return setNoteL8(t("planche.l8.note.import-refuse", { nom: f.name, motif: t(`planche.composant.erreur.${l.erreur}` as CleMessage, { nom: "" }) }));
+      // D-GD-29 : un fichier n'est proposé qu'une fois archivé tel quel en base ; sans archive, l'import est refusé.
       void archiverFichierExtension("planche-composant", { nom: f.name, texte }).then((issue) => {
-        const id = issue.ok ? issue.archive.id : `local:${f.name}`;
+        if (!issue.ok) return setNoteL8(t("planche.l8.note.import-non-archive", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+        const id = issue.archive.id;
         setFichiersAgence((avant) => [...avant.filter((x) => x.id !== id), { id, nom: f.name, fichier: l.fichier, texte }]);
         poserSaisiesL8({ composant: id, valeurs: {} });
-        setNoteL8(issue.ok ? t("planche.l8.note.importe", { nom: f.name, composant: l.fichier.nom }) : t("planche.l8.note.importe-sans-base", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+        setNoteL8(t("planche.l8.note.importe", { nom: f.name, composant: l.fichier.nom }));
       });
     });
   };
@@ -4734,7 +4738,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           }
           const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
           if (!f) throw new Error(t("planche.l8.composant.choisir"));
-          const r = poserComposant(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, ...(f.id.startsWith("local:") ? {} : { archive: f.id }), valeurs, decouper: saisiesL8.decouper }, { ...(s.faces[0] ? { face: s.faces[0] } : { arete: s.aretes[0]! }), ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
+          const r = poserComposant(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs, decouper: saisiesL8.decouper }, { ...(s.faces[0] ? { face: s.faces[0] } : { arete: s.aretes[0]! }), ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
           return { modele: r.modele, selection: [r.occurrence], note: t("planche.l8.note.pose", { nom: f.fichier.nom, baie: t(`planche.l8.baie.${r.baie}` as CleMessage) }) };
         });
       case "remplacer-occurrences":
@@ -4742,7 +4746,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
           if (!f) throw new Error(t("planche.l8.composant.choisir"));
           const valeurs = { ...(composantDe(m, s.objets[0]!)?.meta.valeurs ?? {}), ...valeursComposantL8() };
-          const dd = definitionDepuisFichier(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, ...(f.id.startsWith("local:") ? {} : { archive: f.id }), valeurs });
+          const dd = definitionDepuisFichier(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs });
           const r = remplacerOccurrences(dd.modele, s.objets, dd.definition);
           return { modele: r.modele, selection: s.objets, note: t("planche.l8.note.remplaces", { nombre: String(r.remplaces), nom: f.fichier.nom }) };
         });
@@ -4771,7 +4775,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         return choisirOutil(ID_BOITE);
       case "miroir-lisible":
         return faireL8(t("planche.modelisation.miroir-lisible"), (m) => {
-          const r = miroirLisible(m, s.ids, saisiesL8.axe, o());
+          const r = miroirLisible(m, s.tous, saisiesL8.axe, o());
           return { modele: r.modele, note: t("planche.l8.note.miroir", { gardes: String(r.gardes) }) };
         });
       case "ecreter-enveloppe":

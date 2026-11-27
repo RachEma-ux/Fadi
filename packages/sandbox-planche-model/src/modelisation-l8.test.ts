@@ -9,6 +9,7 @@ import {
   deplacer,
   determinant3,
   grouper,
+  matriceMonde,
   modeleVide,
   modifierAnnotations,
   pousserTirer,
@@ -154,6 +155,18 @@ describe("n° 50 — caler par deux points", () => {
     proche(appliquer(T, v3(1, 0, 0)), v3(10, 3, 0));
     expect(determinant3(T)).toBeCloseTo(27, 9);
     expect(() => matriceCalage(v3(0, 0, 0), v3(0, 0, 0), v3(1, 0, 0), v3(2, 0, 0))).toThrow(ErreurL8);
+  });
+
+  it("dans un groupe ouvert déplacé de 100 m, les points pointés dans le monde sont respectés", () => {
+    const b = boiteGroupee(modeleVide(), v3(0, 0, 0));
+    const g = grouper(b.modele, [b.occurrence], { nom: "Parent" });
+    const m = deplacer(g.modele, [g.occurrence], v3(100, 0, 0)).modele;
+    // Le coin (0, 0, 0) de la boîte est au monde en (100, 0, 0) ; il doit arriver en (110, 0, 0), le coin (1, 0, 0) en (110, 3, 0).
+    const r = calerParDeuxPoints(m, [b.occurrence], [v3(100, 0, 0), v3(101, 0, 0), v3(110, 0, 0), v3(110, 3, 0)], { dans: g.occurrence });
+    const W = matriceMonde(r.modele, b.occurrence)!;
+    proche(appliquer(W, v3(0, 0, 0)), v3(110, 0, 0));
+    proche(appliquer(W, v3(1, 0, 0)), v3(110, 3, 0));
+    expect(r.facteur).toBeCloseTo(3, 12);
   });
 });
 

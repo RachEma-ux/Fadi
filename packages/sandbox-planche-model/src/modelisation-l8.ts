@@ -36,6 +36,7 @@ import {
   creerGroupeDepuisFaces,
   effacerEntites,
   matriceMonde,
+  inverserMatrice,
   miroir,
   modifierAnnotations,
   newell,
@@ -497,7 +498,15 @@ function rotationAutour(k: Vec3, a: number): Matrice4 {
 export function calerParDeuxPoints(m: Modele, entites: readonly Id[], points: readonly [Vec3, Vec3, Vec3, Vec3], o: OptionsContexte & { readonly echelle?: boolean } = {}): Resultat & { readonly angle: number; readonly facteur: number } {
   if (entites.length === 0) throw new ErreurL8("selection-vide");
   const { matrice, angle, facteur } = matriceCalage(points[0], points[1], points[2], points[3], { echelle: o.echelle ?? true });
-  return { ...transformer(m, entites, matrice, o), angle, facteur };
+  // Les points sont pointés dans le monde ; dans un groupe ouvert, la matrice est ramenée dans son repère : W⁻¹·T·W.
+  let locale = matrice;
+  if (o.dans) {
+    const W = matriceMonde(m, o.dans);
+    const Wi = W ? inverserMatrice(W) : null;
+    if (!W || !Wi) throw new ErreurL8("selection-vide");
+    locale = composer(Wi, composer(matrice, W));
+  }
+  return { ...transformer(m, entites, locale, o), angle, facteur };
 }
 
 // ————————————————————————————————————————————————————————————— n° 100 Sélection par altitudes ou boîte
