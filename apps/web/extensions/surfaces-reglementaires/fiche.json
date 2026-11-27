@@ -1,0 +1,24 @@
+{
+  "id": "surfaces-reglementaires",
+  "nom": { "fr": "Surfaces réglementaires", "en": "Regulatory areas" },
+  "description": {
+    "fr": "Surface de plancher par coupe de chaque niveau, emprise au sol par projection, comparaison au programme, cote du premier plancher et zone refuge du PPRI ; règles d'une table sourcée et datée.",
+    "en": "Floor area by cutting each storey, building footprint by projection, comparison with the brief, first floor level and refuge area against the flood plan; rules from a sourced and dated table."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.4",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Surfaces réglementaires", "en": "Regulatory areas" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+U" },
+    { "id": "par-niveau", "libelle": { "fr": "Surfaces de plancher par niveau", "en": "Floor areas by storey" }, "icone": "niveaux.svg", "raccourci": "Ctrl+Alt+N" },
+    { "id": "emprise", "libelle": { "fr": "Emprise au sol", "en": "Building footprint" }, "icone": "emprise.svg", "raccourci": "Ctrl+Alt+E" },
+    { "id": "programme", "libelle": { "fr": "Comparer au programme", "en": "Compare with the brief" }, "icone": "programme.svg", "raccourci": "Ctrl+Alt+O" },
+    { "id": "ppri", "libelle": { "fr": "Premier plancher et zone refuge (PPRI)", "en": "First floor and refuge area (flood plan)" }, "icone": "ppri.svg", "raccourci": "Ctrl+Alt+I" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "surfaces", "titre": { "fr": "Surfaces réglementaires", "en": "Regulatory areas" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
