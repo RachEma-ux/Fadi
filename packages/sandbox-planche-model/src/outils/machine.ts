@@ -130,6 +130,8 @@ export interface VueOutil {
 
 /** Contexte partagé fourni par le rendu à chaque événement. */
 export interface ContexteOutil {
+  /** (Cas 2, lot 8, n° 100) Altitudes saisies au panneau « Soustraire et garder » : bornes z d'une boîte tracée à plat. */
+  readonly altitudesBoite?: { readonly zmin: number; readonly zmax: number } | null;
   readonly modele: Modele;
   /** Sélection courante (ids d'entités ou d'occurrences), tenue par l'interface. */
   readonly selection: readonly string[];
@@ -178,6 +180,8 @@ export interface AdaptateurBooleens {
   union(a: Maillage, b: Maillage): Maillage;
   difference(a: Maillage, b: Maillage): Maillage;
   intersection(a: Maillage, b: Maillage): Maillage;
+  /** (Cas 2, lot 8, n° 15) Aire de l'union de contours plans (x, y), règle de remplissage positive. */
+  aireUnion?(contours: readonly (readonly (readonly [number, number])[])[]): number;
 }
 
 export interface Transition<E> {

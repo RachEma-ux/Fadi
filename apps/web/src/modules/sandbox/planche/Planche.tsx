@@ -96,6 +96,33 @@ import {
   normaliserRaccourci,
   ENTREE_DEUX_TEMPS,
   secondTemps,
+  ErreurL8,
+  ErreurComposant,
+  lireExtrusion,
+  changerHauteurExtrusion,
+  lireEpaisseurs,
+  epaisseurTotale,
+  creerCouches,
+  prolongerArete,
+  soustraireEnGardant,
+  ecreterParEnveloppe,
+  objetsEntreAltitudes,
+  lireAltitudes,
+  miroirLisible,
+  empreintesEnPlan,
+  aireProjetee,
+  longueurCourbes,
+  modeleEclate,
+  lireFichierComposant,
+  poserComposant,
+  composantDe,
+  regenererComposant,
+  remplacerOccurrences,
+  definitionDepuisFichier,
+  suivreOuvertures,
+  ID_CALER,
+  ID_BOITE,
+  type ParEclatement,
   choixEffectif,
   cleCommandeExtension,
   clesMasquees,
@@ -372,6 +399,8 @@ import {
   vueEtatCourante,
   type ChangementBalise,
 } from "@parcours/sandbox-planche-model";
+import { COMMANDES_MODELISATION, disponibiliteModelisation, type IdCommandeModelisation } from "./commandes-objets";
+import { PanneauComposantsAgence, PanneauExtrusion, PanneauSoustraire, PanneauVuesMesures, RACCOURCI_PANNEAU_L8, useSaisiesL8, type FichierAgence } from "./panneaux-l8";
 import { COMMANDES_BALISE, COMMANDES_ECHANGE, COMMANDES_GABARIT, COMMANDES_SCENE, COMMANDES_VERSION, disponibiliteBalise, disponibiliteEchange, disponibiliteGabarit, disponibiliteScene, disponibiliteVersion, type IdCommandeBalise, type IdCommandeEchange, type IdCommandeGabarit, type IdCommandeScene, type IdCommandeVersion } from "./commandes-objets";
 import {
   comparerModeles,
@@ -469,7 +498,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -482,7 +511,7 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet"]);
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 /** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
 export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
@@ -524,7 +553,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [consultation, setConsultation] = useState<{ readonly jalon: Jalon | null; readonly retour: Historique | null } | null>(null);
   const consultationRef = useRef(consultation);
   consultationRef.current = consultation;
-  const readOnly = lectureProp || consultation !== null;
+  // Cas 2, lot 8 (n° 19) : axonométrie éclatée — un modèle d'affichage dérivé (le modèle ne bouge pas) ; lecture seule.
+  const [eclatement, setEclatement] = useState<{ readonly par: ParEclatement; readonly ecart: number } | null>(null);
+  const readOnly = lectureProp || consultation !== null || eclatement !== null;
   const ui = useEtatUi();
   const navigationRef = useRef(ui.navigation);
   navigationRef.current = ui.navigation;
@@ -659,6 +690,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const sectionRef = useRef<SectionCourante | null>(null);
   // Cas 4, étape 4 : épaisseur et hauteur de l'outil Mur (barre d'options), relues par la machine dans son contexte.
   const murRef = useRef<{ epaisseur: number; hauteur: number } | null>({ epaisseur: 0.2, hauteur: 2.5 });
+  // Cas 2, lot 8 (n° 100) : altitudes saisies qui bornent la boîte 3D de sélection.
+  const altitudesBoiteRef = useRef<{ zmin: number; zmax: number } | null>(null);
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "saisie", dimensions: { forme: "rectangle", largeur: "", hauteur: "", epaisseur: "", epaisseurAile: "", segments: "" } });
   const [angleRotation, setAngleRotation] = useState("90");
   const [erreurFace, setErreurFace] = useState<string | null>(null);
@@ -869,6 +902,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
+      altitudesBoite: altitudesBoiteRef.current,
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
@@ -924,6 +958,16 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     if (h.present.operation !== null && h.futur.length === 0 && h.present !== avantHist.futur[0] && h.present.modele !== avantHist.present.modele) {
       const balise = baliserNouveautes(avantHist.present.modele, h.present.modele, baliseRef.current, dansRef.current);
       if (balise !== h.present.modele) h = { ...h, present: { ...h.present, modele: balise } };
+    }
+    // Cas 2, lot 8 (n° 25) : une ouverture découpée suit son composant (déplacé, remplacé, régénéré, copié ou effacé),
+    // dans le même pas d'historique.
+    if (h.present.operation !== null && h.futur.length === 0 && h.present !== avantHist.futur[0] && h.present.modele !== avantHist.present.modele) {
+      try {
+        const suivi = suivreOuvertures(avantHist.present.modele, h.present.modele);
+        if (suivi !== h.present.modele) h = { ...h, present: { ...h.present, modele: suivi } };
+      } catch {
+        // Une ouverture qui ne peut pas suivre reste telle quelle : jamais de perte de l'opération.
+      }
     }
     const changeModele = h.present.modele !== avantHist.present.modele;
     histRef.current = h;
@@ -1090,6 +1134,20 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         setTexte(null);
         setMessage(null);
         passerOutilExtensionRef.current(avant, id);
+        rafraichir();
+        return;
+      }
+      // Cas 2, lot 8 : outils de pointage (Caler par deux points, Boîte 3D), lancés par leur commande, hors catalogue.
+      if (id === ID_CALER || id === ID_BOITE) {
+        if (readOnly && id === ID_CALER) return;
+        setGrille(false);
+        setEdition(null);
+        if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
+        outilRef.current = id;
+        etatMachineRef.current = machineParId(id)?.initial() ?? null;
+        setOutilId(id);
+        setTexte(null);
+        setMessage(null);
         rafraichir();
         return;
       }
@@ -4441,6 +4499,314 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const raccourciConsultation = COMMANDES_VERSION.find((c) => c.id === "consultation")!.raccourci;
 
   /**
+   * Cas 2, lot 8 : outils de modélisation et composants d'agence (maquettes lot8-1 à lot8-4 acceptées le 27 novembre).
+   * Chaque commande ouvre son panneau ; les valeurs sont saisies (aucune valeur par défaut) ; chaque modification est un
+   * pas d'historique ; le moteur booléen est chargé à la demande, comme pour les outils de solides.
+   */
+  const [saisiesL8, poserSaisiesL8] = useSaisiesL8();
+  const [noteL8, setNoteL8] = useState<string | null>(null);
+  const [fichiersAgence, setFichiersAgence] = useState<readonly FichierAgence[]>([]);
+  const [aireL8, setAireL8] = useState<{ readonly union: string; readonly somme: string } | null>(null);
+  const [echelleL8, setEchelleL8] = useState(false);
+  const fichierComposantRef = useRef<HTMLInputElement | null>(null);
+  const nbL8 = (x: number, d = 3) => (Number.isInteger(x) ? String(x) : String(Math.round(x * 10 ** d) / 10 ** d)).replace(".", SEPARATEUR_DECIMAL);
+  const messageL8 = (err: unknown): string =>
+    err instanceof ErreurL8 ? t(`planche.l8.erreur.${err.cle}` as CleMessage, err.args) : err instanceof ErreurComposant ? t(`planche.composant.erreur.${err.cle}` as CleMessage, err.args) : err instanceof Error ? err.message : String(err);
+  const echecL8 = (err: unknown) => {
+    const m = messageL8(err);
+    setNoteL8(m);
+    setMessage(m);
+  };
+  const PANNEAU_L8: Readonly<Record<IdCommandeModelisation, Panneau>> = {
+    "extrusion-hauteur": "extrusion",
+    "creer-couches": "extrusion",
+    "prolonger-arete": "extrusion",
+    "murs-en-couches": "extrusion",
+    "composants-agence": "composants-agence",
+    "ajuster-baie": "composants-agence",
+    "remplacer-occurrences": "composants-agence",
+    "importer-composant": "composants-agence",
+    "soustraire-garder": "soustraire",
+    "caler-deux-points": "soustraire",
+    "selection-altitudes": "soustraire",
+    "selection-boite": "soustraire",
+    "miroir-lisible": "soustraire",
+    "ecreter-enveloppe": "soustraire",
+    "vue-ortho": "vues-mesures",
+    "eclater-axonometrie": "vues-mesures",
+    "echelle-graphique": "vues-mesures",
+    "aire-projetee": "vues-mesures",
+  };
+  /** Sélection lue au moment de la commande : faces, arêtes et objets du contexte ouvert, dans l'ordre du choix. */
+  const selectionL8 = () => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+    return { m, ids, faces: ids.filter((id) => c.faces[id]), aretes: ids.filter((id) => c.aretes[id]), objets: ids.filter((id) => c.occurrences[id]) };
+  };
+  const disponibiliteCommandeModelisation = (id: IdCommandeModelisation) => {
+    const s = selectionL8();
+    return disponibiliteModelisation(id, { lecture: readOnly, faces: s.faces.length, aretes: s.aretes.length, objets: s.objets.length, selection: s.ids.length, panneau: panneau === PANNEAU_L8[id] });
+  };
+  /** Une modification du lot 8 : calculée d'abord (l'erreur reste dans le panneau), puis posée en un pas. */
+  const faireL8 = (nom: string, fn: (m: Modele) => { readonly modele: Modele; readonly selection?: readonly string[]; readonly note: string }) => {
+    if (readOnly) return setNoteL8(t("planche.lecture.message"));
+    try {
+      const r = fn(histRef.current.present.modele);
+      operer(nom, () => ({ modele: r.modele, ...(r.selection ? { selection: r.selection } : {}), message: r.note }));
+      setNoteL8(r.note);
+    } catch (err) {
+      echecL8(err);
+    }
+  };
+  const avecBooleens = (fn: (b: AdaptateurBooleens) => void) => {
+    if (booleensRef.current) return fn(booleensRef.current);
+    setBooleens("chargement");
+    setNoteL8(t("planche.l8.chargement"));
+    void chargerBooleens().then(
+      (b) => {
+        booleensRef.current = b;
+        setBooleens("ok");
+        fn(b);
+      },
+      (err: unknown) => {
+        setBooleens("echec");
+        setNoteL8(t("planche.solides.echec", { motif: err instanceof Error ? err.message : String(err) }));
+      },
+    );
+  };
+  const longueurL8 = (texte: string, cle: string): number => {
+    const x = lireNombreSaisi(texte);
+    if (x === null || !(x > 0)) throw new ErreurL8(cle as "hauteur-invalide");
+    return x;
+  };
+  /** Valeurs saisies du composant (champs vides ignorés : la baie les donne) ; une valeur illisible est refusée. */
+  const valeursComposantL8 = (): Record<string, number> => {
+    const v: Record<string, number> = {};
+    for (const [k, texte] of Object.entries(saisiesL8.valeurs)) {
+      if (!texte.trim()) continue;
+      const x = lireNombreSaisi(texte);
+      if (x === null || !(x > 0)) throw new ErreurComposant("valeur", { nom: t(`planche.l8.composant.${k}` as CleMessage) });
+      v[k] = x;
+    }
+    return v;
+  };
+  // Lecture de l'extrusion (n° 39) : la face choisie seule, panneau ouvert.
+  const lectureExtrusionL8 = useMemo(() => {
+    if (panneau !== "extrusion") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const faces = selectionRef.current.filter((id) => c.faces[id]);
+    if (faces.length !== 1) return null;
+    const l = lireExtrusion(hist.present.modele, faces[0]!, dans !== undefined ? { dans } : {});
+    return l.ok ? { hauteur: `${nbL8(l.hauteur)} m` } : { motif: t(`planche.l8.erreur.${l.motif}` as CleMessage) };
+  }, [panneau, hist.present.modele, vue, dans]); // eslint-disable-line react-hooks/exhaustive-deps
+  const appliquerHauteurL8 = () => {
+    if (!saisiesL8.hauteur.trim()) return;
+    const s = selectionL8();
+    if (s.faces.length !== 1) return setNoteL8(t("planche.l8.motif.face"));
+    faireL8(t("planche.modelisation.extrusion-hauteur"), (m) => {
+      const h = longueurL8(saisiesL8.hauteur, "hauteur-invalide");
+      return { modele: changerHauteurExtrusion(m, s.faces[0]!, h, o()).modele, note: t("planche.l8.note.hauteur", { hauteur: nbL8(h) }) };
+    });
+  };
+  // Composant d'agence choisi dans le dessin (n° 32) : ses valeurs remplissent les champs, pour les modifier.
+  const composantChoisiL8 = useMemo(() => {
+    if (panneau !== "composants-agence") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const objets = selectionRef.current.filter((id) => c.occurrences[id]);
+    if (objets.length !== 1) return null;
+    const x = composantDe(hist.present.modele, objets[0]!);
+    const occ = hist.present.modele.racine.occurrences[objets[0]!] ?? c.occurrences[objets[0]!];
+    return x && occ ? { id: objets[0]!, nom: hist.present.modele.definitions[occ.definition]?.nom ?? x.fichier.nom, genre: x.meta.genre, valeurs: x.meta.valeurs } : null;
+  }, [panneau, hist.present.modele, vue, dans]);
+  const idChoisiL8 = composantChoisiL8?.id ?? null;
+  useEffect(() => {
+    if (!composantChoisiL8) return;
+    poserSaisiesL8({ valeurs: Object.fromEntries(Object.entries(composantChoisiL8.valeurs).map(([k, v]) => [k, nbL8(v, 4)])) });
+  }, [idChoisiL8]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Longueur vraie des courbes choisies (n° 114), au panneau « Vue orthographique ».
+  const courbesL8 = useMemo(() => {
+    if (panneau !== "vues-mesures") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const aretes = selectionRef.current.filter((id) => c.aretes[id]);
+    if (!aretes.length) return null;
+    const l = longueurCourbes(hist.present.modele, aretes, dans !== undefined ? { dans } : {});
+    return l.aretesCourbes > 0 ? { facettes: `${nbL8(l.facettes)} m`, courbe: `${nbL8(l.courbe)} m`, ecart: `${nbL8(l.ecart)} m` } : null;
+  }, [panneau, hist.present.modele, vue, dans]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Fichiers de composants d'agence : archivés en base pour le compte (D-GD-29), lus à l'ouverture du panneau.
+  const chargerComposantsAgence = useCallback(async () => {
+    const liste = await listerFichiersArchives("planche-composant");
+    const lus: FichierAgence[] = [];
+    for (const a of liste) {
+      const texte = await lireFichierArchive(a.id);
+      const l = texte !== null ? lireFichierComposant(texte) : null;
+      if (l?.ok) lus.push({ id: a.id, nom: a.nom, fichier: l.fichier, texte: texte! });
+    }
+    setFichiersAgence((avant) => [...lus, ...avant.filter((x) => x.id.startsWith("local:") && !lus.some((l) => l.nom === x.nom))]);
+    if (lus.length) poserSaisiesL8({ composant: lus[0]!.id });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (panneau === "composants-agence") void chargerComposantsAgence();
+  }, [panneau, chargerComposantsAgence]);
+  const importerComposantAgence = (f: File) => {
+    void f.text().then((texte) => {
+      const l = lireFichierComposant(texte);
+      if (!l.ok) return setNoteL8(t("planche.l8.note.import-refuse", { nom: f.name, motif: t(`planche.composant.erreur.${l.erreur}` as CleMessage, { nom: "" }) }));
+      void archiverFichierExtension("planche-composant", { nom: f.name, texte }).then((issue) => {
+        const id = issue.ok ? issue.archive.id : `local:${f.name}`;
+        setFichiersAgence((avant) => [...avant.filter((x) => x.id !== id), { id, nom: f.name, fichier: l.fichier, texte }]);
+        poserSaisiesL8({ composant: id, valeurs: {} });
+        setNoteL8(issue.ok ? t("planche.l8.note.importe", { nom: f.name, composant: l.fichier.nom }) : t("planche.l8.note.importe-sans-base", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+      });
+    });
+  };
+  // Axonométrie éclatée (n° 19) : le modèle d'affichage est dérivé à chaque changement ; le modèle ne bouge pas.
+  const modeleEclateL8 = useMemo(() => (eclatement ? modeleEclate(hist.present.modele, eclatement.par, eclatement.ecart) : null), [eclatement, hist.present.modele]);
+  useEffect(() => {
+    if (modeleEclateL8) vueRef.current?.majModele(modeleEclateL8.modele);
+  }, [modeleEclateL8]);
+  const quitterEclatement = () => {
+    setEclatement(null);
+    vueRef.current?.majModele(histRef.current.present.modele);
+    setNoteL8(t("planche.l8.note.eclatee-fin"));
+  };
+
+  const executerModelisation = (id: IdCommandeModelisation) => {
+    const d = disponibiliteCommandeModelisation(id);
+    const cible = PANNEAU_L8[id];
+    // Les commandes de panneau ouvrent (ou ferment) leur panneau ; les autres l'ouvrent puis s'exécutent.
+    if (id === "extrusion-hauteur" || id === "composants-agence") {
+      setNoteL8(null);
+      return setPanneau(panneauRef.current === cible ? null : cible);
+    }
+    if (panneauRef.current !== cible) setPanneau(cible);
+    if (id === "soustraire-garder" && panneauRef.current !== cible) return setNoteL8(t("planche.l8.note.soustraire-consigne"));
+    if (!d.disponible) return setNoteL8(t(d.motif ?? "planche.lecture.message"));
+    const s = selectionL8();
+    const sep = SEPARATEUR_DECIMAL;
+    void sep;
+    switch (id) {
+      case "creer-couches":
+        return faireL8(t("planche.modelisation.creer-couches"), (m) => {
+          const e = lireEpaisseurs(saisiesL8.epaisseurs);
+          if (!e) throw new ErreurL8("epaisseurs-invalides");
+          const r = creerCouches(m, s.faces[0]!, e, saisiesL8.sens, o());
+          return { modele: r.modele, selection: r.occurrences, note: t("planche.l8.note.couches", { nombre: String(r.occurrences.length), total: nbL8(epaisseurTotale(e)) }) };
+        });
+      case "prolonger-arete":
+        return faireL8(t("planche.modelisation.prolonger-arete"), (m) => {
+          const [a, limite] = [s.ids[0]!, s.ids[1]!];
+          if (!s.aretes.includes(a)) throw new ErreurL8("arete-inconnue");
+          const l = s.faces.includes(limite) ? { face: limite } : s.aretes.includes(limite) ? { arete: limite } : null;
+          if (!l) throw new ErreurL8("limite-inconnue");
+          return { modele: prolongerArete(m, a, l, o()).modele, selection: [a], note: t("planche.l8.note.prolongee") };
+        });
+      case "murs-en-couches":
+        return faireL8(t("planche.modelisation.murs-en-couches"), (m) => {
+          const e = lireEpaisseurs(saisiesL8.epaisseurs);
+          if (!e) throw new ErreurL8("epaisseurs-invalides");
+          const h = longueurL8(saisiesL8.hauteurMur, "hauteur-invalide");
+          const c = m.racine;
+          const horizontales = s.aretes.filter((x) => c.aretes[x] && Math.abs(c.sommets[c.aretes[x]!.a]!.position.z - c.sommets[c.aretes[x]!.b]!.position.z) < 1e-6);
+          const r = poserMurs(m, chainesDAretes(m, horizontales), { epaisseur: epaisseurTotale(e), hauteur: h, reference: saisiesL8.reference });
+          if (!r.ok) throw new Error(t(`planche.mur.erreur.${r.erreur}`));
+          const occ = r.ids.map((w) => r.modele.annotations?.murs?.[w]?.occurrence).filter((x): x is string => !!x);
+          return { modele: r.modele, selection: occ, note: `${noteJonctions(r.ids.length, r.jonctions)} ${t("planche.l8.note.murs-couches", { couches: e.map((x) => nbL8(x)).join(" ; "), total: nbL8(epaisseurTotale(e)) })}` };
+        });
+      case "importer-composant":
+        return fichierComposantRef.current?.click();
+      case "ajuster-baie":
+        return faireL8(t("planche.modelisation.ajuster-baie"), (m) => {
+          const valeurs = valeursComposantL8();
+          if (s.objets.length === 1 && composantDe(m, s.objets[0]!)) {
+            return { modele: regenererComposant(m, s.objets[0]!, valeurs), selection: [s.objets[0]!], note: t("planche.l8.note.ajuste") };
+          }
+          const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+          if (!f) throw new Error(t("planche.l8.composant.choisir"));
+          const r = poserComposant(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, ...(f.id.startsWith("local:") ? {} : { archive: f.id }), valeurs, decouper: saisiesL8.decouper }, { ...(s.faces[0] ? { face: s.faces[0] } : { arete: s.aretes[0]! }), ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
+          return { modele: r.modele, selection: [r.occurrence], note: t("planche.l8.note.pose", { nom: f.fichier.nom, baie: t(`planche.l8.baie.${r.baie}` as CleMessage) }) };
+        });
+      case "remplacer-occurrences":
+        return faireL8(t("planche.modelisation.remplacer-occurrences"), (m) => {
+          const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+          if (!f) throw new Error(t("planche.l8.composant.choisir"));
+          const valeurs = { ...(composantDe(m, s.objets[0]!)?.meta.valeurs ?? {}), ...valeursComposantL8() };
+          const dd = definitionDepuisFichier(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, ...(f.id.startsWith("local:") ? {} : { archive: f.id }), valeurs });
+          const r = remplacerOccurrences(dd.modele, s.objets, dd.definition);
+          return { modele: r.modele, selection: s.objets, note: t("planche.l8.note.remplaces", { nombre: String(r.remplaces), nom: f.fichier.nom }) };
+        });
+      case "soustraire-garder":
+        return avecBooleens((b) =>
+          faireL8(t("planche.modelisation.soustraire-garder"), (m) => {
+            const r = soustraireEnGardant(b, m, s.objets[0]!, s.objets[1]!, { garder: saisiesL8.garder, nom: saisiesL8.nom, ...(saisiesL8.balise ? { balise: saisiesL8.balise } : {}) });
+            const note = r.garde ? t("planche.l8.note.soustrait-garde", { volume: nbL8(r.volumeRetire), nom: saisiesL8.nom.trim() }) : t("planche.l8.note.soustrait", { volume: nbL8(r.volumeRetire) });
+            return { modele: r.modele, selection: [r.reste, ...(r.garde ? [r.garde] : [])], note };
+          }),
+        );
+      case "caler-deux-points":
+        setNoteL8(t("planche.l8.note.caler"));
+        return choisirOutil(ID_CALER);
+      case "selection-altitudes": {
+        const a = lireAltitudes(saisiesL8.altitudes);
+        if (!a) return echecL8(new ErreurL8("altitudes-invalides"));
+        const ids = objetsEntreAltitudes(histRef.current.present.modele, a.zmin, a.zmax);
+        setSelection(ids);
+        return setNoteL8(t("planche.l8.note.altitudes", { nombre: String(ids.length), min: nbL8(a.zmin), max: nbL8(a.zmax) }));
+      }
+      case "selection-boite":
+        altitudesBoiteRef.current = saisiesL8.altitudes.trim() ? lireAltitudes(saisiesL8.altitudes) : null;
+        if (saisiesL8.altitudes.trim() && !altitudesBoiteRef.current) return echecL8(new ErreurL8("altitudes-invalides"));
+        setNoteL8(t(altitudesBoiteRef.current ? "planche.l8.note.boite-altitudes" : "planche.l8.note.boite"));
+        return choisirOutil(ID_BOITE);
+      case "miroir-lisible":
+        return faireL8(t("planche.modelisation.miroir-lisible"), (m) => {
+          const r = miroirLisible(m, s.ids, saisiesL8.axe, o());
+          return { modele: r.modele, note: t("planche.l8.note.miroir", { gardes: String(r.gardes) }) };
+        });
+      case "ecreter-enveloppe":
+        return avecBooleens((b) =>
+          faireL8(t("planche.modelisation.ecreter-enveloppe"), (m) => {
+            const enveloppe = s.objets[s.objets.length - 1]!;
+            const r = ecreterParEnveloppe(b, m, s.objets.slice(0, -1), enveloppe);
+            return { modele: r.modele, selection: r.crees, note: t("planche.l8.note.ecrete", { total: nbL8(r.retireTotal), detail: r.parts.map((p) => `${p.nom} : ${nbL8(p.retire)} m³`).join(" ; ") }) };
+          }),
+        );
+      case "vue-ortho": {
+        const p = camera.projection === "parallele" ? "perspective" : "parallele";
+        poserProjection(p);
+        return setNoteL8(t(p === "parallele" ? "planche.l8.note.ortho" : "planche.l8.note.perspective"));
+      }
+      case "eclater-axonometrie": {
+        if (eclatement) return quitterEclatement();
+        const e = lireNombreSaisi(saisiesL8.ecart);
+        if (e === null || !(e > 0)) return echecL8(new ErreurL8("ecart-invalide"));
+        const r = modeleEclate(histRef.current.present.modele, saisiesL8.par, e);
+        vueStandard("iso");
+        poserProjection("parallele");
+        setEclatement({ par: saisiesL8.par, ecart: e });
+        return setNoteL8(t("planche.l8.note.eclatee", { groupes: String(r.groupes.length), ecart: nbL8(e) }));
+      }
+      case "echelle-graphique": {
+        const active = !echelleL8;
+        setEchelleL8(active);
+        vueRef.current?.poserEchelleGraphique(active);
+        if (active && camera.projection !== "parallele") poserProjection("parallele");
+        return setNoteL8(active ? t("planche.l8.note.echelle") : null);
+      }
+      case "aire-projetee":
+        return avecBooleens((b) => {
+          try {
+            const r = aireProjetee(b.aireUnion!, empreintesEnPlan(histRef.current.present.modele, s.ids));
+            setAireL8({ union: `${nbL8(r.union, 2)} m²`, somme: `${nbL8(r.somme, 2)} m²` });
+            setNoteL8(t("planche.l8.note.aire", { elements: String(r.elements) }));
+          } catch (err) {
+            echecL8(err);
+          }
+        });
+    }
+  };
+
+  /**
    * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3). Chaque extension a son hôte
    * (`creerHoteExtension`), créé à sa première commande : son code tourne dans un Web Worker isolé et ne touche le
    * dessin que par les services de la Planche — une opération est appliquée d'un bloc, en un seul pas d'historique.
@@ -5198,6 +5564,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "gabarit") executerGabarit(c.id as IdCommandeGabarit);
     else if (c.famille === "echange") executerEchange(c.id as IdCommandeEchange);
     else if (c.famille === "version") executerVersion(c.id as IdCommandeVersion);
+    else if (c.famille === "modelisation") executerModelisation(c.id as IdCommandeModelisation);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -5295,6 +5662,11 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_VERSION.map((c) => {
           const d = disponibiliteCommandeVersion(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.lecture"), executer: () => executerVersion(c.id) };
+        }),
+        // Cas 2, lot 8 : outils de modélisation et composants d'agence.
+        ...COMMANDES_MODELISATION.map((c) => {
+          const d = disponibiliteCommandeModelisation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.lecture"), executer: () => executerModelisation(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -6023,6 +6395,18 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         data-planche-motif-fichier
       />
       <input
+        ref={fichierComposantRef}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) importerComposantAgence(f);
+        }}
+        data-planche-composant-fichier
+      />
+      <input
         ref={fichierGabaritRef}
         type="file"
         accept={`${EXTENSION_GABARIT},.json,application/json`}
@@ -6054,6 +6438,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
               {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
               {panneau === "info-entite" && planChoisi() ? ` · ${t("planche.info.plan")}` : ""}
               {RACCOURCI_PANNEAU_L7[panneau] && <small className="planche-versions-raccourci"> {afficherRaccourci(RACCOURCI_PANNEAU_L7[panneau]!)}</small>}
+              {RACCOURCI_PANNEAU_L8[panneau] && <small className="planche-versions-raccourci"> {afficherRaccourci(RACCOURCI_PANNEAU_L8[panneau]!)}</small>}
             </h3>
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
@@ -6190,6 +6575,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
               />
             )}
             {panneau === "gabarit" && <PanneauGabarit gabarits={gabarits} choisi={gabaritChoisi} onChoisir={setGabaritChoisi} separateur={SEPARATEUR_DECIMAL} note={noteGabarit} executer={executerGabarit} disponibilite={disponibiliteCommandeGabarit} />}
+            {panneau === "extrusion" && <PanneauExtrusion s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} extrusion={lectureExtrusionL8} onHauteur={appliquerHauteurL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "composants-agence" && <PanneauComposantsAgence s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} fichiers={fichiersAgence} choisi={composantChoisiL8} onValeurs={() => executerModelisation("ajuster-baie")} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "soustraire" && <PanneauSoustraire s={saisiesL8} poser={poserSaisiesL8} balises={Object.entries(hist.present.modele.annotations?.balises ?? {}).map(([id, b]) => ({ id, nom: b.nom }))} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "vues-mesures" && <PanneauVuesMesures s={saisiesL8} poser={poserSaisiesL8} exacte={camera.projection === "parallele"} onProjection={(x) => poserProjection(x ? "parallele" : "perspective")} eclatee={eclatement !== null} echelle={echelleL8} aire={aireL8} courbes={courbesL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
             {panneau === "versions-jalons" && (
               <PanneauVersions
                 revision={revisionDe(hist.present.modele)}

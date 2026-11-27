@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit" | "echange" | "version";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -398,6 +398,26 @@ const commandes: EntreeSandbox[] = [
   c("appliquer-brouillon", "version", "git-merge", "Ctrl+Maj+Espace, Maj+A", "panneau-brouillon", true),
   c("garder-brouillon", "version", "git-fork", "Ctrl+Maj+Espace, Maj+G", "panneau-brouillon", true),
   c("abandonner-brouillon", "version", "git-branch-deleted", "Ctrl+Maj+Espace, Maj+Z", "panneau-brouillon", true),
+  // Cas 2 du catalogue, lot 8 (27 novembre 2026) : outils de modélisation et composants ; secondes touches en chiffres
+  // (maquettes lot8-1 à lot8-4 acceptées), Maj+5 et Maj+6 pour les deux commandes ajoutées à la mise en œuvre.
+  c("extrusion-hauteur", "modelisation", "arrow-autofit-height", "Ctrl+Maj+Espace, 1", "panneau-extrusion", true),
+  c("creer-couches", "modelisation", "stack-3", "Ctrl+Maj+Espace, 2", "panneau-extrusion", true),
+  c("prolonger-arete", "modelisation", "arrow-bar-to-right", "Ctrl+Maj+Espace, 3", "panneau-extrusion", true),
+  c("murs-en-couches", "modelisation", "stack-middle", "Ctrl+Maj+Espace, Maj+5", "panneau-extrusion", true),
+  c("composants-agence", "modelisation", "window", "Ctrl+Maj+Espace, 4", "panneau-composants-agence", true),
+  c("ajuster-baie", "modelisation", "aspect-ratio", "Ctrl+Maj+Espace, 5", "panneau-composants-agence", true),
+  c("remplacer-occurrences", "modelisation", "replace", "Ctrl+Maj+Espace, 6", "panneau-composants-agence", true),
+  c("importer-composant", "modelisation", "package-import", "Ctrl+Maj+Espace, Maj+6", "panneau-composants-agence", true),
+  c("soustraire-garder", "modelisation", "cut", "Ctrl+Maj+Espace, 7", "panneau-soustraire", true),
+  c("caler-deux-points", "modelisation", "vector", "Ctrl+Maj+Espace, 8", "panneau-soustraire", true),
+  c("selection-altitudes", "modelisation", "arrows-vertical", "Ctrl+Maj+Espace, 9", "panneau-soustraire", true),
+  c("selection-boite", "modelisation", "box-margin", "Ctrl+Maj+Espace, Maj+9", "panneau-soustraire", true),
+  c("miroir-lisible", "modelisation", "flip-horizontal", "Ctrl+Maj+Espace, 0", "panneau-soustraire", true),
+  c("ecreter-enveloppe", "modelisation", "crop", "Ctrl+Maj+Espace, Maj+0", "panneau-soustraire", true),
+  c("vue-ortho", "modelisation", "perspective-off", "Ctrl+Maj+Espace, Maj+1", "panneau-vues-mesures", true),
+  c("eclater-axonometrie", "modelisation", "arrows-split", "Ctrl+Maj+Espace, Maj+2", "panneau-vues-mesures", true),
+  c("echelle-graphique", "modelisation", "ruler-measure-2", "Ctrl+Maj+Espace, Maj+3", "panneau-vues-mesures", true),
+  c("aire-projetee", "modelisation", "chart-area", "Ctrl+Maj+Espace, Maj+4", "panneau-vues-mesures", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

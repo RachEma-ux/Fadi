@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION, ...COMMANDES_MODELISATION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -577,7 +577,7 @@ export interface CommandeLot4<I extends string> {
   readonly court: CleMessage;
   readonly raccourci: string;
 }
-const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit" | "echange" | "version") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
+const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
 export const COMMANDES_BALISE: readonly CommandeLot4<IdCommandeBalise>[] = (["verrouiller-balise", "balises-phase", "classer-selection", "vue-etat"] as const).map(lot4<IdCommandeBalise>("balise"));
 export const COMMANDES_SCENE: readonly CommandeLot4<IdCommandeScene>[] = (["scenes-types", "avancer-coupe", "reculer-coupe", "scene-face-coupe"] as const).map(lot4<IdCommandeScene>("scene"));
 export const COMMANDES_GABARIT: readonly CommandeLot4<IdCommandeGabarit>[] = (["gabarit", "importer-gabarit", "enregistrer-gabarit", "creer-planche-gabarit"] as const).map(lot4<IdCommandeGabarit>("gabarit"));
@@ -600,6 +600,68 @@ export function disponibiliteVersion(id: IdCommandeVersion, s: { readonly lectur
     return { disponible: true, motif: null };
   }
   if (id === "poser-jalon" && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return { disponible: true, motif: null };
+}
+
+/** Cas 2, lot 8 : outils de modélisation et composants (raccourcis en deux temps : Ctrl+Maj+Espace, puis un chiffre). */
+export type IdCommandeModelisation =
+  | "extrusion-hauteur"
+  | "creer-couches"
+  | "prolonger-arete"
+  | "murs-en-couches"
+  | "composants-agence"
+  | "ajuster-baie"
+  | "remplacer-occurrences"
+  | "importer-composant"
+  | "soustraire-garder"
+  | "caler-deux-points"
+  | "selection-altitudes"
+  | "selection-boite"
+  | "miroir-lisible"
+  | "ecreter-enveloppe"
+  | "vue-ortho"
+  | "eclater-axonometrie"
+  | "echelle-graphique"
+  | "aire-projetee";
+export const COMMANDES_MODELISATION: readonly CommandeLot4<IdCommandeModelisation>[] = ([
+  "extrusion-hauteur",
+  "creer-couches",
+  "prolonger-arete",
+  "murs-en-couches",
+  "composants-agence",
+  "ajuster-baie",
+  "remplacer-occurrences",
+  "importer-composant",
+  "soustraire-garder",
+  "caler-deux-points",
+  "selection-altitudes",
+  "selection-boite",
+  "miroir-lisible",
+  "ecreter-enveloppe",
+  "vue-ortho",
+  "eclater-axonometrie",
+  "echelle-graphique",
+  "aire-projetee",
+] as const).map(lot4<IdCommandeModelisation>("modelisation"));
+/** Commandes du lot 8 qui modifient le dessin : refusées en lecture (consultation, vue éclatée comprises). */
+const MODIFIENT_L8: ReadonlySet<IdCommandeModelisation> = new Set(["creer-couches", "prolonger-arete", "murs-en-couches", "ajuster-baie", "remplacer-occurrences", "soustraire-garder", "caler-deux-points", "miroir-lisible", "ecreter-enveloppe"]);
+/**
+ * Disponibilité d'une commande du lot 8. Les panneaux s'ouvrent toujours ; « Soustraire » ouvre son panneau s'il est
+ * fermé (`panneau` faux), puis agit. Les motifs disent ce qu'il faut choisir.
+ */
+export function disponibiliteModelisation(
+  id: IdCommandeModelisation,
+  s: { readonly lecture: boolean; readonly faces: number; readonly aretes: number; readonly objets: number; readonly selection: number; readonly panneau: boolean },
+): Disponibilite {
+  if (id === "soustraire-garder" && !s.panneau) return { disponible: true, motif: null };
+  if (MODIFIENT_L8.has(id) && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "creer-couches" && s.faces !== 1) return { disponible: false, motif: "planche.l8.motif.face" };
+  if (id === "prolonger-arete" && (s.aretes < 1 || s.selection !== 2)) return { disponible: false, motif: "planche.l8.motif.arete-limite" };
+  if (id === "murs-en-couches" && s.aretes < 1) return { disponible: false, motif: "planche.l8.motif.aretes" };
+  if (id === "ajuster-baie" && s.faces + s.aretes < 1 && s.objets !== 1) return { disponible: false, motif: "planche.l8.motif.baie" };
+  if ((id === "remplacer-occurrences" || id === "caler-deux-points") && s.objets < 1) return { disponible: false, motif: "planche.l8.motif.objets" };
+  if ((id === "soustraire-garder" || id === "ecreter-enveloppe") && s.objets < 2) return { disponible: false, motif: "planche.l8.motif.deux-objets" };
+  if ((id === "miroir-lisible" || id === "aire-projetee") && s.selection < 1) return { disponible: false, motif: "planche.l8.motif.selection" };
   return { disponible: true, motif: null };
 }
 
