@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lireModelePlanche } from "./delta.js";
-import { ajouterPointCalage, calerFond, choisirMethode, coinsFond, estFond, importerFond, residusCalage, saisirCible, saisirLongueur, similitude, supprimerPointCalage, verrouillerFond, versPixel, versPlan } from "./fonds.js";
+import { estOriginalFond, ajouterPointCalage, calerFond, choisirMethode, coinsFond, estFond, importerFond, residusCalage, saisirCible, saisirLongueur, similitude, supprimerPointCalage, verrouillerFond, versPixel, versPlan } from "./fonds.js";
 import { fondVise } from "./outils/calage.js";
 import { type Id, type Modele, modeleVide } from "./geometrie-libre.js";
 
@@ -108,5 +108,15 @@ describe("Fonds calés", () => {
     expect(fondVise([fa!, fb!], rayon, fb!.id)?.fond.id).toBe(fb!.id);
     // Un fond plus haut reste visé d'abord, même si l'autre est choisi.
     expect(fondVise([fa!, { ...fb!, altitude: 1 }], rayon, fa!.id)?.fond.id).toBe(fb!.id);
+  });
+
+  it("original archivé : gardé par l'import et les opérations, relu par le document ; forme fautive refusée", () => {
+    const original = { id: "sbxfond_123e4567-e89b-12d3-a456-426614174000", empreinte: "a".repeat(64), taille: 1234, type: "image/png" as const };
+    const r = ok(importerFond(modeleVide(), { nom: "plan.png", image: IMG, largeurPx: 10, hauteurPx: 10, altitude: 0, original }));
+    const v = ok(verrouillerFond(r.modele, r.id, true));
+    expect(v.modele.annotations!.fonds![r.id]!.original).toEqual(original);
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(v.modele)))!.annotations!.fonds![r.id]!.original).toEqual(original);
+    expect(estOriginalFond({ ...original, empreinte: "xyz" })).toBe(false);
+    expect(importerFond(modeleVide(), { nom: "plan.png", image: IMG, largeurPx: 10, hauteurPx: 10, altitude: 0, original: { ...original, type: "image/gif" as never } })).toEqual({ ok: false, erreur: "image" });
   });
 });

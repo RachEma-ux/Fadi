@@ -255,6 +255,7 @@ import {
   supprimerPointCalage,
   verrouillerFond,
   type ResultatFond,
+  type OriginalFond,
   filtrerReserves,
   leverReserve,
   lotsDesReserves,
@@ -334,6 +335,7 @@ import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
+import { ErreurArchiveFond, archiverOriginalFond } from "./fonds-client";
 import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
 import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
@@ -3297,11 +3299,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return setErreurFond(t("planche.fonds.erreur.image"));
     }
     if (indexRef.current.courante !== planche) return;
+    // L'original est archivé tel quel en base avant la pose (décision du 27 novembre 2026) : sans archive, pas de fond.
+    setNoteFond(t("planche.fonds.note.archivage"));
+    let original: OriginalFond;
+    try {
+      original = await archiverOriginalFond(f);
+    } catch (e) {
+      setNoteFond(null);
+      return setErreurFond(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
     const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
     let pose: string | null = null;
     let erreur: string | null = null;
     operer(t("planche.fonds.importer-fond"), (m) => {
-      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0 });
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original });
       if (!r.ok) {
         erreur = r.erreur;
         return null;

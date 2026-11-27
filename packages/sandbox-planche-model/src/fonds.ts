@@ -41,6 +41,19 @@ export interface PointCalage {
 }
 export type MethodeCalage = "longueur" | "paires";
 
+/**
+ * Fichier d'origine archivé tel quel en base (décision du maître d'ouvrage du 27 novembre 2026) : l'image du fond n'en
+ * est qu'une copie réduite pour l'affichage ; l'original se relit par l'API (`/sandbox/fonds/:id`).
+ */
+export interface OriginalFond {
+  readonly id: string;
+  /** SHA-256 des octets d'origine (64 caractères hexadécimaux). */
+  readonly empreinte: string;
+  /** Octets. */
+  readonly taille: number;
+  readonly type: "image/png" | "image/jpeg";
+}
+
 export interface Fond {
   readonly id: Id;
   /** Nom du fichier importé. */
@@ -59,6 +72,8 @@ export interface Fond {
   /** Longueur saisie entre les deux premiers points (méthode « longueur ») ; null = non saisie. */
   readonly longueur: number | null;
   readonly points: readonly PointCalage[];
+  /** Original archivé en base ; absent = fond antérieur à l'archivage. */
+  readonly original?: OriginalFond;
 }
 
 /** Image encodée : 12 Mo de caractères au plus (un scan A3 réduit à 4 096 px en JPEG reste en deçà). */
@@ -78,6 +93,12 @@ const estImage = (v: unknown): v is string => typeof v === "string" && v.length 
 const estTaille = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= COTE_FOND_MAX_PX;
 const estPose = (v: unknown): v is PoseFond => typeof v === "object" && v !== null && fini((v as PoseFond).echelle) && (v as PoseFond).echelle > 0 && fini((v as PoseFond).rotation) && fini((v as PoseFond).x) && fini((v as PoseFond).y);
 const LETTRES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+export const estOriginalFond = (v: unknown): v is OriginalFond =>
+  typeof v === "object" && v !== null && !Array.isArray(v) &&
+  typeof (v as OriginalFond).id === "string" && /^sbxfond_[0-9a-f-]{36}$/.test((v as OriginalFond).id) &&
+  typeof (v as OriginalFond).empreinte === "string" && /^[0-9a-f]{64}$/.test((v as OriginalFond).empreinte) &&
+  Number.isInteger((v as OriginalFond).taille) && (v as OriginalFond).taille > 0 &&
+  ((v as OriginalFond).type === "image/png" || (v as OriginalFond).type === "image/jpeg");
 
 /** Fond reçu (document, delta) : jamais cru sur parole. */
 export function estFond(id: Id, v: unknown): v is Fond {
@@ -104,7 +125,8 @@ export function estFond(id: Id, v: unknown): v is Fond {
     (f["longueur"] === null || (fini(f["longueur"]) && (f["longueur"] as number) > 0)) &&
     Array.isArray(f["points"]) &&
     (f["points"] as unknown[]).length <= POINTS_CALAGE_MAX &&
-    (f["points"] as unknown[]).every((p, i) => typeof p === "object" && p !== null && (p as PointCalage).id === LETTRES[i] && estPixel((p as PointCalage).pixel, l, h) && ((p as PointCalage).cible === null || estPosition((p as PointCalage).cible)))
+    (f["points"] as unknown[]).every((p, i) => typeof p === "object" && p !== null && (p as PointCalage).id === LETTRES[i] && estPixel((p as PointCalage).pixel, l, h) && ((p as PointCalage).cible === null || estPosition((p as PointCalage).cible))) &&
+    (f["original"] === undefined || estOriginalFond(f["original"]))
   );
 }
 
@@ -141,15 +163,16 @@ const modifierFond = (m: Modele, id: Id, fn: (f: Fond) => Fond | ErreurFond, ver
 };
 
 /** Importe un fond (un pas) : pose provisoire 1 px = 1 cm, coin haut gauche à l'origine, à l'altitude donnée. */
-export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number }): ResultatFond {
+export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number; readonly original?: OriginalFond }): ResultatFond {
   const nom = v.nom.trim().slice(0, NOM_FOND_MAX);
   if (!estImage(v.image)) return { ok: false, erreur: "image" };
   if (!estTaille(v.largeurPx) || !estTaille(v.hauteurPx)) return { ok: false, erreur: "taille" };
   if (!fini(v.altitude)) return { ok: false, erreur: "position" };
+  if (v.original !== undefined && !estOriginalFond(v.original)) return { ok: false, erreur: "image" };
   let id = "" as Id;
   const modele = modifierAnnotations(m, (a, nouvel) => {
     id = nouvel("j");
-    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: false, verrouille: false, opacite: 0.7, methode: "longueur", longueur: null, points: [] };
+    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: false, verrouille: false, opacite: 0.7, methode: "longueur", longueur: null, points: [], ...(v.original ? { original: v.original } : {}) };
   }).modele;
   return { ok: true, modele, id };
 }

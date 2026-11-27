@@ -98,8 +98,13 @@ await (await choix).setFiles({ name: "plan-recu.png", mimeType: "image/png", buf
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().annotations?.fonds ?? {}).length === 1);
 let [f] = await fonds();
 check("Ctrl+Alt+Maj+F3 importe l'image : fond non calé, 1 px = 1 cm provisoire, PNG gardé", f.nom === "plan-recu.png" && !f.cale && f.largeurPx === 800 && f.hauteurPx === 600 && proche(f.pose.echelle, 0.01) && f.image.startsWith("data:image/png;base64,"), JSON.stringify({ nom: f.nom, e: f.pose.echelle, l: f.largeurPx }));
+// Original archivé tel quel en base (décision du 27 novembre 2026), relu à l'identique par l'API.
+const octets = png(800, 600);
+const lu = await page.evaluate(async (id) => { const r = await fetch(`/sandbox/fonds/${id}`, { credentials: "include" }); return { statut: r.status, type: r.headers.get("content-type"), octets: [...new Uint8Array(await r.arrayBuffer())] }; }, f.original?.id ?? "absent");
+check("l'original est archivé en base et relu à l'identique", !!f.original && f.original.taille === octets.length && f.original.type === "image/png" && lu.statut === 200 && lu.type === "image/png" && Buffer.from(lu.octets).equals(octets), JSON.stringify({ original: f.original, statut: lu.statut }));
 const panneau = page.locator("[data-planche-fonds]");
 await panneau.waitFor();
+check("la fiche du fond nomme l'original archivé", (await page.locator(`[data-planche-fond-original='${f.original?.id}']`).count()) === 1);
 check("le panneau Fonds calés s'ouvre ; état « non calé »", (await page.evaluate(() => window.fadiPlanche.panneau())) === "fonds" && (await page.locator(`[data-planche-fond='${f.id}'][data-cale='non']`).count()) === 1);
 check("en-tête : icône et raccourci Ctrl+Alt+Maj+F1", ((await page.locator("[data-planche-panneau='fonds'] [data-planche-panneau-raccourci]").textContent()) ?? "").includes("Ctrl+Alt+Maj+F1") && (await page.locator("[data-planche-panneau='fonds'] .canevas-panneau-tete h3 svg").count()) === 1);
 

@@ -5219,3 +5219,9 @@
   justify-content: flex-start;
   white-space: nowrap;
 }
+.sandbox-planche .planche-fonds-original {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}

@@ -10,6 +10,7 @@ import { LOCALE } from "../../../lib/i18n";
 import { t } from "../messages";
 import { Pictogramme } from "../pictogrammes/Pictogramme";
 import { COMMANDES_FONDS, type Disponibilite, type IdCommandeFond } from "./commandes-objets";
+import { adresseOriginalFond } from "./fonds-client";
 import { afficherRaccourci } from "./outils-planche";
 
 const arreter = (e: { stopPropagation(): void }) => e.stopPropagation();
@@ -172,6 +173,16 @@ export function PanneauFonds({
               <input value={longueur} disabled={verrou} inputMode="decimal" onKeyDown={(e) => { arreter(e); if (e.key === "Enter") enregistrerLongueur(); }} onBlur={enregistrerLongueur} onChange={(e) => setLongueur(e.target.value)} data-planche-fonds-longueur /> m
             </label>
           )}
+          <p className="planche-fonds-original" data-planche-fond-original={choisi.original?.id ?? ""}>
+            {choisi.original ? (
+              <>
+                {t("planche.fonds.original", { taille: `${nombre(choisi.original.taille / 1048576, 2)} Mo`, empreinte: choisi.original.empreinte.slice(0, 12) })}{" "}
+                <a href={adresseOriginalFond(choisi.original.id)} download={choisi.nom || undefined} target="_blank" rel="noreferrer">{t("planche.fonds.telecharger-original")}</a>
+              </>
+            ) : (
+              t("planche.fonds.original-absent")
+            )}
+          </p>
           <label className="planche-fonds-opacite">
             <span>{t("planche.fonds.opacite")}</span>
             <input type="range" min={10} max={100} step={5} value={Math.round(choisi.opacite * 100)} disabled={lecture} onKeyDown={arreter} onChange={(e) => onOpacite(Number(e.target.value) / 100)} data-planche-fonds-opacite /> {Math.round(choisi.opacite * 100)} %

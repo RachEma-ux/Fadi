@@ -30,3 +30,11 @@ fournie par Fadi : elles sont saisies.
 
 - Raccourcis Ctrl+Alt+Maj+F1 à F7 : dernière famille libre du cœur ; sous Linux de bureau, Ctrl+Alt+F change de console.
 - La page de PDF à caler vient avec l'étape 4 (PDF reçu) du lot C4, qui lit déjà le PDF.
+
+## Original archivé en base (décision du maître d'ouvrage, 27 novembre 2026)
+
+Le fichier reçu (PNG ou JPEG, 25 Mo au plus, choix Fadi) est rangé tel quel dans `sandbox_fonds_originaux` avec son
+empreinte SHA-256, au nom du compte, **avant** la pose ; le même fichier n'est rangé qu'une fois par compte. Le fond ne
+porte dans le dessin que la copie réduite (4 096 px au plus) et la référence `original` (id, empreinte, taille, type) ;
+l'original se relit par `GET /sandbox/fonds/:id`. Sans archive (hors connexion, sans compte, refus du serveur), le fond
+n'est pas posé : le motif est affiché. Le type est jugé sur la signature des octets, jamais sur le seul en-tête.
