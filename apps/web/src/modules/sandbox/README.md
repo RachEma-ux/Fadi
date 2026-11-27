@@ -229,8 +229,11 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     avec modificateur ou touche de fonction et pris par personne — Planche, navigateur, autre extension —, icônes en
     SVG), la range, et la rend aux comptes par `GET /sandbox/preferences/extensions` ; il ne l'exécute jamais. Le
     navigateur repasse les mêmes règles à la réception (`lirePaquetsInstalles`).
-  - *Interface* : chaque extension installée a sa **famille** dans la liste « Outils », à son nom, avec la pastille
-    « extension » ; chaque commande y garde son icône (une image du paquet, `<img>` : rien du dessin ne s'exécute), son
+  - *Interface* : chaque extension installée a sa **ligne** dans le groupe « Extensions » de la liste « Outils », à son
+    nom, sous celles fournies par Fadi (maquette validée le 27 novembre 2026 ; avant, une famille à part avec la pastille
+    « extension »), dépliable sur ses commandes, avec sa case « Afficher / Masquer » qui montre ou cache **sa barre**
+    dans la Planche (même état que l'interrupteur de la barre sous « Barres d'outils ») ; la désinstallation reste dans
+    la page Extensions de la barre latérale ; chaque commande y garde son icône (une image du paquet, `<img>` : rien du dessin ne s'exécute), son
     nom et son raccourci, et l'étiquette de la **barre** de l'extension (`extension:<id>`). Une commande lancée (liste,
     barre, clavier) adresse « commande.<id> » à l'extension avec `{ langue }` ; la Planche lui prête son modèle, sa
     sélection et son historique (`AccesPlanche` dans `Planche.tsx`) : une opération validée est **un pas d'annulation**.
