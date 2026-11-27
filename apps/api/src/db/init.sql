@@ -4432,12 +4432,9 @@ CREATE TABLE IF NOT EXISTS sandbox_references_fichiers (
   ajoute_le timestamptz NOT NULL DEFAULT now(),
   UNIQUE (proprietaire_id, empreinte)
 );
--- Formats archivés tels quels : PDF reçu (cas 4, lot C4, étape 4), archive .ifczip (étape 6). Une seule contrainte, la
--- liste complète : ce fichier est rejoué à chaque migration, et une liste plus courte rejouée avant elle refuserait les
--- lignes déjà rangées dans un format ajouté ensuite.
-ALTER TABLE sandbox_references_fichiers DROP CONSTRAINT IF EXISTS sandbox_references_fichiers_format_check;
-ALTER TABLE sandbox_references_fichiers ADD CONSTRAINT sandbox_references_fichiers_format_check CHECK (format IN ('obj', 'stl', 'ifc', 'pdf', 'ifczip'));
--- Formats des fabricants et relevés au capteur (cas 4, lot C4, étape 7a) : le fichier reçu est rangé tel quel.
+-- Formats archivés tels quels : PDF reçu (cas 4, lot C4, étape 4), archive .ifczip (étape 6), formats des fabricants
+-- et relevés au capteur (étape 7a). Une seule contrainte, la liste complète : ce fichier est rejoué à chaque migration,
+-- et une liste plus courte rejouée avant elle refuserait les lignes déjà rangées dans un format ajouté ensuite.
 ALTER TABLE sandbox_references_fichiers DROP CONSTRAINT IF EXISTS sandbox_references_fichiers_format_check;
 ALTER TABLE sandbox_references_fichiers ADD CONSTRAINT sandbox_references_fichiers_format_check CHECK (format IN ('obj', 'stl', 'ifc', 'pdf', 'ifczip', 'gltf', 'glb', 'ply', '3mf', 'dae', '3ds'));
 -- Fichiers de calage des orthophotos (world file, .prj ; lot C4, étape 2) rangés tels quels avec les originaux.
