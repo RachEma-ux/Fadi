@@ -1,0 +1,23 @@
+{
+  "id": "plans",
+  "nom": { "fr": "Plans reçus et présentation", "en": "Received plans and presentation" },
+  "description": {
+    "fr": "Rôles des calques d'un DXF gardés comme modèle, maquette blanche construite après relecture par règles de calque, silhouettes et arbres à l'échelle assortis au style du dessin.",
+    "en": "DXF layer roles kept as a template, white model built after review from layer rules, scaled figures and trees matched to the drawing's style."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.1",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Plans reçus et présentation", "en": "Received plans and presentation" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+D" },
+    { "id": "calques", "libelle": { "fr": "Calques du DXF", "en": "DXF layers" }, "icone": "calques.svg", "raccourci": "Ctrl+Maj+F7" },
+    { "id": "maquette", "libelle": { "fr": "Maquette blanche", "en": "White model" }, "icone": "maquette.svg", "raccourci": "Ctrl+Maj+F8" },
+    { "id": "silhouettes", "libelle": { "fr": "Silhouettes et arbres", "en": "Figures and trees" }, "icone": "silhouettes.svg", "raccourci": "Ctrl+Maj+F9" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "plans", "titre": { "fr": "Plans reçus et présentation", "en": "Received plans and presentation" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
