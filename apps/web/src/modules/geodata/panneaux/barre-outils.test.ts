@@ -58,3 +58,13 @@ describe("Emplacements Projets (27 novembre 2026)", () => {
     expect(adressePlanche("gdempl_1")).toBe("/sandbox?emplacement-geodata=gdempl_1");
   });
 });
+
+describe("groupes de la colonne (P5, D3 et D4)", () => {
+  it("lettres d'accès uniques dans chaque groupe ; chaque outil rangé a son icône propre", async () => {
+    const { LETTRES_GROUPES, ICONES } = await import("./BarreOutilsCarte");
+    for (const g of Object.values(LETTRES_GROUPES)) { const l = Object.values(g); expect(new Set(l).size).toBe(l.length); }
+    expect(Object.keys(LETTRES_GROUPES.mesurer)).toEqual(["distance", "surface", "zone", "annotation"]);
+    const icones = Object.values(ICONES);
+    expect(new Set(icones).size).toBe(icones.length);
+  });
+});

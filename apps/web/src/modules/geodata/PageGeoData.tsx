@@ -35,6 +35,7 @@ import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
 import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
 import { usePanneaux } from "./etat/usePanneaux";
+import { AideRaccourcis } from "./panneaux/AideRaccourcis";
 import { basculerOnglet, basculerVolet, carteSeule, cibleEchap, ouvrirOnglet as ouvrirOngletPur, type EtatPanneaux, type OngletPanneau, type VoletPage } from "./etat/panneaux-ops";
 import { etatInitial, generationMoteur, messageMoteur, noterRefus, oublierAvis, transitionMoteur, type AvisCouches } from "./carte/etat-moteur";
 import { carteVide, consigneVisible, niveauAccueil } from "./etat/accueil-ops";
@@ -74,7 +75,7 @@ export function PageGeoData() {
   const {
     bordVisite, onglet, setOnglet, panneauOuvert, setPanneauOuvert, consigneEcartee, setConsigneEcartee, volet, setVolet,
     panneauMini, setPanneauMini, placementOutils, setPlacementOutils, annonce, setAnnonce, menuOuvert, setMenuOuvert,
-    menuCartes, setMenuCartes, pastillesOuvertes, setPastillesOuvertes,
+    menuCartes, setMenuCartes, pastillesOuvertes, setPastillesOuvertes, groupeOutils, setGroupeOutils, aideRaccourcis, setAideRaccourcis,
   } = usePanneaux(ongletPage === "cartes");
   const conteneurCarte = useRef<HTMLDivElement>(null);
   const moteur = useRef<MoteurCarte | null>(null);
@@ -901,6 +902,9 @@ export function PageGeoData() {
       profil: () => basculerOutilTerrain("profil"),
       remonter,
       descendre: () => descendre(fiche!),
+      "groupe-mesurer": () => setGroupeOutils((g) => (g === "mesurer" ? null : "mesurer")),
+      "groupe-affichage": () => setGroupeOutils((g) => (g === "affichage" ? null : "affichage")),
+      "aide-raccourcis": () => setAideRaccourcis(true),
     };
     actions[commande]();
   };
@@ -1196,6 +1200,7 @@ export function PageGeoData() {
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
             synthese={syntheseOuverte} onSynthese={basculerSynthese} onCopierLien={() => void copierLien()}
             regroupement={composition.couches.some((k) => k.visible && couchesPoints.has(k.coucheId)) ? regroupementsTousActifs(composition, couchesPoints) : null} onRegroupement={basculerRegroupements}
+            groupe={groupeOutils} onGroupe={setGroupeOutils} onAide={() => setAideRaccourcis(true)}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende}
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
@@ -1221,6 +1226,7 @@ export function PageGeoData() {
           {consigne && <ConsigneAccueil contour={coucheArrivee && niveauArrivee ? { niveau: niveauArrivee.pluriel, pays: paysListe?.find((x) => x.code === paysCourant)?.nom ?? paysCourant ?? "" } : null}
             decalee={panneauOuvert} onFermer={() => setConsigneEcartee(true)}
             onCatalogue={() => { setConsigneEcartee(true); ouvrirOnglet("catalogue"); }} onChercher={() => { setConsigneEcartee(true); basculerRecherche(true); }} />}
+          {aideRaccourcis && <AideRaccourcis onFermer={() => setAideRaccourcis(false)} />}
           {etatMoteur.cas === "chargement" && etatMoteur.animation && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisCouches.size > 0 && <div role="status" className="gd-sur-carte gd-alerte gd-avis-couches" data-gd-avis-couches={[...avisCouches.keys()].join(" ")}>
             <p>Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.</p>

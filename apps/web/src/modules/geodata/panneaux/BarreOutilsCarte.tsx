@@ -52,7 +52,22 @@ export const ICONES = {
   grappes: "M4 8a3 3 0 1 0 6 0a3 3 0 1 0-6 0M14 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M11 16a4 4 0 1 0 8 0a4 4 0 1 0-8 0",
   /** Adresse de la vue (D-GD-40) : maillons d'une chaîne. */
   lien: "M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1",
+  /** Groupe « Mesurer et tracer » (P5) : règle et crayon. */
+  groupeMesurer: "M3 17 17 3l4 4L7 21H3v-4ZM7 13l2 2M10 10l2 2M13 7l2 2",
+  /** Groupe « Affichage » (P5) : œil. */
+  groupeAffichage: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+  /** Aide « Raccourcis clavier » (P5) : clavier. */
+  aide: "M3 7h18v10H3zM6 10h1M9 10h1M12 10h1M15 10h1M18 10h0M7 14h10",
 } as const;
+
+/** Groupes de la colonne (P5, décisions D3 et D4) : bouton de divulgation et lettres d'accès dans le groupe ouvert. */
+export type GroupeOutils = "mesurer" | "affichage";
+export const LETTRES_GROUPES: Readonly<Record<GroupeOutils, Readonly<Record<string, string>>>> = {
+  mesurer: { distance: "D", surface: "S", zone: "Z", annotation: "A" },
+  affichage: { nord: "N", "plein-ecran": "F", position: "P", etiquettes: "L", "mini-carte": "M", regrouper: "G", legende: "E", synthese: "V", imprimer: "I", lien: "K", aide: "?" },
+};
+/** Bascules qui laissent le groupe ouvert (enchaîner plusieurs réglages) ; toute autre entrée le referme. */
+const BASCULES = new Set(["etiquettes", "mini-carte", "regrouper"]);
 
 /** Raccourcis des commandes de la barre (Alt + lettre), contrôlés par test : une commande, une touche. */
 /** Dérivée de la table unique des raccourcis (P3). */
@@ -87,6 +102,11 @@ export interface ActionsBarreCarte {
   regroupement: boolean | null;
   onRegroupement(): void;
   onCopierLien(): void;
+  /** Groupe ouvert (P5) ; un seul à la fois. */
+  groupe: GroupeOutils | null;
+  onGroupe(g: GroupeOutils | null): void;
+  /** Aide « Raccourcis clavier » (P5). */
+  onAide(): void;
   /** Placement de la barre dans la carte (position et taille), signalé à chaque changement : la mini-barre de recherche la suit. */
   onPlacement?(r: { droite: number; haut: number; largeur: number; hauteur: number }): void;
 }
@@ -137,12 +157,46 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
     },
     onDoubleClick: () => { ecrirePosition(null); setPosition(borner(POSITION_PAR_DEFAUT)); },
   };
+  const groupeOuvert = p.groupe;
+  const panneauGroupe = useRef<HTMLDivElement>(null);
+  // Groupe ouvert : le focus va sur sa première entrée active (WCAG 2.4.3).
+  useEffect(() => { if (groupeOuvert) panneauGroupe.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus(); }, [groupeOuvert]);
+  const fermerGroupe = (rendreFocus: boolean) => {
+    const g = groupeOuvert;
+    p.onGroupe(null);
+    if (rendreFocus && g) barre.current?.querySelector<HTMLButtonElement>(`[data-gd-groupe='${g}']`)?.focus();
+  };
   const bouton = (cle: string, libelle: string, d: string, action: () => void, extra: { pressed?: boolean; disabled?: boolean } = {}) => {
     const raccourci = (RACCOURCIS_BARRE as Record<string, string>)[cle];
+    // Entrée d'un groupe ouvert : icône et texte visibles, lettre d'accès à droite (P5).
+    const lettre = groupeOuvert ? LETTRES_GROUPES[groupeOuvert][cle] : undefined;
+    if (lettre) {
+      const activer = () => { action(); if (!BASCULES.has(cle)) fermerGroupe(false); };
+      return <button key={cle} type="button" className="gd-entree-groupe" title={libelle} onClick={activer} aria-pressed={extra.pressed} disabled={extra.disabled} aria-keyshortcuts={[raccourci, lettre].filter(Boolean).join(" ")} data-gd-barre-outil={cle} data-gd-lettre={lettre}>
+        <Pictogramme d={d} /><span className="gd-entree-texte">{libelle}</span><kbd aria-hidden="true">{lettre}</kbd>
+      </button>;
+    }
     return <button key={cle} type="button" className="gd-outil" title={libelle} aria-label={libelle} onClick={action} aria-pressed={extra.pressed} disabled={extra.disabled} aria-keyshortcuts={raccourci} data-gd-barre-outil={cle}><Pictogramme d={d} /></button>;
   };
   const trace = (o: Exclude<OutilCarte, "navigation">, libelle: string, d: string) => bouton(o, libelle, d, () => p.onOutil(p.outil === o ? "navigation" : o), { pressed: p.outil === o, disabled: !p.carteDisponible });
+  const boutonGroupe = (g: GroupeOutils, nom: string, legende: string, touche: string, d: string) => (
+    <button type="button" className="gd-outil gd-bouton-groupe" title={`${nom} (${touche})`} aria-label={nom} aria-expanded={groupeOuvert === g} aria-controls={`gd-groupe-${g}`} aria-keyshortcuts={touche}
+      onClick={() => p.onGroupe(groupeOuvert === g ? null : g)} data-gd-groupe={g}>
+      <Pictogramme d={d} /><span className="gd-legende-groupe" aria-hidden="true">{legende}</span>
+    </button>
+  );
+  // Dans le groupe ouvert : flèches haut / bas, lettre d'accès, Échap (ferme et rend le focus au bouton du groupe).
+  const toucheGroupe = (e: KeyboardEvent<HTMLDivElement>) => {
+    const entrees = [...(panneauGroupe.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [])];
+    const i = entrees.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); fermerGroupe(true); return; }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); entrees[(i + (e.key === "ArrowDown" ? 1 : -1) + entrees.length) % entrees.length]?.focus(); return; }
+    if (e.altKey || e.ctrlKey || e.metaKey || e.key.length !== 1) return;
+    const cible = entrees.find((b) => b.dataset["gdLettre"] === e.key.toUpperCase() || b.dataset["gdLettre"] === e.key);
+    if (cible) { e.preventDefault(); e.stopPropagation(); cible.click(); }
+  };
   return (
+    <>
     <nav ref={barre} className="gd-barre-outils" aria-label="Outils de la carte" style={{ right: position.droite, top: position.haut, maxHeight: `calc(100% - ${position.haut}px - var(--gd-barre-bas, 0px) - 4px)` }} data-gd-barre-outils>
       <button type="button" className="gd-poignee" title="Déplacer la barre d'outils (glisser ou flèches ; double-clic : position par défaut)" aria-label="Déplacer la barre d'outils" {...poignee} data-gd-poignee>
         <svg viewBox="0 0 24 24" width="18" height="10" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="7" cy="9" r="1.6" /><circle cx="12" cy="9" r="1.6" /><circle cx="17" cy="9" r="1.6" /><circle cx="7" cy="15" r="1.6" /><circle cx="12" cy="15" r="1.6" /><circle cx="17" cy="15" r="1.6" /></svg>
@@ -150,25 +204,40 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
       <div className="gd-groupe-outils">
         {bouton("zoom-plus", "Zoom avant", ICONES.zoomPlus, () => p.onZoom(1), { disabled: !p.carteDisponible })}
         {bouton("zoom-moins", "Zoom arrière", ICONES.zoomMoins, () => p.onZoom(-1), { disabled: !p.carteDisponible })}
-        {bouton("nord", "Remettre le nord en haut", ICONES.nord, p.onNord, { disabled: !p.carteDisponible })}
-        {bouton("position", "Ma position (ni enregistrée ni envoyée au serveur)", ICONES.position, p.onPosition, { disabled: !p.carteDisponible })}
-        {bouton("plein-ecran", p.pleinEcran ? "Quitter le plein écran" : "Plein écran", p.pleinEcran ? ICONES.quitterPleinEcran : ICONES.pleinEcran, p.onPleinEcran, { pressed: p.pleinEcran })}
       </div>
       <div className="gd-groupe-outils">
-        {trace("distance", "Mesurer une distance", ICONES.distance)}
-        {trace("surface", "Mesurer une surface", ICONES.surface)}
-        {trace("zone", "Tracer une zone d'étude", ICONES.zone)}
-        {trace("annotation", "Poser une annotation", ICONES.annotation)}
-      </div>
-      <div className="gd-groupe-outils">
-        {bouton("etiquettes", p.etiquettes ? "Masquer les libellés (Alt+L)" : "Afficher les libellés (Alt+L)", ICONES.etiquettes, p.onEtiquettes, { pressed: !!p.etiquettes, disabled: !p.carteDisponible || p.etiquettes === null })}
-        {bouton("mini-carte", p.miniCarte ? "Masquer la mini-carte de situation (Alt+M)" : "Afficher la mini-carte de situation (Alt+M)", ICONES.miniCarte, p.onMiniCarte, { pressed: p.miniCarte, disabled: !p.carteDisponible })}
-        {bouton("legende", "Légende", ICONES.legende, p.onLegende, { pressed: p.legendeOuverte })}
-        {bouton("imprimer", "Imprimer la carte (Alt+I)", ICONES.imprimer, p.onImprimer, { disabled: !p.carteDisponible })}
-        {bouton("synthese", p.synthese ? "Fermer la synthèse de la vue (Alt+V)" : "Synthèse de la vue (Alt+V)", ICONES.synthese, p.onSynthese, { pressed: p.synthese, disabled: !p.carteDisponible })}
-        {bouton("regrouper", p.regroupement ? "Afficher chaque point seul (Alt+G)" : "Regrouper les points (Alt+G)", ICONES.grappes, p.onRegroupement, { pressed: !!p.regroupement, disabled: !p.carteDisponible || p.regroupement === null })}
-        {bouton("lien", "Copier l'adresse de cette vue (Alt+K)", ICONES.lien, p.onCopierLien)}
+        {boutonGroupe("mesurer", "Mesurer et tracer", "Mesurer", "Alt+N", ICONES.groupeMesurer)}
+        {boutonGroupe("affichage", "Affichage", "Affichage", "Alt+A", ICONES.groupeAffichage)}
       </div>
     </nav>
+    {groupeOuvert && (
+      <div ref={panneauGroupe} id={`gd-groupe-${groupeOuvert}`} className="gd-panneau-groupe" role="group" aria-label={groupeOuvert === "mesurer" ? "Mesurer et tracer" : "Affichage"}
+        style={{ right: position.droite + (barre.current?.offsetWidth ?? 44) + 8, top: position.haut }} onKeyDown={toucheGroupe} data-gd-panneau-groupe={groupeOuvert}>
+        {groupeOuvert === "mesurer" ? <>
+          {trace("distance", "Mesurer une distance", ICONES.distance)}
+          {trace("surface", "Mesurer une surface", ICONES.surface)}
+          {trace("zone", "Tracer une zone d'étude", ICONES.zone)}
+          {trace("annotation", "Poser une annotation", ICONES.annotation)}
+        </> : <>
+          <p className="gd-titre-section">Vue</p>
+          {bouton("nord", "Remettre le nord en haut", ICONES.nord, p.onNord, { disabled: !p.carteDisponible })}
+          {bouton("position", "Ma position (ni enregistrée ni envoyée au serveur)", ICONES.position, p.onPosition, { disabled: !p.carteDisponible })}
+          {bouton("plein-ecran", p.pleinEcran ? "Quitter le plein écran" : "Plein écran", p.pleinEcran ? ICONES.quitterPleinEcran : ICONES.pleinEcran, p.onPleinEcran, { pressed: p.pleinEcran })}
+          <p className="gd-titre-section">Sur la carte</p>
+          {bouton("etiquettes", p.etiquettes ? "Masquer les libellés (Alt+L)" : "Afficher les libellés (Alt+L)", ICONES.etiquettes, p.onEtiquettes, { pressed: !!p.etiquettes, disabled: !p.carteDisponible || p.etiquettes === null })}
+          {bouton("mini-carte", p.miniCarte ? "Masquer la mini-carte de situation (Alt+M)" : "Afficher la mini-carte de situation (Alt+M)", ICONES.miniCarte, p.onMiniCarte, { pressed: p.miniCarte, disabled: !p.carteDisponible })}
+          {bouton("regrouper", p.regroupement ? "Afficher chaque point seul (Alt+G)" : "Regrouper les points (Alt+G)", ICONES.grappes, p.onRegroupement, { pressed: !!p.regroupement, disabled: !p.carteDisponible || p.regroupement === null })}
+          <p className="gd-titre-section">Lire et partager</p>
+          {bouton("legende", "Légende", ICONES.legende, p.onLegende, { pressed: p.legendeOuverte })}
+          {bouton("synthese", p.synthese ? "Fermer la synthèse de la vue (Alt+V)" : "Synthèse de la vue (Alt+V)", ICONES.synthese, p.onSynthese, { pressed: p.synthese, disabled: !p.carteDisponible })}
+          {bouton("imprimer", "Imprimer la carte (Alt+I)", ICONES.imprimer, p.onImprimer, { disabled: !p.carteDisponible })}
+          {bouton("lien", "Copier l'adresse de cette vue (Alt+K)", ICONES.lien, p.onCopierLien)}
+          <button type="button" className="gd-entree-groupe" title="Raccourcis clavier (?)" onClick={() => { fermerGroupe(false); p.onAide(); }} aria-keyshortcuts="? Shift+Slash" data-gd-lettre="?" data-gd-aide-ouvrir>
+            <Pictogramme d={ICONES.aide} /><span className="gd-entree-texte">Raccourcis clavier</span><kbd aria-hidden="true">?</kbd>
+          </button>
+        </>}
+      </div>
+    )}
+    </>
   );
 }

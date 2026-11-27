@@ -5,10 +5,10 @@ const libre: ContexteClavier = { saisie: false, dansRecherche: false, carteDispo
 const alt = (key: string, code = `Key${key.toUpperCase()}`) => ({ altKey: true, key, code });
 
 describe("table unique des raccourcis (P3)", () => {
-  it("18 lettres Alt et deux flèches, chacune une seule fois ; tables des barres dérivées et inchangées", () => {
+  it("20 lettres Alt (dont les groupes Alt+N et Alt+A, P5), deux flèches et « ? », chacune une seule fois ; tables des barres dérivées et inchangées", () => {
     const touches = RACCOURCIS.map((x) => x.touche);
     expect(new Set(touches).size).toBe(touches.length);
-    expect(touches.filter((t) => /^Alt\+[A-Z]$/.test(t))).toHaveLength(18);
+    expect(touches.filter((t) => /^Alt\+[A-Z]$/.test(t))).toHaveLength(20);
     expect(RACCOURCIS_BARRE).toEqual({ etiquettes: "Alt+L", "mini-carte": "Alt+M", imprimer: "Alt+I", synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" });
     expect(RACCOURCIS_TERRAIN).toEqual({ terrain: "Alt+H", altitude: "Alt+O", profil: "Alt+U" });
     expect(RACCOURCIS_BARRE_BAS).toEqual({ carte: "Alt+X", chercher: "Alt+R", couches: "Alt+C", enregistrer: "Alt+E" });
@@ -35,6 +35,14 @@ describe("table unique des raccourcis (P3)", () => {
     const sans = { ...libre, carteDisponible: false };
     for (const k of ["m", "i", "v", "g", "s", "o", "u"]) expect(commandeDeTouche(alt(k), sans)).toBeNull();
     for (const k of ["r", "l", "k", "x", "c", "e", "t", "z", "j", "h"]) expect(commandeDeTouche(alt(k), sans)).not.toBeNull();
+  });
+
+  it("P5 : groupes Alt+N / Alt+A ; « ? » ouvre l'aide hors saisie, sans Alt", () => {
+    expect(commandeDeTouche(alt("n"), libre)).toBe("groupe-mesurer");
+    expect(commandeDeTouche(alt("a"), libre)).toBe("groupe-affichage");
+    expect(commandeDeTouche({ altKey: false, key: "?", code: "Slash" }, libre)).toBe("aide-raccourcis");
+    expect(commandeDeTouche({ altKey: false, key: "?", code: "Slash" }, { ...libre, saisie: true })).toBeNull();
+    expect(RACCOURCIS.every((x) => x.libelle.length > 0)).toBe(true);
   });
 
   it("flèches : Alt+↑ remonte si un niveau est choisi, Alt+↓ descend si la fiche le permet", () => {

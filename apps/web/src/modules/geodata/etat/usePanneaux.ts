@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import type { PlacementOutils } from "../panneaux/BarreRecherche";
+import type { GroupeOutils } from "../panneaux/BarreOutilsCarte";
 import type { OngletPanneau, VoletPage } from "./panneaux-ops";
 
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -29,9 +30,12 @@ export function usePanneaux(ongletPageCartes: boolean) {
   const [menuCartes, setMenuCartes] = useState(false);
   // Pastilles de thème (D-GD-48) : bande repliable, état mémorisé dans ce navigateur (simple confort).
   const [pastillesOuvertes, setPastillesOuvertes] = useState(() => lireLocal("geodata.pastilles") !== "0");
+  // Groupe ouvert de la colonne d'outils et aide des raccourcis (P5).
+  const [groupeOutils, setGroupeOutils] = useState<GroupeOutils | null>(null);
+  const [aideRaccourcis, setAideRaccourcis] = useState(false);
   return {
     bordVisite, onglet, setOnglet, panneauOuvert, setPanneauOuvert, consigneEcartee, setConsigneEcartee, volet, setVolet,
     panneauMini, setPanneauMini, placementOutils, setPlacementOutils, annonce, setAnnonce, menuOuvert, setMenuOuvert,
-    menuCartes, setMenuCartes, pastillesOuvertes, setPastillesOuvertes,
+    menuCartes, setMenuCartes, pastillesOuvertes, setPastillesOuvertes, groupeOutils, setGroupeOutils, aideRaccourcis, setAideRaccourcis,
   };
 }
