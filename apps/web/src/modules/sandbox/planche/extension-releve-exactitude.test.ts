@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, ajouterSegment, creerExecutantExtension, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, ajouterSegment, creerExecutantExtension, grouper, jugerImportPaquet, modeleVide, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/releve-exactitude/";
@@ -284,14 +284,18 @@ describe("extension « Relevé et exactitude » — provenance (n° 18) et bulle
       { libelle: "Angles presque droits ou presque alignés", valeur: "1 constat", ton: "alerte" },
       { libelle: "Sommets presque confondus", valeur: "1 constat", ton: "alerte" },
     ]);
-    expect(e.resultats[3]!.valeur).toMatch(/^[0-9a-f]{16}$/);
+    expect(valeur(e, "Groupes et composants non contrôlés")).toBe("0");
+    expect(e.encart).toBeNull();
+    const empreinte = valeur(e, "Empreinte du dessin")!;
+    expect(empreinte).toMatch(/^[0-9a-f]{16}$/);
     expect(JSON.stringify(p.etat.modele)).toBe(avant);
     expect(p.etat.pas).toEqual([]);
     await p.action("exporter-bulletin", { onglet: "bulletin" });
     const f = p.etat.fichiers[0]!;
     expect(f.nom).toMatch(/^bulletin-exactitude-\d{4}-\d{2}-\d{2}\.md$/);
     expect(f.texte).toContain("# Bulletin d'exactitude du dessin");
-    expect(f.texte).toContain(`\`${e.resultats[3]!.valeur}\``);
+    expect(f.texte).toContain(`\`${empreinte}\``);
+    expect(f.texte).not.toContain("Limites du contrôle");
     expect(f.texte).toContain("- Seuil d'angle (°) : 0,2");
     expect(f.texte).toContain("Rien n'a été corrigé dans le dessin.");
     // Le dessin change : l'export demande un nouveau contrôle.
@@ -301,9 +305,51 @@ describe("extension « Relevé et exactitude » — provenance (n° 18) et bulle
     await p.action("exporter-bulletin", { onglet: "bulletin" });
     expect(p.etat.fichiers).toHaveLength(1);
   });
+
+  it("bulletin : les groupes et composants, dont le contenu n'est pas lu, sont déclarés non contrôlés ; un dessin fait seulement de groupes est refusé", async () => {
+    // Un dessin fait seulement d'un groupe : aucun bulletin, l'utilisateur est invité à ouvrir le groupe.
+    const r = rectangles([[4, 3]]);
+    const seul = grouper(r.modele, [...faces(r.modele), ...aretes(r.modele)], { nom: "Pièce" }).modele;
+    expect(faces(seul)).toEqual([]);
+    let p = planche(seul);
+    let e = await p.action("controler-dessin", { onglet: "bulletin", valeurs: { pas: "1", angle: "0,2", sommets: "0,5" } });
+    expect(p.derniereAlerte()).toMatch(/aucune arête hors des groupes et composants/);
+    expect(e.vide).toMatch(/Contrôler le dessin/);
+    await p.action("exporter-bulletin", { onglet: "bulletin" });
+    expect(p.etat.fichiers).toEqual([]);
+    // Arêtes libres plus un groupe : le bulletin déclare le groupe non contrôlé, à l'écran et dans l'export.
+    const mixte = ajouterSegment(seul, v3(10, 0, 0), v3(12, 0, 0)).modele;
+    p = planche(mixte);
+    e = await p.action("controler-dessin", { onglet: "bulletin", valeurs: { pas: "1", angle: "0,2", sommets: "0,5" } });
+    expect(e.resultats.find((x) => x.libelle === "Groupes et composants non contrôlés")).toEqual({ libelle: "Groupes et composants non contrôlés", valeur: "1", ton: "alerte" });
+    expect(e.encart).toMatch(/1 groupe ou composant n'est pas contrôlé/);
+    await p.action("exporter-bulletin", { onglet: "bulletin" });
+    expect(p.etat.fichiers[0]!.texte).toContain("## Limites du contrôle");
+    expect(p.etat.fichiers[0]!.texte).toMatch(/1 groupe ou composant n'a pas été contrôlé/);
+    // L'empreinte couvre les groupes : en ajouter un autre rend le bulletin périmé.
+    const avant = valeur(e, "Empreinte du dessin");
+    p.etat.modele = grouper(p.etat.modele, aretes(p.etat.modele), { nom: "Trait" }).modele;
+    e = await p.action("etat", { onglet: "bulletin" });
+    expect(e.encart).toMatch(/a changé depuis le contrôle/);
+    e = await p.action("controler-dessin", { onglet: "bulletin", valeurs: { pas: "1", angle: "0,2", sommets: "0,5" } });
+    expect(valeur(e, "Empreinte du dessin")).not.toBe(avant);
+  });
 });
 
 describe("extension « Relevé et exactitude » — commandes et langue", () => {
+  it("« Effacer » vide les champs de la pièce, et la page les redessine depuis la réponse sans renvoyer l'ancienne saisie", async () => {
+    const p = planche(modeleVide());
+    await p.action("etat", { onglet: "piece", valeurs: { cotes: "4 ; 3 ; 4 ; 3", diagonales: "5 ; 5", tolerance: "5" } });
+    const e = await p.action("effacer-piece", { onglet: "piece", valeurs: { cotes: "4 ; 3 ; 4 ; 3", diagonales: "5 ; 5", tolerance: "5" } }) as Etat & { formulaire: { id: string; valeur: string }[] };
+    expect(e.formulaire.filter((c) => c.id !== "tolerance").map((c) => c.valeur)).toEqual(["", ""]);
+    // La page n'enchaîne aucun appel « etat » après « Effacer » : il relirait les anciens champs et annulerait l'effacement.
+    const page = lire("pages/panneau.js");
+    const debut = page.indexOf('if (b.action === "effacer-piece")');
+    const clic = page.slice(debut, page.indexOf("barre.appendChild(x)", debut));
+    expect(clic).toContain("formulaireDe = null");
+    expect(clic).not.toMatch(/appeler\("etat"\)/);
+  });
+
   it("Ctrl+Alt+R ouvre le panneau ; chaque commande ouvre son onglet ; textes en anglais", async () => {
     const p = planche(modeleVide());
     await p.h.appeler("demande", "commande.ouvrir-panneau", { langue: "fr" });

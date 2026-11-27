@@ -120,6 +120,9 @@ var T = {
     exporte: "Bulletin exporté.",
     controlerDabord: "Contrôlez d'abord le dessin.",
     perime: "Le dessin a changé depuis le contrôle : contrôlez-le à nouveau avant d'exporter.",
+    nonControles: "Groupes et composants non contrôlés",
+    nonControlesEncart: function (n) { return n + (n > 1 ? " groupes ou composants ne sont pas contrôlés" : " groupe ou composant n'est pas contrôlé") + " : leur contenu et leur position ne sont pas lus. Ouvrez-les pour les contrôler."; },
+    rienAControler: "Le dessin ouvert ne contient aucune arête hors des groupes et composants : rien à contrôler. Ouvrez un groupe ou un composant pour le contrôler.",
     fichier: function (d) { return "bulletin-exactitude-" + d + ".md"; },
     md: {
       titre: "Bulletin d'exactitude du dessin",
@@ -131,6 +134,8 @@ var T = {
       provenance: "Provenance de l'existant",
       verification: "Vérification par le destinataire : ouvrir le dessin reçu, lancer le bulletin avec les mêmes seuils et comparer l'empreinte. Une empreinte différente signale un dessin modifié depuis l'envoi.",
       rien: "Rien n'a été corrigé dans le dessin.",
+      limites: "Limites du contrôle",
+      nonControles: function (n) { return n + (n > 1 ? " groupes ou composants n'ont pas été contrôlés" : " groupe ou composant n'a pas été contrôlé") + " : leur contenu et leur position ne sont pas lus ; l'empreinte ne couvre que leur identifiant, leur genre et leur nom."; },
       tronque: function (n) { return "… et " + n + " autres constats (liste limitée)."; },
     },
     ecartDe: function (v) { return "écart " + v; },
@@ -222,6 +227,9 @@ var T = {
     exporte: "Report exported.",
     controlerDabord: "Check the drawing first.",
     perime: "The drawing changed since the check: check it again before exporting.",
+    nonControles: "Groups and components not checked",
+    nonControlesEncart: function (n) { return n + (n > 1 ? " groups or components are not checked" : " group or component is not checked") + ": their contents and position are not read. Open them to check them."; },
+    rienAControler: "The open drawing has no edge outside groups and components: nothing to check. Open a group or component to check it.",
     fichier: function (d) { return "accuracy-report-" + d + ".md"; },
     md: {
       titre: "Drawing accuracy report",
@@ -233,6 +241,8 @@ var T = {
       provenance: "Provenance of existing elements",
       verification: "Check by the recipient: open the received drawing, run the report with the same thresholds and compare the fingerprint. A different fingerprint means the drawing changed after sending.",
       rien: "Nothing was corrected in the drawing.",
+      limites: "Limits of the check",
+      nonControles: function (n) { return n + (n > 1 ? " groups or components were not checked" : " group or component was not checked") + ": their contents and position are not read; the fingerprint only covers their id, kind and name."; },
       tronque: function (n) { return "… and " + n + " more findings (list capped)."; },
     },
     ecartDe: function (v) { return "gap " + v; },
@@ -599,13 +609,17 @@ T.en.total = "Total";
 
 // ——————————————————————————————————————————————— Bulletin d'exactitude
 
-/** Empreinte du dessin : sommets des arêtes au 0,1 mm, triés, hachés (deux FNV-1a de 32 bits). */
+/**
+ * Empreinte du dessin : sommets des arêtes au 0,1 mm, triés, plus l'identifiant, le genre et le nom de chaque groupe ou
+ * composant (leur contenu n'est pas lisible), hachés (deux FNV-1a de 32 bits).
+ */
 function empreinte(m) {
   var cles = m.aretes.map(function (e) {
     var p = e.points.map(function (q) { return q.map(function (v) { return Math.round(v * 10000); }).join(","); });
     p.sort();
     return p.join("|");
   });
+  (m.objets || []).forEach(function (o) { cles.push("o:" + o.id + ":" + (o.genre || "") + ":" + (o.nom || "")); });
   cles.sort();
   var h1 = 0x811c9dc5;
   var h2 = 0x01000193 ^ 0x5bd1e995;
@@ -687,7 +701,7 @@ function controler(m, s, sep) {
     var cg = g.join(",");
     (grille[cg] = grille[cg] || []).push(p);
   });
-  return { constats: constats, nombres: nombres, empreinte: empreinte(m), seuils: s, date: new Date().toISOString().slice(0, 10) };
+  return { constats: constats, nombres: nombres, nonControles: (m.objets || []).length, empreinte: empreinte(m), seuils: s, date: new Date().toISOString().slice(0, 10) };
 }
 
 async function controlerDessin() {
@@ -695,6 +709,11 @@ async function controlerDessin() {
   var s = lireSeuils();
   if (!s) return alerte(x.seuilsInvalides);
   var m = await planche.modele.lire();
+  // Un dessin fait seulement de groupes ou de composants n'a rien de contrôlable : pas de bulletin trompeur.
+  if (!m.aretes.length && m.objets.length) {
+    dernierBulletin = null;
+    return alerte(x.rienAControler);
+  }
   var sep = (await planche.unites.lire()).separateur;
   dernierBulletin = controler(m, s, sep);
   var n = dernierBulletin.nombres;
@@ -718,11 +737,12 @@ async function etatBulletin(sep) {
     { libelle: x.longueurs, valeur: compte("longueurs"), ton: n.longueurs ? "alerte" : "ok" },
     { libelle: x.anglesPresque, valeur: compte("angles"), ton: n.angles ? "alerte" : "ok" },
     { libelle: x.sommetsPresque, valeur: compte("sommets"), ton: n.sommets ? "alerte" : "ok" },
+    { libelle: x.nonControles, valeur: String(b.nonControles), ton: b.nonControles ? "alerte" : "ok" },
     { libelle: x.empreinte, valeur: b.empreinte },
   ];
   var titres = { longueurs: x.longueurs, angles: x.anglesPresque, sommets: x.sommetsPresque };
   var lignes = b.constats.map(function (k) { return { genre: "ligne", id: k.id, cellules: [titres[k.genre], k.nom, k.valeur] }; });
-  return { formulaire: formulaire, resultats: resultats, encart: actuel !== b.empreinte ? x.perime : null, lignes: lignes, colonnes: x.colBulletin };
+  return { formulaire: formulaire, resultats: resultats, encart: actuel !== b.empreinte ? x.perime : b.nonControles ? x.nonControlesEncart(b.nonControles) : null, lignes: lignes, colonnes: x.colBulletin };
 }
 
 async function exporterBulletin() {
@@ -758,6 +778,7 @@ async function exporterBulletin() {
     });
     l.push("");
   }
+  if (b.nonControles) l.push("## " + md.limites, "", md.nonControles(b.nonControles), "");
   l.push(md.verification, "", md.rien, "");
   if (await planche.fichiers.enregistrer(x.fichier(b.date), l.join("\n"))) await info(x.exporte);
 }

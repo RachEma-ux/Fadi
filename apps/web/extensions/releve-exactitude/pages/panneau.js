@@ -66,10 +66,13 @@
       x.textContent = b.nom;
       if (b.principal) x.className = "principal";
       x.addEventListener("click", function () {
-        appeler(b.action).then(function () {
-          // « Effacer » vide les champs affichés.
-          if (b.action === "effacer-piece") { formulaireDe = null; appeler("etat"); }
-        });
+        // « Effacer » : la réponse porte les champs vidés ; le formulaire est redessiné depuis elle, sans relire
+        // les anciennes saisies (une relance de l'état les renverrait).
+        if (b.action === "effacer-piece") {
+          clearTimeout(minuterie);
+          formulaireDe = null;
+        }
+        appeler(b.action);
       });
       barre.appendChild(x);
     });
