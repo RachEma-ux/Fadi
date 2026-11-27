@@ -147,6 +147,8 @@ export interface UnitesLues {
 export interface ModeleLu {
   readonly faces: readonly FaceLue[];
   readonly aretes: readonly AreteLue[];
+  /** (1.3) Groupe ou composant ouvert en édition (le contexte lu), ou `null` à la racine. */
+  readonly dans?: Id | null;
   readonly objets: readonly ObjetLu[];
   /** Vrai pendant une opération ouverte : la lecture montre le modèle de travail de l'extension. */
   readonly enOperation: boolean;
@@ -366,6 +368,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null })),
       aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number, courbe: courbeLue(c, c.aretes[id]!.courbe, null) })),
       objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe", matiere: occ.materiau ?? null, balise: occ.balise ?? null })),
+      dans: dans ?? null,
       enOperation: operation !== null,
     };
     return rendu(lu);
@@ -481,8 +484,16 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     };
   };
 
+  /** (1.3) Balise facultative d'une annotation : identifiant d'une balise existante, ou un message de refus. */
+  const baliseAnnotation = (d: Record<string, unknown> | null, m: Modele): { readonly balise?: Id } | string => {
+    const b = d?.["balise"];
+    if (b === undefined || b === null) return {};
+    if (typeof b !== "string" || !m.annotations?.balises[b]) return "balise : identifiant d'une balise existante attendu";
+    return { balise: b };
+  };
+
   /**
-   * (1.3) `cotes.creer { a, b, position, direction? }` : une cote linéaire entre deux points du monde, sa ligne passant
+   * (1.3) `cotes.creer { a, b, position, direction?, balise? }` : une cote linéaire entre deux points du monde, sa ligne passant
    * par `position` ; rend son identifiant. La cote n'est pas associée aux sommets : elle garde la valeur mesurée.
    */
   const creerCote = (donnees: unknown): ReponseService => {
@@ -492,10 +503,12 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (!estPoint(a) || !estPoint(b) || !estPoint(position)) return refus("argument_invalide", "a, b et position : points [x, y, z] attendus");
     if (Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) < 1e-9) return refus("argument_invalide", "a et b confondus");
     if (typeof direction !== "string" || !(DIRECTIONS_COTE as readonly string[]).includes(direction)) return refus("argument_invalide", `direction : ${DIRECTIONS_COTE.join(", ")}`);
+    const balise = baliseAnnotation(d, vue().modele());
+    if (typeof balise === "string") return refus("argument_invalide", balise);
     const op = operation ?? ouvrir(appel ?? "extension", true);
     const r = modifierAnnotations(op.travail.modele(), (an, id) => {
       const k = id("c");
-      const c: Cote = { id: k, genre: "lineaire", a: v3(...a), b: v3(...b), position: v3(...position), ...(direction !== "alignee" ? { direction: direction as DirectionCote } : {}) };
+      const c: Cote = { id: k, genre: "lineaire", a: v3(...a), b: v3(...b), position: v3(...position), ...(direction !== "alignee" ? { direction: direction as DirectionCote } : {}), ...balise };
       an.cotes[k] = c;
       return k;
     });
@@ -503,17 +516,19 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu(r.extra);
   };
 
-  /** (1.3) `textes.creer { ancre, position, texte }` : un texte avec repère (ancre, ligne de rappel, texte) ; rend son identifiant. */
+  /** (1.3) `textes.creer { ancre, position, texte, balise? }` : un texte avec repère (ancre, ligne de rappel, texte) ; rend son identifiant. */
   const creerTexte = (donnees: unknown): ReponseService => {
     const d = estObjet(donnees) ? donnees : null;
     const ancre = d?.["ancre"], position = d?.["position"];
     const texte = d && typeof d["texte"] === "string" ? d["texte"].trim() : "";
     if (!estPoint(ancre) || !estPoint(position)) return refus("argument_invalide", "ancre et position : points [x, y, z] attendus");
     if (texte.length === 0 || texte.length > MAX_TEXTE_EXTENSION) return refus("argument_invalide", `texte : 1 à ${MAX_TEXTE_EXTENSION} caractères attendus`);
+    const balise = baliseAnnotation(d, vue().modele());
+    if (typeof balise === "string") return refus("argument_invalide", balise);
     const op = operation ?? ouvrir(appel ?? "extension", true);
     const r = modifierAnnotations(op.travail.modele(), (an, id) => {
       const k = id("t");
-      an.textes[k] = { id: k, genre: "repere", ancre: v3(...ancre), position: v3(...position), texte };
+      an.textes[k] = { id: k, genre: "repere", ancre: v3(...ancre), position: v3(...position), texte, ...balise };
       return k;
     });
     op.travail.appliquer(r);

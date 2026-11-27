@@ -314,6 +314,8 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     à défaut), ou `null`. **Annotations** : `planche.cotes.creer(a, b, position, direction)` pose une cote linéaire
     entre deux points du monde (direction « alignee », « horizontale », « verticale », « axe-x », « axe-y » ou
     « axe-z ») ; `planche.textes.creer(ancre, position, texte)` pose un texte avec repère (200 caractères au plus) ;
+    l'une et l'autre acceptent une balise existante en dernier argument : la balise cachée, l'annotation l'est aussi ;
+    `planche.modele.lire()` dit `dans`, l'objet ouvert en édition (`null` à la racine) ;
     `planche.objets.verrouiller(ids, verrou)` verrouille ou déverrouille des groupes et composants du contexte ;
     `planche.annotations.lire()` rend les cotes linéaires et les textes avec repère, `planche.annotations.effacer(ids)`
     en efface (un identifiant inconnu : rien n'est effacé). Les écritures passent par l'opération ouverte ou automatique, en un seul pas d'annulation (permission `modele.modifier`).

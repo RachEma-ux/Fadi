@@ -271,7 +271,7 @@ describe("espace d'exécution — protocole 1.1", () => {
 
   it("(1.3) cotes.creer, textes.creer et objets.verrouiller transmettent leurs arguments", async () => {
     const { x, demandes, attendre } = relier(
-      'planche.sur("commande.trame", async () => { await planche.cotes.creer([0,0,0],[6,0,0],[0,-1,0]); await planche.cotes.creer([0,0,0],[0,4,0],[-1,0,0],"axe-y"); await planche.textes.creer([0,0,0],[0,-2,0],"A"); await planche.objets.verrouiller("g1"); await planche.objets.verrouiller(["g1"], false); return true; });',
+      'planche.sur("commande.trame", async () => { await planche.cotes.creer([0,0,0],[6,0,0],[0,-1,0]); await planche.cotes.creer([0,0,0],[0,4,0],[-1,0,0],"axe-y"); await planche.textes.creer([0,0,0],[0,-2,0],"A"); await planche.textes.creer([0,0,0],[0,-2,0],"B","b1"); await planche.cotes.creer([0,0,0],[1,0,0],[0,-1,0],undefined,"b1"); await planche.objets.verrouiller("g1"); await planche.objets.verrouiller(["g1"], false); return true; });',
       () => null,
     );
     x.recevoir(demandeProtocole(1, "commande.trame"));
@@ -280,6 +280,8 @@ describe("espace d'exécution — protocole 1.1", () => {
       { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [6, 0, 0], position: [0, -1, 0] } },
       { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [0, 4, 0], position: [-1, 0, 0], direction: "axe-y" } },
       { nom: "textes.creer", donnees: { ancre: [0, 0, 0], position: [0, -2, 0], texte: "A" } },
+      { nom: "textes.creer", donnees: { ancre: [0, 0, 0], position: [0, -2, 0], texte: "B", balise: "b1" } },
+      { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [1, 0, 0], position: [0, -1, 0], balise: "b1" } },
       { nom: "objets.verrouiller", donnees: { ids: ["g1"], verrou: true } },
       { nom: "objets.verrouiller", donnees: { ids: ["g1"], verrou: false } },
     ]);

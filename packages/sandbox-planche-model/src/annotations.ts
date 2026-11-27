@@ -31,6 +31,8 @@ export interface ChampsCote {
   readonly texteForce?: string;
   readonly style?: Id;
   readonly chemin?: readonly Id[];
+  /** (Protocole 1.3) Balise de l'annotation : la balise cachée, l'annotation l'est aussi ; absent = toujours montrée. */
+  readonly balise?: Id;
 }
 
 /** Direction mesurée d'une cote linéaire : vraie longueur, composante horizontale, dénivelé, ou selon un axe du repère. */
@@ -108,6 +110,8 @@ export type TexteAnnotation =
       readonly position: Vec3;
       readonly texte: string;
       readonly etiquettePiece?: boolean;
+      /** (Protocole 1.3) Balise du texte : la balise cachée, le texte l'est aussi ; absent = toujours montré. */
+      readonly balise?: Id;
     }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
   | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string };
