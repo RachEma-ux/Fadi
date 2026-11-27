@@ -62,7 +62,18 @@ export interface GeoFond {
   readonly fichier: string;
   readonly systeme: string;
   readonly coefficients: readonly [number, number, number, number, number, number];
+  /** Fichiers de calage (world file, .prj) archivés tels quels en base (`/sandbox/fonds`) ; absent = fond antérieur. */
+  readonly archives?: readonly PieceCalage[];
 }
+export interface PieceCalage {
+  readonly role: "calage" | "prj";
+  readonly id: string;
+  readonly empreinte: string;
+}
+const estPieceCalage = (v: unknown): v is PieceCalage =>
+  typeof v === "object" && v !== null && ((v as PieceCalage).role === "calage" || (v as PieceCalage).role === "prj") &&
+  typeof (v as PieceCalage).id === "string" && (v as PieceCalage).id.length >= 1 && (v as PieceCalage).id.length <= 80 &&
+  typeof (v as PieceCalage).empreinte === "string" && /^[0-9a-f]{64}$/.test((v as PieceCalage).empreinte);
 
 export interface Fond {
   readonly id: Id;
@@ -117,7 +128,8 @@ export const estGeoFond = (v: unknown): v is GeoFond =>
   typeof v === "object" && v !== null && !Array.isArray(v) &&
   typeof (v as GeoFond).fichier === "string" && (v as GeoFond).fichier.length >= 1 && (v as GeoFond).fichier.length <= NOM_FOND_MAX &&
   typeof (v as GeoFond).systeme === "string" && (v as GeoFond).systeme.trim() !== "" && (v as GeoFond).systeme.length <= 200 &&
-  Array.isArray((v as GeoFond).coefficients) && (v as GeoFond).coefficients.length === 6 && (v as GeoFond).coefficients.every(fini);
+  Array.isArray((v as GeoFond).coefficients) && (v as GeoFond).coefficients.length === 6 && (v as GeoFond).coefficients.every(fini) &&
+  ((v as GeoFond).archives === undefined || (Array.isArray((v as GeoFond).archives) && (v as GeoFond).archives!.length <= 2 && (v as GeoFond).archives!.every(estPieceCalage)));
 
 /** Fond reçu (document, delta) : jamais cru sur parole. */
 export function estFond(id: Id, v: unknown): v is Fond {
