@@ -38,3 +38,22 @@ empreinte SHA-256, au nom du compte, **avant** la pose ; le même fichier n'est 
 porte dans le dessin que la copie réduite (4 096 px au plus) et la référence `original` (id, empreinte, taille, type) ;
 l'original se relit par `GET /sandbox/fonds/:id`. Sans archive (hors connexion, sans compte, refus du serveur), le fond
 n'est pas posé : le motif est affiché. Le type est jugé sur la signature des octets, jamais sur le seul en-tête.
+
+## Étape 2 : fiche de calage et orthophoto (lot C4)
+
+Maquette `analyses/catalogue-extensions/cas-4/maquettes/c4-etape-2-fiche-calage.png`. Écarts déclarés :
+
+- **GeoTIFF non lu** : le navigateur ne décode pas le TIFF ; une orthophoto se reçoit en PNG ou JPEG avec son fichier
+  de calage d'image (`.tfw`, `.jgw`, `.pgw`, `.wld`) et, si possible, son `.prj`.
+- **Aucune conversion de système** : un fichier dans un autre système que le point de base du projet est refusé avec
+  son motif ; sans `.prj` lisible, le système est demandé (jamais supposé) et doit être celui du projet.
+- **Pose par similitude seulement** : pixels non carrés, cisaillés ou en miroir sont refusés (Fadi pose un fond par
+  translation, rotation et échelle).
+- **Le `.prj` n'est pas écrit** à l'export du calage d'un fond : Fadi n'a pas de base de systèmes.
+- **Appliquer une fiche** reprend le point de base et ajoute les niveaux absents ; un niveau existant n'est jamais
+  modifié et l'altitude du ±0,00 (réglage de la Planche, hors du dessin) n'est que comparée.
+- **Raccourcis** : Exporter la fiche Ctrl+Alt+Maj+F8, Importer une fiche F9, Importer une orthophoto F10, Exporter le
+  calage du fond F11, Appliquer F12 ; Ignorer Alt+F3, Poser l'orthophoto Alt+F2 (Ctrl+Alt+Maj+F est épuisée, Alt+F6 à
+  F12 et Ctrl+Maj+F1 à F12 sont pris). Certains bureaux Linux gardent Alt+F2 : la commande reste dans le panneau et
+  la liste Outils.
+- **Publication par lien** (bulle de la maquette) : non ajoutée à cette étape ; la fiche s'exporte en fichier.
