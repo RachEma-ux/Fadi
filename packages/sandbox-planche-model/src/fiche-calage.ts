@@ -99,7 +99,8 @@ export function lireFicheCalage(texte: string): { readonly fiche: FicheCalage } 
   const v: Record<string, string> = {};
   const niveaux: NiveauFiche[] = [];
   const fonds: FondFiche[] = [];
-  const nombre = (s: string | undefined): number | null => (s !== undefined && /^-?\d+(\.\d+)?$/.test(s.trim()) ? Number(s.trim()) : null);
+  // Notation écrite par `ecrireFicheCalage`, exposant compris (1e-7) ; jamais une valeur non finie.
+  const nombre = (s: string | undefined): number | null => (s !== undefined && /^-?\d+(\.\d+)?(e[-+]?\d+)?$/i.test(s.trim()) && Number.isFinite(Number(s.trim())) ? Number(s.trim()) : null);
   for (const [i, brute] of lignes.entries()) {
     const ligne = brute.trim();
     if (ligne === "" || ligne.startsWith("#")) continue;
@@ -191,15 +192,17 @@ export type ResultatFiche = { readonly ok: true; readonly modele: Modele; readon
 export function appliquerFiche(m: Modele, f: FicheCalage): ResultatFiche {
   const c = comparerFiche(m, null, f);
   if (c.systeme === "different") return { ok: false, erreur: "systeme" };
-  const existants = new Set(niveauxTries(m).map((x) => x.nom));
-  const nouveaux = f.niveaux.filter((x, i) => !existants.has(x.nom) && f.niveaux.findIndex((y) => y.nom === x.nom) === i);
+  // Même règle d'unicité que niveaux.ts : nom borné à 60 caractères, comparé sans la casse.
+  const cle = (nom: string) => nom.trim().slice(0, 60).toLocaleLowerCase("fr");
+  const existants = new Set(niveauxTries(m).map((x) => cle(x.nom)));
+  const nouveaux = f.niveaux.filter((x, i) => cle(x.nom) !== "" && !existants.has(cle(x.nom)) && f.niveaux.findIndex((y) => cle(y.nom) === cle(x.nom)) === i);
   const pdb = f.pointDeBase && JSON.stringify(f.pointDeBase) !== JSON.stringify(m.annotations?.reglages?.pointDeBase ?? null) ? f.pointDeBase : null;
   if (!pdb && nouveaux.length === 0) return { ok: false, erreur: "vide" };
   const r = modifierAnnotations(m, (a, id) => {
     if (pdb) a.reglages = { ...(a.reglages ?? REGLAGES_DEFAUT), pointDeBase: pdb };
     for (const x of nouveaux) {
       const k = id("n");
-      a.niveaux[k] = { id: k, nom: x.nom.slice(0, 60), altitude: x.altitude, hauteur: x.hauteur };
+      a.niveaux[k] = { id: k, nom: x.nom.trim().slice(0, 60), altitude: x.altitude, hauteur: x.hauteur };
     }
   });
   return { ok: true, modele: r.modele, niveauxAjoutes: nouveaux.length, pointDeBase: pdb !== null };

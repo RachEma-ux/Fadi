@@ -42,6 +42,9 @@ describe("Fiche de calage du projet", () => {
     expect(lireFicheCalage("# Fiche de calage — Fadi 1\ndate = 2026-11-27\ninconnu = 3\n")).toEqual({ erreur: "ligne", ligne: 3 });
     expect(lireFicheCalage("# Fiche de calage — Fadi 1\ndate = 2026-11-27\nsysteme = EPSG:2154\n")).toEqual({ erreur: "point-de-base", ligne: 0 });
     expect(lireFicheCalage("# Fiche de calage — Fadi 1\n")).toEqual({ erreur: "date", ligne: 0 });
+    // Aller-retour d'une valeur que l'écriture note avec un exposant.
+    const petite = { ...ficheDuProjet(projet(), null, "", "2026-11-27"), niveaux: [{ nom: "Vide sanitaire", altitude: 0.0000001, hauteur: 2.7 }] };
+    expect(lireFicheCalage(ecrireFicheCalage(petite))).toEqual({ fiche: petite });
   });
 
   it("comparée au projet : système, écarts du point de base, du nord, de H et de chaque niveau ; rien n'est modifié", () => {
@@ -67,6 +70,9 @@ describe("Fiche de calage du projet", () => {
     expect(r.niveauxAjoutes).toBe(1);
     expect(r.modele.annotations!.reglages!.pointDeBase!.e).toBe(PDB.e + 1);
     expect(niveauxTries(r.modele).map((x) => [x.nom, x.altitude])).toEqual([["Combles", 5.4], ["R+1", 2.7], ["RDC", 0]]);
+    // « rdc » reçu = « RDC » existant (casse ignorée, comme niveaux.ts) : jamais de doublon.
+    const casse = appliquerFiche(m, { ...recue, niveaux: [{ nom: "rdc", altitude: 0, hauteur: 2.7 }] });
+    expect(casse.ok && niveauxTries(casse.modele).length).toBe(2);
     expect(appliquerFiche(m, { ...recue, pointDeBase: { ...PDB, systeme: "EPSG:2056" } })).toEqual({ ok: false, erreur: "systeme" });
     expect(appliquerFiche(m, ficheDuProjet(m, null, "", "2026-11-27"))).toEqual({ ok: false, erreur: "vide" });
     // Projet sans point de base ni réglages : la fiche le pose.

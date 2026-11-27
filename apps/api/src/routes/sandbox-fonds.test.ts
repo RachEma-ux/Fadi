@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../app.js";
+import { typeDesOctets } from "./sandbox-fonds.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { inscrire } from "../test-helpers/inscription.js";
@@ -51,9 +52,24 @@ describe("Originaux des fonds — /sandbox/fonds", () => {
     const b = await compte("fonds-c@example.com");
     expect((await a.post("/sandbox/fonds").set("Content-Type", "image/png").set("X-Fadi-Nom", "a.png").send(JPEG)).status).toBe(415);
     expect((await a.post("/sandbox/fonds").set("Content-Type", "image/gif").set("X-Fadi-Nom", "a.gif").send(Buffer.from("GIF89a"))).status).toBe(415);
+    // Pièces de calage d'une orthophoto (world file, .prj) : rangées telles quelles, texte reconnu à son contenu.
+    const tfw = Buffer.from("0.2\n0\n0\n-0.2\n652000.1\n6863000.1\n");
+    const piece = await a.post("/sandbox/fonds").set("Content-Type", "text/plain").set("X-Fadi-Nom", "ortho.tfw").send(tfw);
+    expect(piece.status).toBe(201);
+    expect(piece.body.original.type).toBe("text/plain");
+    expect((await a.post("/sandbox/fonds").set("Content-Type", "text/plain").set("X-Fadi-Nom", "a.txt").send(Buffer.from("bonjour"))).status).toBe(415);
     expect((await a.post("/sandbox/fonds").set("Content-Type", "image/png").send(PNG)).body.champs).toEqual(["nom"]);
     expect((await a.post("/sandbox/fonds").set("Content-Type", "image/png").set("X-Fadi-Nom", "dossier%2Fa.png").send(PNG)).status).toBe(400);
     const r = await a.post("/sandbox/fonds").set("Content-Type", "image/png").set("X-Fadi-Nom", "a.png").send(PNG);
     expect((await b.get(`/sandbox/fonds/${r.body.original.id}`)).status).toBe(404);
+  });
+});
+
+describe("Signature des pièces de calage", () => {
+  it("world file à six nombres et WKT reconnus ; autre texte refusé", () => {
+    expect(typeDesOctets(Buffer.from("0.2 0 0 -0.2 652000.1 6863000.1"))).toBe("text/plain");
+    expect(typeDesOctets(Buffer.from('PROJCS["RGF93 / Lambert-93",GEOGCS["RGF93"]]'))).toBe("text/plain");
+    expect(typeDesOctets(Buffer.from("1 2 3"))).toBeNull();
+    expect(typeDesOctets(Buffer.from([0x30, 0, 0x31]))).toBeNull();
   });
 });
