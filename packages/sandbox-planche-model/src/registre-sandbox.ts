@@ -330,10 +330,10 @@ const commandes: EntreeSandbox[] = [
   c("ajouter-niveau", "niveau", "stack-push", "Maj+F5", "panneau-niveaux", true),
   c("travailler-niveau", "niveau", "stack-front", "Maj+F10", "panneau-niveaux", true),
   c("rattacher-niveau", "niveau", "layers-linked", "Ctrl+Maj+X", "panneau-niveaux", true),
-  c("supprimer-niveau", "niveau", "stack-pop", "Ctrl+Maj+F2", "panneau-niveaux", true),
+  c("supprimer-niveau", "niveau", "stack-pop", "Ctrl+F2", "panneau-niveaux", true),
   c("locaux", "local", "layout-board-split", "Ctrl+Maj+U", "panneau-locaux", true),
   c("creer-local", "local", "square-plus", "Ctrl+Maj+D", "panneau-locaux", true),
-  c("supprimer-local", "local", "square-minus", "Ctrl+Maj+F3", "panneau-locaux", true),
+  c("supprimer-local", "local", "square-minus", "Ctrl+F3", "panneau-locaux", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
