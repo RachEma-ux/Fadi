@@ -10,6 +10,10 @@ describe("emplacements GeoData", () => {
     const r = validerEmplacementGeoData({ lieu: "A", latitude: 0, longitude: 0 });
     expect(r).toEqual({ ok: true, emplacement: { lieu: "A", latitude: 0, longitude: 0, altitude: null, nord: 0 } });
   });
+  it("un angle arrondi à un tour complet reste dans [0, 360) (contrainte de la base)", () => {
+    const r = validerEmplacementGeoData({ lieu: "A", latitude: 0, longitude: 0, nord: -0.0000001 });
+    expect(r.ok && r.emplacement.nord).toBe(0);
+  });
   it("nomme le premier champ refusé", () => {
     expect(validerEmplacementGeoData({ lieu: "", latitude: 0, longitude: 0 })).toEqual({ ok: false, champ: "lieu" });
     expect(validerEmplacementGeoData({ lieu: "x".repeat(121), latitude: 0, longitude: 0 })).toEqual({ ok: false, champ: "lieu" });

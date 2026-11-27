@@ -38,7 +38,7 @@ export function validerEmplacementGeoData(v: unknown): { readonly ok: true; read
   if (altitude !== null && (!fini(altitude) || Math.abs(altitude) > 10_000)) return { ok: false, champ: "altitude" };
   const nord = e["nord"] === undefined || e["nord"] === null ? 0 : e["nord"];
   if (!fini(nord)) return { ok: false, champ: "nord" };
-  return { ok: true, emplacement: { lieu, latitude: e["latitude"], longitude: e["longitude"], altitude, nord: Number(normaliserNordGeoData(nord).toFixed(6)) } };
+  return { ok: true, emplacement: { lieu, latitude: e["latitude"], longitude: e["longitude"], altitude, nord: normaliserNordGeoData(Number(normaliserNordGeoData(nord).toFixed(6))) } };
 }
 
 const lireNombre = (s: string): number | null => {
