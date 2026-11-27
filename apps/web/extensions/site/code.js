@@ -74,7 +74,7 @@ var T = {
       polylignes: "Polylignes", segments: "Segments", repere: "Repère horizontal", referenceVerticale: "Référence verticale", source: "Source", equidistance: "Équidistance",
       unite: "Unité foncière", mesuree: "Surface mesurée cumulée", contenance: "Contenance cadastrale cumulée",
       pleineTerre: "Pleine terre", biotope: "Coefficient de biotope", seuil: function (a) { return a ? "Seuil saisi (" + a + ")" : "Seuil saisi"; },
-      emprises: "Emprises", extrudables: "Extrudables", sansHauteur: "Sans hauteur",
+      emprises: "Emprises", extrudables: "Extrudables", sansHauteur: "Non extrudables",
     },
     oui1: "oui", aucun: "aucun", nonEvalue: "non évalué", nonEvaluee: "non évaluée",
     marge: function (v) { return "marge " + v; }, manque: function (v) { return "manque " + v; },
@@ -83,7 +83,7 @@ var T = {
     lu: { fermee: "fermée" },
     motifs: {
       illisible: "ligne illisible", doublon: "numéro de point déjà lu", confondu: "point confondu en plan avec un autre", inconnu: function (n) { return "point « " + n + " » inconnu"; },
-      court: "moins de deux points", contourCourt: "contour de moins de trois points", contourDouble: "un seul contour est lu",
+      court: "moins de deux points", tropDeRuptures: function (n) { return "au-delà de " + n + " lignes de rupture : non prise en compte"; }, contourCourt: "contour de moins de trois points", contourDouble: "un seul contour est lu",
     },
     trop: function (n) { return "Plus de " + n + " points : réduisez le semis (le tracé resterait trop lourd)."; },
     pasAssez: "Moins de trois points lus : rien à trianguler.",
@@ -135,12 +135,13 @@ var T = {
     hauteurInvalide: "Hauteur et niveaux : nombres positifs, ou vides.",
     hauteursDeclarees: function (n) { return n + (n > 1 ? " emprises déclarées." : " emprise déclarée."); },
     tropEmprises: function (n) { return "Plus de " + n + " emprises : sélectionnez-en moins."; },
-    rienAExtruder: "Aucune emprise n'a de hauteur : déclarez l'attribut ou saisissez la hauteur.",
-    extrudes: function (n, k) { return n + (n > 1 ? " volumes posés" : " volume posé") + (k ? " ; " + k + " sans hauteur, non extrudée" + (k > 1 ? "s" : "") : "") + "."; },
+    rienAExtruder: "Aucune emprise extrudable : déclarez l'attribut ou saisissez la hauteur (une emprise avec une ouverture n'est pas extrudée).",
+    extrudes: function (n, k) { return n + (n > 1 ? " volumes posés" : " volume posé") + (k ? " ; " + k + " non extrudée" + (k > 1 ? "s" : "") : "") + "."; },
     nomVolume: function (h) { return "Volume — " + h + " m"; },
     emprise: function (i) { return "Emprise " + i; },
     srcAttribut: "attribut", srcNiveaux: function (n) { return n + " niveaux"; }, srcUnique: "saisie",
     attributAbsent: "non évaluée (attribut absent)",
+    avecCour: "non extrudée (emprise avec une ouverture)",
     op: { terrain: "Tracer le terrain", courbes: "Poser les courbes de niveau", parcelle: "Déclarer une parcelle", unite: "Réunir les parcelles", retirer: "Retirer une parcelle", biotope: "Coefficients de biotope", hauteur: "Déclarer la hauteur des emprises", volumes: "Extruder le contexte" },
   },
   en: {
@@ -183,7 +184,7 @@ var T = {
       polylignes: "Polylines", segments: "Segments", repere: "Horizontal coordinate system", referenceVerticale: "Vertical datum", source: "Source", equidistance: "Interval",
       unite: "Land unit", mesuree: "Total measured area", contenance: "Total legal area",
       pleineTerre: "Open ground", biotope: "Biotope factor", seuil: function (a) { return a ? "Threshold typed (" + a + ")" : "Threshold typed"; },
-      emprises: "Footprints", extrudables: "Can be extruded", sansHauteur: "Without height",
+      emprises: "Footprints", extrudables: "Can be extruded", sansHauteur: "Cannot be extruded",
     },
     oui1: "yes", aucun: "none", nonEvalue: "not assessed", nonEvaluee: "not assessed",
     marge: function (v) { return "margin " + v; }, manque: function (v) { return "short by " + v; },
@@ -192,7 +193,7 @@ var T = {
     lu: { fermee: "closed" },
     motifs: {
       illisible: "unreadable line", doublon: "point number already read", confondu: "point at the same plan position as another", inconnu: function (n) { return "unknown point « " + n + " »"; },
-      court: "fewer than two points", contourCourt: "boundary of fewer than three points", contourDouble: "only one boundary is read",
+      court: "fewer than two points", tropDeRuptures: function (n) { return "beyond " + n + " breaklines: not taken into account"; }, contourCourt: "boundary of fewer than three points", contourDouble: "only one boundary is read",
     },
     trop: function (n) { return "More than " + n + " points: thin out the survey (the drawing would stay too heavy)."; },
     pasAssez: "Fewer than three points read: nothing to triangulate.",
@@ -244,12 +245,13 @@ var T = {
     hauteurInvalide: "Height and levels: positive numbers, or empty.",
     hauteursDeclarees: function (n) { return n + (n > 1 ? " footprints declared." : " footprint declared."); },
     tropEmprises: function (n) { return "More than " + n + " footprints: select fewer."; },
-    rienAExtruder: "No footprint has a height: declare the attribute or type the height.",
-    extrudes: function (n, k) { return n + (n > 1 ? " volumes laid" : " volume laid") + (k ? "; " + k + " without height, not extruded" : "") + "."; },
+    rienAExtruder: "No footprint can be extruded: declare the attribute or type the height (a footprint with an opening is not extruded).",
+    extrudes: function (n, k) { return n + (n > 1 ? " volumes laid" : " volume laid") + (k ? "; " + k + " not extruded" : "") + "."; },
     nomVolume: function (h) { return "Volume — " + h + " m"; },
     emprise: function (i) { return "Footprint " + i; },
     srcAttribut: "attribute", srcNiveaux: function (n) { return n + " levels"; }, srcUnique: "typed",
     attributAbsent: "not assessed (attribute missing)",
+    avecCour: "not extruded (footprint with an opening)",
     op: { terrain: "Draw the terrain", courbes: "Lay the contour lines", parcelle: "Declare a parcel", unite: "Join the parcels", retirer: "Remove a parcel", biotope: "Biotope factors", hauteur: "Declare the footprints' height", volumes: "Extrude the context" },
   },
 };
@@ -495,6 +497,7 @@ function lireReleve(nom, brut) {
     if (l.length < min) { ignorer(ch.ligne, motifCourt); return null; }
     return l;
   };
+  chaines.ruptures.slice(MAX_CONTRAINTES).forEach(function (ch) { ignorer(ch.ligne, x.motifs.tropDeRuptures(MAX_CONTRAINTES)); });
   var ruptures = chaines.ruptures.slice(0, MAX_CONTRAINTES).map(function (ch) { return chaine(ch, 2, x.motifs.court); }).filter(Boolean);
   var contour = null;
   chaines.contour.forEach(function (ch, i) {
@@ -514,6 +517,12 @@ async function chargerReleve() {
   releve = r;
   releve.trace = null;
   return info(x.releveCharge(r.points.length));
+}
+
+function aretesFinales(T) {
+  var a = {};
+  T.forEach(function (t) { for (var k = 0; k < 3; k++) a[cleArete(t[k], t[(k + 1) % 3])] = true; });
+  return a;
 }
 
 /** Triangule le relevé : Delaunay, lignes de rupture et contour forcés, triangles hors du contour retirés. */
@@ -544,6 +553,15 @@ function triangulerReleve(r) {
       return dansPolygone(g, poly);
     });
   }
+  // Contrôle sur la triangulation finale : une rupture qui en croise une autre sans point commun peut avoir été défaite.
+  var finales = aretesFinales(T);
+  parRupture = r.ruptures.map(function (l) {
+    for (var i = 0; i + 1 < l.length; i++) {
+      var morceaux = decouperContrainte(P, l[i], l[i + 1]);
+      if (!morceaux.every(function (m) { return finales[cleArete(m[0], m[1])]; })) return false;
+    }
+    return true;
+  });
   var airePlan = T.reduce(function (s, t) { return s + Math.abs(orient(P[t[0]], P[t[1]], P[t[2]])) / 2; }, 0);
   return { triangles: T, respectees: parRupture.filter(Boolean).length, contourForce: contourForce, airePlan: airePlan };
 }
@@ -1075,8 +1093,9 @@ async function declarerHauteurs() {
   var n = texte(r.niveaux).trim() === "" ? null : lireNombre(r.niveaux);
   if ((h !== null && !(h > 0)) || (n !== null && !(n > 0 && n === Math.floor(n)))) return alerte(x.hauteurInvalide);
   var garde = {};
-  var m = await planche.modele.lire();
-  // Les attributs des faces effacées depuis sont oubliés : la donnée reste petite.
+  // Les attributs des faces effacées depuis sont oubliés (lecture du modèle entier : une face dans un autre groupe
+  // n'est pas effacée) ; la donnée reste petite.
+  var m = await planche.modele.lire({ portee: "monde" });
   m.faces.forEach(function (f) { if (a[f.id]) garde[f.id] = a[f.id]; });
   l.forEach(function (f) { garde[f.id] = { hauteur: h, niveaux: n }; });
   await enUnPas(x.op.hauteur, function () { return planche.donnees.ecrire("projet", "emprises", garde); });
@@ -1104,7 +1123,8 @@ async function extruder() {
   if (!l.length) return alerte(x.vide.volumes);
   if (l.length > MAX_EMPRISES) return alerte(x.tropEmprises(MAX_EMPRISES));
   var a = await attributsGardes();
-  var faire = l.map(function (f) { return { f: f, h: hauteurDe(f, a) }; }).filter(function (y) { return y.h; });
+  // Une emprise à cour intérieure (une ouverture) n'est pas extrudée : son volume comblerait la cour.
+  var faire = l.map(function (f) { return { f: f, h: f.trous ? null : hauteurDe(f, a) }; }).filter(function (y) { return y.h; });
   if (!faire.length) return alerte(x.rienAExtruder);
   var sep = (await planche.unites.lire()).separateur;
   var b = await bordDroit();
@@ -1148,9 +1168,9 @@ async function etatVolumes(sep) {
   var a = await attributsGardes();
   var n = 0;
   l.slice(0, MAX_EMPRISES).forEach(function (f, i) {
-    var h = hauteurDe(f, a);
+    var h = f.trous ? null : hauteurDe(f, a);
     if (h) n++;
-    e.lignes.push({ genre: "ligne", id: f.id, ton: h ? "" : "gris", cellules: [x.emprise(i + 1), aire(f.aire, sep), h ? h.source : "–", h ? fixe(h.h, 2, sep) + " m" : x.attributAbsent] });
+    e.lignes.push({ genre: "ligne", id: f.id, ton: h ? "" : f.trous ? "alerte" : "gris", cellules: [x.emprise(i + 1), aire(f.aire, sep), h ? h.source : "–", h ? fixe(h.h, 2, sep) + " m" : f.trous ? x.avecCour : x.attributAbsent] });
   });
   e.resultats.push({ libelle: x.res.emprises, valeur: String(l.length) }, { libelle: x.res.extrudables, valeur: String(n) });
   if (n < l.length) e.resultats.push({ libelle: x.res.sansHauteur, valeur: String(l.length - n), ton: "alerte" });

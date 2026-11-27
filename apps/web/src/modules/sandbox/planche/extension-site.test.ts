@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, appliquer, contexte, creerExecutantExtension, jugerImportPaquet, modeleVide, modifierAnnotations, peindreFaces, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, appliquer, contexte, creerExecutantExtension, creerFonctionsPlanche, jugerImportPaquet, modeleVide, modifierAnnotations, peindreFaces, v3, type AccesPlanche, type AvisExtension, type ExecutantExtension, type Id, type Modele, type PaquetExtension, type ValeursSaisie } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/site/";
@@ -372,11 +372,11 @@ describe("extension « Site et terrain » — volumes du contexte (n° 25)", () 
     p.etat.selection = [...faces];
     let e = await p.action("etat", { onglet: "volumes" });
     expect(e.lignes.map((l) => l.cellules)).toEqual([["Emprise 1", "80,0 m²", "attribut", "9,00 m"], ["Emprise 2", "36,0 m²", "–", "non évaluée (attribut absent)"]]);
-    expect(e.resultats).toEqual([{ libelle: "Emprises", valeur: "2" }, { libelle: "Extrudables", valeur: "1" }, { libelle: "Sans hauteur", valeur: "1", ton: "alerte" }]);
+    expect(e.resultats).toEqual([{ libelle: "Emprises", valeur: "2" }, { libelle: "Extrudables", valeur: "1" }, { libelle: "Non extrudables", valeur: "1", ton: "alerte" }]);
     await p.action("extruder", { onglet: "volumes" });
     expect(p.etat.pas.at(-1)).toBe("Extruder le contexte");
     expect(p.derniereAlerte()).toBe("");
-    expect(p.etat.avis.at(-1)!.texte).toBe("1 volume posé ; 1 sans hauteur, non extrudée.");
+    expect(p.etat.avis.at(-1)!.texte).toBe("1 volume posé ; 1 non extrudée.");
     const [v] = occurrences(p.etat.modele);
     expect(nomDefinition(p.etat.modele, v!.id)).toBe("Volume — 9,00 m");
     const w = monde(p.etat.modele, v!.id);
@@ -391,6 +391,49 @@ describe("extension « Site et terrain » — volumes du contexte (n° 25)", () 
     expect(e.lignes[0]!.cellules.slice(2)).toEqual(["3 niveaux", "9,60 m"]);
     e = await p.action("etat", { onglet: "volumes", valeurs: { source: "unique", hauteur: "12" } });
     expect(e.lignes.map((l) => l.cellules[3])).toEqual(["12,00 m", "12,00 m"]);
+  });
+});
+
+describe("extension « Site et terrain » — retours de relecture", () => {
+  it("deux ruptures qui se croisent sans point commun : la défaite est signalée, contrôlée sur la triangulation finale", async () => {
+    const p = planche(modeleVide());
+    p.fichierAOuvrir({ nom: "croix.txt", texte: ["0 0 0", "10 0 0", "10 10 0", "0 10 0", "# ruptures", "1;3", "2;4"].join("\n") });
+    await p.action("charger-releve", { onglet: "terrain" });
+    const e = await p.action("tracer-terrain", { onglet: "terrain" });
+    expect(e.resultats.find((r) => r.libelle === "Lignes de rupture respectées")).toEqual({ libelle: "Lignes de rupture respectées", valeur: "1 / 2", ton: "alerte" });
+  });
+
+  it("au-delà de 200 lignes de rupture : chacune est listée, non prise en compte", async () => {
+    const p = planche(modeleVide());
+    const ruptures = Array.from({ length: 202 }, () => "1;2");
+    p.fichierAOuvrir({ nom: "r.txt", texte: ["0 0 0", "10 0 0", "10 10 0", "# ruptures", ...ruptures].join("\n") });
+    const e = await p.action("charger-releve", { onglet: "terrain" });
+    expect(e.lignes.map((l) => l.cellules)).toEqual([["205", "au-delà de 200 lignes de rupture : non prise en compte"], ["206", "au-delà de 200 lignes de rupture : non prise en compte"]]);
+  });
+
+  it("une emprise avec une ouverture n'est pas extrudée ; une hauteur déclarée dans un groupe reste quand on en déclare ailleurs", async () => {
+    let { modele, faces } = rectangles([[0, 0, 10, 8], [20, 0, 6, 6]]);
+    modele = ajouterRectangle(modele, v3(3, 3, 0), v3(2, 0, 0), v3(0, 2, 0)).modele;
+    const p = planche(modele);
+    p.etat.selection = [faces[0]!];
+    p.repondre([{ hauteur: "9", niveaux: "" }]);
+    await p.action("declarer-hauteurs", { onglet: "volumes" });
+    let e = await p.action("etat", { onglet: "volumes" });
+    expect(e.lignes[0]!.cellules[3]).toBe("non extrudée (emprise avec une ouverture)");
+    await p.action("extruder", { onglet: "volumes" });
+    expect(p.derniereAlerte()).toMatch(/^Aucune emprise extrudable/);
+    expect(occurrences(p.etat.modele)).toHaveLength(0);
+    // La face 2 passe dans un groupe : sa hauteur déclarée reste quand on en déclare une à la racine.
+    p.etat.selection = [faces[1]!];
+    p.repondre([{ hauteur: "4", niveaux: "" }]);
+    await p.action("declarer-hauteurs", { onglet: "volumes" });
+    const f = creerFonctionsPlanche(p.etat.modele);
+    f.api.grouper([faces[1]!], "Contexte");
+    p.etat.modele = f.modele();
+    p.etat.selection = [faces[0]!];
+    p.repondre([{ hauteur: "12", niveaux: "" }]);
+    await p.action("declarer-hauteurs", { onglet: "volumes" });
+    expect(JSON.stringify(p.etat.modele)).toContain(`"${faces[1]}":{"hauteur":4`);
   });
 });
 
