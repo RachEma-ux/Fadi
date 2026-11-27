@@ -586,15 +586,15 @@ planche.sur("commande.flux", () => essayer(() => planche.fichiers.ouvrir([".json
   });
 
   it("archivage refusé ou impossible : le fichier arrive sans archive, avec le motif ; jamais en flux", async () => {
-    const refus = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: async () => ({ ok: false as const, motif: "connexion requise" }) } });
-    expect(await refus.appeler("demande", "commande.regles")).toEqual({ genre: "fini", resultat: { nom: "regles.json", texte: "{}", archive: null, archiveRefus: "connexion requise" } });
+    const refus = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: async () => ({ ok: false as const, motif: "connexion" as const }) } });
+    expect(await refus.appeler("demande", "commande.regles")).toEqual({ genre: "fini", resultat: { nom: "regles.json", texte: "{}", archive: null, archiveRefus: "connexion" } });
     refus.arreter();
     const panne = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: () => Promise.reject(new Error("x")) } });
-    expect(await panne.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "archivage impossible" } });
+    expect(await panne.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "impossible" } });
     expect(await panne.appeler("demande", "commande.flux")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : archiver : pas en flux/) });
     panne.arreter();
     const sans = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: choisir({ nom: "regles.json", texte: "{}" }) });
-    expect(await sans.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "archivage indisponible dans cette Planche" } });
+    expect(await sans.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "indisponible" } });
     sans.arreter();
   });
 });
