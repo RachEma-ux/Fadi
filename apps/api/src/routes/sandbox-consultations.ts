@@ -5,10 +5,12 @@
  * Routes du compte, montées sous `/sandbox/consultations` (compte connecté exigé, 401 sinon) :
  *
  *   GET  /                 → { liens: [{ jeton, nom, creeLe, echeance, mesure, revoqueLe }] } — liens du compte, du plus
- *                            récent au plus ancien (sans le dessin) ;
+ *                            récent au plus ancien (sans le dessin) : tous les liens actifs (révocables), et les 200
+ *                            derniers liens révoqués ou échus ;
  *   POST /                 { nom, modele, echeance: "AAAA-MM-JJ" | null, mesure: booléen } → 201 { lien } — copie figée
  *                            du dessin (relu par `lireModelePlanche` : jamais cru sur parole), jeton aléatoire ;
  *                            forme fautive → 400 invalid_input (champ nommé) ; dessin de plus de 8 Mo → 413 ;
+ *                            200 liens actifs déjà → 409 limite (la liste reste bornée et chaque lien actif révocable) ;
  *   POST /:jeton/revoquer  → { lien } — révoque (définitif) ; lien d'un autre compte ou inconnu → 404.
  *
  * Route publique, montée sous `/consultation/api` (sans compte) :
@@ -27,6 +29,11 @@ import { requireAuth } from "../middleware/require-auth.js";
 /** Taille maximale du dessin figé (le corps JSON entier). */
 export const LIMITE_CONSULTATION = "8mb";
 const JOUR = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Liens actifs au plus par compte ; liens inactifs listés au plus. */
+export const LIENS_ACTIFS_MAX = 200;
+const INACTIFS_LISTES = 200;
+/** Lien actif : ni révoqué ni échu (heure suisse). */
+const ACTIF = "revoque_le IS NULL AND (echeance IS NULL OR echeance >= (now() AT TIME ZONE 'Europe/Zurich')::date)";
 
 const prive = (_req: unknown, res: Response, next: () => void) => {
   res.setHeader("Cache-Control", "private, no-store");
@@ -58,7 +65,16 @@ sandboxConsultationsRouter.use(prive);
 sandboxConsultationsRouter.use(express.json({ limit: LIMITE_CONSULTATION }));
 
 sandboxConsultationsRouter.get("/", async (req, res) => {
-  const r = await pool.query<LigneConsultation>(`SELECT ${COLONNES} FROM sandbox_consultations WHERE proprietaire_id = $1 ORDER BY cree_le DESC LIMIT 200`, [req.user!.id]);
+  // Tous les liens actifs (bornés à LIENS_ACTIFS_MAX par la création) restent listés, donc révocables ; seuls les plus
+  // anciens liens révoqués ou échus sortent de la liste.
+  const r = await pool.query<LigneConsultation>(
+    `SELECT * FROM (
+       (SELECT ${COLONNES} FROM sandbox_consultations WHERE proprietaire_id = $1 AND ${ACTIF})
+       UNION ALL
+       (SELECT ${COLONNES} FROM sandbox_consultations WHERE proprietaire_id = $1 AND NOT (${ACTIF}) ORDER BY cree_le DESC LIMIT ${INACTIFS_LISTES})
+     ) l ORDER BY cree_le DESC`,
+    [req.user!.id],
+  );
   res.json({ liens: r.rows.map(lien) });
 });
 
@@ -72,6 +88,8 @@ sandboxConsultationsRouter.post("/", async (req, res) => {
   if (echeance !== null && (typeof echeance !== "string" || !jourValide(echeance))) return invalide("echeance", "Échéance : une date AAAA-MM-JJ, ou aucune.");
   const modele = lireModelePlanche(b["modele"]);
   if (!modele) return invalide("modele", "Dessin illisible.");
+  const actifs = await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM sandbox_consultations WHERE proprietaire_id = $1 AND ${ACTIF}`, [req.user!.id]);
+  if ((actifs.rows[0]?.n ?? 0) >= LIENS_ACTIFS_MAX) return void res.status(409).json({ error: "limite", message: `${LIENS_ACTIFS_MAX} liens actifs au plus : révoquez-en un.` });
   const jeton = randomBytes(24).toString("base64url");
   const r = await pool.query<LigneConsultation>(
     `INSERT INTO sandbox_consultations (jeton, proprietaire_id, nom, modele, mesure, echeance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${COLONNES}`,
@@ -98,7 +116,7 @@ consultationPubliqueRouter.get("/:jeton", async (req, res) => {
   if (!/^[A-Za-z0-9_-]{32}$/.test(jeton)) return indisponible();
   const r = await pool.query<{ nom: string; cree_le: Date; mesure: boolean; modele: unknown }>(
     `SELECT nom, cree_le, mesure, modele FROM sandbox_consultations
-      WHERE jeton = $1 AND revoque_le IS NULL AND (echeance IS NULL OR echeance >= (now() AT TIME ZONE 'Europe/Zurich')::date)`,
+      WHERE jeton = $1 AND ${ACTIF}`,
     [jeton],
   );
   const l = r.rows[0];

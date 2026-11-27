@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { ajouterRectangle, modeleVide, v3 } from "@parcours/sandbox-planche-model";
 import { createApp } from "../app.js";
+import { LIENS_ACTIFS_MAX } from "./sandbox-consultations.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { inscrire } from "../test-helpers/inscription.js";
@@ -75,10 +76,36 @@ describe("Liens de consultation — /sandbox/consultations et /consultation/api"
   it("accepte un dessin au-delà de la limite générale de 256 ko", async () => {
     const a = await compte("consult-e@example.com");
     let m = modeleVide();
-    for (let i = 0; i < 400; i++) m = ajouterRectangle(m, v3(i * 5, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
+    for (let i = 0; i < 800; i++) m = ajouterRectangle(m, v3(i * 5, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
     const grand = JSON.parse(JSON.stringify(m));
     expect(JSON.stringify(grand).length).toBeGreaterThan(256 * 1024);
     const c = await a.post("/sandbox/consultations").send({ nom: "Grand", modele: grand, mesure: true });
     expect(c.status).toBe(201);
+  });
+  it("tous les liens actifs restent listés (révocables) ; 200 liens actifs au plus → 409 limite", async () => {
+    const a = await compte("consult-f@example.com");
+    const id = (await pool.query<{ id: string }>("SELECT id FROM users WHERE email = $1", ["consult-f@example.com"])).rows[0]!.id;
+    // 199 liens actifs anciens, puis 250 liens révoqués plus récents (ils repousseraient les actifs d'une liste « 200 derniers »).
+    await pool.query(
+      `INSERT INTO sandbox_consultations (jeton, proprietaire_id, nom, modele, mesure, cree_le)
+       SELECT md5('actif' || i), $1, 'Actif ' || i, '{}'::jsonb, true, now() - interval '30 days' + i * interval '1 second' FROM generate_series(1, $2::int) i`,
+      [id, LIENS_ACTIFS_MAX - 1],
+    );
+    await pool.query(
+      `INSERT INTO sandbox_consultations (jeton, proprietaire_id, nom, modele, mesure, cree_le, revoque_le)
+       SELECT md5('revoque' || i), $1, 'Révoqué ' || i, '{}'::jsonb, true, now() - interval '1 day' + i * interval '1 second', now() FROM generate_series(1, 250) i`,
+      [id],
+    );
+    expect((await a.post("/sandbox/consultations").send({ nom: "Dernier", modele: dessin(), mesure: true })).status).toBe(201);
+    const trop = await a.post("/sandbox/consultations").send({ nom: "Trop", modele: dessin(), mesure: true });
+    expect(trop.status).toBe(409);
+    expect(trop.body.error).toBe("limite");
+    const liens = (await a.get("/sandbox/consultations")).body.liens as { jeton: string; revoqueLe: string | null }[];
+    expect(liens.filter((l) => l.revoqueLe === null)).toHaveLength(LIENS_ACTIFS_MAX);
+    expect(liens.filter((l) => l.revoqueLe !== null)).toHaveLength(200);
+    // Révoquer libère une place.
+    const plusAncien = liens.filter((l) => l.revoqueLe === null).at(-1)!.jeton;
+    expect((await a.post(`/sandbox/consultations/${plusAncien}/revoquer`).send({})).status).toBe(200);
+    expect((await a.post("/sandbox/consultations").send({ nom: "Après", modele: dessin(), mesure: true })).status).toBe(201);
   });
 });

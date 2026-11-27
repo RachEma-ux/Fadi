@@ -3396,7 +3396,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [noteLien, setNoteLien] = useState<string | null>(null);
   const messageErreurLien = (e: unknown): string => {
     const code = e instanceof ErreurConsultation ? e.code : "";
-    return t(code === "unauthorized" || (e instanceof ErreurConsultation && e.statut === 401) ? "planche.consultation.erreur.compte" : code === "reseau" ? "planche.consultation.erreur.reseau" : e instanceof ErreurConsultation && e.statut === 413 ? "planche.consultation.erreur.taille" : "planche.consultation.erreur.serveur");
+    return t(code === "unauthorized" || (e instanceof ErreurConsultation && e.statut === 401) ? "planche.consultation.erreur.compte" : code === "reseau" ? "planche.consultation.erreur.reseau" : e instanceof ErreurConsultation && e.statut === 413 ? "planche.consultation.erreur.taille" : code === "limite" ? "planche.consultation.erreur.limite" : "planche.consultation.erreur.serveur");
   };
   useEffect(() => {
     if (panneau !== "consultations") return;
