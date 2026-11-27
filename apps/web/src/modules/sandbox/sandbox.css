@@ -4765,3 +4765,80 @@
 .sandbox-planche .planche-feuilles-motif input {
   width: 13rem;
 }
+
+/* Cas 4, étape 7a : import hors du fil principal (progression, Annuler). */
+.sandbox-planche .planche-import-cours {
+  position: fixed;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(400px, calc(100vw - 32px));
+  padding: 12px 14px;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 10px;
+  box-shadow: var(--flottant-ombre);
+  font-size: 13px;
+}
+.sandbox-planche .planche-import-cours h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15.5px;
+}
+.sandbox-planche .planche-import-cours h3 small {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-import-aide,
+.sandbox-planche .planche-import-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.sandbox-planche .planche-import-note {
+  margin: 8px 0 0;
+}
+.sandbox-planche .planche-import-barre {
+  height: 10px;
+  margin: 4px 0 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(27, 77, 66, 0.12);
+}
+.sandbox-planche .planche-import-barre i {
+  display: block;
+  height: 100%;
+  background: #1a5fd6;
+  transition: width 0.15s linear;
+}
+.sandbox-planche .planche-import-barre i.planche-import-indetermine {
+  animation: planche-import-va-et-vient 1.2s ease-in-out infinite alternate;
+}
+@keyframes planche-import-va-et-vient {
+  from { margin-left: 0; }
+  to { margin-left: 70%; }
+}
+.sandbox-planche .planche-import-annuler {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 600;
+  background: var(--flottant-fond);
+  border: 1px solid rgba(27, 77, 66, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.sandbox-planche .planche-import-annuler .sandbox-picto {
+  width: 16px;
+  height: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sandbox-planche .planche-import-barre i.planche-import-indetermine { animation: none; }
+}

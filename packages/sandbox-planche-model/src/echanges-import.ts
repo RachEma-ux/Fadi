@@ -1,17 +1,14 @@
 /**
  * Menu de la Planche — import OBJ / STL / IFC : lecture de maillages triangulés (sans dépendance) puis insertion dans la
  * Planche, un groupe par maillage. Texte ou octets → `MaillageLu[]` (pur, testable) ; l'insertion passe par
- * `ajouterTriangles` + `grouper`. Limites déclarées, jamais silencieuses : triangles d'aire nulle ignorés, au plus
- * `MAX_TRIANGLES_IMPORT` triangles, unité du fichier choisie (OBJ, STL) ou lue (IFC : longueur en mètre, centimètre ou
+ * `construireImport` (construction quasi linéaire, hors du modèle, faite dans un travailleur par la Planche) puis `poserImport`. Limites déclarées, jamais silencieuses : triangles d'aire nulle ignorés, unité du fichier choisie (OBJ, STL) ou lue (IFC : longueur en mètre, centimètre ou
  * millimètre ; une autre unité est refusée), IFC lu seulement s'il contient des `IfcTriangulatedFaceSet`.
  */
-import { ajouterTriangles, grouper, modifierAnnotations, type Modele } from "./geometrie-libre.js";
+import { type ContenuImporte, type Modele, construireMaillageImporte, modifierAnnotations, poserMaillagesImportes } from "./geometrie-libre.js";
 import { cross, len, scale, sub, v3, type Vec3 } from "./vecteur.js";
 
 export type FormatImport = "obj" | "stl" | "ifc";
 
-/** Plafond mesuré : l'insertion est quadratique (528 triangles ≈ 0,5 s, 2 200 ≈ 7,5 s, 4 700 ≈ 40 s). */
-export const MAX_TRIANGLES_IMPORT = 1500;
 
 export interface MaillageLu {
   readonly nom: string;
@@ -163,31 +160,43 @@ export interface ResultatImport {
   readonly ignores: number;
 }
 
-/** Insère les maillages (un groupe chacun) ; `echelle` = mètres par unité du fichier. */
-export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], echelle: number, nomBase = "Import", consigner?: { readonly format: "obj" | "stl" | "ifc"; readonly fichier: string }): ResultatImport {
-  const total = maillages.reduce((n, x) => n + x.triangles.length / 3, 0);
-  if (total > MAX_TRIANGLES_IMPORT) throw new ErreurImport("trop-gros", `${total} triangles : au plus ${MAX_TRIANGLES_IMPORT} sont importés (au-delà, la géométrie collante devient trop lente).`);
-  let courant = m;
-  let objets = 0;
-  let triangles = 0;
+/** Triangles d'un maillage lu, à l'échelle (mètres), sans les triangles d'aire nulle (comptés). */
+export function trianglesDuMaillage(mesh: MaillageLu, echelle: number): { readonly triangles: [Vec3, Vec3, Vec3][]; readonly ignores: number } {
+  const tris: [Vec3, Vec3, Vec3][] = [];
   let ignores = 0;
-  for (const mesh of maillages) {
-    const tris: [Vec3, Vec3, Vec3][] = [];
-    const p = (i: number): Vec3 => scale(v3(mesh.positions[i * 3] as number, mesh.positions[i * 3 + 1] as number, mesh.positions[i * 3 + 2] as number), echelle);
-    for (let k = 0; k < mesh.triangles.length; k += 3) {
-      const a = p(mesh.triangles[k] as number);
-      const b = p(mesh.triangles[k + 1] as number);
-      const c = p(mesh.triangles[k + 2] as number);
-      if (len(cross(sub(b, a), sub(c, a))) < 1e-12) ignores++;
-      else tris.push([a, b, c]);
-    }
-    if (tris.length === 0) continue;
-    const r = ajouterTriangles(courant, tris);
-    const g = grouper(r.modele, r.rapport.crees, { nom: mesh.nom || nomBase, genre: "groupe" });
-    courant = g.modele;
-    objets++;
-    triangles += tris.length;
+  const p = (i: number): Vec3 => scale(v3(mesh.positions[i * 3] as number, mesh.positions[i * 3 + 1] as number, mesh.positions[i * 3 + 2] as number), echelle);
+  for (let k = 0; k < mesh.triangles.length; k += 3) {
+    const a = p(mesh.triangles[k] as number);
+    const b = p(mesh.triangles[k + 1] as number);
+    const c = p(mesh.triangles[k + 2] as number);
+    if (len(cross(sub(b, a), sub(c, a))) < 1e-12) ignores++;
+    else tris.push([a, b, c]);
   }
+  return { triangles: tris, ignores };
+}
+
+/** Contenus prêts à poser (étape coûteuse, faite dans le travailleur d'import) ; `progression` reçoit le total des triangles traités. */
+export function construireImport(maillages: readonly MaillageLu[], echelle: number, nomBase = "Import", progression?: (fait: number, total: number) => void): { readonly contenus: readonly ContenuImporte[]; readonly ignores: number } {
+  const total = maillages.reduce((n, x) => n + x.triangles.length / 3, 0);
+  let avant = 0;
+  let ignores = 0;
+  const contenus: ContenuImporte[] = [];
+  for (const mesh of maillages) {
+    const lu = trianglesDuMaillage(mesh, echelle);
+    ignores += lu.ignores;
+    const n = mesh.triangles.length / 3;
+    if (lu.triangles.length > 0) contenus.push(construireMaillageImporte(mesh.nom || nomBase, lu.triangles, progression ? (f) => progression(avant + f, total) : undefined));
+    avant += n;
+    progression?.(avant, total);
+  }
+  return { contenus, ignores };
+}
+
+/** Pose des contenus construits (un groupe chacun), correspondance d'unité consignée dans la même opération. */
+export function poserImport(m: Modele, contenus: readonly ContenuImporte[], ignores: number, echelle: number, consigner?: { readonly format: "obj" | "stl" | "ifc"; readonly fichier: string }): ResultatImport {
+  const r = poserMaillagesImportes(m, contenus);
+  let courant = r.modele;
+  const objets = r.occurrences.length;
   // Chantier Axes (AX-5) : la correspondance d'unité est consignée dans le même pas (export « en coordonnées d'origine »).
   if (consigner && objets > 0) {
     courant = modifierAnnotations(courant, (a, id) => {
@@ -195,5 +204,14 @@ export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], e
       a.correspondances[k] = { id: k, format: consigner.format, fichier: consigner.fichier, metresParUnite: echelle };
     }).modele;
   }
-  return { modele: courant, objets, triangles, ignores };
+  return { modele: courant, objets, triangles: contenus.reduce((n, x) => n + x.triangles, 0), ignores };
+}
+
+/**
+ * Insère les maillages (un groupe chacun) ; `echelle` = mètres par unité du fichier. Construction quasi linéaire
+ * (`construireMaillageImporte`) : plus de plafond fixe ; la borne affichée dans la Planche est mesurée sur l'appareil.
+ */
+export function importerMaillages(m: Modele, maillages: readonly MaillageLu[], echelle: number, nomBase = "Import", consigner?: { readonly format: "obj" | "stl" | "ifc"; readonly fichier: string }): ResultatImport {
+  const c = construireImport(maillages, echelle, nomBase);
+  return poserImport(m, c.contenus, c.ignores, echelle, consigner);
 }

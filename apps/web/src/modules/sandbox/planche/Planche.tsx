@@ -261,7 +261,8 @@ import {
   supprimerRepere,
 } from "@parcours/sandbox-planche-model";
 import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
-import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
+import { compter as compterContexte, exporterIfc, maillagesPlanche, nonEtanchesDe, omisExport, poserImport } from "@parcours/sandbox-planche-model";
+import { type EtatImport, lancerImport, noterPose } from "./import-hors-fil";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
@@ -455,6 +456,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const texteRef = useRef<TexteMesures>(null);
   const [texte, setTexteEtat] = useState<TexteMesures>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // Cas 4, étape 7a : import hors du fil principal (progression, Annuler / Échap).
+  const [importCours, setImportCours] = useState<(EtatImport & { readonly fichier: string; readonly octets: number }) | null>(null);
+  const annulerImportRef = useRef<(() => void) | null>(null);
+  const importActif = importCours !== null;
+  useEffect(() => {
+    if (!importActif) return;
+    // Échap annule l'import où que soit le focus (menu, champ, vue).
+    const surTouche = (e: KeyboardEvent): void => {
+      if (e.key !== "Escape" || !annulerImportRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      annulerImportRef.current();
+    };
+    window.addEventListener("keydown", surTouche, true);
+    return () => window.removeEventListener("keydown", surTouche, true);
+  }, [importActif]);
   const [grille, setGrille] = useState(false);
   const grilleRef = useRef(false);
   grilleRef.current = grille;
@@ -2194,17 +2211,38 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       },
       exporter: async (format) => exporter(format),
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
+        if (annulerImportRef.current) return;
         try {
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
-          const lu = lireMaillages(format, donnees);
-          const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
-          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""), { format, fichier: fichier.name });
+          const enCours = lancerImport({ format, donnees, echelle: ECHELLE_UNITE[unite], nom: fichier.name.replace(/\.[^.]+$/, "") }, (e) => setImportCours({ ...e, fichier: fichier.name, octets: fichier.size }));
+          annulerImportRef.current = enCours.annuler;
+          const issue = await enCours.issue;
+          annulerImportRef.current = null;
+          setImportCours(null);
+          if (issue.genre === "annule") {
+            setMessage(t("planche.import.annule"));
+            return;
+          }
+          if (issue.genre === "trop-gros") {
+            setMessage(t("planche.import.tropGros", { triangles: issue.triangles.toLocaleString(LOCALE), borne: issue.borne.toLocaleString(LOCALE) }));
+            return;
+          }
+          if (issue.genre === "erreur") {
+            setMessage(t("planche.sb.import.erreur", { motif: issue.message }));
+            return;
+          }
+          const t0 = performance.now();
+          const r = poserImport(histRef.current.present.modele, issue.contenus, issue.ignores, issue.echelle, { format, fichier: fichier.name });
+          noterPose(performance.now() - t0);
           poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
           rafraichir();
+          const echelle = issue.echelle;
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
           setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
         } catch (e) {
-          setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
+          annulerImportRef.current = null;
+          setImportCours(null);
+          setMessage(t("planche.sb.import.erreur", { motif: e instanceof Error ? e.message : String(e) }));
         }
       },
       telechargerPng: async () => {
@@ -2325,6 +2363,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (e.key === "Home" && e.shiftKey && !mod && dansRef.current !== undefined && !dansMesures) {
         e.preventDefault();
         fermerContexte("fermer-tout");
+        return;
+      }
+      if (e.key === "Escape" && annulerImportRef.current) {
+        e.preventDefault();
+        annulerImportRef.current();
         return;
       }
       if (e.key === "Escape") {
@@ -5456,6 +5499,33 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
       </div>
 
+      {importCours && (
+        <div className="planche-import-cours" role="dialog" aria-modal="false" aria-label={t("planche.import.titre")} data-planche-import-cours data-phase={importCours.phase}>
+          <h3>
+            <IconeSandbox nom="menuImporter" />
+            {t("planche.import.titre")}
+            <small>{t("planche.import.echap")}</small>
+          </h3>
+          <p className="planche-import-aide">{t("planche.import.aide", { fichier: importCours.fichier })}</p>
+          <div>{importCours.phase === "etalonnage" ? t("planche.import.etalonnage") : t("planche.import.lecture", { mo: (importCours.octets / 1e6).toLocaleString(LOCALE, { maximumFractionDigits: 1 }), etat: importCours.phase === "lecture" ? t("planche.import.enCours") : t("planche.import.terminee") })}</div>
+          <div className="planche-import-barre"><i style={{ width: importCours.phase === "lecture" || importCours.phase === "etalonnage" ? "30%" : "100%" }} className={importCours.phase === "insertion" ? undefined : "planche-import-indetermine"} /></div>
+          {importCours.phase === "insertion" && (
+            <>
+              <div data-planche-import-insertion>{t("planche.import.insertion", { fait: importCours.fait.toLocaleString(LOCALE), total: importCours.total.toLocaleString(LOCALE), pc: String(importCours.total > 0 ? Math.floor((importCours.fait / importCours.total) * 100) : 0) })}</div>
+              <div className="planche-import-barre"><i style={{ width: `${importCours.total > 0 ? (importCours.fait / importCours.total) * 100 : 0}%` }} /></div>
+            </>
+          )}
+          <button type="button" className="planche-import-annuler" data-planche-import-annuler onClick={() => annulerImportRef.current?.()}>
+            <IconeSandbox nom="fermer" />
+            {t("planche.import.annuler")}
+          </button>
+          {importCours.borne !== null && importCours.debit && (
+            <p className="planche-import-note" data-planche-import-borne={importCours.borne}>
+              {t("planche.import.borne", { borne: importCours.borne.toLocaleString(LOCALE), debit: importCours.debit.trianglesParSeconde.toLocaleString(LOCALE), date: new Date(importCours.debit.mesure).toLocaleDateString(LOCALE), budget: "20" })}
+            </p>
+          )}
+        </div>
+      )}
       {recherche && (
         <RechercheOutil
           lecture={readOnly}
