@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { directionNord, soleil } from "@parcours/sandbox-planche-model";
+import { controlerCotes, dessinerCote, directionNord, soleil } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -22,6 +22,9 @@ const COULEURS_TRIADE: Readonly<Record<"x" | "y" | "z", string>> = { x: "#c62828
 
 /** Rayon d'accrochage à l'écran (px), converti en mètres à la profondeur visée (choix Fadi, cahier-planche §5.1). */
 export const TOLERANCE_PX = 10;
+/** (Cas 2, lot 1) Loupe d'accrochage au doigt : diamètre (px CSS) et grossissement. */
+const TAILLE_LOUPE = 120;
+const LOUPE_FACTEUR = 3;
 /** Au doigt, le point touché est masqué par le doigt et moins précis : rayon d'accrochage plus large (SketchUp web mobile). */
 export const TOLERANCE_TACTILE_PX = 22;
 /** Déplacement minimal (px) pour qu'un appui devienne un glisser. */
@@ -67,6 +70,8 @@ export interface RappelsVuePlanche {
   isolement?(): { readonly chemin: readonly string[]; readonly ids: readonly string[] } | null;
   /** Chemin complet du contexte ouvert (Objets O-2) : distingue les occurrences d'un même composant. */
   chemin?(): readonly string[];
+  /** (Cas 2, lot 1) L'outil actif montre une loupe d'accrochage au doigt (Cotation, Texte). */
+  loupe?(): boolean;
 }
 
 /** Options d'affichage (panneaux Styles, Affichage, Ombres — état de vue, R10). */
@@ -229,6 +234,9 @@ export class VuePlanche {
   private readonly canvas: HTMLCanvasElement;
   private readonly surcouche: HTMLDivElement;
   private readonly marqueur: HTMLDivElement;
+  /** (Cas 2, lot 1) Loupe d'accrochage au doigt : agrandit la zone sous le doigt, au-dessus de lui. */
+  private readonly loupeCanvas: HTMLCanvasElement;
+  private loupeEn: Point2 | null = null;
   private readonly infobulle: HTMLDivElement;
   private readonly cadre: HTMLDivElement;
   private readonly contourSvg: SVGSVGElement;
@@ -258,6 +266,11 @@ export class VuePlanche {
   private readonly sol: THREE.Mesh;
   private readonly soleil: THREE.DirectionalLight;
   private options: OptionsAffichage = OPTIONS_AFFICHAGE_DEFAUT;
+  /** (Cas 2, lot 1) Précision d'affichage (préférence de l'appareil) et séparateur décimal des cotes. */
+  private precisionCotes = 2;
+  private separateurCotes: "." | "," = ",";
+  /** Échelle (m par pixel) à laquelle les annotations ont été construites : extrémités et cotes courtes en dépendent. */
+  private pasAnnotations = 0;
   private projectionParallele = false;
   private fovPerspective = CHAMP_DE_VISION_INITIAL;
   private readonly lanceur = new THREE.Raycaster();
@@ -306,7 +319,13 @@ export class VuePlanche {
     this.triadeSvg.setAttribute("height", String(TAILLE_TRIADE));
     this.triadeSvg.setAttribute("viewBox", `${-TAILLE_TRIADE / 2} ${-TAILLE_TRIADE / 2} ${TAILLE_TRIADE} ${TAILLE_TRIADE}`);
     this.triadeSvg.setAttribute("data-planche-triade", "");
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg);
+    this.loupeCanvas = document.createElement("canvas");
+    this.loupeCanvas.className = "planche-loupe";
+    this.loupeCanvas.width = TAILLE_LOUPE;
+    this.loupeCanvas.height = TAILLE_LOUPE;
+    this.loupeCanvas.setAttribute("data-planche-loupe", "");
+    this.loupeCanvas.style.display = "none";
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg, this.loupeCanvas);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -654,29 +673,22 @@ export class VuePlanche {
         this.groupeAnnotations.add(plein(c, [{ x: o.x - r, y: o.y, z: o.z }, { x: o.x + r, y: o.y, z: o.z }]), plein(c, [{ x: o.x, y: o.y - r, z: o.z }, { x: o.x, y: o.y + r, z: o.z }]), plein(c, [{ x: o.x, y: o.y, z: o.z - r }, { x: o.x, y: o.y, z: o.z + r }]));
       }
     }
-    const fmt = (v: number): string => `${v.toFixed(2).replace(".", ",")} m`;
-    const sommetMonde = (id: string): Vec3 | null => {
-      const s = modele.racine.sommets[id];
-      return s ? s.position : null;
-    };
+    // Cas 2, lot 1 (cotation) : géométrie des cotes calculée par le modèle (style, extrémités, format, cote trop courte,
+    // orpheline) ; le total d'une chaîne dont la somme affichée diffère est marqué en rouge.
+    this.pasAnnotations = pas;
+    const controle = Object.keys(a.cotes).length ? controlerCotes(modele, this.precisionCotes) : null;
+    const alertes = new Set(controle?.chaines.map((x) => x.total) ?? []);
     for (const c of Object.values(a.cotes)) {
-      const couleur = cs(c.id, "#333333");
-      if (c.genre === "lineaire") {
-        const A = (c.sommets && sommetMonde(c.sommets[0])) ?? c.a;
-        const B = (c.sommets && sommetMonde(c.sommets[1])) ?? c.b;
-        const d = v3(B).sub(v3(A));
-        const L = d.length();
-        if (L < 1e-9) continue;
-        d.normalize();
-        const off = v3(c.position).sub(v3(A));
-        off.sub(d.clone().multiplyScalar(off.dot(d)));
-        const A2 = v3(A).add(off);
-        const B2 = v3(B).add(off);
-        this.groupeAnnotations.add(plein(couleur, [A, A2]), plein(couleur, [B, B2]), plein(couleur, [A2, B2]));
-        etiquette(fmt(L), A2.clone().add(B2).multiplyScalar(0.5), "planche-etiquette-cote");
-      } else {
-        this.groupeAnnotations.add(plein(couleur, [c.centre, c.position]));
-        etiquette(`⌀ ${fmt(2 * c.rayon)}`, c.position, "planche-etiquette-cote");
+      const d = dessinerCote(modele, c, pas, this.precisionCotes, this.separateurCotes);
+      if (!d) continue;
+      const couleur = cs(c.id, d.orpheline ? "#b3261e" : "#333333");
+      for (const l of d.lignes) this.groupeAnnotations.add(d.orpheline ? tirets(couleur, [...l], 5) : plein(couleur, [...l]));
+      const texte = d.texte;
+      etiquette(texte, d.etiquette, `planche-etiquette-cote${d.orpheline ? " est-orpheline" : ""}${alertes.has(c.id) ? " est-alerte" : ""}${sel.has(c.id) ? " est-selectionne" : ""}`);
+      const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]?.el;
+      if (el) {
+        el.dataset["planchePlein"] = d.plein;
+        el.dataset["plancheCote"] = c.id;
       }
     }
     for (const t of Object.values(a.textes)) {
@@ -941,6 +953,12 @@ export class VuePlanche {
   }
 
   private majInfobulle(): void {
+    const plein = !this.tactile && this.dernierEcran ? this.valeurPleineSous(this.dernierEcran) : null;
+    if (plein && this.dernierEcran) {
+      this.infobulle.textContent = plein;
+      Object.assign(this.infobulle.style, { display: "block", left: `${this.dernierEcran.x + 16}px`, top: `${this.dernierEcran.y + 18}px` });
+      return;
+    }
     const inf = this.inference;
     if (!inf || !inf.libelle.fr || !this.dernierEcran) {
       this.infobulle.style.display = "none";
@@ -969,10 +987,88 @@ export class VuePlanche {
       this.ajusterAxes();
       this.eclairerDepuisCamera();
       this.moteur.render(this.scene, this.camera);
+      this.dessinerLoupe();
       this.placerMarqueur();
       this.placerEtiquettes();
       this.majTriade();
+      this.recalerCotes();
     });
+  }
+
+  /**
+   * Loupe d'accrochage (cas 2, lot 1, D2-F2-017) : copie agrandie (×LOUPE_FACTEUR) de l'image juste rendue autour du
+   * doigt, posée au-dessus de lui pour qu'il ne la cache pas, avec la mire au centre. Lue dans le même tour que le rendu
+   * (le tampon WebGL n'est pas conservé ensuite).
+   */
+  private dessinerLoupe(): void {
+    const p = this.loupeEn;
+    if (!p) {
+      this.loupeCanvas.style.display = "none";
+      return;
+    }
+    const ctx = this.loupeCanvas.getContext("2d");
+    if (!ctx) return;
+    const ratio = this.canvas.width / Math.max(1, this.canvas.clientWidth);
+    const cote = (TAILLE_LOUPE / LOUPE_FACTEUR) * ratio;
+    ctx.clearRect(0, 0, TAILLE_LOUPE, TAILLE_LOUPE);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(TAILLE_LOUPE / 2, TAILLE_LOUPE / 2, TAILLE_LOUPE / 2 - 1, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(this.canvas, p.x * ratio - cote / 2, p.y * ratio - cote / 2, cote, cote, 0, 0, TAILLE_LOUPE, TAILLE_LOUPE);
+    ctx.restore();
+    const c = TAILLE_LOUPE / 2;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.75)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(c - 10, c);
+    ctx.lineTo(c + 10, c);
+    ctx.moveTo(c, c - 10);
+    ctx.lineTo(c, c + 10);
+    ctx.stroke();
+    const haut = p.y - TAILLE_LOUPE - 40 < 0 ? p.y + 40 : p.y - TAILLE_LOUPE - 40;
+    Object.assign(this.loupeCanvas.style, { display: "block", left: `${p.x - TAILLE_LOUPE / 2}px`, top: `${haut}px` });
+  }
+
+  private majLoupe(p: Point2 | null): void {
+    this.loupeEn = p && this.rappels.loupe?.() ? p : null;
+    if (!this.loupeEn) this.loupeCanvas.style.display = "none";
+    this.rendre();
+  }
+
+  /** Après un zoom, les extrémités et le choix « cote trop courte » suivent la nouvelle échelle (cas 2, lot 1). */
+  private recalerCotes(): void {
+    const m = this.modele;
+    if (!m || !m.annotations || Object.keys(m.annotations.cotes).length === 0 || this.pasAnnotations <= 0) return;
+    const pas = this.metresParPixel(this.cible);
+    if (Math.abs(pas / this.pasAnnotations - 1) < 0.2) return;
+    this.majAnnotations(m, this.cleSelection ? this.cleSelection.split("|") : []);
+    this.rendre();
+  }
+
+  /** (Cas 2, lot 1) Précision d'affichage et séparateur des valeurs de cote. */
+  majFormatCotes(precision: number, separateur: "." | ","): void {
+    if (precision === this.precisionCotes && separateur === this.separateurCotes) return;
+    this.precisionCotes = precision;
+    this.separateurCotes = separateur;
+    if (this.modele) {
+      this.majAnnotations(this.modele, this.cleSelection ? this.cleSelection.split("|") : []);
+      this.rendre();
+    }
+  }
+
+  /** Valeur pleine d'une cote sous le pointeur (survol de son étiquette), sinon null. */
+  private valeurPleineSous(p: Point2): string | null {
+    const r = this.etiquettesDom.getBoundingClientRect();
+    for (const e of this.etiquettesFixes) {
+      const plein = e.el.dataset["planchePlein"];
+      if (!plein || e.el.style.display === "none") continue;
+      const b = e.el.getBoundingClientRect();
+      const x = p.x + r.left;
+      const y = p.y + r.top;
+      if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return plein;
+    }
+    return null;
   }
 
   /**
@@ -1498,6 +1594,7 @@ export class VuePlanche {
     }
     this.geste = { genre: "outil", id: e.pointerId, depart: p, dernier: p, glisse: false };
     this.emettre("appui", p);
+    if (e.pointerType === "touch") this.majLoupe(p);
   };
 
   private surMouvement = (e: PointerEvent): void => {
@@ -1553,7 +1650,10 @@ export class VuePlanche {
       if (!g.glisse && Math.hypot(p.x - g.depart.x, p.y - g.depart.y) >= SEUIL_GLISSER_PX) g.glisse = true;
       // Au doigt, le glisser tient lieu de survol : l'aperçu (ligne, rectangle, inférence) suit le doigt, et le
       // relâcher pose le point là où le doigt s'arrête — appuyer-glisser-lâcher, sans touche ni saisie.
-      if (e.pointerType === "touch") this.emettre("survol", p);
+      if (e.pointerType === "touch") {
+        this.emettre("survol", p);
+        this.majLoupe(p);
+      }
       this.emettre("glisser", p);
       this.majInfobulle();
       return;
@@ -1574,6 +1674,7 @@ export class VuePlanche {
     }
     if (g?.genre === "outil" && g.id === e.pointerId) {
       this.geste = null;
+      if (this.loupeEn) this.majLoupe(null);
       this.emettre("relache", p);
       const maintenant = performance.now();
       const d = this.dernierClic;
@@ -1602,6 +1703,7 @@ export class VuePlanche {
 
   private surAnnulation = (e: PointerEvent): void => {
     this.pointeurs.delete(e.pointerId);
+    if (this.loupeEn) this.majLoupe(null);
     if (this.geste?.genre === "outil") this.emettre("relache", this.geste.dernier);
     if (this.pointeurs.size === 0) this.geste = null;
   };

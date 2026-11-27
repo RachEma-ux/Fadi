@@ -32,6 +32,7 @@
  *    ne recalcule pas l'intersection avec la géométrie traversée (seuls les sommets confondus fusionnent) ;
  *  - `decaler` ne traite que la boucle extérieure (pas d'élagage des recouvrements, Alt non modélisé).
  */
+import { suivreAnnotations } from "./cotes.js";
 import {
   type Vec3,
   AXE_X,
@@ -771,7 +772,7 @@ class Travail {
           : Object.freeze({ id: d.id, nom: d.nom, genre: d.genre, contenu, ...metaDe(d) });
     }
     const base = { racine: this.figer(this.racine), definitions: Object.freeze(definitions), prochainId: this.prochain };
-    if (!this.annotationsSales) return Object.freeze(this.modele.annotations ? { ...base, annotations: this.modele.annotations } : base);
+    if (!this.annotationsSales) return suivreAnnotations(this.modele, Object.freeze(this.modele.annotations ? { ...base, annotations: this.modele.annotations } : base));
     const a = this.annotations;
     const annotations: Annotations = Object.freeze({
       guides: Object.freeze({ ...a.guides }),
@@ -788,7 +789,7 @@ class Travail {
       ...(Object.keys(a.reperes).length ? { reperes: Object.freeze({ ...a.reperes }) } : {}),
       ...(Object.keys(a.correspondances).length ? { correspondances: Object.freeze({ ...a.correspondances }) } : {}),
     });
-    return Object.freeze({ ...base, annotations });
+    return suivreAnnotations(this.modele, Object.freeze({ ...base, annotations }));
   }
 
   /** Efface les annotations dont l'identifiant est donné (ids géométriques ignorés). */
@@ -3277,7 +3278,14 @@ export function redimensionner(m: Modele, facteur: number): Resultat {
       a.guides[g.id] = g.genre === "ligne" ? { ...g, origine: e(g.origine) } : g.genre === "segment" ? { ...g, origine: e(g.origine), fin: e(g.fin) } : { ...g, origine: e(g.origine) };
     }
     for (const ct of Object.values(a.cotes)) {
-      a.cotes[ct.id] = ct.genre === "lineaire" ? { ...ct, a: e(ct.a), b: e(ct.b), position: e(ct.position) } : { ...ct, centre: e(ct.centre), rayon: ct.rayon * k, position: e(ct.position) };
+      a.cotes[ct.id] =
+        ct.genre === "lineaire" || ct.genre === "pente"
+          ? { ...ct, a: e(ct.a), b: e(ct.b), position: e(ct.position) }
+          : ct.genre === "diametre"
+            ? { ...ct, centre: e(ct.centre), rayon: ct.rayon * k, position: e(ct.position) }
+            : ct.genre === "niveau"
+              ? { ...ct, point: e(ct.point), position: e(ct.position) }
+              : { ...ct, centre: e(ct.centre), a: e(ct.a), b: e(ct.b), position: e(ct.position) };
     }
     for (const tx of Object.values(a.textes)) if (tx.genre === "repere") a.textes[tx.id] = { ...tx, ancre: e(tx.ancre), position: e(tx.position) };
     for (const pc of Object.values(a.plansDeCoupe)) a.plansDeCoupe[pc.id] = { ...pc, origine: e(pc.origine) };
@@ -4165,6 +4173,20 @@ export function renommerOccurrence(m: Modele, id: Id, nom: string, o: OptionsCon
     const n = nom.trim();
     const { nom: _ancien, ...reste } = occ;
     c.occurrences.set(id, n ? { ...reste, nom: n } : reste);
+  });
+}
+
+/** (Cas 2, lot 1) Renomme plusieurs objets du contexte en une seule opération (un seul pas d'annulation). */
+export function renommerOccurrences(m: Modele, noms: Readonly<Record<Id, string>>, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const [id, nom] of Object.entries(noms)) {
+      const occ = c.occurrences.get(id);
+      if (!occ) throw new Error(`Occurrence inconnue : ${id}`);
+      if (occ.verrouille) throw new RangeError("Un objet verrouillé ne peut pas être renommé : déverrouillez-le d'abord.");
+      const n = nom.trim();
+      const { nom: _ancien, ...reste } = occ;
+      c.occurrences.set(id, n ? { ...reste, nom: n } : reste);
+    }
   });
 }
 

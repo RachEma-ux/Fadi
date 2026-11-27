@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "numerotation";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-numerotation" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -319,6 +319,9 @@ const commandes: EntreeSandbox[] = [
   // Extension « Scripts » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("scripts", "scripts", "code", "Maj+F3", "panneau-scripts", true),
   c("executer-script", "scripts", "player-play", "Maj+F6", "panneau-scripts", true),
+  // Cas 2 du catalogue, lot 1 (27 novembre 2026) : numérotation en série, barre de son panneau, hors des 86 entrées.
+  c("numerotation", "numerotation", "numbers", "Alt+F6", "panneau-numerotation", true),
+  c("numeroter-serie", "numerotation", "sort-ascending-numbers", "Alt+F7", "panneau-numerotation", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
@@ -359,6 +362,8 @@ const panneaux: EntreeSandbox[] = [
   p("emplacement", "map-pin", "colonne", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
+  // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
+  p("numerotation", "numbers", "colonne", true),
   p("info-modele", "info-circle", "colonne-bas"),
 ];
 
@@ -375,6 +380,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:composant-dynamique", "panneau:dynamique"],
   ["commande:emplacement", "panneau:emplacement"],
   ["commande:scripts", "panneau:scripts"],
+  ["commande:numerotation", "panneau:numerotation"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

@@ -26,6 +26,15 @@ import {
   configurerTexte3D,
   lireAlignementTexte3D,
   contexte as contexteDe,
+  famillesNumerotation,
+  lirePrefixes,
+  nomsNumerotes,
+  numeroterEnSerie,
+  ordreDeLecture,
+  piloterCote,
+  nouvellesSortiesDePlage,
+  type Cote,
+  type DirectionCote,
   cheminOccurrence,
   detacherLiens,
   liensDesFaces,
@@ -223,7 +232,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -234,6 +243,7 @@ import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
+import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
@@ -295,7 +305,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "numerotation";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -1626,6 +1636,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
   }, []);
   const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = a.reglages?.emplacement && !r.emplacement ? { ...r, emplacement: a.reglages.emplacement } : r)).modele, message: t("planche.infomodele.enregistre") })), [operer]);
+  /** Cas 2, lot 1 : applique un style nommé à toutes les cotes du modèle (absent = chaque cote suit le style par défaut). */
+  const appliquerStyleCotes = useCallback(
+    (style: string | null) =>
+      operer(t("planche.infomodele.style-cote.appliquer-court"), (m) => ({
+        modele: modifierAnnotations(m, (a) => {
+          for (const [id, c] of Object.entries(a.cotes)) {
+            const { style: _s, ...reste } = c;
+            a.cotes[id] = (style ? { ...reste, style } : reste) as Cote;
+          }
+        }).modele,
+      })),
+    [operer],
+  );
   const actionsInfo = useMemo(
     () => ({
       renommerOccurrence: (id: string, nom: string) => operer(t("planche.info.nom"), (m) => ({ modele: renommerOccurrence(m, id, nom, o()).modele })),
@@ -1639,9 +1662,45 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       materiauObjet: (id: string, materiau: string | null) => operer(t("planche.info.materiau"), (m) => ({ modele: peindreOccurrences(m, [id], materiau, o()).modele })),
       balise: (id: string, balise: string | null) => operer(t("planche.info.balise"), (m) => ({ modele: baliserOccurrences(m, [id], balise, o()).modele })),
       renommerPlan: (id: string, nom: string) => operer(t("planche.info.nom"), () => ({ modele: modifierPlanDeCoupe(contexte(), id, { nom }).modele ?? histRef.current.present.modele })),
+      // Cas 2, lot 1 : texte forcé, style, direction, plage gardée d'une cote ; cote pilotante ; cotes orphelines.
+      modifierCote: (id: string, patch: { texteForce?: string | null; style?: string | null; direction?: DirectionCote; plage?: { min?: number; max?: number } | null }) =>
+        operer(t("planche.info.cote"), (m) => ({
+          modele: modifierAnnotations(m, (a) => {
+            const c = a.cotes[id];
+            if (!c) return;
+            const n: Record<string, unknown> = { ...c };
+            for (const [k, v] of Object.entries(patch)) {
+              if (v === null || v === undefined || (k === "direction" && v === "alignee")) delete n[k];
+              else n[k] = v;
+            }
+            if (c.genre !== "lineaire") {
+              delete n.direction;
+              delete n.plage;
+            }
+            a.cotes[id] = n as unknown as Cote;
+          }).modele,
+        })),
+      piloterCote: (id: string, valeur: number) => operer(t("planche.cote.pilote"), (m) => ({ modele: piloterCote(m, id, valeur).modele })),
+      selectionnerCotes: (ids: readonly string[]) => setSelection(ids),
     }),
-    [contexte, o, operer],
+    [contexte, o, operer, setSelection],
   );
+
+  // Cas 2, lot 1 : format des cotes dans la vue (précision de l'Info modèle, séparateur décimal de la Planche).
+  useEffect(() => {
+    vueRef.current?.majFormatCotes(precision, SEPARATEUR_DECIMAL);
+    rafraichir();
+  }, [precision, rafraichir]);
+  // Cas 2, lot 1 : une opération qui sort une cote de sa plage gardée est signalée, jamais corrigée.
+  const modelePrecedentPlage = useRef<Modele | null>(null);
+  useEffect(() => {
+    const avant = modelePrecedentPlage.current;
+    const apres = hist.present.modele;
+    modelePrecedentPlage.current = apres;
+    if (!avant || avant === apres) return;
+    const hors = nouvellesSortiesDePlage(avant, apres);
+    if (hors.length > 0) setMessage(t("planche.cote.sortie-plage", { nombre: String(hors.length) }));
+  }, [hist.present.modele]);
 
   /** Fin de la saisie d'un texte (Entrée, bouton, clic dans le dessin) : le texte tapé remplace la proposition, zone fermée. */
   const validerEdition = useCallback(() => {
@@ -1799,6 +1858,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           envoyer(ev);
         },
         outilCamera: () => (estOutilCamera(outilRef.current) ? (outilRef.current as OutilCamera) : null),
+        loupe: () => outilRef.current === "cotation" || outilRef.current === "texte",
         navigation: () => navigationRef.current,
         tactile: () => setTactile(true),
         // Outils de caméra temporaires (§4.34) : Zoom fenêtre rend l'outil précédent, Positionner la caméra enchaîne
@@ -2749,6 +2809,59 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   };
 
+  // ——— Numérotation en série (cas 2 du catalogue, lot 1) : familles de la sélection, aperçu, une seule opération.
+  const [reglagesNumerotation, setReglagesNumerotation] = useState<ReglagesNumerotation>(REGLAGES_NUMEROTATION_DEFAUT);
+  const [noteNumerotation, setNoteNumerotation] = useState<string | null>(null);
+  const selectionNumerotee = vue.selection ?? selectionRef.current;
+  const optionsLecture = dans !== undefined ? { dans, chemin } : {};
+  const famillesNumerotees = useMemo(
+    () => (panneau === "numerotation" || selectionNumerotee.length > 0 ? famillesNumerotation(hist.present.modele, selectionNumerotee, optionsLecture) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panneau, hist.present.modele, selectionNumerotee, dans, chemin],
+  );
+  const optionsNumerotation = () => ({
+    prefixes: lirePrefixes(reglagesNumerotation.prefixes),
+    depart: reglagesNumerotation.depart,
+    parNiveau: reglagesNumerotation.parNiveau,
+    ...optionsLecture,
+  });
+  const apercuNumerotation = useMemo((): readonly { avant: string; apres: string }[] | string => {
+    if (panneau !== "numerotation") return [];
+    const m = hist.present.modele;
+    try {
+      const noms = nomsNumerotes(m, selectionNumerotee, optionsNumerotation());
+      const c = contexteDe(m, dans);
+      return Object.entries(noms).map(([id, apres]) => {
+        const occ = c.occurrences[id];
+        return { avant: occ?.nom ?? m.definitions[occ?.definition ?? ""]?.nom ?? id, apres };
+      });
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, hist.present.modele, selectionNumerotee, reglagesNumerotation, dans, chemin]);
+  const niveauxNumerotation = useMemo(
+    () => (panneau === "numerotation" ? ordreDeLecture(hist.present.modele, famillesNumerotees.flatMap((f) => f.ids), optionsLecture).length : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panneau, hist.present.modele, famillesNumerotees],
+  );
+  const disponibiliteCommandeNumerotation = (id: IdCommandeNumerotation) =>
+    disponibiliteNumerotation(id, { objets: famillesNumerotees.reduce((n, f) => n + f.ids.length, 0), lecture: readOnly });
+  const executerNumerotation = (id: IdCommandeNumerotation) => {
+    if (!disponibiliteCommandeNumerotation(id).disponible) return;
+    setPanneau("numerotation");
+    if (id === "numerotation") return;
+    const ids = famillesNumerotees.flatMap((f) => f.ids);
+    try {
+      nomsNumerotes(histRef.current.present.modele, ids, optionsNumerotation());
+    } catch (e) {
+      setNoteNumerotation(e instanceof Error ? e.message : String(e));
+      return;
+    }
+    setNoteNumerotation(t("planche.numeroter.note", { objets: String(ids.length) }));
+    operer(t("planche.numeroter.serie"), (m) => ({ modele: numeroterEnSerie(m, ids, optionsNumerotation()).modele, selection: ids }));
+  };
+
   /**
    * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3). Chaque extension a son hôte
    * (`creerHoteExtension`), créé à sa première commande : son code tourne dans un Web Worker isolé et ne touche le
@@ -3493,6 +3606,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
+    else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -3543,6 +3657,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_SCRIPTS.map((c) => {
           const d = disponibiliteCommandeScripts(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.scripts.motif.vide"), executer: () => executerScripts(c.id) };
+        }),
+        // Cas 2, lot 1 : numérotation en série, mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_NUMEROTATION.map((c) => {
+          const d = disponibiliteCommandeNumerotation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.numeroter.motif.selection"), executer: () => executerNumerotation(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4247,10 +4366,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
+            {panneau === "numerotation" && (
+              <PanneauNumerotation familles={famillesNumerotees} niveaux={niveauxNumerotation} apercu={apercuNumerotation} reglages={reglagesNumerotation} onReglages={setReglagesNumerotation} executer={executerNumerotation} disponibilite={disponibiliteCommandeNumerotation} lecture={readOnly} note={noteNumerotation} />
+            )}
             {panneau === "controle" && rapportControle && (
               <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
             )}
-            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} actions={actionsInfo} />}
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} />}
             {panneau === "composants" && (
               <PanneauComposants
                 modele={hist.present.modele}
@@ -4317,7 +4439,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
-            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} />}
+            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} onAppliquerStyle={appliquerStyleCotes} />}
             {panneau === "navigateur" && (
               <NavigateurPlanche
                 modele={hist.present.modele}
@@ -4639,6 +4761,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         {!etroit ? fleches : flechesAuToucher && <span className="planche-fleches au-toucher" role="group" aria-label={t("planche.mod.fleches")}>{boutonsFleches()}</span>}
       </div>
 
+        {tactile && outilId === "cotation" && vue.mesures && (
+          // Cas 2, lot 1 (maquette lot1-3) : pavé numérique au toucher, qui écrit dans le champ Mesures sans clavier système.
+          <div className="planche-pave" role="group" aria-label={t("planche.pave")} data-planche-pave>
+            {["7", "8", "9", "effacer", "4", "5", "6", ";", "1", "2", "3", "m", "0", ",", "±", "OK"].map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={k === "OK" ? "planche-pave-ok" : undefined}
+                aria-label={k === "effacer" ? t("planche.pave.effacer") : k === "±" ? t("planche.pave.signe") : k}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  if (k === "OK") return valider();
+                  const actuel = texteRef.current?.statut === "frappe" ? texteRef.current.texte : "";
+                  const suivant = k === "effacer" ? actuel.slice(0, -1) : k === "±" ? (actuel.startsWith("-") ? actuel.slice(1) : `-${actuel}`) : actuel + k;
+                  setTexte(suivant ? { texte: suivant, statut: "frappe" } : null);
+                }}
+                data-planche-pave-touche={k}
+              >
+                {k === "effacer" ? <IconeSandbox nom="effacerSaisie" /> : k}
+              </button>
+            ))}
+          </div>
+        )}
         <form
           className="planche-mesures"
           onSubmit={(e) => {

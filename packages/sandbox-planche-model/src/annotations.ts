@@ -21,9 +21,29 @@ export type Guide =
   /** Point de guide. */
   | { readonly id: Id; readonly genre: "point"; readonly origine: Vec3 };
 
+/**
+ * (Cas 2, lot 1 « Cotation ») Champs communs à toutes les cotes : texte forcé (remplace la valeur affichée, la valeur
+ * mesurée reste lisible dans l'Info entité), style de cote nommé (`ReglagesPlanche.stylesCote`), chemin du contexte
+ * ouvert à la création (association aux sommets d'un groupe ou d'un composant ouvert ; absent = racine).
+ */
+export interface ChampsCote {
+  readonly texteForce?: string;
+  readonly style?: Id;
+  readonly chemin?: readonly Id[];
+}
+
+/** Direction mesurée d'une cote linéaire : vraie longueur, composante horizontale, dénivelé, ou selon un axe du repère. */
+export type DirectionCote = "alignee" | "horizontale" | "verticale" | "axe-x" | "axe-y" | "axe-z";
+
+/** Plage gardée d'une cote (saisie par l'utilisateur, jamais fournie par la Planche) : bornes en mètres, au moins une. */
+export interface PlageCote {
+  readonly min?: number;
+  readonly max?: number;
+}
+
 export type Cote =
   /** Cote linéaire entre deux points ; `sommets` = association aux sommets (la valeur suit leur déplacement). */
-  | {
+  | (ChampsCote & {
       readonly id: Id;
       readonly genre: "lineaire";
       readonly a: Vec3;
@@ -31,9 +51,13 @@ export type Cote =
       readonly sommets?: readonly [Id, Id];
       /** Point par lequel passe la ligne de cote (décalage par rapport au segment mesuré). */
       readonly position: Vec3;
-    }
+      /** (Cas 2, lot 1) Direction mesurée ; absent = alignée. */
+      readonly direction?: DirectionCote;
+      /** (Cas 2, lot 1) Plage gardée : une opération qui sort la cote de sa plage est signalée, jamais corrigée. */
+      readonly plage?: PlageCote;
+    })
   /** Cote de diamètre d'une courbe fermée (cercle, polygone). */
-  | {
+  | (ChampsCote & {
       readonly id: Id;
       readonly genre: "diametre";
       readonly courbe: Id;
@@ -41,11 +65,49 @@ export type Cote =
       readonly rayon: number;
       readonly normale: Vec3;
       readonly position: Vec3;
-    };
+    })
+  /** (Cas 2, lot 1) Cote de niveau : altitude d'un point rapportée au ±0,00 du projet (z = 0) ou à l'altitude NGF déclarée. */
+  | (ChampsCote & {
+      readonly id: Id;
+      readonly genre: "niveau";
+      readonly point: Vec3;
+      readonly sommet?: Id;
+      readonly reference: "projet" | "ngf";
+      readonly position: Vec3;
+    })
+  /** (Cas 2, lot 1) Cote de pente entre deux points : dénivelé / distance horizontale en %, flèche dans le sens de la descente. */
+  | (ChampsCote & {
+      readonly id: Id;
+      readonly genre: "pente";
+      readonly a: Vec3;
+      readonly b: Vec3;
+      readonly sommets?: readonly [Id, Id];
+      readonly position: Vec3;
+    })
+  /** (Cas 2, lot 1) Cote angulaire (Rapporteur) : sommet de l'angle et un point sur chacun des deux côtés. */
+  | (ChampsCote & {
+      readonly id: Id;
+      readonly genre: "angulaire";
+      readonly centre: Vec3;
+      readonly a: Vec3;
+      readonly b: Vec3;
+      readonly normale: Vec3;
+      readonly position: Vec3;
+    });
 
 export type TexteAnnotation =
   /** Texte avec repère : ancre sur une entité (ou un point), position du texte, ligne de rappel entre les deux. */
-  | { readonly id: Id; readonly genre: "repere"; readonly ancre: Vec3; readonly entite?: Id; readonly position: Vec3; readonly texte: string; readonly etiquettePiece?: boolean }
+  | {
+      readonly id: Id;
+      readonly genre: "repere";
+      readonly ancre: Vec3;
+      readonly entite?: Id;
+      /** (Cas 2, lot 1) Chemin du contexte de l'entité (racine si absent) : l'ancre suit l'entité quand elle bouge. */
+      readonly chemin?: readonly Id[];
+      readonly position: Vec3;
+      readonly texte: string;
+      readonly etiquettePiece?: boolean;
+    }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
   | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string };
 
@@ -133,11 +195,29 @@ export interface ReglagesPlanche {
   readonly alignerTexte: "ecran" | "epingle";
   readonly extremitesCote: "aucune" | "barre" | "fleche-ouverte" | "fleche-fermee" | "point";
   readonly alignerCote: "dessus" | "centre" | "exterieur" | "ecran";
+  /** (Cas 2, lot 1) Format des valeurs de cote ; absent = mètres. */
+  readonly formatCote?: FormatCote;
+  /** (Cas 2, lot 1) Style appliqué aux cotes sans style propre ; absent = réglages ci-dessus. */
+  readonly styleCote?: Id;
+  /** (Cas 2, lot 1) Styles de cote nommés ; absent = aucun. */
+  readonly stylesCote?: Readonly<Record<Id, StyleCote>>;
   /** (Extension « Emplacement ») Position saisie de la Planche et nord vrai ; absent = non renseigné. */
   readonly emplacement?: Emplacement;
   /** (Protocole des extensions, lot 5) Données attachées au projet par les extensions : `{ <extension> : { <clé> : valeur } }`. */
   readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 }
+/** Format des valeurs de cote : mètres, mètres avec le millimètre en exposant (à la française), centimètres sans unité. */
+export type FormatCote = "metres" | "metres-mm" | "centimetres";
+
+/** (Cas 2, lot 1) Style de cote nommé : extrémités, alignement du texte et format, appliqués cote par cote. */
+export interface StyleCote {
+  readonly id: Id;
+  readonly nom: string;
+  readonly extremites: ReglagesPlanche["extremitesCote"];
+  readonly aligner: ReglagesPlanche["alignerCote"];
+  readonly format: FormatCote;
+}
+
 export const REGLAGES_DEFAUT: ReglagesPlanche = { accrochageLongueur: 0.01, accrochageAngle: 15, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre" };
 
 /**

@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NUMEROTATION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -340,6 +340,27 @@ export function disponibiliteScripts(id: IdCommandeScripts, s: { readonly vide: 
   if (id === "scripts") return { disponible: true, motif: null };
   if (s.enCours) return { disponible: false, motif: "planche.scripts.motif.encours" };
   return s.vide ? { disponible: false, motif: "planche.scripts.motif.vide" } : { disponible: true, motif: null };
+}
+
+/** Cas 2 du catalogue, lot 1 : ouvrir le panneau « Numérotation », numéroter la sélection en série (règle d'or). */
+export type IdCommandeNumerotation = "numerotation" | "numeroter-serie";
+export interface CommandeNumerotation {
+  readonly id: IdCommandeNumerotation;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_NUMEROTATION: readonly CommandeNumerotation[] = [
+  { id: "numerotation", ...depuisRegistre("numerotation"), libelle: "planche.numeroter.ouvrir", court: "planche.numeroter.court.ouvrir" },
+  { id: "numeroter-serie", ...depuisRegistre("numeroter-serie"), libelle: "planche.numeroter.serie", court: "planche.numeroter.court.serie" },
+];
+
+/** Disponibilité : le panneau toujours ; numéroter hors lecture, avec au moins un groupe ou composant sélectionné. */
+export function disponibiliteNumerotation(id: IdCommandeNumerotation, s: { readonly objets: number; readonly lecture: boolean }): Disponibilite {
+  if (id === "numerotation") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.objets > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.numeroter.motif.selection" };
 }
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */
