@@ -22,7 +22,7 @@
  * Aucune interface ici : la Planche fournit l'accès au modèle, l'affichage des avis et la fenêtre de saisie.
  */
 import {
-  BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
+  BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, BORNES_FICHIER, creerReserveFichiers, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
   lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireEnvoiPanneau, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie,
   type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
@@ -130,6 +130,8 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
   let avis = 0;
   /** Fenêtre de saisie ouverte pour l'appel en cours : au plus une. */
   let saisie: { readonly fermer: () => void } | null = null;
+  /** (1.1) Fichiers en flux de l'appel en cours : oubliés à la fin de l'appel. */
+  const reserve = creerReserveFichiers();
   const fermerSaisie = () => {
     const s = saisie;
     saisie = null;
@@ -187,6 +189,11 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     const appel = enCours;
     if (!o.fichiers || !appel || appel.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
     if (appel.sorte !== "demande") return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "fichiers : pendant une commande seulement"));
+    // (1.1) Morceaux d'un fichier en flux : sans fenêtre, servis tout de suite.
+    if (m.nom === "fichiers.lire" || m.nom === "fichiers.ajouter" || m.nom === "fichiers.preparer") {
+      const r = m.nom === "fichiers.lire" ? reserve.lire(m.donnees) : m.nom === "fichiers.ajouter" ? reserve.ajouter(m.donnees) : reserve.preparer();
+      return void w?.postMessage(r.ok ? reponseProtocole(m.id, r.valeur) : refusProtocole(m.id, "argument_invalide", r.detail));
+    }
     if (saisie) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "fichiers : une fenêtre est déjà ouverte"));
     let ouverte: { readonly reponse: Promise<unknown>; readonly fermer: () => void };
     let rendre: (valeur: unknown) => MessageProtocole;
@@ -195,12 +202,16 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
       rendre = (valeur) => {
         const fichier = lireFichierChoisi(valeur, lu.demande);
-        return fichier.ok ? reponseProtocole(m.id, fichier.fichier) : refusProtocole(m.id, "argument_invalide", fichier.detail);
+        if (!fichier.ok) return refusProtocole(m.id, "argument_invalide", fichier.detail);
+        if (!lu.demande.flux || !fichier.fichier) return reponseProtocole(m.id, fichier.fichier);
+        // En flux, l'extension reçoit un jeton : le texte reste ici jusqu'à la fin de l'appel.
+        const retenu = reserve.retenir(fichier.fichier);
+        return retenu ? reponseProtocole(m.id, retenu) : refusProtocole(m.id, "argument_invalide", `${BORNES_FICHIER.jetons} fichiers en flux au plus pendant une commande`);
       };
       appel.suspendre();
       ouverte = o.fichiers.ouvrir(lu.demande);
     } else {
-      const lu = lireDemandeEnregistrement(m.donnees);
+      const lu = lireDemandeEnregistrement(m.donnees, reserve.texteDe);
       if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
       rendre = (valeur) => reponseProtocole(m.id, valeur === true);
       appel.suspendre();
@@ -259,12 +270,21 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     if (!jugement.ok) return void w?.postMessage(refusProtocole(m.id, jugement.erreur, jugement.detail));
     if (m.nom === "message.afficher" || m.nom === "saisie.demander") return servirMessages(m);
     if (m.nom === "minuterie.armer" || m.nom === "minuterie.annuler") return servirMinuterie(m);
-    if (m.nom === "fichiers.ouvrir" || m.nom === "fichiers.enregistrer") return servirFichiers(m);
+    if (m.nom.startsWith("fichiers.")) return servirFichiers(m);
     if (m.nom === "panneau.envoyer" || m.nom === "panneau.ouvrir") return servirPanneau(m);
     if (m.nom !== "journal.afficher") {
       // Hors d'un appel (aucune commande ni événement en cours), une extension ne lit ni ne modifie rien.
       if (!services || !enCours || enCours.id === "demarrage") return void w?.postMessage(refusProtocole(m.id, "demande_inconnue", m.nom));
-      const r = services.servir(m.nom, m.donnees);
+      // Le temps que la Planche passe à servir (un plan de milliers de segments) n'est pas celui de l'extension : le
+      // délai de l'appel est suspendu pendant ce temps.
+      const appel = enCours;
+      appel.suspendre();
+      let r: ReturnType<typeof services.servir>;
+      try {
+        r = services.servir(m.nom, m.donnees);
+      } finally {
+        appel.reprendre();
+      }
       return void w?.postMessage(r.ok ? reponseProtocole(m.id, r.resultat) : refusProtocole(m.id, r.erreur, r.detail));
     }
     const ligne = (m.donnees as { ligne?: unknown } | null)?.ligne;
@@ -297,6 +317,7 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
         clearTimeout(minuterie);
         enCours = null;
         fermerSaisie();
+        reserve.vider();
         resolve(i);
       };
       const depasser = () => {
@@ -307,12 +328,15 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       let reste = delai;
       let depuis = Date.now();
       let minuterie = setTimeout(depasser, reste);
+      // Suspensions emboîtées (une fenêtre ouverte, et la Planche qui sert une demande) : le délai reprend à la dernière.
+      let suspensions = 0;
       const suspendre = () => {
+        if (suspensions++ > 0) return;
         clearTimeout(minuterie);
         reste = Math.max(0, reste - (Date.now() - depuis));
       };
       const reprendre = () => {
-        if (fini) return;
+        if (fini || suspensions === 0 || --suspensions > 0) return;
         depuis = Date.now();
         minuterie = setTimeout(depasser, reste);
       };

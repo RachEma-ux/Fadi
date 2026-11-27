@@ -279,8 +279,11 @@ export interface FonctionsPlanche {
   readonly existe: (id: Id) => boolean;
   /** Retient l'état de travail ; la fonction rendue y revient (une demande refusée à mi-chemin ne laisse rien). */
   readonly figer: () => () => void;
-  /** Applique au modèle de travail une opération du modèle faite hors de `api` (données attachées d'une extension). */
-  readonly appliquer: (r: { readonly modele: Modele; readonly rapport: Rapport }) => void;
+  /**
+   * Applique au modèle de travail une opération du modèle faite hors de `api` (données attachées, courbes et balises
+   * d'une extension) ; rend les éléments créés qui existent encore.
+   */
+  readonly appliquer: (r: { readonly modele: Modele; readonly rapport: Rapport }) => readonly Id[];
 }
 
 /**
@@ -430,9 +433,7 @@ export function creerFonctionsPlanche(modele: Modele, options: OptionsFonctionsP
   };
 
   return { api: Object.freeze(api), modele: () => m, crees: () => { const c = ctx(); return [...crees].filter((id) => existe(c, id)); }, existe: (id) => existe(ctx(), id),
-    appliquer: (r) => {
-      operer(r);
-    },
+    appliquer: (r) => operer(r),
     figer: () => {
       const [m0, operations0, crees0] = [m, operations, [...crees]];
       return () => {
