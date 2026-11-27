@@ -26,6 +26,15 @@ import {
   configurerTexte3D,
   lireAlignementTexte3D,
   contexte as contexteDe,
+  famillesNumerotation,
+  lirePrefixes,
+  nomsNumerotes,
+  numeroterEnSerie,
+  ordreDeLecture,
+  piloterCote,
+  nouvellesSortiesDePlage,
+  type Cote,
+  type DirectionCote,
   cheminOccurrence,
   detacherLiens,
   liensDesFaces,
@@ -176,6 +185,15 @@ import {
   modifierNiveau,
   niveauSuivant,
   niveauxTries,
+  tableauLocaux,
+  localDeLaFace,
+  numeroSuivant,
+  creerLocal,
+  modifierLocal,
+  supprimerLocal,
+  lireSaisieLocal,
+  type SaisieLocal,
+  type ErreurLocal,
   rattacherAuNiveau,
   rattacherNouveauxObjets,
   repereDuNiveau,
@@ -236,7 +254,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -246,9 +264,11 @@ import { PanneauControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
+import { PanneauLocaux } from "./panneau-locaux";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
+import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
@@ -310,7 +330,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -1651,6 +1671,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
   }, []);
   const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = { ...r, ...(a.reglages?.emplacement && !r.emplacement ? { emplacement: a.reglages.emplacement } : {}), ...(a.reglages?.pointDeBase && !r.pointDeBase ? { pointDeBase: a.reglages.pointDeBase } : {}) })).modele, message: t("planche.infomodele.enregistre") })), [operer]);
+  /** Cas 2, lot 1 : applique un style nommé à toutes les cotes du modèle (absent = chaque cote suit le style par défaut). */
+  const appliquerStyleCotes = useCallback(
+    (style: string | null) =>
+      operer(t("planche.infomodele.style-cote.appliquer-court"), (m) => ({
+        modele: modifierAnnotations(m, (a) => {
+          for (const [id, c] of Object.entries(a.cotes)) {
+            const { style: _s, ...reste } = c;
+            a.cotes[id] = (style ? { ...reste, style } : reste) as Cote;
+          }
+        }).modele,
+      })),
+    [operer],
+  );
   const actionsInfo = useMemo(
     () => ({
       renommerOccurrence: (id: string, nom: string) => operer(t("planche.info.nom"), (m) => ({ modele: renommerOccurrence(m, id, nom, o()).modele })),
@@ -1669,9 +1702,40 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           return "erreur" in r ? null : { modele: r.modele };
         }),
       renommerPlan: (id: string, nom: string) => operer(t("planche.info.nom"), () => ({ modele: modifierPlanDeCoupe(contexte(), id, { nom }).modele ?? histRef.current.present.modele })),
+      // Cas 2, lot 1 : texte forcé, style, direction, plage gardée d'une cote ; cote pilotante ; cotes orphelines.
+      modifierCote: (id: string, patch: { texteForce?: string | null; style?: string | null; direction?: DirectionCote; plage?: { min?: number; max?: number } | null }) =>
+        operer(t("planche.info.cote"), (m) => ({
+          modele: modifierAnnotations(m, (a) => {
+            const c = a.cotes[id];
+            if (!c) return;
+            const n: Record<string, unknown> = { ...c };
+            for (const [k, v] of Object.entries(patch)) {
+              if (v === null || v === undefined || (k === "direction" && v === "alignee")) delete n[k];
+              else n[k] = v;
+            }
+            if (c.genre !== "lineaire") {
+              delete n.direction;
+              delete n.plage;
+            }
+            a.cotes[id] = n as unknown as Cote;
+          }).modele,
+        })),
+      piloterCote: (id: string, valeur: number) => operer(t("planche.cote.pilote"), (m) => ({ modele: piloterCote(m, id, valeur).modele })),
+      selectionnerCotes: (ids: readonly string[]) => setSelection(ids),
     }),
-    [contexte, o, operer],
+    [contexte, o, operer, setSelection],
   );
+
+  // Cas 2, lot 1 : une opération qui sort une cote de sa plage gardée est signalée, jamais corrigée.
+  const modelePrecedentPlage = useRef<Modele | null>(null);
+  useEffect(() => {
+    const avant = modelePrecedentPlage.current;
+    const apres = hist.present.modele;
+    modelePrecedentPlage.current = apres;
+    if (!avant || avant === apres) return;
+    const hors = nouvellesSortiesDePlage(avant, apres);
+    if (hors.length > 0) setMessage(t("planche.cote.sortie-plage", { nombre: String(hors.length) }));
+  }, [hist.present.modele]);
 
   /** Fin de la saisie d'un texte (Entrée, bouton, clic dans le dessin) : le texte tapé remplace la proposition, zone fermée. */
   const validerEdition = useCallback(() => {
@@ -1829,6 +1893,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           envoyer(ev);
         },
         outilCamera: () => (estOutilCamera(outilRef.current) ? (outilRef.current as OutilCamera) : null),
+        loupe: () => outilRef.current === "cotation" || outilRef.current === "texte",
         navigation: () => navigationRef.current,
         tactile: () => setTactile(true),
         // Outils de caméra temporaires (§4.34) : Zoom fenêtre rend l'outil précédent, Positionner la caméra enchaîne
@@ -1879,6 +1944,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       delete fenetreRecette().fadiPlanche;
     };
   }, [envoyer, rafraichir, setTexte]);
+  // Cas 2, lot 1 : format des cotes dans la vue (précision de l'Info modèle, séparateur décimal de la Planche), déclaré après la
+  // création de la vue pour que la précision enregistrée s'applique dès l'ouverture.
+  useEffect(() => {
+    vueRef.current?.majFormatCotes(precision, SEPARATEUR_DECIMAL);
+    rafraichir();
+  }, [precision, rafraichir, envoyer, setTexte]);
 
   // --- Brouillon propre à Sandbox : lu à l'ouverture (s'il n'y a encore rien de dessiné), enregistré après chaque pas.
   useEffect(() => {
@@ -2849,6 +2920,60 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     void enregistrerIndex(idx).catch(() => undefined);
     setNoteNiveau(t("planche.niveaux.note.reference"));
   };
+  /**
+   * Locaux (cas 4 du catalogue, étape 3) : pièces appuyées sur une face de sol de la racine ; mesures recalculées depuis
+   * la géométrie à chaque rendu (elles suivent les parois). Créer prend la face choisie seule.
+   */
+  const tableLocaux = tableauLocaux(hist.present.modele);
+  const [localChoisiEtat, setLocalChoisi] = useState<string | null>(null);
+  const localChoisi = tableLocaux.lignes.some((l) => l.local.id === localChoisiEtat) ? localChoisiEtat : (tableLocaux.lignes[0]?.local.id ?? null);
+  const [erreurLocal, setErreurLocal] = useState<ErreurLocal | null>(null);
+  const [noteLocal, setNoteLocal] = useState<string | null>(null);
+  const faceDeLocal = (): { face: string | null; etat: "aucune" | "horizontale" | "inclinee" | "prise" } => {
+    const faces = selectionRef.current.filter((x) => hist.present.modele.racine.faces[x]);
+    if (faces.length !== 1) return { face: null, etat: "aucune" };
+    const f = hist.present.modele.racine.faces[faces[0]!]!;
+    if (Math.abs(f.normale.z) < 1 - 1e-6) return { face: f.id, etat: "inclinee" };
+    return { face: f.id, etat: localDeLaFace(hist.present.modele, f.id) ? "prise" : "horizontale" };
+  };
+  const disponibiliteCommandeLocal = (id: IdCommandeLocal) => disponibiliteLocal(id, { face: faceDeLocal().etat, dansObjet: dans !== undefined, lecture: readOnly, choisi: localChoisi !== null });
+  const executerLocal = (id: IdCommandeLocal) => {
+    if (id === "locaux") {
+      setPanneau("locaux");
+      return;
+    }
+    if (!disponibiliteCommandeLocal(id).disponible) return;
+    if (id === "supprimer-local") return localChoisi ? supprimerUnLocal(localChoisi) : undefined;
+    const { face } = faceDeLocal();
+    if (!face) return;
+    const numero = numeroSuivant(hist.present.modele);
+    const r = creerLocal(hist.present.modele, face, { numero, nom: t("planche.locaux.nom-defaut", { numero }) });
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    setLocalChoisi(r.id);
+    setPanneau("locaux");
+    const message = t("planche.locaux.note.cree", { numero });
+    setNoteLocal(message);
+    operer(t("planche.locaux.creer"), () => ({ modele: r.modele, message }));
+  };
+  const modifierUnLocal = (id: string, saisie: SaisieLocal) => {
+    const v = lireSaisieLocal(saisie);
+    if ("erreur" in v) return setErreurLocal(v.erreur);
+    const r = modifierLocal(hist.present.modele, id, v.valeurs);
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    setNoteLocal(null);
+    operer(t("planche.locaux.ouvrir"), () => ({ modele: r.modele }));
+  };
+  const supprimerUnLocal = (id: string) => {
+    const numero = hist.present.modele.annotations?.locaux?.[id]?.numero ?? "";
+    const r = supprimerLocal(hist.present.modele, id);
+    if (!r.ok) return setErreurLocal(r.erreur);
+    setErreurLocal(null);
+    const message = t("planche.locaux.note.supprime", { numero });
+    setNoteLocal(message);
+    operer(t("planche.locaux.supprimer"), () => ({ modele: r.modele, message }));
+  };
   const disponibiliteCommandeNiveau = (id: IdCommandeNiveau) => {
     const s = etatSelectionObjets();
     return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly });
@@ -2923,6 +3048,59 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       operer(t("planche.scripts.executer"), () => ({ modele, selection: i.crees, message: t("planche.scripts.issue.modifie") }));
       fin("modifie");
     });
+  };
+
+  // ——— Numérotation en série (cas 2 du catalogue, lot 1) : familles de la sélection, aperçu, une seule opération.
+  const [reglagesNumerotation, setReglagesNumerotation] = useState<ReglagesNumerotation>(REGLAGES_NUMEROTATION_DEFAUT);
+  const [noteNumerotation, setNoteNumerotation] = useState<string | null>(null);
+  const selectionNumerotee = vue.selection ?? selectionRef.current;
+  const optionsLecture = dans !== undefined ? { dans, chemin } : {};
+  const famillesNumerotees = useMemo(
+    () => (panneau === "numerotation" || selectionNumerotee.length > 0 ? famillesNumerotation(hist.present.modele, selectionNumerotee, optionsLecture) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panneau, hist.present.modele, selectionNumerotee, dans, chemin],
+  );
+  const optionsNumerotation = () => ({
+    prefixes: lirePrefixes(reglagesNumerotation.prefixes),
+    depart: reglagesNumerotation.depart,
+    parNiveau: reglagesNumerotation.parNiveau,
+    ...optionsLecture,
+  });
+  const apercuNumerotation = useMemo((): readonly { avant: string; apres: string }[] | string => {
+    if (panneau !== "numerotation") return [];
+    const m = hist.present.modele;
+    try {
+      const noms = nomsNumerotes(m, selectionNumerotee, optionsNumerotation());
+      const c = contexteDe(m, dans);
+      return Object.entries(noms).map(([id, apres]) => {
+        const occ = c.occurrences[id];
+        return { avant: occ?.nom ?? m.definitions[occ?.definition ?? ""]?.nom ?? id, apres };
+      });
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, hist.present.modele, selectionNumerotee, reglagesNumerotation, dans, chemin]);
+  const niveauxNumerotation = useMemo(
+    () => (panneau === "numerotation" ? ordreDeLecture(hist.present.modele, famillesNumerotees.flatMap((f) => f.ids), optionsLecture).length : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panneau, hist.present.modele, famillesNumerotees],
+  );
+  const disponibiliteCommandeNumerotation = (id: IdCommandeNumerotation) =>
+    disponibiliteNumerotation(id, { objets: famillesNumerotees.reduce((n, f) => n + f.ids.length, 0), lecture: readOnly });
+  const executerNumerotation = (id: IdCommandeNumerotation) => {
+    if (!disponibiliteCommandeNumerotation(id).disponible) return;
+    setPanneau("numerotation");
+    if (id === "numerotation") return;
+    const ids = famillesNumerotees.flatMap((f) => f.ids);
+    try {
+      nomsNumerotes(histRef.current.present.modele, ids, optionsNumerotation());
+    } catch (e) {
+      setNoteNumerotation(e instanceof Error ? e.message : String(e));
+      return;
+    }
+    setNoteNumerotation(t("planche.numeroter.note", { objets: String(ids.length) }));
+    operer(t("planche.numeroter.serie"), (m) => ({ modele: numeroterEnSerie(m, ids, optionsNumerotation()).modele, selection: ids }));
   };
 
   /**
@@ -3669,7 +3847,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
+    else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
+    else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -3721,10 +3901,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteCommandeScripts(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.scripts.motif.vide"), executer: () => executerScripts(c.id) };
         }),
+        // Cas 2, lot 1 : numérotation en série, mêmes disponibilités et exécution que la barre de son panneau.
+        ...COMMANDES_NUMEROTATION.map((c) => {
+          const d = disponibiliteCommandeNumerotation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.numeroter.motif.selection"), executer: () => executerNumerotation(c.id) };
+        }),
         // Niveaux d'étage (cas 4) : mêmes disponibilités et exécution que la barre du panneau Niveaux.
         ...COMMANDES_NIVEAUX.map((c) => {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
+        }),
+        ...COMMANDES_LOCAUX.map((c) => {
+          const d = disponibiliteCommandeLocal(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.locaux.motif.face"), executer: () => executerLocal(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4431,6 +4620,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 note={noteNiveau}
               />
             )}
+            {panneau === "locaux" && (
+              <PanneauLocaux
+                lignes={tableLocaux.lignes}
+                total={tableLocaux.total}
+                evalues={tableLocaux.evalues}
+                choisi={localChoisi}
+                lecture={readOnly}
+                onChoisir={(id) => { setLocalChoisi(id); setErreurLocal(null); }}
+                onModifier={modifierUnLocal}
+                executer={executerLocal}
+                disponibilite={disponibiliteCommandeLocal}
+                erreur={erreurLocal}
+                note={noteLocal}
+              />
+            )}
             {panneau === "scripts" && (
               <PanneauScripts
                 scripts={prefsSandbox.preferences.scripts}
@@ -4448,10 +4652,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
+            {panneau === "numerotation" && (
+              <PanneauNumerotation familles={famillesNumerotees} niveaux={niveauxNumerotation} apercu={apercuNumerotation} reglages={reglagesNumerotation} onReglages={setReglagesNumerotation} executer={executerNumerotation} disponibilite={disponibiliteCommandeNumerotation} lecture={readOnly} note={noteNumerotation} />
+            )}
             {panneau === "controle" && rapportControle && (
               <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
             )}
-            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef} />}
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef} />}
             {panneau === "composants" && (
               <PanneauComposants
                 modele={hist.present.modele}
@@ -4519,7 +4726,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
-            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} />}
+            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} onAppliquerStyle={appliquerStyleCotes} />}
             {panneau === "navigateur" && (
               <NavigateurPlanche
                 modele={hist.present.modele}
@@ -4841,6 +5048,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         {!etroit ? fleches : flechesAuToucher && <span className="planche-fleches au-toucher" role="group" aria-label={t("planche.mod.fleches")}>{boutonsFleches()}</span>}
       </div>
 
+        {tactile && outilId === "cotation" && vue.mesures && (
+          // Cas 2, lot 1 (maquette lot1-3) : pavé numérique au toucher, qui écrit dans le champ Mesures sans clavier système.
+          <div className="planche-pave" role="group" aria-label={t("planche.pave")} data-planche-pave>
+            {["7", "8", "9", "effacer", "4", "5", "6", ";", "1", "2", "3", "m", "0", ",", "±", "OK"].map((k) => (
+              <button
+                key={k}
+                type="button"
+                className={k === "OK" ? "planche-pave-ok" : undefined}
+                aria-label={k === "effacer" ? t("planche.pave.effacer") : k === "±" ? t("planche.pave.signe") : k}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  if (k === "OK") return valider();
+                  const actuel = texteRef.current?.statut === "frappe" ? texteRef.current.texte : "";
+                  const suivant = k === "effacer" ? actuel.slice(0, -1) : k === "±" ? (actuel.startsWith("-") ? actuel.slice(1) : `-${actuel}`) : actuel + k;
+                  setTexte(suivant ? { texte: suivant, statut: "frappe" } : null);
+                }}
+                data-planche-pave-touche={k}
+              >
+                {k === "effacer" ? <IconeSandbox nom="effacerSaisie" /> : k}
+              </button>
+            ))}
+          </div>
+        )}
         <form
           className="planche-mesures"
           onSubmit={(e) => {

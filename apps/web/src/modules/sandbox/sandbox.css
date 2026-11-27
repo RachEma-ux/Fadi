@@ -990,6 +990,61 @@
 .sandbox-planche .planche-etiquette-cote {
   color: #1a3a6e;
 }
+/* Cas 2, lot 1 : cote orpheline (un sommet coté a disparu) et total de chaîne incohérent. */
+.sandbox-planche .planche-etiquette-cote.est-orpheline {
+  color: var(--danger, #a12626);
+  border: 1px dashed var(--danger, #a12626);
+}
+.sandbox-planche .planche-etiquette-cote.est-alerte {
+  color: var(--danger, #a12626);
+}
+.sandbox-planche .planche-info-cote-alerte {
+  color: var(--danger, #a12626);
+}
+.sandbox-planche .planche-info-cote dd small {
+  display: block;
+}
+/* Cas 2, lot 1 : loupe d'accrochage au doigt. */
+.sandbox-planche .planche-loupe {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid #1a5fd6;
+  background: #fff;
+  pointer-events: none;
+}
+/* Cas 2, lot 1 : pavé numérique de la Cotation au toucher. */
+.sandbox-planche .planche-pave {
+  display: grid;
+  grid-template-columns: repeat(4, 44px);
+  gap: 4px;
+  justify-content: end;
+  padding: 4px;
+}
+.sandbox-planche .planche-pave button {
+  min-height: 44px;
+  font-size: 1.05rem;
+}
+.sandbox-planche .planche-pave .planche-pave-ok {
+  background: #1a5fd6;
+  color: #fff;
+}
+/* Cas 2, lot 1 : panneau Numérotation. */
+.sandbox-planche .planche-numerotation-champs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  margin: 8px 0;
+}
+.sandbox-planche .planche-numerotation-champs dd {
+  margin: 0;
+}
+.sandbox-planche .planche-numerotation-apercu {
+  max-height: 240px;
+  overflow: auto;
+  padding-left: 1.4em;
+}
 .sandbox-planche .planche-etiquette-texte {
   border: 1px solid #8a8a8a;
 }
@@ -4347,4 +4402,57 @@
   color: #ffffff;
   background: #1b4d42;
   border-color: #1b4d42;
+}
+/* Cas 4, étape 3 : locaux (panneau et étiquettes liées en plan). */
+.sandbox-planche .planche-etiquette.planche-etiquette-local {
+  white-space: pre-line;
+  text-align: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid #1a5fd6;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #1b4d42;
+  font-weight: 600;
+  transform: translate(-50%, -50%);
+}
+.sandbox-planche .planche-locaux-table .planche-locaux-n {
+  text-align: right;
+}
+.sandbox-planche .planche-locaux-table tbody tr.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-locaux-table tbody tr.est-ouvert td {
+  color: rgba(138, 75, 18, 1);
+}
+.sandbox-planche .planche-locaux-table tr.planche-locaux-total td {
+  font-weight: 700;
+  border-top: 1px solid rgba(27, 77, 66, 0.35);
+}
+.sandbox-planche .planche-locaux-formulaire {
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr 1.4fr;
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-locaux-formulaire input {
+  width: 100%;
+  min-width: 0;
+}
+.sandbox-planche .planche-locaux .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+/* Le tableau des locaux a huit colonnes : panneau plus large sur grand écran (maquette de l'étape 3). */
+@media (min-width: 64rem) {
+  .sandbox-planche .planche-panneau[data-planche-panneau="locaux"] {
+    width: min(38rem, calc(100% - var(--colonne-l) - 5rem));
+  }
+}
+/* Dix-sept panneaux dans la colonne (Niveaux et Locaux du cas 4, Numérotation du cas 2 lot 1). Sur écran tactile large
+   (téléphone détaché couché, tablette), l'écart entre boutons passe de 12 à 4 px pour que la colonne tienne entière
+   sans défiler ni cacher de panneau. */
+@media (min-width: 761px) and (hover: none) and (pointer: coarse) {
+  .sandbox-planche .planche-colonne {
+    gap: 4px;
+  }
 }

@@ -40,7 +40,7 @@
      "en": "Terrain from points"
     },
     "icone": "terrain.svg",
-    "raccourci": "Ctrl+Maj+F2"
+    "raccourci": "Ctrl+Maj+F10"
    },
    {
     "id": "courbes",
@@ -49,7 +49,7 @@
      "en": "Contour lines"
     },
     "icone": "courbes.svg",
-    "raccourci": "Ctrl+Maj+F3"
+    "raccourci": "Ctrl+Alt+Maj+E"
    },
    {
     "id": "unite-fonciere",
@@ -58,7 +58,7 @@
      "en": "Land unit"
     },
     "icone": "unite.svg",
-    "raccourci": "Ctrl+Maj+F4"
+    "raccourci": "Ctrl+Alt+Maj+J"
    },
    {
     "id": "biotope",
@@ -67,7 +67,7 @@
      "en": "Open ground and biotope"
     },
     "icone": "biotope.svg",
-    "raccourci": "Ctrl+Maj+F5"
+    "raccourci": "Ctrl+Alt+Maj+K"
    },
    {
     "id": "volumes",
@@ -76,7 +76,7 @@
      "en": "Context volumes"
     },
     "icone": "volumes.svg",
-    "raccourci": "Ctrl+Maj+F6"
+    "raccourci": "Ctrl+Alt+Maj+Y"
    }
   ],
   "outils": [],

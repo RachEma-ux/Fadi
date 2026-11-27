@@ -18,6 +18,8 @@ export const ICONES_INTERFACE = {
   detacher: "picture-in-picture-on",
   rattacher: "picture-in-picture-off",
   coche: "square-check",
+  // Cas 2, lot 1 : pavé numérique de la Cotation au toucher.
+  effacerSaisie: "backspace",
   caseVide: "square",
   actions: "dots-vertical",
   cibler: "focus-centered",

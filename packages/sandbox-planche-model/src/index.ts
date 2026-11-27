@@ -2,6 +2,8 @@
 export { type Vec3, EPS, TOL, v3, ORIGINE, AXE_X, AXE_Y, AXE_Z, add, sub, scale, dot, cross, len, dist, normalize, lerp, egal, colineaires, tourner as tournerPoint } from "./vecteur.js";
 export * from "./geometrie-libre.js";
 export * from "./annotations.js";
+export * from "./cotes.js";
+export * from "./numerotation.js";
 export * from "./profiles.js";
 export * from "./assemblages.js";
 export * from "./debit.js";
@@ -16,6 +18,7 @@ export * from "./reperes.js";
 export * from "./reperes-enregistres.js";
 export * from "./niveaux.js";
 export * from "./point-de-base.js";
+export * from "./locaux.js";
 export * from "./origine-composant.js";
 export * from "./reperes-lies.js";
 export * from "./echanges-coordonnees.js";

@@ -72,7 +72,7 @@ export const machineTexte: MachineOutil<EtatTexte> = {
           try {
             const r = modifierAnnotations(ctx.modele, (a, id) => {
               const t = id("t");
-              a.textes[t] = { id: t, genre: "repere", ancre: etat.ancre as Vec3, ...(etat.entite ? { entite: etat.entite } : {}), position: i.point, texte: etat.defaut };
+              a.textes[t] = { id: t, genre: "repere", ancre: etat.ancre as Vec3, ...(etat.entite ? { entite: etat.entite, ...(ctx.dans !== undefined ? { chemin: ctx.chemin && ctx.chemin.length ? ctx.chemin : [ctx.dans] } : {}) } : {}), position: i.point, texte: etat.defaut };
               return t;
             });
             return { etat: { ...etat, etape: 3, enEdition: r.extra, inference: i, erreur: null }, modele: r.modele, selection: ctx.selection, operation: "Texte", editerTexte: { id: r.extra, texte: etat.defaut } };

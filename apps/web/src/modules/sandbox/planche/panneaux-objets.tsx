@@ -6,11 +6,12 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, REGLAGES_DEFAUT, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
 import { afficherRaccourci } from "./outils-planche";
+import { type ActionsInfoCote, PanneauInfoCote } from "./panneau-info-cote";
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
@@ -192,7 +193,7 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
 // ---------------------------------------------------------------------------------------------------------------
 // Info entité
 
-export interface ActionsInfoEntite {
+export interface ActionsInfoEntite extends ActionsInfoCote {
   renommerOccurrence(id: Id, nom: string): void;
   modifierDefinition(def: Id, meta: MetadonneesDefinition & { nom?: string }): void;
   verrouiller(id: Id, verrou: boolean): void;
@@ -237,7 +238,7 @@ function InfoNiveau({ modele, occ, lecture, separateur, reference, onNiveau }: {
   );
 }
 
-export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, actions, referenceNiveaux = null }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; actions: ActionsInfoEntite; referenceNiveaux?: number | null }) {
+export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null }) {
   const c = contexte(modele, dans);
   const materiaux = Object.values(modele.annotations?.materiaux ?? {});
   const balises = Object.values(modele.annotations?.balises ?? {});
@@ -400,6 +401,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
       </dl>
     );
   }
+  if (g === "cote" && an?.cotes[id]) return <PanneauInfoCote modele={modele} id={id} lecture={lecture} separateur={separateur} precision={precision} actions={actions} />;
   if (g === "cote" || g === "texte" || g === "guide") {
     return (
       <dl className="planche-info" data-planche-info={g}>
@@ -646,10 +648,32 @@ export function PanneauAdoucir({ selection, lecture, onAppliquer }: { selection:
 // ---------------------------------------------------------------------------------------------------------------
 // Info modèle
 
-export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void }) {
+/** Style par défaut des cotes (absent = réglages ci-dessus), sans réordonner les champs existants. */
+function avecStyleParDefaut(r: ReglagesPlanche, id: Id | null): ReglagesPlanche {
+  const { styleCote: _ancien, ...reste } = r;
+  return id ? { ...reste, styleCote: id } : reste;
+}
+/** Enregistre les extrémités, l'alignement et le format courants comme style nommé (un nom déjà pris est remplacé). */
+function enregistrerStyle(r: ReglagesPlanche, nom: string): ReglagesPlanche {
+  const styles = { ...(r.stylesCote ?? {}) };
+  const deja = Object.values(styles).find((s) => s.nom.toLocaleLowerCase("fr") === nom.toLocaleLowerCase("fr"));
+  let id = deja?.id;
+  if (!id) {
+    let i = 1;
+    while (styles[`style-cote-${i}`]) i++;
+    id = `style-cote-${i}`;
+  }
+  styles[id] = { id, nom, extremites: r.extremitesCote, aligner: r.alignerCote, format: r.formatCote ?? "metres" };
+  return { ...r, stylesCote: styles, styleCote: id };
+}
+
+export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages, onAppliquerStyle }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void; onAppliquerStyle?: (style: Id | null) => void }) {
   const r = modele.annotations?.reglages ?? REGLAGES_DEFAUT;
   const [brouillon, setBrouillon] = useState(r);
+  const [nomStyle, setNomStyle] = useState("");
   useEffect(() => setBrouillon(r), [r]);
+  const controle = useMemo(() => controlerCotes(modele, precision), [modele, precision]);
+  const nbCotes = Object.keys(modele.annotations?.cotes ?? {}).length;
   const ext = (valeur: ReglagesPlanche["extremitesCote"], onChange: (v: ReglagesPlanche["extremitesCote"]) => void, nom: string) => (
     <select value={valeur} disabled={lecture} aria-label={nom} onChange={(e) => onChange(e.target.value as ReglagesPlanche["extremitesCote"])}>
       {(["aucune", "barre", "fleche-ouverte", "fleche-fermee", "point"] as const).map((v) => (
@@ -709,6 +733,50 @@ export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onR
           ))}
         </select>
       </label>
+      <label>
+        {t("planche.infomodele.format")}
+        <select value={brouillon.formatCote ?? "metres"} disabled={lecture} onChange={(e) => setBrouillon({ ...brouillon, formatCote: e.target.value as FormatCote })} data-planche-format-cote>
+          {(["metres", "metres-mm", "centimetres"] as const).map((v) => (
+            <option key={v} value={v}>{t(`planche.infomodele.format.${v}`)}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        {t("planche.infomodele.style-cote")}
+        <select value={brouillon.styleCote ?? ""} disabled={lecture} onChange={(e) => setBrouillon(avecStyleParDefaut(brouillon, e.target.value || null))} data-planche-style-cote>
+          <option value="">{t("planche.infomodele.style-cote.reglages")}</option>
+          {Object.values(brouillon.stylesCote ?? {}).map((st) => (
+            <option key={st.id} value={st.id}>{st.nom}</option>
+          ))}
+        </select>
+      </label>
+      <div className="planche-debit-barre">
+        <input value={nomStyle} disabled={lecture} placeholder={t("planche.infomodele.style-cote.nom")} aria-label={t("planche.infomodele.style-cote.nom")} onChange={(e) => setNomStyle(e.target.value)} data-planche-style-cote-nom />
+        <button type="button" disabled={lecture || nomStyle.trim() === ""} onClick={() => {
+          setBrouillon(enregistrerStyle(brouillon, nomStyle.trim()));
+          setNomStyle("");
+        }} data-planche-style-cote-enregistrer>{t("planche.infomodele.style-cote.enregistrer")}</button>
+      </div>
+      {onAppliquerStyle && (
+        <button type="button" disabled={lecture || nbCotes === 0} onClick={() => onAppliquerStyle(brouillon.styleCote ?? null)} data-planche-style-cote-appliquer>
+          {t("planche.infomodele.style-cote.appliquer", { nombre: String(nbCotes) })}
+        </button>
+      )}
+      <h4>{t("planche.infomodele.controle-chaines")}</h4>
+      {controle.chaines.length === 0 && controle.orphelines.length === 0 && controle.horsPlage.length === 0 ? (
+        <p className="inspecteur-aide" data-planche-controle-chaines="ok">{t("planche.infomodele.controle-chaines.ok")}</p>
+      ) : (
+        <ul className="planche-controle-points" data-planche-controle-chaines={controle.chaines.length}>
+          {controle.chaines.map((ch) => (
+            <li key={ch.total} className="planche-info-cote-alerte">
+              {t("planche.infomodele.controle-chaines.ecart", { partielles: String(ch.partielles.length), ecart: `${Math.abs(ch.ecart * 1000).toFixed(0)} mm` })}
+            </li>
+          ))}
+          {controle.orphelines.length > 0 && <li className="planche-info-cote-alerte">{t("planche.cote.orphelines.nombre", { nombre: String(controle.orphelines.length) })}</li>}
+          {controle.horsPlage.length > 0 && <li className="planche-info-cote-alerte">{t("planche.cote.hors-plage.nombre", { nombre: String(controle.horsPlage.length) })}</li>}
+        </ul>
+      )}
+      <p className="inspecteur-aide">{t("planche.infomodele.arrondi")}</p>
       <p className="inspecteur-aide">{t("planche.infomodele.police")}</p>
       <button type="submit" disabled={lecture} data-planche-reglages-enregistrer>{t("planche.composants.enregistrer")}</button>
     </form>
