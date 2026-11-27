@@ -166,6 +166,15 @@ describe("cas 2, lot 6 — lecture IFC complète (n° 2, 22, 91)", () => {
     const t = bornes(objet("Table").triangles.flat());
     expect(t.min.x).toBeCloseTo(1.1, 9);
     expect(t.min.y).toBeCloseTo(0.2, 9);
+    // Revue de #511 : origine de la carte (MappingOrigin) retirée avant la cible ; échelles non uniformes et axe réfléchi
+    // gardés (IfcCartesianTransformationOperator3DnonUniform).
+    const variante = lireIfcComplet(IFC_ESSAI.replace("#73=IFCREPRESENTATIONMAP(#11,#72);", "#73=IFCREPRESENTATIONMAP(#900,#72);\n#900=IFCAXIS2PLACEMENT3D(#901,$,$);\n#901=IFCCARTESIANPOINT((50.,0.,0.));")
+      .replace("#75=IFCCARTESIANTRANSFORMATIONOPERATOR3D($,$,#74,$,$);", "#75=IFCCARTESIANTRANSFORMATIONOPERATOR3DNONUNIFORM($,#902,#74,1.,$,2.,3.);\n#902=IFCDIRECTION((0.,-1.,0.));"));
+    const tv = bornes(variante.objets.find((o) => o.nom === "Table")!.triangles.flat());
+    expect(tv.min.x).toBeCloseTo(1 + 0.1 - 0.05, 9);
+    expect(tv.max.x).toBeCloseTo(1 + 0.1 - 0.05 + 0.5, 9);
+    expect(tv.max.y).toBeCloseTo(0.2, 9);
+    expect(tv.min.y).toBeCloseTo(0.2 - 1, 9);
     expect(objet("Borne").triangles).toHaveLength(4);
     expect(objet("Poteau").approche).toBe(true);
     expect(objet("Toiture").triangles).toHaveLength(0);
@@ -299,6 +308,10 @@ describe("cas 2, lot 6 — coller un tracé (n° 112)", () => {
     expect(l.refuses).toBe(1);
     expect(l.traces[0]!.points[2]).toEqual(v3(320, -100, 0));
     expect(lireTraceColle('<svg width="100mm" height="50mm" viewBox="0 0 100 50"><rect x="0" y="0" width="10" height="5"/></svg>')!.unite).toBe("mm");
+    // Revue de #511 : un tracé rangé dans `defs`, `clipPath` ou `symbol` n'est pas dessiné, il n'est pas collé.
+    const d = lireTraceColle('<svg><defs><path d="M0 0 L9 9"/></defs><clipPath id="c"><rect x="0" y="0" width="5" height="5"/></clipPath><symbol id="s"><line x1="0" y1="0" x2="1" y2="1"/></symbol><line x1="0" y1="0" x2="10" y2="0"/></svg>')!;
+    expect(d.traces).toHaveLength(1);
+    expect(d.traces[0]!.points.map((p) => p.x)).toEqual([0, 10]);
     expect(lireTraceColle('<svg width="100mm" viewBox="0 0 200 50"><rect width="10" height="5"/></svg>')!.unite).toBeNull();
   });
   it("SVG : courbes approchées, transformations de groupe appliquées", () => {

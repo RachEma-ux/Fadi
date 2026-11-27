@@ -528,6 +528,7 @@ function cheminSvg(d: string): { traces: { points: [number, number][]; ferme: bo
 }
 
 const UNITES_SVG: Readonly<Record<string, UniteColle>> = { mm: "mm", cm: "cm", m: "m" };
+const NON_DESSINES_SVG: ReadonlySet<string> = new Set(["defs", "clippath", "mask", "symbol", "pattern", "marker", "lineargradient", "radialgradient", "filter"]);
 
 function lireSvg(texte: string): LectureColle {
   const traces: TraceColle[] = [];
@@ -541,9 +542,18 @@ function lireSvg(texte: string): LectureColle {
     // SVG : y vers le bas ; la Planche : y vers le haut.
     if (q.length >= 2) traces.push({ points: q.map(([a, b]) => v3(a, -b, 0)), ferme });
   };
+  // Sous-arbres jamais dessinés (définitions, découpes, masques, symboles, motifs, marqueurs) : ignorés ; ce qu'ils portent
+  // n'est posé que par une instance (`use`), elle-même refusée.
+  let cache = 0;
   for (const r of texte.matchAll(/<\s*(\/?)\s*([A-Za-z][\w:-]*)([^>]*?)(\/?)\s*>/g)) {
     const [, ferme, nomBrut, a = "", auto] = r;
     const nom = (nomBrut as string).toLowerCase();
+    if (NON_DESSINES_SVG.has(nom)) {
+      if (ferme) cache = Math.max(0, cache - 1);
+      else if (!auto) cache++;
+      continue;
+    }
+    if (cache > 0) continue;
     if (nom === "svg" && !ferme) {
       const w = /^\s*([\d.]+)\s*(mm|cm|m)\s*$/.exec(attr(a, "width") ?? "");
       const vb = (attr(a, "viewBox") ?? "").split(/[\s,]+/).filter(Boolean).map(Number);

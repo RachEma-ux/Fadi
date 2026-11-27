@@ -11,7 +11,7 @@
  *
  * Unités : longueur SI (mètre et préfixes) ou unité convertie (`IfcConversionBasedUnit`) ; une autre unité est refusée.
  */
-import { appliquer, composer, type Matrice4 } from "./geometrie-libre.js";
+import { appliquer, composer, inverserMatrice, type Matrice4 } from "./geometrie-libre.js";
 import { triangulerFace } from "./maillage.js";
 import { add, cross, dot, len, normalize, scale, sub, v3, type Vec3 } from "./vecteur.js";
 import { ErreurImport } from "./echanges-import.js";
@@ -436,8 +436,10 @@ function lireItem(L: Lecteur, item: EntiteStep, M: Matrice4, lu: Lu, profondeur 
       const cible = L.get(a[1]);
       const rep = L.get(source?.args[1]);
       if (!source || !rep || profondeur > 8) return void lu.nonLues.push(classeIfc(item.type));
-      let T = composer(M, transformation(L, cible));
-      T = composer(T, L.placement(source.args[0]));
+      // Géométrie de la carte sortie de son origine (MappingOrigin), puis posée par la cible (MappingTarget).
+      const origine = inverserMatrice(L.placement(source.args[0]));
+      if (!origine) return void lu.nonLues.push(classeIfc(item.type));
+      const T = composer(composer(M, transformation(L, cible)), origine);
       for (const r of Array.isArray(rep.args[3]) ? (rep.args[3] as ValeurStep[]) : []) {
         const it = L.get(r);
         if (it) lireItem(L, it, T, lu, profondeur + 1);
@@ -449,16 +451,25 @@ function lireItem(L: Lecteur, item: EntiteStep, M: Matrice4, lu: Lu, profondeur 
   }
 }
 
-/** `IfcCartesianTransformationOperator3D` (axes, origine, échelle uniforme). */
+/**
+ * `IfcCartesianTransformationOperator3D` et `…3DnonUniform` : axes dérivés comme `IfcBaseAxis` (Z = Axis3 ou (0, 0, 1),
+ * X = Axis1 projeté hors de Z, Y = Axis2 projeté hors de Z et X, son sens gardé : un axe réfléchi le reste), origine,
+ * échelles Scale, Scale2, Scale3 (chacune Scale par défaut).
+ */
 function transformation(L: Lecteur, t: EntiteStep | undefined): Matrice4 {
   if (!t || !t.type.startsWith("IFCCARTESIANTRANSFORMATIONOPERATOR")) return IDENTITE;
-  const x = L.direction(t.args[0], v3(1, 0, 0));
-  const y0 = L.direction(t.args[1], v3(0, 1, 0));
   const o = L.point(t.args[2]) ?? v3(0, 0, 0);
-  const k = typeof t.args[3] === "number" ? t.args[3] : 1;
-  const z = t.type.endsWith("3D") || t.type.endsWith("3DNONUNIFORM") ? L.direction(t.args[4], normalize(cross(x, y0))) : normalize(cross(x, y0));
-  const y = normalize(cross(z, x));
-  return [x.x * k, y.x * k, z.x * k, o.x, x.y * k, y.y * k, z.y * k, o.y, x.z * k, y.z * k, z.z * k, o.z, 0, 0, 0, 1];
+  const k1 = typeof t.args[3] === "number" ? t.args[3] : 1;
+  const nonUniforme = t.type.endsWith("NONUNIFORM");
+  const k2 = nonUniforme && typeof t.args[5] === "number" ? t.args[5] : k1;
+  const k3 = nonUniforme && typeof t.args[6] === "number" ? t.args[6] : k1;
+  const z = t.type.includes("3D") ? L.direction(t.args[4], v3(0, 0, 1)) : v3(0, 0, 1);
+  const projeter = (v: Vec3, n: Vec3) => sub(v, scale(n, dot(v, n)));
+  let x = normalize(projeter(L.direction(t.args[0], v3(1, 0, 0)), z));
+  if (!(len(x) > 1e-9)) x = normalize(projeter(v3(0, 1, 0), z));
+  const yBrut = t.args[1] !== null && t.args[1] !== undefined ? projeter(projeter(L.direction(t.args[1], v3(0, 1, 0)), z), x) : null;
+  const y = yBrut && len(yBrut) > 1e-9 ? normalize(yBrut) : normalize(cross(z, x));
+  return [x.x * k1, y.x * k2, z.x * k3, o.x, x.y * k1, y.y * k2, z.y * k3, o.y, x.z * k1, y.z * k2, z.z * k3, o.z, 0, 0, 0, 1];
 }
 
 /** Mètres par unité de longueur déclarée ; refus d'une unité qui n'est pas une longueur connue. */

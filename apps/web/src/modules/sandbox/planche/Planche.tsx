@@ -2219,8 +2219,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const echec = (e: unknown) => setMessage(t("planche.sb.echec", { motif: motif(e) }));
     const nomFichier = () => (nomAffiche(courante()).replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche");
     /** Cas 2, lot 6 : le fichier importé et son rapport sont archivés tels quels en base (D-GD-29). */
-    const archiverEchange = async (nom: string, texte: string, rapport: RapportEchange) => {
-      const a = await archiverFichierExtension("planche-echange", { nom, texte });
+    /** Fichier importé rangé tel quel en base (octets d'origine pour un STL, binaire ou ASCII), puis son rapport. */
+    const archiverEchange = async (nom: string, contenu: string | Uint8Array, rapport: RapportEchange) => {
+      const a = typeof contenu === "string" ? await archiverFichierExtension("planche-echange", { nom, texte: contenu }) : await archiverFichierExtension("planche-echange", { nom, texte: "" }, contenu);
       const b = a.ok ? await archiverFichierExtension("planche-echange", { nom: `${nom}.rapport.txt`, texte: texteRapport(rapport) }) : a;
       if (a.ok && b.ok) setArchiveImport(t("planche.echange.archive.ok", { empreinte: empreinteCourte(a.archive.empreinte) }));
       else setArchiveImport(t("planche.echange.archive.refus", { motif: t(`planche.pieces.motif.${(!a.ok ? a : b as { motif: string }).motif}` as "planche.pieces.motif.reseau") }));
@@ -2379,12 +2380,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           rafraichir();
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
           setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
-          // Cas 2, lot 6 (n° 6) : rapport chiffré de l'import OBJ / STL aussi, archivé avec le fichier (texte seulement).
+          // Cas 2, lot 6 (n° 6) : rapport chiffré de l'import OBJ / STL aussi, archivé avec le fichier tel quel.
           const rapport = rapportImportMaillages(format, fichier.name, r, date);
           setRapportImport({ rapport, arbre: [] });
           setArchiveImport(null);
           setPanneau("echange-import");
-          if (typeof donnees === "string") void archiverEchange(fichier.name, donnees, rapport);
+          void archiverEchange(fichier.name, donnees, rapport);
         } catch (e) {
           setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
         }
