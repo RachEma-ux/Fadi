@@ -26,6 +26,10 @@ const NUMERO_MAX = 20;
 const NOM_MAX = 80;
 const INDICE_MAX = 10;
 const CHAMP_MAX = 80;
+/** Fenêtres de vue par feuille au plus (même borne que la relecture `estFeuille`). */
+export const FENETRES_MAX = 32;
+/** Lignes de hachure d'une famille au plus dans une poche du PDF ; au-delà l'export est refusé, jamais tronqué. */
+export const LIGNES_HACHURE_MAX = 4000;
 
 /** Dimensions d'un format A (mm) : petit côté × grand côté. */
 export function formatA(rang: number): { readonly court: number; readonly long: number } {
@@ -41,7 +45,7 @@ export function dimensionsFeuille(f: Pick<Feuille, "format" | "sens">): { readon
 
 // ————————————————————————————————————————————————————————————— Validation et édition
 
-export type ErreurFeuille = "numero" | "nom" | "indice" | "cartouche" | "format" | "echelle" | "scene" | "coupe" | "position" | "absent";
+export type ErreurFeuille = "numero" | "nom" | "indice" | "cartouche" | "format" | "echelle" | "scene" | "coupe" | "position" | "absent" | "limite";
 
 const texteBorne = (v: unknown, max: number, vide = true): v is string => typeof v === "string" && v.length <= max && (vide || v.trim().length > 0);
 const fini = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -71,7 +75,7 @@ export function estFeuille(id: Id, v: unknown): v is Feuille {
     texteBorne(c["phase"], CHAMP_MAX) &&
     texteBorne(c["date"], CHAMP_MAX) &&
     Array.isArray(w["fenetres"]) &&
-    w["fenetres"].length <= 32 &&
+    w["fenetres"].length <= FENETRES_MAX &&
     w["fenetres"].every(estFenetre) &&
     new Set((w["fenetres"] as FenetreVue[]).map((f) => f.id)).size === w["fenetres"].length
   );
@@ -136,6 +140,7 @@ function verifierFenetre(m: Modele, f: Omit<FenetreVue, "id">): ErreurFeuille | 
 export function ajouterFenetre(m: Modele, feuille: Id, v: Omit<FenetreVue, "id">): ResultatFeuille {
   const f = m.annotations?.feuilles?.[feuille];
   if (!f) return { ok: false, erreur: "absent" };
+  if (f.fenetres.length >= FENETRES_MAX) return { ok: false, erreur: "limite" };
   const e = verifierFenetre(m, v);
   if (e) return { ok: false, erreur: e };
   const n = Math.max(0, ...f.fenetres.map((x) => Number(x.id.slice(1)))) + 1;
@@ -284,7 +289,13 @@ export function svgFeuille(c: CompositionFeuille, o: { readonly surligne?: strin
       if (p.motif) {
         if (!vus.has(p.motif.id)) {
           vus.add(p.motif.id);
-          p.motif.familles.forEach((f, i) => defs.push(`<pattern id="${p.motif!.id}-${i}" patternUnits="userSpaceOnUse" width="1000" height="${n3(Math.abs(f.dy))}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})"><line x1="0" y1="0" x2="1000" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${f.tirets.length ? ` stroke-dasharray="${f.tirets.map((t) => n3(Math.max(Math.abs(t), 0.05))).join(" ")}"` : ""}/></pattern>`));
+          p.motif.familles.forEach((f, i) => {
+            // Comme svgPlan : tuile d'une période de tirets, décalage dx d'une ligne à la suivante rendu par un cisaillement.
+            const traits = f.tirets.map((t) => Math.max(Math.abs(t), 0.05));
+            const periode = traits.length ? traits.reduce((a, b) => a + b, 0) * (traits.length % 2 ? 2 : 1) : 1000;
+            const cisaillement = f.dx !== 0 ? ` skewX(${n3((Math.atan2(f.dx, f.dy) * 180) / Math.PI)})` : "";
+            defs.push(`<pattern id="${p.motif!.id}-${i}" patternUnits="userSpaceOnUse" width="${n3(periode)}" height="${n3(Math.abs(f.dy))}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})${cisaillement}"><line x1="0" y1="0" x2="${n3(periode)}" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${traits.length ? ` stroke-dasharray="${traits.map(n3).join(" ")}"` : ""}/></pattern>`);
+          });
         }
         p.motif.familles.forEach((_f, i) => corps.push(`<path d="${d}" fill="url(#${p.motif!.id}-${i})" fill-rule="evenodd"/>`));
       }
@@ -324,7 +335,8 @@ function largeurTexte(t: string, taille: number): number {
   return u * taille;
 }
 
-function hachures(boucles: readonly (readonly P2[])[], f: FamilleHachure): string {
+/** Repère d'une famille sur le papier et rangs de ses lignes qui traversent les boucles. */
+function rangsHachure(boucles: readonly (readonly P2[])[], f: FamilleHachure) {
   const pts = boucles.flat();
   const a = (f.angle * Math.PI) / 180;
   // Repère du papier : y vers le bas, l'angle compte dans le sens trigonométrique vu sur la feuille.
@@ -334,18 +346,42 @@ function hachures(boucles: readonly (readonly P2[])[], f: FamilleHachure): strin
   const proj = pts.map((p) => p.x * nrm.x + p.y * nrm.y);
   const long = pts.map((p) => p.x * u.x + p.y * u.y);
   const o0 = f.x0 * nrm.x + f.y0 * nrm.y;
-  const debut = Math.floor((Math.min(...proj) - o0) / pas);
-  const fin = Math.ceil((Math.max(...proj) - o0) / pas);
-  if (fin - debut > 4000) return "";
+  return { u, nrm, pas, long, o0, debut: Math.floor((Math.min(...proj) - o0) / pas), fin: Math.ceil((Math.max(...proj) - o0) / pas) };
+}
+
+/**
+ * Poches dont une famille de hachure demanderait plus de LIGNES_HACHURE_MAX lignes au PDF : l'export est alors refusé
+ * (le PDF ne tronque ni n'omet jamais une hachure). Renvoie le nombre de familles en excès.
+ */
+export function hachuresTropDenses(pages: readonly CompositionFeuille[]): number {
+  let n = 0;
+  for (const c of pages)
+    for (const p of c.primitives)
+      if (p.genre === "poche" && p.motif)
+        for (const f of p.motif.familles) {
+          const r = rangsHachure(p.boucles, f);
+          if (r.fin - r.debut > LIGNES_HACHURE_MAX) n++;
+        }
+  return n;
+}
+
+function hachures(boucles: readonly (readonly P2[])[], f: FamilleHachure): string {
+  const { u, nrm, pas, long, o0, debut, fin } = rangsHachure(boucles, f);
+  if (fin - debut > LIGNES_HACHURE_MAX) throw new Error("hachure trop dense : contrôler avec hachuresTropDenses avant l'export");
   const l0 = Math.min(...long) - 1;
   const l1 = Math.max(...long) + 1;
-  const tirets = f.tirets.length ? `[${f.tirets.map((t) => n4(Math.max(Math.abs(t), 0.05))).join(" ")}] 0 d` : "[] 0 d";
-  let s = `0.13 w ${tirets}\n`;
+  const traits = f.tirets.map((t) => Math.max(Math.abs(t), 0.05));
+  const periode = traits.reduce((x, y) => x + y, 0) * (traits.length % 2 ? 2 : 1);
+  // Origine longitudinale de la famille (x0, y0) et glissement de k·dx de la ligne de rang k, comme dans le .pat :
+  // la phase des tirets de chaque ligne part de là, pas du bord de la poche.
+  const l00 = f.x0 * u.x + f.y0 * u.y;
+  let s = `0.13 w${traits.length ? "" : " [] 0 d"}\n`;
   for (let i = debut; i <= fin; i++) {
     const o = o0 + i * pas;
     const A = { x: nrm.x * o + u.x * l0, y: nrm.y * o + u.y * l0 };
     const B = { x: nrm.x * o + u.x * l1, y: nrm.y * o + u.y * l1 };
-    s += `${n4(A.x)} ${n4(A.y)} m ${n4(B.x)} ${n4(B.y)} l S\n`;
+    const phase = traits.length ? (((l0 - (l00 + i * f.dx)) % periode) + periode) % periode : 0;
+    s += `${traits.length ? `[${traits.map(n4).join(" ")}] ${n4(phase)} d ` : ""}${n4(A.x)} ${n4(A.y)} m ${n4(B.x)} ${n4(B.y)} l S\n`;
   }
   return s;
 }

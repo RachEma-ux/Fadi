@@ -205,6 +205,7 @@ import {
   nomFichierFeuille,
   numeroFeuilleSuivant,
   pdfFeuilles,
+  hachuresTropDenses,
   relirePdf,
   supprimerFenetre,
   supprimerFeuille,
@@ -3142,6 +3143,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   const emettrePdf = (feuilles: readonly Feuille[], fichier: string) => {
     const pages = feuilles.map((f) => composerFeuille(hist.present.modele, f, libellesFeuille()));
+    // Une hachure trop dense n'est jamais omise du PDF : l'export est refusé.
+    const denses = hachuresTropDenses(pages);
+    if (denses) return setErreurFeuille(t("planche.feuilles.erreur.densite", { familles: String(denses) }));
     const octets = pdfFeuilles(pages, fichier.replace(/\.pdf$/, ""));
     // Contrôle de l'échelle exacte : le fichier émis est relu, ses formats comparés aux feuilles.
     const relu = relirePdf(octets);

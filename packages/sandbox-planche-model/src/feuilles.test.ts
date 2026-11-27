@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { PlanDeCoupe } from "./annotations.js";
 import { lireModelePlanche } from "./delta.js";
-import { ajouterFenetre, composerFeuille, creerFeuille, dimensionsFeuille, estFeuille, formatA, modifierFenetre, modifierFeuille, nomFichierFeuille, numeroFeuilleSuivant, pdfFeuilles, relirePdf, supprimerFenetre, supprimerFeuille, svgFeuille } from "./feuilles.js";
+import { type CompositionFeuille, FENETRES_MAX, ajouterFenetre, composerFeuille, hachuresTropDenses, creerFeuille, dimensionsFeuille, estFeuille, formatA, modifierFenetre, modifierFeuille, nomFichierFeuille, numeroFeuilleSuivant, pdfFeuilles, relirePdf, supprimerFenetre, supprimerFeuille, svgFeuille } from "./feuilles.js";
 import { type Id, type Modele, ajouterRectangle, modeleVide, modifierAnnotations, pousserTirer } from "./geometrie-libre.js";
 import { v3 } from "./vecteur.js";
 
@@ -117,5 +117,49 @@ describe("Composition, SVG et PDF", () => {
     const premier = Number(/xref\n0 \d+\n0000000000 65535 f \n(\d{10})/.exec(texte)![1]);
     expect(texte.slice(premier, premier + 7)).toBe("1 0 obj");
     expect(relirePdf(new Uint8Array([1, 2, 3]))).toBeNull();
+  });
+
+  it("relecture #495 : décalage dx et origine des tirets gardés dans le PDF et le SVG de la feuille", () => {
+    const poche = (dx: number): CompositionFeuille => ({
+      largeur: 100,
+      hauteur: 100,
+      fenetres: [],
+      echelles: [],
+      primitives: [{ genre: "poche", boucles: [[{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 12 }, { x: 10, y: 12 }]], motif: { id: "h1" as Id, nom: "t", source: { genre: "saisie" }, familles: [{ angle: 0, x0: 0, y0: 0, dx, dy: 1, tirets: [1, -1] }] } }],
+    });
+    const pdf = (c: CompositionFeuille) => new TextDecoder("latin1").decode(pdfFeuilles([c], "t"));
+    expect(pdf(poche(0))).not.toBe(pdf(poche(0.5)));
+    // Ligne de rang k : phase = (l0 − k·dx) modulo la période 2 ; l0 = 9 (bord de poche − 1).
+    expect(pdf(poche(0.5))).toContain("[1 1] 0 d");
+    expect(pdf(poche(0.5))).toContain("[1 1] 1.5 d");
+    expect(svgFeuille(poche(0.5), {})).toContain('width="2"');
+    expect(svgFeuille(poche(0.5), {})).toContain("skewX(26.565)");
+  });
+
+  it("relecture #495 : hachure trop dense signalée, jamais omise en silence", () => {
+    const c: CompositionFeuille = {
+      largeur: 100,
+      hauteur: 100,
+      fenetres: [],
+      echelles: [],
+      primitives: [{ genre: "poche", boucles: [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 60 }, { x: 0, y: 60 }]], motif: { id: "h1" as Id, nom: "t", source: { genre: "saisie" }, familles: [{ angle: 0, x0: 0, y0: 0, dx: 0, dy: 0.01, tirets: [] }] } }],
+    };
+    expect(hachuresTropDenses([c])).toBe(1);
+    expect(() => pdfFeuilles([c], "t")).toThrow();
+  });
+});
+
+describe("relecture #495 : borne des fenêtres", () => {
+  it("la 33e fenêtre est refusée avant de toucher au modèle, qui reste relisible", () => {
+    let { m, id } = feuilleAvecVue();
+    const v = m.annotations!.feuilles![id]!.fenetres[0]!;
+    while (m.annotations!.feuilles![id]!.fenetres.length < FENETRES_MAX) {
+      const r = ajouterFenetre(m, id, { ...v, x: 10, y: 10 });
+      if (!r.ok) throw new Error(r.erreur);
+      m = r.modele;
+    }
+    const r = ajouterFenetre(m, id, { ...v, x: 10, y: 10 });
+    expect(r).toEqual({ ok: false, erreur: "limite" });
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(m)))).not.toBeNull();
   });
 });
