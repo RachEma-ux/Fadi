@@ -12,7 +12,7 @@ aucune donnée dans le code (D-GD-29).
 | --- | --- | --- | --- |
 | P1 | A Arrivée | Contour du découpage en base, consigne, catalogue fermé | livrée (PR #472) |
 | P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (PR #482) |
-| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (jalon C) |
+| P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (PR #487) |
 | P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | livrée (cette PR) |
 | P8-P10 | E Légende | Version et couverture, légende complète, hachures | à faire |
 | P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | à faire |
@@ -71,6 +71,8 @@ aucune donnée dans le code (D-GD-29).
 - **P5, comportement** : la colonne d'outils garde zoom avant / arrière et range le reste en deux groupes nommés à
   divulgation, « Mesurer et tracer » (Alt+N) et « Affichage » (Alt+A), avec la lettre d'accès de chaque entrée ; Échap
   ferme le groupe et rend le focus à son bouton. « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique.
+- Revue de la PR #487 : le panneau d'un groupe s'ouvre du côté où il tient dans la carte (`placementPanneauGroupe`,
+  testé), même quand la barre est déplacée contre le bord gauche.
 - Écart connu : l'ordre de tabulation de la colonne n'a pas été réordonné (inchangé par rapport à l'existant).
 - Captures : `captures/p5/` (groupe « Affichage » ouvert et aide des raccourcis au bureau 1440 px ; groupe ouvert sur
   Pixel 7), données réelles du Maroc, build final de la feuille de route.
