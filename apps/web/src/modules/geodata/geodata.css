@@ -458,3 +458,18 @@
   .geodata-page .gd-accueil .gd-actions button,.geodata-page .gd-accueil-fermer{min-height:32px;padding:3px 8px;font-size:13px}
 }
 .geodata-page .gd-avis-couches ul{margin:4px 0;padding-left:18px}
+/* Groupes de la colonne d'outils (P5) : bouton de divulgation avec légende courte ; panneau à gauche de la colonne. */
+.geodata-page .gd-outil.gd-bouton-groupe{width:52px;height:50px;min-height:50px;flex-direction:column;gap:1px}
+.geodata-page .gd-bouton-groupe .gd-legende-groupe{font-size:9.5px;line-height:1;letter-spacing:-.1px}
+.geodata-page .gd-bouton-groupe[aria-expanded="true"]{background:#edf5f3;color:var(--gd-accent)}
+.geodata-page .gd-panneau-groupe{position:absolute;z-index:6;display:flex;flex-direction:column;gap:2px;min-width:230px;max-width:min(300px,calc(100% - 90px));max-height:calc(100% - 20px - var(--gd-barre-bas, 0px));overflow:auto;background:#fff;border:1px solid var(--gd-ligne);border-radius:10px;box-shadow:0 8px 24px rgba(23,59,67,.18);padding:6px}
+.geodata-page .gd-panneau-groupe .gd-titre-section{margin:6px 6px 2px;font-size:11px;font-weight:600;color:#29434a;text-transform:uppercase;letter-spacing:.04em}
+.geodata-page .gd-entree-groupe{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;border-radius:6px;padding:6px 8px;min-height:38px}
+.geodata-page .gd-entree-groupe .gd-entree-texte{flex:1}
+.geodata-page .gd-entree-groupe kbd{font:inherit;font-size:11px;border:1px solid var(--gd-ligne);border-radius:4px;padding:0 5px;color:#29434a;background:#f7faf9}
+.geodata-page .gd-entree-groupe[aria-pressed="true"] kbd{color:#fff;border-color:#ffffff;background:transparent}
+/* Aide « Raccourcis clavier » (P5). */
+.geodata-page .gd-aide-raccourcis{position:absolute;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:#fff;border:1px solid var(--gd-ligne);border-radius:10px;box-shadow:0 12px 36px rgba(23,59,67,.18);padding:10px 14px}
+.geodata-page .gd-aide-raccourcis h2{font-size:16px;margin:0}
+.geodata-page .gd-aide-raccourcis kbd{font:inherit;font-size:12px;border:1px solid var(--gd-ligne);border-radius:4px;padding:0 6px;background:#f7faf9;white-space:nowrap}
+.geodata-page .gd-panneau-groupe[hidden]{display:none}

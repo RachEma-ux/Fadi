@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bornerPosition, HAUTEUR_UTILE_MIN, ICONES, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
+import { bornerPosition, HAUTEUR_UTILE_MIN, ICONES, placementPanneauGroupe, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
 
 describe("barre d'outils flottante GeoData", () => {
   it("position par défaut : à droite, en haut", () => expect(POSITION_PAR_DEFAUT).toEqual({ droite: 10, haut: 10 }));
@@ -56,5 +56,21 @@ describe("Emplacements Projets (27 novembre 2026)", () => {
     const prises = [...Object.values(RACCOURCIS_BARRE), ...Object.values(RACCOURCIS_BARRE_BAS), ...Object.values(RACCOURCIS_TERRAIN), "Alt+S", "Alt+Z", "Alt+T", "Alt+P", "Alt+A"];
     expect(prises).not.toContain(RACCOURCI_EMPLACEMENTS);
     expect(adressePlanche("gdempl_1")).toBe("/sandbox?emplacement-geodata=gdempl_1");
+  });
+});
+
+describe("groupes de la colonne (P5, D3 et D4)", () => {
+  it("lettres d'accès uniques dans chaque groupe ; chaque outil rangé a son icône propre", async () => {
+    const { LETTRES_GROUPES, ICONES } = await import("./BarreOutilsCarte");
+    for (const g of Object.values(LETTRES_GROUPES)) { const l = Object.values(g); expect(new Set(l).size).toBe(l.length); }
+    expect(Object.keys(LETTRES_GROUPES.mesurer)).toEqual(["distance", "surface", "zone", "annotation"]);
+    const icones = Object.values(ICONES);
+    expect(new Set(icones).size).toBe(icones.length);
+  });
+  it("panneau d'un groupe : à gauche de la barre s'il y a la place, sinon à droite, jamais hors de la carte", () => {
+    expect(placementPanneauGroupe({ droite: 10, haut: 10 }, 52, 1000)).toEqual({ right: 70 });
+    // Barre contre le bord gauche (droite = 1000 - 52 - 4) : le panneau s'ouvre à sa droite, dans la carte.
+    expect(placementPanneauGroupe({ droite: 944, haut: 10 }, 52, 1000)).toEqual({ left: 64 });
+    expect(placementPanneauGroupe({ droite: 10, haut: 10 }, 52, 0)).toEqual({ right: 70 });
   });
 });

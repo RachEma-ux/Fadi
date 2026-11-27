@@ -67,5 +67,6 @@ export function BarreBas(p: ActionsBarreBas) {
 }
 
 /** Raccourcis de la barre du bas, contrôlés par test : une commande, une touche, une icône. */
-export const RACCOURCIS_BARRE_BAS = { carte: "Alt+X", chercher: "Alt+R", couches: "Alt+C", enregistrer: "Alt+E" } as const;
+/** Dérivée de la table unique des raccourcis (P3). */
+export { RACCOURCIS_BARRE_BAS } from "../raccourcis";
 export const ICONES_BARRE_BAS = ICONES;

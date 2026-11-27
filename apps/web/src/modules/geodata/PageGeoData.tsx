@@ -20,7 +20,7 @@ import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, 
 import { FicheValeur, LegendeIndicateur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
-import { BarreRecherche, type ChoixFond, type PlacementOutils } from "./panneaux/BarreRecherche";
+import { BarreRecherche, type ChoixFond } from "./panneaux/BarreRecherche";
 import { PanneauCollection, useCollection, type ModeCollection } from "./panneaux/collection";
 import { BarreTerritoriale } from "./panneaux/BarreTerritoriale";
 import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche, refusImpressionFiche } from "./panneaux/FicheTerritoriale";
@@ -33,14 +33,18 @@ import { BarreBas } from "./panneaux/BarreBas";
 import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
+import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
+import { usePanneaux } from "./etat/usePanneaux";
+import { AideRaccourcis } from "./panneaux/AideRaccourcis";
+import { basculerOnglet, basculerVolet, carteSeule, cibleEchap, ouvrirOnglet as ouvrirOngletPur, type EtatPanneaux, type OngletPanneau, type VoletPage } from "./etat/panneaux-ops";
 import { etatInitial, generationMoteur, messageMoteur, noterRefus, oublierAvis, transitionMoteur, type AvisCouches } from "./carte/etat-moteur";
 import { carteVide, consigneVisible, niveauAccueil } from "./etat/accueil-ops";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
 
-type Onglet = "catalogue" | "couches" | "legende";
-type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain" | "emplacements";
+type Onglet = OngletPanneau;
+type Volet = VoletPage;
 
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -67,8 +71,12 @@ export function PageGeoData() {
   // Onglets de GeoData (D-GD-37) : une adresse par onglet (/geodata, /geodata/chiffres-cles…) ; la carte reste montée
   // derrière les autres onglets : couches, sélection, indicateur actif et zoom sont conservés au retour.
   const ongletPage: OngletGeoData = ongletDeChemin(useLocation().pathname);
-  const [bordVisite, setBordVisite] = useState(ongletPage !== "cartes");
-  useEffect(() => { if (ongletPage !== "cartes") setBordVisite(true); }, [ongletPage]);
+  // Panneaux, volets, menus et annonces (P4 : domaine extrait dans `etat/usePanneaux.ts`, comportement inchangé).
+  const {
+    bordVisite, onglet, setOnglet, panneauOuvert, setPanneauOuvert, consigneEcartee, setConsigneEcartee, volet, setVolet,
+    panneauMini, setPanneauMini, placementOutils, setPlacementOutils, annonce, setAnnonce, menuOuvert, setMenuOuvert,
+    menuCartes, setMenuCartes, pastillesOuvertes, setPastillesOuvertes, groupeOutils, setGroupeOutils, aideRaccourcis, setAideRaccourcis,
+  } = usePanneaux(ongletPage === "cartes");
   const conteneurCarte = useRef<HTMLDivElement>(null);
   const moteur = useRef<MoteurCarte | null>(null);
   // Composition courante lue par le moteur à sa création (chargé de façon asynchrone, après une éventuelle réouverture).
@@ -98,13 +106,9 @@ export function PageGeoData() {
   const [fiche, setFiche] = useState<FicheRecue | null>(null);
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
   const [coucheTable, setCoucheTable] = useState<string | null>(null);
-  const [onglet, setOnglet] = useState<Onglet>("catalogue");
   // Catalogue fermé à chaque ouverture de la page (P1, décision D1 de la feuille de route) : la carte d'arrivée reste
   // dégagée ; le bouton « Données » ou la consigne l'ouvrent.
-  const [panneauOuvert, setPanneauOuvert] = useState(false);
   // Consigne d'arrivée écartée pour la session : première fiche, premier outil, première recherche ou fermeture (P1).
-  const [consigneEcartee, setConsigneEcartee] = useState(false);
-  const [volet, setVolet] = useState<Volet | null>(null);
   const [outil, setOutil] = useState<OutilCarte>("navigation");
   // Terrain haute résolution (TER-05) : état gardé par la page, les couches restent affichées panneau fermé.
   const terrain = useTerrain(() => moteur.current?.emprise() ?? null);
@@ -135,16 +139,11 @@ export function PageGeoData() {
   // Panneaux de la mini-barre (D-GD-38) : recherche (loupe), fil de navigation administrative (≡) et fonds — un seul
   // ouvert à la fois ; en ouvrir un referme l'autre sans perdre son état (texte de recherche, fil à jour). État de la page :
   // conservé quand on change d'onglet (la carte reste montée).
-  const [panneauMini, setPanneauMini] = useState<"recherche" | "navigation" | "fonds" | null>(null);
   const rechercheOuverte = panneauMini === "recherche";
-  const [placementOutils, setPlacementOutils] = useState<PlacementOutils | null>(null);
   const basculerPanneauMini = (q: "recherche" | "navigation" | "fonds", ouvert: boolean) => setPanneauMini((a) => (ouvert ? q : a === q ? null : a));
   const basculerRecherche = (ouverte: boolean) => { basculerPanneauMini("recherche", ouverte); if (!ouverte) { setResultats(null); setAvisRecherche(null); } };
-  const [annonce, setAnnonce] = useState("");
-  const [menuOuvert, setMenuOuvert] = useState(false);
   // Menu ☰ : rubrique « Cartes » dépliée (Mes cartes, Collection, Fournisseurs) ; panneau Collection et son mode ;
   // « Enregistrer sous » de Mes cartes (D-GD-36).
-  const [menuCartes, setMenuCartes] = useState(false);
   const [modeCollection, setModeCollection] = useState<ModeCollection>("ouverte");
   const [enregistrerSousCarte, setEnregistrerSousCarte] = useState(false);
   const collection = useCollection();
@@ -202,7 +201,6 @@ export function PageGeoData() {
   const [etatsCouches, setEtatsCouches] = useState<ReadonlyMap<string, EtatCouche>>(new Map());
   const [nombresVus, setNombresVus] = useState<ReadonlyMap<string, number>>(new Map());
   // Pastilles de thème (D-GD-48) : bande repliable, état mémorisé dans ce navigateur (simple confort).
-  const [pastillesOuvertes, setPastillesOuvertes] = useState(() => lireLocal("geodata.pastilles") !== "0");
   const [vues, setVues] = useState<Map<string, { cle: string; etat: "chargement" | "ok" | "erreur"; codes: string[]; total: number; tronque: boolean; erreur?: string }>>(new Map());
   const conteneurMini = useRef<HTMLDivElement>(null);
 
@@ -871,40 +869,44 @@ export function PageGeoData() {
   // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
   const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
   raccourcisNiveaux.current = (e) => {
-    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); const refus = refusImpressionFiche(fiche); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
+    // Table unique des raccourcis (P3, `raccourcis.ts`) : la commande d'une touche dépend du contexte, jamais d'une cascade.
     const cible = e.target as HTMLElement | null;
-    const saisie = !!cible?.closest("input, select, textarea, [contenteditable='true']");
-    // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).
-    if (e.altKey && (e.key === "m" || e.key === "M" || e.code === "KeyM") && !saisie && !erreurCarte) { e.preventDefault(); basculerMiniCarte(); return; }
-    if (e.altKey && (e.key === "i" || e.key === "I" || e.code === "KeyI") && !saisie && !erreurCarte) { e.preventDefault(); imprimerCarte(); return; }
-    // Alt+R : barre de recherche de la carte ouverte ou fermée (loupe de la mini-barre) ; aussi depuis son propre champ.
-    if (e.altKey && (e.key === "r" || e.key === "R" || e.code === "KeyR") && (!saisie || !!cible?.closest("[data-gd-recherche-flottante]"))) { e.preventDefault(); basculerRecherche(!rechercheOuverte); return; }
-    // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
-    if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
-    // Lecture de l'emprise (D-GD-40) : Alt+V synthèse de la vue, Alt+G regroupement des points, Alt+K adresse de la vue.
-    if (e.altKey && (e.key === "v" || e.key === "V" || e.code === "KeyV") && !saisie && !erreurCarte) { e.preventDefault(); basculerSynthese(); return; }
-    if (e.altKey && (e.key === "g" || e.key === "G" || e.code === "KeyG") && !saisie && !erreurCarte) { e.preventDefault(); basculerRegroupements(); return; }
-    if (e.altKey && (e.key === "k" || e.key === "K" || e.code === "KeyK") && !saisie) { e.preventDefault(); void copierLien(); return; }
-    // Barre du bas (D-GD-52) : Alt+X carte seule, Alt+C panneau Couches, Alt+E enregistrer.
-    if (e.altKey && (e.key === "x" || e.key === "X" || e.code === "KeyX") && !saisie) { e.preventDefault(); afficherCarteSeule(); return; }
-    if (e.altKey && (e.key === "c" || e.key === "C" || e.code === "KeyC") && !saisie) { e.preventDefault(); basculerCouches(); return; }
-    if (e.altKey && (e.key === "e" || e.key === "E" || e.code === "KeyE") && !saisie) { e.preventDefault(); if (!enregistrementImpossible) void enregistrer(); return; }
-    // Alt+T : bande des pastilles de thème repliée ou affichée (D-GD-48).
-    if (e.altKey && (e.key === "t" || e.key === "T" || e.code === "KeyT") && !saisie) { e.preventDefault(); basculerPastilles(); return; }
-    // Alt+S : vue plan ↔ vue satellite (D-GD-46).
-    if (e.altKey && (e.key === "s" || e.key === "S" || e.code === "KeyS") && !saisie && !erreurCarte) { e.preventDefault(); basculerPlanSatellite(); return; }
-    // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
-    if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
-    // Terrain haute résolution (TER-05) : Alt+H panneau Terrain, Alt+O altitude au point, Alt+U profil du terrain.
-    // Alt+J : volet « Emplacements Projets » (bouton du bas de la mini-barre).
-    if (e.altKey && (e.key === "j" || e.key === "J" || e.code === "KeyJ") && !saisie) { e.preventDefault(); basculerEmplacements(); return; }
-    if (e.altKey && (e.key === "h" || e.key === "H" || e.code === "KeyH") && !saisie) { e.preventDefault(); basculerTerrain(); return; }
-    if (e.altKey && (e.key === "o" || e.key === "O" || e.code === "KeyO") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("altitude"); return; }
-    if (e.altKey && (e.key === "u" || e.key === "U" || e.code === "KeyU") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("profil"); return; }
-    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-    if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
-    if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
-    if (e.key === "ArrowDown" && volet === "fiche" && fiche && descentePossible(fiche)) { e.preventDefault(); descendre(fiche); }
+    const commande = commandeDeTouche(e, {
+      saisie: !!cible?.closest("input, select, textarea, [contenteditable='true']"),
+      dansRecherche: !!cible?.closest("[data-gd-recherche-flottante]"),
+      carteDisponible: !erreurCarte,
+      ficheOuverte: volet === "fiche" && !!fiche,
+      niveauChoisi: chemin.length > 0,
+      descentePossible: volet === "fiche" && !!fiche && !!descentePossible(fiche),
+    });
+    if (!commande) return;
+    e.preventDefault();
+    const actions: Record<CommandeClavier, () => void> = {
+      "imprimer-fiche": () => { const refus = refusImpressionFiche(fiche!); if (refus) setAnnonce(refus); else if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); },
+      "mini-carte": basculerMiniCarte,
+      imprimer: imprimerCarte,
+      recherche: () => basculerRecherche(!rechercheOuverte),
+      libelles: basculerLibelles,
+      synthese: basculerSynthese,
+      regrouper: basculerRegroupements,
+      lien: () => void copierLien(),
+      "carte-seule": afficherCarteSeule,
+      couches: basculerCouches,
+      enregistrer: () => { if (!enregistrementImpossible) void enregistrer(); },
+      pastilles: basculerPastilles,
+      "plan-satellite": basculerPlanSatellite,
+      zone: basculerFiltreZone,
+      emplacements: basculerEmplacements,
+      terrain: basculerTerrain,
+      altitude: () => basculerOutilTerrain("altitude"),
+      profil: () => basculerOutilTerrain("profil"),
+      remonter,
+      descendre: () => descendre(fiche!),
+      "groupe-mesurer": () => setGroupeOutils((g) => (g === "mesurer" ? null : "mesurer")),
+      "groupe-affichage": () => setGroupeOutils((g) => (g === "affichage" ? null : "affichage")),
+      "aide-raccourcis": () => setAideRaccourcis(true),
+    };
+    actions[commande]();
   };
   useEffect(() => {
     const ecouter = (e: globalThis.KeyboardEvent) => raccourcisNiveaux.current(e);
@@ -934,10 +936,12 @@ export function PageGeoData() {
     const presentes = new Set(composition.couches.map((k) => k.coucheId));
     if ([...indicateursMasques].some((id) => !presentes.has(id))) setIndicateursMasques(new Set([...indicateursMasques].filter((id) => presentes.has(id))));
   }, [composition, indicateursMasques]);
-  const ouvrirVolet = (v: Volet) => { setVolet(volet === v ? null : v); if (estTelephone()) setPanneauOuvert(false); };
-  const ouvrirOnglet = (o: Onglet) => { setOnglet(o); setPanneauOuvert(true); if (estTelephone()) setVolet(null); };
+  /** Applique une transition pure des panneaux (P4, `etat/panneaux-ops.ts`). */
+  const panneaux = (f: (e: EtatPanneaux) => EtatPanneaux) => { const e = f({ onglet, panneauOuvert, volet }); setOnglet(e.onglet); setPanneauOuvert(e.panneauOuvert); setVolet(e.volet); };
+  const ouvrirVolet = (v: Volet) => panneaux((e) => basculerVolet(e, v, estTelephone()));
+  const ouvrirOnglet = (o: Onglet) => panneaux((e) => ouvrirOngletPur(e, o, estTelephone()));
   // Bouton « Données » (sur la carte et dans le menu) : ouvre le catalogue rangé par catégorie, ou referme le panneau.
-  const basculerDonnees = () => { if (panneauOuvert && onglet === "catalogue") setPanneauOuvert(false); else ouvrirOnglet("catalogue"); };
+  const basculerDonnees = () => panneaux((e) => basculerOnglet(e, "catalogue", estTelephone()));
   const basculerLibelles = () => {
     const avant = etiquettesToutesAffichees(composition, vectorielles);
     if (!composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId))) return;
@@ -945,9 +949,9 @@ export function PageGeoData() {
     setAnnonce(avant ? "Libellés masqués" : "Libellés affichés");
   };
   /** Barre du bas (D-GD-52) : carte seule (panneaux et recherche fermés), panneau Couches ouvert ou refermé. */
-  const afficherCarteSeule = () => { setPanneauOuvert(false); setVolet(null); basculerRecherche(false); };
-  const basculerCouches = () => { if (panneauOuvert && onglet === "couches") setPanneauOuvert(false); else ouvrirOnglet("couches"); };
-  const basculerLegende = () => { if (panneauOuvert && onglet === "legende") setPanneauOuvert(false); else ouvrirOnglet("legende"); };
+  const afficherCarteSeule = () => { panneaux(carteSeule); basculerRecherche(false); };
+  const basculerCouches = () => panneaux((e) => basculerOnglet(e, "couches", estTelephone()));
+  const basculerLegende = () => panneaux((e) => basculerOnglet(e, "legende", estTelephone()));
   const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setConsigneEcartee(true); setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
   const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outil === "altitude" || outil === "profil") setOutil("navigation"); } else afficherVolet("terrain"); };
@@ -1096,11 +1100,13 @@ export function PageGeoData() {
 
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
-      if (outil !== "navigation" && trace) { moteur.current?.annulerTrace(); setTrace(null); e.stopPropagation(); }
-      else if (menuOuvert) setMenuOuvert(false);
-      else if (resultats) setResultats(null);
-      else if (panneauMini) setPanneauMini(null);
-      else if (volet && estTelephone()) setVolet(null);
+      // Ordre de fermeture par Échap (P4, `cibleEchap`) : tracé, menu, résultats, panneau de la mini-barre, volet (téléphone).
+      const cible = cibleEchap({ traceEnCours: outil !== "navigation" && !!trace, menuOuvert, resultats: !!resultats, panneauMini: !!panneauMini, volet: !!volet, telephone: estTelephone() });
+      if (cible === "trace") { moteur.current?.annulerTrace(); setTrace(null); e.stopPropagation(); }
+      else if (cible === "menu") setMenuOuvert(false);
+      else if (cible === "resultats") setResultats(null);
+      else if (cible === "panneau-mini") setPanneauMini(null);
+      else if (cible === "volet") setVolet(null);
     }
     if (e.key === "Enter" && outil !== "navigation" && outil !== "annotation" && outil !== "altitude" && (e.target as HTMLElement).classList.contains("maplibregl-canvas")) moteur.current?.terminerTrace();
   };
@@ -1194,6 +1200,7 @@ export function PageGeoData() {
             miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
             synthese={syntheseOuverte} onSynthese={basculerSynthese} onCopierLien={() => void copierLien()}
             regroupement={composition.couches.some((k) => k.visible && couchesPoints.has(k.coucheId)) ? regroupementsTousActifs(composition, couchesPoints) : null} onRegroupement={basculerRegroupements}
+            groupe={groupeOutils} onGroupe={setGroupeOutils} onAide={() => setAideRaccourcis(true)}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende}
             onPlacement={(r) => setPlacementOutils((a) => (a && a.droite === r.droite && a.haut === r.haut && a.largeur === r.largeur && a.hauteur === r.hauteur ? a : r))} />
           <BarreRecherche outils={placementOutils} ouverte={rechercheOuverte} onBasculer={basculerRecherche} texte={recherche} onTexte={setRecherche} onLancer={() => void lancerRecherche()}
@@ -1219,6 +1226,7 @@ export function PageGeoData() {
           {consigne && <ConsigneAccueil contour={coucheArrivee && niveauArrivee ? { niveau: niveauArrivee.pluriel, pays: paysListe?.find((x) => x.code === paysCourant)?.nom ?? paysCourant ?? "" } : null}
             decalee={panneauOuvert} onFermer={() => setConsigneEcartee(true)}
             onCatalogue={() => { setConsigneEcartee(true); ouvrirOnglet("catalogue"); }} onChercher={() => { setConsigneEcartee(true); basculerRecherche(true); }} />}
+          {aideRaccourcis && <AideRaccourcis onFermer={() => setAideRaccourcis(false)} />}
           {etatMoteur.cas === "chargement" && etatMoteur.animation && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisCouches.size > 0 && <div role="status" className="gd-sur-carte gd-alerte gd-avis-couches" data-gd-avis-couches={[...avisCouches.keys()].join(" ")}>
             <p>Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.</p>

@@ -30,7 +30,9 @@ export const ICONES_TERRAIN = {
   /** Profil du terrain : coupe sur deux axes. */
   profil: "M3 3v18h18M6 16l4-6 3 3 3-5 4 4",
 } as const;
-export const RACCOURCIS_TERRAIN = { terrain: "Alt+H", altitude: "Alt+O", profil: "Alt+U" } as const;
+/** Dérivée de la table unique des raccourcis (P3). */
+export { RACCOURCIS_TERRAIN } from "../raccourcis";
+import { RACCOURCIS_TERRAIN } from "../raccourcis";
 
 /**
  * Bouton « Terrain » de la carte, à côté de « Données » : la barre d'outils verticale garde ses seize outils (au-delà, elle
