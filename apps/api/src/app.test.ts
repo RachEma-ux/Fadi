@@ -3236,6 +3236,38 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         for (const corps of [{}, { installee: "oui" }, { installee: true, autre: 1 }]) expect((await user.a.put("/sandbox/preferences/extensions/essai-commandes").send(corps)).status).toBe(400);
       });
 
+      it("protocole 1.2 : un fichier ouvert par une extension installée est archivé tel quel, une fois ; jamais vu d'un autre compte", async () => {
+        const boss = await admin();
+        expect((await boss.a.post("/admin/addons/paquets?installee=non").send(paquet())).status).toBe(201);
+        const user = await account("fichiers-archives");
+        const corps = { extension: "essai-commandes", nom: "regles.json", texte: '{"seuils":[]}' };
+        expect((await agent().post("/sandbox/preferences/fichiers").send(corps)).status).toBe(401);
+        // Extension ajoutée mais pas installée par ce compte, ou inconnue : 404.
+        expect((await user.a.post("/sandbox/preferences/fichiers").send(corps)).status).toBe(404);
+        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, extension: "fantome" })).status).toBe(404);
+        expect((await user.a.put("/sandbox/preferences/extensions/essai-commandes").send({ installee: true })).status).toBe(200);
+
+        const premier = await user.a.post("/sandbox/preferences/fichiers").send(corps);
+        expect(premier.status).toBe(201);
+        expect(premier.body.archive).toMatchObject({ id: expect.any(String), empreinte: expect.stringMatching(/^[0-9a-f]{64}$/), ajouteLe: expect.any(String) });
+        const encore = await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, nom: "copie.json" });
+        expect(encore.status).toBe(200);
+        expect(encore.body.archive).toEqual(premier.body.archive);
+        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, texte: "{}" })).status).toBe(201);
+
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=essai-commandes");
+        expect(liste.body.archives).toHaveLength(2);
+        const lu = await user.a.get(`/sandbox/preferences/fichiers/${premier.body.archive.id}`);
+        expect(lu.body).toMatchObject({ nom: "regles.json", texte: corps.texte, extension: "essai-commandes", version: "1.0.0" });
+
+        const autre = await account("fichiers-archives-autre");
+        expect((await autre.a.get(`/sandbox/preferences/fichiers/${premier.body.archive.id}`)).status).toBe(404);
+        expect((await autre.a.get("/sandbox/preferences/fichiers")).body.archives).toEqual([]);
+
+        for (const mauvais of [{}, { ...corps, nom: "../x.json" }, { ...corps, texte: 3 }, { ...corps, autre: 1 }]) expect((await user.a.post("/sandbox/preferences/fichiers").send(mauvais)).status).toBe(400);
+        expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, texte: "x".repeat(200_001) })).status).toBe(413);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

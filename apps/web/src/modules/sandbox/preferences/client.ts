@@ -2,13 +2,15 @@
  * Client minimal des préférences d'outils du Sandbox (lot 5) : les seules requêtes serveur du Sandbox, sur la session
  * du compte — `GET` et `PUT /sandbox/preferences`, et (protocole des extensions, lot 3) `GET
  * /sandbox/preferences/extensions`, la liste des extensions installées sur la plateforme. Le test d'indépendance
- * n'autorise que ce fichier à appeler le serveur, et seulement ces deux adresses ; le client API général de Fadi n'est
- * jamais importé.
+ * n'autorise que ce fichier à appeler le serveur, et seulement ces adresses ; le client API général de Fadi n'est
+ * jamais importé. Protocole des extensions 1.2 : `POST /sandbox/preferences/fichiers` range tel quel en base un fichier
+ * de données ouvert par une extension (table de règles, bibliothèque de types).
  */
-import { lireCatalogue, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
+import { lireArchiveFichier, lireCatalogue, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type FichierLu, type IssueArchive, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 
 export const ADRESSE_PREFERENCES = "/sandbox/preferences";
 export const ADRESSE_EXTENSIONS = "/sandbox/preferences/extensions";
+export const ADRESSE_FICHIERS = "/sandbox/preferences/fichiers";
 
 export interface PreferencesRecues {
   readonly preferences: PreferencesSandbox;
@@ -58,4 +60,23 @@ export async function lireExtensionsServeur(): Promise<readonly PaquetExtension[
   }
   if (!r.ok) throw new ErreurPreferences(r.status);
   return lirePaquetsInstalles(((await r.json()) as { extensions?: unknown }).extensions);
+}
+
+/**
+ * (Protocole 1.2) Archive tel quel en base le fichier qu'une extension vient d'ouvrir. Jamais d'exception : un refus
+ * rend son motif, que l'extension montre (connexion absente, extension inconnue de la plateforme, fichier trop lourd).
+ */
+export async function archiverFichierExtension(extension: string, fichier: FichierLu): Promise<IssueArchive> {
+  let r: Response;
+  try {
+    r = await fetch(ADRESSE_FICHIERS, { method: "POST", credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ extension, nom: fichier.nom, texte: fichier.texte }) });
+  } catch {
+    return { ok: false, motif: "réseau indisponible" };
+  }
+  if (r.status === 401) return { ok: false, motif: "connexion requise" };
+  if (r.status === 404) return { ok: false, motif: "extension inconnue de la plateforme" };
+  if (r.status === 413) return { ok: false, motif: "fichier trop lourd" };
+  if (!r.ok) return { ok: false, motif: `réponse ${r.status} du serveur` };
+  const archive = lireArchiveFichier(((await r.json().catch(() => null)) as { archive?: unknown } | null)?.archive);
+  return archive ? { ok: true, archive } : { ok: false, motif: "réponse du serveur illisible" };
 }

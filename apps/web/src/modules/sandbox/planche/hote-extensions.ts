@@ -16,6 +16,10 @@
  *    `saisir`) ; pendant qu'une fenêtre de saisie est ouverte, le délai de la commande est suspendu — le temps de
  *    l'utilisateur n'est pas celui de l'extension. La fin de l'appel, quelle qu'elle soit, referme la fenêtre.
  *
+ *  - protocole 1.2 : archivage. Un fichier ouvert avec `archiver: true` est confié à `archiver` (la Planche le range
+ *    tel quel en base) avant d'être rendu ; le délai reste suspendu pendant l'envoi. L'extension reçoit l'archive, ou
+ *    son absence avec le motif, et ne parle jamais au serveur elle-même.
+ *
  *  - lot 4 : panneau (permission « panneau »). L'extension envoie des données à la page de son panneau ou l'ouvre ;
  *    une action de la page est une demande comme une commande (`appeler("demande", "panneau.<id>.<action>", …)`).
  *
@@ -23,7 +27,7 @@
  */
 import {
   BORNES_EXTENSION, BORNES_MINUTERIE, BORNES_SAISIE, MAX_LIGNES_JOURNAL, MAX_LONGUEUR_LIGNE_JOURNAL, BORNES_FICHIER, creerReserveFichiers, creerServicesExtension, demandeProtocole, evenementProtocole, jugerDemandeExtension,
-  lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireEnvoiPanneau, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie,
+  lireAvisExtension, lireDelaiMinuterie, lireDemandeEnregistrement, lireDemandeOuverture, lireDemandeSaisie, lireEnvoiPanneau, fichierArchive, lireFichierChoisi, lireMessageProtocole, refusProtocole, reponseProtocole, type AccesPlanche, type AvisExtension, type DemandeEnregistrement, type DemandeOuverture, type DemandeSaisie, type FichierLu, type IssueArchive,
   type ErreurDemarrageExtension, type ErreurProtocole, type MessageProtocole, type PaquetExtension, type ValeursSaisie,
 } from "@parcours/sandbox-planche-model";
 import type { DemarrageExtension, DemarrageRendu } from "./extension-planche.worker";
@@ -90,6 +94,8 @@ export interface OptionsHoteExtension {
   readonly fichiers?: {
     readonly ouvrir: (demande: DemandeOuverture) => { readonly reponse: Promise<unknown>; readonly fermer: () => void };
     readonly enregistrer: (demande: DemandeEnregistrement) => { readonly reponse: Promise<boolean>; readonly fermer: () => void };
+    /** (1.2) Range tel quel en base le fichier choisi ; absent : l'extension reçoit `archive: null` et son motif. */
+    readonly archiver?: (fichier: FichierLu) => Promise<IssueArchive>;
   };
   /**
    * Panneau (lot 4, permission « panneau ») : `envoyer` remet des données à la page du panneau et rend faux s'il n'est
@@ -196,13 +202,20 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     }
     if (saisie) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", "fichiers : une fenêtre est déjà ouverte"));
     let ouverte: { readonly reponse: Promise<unknown>; readonly fermer: () => void };
-    let rendre: (valeur: unknown) => MessageProtocole;
+    let rendre: (valeur: unknown) => MessageProtocole | Promise<MessageProtocole>;
     if (m.nom === "fichiers.ouvrir") {
       const lu = lireDemandeOuverture(m.donnees);
       if (!lu.ok) return void w?.postMessage(refusProtocole(m.id, "argument_invalide", lu.detail));
       rendre = (valeur) => {
         const fichier = lireFichierChoisi(valeur, lu.demande);
         if (!fichier.ok) return refusProtocole(m.id, "argument_invalide", fichier.detail);
+        if (lu.demande.archiver && fichier.fichier) {
+          // (1.2) Archivé tel quel avant d'être rendu ; un envoi qui échoue rend le motif, jamais une exception.
+          const f = fichier.fichier;
+          const archiver = o.fichiers?.archiver;
+          if (!archiver) return reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage indisponible dans cette Planche" }));
+          return archiver(f).then((issue) => reponseProtocole(m.id, fichierArchive(f, issue)), () => reponseProtocole(m.id, fichierArchive(f, { ok: false, motif: "archivage impossible" })));
+        }
         if (!lu.demande.flux || !fichier.fichier) return reponseProtocole(m.id, fichier.fichier);
         // En flux, l'extension reçoit un jeton : le texte reste ici jusqu'à la fin de l'appel.
         const retenu = reserve.retenir(fichier.fichier);
@@ -221,12 +234,15 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
     void ouverte.reponse.then(
       (valeur) => valeur,
       () => null,
-    ).then((valeur) => {
+    ).then(async (valeur) => {
+      if (saisie !== ouverte) return;
+      // (1.2) Pendant l'archivage, l'appel reste suspendu et la fenêtre comptée comme ouverte.
+      const message = await rendre(valeur);
       if (saisie !== ouverte) return;
       saisie = null;
       if (enCours !== appel) return;
       appel.reprendre();
-      w?.postMessage(rendre(valeur));
+      w?.postMessage(message);
     });
   };
 

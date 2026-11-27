@@ -21,6 +21,10 @@
  *   PUT /extensions/:id { installee: booléen } → { paquets } ; extension inconnue → 404 ; corps invalide → 400. Le
  *            choix est rangé à part (`packages`) : la Planche, qui réécrit `extensions` en entier, n'y touche pas.
  *
+ *   POST /fichiers, GET /fichiers, GET /fichiers/:id — protocole des extensions 1.2 : fichiers de données ouverts
+ *            par une extension (table de règles, bibliothèque de types), archivés tels quels en base
+ *            (`sandbox_fichiers_extensions`, voir plus bas).
+ *
  * Réservées au compte connecté (401 sinon) ; personnelles, les mêmes sur tous ses appareils ; aucune donnée de projet
  * ni de dessin (le brouillon du Sandbox reste dans le navigateur). Seules routes serveur du Sandbox.
  */
@@ -34,6 +38,7 @@ import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
 import { basculerPaquet, lireChoixPaquets, type ChoixPaquets } from "@parcours/sandbox-planche-model";
 import { fichesComptePaquets, paquetsDuCompte } from "../lib/addon-paquets.js";
 import { lireLignesPaquets } from "../lib/addon-paquets-lecture.js";
+import { archiverFichierExtension, BORNES_ARCHIVE, estNomArchive, lireArchive, listerArchives } from "../lib/sandbox-fichiers.js";
 
 export const sandboxPreferencesRouter = Router();
 sandboxPreferencesRouter.use(requireAuth);
@@ -71,6 +76,39 @@ sandboxPreferencesRouter.put("/extensions/:id", async (req, res) => {
   await db.insert(sandboxToolPreferences).values({ userId: req.user!.id, packages: { ...choix } })
     .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: { packages: { ...choix }, updatedAt: new Date() } });
   res.json({ paquets: fichesComptePaquets(lignes, choix) });
+});
+
+/**
+ * Protocole des extensions 1.2 (27 novembre 2026) — fichiers de données ouverts par une extension, archivés tels quels :
+ *   POST /fichiers { extension, nom, texte } → 201 { archive } (200 si ce même fichier était déjà rangé) ; extension
+ *        que le compte n'a pas installée → 404 ; forme invalide → 400 ; texte de plus de 200 000 caractères → 413.
+ *   GET  /fichiers[?extension=…] → { archives: [{ id, extension, version, nom, taille, empreinte, ajouteLe }] }
+ *   GET  /fichiers/:id → l'archive et son `texte` tel qu'il a été rangé ; 404 si elle n'est pas au compte.
+ */
+sandboxPreferencesRouter.post("/fichiers", async (req, res) => {
+  const corps = req.body as Record<string, unknown> | null;
+  const { extension, nom, texte } = corps ?? {};
+  if (!corps || typeof corps !== "object" || Object.keys(corps).some((k) => !["extension", "nom", "texte"].includes(k)) || typeof extension !== "string" || !/^[a-z0-9-]{1,40}$/.test(extension) || !estNomArchive(nom) || typeof texte !== "string") {
+    return void res.status(400).json({ error: "invalid_input", detail: `{ extension, nom (${BORNES_ARCHIVE.nom} caractères au plus, sans chemin), texte }` });
+  }
+  if (texte.length > BORNES_ARCHIVE.texte) return void res.status(413).json({ error: "too_large", detail: `${BORNES_ARCHIVE.texte} caractères au plus` });
+  // Seule une extension que ce compte a installée peut faire archiver ; sa version est gardée avec le fichier.
+  const paquet = paquetsDuCompte(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)).find((p) => p.fiche.id === extension);
+  if (!paquet) return void res.status(404).json({ error: "not_found" });
+  const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, paquet.fiche.version, nom, texte);
+  res.status(deja ? 200 : 201).json({ archive });
+});
+
+sandboxPreferencesRouter.get("/fichiers", async (req, res) => {
+  const extension = req.query["extension"];
+  if (extension !== undefined && (typeof extension !== "string" || !/^[a-z0-9-]{1,40}$/.test(extension))) return void res.status(400).json({ error: "invalid_input" });
+  res.json({ archives: await listerArchives(req.user!.id, typeof extension === "string" ? extension : null) });
+});
+
+sandboxPreferencesRouter.get("/fichiers/:id", async (req, res) => {
+  const archive = await lireArchive(req.user!.id, String(req.params["id"]));
+  if (!archive) return void res.status(404).json({ error: "not_found" });
+  res.json(archive);
 });
 
 sandboxPreferencesRouter.put("/", async (req, res) => {

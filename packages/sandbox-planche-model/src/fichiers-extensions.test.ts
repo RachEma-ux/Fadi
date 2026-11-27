@@ -1,6 +1,6 @@
 /** Fichiers demandés par une extension (protocole 1.0, lot 7) : forme des demandes et du fichier choisi. */
 import { describe, expect, it } from "vitest";
-import { BORNES_FICHIER, TYPES_FICHIER_EXTENSION, creerReserveFichiers, estNomDeFichier, lireDemandeEnregistrement, lireDemandeOuverture, lireFichierChoisi, typeDeFichier } from "./fichiers-extensions.js";
+import { BORNES_FICHIER, TYPES_FICHIER_EXTENSION, creerReserveFichiers, fichierArchive, lireArchiveFichier, estNomDeFichier, lireDemandeEnregistrement, lireDemandeOuverture, lireFichierChoisi, typeDeFichier } from "./fichiers-extensions.js";
 import { DEMANDES_EXTENSION, jugerDemandeExtension } from "./protocole-extensions.js";
 
 describe("fichiers d'une extension", () => {
@@ -82,5 +82,38 @@ describe("fichiers en flux (protocole 1.1)", () => {
   it("le type .svg est admis (plan masse en image vectorielle) ; une page ou un programme ne l'est jamais", () => {
     expect(estNomDeFichier("plan masse.svg")).toBe(true);
     for (const nom of ["page.html", "outil.js", "x.htm"]) expect(estNomDeFichier(nom)).toBe(false);
+  });
+});
+
+describe("fichiers archivés en base (protocole 1.2)", () => {
+  const EMPREINTE = "a".repeat(64);
+
+  it("ouvrir avec archivage : un fichier de 200 000 caractères au plus, jamais en flux", () => {
+    expect(lireDemandeOuverture({ types: [".json"], archiver: true })).toEqual({ ok: true, demande: { types: [".json"], archiver: true } });
+    expect(lireDemandeOuverture({ archiver: false })).toEqual({ ok: true, demande: { types: TYPES_FICHIER_EXTENSION } });
+    expect(lireDemandeOuverture({ archiver: "oui" }).ok).toBe(false);
+    expect(lireDemandeOuverture({ archiver: true, flux: true }).ok).toBe(false);
+    const demande = { types: [".json" as const], archiver: true };
+    expect(lireFichierChoisi({ nom: "regles.json", texte: "x".repeat(BORNES_FICHIER.archive) }, demande).ok).toBe(true);
+    expect(lireFichierChoisi({ nom: "regles.json", texte: "x".repeat(BORNES_FICHIER.archive + 1) }, demande).ok).toBe(false);
+  });
+
+  it("archive lue : identifiant, empreinte SHA-256 et date ; toute autre forme est refusée", () => {
+    const bonne = { id: "sbxfic_1", empreinte: EMPREINTE, ajouteLe: "2026-11-27T12:00:00.000Z" };
+    expect(lireArchiveFichier(bonne)).toEqual(bonne);
+    expect(lireArchiveFichier({ ...bonne, empreinte: "A".repeat(64) })).toBeNull();
+    expect(lireArchiveFichier({ ...bonne, empreinte: "a".repeat(63) })).toBeNull();
+    expect(lireArchiveFichier({ ...bonne, id: "" })).toBeNull();
+    expect(lireArchiveFichier({ ...bonne, ajouteLe: "hier" })).toBeNull();
+    expect(lireArchiveFichier(null)).toBeNull();
+  });
+
+  it("fichier rendu : avec son archive, ou sans elle avec le motif du refus (borné)", () => {
+    const f = { nom: "regles.json", texte: "{}" };
+    const archive = { id: "sbxfic_1", empreinte: EMPREINTE, ajouteLe: "2026-11-27T12:00:00.000Z" };
+    expect(fichierArchive(f, { ok: true, archive })).toEqual({ ...f, archive });
+    expect(fichierArchive(f, { ok: false, motif: "réseau indisponible" })).toEqual({ ...f, archive: null, archiveRefus: "réseau indisponible" });
+    expect(fichierArchive(f, { ok: false, motif: "" }).archiveRefus).toBe("archivage impossible");
+    expect(fichierArchive(f, { ok: false, motif: "x".repeat(500) }).archiveRefus).toHaveLength(200);
   });
 });

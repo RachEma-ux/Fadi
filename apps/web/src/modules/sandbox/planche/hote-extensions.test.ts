@@ -204,7 +204,7 @@ describe("hôte d'une extension — l'extension d'essai du socle", () => {
     const h = creerHoteExtension(ESSAI, { creer });
     expect(await h.appeler("demande", "commande.compter")).toEqual({ genre: "fini", resultat: "fait" });
     await new Promise((r) => setTimeout(r, 5));
-    expect(recus).toEqual([{ protocole: "1.1", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
+    expect(recus).toEqual([{ protocole: "1.2", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
   });
 });
 
@@ -563,6 +563,37 @@ planche.sur("modele.change", () => essayer(() => planche.fichiers.ouvrir()).then
     const nue = creerHoteExtension(avecCode(code, [...PERMISSIONS]), { creer: faux().creer });
     expect(await nue.appeler("demande", "commande.ouvrir")).toMatchObject({ genre: "fini", resultat: "demande_inconnue : fichiers.ouvrir" });
     nue.arreter();
+  });
+});
+
+describe("fichiers archivés en base (protocole 1.2)", () => {
+  const essayer = 'async (f) => { try { return await f(); } catch (e) { return e.name + " : " + e.message; } }';
+  const code = `const essayer = ${essayer};
+planche.sur("commande.regles", () => essayer(() => planche.fichiers.ouvrir([".json"], { archiver: true })));
+planche.sur("commande.flux", () => essayer(() => planche.fichiers.ouvrir([".json"], { archiver: true, flux: true })));`;
+  const ARCHIVE = { id: "sbxfic_1", empreinte: "b".repeat(64), ajouteLe: "2026-11-27T12:00:00.000Z" };
+  const choisir = (v: unknown) => ({ ouvrir: (demande: unknown) => ({ reponse: Promise.resolve(v) as Promise<never>, fermer: () => void demande }), enregistrer: () => ({ reponse: Promise.resolve(false) as Promise<never>, fermer: () => {} }) });
+
+  it("le fichier choisi est archivé avant d'être rendu : l'extension reçoit son archive", async () => {
+    const recus: unknown[] = [];
+    const fichiers = { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: async (f: unknown) => (recus.push(f), { ok: true as const, archive: ARCHIVE }) };
+    const h = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers });
+    expect(await h.appeler("demande", "commande.regles")).toEqual({ genre: "fini", resultat: { nom: "regles.json", texte: "{}", archive: ARCHIVE } });
+    expect(recus).toEqual([{ nom: "regles.json", texte: "{}" }]);
+    h.arreter();
+  });
+
+  it("archivage refusé ou impossible : le fichier arrive sans archive, avec le motif ; jamais en flux", async () => {
+    const refus = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: async () => ({ ok: false as const, motif: "connexion requise" }) } });
+    expect(await refus.appeler("demande", "commande.regles")).toEqual({ genre: "fini", resultat: { nom: "regles.json", texte: "{}", archive: null, archiveRefus: "connexion requise" } });
+    refus.arreter();
+    const panne = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: { ...choisir({ nom: "regles.json", texte: "{}" }), archiver: () => Promise.reject(new Error("x")) } });
+    expect(await panne.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "archivage impossible" } });
+    expect(await panne.appeler("demande", "commande.flux")).toMatchObject({ genre: "fini", resultat: expect.stringMatching(/^argument_invalide : archiver : pas en flux/) });
+    panne.arreter();
+    const sans = creerHoteExtension(avecCode(code, ["fichiers"]), { creer: faux().creer, fichiers: choisir({ nom: "regles.json", texte: "{}" }) });
+    expect(await sans.appeler("demande", "commande.regles")).toMatchObject({ genre: "fini", resultat: { archive: null, archiveRefus: "archivage indisponible dans cette Planche" } });
+    sans.arreter();
   });
 });
 

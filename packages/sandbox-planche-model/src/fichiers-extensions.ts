@@ -18,6 +18,14 @@
  *   fichiers.enregistrer { nom, jeton }           propose d'enregistrer le fichier préparé
  * Un jeton ne vaut que pendant la commande qui l'a obtenu ; la Planche oublie le texte à la fin de la commande.
  * Fichier en flux : 50 000 000 caractères au plus. Le type .svg est admis (plan masse en image vectorielle).
+ *
+ * Protocole 1.2 — archivage en base (règle « interface ≠ base de données », décision du maître d'ouvrage du
+ * 27 novembre 2026) : un fichier de données (table de règles, bibliothèque de types) est archivé tel quel en base.
+ *   fichiers.ouvrir     { types?, archiver: true } rend { nom, texte, archive } : `archive` = { id, empreinte, ajouteLe }
+ *                                                  du fichier rangé tel quel en base (empreinte SHA-256), ou `null` avec
+ *                                                  `archiveRefus` (motif) si la Planche n'a pas pu l'archiver.
+ * La Planche archive elle-même le texte choisi par l'utilisateur ; l'extension ne parle jamais au serveur. Pas en flux :
+ * un fichier archivé tient en 200 000 caractères.
  */
 
 /** Types de fichier texte admis, à l'ouverture comme à l'enregistrement. */
@@ -27,13 +35,15 @@ export type TypeFichierExtension = (typeof TYPES_FICHIER_EXTENSION)[number];
  * `caracteres` : fichier rendu d'un coup (1.0) ; `flux` : fichier lu ou écrit par morceaux (1.1) ; `morceau` : un
  * morceau ; `jetons` : fichiers en flux tenus à la fois par une commande.
  */
-export const BORNES_FICHIER = { caracteres: 1_000_000, nom: 80, flux: 50_000_000, morceau: 500_000, jetons: 4 } as const;
+export const BORNES_FICHIER = { caracteres: 1_000_000, nom: 80, flux: 50_000_000, morceau: 500_000, jetons: 4, archive: 200_000 } as const;
 
 export interface DemandeOuverture {
   /** Types proposés à l'utilisateur ; jamais vide. */
   readonly types: readonly TypeFichierExtension[];
   /** (1.1) Lecture en flux : le texte reste dans la Planche, l'extension le lit par morceaux. */
   readonly flux?: boolean;
+  /** (1.2) Archiver le fichier tel quel en base avant de le rendre. */
+  readonly archiver?: boolean;
 }
 export interface DemandeEnregistrement {
   readonly nom: string;
@@ -42,6 +52,19 @@ export interface DemandeEnregistrement {
 export interface FichierLu {
   readonly nom: string;
   readonly texte: string;
+}
+/** (1.2) Fichier rangé tel quel en base : identifiant, empreinte SHA-256 (hexadécimale), date d'archivage (ISO). */
+export interface ArchiveFichier {
+  readonly id: string;
+  readonly empreinte: string;
+  readonly ajouteLe: string;
+}
+/** (1.2) Ce que la Planche obtient en archivant : l'archive, ou le motif du refus (connexion absente, serveur…). */
+export type IssueArchive = { readonly ok: true; readonly archive: ArchiveFichier } | { readonly ok: false; readonly motif: string };
+/** (1.2) Fichier rendu à l'extension quand elle a demandé l'archivage. */
+export interface FichierArchive extends FichierLu {
+  readonly archive: ArchiveFichier | null;
+  readonly archiveRefus?: string;
 }
 export type LectureFichier<T> = { readonly ok: true; readonly demande: T } | { readonly ok: false; readonly detail: string };
 
@@ -69,7 +92,10 @@ export function lireDemandeOuverture(v: unknown): LectureFichier<DemandeOuvertur
   const types = estObjet(v) ? v["types"] : undefined;
   const flux = estObjet(v) ? (v["flux"] ?? false) : false;
   if (typeof flux !== "boolean") return { ok: false, detail: "flux : vrai ou faux" };
-  const f = flux ? { flux: true } : {};
+  const archiver = estObjet(v) ? (v["archiver"] ?? false) : false;
+  if (typeof archiver !== "boolean") return { ok: false, detail: "archiver : vrai ou faux" };
+  if (flux && archiver) return { ok: false, detail: `archiver : pas en flux (un fichier archivé tient en ${BORNES_FICHIER.archive} caractères)` };
+  const f = flux ? { flux: true } : archiver ? { archiver: true } : {};
   if (types === undefined || types === null) return { ok: true, demande: { types: TYPES_FICHIER_EXTENSION, ...f } };
   if (!Array.isArray(types) || types.length === 0 || types.length > TYPES_FICHIER_EXTENSION.length || !types.every(estType) || new Set(types).size !== types.length) return { ok: false, detail: `types : liste sans doublon prise parmi ${LISTE}` };
   return { ok: true, demande: { types: types as TypeFichierExtension[], ...f } };
@@ -102,11 +128,25 @@ export function lireFichierChoisi(v: unknown, demande: DemandeOuverture): { read
   if (!estObjet(v) || typeof v["nom"] !== "string" || typeof v["texte"] !== "string") return { ok: false, detail: "fichier illisible" };
   const type = typeDeFichier(v["nom"]);
   if (!type || !demande.types.includes(type)) return { ok: false, detail: `fichier d'un autre type que ${demande.types.join(", ")}` };
-  const max = demande.flux ? BORNES_FICHIER.flux : BORNES_FICHIER.caracteres;
-  if (v["texte"].length > max) return { ok: false, detail: `fichier de plus de ${max} caractères${demande.flux ? "" : " (au-delà : ouverture en flux)"}` };
+  const max = demande.flux ? BORNES_FICHIER.flux : demande.archiver ? BORNES_FICHIER.archive : BORNES_FICHIER.caracteres;
+  if (v["texte"].length > max) return { ok: false, detail: `fichier de plus de ${max} caractères${demande.flux || demande.archiver ? "" : " (au-delà : ouverture en flux)"}` };
   // Le nom rendu est le nom seul, jamais un chemin.
   const nom = v["nom"].split(/[\\/]/).pop()!.slice(-BORNES_FICHIER.nom);
   return { ok: true, fichier: { nom, texte: v["texte"] } };
+}
+
+/** (1.2) Empreinte SHA-256 en hexadécimal : 64 caractères. */
+const MOTIF_EMPREINTE = /^[0-9a-f]{64}$/;
+/** (1.2) Relit une archive rendue par le serveur avant de la remettre à l'extension ; `null` si sa forme est fausse. */
+export function lireArchiveFichier(v: unknown): ArchiveFichier | null {
+  if (!estObjet(v)) return null;
+  const { id, empreinte, ajouteLe } = v;
+  if (typeof id !== "string" || id.length < 1 || id.length > 80 || typeof empreinte !== "string" || !MOTIF_EMPREINTE.test(empreinte) || typeof ajouteLe !== "string" || Number.isNaN(Date.parse(ajouteLe))) return null;
+  return { id, empreinte, ajouteLe };
+}
+/** (1.2) Fichier rendu à l'extension : avec son archive, ou sans elle et avec le motif (borné). */
+export function fichierArchive(fichier: FichierLu, issue: IssueArchive): FichierArchive {
+  return issue.ok ? { ...fichier, archive: issue.archive } : { ...fichier, archive: null, archiveRefus: issue.motif.slice(0, 200) || "archivage impossible" };
 }
 
 // ————————————————————————————————————————————————————————————— Protocole 1.1 : fichiers en flux

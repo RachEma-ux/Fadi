@@ -254,6 +254,7 @@ import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils, titreOperation, type CommandeListe, type FamilleExtension, type LigneBarre } from "./BoutonOutils";
+import { archiverFichierExtension } from "../preferences/client";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -3088,7 +3089,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 repondre(accepte);
               },
             }),
-          ),
+          ),        // (Protocole 1.2) Fichier de données ouvert avec « archiver » : rangé tel quel en base, au nom du compte.
+        archiver: (fichier) => archiverFichierExtension(id, fichier),
       },
       saisir: (demande) => {
         const cle = ++cleExtensions.current;
