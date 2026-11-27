@@ -3790,12 +3790,12 @@ export function entitesConnectees(m: Modele, id: Id, o: OptionsContexte = {}): I
  * l'origine du contexte `o.dans`. Elle n'est jamais purgée tant qu'elle a une occurrence (seules les définitions sans
  * occurrence le sont, `Travail.fermer`).
  */
-export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string } = {}): ResultatGroupe {
+export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string; readonly description?: string } = {}): ResultatGroupe {
   const r = operer(m, o.dans, (t, c) => {
     const genre = o.genre ?? "groupe";
     const def = t.id("d");
     const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
-    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu });
+    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu, ...(o.description ? { description: o.description } : {}) });
     const occ = t.id("o");
     c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
     return { occ, def };

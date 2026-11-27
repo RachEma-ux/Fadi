@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -408,6 +408,14 @@ const commandes: EntreeSandbox[] = [
   c("afficher-reference", "reference", "eye-table", "Ctrl+Maj+Espace, M", "panneau-references", true),
   c("controler-recolement", "reference", "radar-2", "Ctrl+Maj+Espace, K", "panneau-references", true),
   c("supprimer-reference", "reference", "box-off", "Ctrl+Maj+Espace, S", "panneau-references", true),
+  // Lot C4, étape 4 : PDF reçu (page vectorielle en arêtes, échelle proposée puis confirmée, page scannée en fond).
+  c("pdf-recu", "pdf", "file-arrow-right", "Ctrl+Maj+Espace, P", "outils", true),
+  c("ouvrir-pdf", "pdf", "file-upload", "Ctrl+Maj+Espace, Maj+P", "panneau-pdf-recu", true),
+  c("mesurer-pdf", "pdf", "ruler-2", "Ctrl+Maj+Espace, E", "panneau-pdf-recu", true),
+  c("barre-echelle-pdf", "pdf", "ruler-3", "Ctrl+Maj+Espace, B", "panneau-pdf-recu", true),
+  c("confirmer-echelle-pdf", "pdf", "scale", "Ctrl+Maj+Espace, Maj+E", "panneau-pdf-recu", true),
+  c("inserer-pdf", "pdf", "arrow-autofit-content", "Ctrl+Maj+Espace, I", "panneau-pdf-recu", true),
+  c("poser-fond-pdf", "pdf", "photo-scan", "Ctrl+Maj+Espace, F", "panneau-pdf-recu", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
@@ -464,6 +472,8 @@ const panneaux: EntreeSandbox[] = [
   p("fonds", "photo", "outils", true),
   // Références verrouillées (cas 4, lot C4, étape 3) : hors de la colonne (pleine).
   p("references", "box-model-2", "outils", true),
+  // PDF reçu (cas 4, lot C4, étape 4) : hors de la colonne (pleine).
+  p("pdf-recu", "file-arrow-right", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -494,6 +504,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:partager-lien", "panneau:consultations"],
   ["commande:fonds", "panneau:fonds"],
   ["commande:references", "panneau:references"],
+  ["commande:pdf-recu", "panneau:pdf-recu"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

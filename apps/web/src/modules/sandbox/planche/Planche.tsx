@@ -251,6 +251,13 @@ import {
   appliquerFiche,
   ENTREE_DEUX_TEMPS,
   afficherReference,
+  echelleDeLaBarre,
+  echellesDuTexte,
+  estEchellePdf,
+  insererPagePdf,
+  lirePdfRecu,
+  poseImagePdf,
+  type PointPdf,
   ajouterReference,
   controlerRecolement,
   deplacerReference,
@@ -356,7 +363,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -373,6 +380,7 @@ import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
 import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
+import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond } from "./fonds-client";
 import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
@@ -450,7 +458,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -465,7 +473,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -3365,7 +3373,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
   };
   /** `calage` : orthophoto posée d'après son fichier de calage d'image, dans le système déclaré (déjà comparé au projet). */
-  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string }) => {
+  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string }, pdf?: { readonly pose: (largeurPx: number, hauteurPx: number) => PoseFond | null; readonly message: string }) => {
     // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
     const planche = indexRef.current.courante;
     let image: Awaited<ReturnType<typeof reduireFond>>;
@@ -3382,6 +3390,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.calage-${r.erreur}`));
       pose = { pose: r.pose, geo: { fichier: calage.fichier.slice(0, 200), systeme: calage.systeme, coefficients: [calage.k.a, calage.k.d, calage.k.b, calage.k.e, calage.k.c, calage.k.f] } };
     }
+    // Page scannée d'un PDF reçu (lot C4, étape 4) : posée à l'échelle de la page, calée (non verrouillée).
+    const posePdf = pdf ? pdf.pose(image.largeur, image.hauteur) : null;
+    if (pdf && !posePdf) return setErreurFond(t("planche.pdf.erreur.cisaillement"));
     // L'original est archivé tel quel en base avant la pose (décision du 27 novembre 2026) : sans archive, pas de fond.
     setNoteFond(t("planche.fonds.note.archivage"));
     let original: OriginalFond;
@@ -3395,9 +3406,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
     let pose2: string | null = null;
     let erreur: string | null = null;
-    const message = calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
-    operer(t(calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
-      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original, ...(pose ?? {}) });
+    const message = pdf ? pdf.message : calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
+    operer(t(pdf ? "planche.pdf.poser-fond-pdf" : calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original, ...(pose ?? {}), ...(posePdf ? { pose: posePdf } : {}) });
       if (!r.ok) {
         erreur = r.erreur;
         return null;
@@ -3656,6 +3667,134 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setNoteReference(null);
       setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
     }
+  };
+  // PDF reçu (lot C4, étape 4) : PDF lu dans le navigateur, original archivé en base, échelle confirmée avant insertion.
+  const [pdfRecu, setPdfRecu] = useState<EtatPdf | null>(null);
+  const [pagePdf, setPagePdf] = useState(0);
+  const [modePdf, setModePdf] = useState<"mesure" | "barre" | null>(null);
+  const [pointsPdf, setPointsPdf] = useState<readonly PointPdf[]>([]);
+  const [longueurBarrePdf, setLongueurBarrePdf] = useState("");
+  const [echellePdf, setEchellePdf] = useState("");
+  const [echelleConfirmee, setEchelleConfirmee] = useState<number | null>(null);
+  const [niveauPdfEtat, setNiveauPdf] = useState<string | null>(null);
+  const niveauPdf = niveaux.some((n) => n.id === niveauPdfEtat) ? niveauPdfEtat : niveauChoisi;
+  const [originePdf, setOriginePdf] = useState({ x: "0", y: "0" });
+  const [erreurPdf, setErreurPdf] = useState<string | null>(null);
+  const [notePdf, setNotePdf] = useState<string | null>(null);
+  const importPdfRef = useRef<HTMLInputElement | null>(null);
+  const pageCourantePdf = pdfRecu?.pages[pagePdf] ?? null;
+  const propositionPdf = pageCourantePdf ? (echellesDuTexte(pageCourantePdf.textes)[0] ?? null) : null;
+  const papierBarre = modePdf === "barre" && pointsPdf.length === 2 ? Math.hypot(pointsPdf[1]!.x - pointsPdf[0]!.x, pointsPdf[1]!.y - pointsPdf[0]!.y) : null;
+  const echelleBarrePdf = papierBarre !== null ? echelleDeLaBarre(papierBarre, Number(longueurBarrePdf.trim().replace(",", "."))) : null;
+  const echelleSaisiePdf = (() => {
+    const v = echellePdf.trim().replace(",", ".");
+    return v === "" ? null : Number(v);
+  })();
+  const disponibiliteCommandePdf = (id: IdCommandePdf) =>
+    disponibilitePdf(id, {
+      page: pageCourantePdf !== null,
+      vectorielle: pageCourantePdf !== null && pageCourantePdf.traits.length + pageCourantePdf.arcs.length > 0,
+      image: pageCourantePdf !== null && pageCourantePdf.images.length > 0,
+      proposee: echelleSaisiePdf !== null || echelleBarrePdf !== null || propositionPdf !== null,
+      confirmee: echelleConfirmee !== null,
+      lecture: readOnly,
+    });
+  const changerPagePdf = (i: number) => {
+    setPagePdf(i);
+    setPointsPdf([]);
+    setModePdf(null);
+    setEchelleConfirmee(null);
+    setEchellePdf("");
+    setErreurPdf(null);
+  };
+  const lireFichierPdf = async (f: File) => {
+    setErreurPdf(null);
+    setNotePdf(null);
+    const octets = new Uint8Array(await f.arrayBuffer());
+    const lu = lirePdfRecu(octets);
+    if (!lu.ok) return setErreurPdf(t(`planche.pdf.erreur.${lu.erreur}`));
+    setPdfRecu({ nom: f.name, fichier: null, pages: lu.pages });
+    changerPagePdf(0);
+    setPanneau("pdf-recu");
+    // L'original est archivé tel quel en base ; sans archive, la page reste consultable mais n'est pas insérée.
+    setNotePdf(t("planche.pdf.note.archivage"));
+    try {
+      const fichier = await archiverFichierReference(f, "pdf");
+      setPdfRecu((a) => (a && a.nom === f.name ? { ...a, fichier: { id: fichier.id, empreinte: fichier.empreinte } } : a));
+      setNotePdf(t("planche.pdf.note.lu", { nom: f.name, pages: String(lu.pages.length) }));
+    } catch (e) {
+      setNotePdf(null);
+      setErreurPdf(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+  };
+  const executerPdf = (id: IdCommandePdf) => {
+    if (id === "pdf-recu") return setPanneau("pdf-recu");
+    if (!disponibiliteCommandePdf(id).disponible) return;
+    setPanneau("pdf-recu");
+    if (id === "ouvrir-pdf") return importPdfRef.current?.click();
+    if (id === "mesurer-pdf" || id === "barre-echelle-pdf") {
+      const m = id === "mesurer-pdf" ? "mesure" : "barre";
+      setPointsPdf([]);
+      return setModePdf(modePdf === m ? null : m);
+    }
+    const page = pageCourantePdf;
+    if (!page) return;
+    if (id === "confirmer-echelle-pdf") {
+      // Priorité : l'échelle tapée, puis la barre pointée, puis l'échelle écrite dans la page.
+      const e = echelleSaisiePdf ?? echelleBarrePdf ?? propositionPdf?.echelle ?? null;
+      if (!estEchellePdf(e)) return setErreurPdf(t("planche.pdf.erreur.echelle"));
+      setErreurPdf(null);
+      setEchelleConfirmee(e);
+      setEchellePdf(String(Math.round(e * 1000) / 1000));
+      return setNotePdf(t("planche.pdf.echelle.confirmee", { echelle: String(Math.round(e * 1000) / 1000) }));
+    }
+    if (echelleConfirmee === null) return;
+    const x = Number(originePdf.x.trim().replace(",", "."));
+    const y = Number(originePdf.y.trim().replace(",", "."));
+    if (!Number.isFinite(x) || !Number.isFinite(y) || originePdf.x.trim() === "" || originePdf.y.trim() === "") return setErreurPdf(t("planche.pdf.erreur.position"));
+    const altitude = niveaux.find((n) => n.id === niveauPdf)?.altitude ?? 0;
+    const echelleTexte = String(Math.round(echelleConfirmee * 1000) / 1000);
+    if (id === "inserer-pdf") {
+      if (!pdfRecu?.fichier) return setErreurPdf(t("planche.references.erreur.archive-serveur"));
+      const nom = t("planche.pdf.groupe", { nom: pdfRecu.nom, numero: String(page.numero) });
+      const description = t("planche.pdf.description", { nom: pdfRecu.nom, numero: String(page.numero), echelle: echelleTexte, id: pdfRecu.fichier.id, empreinte: pdfRecu.fichier.empreinte });
+      let erreur: string | null = null;
+      let compte = { traits: 0, arcs: 0 };
+      const message = t("planche.pdf.note.inseree", { numero: String(page.numero), echelle: echelleTexte, traits: page.traits.length.toLocaleString(LOCALE), arcs: page.arcs.length.toLocaleString(LOCALE), nom });
+      operer(t("planche.pdf.inserer-pdf"), (m) => {
+        const r = insererPagePdf(m, page, { echelle: echelleConfirmee, x, y, altitude, nom, description });
+        if (!r.ok) {
+          erreur = r.erreur;
+          return null;
+        }
+        compte = { traits: r.traits, arcs: r.arcs };
+        return { modele: r.modele, message };
+      });
+      if (erreur) return setErreurPdf(t(`planche.pdf.erreur.${erreur}`));
+      setErreurPdf(null);
+      return setNotePdf(compte.traits + compte.arcs > 0 ? message : null);
+    }
+    // Poser en fond : la plus grande image de la page, posée à l'échelle de la page.
+    const img = [...page.images].sort((a, b) => b.largeurPx * b.hauteurPx - a.largeurPx * a.hauteurPx)[0];
+    if (!img) return;
+    const essai = poseImagePdf(img, echelleConfirmee, x, y);
+    if ("erreur" in essai) return setErreurPdf(t(`planche.pdf.erreur.${essai.erreur}`));
+    void (async () => {
+      let fichier: File;
+      try {
+        fichier = await fichierImagePdf(img, `${(pdfRecu?.nom ?? "plan.pdf").replace(/\.pdf$/i, "")}-p${page.numero}`);
+      } catch {
+        return setErreurPdf(t("planche.pdf.erreur.image"));
+      }
+      setErreurPdf(null);
+      await importerUnFond(fichier, undefined, {
+        pose: (l, h) => {
+          const r = poseImagePdf({ ...img, largeurPx: l, hauteurPx: h }, echelleConfirmee, x, y);
+          return "pose" in r ? r.pose : null;
+        },
+        message: t("planche.pdf.note.fond", { numero: String(page.numero), echelle: echelleTexte }),
+      });
+    })();
   };
   const reservesListe = reservesDe(hist.present.modele);
   const [reserveChoisieEtat, setReserveChoisie] = useState<string | null>(null);
@@ -4822,6 +4961,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
     else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
     else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
+    else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -4899,6 +5039,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_REFERENCES.map((c) => {
           const d = disponibiliteCommandeReference(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.references.motif.reference"), executer: () => executerReference(c.id) };
+        }),
+        ...COMMANDES_PDF.map((c) => {
+          const d = disponibiliteCommandePdf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.pdf.motif.page"), executer: () => executerPdf(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -5658,6 +5802,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-reference-fichier
       />
+      {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
+      <input
+        ref={importPdfRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierPdf(f);
+        }}
+        data-planche-pdf-fichier-entree
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -5706,6 +5863,33 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "pdf-recu" && (
+              <PanneauPdfRecu
+                pdf={pdfRecu}
+                choisie={pagePdf}
+                onChoisir={changerPagePdf}
+                mode={modePdf}
+                points={pointsPdf}
+                onPoint={(p) => setPointsPdf((a) => (a.length >= 2 ? [p] : [...a, p]))}
+                proposition={propositionPdf}
+                echelleBarre={echelleBarrePdf}
+                longueurBarre={longueurBarrePdf}
+                onLongueurBarre={setLongueurBarrePdf}
+                echelle={echellePdf}
+                onEchelle={(v) => { setEchellePdf(v); setEchelleConfirmee(null); }}
+                confirmee={echelleConfirmee}
+                niveaux={niveaux}
+                niveau={niveauPdf}
+                onNiveau={setNiveauPdf}
+                origine={originePdf}
+                onOrigine={setOriginePdf}
+                lecture={readOnly}
+                executer={executerPdf}
+                disponibilite={disponibiliteCommandePdf}
+                erreur={erreurPdf}
+                note={notePdf}
               />
             )}
             {panneau === "references" && (

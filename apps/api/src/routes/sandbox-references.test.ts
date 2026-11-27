@@ -61,12 +61,15 @@ describe("Fichiers des références — /sandbox/references", () => {
     expect((await b.get(`/sandbox/references/${r.body.fichier.id}`)).status).toBe(404);
   });
 
-  it("signatures : IFC, STL ASCII et binaire, OBJ texte", () => {
+  it("signatures : IFC, STL ASCII et binaire, OBJ texte, PDF", () => {
     expect(contenuConforme("ifc", IFC)).toBe(true);
     expect(contenuConforme("stl", STL)).toBe(true);
     expect(contenuConforme("stl", Buffer.from("solid x\nfacet normal 0 0 1\n"))).toBe(true);
     expect(contenuConforme("obj", Buffer.from("o a\nv 1 2 3\n"))).toBe(true);
     expect(contenuConforme("obj", Buffer.from([0, 1, 2]))).toBe(false);
     expect(contenuConforme("stl", Buffer.alloc(100))).toBe(false);
+    // PDF reçu (lot C4, étape 4).
+    expect(contenuConforme("pdf", Buffer.from("%PDF-1.7\n%\xe2\xe3\n1 0 obj"))).toBe(true);
+    expect(contenuConforme("pdf", Buffer.from("PDF ou pas"))).toBe(false);
   });
 });

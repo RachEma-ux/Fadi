@@ -5355,3 +5355,82 @@
 .sandbox-planche .planche-references .planche-fonds-auteur .est-principal {
   margin-left: auto;
 }
+/* PDF reçu (cas 4, lot C4, étape 4) : aperçu cliquable de la page, résultat de mesure, réglages d'insertion. */
+.sandbox-planche .planche-pdf-apercu {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  margin: 6px 0 4px;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.04);
+}
+.sandbox-planche .planche-pdf-apercu.est-pointage {
+  cursor: crosshair;
+}
+.sandbox-planche .planche-pdf-feuille {
+  fill: rgba(255, 255, 255, 1);
+  stroke: rgba(27, 77, 66, 0.35);
+  stroke-width: 0.5;
+}
+.sandbox-planche .planche-pdf-traits,
+.sandbox-planche .planche-pdf-arc,
+.sandbox-planche .planche-pdf-mesure,
+.sandbox-planche .planche-pdf-barre {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.sandbox-planche .planche-pdf-traits {
+  stroke: rgba(29, 42, 37, 0.9);
+  stroke-width: 0.8;
+}
+.sandbox-planche .planche-pdf-arc {
+  stroke: rgba(47, 111, 214, 1);
+  stroke-width: 1.4;
+}
+.sandbox-planche .planche-pdf-mesure {
+  stroke: rgba(179, 38, 30, 1);
+  stroke-width: 2;
+}
+.sandbox-planche .planche-pdf-barre {
+  stroke: rgba(176, 125, 0, 1);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+.sandbox-planche .planche-pdf-point {
+  fill: rgba(179, 38, 30, 1);
+}
+.sandbox-planche .planche-pdf-point.est-barre {
+  fill: rgba(246, 201, 47, 1);
+  stroke: rgba(29, 42, 37, 1);
+  stroke-width: 0.3;
+}
+.sandbox-planche .planche-pdf-resultat {
+  margin: 2px 0 6px;
+  color: rgba(179, 38, 30, 1);
+}
+.sandbox-planche .planche-pdf-ligne input {
+  width: 64px;
+  font: inherit;
+}
+.sandbox-planche .planche-pdf-reglages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0;
+}
+.sandbox-planche .planche-pdf-reglages label {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  gap: 2px;
+}
+.sandbox-planche .planche-pdf-reglages input,
+.sandbox-planche .planche-pdf-reglages select {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.sandbox-planche .planche-pdf .planche-debit-barre .est-actif {
+  outline: 2px solid rgba(47, 111, 214, 1);
+}
