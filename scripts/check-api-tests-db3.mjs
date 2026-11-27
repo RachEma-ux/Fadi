@@ -35,6 +35,7 @@ export const DB3_PENDING_SUITES = Object.freeze([
   'src/routes/atelier-planches.test.ts',
   'src/routes/atelier-reseaux.test.ts',
   'src/routes/atelier-structure.test.ts',
+  'src/routes/geodata-emplacements.test.ts',
   'src/routes/geodata-prix.test.ts',
   'src/routes/geodata-terrain-fond-mondial.test.ts',
   'src/routes/geodata-terrain-services.test.ts',

@@ -34,8 +34,8 @@ type).
 | Analyses métier | Quantities, constraints, checks and scenario comparison |
 | Documents | Plans, tables, schedules and reports |
 | Collaboration | Access, comments, revisions and synchronisation |
-| Sandbox | Free 3D board on its own (`/sandbox`): no project, no link with the step 10 Planche; only its tool preferences reach the server |
-| GeoData | Autonomous geographic data and map space (`/geodata`): catalogue of versioned sources, saved maps, study zones, bounded analyses and authorised exports; no project anywhere in its core |
+| Sandbox | Free 3D board on its own (`/sandbox`): no project, no link with the step 10 Planche; only its tool preferences reach the server, plus a read-only fetch of the locations saved in GeoData |
+| GeoData | Autonomous geographic data and map space (`/geodata`): catalogue of versioned sources, saved maps, study zones, saved locations (« Emplacements Projets ») the Sandbox board can open, bounded analyses and authorised exports; no project anywhere in its core |
 
 The Sandbox is the eighth module (owner decision of 2026-10-20; lot 1 moved it out of the Studio Console,
 `Studio/Sandbox/Recommandation_Sandbox_Architecture.md`). It is independent in both directions: it imports neither
@@ -46,6 +46,12 @@ link, and the former address `/studio/console/sandbox` redirects to `/sandbox`. 
 account's tool preferences (lot 5, owner decision of 2026-10-20): `GET`/`PUT /sandbox/preferences`, table
 `sandbox_tool_preferences`, through a minimal client (`modules/sandbox/preferences/client.ts`), the one file the
 independence test lets call the server; the drawing draft stays in the browser.
+Since 2026-11-27 (owner request « Emplacements Projets »), the board may also **read** the locations saved in GeoData —
+`GET /geodata/api/emplacements` and `/geodata/api/emplacements/:id`, through `modules/sandbox/planche/emplacements-geodata.ts`,
+the second and last file allowed to call the server. The call is read-only, with no import of the GeoData module (the
+address is written out), and each response is re-checked against the board's `Emplacement` format. The address
+`/sandbox?emplacement-geodata=<id>`, written out by GeoData's panel, opens one of them as the board's location (one
+undo step). GeoData stays unaware of the Sandbox: it stores the location in `geodata_emplacements`, with no project.
 
 GeoData is the ninth module (owner decisions ADR-GEODATA-01 of 2026-10-22 and ADR-GEODATA-02 of 2026-10-25), independent of
 projects in both directions: no `projectId`, project role or project context in its routes, models, permissions or SQL

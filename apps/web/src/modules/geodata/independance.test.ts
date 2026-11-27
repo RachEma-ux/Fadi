@@ -31,7 +31,11 @@ describe("GeoData — module autonome (GEO 04)", () => {
   });
 
   it("aucune notion de projet dans le code du module", () => {
-    for (const f of sources) expect(sansCommentaires(code(f)), rel(f)).not.toMatch(PROJET);
+    // Seule exception : le libellé « Emplacements Projets » demandé par le maître d'ouvrage (27 novembre 2026), écrit une
+    // seule fois dans `panneaux/Emplacements.tsx`. C'est un nom d'interface : aucun identifiant ni contexte de projet.
+    const LIBELLE = 'export const LIBELLE_EMPLACEMENTS = "Emplacements Projets";';
+    expect(code(join(RACINE, "panneaux/Emplacements.tsx"))).toContain(LIBELLE);
+    for (const f of sources) expect(sansCommentaires(code(f)).replace(LIBELLE, ""), rel(f)).not.toMatch(PROJET);
   });
 
   it("serveur : seul client.ts appelle, et seulement /geodata/api", () => {
