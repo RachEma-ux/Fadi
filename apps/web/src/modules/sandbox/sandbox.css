@@ -4393,3 +4393,10 @@
     width: min(38rem, calc(100% - var(--colonne-l) - 5rem));
   }
 }
+/* Cas 4, étape 3 : seize panneaux dans la colonne (Niveaux et Locaux ajoutés). Sur écran tactile large (téléphone
+   détaché couché, tablette), l'écart entre boutons passe de 12 à 8 px pour que la colonne tienne entière sans défiler. */
+@media (min-width: 761px) and (hover: none) and (pointer: coarse) {
+  .sandbox-planche .planche-colonne {
+    gap: 8px;
+  }
+}
