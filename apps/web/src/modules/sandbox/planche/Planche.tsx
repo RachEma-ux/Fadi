@@ -1686,11 +1686,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     [contexte, o, operer, setSelection],
   );
 
-  // Cas 2, lot 1 : format des cotes dans la vue (précision de l'Info modèle, séparateur décimal de la Planche).
-  useEffect(() => {
-    vueRef.current?.majFormatCotes(precision, SEPARATEUR_DECIMAL);
-    rafraichir();
-  }, [precision, rafraichir]);
   // Cas 2, lot 1 : une opération qui sort une cote de sa plage gardée est signalée, jamais corrigée.
   const modelePrecedentPlage = useRef<Modele | null>(null);
   useEffect(() => {
@@ -1909,6 +1904,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       delete fenetreRecette().fadiPlanche;
     };
   }, [envoyer, rafraichir, setTexte]);
+  // Cas 2, lot 1 : format des cotes dans la vue (précision de l'Info modèle, séparateur décimal de la Planche), déclaré après la
+  // création de la vue pour que la précision enregistrée s'applique dès l'ouverture.
+  useEffect(() => {
+    vueRef.current?.majFormatCotes(precision, SEPARATEUR_DECIMAL);
+    rafraichir();
+  }, [precision, rafraichir, envoyer, setTexte]);
 
   // --- Brouillon propre à Sandbox : lu à l'ouverture (s'il n'y a encore rien de dessiné), enregistré après chaque pas.
   useEffect(() => {

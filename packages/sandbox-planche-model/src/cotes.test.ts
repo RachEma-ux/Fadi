@@ -17,7 +17,7 @@ import {
   texteCote,
   valeurCote,
 } from "./cotes.js";
-import { type Modele, ajouterRectangle, ajouterSegment, deplacer, effacerEntites, grouper, modeleVide, modifierAnnotations } from "./geometrie-libre.js";
+import { type Modele, ajouterRectangle, ajouterSegment, deplacer, effacerEntites, grouper, modeleVide, modifierAnnotations, redimensionner } from "./geometrie-libre.js";
 import { famillesNumerotation, lirePrefixes, nomsNumerotes, numeroterEnSerie, ordreDeLecture } from "./numerotation.js";
 import { machineCotation } from "./outils/cotation.js";
 import { clicVers, partie, saisie, survolVers, touche } from "./outils/essais-modification.js";
@@ -239,6 +239,19 @@ describe("Suivi, orphelines, solides (n° 8, 24, 65)", () => {
     if (t.genre !== "repere") throw new Error("repère attendu");
     expect(t.ancre.z).toBeCloseTo(1, 9);
     expect(t.position.z).toBeCloseTo(0, 9);
+  });
+  it("une opération qui déplace déjà l'ancre (Redimensionner) ne la déplace pas une seconde fois", () => {
+    const m0 = sol();
+    const face = Object.keys(m0.racine.faces)[0]!;
+    const m = modifierAnnotations(m0, (an, id) => {
+      const t = id("t");
+      an.textes[t] = { id: t, genre: "repere", ancre: v3(2, 1, 0), entite: face, position: v3(3, 3, 0), texte: "Séjour" };
+    }).modele;
+    const r = redimensionner(m, 2).modele;
+    const t = Object.values(r.annotations!.textes)[0]!;
+    if (t.genre !== "repere") throw new Error("repère attendu");
+    expect(t.ancre.x).toBeCloseTo(4, 9);
+    expect(t.ancre.y).toBeCloseTo(2, 9);
   });
 });
 

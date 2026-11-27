@@ -618,6 +618,9 @@ export function suivreAnnotations(avant: Modele, apres: Modele): Modele {
   }
   for (const t of Object.values(a.textes)) {
     if (t.genre !== "repere" || !t.entite || t.etiquettePiece) continue;
+    // L'opération a déjà déplacé l'ancre (Redimensionner, Déplacer d'un bloc) : rien à ajouter.
+    const t0 = avant.annotations?.textes[t.id];
+    if (!t0 || t0.genre !== "repere" || dist(t0.ancre, t.ancre) > 1e-9) continue;
     const r0 = referenceEntite(avant, t.chemin, t.entite);
     const r1 = referenceEntite(apres, t.chemin, t.entite);
     if (!r0 || !r1 || dist(r0, r1) < 1e-9) continue;
