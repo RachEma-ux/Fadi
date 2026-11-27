@@ -103,6 +103,7 @@ import {
   entreeOutil,
   entreePanneau,
   entreesSandbox,
+  entreeSandbox,
   type Pictogramme as DescriptionPictogramme,
   peindreFacesCote,
   peindreOccurrences,
@@ -196,6 +197,21 @@ import {
   supprimerMotif,
   svgPlan,
   type ResultatMotif,
+  ajouterFenetre,
+  composerFeuille,
+  creerFeuille,
+  modifierFenetre,
+  modifierFeuille,
+  nomFichierFeuille,
+  numeroFeuilleSuivant,
+  pdfFeuilles,
+  relirePdf,
+  supprimerFenetre,
+  supprimerFeuille,
+  type Feuille,
+  type FenetreVue,
+  type LibellesFeuille,
+  type ResultatFeuille,
   poserMurs,
   chainesDAretes,
   lireNombreSaisi,
@@ -269,7 +285,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -280,6 +296,7 @@ import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
+import { PanneauFeuilles } from "./panneau-feuilles";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
@@ -348,12 +365,12 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
  */
-const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").map((e) => ({
+const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").filter((e) => e.emplacement === "colonne" || e.emplacement === "colonne-bas").map((e) => ({
   id: e.id as Panneau,
   picto: e.pictogramme,
   bas: e.emplacement === "colonne-bas",
@@ -361,7 +378,9 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
+/** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles"]);
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
@@ -3091,6 +3110,88 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   const associerUnMotif = (materiau: string, motif: string | null) => operationMotif(associerMotif(hist.present.modele, materiau, motif), t("planche.plan.motifs-hachure"), null);
   /**
+   * Feuilles (cas 4 du catalogue, étape 6) : feuilles ISO, fenêtres de vue (plan vectoriel d'une scène à une échelle de la
+   * série), PDF vectoriel à l'échelle relu avant téléchargement. Cochage du jeu et motif des noms : préférences de la
+   * session, pas des données du projet.
+   */
+  const feuillesListe = Object.values(hist.present.modele.annotations?.feuilles ?? {}).sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
+  const [feuilleChoisieEtat, setFeuilleChoisie] = useState<string | null>(null);
+  const feuilleChoisie = feuillesListe.find((f) => f.id === feuilleChoisieEtat) ?? feuillesListe[0] ?? null;
+  const [fenetreChoisieEtat, setFenetreChoisie] = useState<string | null>(null);
+  const fenetreChoisie = feuilleChoisie?.fenetres.some((w) => w.id === fenetreChoisieEtat) ? fenetreChoisieEtat : null;
+  const [decochees, setDecochees] = useState<ReadonlySet<string>>(new Set());
+  const cocheesFeuilles = new Set(feuillesListe.filter((f) => !decochees.has(f.id)).map((f) => f.id));
+  const [motifNomsFeuilles, setMotifNomsFeuilles] = useState("{numero}-{nom}-{indice}");
+  const [erreurFeuille, setErreurFeuille] = useState<string | null>(null);
+  const [noteFeuille, setNoteFeuille] = useState<string | null>(null);
+  const libellesFeuille = (): LibellesFeuille => ({ projet: t("planche.feuilles.cartouche.projet"), phase: t("planche.feuilles.cartouche.phase"), titre: t("planche.feuilles.cartouche.titre"), date: t("planche.feuilles.cartouche.date"), numero: t("planche.feuilles.cartouche.numero"), indice: t("planche.feuilles.cartouche.indice"), echelles: t("planche.feuilles.cartouche.echelles"), vueDessus: t("planche.feuilles.scene.dessus") });
+  const compositionFeuille = useMemo(
+    () => (panneau === "feuilles" && feuilleChoisie ? composerFeuille(hist.present.modele, feuilleChoisie, libellesFeuille()) : null),
+    [panneau, feuilleChoisie, hist.present.modele], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const disponibiliteCommandeFeuille = (id: IdCommandeFeuille) => disponibiliteFeuille(id, { feuille: feuilleChoisie !== null, fenetre: fenetreChoisie !== null, cochees: cocheesFeuilles.size, lecture: readOnly });
+  const operationFeuille = (r: ResultatFeuille, libelle: string, message: string | null): ResultatFeuille | null => {
+    if (!r.ok) {
+      setErreurFeuille(t(`planche.feuilles.erreur.${r.erreur}`));
+      return null;
+    }
+    setErreurFeuille(null);
+    setNoteFeuille(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return r;
+  };
+  const emettrePdf = (feuilles: readonly Feuille[], fichier: string) => {
+    const pages = feuilles.map((f) => composerFeuille(hist.present.modele, f, libellesFeuille()));
+    const octets = pdfFeuilles(pages, fichier.replace(/\.pdf$/, ""));
+    // Contrôle de l'échelle exacte : le fichier émis est relu, ses formats comparés aux feuilles.
+    const relu = relirePdf(octets);
+    if (!relu || relu.pages.length !== pages.length || relu.pages.some((p, i) => Math.abs(p.largeur - pages[i]!.largeur) > 0.05 || Math.abs(p.hauteur - pages[i]!.hauteur) > 0.05)) return setErreurFeuille(t("planche.feuilles.erreur.pdf"));
+    setErreurFeuille(null);
+    telechargerFichier(new Blob([octets as BlobPart], { type: "application/pdf" }), fichier);
+    setNoteFeuille(t("planche.feuilles.note.pdf", { pages: String(relu.pages.length), formats: [...new Set(relu.pages.map((p) => `${p.largeur} × ${p.hauteur} mm`))].join(", ") }));
+  };
+  const executerFeuille = (id: IdCommandeFeuille) => {
+    if (id === "feuilles") return setPanneau("feuilles");
+    if (!disponibiliteCommandeFeuille(id).disponible) return;
+    setPanneau("feuilles");
+    const m = hist.present.modele;
+    if (id === "nouvelle-feuille") {
+      const numero = numeroFeuilleSuivant(m);
+      const r = operationFeuille(creerFeuille(m, { numero, nom: t("planche.feuilles.nom-defaut", { numero }) }), t("planche.feuilles.nouvelle-feuille"), t("planche.feuilles.note.creee", { numero }));
+      if (r?.ok) {
+        setFeuilleChoisie(r.id);
+        setFenetreChoisie(null);
+      }
+      return;
+    }
+    if (!feuilleChoisie) return;
+    if (id === "supprimer-feuille") return void operationFeuille(supprimerFeuille(m, feuilleChoisie.id), t("planche.feuilles.supprimer-feuille"), t("planche.feuilles.note.supprimee", { numero: feuilleChoisie.numero }));
+    if (id === "ajouter-fenetre") {
+      const n = feuilleChoisie.fenetres.length;
+      const r = operationFeuille(ajouterFenetre(m, feuilleChoisie.id, { scene: null, echelle: 50, coupe: null, x: 30 + 10 * n, y: 20 + 10 * n }), t("planche.feuilles.ajouter-fenetre"), null);
+      if (r?.ok) setFenetreChoisie(r.id);
+      return;
+    }
+    if (id === "supprimer-fenetre") return void (fenetreChoisie && operationFeuille(supprimerFenetre(m, feuilleChoisie.id, fenetreChoisie), t("planche.feuilles.supprimer-fenetre"), null));
+    if (id === "exporter-feuille-pdf") return emettrePdf([feuilleChoisie], nomFichierFeuille(motifNomsFeuilles, feuilleChoisie));
+    if (id === "exporter-jeu-pdf") {
+      const jeu = feuillesListe.filter((f) => cocheesFeuilles.has(f.id));
+      const premier = nomFichierFeuille(motifNomsFeuilles, jeu[0]!).replace(/\.pdf$/, "");
+      emettrePdf(jeu, `${premier}${jeu.length > 1 ? `-${jeu.length}` : ""}.pdf`);
+    }
+  };
+  const modifierUneFeuille = (v: Partial<Omit<Feuille, "id" | "fenetres">>) => feuilleChoisie && operationFeuille(modifierFeuille(hist.present.modele, feuilleChoisie.id, v), t("planche.feuilles.feuilles"), null);
+  const modifierUneFenetre = (v: Partial<Omit<FenetreVue, "id">> | { position: string }) => {
+    if (!feuilleChoisie || !fenetreChoisie) return;
+    let patch: Partial<Omit<FenetreVue, "id">>;
+    if ("position" in v) {
+      const morceaux = v.position.split(";").map((x) => lireNombreSaisi(x));
+      if (morceaux.length !== 2 || morceaux.some((x) => x === null)) return setErreurFeuille(t("planche.feuilles.erreur.position"));
+      patch = { x: morceaux[0]!, y: morceaux[1]! };
+    } else patch = v;
+    operationFeuille(modifierFenetre(hist.present.modele, feuilleChoisie.id, fenetreChoisie, patch), t("planche.feuilles.feuilles"), null);
+  };
+  /**
    * Murs à épaisseur (cas 4 du catalogue, étape 4) : épaisseur et hauteur saisies dans la barre d'options de l'outil Mur
    * (valeurs de départ de l'outil, jamais une donnée du projet) ; « Murs depuis les arêtes » pose un mur par chaîne
    * d'arêtes horizontales choisies, en un pas. Jonctions non raccordées signalées, jamais corrigées.
@@ -4004,6 +4105,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
+    else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
@@ -4065,6 +4167,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_NIVEAUX.map((c) => {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
+        }),
+        ...COMMANDES_FEUILLES.map((c) => {
+          const d = disponibiliteCommandeFeuille(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.feuilles.motif.feuille"), executer: () => executerFeuille(c.id) };
         }),
         ...COMMANDES_PLAN.map((c) => {
           const d = disponibiliteCommandePlan(c.id);
@@ -4766,7 +4872,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
-            <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
+            <h3>
+              {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
+              {t(`panneau.${panneau}` as "panneau.info-entite")}
+            </h3>
+            {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
@@ -4796,6 +4906,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 note={noteNiveau}
               />
             )}
+            {panneau === "feuilles" && (
+              <PanneauFeuilles
+                feuilles={feuillesListe}
+                choisie={feuilleChoisie}
+                composition={compositionFeuille}
+                fenetre={fenetreChoisie}
+                cochees={cocheesFeuilles}
+                scenes={Object.values(hist.present.modele.annotations?.scenes ?? {})}
+                plans={Object.values(hist.present.modele.annotations?.plansDeCoupe ?? {})}
+                motifNoms={motifNomsFeuilles}
+                lecture={readOnly}
+                onChoisir={(id) => { setFeuilleChoisie(id); setFenetreChoisie(null); setErreurFeuille(null); }}
+                onCocher={(id, coche) => setDecochees((d) => { const n = new Set(d); if (coche) n.delete(id); else n.add(id); return n; })}
+                onChoisirFenetre={setFenetreChoisie}
+                onModifierFeuille={modifierUneFeuille}
+                onModifierFenetre={modifierUneFenetre}
+                onMotifNoms={setMotifNomsFeuilles}
+                executer={executerFeuille}
+                disponibilite={disponibiliteCommandeFeuille}
+                erreur={erreurFeuille}
+                note={noteFeuille}
+              />
+            )}
             {panneau === "plan-vectoriel" && (
               <>
                 <PanneauPlanVectoriel
@@ -4815,6 +4948,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                   refMotifs={titreMotifsRef}
                   erreur={erreurPlan}
                   note={notePlan}
+                  suite={(() => {
+                    const c = COMMANDES_FEUILLES[0]!;
+                    return (
+                      <button type="button" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => executerFeuille("feuilles")} data-planche-commande="feuilles">
+                        <Pictogramme picto={c.picto} /> {t(c.court)}
+                      </button>
+                    );
+                  })()}
                 />
               </>
             )}
@@ -5103,6 +5244,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {outilExtensionActif && vue.consigne ? " — " : ""}
             {vue.consigne}
           </span>
+          {panneau === "feuilles" && feuilleChoisie && <span className="planche-plan-etat" data-planche-feuilles-etat>{vue.consigne ? " | " : ""}{t("planche.feuilles.etat", { numero: feuilleChoisie.numero, format: `A${feuilleChoisie.format}`, sens: t(`planche.feuilles.sens.${feuilleChoisie.sens}`), nombre: String(feuilleChoisie.fenetres.length), echelles: compositionFeuille?.echelles.length ? ` (${compositionFeuille.echelles.map((e) => `1:${e}`).join(", ")})` : "" })}</span>}
           {panneau === "plan-vectoriel" && apercuPlan && <span className="planche-plan-etat" data-planche-plan-etat>{vue.consigne ? " | " : ""}{t("planche.plan.etat", { echelle: String(optionsPlan.echelle), traits: String(apercuPlan.classes), motifs: String(apercuPlan.motifs) })}</span>}
           {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}

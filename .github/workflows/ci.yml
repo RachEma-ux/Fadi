@@ -1105,6 +1105,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-plan-vectoriel node apps/web/e2e/planche-plan-vectoriel.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des feuilles (cas 4, étape 6) — formats ISO, fenêtres à l'échelle, cartouche, export PDF vectoriel relu (apps/web/e2e/planche-feuilles.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-feuilles node apps/web/e2e/planche-feuilles.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

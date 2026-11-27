@@ -21,7 +21,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
     // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.famille !== "numerotation" && e.id !== "numerotation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.famille !== "feuille" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.id !== "feuilles" && e.famille !== "numerotation" && e.id !== "numerotation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
     // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["controler", true, "panneau-controle"], ["nettoyer", true, "panneau-controle"]]);
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
@@ -36,6 +36,7 @@ describe("registre du Sandbox — contenu", () => {
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "niveau").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["niveaux", true, "panneau-niveaux"], ["ajouter-niveau", true, "panneau-niveaux"], ["travailler-niveau", true, "panneau-niveaux"], ["rattacher-niveau", true, "panneau-niveaux"], ["supprimer-niveau", true, "panneau-niveaux"]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "local").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["locaux", true, "panneau-locaux"], ["creer-local", true, "panneau-locaux"], ["supprimer-local", true, "panneau-locaux"]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "plan").map((e) => [e.id, e.raccourci])).toEqual([["plan-vectoriel", "Ctrl+F7"], ["exporter-plan-svg", "Ctrl+F8"], ["rafraichir-plan", "Ctrl+F1"], ["motifs-hachure", "Ctrl+F9"], ["nouveau-motif", "Ctrl+F10"], ["importer-motif", "Ctrl+F11"], ["supprimer-motif", "Ctrl+F12"]]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "feuille").map((e) => [e.id, e.raccourci])).toEqual([["feuilles", "Ctrl+Alt+Maj+1"], ["nouvelle-feuille", "Ctrl+Alt+Maj+2"], ["supprimer-feuille", "Ctrl+Alt+Maj+3"], ["ajouter-fenetre", "Ctrl+Alt+Maj+4"], ["supprimer-fenetre", "Ctrl+Alt+Maj+5"], ["exporter-feuille-pdf", "Ctrl+Alt+Maj+6"], ["exporter-jeu-pdf", "Ctrl+Alt+Maj+7"]]);
     expect(entreePanneau("niveaux").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
@@ -110,6 +111,8 @@ describe("registre du Sandbox — contenu", () => {
       "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle", "dynamique", "emplacement", "niveaux", "locaux", "plan-vectoriel", "scripts", "numerotation",
     ]);
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
+    // Feuilles (cas 4, étape 6) : hors de la colonne, ouvert depuis le panneau Plan vectoriel.
+    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "panneau-plan-vectoriel").map((e) => e.id)).toEqual(["feuilles"]);
   });
 
   it("barre gauche par défaut : les seize outils essentiels, dans l'ordre de SketchUp (lot 4)", () => {
