@@ -21,6 +21,7 @@ import { sitesRouter } from "./routes/sites.js";
 import { consultationPubliqueRouter, sandboxConsultationsRouter } from "./routes/sandbox-consultations.js";
 import { sandboxFondsRouter } from "./routes/sandbox-fonds.js";
 import { sandboxReferencesRouter } from "./routes/sandbox-references.js";
+import { sandboxProjectionsRouter } from "./routes/sandbox-projections.js";
 import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
 import { organizationsRouter } from "./routes/organizations.js";
@@ -108,6 +109,7 @@ export function createApp() {
   // Originaux des fonds calés de la Planche (cas 4, lot C4) : l'image reçue archivée telle quelle.
   app.use("/sandbox/fonds", apiLimiter, sandboxFondsRouter);
   app.use("/sandbox/references", apiLimiter, sandboxReferencesRouter);
+  app.use("/sandbox/projections", apiLimiter, sandboxProjectionsRouter);
   // GeoData (9ᵉ module, ADR-GEODATA-02) : API sous `/geodata/api` ; la page `/geodata` reste celle du client. Les tuiles
   // ont leur propre limite (une carte en demande des dizaines par déplacement).
   const tuilesLimiter = rateLimit({ windowMs: 60 * 1000, limit: Number(process.env["GEODATA_TILE_RATE_LIMIT"] ?? 3000), standardHeaders: true, legacyHeaders: false });
