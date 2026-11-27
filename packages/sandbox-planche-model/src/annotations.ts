@@ -141,6 +141,8 @@ export interface Balise {
   readonly nom: string;
   readonly couleur: string;
   readonly visible: boolean;
+  /** (Cas 2, lot 2) Balise exclue de l'accrochage : ses objets restent affichés, rien ne s'y accroche. */
+  readonly horsAccrochage?: boolean;
 }
 
 /** Repère de saisie (outil Axes) : origine et axes unitaires rouge / vert / bleu dans le repère stocké. */
@@ -209,7 +211,20 @@ export interface ReglagesPlanche {
   /** (Protocole des extensions, lot 5) Données attachées au projet par les extensions : `{ <extension> : { <clé> : valeur } }`. */
   readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   /** (Cas 4, étape 2) Point de base du projet : coordonnées projetées déclarées de l'origine ; absent = non déclaré. */
-  readonly pointDeBase?: PointDeBase;
+  readonly pointDeBase?: PointDeBase;  /** (Cas 2, lot 2) Unité d'affichage et de saisie des longueurs ; absent = mètres. Les valeurs stockées restent en mètres. */
+  readonly uniteSaisie?: UniteSaisie;
+  /** (Cas 2, lot 2) Paramètres nommés du projet (valeurs saisies par l'utilisateur, en mètres). */
+  readonly parametres?: Readonly<Record<Id, ParametreProjet>>;
+  /** (Cas 2, lot 2) Ressaut maximal à signaler, saisi par l'utilisateur avec sa source ; absent = « non évalué ». */
+  readonly ressautMax?: { readonly valeur: number; readonly source: string };
+}
+/** (Cas 2, lot 2) Unité d'affichage et de saisie. */
+export type UniteSaisie = "m" | "cm" | "mm" | "pieds-pouces";
+/** (Cas 2, lot 2) Paramètre nommé du projet (épaisseur de mur, hauteur sous plafond, module…), valeur en mètres. */
+export interface ParametreProjet {
+  readonly id: Id;
+  readonly nom: string;
+  readonly valeur: number;
 }
 /** Format des valeurs de cote : mètres, mètres avec le millimètre en exposant (à la française), centimètres sans unité. */
 export type FormatCote = "metres" | "metres-mm" | "centimetres";

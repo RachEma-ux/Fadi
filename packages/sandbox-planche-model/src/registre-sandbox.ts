@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "accrochage";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -355,6 +355,20 @@ const commandes: EntreeSandbox[] = [
   c("supprimer-fenetre", "feuille", "browser-x", "Ctrl+Alt+Maj+5", "panneau-feuilles", true),
   c("exporter-feuille-pdf", "feuille", "file-type-pdf", "Ctrl+Alt+Maj+6", "panneau-feuilles", true),
   c("exporter-jeu-pdf", "feuille", "file-stack", "Ctrl+Alt+Maj+7", "panneau-feuilles", true),
+  // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
+  // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
+  // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
+  c("accrochage", "accrochage", "magnet", "Alt+F8", "panneau-accrochage", true),
+  c("forcer-sommet", "accrochage", "point", "Alt+1", "panneau-accrochage", true),
+  c("forcer-milieu", "accrochage", "circle-half", "Alt+2", "panneau-accrochage", true),
+  c("forcer-intersection", "accrochage", "crosshair", "Alt+3", "panneau-accrochage", true),
+  c("forcer-quadrant", "accrochage", "circle-dot", "Alt+4", "panneau-accrochage", true),
+  c("forcer-axe", "accrochage", "separator-vertical", "Alt+5", "panneau-accrochage", true),
+  c("forcer-guide", "accrochage", "ruler-2", "Alt+6", "panneau-accrochage", true),
+  c("metre-mesure", "accrochage", "ruler-3", "Alt+F9", "panneau-metre", true),
+  c("guide-reseau", "accrochage", "layout-distribute-horizontal", "Alt+F10", "panneau-metre", true),
+  c("repartir", "accrochage", "spacing-horizontal", "Alt+F11", "panneau-metre", true),
+  c("remettre-echelle", "accrochage", "scale", "Alt+F12", "panneau-info-entite", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel", horsCatalogue = false): EntreeSandbox => ({

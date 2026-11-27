@@ -31,6 +31,12 @@
  * cible         := longueur AVEC unité (ou liste de telles longueurs)          Échelle : « 3m » = dimension cible
  * champ_vision  := decimal ["deg" | "°"] | decimal "mm"            Zoom : degrés ou focale
  * texte         := tout caractère                                  rendu tel quel (sans les espaces de bord)
+ * expression    := terme (("+" | "-") terme)*                     (cas 2, lot 2) partout où une longueur est attendue
+ * terme         := facteur (("*" | "×" | "/") facteur)*
+ * facteur       := [signe] (longueur | parametre | "(" expression ")")
+ * parametre     := nom déclaré dans Info modèle (lettres, chiffres, « _ »)
+ * point_depuis  := "@" longueur SEP longueur [SEP longueur]       (cas 2, lot 2) décalage depuis le point visé, non posé
+ * chanfrein     := pente SEP longueur                              (cas 2, lot 2) « 1:3 ; 0,05 », « 33 % ; 5 cm »
  * ```
  *
  * ## Séparateurs (locale)
@@ -107,6 +113,8 @@ export interface ContexteSaisie {
    * point relatif `<dx;dy;dz>` le long de ses axes ; les coordonnées retournées sont dans le repère stocké.
    */
   readonly repere?: { readonly origine: Vec3; readonly x: Vec3; readonly y: Vec3; readonly z: Vec3 };
+  /** (Cas 2, lot 2) Paramètres nommés du projet (Info modèle), valeurs en mètres, employables dans toute saisie. */
+  readonly parametres?: Readonly<Record<string, number>>;
 }
 
 export interface Angle {
@@ -116,7 +124,9 @@ export interface Angle {
 
 export type ResultatSaisie =
   | { readonly genre: "longueur"; readonly valeur: number }
-  | { readonly genre: "point"; readonly reference: "absolue" | "relative"; readonly point: Vec3 }
+  | { readonly genre: "point"; readonly reference: "absolue" | "relative" | "depuis"; readonly point: Vec3 }
+  /** (Cas 2, lot 2) Chanfrein : pente (montée / course) et hauteur signée, en mètres. */
+  | { readonly genre: "chanfrein"; readonly pente: number; readonly hauteur: number }
   | { readonly genre: "dimensions"; readonly valeurs: readonly (number | null)[] }
   | { readonly genre: "longueur-angle"; readonly longueur: number | null; readonly angle: Angle | null }
   | {
@@ -177,12 +187,14 @@ type Forme =
   | "reseau"
   | "echelle"
   | "champ-vision"
-  | "texte";
+  | "texte"
+  | "point-depuis"
+  | "chanfrein";
 
 /** Formes acceptées pour chaque attente, dans l'ordre d'essai. */
 export const FORMES_PAR_ATTENDU: Readonly<Record<AttenduSaisie, readonly Forme[]>> = {
   longueur: ["longueur"],
-  "longueur-ou-point": ["point", "longueur"],
+  "longueur-ou-point": ["point-depuis", "point", "chanfrein", "longueur"],
   point: ["point"],
   "distance-reseau": ["point", "reseau", "longueur"],
   dimensions2: ["liste2"],
@@ -211,6 +223,7 @@ export const angleDepuisRadians = (radians: number): Angle => ({ radians, degres
 interface Locale {
   readonly dec: "." | ",";
   readonly uniteModele: UniteLongueur;
+  readonly parametres?: Readonly<Record<string, number>>;
 }
 
 /** Découpe une liste selon la locale ; `;` toujours accepté, `,` seulement si le décimal est « . ». */
@@ -290,13 +303,91 @@ function lireLongueur(brut: string, loc: Locale): LongueurLue | Erreur | null {
   }
 
   const gen = /^([\d.\s/]+?)\s*(mm|cm|km|m|in|ft|"|')?$/i.exec(corps);
-  if (!gen) return null;
+  if (!gen) return lireExpression(s, loc);
   const n = lireMixte(gen[1] ?? "");
-  if (estErreur(n)) return n;
-  if (n === null) return null;
+  // « 2.4 / 2 » ressemble à une fraction sans en être une : l'expression est essayée avant de refuser.
+  if (estErreur(n) || n === null) return lireExpression(s, loc) ?? n;
   const unite = gen[2] ? uniteDepuisSuffixe(gen[2]) : null;
   const facteur = METRES_PAR_UNITE[unite ?? loc.uniteModele];
   return { metres: k * n * facteur, avecUnite: unite !== null };
+}
+
+/**
+ * (Cas 2, lot 2) Expression arithmétique de longueurs : nombres avec ou sans unité, paramètres du projet, + − × / et
+ * parenthèses. Une longueur ne se multiplie que par un nombre ; un nombre nu ajouté à une longueur est dans l'unité du
+ * modèle. Rend null quand le texte n'est pas une expression (« x5 », « /5 », « 5x » restent des réseaux).
+ */
+function lireExpression(brut: string, loc: Locale): LongueurLue | Erreur | null {
+  const texte = brut.replace(/\u2212/g, "-");
+  type V = { v: number; dim: 0 | 1; avecUnite: boolean };
+  const jetons = texte.match(/\s*(\d+(?:\.\d*)?|\.\d+)\s*(mm|cm|km|m|in|ft)?(?![\p{L}\d_])|\s*[\p{L}_][\p{L}\d_]*|\s*[-+*×/()]/giu);
+  if (!jetons || jetons.join("").replace(/\s+/g, "") !== texte.replace(/\s+/g, "")) return null;
+  const j = jetons.map((x) => x.trim());
+  if (!j.some((x) => /^[-+*×/()]$/.test(x)) && !j.some((x) => /^[\p{L}_]/u.test(x))) return null;
+  let i = 0;
+  const params = loc.parametres ?? {};
+  const enLongueur = (a: V): V => (a.dim === 1 ? a : { v: a.v * METRES_PAR_UNITE[loc.uniteModele], dim: 1, avecUnite: false });
+  const facteur = (): V | Erreur | null => {
+    const x = j[i++];
+    if (x === undefined) return null;
+    if (x === "-" || x === "+") {
+      const f = facteur();
+      if (f === null || estErreur(f)) return f;
+      return x === "-" ? { ...f, v: -f.v } : f;
+    }
+    if (x === "(") {
+      const e = expression();
+      if (e === null || estErreur(e)) return e;
+      if (j[i++] !== ")") return erreur("Parenthèse fermante manquante.");
+      return e;
+    }
+    const n = /^(\d+(?:\.\d*)?|\.\d+)\s*(mm|cm|km|m|in|ft)?$/i.exec(x);
+    if (n) {
+      const u = n[2] ? uniteDepuisSuffixe(n[2]) : null;
+      return u ? { v: Number(n[1]) * METRES_PAR_UNITE[u], dim: 1, avecUnite: true } : { v: Number(n[1]), dim: 0, avecUnite: false };
+    }
+    if (/^[\p{L}_]/u.test(x)) {
+      const p = Object.prototype.hasOwnProperty.call(params, x) ? params[x] : undefined;
+      return p === undefined ? null : { v: p, dim: 1, avecUnite: true };
+    }
+    return null;
+  };
+  const terme = (): V | Erreur | null => {
+    let a = facteur();
+    while (a !== null && !estErreur(a) && (j[i] === "*" || j[i] === "×" || j[i] === "/")) {
+      const op = j[i++];
+      const b = facteur();
+      if (b === null || estErreur(b)) return b === null ? erreur("Expression incomplète.") : b;
+      if (op === "/") {
+        if (b.dim === 1 && a.dim === 1) a = { v: a.v / b.v, dim: 0, avecUnite: false };
+        else if (b.dim === 1) return erreur("On ne divise pas un nombre par une longueur.");
+        else if (b.v === 0) return erreur("Division par zéro.");
+        else a = { ...a, v: a.v / b.v };
+      } else {
+        if (a.dim === 1 && b.dim === 1) return erreur("Le produit de deux longueurs n'est pas une longueur.");
+        a = { v: a.v * b.v, dim: a.dim === 1 || b.dim === 1 ? 1 : 0, avecUnite: a.avecUnite || b.avecUnite };
+      }
+    }
+    return a;
+  };
+  const expression = (): V | Erreur | null => {
+    let a = terme();
+    while (a !== null && !estErreur(a) && (j[i] === "+" || j[i] === "-")) {
+      const op = j[i++];
+      const b = terme();
+      if (b === null || estErreur(b)) return b === null ? erreur("Expression incomplète.") : b;
+      const x = enLongueur(a);
+      const y = enLongueur(b);
+      a = { v: op === "+" ? x.v + y.v : x.v - y.v, dim: 1, avecUnite: x.avecUnite || y.avecUnite };
+    }
+    return a;
+  };
+  const r = expression();
+  if (r === null || estErreur(r)) return r;
+  if (i !== j.length) return null;
+  if (!Number.isFinite(r.v)) return erreur("Expression non calculable.");
+  const l = enLongueur(r);
+  return { metres: l.v, avecUnite: l.avecUnite };
 }
 
 /** Lit un nombre réel signé (facteur, angle) ; null si ce n'en est pas un. */
@@ -337,6 +428,41 @@ function formePoint(t: string, loc: Locale): ResultatSaisie | null {
   }
   const [x, y, z] = vals as [number, number, number];
   return { genre: "point", reference: ouvrant === "[" ? "absolue" : "relative", point: v3(x, y, z) };
+}
+
+/** (Cas 2, lot 2) « @dx ; dy [; dz] » : décalage depuis le point visé (désigné, non posé). */
+function formePointDepuis(t: string, loc: Locale): ResultatSaisie | null {
+  const m = /^@\s*(.+)$/s.exec(t);
+  if (!m) return null;
+  const parts = decouperListe(m[1] ?? "", loc);
+  if (parts.length < 2 || parts.length > 3) return erreur("« @ » demande 2 ou 3 décalages : @dx ; dy [; dz].");
+  const vals: number[] = [];
+  for (const p of parts) {
+    const l = p === "" ? { metres: 0, avecUnite: false } : lireLongueur(p, loc);
+    if (l === null) return erreur(MSG_LONGUEUR(p));
+    if (estErreur(l)) return l;
+    vals.push(l.metres);
+  }
+  return { genre: "point", reference: "depuis", point: v3(vals[0] as number, vals[1] as number, vals[2] ?? 0) };
+}
+
+/** (Cas 2, lot 2) Chanfrein : « pente ; hauteur », la pente en rapport « 1:3 » ou en pourcentage « 33 % ». */
+function formeChanfrein(t: string, loc: Locale): ResultatSaisie | null {
+  const parts = decouperListe(t, loc);
+  if (parts.length !== 2) return null;
+  const [p, h] = parts as [string, string];
+  let pente: number | null = null;
+  const rapport = /^(\d+(?:[.,]\d+)?)\s*:\s*(\d+(?:[.,]\d+)?)$/.exec(p);
+  const pourcent = /^(\d+(?:[.,]\d+)?)\s*%$/.exec(p);
+  if (rapport) pente = Number((rapport[1] ?? "").replace(",", ".")) / Number((rapport[2] ?? "").replace(",", "."));
+  else if (pourcent) pente = Number((pourcent[1] ?? "").replace(",", ".")) / 100;
+  else return null;
+  if (!Number.isFinite(pente) || pente <= 0) return erreur("Pente nulle : un chanfrein demande une pente positive.");
+  const l = lireLongueur(h, loc);
+  if (l === null) return erreur(MSG_LONGUEUR(h));
+  if (estErreur(l)) return l;
+  if (l.metres === 0) return erreur("Hauteur nulle : aucun chanfrein.");
+  return { genre: "chanfrein", pente, hauteur: l.metres };
 }
 
 function lireListeLongueurs(t: string, loc: Locale, max: number): (number | null)[] | Erreur {
@@ -589,6 +715,10 @@ function essayer(forme: Forme, t: string, loc: Locale, ctx: ContexteSaisie): Res
       return formeChampVision(t, loc);
     case "texte":
       return { genre: "texte", texte: t };
+    case "point-depuis":
+      return formePointDepuis(t, loc);
+    case "chanfrein":
+      return formeChanfrein(t, loc);
   }
 }
 
@@ -605,7 +735,7 @@ function dansLeRepere(r: Extract<ResultatSaisie, { genre: "point" }>, rep: NonNu
 
 export function analyserSaisie(texte: string, contexte: ContexteSaisie): ResultatSaisie {
   try {
-    const loc: Locale = { dec: contexte.separateurDecimal ?? ".", uniteModele: contexte.uniteModele ?? "m" };
+    const loc: Locale = { dec: contexte.separateurDecimal ?? ".", uniteModele: contexte.uniteModele ?? "m", ...(contexte.parametres ? { parametres: contexte.parametres } : {}) };
     const t = texte.trim();
     if (contexte.attendu === "aucune") return erreur("Cet outil n'attend aucune saisie dans le champ Mesures.");
     if (contexte.attendu === "texte") return { genre: "texte", texte: t };

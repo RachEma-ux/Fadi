@@ -12,6 +12,7 @@
  * - Échap annule l'opération en cours (sinon : sans effet, l'interface gère le retour à l'outil précédent).
  */
 import type { PlanDeTravail } from "../reperes.js";
+import type { OptionsAccrochage } from "../inference.js";
 import type { Modele } from "../geometrie-libre.js";
 import type { Maillage } from "../maillage.js";
 import type { Repere } from "../annotations.js";
@@ -119,6 +120,10 @@ export interface VueOutil {
   readonly survol: readonly string[];
   /** Message d'erreur transitoire (saisie refusée…), annoncé par `aria-live`. */
   readonly erreur: string | null;
+  /** (Cas 2, lot 2) Note d'information de l'outil (ex. ressaut d'un chanfrein comparé au maximum saisi). */
+  readonly note?: string;
+  /** (Cas 2, lot 2) Mètre : dernière mesure (décomposée par le panneau Mètre · Mesure) et dernier guide créé. */
+  readonly metre?: { readonly derniere: { readonly a: Vec3; readonly b: Vec3 } | null; readonly guide: { readonly id: string; readonly pas: Vec3 } | null };
   /** (Lot Planche 8) Options de l'outil actif, affichées en boutons (barre d'options, toucher). */
   readonly options?: readonly OptionOutil[];
 }
@@ -164,6 +169,8 @@ export interface ContexteOutil {
   readonly sectionCourante?: SectionCourante;
   /** (Cas 4, étape 4) Épaisseur et hauteur du mur, saisies dans la barre d'options de l'outil Mur ; absent = saisie invalide. */
   readonly parametresMur?: { readonly epaisseur: number; readonly hauteur: number };
+  /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage » (genre forcé, genres coupés, presque, pas). */
+  readonly accrochage?: OptionsAccrochage;
 }
 
 /** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */
