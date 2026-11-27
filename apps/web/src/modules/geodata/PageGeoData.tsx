@@ -14,11 +14,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
+import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ExportRecu } from "./client";
 import { colorationIndicateur, basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, LegendeIndicateur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
-import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
+import { Etudes, Export, Import, MesCartes } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
 import { BarreRecherche, type ChoixFond } from "./panneaux/BarreRecherche";
 import { PanneauCollection, useCollection, type ModeCollection } from "./panneaux/collection";
@@ -34,6 +34,8 @@ import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacemen
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { ConsigneAccueil } from "./panneaux/ConsigneAccueil";
 import { commandeDeTouche, type CommandeClavier } from "./raccourcis";
+import { useOutilsZones } from "./etat/useOutilsZones";
+import { outilQuiEnregistre, outilTerrain, voletDeOutil, zoneARetablir } from "./etat/outils-ops";
 import { usePanneaux } from "./etat/usePanneaux";
 import { AideRaccourcis } from "./panneaux/AideRaccourcis";
 import { basculerOnglet, basculerVolet, carteSeule, cibleEchap, ouvrirOnglet as ouvrirOngletPur, type EtatPanneaux, type OngletPanneau, type VoletPage } from "./etat/panneaux-ops";
@@ -109,20 +111,13 @@ export function PageGeoData() {
   // Catalogue fermé à chaque ouverture de la page (P1, décision D1 de la feuille de route) : la carte d'arrivée reste
   // dégagée ; le bouton « Données » ou la consigne l'ouvrent.
   // Consigne d'arrivée écartée pour la session : première fiche, premier outil, première recherche ou fermeture (P1).
-  const [outil, setOutil] = useState<OutilCarte>("navigation");
+  // Outils, tracé et zones d'étude (P6 : domaine D6 extrait, `etat/useOutilsZones.ts`).
+  const { outil, setOutil, trace, setTrace, tracePret, setTracePret, zones, zonesLues, zoneFiltre, setZoneFiltre, derniereZone,
+    codesZone, setCodesZone, analysesIds, chargerZones, zoneActive } = useOutilsZones();
   // Terrain haute résolution (TER-05) : état gardé par la page, les couches restent affichées panneau fermé.
   const terrain = useTerrain(() => moteur.current?.emprise() ?? null);
   const terrainRef = useRef(terrain);
   terrainRef.current = terrain;
-  const [trace, setTrace] = useState<TraceEnCours | null>(null);
-  const [tracePret, setTracePret] = useState<TraceEnCours | null>(null);
-  const [zones, setZones] = useState<ZoneRecue[]>([]);
-  // Zone d'étude qui filtre la carte, la table et la synthèse (D-GD-41) ; codes des objets qui la recoupent, par couche.
-  const [zonesLues, setZonesLues] = useState(false);
-  const [zoneFiltre, setZoneFiltre] = useState<string | null>(null);
-  const derniereZone = useRef<string | null>(null);
-  const [codesZone, setCodesZone] = useState<{ zone: string; couches: Map<string, { codes: string[]; tronque: boolean } | { erreur: string }> } | null>(null);
-  const [analysesIds, setAnalysesIds] = useState<string[]>([]);
   // État du moteur (P2) : chargement, prêt, sans WebGL, échec de démarrage, contexte perdu — jamais une tuile refusée.
   const [etatMoteur, envoyerMoteur] = useReducer(transitionMoteur, undefined, () => etatInitial(webglDisponible()));
   const webgl = etatMoteur.cas !== "sans-webgl";
@@ -232,7 +227,6 @@ export function PageGeoData() {
   const themes = useMemo(() => regrouperCatalogue(catalogue ?? [], "vecteurs", new Set<string>(), rangementCatalogue)
     .map((g) => ({ cle: g.categorie.cle, libelle: g.categorie.libelle, couches: g.couches.filter((c) => !c.niveauAdministratif) }))
     .filter((g) => g.couches.length > 0), [catalogue, rangementCatalogue]);
-  const chargerZones = useCallback(() => { api.zones().then((r) => { setZones(r.zones); setZonesLues(true); }).catch(() => undefined); api.analyses().then((r) => setAnalysesIds(r.analyses.map((a) => a.id))).catch(() => undefined); }, []);
 
   useEffect(() => {
     api.espace().then(setEspace).catch((e) => setErreurEspace(message(e)));
@@ -394,7 +388,6 @@ export function PageGeoData() {
     const versions = new Set(paysListe?.find((x) => x.code === paysCourant)?.versions ?? []);
     return couchesNiveau.filter((c) => versions.has(couchesConnues.get(c.coucheId)?.version.id ?? ""));
   }, [chemin, couchesNiveau, paysListe, paysCourant, couchesConnues]);
-  const zoneActive = useMemo(() => zones.find((z) => z.id === zoneFiltre && z.nature === "zone") ?? null, [zones, zoneFiltre]);
   // Zone archivée ou inconnue (adresse d'un autre espace) : le filtre est retiré une fois les zones lues.
   useEffect(() => { if (zoneFiltre && zonesLues && !zoneActive) { setZoneFiltre(null); setAnnonce("Zone d'étude introuvable : filtre de zone retiré."); } }, [zoneFiltre, zonesLues, zoneActive]);
   const cleCouchesVectorielles = [...vectorielles].sort().join(",");
@@ -434,8 +427,7 @@ export function PageGeoData() {
   /** Alt+Z : retire le filtre de zone, ou rétablit la dernière zone filtrée (sinon la zone d'étude la plus récente). */
   const basculerFiltreZone = () => {
     if (zoneFiltre) return filtrerZone(null);
-    const candidates = zones.filter((z) => z.nature === "zone");
-    const cible = candidates.find((z) => z.id === derniereZone.current) ?? candidates[0];
+    const cible = zoneARetablir(zones, derniereZone.current);
     if (!cible) return setAnnonce("Aucune zone d'étude : tracez-en une avec « Tracer une zone d'étude ».");
     filtrerZone(cible.id);
   };
@@ -599,8 +591,8 @@ export function PageGeoData() {
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => {
             // Outils du terrain (TER-05) : le résultat s'affiche dans le panneau Terrain, aucun tracé n'est gardé ici.
-            if (o === "altitude" || o === "profil") { setTrace(null); terrainRef.current.surTrace(o, s); return; }
-            setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] });
+            if (outilTerrain(o)) { setTrace(null); terrainRef.current.surTrace(o, s); return; }
+            setTrace({ outil: o, sommets: [...s] }); if (outilQuiEnregistre(o)) setTracePret({ outil: o, sommets: [...s] });
           },
           // Seule cause signalée par surErreur : la perte du contexte WebGL ; sa restauration rend la carte (P2).
           surErreur: () => envoyerMoteur({ type: "contexte-perdu" }),
@@ -952,9 +944,9 @@ export function PageGeoData() {
   const afficherCarteSeule = () => { panneaux(carteSeule); basculerRecherche(false); };
   const basculerCouches = () => panneaux((e) => basculerOnglet(e, "couches", estTelephone()));
   const basculerLegende = () => panneaux((e) => basculerOnglet(e, "legende", estTelephone()));
-  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setConsigneEcartee(true); setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
+  const choisirOutil = (o: OutilCarte) => { setOutil(o); const v = voletDeOutil(o); if (v) { setConsigneEcartee(true); setVolet(v); if (estTelephone()) setPanneauOuvert(false); } };
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
-  const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outil === "altitude" || outil === "profil") setOutil("navigation"); } else afficherVolet("terrain"); };
+  const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outilTerrain(outil)) setOutil("navigation"); } else afficherVolet("terrain"); };
   /** « Emplacements Projets » (Alt+J) : volet des emplacements à ouvrir dans la Planche. */
   const basculerEmplacements = () => { if (volet === "emplacements") setVolet(null); else afficherVolet("emplacements"); };
   const basculerOutilTerrain = (o: "altitude" | "profil") => choisirOutil(outil === o ? "navigation" : o);
