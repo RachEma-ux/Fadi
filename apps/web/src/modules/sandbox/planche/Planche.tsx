@@ -366,7 +366,9 @@ const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(COLONNE.map((p) => p.id).f
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
   try {
-    const v = Number(window.localStorage.getItem(CLE_PRECISION));
+    // Aucune préférence enregistrée : 2 décimales (Number(null) vaudrait 0 et effacerait les centimètres).
+    const brut = window.localStorage.getItem(CLE_PRECISION);
+    const v = brut === null || brut.trim() === "" ? Number.NaN : Number(brut);
     return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 2;
   } catch {
     return 2;
