@@ -3255,11 +3255,28 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   const modifierUneReserve = (v: Parameters<typeof modifierReserve>[2]) => reserveChoisie && operationReserve(modifierReserve(hist.present.modele, reserveChoisie.id, v), t("planche.reserves.fiche"), null);
   const joindrePhoto = async (f: File) => {
+    // La réserve et la Planche visées sont retenues avant le décodage ; la photo s'applique ensuite au modèle courant
+    // (dans `operer`), jamais à un instantané : une modification faite pendant le décodage n'est pas perdue.
+    const cible = reserveChoisie?.id;
+    const planche = indexRef.current.courante;
+    if (!cible) return;
+    let photo: Awaited<ReturnType<typeof reduirePhoto>>;
     try {
-      modifierUneReserve({ photo: await reduirePhoto(f) });
+      photo = await reduirePhoto(f);
     } catch {
-      setErreurReserve(t("planche.reserves.erreur.photo"));
+      return setErreurReserve(t("planche.reserves.erreur.photo"));
     }
+    if (indexRef.current.courante !== planche) return;
+    let erreur: string | null = null;
+    operer(t("planche.reserves.fiche"), (m) => {
+      const r = modifierReserve(m, cible, { photo });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      return { modele: r.modele };
+    });
+    setErreurReserve(erreur ? t(`planche.reserves.erreur.${erreur}`) : null);
   };
   const executerFeuille = (id: IdCommandeFeuille) => {
     if (id === "feuilles") return setPanneau("feuilles");
