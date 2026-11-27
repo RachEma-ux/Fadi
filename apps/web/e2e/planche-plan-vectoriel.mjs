@@ -133,7 +133,9 @@ await vue.focus();
 await page.keyboard.press("Escape");
 await page.keyboard.press("Control+F9");
 await panneau.waitFor();
-check("Ctrl+F9 : panneau ouvert sur « Motifs de hachure »", (await page.evaluate(() => document.activeElement?.hasAttribute("data-planche-plan-motifs"))) === true);
+// Le focus est posé après le rendu du panneau (setTimeout) : on l'attend, borné.
+const focusMotifs = await page.waitForFunction(() => document.activeElement?.hasAttribute("data-planche-plan-motifs") === true, null, { timeout: 3000 }).then(() => true, () => false);
+check("Ctrl+F9 : panneau ouvert sur « Motifs de hachure »", focusMotifs);
 check("sans motif : le panneau le dit ; Supprimer grisé avec son motif", (await panneau.locator("[data-planche-motifs-vide]").count()) === 1 && (await commande("supprimer-motif").isDisabled()) && ((await commande("supprimer-motif").getAttribute("title")) ?? "").includes("Choisissez d'abord un motif"));
 const pas0 = await pas();
 await vue.focus();
