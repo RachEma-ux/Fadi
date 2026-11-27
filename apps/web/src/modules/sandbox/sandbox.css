@@ -4348,3 +4348,48 @@
   background: #1b4d42;
   border-color: #1b4d42;
 }
+/* Cas 4, étape 3 : locaux (panneau et étiquettes liées en plan). */
+.sandbox-planche .planche-etiquette.planche-etiquette-local {
+  white-space: pre-line;
+  text-align: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid #1a5fd6;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #1b4d42;
+  font-weight: 600;
+  transform: translate(-50%, -50%);
+}
+.sandbox-planche .planche-locaux-table .planche-locaux-n {
+  text-align: right;
+}
+.sandbox-planche .planche-locaux-table tbody tr.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-locaux-table tbody tr.est-ouvert td {
+  color: rgba(138, 75, 18, 1);
+}
+.sandbox-planche .planche-locaux-table tr.planche-locaux-total td {
+  font-weight: 700;
+  border-top: 1px solid rgba(27, 77, 66, 0.35);
+}
+.sandbox-planche .planche-locaux-formulaire {
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr 1.4fr;
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-locaux-formulaire input {
+  width: 100%;
+  min-width: 0;
+}
+.sandbox-planche .planche-locaux .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+/* Le tableau des locaux a huit colonnes : panneau plus large sur grand écran (maquette de l'étape 3). */
+@media (min-width: 64rem) {
+  .sandbox-planche .planche-panneau[data-planche-panneau="locaux"] {
+    width: min(38rem, calc(100% - var(--colonne-l) - 5rem));
+  }
+}
