@@ -48,4 +48,5 @@ export * from "./evenements-extensions.js";
 export * from "./fichiers-extensions.js";
 export * from "./panneaux-extensions.js";
 export * from "./plan-vectoriel.js";
+export * from "./feuilles.js";
 export * from "./controle-l3.js";

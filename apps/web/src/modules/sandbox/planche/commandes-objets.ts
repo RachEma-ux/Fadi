@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -487,6 +487,31 @@ export function disponibilitePlan(id: IdCommandePlan, s: { readonly dessin: bool
   if (id === "exporter-plan-svg") return s.dessin ? { disponible: true, motif: null } : { disponible: false, motif: "planche.plan.motif.vide" };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (id === "supprimer-motif" && !s.motifChoisi) return { disponible: false, motif: "planche.plan.motif.choisi" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Feuilles (cas 4 du catalogue, étape 6) : ouvrir le panneau, créer et supprimer une feuille, ajouter et supprimer une
+ * fenêtre de vue, exporter la feuille ou le jeu coché en PDF vectoriel (règle d'or : icône, barre, raccourci).
+ */
+export type IdCommandeFeuille = "feuilles" | "nouvelle-feuille" | "supprimer-feuille" | "ajouter-fenetre" | "supprimer-fenetre" | "exporter-feuille-pdf" | "exporter-jeu-pdf";
+export interface CommandeFeuille {
+  readonly id: IdCommandeFeuille;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_FEUILLES: readonly CommandeFeuille[] = (["feuilles", "nouvelle-feuille", "supprimer-feuille", "ajouter-fenetre", "supprimer-fenetre", "exporter-feuille-pdf", "exporter-jeu-pdf"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.feuilles.${id}` as CleMessage, court: `planche.feuilles.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; exporter avec une feuille (ou des feuilles cochées) ; modifier hors lecture. */
+export function disponibiliteFeuille(id: IdCommandeFeuille, s: { readonly feuille: boolean; readonly fenetre: boolean; readonly cochees: number; readonly lecture: boolean }): Disponibilite {
+  if (id === "feuilles") return { disponible: true, motif: null };
+  if (id === "exporter-feuille-pdf") return s.feuille ? { disponible: true, motif: null } : { disponible: false, motif: "planche.feuilles.motif.feuille" };
+  if (id === "exporter-jeu-pdf") return s.cochees > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.feuilles.motif.cochees" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if ((id === "supprimer-feuille" || id === "ajouter-fenetre") && !s.feuille) return { disponible: false, motif: "planche.feuilles.motif.feuille" };
+  if (id === "supprimer-fenetre" && !s.fenetre) return { disponible: false, motif: "planche.feuilles.motif.fenetre" };
   return { disponible: true, motif: null };
 }
 

@@ -351,6 +351,38 @@ export interface FamilleHachure {
   readonly dy: number;
   readonly tirets: readonly number[];
 }
+/**
+ * (Cas 4 du catalogue, étape 6 : D7-F11-013) Fenêtre de vue d'une feuille : le plan vectoriel d'une scène (ou de la vue de
+ * dessus), à une échelle de la série, posé sur la feuille par son coin haut gauche (mm, depuis le coin haut gauche).
+ * Identifiant local à la feuille (« v1 », « v2 »…).
+ */
+export interface FenetreVue {
+  readonly id: string;
+  /** Scène de la Planche ; `null` = vue de dessus. */
+  readonly scene: Id | null;
+  /** Dénominateur de l'échelle (50 pour 1:50). */
+  readonly echelle: number;
+  /** Plan de coupe : identifiant, « aucune », ou `null` = le plan actif. */
+  readonly coupe: Id | "aucune" | null;
+  readonly x: number;
+  readonly y: number;
+}
+/**
+ * (Cas 4, étape 6 : D7-F11-013, D7-F11-012) Feuille de dessin : format ISO 216 (A0 à A4), sens, cartouche saisi (un champ
+ * vide reste vide), fenêtres de vue. Préfixe « k ».
+ */
+export interface Feuille {
+  readonly id: Id;
+  readonly numero: string;
+  readonly nom: string;
+  readonly indice: string;
+  /** Rang du format A (0 = A0 … 4 = A4). */
+  readonly format: 0 | 1 | 2 | 3 | 4;
+  readonly sens: "paysage" | "portrait";
+  readonly cartouche: { readonly projet: string; readonly phase: string; readonly date: string };
+  readonly fenetres: readonly FenetreVue[];
+}
+
 export interface MotifHachure {
   readonly id: Id;
   readonly nom: string;
@@ -390,6 +422,7 @@ export interface Annotations {
   /** (Cas 4, étape 4) Murs à épaisseur : tracé d'axe et paramètres, géométrie dans un groupe de la racine. */
   readonly murs?: Readonly<Record<Id, Mur>>;
   readonly motifs?: Readonly<Record<Id, MotifHachure>>;
+  readonly feuilles?: Readonly<Record<Id, Feuille>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -420,6 +453,7 @@ export interface AnnotationsMutables {
   locaux: Record<Id, Local>;
   murs: Record<Id, Mur>;
   motifs: Record<Id, MotifHachure>;
+  feuilles: Record<Id, Feuille>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

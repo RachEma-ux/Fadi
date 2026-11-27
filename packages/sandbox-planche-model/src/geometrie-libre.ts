@@ -684,7 +684,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -796,6 +796,7 @@ class Travail {
       ...(Object.keys(a.locaux).length ? { locaux: Object.freeze({ ...a.locaux }) } : {}),
       ...(Object.keys(a.murs).length ? { murs: Object.freeze({ ...a.murs }) } : {}),
       ...(Object.keys(a.motifs).length ? { motifs: Object.freeze({ ...a.motifs }) } : {}),
+      ...(Object.keys(a.feuilles).length ? { feuilles: Object.freeze({ ...a.feuilles }) } : {}),
     });
     return suivreAnnotations(this.modele, Object.freeze({ ...base, annotations }));
   }
@@ -861,7 +862,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}, a.feuilles ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));

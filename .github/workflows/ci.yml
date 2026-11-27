@@ -1105,6 +1105,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-plan-vectoriel node apps/web/e2e/planche-plan-vectoriel.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des feuilles (cas 4, étape 6) — formats ISO, fenêtres à l'échelle, cartouche, export PDF vectoriel relu (apps/web/e2e/planche-feuilles.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-feuilles node apps/web/e2e/planche-feuilles.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

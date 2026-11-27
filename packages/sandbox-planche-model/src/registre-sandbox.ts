@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "accrochage";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -355,6 +355,14 @@ const commandes: EntreeSandbox[] = [
   c("nouveau-motif", "plan", "row-insert-bottom", "Ctrl+F10", "panneau-plan-vectoriel", true),
   c("importer-motif", "plan", "file-import", "Ctrl+F11", "panneau-plan-vectoriel", true),
   c("supprimer-motif", "plan", "row-remove", "Ctrl+F12", "panneau-plan-vectoriel", true),
+  // Feuilles (cas 4, étape 6) : feuilles ISO, fenêtres de vue, PDF vectoriel ; ouvert depuis le panneau Plan vectoriel.
+  c("feuilles", "feuille", "files", "Ctrl+Alt+Maj+1", "panneau-plan-vectoriel", true),
+  c("nouvelle-feuille", "feuille", "file-plus", "Ctrl+Alt+Maj+2", "panneau-feuilles", true),
+  c("supprimer-feuille", "feuille", "file-minus", "Ctrl+Alt+Maj+3", "panneau-feuilles", true),
+  c("ajouter-fenetre", "feuille", "browser-plus", "Ctrl+Alt+Maj+4", "panneau-feuilles", true),
+  c("supprimer-fenetre", "feuille", "browser-x", "Ctrl+Alt+Maj+5", "panneau-feuilles", true),
+  c("exporter-feuille-pdf", "feuille", "file-type-pdf", "Ctrl+Alt+Maj+6", "panneau-feuilles", true),
+  c("exporter-jeu-pdf", "feuille", "file-stack", "Ctrl+Alt+Maj+7", "panneau-feuilles", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -371,7 +379,7 @@ const commandes: EntreeSandbox[] = [
   c("remettre-echelle", "accrochage", "scale", "Alt+F12", "panneau-info-entite", true),
 ];
 
-const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
+const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel", horsCatalogue = false): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
@@ -413,6 +421,8 @@ const panneaux: EntreeSandbox[] = [
   p("locaux", "layout-board-split", "colonne", true),
   // Plan vectoriel (cas 4, étape 5) : dessin 2D de la vue, coupe pochée, motifs de hachure ; fonction du noyau.
   p("plan-vectoriel", "background", "colonne", true),
+  // Feuilles (cas 4, étape 6) : hors de la colonne (pleine), ouvert depuis Plan vectoriel, Outils ▾ et son raccourci.
+  p("feuilles", "files", "panneau-plan-vectoriel", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -437,6 +447,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:niveaux", "panneau:niveaux"],
   ["commande:locaux", "panneau:locaux"],
   ["commande:plan-vectoriel", "panneau:plan-vectoriel"],
+  ["commande:feuilles", "panneau:feuilles"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */
