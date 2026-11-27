@@ -61,6 +61,9 @@ export const sauvegarderSite = (s: SiteOuvert, contenu: ContenuSite, lien?: Lien
 export const sauvegarderSiteSous = (s: SiteOuvert, contenu: ContenuSite, lien?: LienSite) =>
   appeler<SiteOuvert>(`/sites/${encodeURIComponent(s.id)}/copie`, { method: "POST", corps: { ...contenu, ...(lien ? { lien } : {}) } });
 
+/** Rattache un site existant au module (la Planche ouverte suit ce site). */
+export const lierSite = (id: string, lien: LienSite) => appeler<SiteOuvert>(`/sites/${encodeURIComponent(id)}/lien`, { method: "POST", corps: { lien } });
+
 export const importerSite = (nom: string, contenu: string, lien?: LienSite) => appeler<SiteOuvert>("/import", { method: "POST", corps: { nom, contenu, ...(lien ? { lien } : {}) } });
 
 /** Adresse du fichier d'échange (téléchargé par le navigateur, session comprise). */

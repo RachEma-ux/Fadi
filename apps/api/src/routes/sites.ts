@@ -95,6 +95,15 @@ sitesRouter.put("/sites/:id", async (req, res) => {
   res.json(await lireSite(moi(req), req.params["id"]!));
 });
 
+/** Rattacher le site ouvert (Ouvrir un site… dans la Planche) : la Planche suit désormais ce site, en base. */
+sitesRouter.post("/sites/:id/lien", async (req, res) => {
+  const lien = lienDe((req.body as Record<string, unknown> | undefined)?.["lien"]);
+  if (!lien || lien === "invalide") return invalide(res, "lien");
+  if (!(await lireSite(moi(req), req.params["id"]!))) return introuvable(res);
+  await transaction((tx) => lierSeul(moi(req), req.params["id"]!, lien, tx));
+  res.json(await lireSite(moi(req), req.params["id"]!));
+});
+
 /** « Sauvegarder sous… » : copie du site sous un autre nom (contenu reçu, ou celui du site s'il n'est pas fourni). */
 sitesRouter.post("/sites/:id/copie", async (req, res) => {
   const source = await lireSite(moi(req), req.params["id"]!);

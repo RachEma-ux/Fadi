@@ -9,7 +9,7 @@
  */
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { NATURES_TRAVAUX, type ContenuSite, type FicheSite, type LienSite, type NatureTravaux, type ObservationsSite } from "@parcours/domain-model";
-import { adresseExport, contenuDe, creerSite, ErreurSites, importerSite, lireSite, listerSites, sauvegarderSite, sauvegarderSiteSous, type ResumeSite, type SiteOuvert } from "./client";
+import { adresseExport, contenuDe, creerSite, ErreurSites, importerSite, lierSite, lireSite, listerSites, sauvegarderSite, sauvegarderSiteSous, type ResumeSite, type SiteOuvert } from "./client";
 import "./sites.css";
 
 /** Pour la Planche, qui ne lit pas le modèle du domaine directement : l'Emplacement tiré d'un site. */
@@ -149,7 +149,8 @@ export function useSitesProjet({ lien, etatModule, onOuvert }: OptionsSitesProje
     }).then((ok) => ok && setDialogue(null));
 
   const ouvrirId = (id: string) =>
-    executer(async () => ouvert(await lireSite(id), "")).then((ok) => {
+    // Ouvert depuis un module lié (la Planche), le site est aussi rattaché en base : la réouverture le retrouve.
+    executer(async () => ouvert(lien ? await lierSite(id, lien) : await lireSite(id), "")).then((ok) => {
       if (ok) setDialogue(null);
     });
 

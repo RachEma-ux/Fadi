@@ -76,6 +76,11 @@ describe("Sites de projet — API /sites/api", () => {
     const s2 = await a.post(`${API}/sites`).send({ fiche: { nom: "Deux" }, lien: { genre: "planche", cible: "p1" } });
     expect((await a.get(`${API}/sites?genre=planche&cible=p1`)).body.sites.map((s: { id: string }) => s.id)).toEqual([s2.body.id]);
     expect((await a.get(`${API}/sites/${s1.body.id}`)).body.liens).toEqual([]);
+    // Ouvrir un site depuis la Planche le rattache en base : la Planche suit le site ouvert, plus l'ancien.
+    const l = await a.post(`${API}/sites/${s1.body.id}/lien`).send({ lien: { genre: "planche", cible: "p1" } });
+    expect(l.status).toBe(200);
+    expect((await a.get(`${API}/sites?genre=planche&cible=p1`)).body.sites.map((s: { id: string }) => s.id)).toEqual([s1.body.id]);
+    expect((await a.post(`${API}/sites/${s1.body.id}/lien`).send({ lien: { genre: "projet", cible: "x" } })).status).toBe(400);
   });
 
   it("isolation : un autre compte ne voit ni ne sauvegarde le site ; sans session : 401", async () => {

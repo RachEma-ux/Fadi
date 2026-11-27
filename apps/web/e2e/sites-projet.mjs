@@ -79,7 +79,15 @@ const statut = (await page.locator("body").textContent()) ?? "";
 check("Planche : le nord non évalué est dit, pas supposé en silence", statut.includes("nord vrai non évalué"));
 await page.screenshot({ path: `${OUT}/planche-site-ouvert.png` });
 
-// Sauvegarder : l'Emplacement (nord compris) est écrit dans le site, révision suivante.
+const lieSite = (await api(`/sites?genre=planche&cible=brouillon`)).sites;
+check("Planche : ouvrir un site le rattache en base à la Planche", lieSite.length === 1 && lieSite[0].id === cree.id, JSON.stringify(lieSite));
+// Sauvegarder sans toucher au nord : le 0° des ombres n'est pas écrit comme un nord déclaré.
+await ouvrirMenu();
+await page.locator(".planche-bandeau-menu-liste [role^='menuitem']", { hasText: /^Sauvegarder$/ }).click();
+await page.waitForTimeout(1200);
+const sansNord = await api(`/sites/${cree.id}`);
+check("Planche : Sauvegarder garde le nord non évalué tant qu'il n'est pas saisi", sansNord.revision === 2 && sansNord.observations.nord === null, JSON.stringify(sansNord.observations.nord));
+// Sauvegarder : l'Emplacement (nord saisi compris) est écrit dans le site, révision suivante.
 await page.locator("[data-planche-lieu-champ='nord']").fill("12");
 await page.locator("[data-planche-lieu-enregistrer], [data-planche-lieu] button[type='submit']").first().click().catch(() => undefined);
 await page.waitForTimeout(300);
@@ -87,7 +95,7 @@ await ouvrirMenu();
 await page.locator(".planche-bandeau-menu-liste [role^='menuitem']", { hasText: /^Sauvegarder$/ }).click();
 await page.waitForTimeout(1200);
 const sauve = await api(`/sites/${cree.id}`);
-check("Planche : Sauvegarder écrit l'Emplacement dans le site", sauve.revision === 2 && sauve.observations.geographic?.source === "Emplacement de la Planche" && sauve.liens.some((l) => l.genre === "planche"), `révision ${sauve.revision}, nord ${JSON.stringify(sauve.observations.nord)}`);
+check("Planche : Sauvegarder écrit l'Emplacement dans le site, nord saisi compris", sauve.revision === 3 && sauve.observations.nord?.valeur === 12 && sauve.observations.geographic?.source === "Emplacement de la Planche" && sauve.liens.some((l) => l.genre === "planche"), `révision ${sauve.revision}, nord ${JSON.stringify(sauve.observations.nord)}`);
 
 // Sauvegarder sous… : copie sous un autre nom.
 await ouvrirMenu();

@@ -2604,6 +2604,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // écrit l'Emplacement (position, nord, altitude, lieu, source « Emplacement de la Planche ») ; Ouvrir et Importer posent
   // la position du site comme Emplacement (un pas d'historique : Annuler le retire) et activent l'extension au besoin.
   const SOURCE_EMPLACEMENT = "Emplacement de la Planche";
+  // Nord non évalué : un site sans nord ouvert dans la Planche lui laisse 0° pour ses ombres, mais ce 0° n'est pas une
+  // déclaration. Tant que la personne n'a pas enregistré l'Emplacement elle-même, Sauvegarder n'écrit pas un nord de 0°
+  // dans un site qui n'en a pas : il y reste « non évalué » (réouverture de la Planche comprise).
+  const nordSaisiRef = useRef(false);
+  const nordSuppose = (nord: number) => !nordSaisiRef.current && nord === 0 && (sitesProjetRef.current?.site?.observations.nord ?? null) === null;
+  const sitesProjetRef = useRef<{ site: { observations: { nord: unknown } } | null } | null>(null);
   const sitesProjet = useSitesProjet({
     lien: readOnly ? null : { genre: "planche", cible: indexPlanches.courante },
     etatModule: () => {
@@ -2611,7 +2617,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return {
         observations: {
           geographic: { longitude: emplacement.longitude, latitude: emplacement.latitude, source: SOURCE_EMPLACEMENT },
-          nord: { valeur: emplacement.nord, source: SOURCE_EMPLACEMENT },
+          ...(nordSuppose(emplacement.nord) ? {} : { nord: { valeur: emplacement.nord, source: SOURCE_EMPLACEMENT } }),
           ...(emplacement.altitude !== undefined ? { altitudeReference: { valeur: emplacement.altitude, source: SOURCE_EMPLACEMENT } } : {}),
         },
         ...(emplacement.lieu ? { lieu: emplacement.lieu } : {}),
@@ -2625,11 +2631,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }
       const { nordEvalue, lieu, ...reste } = e;
       if (readOnly) return;
+      if (!nordEvalue) nordSaisiRef.current = false;
       poserEmplacement({ ...reste, ...(lieu ? { lieu } : {}) }, t(nordEvalue ? "planche.sites.note.ouvert" : "planche.sites.note.nord-non-evalue", { nom: site.fiche.nom }));
       if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
       setPanneau("emplacement");
     },
   });
+  sitesProjetRef.current = sitesProjet;
   useEffect(() => {
     if (sitesProjet.note) setMessage(sitesProjet.note.texte);
   }, [sitesProjet.note]);
@@ -4176,7 +4184,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
             )}
             {panneau === "emplacement" && (
-              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire"))} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement} />
+              <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => { nordSaisiRef.current = true; poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire")); }} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement} />
             )}
             {panneau === "scripts" && (
               <PanneauScripts
