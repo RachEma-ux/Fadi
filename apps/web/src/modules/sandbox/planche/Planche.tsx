@@ -169,6 +169,18 @@ import {
   MAX_NOM_REGROUPEMENT,
   MAX_REGROUPEMENTS,
   idRegroupement,
+  changerLongueurArete,
+  changerUnite,
+  exclureDeLAccrochage,
+  formaterLongueurUnite,
+  placerSommet,
+  poserParametre,
+  remettreAEchelleImport,
+  repartir,
+  repeterGuide,
+  supprimerParametre,
+  type GenreAccrochage,
+  type UniteSaisie,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { FilArianePlanche } from "../fil-ariane-planche";
@@ -356,7 +368,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -383,6 +395,7 @@ import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
+import { PanneauAccrochage, PanneauMetreMesure, REGLAGES_METRE_DEFAUT, type ReglagesMetre, SectionParametres, SectionRemiseEchelle, SectionUnites, lireNombre, resultatRepartition } from "./panneau-accrochage";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
@@ -450,7 +463,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "accrochage" | "metre-mesure";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -463,12 +476,17 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
 const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
+/** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
+export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
+  if (!unite || unite === "m") return texte;
+  return texte.replace(/(-?\d+(?:[.,]\d+)?) m(?![²³\w])/g, (_, n: string) => formaterLongueurUnite(Number(n.replace(",", ".")), unite, sep, 3));
+}
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
   try {
@@ -796,6 +814,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (vueRef.current) vueRef.current.hauteurOeil = h;
   }, []);
 
+  // Cas 2, lot 2 : accrochage — genre forcé pour le prochain point (Alt + 1 à 6, effacé après le clic) et seuil du
+  // « presque accroché » (mm), réglages de l'interface ; le pas de longueur vient de l'Info modèle.
+  const [forceAccrochage, setForceAccrochageEtat] = useState<GenreAccrochage | null>(null);
+  const forceAccrochageRef = useRef<GenreAccrochage | null>(null);
+  const setForceAccrochage = useCallback((g: GenreAccrochage | null) => {
+    forceAccrochageRef.current = g;
+    setForceAccrochageEtat(g);
+  }, []);
+  const [presqueMm, setPresqueMmEtat] = useState(10);
+  const presqueMmRef = useRef(10);
+  const setPresqueMm = useCallback((v: number) => {
+    presqueMmRef.current = v;
+    setPresqueMmEtat(v);
+  }, []);
+
   const contexte = useCallback(
     (): ContexteOutil => ({
       modele: histRef.current.present.modele,
@@ -815,6 +848,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
       lecture: readOnly,
+      accrochage: {
+        ...(forceAccrochageRef.current ? { force: forceAccrochageRef.current } : {}),
+        presque: presqueMmRef.current / 1000,
+        pasLongueur: histRef.current.present.modele.annotations?.reglages?.accrochageLongueur ?? null,
+      },
     }),
     [readOnly],
   );
@@ -885,6 +923,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         return false;
       }
       etatMachineRef.current = tr.etat;
+      // Cas 2, lot 2 (n° 111) : le genre forcé ne vaut que pour le prochain point.
+      if (ev.genre === "clic" && forceAccrochageRef.current) setForceAccrochage(null);
       if (m === MACHINE_OUTIL_EXTENSION) {
         // L'événement préparé par la machine part vers l'extension ; sa description reviendra plus tard.
         const emis = (tr.etat as EtatOutilExtension).emis;
@@ -940,7 +980,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }
       return change;
     },
-    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte],
+    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte, setForceAccrochage],
   );
 
   /**
@@ -1875,6 +1915,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           }).modele,
         })),
       piloterCote: (id: string, valeur: number) => operer(t("planche.cote.pilote"), (m) => ({ modele: piloterCote(m, id, valeur).modele })),
+      // Cas 2, lot 2 : longueur d'une arête, coordonnées d'un sommet (racine), objet ou balise exclu de l'accrochage.
+      longueurArete: (id: string, longueur: number) => operer(t("planche.info.longueur"), (m) => ({ modele: changerLongueurArete(m, id, longueur).modele })),
+      placerSommet: (id: string, position: Vec3) => operer(t("planche.arete.sommets"), (m) => ({ modele: placerSommet(m, id, position).modele })),
+      exclureAccrochage: (id: string, exclu: boolean) => operer(t("planche.accrochage.titre"), (m) => ({ modele: exclureDeLAccrochage(m, [id], exclu, o()).modele })),
+      exclureBalise: (id: string, exclue: boolean) =>
+        operer(t("planche.accrochage.titre"), (m) => ({
+          modele: modifierAnnotations(m, (a) => {
+            const b = a.balises[id];
+            if (!b) return;
+            const { horsAccrochage: _h, ...reste } = b;
+            a.balises[id] = exclue ? { ...reste, horsAccrochage: true } : reste;
+          }).modele,
+        })),
       selectionnerCotes: (ids: readonly string[]) => setSelection(ids),
     }),
     [contexte, o, operer, setSelection],
@@ -4076,6 +4129,86 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
 
   /**
+   * Cas 2 du catalogue, lot 2 « Accrochage et saisie » : panneaux « Accrochage » et « Mètre · Mesure » (contextuels,
+   * ouverts par leur commande), genre forcé, guide en réseau, répartition, remise à l'échelle d'un import.
+   */
+  const [metreMemo, setMetreMemo] = useState<NonNullable<VueOutil["metre"]>>({ derniere: null, guide: null });
+  useEffect(() => {
+    if (vue.metre && (vue.metre.derniere !== metreMemo.derniere || vue.metre.guide !== metreMemo.guide)) setMetreMemo(vue.metre);
+  }, [vue.metre]);
+  const [reglagesMetre, setReglagesMetre] = useState<ReglagesMetre>(REGLAGES_METRE_DEFAUT);
+  const [noteMetre, setNoteMetre] = useState<string | null>(null);
+  const [echelleMesuree, setEchelleMesuree] = useState("");
+  const [echelleReelle, setEchelleReelle] = useState("");
+  const [noteEchelle, setNoteEchelle] = useState<string | null>(null);
+  const uniteProjet: UniteSaisie | undefined = hist.present.modele.annotations?.reglages?.uniteSaisie;
+  const longueurMesure = metreMemo.derniere ? Math.hypot(metreMemo.derniere.b.x - metreMemo.derniere.a.x, metreMemo.derniere.b.y - metreMemo.derniere.a.y, metreMemo.derniere.b.z - metreMemo.derniere.a.z) : null;
+  /** Objet de la racine choisi seul (remise à l'échelle d'un import). */
+  const objetSeul = (): string | null => {
+    const sel = selectionRef.current;
+    return dans === undefined && sel.length === 1 && hist.present.modele.racine.occurrences[sel[0]!] ? sel[0]! : null;
+  };
+  const distancesEchelle = () => ({ mesuree: lireNombre(echelleMesuree) ?? longueurMesure, reelle: lireNombre(echelleReelle) });
+  const disponibiliteCommandeAccrochage = (id: IdCommandeAccrochage) => {
+    const d = distancesEchelle();
+    return disponibiliteAccrochage(id, {
+      lecture: readOnly,
+      guide: metreMemo.guide !== null && hist.present.modele.annotations?.guides[metreMemo.guide.id] !== undefined,
+      mesure: metreMemo.derniere !== null,
+      selection: selectionRef.current.length,
+      echelle: objetSeul() !== null && d.mesuree !== null && d.mesuree > 0 && d.reelle !== null && d.reelle > 0,
+    });
+  };
+  // Info modèle : unité (contrôle d'écart nul exigé), paramètres du projet — chacun un pas d'historique.
+  const changerUniteProjet = (u: UniteSaisie) =>
+    operer(t("planche.unites.affichage"), (m) => {
+      const r = changerUnite(m, u);
+      return { modele: r.modele, message: t("planche.unites.note", { unite: t(`planche.unites.${u}`), valeurs: r.controle.valeurs.toLocaleString("fr-CH") }) };
+    });
+  const poserParametreProjet = (p: { id?: string; nom: string; valeur: number }) => operer(t("planche.parametres.titre"), (m) => ({ modele: poserParametre(m, p).modele }));
+  const supprimerParametreProjet = (id: string) => operer(t("planche.parametres.supprimer"), (m) => ({ modele: supprimerParametre(m, id).modele }));
+  const executerAccrochage = (id: IdCommandeAccrochage) => {
+    if (!disponibiliteCommandeAccrochage(id).disponible) return;
+    const genre = GENRE_FORCE[id];
+    if (genre) {
+      setForceAccrochage(forceAccrochageRef.current === genre ? null : genre);
+      setMessage(t("planche.accrochage.force", { genre: t(`planche.accrochage.court.${id}` as "planche.accrochage.court.forcer-sommet") }));
+      rafraichir();
+      return;
+    }
+    if (id === "accrochage") return setPanneau("accrochage");
+    if (id === "metre-mesure") return setPanneau("metre-mesure");
+    if (id === "guide-reseau") {
+      const g = metreMemo.guide!;
+      const pas0 = Math.hypot(g.pas.x, g.pas.y, g.pas.z);
+      const entraxe = lireNombre(reglagesMetre.entraxe) ?? pas0;
+      const nombre = Number(reglagesMetre.nombre);
+      if (!(entraxe > 0) || !Number.isInteger(nombre) || nombre < 1 || pas0 <= 0) return setNoteMetre(t("planche.metre.reseau.invalide"));
+      const pas = { x: (g.pas.x / pas0) * entraxe, y: (g.pas.y / pas0) * entraxe, z: (g.pas.z / pas0) * entraxe };
+      setNoteMetre(t("planche.metre.reseau.note", { nombre: String(nombre) }));
+      return operer(t("planche.accrochage.guide-reseau"), (m) => ({ modele: repeterGuide(m, g.id, pas, { copies: nombre }).modele }));
+    }
+    if (id === "repartir") {
+      const b = metreMemo.derniere!;
+      const res = resultatRepartition(b, reglagesMetre);
+      if (typeof res === "string") return setNoteMetre(res);
+      const ids = [...selectionRef.current];
+      setNoteMetre(t("planche.metre.repartir.note", { elements: String(res.elements) }));
+      return operer(t("planche.accrochage.repartir"), (m, d) => ({ modele: repartir(m, ids, b.a, b.b, reglagesMetre.regle, lireNombre(reglagesMetre.valeur)!, 0, d !== undefined ? { dans: d } : {}).modele }));
+    }
+    // Remise à l'échelle d'un seul import : autour du premier point mesuré, sinon de l'origine de l'objet.
+    const occ = objetSeul()!;
+    const d = distancesEchelle();
+    const T = hist.present.modele.racine.occurrences[occ]!.transformation;
+    const origine = metreMemo.derniere?.a ?? { x: T[12] ?? 0, y: T[13] ?? 0, z: T[14] ?? 0 };
+    operer(t("planche.accrochage.remettre-echelle"), (m) => {
+      const r = remettreAEchelleImport(m, occ, d.mesuree!, d.reelle!, origine);
+      setNoteEchelle(t("planche.echelle.note", { facteur: r.facteur.toFixed(5).replace(".", SEPARATEUR_DECIMAL) }));
+      return { modele: r.modele };
+    });
+  };
+
+  /**
    * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3). Chaque extension a son hôte
    * (`creerHoteExtension`), créé à sa première commande : son code tourne dans un Web Worker isolé et ne touche le
    * dessin que par les services de la Planche — une opération est appliquée d'un bloc, en un seul pas d'historique.
@@ -4542,8 +4675,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
   const sections = useMemo(() => sectionsGrille(outilsOfferts, undefined, idsBarre), [outilsOfferts, idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
-  const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
-  const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
+  const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? vue.note ?? message;
+  // Cas 2, lot 2 (n° 21) : les longueurs proposées par l'outil (« 2.40 m ») s'affichent dans l'unité du projet ; une
+  // saisie tapée reste telle quelle. Les valeurs stockées ne changent jamais (mètres).
+  const valeurMesures = texte?.texte ?? (vue.mesures?.valeur !== undefined ? convertirLongueursAffichees(vue.mesures.valeur, uniteProjet, SEPARATEUR_DECIMAL) : "");
 
   const boutonOutil = (o: Outil, dansGrille = false) => {
     const raison = raisonDe(o);
@@ -4831,6 +4966,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
     else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
+    else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -4927,6 +5063,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_MUR.map((c) => {
           const d = disponibiliteCommandeMur(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.mur.motif.aretes"), executer: () => executerMur(c.id) };
+        }),
+        // Cas 2, lot 2 : accrochage et saisie, mêmes disponibilités et exécution que les barres de leurs panneaux.
+        ...COMMANDES_ACCROCHAGE.map((c) => {
+          const d = disponibiliteCommandeAccrochage(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.accrochage.motif.mesure"), executer: () => executerAccrochage(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -5902,13 +6043,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
+            {panneau === "accrochage" && <PanneauAccrochage force={forceAccrochage} presqueMm={presqueMm} onPresque={setPresqueMm} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} />}
+            {panneau === "metre-mesure" && (
+              <PanneauMetreMesure
+                derniere={metreMemo.derniere}
+                zeroNgf={referenceNiveaux}
+                unite={uniteProjet}
+                separateur={SEPARATEUR_DECIMAL}
+                guidePas={metreMemo.guide ? Math.hypot(metreMemo.guide.pas.x, metreMemo.guide.pas.y, metreMemo.guide.pas.z) : null}
+                reglages={reglagesMetre}
+                onReglages={setReglagesMetre}
+                executer={executerAccrochage}
+                disponibilite={disponibiliteCommandeAccrochage}
+                note={noteMetre}
+              />
+            )}
             {panneau === "numerotation" && (
               <PanneauNumerotation familles={famillesNumerotees} niveaux={niveauxNumerotation} apercu={apercuNumerotation} reglages={reglagesNumerotation} onReglages={setReglagesNumerotation} executer={executerNumerotation} disponibilite={disponibiliteCommandeNumerotation} lecture={readOnly} note={noteNumerotation} />
             )}
             {panneau === "controle" && rapportControle && (
               <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
             )}
-            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef} />}
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef}
+              echelle={<SectionRemiseEchelle mesureeDefaut={longueurMesure} separateur={SEPARATEUR_DECIMAL} mesuree={echelleMesuree} reelle={echelleReelle} onMesuree={setEchelleMesuree} onReelle={setEchelleReelle} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} note={noteEchelle} />} />}
             {panneau === "composants" && (
               <PanneauComposants
                 modele={hist.present.modele}
@@ -5976,7 +6133,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
-            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} onAppliquerStyle={appliquerStyleCotes} />}
+            {panneau === "info-modele" && (
+              <PanneauInfoModele
+                modele={hist.present.modele}
+                lecture={readOnly}
+                precision={precision}
+                onPrecision={poserPrecision}
+                onReglages={poserReglages}
+                onAppliquerStyle={appliquerStyleCotes}
+                unites={<SectionUnites modele={hist.present.modele} lecture={readOnly} onUnite={changerUniteProjet} />}
+                parametres={<SectionParametres modele={hist.present.modele} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} onParametre={poserParametreProjet} onSupprimerParametre={supprimerParametreProjet} />}
+              />
+            )}
             {panneau === "navigateur" && (
               <NavigateurPlanche
                 modele={hist.present.modele}

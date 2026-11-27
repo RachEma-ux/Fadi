@@ -319,7 +319,8 @@ consultationRouter.get("/raster/:coucheId/valeur", async (req, res) => {
   if (!g) return introuvable(res);
   const v = valeurAuPoint(g.grille, lon, lat);
   const classe = v !== null && g.description.classes ? g.description.classes.find((c) => c.valeur === v) ?? null : null;
-  res.json({ lon, lat, valeur: v, classe: classe?.libelle ?? null, unite: g.description.unite, grandeur: g.description.grandeur });
+  // Version lue (P8, champ additif) : la valeur au point se rattache à sa version publiée, comme la fiche.
+  res.json({ lon, lat, valeur: v, classe: classe?.libelle ?? null, unite: g.description.unite, grandeur: g.description.grandeur, version: lireVersion(couche) });
 });
 
 /** Table paginée des objets d'une couche (sans géométrie), filtre et tri sur liste autorisée. */
@@ -439,6 +440,9 @@ consultationRouter.get("/couches/:id/objets/:code/proximite", async (req, res) =
     resultats.push({
       coucheId: id, accessible: true, titre: c["couche_titre"], nombre: Number(r?.nombre ?? 0),
       plusProche: r?.code ? { code: r.code, nom: r.nom ?? r.code, distanceM: Math.round(Number(r.distance)) } : null,
+      // P8 (champs additifs) : version comptée, et couverture du rayon par la couche jamais déduite — « non évaluée »,
+      // avec la couverture déclarée par la fiche de source (texte publié, ou null).
+      version: lireVersion(c), couverture: { etat: "non-evaluee", declaree: c["couverture"] ?? null },
     });
   }
   res.json({ rayon, couches: resultats });

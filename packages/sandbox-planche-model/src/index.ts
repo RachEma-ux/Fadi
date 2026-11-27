@@ -4,6 +4,7 @@ export * from "./geometrie-libre.js";
 export * from "./annotations.js";
 export * from "./cotes.js";
 export * from "./numerotation.js";
+export * from "./saisie-projet.js";
 export * from "./profiles.js";
 export * from "./assemblages.js";
 export * from "./debit.js";

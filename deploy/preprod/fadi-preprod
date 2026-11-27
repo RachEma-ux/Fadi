@@ -72,7 +72,7 @@ studio-exact studio-g4 studio-mesures-chargement studio-accessibilite studio-ech
 studio-visualisation studio-exigences studio-preuves-b studio-preuves-c studio-preuves-a studio-contrats-api studio-lot-f studio-cmd studio-rend studio-g1 studio-w3a studio-w3b studio-w3c collaboration-support-telephone atelier-canevas planche planche-modification
 planche-outils planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
 planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
-planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-niveaux planche-point-de-base planche-locaux planche-murs planche-plan-vectoriel planche-feuilles planche-import planche-reserves planche-enveloppe planche-consultation planche-fonds planche-fiche-calage planche-references planche-lots-4-6 planche-lot-5 sandbox-module extensions-page extensions-commandes extensions-evenements extensions-fichiers extensions-panneau extensions-outil sandbox-axes
+planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-niveaux planche-point-de-base planche-locaux planche-murs planche-plan-vectoriel planche-feuilles planche-import planche-reserves planche-enveloppe planche-consultation planche-fonds planche-fiche-calage planche-references planche-accrochage-saisie planche-lots-4-6 planche-lot-5 sandbox-module extensions-page extensions-commandes extensions-evenements extensions-fichiers extensions-panneau extensions-outil sandbox-axes
 sandbox-reperes sandbox-origine sandbox-reperes-lies planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
 p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents atelier-barre planche-barre-outils"
 
@@ -490,22 +490,29 @@ esac
 [ -e "$BASE" ] || { admin_seulement "création de $BASE"; mkdir -m 0700 "$BASE"; }
 sur "$BASE" d
 exec 9>"$BASE/.verrou"
-flock -n 9 || die "une autre exécution de fadi-preprod est en cours"
+# Attente courte plutôt qu'un refus immédiat : un chevauchement de quelques secondes (une lecture d'état lancée pendant
+# un déploiement) ne fait plus échouer une étape ; au-delà de 2 minutes, refus comme avant.
+flock -w 120 9 || die "une autre exécution de fadi-preprod est en cours"
 
 case "$cmd" in
   sync)
     sha=${1:-}; [[ $sha =~ ^[0-9a-f]{40}$ ]] || die "sha complet (40 caractères hexadécimaux) attendu"
-    [ -d "$SRC/.git" ] || git clone --quiet --no-checkout "$REPO_URL" "$SRC"
+    # Git ne doit laisser aucun processus derrière lui : une maintenance automatique détachée (gc, `maintenance --auto`)
+    # hériterait du descripteur du verrou (9) et le tiendrait après la fin de `sync`, faisant échouer `build` et le
+    # retour arrière du déploiement automatique (« une autre exécution de fadi-preprod est en cours », 27.11.2026).
+    # D'où la maintenance coupée et le descripteur fermé pour chaque appel à git.
+    git_src() { git -c safe.directory="$SRC" -c gc.auto=0 -c maintenance.auto=false -C "$SRC" "$@" 9>&-; }
+    [ -d "$SRC/.git" ] || git -c gc.auto=0 -c maintenance.auto=false clone --quiet --no-checkout "$REPO_URL" "$SRC" 9>&-
     sur "$SRC" d
-    git -c safe.directory="$SRC" -C "$SRC" fetch --quiet origin
-    git -c safe.directory="$SRC" -C "$SRC" cat-file -e "$sha^{commit}" || die "commit $sha introuvable sur $REPO_URL"
-    git -c safe.directory="$SRC" -C "$SRC" -c advice.detachedHead=false checkout --quiet --force --detach "$sha"
-    git -c safe.directory="$SRC" -C "$SRC" clean -fdxq
+    git_src fetch --quiet origin
+    git_src cat-file -e "$sha^{commit}" || die "commit $sha introuvable sur $REPO_URL"
+    git_src -c advice.detachedHead=false checkout --quiet --force --detach "$sha"
+    git_src clean -fdxq
     # Ce script tourne en umask 077 : sans cette normalisation, le code serait en 0600 / 0700 et l'image construite
     # échouerait en EACCES (utilisateur « node »). Lecture pour tous dans src seulement ; BASE reste en 0700.
     chmod -R u=rwX,go=rX "$SRC"
     echo "$sha" > "$APPROVED.tmp" && mv -f "$APPROVED.tmp" "$APPROVED"
-    log "commit approuvé et figé : $(git -c safe.directory="$SRC" -C "$SRC" log -1 --format='%H %ci %s')" ;;
+    log "commit approuvé et figé : $(git_src log -1 --format='%H %ci %s')" ;;
   init-env)
     [ -e "$BASE/env" ] || mkdir -m 0700 "$BASE/env"
     sur "$BASE/env" d

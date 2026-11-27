@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende } from "@parcours/geodata-model";
+import { cheminOnglet, ongletDeChemin, ONGLETS_GEODATA, type OngletGeoData, type PaysTerritorial, type CleIndicateur, cleIndicateur, indicateurPourCle, unionIndicateurs, niveauxDeSelection, niveauxDuPoint, rangPourClics, ancetresDe, DELAI_CLICS_MS, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, filtresNiveaux, type CoucheNiveau, type EtapeNiveau, type Parents, type RangAdministratif, lireValeur, valeursEtiquettes, lireAdresseVue, ecrireAdresseVue, syntheseCouche, fondBascule, regrouperCatalogue, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur, type EntreeLegende, legendeLue, type LegendeLue, type ClassificationLue } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type DecoupageRecu, type IndicateurRecu, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ExportRecu } from "./client";
 import { colorationIndicateur, basculerTheme, etatTheme, sansColorationThematique, ajouterCouche, basculerRegroupement, basculerTousRegroupements, regroupementsTousActifs, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type EtatCouche, type MoteurCarte, type ObjetDesigne, type OutilCarte } from "./carte/moteur";
@@ -372,7 +372,7 @@ export function PageGeoData() {
   }, [compositionAffichee, indicateursParCouche, indicateursMasques, valeurs]);
   // Coloration selon l'indicateur actif (D-GD-55) : classes des valeurs lues en base, par couche visible qui le porte.
   const colorations = useMemo(() => {
-    const m = new Map<string, { indicateur: IndicateurRecu; couleurs: Map<string, string>; entrees: EntreeLegende[] }>();
+    const m = new Map<string, { indicateur: IndicateurRecu; couleurs: Map<string, string>; entrees: EntreeLegende[]; classification: ClassificationLue; classeDe: Map<string, number | "absente"> }>();
     for (const k of compositionAffichee.couches) {
       const i = indicateursParCouche.get(k.coucheId);
       const vs = i ? valeurs.get(i.id) : undefined;
@@ -382,6 +382,18 @@ export function PageGeoData() {
     }
     return m;
   }, [compositionAffichee, indicateursParCouche, colorationsCoupees, valeurs]);
+  // Légende lue (P9, L1-L5) : période, classification nommée, absences par motif, source, lieu sélectionné ; calculée à
+  // part pour qu'une sélection ne recolore pas la carte.
+  const legendesLues = useMemo(() => {
+    const m = new Map<string, { indicateur: IndicateurRecu; entrees: readonly EntreeLegende[]; lue: LegendeLue | null }>();
+    for (const [id, c] of colorations) {
+      const version = couchesConnues.get(id)?.version;
+      const vs = valeurs.get(c.indicateur.id);
+      const lue = version && vs ? legendeLue({ indicateur: c.indicateur, version, valeurs: vs, entrees: c.entrees, classification: c.classification, classeDe: c.classeDe, selection: selection?.coucheId === id ? selection.code : null }) : null;
+      m.set(id, { indicateur: c.indicateur, entrees: c.entrees, lue });
+    }
+    return m;
+  }, [colorations, couchesConnues, valeurs, selection]);
   const couleursIndicateur = useMemo(() => new Map([...colorations].map(([id, c]) => [id, c.couleurs])), [colorations]);
   // Chemin venu du découpage en base (étapes sans coucheId) : il ne s'applique qu'aux couches dont la version forme ce
   // découpage — jamais à une couche d'un autre pays ou d'une autre source aux codes semblables. Chemin lu dans les couches
@@ -469,7 +481,7 @@ export function PageGeoData() {
     return {
       coucheId: k.coucheId, titre, etat: "ok", tronque: v.tronque,
       synthese: syntheseCouche({ codes: v.codes, total: v.total, retenus: retenus ? new Set(retenus) : null, valeurs: i ? valeursI ?? new Map() : null }),
-      indicateur: i ? { titre: i.titre, unite: i.unite } : null,
+      indicateur: i ? { titre: i.titre, unite: i.unite, periode: i.periode } : null,
     };
   }), [couchesSynthese, couchesConnues, vues, indicateursParCouche, filtresAffiches, valeurs]);
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
@@ -1197,7 +1209,7 @@ export function PageGeoData() {
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onEtiquettes={(id) => setComposition((c) => basculerEtiquettes(c, id))} onRegrouper={(id) => setComposition((c) => basculerRegroupement(c, id))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
-              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} colorations={colorations} />}
+              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} categories={categories} colorations={legendesLues} />}
           </div>
         </aside>}
         <main className="gd-carte" aria-label="Carte" data-gd-zoom={composition.camera.zoom.toFixed(2)}>
@@ -1233,7 +1245,7 @@ export function PageGeoData() {
             {zoneEchecs > 0 && <span className="gd-alerte" data-gd-zone-echec><span>— filtre impossible, objets masqués pour</span> <span>{zoneEchecs}</span> <span>couche(s)</span></span>}
             <button type="button" onClick={() => filtrerZone(null)} aria-label="Retirer le filtre de zone (Alt+Z)" title="Retirer le filtre de zone (Alt+Z)" aria-keyshortcuts="Alt+Z" data-gd-retirer-zone>×</button>
           </div>}
-          {!erreurCarte && colorations.size > 0 && <LegendeIndicateur colorations={colorations} couches={couchesConnues} decalee={panneauOuvert} />}
+          {!erreurCarte && colorations.size > 0 && <LegendeIndicateur colorations={legendesLues} couches={couchesConnues} decalee={panneauOuvert} />}
           {!erreurCarte && <p className="gd-zoom-affiche" aria-label={`Zoom ${composition.camera.zoom.toFixed(1)}`} data-gd-zoom-affiche><span>Zoom</span> <span>{composition.camera.zoom.toFixed(1).replace(".", ",")}</span></p>}
           {consigne && <ConsigneAccueil contour={coucheArrivee && niveauArrivee ? { niveau: niveauArrivee.pluriel, pays: paysListe?.find((x) => x.code === paysCourant)?.nom ?? paysCourant ?? "" } : null}
             decalee={panneauOuvert} onFermer={() => setConsigneEcartee(true)}
