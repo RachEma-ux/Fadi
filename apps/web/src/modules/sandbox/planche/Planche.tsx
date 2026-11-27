@@ -46,6 +46,31 @@ import {
   etendreSelection,
   exporterObj,
   exporterStl,
+  aretesCollees,
+  donneesIfcDe,
+  empreinteCourte,
+  enveloppeNatif,
+  importerIfc,
+  inverserMatrice,
+  lireEchelleColle,
+  lireIfcComplet,
+  lireTraceColle,
+  METRES_PAR_UNITE_COLLE,
+  REPERE_DU_MODELE,
+  objetsNonAffiches,
+  ouvrirEnveloppeNatif,
+  poserTraces,
+  preparerExport,
+  rapportExport,
+  rapportImportMaillages,
+  sommetsColles,
+  texteCoordonnee,
+  texteRapport,
+  EXTENSION_NATIF,
+  type BrancheEtage,
+  type LectureColle,
+  type RapportEchange,
+  type UniteColle,
   genreAnnotation,
   grouper,
   grouperVide,
@@ -280,7 +305,7 @@ import { AvisExtensions, CadrePanneauExtension, DialogueFichierExtension, Dialog
 import { creerHoteExtension, type HoteExtension, type IssueAppelExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
-import { chargerBrouillon, enregistrerBrouillon, serialiserBrouillon } from "./brouillon";
+import { chargerBrouillon, enregistrerBrouillon, lireBrouillon, serialiserBrouillon } from "./brouillon";
 import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brouillon";
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
@@ -345,8 +370,9 @@ import {
   vueEtatCourante,
   type ChangementBalise,
 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_BALISE, COMMANDES_GABARIT, COMMANDES_SCENE, disponibiliteBalise, disponibiliteGabarit, disponibiliteScene, type IdCommandeBalise, type IdCommandeGabarit, type IdCommandeScene } from "./commandes-objets";
+import { COMMANDES_BALISE, COMMANDES_ECHANGE, COMMANDES_GABARIT, COMMANDES_SCENE, disponibiliteBalise, disponibiliteEchange, disponibiliteGabarit, disponibiliteScene, type IdCommandeBalise, type IdCommandeEchange, type IdCommandeGabarit, type IdCommandeScene } from "./commandes-objets";
 import { PanneauBalises, PanneauGabarit, SectionPlanCoupe, SectionScenesL4, type GabaritDisponible } from "./panneaux-l4";
+import { PanneauCollerTrace, PanneauExportEchange, PanneauImportEchange, PanneauNatifImage, type EcritExport, type PoserSur } from "./panneaux-l6";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -395,6 +421,12 @@ const SEPARATEUR_DECIMAL = "," as const;
 /** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
 const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
+/** Cas 2, lot 6 : date et heure locales du rapport d'échange (« 27.11.2026 19:40 »). */
+function horodatage(d = new Date()): string {
+  const n = (x: number) => String(x).padStart(2, "0");
+  return `${n(d.getDate())}.${n(d.getMonth() + 1)}.${d.getFullYear()} ${n(d.getHours())}:${n(d.getMinutes())}`;
+}
+
 function telechargerFichier(blob: Blob, nom: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -405,7 +437,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure" | "gabarit";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -418,7 +450,7 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit"]);
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace"]);
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 /** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
 export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
@@ -562,6 +594,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [gabaritChoisi, setGabaritChoisi] = useState("");
   const [noteGabarit, setNoteGabarit] = useState<string | null>(null);
   const fichierGabaritRef = useRef<HTMLInputElement | null>(null);
+  // Cas 2, lot 6 : échanges (rapport du dernier import, export préparé, fichier natif et image, collage d'un tracé).
+  const [rapportImport, setRapportImport] = useState<{ readonly rapport: RapportEchange; readonly arbre: readonly BrancheEtage[] } | null>(null);
+  const [archiveImport, setArchiveImport] = useState<string | null>(null);
+  const [formatExport, setFormatExport] = useState<FormatEchange>("ifc");
+  const [inclureMasques, setInclureMasques] = useState(false);
+  const [balisesIncluses, setBalisesIncluses] = useState<ReadonlySet<string>>(new Set());
+  const [dernierNatif, setDernierNatif] = useState<{ readonly date: string; readonly empreinte: string } | null>(null);
+  const [reimportNatif, setReimportNatif] = useState<"conforme" | "refuse" | null>(null);
+  const [noteNatif, setNoteNatif] = useState<string | null>(null);
+  const [tailleImage, setTailleImage] = useState({ largeur: 3840, hauteur: 2160 });
+  const [imageTransparente, setImageTransparente] = useState(true);
+  const fichierNatifRef = useRef<HTMLInputElement | null>(null);
+  const [colle, setColle] = useState<LectureColle | null>(null);
+  const [uniteColle, setUniteColle] = useState<UniteColle | "">("");
+  const [echelleColle, setEchelleColle] = useState("1:1");
+  const [poserColle, setPoserColle] = useState<PoserSur>("travail");
+  const attenteCollerRef = useRef(0);
+  const ouvrirCollageRef = useRef<(l: LectureColle) => void>(() => {});
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
@@ -2168,6 +2218,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const motif = (e: unknown) => (e instanceof Error ? e.message : String(e));
     const echec = (e: unknown) => setMessage(t("planche.sb.echec", { motif: motif(e) }));
     const nomFichier = () => (nomAffiche(courante()).replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche");
+    /** Cas 2, lot 6 : le fichier importé et son rapport sont archivés tels quels en base (D-GD-29). */
+    const archiverEchange = async (nom: string, texte: string, rapport: RapportEchange) => {
+      const a = await archiverFichierExtension("planche-echange", { nom, texte });
+      const b = a.ok ? await archiverFichierExtension("planche-echange", { nom: `${nom}.rapport.txt`, texte: texteRapport(rapport) }) : a;
+      if (a.ok && b.ok) setArchiveImport(t("planche.echange.archive.ok", { empreinte: empreinteCourte(a.archive.empreinte) }));
+      else setArchiveImport(t("planche.echange.archive.refus", { motif: t(`planche.pieces.motif.${(!a.ok ? a : b as { motif: string }).motif}` as "planche.pieces.motif.reseau") }));
+    };
     /** Écrit la Planche courante sans attendre l'enregistrement automatique. */
     const ecrireCourante = async () => {
       sauvegarde.invalider();
@@ -2185,32 +2242,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       remplacerRef.current = true;
       await poserIndex(idx);
       setChargeId((n) => n + 1);
-    };
-    const exporter = (format: FormatEchange) => {
-      // Chantier Axes (AX-5, AX-D10) : coordonnées choisies explicitement ; un choix non pris en charge est refusé.
-      const choix = etatUi.get().coordonneesExport;
-      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere, courante().altitudeRef);
-      if (!c.ok) {
-        setMessage(c.motif);
-        return;
-      }
-      const modele = c.modele;
-      const o = c.repere?.origine;
-      const coordonnees =
-        choix === "travail" && o
-          ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
-          : choix === "source"
-            ? t("planche.export.coordonnees.source", { unite: c.unite })
-            : choix === "projete"
-              ? t("planche.export.coordonnees.projete", { systeme: [histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme, histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systemeVertical].filter(Boolean).join(" / ") })
-            : t("planche.export.coordonnees.modele");
-      const nom = nomFichier();
-      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(modele, nom);
-      telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`);
-      const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
-      // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
-      const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
-      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts + ` ${t("planche.export.coordonnees", { format: format.toUpperCase(), coordonnees })}`);
     };
     return {
       ouvrir: async (id) => {
@@ -2312,9 +2343,34 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           echec(e);
         }
       },
-      exporter: async (format) => exporter(format),
+      // Cas 2, lot 6 (n° 90, 95, 6) : Fichier > Exporter ouvre le panneau « Exporter » (ce qui sera écrit, objets non
+      // affichés, rapport prévu) ; le téléchargement part de son bouton, avec le rapport joint.
+      exporter: async (format) => {
+        setFormatExport(format);
+        setPanneau("echange-export");
+        setMessage(t("planche.echange.export.consigne", { format: format.toUpperCase() }));
+      },
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
         try {
+          const date = horodatage();
+          if (format === "ifc") {
+            // Cas 2, lot 6 (n° 2, 22, 91) : lecture complète, objets posés à leur place, rangés par étage et par classe.
+            const texte = await fichier.text();
+            const lu = lireIfcComplet(texte);
+            if (lu.objets.length === 0) throw new ErreurImport("vide", "Aucun objet avec une représentation dans ce fichier IFC.");
+            const r = importerIfc(histRef.current.present.modele, lu, fichier.name, date);
+            if (r.occurrence !== null) {
+              poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: "IFC" }), false));
+              rafraichir();
+            }
+            const total = r.rapport.lignes[0]!;
+            setRapportImport({ rapport: r.rapport, arbre: r.arbre });
+            setArchiveImport(null);
+            setPanneau("echange-import");
+            setMessage(t("planche.echange.import.ok", { format: "IFC", objets: String((total.ecrits ?? 0) + (total.approches ?? 0)) }));
+            void archiverEchange(fichier.name, texte, r.rapport);
+            return;
+          }
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
           const lu = lireMaillages(format, donnees);
           const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
@@ -2323,6 +2379,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           rafraichir();
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
           setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
+          // Cas 2, lot 6 (n° 6) : rapport chiffré de l'import OBJ / STL aussi, archivé avec le fichier (texte seulement).
+          const rapport = rapportImportMaillages(format, fichier.name, r, date);
+          setRapportImport({ rapport, arbre: [] });
+          setArchiveImport(null);
+          setPanneau("echange-import");
+          if (typeof donnees === "string") void archiverEchange(fichier.name, donnees, rapport);
         } catch (e) {
           setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
         }
@@ -2413,9 +2475,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         return;
       }
       if (mod && !e.altKey && !e.shiftKey && !dansMesures && (cle === "c" || cle === "x" || cle === "v")) {
+        if (cle === "v") {
+          // Cas 2, lot 6 (n° 112) : l'événement « paste » qui suit lit le presse-papiers du système (tracé SVG, DXF ou
+          // sommets) ; s'il n'en apporte pas, la copie interne est collée comme avant.
+          window.clearTimeout(attenteCollerRef.current);
+          attenteCollerRef.current = window.setTimeout(() => {
+            attenteCollerRef.current = 0;
+            collerSelection();
+          }, 120);
+          return;
+        }
         e.preventDefault();
-        if (cle === "v") collerSelection();
-        else copierSelection(cle === "x");
+        copierSelection(cle === "x");
         return;
       }
       const etat = toucheEtat(e.key);
@@ -2508,8 +2579,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       frappeRef.current = consommerFrappe(frappeRef.current);
     };
     clavierRef.current = { touche: surTouche, relache: surRelache, perte: surPerte, pointeur: surPointeur };
+    /** Cas 2, lot 6 (n° 112) : un tracé collé depuis une autre application ouvre « Coller un tracé ». */
+    const surColler = (e: ClipboardEvent) => {
+      if (champSaisie(e.target) || rechercheRef.current) return;
+      const donnees = e.clipboardData;
+      const texte = donnees ? donnees.getData("text/plain") || donnees.getData("image/svg+xml") : "";
+      const l = texte ? lireTraceColle(texte) : null;
+      if (!l) return;
+      e.preventDefault();
+      window.clearTimeout(attenteCollerRef.current);
+      attenteCollerRef.current = 0;
+      ouvrirCollageRef.current(l);
+    };
     const fenetres = [window, ...(fenetreRef.current ? [fenetreRef.current] : [])];
     for (const w of fenetres) {
+      w.addEventListener("paste", surColler);
       w.addEventListener("keydown", surTouche);
       w.addEventListener("keyup", surRelache);
       w.addEventListener("blur", surPerte);
@@ -2517,6 +2601,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     return () => {
       for (const w of fenetres) {
+        w.removeEventListener("paste", surColler);
         w.removeEventListener("keydown", surTouche);
         w.removeEventListener("keyup", surRelache);
         w.removeEventListener("blur", surPerte);
@@ -3745,6 +3830,152 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       });
     });
   };
+  // ——— Cas 2, lot 6 : échanges (export préparé, fichier natif et image, collage d'un tracé).
+  const nomFichierPlanche = () => nomCourant.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche";
+  const exportPrepare = useMemo(() => {
+    if (panneau !== "echange-export") return null;
+    const m = hist.present.modele;
+    const nonAffiches = objetsNonAffiches(m);
+    const choix = ui.coordonneesExport;
+    const c = modeleAExporter(m, choix, formatExport, histContexte.courant.repere, referenceNiveaux);
+    if (!c.ok) return { nonAffiches, motif: c.motif, ecrit: null, prevu: null, contenu: null, fichier: "" } as const;
+    const p = preparerExport(c.modele, { masques: inclureMasques, balises: [...balisesIncluses] });
+    const nom = nomFichierPlanche();
+    const o = c.repere?.origine;
+    const pb = m.annotations?.reglages?.pointDeBase;
+    const coordonnees =
+      choix === "travail" && o
+        ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
+        : choix === "source"
+          ? t("planche.export.coordonnees.source", { unite: c.unite })
+          : choix === "projete"
+            ? t("planche.export.coordonnees.projete", { systeme: [pb?.systeme, pb?.systemeVertical].filter(Boolean).join(" / ") })
+            : t("planche.export.coordonnees.modele");
+    const r = formatExport === "ifc" ? exporterIfc(p.modele, nomCourant) : formatExport === "obj" ? exporterObj(p.modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(p.modele, nom);
+    const unite = c.unite === "m" || c.unite === "cm" || c.unite === "mm" ? t(`planche.echange.unite.${c.unite}`) : c.unite;
+    const ecrit: EcritExport =
+      choix === "projete" && pb
+        ? { unite, repere: [pb.systeme, pb.systemeVertical].filter(Boolean).join(" / ") || t("planche.echange.repere.non-declare"), origine: `${texteCoordonnee(pb.e)} ; ${texteCoordonnee(pb.n)} ; ${texteCoordonnee(referenceNiveaux ?? 0)}` }
+        : choix === "travail" && o
+          ? { unite, repere: t("planche.echange.repere.travail"), origine: `${texteCoordonnee(o.x)} ; ${texteCoordonnee(o.y)} ; ${texteCoordonnee(o.z)}` }
+          : { unite, repere: t(choix === "source" ? "planche.echange.repere.source" : "planche.echange.repere.modele"), origine: null };
+    const fichier = `${nom}.${formatExport}`;
+    return { nonAffiches, motif: null, ecrit, prevu: rapportExport(formatExport, fichier, r, p.omis, horodatage(), { unite: ecrit.unite, repere: ecrit.origine ? `${ecrit.repere} (origine ${ecrit.origine})` : ecrit.repere }), contenu: r.contenu, fichier } as const;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, hist.present.modele, formatExport, ui.coordonneesExport, inclureMasques, balisesIncluses, histContexte, referenceNiveaux, nomCourant]);
+  const exporterEchange = () => {
+    const x = exportPrepare;
+    if (!x || !x.contenu || !x.prevu || !x.ecrit) return;
+    const base = x.fichier.replace(/\.[^.]+$/, "");
+    telechargerFichier(new Blob([x.contenu], { type: "text/plain;charset=utf-8" }), x.fichier);
+    telechargerFichier(new Blob([texteRapport(x.prevu)], { type: "text/plain;charset=utf-8" }), `${base}.rapport.txt`);
+    const l = x.prevu.lignes[0]!;
+    setMessage(t("planche.echange.export.ok", { format: formatExport.toUpperCase(), objets: String(l.ecrits ?? 0), omis: String(l.omis ?? 0), unite: x.ecrit.unite, repere: x.ecrit.origine ? `${x.ecrit.repere} (${x.ecrit.origine})` : x.ecrit.repere, fichier: `${base}.rapport.txt` }));
+  };
+  const exporterNatif = () => {
+    const e = enveloppeNatif(serialiserBrouillon(histRef.current.present.modele), nomCourant, new Date());
+    const fichier = `${nomFichierPlanche()}${EXTENSION_NATIF}`;
+    telechargerFichier(new Blob([e.contenu], { type: "application/json;charset=utf-8" }), fichier);
+    setDernierNatif({ date: horodatage(), empreinte: e.empreinte });
+    setReimportNatif(null);
+    const note = t("planche.echange.natif.exporte", { fichier, empreinte: empreinteCourte(e.empreinte) });
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const importerNatif = async (f: File) => {
+    const r = ouvrirEnveloppeNatif(await f.text());
+    const m = r.ok ? lireBrouillon(r.texteModele) : null;
+    if (!r.ok || !m) {
+      const note = t(`planche.echange.natif.refus.${r.ok ? "illisible" : r.motif}`);
+      setReimportNatif("refuse");
+      setNoteNatif(note);
+      setMessage(note);
+      return;
+    }
+    // La Planche courante n'est jamais écrasée : le réimport ouvre une nouvelle Planche.
+    await actionsMenu.creer(r.nom || f.name.replace(/\.planche$/i, ""), referenceNiveaux ?? null, m);
+    const note = t("planche.echange.natif.ouverte");
+    setReimportNatif("conforme");
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const exporterImage = async () => {
+    const { largeur, hauteur } = tailleImage;
+    const blob = await vueRef.current?.captureDefinition(largeur, hauteur, imageTransparente);
+    if (!blob) {
+      setNoteNatif(t("planche.echange.image.echec", { largeur: String(largeur), hauteur: String(hauteur) }));
+      return;
+    }
+    telechargerFichier(blob, `${nomFichierPlanche()}-${largeur}x${hauteur}.png`);
+    const note = t("planche.echange.image.ok", { largeur: String(largeur), hauteur: String(hauteur), fond: imageTransparente ? t("planche.echange.image.fond") : "" });
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const executerEchange = (id: IdCommandeEchange) => {
+    if (id === "natif-image") setPanneau(panneauRef.current === "natif-image" ? null : "natif-image");
+  };
+  ouvrirCollageRef.current = (l: LectureColle) => {
+    if (readOnly) return;
+    setColle(l);
+    setUniteColle(l.unite ?? "");
+    setEchelleColle("1:1");
+    setPanneau("coller-trace");
+    setMessage(t("planche.echange.coller.consigne"));
+  };
+  /** Édition > Coller : la copie interne d'abord ; sinon le presse-papiers du système, s'il contient un tracé. */
+  const collerDepuisMenu = () => {
+    if (pressePapiers.current) return collerSelection();
+    void (async () => {
+      try {
+        const l = lireTraceColle(await navigator.clipboard.readText());
+        if (l) return ouvrirCollageRef.current(l);
+      } catch {
+        // Lecture refusée par le navigateur : rien n'est collé.
+      }
+      setMessage(t("planche.presse-papiers.vide"));
+    })();
+  };
+  const echelleColleLue = lireEchelleColle(echelleColle);
+  const collerTrace = () => {
+    const l = colle;
+    if (!l || uniteColle === "" || echelleColleLue === null) return;
+    const unite = uniteColle;
+    const sol = poserColle === "sol";
+    operer(t("planche.echange.coller.operation"), (m, d) => {
+      const monde = sol ? REPERE_DU_MODELE : (histContexteRef.current.courant.repere ?? REPERE_DU_MODELE);
+      // Dans un groupe ouvert, le plan (monde) est ramené aux coordonnées du groupe.
+      const M = d !== undefined ? matriceMonde(m, d) : null;
+      const I = M ? inverserMatrice(M) : null;
+      const vers = (p: { x: number; y: number; z: number }, translation: boolean) => {
+        if (!I) return p;
+        const g = (k: number) => I[k] ?? 0;
+        const w = translation ? 1 : 0;
+        return { x: g(0) * p.x + g(1) * p.y + g(2) * p.z + g(3) * w, y: g(4) * p.x + g(5) * p.y + g(6) * p.z + g(7) * w, z: g(8) * p.x + g(9) * p.y + g(10) * p.z + g(11) * w };
+      };
+      const repere = { origine: vers(monde.origine, true), x: vers(monde.x, false), y: vers(monde.y, false), z: vers(monde.z, false) };
+      const r = poserTraces(m, l, { metresParUnite: METRES_PAR_UNITE_COLLE[unite], echelle: echelleColleLue, repere, ...(d !== undefined ? { dans: d } : {}) });
+      return {
+        modele: r.modele,
+        selection: r.rapport.crees,
+        message: t("planche.echange.coller.ok", { traces: String(l.traces.length), type: t(`planche.echange.coller.type.${l.type}`), sommets: String(sommetsColles(l)), aretes: String(aretesCollees(l)), plan: t(sol ? "planche.echange.coller.plan.sol" : "planche.echange.coller.plan.travail") }),
+      };
+    });
+    setPanneau(null);
+    setColle(null);
+  };
+  const objetIfcChoisi = (() => {
+    if (panneau !== "echange-import") return null;
+    const m = hist.present.modele;
+    const c = contexteDe(m, dans);
+    for (const id of selectionRef.current) {
+      const occ = c.occurrences[id];
+      const d = donneesIfcDe(m, occ);
+      if (occ && d) return { nom: occ.nom ?? m.definitions[occ.definition]?.nom ?? id, donnees: d };
+    }
+    return null;
+  })();
+  const cadreImage = panneau === "natif-image" ? (vueRef.current?.cadreImage(tailleImage.largeur, tailleImage.hauteur) ?? null) : null;
+
   const executerGabarit = (id: IdCommandeGabarit) => {
     if (!disponibiliteCommandeGabarit(id).disponible) return;
     if (id === "gabarit") return setPanneau("gabarit");
@@ -4532,6 +4763,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
     else if (c.famille === "scene") executerScene(c.id as IdCommandeScene);
     else if (c.famille === "gabarit") executerGabarit(c.id as IdCommandeGabarit);
+    else if (c.famille === "echange") executerEchange(c.id as IdCommandeEchange);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -4623,6 +4855,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteCommandeGabarit(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.gabarit.motif.choix"), executer: () => executerGabarit(c.id) };
         }),
+        // Cas 2, lot 6 : panneau « Fichier natif et image ».
+        ...COMMANDES_ECHANGE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: null, executer: () => executerEchange(c.id) })),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
           const d = disponibiliteRepere(c.id, etatReperes());
@@ -4871,7 +5105,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         { genre: "separateur" },
         cmd("couper", t("planche.menus.couper"), () => copierSelection(true), { raccourci: afficherRaccourci("Ctrl+X"), disabled: readOnly || nbSelection === 0 }),
         cmd("copier", t("planche.menus.copier"), () => copierSelection(false), { raccourci: afficherRaccourci("Ctrl+C"), disabled: nbSelection === 0 }),
-        cmd("coller", t("planche.menu.coller"), collerSelection, { raccourci: afficherRaccourci("Ctrl+V"), disabled: readOnly }),
+        cmd("coller", t("planche.menu.coller"), collerDepuisMenu, { raccourci: afficherRaccourci("Ctrl+V"), disabled: readOnly }),
         { genre: "separateur" },
         cmd("tout-selectionner", t("planche.menus.tout-selectionner"), () => etendre("tout"), { raccourci: afficherRaccourci("Ctrl+A") }),
         cmd("inverser-selection", t("planche.menu.sel.inverser"), () => etendre("inverser"), { raccourci: afficherRaccourci("Ctrl+Maj+I") }),
@@ -5025,6 +5259,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           data-planche-curseur={outilId}
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
+          {cadreImage && (
+            <div className="planche-cadre-image" style={{ left: cadreImage.x, top: cadreImage.y, width: cadreImage.l, height: cadreImage.h }} aria-hidden="true" data-planche-cadre-image>
+              <span>{t("planche.echange.image.cadre", { largeur: String(tailleImage.largeur), hauteur: String(tailleImage.hauteur) })}{imageTransparente ? t("planche.echange.image.fond") : ""}</span>
+            </div>
+          )}
         </div>
         <AvisExtensions avis={avisExtensions} onFermer={(cle) => setAvisExtensions((liste) => liste.filter((a) => a.cle !== cle))} />
       </div>
@@ -5331,11 +5570,23 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-gabarit-fichier
       />
+      <input
+        ref={fichierNatifRef}
+        type="file"
+        accept={`${EXTENSION_NATIF},application/json`}
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerNatif(f);
+        }}
+        data-planche-natif-fichier
+      />
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
             <h3>
-              {t(`panneau.${panneau}` as "panneau.info-entite")}
+              {panneau === "echange-import" && rapportImport ? t("planche.echange.titre-import", { format: rapportImport.rapport.format.toUpperCase() }) : t(`panneau.${panneau}` as "panneau.info-entite")}
               {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
               {panneau === "info-entite" && planChoisi() ? ` · ${t("planche.info.plan")}` : ""}
             </h3>
@@ -5421,6 +5672,57 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             )}
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
+            )}
+            {panneau === "echange-import" && <PanneauImportEchange rapport={rapportImport?.rapport ?? null} arbre={rapportImport?.arbre ?? []} objet={objetIfcChoisi} separateur={SEPARATEUR_DECIMAL} archive={archiveImport} />}
+            {panneau === "echange-export" && exportPrepare && (
+              <PanneauExportEchange
+                modele={hist.present.modele}
+                format={formatExport}
+                onFormat={setFormatExport}
+                coordonnees={ui.coordonneesExport}
+                onCoordonnees={(c) => etatUi.set({ coordonneesExport: c })}
+                reference={referenceNiveaux ?? null}
+                ecrit={exportPrepare.ecrit}
+                motif={exportPrepare.motif}
+                nonAffiches={exportPrepare.nonAffiches}
+                inclureMasques={inclureMasques}
+                onInclureMasques={setInclureMasques}
+                balisesIncluses={balisesIncluses}
+                onBaliseIncluse={(id, v) => setBalisesIncluses((avant) => (v ? new Set([...avant, id]) : new Set([...avant].filter((x) => x !== id))))}
+                prevu={exportPrepare.prevu}
+                onExporter={exporterEchange}
+                onAnnuler={() => setPanneau(null)}
+              />
+            )}
+            {panneau === "natif-image" && (
+              <PanneauNatifImage
+                dernierExport={dernierNatif}
+                reimport={reimportNatif}
+                onExporterNatif={exporterNatif}
+                onImporterNatif={() => fichierNatifRef.current?.click()}
+                largeur={tailleImage.largeur}
+                hauteur={tailleImage.hauteur}
+                onTaille={(largeur, hauteur) => setTailleImage({ largeur, hauteur })}
+                transparent={imageTransparente}
+                onTransparent={setImageTransparente}
+                onExporterImage={() => void exporterImage()}
+                note={noteNatif}
+                disponibilite={disponibiliteEchange}
+              />
+            )}
+            {panneau === "coller-trace" && (
+              <PanneauCollerTrace
+                lecture={colle}
+                unite={uniteColle}
+                onUnite={setUniteColle}
+                echelle={echelleColle}
+                onEchelle={setEchelleColle}
+                poserSur={poserColle}
+                onPoserSur={setPoserColle}
+                onColler={collerTrace}
+                onAnnuler={() => { setPanneau(null); setColle(null); }}
+                echelleValide={echelleColleLue !== null}
+              />
             )}
             {panneau === "gabarit" && <PanneauGabarit gabarits={gabarits} choisi={gabaritChoisi} onChoisir={setGabaritChoisi} separateur={SEPARATEUR_DECIMAL} note={noteGabarit} executer={executerGabarit} disponibilite={disponibiliteCommandeGabarit} />}
             {panneau === "accrochage" && <PanneauAccrochage force={forceAccrochage} presqueMm={presqueMm} onPresque={setPresqueMm} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} />}

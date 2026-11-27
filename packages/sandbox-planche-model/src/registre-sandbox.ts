@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit" | "echange";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -383,6 +383,9 @@ const commandes: EntreeSandbox[] = [
   c("importer-gabarit", "gabarit", "file-upload", "Ctrl+Maj+0", "panneau-gabarit", true),
   c("enregistrer-gabarit", "gabarit", "file-download", "Alt+7", "panneau-gabarit", true),
   c("creer-planche-gabarit", "gabarit", "file-plus", "Alt+8", "panneau-gabarit", true),
+  // Cas 2 du catalogue, lot 6 (27 novembre 2026) : Planche complète au format natif (empreinte) et image de la vue ;
+  // Alt + F1 était la dernière touche simple libre (les suivantes passent aux raccourcis en deux temps).
+  c("natif-image", "echange", "file-database", "Alt+F1", "panneau-natif-image", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

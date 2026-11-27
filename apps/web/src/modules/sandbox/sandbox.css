@@ -4805,3 +4805,113 @@
     grid-template-columns: 1.4rem minmax(0, 1fr) 3.2rem 5.4rem 1rem;
   }
 }
+/* Cas 2, lot 6 : rapport d'échange, rangement de l'import, export préparé, fichier natif et image, coller un tracé. */
+.sandbox-planche .planche-echange h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-rapport-echange {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.sandbox-planche .planche-rapport-echange th,
+.sandbox-planche .planche-rapport-echange td {
+  padding: 3px 2px;
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  text-align: right;
+}
+.sandbox-planche .planche-rapport-echange thead th {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-rapport-echange tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+.sandbox-planche .planche-rapport-echange .est-total th,
+.sandbox-planche .planche-rapport-echange .est-total td {
+  font-weight: 700;
+}
+.sandbox-planche .planche-rapport-echange .planche-invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.sandbox-planche .planche-echange-avertissement {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #b54708;
+  background: color-mix(in srgb, #b54708 10%, transparent);
+}
+.sandbox-planche .planche-echange-arbre,
+.sandbox-planche .planche-echange-arbre ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sandbox-planche .planche-echange-arbre ul {
+  padding-left: 16px;
+}
+.sandbox-planche .planche-echange-arbre li {
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  padding: 2px 0;
+}
+.sandbox-planche .planche-echange-arbre button {
+  min-height: 28px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-echange-arbre button::before {
+  content: "";
+  display: inline-block;
+  margin-right: 6px;
+  border: 4px solid transparent;
+  border-left: 6px solid currentColor;
+  vertical-align: 1px;
+}
+.sandbox-planche .planche-echange-arbre button[aria-expanded="true"]::before {
+  transform: rotate(90deg) translateX(2px);
+}
+.sandbox-planche .planche-echange-arbre small,
+.sandbox-planche .planche-echange-pset summary {
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-echange-case {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.sandbox-planche .planche-echange-conforme {
+  color: var(--accent, #2f6f4f);
+}
+.sandbox-planche .planche-echange-refuse {
+  color: var(--atelier-erreur, #a1260d);
+}
+.sandbox-planche .planche-cadre-image {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed #1a5fd6;
+  pointer-events: none;
+}
+.sandbox-planche .planche-cadre-image span {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  background: #1a5fd6;
+  font-size: 0.8rem;
+}
