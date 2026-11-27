@@ -122,6 +122,14 @@ const cliquer = async (page, fx, fy) => {
   await attendreConsigne(page, "Cliquez le point d'arrivée");
   await viser(page, 0.6, 0.6);
   await page.waitForFunction(() => /\d m$/.test(document.querySelector("[data-planche-mesures]")?.value ?? "") && !/^0[.,]00 m$/.test(document.querySelector("[data-planche-mesures]").value), null, { timeout: 15000 });
+  // L'extension répond de façon asynchrone à chaque déplacement de la souris (cinq pas) : on attend que la saisie et
+  // l'étiquette de l'aperçu portent la même valeur, sans changer pendant 300 ms, avant de les lire.
+  for (let essai = 0, precedente = ""; essai < 50; essai++) {
+    const v = await page.locator("[data-planche-mesures]").inputValue();
+    if (v === precedente && (await etiquettes(page)).includes(v)) break;
+    precedente = v;
+    await page.waitForTimeout(300);
+  }
   const m1 = await mesures(page);
   const e1 = await etiquettes(page);
   check("pendant le tracé : zone de saisie « Longueur » et étiquette de l'aperçu, rendues par l'outil et tenues à jour", m1.libelle === "Longueur" && /^\d+,\d\d m$/.test(m1.valeur) && e1.includes(m1.valeur) && (await vueDessin(page).evaluate((el) => getComputedStyle(el).cursor)) === "cell", `${m1.libelle} ${m1.valeur} · ${e1.join(" | ")}`);
