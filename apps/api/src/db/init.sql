@@ -3199,6 +3199,23 @@ CREATE TABLE IF NOT EXISTS geodata_analyses (
   CONSTRAINT geodata_analyses_zone_fk FOREIGN KEY (zone_id, espace_id) REFERENCES geodata_zones (id, espace_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS geodata_analyses_espace_idx ON geodata_analyses (espace_id, cree_le DESC);
+-- Emplacements enregistrés dans GeoData (bouton « Emplacements Projets », 27 novembre 2026) : position saisie ou lue au
+-- centre de la carte, au format de l'Emplacement de la Planche (lieu, latitude, longitude, altitude, nord vrai), que la
+-- Planche peut ouvrir. Altitude absente = NULL (jamais zéro) ; espace personnel de l'identité vérifiée seulement.
+CREATE TABLE IF NOT EXISTS geodata_emplacements (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  lieu text NOT NULL CHECK (length(btrim(lieu)) BETWEEN 1 AND 120),
+  latitude double precision NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude double precision NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  altitude double precision CHECK (altitude IS NULL OR altitude BETWEEN -10000 AND 10000),
+  nord double precision NOT NULL DEFAULT 0 CHECK (nord >= 0 AND nord < 360),
+  revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  modifie_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_emplacements_espace_idx ON geodata_emplacements (espace_id, modifie_le DESC);
 CREATE TABLE IF NOT EXISTS geodata_imports (
   id text PRIMARY KEY,
   espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,

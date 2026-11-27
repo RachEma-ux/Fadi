@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { CarteDeCollection, Composition, DescriptionRaster, DroitsVersion, EtatQualite, NiveauTerrain, ProduitTerrain, ReferenceVerticale, Milieu, MotifAbsence, PaysTerritorial, Qualification, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
+import type { CarteDeCollection, Composition, EmplacementGeoData, DescriptionRaster, DroitsVersion, EtatQualite, NiveauTerrain, ProduitTerrain, ReferenceVerticale, Milieu, MotifAbsence, PaysTerritorial, Qualification, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -26,6 +26,9 @@ async function appeler<T>(chemin: string, init: RequestInit = {}): Promise<T> {
   return corps as T;
 }
 const envoyer = <T,>(chemin: string, methode: string, corps?: unknown) => appeler<T>(chemin, { method: methode, ...(corps === undefined ? {} : { body: JSON.stringify(corps) }) });
+
+/** Emplacement enregistré (« Emplacements Projets ») : format de l'Emplacement de la Planche, révision pour modifier. */
+export interface EmplacementRecu extends EmplacementGeoData { id: string; revision: number; creeLe: string; modifieLe: string }
 
 export interface Fond { id: string; libelle: string; type: "neutre" | "raster"; tuiles: string[] | null; attribution: string; export: boolean; zoomMax: number | null }
 export interface EspaceRecu { espace: { id: string; type: string; creeLe: string }; roles: string[]; capacites: string[]; fonds: Fond[]; geocodage: { externe: boolean; message: string } }
@@ -251,6 +254,10 @@ export const api = {
   creerCollection: (corps: { nom: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>("/collections", "POST", corps),
   enregistrerCollection: (id: string, corps: { revisionAttendue: number; nom?: string; description?: string; cartes?: string[] }) => envoyer<CollectionDetail>(`/collections/${encodeURIComponent(id)}`, "PUT", corps),
   supprimerCollection: (id: string) => envoyer<void>(`/collections/${encodeURIComponent(id)}`, "DELETE"),
+  emplacements: () => appeler<{ emplacements: EmplacementRecu[] }>("/emplacements"),
+  creerEmplacement: (e: EmplacementGeoData) => envoyer<EmplacementRecu>("/emplacements", "POST", e),
+  modifierEmplacement: (id: string, revisionAttendue: number, e: EmplacementGeoData) => envoyer<EmplacementRecu>(`/emplacements/${encodeURIComponent(id)}`, "PUT", { ...e, revisionAttendue }),
+  supprimerEmplacement: (id: string) => envoyer<void>(`/emplacements/${encodeURIComponent(id)}`, "DELETE"),
   zones: () => appeler<{ zones: ZoneRecue[] }>("/zones"),
   creerZone: (corps: { nature: "zone" | "annotation"; nom: string; texte?: string; geometrie: unknown; provenance: "dessin" | "import" | "coordonnees" }) => envoyer<ZoneRecue>("/zones", "POST", corps),
   archiverZone: (id: string) => envoyer<{ id: string }>(`/zones/${encodeURIComponent(id)}/archiver`, "POST", {}),

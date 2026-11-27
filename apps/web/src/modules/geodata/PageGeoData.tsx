@@ -29,13 +29,14 @@ import { TableauDeBord, type ZoneCarte } from "./panneaux/TableauDeBord";
 import { SyntheseVue, type LigneSynthese } from "./panneaux/SyntheseVue";
 import { PastillesThemes, type PastilleTheme } from "./panneaux/PastillesThemes";
 import { BarreBas } from "./panneaux/BarreBas";
+import { LIBELLE_EMPLACEMENTS, PanneauEmplacements } from "./panneaux/Emplacements";
 import { BoutonTerrain, PanneauTerrain, useTerrain } from "./panneaux/Terrain";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
 
 type Onglet = "catalogue" | "couches" | "legende";
-type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain";
+type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain" | "emplacements";
 
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -864,6 +865,8 @@ export function PageGeoData() {
     // Alt+Z : filtre de zone d'étude retiré ou rétabli (D-GD-41).
     if (e.altKey && (e.key === "z" || e.key === "Z" || e.code === "KeyZ") && !saisie) { e.preventDefault(); basculerFiltreZone(); return; }
     // Terrain haute résolution (TER-05) : Alt+H panneau Terrain, Alt+O altitude au point, Alt+U profil du terrain.
+    // Alt+J : volet « Emplacements Projets » (bouton du bas de la mini-barre).
+    if (e.altKey && (e.key === "j" || e.key === "J" || e.code === "KeyJ") && !saisie) { e.preventDefault(); basculerEmplacements(); return; }
     if (e.altKey && (e.key === "h" || e.key === "H" || e.code === "KeyH") && !saisie) { e.preventDefault(); basculerTerrain(); return; }
     if (e.altKey && (e.key === "o" || e.key === "O" || e.code === "KeyO") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("altitude"); return; }
     if (e.altKey && (e.key === "u" || e.key === "U" || e.code === "KeyU") && !saisie && !erreurCarte) { e.preventDefault(); basculerOutilTerrain("profil"); return; }
@@ -917,6 +920,8 @@ export function PageGeoData() {
   const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setVolet(o === "altitude" || o === "profil" ? "terrain" : "etudes"); if (estTelephone()) setPanneauOuvert(false); } };
   /** Panneau Terrain (TER-05, Alt+H) ; altitude au point (Alt+O) et profil (Alt+U) : outils de la carte, panneau ouvert. */
   const basculerTerrain = () => { if (volet === "terrain") { setVolet(null); if (outil === "altitude" || outil === "profil") setOutil("navigation"); } else afficherVolet("terrain"); };
+  /** « Emplacements Projets » (Alt+J) : volet des emplacements à ouvrir dans la Planche. */
+  const basculerEmplacements = () => { if (volet === "emplacements") setVolet(null); else afficherVolet("emplacements"); };
   const basculerOutilTerrain = (o: "altitude" | "profil") => choisirOutil(outil === o ? "navigation" : o);
   const localiser = () => {
     if (!navigator.geolocation) return setAnnonce("Localisation indisponible dans ce navigateur.");
@@ -1162,6 +1167,7 @@ export function PageGeoData() {
             resultats={resultats} avis={avisRecherche} onChoisir={choisirResultat} onFermerResultats={() => { setResultats(null); setAvisRecherche(null); }}
             enregistrement={{ libelle: "Enregistrer", desactive: enregistrementImpossible, onEnregistrer: () => void enregistrer(), etat: etat.etat, etatLibelle: LIBELLES_ENREGISTREMENT[etat.etat], carteNom: carte?.nom ?? null }}
             planSatellite={planSatellite ? { versSatellite: planSatellite.versSatellite } : null} onPlanSatellite={basculerPlanSatellite}
+            emplacements={{ ouvert: volet === "emplacements", onBasculer: basculerEmplacements }}
             fonds={{ choix: choixFonds, actif: composition.fond, onChoisir: choisirFond, ouverts: panneauMini === "fonds", onBasculer: (o) => basculerPanneauMini("fonds", o) }}
             navigation={{ ouverte: panneauMini === "navigation", onBasculer: (o) => basculerPanneauMini("navigation", o),
               contenu: <BarreTerritoriale pays={paysListe} erreur={erreurTerritoires} paysCourant={paysCourant} chemin={chemin} onPays={changerPays} onChoisir={choisirTerritoire} onRetour={remonter} /> }} />
@@ -1185,8 +1191,8 @@ export function PageGeoData() {
           enregistrementImpossible={enregistrementImpossible} enregistrementLibelle="Enregistrer"
           onCarte={afficherCarteSeule} onChercher={() => basculerRecherche(!rechercheOuverte)} onCouches={basculerCouches} onEnregistrer={() => void enregistrer()} />
         {volet && (
-          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter", terrain: "Terrain" })[volet]} data-gd-volet-ouvert={volet}>
-            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter", terrain: "Terrain haute résolution" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer", export: "Exporter", terrain: "Terrain", emplacements: LIBELLE_EMPLACEMENTS })[volet]} data-gd-volet-ouvert={volet}>
+            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", collection: "Collection", etudes: "Études", import: "Importer des données", export: "Exporter", terrain: "Terrain haute résolution", emplacements: LIBELLE_EMPLACEMENTS })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
             {volet === "fiche" && <FicheObjet indicateurActif={indicateurActif} proximite={composition.couches.filter((k) => k.visible && couchesPoints.has(k.coucheId)).map((k) => ({ id: k.coucheId, titre: couchesConnues.get(k.coucheId)?.titre ?? k.coucheId }))} subdivisions={fiche ? subdivisionsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
@@ -1200,6 +1206,8 @@ export function PageGeoData() {
             {volet === "import" && <Import onCoucheImportee={async (id) => { const c = await api.couche(id); connaitre([c]); chargerCatalogue(); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); const e = empriseDe(c.emprise?.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "terrain" && <PanneauTerrain t={terrain} outil={outil} onOutil={choisirOutil} onCentrer={(e) => moteur.current?.allerA({ emprise: e })}
               vue={versionEmprise >= 0 ? moteur.current?.emprise() ?? null : null} zoneEtude={zoneActive ? { nom: zoneActive.nom, geometrie: zoneActive.geometrie } : null} zoom={composition.camera.zoom} />}
+            {volet === "emplacements" && <PanneauEmplacements centre={() => (erreurCarte ? null : { lon: composition.camera.lon, lat: composition.camera.lat })}
+              onCentrer={(c) => moteur.current?.allerA({ lon: c.lon, lat: c.lat, zoom: Math.max(composition.camera.zoom, 15) })} onAnnonce={setAnnonce} />}
             {volet === "export" && <Export carte={carte} enregistree={etat.etat === "enregistree"} analyses={analysesIds} onExporter={exporter} />}
           </aside>
         )}
