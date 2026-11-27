@@ -170,7 +170,7 @@ check("ARRIVÉE · « Ouvrir le catalogue » ouvre le catalogue et écarte la co
 
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
-// P5 : la colonne garde ses 16 outils, dont 14 rangés dans deux groupes nommés (« Mesurer et tracer », « Affichage »).
+// P5 : la colonne garde ses 17 outils (dont « Site », P13), la plupart rangés dans deux groupes nommés (« Mesurer et tracer », « Affichage »).
 const outils = await page.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
 const colonne = await barreOutils.locator("button[data-gd-barre-outil], button[data-gd-groupe]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-outil") ?? `groupe:${b.getAttribute("data-gd-groupe")}`));
 check("P5 · colonne : zoom avant, zoom arrière, puis deux groupes à divulgation (Alt+N, Alt+A)", colonne.join(",") === "zoom-plus,zoom-moins,groupe:mesurer,groupe:affichage" && (await barreOutils.locator("[data-gd-groupe='mesurer']").getAttribute("aria-keyshortcuts")) === "Alt+N", colonne.join(","));
@@ -235,7 +235,7 @@ const basBarre = groupes[groupes.length - 1].bottom;
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
 // À côté : bas alignés, ou remontée au-dessus de la ligne des sources quand elle est haute (contour d'arrivée, P1).
 const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && boiteLoupe.y + boiteLoupe.height <= basBarre + 1.5;
-check("mini-barre : séparée de la barre d'outils (qui garde ses 16 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, Plan / Satellite, Emplacements Projets, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
+check("mini-barre : séparée de la barre d'outils (qui garde ses 17 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, Plan / Satellite, Emplacements Projets, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
   (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte|Vue satellite indisponible : réglez la clé MapTiler dans Paramètres|Emplacements Projets" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
