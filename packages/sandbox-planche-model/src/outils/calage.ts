@@ -21,8 +21,11 @@ export interface EtatCalage {
   readonly pose: { readonly fond: string; readonly point: string } | null;
 }
 
-/** Premier fond déverrouillé traversé par le rayon, et le pixel visé. */
-export function fondVise(fonds: readonly Fond[], r: Rayon): { readonly fond: Fond; readonly u: number; readonly v: number } | null {
+/**
+ * Premier fond déverrouillé traversé par le rayon, et le pixel visé. À distance égale (fonds superposés à la même
+ * altitude), le fond choisi dans le panneau (`prefere`) l'emporte, sinon le dernier de la liste (dessiné au-dessus).
+ */
+export function fondVise(fonds: readonly Fond[], r: Rayon, prefere?: string): { readonly fond: Fond; readonly u: number; readonly v: number } | null {
   let meilleur: { fond: Fond; u: number; v: number; t: number } | null = null;
   for (const f of fonds) {
     if (f.verrouille || Math.abs(r.direction.z) < 1e-9) continue;
@@ -30,7 +33,8 @@ export function fondVise(fonds: readonly Fond[], r: Rayon): { readonly fond: Fon
     if (!(t > 0)) continue;
     const px = versPixel(f.pose, { x: r.origine.x + t * r.direction.x, y: r.origine.y + t * r.direction.y });
     if (px.u < 0 || px.v < 0 || px.u > f.largeurPx || px.v > f.hauteurPx) continue;
-    if (!meilleur || t < meilleur.t) meilleur = { fond: f, u: px.u, v: px.v, t };
+    const egal = meilleur !== null && Math.abs(t - meilleur.t) <= 1e-9 * Math.max(1, Math.abs(t));
+    if (!meilleur || (!egal && t < meilleur.t) || (egal && meilleur.fond.id !== prefere)) meilleur = { fond: f, u: px.u, v: px.v, t };
   }
   return meilleur && { fond: meilleur.fond, u: meilleur.u, v: meilleur.v };
 }
@@ -43,7 +47,7 @@ export const machineCalage: MachineOutil<EtatCalage> = {
     switch (ev.genre) {
       case "clic": {
         if (ctx.lecture) return { etat: { ...etat, erreur: ERREUR_CALAGE_LECTURE } };
-        const v = fondVise(fondsDe(ctx.modele), ev.rayon);
+        const v = fondVise(fondsDe(ctx.modele), ev.rayon, ctx.fondCourant);
         if (!v) return { etat: { ...etat, erreur: ERREUR_CALAGE_HORS } };
         const r = ajouterPointCalage(ctx.modele, v.fond.id, { u: Math.round(v.u * 10) / 10, v: Math.round(v.v * 10) / 10 });
         if (!r.ok) return { etat: { ...etat, erreur: r.erreur === "points" ? ERREUR_CALAGE_PLEIN : ERREUR_CALAGE_HORS } };

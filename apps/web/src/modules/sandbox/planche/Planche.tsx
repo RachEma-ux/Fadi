@@ -578,6 +578,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
   const baliseRef = useRef<string | null>(null);
+  const fondCourantRef = useRef<string | null>(null);
   const [balise, setBaliseEtat] = useState<string | null>(null);
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
@@ -764,6 +765,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(dansRef.current !== undefined ? { dans: dansRef.current, chemin: cheminRef.current } : {}),
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
+      ...(fondCourantRef.current ? { fondCourant: fondCourantRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
       aujourdhui: dateDuJour(),
@@ -3265,6 +3267,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const fondsListe = fondsDe(hist.present.modele);
   const [fondChoisiEtat, setFondChoisi] = useState<string | null>(null);
   const fondChoisi = fondsListe.find((f) => f.id === fondChoisiEtat) ?? fondsListe[0] ?? null;
+  fondCourantRef.current = fondChoisi?.id ?? null;
   const [pointChoisiEtat, setPointChoisi] = useState<string | null>(null);
   const pointChoisi = fondChoisi?.points.some((p) => p.id === pointChoisiEtat) ? pointChoisiEtat : null;
   const [erreurFond, setErreurFond] = useState<string | null>(null);

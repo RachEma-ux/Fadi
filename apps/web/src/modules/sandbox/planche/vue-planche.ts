@@ -879,7 +879,7 @@ export class VuePlanche {
     // Fonds calés (cas 4, lot C4, étape 1) : image à plat à son altitude, sous le dessin ; points de calage en lettres.
     const fonds = Object.values(a.fonds ?? {});
     for (const id of [...this.texturesFonds.keys()]) if (!fonds.some((f) => f.id === id)) { this.texturesFonds.get(id)!.texture.dispose(); this.texturesFonds.delete(id); }
-    for (const f of fonds) {
+    for (const [i, f] of fonds.entries()) {
       const [hg, hd, bd, bg] = coinsFond(f);
       const z = f.altitude - 0.002;
       const g = new THREE.BufferGeometry();
@@ -888,7 +888,8 @@ export class VuePlanche {
       g.setIndex([0, 1, 2, 0, 2, 3]);
       const mat = new THREE.MeshBasicMaterial({ map: this.textureFond(f.id, f.image), transparent: true, opacity: f.opacite, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
       const mesh = new THREE.Mesh(g, mat);
-      mesh.renderOrder = -1;
+      // Fonds superposés : le dernier de la liste est dessiné au-dessus, comme l'outil Calage le vise (fondVise).
+      mesh.renderOrder = -2 + (i + 1) / (fonds.length + 1);
       mesh.userData["fond"] = f.id;
       this.groupeAnnotations.add(mesh);
       for (const p of f.points) {

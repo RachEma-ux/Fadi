@@ -97,4 +97,16 @@ describe("Fonds calés", () => {
     expect(fondVise([{ ...f, verrouille: true }], { origine: { x: 2.5, y: 4, z: 10 }, direction: { x: 0, y: 0, z: -1 } })).toBeNull();
     expect(fondVise([f], { origine: { x: 20, y: 4, z: 10 }, direction: { x: 0, y: 0, z: -1 } })).toBeNull();
   });
+
+  it("fonds superposés à la même altitude : le fond choisi l'emporte, sinon le dernier (dessiné au-dessus)", () => {
+    const a = fond();
+    const b = fond(a.m);
+    const [fa, fb] = Object.values(b.m.annotations!.fonds!);
+    const rayon = { origine: { x: 2.5, y: 4, z: 10 }, direction: { x: 0, y: 0, z: -1 } };
+    expect(fondVise([fa!, fb!], rayon)?.fond.id).toBe(fb!.id);
+    expect(fondVise([fa!, fb!], rayon, fa!.id)?.fond.id).toBe(fa!.id);
+    expect(fondVise([fa!, fb!], rayon, fb!.id)?.fond.id).toBe(fb!.id);
+    // Un fond plus haut reste visé d'abord, même si l'autre est choisi.
+    expect(fondVise([fa!, { ...fb!, altitude: 1 }], rayon, fa!.id)?.fond.id).toBe(fb!.id);
+  });
 });

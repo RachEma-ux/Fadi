@@ -13,7 +13,7 @@ import { COMMANDES_FONDS, type Disponibilite, type IdCommandeFond } from "./comm
 import { afficherRaccourci } from "./outils-planche";
 
 const arreter = (e: { stopPropagation(): void }) => e.stopPropagation();
-const nombre = (v: number, d = 2): string => v.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d });
+const nombre = (v: number, d = 2, max = d): string => v.toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: max, useGrouping: false });
 /** « 12,4 » ou « 12.4 » → 12,4 ; "" → null ; illisible → undefined. */
 const lireNombre = (s: string): number | null | undefined => {
   const v = s.trim().replace(",", ".");
@@ -27,7 +27,9 @@ const lirePosition = (s: string): PositionPlan | null | undefined => {
   const m = /^\s*(-?[0-9]+(?:[.,][0-9]+)?)\s*;\s*(-?[0-9]+(?:[.,][0-9]+)?)\s*$/.exec(s);
   return m ? { x: Number(m[1]!.replace(",", ".")), y: Number(m[2]!.replace(",", ".")) } : undefined;
 };
-const textePosition = (p: PositionPlan | null): string => (p ? `${nombre(p.x)} ; ${nombre(p.y)}` : "");
+/** Sans perte (jusqu'au dixième de millimètre au-delà des deux décimales affichées) : un champ relu ne réécrit pas une
+ * valeur arrondie. */
+const textePosition = (p: PositionPlan | null): string => (p ? `${nombre(p.x, 2, 6)} ; ${nombre(p.y, 2, 6)}` : "");
 
 /** Image réduite à `cote` px (plus grand côté) : JPEG, sauf PNG gardé en PNG (plans au trait). */
 export async function reduireFond(f: File, cote = 4096): Promise<{ image: string; largeur: number; hauteur: number }> {
@@ -78,7 +80,7 @@ export function PanneauFonds({
   const [local, setLocal] = useState<string | null>(null);
   const cle = choisi ? JSON.stringify([choisi.id, choisi.longueur, choisi.points]) : "";
   useEffect(() => {
-    setLongueur(choisi?.longueur != null ? nombre(choisi.longueur, 3) : "");
+    setLongueur(choisi?.longueur != null ? nombre(choisi.longueur, 3, 6) : "");
     setCibles(Object.fromEntries((choisi?.points ?? []).map((p) => [p.id, textePosition(p.cible)])));
     setLocal(null);
   }, [cle]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -92,6 +94,8 @@ export function PanneauFonds({
     if (v !== (choisi?.longueur ?? null)) onLongueur(v);
   };
   const enregistrerCible = (id: string) => {
+    // Champ inchangé (texte relu du modèle) : rien n'est réécrit, même au-delà des décimales affichées.
+    if ((cibles[id] ?? "") === textePosition(choisi?.points.find((p) => p.id === id)?.cible ?? null)) return setLocal(null);
     const v = lirePosition(cibles[id] ?? "");
     if (v === undefined) return setLocal(t("planche.fonds.erreur.position"));
     setLocal(null);
