@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bornerPosition, HAUTEUR_UTILE_MIN, ICONES, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
+import { bornerPosition, HAUTEUR_UTILE_MIN, ICONES, placementPanneauGroupe, POSITION_PAR_DEFAUT, RACCOURCIS_BARRE } from "./BarreOutilsCarte";
 
 describe("barre d'outils flottante GeoData", () => {
   it("position par défaut : à droite, en haut", () => expect(POSITION_PAR_DEFAUT).toEqual({ droite: 10, haut: 10 }));
@@ -66,5 +66,11 @@ describe("groupes de la colonne (P5, D3 et D4)", () => {
     expect(Object.keys(LETTRES_GROUPES.mesurer)).toEqual(["distance", "surface", "zone", "annotation"]);
     const icones = Object.values(ICONES);
     expect(new Set(icones).size).toBe(icones.length);
+  });
+  it("panneau d'un groupe : à gauche de la barre s'il y a la place, sinon à droite, jamais hors de la carte", () => {
+    expect(placementPanneauGroupe({ droite: 10, haut: 10 }, 52, 1000)).toEqual({ right: 70 });
+    // Barre contre le bord gauche (droite = 1000 - 52 - 4) : le panneau s'ouvre à sa droite, dans la carte.
+    expect(placementPanneauGroupe({ droite: 944, haut: 10 }, 52, 1000)).toEqual({ left: 64 });
+    expect(placementPanneauGroupe({ droite: 10, haut: 10 }, 52, 0)).toEqual({ right: 70 });
   });
 });

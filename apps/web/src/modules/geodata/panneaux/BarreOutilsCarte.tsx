@@ -23,6 +23,16 @@ export function bornerPosition(p: PositionBarre, carte: { largeur: number; haute
   const reserve = Math.max(barre.hauteur, HAUTEUR_UTILE_MIN);
   return { droite: borne(p.droite, carte.largeur - barre.largeur - 4), haut: borne(p.haut, carte.hauteur - reserve - 4) };
 }
+/** Largeur réservée au panneau d'un groupe (largeur minimale 230 px et marge de 8 px, `.gd-panneau-groupe`). */
+export const LARGEUR_PANNEAU_GROUPE = 238;
+/**
+ * Côté d'ouverture du panneau d'un groupe (revue de la PR #487) : à gauche de la barre s'il y a la place dans la carte,
+ * sinon à droite (barre déplacée contre le bord gauche) ; jamais hors de la carte.
+ */
+export function placementPanneauGroupe(p: PositionBarre, largeurBarre: number, largeurCarte: number): { right: number } | { left: number } {
+  const aGauche = largeurCarte - p.droite - largeurBarre - 8;
+  return aGauche >= LARGEUR_PANNEAU_GROUPE || largeurCarte <= 0 ? { right: p.droite + largeurBarre + 8 } : { left: Math.max(4, largeurCarte - p.droite + 8) };
+}
 const lirePosition = (): PositionBarre => {
   try { const v = JSON.parse(window.localStorage.getItem(CLE_POSITION) ?? "null") as PositionBarre | null; return v && Number.isFinite(v.droite) && Number.isFinite(v.haut) ? v : POSITION_PAR_DEFAUT; } catch { return POSITION_PAR_DEFAUT; }
 };
@@ -215,14 +225,14 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
     {/* Panneaux des groupes (P5) : toujours montés, masqués quand le groupe est fermé (états lisibles, un seul ouvert). */}
     <div ref={panneauxGroupes} onKeyDown={toucheGroupe}>
       <div id="gd-groupe-mesurer" className="gd-panneau-groupe" role="group" aria-label="Mesurer et tracer" hidden={groupeOuvert !== "mesurer"}
-        style={{ right: position.droite + (barre.current?.offsetWidth ?? 52) + 8, top: position.haut }} data-gd-panneau-groupe="mesurer">
+        style={{ ...placementPanneauGroupe(position, barre.current?.offsetWidth ?? 52, barre.current?.parentElement?.clientWidth ?? 0), top: position.haut }} data-gd-panneau-groupe="mesurer">
           {trace("distance", "Mesurer une distance", ICONES.distance)}
           {trace("surface", "Mesurer une surface", ICONES.surface)}
           {trace("zone", "Tracer une zone d'étude", ICONES.zone)}
           {trace("annotation", "Poser une annotation", ICONES.annotation)}
         </div>
       <div id="gd-groupe-affichage" className="gd-panneau-groupe" role="group" aria-label="Affichage" hidden={groupeOuvert !== "affichage"}
-        style={{ right: position.droite + (barre.current?.offsetWidth ?? 52) + 8, top: position.haut }} data-gd-panneau-groupe="affichage">
+        style={{ ...placementPanneauGroupe(position, barre.current?.offsetWidth ?? 52, barre.current?.parentElement?.clientWidth ?? 0), top: position.haut }} data-gd-panneau-groupe="affichage">
           <p className="gd-titre-section">Vue</p>
           {bouton("nord", "Remettre le nord en haut", ICONES.nord, p.onNord, { disabled: !p.carteDisponible })}
           {bouton("position", "Ma position (ni enregistrée ni envoyée au serveur)", ICONES.position, p.onPosition, { disabled: !p.carteDisponible })}
