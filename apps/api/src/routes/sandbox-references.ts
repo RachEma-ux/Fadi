@@ -5,7 +5,7 @@
  *
  * Routes montées sous `/sandbox/references` (compte connecté exigé, 401 sinon) :
  *
- *   POST /      corps brut (en-têtes X-Fadi-Nom : nom du fichier encodé URI ; X-Fadi-Format : obj, stl, ifc, pdf, ifczip, gltf, glb, ply, 3mf, dae ou 3ds)
+ *   POST /      corps brut (en-têtes X-Fadi-Nom : nom du fichier encodé URI ; X-Fadi-Format : obj, stl, ifc, pdf, ifczip, gltf, glb, ply, 3mf, dae, 3ds, kml, kmz ou prj)
  *               → 201 { fichier: { id, nom, format, taille, empreinte, ajouteLe } } (200 si ce même fichier était déjà
  *               rangé pour ce compte) ; contenu qui ne ressemble pas au format annoncé → 415 ; nom illisible → 400 ;
  *               plus de 60 Mo → 413.
@@ -21,7 +21,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 
 /** Taille maximale d'un fichier de référence (choix Fadi : maquette d'un bâtiment courant, relevé décimé). */
 export const LIMITE_FICHIER_REFERENCE = 60 * 1024 * 1024;
-const FORMATS = ["obj", "stl", "ifc", "pdf", "ifczip", "gltf", "glb", "ply", "3mf", "dae", "3ds"] as const;
+const FORMATS = ["obj", "stl", "ifc", "pdf", "ifczip", "gltf", "glb", "ply", "3mf", "dae", "3ds", "kml", "kmz", "prj"] as const;
 type FormatReference = (typeof FORMATS)[number];
 
 /** Le contenu ressemble-t-il au format annoncé ? (signature, jamais d'après le seul nom). */
@@ -49,6 +49,10 @@ export function contenuConforme(format: FormatReference, o: Buffer): boolean {
   if (format === "3mf") return o.length >= 4 && o.readUInt32LE(0) === 0x04034b50;
   if (format === "dae") return /<COLLADA[\s>]/.test(tete);
   if (format === "3ds") return o.length >= 6 && o.readUInt16LE(0) === 0x4d4d && o.readUInt32LE(2) <= o.length;
+  // KML / KMZ et .prj du système (lot C4, étape 7b).
+  if (format === "kml") return /<kml[\s>]/.test(tete);
+  if (format === "kmz") return o.length >= 4 && o.readUInt32LE(0) === 0x04034b50;
+  if (format === "prj") return /^\s*(PROJCS|PROJCRS|GEOGCS|GEOGCRS|GEODCRS|COMPD_CS|COMPOUNDCRS)\s*\[/.test(tete);
   if (format === "stl") {
     if (/^\s*solid\b/.test(tete) && /facet\s+normal/.test(tete)) return true;
     return o.length >= 84 && o.length === 84 + 50 * o.readUInt32LE(80);
@@ -79,7 +83,7 @@ sandboxReferencesRouter.use(prive);
 sandboxReferencesRouter.post("/", express.raw({ type: () => true, limit: LIMITE_FICHIER_REFERENCE }), async (req, res) => {
   const format = String(req.headers["x-fadi-format"] ?? "").trim().toLowerCase() as FormatReference;
   const octets = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-  if (!FORMATS.includes(format) || !contenuConforme(format, octets)) return void res.status(415).json({ error: "unsupported_media_type", message: "Fichier OBJ, STL, IFC, IFCZIP, PDF, glTF, GLB, PLY, 3MF, DAE ou 3DS attendu, conforme au format annoncé." });
+  if (!FORMATS.includes(format) || !contenuConforme(format, octets)) return void res.status(415).json({ error: "unsupported_media_type", message: "Fichier OBJ, STL, IFC, IFCZIP, PDF, glTF, GLB, PLY, 3MF, DAE, 3DS, KML, KMZ ou PRJ attendu, conforme au format annoncé." });
   let nom: string;
   try {
     nom = decodeURIComponent(String(req.headers["x-fadi-nom"] ?? "")).trim();

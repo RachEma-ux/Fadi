@@ -372,6 +372,11 @@ import {
   poserScene,
   type AxeHaut,
   type FormatFabricant,
+  lireKml,
+  lireKmz,
+  pointsKml,
+  poserKml,
+  type LectureKml,
   type LectureScene,
   positionsReference,
   rechargerReference,
@@ -473,7 +478,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -493,6 +498,8 @@ import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./pannea
 import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
 import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./panneau-ifc";
 import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
+import { PanneauKml, type ResumeKml } from "./panneau-kml";
+import { ErreurProjection, projeterVersSysteme } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
@@ -649,7 +656,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -664,7 +671,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -6700,6 +6707,90 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const n = (x: number) => x.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
     return { nom: luFabricant.nom, format: luFabricant.format.toUpperCase(), objets: r.objets, triangles: r.triangles, matieres: r.matieres, repetes: r.repetes, dimensions: `${n(r.dimensions[0])} × ${n(r.dimensions[1])} × ${n(r.dimensions[2])} m`, uniteLue: luFabricant.lecture.uniteFichier !== null, axeLu: luFabricant.lecture.axeFichier !== null, omis: r.omis.map((o) => t(`planche.fabricant.omis.${o}` as CleMessage)) };
   }, [luFabricant, uniteFabricant, axeFabricant]);
+  // KML / KMZ (cas 4, lot C4, étape 7b) : lu sans bibliothèque, projeté par l'API dans le système du point de base
+  // (définition connue de Fadi ou .prj fourni), posé à plat en un seul pas.
+  const [luKml, setLuKml] = useState<{ readonly nom: string; readonly format: "kml" | "kmz"; readonly lecture: LectureKml; readonly fichier: File } | null>(null);
+  const [prjKml, setPrjKml] = useState<{ readonly nom: string; readonly wkt: string; readonly fichier: File; readonly systeme: string } | null>(null);
+  const [erreurKml, setErreurKml] = useState<string | null>(null);
+  const [noteKml, setNoteKml] = useState<string | null>(null);
+  const importKmlRef = useRef<HTMLInputElement | null>(null);
+  const importPrjKmlRef = useRef<HTMLInputElement | null>(null);
+  const systemeKml = hist.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? null;
+  const disponibiliteCommandeKml = (id: IdCommandeKml) => disponibiliteKml(id, { lu: luKml !== null, pointDeBase: systemeKml !== null, lecture: readOnly });
+  const lireFichierKml = async (f: File) => {
+    setErreurKml(null);
+    setNoteKml(null);
+    setPanneau("import-kml");
+    const kmz = f.name.toLowerCase().endsWith(".kmz");
+    try {
+      const lecture = kmz ? lireKmz(new Uint8Array(await f.arrayBuffer())) : lireKml(await f.text());
+      setLuKml({ nom: f.name, format: kmz ? "kmz" : "kml", lecture, fichier: f });
+    } catch (e) {
+      setLuKml(null);
+      setErreurKml(t("planche.kml.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  const lirePrjKml = async (f: File) => {
+    setPanneau("import-kml");
+    setNoteKml(null);
+    const wkt = f.size <= 65536 ? await f.text().catch(() => "") : "";
+    const s = wkt ? systemeDuPrj(wkt) : null;
+    if (!s) return setErreurKml(t("planche.kml.erreur.prj"));
+    const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
+    // Un .prj qui porte un code d'autorité doit décrire le système du point de base ; sans code (ESRI), son nom est affiché.
+    if (s.code && normaliserSysteme(s.code) !== normaliserSysteme(projet)) return setErreurKml(t("planche.kml.erreur.prj-different", { lu: s.code, systeme: projet }));
+    setPrjKml({ nom: f.name, wkt, fichier: f, systeme: projet });
+    setErreurKml(null);
+    setNoteKml(t("planche.kml.note.prj", { nom: f.name, systeme: s.code ?? s.nom ?? "" }));
+  };
+  const importerKml = async () => {
+    const lu = luKml;
+    const pdb = histRef.current.present.modele.annotations?.reglages?.pointDeBase ?? null;
+    if (!lu || !pdb || readOnly) return;
+    const points = pointsKml(lu.lecture);
+    if (points.length === 0) return setErreurKml(t("planche.kml.erreur.demande"));
+    // La définition fournie n'a été contrôlée que pour le système du point de base au moment de sa lecture : si ce système a
+    // changé depuis, elle est écartée plutôt que d'interpréter les coordonnées dans un autre repère.
+    if (prjKml && normaliserSysteme(prjKml.systeme) !== normaliserSysteme(pdb.systeme)) {
+      setPrjKml(null);
+      return setErreurKml(t("planche.kml.erreur.prj-perime", { nom: prjKml.nom }));
+    }
+    try {
+      await archiverFichierReference(lu.fichier, lu.format);
+      if (prjKml) await archiverFichierReference(prjKml.fichier, "prj");
+    } catch (e) {
+      return setErreurKml(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    let projetes: Awaited<ReturnType<typeof projeterVersSysteme>>;
+    try {
+      projetes = await projeterVersSysteme(pdb.systeme, prjKml?.wkt ?? null, points);
+    } catch (e) {
+      return setErreurKml(t(`planche.kml.erreur.${e instanceof ErreurProjection ? e.code : "serveur"}` as CleMessage, { systeme: pdb.systeme }));
+    }
+    let r: ReturnType<typeof poserKml> | null = null;
+    try {
+      r = poserKml(histRef.current.present.modele, lu.lecture, projetes.points, pdb);
+    } catch (e) {
+      return setErreurKml(t("planche.kml.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+    const fait = r;
+    const note = t("planche.kml.note.importe", { polygones: String(fait.polygones), lignes: String(fait.lignes), points: String(fait.points), source: t(`planche.kml.source.${projetes.source}`), ignores: fait.ignores > 0 ? t("planche.kml.note.ignores", { nombre: String(fait.ignores) }) : "" });
+    operer(t("planche.kml.nom"), () => ({ modele: fait.modele, selection: fait.groupes, message: note }));
+    setErreurKml(null);
+    setNoteKml(note);
+  };
+  const executerKml = (id: IdCommandeKml) => {
+    setPanneau("import-kml");
+    if (id === "import-kml") return luKml ? undefined : importKmlRef.current?.click();
+    if (!disponibiliteCommandeKml(id).disponible) return;
+    if (id === "definition-systeme") return importPrjKmlRef.current?.click();
+    void importerKml();
+  };
+  const resumeKml = useMemo((): ResumeKml | null => {
+    if (!luKml) return null;
+    const compte = (g: string) => luKml.lecture.elements.filter((e) => e.genre === g).length;
+    return { nom: luKml.nom, polygones: compte("polygone"), lignes: compte("ligne"), points: compte("point"), omis: luKml.lecture.omis.map((o) => t(`planche.kml.omis.${o}` as CleMessage)) };
+  }, [luKml]);
   const executerTravaux = (id: IdCommandeTravaux) => {
     setPanneau("statut-travaux");
     if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
@@ -6861,6 +6952,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
     else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
     else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
+    else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
@@ -6965,6 +7057,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_FABRICANT.map((c) => {
           const d = disponibiliteCommandeFabricant(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fabricant.motif.fichier"), executer: () => executerFabricant(c.id) };
+        }),
+        ...COMMANDES_KML.map((c) => {
+          const d = disponibiliteCommandeKml(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
         }),
         ...COMMANDES_CONSULTATION.map((c) => {
           const d = disponibiliteCommandeConsultation(c.id);
@@ -7807,6 +7903,31 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         }}
         data-planche-import-fabricant-entree
       />
+      {/* KML / KMZ (Ctrl+Maj+Espace, W) et définition du système (Y) : montés hors du panneau. */}
+      <input
+        ref={importKmlRef}
+        type="file"
+        accept=".kml,.kmz"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierKml(f);
+        }}
+        data-planche-import-kml-entree
+      />
+      <input
+        ref={importPrjKmlRef}
+        type="file"
+        accept=".prj"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lirePrjKml(f);
+        }}
+        data-planche-import-kml-prj-entree
+      />
       {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
       <input
         ref={importPdfRef}
@@ -7972,6 +8093,18 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 erreur={erreurFabricant}
                 note={noteFabricant}
                 progression={progressionFabricant}
+              />
+            )}
+            {panneau === "import-kml" && (
+              <PanneauKml
+                lu={resumeKml}
+                systeme={systemeKml}
+                prj={prjKml?.nom ?? null}
+                executer={executerKml}
+                disponibilite={disponibiliteCommandeKml}
+                onChoisirFichier={() => importKmlRef.current?.click()}
+                erreur={erreurKml}
+                note={noteKml}
               />
             )}
             {panneau === "statut-travaux" && (

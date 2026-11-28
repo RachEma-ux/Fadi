@@ -70,3 +70,4 @@ export * from "./modelisation-l8.js";
 export * from "./composants-l8.js";
 export * from "./xml-mini.js";
 export * from "./formats-3d.js";
+export * from "./kml.js";

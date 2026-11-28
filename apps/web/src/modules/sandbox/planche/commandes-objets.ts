@@ -959,3 +959,25 @@ export function disponibiliteFabricant(id: IdCommandeFabricant, s: { readonly lu
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   return s.lu ? { disponible: true, motif: null } : { disponible: false, motif: "planche.fabricant.motif.fichier" };
 }
+
+/**
+ * KML / KMZ (cas 4, lot C4, étape 7b) : un panneau ; importer exige un fichier lu et un point de base (la projection en
+ * part) ; la définition du système (.prj) est facultative quand Fadi connaît le système.
+ */
+export type IdCommandeKml = "import-kml" | "importer-kml" | "definition-systeme";
+export interface CommandeKml {
+  readonly id: IdCommandeKml;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_KML: readonly CommandeKml[] = (["import-kml", "importer-kml", "definition-systeme"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.kml.${id}` as CleMessage, court: `planche.kml.court.${id}` as CleMessage }));
+
+export function disponibiliteKml(id: IdCommandeKml, s: { readonly lu: boolean; readonly pointDeBase: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "import-kml") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "definition-systeme") return s.pointDeBase ? { disponible: true, motif: null } : { disponible: false, motif: "planche.kml.motif.point-de-base" };
+  if (!s.lu) return { disponible: false, motif: "planche.kml.motif.fichier" };
+  return s.pointDeBase ? { disponible: true, motif: null } : { disponible: false, motif: "planche.kml.motif.point-de-base" };
+}

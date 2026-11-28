@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -260,5 +260,17 @@ describe("Formats des fabricants (lot C4, étape 7a) : disponibilité des comman
     expect(disponibiliteFabricant("importer-fabricant", { lu: false, lecture: false }).motif).toBe("planche.fabricant.motif.fichier");
     expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: false }).disponible).toBe(true);
+  });
+});
+
+describe("KML / KMZ (lot C4, étape 7b) : disponibilité des commandes", () => {
+  it("ouvrir toujours ; importer un fichier lu avec un point de base, hors lecture ; .prj avec un point de base", () => {
+    const s = { lu: true, pointDeBase: true, lecture: false };
+    expect(disponibiliteKml("import-kml", { ...s, lecture: true, lu: false }).disponible).toBe(true);
+    expect(disponibiliteKml("importer-kml", { ...s, lu: false }).motif).toBe("planche.kml.motif.fichier");
+    expect(disponibiliteKml("importer-kml", { ...s, pointDeBase: false }).motif).toBe("planche.kml.motif.point-de-base");
+    expect(disponibiliteKml("definition-systeme", { ...s, pointDeBase: false }).motif).toBe("planche.kml.motif.point-de-base");
+    expect(disponibiliteKml("importer-kml", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteKml("importer-kml", s).disponible).toBe(true);
   });
 });
