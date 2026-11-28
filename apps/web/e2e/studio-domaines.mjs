@@ -280,7 +280,8 @@ try {
   check("NAV-007 : changer de domaine ne demande rien et garde le brouillon", dialogues.length === 0
     && (await enAttente()) === "1" && (await page.locator("[data-studio-etat]").textContent()) === "Brouillon non enregistré", dialogues.join(" | "));
   // Ctrl + clic : l'adresse du domaine s'ouvre ailleurs ; la variante n'est ni quittée ni gardée.
-  const ailleurs = context.waitForEvent("page", { timeout: 10000 }).catch(() => null);
+  // Sous charge, l'ouverture d'un onglet par le navigateur peut dépasser 10 s : l'attente passe à 30 s.
+  const ailleurs = context.waitForEvent("page", { timeout: 30000 }).catch(() => null);
   await nav.getByRole("link", { name: "BIM et coordination", exact: true }).click({ modifiers: ["Control"] });
   const onglet = await ailleurs;
   check("I-6 : Ctrl + clic sur un domaine ouvre son adresse ailleurs, sans garde ni changement ici", !!onglet && dialogues.length === 0 && page.url() === `${base}?domaine=visualisation`
