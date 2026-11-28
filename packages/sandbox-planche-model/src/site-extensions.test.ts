@@ -1,7 +1,7 @@
 /** Protocole 1.6 (cas 3, lot 4, site) : site.lire, geometrie.rayon et la fonction de dessin « triangles ». */
 import { describe, expect, it } from "vitest";
 import { REGLAGES_DEFAUT } from "./annotations.js";
-import { ajouterRectangle, baliserOccurrences, grouper, modeleVide, modifierAnnotations, type Id, type Modele } from "./geometrie-libre.js";
+import { ajouterRectangle, ajouterSegments, baliserOccurrences, grouper, modeleVide, modifierAnnotations, type Id, type Modele } from "./geometrie-libre.js";
 import type { PermissionExtension } from "./protocole-extensions.js";
 import { MAX_RAYONS_APPEL, MAX_TRIANGLES_APPEL, creerServicesExtension, type AccesPlanche } from "./services-extensions.js";
 import { v3 } from "./vecteur.js";
@@ -72,6 +72,22 @@ describe("protocole 1.6 : triangles", () => {
     expect(etat.pas).toEqual([]);
     expect(Object.keys(etat.modele.racine.faces)).toHaveLength(0);
   });
+  it("un triangle trop petit pour avoir une normale est refusé avec son rang, pas créé sans face", () => {
+    const { etat, acces } = planche();
+    expect(servir(acces, "modele.modifier", { fonction: "triangles", arguments: [[[[20, 0, 0], [20.00001, 0, 0], [20, 0.00001, 0]]]] })).toEqual({ ok: false, erreur: "argument_invalide", detail: "triangles : le triangle 1 est d'aire nulle" });
+    expect(etat.pas).toEqual([]);
+  });
+  it("une géométrie voisine coplanaire déjà dessinée garde ses arêtes", () => {
+    // Carré de 4 m coupé en deux faces par une ligne, puis un triangle sans lien à x = 10.
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 4, 0)).modele;
+    m = ajouterSegments(m, [[v3(2, 0, 0), v3(2, 4, 0)]]).modele;
+    expect(Object.keys(m.racine.faces)).toHaveLength(2);
+    const aretes = Object.keys(m.racine.aretes).length;
+    const { etat, acces } = planche(m);
+    ok(servir(acces, "modele.modifier", { fonction: "triangles", arguments: [[[[10, 0, 0], [11, 0, 0], [10, 1, 0]]]] }));
+    expect(Object.keys(etat.modele.racine.faces)).toHaveLength(3);
+    expect(Object.keys(etat.modele.racine.aretes)).toHaveLength(aretes + 3);
+  });
 });
 
 describe("protocole 1.6 : geometrie.rayon", () => {
@@ -101,6 +117,10 @@ describe("protocole 1.6 : geometrie.rayon", () => {
     const vers = (acc: AccesPlanche, d: Record<string, unknown>) => ok<{ impacts: ({ distance: number } | null)[] }>(servir(acc, "geometrie.rayon", { rayons: [{ origine: [1, 1, 10], direction: [0, 0, -1] }], ...d })).impacts[0];
     expect(vers(planche(m).acces, { distanceMax: 5 })).toBeNull();
     expect(vers(planche(m).acces, { objets: [groupe] })).toMatchObject({ distance: 7 });
+    // Un objet imbriqué (groupe dans un groupe) sert aussi de filtre.
+    const g2 = grouper(m, [groupe]);
+    const ext = g2.rapport.crees.find((id) => g2.modele.racine.occurrences[id]) as Id;
+    expect(vers(planche(g2.modele).acces, { objets: [groupe] })).toMatchObject({ distance: 7, chemin: [ext, groupe] });
     const masque = modifierAnnotations(baliserOccurrences(m, [groupe], "b1").modele, (a) => {
       a.balises = { b1: { id: "b1", nom: "Contexte", couleur: "#888888", visible: false } } as never;
     }).modele;

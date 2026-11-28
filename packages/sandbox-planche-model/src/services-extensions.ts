@@ -388,12 +388,13 @@ function lireCourbe(fonction: "lignes" | "arc" | "cercle" | "triangles", args: r
   if (fonction === "triangles") {
     const l = args[0];
     if (!Array.isArray(l) || l.length === 0 || l.length > MAX_TRIANGLES_APPEL || !l.every((t) => Array.isArray(t) && t.length === 3 && t.every(estPoint))) return `triangles : liste de 1 à ${MAX_TRIANGLES_APPEL} triangles [[x, y, z], [x, y, z], [x, y, z]] attendue`;
-    // Un triangle d'aire nulle n'a pas de normale : refusé avec son rang (rien n'est ignoré en silence).
+    // Un triangle d'aire nulle (ou trop petite pour que le noyau en tire une normale, même tolérance que `normalize`)
+    // est refusé avec son rang : rien n'est ignoré en silence.
     const tris = (l as [number, number, number][][]).map((t) => t.map(versVec) as unknown as readonly [Vec3, Vec3, Vec3]);
     const plat = tris.findIndex(([a, b, c]) => {
       const u = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
       const w = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
-      return Math.hypot(u.y * w.z - u.z * w.y, u.z * w.x - u.x * w.z, u.x * w.y - u.y * w.x) < 1e-12;
+      return Math.hypot(u.y * w.z - u.z * w.y, u.z * w.x - u.x * w.z, u.x * w.y - u.y * w.x) < 1e-9;
     });
     if (plat >= 0) return `triangles : le triangle ${plat + 1} est d'aire nulle`;
     return (m, dans) => ajouterTriangles(m, tris, o(dans));
@@ -909,7 +910,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const objets = d["objets"];
     if (objets !== undefined && !(Array.isArray(objets) && objets.length <= MAX_SELECTION_EXTENSION && objets.every((x): x is string => typeof x === "string"))) return refus("argument_invalide", "objets : liste d'identifiants attendue");
     const f = vue();
-    const absent = (objets ?? []).find((id) => !f.existe(id));
+    // Un objet imbriqué (groupe dans un groupe) se cherche dans tout le modèle, comme le parcours des rayons.
+    const absent = (objets ?? []).find((id) => !f.existe(id) && cheminsVers(f.modele(), id).length === 0);
     if (absent !== undefined) return refus("objet_introuvable", absent);
     const filtre = objets && objets.length > 0 ? new Set(objets) : null;
     const faces = scene(f.modele()).filter((el): el is Extract<typeof el, { genre: "face" }> => el.genre === "face" && (!filtre || el.chemin.some((c) => filtre.has(c))));

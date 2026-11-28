@@ -1550,13 +1550,16 @@ export function ajouterRectangle(m: Modele, coin: Vec3, cote1: Vec3, cote2: Vec3
  */
 export function ajouterTriangles(m: Modele, triangles: readonly (readonly [Vec3, Vec3, Vec3])[], o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    // Seules les faces nées de cet appel fusionnent entre elles : une géométrie voisine déjà dessinée, même coplanaire,
+    // garde ses arêtes.
+    const avant = new Set(c.faces.keys());
     for (const [p, q, r] of triangles) {
       const n = normalize(cross(sub(q, p), sub(r, p)));
       insererGeometrie(t, c, [{ a: p, b: q }, { a: q, b: r }, { a: r, b: p }], [{ exterieur: [p, q, r], trous: [], normale: n, role: "face" }], false);
     }
     const internes = [...c.aretes.values()].filter((a) => {
       const fs = facesDeArete(c, a);
-      return fs.length === 2 && dot((fs[0] as Face).normale, (fs[1] as Face).normale) > 1 - 1e-9;
+      return fs.length === 2 && fs.every((x) => !avant.has((x as Face).id)) && dot((fs[0] as Face).normale, (fs[1] as Face).normale) > 1 - 1e-9;
     });
     if (internes.length > 0) effacerAretesInterne(t, c, internes.map((a) => a.id));
   });
