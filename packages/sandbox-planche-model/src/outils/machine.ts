@@ -169,6 +169,8 @@ export interface ContexteOutil {
   readonly sectionCourante?: SectionCourante;
   /** (Cas 4, étape 4) Épaisseur et hauteur du mur, saisies dans la barre d'options de l'outil Mur ; absent = saisie invalide. */
   readonly parametresMur?: { readonly epaisseur: number; readonly hauteur: number };
+  /** (Cas 4, étape 7b) Date du jour « AAAA-MM-JJ » (outil Réserve) ; absent = aucune réserve posée. */
+  readonly aujourdhui?: string;
   /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage » (genre forcé, genres coupés, presque, pas). */
   readonly accrochage?: OptionsAccrochage;
 }

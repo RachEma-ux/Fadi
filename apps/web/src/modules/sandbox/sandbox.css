@@ -4945,6 +4945,140 @@
 @media (prefers-reduced-motion: reduce) {
   .sandbox-planche .planche-import-barre i.planche-import-indetermine { animation: none; }
 }
+
+/* Cas 4, étape 7b : épingles des réserves de chantier (bleue ouverte, verte levée ; numéro toujours écrit). */
+.sandbox-planche .planche-etiquette-reserve {
+  transform: translate(-50%, -100%);
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: 11px 11px 11px 2px;
+  font-weight: 700;
+  text-align: center;
+  color: #ffffff;
+  background: #1a5fd6;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.sandbox-planche .planche-etiquette-reserve.est-levee {
+  background: #1b4d42;
+}
+.sandbox-planche .planche-reserves {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.sandbox-planche .planche-reserves-compte {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-reserves-filtres {
+  display: flex;
+  gap: 6px;
+}
+.sandbox-planche .planche-reserves-filtres select {
+  font: inherit;
+  font-size: 12px;
+}
+.sandbox-planche .planche-reserves-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sandbox-planche .planche-reserves-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  padding: 3px 5px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.2);
+}
+.sandbox-planche .planche-reserves-table td {
+  padding: 5px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.08);
+  cursor: pointer;
+}
+.sandbox-planche .planche-reserves-table td button {
+  font: inherit;
+  font-weight: 700;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.sandbox-planche .planche-reserves-table tr.est-choisi td {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-reserves-etat {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(27, 77, 66, 0.4);
+}
+.sandbox-planche .planche-reserves-etat.est-levee {
+  color: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-reserves-retard {
+  font-weight: 700;
+  font-style: normal;
+}
+.sandbox-planche .planche-reserves-fiche {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  padding: 7px;
+  border: 1px solid rgba(27, 77, 66, 0.15);
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.03);
+}
+.sandbox-planche .planche-reserves-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  min-width: 0;
+}
+.sandbox-planche .planche-reserves-champ > span:first-child {
+  opacity: 0.75;
+}
+.sandbox-planche .planche-reserves-champ input,
+.sandbox-planche .planche-reserves-champ textarea {
+  font: inherit;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-reserves-filtres select {
+  min-width: 0;
+  flex: 1 1 0;
+}
+.sandbox-planche .planche-reserves .planche-debit-barre {
+  flex-wrap: wrap;
+}
+.sandbox-planche .planche-reserves-champ[data-champ="description"],
+.sandbox-planche .planche-reserves-photo {
+  grid-column: 1 / -1;
+}
+.sandbox-planche .planche-reserves-photo > span:last-child {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sandbox-planche .planche-reserves-photo img {
+  width: 72px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.sandbox-planche .planche-reserves .planche-debit-barre button.est-principal:not(:disabled) {
+  background: #1b4d42;
+  color: #ffffff;
+  border-color: #1b4d42;
+}
 /* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
 .sandbox-planche .planche-accrochage h4,
 .sandbox-planche .planche-metre h4 {

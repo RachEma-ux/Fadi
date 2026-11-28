@@ -269,6 +269,15 @@ import {
   pousserContexte,
   repereDepuisFace,
   repereDuContexte,
+  ID_RESERVE,
+  filtrerReserves,
+  leverReserve,
+  lotsDesReserves,
+  modifierReserve,
+  reservesDe,
+  supprimerReserve,
+  type ResultatReserve,
+  type StatutReserve,
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
@@ -314,7 +323,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -326,6 +335,7 @@ import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
 import { PanneauFeuilles } from "./panneau-feuilles";
+import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
@@ -382,6 +392,11 @@ export interface PropsPlanche {
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+/** Date du jour « AAAA-MM-JJ », heure locale de l'appareil (réserves de chantier). */
+const dateDuJour = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 /** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
 const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
@@ -395,7 +410,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "accrochage" | "metre-mesure";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "accrochage" | "metre-mesure";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -410,7 +425,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves"]);
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 /** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
 export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
@@ -494,6 +509,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Cas 4, étape 7a : import hors du fil principal (progression, Annuler / Échap).
   const [importCours, setImportCours] = useState<(EtatImport & { readonly fichier: string; readonly octets: number }) | null>(null);
   const annulerImportRef = useRef<(() => void) | null>(null);
+  const surReservePoseeRef = useRef<(id: string) => void>(() => {});
   const importActif = importCours !== null;
   useEffect(() => {
     if (!importActif) return;
@@ -781,6 +797,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
+      aujourdhui: dateDuJour(),
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
@@ -877,6 +894,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setSelection(tr.selection);
         change = true;
       }
+      // Cas 4, étape 7b : la réserve épinglée s'ouvre dans le panneau Réserves.
+      const posee = (tr.etat as { posee?: string | null } | null)?.posee;
+      if (outilRef.current === ID_RESERVE && posee && posee !== (avant as { posee?: string | null } | null)?.posee) surReservePoseeRef.current(posee);
       if (tr.dans !== undefined) {
         poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
@@ -3419,6 +3439,67 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     telechargerFichier(new Blob([octets as BlobPart], { type: "application/pdf" }), fichier);
     setNoteFeuille(t("planche.feuilles.note.pdf", { pages: String(relu.pages.length), formats: [...new Set(relu.pages.map((p) => `${p.largeur} × ${p.hauteur} mm`))].join(", ") }));
   };
+  /**
+   * Réserves de chantier (cas 4 du catalogue, étape 7b) : panneau hors colonne, outil Réserve, fiche saisie, levée datée.
+   */
+  const reservesListe = reservesDe(hist.present.modele);
+  const [reserveChoisieEtat, setReserveChoisie] = useState<string | null>(null);
+  const reserveChoisie = reservesListe.find((r) => r.id === reserveChoisieEtat) ?? null;
+  const [filtreReserves, setFiltreReserves] = useState<{ lot: string | null; statut: StatutReserve | null }>({ lot: null, statut: null });
+  const [erreurReserve, setErreurReserve] = useState<string | null>(null);
+  const [noteReserve, setNoteReserve] = useState<string | null>(null);
+  surReservePoseeRef.current = (id) => {
+    setReserveChoisie(id);
+    setErreurReserve(null);
+    setNoteReserve(null);
+    setPanneau("reserves");
+  };
+  const disponibiliteCommandeReserve = (id: IdCommandeReserve) => disponibiliteReserve(id, { reserve: reserveChoisie !== null, lecture: readOnly });
+  const operationReserve = (r: ResultatReserve, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReserve(t(`planche.reserves.erreur.${r.erreur}`));
+    setErreurReserve(null);
+    setNoteReserve(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  const executerReserve = (id: IdCommandeReserve) => {
+    if (id === "reserves") return setPanneau("reserves");
+    if (!disponibiliteCommandeReserve(id).disponible || !reserveChoisie) return;
+    setPanneau("reserves");
+    const m = hist.present.modele;
+    if (id === "lever-reserve") {
+      const levee = reserveChoisie.statut === "ouverte";
+      return operationReserve(leverReserve(m, reserveChoisie.id, dateDuJour()), t(levee ? "planche.reserves.lever-reserve" : "planche.reserves.rouvrir"), t(levee ? "planche.reserves.note.levee" : "planche.reserves.note.rouverte", { numero: String(reserveChoisie.numero) }));
+    }
+    if (id === "supprimer-reserve") {
+      operationReserve(supprimerReserve(m, reserveChoisie.id), t("planche.reserves.supprimer-reserve"), t("planche.reserves.note.supprimee", { numero: String(reserveChoisie.numero) }));
+      setReserveChoisie(null);
+    }
+  };
+  const modifierUneReserve = (v: Parameters<typeof modifierReserve>[2]) => reserveChoisie && operationReserve(modifierReserve(hist.present.modele, reserveChoisie.id, v), t("planche.reserves.fiche"), null);
+  const joindrePhoto = async (f: File) => {
+    // La réserve et la Planche visées sont retenues avant le décodage ; la photo s'applique ensuite au modèle courant
+    // (dans `operer`), jamais à un instantané : une modification faite pendant le décodage n'est pas perdue.
+    const cible = reserveChoisie?.id;
+    const planche = indexRef.current.courante;
+    if (!cible) return;
+    let photo: Awaited<ReturnType<typeof reduirePhoto>>;
+    try {
+      photo = await reduirePhoto(f);
+    } catch {
+      return setErreurReserve(t("planche.reserves.erreur.photo"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    let erreur: string | null = null;
+    operer(t("planche.reserves.fiche"), (m) => {
+      const r = modifierReserve(m, cible, { photo });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      return { modele: r.modele };
+    });
+    setErreurReserve(erreur ? t(`planche.reserves.erreur.${erreur}`) : null);
+  };
   const executerFeuille = (id: IdCommandeFeuille) => {
     if (id === "feuilles") return setPanneau("feuilles");
     if (!disponibiliteCommandeFeuille(id).disponible) return;
@@ -4458,6 +4539,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
     else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
+    else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -4524,6 +4606,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_FEUILLES.map((c) => {
           const d = disponibiliteCommandeFeuille(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.feuilles.motif.feuille"), executer: () => executerFeuille(c.id) };
+        }),
+        ...COMMANDES_RESERVES.map((c) => {
+          const d = disponibiliteCommandeReserve(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
         }),
         ...COMMANDES_PLAN.map((c) => {
           const d = disponibiliteCommandePlan(c.id);
@@ -5263,6 +5349,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "reserves" && (
+              <PanneauReserves
+                reserves={filtrerReserves(reservesListe, filtreReserves)}
+                total={reservesListe.length}
+                lots={lotsDesReserves(hist.present.modele)}
+                filtre={filtreReserves}
+                choisie={reserveChoisie}
+                aujourdhui={dateDuJour()}
+                nomObjet={(id) => { const o = hist.present.modele.racine.occurrences[id]; return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null; }}
+                lecture={readOnly}
+                onFiltre={setFiltreReserves}
+                onChoisir={(id) => { setReserveChoisie(id); setErreurReserve(null); setNoteReserve(null); }}
+                onModifier={modifierUneReserve}
+                onPhoto={(f) => void joindrePhoto(f)}
+                executer={executerReserve}
+                disponibilite={disponibiliteCommandeReserve}
+                erreur={erreurReserve}
+                note={noteReserve}
               />
             )}
             {panneau === "feuilles" && (

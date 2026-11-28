@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -512,6 +512,28 @@ export function disponibiliteFeuille(id: IdCommandeFeuille, s: { readonly feuill
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if ((id === "supprimer-feuille" || id === "ajouter-fenetre") && !s.feuille) return { disponible: false, motif: "planche.feuilles.motif.feuille" };
   if (id === "supprimer-fenetre" && !s.fenetre) return { disponible: false, motif: "planche.feuilles.motif.fenetre" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Réserves de chantier (cas 4 du catalogue, étape 7b) : ouvrir le panneau, lever (ou rouvrir) et supprimer la réserve
+ * choisie (règle d'or : icône, barre, raccourci). L'outil Réserve épingle (registre des outils).
+ */
+export type IdCommandeReserve = "reserves" | "lever-reserve" | "supprimer-reserve";
+export interface CommandeReserve {
+  readonly id: IdCommandeReserve;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_RESERVES: readonly CommandeReserve[] = (["reserves", "lever-reserve", "supprimer-reserve"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.reserves.${id}` as CleMessage, court: `planche.reserves.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; lever et supprimer avec une réserve choisie, hors lecture. */
+export function disponibiliteReserve(id: IdCommandeReserve, s: { readonly reserve: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "reserves") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (!s.reserve) return { disponible: false, motif: "planche.reserves.motif.reserve" };
   return { disponible: true, motif: null };
 }
 
