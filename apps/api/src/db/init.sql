@@ -4413,13 +4413,16 @@ CREATE TABLE IF NOT EXISTS sandbox_fonds_originaux (
   id text PRIMARY KEY,
   proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
-  type text NOT NULL CHECK (type IN ('image/png', 'image/jpeg')),
+  type text NOT NULL CHECK (type IN ('image/png', 'image/jpeg', 'text/plain')),
   taille integer NOT NULL CHECK (taille > 0),
   empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
   contenu bytea NOT NULL,
   ajoute_le timestamptz NOT NULL DEFAULT now(),
   UNIQUE (proprietaire_id, empreinte)
 );
+-- Fichiers de calage des orthophotos (world file, .prj ; lot C4, étape 2) rangés tels quels avec les originaux.
+ALTER TABLE sandbox_fonds_originaux DROP CONSTRAINT IF EXISTS sandbox_fonds_originaux_type_check;
+ALTER TABLE sandbox_fonds_originaux ADD CONSTRAINT sandbox_fonds_originaux_type_check CHECK (type IN ('image/png', 'image/jpeg', 'text/plain'));
 DO $$
 DECLARE
   r record;

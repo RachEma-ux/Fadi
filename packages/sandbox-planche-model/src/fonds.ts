@@ -52,7 +52,28 @@ export interface OriginalFond {
   /** Octets. */
   readonly taille: number;
   readonly type: "image/png" | "image/jpeg";
+  /** Dimensions de l'original (px) ; absentes = non relevées. */
+  readonly largeurPx?: number;
+  readonly hauteurPx?: number;
 }
+
+/** Fond posé d'après un fichier de calage d'image (étape 2) : nom du fichier, système retenu, six coefficients A D B E C F. */
+export interface GeoFond {
+  readonly fichier: string;
+  readonly systeme: string;
+  readonly coefficients: readonly [number, number, number, number, number, number];
+  /** Fichiers de calage (world file, .prj) archivés tels quels en base (`/sandbox/fonds`) ; absent = fond antérieur. */
+  readonly archives?: readonly PieceCalage[];
+}
+export interface PieceCalage {
+  readonly role: "calage" | "prj";
+  readonly id: string;
+  readonly empreinte: string;
+}
+const estPieceCalage = (v: unknown): v is PieceCalage =>
+  typeof v === "object" && v !== null && ((v as PieceCalage).role === "calage" || (v as PieceCalage).role === "prj") &&
+  typeof (v as PieceCalage).id === "string" && (v as PieceCalage).id.length >= 1 && (v as PieceCalage).id.length <= 80 &&
+  typeof (v as PieceCalage).empreinte === "string" && /^[0-9a-f]{64}$/.test((v as PieceCalage).empreinte);
 
 export interface Fond {
   readonly id: Id;
@@ -74,6 +95,8 @@ export interface Fond {
   readonly points: readonly PointCalage[];
   /** Original archivé en base ; absent = fond antérieur à l'archivage. */
   readonly original?: OriginalFond;
+  /** Posé d'après un fichier de calage d'image ; absent = calé à la main (ou non calé). */
+  readonly geo?: GeoFond;
 }
 
 /** Image encodée : 12 Mo de caractères au plus (un scan A3 réduit à 4 096 px en JPEG reste en deçà). */
@@ -98,7 +121,15 @@ export const estOriginalFond = (v: unknown): v is OriginalFond =>
   typeof (v as OriginalFond).id === "string" && /^sbxfond_[0-9a-f-]{36}$/.test((v as OriginalFond).id) &&
   typeof (v as OriginalFond).empreinte === "string" && /^[0-9a-f]{64}$/.test((v as OriginalFond).empreinte) &&
   Number.isInteger((v as OriginalFond).taille) && (v as OriginalFond).taille > 0 &&
-  ((v as OriginalFond).type === "image/png" || (v as OriginalFond).type === "image/jpeg");
+  ((v as OriginalFond).type === "image/png" || (v as OriginalFond).type === "image/jpeg") &&
+  ((v as OriginalFond).largeurPx === undefined || (Number.isInteger((v as OriginalFond).largeurPx) && (v as OriginalFond).largeurPx! > 0)) &&
+  ((v as OriginalFond).hauteurPx === undefined || (Number.isInteger((v as OriginalFond).hauteurPx) && (v as OriginalFond).hauteurPx! > 0));
+export const estGeoFond = (v: unknown): v is GeoFond =>
+  typeof v === "object" && v !== null && !Array.isArray(v) &&
+  typeof (v as GeoFond).fichier === "string" && (v as GeoFond).fichier.length >= 1 && (v as GeoFond).fichier.length <= NOM_FOND_MAX &&
+  typeof (v as GeoFond).systeme === "string" && (v as GeoFond).systeme.trim() !== "" && (v as GeoFond).systeme.length <= 200 &&
+  Array.isArray((v as GeoFond).coefficients) && (v as GeoFond).coefficients.length === 6 && (v as GeoFond).coefficients.every(fini) &&
+  ((v as GeoFond).archives === undefined || (Array.isArray((v as GeoFond).archives) && (v as GeoFond).archives!.length <= 2 && (v as GeoFond).archives!.every(estPieceCalage)));
 
 /** Fond reçu (document, delta) : jamais cru sur parole. */
 export function estFond(id: Id, v: unknown): v is Fond {
@@ -126,7 +157,8 @@ export function estFond(id: Id, v: unknown): v is Fond {
     Array.isArray(f["points"]) &&
     (f["points"] as unknown[]).length <= POINTS_CALAGE_MAX &&
     (f["points"] as unknown[]).every((p, i) => typeof p === "object" && p !== null && (p as PointCalage).id === LETTRES[i] && estPixel((p as PointCalage).pixel, l, h) && ((p as PointCalage).cible === null || estPosition((p as PointCalage).cible))) &&
-    (f["original"] === undefined || estOriginalFond(f["original"]))
+    (f["original"] === undefined || estOriginalFond(f["original"])) &&
+    (f["geo"] === undefined || estGeoFond(f["geo"]))
   );
 }
 
@@ -163,16 +195,17 @@ const modifierFond = (m: Modele, id: Id, fn: (f: Fond) => Fond | ErreurFond, ver
 };
 
 /** Importe un fond (un pas) : pose provisoire 1 px = 1 cm, coin haut gauche à l'origine, à l'altitude donnée. */
-export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number; readonly original?: OriginalFond }): ResultatFond {
+export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number; readonly original?: OriginalFond; readonly pose?: PoseFond; readonly geo?: GeoFond }): ResultatFond {
   const nom = v.nom.trim().slice(0, NOM_FOND_MAX);
   if (!estImage(v.image)) return { ok: false, erreur: "image" };
   if (!estTaille(v.largeurPx) || !estTaille(v.hauteurPx)) return { ok: false, erreur: "taille" };
   if (!fini(v.altitude)) return { ok: false, erreur: "position" };
   if (v.original !== undefined && !estOriginalFond(v.original)) return { ok: false, erreur: "image" };
+  if ((v.pose !== undefined && !estPose(v.pose)) || (v.geo !== undefined && !estGeoFond(v.geo))) return { ok: false, erreur: "position" };
   let id = "" as Id;
   const modele = modifierAnnotations(m, (a, nouvel) => {
     id = nouvel("j");
-    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: false, verrouille: false, opacite: 0.7, methode: "longueur", longueur: null, points: [], ...(v.original ? { original: v.original } : {}) };
+    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: v.pose ?? { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: v.pose !== undefined, verrouille: v.geo !== undefined, opacite: 0.7, methode: "longueur", longueur: null, points: [], ...(v.original ? { original: v.original } : {}), ...(v.geo ? { geo: v.geo } : {}) };
   }).modele;
   return { ok: true, modele, id };
 }
@@ -280,11 +313,14 @@ export const calerFond = (m: Modele, id: Id): ResultatFond =>
       const p0 = { ...f.pose, echelle };
       const apres = versPlan(p0, a.pixel);
       const pose = { ...p0, x: p0.x + avant.x - apres.x, y: p0.y + avant.y - apres.y };
-      return { ...f, pose, cale: true, points: f.points.map((p) => ({ ...p, cible: versPlan(pose, p.pixel) })) };
+      const { geo: _geo, ...sansGeo } = f;
+      return { ...sansGeo, pose, cale: true, points: f.points.map((p) => ({ ...p, cible: versPlan(pose, p.pixel) })) };
     }
     const paires = f.points.filter((p): p is PointCalage & { cible: PositionPlan } => p.cible !== null);
     if (paires.length < 2) return "cibles";
     const pose = similitude(paires);
     if (!pose) return "degenere";
-    return { ...f, pose, cale: true };
+    // Recalé à la main : le fichier de calage d'image ne décrit plus la pose.
+    const { geo: _geo, ...sansGeo } = f;
+    return { ...sansGeo, pose, cale: true };
   });

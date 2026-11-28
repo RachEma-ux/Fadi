@@ -5328,6 +5328,77 @@
   opacity: 0.8;
   overflow-wrap: anywhere;
 }
+/* Fiche de calage du projet, fiche reçue, orthophoto en attente (cas 4, lot C4, étape 2). */
+.sandbox-planche .planche-fonds-titre {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #1b4d42;
+}
+.sandbox-planche .planche-fonds-fiche-projet {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.sandbox-planche .planche-fonds-fiche-projet th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  padding: 3px 5px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.2);
+}
+.sandbox-planche .planche-fonds-fiche-projet td {
+  padding: 2px 5px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.08);
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-fonds-fiche-projet td:first-child {
+  white-space: nowrap;
+}
+.sandbox-planche .planche-fonds-source {
+  opacity: 0.65;
+}
+.sandbox-planche .planche-fonds-auteur {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.06);
+}
+.sandbox-planche .planche-fonds-auteur label {
+  display: flex;
+  flex-direction: row;
+  margin: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-fonds-auteur input {
+  width: 9em;
+  font: inherit;
+}
+.sandbox-planche .planche-fonds-recue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid rgba(233, 196, 106, 0.9);
+  border-radius: 8px;
+  background: rgba(233, 196, 106, 0.16);
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-fonds-recue p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-fonds-recue .est-ecart {
+  color: #b3261e;
+}
+.sandbox-planche .planche-fonds-recue .planche-fonds-longueur input {
+  width: 10em;
+}
 /* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
 .sandbox-planche .planche-accrochage h4,
 .sandbox-planche .planche-metre h4 {

@@ -275,6 +275,23 @@ import {
   choisirMethode,
   fondsDe,
   importerFond,
+  appliquerFiche,
+  calageImageDuFond,
+  comparerFiche,
+  ecrireCalageImage,
+  ecrireFicheCalage,
+  ficheDuProjet,
+  lireCalageImage,
+  lireFicheCalage,
+  normaliserSysteme,
+  poseDepuisCalageImage,
+  systemeDuPrj,
+  EXTENSIONS_CALAGE_IMAGE,
+  FICHE_MAX,
+  type CalageImage,
+  type FicheCalage,
+  type GeoFond,
+  type PoseFond,
   reglerOpacite,
   saisirCible,
   saisirLongueur,
@@ -362,7 +379,7 @@ import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
 import { PanneauEnveloppe } from "./panneau-enveloppe";
 import { PanneauConsultations } from "./panneau-consultations";
 import { PanneauFonds, reduireFond } from "./panneau-fonds";
-import { ErreurArchiveFond, archiverOriginalFond } from "./fonds-client";
+import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
 import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
 import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
@@ -3504,14 +3521,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     setNoteFond(null);
     setPanneau("fonds");
   };
-  const disponibiliteCommandeFond = (id: IdCommandeFond) => disponibiliteFond(id, { fond: fondChoisi !== null, verrouille: fondChoisi?.verrouille ?? false, point: pointChoisi !== null, lecture: readOnly });
+  const disponibiliteCommandeFond = (id: IdCommandeFond) => disponibiliteFond(id, { fond: fondChoisi !== null, verrouille: fondChoisi?.verrouille ?? false, point: pointChoisi !== null, lecture: readOnly, cale: fondChoisi?.cale ?? false, pointDeBase: (hist.present.modele.annotations?.reglages?.pointDeBase ?? null) !== null, fiche: ficheRecue !== null, orthophoto: orthoAttente !== null });
   const operationFond = (r: ResultatFond, libelle: string, message: string | null): void => {
     if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
     setErreurFond(null);
     setNoteFond(message);
     operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
   };
-  const importerUnFond = async (f: File) => {
+  /** `calage` : orthophoto posée d'après son fichier de calage d'image, dans le système déclaré (déjà comparé au projet). */
+  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string; readonly pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] }) => {
     // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
     const planche = indexRef.current.courante;
     let image: Awaited<ReturnType<typeof reduireFond>>;
@@ -3521,35 +3539,106 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return setErreurFond(t("planche.fonds.erreur.image"));
     }
     if (indexRef.current.courante !== planche) return;
+    // Orthophoto : pose calculée avant l'archivage (un fichier de calage refusé n'archive rien).
+    let pose: { pose: PoseFond; geo: GeoFond } | undefined;
+    if (calage) {
+      const r = poseDepuisCalageImage(calage.k, histRef.current.present.modele.annotations?.reglages?.pointDeBase ?? null, image.largeur / image.largeurOriginal);
+      if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.calage-${r.erreur}`));
+      pose = { pose: r.pose, geo: { fichier: calage.fichier.slice(0, 200), systeme: calage.systeme, coefficients: [calage.k.a, calage.k.d, calage.k.b, calage.k.e, calage.k.c, calage.k.f] } };
+    }
     // L'original est archivé tel quel en base avant la pose (décision du 27 novembre 2026) : sans archive, pas de fond.
     setNoteFond(t("planche.fonds.note.archivage"));
     let original: OriginalFond;
     try {
-      original = await archiverOriginalFond(f);
+      original = { ...(await archiverOriginalFond(f)), largeurPx: image.largeurOriginal, hauteurPx: image.hauteurOriginal };
+      // Fichiers de calage (world file, .prj) archivés tels quels eux aussi (D-GD-29) : leurs références vont au fond.
+      if (pose && calage && calage.pieces.length) {
+        const archives = [];
+        for (const p of calage.pieces) archives.push(await archiverPieceCalage(p.fichier, p.role));
+        pose = { ...pose, geo: { ...pose.geo, archives } };
+      }
     } catch (e) {
       setNoteFond(null);
       return setErreurFond(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
     }
     if (indexRef.current.courante !== planche) return;
     const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
-    let pose: string | null = null;
+    let pose2: string | null = null;
     let erreur: string | null = null;
-    operer(t("planche.fonds.importer-fond"), (m) => {
-      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original });
+    const message = calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
+    operer(t(calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: n?.altitude ?? 0, original, ...(pose ?? {}) });
       if (!r.ok) {
         erreur = r.erreur;
         return null;
       }
-      pose = r.id;
-      return { modele: r.modele, message: t("planche.fonds.note.importe", { nom: f.name }) };
+      pose2 = r.id;
+      return { modele: r.modele, message };
     });
     if (erreur) return setErreurFond(t(`planche.fonds.erreur.${erreur}`));
     setErreurFond(null);
-    setNoteFond(t("planche.fonds.note.importe", { nom: f.name }));
-    if (pose) {
-      setFondChoisi(pose);
+    setNoteFond(message);
+    if (pose2) {
+      setFondChoisi(pose2);
       setPointChoisi(null);
     }
+    setPanneau("fonds");
+  };
+  // Fiche de calage (lot C4, étape 2) : fiche du projet, fiche reçue comparée, orthophoto en attente de son système.
+  const [auteurFiche, setAuteurFiche] = useState("");
+  const [dateFiche, setDateFiche] = useState(dateDuJour);
+  const [ficheRecue, setFicheRecue] = useState<{ nom: string; fiche: FicheCalage } | null>(null);
+  const [orthoAttente, setOrthoAttente] = useState<{ fichier: File; k: CalageImage; calage: string; nomPrj: string | null; pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] } | null>(null);
+  const [systemeOrtho, setSystemeOrtho] = useState("");
+  const importFicheRef = useRef<HTMLInputElement | null>(null);
+  const importOrthoRef = useRef<HTMLInputElement | null>(null);
+  const ficheProjet = ficheDuProjet(hist.present.modele, referenceNiveaux, auteurFiche, /^\d{4}-\d{2}-\d{2}$/.test(dateFiche) ? dateFiche : dateDuJour());
+  const nomFichierSur = (s: string): string => s.normalize("NFC").replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "planche";
+  const lireFiche = async (f: File) => {
+    setNoteFond(null);
+    if (f.size > FICHE_MAX * 4) return setErreurFond(t("planche.fonds.erreur.fiche-taille"));
+    let texte: string;
+    try {
+      texte = await f.text();
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.fiche-lecture"));
+    }
+    const r = lireFicheCalage(texte);
+    if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.fiche-${r.erreur}`, { ligne: String(r.ligne) }));
+    setErreurFond(null);
+    setFicheRecue({ nom: f.name, fiche: r.fiche });
+    setNoteFond(t("planche.fonds.note.fiche-recue", { nom: f.name }));
+    setPanneau("fonds");
+  };
+  const lireOrthophoto = async (fichiers: readonly File[]) => {
+    setNoteFond(null);
+    setOrthoAttente(null);
+    const extension = (f: File) => f.name.toLowerCase().split(".").pop() ?? "";
+    const image = fichiers.find((f) => f.type === "image/png" || f.type === "image/jpeg");
+    const monde = fichiers.find((f) => (EXTENSIONS_CALAGE_IMAGE as readonly string[]).includes(extension(f)));
+    const prj = fichiers.find((f) => extension(f) === "prj");
+    if (!image) return setErreurFond(t("planche.fonds.erreur.ortho-image"));
+    if (!monde) return setErreurFond(t("planche.fonds.erreur.ortho-calage"));
+    let k: CalageImage | null = null;
+    let wkt: string | null = null;
+    try {
+      k = monde.size <= 4096 ? lireCalageImage(await monde.text()) : null;
+      wkt = prj && prj.size <= 65536 ? await prj.text() : null;
+    } catch {
+      k = null;
+    }
+    if (!k) return setErreurFond(t("planche.fonds.erreur.ortho-calage-illisible"));
+    const systeme = wkt ? systemeDuPrj(wkt) : null;
+    const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? null;
+    if (!projet) return setErreurFond(t("planche.fonds.erreur.calage-point-de-base"));
+    if (systeme?.code) {
+      if (normaliserSysteme(systeme.code) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: systeme.code, projet }));
+      return importerUnFond(image, { k, fichier: monde.name, systeme: systeme.code, pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
+    }
+    // Sans .prj lisible : le système est demandé, jamais supposé.
+    setErreurFond(null);
+    setSystemeOrtho("");
+    setOrthoAttente({ fichier: image, k, calage: monde.name, nomPrj: systeme?.nom ?? (prj ? prj.name : null), pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
     setPanneau("fonds");
   };
   const executerFond = (id: IdCommandeFond) => {
@@ -3557,6 +3646,47 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (!disponibiliteCommandeFond(id).disponible) return;
     setPanneau("fonds");
     if (id === "importer-fond") return importFondRef.current?.click();
+    if (id === "importer-fiche") return importFicheRef.current?.click();
+    if (id === "importer-orthophoto") return importOrthoRef.current?.click();
+    if (id === "exporter-fiche") {
+      const fichier = `fiche-calage-${nomFichierSur(plancheDe(indexRef.current).nom)}.txt`;
+      telechargerFichier(new Blob([ecrireFicheCalage(ficheProjet)], { type: "text/plain;charset=utf-8" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-exportee", { fichier }));
+    }
+    if (id === "ignorer-fiche") {
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-ignoree"));
+    }
+    if (id === "appliquer-fiche" && ficheRecue) {
+      const r = appliquerFiche(hist.present.modele, ficheRecue.fiche);
+      if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+      const message = t("planche.fonds.note.fiche-appliquee", { pdb: t(r.pointDeBase ? "planche.fonds.note.pdb-repris" : "planche.fonds.note.pdb-inchange"), niveaux: String(r.niveauxAjoutes) });
+      operer(t("planche.fonds.appliquer-fiche"), () => ({ modele: r.modele, message }));
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(message);
+    }
+    if (id === "poser-orthophoto" && orthoAttente) {
+      const saisi = systemeOrtho.trim();
+      if (saisi === "") return setErreurFond(t("planche.fonds.erreur.ortho-systeme-vide"));
+      const projet = hist.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
+      if (normaliserSysteme(saisi) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: saisi, projet }));
+      const o = orthoAttente;
+      setOrthoAttente(null);
+      // Système retenu sous l'écriture du projet (comparaison sans casse ni espaces).
+      return void importerUnFond(o.fichier, { k: o.k, fichier: o.calage, systeme: projet, pieces: o.pieces });
+    }
+    if (id === "exporter-calage-fond" && fondChoisi) {
+      const k = calageImageDuFond(fondChoisi, hist.present.modele.annotations?.reglages?.pointDeBase ?? null, fondChoisi.original?.largeurPx);
+      if (!k) return setErreurFond(t("planche.fonds.erreur.calage-export"));
+      const base = (fondChoisi.nom || "fond").replace(/\.[^.]*$/, "");
+      const fichier = `${nomFichierSur(base)}.${fondChoisi.original?.type === "image/png" ? "pgw" : "jgw"}`;
+      telechargerFichier(new Blob([ecrireCalageImage(k)], { type: "text/plain" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.calage-exporte", { fichier }));
+    }
     if (!fondChoisi) return;
     const m = hist.present.modele;
     if (id === "caler-fond") return operationFond(calerFond(m, fondChoisi.id), t("planche.fonds.caler-fond"), t("planche.fonds.note.cale", { nom: fondChoisi.nom }));
@@ -5612,6 +5742,32 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-fond-fichier
       />
+      {/* Fiche de calage reçue (Ctrl+Alt+Maj+F9) et orthophoto avec son fichier de calage (Ctrl+Alt+Maj+F10) : montés hors du panneau. */}
+      <input
+        ref={importFicheRef}
+        type="file"
+        accept=".txt,text/plain"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFiche(f);
+        }}
+        data-planche-fiche-fichier
+      />
+      <input
+        ref={importOrthoRef}
+        type="file"
+        multiple
+        accept={["image/png", "image/jpeg", ...EXTENSIONS_CALAGE_IMAGE.map((x) => `.${x}`), ".prj"].join(",")}
+        hidden
+        onChange={(e) => {
+          const f = [...(e.target.files ?? [])];
+          e.target.value = "";
+          if (f.length > 0) void lireOrthophoto(f);
+        }}
+        data-planche-orthophoto-fichier
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -5679,6 +5835,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeFond}
                 erreur={erreurFond}
                 note={noteFond}
+                fiche={ficheProjet}
+                auteur={auteurFiche}
+                date={dateFiche}
+                onAuteur={setAuteurFiche}
+                onDate={setDateFiche}
+                recue={ficheRecue ? { ...ficheRecue, comparaison: comparerFiche(hist.present.modele, referenceNiveaux, ficheRecue.fiche) } : null}
+                orthophoto={orthoAttente ? { image: orthoAttente.fichier.name, calage: orthoAttente.calage, nomPrj: orthoAttente.nomPrj } : null}
+                systemeOrthophoto={systemeOrtho}
+                onSystemeOrthophoto={setSystemeOrtho}
               />
             )}
             {panneau === "consultations" && (

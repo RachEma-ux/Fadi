@@ -1144,6 +1144,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-fonds node apps/web/e2e/planche-fonds.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la fiche de calage (cas 4, lot C4, étape 2) — fiche reçue comparée et appliquée, fiche exportée, orthophoto et fichier de calage d'image (apps/web/e2e/planche-fiche-calage.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-fiche-calage node apps/web/e2e/planche-fiche-calage.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
