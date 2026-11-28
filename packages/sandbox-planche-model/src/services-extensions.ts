@@ -17,7 +17,7 @@
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
 import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
 import { reglagesDe } from "./cotes.js";
-import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, IDENTITE, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, ajouterTriangles, appliquer, baliserOccurrences, composer, contexte, IDENTITE, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
 import { estMotif, NOM_MOTIF_MAX } from "./plan-vectoriel.js";
 import { formaterAire } from "./outils/metre.js";
@@ -25,6 +25,7 @@ import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExte
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
 import { type Vec3, v3 } from "./vecteur.js";
 import { niveauxTries } from "./niveaux.js";
+import { rayonFace, scene } from "./outils/selection.js";
 import { PasUnSolide, maillageDuSolide, motifNonSolide, type Maillage } from "./maillage.js";
 import type { AdaptateurBooleens, PointPlan, PolygonePlan } from "./outils/machine.js";
 
@@ -70,6 +71,10 @@ export const MAX_PROFONDEUR_MONDE = 32;
 export const MAX_SELECTION_EXTENSION = 10_000;
 /** (1.1) Segments d'un seul appel « lignes » ; côtés d'un arc ou d'un cercle (bornes de la Planche, 3 à 999). */
 export const MAX_SEGMENTS_APPEL = 20_000;
+/** (1.6) Triangles d'un seul appel « triangles » (l'insertion fusionne les coplanaires : coût croissant, borne prudente). */
+export const MAX_TRIANGLES_APPEL = 5_000;
+/** (1.6) Rayons d'un seul appel `geometrie.rayon`. */
+export const MAX_RAYONS_APPEL = 2_000;
 export const COTES_ARC_DEFAUT = 12;
 export const COTES_CERCLE_DEFAUT = 24;
 /** (1.1) Nom d'une balise créée par une extension, en caractères. */
@@ -371,7 +376,7 @@ function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteM
  *   cercle(centre, rayon, normale = [0, 0, 1], cotes = 24)   cercle, une courbe, face automatique
  * Rend l'opération du modèle à faire, ou le motif du refus.
  */
-function lireCourbe(fonction: "lignes" | "arc" | "cercle", args: readonly unknown[]): string | ((m: Modele, dans: Id | undefined) => ReturnType<typeof ajouterSegments>) {
+function lireCourbe(fonction: "lignes" | "arc" | "cercle" | "triangles", args: readonly unknown[]): string | ((m: Modele, dans: Id | undefined) => ReturnType<typeof ajouterSegments>) {
   const cotes = (v: unknown, defaut: number): number | null => (v === undefined ? defaut : typeof v === "number" && Number.isInteger(v) && v >= 3 && v <= 999 ? v : null);
   const o = (dans: Id | undefined) => (dans !== undefined ? { dans } : {});
   if (fonction === "lignes") {
@@ -379,6 +384,20 @@ function lireCourbe(fonction: "lignes" | "arc" | "cercle", args: readonly unknow
     if (!Array.isArray(l) || l.length === 0 || l.length > MAX_SEGMENTS_APPEL || !l.every((s) => Array.isArray(s) && s.length === 2 && estPoint(s[0]) && estPoint(s[1]))) return `lignes : liste de 1 à ${MAX_SEGMENTS_APPEL} segments [[x, y, z], [x, y, z]] attendue`;
     const segments = (l as [[number, number, number], [number, number, number]][]).map(([a, b]) => [versVec(a), versVec(b)] as const);
     return (m, dans) => ajouterSegments(m, segments, o(dans));
+  }
+  if (fonction === "triangles") {
+    const l = args[0];
+    if (!Array.isArray(l) || l.length === 0 || l.length > MAX_TRIANGLES_APPEL || !l.every((t) => Array.isArray(t) && t.length === 3 && t.every(estPoint))) return `triangles : liste de 1 à ${MAX_TRIANGLES_APPEL} triangles [[x, y, z], [x, y, z], [x, y, z]] attendue`;
+    // Un triangle d'aire nulle (ou trop petite pour que le noyau en tire une normale, même tolérance que `normalize`)
+    // est refusé avec son rang : rien n'est ignoré en silence.
+    const tris = (l as [number, number, number][][]).map((t) => t.map(versVec) as unknown as readonly [Vec3, Vec3, Vec3]);
+    const plat = tris.findIndex(([a, b, c]) => {
+      const u = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+      const w = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+      return Math.hypot(u.y * w.z - u.z * w.y, u.z * w.x - u.x * w.z, u.x * w.y - u.y * w.x) < 1e-9;
+    });
+    if (plat >= 0) return `triangles : le triangle ${plat + 1} est d'aire nulle`;
+    return (m, dans) => ajouterTriangles(m, tris, o(dans));
   }
   if (fonction === "arc") {
     const [a, p, b, n] = args;
@@ -483,7 +502,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const fonction = donnees["fonction"] as FonctionModification;
     // Fonctions de 1.1 : arguments lus ici, avant toute opération (un argument faux n'ouvre rien).
     let courbe: ((m: Modele, dans: Id | undefined) => { readonly modele: Modele; readonly rapport: { readonly crees: readonly Id[]; readonly supprimes: readonly Id[]; readonly modifies: readonly Id[] } }) | null = null;
-    if (fonction === "lignes" || fonction === "arc" || fonction === "cercle") {
+    if (fonction === "lignes" || fonction === "arc" || fonction === "cercle" || fonction === "triangles") {
       const lu = lireCourbe(fonction, args);
       if (typeof lu === "string") return refus("argument_invalide", lu);
       courbe = lu;
@@ -581,6 +600,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const nom = d && typeof d["nom"] === "string" ? d["nom"].trim() : "";
     const couleur = d ? (d["couleur"] ?? COULEUR_MATIERE_DEFAUT) : COULEUR_MATIERE_DEFAUT;
     const motif = d ? (d["motif"] ?? null) : null;
+    const opacite = d ? (d["opacite"] ?? null) : null;
+    if (opacite !== null && !(typeof opacite === "number" && Number.isFinite(opacite) && opacite >= 0.05 && opacite <= 1)) return refus("argument_invalide", "opacite : nombre de 0,05 à 1 attendu, ou absent");
     if (nom.length === 0 || nom.length > MAX_NOM_MATIERE) return refus("argument_invalide", `nom : texte de 1 à ${MAX_NOM_MATIERE} caractères attendu`);
     if (typeof couleur !== "string" || !MOTIF_COULEUR.test(couleur)) return refus("argument_invalide", "couleur : « #rrggbb » attendue");
     if (motif !== null && typeof motif !== "string") return refus("argument_invalide", "motif : identifiant de motif, ou absent");
@@ -591,7 +612,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (existante) return rendu(existante.id);
     const r = modifierAnnotations(op.travail.modele(), (a, id) => {
       const k = id("m");
-      a.materiaux[k] = { id: k, nom, couleur: couleur.toLowerCase(), ...(motif !== null ? { motif } : {}) };
+      a.materiaux[k] = { id: k, nom, couleur: couleur.toLowerCase(), ...(motif !== null ? { motif } : {}), ...(opacite !== null && opacite < 1 ? { opacite } : {}) };
       return k;
     });
     op.travail.appliquer(r);
@@ -862,6 +883,52 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     }
   };
 
+  /** (1.6) `site.lire` : l'Emplacement saisi (Info planche), tel quel ; `null` s'il ne l'est pas. Rien n'est deviné. */
+  const lireSite = (): ReponseService => {
+    const e = reglagesDe(vue().modele()).emplacement;
+    return rendu({ emplacement: e ? { latitude: e.latitude, longitude: e.longitude, altitude: e.altitude ?? null, lieu: e.lieu ?? null, nord: e.nord } : null });
+  };
+
+  /**
+   * (1.6) `geometrie.rayon { rayons, distanceMax?, objets? }` : premier impact de chaque rayon contre les faces visibles du
+   * modèle (coordonnées du modèle ; une balise masquée ou verrouillée n'est pas visée, comme à la souris). `objets` limite
+   * aux faces contenues dans ces groupes ou composants. Les deux faces d'une paroi comptent : la plus proche gagne.
+   */
+  const lancerRayons = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : {};
+    const rs = d["rayons"];
+    if (!Array.isArray(rs) || rs.length === 0 || rs.length > MAX_RAYONS_APPEL) return refus("argument_invalide", `rayons : liste de 1 à ${MAX_RAYONS_APPEL} rayons { origine, direction } attendue`);
+    const lus: { origine: Vec3; direction: Vec3 }[] = [];
+    for (const [i, r] of rs.entries()) {
+      if (!estObjet(r) || !estPoint(r["origine"]) || !estPoint(r["direction"]) || Math.hypot(...(r["direction"] as number[])) < 1e-12) return refus("argument_invalide", `rayon ${i + 1} : origine [x, y, z] et direction non nulle attendues`);
+      const n = Math.hypot(...(r["direction"] as number[]));
+      const [x, y, z] = r["direction"] as [number, number, number];
+      lus.push({ origine: versVec(r["origine"] as [number, number, number]), direction: v3(x / n, y / n, z / n) });
+    }
+    const max = d["distanceMax"];
+    if (max !== undefined && !(typeof max === "number" && Number.isFinite(max) && max > 0)) return refus("argument_invalide", "distanceMax : nombre positif attendu, en mètres");
+    const objets = d["objets"];
+    if (objets !== undefined && !(Array.isArray(objets) && objets.length <= MAX_SELECTION_EXTENSION && objets.every((x): x is string => typeof x === "string"))) return refus("argument_invalide", "objets : liste d'identifiants attendue");
+    const f = vue();
+    // Un objet imbriqué (groupe dans un groupe) se cherche dans tout le modèle, comme le parcours des rayons.
+    const absent = (objets ?? []).find((id) => !f.existe(id) && cheminsVers(f.modele(), id).length === 0);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    const filtre = objets && objets.length > 0 ? new Set(objets) : null;
+    const faces = scene(f.modele()).filter((el): el is Extract<typeof el, { genre: "face" }> => el.genre === "face" && (!filtre || el.chemin.some((c) => filtre.has(c))));
+    const impacts = lus.map((r) => {
+      let mieux: { t: number; el: (typeof faces)[number] } | null = null;
+      for (const el of faces) {
+        const t = rayonFace(r, el);
+        if (t !== null && (max === undefined || t <= max) && (!mieux || t < mieux.t)) mieux = { t, el };
+      }
+      if (!mieux) return null;
+      const p = { x: r.origine.x + r.direction.x * mieux.t, y: r.origine.y + r.direction.y * mieux.t, z: r.origine.z + r.direction.z * mieux.t };
+      const n = mieux.el.normale;
+      return { point: [p.x, p.y, p.z], distance: mieux.t, face: mieux.el.id, chemin: [...mieux.el.chemin], normale: [n.x, n.y, n.z] };
+    });
+    return rendu({ impacts });
+  };
+
   /** (1.4) `geometrie.union` : union de polygones donnés par l'extension. */
   const unionPlans = (donnees: unknown): ReponseService => {
     const lu = lirePolygonesPlan(estObjet(donnees) ? donnees["polygones"] : null);
@@ -923,7 +990,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
         case "selection.definir":
           return definirSelection(donnees);
         case "matieres.lire":
-          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, motif: x.motif ?? null })));
+          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, motif: x.motif ?? null, opacite: x.opacite ?? 1 })));
         case "matieres.creer":
           return creerMatiere(donnees);
         case "motifs.lire":
@@ -964,6 +1031,10 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return plansDesSolides(donnees, false);
         case "geometrie.union":
           return unionPlans(donnees);
+        case "site.lire":
+          return lireSite();
+        case "geometrie.rayon":
+          return lancerRayons(donnees);
         case "niveaux.lire": {
           const ref = acces.referenceNGF?.() ?? null;
           return rendu({

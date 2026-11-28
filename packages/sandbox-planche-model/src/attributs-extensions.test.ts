@@ -44,7 +44,7 @@ describe("matières et balises d'une extension", () => {
   it("lit les matières et les balises du dessin", () => {
     const d = depart();
     const { s } = planche(d.modele);
-    expect(ok(s.servir("matieres.lire", null))).toEqual([{ id: d.matiere, nom: "Chêne", couleur: "#b08040", motif: null }]);
+    expect(ok(s.servir("matieres.lire", null))).toEqual([{ id: d.matiere, nom: "Chêne", couleur: "#b08040", motif: null, opacite: 1 }]);
     expect(ok(s.servir("balises.lire", null))).toEqual([{ id: d.balise, nom: "Mobilier", couleur: "#3366cc", visible: true }]);
   });
 

@@ -17,7 +17,8 @@
  *   fichiers.ajouter    { jeton, texte }          ajoute un morceau au fichier préparé
  *   fichiers.enregistrer { nom, jeton }           propose d'enregistrer le fichier préparé
  * Un jeton ne vaut que pendant la commande qui l'a obtenu ; la Planche oublie le texte à la fin de la commande.
- * Fichier en flux : 50 000 000 caractères au plus. Le type .svg est admis (plan masse en image vectorielle).
+ * Fichier en flux : 50 000 000 caractères au plus. Le type .svg est admis (plan masse en image vectorielle). (1.6) Les
+ * types .geojson et .osm sont admis (contexte bâti, servitudes et zonages fournis par l'usager).
  *
  * Protocole 1.2 — archivage en base (règle « interface ≠ base de données », décision du maître d'ouvrage du
  * 27 novembre 2026) : un fichier de données (table de règles, bibliothèque de types) est archivé tel quel en base.
@@ -30,7 +31,7 @@
  */
 
 /** Types de fichier texte admis, à l'ouverture comme à l'enregistrement. */
-export const TYPES_FICHIER_EXTENSION = [".txt", ".csv", ".tsv", ".json", ".md", ".xml", ".obj", ".mtl", ".dxf", ".stl", ".ply", ".svg"] as const;
+export const TYPES_FICHIER_EXTENSION = [".txt", ".csv", ".tsv", ".json", ".md", ".xml", ".obj", ".mtl", ".dxf", ".stl", ".ply", ".svg", ".geojson", ".osm"] as const;
 export type TypeFichierExtension = (typeof TYPES_FICHIER_EXTENSION)[number];
 /**
  * `caracteres` : fichier rendu d'un coup (1.0) ; `flux` : fichier lu ou écrit par morceaux (1.1) ; `morceau` : un

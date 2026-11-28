@@ -25,7 +25,7 @@ describe("protocole 1.5 : motifs et matières à hachure", () => {
     const mat = ok<string>(s.servir("matieres.creer", { nom: "Béton coupé", couleur: "#A0A0A0", motif: h }));
     ok(s.servir("operation.valider", null));
     expect(modele().annotations?.motifs?.[h]).toMatchObject({ nom: "ANSI31", source: { genre: "pat", fichier: "plan.dxf" } });
-    expect(ok<unknown[]>(s.servir("matieres.lire", null))).toEqual([{ id: mat, nom: "Béton coupé", couleur: "#a0a0a0", motif: h }]);
+    expect(ok<unknown[]>(s.servir("matieres.lire", null))).toEqual([{ id: mat, nom: "Béton coupé", couleur: "#a0a0a0", motif: h, opacite: 1 }]);
     expect(ok<unknown[]>(s.servir("motifs.lire", null))).toEqual([{ id: h, nom: "ANSI31", familles: ANSI31 }]);
   });
   it("même nom : le motif ou la matière existants sont rendus, rien n'est doublé ; sans couleur ni motif : gris, aplat", () => {

@@ -80,9 +80,20 @@
  *   planche.motifs.lire()                       [{ id, nom, familles }]
  *   planche.matieres.creer(nom, couleur, motif) matière d'apparence, avec ou sans motif ; rend l'identifiant (celui de la
  *                                               matière du même nom si elle existe) ; matieres.lire rend aussi `motif`
+ * Protocole 1.6 (site, cas 3 lot 4) :
+ *   planche.site.lire()                         { emplacement : { latitude, longitude, altitude, lieu, nord } ou null s'il
+ *                                               n'est pas saisi ; altitude et lieu null s'ils manquent }
+ *   planche.geometrie.rayon(rayons, options)    rayons [{ origine, direction }] (ou un seul) contre les faces visibles :
+ *                                               pour chacun le premier impact { point, distance, face, chemin, normale }
+ *                                               ou null ; options { distanceMax, objets } (objets : n'y viser que ceux-là)
+ *   planche.modele.triangles([[a, b, c], …])    faces explicites, coplanaires de même sens fusionnées, une opération
+ *   planche.matieres.creer(nom, couleur, motif, opacite)  opacité de rendu de 0,05 à 1 (1 = opaque) ; matieres.lire la rend
+ *   planche.fichiers.ouvrir([".geojson", ".osm"]) types admis en plus (contexte bâti, servitudes)
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
+
+const estObjetSimple = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 import { BORNES_FICHIER } from "./fichiers-extensions.js";
 
 export type ErreurDemarrageExtension = { readonly genre: "import" } | { readonly genre: "syntaxe" | "execution"; readonly texte: string };
@@ -159,7 +170,7 @@ export function creerExecutantExtension(
     matieres: Object.freeze({
       lire: () => demander("matieres.lire"),
       appliquer: (ids: unknown, matiere: unknown = null) => demander("matieres.appliquer", { ids: typeof ids === "string" ? [ids] : ids, matiere }),
-      creer: (nom: unknown, couleur?: unknown, motif?: unknown) => demander("matieres.creer", { nom, ...(couleur === undefined ? {} : { couleur }), ...(motif === undefined ? {} : { motif }) }),
+      creer: (nom: unknown, couleur?: unknown, motif?: unknown, opacite?: unknown) => demander("matieres.creer", { nom, ...(couleur === undefined ? {} : { couleur }), ...(motif === undefined || motif === null ? {} : { motif }), ...(opacite === undefined ? {} : { opacite }) }),
     }),
     motifs: Object.freeze({
       lire: () => demander("motifs.lire"),
@@ -187,7 +198,11 @@ export function creerExecutantExtension(
     niveaux: Object.freeze({
       lire: () => demander("niveaux.lire"),
     }),
+    site: Object.freeze({
+      lire: () => demander("site.lire"),
+    }),
     geometrie: Object.freeze({
+      rayon: (rayons: unknown, options?: unknown) => demander("geometrie.rayon", { rayons: Array.isArray(rayons) ? rayons : [rayons], ...(estObjetSimple(options) ? options : {}) }),
       coupe: (hauteur: unknown, objets?: unknown, sansBalises?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       projection: (objets?: unknown, sansBalises?: unknown) => demander("geometrie.projection", { ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       union: (polygones: unknown) => demander("geometrie.union", { polygones }),
