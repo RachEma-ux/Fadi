@@ -1004,3 +1004,22 @@ export function disponibiliteRedressement(id: IdCommandeRedressement, s: { reado
   if (s.points < 4) return { disponible: false, motif: "planche.redressement.motif.points" };
   return s.dimensions ? { disponible: true, motif: null } : { disponible: false, motif: "planche.redressement.motif.dimensions" };
 }
+
+/**
+ * Visionneuse hors ligne (cas 4, lot C4, étape 7d : D10-F14-085) : un panneau ; l'export écrit un seul fichier HTML,
+ * consultable sans réseau. Il exige une maquette non vide ; il reste permis en lecture seule (rien n'est modifié).
+ */
+export type IdCommandeVisionneuse = "visionneuse" | "exporter-visionneuse";
+export interface CommandeVisionneuse {
+  readonly id: IdCommandeVisionneuse;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_VISIONNEUSE: readonly CommandeVisionneuse[] = (["visionneuse", "exporter-visionneuse"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.visionneuse.${id}` as CleMessage, court: `planche.visionneuse.court.${id}` as CleMessage }));
+
+export function disponibiliteVisionneuse(id: IdCommandeVisionneuse, s: { readonly triangles: number }): Disponibilite {
+  if (id === "visionneuse") return { disponible: true, motif: null };
+  return s.triangles > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.visionneuse.motif.vide" };
+}

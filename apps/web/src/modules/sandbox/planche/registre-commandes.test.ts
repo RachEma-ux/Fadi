@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "@parcours/sandbox-planche-model";
 import { COMMANDES_DEUX_TEMPS, COMMANDES_TROIS_TEMPS, FAMILLES_AFFICHEES, REGISTRE_COMMANDES, commandeDuClavier, commandeDuSecondTemps, commandeDuTroisiemeTemps, commandesDeLaFamille, estEntreeDeuxTemps, familleDeLaPorte, rechercherCommandes, routeeParLeRegistre, touchesApresEntree, type EntreeRegistre } from "./registre-commandes";
-import { FAMILLES_DEUX_TEMPS, secondTemps } from "@parcours/sandbox-planche-model";
+import { FAMILLES_DEUX_TEMPS, secondTemps, troisTemps } from "@parcours/sandbox-planche-model";
 import { pictoOutil, raccourciOutil, type Cle } from "./outils-planche";
 import { clePictogramme, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 
@@ -41,7 +41,7 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   });
 
   it("chaque commande routée par le registre se retrouve depuis son événement clavier, y compris sous macOS (Option)", () => {
-    for (const c of REGISTRE_COMMANDES.filter((x) => routeeParLeRegistre(x) && secondTemps(x.raccourci) === null)) {
+    for (const c of REGISTRE_COMMANDES.filter((x) => routeeParLeRegistre(x) && secondTemps(x.raccourci) === null && troisTemps(x.raccourci) === null)) {
       expect(commandeDuClavier(evenement(c.raccourci))?.id, c.raccourci).toBe(c.id);
       if (c.raccourci.includes("Alt")) expect(commandeDuClavier(evenement(c.raccourci, true))?.id, `${c.raccourci} (macOS)`).toBe(c.id);
     }

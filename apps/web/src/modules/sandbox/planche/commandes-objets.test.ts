@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement, disponibiliteVisionneuse } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -283,5 +283,13 @@ describe("KML / KMZ (lot C4, étape 7b) : disponibilité des commandes", () => {
     expect(disponibiliteRedressement("effacer-points-redressement", { ...s, points: 0 }).motif).toBe("planche.redressement.motif.aucun-point");
     expect(disponibiliteRedressement("poser-redressee", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteRedressement("poser-redressee", s).disponible).toBe(true);
+  });
+});
+
+describe("visionneuse hors ligne (lot C4, étape 7d) : disponibilité des commandes", () => {
+  it("le panneau s'ouvre toujours ; l'export exige une maquette non vide, même en lecture seule", () => {
+    expect(disponibiliteVisionneuse("visionneuse", { triangles: 0 }).disponible).toBe(true);
+    expect(disponibiliteVisionneuse("exporter-visionneuse", { triangles: 0 }).motif).toBe("planche.visionneuse.motif.vide");
+    expect(disponibiliteVisionneuse("exporter-visionneuse", { triangles: 12 }).disponible).toBe(true);
   });
 });

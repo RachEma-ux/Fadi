@@ -6245,3 +6245,31 @@
   margin-top: 2px;
   color: #6b7672;
 }
+/* Visionneuse hors ligne (cas 4, lot C4, étape 7d). */
+.sandbox-planche .planche-visionneuse-choix {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 4px 0 8px;
+}
+.sandbox-planche .planche-visionneuse-choix label {
+  display: block;
+}
+.sandbox-planche .planche-visionneuse-choix small {
+  display: block;
+  margin-left: 22px;
+  opacity: 0.7;
+}
+.sandbox-planche .planche-visionneuse kbd {
+  font: inherit;
+  font-size: 0.9em;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 0 5px;
+  margin-left: 4px;
+}
+.sandbox-planche .planche-visionneuse .planche-debit-barre button.est-principal:not(:disabled) {
+  background: #1b4d42;
+  border-color: #1b4d42;
+  color: #fff;
+}
