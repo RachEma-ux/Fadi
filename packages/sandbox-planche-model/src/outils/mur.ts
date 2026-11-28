@@ -8,7 +8,7 @@
  * un pas d'historique (« Mur »), dans la racine du modèle.
  */
 import { mursDuModele, poserMurs, empreinteMur, nettoyerAxe, type ErreurMur, type ReferenceMur, REFERENCES_MUR } from "../murs.js";
-import { type Inference, type Verrou, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, dist, len, normalize, scale, sub } from "../vecteur.js";
 import { axesDeSaisie } from "./commun-formes.js";
@@ -43,7 +43,7 @@ const dernier = (e: EtatMur): Vec3 | null => e.points[e.points.length - 1] ?? nu
 function inferenceMur(e: EtatMur, ctx: ContexteOutil, r: Rayon, tolerance: number): Inference {
   const v = e.verrouMaj ?? e.fleche?.verrou;
   const d = dernier(e);
-  return inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), ...(d ? { depart: d } : {}), ...(v ? { verrou: v } : {}), ...axesDeSaisie(ctx) });
+  return inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(d ? { depart: d } : {}), ...(v ? { verrou: v } : {}), ...axesDeSaisie(ctx) });
 }
 
 const recalculer = (e: EtatMur, ctx: ContexteOutil): EtatMur => (e.rayon ? { ...e, inference: inferenceMur(e, ctx, e.rayon.rayon, e.rayon.tolerance) } : e);

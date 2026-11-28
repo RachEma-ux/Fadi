@@ -4,7 +4,7 @@
  * épaisseurs des traits coupé / vu / caché, aperçu SVG, export ; section « Motifs de hachure » : tableau (motif, aperçu,
  * angle, pas en mm papier, matières), nouveau motif, import d'un fichier .pat, suppression. Aucun motif n'est fourni.
  */
-import type { ClasseTrait, Id, Materiau, MotifHachure, PlanDeCoupe } from "@parcours/sandbox-planche-model";
+import { type ClasseTrait, type Id, type Materiau, type MotifHachure, type PlanDeCoupe, ECHELLES_SERIE, EPAISSEURS_TRAITS } from "@parcours/sandbox-planche-model";
 import { useEffect, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { Pictogramme } from "../pictogrammes/Pictogramme";
@@ -13,9 +13,8 @@ import { afficherRaccourci } from "./outils-planche";
 
 export type SourcePlan = "courante" | "dessus" | "avant" | "droite" | "arriere" | "gauche";
 export const SOURCES_PLAN: readonly SourcePlan[] = ["courante", "dessus", "avant", "droite", "arriere", "gauche"];
-export const ECHELLES_PLAN: readonly number[] = [1, 5, 10, 20, 50, 100, 200, 500];
-/** Épaisseurs des traits (mm papier) : convention graphique du dessin, pas une donnée de projet. */
-export const TRAITS_PLAN: Readonly<Record<ClasseTrait, number>> = { coupe: 0.5, vu: 0.18, cache: 0.13 };
+export const ECHELLES_PLAN: readonly number[] = ECHELLES_SERIE;
+export const TRAITS_PLAN: Readonly<Record<ClasseTrait, number>> = EPAISSEURS_TRAITS;
 export interface OptionsPlan {
   readonly source: SourcePlan;
   readonly echelle: number;
@@ -74,6 +73,7 @@ export function PanneauPlanVectoriel({
   refMotifs,
   erreur,
   note,
+  suite,
 }: {
   options: OptionsPlan;
   plans: readonly PlanDeCoupe[];
@@ -91,6 +91,8 @@ export function PanneauPlanVectoriel({
   refMotifs: React.RefObject<HTMLHeadingElement | null>;
   erreur: string | null;
   note: string | null;
+  /** Bouton ajouté à la barre du plan : ouvrir les feuilles (étape 6). */
+  suite?: React.ReactNode;
 }) {
   const courant = motifs.find((m) => m.id === choisi) ?? null;
   const [saisie, setSaisie] = useState<SaisieMotif>(() => saisieDe(courant));
@@ -161,6 +163,7 @@ export function PanneauPlanVectoriel({
       <div className="planche-debit-barre" role="toolbar" aria-label={t("planche.plan.barre")}>
         {bouton("exporter-plan-svg", "est-principal", true)}
         {bouton("rafraichir-plan", "")}
+        {suite}
       </div>
 
       <h3 className="planche-plan-titre" tabIndex={-1} ref={refMotifs} data-planche-plan-motifs>

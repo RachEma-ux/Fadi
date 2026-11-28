@@ -154,8 +154,15 @@ export interface ContexteOutil {
    * Absent : retrouvé depuis `dans` (première occurrence).
    */
   readonly chemin?: readonly string[];
+  /**
+   * (Cas 4, C4 étape 5) État des travaux affiché (« existant » ou « projete ») ; absent = tout. Ce que l'état masque n'est
+   * ni visé, ni sélectionné, ni accroché.
+   */
+  readonly etatTravaux?: "existant" | "projete";
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
+  /** (Cas 4, lot C4) Fond choisi dans le panneau Fonds calés : visé en priorité là où des fonds se superposent. */
+  readonly fondCourant?: string;
   /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
   readonly baliseCourante?: string;
   /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */
@@ -176,6 +183,8 @@ export interface ContexteOutil {
   readonly sectionCourante?: SectionCourante;
   /** (Cas 4, étape 4) Épaisseur et hauteur du mur, saisies dans la barre d'options de l'outil Mur ; absent = saisie invalide. */
   readonly parametresMur?: { readonly epaisseur: number; readonly hauteur: number };
+  /** (Cas 4, étape 7b) Date du jour « AAAA-MM-JJ » (outil Réserve) ; absent = aucune réserve posée. */
+  readonly aujourdhui?: string;
   /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage » (genre forcé, genres coupés, presque, pas). */
   readonly accrochage?: OptionsAccrochage;
 }
@@ -187,6 +196,27 @@ export interface AdaptateurBooleens {
   intersection(a: Maillage, b: Maillage): Maillage;
   /** (Cas 2, lot 8, n° 15) Aire de l'union de contours plans (x, y), règle de remplissage positive. */
   aireUnion?(contours: readonly (readonly (readonly [number, number])[])[]): number;
+  /** (Protocole 1.4) Opérations planes du même moteur ; absentes = moteur sans opérations planes. */
+  readonly plans?: AdaptateurPlans;
+}
+
+/** Point du plan horizontal (x, y), en mètres, coordonnées monde. */
+export type PointPlan = readonly [number, number];
+/** Polygone du plan : contour extérieur (sens trigonométrique) et trous (sens horaire). */
+export interface PolygonePlan {
+  readonly exterieur: readonly PointPlan[];
+  readonly trous: readonly (readonly PointPlan[])[];
+}
+
+/**
+ * (Protocole 1.4) Opérations planes : coupe horizontale de solides à une hauteur, projection au sol, union de
+ * polygones. Le résultat est toujours l'union (aucun recouvrement compté deux fois) ; « booléen de maillage », jamais
+ * exact au sens B-Rep.
+ */
+export interface AdaptateurPlans {
+  coupe(solides: readonly Maillage[], hauteur: number): PolygonePlan[];
+  projection(solides: readonly Maillage[]): PolygonePlan[];
+  union(polygones: readonly PolygonePlan[]): PolygonePlan[];
 }
 
 export interface Transition<E> {

@@ -13,7 +13,7 @@
  * en cache par paramètres (le survol ne recalcule que le placement).
  */
 import { type FacesPolygonales, creerGroupeDepuisFaces } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { geometrieDuTexte } from "../police-geometrique.js";
 import { type Vec3, add, cross, len, normalize, scale, v3 } from "../vecteur.js";
 import { contexteSaisie, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
@@ -141,10 +141,10 @@ export const machineTexte3D: MachineOutil<EtatTexte3D> = {
     switch (ev.genre) {
       case "survol":
         if (etat.boite) return { etat };
-        return { etat: { ...etat, inference: inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) }), erreur: null } };
+        return { etat: { ...etat, inference: inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) }), erreur: null } };
       case "clic": {
         if (etat.boite || etat.texte.trim() === "") return { etat };
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
         try {
           const { faces, ignores } = facesDuTexte3D(etat, i.point, planDePose(ctx, i), etat.alignement);
           if (faces.length === 0) return { etat: { ...etat, inference: i, erreur: ignores.length ? `Aucun caractère connu dans « ${etat.texte} » (ignorés : ${ignores.join(" ")}).` : "Texte vide." } };

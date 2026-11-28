@@ -44,18 +44,22 @@ temps (Ctrl+Maj+Espace, puis un chiffre, avec ou sans Maj ; le chiffre est lu su
 | `ajuster-baie` — Ajuster à la baie | `aspect-ratio` | Ctrl+Maj+Espace, 5 |
 | `remplacer-occurrences` — Remplacer les occurrences | `replace` | Ctrl+Maj+Espace, 6 |
 | `soustraire-garder` — Soustraire et garder | `cut` | Ctrl+Maj+Espace, 7 |
-| `caler-deux-points` — Caler par deux points | `vector` | Ctrl+Maj+Espace, 8 |
+| `caler-deux-points` — Caler par deux points | `vector-spline` | Ctrl+Maj+Espace, 8 |
 | `selection-altitudes` — Sélectionner entre altitudes | `arrows-vertical` | Ctrl+Maj+Espace, 9 |
 | `selection-boite` — Boîte 3D | `box-margin` | Ctrl+Maj+Espace, Maj+9 |
 | `miroir-lisible` — Miroir lisible | `flip-horizontal` | Ctrl+Maj+Espace, 0 |
 | `ecreter-enveloppe` — Écrêter par l'enveloppe | `crop` | Ctrl+Maj+Espace, Maj+0 |
 | `vue-ortho` — Vue orthographique | `perspective-off` | Ctrl+Maj+Espace, Maj+1 |
 | `eclater-axonometrie` — Éclater l'axonométrie | `arrows-split` | Ctrl+Maj+Espace, Maj+2 |
-| `echelle-graphique` — Échelle graphique | `ruler-measure-2` | Ctrl+Maj+Espace, Maj+3 |
+| `echelle-graphique` — Échelle graphique | `tallymarks` | Ctrl+Maj+Espace, Maj+3 |
 | `aire-projetee` — Mesurer l'aire projetée | `chart-area` | Ctrl+Maj+Espace, Maj+4 |
 
 Correction faite en chemin : une seconde touche Maj + chiffre était lue sans Maj dans le navigateur (un `KeyboardEvent`
 étalé perd ses accesseurs) ; test ajouté dans `registre-commandes.test.ts`.
+
+Icônes changées au report de main du 28 novembre 2026 (unicité des pictogrammes) : `caler-deux-points` prend
+`vector-spline` (`vector` est à « Feuilles DXF »), `echelle-graphique` prend `tallymarks` (`ruler-measure-2` est à
+« Caler le fond »).
 
 ## Conformité aux maquettes (écarts réglés le 28 novembre 2026)
 

@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -97,6 +97,8 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   profile: "fadi:profile",
   "profiles-aretes": "frame",
   mur: "wall",
+  reserve: "pin",
+  calage: "target-arrow",
   onglet: "fadi:onglet",
   "coupe-profil": "fadi:coupe-profil",
   "allonger-piece": "fadi:allonger",
@@ -179,6 +181,13 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   "profiles-aretes": "Alt+Maj+Q",
   // Cas 4, étape 4 : murs à épaisseur. Maj+W est le Zoom fenêtre, Maj+X commencerait une saisie : M comme « mur ».
   mur: "Ctrl+Maj+M",
+  // Cas 4, étape 7b : réserves de chantier. Un outil se tape Maj (+ Alt ou Ctrl) + lettre (la maquette disait
+  // Ctrl+Alt+Maj+9, forme refusée aux outils) ; parmi les lettres libres de Ctrl+Maj, V est la seule que le navigateur
+  // ne garde pas (A, O, P et Q ouvrent ou ferment une fenêtre du navigateur).
+  reserve: "Ctrl+Maj+V",
+  // Cas 4, lot C4, étape 1 : calage d'image. Toutes les lettres des outils sont prises ; Ctrl+Alt+Maj+F1 à F12 sont la
+  // dernière famille libre du cœur (Ctrl+Alt+lettre reste aux extensions).
+  calage: "Ctrl+Alt+Maj+F2",
   onglet: "Alt+Maj+O",
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
@@ -355,6 +364,73 @@ const commandes: EntreeSandbox[] = [
   c("nouveau-motif", "plan", "row-insert-bottom", "Ctrl+F10", "panneau-plan-vectoriel", true),
   c("importer-motif", "plan", "file-import", "Ctrl+F11", "panneau-plan-vectoriel", true),
   c("supprimer-motif", "plan", "row-remove", "Ctrl+F12", "panneau-plan-vectoriel", true),
+  // Feuilles (cas 4, étape 6) : feuilles ISO, fenêtres de vue, PDF vectoriel ; ouvert depuis le panneau Plan vectoriel.
+  c("feuilles", "feuille", "files", "Ctrl+Alt+Maj+1", "panneau-plan-vectoriel", true),
+  c("nouvelle-feuille", "feuille", "file-plus", "Ctrl+Alt+Maj+2", "panneau-feuilles", true),
+  c("supprimer-feuille", "feuille", "file-minus", "Ctrl+Alt+Maj+3", "panneau-feuilles", true),
+  c("ajouter-fenetre", "feuille", "browser-plus", "Ctrl+Alt+Maj+4", "panneau-feuilles", true),
+  c("supprimer-fenetre", "feuille", "browser-x", "Ctrl+Alt+Maj+5", "panneau-feuilles", true),
+  c("exporter-feuille-pdf", "feuille", "file-type-pdf", "Ctrl+Alt+Maj+6", "panneau-feuilles", true),
+  c("exporter-jeu-pdf", "feuille", "file-stack", "Ctrl+Alt+Maj+7", "panneau-feuilles", true),
+  // Réserves de chantier (cas 4, étape 7b) : panneau hors colonne (Outils ▾ et raccourci), outil Réserve (Ctrl+Maj+V).
+  c("reserves", "reserve", "clipboard-list", "Ctrl+Alt+Maj+8", "outils", true),
+  c("lever-reserve", "reserve", "circle-check", "Ctrl+Alt+1", "panneau-reserves", true),
+  c("supprimer-reserve", "reserve", "trash-x", "Ctrl+Alt+2", "panneau-reserves", true),
+  // Contrôle de l'enveloppe (cas 4, étape 7c) : panneau hors colonne (Outils ▾ et raccourci), désigner l'enveloppe,
+  // basculer le contrôle, ajouter / supprimer une règle de hauteur (seuils saisis avec leur source).
+  c("enveloppe", "enveloppe", "home-shield", "Ctrl+Alt+Maj+0", "outils", true),
+  c("definir-enveloppe", "enveloppe", "square-check", "Ctrl+Alt+3", "panneau-enveloppe", true),
+  c("controler-enveloppe", "enveloppe", "shield-check", "Ctrl+Alt+4", "panneau-enveloppe", true),
+  c("ajouter-regle-hauteur", "enveloppe", "playlist-add", "Ctrl+Alt+5", "panneau-enveloppe", true),
+  c("supprimer-regle-hauteur", "enveloppe", "playlist-x", "Ctrl+Alt+6", "panneau-enveloppe", true),
+  // Liens de consultation (cas 4, étape 7d) : copie figée en lecture seule, ouvrable sans compte ; panneau ouvert par
+  // Fichier ▸ Partager un lien, Outils ▾ et son raccourci ; créer, copier et révoquer un lien.
+  c("partager-lien", "consultation", "link", "Ctrl+Alt+7", "outils", true),
+  c("creer-lien", "consultation", "link-plus", "Ctrl+Alt+Maj+9", "panneau-consultations", true),
+  c("copier-lien", "consultation", "copy", "Ctrl+Alt+9", "panneau-consultations", true),
+  c("revoquer-lien", "consultation", "link-off", "Ctrl+Alt+8", "panneau-consultations", true),
+  // Fonds calés (cas 4, lot C4, étape 1) : panneau hors colonne (Fichier ▸ Importer un fond, Outils ▾ et raccourci),
+  // outil Calage (Ctrl+Alt+Maj+F2) ; Ctrl+Alt+Maj+F1 à F12, dernière famille libre du cœur.
+  c("fonds", "fond", "photo", "Ctrl+Alt+Maj+F1", "outils", true),
+  c("importer-fond", "fond", "photo-plus", "Ctrl+Alt+Maj+F3", "panneau-fonds", true),
+  c("caler-fond", "fond", "ruler-measure-2", "Ctrl+Alt+Maj+F4", "panneau-fonds", true),
+  c("verrouiller-fond", "fond", "lock-square", "Ctrl+Alt+Maj+F5", "panneau-fonds", true),
+  c("supprimer-point-calage", "fond", "point-off", "Ctrl+Alt+Maj+F6", "panneau-fonds", true),
+  c("supprimer-fond", "fond", "photo-x", "Ctrl+Alt+Maj+F7", "panneau-fonds", true),
+  // Lot C4, étape 2 : fiche de calage du projet et orthophoto posée d'après son fichier de calage d'image (F8 à F12 ;
+  // Ctrl+Alt+Maj+F est alors épuisée ; Alt+F6 à F12 et Ctrl+Maj+F1 à F12 sont pris ou réservés : Alt+F3 pour Ignorer,
+  // Alt+F2 pour Poser ; certains bureaux Linux gardent Alt+F2, la commande reste dans le panneau et la liste Outils).
+  c("exporter-fiche", "fond", "file-description", "Ctrl+Alt+Maj+F8", "panneau-fonds", true),
+  c("importer-fiche", "fond", "file-search", "Ctrl+Alt+Maj+F9", "panneau-fonds", true),
+  c("importer-orthophoto", "fond", "map-2", "Ctrl+Alt+Maj+F10", "panneau-fonds", true),
+  c("exporter-calage-fond", "fond", "grid-scan", "Ctrl+Alt+Maj+F11", "panneau-fonds", true),
+  c("appliquer-fiche", "fond", "file-check", "Ctrl+Alt+Maj+F12", "panneau-fonds", true),
+  c("ignorer-fiche", "fond", "file-x", "Alt+F3", "panneau-fonds", true),
+  c("poser-orthophoto", "fond", "map-check", "Alt+F2", "panneau-fonds", true),
+  // Lot C4, étape 3 : références verrouillées et contrôle de récolement ; raccourcis en deux temps (décision du maître
+  // d'ouvrage du 27 novembre 2026 : Ctrl+Maj+Espace, puis une touche).
+  c("references", "reference", "box-model-2", "Ctrl+Maj+Espace, R", "outils", true),
+  c("charger-reference", "reference", "file-3d", "Ctrl+Maj+Espace, C", "panneau-references", true),
+  c("recharger-reference", "reference", "refresh-dot", "Ctrl+Maj+Espace, Maj+C", "panneau-references", true),
+  c("verrouiller-reference", "reference", "lock-cog", "Ctrl+Maj+Espace, L", "panneau-references", true),
+  c("afficher-reference", "reference", "eye-table", "Ctrl+Maj+Espace, M", "panneau-references", true),
+  c("controler-recolement", "reference", "radar-2", "Ctrl+Maj+Espace, K", "panneau-references", true),
+  c("supprimer-reference", "reference", "box-off", "Ctrl+Maj+Espace, S", "panneau-references", true),
+  // Lot C4, étape 4 : PDF reçu (page vectorielle en arêtes, échelle proposée puis confirmée, page scannée en fond).
+  c("pdf-recu", "pdf", "file-arrow-right", "Ctrl+Maj+Espace, P", "outils", true),
+  c("ouvrir-pdf", "pdf", "file-upload", "Ctrl+Maj+Espace, Maj+P", "panneau-pdf-recu", true),
+  c("mesurer-pdf", "pdf", "ruler", "Ctrl+Maj+Espace, E", "panneau-pdf-recu", true),
+  c("barre-echelle-pdf", "pdf", "arrows-horizontal", "Ctrl+Maj+Espace, B", "panneau-pdf-recu", true),
+  c("confirmer-echelle-pdf", "pdf", "checks", "Ctrl+Maj+Espace, Maj+E", "panneau-pdf-recu", true),
+  c("inserer-pdf", "pdf", "arrow-autofit-content", "Ctrl+Maj+Espace, I", "panneau-pdf-recu", true),
+  c("poser-fond-pdf", "pdf", "photo-scan", "Ctrl+Maj+Espace, F", "panneau-pdf-recu", true),
+  // Lot C4, étape 5 : feuilles en DXF (un fichier par feuille, calques normalisés) et statut des travaux (SIA 400).
+  c("feuilles-dxf", "dxf", "vector", "Ctrl+Maj+Espace, D", "outils", true),
+  c("exporter-dxf", "dxf", "file-download", "Ctrl+Maj+Espace, Maj+D", "panneau-feuilles-dxf", true),
+  c("statut-travaux", "travaux", "home-cog", "Ctrl+Maj+Espace, T", "outils", true),
+  c("statut-existant", "travaux", "home-check", "Ctrl+Maj+Espace, X", "panneau-statut-travaux", true),
+  c("statut-a-demolir", "travaux", "home-x", "Ctrl+Maj+Espace, A", "panneau-statut-travaux", true),
+  c("statut-projete", "travaux", "home-plus", "Ctrl+Maj+Espace, J", "panneau-statut-travaux", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -380,9 +456,9 @@ const commandes: EntreeSandbox[] = [
   c("reculer-coupe", "scene", "chevrons-down", "Ctrl+Maj+7", "panneau-info-entite", true),
   c("scene-face-coupe", "scene", "camera-plus", "Ctrl+Maj+8", "panneau-info-entite", true),
   c("gabarit", "gabarit", "file-settings", "Ctrl+Maj+9", "panneau-gabarit", true),
-  c("importer-gabarit", "gabarit", "file-upload", "Ctrl+Maj+0", "panneau-gabarit", true),
-  c("enregistrer-gabarit", "gabarit", "file-download", "Alt+7", "panneau-gabarit", true),
-  c("creer-planche-gabarit", "gabarit", "file-plus", "Alt+8", "panneau-gabarit", true),
+  c("importer-gabarit", "gabarit", "file-arrow-left", "Ctrl+Maj+0", "panneau-gabarit", true),
+  c("enregistrer-gabarit", "gabarit", "file-pencil", "Alt+7", "panneau-gabarit", true),
+  c("creer-planche-gabarit", "gabarit", "file-star", "Alt+8", "panneau-gabarit", true),
   // Cas 2 du catalogue, lot 6 (27 novembre 2026) : Planche complète au format natif (empreinte) et image de la vue ;
   // Alt + F1 était la dernière touche simple libre (les suivantes passent aux raccourcis en deux temps).
   c("natif-image", "echange", "file-database", "Alt+F1", "panneau-natif-image", true),
@@ -407,18 +483,18 @@ const commandes: EntreeSandbox[] = [
   c("ajuster-baie", "modelisation", "aspect-ratio", "Ctrl+Maj+Espace, 5", "panneau-composants-agence", true),
   c("remplacer-occurrences", "modelisation", "replace", "Ctrl+Maj+Espace, 6", "panneau-composants-agence", true),
   c("soustraire-garder", "modelisation", "cut", "Ctrl+Maj+Espace, 7", "panneau-soustraire", true),
-  c("caler-deux-points", "modelisation", "vector", "Ctrl+Maj+Espace, 8", "panneau-soustraire", true),
+  c("caler-deux-points", "modelisation", "vector-spline", "Ctrl+Maj+Espace, 8", "panneau-soustraire", true),
   c("selection-altitudes", "modelisation", "arrows-vertical", "Ctrl+Maj+Espace, 9", "panneau-soustraire", true),
   c("selection-boite", "modelisation", "box-margin", "Ctrl+Maj+Espace, Maj+9", "panneau-soustraire", true),
   c("miroir-lisible", "modelisation", "flip-horizontal", "Ctrl+Maj+Espace, 0", "panneau-soustraire", true),
   c("ecreter-enveloppe", "modelisation", "crop", "Ctrl+Maj+Espace, Maj+0", "panneau-soustraire", true),
   c("vue-ortho", "modelisation", "perspective-off", "Ctrl+Maj+Espace, Maj+1", "panneau-vues-mesures", true),
   c("eclater-axonometrie", "modelisation", "arrows-split", "Ctrl+Maj+Espace, Maj+2", "panneau-vues-mesures", true),
-  c("echelle-graphique", "modelisation", "ruler-measure-2", "Ctrl+Maj+Espace, Maj+3", "panneau-vues-mesures", true),
+  c("echelle-graphique", "modelisation", "tallymarks", "Ctrl+Maj+Espace, Maj+3", "panneau-vues-mesures", true),
   c("aire-projetee", "modelisation", "chart-area", "Ctrl+Maj+Espace, Maj+4", "panneau-vues-mesures", true),
 ];
 
-const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
+const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
@@ -460,6 +536,23 @@ const panneaux: EntreeSandbox[] = [
   p("locaux", "layout-board-split", "colonne", true),
   // Plan vectoriel (cas 4, étape 5) : dessin 2D de la vue, coupe pochée, motifs de hachure ; fonction du noyau.
   p("plan-vectoriel", "background", "colonne", true),
+  // Feuilles (cas 4, étape 6) : hors de la colonne (pleine), ouvert depuis Plan vectoriel, Outils ▾ et son raccourci.
+  p("feuilles", "files", "panneau-plan-vectoriel", true),
+  // Réserves (cas 4, étape 7b) : hors de la colonne (pleine), ouvert par Outils ▾, son raccourci et l'outil Réserve.
+  p("reserves", "clipboard-list", "outils", true),
+  // Enveloppe (cas 4, étape 7c) : hors de la colonne (pleine), ouvert par Outils ▾ et son raccourci.
+  p("enveloppe", "home-shield", "outils", true),
+  // Liens de consultation (cas 4, étape 7d) : hors de la colonne (pleine).
+  p("consultations", "link", "outils", true),
+  // Fonds calés (cas 4, lot C4, étape 1) : hors de la colonne (pleine).
+  p("fonds", "photo", "outils", true),
+  // Références verrouillées (cas 4, lot C4, étape 3) : hors de la colonne (pleine).
+  p("references", "box-model-2", "outils", true),
+  // PDF reçu (cas 4, lot C4, étape 4) : hors de la colonne (pleine).
+  p("pdf-recu", "file-arrow-right", "outils", true),
+  // Feuilles en DXF et statut des travaux (cas 4, lot C4, étape 5) : hors de la colonne (pleine).
+  p("feuilles-dxf", "vector", "outils", true),
+  p("statut-travaux", "home-cog", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -484,6 +577,15 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:niveaux", "panneau:niveaux"],
   ["commande:locaux", "panneau:locaux"],
   ["commande:plan-vectoriel", "panneau:plan-vectoriel"],
+  ["commande:feuilles", "panneau:feuilles"],
+  ["commande:reserves", "panneau:reserves"],
+  ["commande:enveloppe", "panneau:enveloppe"],
+  ["commande:partager-lien", "panneau:consultations"],
+  ["commande:fonds", "panneau:fonds"],
+  ["commande:references", "panneau:references"],
+  ["commande:pdf-recu", "panneau:pdf-recu"],
+  ["commande:feuilles-dxf", "panneau:feuilles-dxf"],
+  ["commande:statut-travaux", "panneau:statut-travaux"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

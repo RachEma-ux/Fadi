@@ -15,12 +15,17 @@
  * l'utilisateur, lui, ne voit rien avant la validation.
  */
 import { changerDonneesExtension, estCleDonnee, lireCibleDonnees, lireDonneesExtension, lireValeurDonnee, BORNES_DONNEES, type MotifDonnees } from "./donnees-extensions.js";
-import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
-import { arcParTroisPoints, formaterLongueur, pointsArc } from "./outils/commun-formes.js";
+import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
+import { reglagesDe } from "./cotes.js";
+import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, IDENTITE, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
 import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
 import { type Vec3, v3 } from "./vecteur.js";
+import { niveauxTries } from "./niveaux.js";
+import { PasUnSolide, maillageDuSolide, motifNonSolide, type Maillage } from "./maillage.js";
+import type { AdaptateurBooleens, PointPlan, PolygonePlan } from "./outils/machine.js";
 
 /** Ce que la Planche prête à une extension. Les lectures rendent l'état courant à chaque appel. */
 export interface AccesPlanche {
@@ -33,6 +38,12 @@ export interface AccesPlanche {
   readonly selectionner: (ids: readonly Id[], contexte?: ContexteApplication) => void;
   /** Séparateur décimal de l'interface (lot 7, « unites ») ; absent = virgule. */
   readonly separateur?: () => "." | ",";
+  /** (1.3) Décimales d'affichage des longueurs choisies pour le projet (Info modèle) ; absent = 2. */
+  readonly decimales?: () => number;
+  /** (1.4) Moteur booléen chargé (manifold-3d), pour les opérations planes ; absent ou `null` = pas chargé. */
+  readonly booleens?: () => AdaptateurBooleens | null;
+  /** (1.4) Altitude NGF du ±0,00 de la planche (Info planche) ; absent ou `null` = non renseignée. */
+  readonly referenceNGF?: () => number | null;
 }
 
 /** Dans quel appel une opération est appliquée (lot 7). */
@@ -62,6 +73,100 @@ export const COTES_ARC_DEFAUT = 12;
 export const COTES_CERCLE_DEFAUT = 24;
 /** (1.1) Nom d'une balise créée par une extension, en caractères. */
 export const MAX_NOM_BALISE = 80;
+/** (1.4) Solides d'une coupe ou d'une projection ; polygones et points d'une union ; hauteur de coupe (± m). */
+export const BORNES_PLANS = { solides: 5_000, polygones: 10_000, points: 200_000, hauteur: 10_000 } as const;
+
+/** (1.4) Polygone rendu à l'extension : contour extérieur, trous, aire nette en m². */
+export interface PolygoneLu {
+  readonly exterieur: PointPlan[];
+  readonly trous: PointPlan[][];
+  readonly aire: number;
+}
+/** (1.4) Résultat d'une coupe ou d'une projection : union de tous les solides, puis le détail par solide. */
+export interface PlansLus {
+  readonly polygones: PolygoneLu[];
+  /** Aire de l'union (aucun recouvrement compté deux fois), en m². */
+  readonly aire: number;
+  /** Chaque solide retenu (chemin depuis la racine : une instance de composant par chemin) et sa propre aire. */
+  readonly solides: { readonly id: Id; readonly chemin: Id[]; readonly balise: Id | null; readonly aire: number }[];
+  /** Objets écartés parce qu'ils ne sont pas des solides fermés, avec le motif : rien n'est omis en silence. */
+  readonly ecartes: { readonly id: Id; readonly chemin: Id[]; readonly motif: string }[];
+  /** Faces posées à la racine hors de tout groupe : jamais comptées (pas un solide). */
+  readonly facesLibres: number;
+}
+
+const aireContourPlan = (c: readonly PointPlan[]): number => {
+  let a = 0;
+  for (let i = 0; i < c.length; i++) {
+    const p = c[i] as PointPlan;
+    const q = c[(i + 1) % c.length] as PointPlan;
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return Math.abs(a) / 2;
+};
+const polygoneLu = (p: PolygonePlan): PolygoneLu => ({
+  exterieur: p.exterieur.map(([x, y]) => [x, y]),
+  trous: p.trous.map((t) => t.map(([x, y]) => [x, y] as PointPlan)),
+  aire: aireContourPlan(p.exterieur) - p.trous.reduce((s, t) => s + aireContourPlan(t), 0),
+});
+const airePolygones = (ps: readonly PolygoneLu[]): number => ps.reduce((s, p) => s + p.aire, 0);
+/**
+ * Tous les chemins (racine → occurrence) qui mènent à un objet, chacun avec sa matrice monde composée et la balise
+ * héritée (celle de l'objet, sinon du plus proche contenant qui en porte une). Bornés à `BORNES_PLANS.solides`.
+ */
+function cheminsVers(m: Modele, id: Id): { chemin: Id[]; M: Matrice4; balise: Id | null }[] {
+  const trouves: { chemin: Id[]; M: Matrice4; balise: Id | null }[] = [];
+  const chercher = (c: Contexte, M: Matrice4, chemin: Id[], herite: Id | null, prof: number): void => {
+    if (prof > MAX_PROFONDEUR_MONDE || trouves.length >= BORNES_PLANS.solides) return;
+    for (const o of Object.values(c.occurrences)) {
+      const M2 = composer(M, o.transformation);
+      const b = o.balise ?? herite;
+      const ch = [...chemin, o.id];
+      if (o.id === id) trouves.push({ chemin: ch, M: M2, balise: b });
+      const d = m.definitions[o.definition];
+      if (d) chercher(d.contenu, M2, ch, b, prof + 1);
+    }
+  };
+  chercher(m.racine, IDENTITE, [], null, 1);
+  return trouves;
+}
+
+/** (1.4) Polygones passés par une extension : `{ exterieur, trous? }`, points `[x, y]` finis ; message d'erreur sinon. */
+function lirePolygonesPlan(v: unknown): PolygonePlan[] | string {
+  if (!Array.isArray(v) || v.length === 0 || v.length > BORNES_PLANS.polygones) return `polygones : liste de 1 à ${BORNES_PLANS.polygones} polygones attendue`;
+  let points = 0;
+  const contour = (c: unknown): PointPlan[] | null => {
+    if (!Array.isArray(c) || c.length < 3) return null;
+    const pts: PointPlan[] = [];
+    for (const p of c) {
+      if (!Array.isArray(p) || p.length !== 2 || !p.every((x) => typeof x === "number" && Number.isFinite(x))) return null;
+      pts.push([p[0], p[1]]);
+    }
+    points += pts.length;
+    return pts;
+  };
+  const sortie: PolygonePlan[] = [];
+  for (const brut of v) {
+    if (!estObjet(brut)) return "polygone : { exterieur, trous } attendu";
+    const exterieur = contour(brut["exterieur"]);
+    if (!exterieur) return "exterieur : au moins 3 points [x, y] attendus";
+    const t = brut["trous"] ?? [];
+    if (!Array.isArray(t)) return "trous : liste de contours attendue";
+    const trous: PointPlan[][] = [];
+    for (const c of t) {
+      const lu = contour(c);
+      if (!lu) return "trou : au moins 3 points [x, y] attendus";
+      trous.push(lu);
+    }
+    if (points > BORNES_PLANS.points) return `polygones de plus de ${BORNES_PLANS.points} points`;
+    sortie.push({ exterieur, trous });
+  }
+  return sortie;
+}
+/** (1.3) Texte posé par une extension (`textes.creer`), en caractères. */
+export const MAX_TEXTE_EXTENSION = 200;
+/** (1.3) Directions admises d'une cote créée par une extension. */
+export const DIRECTIONS_COTE: readonly DirectionCote[] = ["alignee", "horizontale", "verticale", "axe-x", "axe-y", "axe-z"];
 /** Couleur d'une balise : « #rrggbb ». */
 const MOTIF_COULEUR = /^#[0-9a-fA-F]{6}$/;
 /** Couleur d'une balise créée sans couleur : celle que propose le panneau Balises de la Planche. */
@@ -128,11 +233,19 @@ export interface UnitesLues {
   readonly aire: "m²";
   readonly decimales: number;
   readonly separateur: "." | ",";
+  /** (1.3) Pas d'accrochage des longueurs saisies (m), ou `null` s'il est coupé. */
+  readonly pasLongueur: number | null;
+  /** (1.3) Pas d'accrochage des angles (degrés), ou `null` s'il est coupé. */
+  readonly pasAngle: number | null;
+  /** (1.3) Format des valeurs de cote du projet. */
+  readonly formatCote: FormatCote;
 }
 /** Rendu par « modele.lire » : tout le contexte courant (la racine, ou l'objet ouvert en édition). */
 export interface ModeleLu {
   readonly faces: readonly FaceLue[];
   readonly aretes: readonly AreteLue[];
+  /** (1.3) Groupe ou composant ouvert en édition (le contexte lu), ou `null` à la racine. */
+  readonly dans?: Id | null;
   readonly objets: readonly ObjetLu[];
   /** Vrai pendant une opération ouverte : la lecture montre le modèle de travail de l'extension. */
   readonly enOperation: boolean;
@@ -352,6 +465,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null })),
       aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number, courbe: courbeLue(c, c.aretes[id]!.courbe, null) })),
       objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe", matiere: occ.materiau ?? null, balise: occ.balise ?? null })),
+      dans: dans ?? null,
       enOperation: operation !== null,
     };
     return rendu(lu);
@@ -453,15 +567,122 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu(r.extra);
   };
 
-  const unites = (): UnitesLues => ({ longueur: "m", aire: "m²", decimales: 2, separateur: acces.separateur?.() ?? "," });
+  const unites = (): UnitesLues => {
+    const r = reglagesDe(vue().modele());
+    const d = acces.decimales?.();
+    return {
+      longueur: "m",
+      aire: "m²",
+      decimales: typeof d === "number" && Number.isInteger(d) && d >= 0 && d <= 6 ? d : 2,
+      separateur: acces.separateur?.() ?? ",",
+      pasLongueur: r.accrochageLongueur,
+      pasAngle: r.accrochageAngle,
+      formatCote: r.formatCote ?? "metres",
+    };
+  };
+
+  /** (1.3) Balise facultative d'une annotation : identifiant d'une balise existante, ou un message de refus. */
+  const baliseAnnotation = (d: Record<string, unknown> | null, m: Modele): { readonly balise?: Id } | string => {
+    const b = d?.["balise"];
+    if (b === undefined || b === null) return {};
+    if (typeof b !== "string" || !m.annotations?.balises[b]) return "balise : identifiant d'une balise existante attendu";
+    return { balise: b };
+  };
+
+  /**
+   * (1.3) `cotes.creer { a, b, position, direction?, balise? }` : une cote linéaire entre deux points du monde, sa ligne passant
+   * par `position` ; rend son identifiant. La cote n'est pas associée aux sommets : elle garde la valeur mesurée.
+   */
+  const creerCote = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const a = d?.["a"], b = d?.["b"], position = d?.["position"];
+    const direction = d?.["direction"] ?? "alignee";
+    if (!estPoint(a) || !estPoint(b) || !estPoint(position)) return refus("argument_invalide", "a, b et position : points [x, y, z] attendus");
+    if (Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) < 1e-9) return refus("argument_invalide", "a et b confondus");
+    if (typeof direction !== "string" || !(DIRECTIONS_COTE as readonly string[]).includes(direction)) return refus("argument_invalide", `direction : ${DIRECTIONS_COTE.join(", ")}`);
+    const balise = baliseAnnotation(d, vue().modele());
+    if (typeof balise === "string") return refus("argument_invalide", balise);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const r = modifierAnnotations(op.travail.modele(), (an, id) => {
+      const k = id("c");
+      const c: Cote = { id: k, genre: "lineaire", a: v3(...a), b: v3(...b), position: v3(...position), ...(direction !== "alignee" ? { direction: direction as DirectionCote } : {}), ...balise };
+      an.cotes[k] = c;
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
+  /** (1.3) `textes.creer { ancre, position, texte, balise? }` : un texte avec repère (ancre, ligne de rappel, texte) ; rend son identifiant. */
+  const creerTexte = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const ancre = d?.["ancre"], position = d?.["position"];
+    const texte = d && typeof d["texte"] === "string" ? d["texte"].trim() : "";
+    if (!estPoint(ancre) || !estPoint(position)) return refus("argument_invalide", "ancre et position : points [x, y, z] attendus");
+    if (texte.length === 0 || texte.length > MAX_TEXTE_EXTENSION) return refus("argument_invalide", `texte : 1 à ${MAX_TEXTE_EXTENSION} caractères attendus`);
+    const balise = baliseAnnotation(d, vue().modele());
+    if (typeof balise === "string") return refus("argument_invalide", balise);
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const r = modifierAnnotations(op.travail.modele(), (an, id) => {
+      const k = id("t");
+      an.textes[k] = { id: k, genre: "repere", ancre: v3(...ancre), position: v3(...position), texte, ...balise };
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
+  /** (1.3) `annotations.lire` : les cotes linéaires et les textes avec repère du dessin (coordonnées du monde). */
+  const lireAnnotations = (): ReponseService => {
+    const a = vue().modele().annotations;
+    const p = (v: Vec3) => [v.x, v.y, v.z];
+    const cotes = Object.values(a?.cotes ?? {}).flatMap((c) => (c.genre === "lineaire" ? [{ id: c.id, a: p(c.a), b: p(c.b), position: p(c.position), direction: c.direction ?? "alignee" }] : []));
+    const textes = Object.values(a?.textes ?? {}).flatMap((x) => (x.genre === "repere" ? [{ id: x.id, ancre: p(x.ancre), position: p(x.position), texte: x.texte }] : []));
+    return rendu({ cotes, textes });
+  };
+
+  /** (1.3) `annotations.effacer { ids }` : efface des cotes et des textes ; un identifiant inconnu est refusé, rien n'est effacé. */
+  const effacerAnnotations = (donnees: unknown): ReponseService => {
+    const ids = estObjet(donnees) ? donnees["ids"] : null;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SELECTION_EXTENSION || !ids.every((x): x is string => typeof x === "string")) return refus("argument_invalide", "ids : liste d'identifiants attendue");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const a = op.travail.modele().annotations;
+    const absent = ids.find((id) => !a?.cotes[id] && !a?.textes[id]);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    op.travail.appliquer(
+      modifierAnnotations(op.travail.modele(), (an) => {
+        for (const id of ids) {
+          delete an.cotes[id];
+          delete an.textes[id];
+        }
+      }),
+    );
+    return rendu();
+  };
+
+  /** (1.3) `objets.verrouiller { ids, verrou }` : verrouille ou déverrouille des groupes et composants du contexte. */
+  const verrouiller = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const ids = d ? d["ids"] : null;
+    const verrou = d ? d["verrou"] : null;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_SELECTION_EXTENSION || !ids.every((x): x is string => typeof x === "string")) return refus("argument_invalide", "ids : liste d'identifiants attendue");
+    if (typeof verrou !== "boolean") return refus("argument_invalide", "verrou : vrai ou faux attendu");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const c = contexte(op.travail.modele(), op.dans);
+    const absent = ids.find((id) => !c.occurrences[id]);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    op.travail.appliquer(verrouillerOccurrences(op.travail.modele(), [...new Set(ids)], verrou, op.dans !== undefined ? { dans: op.dans } : {}));
+    return rendu();
+  };
   const formater = (donnees: unknown): ReponseService => {
     const d = estObjet(donnees) ? donnees : null;
     const valeur = d ? d["valeur"] : null;
     const genre = d ? (d["genre"] ?? "longueur") : null;
     if (typeof valeur !== "number" || !Number.isFinite(valeur)) return refus("argument_invalide", "valeur : nombre attendu, en mètres ou en mètres carrés");
     if (genre !== "longueur" && genre !== "aire") return refus("argument_invalide", "genre : « longueur » ou « aire »");
-    const sep = unites().separateur;
-    return rendu(genre === "aire" ? formaterAire(valeur, sep) : formaterLongueur(valeur, sep));
+    const u = unites();
+    // (1.3) Une longueur suit la précision réelle du projet ; une aire garde la forme du Mètre.
+    return rendu(genre === "aire" ? formaterAire(valeur, u.separateur) : `${formaterNombre(valeur, u.decimales, u.separateur)} m`);
   };
 
   const erreurDonnees = (motif: MotifDonnees, detail: string): ReponseService => refus(motif === "introuvable" ? "objet_introuvable" : "argument_invalide", detail);
@@ -498,6 +719,104 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
       }
     }
     return rendu();
+  };
+
+  /** (1.4) Moteur des opérations planes, ou le refus à rendre. */
+  const moteurPlans = () => {
+    const plans = acces.booleens?.()?.plans;
+    return plans ?? refus("argument_invalide", "moteur des opérations planes indisponible (manifold-3d non chargé)");
+  };
+
+  /**
+   * (1.4) Solides du modèle entier (ou des objets nommés), chacun à sa place monde : une instance de composant par
+   * chemin. Un objet qui n'est pas un solide fermé est descendu s'il contient d'autres objets, sinon écarté avec son
+   * motif.
+   */
+  const solidesDe = (m: Modele, objets: unknown): { solides: { id: Id; chemin: Id[]; balise: Id | null; maillage: Maillage }[]; ecartes: PlansLus["ecartes"]; facesLibres: number } | ReponseService => {
+    const solides: { id: Id; chemin: Id[]; balise: Id | null; maillage: Maillage }[] = [];
+    const ecartes: { id: Id; chemin: Id[]; motif: string }[] = [];
+    let trop = false;
+    // La balise d'un objet vaut pour son contenu qui n'a pas la sienne (comme à l'affichage).
+    const visiter = (id: Id, M: Matrice4 | null, chemin: Id[], balise: Id | null, profondeur: number): void => {
+      if (trop) return;
+      if (profondeur > MAX_PROFONDEUR_MONDE) return void ecartes.push({ id, chemin, motif: `imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux` });
+      const motif = motifNonSolide(m, id);
+      if (motif === null) {
+        try {
+          if (solides.length >= BORNES_PLANS.solides) return void (trop = true);
+          return void solides.push({ id, chemin, balise, maillage: maillageDuSolide(m, id, M) });
+        } catch (e) {
+          if (!(e instanceof PasUnSolide)) throw e;
+          return void ecartes.push({ id, chemin, motif: e.message });
+        }
+      }
+      const c = contexte(m, id);
+      const enfants = Object.values(c.occurrences).filter((o) => !o.masquee);
+      if (enfants.length === 0) return void ecartes.push({ id, chemin, motif });
+      const faces = Object.values(c.faces).filter((f) => !f.masquee).length;
+      if (faces > 0) ecartes.push({ id, chemin, motif: `${faces} face(s) hors de tout solide` });
+      for (const o of enfants) visiter(o.id, M ? composer(M, o.transformation) : o.transformation, [...chemin, o.id], o.balise ?? balise, profondeur + 1);
+    };
+    let facesLibres = 0;
+    if (objets === undefined || objets === null) {
+      facesLibres = Object.values(m.racine.faces).filter((f) => !f.masquee).length;
+      for (const o of Object.values(m.racine.occurrences)) if (!o.masquee) visiter(o.id, o.transformation, [o.id], o.balise ?? null, 1);
+    } else {
+      if (!Array.isArray(objets) || objets.length === 0 || objets.length > BORNES_PLANS.solides || !objets.every((x) => typeof x === "string")) return refus("argument_invalide", `objets : liste de 1 à ${BORNES_PLANS.solides} identifiants`);
+      for (const id of objets as string[]) {
+        // Chaque instance de l'objet (un composant placé deux fois donne deux chemins), avec ses ancêtres.
+        const chemins = cheminsVers(m, id);
+        if (chemins.length === 0) return refus("objet_introuvable", id);
+        for (const c of chemins) visiter(id, c.M, c.chemin, c.balise, c.chemin.length);
+        if (trop) break;
+      }
+    }
+    if (trop) return refus("argument_invalide", `plus de ${BORNES_PLANS.solides} solides`);
+    return { solides, ecartes, facesLibres };
+  };
+
+  /** (1.4) `geometrie.coupe` (hauteur donnée) et `geometrie.projection` (hauteur absente). */
+  const plansDesSolides = (donnees: unknown, coupe: boolean): ReponseService => {
+    const d = estObjet(donnees) ? donnees : {};
+    const h = d["hauteur"];
+    if (coupe && (typeof h !== "number" || !Number.isFinite(h) || Math.abs(h) > BORNES_PLANS.hauteur)) return refus("argument_invalide", `hauteur : nombre de −${BORNES_PLANS.hauteur} à ${BORNES_PLANS.hauteur} m attendu`);
+    const plans = moteurPlans();
+    if ("ok" in plans) return plans;
+    const sans = d["sansBalises"];
+    if (sans !== undefined && (!Array.isArray(sans) || sans.length > 200 || !sans.every((b) => typeof b === "string"))) return refus("argument_invalide", "sansBalises : liste d'identifiants de balises");
+    const lu0 = solidesDe(vue().modele(), d["objets"]);
+    if ("ok" in lu0) return lu0;
+    // Solides dont la balise est écartée : ni comptés ni rendus (l'union reste sans double compte).
+    const ecarter = new Set((sans ?? []) as string[]);
+    const lu = { ...lu0, solides: lu0.solides.filter((x) => x.balise === null || !ecarter.has(x.balise)) };
+    const calcul = (ms: readonly Maillage[]) => (coupe ? plans.coupe(ms, h as number) : plans.projection(ms)).map(polygoneLu);
+    try {
+      const polygones = lu.solides.length ? calcul(lu.solides.map((x) => x.maillage)) : [];
+      const resultat: PlansLus = {
+        polygones,
+        aire: airePolygones(polygones),
+        solides: lu.solides.map((x) => ({ id: x.id, chemin: x.chemin, balise: x.balise, aire: airePolygones(calcul([x.maillage])) })),
+        ecartes: lu.ecartes,
+        facesLibres: lu.facesLibres,
+      };
+      return rendu(resultat);
+    } catch (e) {
+      return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+    }
+  };
+
+  /** (1.4) `geometrie.union` : union de polygones donnés par l'extension. */
+  const unionPlans = (donnees: unknown): ReponseService => {
+    const lu = lirePolygonesPlan(estObjet(donnees) ? donnees["polygones"] : null);
+    if (typeof lu === "string") return refus("argument_invalide", lu);
+    const plans = moteurPlans();
+    if ("ok" in plans) return plans;
+    try {
+      const polygones = plans.union(lu).map(polygoneLu);
+      return rendu({ polygones, aire: airePolygones(polygones) });
+    } catch (e) {
+      return refus("argument_invalide", (e instanceof Error ? e.message : String(e)).slice(0, 500));
+    }
   };
 
   return {
@@ -556,6 +875,16 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return appliquerAttribut(donnees, "balise");
         case "balises.creer":
           return creerBalise(donnees);
+        case "cotes.creer":
+          return creerCote(donnees);
+        case "textes.creer":
+          return creerTexte(donnees);
+        case "objets.verrouiller":
+          return verrouiller(donnees);
+        case "annotations.lire":
+          return lireAnnotations();
+        case "annotations.effacer":
+          return effacerAnnotations(donnees);
         case "unites.lire":
           return rendu(unites());
         case "unites.formater":
@@ -566,6 +895,19 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return changerDonnees(donnees, true);
         case "donnees.effacer":
           return changerDonnees(donnees, false);
+        case "geometrie.coupe":
+          return plansDesSolides(donnees, true);
+        case "geometrie.projection":
+          return plansDesSolides(donnees, false);
+        case "geometrie.union":
+          return unionPlans(donnees);
+        case "niveaux.lire": {
+          const ref = acces.referenceNGF?.() ?? null;
+          return rendu({
+            niveaux: niveauxTries(vue().modele()).map((n) => ({ id: n.id, nom: n.nom, altitude: n.altitude, hauteur: n.hauteur })),
+            referenceNGF: typeof ref === "number" && Number.isFinite(ref) ? ref : null,
+          });
+        }
         default:
           return refus("demande_inconnue", nom);
       }

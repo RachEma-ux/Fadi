@@ -12,7 +12,7 @@
  */
 import { axesDeSaisie, contraindreAuPlan, planDeTravailDe } from "./commun-formes.js";
 import { type Modele, ajouterCourbeLibre } from "../geometrie-libre.js";
-import { geometrieVisible, inferer } from "../inference.js";
+import { etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, EPS, TOL, add, dist, dot, lerp, normalize, scale, sub } from "../vecteur.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Touche, Transition, VueOutil } from "./machine.js";
 import { etapeCatalogue, mesuresVides, optionsDans, versContexteEdition } from "./selection.js";
@@ -109,12 +109,12 @@ export const machineMainLevee: MachineOutil<EtatMainLevee> = {
         return { etat };
       }
       case "survol": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
-        const f = i.type === "sur-face" ? geometrieVisible(ctx.modele).faces.find((x) => x.id === i.entite) : undefined;
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
+        const f = i.type === "sur-face" ? geometrieVisible(ctx.modele, etatOutil(ctx)).faces.find((x) => x.id === i.entite) : undefined;
         return { etat: { ...etat, faceSurvolee: f ? normalize(f.normale) : etat.faceSurvolee, ignorerClic: false } };
       }
       case "appui": {
-        const geo = geometrieVisible(ctx.modele);
+        const geo = geometrieVisible(ctx.modele, etatOutil(ctx));
         const pl = planDeTravailDe(ctx);
         const i0 = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geo, ...axesDeSaisie(ctx) });
         // Chantier Axes (AX-1) : plan verrouillé → le tracé commence et reste sur le plan de travail ; sinon, hors

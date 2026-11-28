@@ -11,7 +11,7 @@
  * l'inférence courante, Échap annule. Un lecteur (`ctx.lecture`) mesure sans rien créer (CA-MET-4).
  */
 import { type Id, type Modele, modifierAnnotations as modifierGuides, redimensionner } from "../geometrie-libre.js";
-import { type Inference, type Verrou, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { repeterGuide } from "../saisie-projet.js";
 import { type Vec3, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
@@ -77,7 +77,7 @@ function inferer2(e: EtatMetre, ctx: ContexteOutil, rayon: Rayon, tolerance: num
   return inferer({
     rayon,
     tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     ...(e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
@@ -101,7 +101,7 @@ function aireFace(m: Modele, id: Id): number | null {
 /** Direction de l'arête visée par une inférence « sur l'arête » ou « milieu ». */
 function directionAreteDe(i: Inference, ctx: ContexteOutil): Vec3 | null {
   if (i.entite === undefined || (i.type !== "sur-arete" && i.type !== "milieu")) return null;
-  const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
+  const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === i.entite);
   return a ? normalize(sub(a.b, a.a)) : null;
 }
 

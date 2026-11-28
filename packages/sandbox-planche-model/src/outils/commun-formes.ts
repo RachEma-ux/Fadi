@@ -7,7 +7,7 @@ import { type CodeDiagnostic, CODES_DIAGNOSTIC, codeDe } from "../diagnostics.js
 import { type EtapeOutil, type Outil, INFERENCES, outilParId } from "../catalogue-outils.js";
 import type { Modele } from "../geometrie-libre.js";
 import { saisieDuProjet } from "../saisie-projet.js";
-import { type GuideAccrochable, type Inference, type OptionsAccrochage, COULEURS, LIBELLES, LIBELLE_PLAN_CONTRAINT, geometrieVisible, inferer } from "../inference.js";
+import { type GuideAccrochable, type Inference, type OptionsAccrochage, COULEURS, LIBELLES, LIBELLE_PLAN_CONTRAINT, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type AttenduSaisie, type ContexteSaisie, SEGMENTS_MAX, SEGMENTS_MIN } from "../saisie-vcb.js";
 import {
   type Vec3,
@@ -248,7 +248,7 @@ interface Viser {
 
 /** Inférence libre (accrochages, axes depuis `depart`), et normale du plan inféré : face survolée, sinon sol. */
 export function viserLibre(ctx: ContexteOutil, ev: Viser, depart?: Vec3): { inference: Inference; normale: Vec3 } {
-  const geometrie = geometrieVisible(ctx.modele);
+  const geometrie = geometrieVisible(ctx.modele, etatOutil(ctx));
   const brute = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
   // AX-1 : hors face, la normale est celle du plan de travail (plus jamais Z du monde sous un repère incliné, AX05) ;
   // plan verrouillé : le point reste sur le plan et la normale ne suit plus les faces survolées.

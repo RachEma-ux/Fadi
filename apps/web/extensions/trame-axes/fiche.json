@@ -1,0 +1,20 @@
+{
+  "id": "trame-axes",
+  "nom": { "fr": "Trame d'axes", "en": "Grid lines" },
+  "description": {
+    "fr": "Trame d'axes nommée (A, B, C / 1, 2, 3) à entraxes saisis : files accrochables, bulles et cotes d'entraxe, balise « Trame », verrouillée ; se rouvre pour changer un entraxe.",
+    "en": "Named grid (A, B, C / 1, 2, 3) from typed spacings: snappable grid lines, bubbles and spacing dimensions, \"Grid\" tag, locked; reopens to change a spacing."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.3",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "outil", "donnees"],
+  "commandes": [
+    { "id": "modifier", "libelle": { "fr": "Modifier la trame", "en": "Edit the grid" }, "icone": "modifier.svg", "raccourci": "Ctrl+Alt+F" }
+  ],
+  "outils": [
+    { "id": "poser", "libelle": { "fr": "Trame d'axes", "en": "Grid lines" }, "icone": "poser.svg", "raccourci": "Ctrl+Alt+A", "curseur": "croix" }
+  ],
+  "panneaux": [],
+  "abonnements": []
+}

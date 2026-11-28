@@ -6,7 +6,7 @@
  * Le moteur booléen lui-même (manifold-3d, WASM) n'est pas ici : il est injecté par l'interface sous la forme
  * d'un `AdaptateurBooleens` (voir `outils/machine.ts`), le noyau reste testable sans WASM (cahier §8 lot 6).
  */
-import { type Id, type Modele, baseDuPlan, contexte, estSolide, matriceMonde, appliquer, positionsFace, transformerNormale, newell } from "./geometrie-libre.js";
+import { type Id, type Matrice4, type Modele, baseDuPlan, contexte, estSolide, matriceMonde, appliquer, positionsFace, transformerNormale, newell } from "./geometrie-libre.js";
 import { type Vec3, EPS, add, cross, dot, len, normalize, scale, sub, v3 } from "./vecteur.js";
 
 /** Maillage triangulé : positions aplaties (x y z …), triangles (3 indices par triangle), face d'origine par triangle. */
@@ -196,12 +196,15 @@ export function motifNonSolide(m: Modele, occurrence: Id): string | null {
   return null;
 }
 
-/** Maillage monde (triangulé, orienté vers l'extérieur) d'un groupe ou composant solide. */
-export function maillageDuSolide(m: Modele, occurrence: Id): Maillage {
+/**
+ * Maillage monde (triangulé, orienté vers l'extérieur) d'un groupe ou composant solide. `matrice` : position monde de
+ * cette occurrence-là (une instance d'un composant placé plusieurs fois) ; absente = premier chemin trouvé.
+ */
+export function maillageDuSolide(m: Modele, occurrence: Id, matrice?: Matrice4 | null): Maillage {
   const motif = motifNonSolide(m, occurrence);
   if (motif || !estSolide(m, occurrence)) throw new PasUnSolide(`L'objet ${occurrence} n'est pas un solide : ${motif ?? "arêtes non bordées par deux faces"}.`);
   const c = contexte(m, occurrence);
-  const M = matriceMonde(m, occurrence);
+  const M = matrice === undefined ? matriceMonde(m, occurrence) : matrice;
   const positions: number[] = [];
   const triangles: number[] = [];
   const facesParTriangle: number[] = [];

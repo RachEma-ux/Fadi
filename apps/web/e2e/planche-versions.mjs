@@ -108,8 +108,13 @@ await champ(racine.locator("[data-planche-versions-statut]"), "Permis");
 await champ(racine.locator("[data-planche-versions-indice]"), "B");
 m = await modele();
 check("statut et indice saisis, écrits dans la Planche", m.annotations?.reglages?.revision?.statut === "Permis" && m.annotations?.reglages?.revision?.indice === "B", JSON.stringify(m.annotations?.reglages?.revision));
-await racine.locator("[data-planche-versions-nom]").fill("Dépôt permis");
+check("aucun champ de nom ajouté au panneau (le nom se tape dans Mesures)", (await racine.locator("[data-planche-versions-nom]").count()) === 0);
 await racine.locator("[data-planche-versions-poser]").click();
+await page.locator("[data-planche-mesures-jalon]").waitFor({ timeout: 5000 });
+check("Poser un jalon : Mesures attend le nom (libellé « Nom du jalon »)", (await page.locator("label[for='planche-mesures']").textContent()) === "Nom du jalon", await page.locator("label[for='planche-mesures']").textContent());
+check("consigne : taper le nom dans Mesures", /Tapez le nom du jalon dans Mesures/.test(await message()), await message());
+await page.locator("[data-planche-mesures]").fill("Dépôt permis");
+await page.locator("[data-planche-mesures]").press("Enter");
 await racine.locator("[data-planche-versions-jalon]").first().waitFor({ timeout: 5000 });
 const ligneJalon = (await racine.locator("[data-planche-versions-jalon]").first().textContent()) ?? "";
 check("jalon « Dépôt permis » posé, figé : statut, indice et empreinte affichés", ligneJalon.includes("Dépôt permis") && ligneJalon.includes("Permis") && ligneJalon.includes("B") && /empreinte [0-9a-f]{4}…[0-9a-f]{4}/.test(ligneJalon), ligneJalon);
@@ -211,6 +216,9 @@ if ((await panneau("brouillon").count()) === 0) await deuxTemps("Shift+V");
 await racine.locator("[data-planche-brouillon-appliquer]").click();
 await page.waitForFunction(() => !document.querySelector("[data-planche-brouillon-bandeau]"), null, { timeout: 10000 });
 await page.waitForFunction((e) => JSON.stringify(window.fadiPlanche.modele().racine.occurrences) === e, essai, { timeout: 10000 }).catch(() => undefined);
+// Le bandeau disparaît dès que l'index désigne l'original, avant que son dessin et son historique soient rechargés :
+// le brouillon a le même contenu, donc on attend aussi l'historique rechargé (un seul pas) avant de le lire.
+await page.waitForFunction(() => window.fadiPlanche.pas() === 1, null, { timeout: 10000 }).catch(() => undefined);
 check("Appliquer : l'original reçoit le brouillon", JSON.stringify((await modele()).racine.occurrences) === essai);
 check("Appliquer : un seul pas d'historique", (await page.evaluate(() => window.fadiPlanche.pas())) === 1, String(await page.evaluate(() => window.fadiPlanche.pas())));
 await vue.focus();
@@ -228,6 +236,8 @@ await page.waitForTimeout(400);
 if ((await panneau("brouillon").count()) === 0) await deuxTemps("Shift+V");
 await racine.locator("[data-planche-brouillon-garder]").click();
 await page.waitForFunction(() => !document.querySelector("[data-planche-brouillon-bandeau]"), null, { timeout: 10000 });
+// Le message est posé après le changement de Planche (le bandeau disparaît avant) : on l'attend.
+await page.waitForFunction(() => /gardé comme variante/.test(document.querySelector("[data-planche-message], .planche-message")?.textContent ?? ""), null, { timeout: 10000 }).catch(() => undefined);
 check("Garder : le brouillon devient une variante", /gardé comme variante/.test(await message()), await message());
 await deuxTemps("v");
 await panneau("versions-jalons").waitFor();

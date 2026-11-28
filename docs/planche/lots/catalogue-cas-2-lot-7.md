@@ -41,8 +41,9 @@ ouvert (ajoutées à la revue de #514) portent leur icône sur les boutons du pa
 
 ## Écarts déclarés par rapport aux maquettes
 
-- « Nom du jalon » : un champ de saisie au-dessus de « Poser un jalon » (la maquette ne montre pas où le nom est saisi ;
-  un jalon exige un nom).
+- « Nom du jalon » : aucun champ ajouté au panneau. « Poser un jalon » (bouton ou Ctrl+Maj+Espace, Maj+J) fait attendre
+  le nom dans Mesures, dont le libellé devient « Nom du jalon » ; Entrée pose le jalon, Échap l'abandonne (décision du
+  28 novembre 2026 : réglage interactif plutôt qu'un champ hors maquette ; maquette lot7-1 mise à jour, `lot7-1-jalons-v2.png`).
 - Destinataire d'une émission : champ de saisie sur la ligne du registre (la maquette montre le destinataire déclaré).
 - Statut : champ avec liste proposée (la maquette montre une liste ; la saisie libre reste permise, note du panneau).
 

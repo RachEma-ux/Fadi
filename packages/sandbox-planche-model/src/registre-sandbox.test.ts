@@ -11,9 +11,9 @@ import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCO
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
 describe("registre du Sandbox — contenu", () => {
-  it("86 entrées du catalogue : 53 outils (Mur compris, cas 4), 20 commandes, 13 panneaux (la sous-liste « Objets et vue » a disparu, lot 4)", () => {
-    expect(catalogue).toHaveLength(86);
-    expect(catalogue.filter((e) => e.nature === "outil")).toHaveLength(53);
+  it("88 entrées du catalogue : 55 outils (Mur, Réserve et Calage compris, cas 4), 20 commandes, 13 panneaux (la sous-liste « Objets et vue » a disparu, lot 4)", () => {
+    expect(catalogue).toHaveLength(88);
+    expect(catalogue.filter((e) => e.nature === "outil")).toHaveLength(55);
     expect(catalogue.filter((e) => e.nature === "commande")).toHaveLength(20);
     expect(catalogue.filter((e) => e.nature === "panneau")).toHaveLength(13);
     expect(entreeSandbox("panneau", "objets")).toBeUndefined();
@@ -21,7 +21,7 @@ describe("registre du Sandbox — contenu", () => {
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
     // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.famille !== "accrochage" && e.famille !== "balise" && e.famille !== "scene" && e.famille !== "gabarit" && e.famille !== "echange" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.famille !== "numerotation" && e.id !== "numerotation" && e.famille !== "version" && e.famille !== "modelisation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere" && e.famille !== "niveau" && e.famille !== "local" && e.famille !== "mur" && e.famille !== "plan" && e.famille !== "feuille" && e.famille !== "accrochage" && e.famille !== "reserve" && e.famille !== "fond" && e.famille !== "reference" && e.famille !== "pdf" && e.famille !== "dxf" && e.famille !== "travaux" && e.famille !== "enveloppe" && e.famille !== "consultation" && e.famille !== "balise" && e.famille !== "scene" && e.famille !== "gabarit" && e.famille !== "echange" && e.id !== "reperes" && e.id !== "niveaux" && e.id !== "locaux" && e.id !== "plan-vectoriel" && e.id !== "feuilles" && e.id !== "reserves" && e.id !== "fonds" && e.id !== "references" && e.id !== "pdf-recu" && e.id !== "feuilles-dxf" && e.id !== "statut-travaux" && e.famille !== "numerotation" && e.id !== "numerotation" && e.id !== "enveloppe" && e.id !== "consultations" && e.famille !== "version" && e.famille !== "modelisation" && extensionDe(e.nature, e.id) === undefined).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
     // Extension « Contrôle et nettoyage » : ses entrées sont hors catalogue, dans la barre de son panneau.
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "controle").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual(["controler", "nettoyer", "defaut-precedent", "defaut-suivant", "corriger-defaut", "preparer-fond-dao", "fusionner-volumes", "pieces-permis"].map((id) => [id, true, "panneau-controle"]));
     expect(entreePanneau("controle").horsCatalogue).toBe(true);
@@ -50,6 +50,7 @@ describe("registre du Sandbox — contenu", () => {
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "local").map((e) => [e.id, e.horsCatalogue, e.emplacement])).toEqual([["locaux", true, "panneau-locaux"], ["creer-local", true, "panneau-locaux"], ["supprimer-local", true, "panneau-locaux"]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "echange").map((e) => [e.id, e.raccourci, e.emplacement, e.horsCatalogue])).toEqual([["natif-image", "Alt+F1", "panneau-natif-image", true]]);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "plan").map((e) => [e.id, e.raccourci])).toEqual([["plan-vectoriel", "Ctrl+F7"], ["exporter-plan-svg", "Ctrl+F8"], ["rafraichir-plan", "Ctrl+F1"], ["motifs-hachure", "Ctrl+F9"], ["nouveau-motif", "Ctrl+F10"], ["importer-motif", "Ctrl+F11"], ["supprimer-motif", "Ctrl+F12"]]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "feuille").map((e) => [e.id, e.raccourci])).toEqual([["feuilles", "Ctrl+Alt+Maj+1"], ["nouvelle-feuille", "Ctrl+Alt+Maj+2"], ["supprimer-feuille", "Ctrl+Alt+Maj+3"], ["ajouter-fenetre", "Ctrl+Alt+Maj+4"], ["supprimer-fenetre", "Ctrl+Alt+Maj+5"], ["exporter-feuille-pdf", "Ctrl+Alt+Maj+6"], ["exporter-jeu-pdf", "Ctrl+Alt+Maj+7"]]);
     expect(entreePanneau("niveaux").horsCatalogue).toBe(true);
     expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
@@ -124,6 +125,8 @@ describe("registre du Sandbox — contenu", () => {
       "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit", "reperes", "controle", "dynamique", "emplacement", "niveaux", "locaux", "plan-vectoriel", "scripts", "numerotation",
     ]);
     expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
+    // Feuilles (cas 4, étape 6) : hors de la colonne, ouvert depuis le panneau Plan vectoriel.
+    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "panneau-plan-vectoriel").map((e) => e.id)).toEqual(["feuilles"]);
   });
 
   it("barre gauche par défaut : les seize outils essentiels, dans l'ordre de SketchUp (lot 4)", () => {

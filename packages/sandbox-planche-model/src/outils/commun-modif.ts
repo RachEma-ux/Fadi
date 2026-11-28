@@ -5,7 +5,7 @@
  */
 import { type Contexte, type Id, type Modele, contexte } from "../geometrie-libre.js";
 import { saisieDuProjet } from "../saisie-projet.js";
-import { type Inference, type Verrou, geometrieVisible } from "../inference.js";
+import { type Inference, type Verrou, etatOutil, geometrieVisible } from "../inference.js";
 import { type ContexteSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, cross, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import { erreurPlanche } from "../diagnostics.js";
@@ -27,7 +27,7 @@ interface Viser {
 
 /** Élément visé et ce qu'il représente dans le contexte d'édition (arête, face ou occurrence entière). */
 export function viseeElement(ctx: ContexteOutil, ev: Viser): { el: ElementScene | null; cible: Cible | null } {
-  const el = viser(ctx.modele, ev.rayon, ev.tolerance);
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, undefined, ctx.etatTravaux);
   return { el, cible: el ? cibleDans(el, ctx.dans, ctx.chemin) : null };
 }
 
@@ -176,7 +176,7 @@ export function reference(
   ctx: ContexteOutil,
 ): { readonly a: Vec3; readonly b: Vec3 } | null {
   if (i.entite === undefined || !["extremite", "milieu", "sur-arete"].includes(i.type)) return ancienne;
-  const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
+  const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === i.entite);
   return a ? { a: a.a, b: a.b } : ancienne;
 }
 
