@@ -196,6 +196,10 @@ export interface AreteVisible {
   readonly horsAccrochage?: boolean;
   /** (Cas 2, lot 2) Arête de section du plan de coupe actif (calculée, n'existe pas dans le modèle). */
   readonly section?: boolean;
+  /** (Cas 2, lot 4) Balise de l'arête, sinon de l'objet le plus proche qui en porte une (épaisseur et trait des sorties). */
+  readonly balise?: Id;
+  /** (Cas 2, lot 4) Portée par une balise verrouillée : affichée, ni sélectionnable ni modifiable. */
+  readonly verrouillee?: boolean;
 }
 
 export interface FaceVisible {
@@ -206,13 +210,15 @@ export interface FaceVisible {
   readonly dansObjet?: boolean;
   /** Matière affichée : celle de la face, sinon celle de l'objet le plus proche qui en porte une (lot 5). */
   readonly materiau?: Id;
-  /** Balise de l'objet le plus proche qui en porte une (couleur par balise, lot 5). */
+  /** Balise de la face, sinon de l'objet le plus proche qui en porte une (couleur par balise, lot 5). */
   readonly balise?: Id;
   /** (Cas 4, C4 étape 5) Statut des travaux de l'objet le plus proche qui en porte un. */
   readonly statut?: StatutTravaux;
   /** Hors du contexte d'édition ouvert (Objets O-2) : affichée délavée. */
   readonly horsContexte?: boolean;
   readonly horsAccrochage?: boolean;
+  /** (Cas 2, lot 4) Portée par une balise verrouillée. */
+  readonly verrouillee?: boolean;
 }
 
 export interface CentreVisible {
@@ -1063,7 +1069,10 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     if (pile.length === n) return "niveau";
     return retenues.has(pile[n] as Id) ? "libre" : "dehors";
   };
-  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = [], exclu = false, statut?: StatutTravaux): void => {
+  // (Cas 2, lot 4) Balise masquée : rien de ce qu'elle porte n'est rendu ; verrouillée : rendu, marqué.
+  const cachee = (b: Id | undefined) => !!b && balises?.[b]?.visible === false;
+  const verrou = (b: Id | undefined) => !!b && balises?.[b]?.verrouillee === true;
+  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = [], exclu = false, statut?: StatutTravaux, verrouille = false): void => {
     if (profondeur > 32) return;
     const isolement = etatIsolement(pile);
     if (isolement === "dehors") return;
@@ -1075,10 +1084,15 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     // (Cas 4, C4 étape 5) Le statut effectif du contexte décide de sa propre géométrie seulement : un enfant au statut
     // explicite différent est jugé à son tour (le parcours continue).
     const rendre = !(o.masquerReste && hors) && montreDansEtat(statut, o.etat);
-    for (const a of Object.values(c.aretes)) if (!a.masquee && rendre && montrer(a.id)) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
+    for (const a of Object.values(c.aretes)) {
+      if (a.masquee || !rendre || !montrer(a.id) || cachee(a.balise)) continue;
+      const bal = a.balise ?? balise;
+      aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}), ...(bal ? { balise: bal } : {}), ...(verrouille || verrou(a.balise) ? { verrouillee: true } : {}) });
+    }
     for (const f of Object.values(c.faces)) {
-      if (f.masquee || !rendre || !montrer(f.id)) continue;
+      if (f.masquee || !rendre || !montrer(f.id) || cachee(f.balise)) continue;
       const mat = f.materiauRecto ?? materiau;
+      const balF = f.balise ?? balise;
       faces.push({
         id: f.id,
         exterieur: f.exterieur.map(p),
@@ -1086,7 +1100,8 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
         normale: transformerNormale(M, f.normale),
         ...marque,
         ...(mat ? { materiau: mat } : {}),
-        ...(balise ? { balise } : {}),
+        ...(balF ? { balise: balF } : {}),
+        ...(verrouille || verrou(f.balise) ? { verrouillee: true } : {}),
       });
     }
     for (const k of Object.values(c.courbes)) {
@@ -1112,7 +1127,7 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
       const d = m.definitions[oc.definition];
       // (Cas 2, lot 2) Objet ou balise exclu de l'accrochage : affiché, marqué `horsAccrochage`.
       const exclut = exclu || oc.horsAccrochage === true || (!!oc.balise && !!balises?.[oc.balise]?.horsAccrochage);
-      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id], exclut, st);
+      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id], exclut, st, verrouille || verrou(oc.balise));
     }
   };
   parcourir(m.racine, IDENTITE, false, 0, undefined, undefined);

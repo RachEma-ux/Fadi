@@ -3288,6 +3288,20 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect(lu.body).toMatchObject({ extension: "controle", nom: "pieces.json", texte: '{"source":"essai","pieces":[]}' });
       });
 
+      it("gabarit d'agence de la Planche (cas 2, lot 4) : rangé tel quel pour le compte, relu par la liste", async () => {
+        const user = await account("fichiers-gabarit");
+        const texte = '{"format":"fadi-gabarit/1","nom":"Agence","source":"essai","balises":[{"nom":"Existant","couleur":"#222222"}]}';
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-gabarit", nom: "agence.fadi-gabarit.json", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-gabarit");
+        expect(liste.body.archives).toHaveLength(1);
+        expect(liste.body.archives[0]).toMatchObject({ extension: "planche-gabarit", version: "fadi-gabarit/1", nom: "agence.fadi-gabarit.json" });
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+        // Un autre compte ne voit pas ce gabarit.
+        const autre = await account("fichiers-gabarit-autre");
+        expect((await autre.a.get("/sandbox/preferences/fichiers?extension=planche-gabarit")).body.archives).toEqual([]);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

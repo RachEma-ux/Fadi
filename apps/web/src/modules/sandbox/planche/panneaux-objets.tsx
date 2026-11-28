@@ -269,7 +269,7 @@ function InfoMur({ modele, occurrence, separateur }: { modele: Modele; occurrenc
   );
 }
 
-export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null, echelle }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null; /** (Cas 2, lot 2, n° 47) Remise à l'échelle d'un import, posée par la Planche. */ echelle?: ReactNode }) {
+export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur, precision = 2, actions, referenceNiveaux = null, echelle, coupe }: { modele: Modele; selection: readonly Id[]; dans: Id | undefined; lecture: boolean; separateur: "." | ","; precision?: number; actions: ActionsInfoEntite; referenceNiveaux?: number | null; /** (Cas 2, lot 2, n° 47) Remise à l'échelle d'un import, posée par la Planche. */ echelle?: ReactNode; /** (Cas 2, lot 4) Section du plan de coupe choisi, posée par la Planche. */ coupe?: (planId: Id) => ReactNode }) {
   const c = contexte(modele, dans);
   const materiaux = Object.values(modele.annotations?.materiaux ?? {});
   const balises = Object.values(modele.annotations?.balises ?? {});
@@ -447,6 +447,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
         <dd>
           <input value={p.nom} disabled={lecture} aria-label={t("planche.info.nom")} onChange={(e) => actions.renommerPlan(id, e.target.value)} />
         </dd>
+        {coupe?.(id)}
       </dl>
     );
   }

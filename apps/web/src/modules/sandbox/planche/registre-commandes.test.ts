@@ -18,7 +18,10 @@ function evenement(r: string, mac = false): Cle {
   const lettre = /^[A-Z]$/.test(touche);
   let key = touche === "Échap" ? "Escape" : touche === "Origine" ? "Home" : lettre ? (shiftKey ? touche : touche.toLowerCase()) : touche;
   if (mac && altKey && lettre) key = "∏";
-  return { key, code: lettre ? `Key${touche}` : undefined, ctrlKey, shiftKey, altKey };
+  // Chiffre sous Maj (cas 2, lot 4 : Ctrl + Maj + chiffre) : la touche donne un signe (« ! » en QWERTY, « + » en QWERTZ).
+  const chiffre = /^[0-9]$/.test(touche);
+  if (chiffre && shiftKey) key = "!";
+  return { key, code: lettre ? `Key${touche}` : chiffre ? `Digit${touche}` : undefined, ctrlKey, shiftKey, altKey };
 }
 
 describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {

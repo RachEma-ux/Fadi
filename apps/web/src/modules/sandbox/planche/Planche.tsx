@@ -431,7 +431,34 @@ import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils, titreOperation, type CommandeListe, type FamilleExtension, type LigneBarre } from "./BoutonOutils";
-import { archiverFichierExtension } from "../preferences/client";
+import { archiverFichierExtension, listerFichiersArchives, lireFichierArchive } from "../preferences/client";
+import {
+  EXTENSION_GABARIT,
+  NOMS_PHASES,
+  VUES_ETAT,
+  ajouterScenes,
+  appliquerEtatScene,
+  appliquerVueEtat,
+  baliserNouveautes,
+  capturerEtatScene,
+  classerSelection,
+  compterSelection,
+  creerBalisesPhase,
+  decalerPlan,
+  gabaritDeLaPlanche,
+  limiterProfondeur,
+  lireGabarit,
+  modeleDepuisGabarit,
+  modifierBalise,
+  modifierScene,
+  placerPlan,
+  sceneFaceCoupe,
+  scenesTypes,
+  vueEtatCourante,
+  type ChangementBalise,
+} from "@parcours/sandbox-planche-model";
+import { COMMANDES_BALISE, COMMANDES_GABARIT, COMMANDES_SCENE, disponibiliteBalise, disponibiliteGabarit, disponibiliteScene, type IdCommandeBalise, type IdCommandeGabarit, type IdCommandeScene } from "./commandes-objets";
+import { PanneauBalises, PanneauGabarit, SectionPlanCoupe, SectionScenesL4, type GabaritDisponible } from "./panneaux-l4";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -451,6 +478,8 @@ interface CrochetRecette {
       /** Lots 4 à 6 : matière et balise courantes, hauteur d'œil, moteur booléen chargé, emprise et caméra. */
       materiau: () => string | null;
       balise: () => string | null;
+      echelleRendue: () => number | null;
+      plansRognage: () => number;
       hauteurOeil: () => number;
       booleens: () => "absent" | "chargement" | "ok" | "echec";
       emprise: () => { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null;
@@ -498,7 +527,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -511,7 +540,7 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
 const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
@@ -673,6 +702,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const precisionRef = useRef(precision);
   precisionRef.current = precision;
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
+  // Cas 2, lot 4 : scène rappelée, pas et échelle de la coupe, gabarits d'agence du compte (lus en base à l'ouverture du
+  // panneau « Nouvelle Planche »), gabarit choisi. État d'interface.
+  const [sceneActive, setSceneActive] = useState<string | null>(null);
+  const [pasCoupe, setPasCoupe] = useState(0.1);
+  const [echelleCoupe, setEchelleCoupe] = useState<number | null>(null);
+  const [gabarits, setGabarits] = useState<readonly GabaritDisponible[]>([]);
+  const [gabaritChoisi, setGabaritChoisi] = useState("");
+  const [noteGabarit, setNoteGabarit] = useState<string | null>(null);
+  const fichierGabaritRef = useRef<HTMLInputElement | null>(null);
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
@@ -943,6 +981,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (niveau && h0.present.operation !== null && h0.futur.length === 0 && h0.present !== avantHist.futur[0] && h0.present.modele !== avantHist.present.modele) {
       const rattache = rattacherNouveauxObjets(avantHist.present.modele, h0.present.modele, niveau);
       if (rattache !== h0.present.modele) h = { ...h0, present: { ...h0.present, modele: rattache } };
+    }
+    // Cas 2, lot 4 (n° 74, n° 63) : la balise courante et les balises réservées sont posées sur ce que l'opération crée.
+    if (h.present.operation !== null && h.futur.length === 0 && h.present !== avantHist.futur[0] && h.present.modele !== avantHist.present.modele) {
+      const balise = baliserNouveautes(avantHist.present.modele, h.present.modele, baliseRef.current, dansRef.current);
+      if (balise !== h.present.modele) h = { ...h, present: { ...h.present, modele: balise } };
     }
     const changeModele = h.present.modele !== avantHist.present.modele;
     histRef.current = h;
@@ -1839,6 +1882,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const c = histContexteRef.current.courant;
     return { repere: captureDuContexte(c, repereDuContexte(c)) };
   };
+  /**
+   * Cas 2, lot 4 (n° 11, n° 108) : état de la vue mémorisé avec la scène (balises visibles, plans actifs, objets masqués,
+   * style des faces) et date et heure du soleil de la vue.
+   */
+  const captureEtatL4 = (m: Modele): Pick<Scene, "etat" | "soleil"> => {
+    const o = vueRef.current?.lireOptions();
+    return { etat: capturerEtatScene(m, o?.modeFace), ...(o ? { soleil: { jour: o.jour, heure: o.heure } } : {}) };
+  };
   /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
   const ajouterScene = useCallback(
     () =>
@@ -1848,7 +1899,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         const r = modifierAnnotations(m, (a, id) => {
           const i = id("v");
-          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene() };
+          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene(), ...captureEtatL4(m) };
           return i;
         });
         return { modele: r.modele, selection: [r.extra] };
@@ -1864,7 +1915,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         // Chantier Axes (AX-3) : la capture de repère suit l'option ; décochée, la scène ne rappelle plus que la caméra.
         const { repere: _ancien, ...sansRepere } = s;
-        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene() })).modele };
+        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene(), ...captureEtatL4(m) })).modele };
       }),
     [operer],
   );
@@ -1874,7 +1925,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const v = vueRef.current;
       if (!v) return;
       v.appliquerScene(s);
-      if (s.ombres !== undefined) majOptions({ ombres: s.ombres });
+      // Cas 2, lot 4 : échelle nominale (n° 43) en projection parallèle, soleil (n° 108), état mémorisé (n° 11).
+      if (s.projection === "parallele" && s.echelle) v.poserEchelleNominale(s.echelle);
+      const style = s.etat?.style as OptionsAffichage["modeFace"] | undefined;
+      majOptions({ ...(s.ombres !== undefined ? { ombres: s.ombres } : {}), ...(s.soleil ? { jour: s.soleil.jour, heure: s.soleil.heure } : {}), ...(style ? { modeFace: style } : {}) });
+      setSceneActive(s.id);
+      if (s.etat) {
+        const m0 = histRef.current.present.modele;
+        const cle = (e: { balisesVisibles: readonly string[]; plansActifs: readonly string[]; masques: readonly string[] }) => JSON.stringify([[...e.balisesVisibles].sort(), [...e.plansActifs].sort(), [...e.masques].sort()]);
+        const m1 = cle(capturerEtatScene(m0)) === cle(s.etat) ? m0 : appliquerEtatScene(m0, s.etat);
+        if (m1 !== m0 && !readOnly) poserHistorique(enregistrer(histRef.current, m1, t("planche.scene.rappel", { nom: s.nom })));
+      }
       // Chantier Axes (AX-3, AX14) : une scène qui capture un repère le rappelle ; sinon le contexte reste tel quel.
       if (s.repere) {
         const r = contexteDeScene(histContexteRef.current.courant, s.repere, histRef.current.present.modele);
@@ -1888,7 +1949,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setSelection([s.id]);
       rafraichir();
     },
-    [majOptions, rafraichir, setSelection, changerContexte],
+    [majOptions, rafraichir, setSelection, changerContexte, readOnly, poserHistorique],
   );
   const vueStandard = useCallback((nom: VueStandard) => {
     vueRef.current?.vueStandard(nom);
@@ -2183,6 +2244,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       versEcran: (p) => vueRef.current?.versEcran(p) ?? null,
       materiau: () => materiauRef.current,
       balise: () => baliseRef.current,
+      // Cas 2, lot 4 : échelle nominale rendue et plans de rognage de la vue (recette).
+      echelleRendue: () => vueRef.current?.echelleRendue() ?? null,
+      plansRognage: () => vueRef.current?.plansRognage() ?? 0,
       hauteurOeil: () => hauteurOeilRef.current,
       booleens: () => (booleensRef.current ? "ok" : booleensEtatRef.current),
       emprise: () => vueRef.current?.emprise() ?? null,
@@ -2321,12 +2385,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           echec(e);
         }
       },
-      creer: async (nom, altitude) => {
+      creer: async (nom, altitude, modele) => {
         try {
           await ecrireCourante();
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: altitude, creeA: maintenant, modifieA: maintenant });
-          await enregistrerBrouillon(modeleVide(), idx.courante);
+          await enregistrerBrouillon(modele ?? modeleVide(), idx.courante);
           await enregistrerJournal(idx.courante, ajouterEntree([], { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.creee") })).catch(() => undefined);
           await basculerVers(idx);
           setMessage(t("planche.sb.creee", { nom }));
@@ -4566,6 +4630,166 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   };
 
+  // ——— Cas 2, lot 4 : balises, scènes et plans de coupe, gabarit d'agence (maquettes lot4-1 à lot4-4).
+  const planChoisi = (): string | null => {
+    const sel = selectionRef.current;
+    return sel.length === 1 && hist.present.modele.annotations?.plansDeCoupe[sel[0]!] ? sel[0]! : null;
+  };
+  const disponibiliteCommandeBalise = (id: IdCommandeBalise) =>
+    disponibiliteBalise(id, {
+      lecture: readOnly,
+      courante: balise !== null && hist.present.modele.annotations?.balises[balise] !== undefined,
+      selection: selectionRef.current.length,
+      phases: Object.values(hist.present.modele.annotations?.balises ?? {}).some((b) => b.phase !== undefined),
+    });
+  const disponibiliteCommandeScene = (id: IdCommandeScene) => disponibiliteScene(id, { lecture: readOnly, typesGabarit: hist.present.modele.annotations?.reglages?.gabarit?.scenesTypes.length ?? 0, plan: planChoisi() !== null });
+  const disponibiliteCommandeGabarit = (id: IdCommandeGabarit) => disponibiliteGabarit(id, { balises: Object.keys(hist.present.modele.annotations?.balises ?? {}).length, choisi: gabaritChoisi !== "" });
+  const modifierBaliseL4 = (id: string, v: ChangementBalise): boolean => {
+    try {
+      const r = modifierBalise(histRef.current.present.modele, id, v);
+      operer(t("planche.balise.modifier"), () => ({ modele: r.modele }));
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const classerSelectionL4 = (b: string | null) => {
+    const ids = [...selectionRef.current];
+    operer(t("planche.balise.classer-selection"), (m, d) => {
+      const r = classerSelection(m, ids, b, d);
+      const nom = b ? m.annotations?.balises[b]?.nom ?? "" : t("planche.info.sans-balise");
+      return { modele: r.modele, message: t("planche.balise.classee", { nombre: String(r.extra), nom }) };
+    });
+  };
+  const executerBalise = (id: IdCommandeBalise) => {
+    if (!disponibiliteCommandeBalise(id).disponible) return;
+    if (id === "classer-selection") {
+      setPanneau("balises");
+      return classerSelectionL4(baliseRef.current);
+    }
+    if (id === "verrouiller-balise") {
+      const b = histRef.current.present.modele.annotations?.balises[baliseRef.current!];
+      if (!b) return;
+      // Verrouiller retire de la sélection ce que porte la balise (revue de #507) : plus rien ne la vise ni ne la modifie.
+      const garder = (m: Modele, d: string | undefined) => {
+        const c = contexteDe(m, d);
+        const a = m.annotations;
+        return selectionRef.current.filter((id) => ((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id] ?? a?.cotes[id] ?? a?.textes[id] ?? a?.plansDeCoupe[id]) as { balise?: string } | undefined)?.balise !== b.id);
+      };
+      return operer(t(b.verrouillee ? "planche.balise.deverrouiller" : "planche.balise.verrouiller-balise"), (m, d) => ({ modele: modifierBalise(m, b.id, { verrouillee: !b.verrouillee }).modele, ...(b.verrouillee ? {} : { selection: garder(m, d) }), message: t(b.verrouillee ? "planche.balise.note.deverrouillee" : "planche.balise.note.verrouillee", { nom: b.nom }) }));
+    }
+    if (id === "balises-phase") {
+      // Couleurs de départ des balises de phase, modifiables ensuite ; une balise de phase existante garde la sienne.
+      return operer(t("planche.balise.balises-phase"), (m) => ({ modele: creerBalisesPhase(m, { existant: "#333333", demolir: "#8f6a1f", projete: "#b3261e" }).modele, message: t("planche.balise.note.phases", { noms: Object.values(NOMS_PHASES).join(", ") }) }));
+    }
+    // Vue d'état : tout, puis existant, puis projeté (n° 116).
+    const actuelle = vueEtatCourante(histRef.current.present.modele);
+    const suivante = VUES_ETAT[(VUES_ETAT.indexOf(actuelle ?? "projet") + 1) % VUES_ETAT.length]!;
+    operer(t("planche.balise.vue-etat"), (m) => ({ modele: appliquerVueEtat(m, suivante).modele, message: t("planche.balise.note.vue-etat", { vue: t(`planche.balise.vue.${suivante}` as CleMessage) }) }));
+  };
+  const modifierSceneL4 = (id: string, v: { echelle?: number | null; soleil?: { jour: number; heure: number } | null }): boolean => {
+    try {
+      const r = modifierScene(histRef.current.present.modele, id, v);
+      operer(t("planche.scene.modifier"), () => ({ modele: r.modele }));
+      if (v.soleil) majOptions({ jour: v.soleil.jour, heure: v.soleil.heure });
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const creerScenesTypes = (genres: readonly string[] | null) =>
+    operer(t("planche.scene.scenes-types"), (m) => {
+      const types = (m.annotations?.reglages?.gabarit?.scenesTypes ?? []).filter((x) => genres === null || genres.includes(x.genre));
+      const scenes = scenesTypes(m, types);
+      if (!scenes.length) return { modele: m, message: t("planche.scene.note.aucune") };
+      const r = ajouterScenes(m, scenes);
+      return { modele: r.modele, message: t("planche.scene.note.creees", { nombre: String(r.extra.length) }) };
+    });
+  const executerScene = (id: IdCommandeScene) => {
+    if (!disponibiliteCommandeScene(id).disponible) return;
+    if (id === "scenes-types") {
+      setPanneau("scenes");
+      return creerScenesTypes(null);
+    }
+    const plan = planChoisi()!;
+    if (id === "avancer-coupe" || id === "reculer-coupe") return operer(t(`planche.scene.${id}`), (m) => ({ modele: decalerPlan(m, plan, id === "avancer-coupe" ? pasCoupe : -pasCoupe).modele }));
+    operer(t("planche.scene.scene-face-coupe"), (m) => {
+      const r = ajouterScenes(m, [sceneFaceCoupe(m, plan, echelleCoupe, vueRef.current?.lireOptions().modeFace)]);
+      const sc = r.modele.annotations?.scenes?.[r.extra[0]!];
+      if (sc) window.setTimeout(() => appliquerScene(sc), 0);
+      return { modele: r.modele, message: t("planche.scene.note.face-coupe", { nom: sc?.nom ?? "" }) };
+    });
+  };
+  const actionPlan = (fn: (m: Modele) => Modele, libelle: string): boolean => {
+    try {
+      const m1 = fn(histRef.current.present.modele);
+      operer(libelle, () => ({ modele: m1 }));
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const chargerGabarits = useCallback(async () => {
+    const liste = await listerFichiersArchives("planche-gabarit");
+    const lus: GabaritDisponible[] = [];
+    for (const a of liste) {
+      const texte = await lireFichierArchive(a.id);
+      const g = texte !== null ? lireGabarit(texte) : null;
+      if (g?.ok) lus.push({ id: a.id, nomFichier: a.nom, gabarit: g.gabarit, texte: texte!, archive: { id: a.id, empreinte: a.empreinte, ajouteLe: a.ajouteLe } });
+    }
+    setGabarits((avant) => [...lus, ...avant.filter((x) => x.id.startsWith("local:") && !lus.some((l) => l.nomFichier === x.nomFichier))]);
+  }, []);
+  useEffect(() => {
+    if (panneau === "gabarit") void chargerGabarits();
+  }, [panneau, chargerGabarits]);
+  const importerGabarit = (f: File) => {
+    void f.text().then((texte) => {
+      const lu = lireGabarit(texte);
+      if (!lu.ok) return setNoteGabarit(lu.erreur);
+      // Interface ≠ base de données (D-GD-29) : le gabarit est rangé tel quel en base pour le compte avant d'être proposé.
+      void archiverFichierExtension("planche-gabarit", { nom: f.name, texte }).then((issue) => {
+        const id = issue.ok ? issue.archive.id : `local:${f.name}`;
+        const g: GabaritDisponible = { id, nomFichier: f.name, gabarit: lu.gabarit, texte, ...(issue.ok ? { archive: issue.archive } : { refusArchive: issue.motif }) };
+        setGabarits((avant) => [...avant.filter((x) => x.id !== id), g]);
+        setGabaritChoisi(id);
+        setNoteGabarit(issue.ok ? t("planche.gabarit.note.importe", { nom: lu.gabarit.nom }) : t("planche.gabarit.note.importe-sans-base", { nom: lu.gabarit.nom, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+      });
+    });
+  };
+  const executerGabarit = (id: IdCommandeGabarit) => {
+    if (!disponibiliteCommandeGabarit(id).disponible) return;
+    if (id === "gabarit") return setPanneau("gabarit");
+    if (id === "importer-gabarit") {
+      setPanneau("gabarit");
+      return fichierGabaritRef.current?.click();
+    }
+    if (id === "enregistrer-gabarit") {
+      try {
+        const nom = nomAffiche(plancheDe(indexRef.current));
+        const g = gabaritDeLaPlanche(histRef.current.present.modele, nom, t("planche.gabarit.source-planche", { nom }));
+        const texte = JSON.stringify(g, null, 2);
+        const fichier = `${nom.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "gabarit"}${EXTENSION_GABARIT}`;
+        telechargerFichier(new Blob([texte], { type: "application/json;charset=utf-8" }), fichier);
+        void archiverFichierExtension("planche-gabarit", { nom: fichier, texte }).then((issue) => {
+          const ident = issue.ok ? issue.archive.id : `local:${fichier}`;
+          setGabarits((avant) => [...avant.filter((x) => x.id !== ident), { id: ident, nomFichier: fichier, gabarit: g, texte, ...(issue.ok ? { archive: issue.archive } : { refusArchive: issue.motif }) }]);
+          setNoteGabarit(issue.ok ? t("planche.gabarit.note.enregistre", { nom: fichier }) : t("planche.gabarit.note.enregistre-sans-base", { nom: fichier, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+        });
+      } catch (err) {
+        setNoteGabarit(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+    // Créer la Planche : depuis le gabarit choisi, sinon une Planche vide.
+    const g = gabarits.find((x) => x.id === gabaritChoisi);
+    const nom = g ? `${g.gabarit.nom} ${indexRef.current.planches.length + 1}` : `${t("planche.gabarit.vide")} ${indexRef.current.planches.length + 1}`;
+    const modele = g ? modeleDepuisGabarit(g.gabarit, { nom: g.nomFichier, texte: g.texte }, { ...(g.archive ? { archive: g.archive } : {}), ...(g.refusArchive ? { refusArchive: g.refusArchive } : {}) }) : undefined;
+    void actionsMenu.creer(nom, null, modele).then(() => setPanneau(null));
+  };
+
   /**
    * Extensions installées sur la plateforme (protocole des extensions 1.0, lot 3). Chaque extension a son hôte
    * (`creerHoteExtension`), créé à sa première commande : son code tourne dans un Web Worker isolé et ne touche le
@@ -5364,6 +5588,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
+    else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
+    else if (c.famille === "scene") executerScene(c.id as IdCommandeScene);
+    else if (c.famille === "gabarit") executerGabarit(c.id as IdCommandeGabarit);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -5477,6 +5704,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_ACCROCHAGE.map((c) => {
           const d = disponibiliteCommandeAccrochage(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.accrochage.motif.mesure"), executer: () => executerAccrochage(c.id) };
+        }),
+        // Cas 2, lot 4 : balises, scènes et plans de coupe, gabarit d'agence.
+        ...COMMANDES_BALISE.map((c) => {
+          const d = disponibiliteCommandeBalise(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.balise.motif.courante"), executer: () => executerBalise(c.id) };
+        }),
+        ...COMMANDES_SCENE.map((c) => {
+          const d = disponibiliteCommandeScene(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.scene.motif.plan"), executer: () => executerScene(c.id) };
+        }),
+        ...COMMANDES_GABARIT.map((c) => {
+          const d = disponibiliteCommandeGabarit(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.gabarit.motif.choix"), executer: () => executerGabarit(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -6119,6 +6359,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               modele={hist.present.modele}
               courante={balise}
               lecture={readOnly}
+              separateur={SEPARATEUR_DECIMAL}
+              compte={compterSelection(hist.present.modele, vue.selection ?? selectionRef.current, dans)}
+              onCourante={(id) => {
+                setBalise(id);
+                const b = id ? histRef.current.present.modele.annotations?.balises[id] : undefined;
+                setMessage(b ? t("planche.balise.note.courante", { nom: b.nom }) : t("planche.balise.note.sans-courante"));
+              }}
+              onModifier={modifierBaliseL4}
+              onClasser={classerSelectionL4}
+              executer={executerBalise}
+              disponibilite={disponibiliteCommandeBalise}
               onChoisir={(id) => {
                 setBalise(id);
                 if (!readOnly) choisirOutil("balise");
@@ -6242,6 +6493,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-motif-fichier
       />
+      <input
+        ref={fichierGabaritRef}
+        type="file"
+        accept={`${EXTENSION_GABARIT},.json,application/json`}
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) importerGabarit(f);
+        }}
+        data-planche-gabarit-fichier
+      />
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
@@ -6249,6 +6512,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
               {t(`panneau.${panneau}` as "panneau.info-entite")}
               {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
+              {panneau === "info-entite" && planChoisi() ? ` · ${t("planche.info.plan")}` : ""}
             </h3>
             {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
@@ -6520,6 +6784,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
+            {panneau === "gabarit" && <PanneauGabarit gabarits={gabarits} choisi={gabaritChoisi} onChoisir={setGabaritChoisi} separateur={SEPARATEUR_DECIMAL} note={noteGabarit} executer={executerGabarit} disponibilite={disponibiliteCommandeGabarit} />}
             {panneau === "accrochage" && <PanneauAccrochage force={forceAccrochage} presqueMm={presqueMm} onPresque={setPresqueMm} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} />}
             {panneau === "metre-mesure" && (
               <PanneauMetreMesure
@@ -6575,6 +6840,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef}
+              coupe={(planId) => {
+                const plan = hist.present.modele.annotations?.plansDeCoupe[planId];
+                return plan ? (
+                  <SectionPlanCoupe
+                    modele={hist.present.modele}
+                    plan={plan}
+                    lecture={readOnly}
+                    separateur={SEPARATEUR_DECIMAL}
+                    pas={pasCoupe}
+                    onPas={setPasCoupe}
+                    echelle={echelleCoupe}
+                    onEchelle={setEchelleCoupe}
+                    onPlacer={(d) => actionPlan((m) => placerPlan(m, planId, d).modele, t("planche.coupe.distance"))}
+                    onDecaler={(d) => actionPlan((m) => decalerPlan(m, planId, d).modele, t("planche.coupe.deplacer"))}
+                    onProfondeur={(x) => actionPlan((m) => limiterProfondeur(m, planId, x).modele, t("planche.coupe.profondeur"))}
+                    executer={executerScene}
+                    disponibilite={disponibiliteCommandeScene}
+                  />
+                ) : null;
+              }}
               echelle={<SectionRemiseEchelle mesureeDefaut={longueurMesure} separateur={SEPARATEUR_DECIMAL} mesuree={echelleMesuree} reelle={echelleReelle} onMesuree={setEchelleMesuree} onReelle={setEchelleReelle} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} note={noteEchelle} />} />}
             {panneau === "composants" && (
               <PanneauComposants
@@ -6598,6 +6883,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onReafficher={reafficher}
                 onSupprimerGuides={() => operer(t("planche.affichage.supprimer-guides"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.guides = {})).modele, selection: selectionRef.current.filter((id) => genreAnnotation(id) !== "guide") }))}
                 lecture={readOnly}
+              />
+            )}
+            {panneau === "scenes" && (
+              <SectionScenesL4
+                modele={hist.present.modele}
+                active={sceneActive}
+                lecture={readOnly}
+                onAppliquer={appliquerScene}
+                onMettreAJour={mettreAJourScene}
+                onModifier={modifierSceneL4}
+                onScenesTypes={(genres) => creerScenesTypes(genres)}
+                executer={executerScene}
+                disponibilite={disponibiliteCommandeScene}
               />
             )}
             {panneau === "scenes" && (
@@ -7311,52 +7609,6 @@ function PanneauMateriaux({ modele, courant, lecture, onChoisir, onCreer }: { mo
             <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-materiau-couleur />
           </label>
           <button type="submit" data-planche-materiau-creer>{t("planche.materiau.creer")}</button>
-        </form>
-      )}
-    </div>
-  );
-}
-
-/** Panneau Balises (lot 5, P-9 : une balise = un calque) : visibilité, balise courante pour l'outil Balise. */
-function PanneauBalises({ modele, courante, lecture, onChoisir, onVisible, onCreer }: { modele: Modele; courante: string | null; lecture: boolean; onChoisir: (id: string) => void; onVisible: (id: string, visible: boolean) => void; onCreer: (nom: string, couleur: string) => void }) {
-  const balises = Object.values(modele.annotations?.balises ?? {});
-  const [nom, setNom] = useState("");
-  const [couleur, setCouleur] = useState("#2f7bd6");
-  return (
-    <div className="planche-liste-panneau" data-planche-balises>
-      <ul role="listbox" aria-label={t("panneau.balises")}>
-        {balises.map((b) => (
-          <li key={b.id} role="option" aria-selected={courante === b.id} className={courante === b.id ? "est-actif" : undefined} data-planche-balise={b.id}>
-            <input type="checkbox" checked={b.visible} disabled={lecture} aria-label={`${t("planche.balise.visible")} — ${b.nom}`} onChange={(e) => onVisible(b.id, e.target.checked)} data-planche-balise-visible />
-            <button type="button" className="planche-ligne-choix" onClick={() => onChoisir(b.id)}>
-              <span className="planche-pastille" style={{ background: b.couleur }} aria-hidden="true" />
-              {b.nom}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {balises.length === 0 && <p className="inspecteur-aide">{t("planche.balise.aucune")}</p>}
-      {!lecture && (
-        <form
-          className="planche-creation"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const n = nom.trim() || `${t("planche.balise.nouvelle")} ${balises.length + 1}`;
-            onCreer(n, couleur);
-            setNom("");
-          }}
-          data-planche-balise-creation
-        >
-          <h4>{t("planche.balise.nouvelle")}</h4>
-          <label>
-            {t("planche.materiau.nom")}
-            <input value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="off" data-planche-balise-nom />
-          </label>
-          <label>
-            {t("planche.materiau.couleur")}
-            <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-balise-couleur />
-          </label>
-          <button type="submit" data-planche-balise-creer>{t("planche.balise.creer")}</button>
         </form>
       )}
     </div>

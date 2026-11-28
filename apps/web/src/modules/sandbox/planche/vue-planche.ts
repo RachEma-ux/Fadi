@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { coinsFond, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -678,7 +678,10 @@ export class VuePlanche {
       return;
     }
     const n = v3(p.normale).multiplyScalar(p.inverse ? 1 : -1);
-    this.moteur.clippingPlanes = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+    const plans = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+    // Cas 2, lot 4 (n° 59) : profondeur vue limitée au-delà de la coupe (même règle que `gardeParCoupe`).
+    if (p.profondeur !== undefined) plans.push(new THREE.Plane(n.clone().negate(), n.dot(v3(p.origine)) + p.profondeur));
+    this.moteur.clippingPlanes = plans;
     this.majPoche(modele, p);
   }
 
@@ -899,8 +902,6 @@ export class VuePlanche {
       this.etiquettesFixes.push({ el, point });
     };
     const cs = (id: string, defaut: string): string => (sel.has(id) ? COULEUR_SELECTION : defaut);
-    // (Protocole 1.3) Une annotation balisée suit la visibilité de sa balise.
-    const cachee = (x: { readonly balise?: string }): boolean => !!x.balise && a.balises[x.balise]?.visible === false;
     for (const g of Object.values(a.guides)) {
       if (!this.options.guides) break;
       const c = cs(g.id, "#222222");
@@ -921,7 +922,8 @@ export class VuePlanche {
     const controle = Object.keys(a.cotes).length ? controlerCotes(modele, this.precisionCotes) : null;
     const alertes = new Set(controle?.chaines.map((x) => x.total) ?? []);
     for (const c of Object.values(a.cotes)) {
-      if (cachee(c)) continue;
+      // Cas 2, lot 4 : une cote ou un texte d'une balise masquée n'est pas dessiné.
+      if (baliseMasquee(modele, c.balise)) continue;
       const d = dessinerCote(modele, c, pas, this.precisionCotes, this.separateurCotes);
       if (!d) continue;
       const couleur = cs(c.id, d.orpheline ? "#b3261e" : "#333333");
@@ -935,7 +937,7 @@ export class VuePlanche {
       }
     }
     for (const t of Object.values(a.textes)) {
-      if (t.genre === "repere" && cachee(t)) continue;
+      if (baliseMasquee(modele, t.balise)) continue;
       if (t.genre === "repere") {
         this.groupeAnnotations.add(plein(cs(t.id, "#333333"), [t.ancre, t.position]));
         etiquette(t.texte, t.position, `planche-etiquette-texte${sel.has(t.id) ? " est-selectionne" : ""}`);
@@ -994,6 +996,7 @@ export class VuePlanche {
     }
     for (const p of Object.values(a.plansDeCoupe)) {
       if (!this.options.plansDeCoupe) break;
+      if (baliseMasquee(modele, p.balise)) continue;
       const couleur = sel.has(p.id) ? "#e8891c" : "#8a8a8a";
       this.groupeAnnotations.add(...rectanglePlan(p.origine, p.u, p.w, p.demiU, p.demiW, couleur, p.inverse ? v3(p.normale).multiplyScalar(-1) : v3(p.normale), pas));
     }
@@ -1792,6 +1795,35 @@ export class VuePlanche {
     this.camera.updateProjectionMatrix();
     if (s.projection === "parallele") this.projection = "parallele";
     this.rendre();
+  }
+
+  /**
+   * Cas 2, lot 4 (n° 43) : échelle nominale 1:n en projection parallèle — la hauteur de la vue à l'écran (pixels CSS à
+   * 96 ppp) vaut la hauteur du modèle divisée par n. Sans effet en perspective.
+   */
+  poserEchelleNominale(echelle: number): void {
+    if (!this.projectionParallele || !(echelle > 0)) return;
+    const hauteurPx = this.moteur.domElement.clientHeight || this.moteur.domElement.height;
+    const demiHauteur = ((hauteurPx / 2) * (25.4 / 96) * echelle) / 1000;
+    const direction = this.camera.position.clone().sub(this.cible).normalize();
+    const d = demiHauteur / Math.tan((this.camera.fov * Math.PI) / 360);
+    this.camera.position.copy(this.cible).add(direction.multiplyScalar(d));
+    this.camera.far = Math.max(20000, d * 4);
+    this.camera.updateProjectionMatrix();
+    this.rendre();
+  }
+
+  /** Nombre de plans de rognage posés par la coupe active (instrumentation). */
+  plansRognage(): number {
+    return this.moteur.clippingPlanes.length;
+  }
+
+  /** Échelle nominale rendue (dénominateur), en projection parallèle ; `null` en perspective (instrumentation). */
+  echelleRendue(): number | null {
+    if (!this.projectionParallele) return null;
+    const hauteurPx = this.moteur.domElement.clientHeight || this.moteur.domElement.height;
+    const demiHauteur = this.camera.position.distanceTo(this.cible) * Math.tan((this.camera.fov * Math.PI) / 360);
+    return (demiHauteur * 1000) / ((hauteurPx / 2) * (25.4 / 96));
   }
 
   /** Vue standard autour de la cible courante, à la même distance (sud = −y, D-017). */
