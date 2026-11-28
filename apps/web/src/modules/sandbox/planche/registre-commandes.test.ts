@@ -53,6 +53,7 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: true, altKey: false })).toBe(true);
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: false, altKey: false })).toBe(false);
     expect(COMMANDES_DEUX_TEMPS.length).toBeGreaterThanOrEqual(7);
+    expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(expect.arrayContaining(["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon"]));
     for (const c of COMMANDES_DEUX_TEMPS) {
       const s = secondTemps(c.raccourci)!;
       const maj = s.startsWith("Maj+");
@@ -62,6 +63,8 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
     expect(commandeDuClavier({ key: " ", ctrlKey: true, shiftKey: true, altKey: false }), "l'entrée seule n'exécute rien").toBeNull();
     expect(commandeDuSecondTemps({ key: "c", code: "KeyC", ctrlKey: false, shiftKey: false, altKey: false })?.id).toBe("charger-reference");
     expect(commandeDuSecondTemps({ key: "C", code: "KeyC", ctrlKey: false, shiftKey: true, altKey: false })?.id).toBe("recharger-reference");
+    expect(commandeDuSecondTemps({ key: "v", code: "KeyV", ctrlKey: false, shiftKey: false, altKey: false })?.id).toBe("versions");
+    expect(commandeDuSecondTemps({ key: "V", code: "KeyV", ctrlKey: false, shiftKey: true, altKey: false })?.id).toBe("brouillon");
   });
 
   it("une touche sans commande ne résout rien", () => {

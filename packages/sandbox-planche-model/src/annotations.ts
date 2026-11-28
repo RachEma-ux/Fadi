@@ -252,6 +252,10 @@ export interface ReglagesPlanche {
   readonly balisesReservees?: import("./balises-l4.js").BalisesReservees;
   /** (Cas 2, lot 4) Gabarit d'agence appliqué à la création de la Planche : fichier archivé tel quel. */
   readonly gabarit?: import("./balises-l4.js").GabaritApplique;
+  /** (Cas 2, lot 7) Statut et indice de révision de la Planche, saisis ; repris par chaque jalon. Absent = non renseigné. */
+  readonly revision?: import("./versions-l7.js").Revision;
+  /** (Cas 2, lot 7) Fiche d'identité du projet, saisie une fois, reprise dans les pièces émises ; champ absent = non renseigné. */
+  readonly ficheProjet?: import("./versions-l7.js").FicheProjet;
 }
 /** (Cas 2, lot 2) Unité d'affichage et de saisie. */
 export type UniteSaisie = "m" | "cm" | "mm" | "pieds-pouces";

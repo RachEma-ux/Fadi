@@ -214,6 +214,11 @@ function geometrieSegments(segments: readonly (readonly [Vec3, Vec3])[]): THREE.
   return g;
 }
 
+/** (Cas 2, lot 7) Couleurs du surlignage des différences : celles des états « conforme », « à reprendre », « refusé ». */
+const COULEUR_DIFF_AJOUTE = "#2f6f4f";
+const COULEUR_DIFF_MODIFIE = "#b54708";
+const COULEUR_DIFF_SUPPRIME = "#a1260d";
+
 function vider(groupe: THREE.Group): void {
   for (const enfant of [...groupe.children]) {
     groupe.remove(enfant);
@@ -266,6 +271,8 @@ export class VuePlanche {
   private readonly groupeAnnotations = new THREE.Group();
   /** Poché de la matière coupée (cas 4, étape 5), posé sur le plan de coupe actif. */
   private readonly groupeCoupe = new THREE.Group();
+  /** (Cas 2, lot 7, n° 48) Différences entre deux états : ajoutés, modifiés, supprimés (en pointillé). */
+  private readonly groupeDifferences = new THREE.Group();
   /** Contrôle de l'enveloppe (cas 4, étape 7c) : faces hors enveloppe hachurées et colorées, point le plus défavorable. */
   private readonly groupeEnveloppe = new THREE.Group();
   /** Références verrouillées (cas 4, lot C4, étape 3) : maquettes reçues dessinées d'un bloc, jamais fusionnées au dessin. */
@@ -376,7 +383,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeDifferences, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -502,6 +509,38 @@ export class VuePlanche {
     if (!transparent) for (let i = 3; i < image.data.length; i += 4) image.data[i] = 255;
     g.putImageData(image, 0, 0);
     return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
+  }
+
+  /**
+   * (Cas 2, lot 7, n° 48) Surligne les différences entre deux états : arêtes des objets ajoutés (vert) et modifiés (ocre)
+   * de l'état affiché, arêtes des objets supprimés (rouge, pointillé) de l'état de départ. `null` efface le surlignage.
+   */
+  poserDifferences(d: { readonly ajoutes: readonly (readonly [Vec3, Vec3])[]; readonly modifies: readonly (readonly [Vec3, Vec3])[]; readonly supprimes: readonly (readonly [Vec3, Vec3])[] } | null): void {
+    vider(this.groupeDifferences);
+    if (d) {
+      const lignes = (segs: readonly (readonly [Vec3, Vec3])[], couleur: string, pointille: boolean) => {
+        if (!segs.length) return;
+        const geo = new THREE.BufferGeometry().setFromPoints(segs.flatMap(([a, b]) => [new THREE.Vector3(a.x, a.y, a.z), new THREE.Vector3(b.x, b.y, b.z)]));
+        const l = new THREE.LineSegments(geo, pointille ? new THREE.LineDashedMaterial({ color: couleur, dashSize: 0.15, gapSize: 0.1, depthTest: false }) : new THREE.LineBasicMaterial({ color: couleur, depthTest: false }));
+        if (pointille) l.computeLineDistances();
+        l.renderOrder = 4;
+        l.name = couleur;
+        this.groupeDifferences.add(l);
+      };
+      lignes(d.ajoutes, COULEUR_DIFF_AJOUTE, false);
+      lignes(d.modifies, COULEUR_DIFF_MODIFIE, false);
+      lignes(d.supprimes, COULEUR_DIFF_SUPPRIME, true);
+    }
+    this.rendre();
+  }
+
+  /** Nombre de segments surlignés par genre (recette). */
+  differencesAffichees(): { readonly ajoutes: number; readonly modifies: number; readonly supprimes: number } {
+    const n = (c: string) => {
+      const l = this.groupeDifferences.children.find((x) => x.name === c) as THREE.LineSegments | undefined;
+      return l ? (l.geometry.getAttribute("position")?.count ?? 0) / 2 : 0;
+    };
+    return { ajoutes: n(COULEUR_DIFF_AJOUTE), modifies: n(COULEUR_DIFF_MODIFIE), supprimes: n(COULEUR_DIFF_SUPPRIME) };
   }
 
   detruire(): void {

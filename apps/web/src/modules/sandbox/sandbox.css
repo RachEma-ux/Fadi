@@ -5915,3 +5915,142 @@
   background: #1a5fd6;
   font-size: 0.8rem;
 }
+
+/* Raccourcis en deux temps (repris tels quels du cas 4, lot C4, étape 3) : encadré des secondes touches. */
+.sandbox-planche .planche-deux-temps {
+  position: absolute;
+  left: 72px;
+  bottom: 12px;
+  z-index: 30;
+  max-width: min(460px, calc(100% - 96px));
+  max-height: 60%;
+  overflow: auto;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #161616;
+  color: #f4f4f4;
+  font-size: 13px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.sandbox-planche .planche-deux-temps p {
+  margin: 0;
+}
+.sandbox-planche .planche-deux-temps ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 3px 12px;
+}
+.sandbox-planche .planche-deux-temps kbd {
+  font: 600 11.5px inherit;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Cas 2, lot 7 : versions et jalons, comparaison, brouillon, fiche du projet (maquettes du 27 novembre 2026). */
+.sandbox-planche .planche-bandeau-version {
+  position: absolute;
+  top: 8px;
+  left: 72px;
+  right: 8px;
+  z-index: 6;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  pointer-events: none;
+}
+.sandbox-planche .planche-bandeau-consultation {
+  color: #1a5fd6;
+  background: color-mix(in srgb, #1a5fd6 10%, #ffffff);
+}
+.sandbox-planche .planche-bandeau-brouillon {
+  color: #9a2c1c;
+  background: color-mix(in srgb, #c2410c 10%, #ffffff);
+}
+.sandbox-planche .planche-versions-raccourci {
+  color: #6b7672;
+  font-weight: 400;
+}
+.sandbox-planche .planche-versions-origine {
+  margin: 0 0 8px;
+  color: #6b7672;
+}
+.sandbox-planche .planche-versions-liste,
+.sandbox-planche .planche-versions-registre {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.sandbox-planche .planche-versions-liste li,
+.sandbox-planche .planche-versions-registre li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #e9edeb;
+}
+.sandbox-planche .planche-versions-ligne {
+  display: grid;
+  grid-template-columns: 1fr 70px 34px;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.sandbox-planche .planche-versions-ligne small {
+  display: block;
+  color: #6b7672;
+}
+.sandbox-planche .planche-versions-choisi .planche-versions-ligne {
+  background: #eef4f0;
+}
+.sandbox-planche .planche-versions-indice {
+  text-align: center;
+}
+.sandbox-planche .planche-versions-registre input {
+  width: 9em;
+}
+.sandbox-planche .planche-diff-pastille {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.sandbox-planche .planche-diff-ajoute {
+  background: #2f6f4f;
+}
+.sandbox-planche .planche-diff-supprime {
+  background: #a1260d;
+}
+.sandbox-planche .planche-diff-modifie {
+  background: #b54708;
+}
+.sandbox-planche .planche-fiche-vide::placeholder {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-versions-raccourci-bouton {
+  opacity: 0.7;
+  font-weight: 400;
+}
+.sandbox-planche .planche-lien-bouton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1a5fd6;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

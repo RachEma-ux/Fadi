@@ -62,3 +62,4 @@ export * from "./references.js";
 export * from "./enveloppe.js";
 export * from "./controle-l3.js";
 export * from "./balises-l4.js";
+export * from "./versions-l7.js";

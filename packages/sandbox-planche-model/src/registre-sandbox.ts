@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange" | "version";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -462,6 +462,18 @@ const commandes: EntreeSandbox[] = [
   // Cas 2 du catalogue, lot 6 (27 novembre 2026) : Planche complète au format natif (empreinte) et image de la vue ;
   // Alt + F1 était la dernière touche simple libre (les suivantes passent aux raccourcis en deux temps).
   c("natif-image", "echange", "file-database", "Alt+F1", "panneau-natif-image", true),
+  // Cas 2 du catalogue, lot 7 (27 novembre 2026) : versions, jalons et brouillon ; raccourcis en deux temps
+  // (Ctrl+Maj+Espace puis une touche), secondes touches accordées avec le cas 4 le 27 novembre.
+  c("versions", "version", "history", "Ctrl+Maj+Espace, V", "panneau-versions", true),
+  c("poser-jalon", "version", "flag", "Ctrl+Maj+Espace, Maj+J", "panneau-versions", true),
+  c("consultation", "version", "lock-access", "Ctrl+Maj+Espace, G", "panneau-versions", true),
+  c("comparer", "version", "git-compare", "Ctrl+Maj+Espace, Q", "panneau-comparer", true),
+  c("brouillon", "version", "git-branch", "Ctrl+Maj+Espace, Maj+V", "panneau-brouillon", true),
+  c("fiche-projet", "version", "id-badge-2", "Ctrl+Maj+Espace, Maj+F", "panneau-fiche-projet", true),
+  // Brouillon ouvert (revue de #514, règle d'or) : appliquer, garder comme variante, abandonner.
+  c("appliquer-brouillon", "version", "git-merge", "Ctrl+Maj+Espace, Maj+A", "panneau-brouillon", true),
+  c("garder-brouillon", "version", "git-fork", "Ctrl+Maj+Espace, Maj+G", "panneau-brouillon", true),
+  c("abandonner-brouillon", "version", "git-branch-deleted", "Ctrl+Maj+Espace, Maj+Z", "panneau-brouillon", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({

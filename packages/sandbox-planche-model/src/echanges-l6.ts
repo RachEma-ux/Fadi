@@ -51,6 +51,9 @@ export interface RapportEchange {
   /** Unité et repère réellement écrits (export, n° 90). */
   readonly unite?: string;
   readonly repere?: string;
+  /** (Cas 2, lot 7, n° 109, n° 40) Fiche du projet et révision reprises dans le rapport d'export. */
+  readonly projet?: readonly (readonly [string, string])[];
+  readonly revision?: string;
 }
 
 const LIBELLES_LIGNES: Readonly<Record<CleLigneRapport, string>> = {
@@ -80,6 +83,8 @@ export function texteRapport(r: RapportEchange): string {
     `Date : ${r.date}`,
     ...(r.unite ? [`Unité écrite : ${r.unite}`] : []),
     ...(r.repere ? [`Repère écrit : ${r.repere}`] : []),
+    ...(r.revision ? [`Révision : ${r.revision}`] : []),
+    ...(r.projet?.length ? ["", "Projet :", ...r.projet.map(([l, v]) => `  ${l} : ${v}`)] : []),
     "",
     `${"".padEnd(28)}${"écrits".padStart(10)}${"omis".padStart(10)}${"approchés".padStart(10)}${"refusés".padStart(10)}`,
     ...r.lignes.map((l) => `${LIBELLES_LIGNES[l.cle].padEnd(28)}${col(l.ecrits)}${col(l.omis)}${col(l.approches)}${col(l.refuses)}`),
@@ -279,8 +284,17 @@ export function preparerExport(m: Modele, choix: ChoixExport): { readonly modele
 }
 
 /** Rapport d'un export de maillage (prévu puis joint au fichier). */
-export function rapportExport(format: string, fichier: string, r: ExportMaillage, omisObjets: number, date: string, ecrit: { readonly unite: string; readonly repere: string }): RapportEchange {
+export function rapportExport(
+  format: string,
+  fichier: string,
+  r: ExportMaillage,
+  omisObjets: number,
+  date: string,
+  ecrit: { readonly unite: string; readonly repere: string },
+  piece?: { readonly projet: readonly (readonly [string, string])[]; readonly revision: string | null },
+): RapportEchange {
   return {
+    ...(piece ? { projet: piece.projet, ...(piece.revision ? { revision: piece.revision } : {}) } : {}),
     sens: "export",
     format,
     fichier,
