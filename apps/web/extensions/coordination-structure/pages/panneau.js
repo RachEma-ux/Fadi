@@ -31,8 +31,14 @@
     d.valeurs = lireValeurs();
     return fadi.action(nom, d).then(montrer, erreur);
   };
+  // Les onglets et les boutons ne sont recréés que s'ils changent : un clic ne tombe jamais sur un bouton remplacé
+  // par l'état qui arrive entre l'appui et le relâchement.
   var dessinerOnglets = function () {
     var barre = el("onglets");
+    if (barre.children.length === ONGLETS.length) {
+      ONGLETS.forEach(function (o, i) { barre.children[i].setAttribute("aria-selected", o.id === onglet ? "true" : "false"); });
+      return;
+    }
     barre.textContent = "";
     ONGLETS.forEach(function (o) {
       var x = document.createElement("button");
@@ -52,8 +58,12 @@
       barre.appendChild(x);
     });
   };
+  var boutonsDe = null;
   var dessinerBoutons = function () {
     var barre = el("barre");
+    var cle = onglet + "|" + (choisie || "") + "|" + (dernier && dernier.choisieLibelle ? dernier.choisieLibelle : "");
+    if (boutonsDe === cle) return;
+    boutonsDe = cle;
     barre.textContent = "";
     ONGLETS.filter(function (o) { return o.id === onglet; })[0].boutons.forEach(function (b) {
       var x = document.createElement("button");
