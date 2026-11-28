@@ -130,9 +130,14 @@ export function nomOutil(o: Pick<Outil, "libelle" | "libelleSketchUp">, langue: 
 export function afficherRaccourci(r: string, langue: Langue = LANGUE_INTERFACE): string {
   if (langue !== "en") return r;
   return r
-    .split("+")
-    .map((x) => (x === "Maj" ? "Shift" : x === "Espace" ? "Space" : x))
-    .join("+");
+    .split(", ")
+    .map((t) =>
+      t
+        .split("+")
+        .map((x) => (x === "Maj" ? "Shift" : x === "Espace" ? "Space" : x))
+        .join("+"),
+    )
+    .join(", ");
 }
 
 /** Titre d'un bouton d'outil : « Nom (raccourci) » (relevé, ou couche Fadi), suivi du motif d'indisponibilité. */

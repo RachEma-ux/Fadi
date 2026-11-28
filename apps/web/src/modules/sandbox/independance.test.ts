@@ -49,12 +49,17 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
     const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
     // L'isolement des Workers (scripts personnels, extensions) nomme ces fonctions pour les **retirer** : il n'en appelle aucune.
-    expect(appelants).toEqual(["planche/consultations-client.ts", "planche/emplacements-geodata.ts", "planche/fonds-client.ts", "planche/isolement-worker.ts", "preferences/client.ts"]);
+    expect(appelants).toEqual(["planche/consultations-client.ts", "planche/emplacements-geodata.ts", "planche/fonds-client.ts", "planche/isolement-worker.ts", "planche/references-client.ts", "preferences/client.ts"]);
     // Originaux des fonds calés (cas 4, lot C4 ; décision du 27 novembre 2026) : archivés tels quels sous /sandbox/fonds, seule adresse.
     const fonds = code(join(RACINE, "planche/fonds-client.ts"));
     expect(fonds).toContain('export const ADRESSE_FONDS = "/sandbox/fonds";');
     expect([...fonds.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_FONDS"]);
     expect(fonds).not.toMatch(/https?:\/\//);
+    // Références verrouillées (cas 4, lot C4, étape 3) : fichiers rangés et relus sous /sandbox/references, seule adresse.
+    const references = code(join(RACINE, "planche/references-client.ts"));
+    expect(references).toContain('export const ADRESSE_REFERENCES = "/sandbox/references";');
+    expect([...references.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_REFERENCES", "adresse"]);
+    expect(references).not.toMatch(/https?:\/\//);
     // Liens de consultation (cas 4, étape 7d) : copie figée créée, listée, révoquée sous /sandbox/consultations, lue sans
     // compte sous /consultation/api ; ces deux adresses seules, sans adresse absolue.
     const consultations = code(join(RACINE, "planche/consultations-client.ts"));
