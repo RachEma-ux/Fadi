@@ -4,7 +4,11 @@
  * planche), le focus passe à la planche qui vient d'apparaître : la planche de dessin 2D (`svg` « Planche de dessin 2D »)
  * ou la vue 3D (`section` « Vue 3D », chargée à la demande). L'élément reçoit `tabindex="-1"` (focus programmatique sans
  * entrer dans l'ordre de tabulation) et l'attribut `data-studio-focus-bascule`, que `studio.css` souligne d'un contour
- * visible. `cibleFocusBascule` est pur ; `deplacerFocusBascule` touche le DOM seulement.
+ * visible. `cibleFocusBascule` et `focusDejaDansPlanche` sont purs ; `deplacerFocusBascule` touche le DOM seulement.
+ *
+ * Le déplacement attend une image (la vue 3D est chargée à la demande) : si, entre-temps, l'utilisateur a déjà porté le
+ * focus sur un élément de la planche apparue (une forme, une cote), ce focus est le sien et n'est jamais repris. Sous
+ * charge, l'image tardait, et le focus revenait à la planche entière juste avant Entrée : l'objet n'était pas sélectionné.
  */
 import type { ModePlanche } from "../domaines/definitions";
 
@@ -14,6 +18,14 @@ export const SELECTEURS_FOCUS_BASCULE: Readonly<Record<CibleFocusBascule, string
   "2d": 'svg[aria-label="Planche de dessin 2D"]',
   "3d": "section[data-studio-vue3d]",
 });
+
+/**
+ * Vrai si le focus est déjà sur un élément DE la planche (pas la planche elle-même) : l'utilisateur y est allé avant que
+ * la bascule ne déplace le focus, il le garde.
+ */
+export function focusDejaDansPlanche(planche: { contains(n: unknown): boolean }, actif: unknown): boolean {
+  return actif != null && actif !== planche && planche.contains(actif);
+}
 
 /** Planche qui reçoit le focus après le passage de `avant` à `apres` : celle qui vient d'apparaître ; null sans bascule. */
 export function cibleFocusBascule(avant: ModePlanche, apres: ModePlanche): CibleFocusBascule | null {
@@ -37,7 +49,7 @@ export function deplacerFocusBascule(racine: HTMLElement, cible: CibleFocusBascu
       if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
       for (const autre of racine.querySelectorAll("[data-studio-focus-bascule]")) if (autre !== el) autre.removeAttribute("data-studio-focus-bascule");
       el.setAttribute("data-studio-focus-bascule", cible);
-      el.focus({ preventScroll: false });
+      if (!focusDejaDansPlanche(el, document.activeElement)) el.focus({ preventScroll: false });
       return;
     }
     if (++n < tentatives) image = requestAnimationFrame(essayer);
