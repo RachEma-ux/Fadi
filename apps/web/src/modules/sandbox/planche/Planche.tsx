@@ -384,6 +384,12 @@ import {
   type VerticalFond,
   type PixelFond,
   IMAGE_FOND_MAX,
+  ecrireVisionneuse,
+  trianglesVisionneuse,
+  maquetteVisionneuseNonVide,
+  versionVisionneuse,
+  empreinteAbregee,
+  empreintePlanche as empreinteDeLaPlanche,
   lireKmz,
   pointsKml,
   poserKml,
@@ -489,7 +495,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_VISIONNEUSE, disponibiliteVisionneuse, type IdCommandeVisionneuse, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -511,6 +517,7 @@ import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./
 import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
 import { PanneauKml, type ResumeKml } from "./panneau-kml";
 import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
+import { PanneauVisionneuse } from "./panneau-visionneuse";
 import { ErreurProjection, projeterVersSysteme } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
@@ -668,7 +675,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement" | "visionneuse";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -683,7 +690,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement", "visionneuse"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -2825,7 +2832,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   ouvrirDeuxTempsRef.current = () => {
     deuxTempsRef.current = true;
     familleDTRef.current = null;
-    focusAvantDT.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Fenêtre détachée : le focus se lit dans le document qui porte la Planche (autre royaume, pas d'instanceof).
+    const actifDT = (racineRef.current?.ownerDocument ?? document).activeElement;
+    focusAvantDT.current = actifDT && typeof (actifDT as HTMLElement).focus === "function" ? (actifDT as HTMLElement) : null;
     arreterMinuteurDT();
     minuteurDeuxTemps.current = setTimeout(() => finirDeuxTempsRef.current(), 5000);
     setDeuxTemps(true);
@@ -6973,6 +6982,61 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     setErreurRedr(null);
     setNoteRedr(note);
   };
+  // Visionneuse hors ligne (cas 4, lot C4, étape 7d) : un seul fichier HTML, consultable sans réseau ; la taille
+  // affichée est celle du fichier que l'export écrirait maintenant.
+  const [balisesVis, setBalisesVis] = useState(true);
+  const [scenesExcluesVis, setScenesExcluesVis] = useState<ReadonlySet<string>>(() => new Set());
+  const [noteVis, setNoteVis] = useState<string | null>(null);
+  const scenesVis = useMemo(() => Object.values(hist.present.modele.annotations?.scenes ?? {}).map((s) => ({ id: s.id, nom: s.nom })), [hist.present.modele]);
+  const optionsVis = (maintenant: Date) => ({ nom: nomCourant, balises: balisesVis, scenes: scenesVis.filter((s) => !scenesExcluesVis.has(s.id)).map((s) => s.id), maintenant });
+  const trianglesVis = useMemo(() => (panneau === "visionneuse" ? trianglesVisionneuse(hist.present.modele) : 0), [panneau, hist.present.modele]);
+  const resumeVis = useMemo(() => {
+    if (panneau !== "visionneuse") return null;
+    const m = hist.present.modele;
+    const r = ecrireVisionneuse(m, optionsVis(new Date()));
+    const mo = r.octets / 1e6;
+    return {
+      triangles: t("planche.visionneuse.triangles", { nombre: trianglesVis.toLocaleString(LOCALE) }),
+      version: versionVisionneuse(new Date()),
+      empreinte: empreinteAbregee(empreinteDeLaPlanche(m)),
+      taille: t("planche.visionneuse.taille.valeur", { taille: mo >= 1 ? t("planche.visionneuse.taille.mo", { n: mo.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) }) : t("planche.visionneuse.taille.ko", { n: Math.max(1, Math.round(r.octets / 1000)).toLocaleString(LOCALE) }) }),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, hist.present.modele, balisesVis, scenesExcluesVis, nomCourant, trianglesVis]);
+  // Disponibilité lue à chaque rendu (liste des commandes) : test rapide mémorisé par identité du modèle, sans triangulation.
+  const nonVideVis = useMemo(() => maquetteVisionneuseNonVide(hist.present.modele), [hist.present.modele]);
+  const disponibiliteCommandeVis = (id: IdCommandeVisionneuse) => disponibiliteVisionneuse(id, { nonVide: nonVideVis });
+  const executerVis = (id: IdCommandeVisionneuse) => {
+    setPanneau("visionneuse");
+    if (id === "visionneuse" || !disponibiliteCommandeVis(id).disponible) return;
+    setNoteVis(null);
+    void (async () => {
+      try {
+        const maintenant = new Date();
+        const r = ecrireVisionneuse(histRef.current.present.modele, optionsVis(maintenant));
+        const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich", year: "numeric", month: "2-digit", day: "2-digit" }).format(maintenant);
+        const fichier = new File([r.html], `${nomFichierPlanche()}-visionneuse-${jour}.html`, { type: "text/html" });
+        const valeurs = { fichier: fichier.name, triangles: r.triangles.toLocaleString(LOCALE), vues: String(r.vues) };
+        // Téléphone ou tablette : la feuille de partage ; ailleurs, le téléchargement (maquette validée).
+        const tactile = (racineRef.current?.ownerDocument.defaultView ?? window).matchMedia("(pointer: coarse)").matches;
+        if (tactile && typeof navigator.canShare === "function" && navigator.canShare({ files: [fichier] })) {
+          try {
+            await navigator.share({ files: [fichier], title: nomCourant });
+            noterEmissionRef.current("HTML", fichier.name, "partage");
+            setNoteVis(t("planche.visionneuse.note.partage", valeurs));
+          } catch (e) {
+            if (!(e instanceof DOMException && e.name === "AbortError")) throw e;
+          }
+          return;
+        }
+        telechargerFichier(fichier, fichier.name);
+        noterEmissionRef.current("HTML", fichier.name, "emission");
+        setNoteVis(t("planche.visionneuse.note", valeurs));
+      } catch (e) {
+        setNoteVis(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  };
   const executerRedr = (id: IdCommandeRedressement) => {
     setPanneau("redressement");
     if (id === "redresser-photo") return photoRedr ? undefined : importRedrRef.current?.click();
@@ -7146,6 +7210,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
     else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
     else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);
+    else if (c.famille === "visionneuse") executerVis(c.id as IdCommandeVisionneuse);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
@@ -7254,6 +7319,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_KML.map((c) => {
           const d = disponibiliteCommandeKml(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
+        }),
+        ...COMMANDES_VISIONNEUSE.map((c) => {
+          const d = disponibiliteCommandeVis(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.visionneuse.motif.vide"), executer: () => executerVis(c.id) };
         }),
         ...COMMANDES_REDRESSEMENT.map((c) => {
           const d = disponibiliteCommandeRedr(c.id);
@@ -8398,6 +8467,19 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onChoisirFichier={() => importKmlRef.current?.click()}
                 erreur={erreurKml}
                 note={noteKml}
+              />
+            )}
+            {panneau === "visionneuse" && resumeVis && (
+              <PanneauVisionneuse
+                resume={resumeVis}
+                balises={balisesVis}
+                onBalises={setBalisesVis}
+                scenes={scenesVis}
+                choisies={new Set(scenesVis.filter((x) => !scenesExcluesVis.has(x.id)).map((x) => x.id))}
+                onScene={(id, v) => setScenesExcluesVis((e) => { const n = new Set(e); if (v) n.delete(id); else n.add(id); return n; })}
+                executer={executerVis}
+                disponibilite={disponibiliteCommandeVis}
+                note={noteVis}
               />
             )}
             {panneau === "redressement" && (
