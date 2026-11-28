@@ -13,7 +13,9 @@ export type CommandeClavier =
   | "carte-seule" | "couches" | "enregistrer" | "pastilles" | "plan-satellite" | "zone" | "emplacements" | "terrain"
   | "altitude" | "profil" | "remonter" | "descendre"
   /** P5 (D3, D4) : groupes de la colonne d'outils et aide des raccourcis. */
-  | "groupe-mesurer" | "groupe-affichage" | "aide-raccourcis";
+  | "groupe-mesurer" | "groupe-affichage" | "aide-raccourcis"
+  /** P13 (UX-6) : analyse de site, « Que sait-on d'ici ? ». */
+  | "site";
 
 /**
  * Quand une commande répond : `toujours` (même dans un champ de saisie), `hors-saisie`, `hors-saisie-sauf-recherche`
@@ -57,12 +59,13 @@ export const RACCOURCIS: readonly Raccourci[] = [
   r("groupe-mesurer", "Alt+N", "Ouvrir le groupe « Mesurer et tracer »"),
   r("groupe-affichage", "Alt+A", "Ouvrir le groupe « Affichage »"),
   r("aide-raccourcis", "?", "Raccourcis clavier"),
+  r("site", "Alt+Q", "Que sait-on d'ici ?"),
 ];
 
 const touche = (c: CommandeClavier) => RACCOURCIS.find((x) => x.commande === c)!.touche;
 
 /** Barre d'outils de la carte (D-GD-40, lot G). */
-export const RACCOURCIS_BARRE = { etiquettes: touche("libelles"), "mini-carte": touche("mini-carte"), imprimer: touche("imprimer"), synthese: touche("synthese"), regrouper: touche("regrouper"), lien: touche("lien") } as const;
+export const RACCOURCIS_BARRE = { etiquettes: touche("libelles"), "mini-carte": touche("mini-carte"), imprimer: touche("imprimer"), synthese: touche("synthese"), regrouper: touche("regrouper"), lien: touche("lien"), site: touche("site") } as const;
 /** Terrain haute résolution (TER-05). */
 export const RACCOURCIS_TERRAIN = { terrain: touche("terrain"), altitude: touche("altitude"), profil: touche("profil") } as const;
 /** Barre du bas au téléphone (D-GD-52). */

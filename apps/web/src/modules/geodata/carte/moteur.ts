@@ -134,6 +134,11 @@ export interface MoteurCarte {
    * calque hors composition, jamais enregistré ni exporté ; null : retiré. Une tuile refusée ne bloque pas la carte.
    */
   afficherAccueil(coucheId: string | null): void;
+  /**
+   * Signes du lieu lu par l'analyse de site (P13, carto C3) : repère du point et cercle du rayon des services ; calque hors
+   * composition (jamais enregistré), masqué à l'export comme le contour territorial.
+   */
+  afficherSite(site: { lon: number; lat: number; rayonM: number } | null): void;
   /** Contour de l'unité choisie dans la barre territoriale (lot H), en GeoJSON WGS 84 ; null : retiré. */
   afficherTerritoire(contour: unknown | null): void;
   /** Entité sélectionnée par clic sans couche chargée (D-GD-34) : contour et mise en évidence, ou rien. */
