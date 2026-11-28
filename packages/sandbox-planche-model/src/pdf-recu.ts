@@ -1,7 +1,7 @@
 /**
  * PDF reçu (cas 4 du catalogue des extensions, lot C4, étape 4 : D10-F14-008, D10-F14-009, D10-S-004). Pur : ni React,
- * ni DOM ; la décompression (FlateDecode) est celle d'`inflate.ts` (écrite pour Fadi, aucune bibliothèque), remplaçable
- * par l'appelant.
+ * ni DOM ; la décompression (FlateDecode) est celle des navigateurs (`compression.ts`, décision « 3 A » du 28.11.2026) :
+ * asynchrone, elle passe par `lirePdfRecuAsync` ; `lirePdfRecu` reçoit une décompression synchrone de l'appelant.
  *
  * - Lecture d'un PDF reçu : objets directs et flux d'objets (PDF 1.5), arbre des pages, MediaBox, Rotate, UserUnit,
  *   contenus et formulaires (XObject Form) ; traits peints (S, s, B, b…) en segments, en millimètres papier, origine en
@@ -16,7 +16,8 @@
  */
 import { ajouterArc, ajouterPolygone, ajouterSegments, grouperVide, type Id, type Modele } from "./geometrie-libre.js";
 import type { PoseFond } from "./fonds.js";
-import { inflerSync } from "./inflate.js";
+import { decompresser } from "./compression.js";
+import { crc32 } from "./zip.js";
 import { pointsArc } from "./outils/commun-formes.js";
 import { type Vec3, v3 } from "./vecteur.js";
 
@@ -805,7 +806,7 @@ function lireImage(doc: Document, x: Dict, ctm: M6): ImagePdf | null {
 }
 
 /** Lit un PDF reçu : pages dans l'ordre de l'arbre des pages (ou des objets, à défaut). */
-export function lirePdfRecu(octets: Uint8Array, inflate: Inflate = inflerSync): LecturePdf {
+export function lirePdfRecu(octets: Uint8Array, inflate: Inflate = () => null): LecturePdf {
   const s = latin1(octets);
   if (!s.slice(0, 1024).includes("%PDF-")) return { ok: false, erreur: "signature" };
   if (/\/Encrypt\s*(\d+\s+\d+\s+R|<<)/.test(s)) return { ok: false, erreur: "chiffre" };
@@ -965,4 +966,26 @@ export function poseImagePdf(img: ImagePdf, echelle: number, x: number, y: numbe
   if (Math.hypot(attendu.x - v.x, attendu.y - v.y) > lu * 0.01) return { erreur: "cisaillement" };
   // Coin haut gauche de l'image : (0 ; 1) du carré unité.
   return { pose: { echelle: lu, rotation, x: x + (c + e) * k, y: y + (d + f) * k } };
+}
+
+/**
+ * Lecture avec la décompression des navigateurs (asynchrone) : la lecture synchrone relève les flux compressés qu'elle
+ * demande, ils sont décompressés, puis la lecture reprend avec eux, jusqu'à ce qu'aucun flux nouveau ne soit demandé
+ * (un flux d'objets décompressé peut en désigner d'autres). Douze tours au plus.
+ */
+export async function lirePdfRecuAsync(octets: Uint8Array): Promise<LecturePdf> {
+  const cache = new Map<string, Uint8Array | null>();
+  const cle = (o: Uint8Array) => `${o.length}:${crc32(o)}`;
+  for (let tour = 0; tour < 12; tour++) {
+    const manquants = new Map<string, Uint8Array>();
+    const r = lirePdfRecu(octets, (o) => {
+      const k = cle(o);
+      if (cache.has(k)) return cache.get(k) ?? null;
+      manquants.set(k, o);
+      return null;
+    });
+    if (!manquants.size) return r;
+    for (const [k, o] of manquants) cache.set(k, await decompresser(o, "deflate"));
+  }
+  return lirePdfRecu(octets, (o) => cache.get(cle(o)) ?? null);
 }

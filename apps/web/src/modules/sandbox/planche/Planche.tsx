@@ -359,7 +359,8 @@ import {
   echellesDuTexte,
   estEchellePdf,
   insererPagePdf,
-  lirePdfRecu,
+  lirePdfRecuAsync,
+  deplierSiZip,
   poseImagePdf,
   type PointPdf,
   ajouterReference,
@@ -4267,7 +4268,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         let etat: { positions: Float32Array } | "introuvable";
         try {
           const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
-          etat = { positions: positionsReference(maillagesReference(r.format, octets, r.axe ?? "z").maillages).positions };
+          etat = { positions: positionsReference(maillagesReference(r.format, await deplierSiZip(octets), r.axe ?? "z").maillages).positions };
         } catch {
           etat = "introuvable";
         }
@@ -4403,7 +4404,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     setErreurPdf(null);
     setNotePdf(null);
     const octets = new Uint8Array(await f.arrayBuffer());
-    const lu = lirePdfRecu(octets);
+    const lu = await lirePdfRecuAsync(octets);
     if (!lu.ok) return setErreurPdf(t(`planche.pdf.erreur.${lu.erreur}`));
     setPdfRecu({ nom: f.name, fichier: null, pages: lu.pages });
     changerPagePdf(0);
@@ -6613,7 +6614,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       : { possible: true, texte: t("planche.ifc.georef.valeurs", { systeme: pointDeBaseIfc.systeme, e: texteCoordonnee(pointDeBaseIfc.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(pointDeBaseIfc.n, SEPARATEUR_DECIMAL), h: texteCoordonnee(referenceIfc, SEPARATEUR_DECIMAL), rotation: String(pointDeBaseIfc.rotation).replace(".", SEPARATEUR_DECIMAL) }) };
   const controlerIfc = () => controlerAvantEmissionIfc(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, reference: referenceIfc });
   const disponibiliteCommandeIfc = (id: IdCommandeIfc) => disponibiliteIfc(id, { bloquant: id === "exporter-ifc" && controlerIfc().some((c) => c.niveau === "bloquant"), lu: luIfc !== null, lecture: readOnly });
-  const executerIfc = (id: IdCommandeIfc) => {
+  const executerIfc = async (id: IdCommandeIfc) => {
     if (id === "import-ifc") return setPanneau("import-ifc");
     if (id === "importer-ifc") {
       setPanneau("import-ifc");
@@ -6629,9 +6630,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     if (id === "controler-ifc" || constats.some((c) => c.niveau === "bloquant")) return;
     const maintenant = new Date();
     const x = exporterIfcStructure(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, nom: nomAffiche(plancheDe(indexPlanches)) || "planche", maintenant, reference: referenceIfc });
-    const donnees = formatIfc === "ifczip" ? ifczip(x, maintenant) : x.contenu;
+    const donnees = formatIfc === "ifczip" ? await ifczip(x, maintenant) : x.contenu;
     // Relu avant tout téléchargement : étages, objets, triangles, GlobalId et géoréférencement comparés.
-    const r = relireIfcStructure(x, schemaIfc, donnees);
+    const r = relireIfcStructure(x, schemaIfc, typeof donnees === "string" ? donnees : await deplierSiZip(donnees));
     if (!r.identique) {
       setNoteIfc(null);
       return setErreurIfc(t("planche.ifc.erreur.relecture", { ecarts: r.ecarts.map((e) => `${e.cle} ${e.attendu} / ${e.lu}`).join(", ") }));
@@ -6646,7 +6647,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     setNoteImportIfc(null);
     setPanneau("import-ifc");
     try {
-      const lecture = lireIfcStructure(new Uint8Array(await f.arrayBuffer()));
+      const lecture = lireIfcStructure(await deplierSiZip(new Uint8Array(await f.arrayBuffer())));
       if (lecture.objets.length === 0) {
         setLuIfc(null);
         return setErreurImportIfc(t("planche.ifc.import.vide"));
@@ -6713,7 +6714,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       return setErreurFabricant(t(`planche.fabricant.refus.${format ?? "inconnu"}` as CleMessage));
     }
     try {
-      const lecture = lireScene(format, octets);
+      const lecture = lireScene(format, await deplierSiZip(octets));
       setLuFabricant({ nom: f.name, format, lecture, fichier: f, octets });
       setUniteFabricant(lecture.uniteFichier ?? 1);
       setAxeFabricant(lecture.axeFichier ?? "z");
@@ -6803,7 +6804,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     setPanneau("import-kml");
     const kmz = f.name.toLowerCase().endsWith(".kmz");
     try {
-      const lecture = kmz ? lireKmz(new Uint8Array(await f.arrayBuffer())) : lireKml(await f.text());
+      const lecture = kmz ? lireKmz(await deplierSiZip(new Uint8Array(await f.arrayBuffer()))) : lireKml(await f.text());
       setLuKml({ nom: f.name, format: kmz ? "kmz" : "kml", lecture, fichier: f });
     } catch (e) {
       setLuKml(null);
@@ -7206,7 +7207,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
     else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
     else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
-    else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
+    else if (c.famille === "ifc") void executerIfc(c.id as IdCommandeIfc);
     else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
     else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
     else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);

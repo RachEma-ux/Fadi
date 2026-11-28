@@ -62,7 +62,7 @@ export * from "./pdf-recu.js";
 export * from "./ifc-step.js";
 export * from "./ifc-structure.js";
 export * from "./zip.js";
-export * from "./inflate.js";
+export * from "./compression.js";
 export * from "./references.js";
 export * from "./enveloppe.js";
 export * from "./controle-l3.js";

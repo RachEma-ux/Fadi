@@ -8,7 +8,7 @@
  * Borne de l'appareil : avant le premier import, un étalonnage construit et pose une gaufre de `TRIANGLES_ETALON`
  * triangles ; le débit mesuré (triangles par seconde) fixe la borne à `BUDGET_IMPORT_S` secondes de travail.
  */
-import { construireImport, construireScene, lireMaillages, lireScene, modeleVide, poserImport, type AxeHaut, type ContenuImporte, type FormatFabricant, type FormatImport, type MaillageLu, type SceneConstruite } from "@parcours/sandbox-planche-model";
+import { construireImport, construireScene, deplierSiZip, lireMaillages, lireScene, modeleVide, poserImport, type AxeHaut, type ContenuImporte, type FormatFabricant, type FormatImport, type MaillageLu, type SceneConstruite } from "@parcours/sandbox-planche-model";
 
 export const TRIANGLES_ETALON = 2000;
 
@@ -51,7 +51,7 @@ export function etalonner(): number {
 const porte = self as unknown as { onmessage: ((e: MessageEvent<DemandeImport>) => void) | null; postMessage(m: MessageImport): void };
 const envoyer = (m: MessageImport): void => porte.postMessage(m);
 
-porte.onmessage = (e) => {
+porte.onmessage = async (e) => {
   const d = e.data;
   try {
     if (d.genre === "etalonner") {
@@ -59,7 +59,7 @@ porte.onmessage = (e) => {
       return;
     }
     if (d.genre === "scene") {
-      const l = lireScene(d.format, d.donnees);
+      const l = lireScene(d.format, await deplierSiZip(d.donnees));
       const total = l.objets.reduce((n, o) => n + o.triangles.length / 3, 0);
       envoyer({ genre: "lu", triangles: total, echelleFichier: l.uniteFichier });
       if (total > d.borne) {
@@ -78,7 +78,7 @@ porte.onmessage = (e) => {
       envoyer({ genre: "fini-scene", scene, echelle: d.echelle, ms: performance.now() - t0 });
       return;
     }
-    const lu = lireMaillages(d.format, d.donnees);
+    const lu = lireMaillages(d.format, typeof d.donnees === "string" ? d.donnees : await deplierSiZip(d.donnees));
     const total = lu.maillages.reduce((n, x) => n + x.triangles.length / 3, 0);
     envoyer({ genre: "lu", triangles: total, echelleFichier: lu.echelleFichier });
     if (total > d.borne) {

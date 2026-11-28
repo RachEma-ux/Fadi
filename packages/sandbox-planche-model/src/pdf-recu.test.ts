@@ -2,7 +2,7 @@ import { deflateSync, inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { versPlan } from "./fonds.js";
 import { modeleVide } from "./geometrie-libre.js";
-import { MM_PAR_POINT, accrocherPdf, arcDeBezier, echelleDeLaBarre, echellesDuTexte, estCercleComplet, insererPagePdf, lirePdfRecu, mesurePdf, poseImagePdf, type PagePdf } from "./pdf-recu.js";
+import { MM_PAR_POINT, accrocherPdf, arcDeBezier, echelleDeLaBarre, echellesDuTexte, estCercleComplet, insererPagePdf, lirePdfRecu, lirePdfRecuAsync, mesurePdf, poseImagePdf, type PagePdf } from "./pdf-recu.js";
 
 const inflate = (o: Uint8Array): Uint8Array | null => {
   try {
@@ -192,5 +192,19 @@ describe("Insertion d'une page", () => {
     const [p] = lire(pdf([{ contenu: "0 0 m 72 0 l S" }]));
     expect(accrocherPdf(p!, { x: 25.3, y: 0.2 }, 1)).toEqual({ point: { x: 25.4, y: 0 }, accroche: true });
     expect(accrocherPdf(p!, { x: 12, y: 5 }, 1)).toEqual({ point: { x: 12, y: 5 }, accroche: false });
+  });
+});
+
+describe("PDF reçu : décompression des navigateurs (décision « 3 A »)", () => {
+  it("lirePdfRecuAsync lit un PDF compressé sans décompression fournie, comme la lecture avec zlib", async () => {
+    const fichier = pdf([{ contenu: "0 0 m 100 0 l 100 100 l S" }], { compresser: true });
+    const attendu = lirePdfRecu(fichier, inflate);
+    const lu = await lirePdfRecuAsync(fichier);
+    expect(lu).toEqual(attendu);
+    expect(lu.ok).toBe(true);
+    // Sans décompression, la lecture synchrone ne voit aucun trait.
+    const sans = lirePdfRecu(fichier);
+    expect(sans.ok && sans.pages[0]!.traits.length).toBe(0);
+    expect(lu.ok && lu.pages[0]!.traits.length).toBeGreaterThan(0);
   });
 });
