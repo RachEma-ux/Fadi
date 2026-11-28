@@ -24,3 +24,26 @@ export async function projeterVersSysteme(systeme: string, wkt: string | null, p
   }
   return (await r.json()) as { points: [number, number][]; source: "fadi" | "prj" };
 }
+
+/** Cas 2, lot 5 (n° 92) : systèmes dont Fadi a la définition, liste fermée lue par l'API. */
+export interface SystemeConnu {
+  readonly code: string;
+  readonly nom: string;
+}
+export interface SystemesConnus {
+  readonly horizontaux: readonly SystemeConnu[];
+  readonly verticaux: readonly SystemeConnu[];
+}
+
+/** Lecture de la liste fermée des systèmes (`GET /sandbox/projections/systemes`) ; `null` si elle n'a pas pu être lue. */
+export async function lireSystemesConnus(): Promise<SystemesConnus | null> {
+  try {
+    const r = await fetch(`${ADRESSE_PROJECTIONS}/systemes`, { credentials: "include" });
+    if (!r.ok) return null;
+    const j = (await r.json()) as Partial<SystemesConnus>;
+    const liste = (v: unknown): SystemeConnu[] => (Array.isArray(v) ? v.filter((x): x is SystemeConnu => typeof x?.code === "string" && typeof x?.nom === "string") : []);
+    return { horizontaux: liste(j.horizontaux), verticaux: liste(j.verticaux) };
+  } catch {
+    return null;
+  }
+}

@@ -199,8 +199,10 @@ await vue.focus();
 await page.keyboard.press("Control+Shift+Space");
 const encadre = page.locator("[data-planche-deux-temps]");
 await encadre.waitFor();
-check("encadré : champ de recherche, aucune famille affichée tant qu'aucune n'a de commande, commandes actuelles listées",
-  (await encadre.locator("[data-planche-deux-temps-recherche]").count()) === 1 && (await encadre.locator("[data-planche-deux-temps-porte]").count()) === 0
+// Seules les familles qui ont une commande s'affichent : « Site » depuis le cas 2, lot 5 (Course solaire, Maj+T, S).
+const portes = await encadre.locator("[data-planche-deux-temps-porte]").evaluateAll((l) => l.map((x) => x.getAttribute("data-planche-deux-temps-porte")));
+check("encadré : champ de recherche, seules les familles qui ont une commande affichées (Site), commandes actuelles listées",
+  (await encadre.locator("[data-planche-deux-temps-recherche]").count()) === 1 && JSON.stringify(portes) === JSON.stringify(["site"])
   && (await encadre.locator("[data-planche-deux-temps-commande='ifc-structure'] kbd").textContent()) === "U");
 await page.keyboard.press("Tab");
 const champ = encadre.locator("[data-planche-deux-temps-recherche]");

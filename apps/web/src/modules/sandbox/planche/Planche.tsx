@@ -124,6 +124,7 @@ import {
   ID_POSER_BAIE,
   ID_POSER_GARDE_CORPS,
   IDS_POINTAGE_L8,
+  ID_COURSE_SOLAIRE,
   genreBaie,
   type Pose,
   type ParEclatement,
@@ -463,6 +464,9 @@ import {
   supprimerRepere,
 } from "@parcours/sandbox-planche-model";
 import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
+import { courseSolaire, dateDuRang, lireAltitude, type ResultatCourseSolaire } from "@parcours/sandbox-planche-model";
+import { decalageLegal, fuseauxDuNavigateur } from "./fuseaux";
+import { DiagrammeCourseSolaire, EtiquetteVise, RappelSysteme, SectionSystemes, SectionZeroProjet } from "./panneaux-l5";
 import { compter as compterContexte, exporterIfc, maillagesPlanche, nonEtanchesDe, omisExport, poserImport } from "@parcours/sandbox-planche-model";
 import { type EtatImport, lancerImport, noterPose } from "./import-hors-fil";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
@@ -489,7 +493,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_SOLEIL, type IdCommandeSoleil, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -511,7 +515,7 @@ import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./
 import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
 import { PanneauKml, type ResumeKml } from "./panneau-kml";
 import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
-import { ErreurProjection, projeterVersSysteme } from "./projections-client";
+import { ErreurProjection, lireSystemesConnus, projeterVersSysteme, type SystemesConnus } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
 import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
@@ -787,6 +791,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const annulerImportRef = useRef<(() => void) | null>(null);
   const surReservePoseeRef = useRef<(id: string) => void>(() => {});
   const surPointCalagePoseRef = useRef<(fond: string, point: string) => void>(() => {});
+  const surPointObserveRef = useRef<(point: Vec3) => void>(() => {});
   const importActif = importCours !== null;
   useEffect(() => {
     if (!importActif) return;
@@ -1120,6 +1125,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
+      // Cas 2, lot 5 : altitude NGF du ±0,00 (Tab dans Mesures de Déplacer et Pousser-tirer).
+      referenceNGF: plancheDe(indexRef.current).altitudeRef ?? null,
       lecture: readOnly,
       accrochage: {
         ...(forceAccrochageRef.current ? { force: forceAccrochageRef.current } : {}),
@@ -1233,6 +1240,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       // Cas 4, lot C4, étape 1 : le point de calage posé ouvre le panneau Fonds calés sur son fond.
       const pose = (tr.etat as { pose?: { fond: string; point: string } | null } | null)?.pose;
       if (outilRef.current === ID_CALAGE && pose && pose !== (avant as { pose?: unknown } | null)?.pose) surPointCalagePoseRef.current(pose.fond, pose.point);
+      // Cas 2, lot 5 (n° 110) : le point d'observation cliqué ouvre la course solaire.
+      if (tr.pointObserve) surPointObserveRef.current(tr.pointObserve);
       if (tr.dans !== undefined) {
         poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
@@ -1358,8 +1367,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         return;
       }
       // Cas 2, lot 8 : outils de pointage (Caler par deux points, Boîte 3D), lancés par leur commande, hors catalogue.
-      if (IDS_POINTAGE_L8.includes(id)) {
-        if (readOnly && id !== ID_BOITE) return;
+      if (IDS_POINTAGE_L8.includes(id) || id === ID_COURSE_SOLAIRE) {
+        if (readOnly && id !== ID_BOITE && id !== ID_COURSE_SOLAIRE) return;
         setGrille(false);
         setEdition(null);
         if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
@@ -2863,6 +2872,14 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       if ((champSaisie(cible) && !dansMesures) || rechercheRef.current) return;
       const mod = e.ctrlKey || e.metaKey;
       const cle = e.key.toLowerCase();
+      // Cas 2, lot 5 (n° 55 et 70) : dans Déplacer et Pousser-tirer, Tab fait défiler ce qu'attend Mesures (distance,
+      // altitude ±0,00, altitude NGF), depuis la vue ou depuis Mesures. Maj + Tab garde la navigation au clavier.
+      if (e.key === "Tab" && !mod && !e.altKey && !e.shiftKey && (outilRef.current === "deplacer" || outilRef.current === "pousser-tirer") && (dansMesures || cible === hoteRef.current)) {
+        e.preventDefault();
+        envoyerTouche("Tab", "enfoncee");
+        envoyerTouche("Tab", "relachee");
+        return;
+      }
       if (mod && !e.altKey && cle === "z") {
         e.preventDefault();
         if (e.shiftKey) retablirPas();
@@ -3530,6 +3547,41 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         message,
       };
     });
+  // Cas 2, lot 5 (n° 92 et 105) : heure légale des ombres. Le fuseau de l'Emplacement donne le décalage à la date choisie
+  // (heure d'été comprise) ; sans fuseau ou sans Emplacement, les ombres restent à l'heure solaire.
+  const fuseaux = useMemo(() => fuseauxDuNavigateur(), []);
+  const fuseauActif = emplacementActif?.fuseau ?? null;
+  useEffect(() => {
+    const { mois, jour } = dateDuRang(options.annee, options.jour);
+    majOptions({ longitude: emplacementActif ? emplacementActif.longitude : null, decalage: fuseauActif ? decalageLegal(fuseauActif, options.annee, mois, jour, options.heure) : null });
+  }, [emplacementActif?.longitude, emplacementActif === null, fuseauActif, options.annee, options.jour, options.heure, majOptions]);
+  const poserFuseau = (fuseau: string | null) => {
+    if (!emplacement) return;
+    const { fuseau: _ancien, ...reste } = emplacement;
+    nordSaisiRef.current = true;
+    poserEmplacement(fuseau ? { ...reste, fuseau } : reste, t("planche.emplacement.note.enregistre"));
+  };
+  // Cas 2, lot 5 (n° 110) : course solaire depuis le point cliqué, masques formés par les objets de la Planche.
+  const executerSoleil = (_id: IdCommandeSoleil) => {
+    setPanneau("ombres");
+    choisirOutil(ID_COURSE_SOLAIRE);
+  };
+  const [courseSolaireCalc, setCourseSolaireCalc] = useState<ResultatCourseSolaire | null>(null);
+  surPointObserveRef.current = (point) => {
+    const o = vueRef.current?.lireOptions() ?? options;
+    const fuseau = emplacementActif?.fuseau ?? null;
+    setCourseSolaireCalc(
+      courseSolaire({
+        point,
+        maillages: maillagesPlanche(histRef.current.present.modele),
+        annee: o.annee,
+        latitude: o.latitude,
+        longitude: emplacementActif ? emplacementActif.longitude : null,
+        nord: o.nord,
+        decalage: fuseau ? (mois, jour) => decalageLegal(fuseau, o.annee, mois, jour, 12) : null,
+      }),
+    );
+  };
   // Point de base du projet (cas 4 du catalogue, étape 2) : coordonnées projetées déclarées de l'origine, un pas d'historique.
   const pointDeBase = annotationsDe(hist.present.modele.annotations).reglages?.pointDeBase ?? null;
   const [notePointDeBase, setNotePointDeBase] = useState<string | null>(null);
@@ -3560,11 +3612,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     lien: readOnly ? null : { genre: "planche", cible: indexPlanches.courante },
     etatModule: () => {
       if (!emplacement) return {};
+      // Cas 2, lot 5 (n° 5) : le ±0,00 NGF unique d'abord ; à défaut, l'altitude reçue avec l'emplacement.
+      const altitudeZero = plancheDe(indexRef.current).altitudeRef ?? emplacement.altitude;
       return {
         observations: {
           geographic: { longitude: emplacement.longitude, latitude: emplacement.latitude, source: SOURCE_EMPLACEMENT },
           ...(nordSuppose(emplacement.nord) ? {} : { nord: { valeur: emplacement.nord, source: SOURCE_EMPLACEMENT } }),
-          ...(emplacement.altitude !== undefined ? { altitudeReference: { valeur: emplacement.altitude, source: SOURCE_EMPLACEMENT } } : {}),
+          ...(altitudeZero != null ? { altitudeReference: { valeur: altitudeZero, source: SOURCE_EMPLACEMENT } } : {}),
         },
         ...(emplacement.lieu ? { lieu: emplacement.lieu } : {}),
       };
@@ -3640,7 +3694,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       .then(setGeodataListe, () => setGeodataErreur(t("planche.emplacement.geodata.erreur")))
       .finally(() => setGeodataChargement(false));
   };
-  const appliquerEmplacementGeoData = (g: EmplacementGeoDataLu) => poserEmplacement(g.emplacement, t("planche.emplacement.note.geodata", { lieu: g.emplacement.lieu ?? `${g.emplacement.latitude} ; ${g.emplacement.longitude}` }));
+  const appliquerEmplacementGeoData = (g: EmplacementGeoDataLu) => {
+    poserEmplacement(g.emplacement, t("planche.emplacement.note.geodata", { lieu: g.emplacement.lieu ?? `${g.emplacement.latitude} ; ${g.emplacement.longitude}` }));
+    // Cas 2, lot 5 (n° 5) : un seul ±0,00. L'altitude reçue avec l'emplacement le déclare s'il ne l'est pas encore ;
+    // un ±0,00 déjà déclaré n'est jamais remplacé en silence.
+    if (g.emplacement.altitude !== undefined && plancheDe(indexRef.current).altitudeRef == null) poserReferenceNiveaux(String(g.emplacement.altitude));
+  };
   const appliquerGeoDataRef = useRef(appliquerEmplacementGeoData);
   appliquerGeoDataRef.current = appliquerEmplacementGeoData;
   // Adresse `/sandbox?emplacement-geodata=<id>` (bouton « Ouvrir dans Planche » de GeoData) : une fois le brouillon chargé,
@@ -3786,6 +3845,31 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     setIndexPlanches(idx);
     void enregistrerIndex(idx).catch(() => undefined);
     setNoteNiveau(t("planche.niveaux.note.reference"));
+  };
+  // Cas 2, lot 5 (n° 5) : le ±0,00 NGF unique se modifie en place dans l'Emplacement ; c'est la référence des Niveaux.
+  const [erreurZero, setErreurZero] = useState(false);
+  const poserZero = (texte: string) => {
+    if (readOnly) return;
+    const valeur = texte.trim() === "" ? null : lireAltitude(texte);
+    if (texte.trim() !== "" && valeur === null) return setErreurZero(true);
+    setErreurZero(false);
+    poserReferenceNiveaux(valeur === null ? "" : String(valeur));
+  };
+  // Cas 2, lot 5 (n° 92) : systèmes connus (liste fermée lue par l'API) à l'ouverture de l'Emplacement.
+  const [systemesConnus, setSystemesConnus] = useState<SystemesConnus | null>(null);
+  useEffect(() => {
+    if (panneau !== "emplacement" || systemesConnus !== null) return;
+    let vivant = true;
+    void lireSystemesConnus().then((r) => {
+      if (vivant) setSystemesConnus(r);
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [panneau, systemesConnus]);
+  const poserSysteme = (code: string) => {
+    if (!pointDeBase || !code || code === pointDeBase.systeme) return;
+    poserPointDeBase({ ...pointDeBase, systeme: code });
   };
   /**
    * Locaux (cas 4 du catalogue, étape 3) : pièces appuyées sur une face de sol de la racine ; mesures recalculées depuis
@@ -7127,6 +7211,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "piece") executerPiece(c.id as IdCommandePiece);
     else if (c.famille === "controle") executerControle(c.id as IdCommandeControle);
     else if (c.famille === "dynamique") executerDynamique(c.id as IdCommandeDynamique);
+    else if (c.famille === "emplacement" && c.id === "course-solaire") executerSoleil(c.id);
     else if (c.famille === "emplacement") executerEmplacement(c.id as IdCommandeEmplacement);
     else if (c.famille === "scripts") executerScripts(c.id as IdCommandeScripts);
     else if (c.famille === "numerotation") executerNumerotation(c.id as IdCommandeNumerotation);
@@ -7255,6 +7340,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           const d = disponibiliteCommandeKml(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
         }),
+        ...COMMANDES_SOLEIL.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: null, executer: () => executerSoleil(c.id) })),
         ...COMMANDES_REDRESSEMENT.map((c) => {
           const d = disponibiliteCommandeRedr(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.redressement.motif.photo"), executer: () => executerRedr(c.id) };
@@ -7706,7 +7792,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
           // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
-          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || IDS_POINTAGE_L8.includes(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
+          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || IDS_POINTAGE_L8.includes(outilId) || outilId === ID_COURSE_SOLAIRE ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
           data-planche-curseur={outilId}
         >
@@ -7718,6 +7804,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           )}
         </div>
         <AvisExtensions avis={avisExtensions} onFermer={(cle) => setAvisExtensions((liste) => liste.filter((a) => a.cle !== cle))} />
+        {/* Cas 2, lot 5 (n° 18 et 110) : altitude du point visé ; course solaire depuis le point cliqué. */}
+        {vue.inference && <EtiquetteVise z={vue.inference.point.z} reference={referenceNiveaux} />}
+        {courseSolaireCalc && <DiagrammeCourseSolaire resultat={courseSolaireCalc} reference={referenceNiveaux} onFermer={() => setCourseSolaireCalc(null)} />}
         {consultation ? (
           <div className="planche-bandeau-version planche-bandeau-consultation" role="status" data-planche-consultation={consultation.jalon?.id ?? "courante"}>
             {t("planche.lecture.bandeau", { quoi: consultation.jalon ? t("planche.lecture.jalon", { nom: consultation.jalon.nom, indice: consultation.jalon.indice ? ` (${consultation.jalon.indice})` : "" }) : `« ${nomCourant} »` })} · {afficherRaccourci(raccourciConsultation)}
@@ -8303,7 +8392,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             )}
             {panneau === "emplacement" && (
               <PanneauEmplacement emplacement={emplacement} lecture={readOnly} flecheNord={options.flecheNord} onEnregistrer={(e) => { nordSaisiRef.current = true; poserEmplacement(e, t(e ? "planche.emplacement.note.enregistre" : "planche.emplacement.note.retire")); }} executer={executerEmplacement} disponibilite={disponibiliteCommandeEmplacement} note={noteEmplacement}
-                geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }} />
+                geodata={{ liste: geodataListe, chargement: geodataChargement, erreur: geodataErreur, onCharger: chargerEmplacementsGeoData, onAppliquer: appliquerEmplacementGeoData }}
+                zero={<SectionZeroProjet reference={referenceNiveaux} lecture={readOnly} erreur={erreurZero} onReference={poserZero} />}
+                systemes={<SectionSystemes point={pointDeBase} systemes={systemesConnus} lecture={readOnly} onSysteme={poserSysteme} />} />
             )}
             {panneau === "emplacement" && <SectionPointDeBase point={pointDeBase} reference={referenceNiveaux} lecture={readOnly} onEnregistrer={poserPointDeBase} note={notePointDeBase} />}
             {panneau === "niveaux" && (
@@ -8841,7 +8932,27 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
               />
             )}
             {panneau === "styles" && <PanneauStyles options={options} onOptions={majOptions} />}
-            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={emplacementActif ? emplacementActif.latitude : null} />}
+            {panneau === "ombres" && (
+              <PanneauOmbres
+                options={options}
+                onOptions={majOptions}
+                latitudeParcelle={emplacementActif ? emplacementActif.latitude : null}
+                emplacement={emplacementActif}
+                lecture={readOnly}
+                fuseaux={fuseaux}
+                onFuseau={poserFuseau}
+                courseSolaire={
+                  <div className="planche-debit-barre" role="toolbar" aria-label={t("planche.l5.course.section")} data-planche-ombres-course>
+                    {COMMANDES_SOLEIL.map((c) => (
+                      <button key={c.id} type="button" aria-pressed={outilId === ID_COURSE_SOLAIRE} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => executerSoleil(c.id)} data-planche-commande={c.id}>
+                        <Pictogramme picto={c.picto} /> {t(c.court)}
+                      </button>
+                    ))}
+                    <p className="inspecteur-aide">{t("planche.l5.course.masques-note")}</p>
+                  </div>
+                }
+              />
+            )}
             {panneau === "affichage" && (
               <PanneauAffichage
                 options={options}
@@ -8917,6 +9028,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onAppliquerStyle={appliquerStyleCotes}
                 unites={<SectionUnites modele={hist.present.modele} lecture={readOnly} onUnite={changerUniteProjet} />}
                 parametres={<SectionParametres modele={hist.present.modele} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} onParametre={poserParametreProjet} onSupprimerParametre={supprimerParametreProjet} />}
+                rappelSysteme={<RappelSysteme point={pointDeBase} reference={referenceNiveaux} />}
               />
             )}
             {panneau === "navigateur" && (

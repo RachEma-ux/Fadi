@@ -9,6 +9,7 @@ import { MACHINES_PROFILES } from "./registre-profiles.js";
 import { MACHINES_INTERACTION } from "./interagir.js";
 import { MACHINE_OUTIL_EXTENSION, PREFIXE_OUTIL_EXTENSION } from "./outil-extension.js";
 import { MACHINES_POINTAGE_L8 } from "./pointage-l8.js";
+import { MACHINE_COURSE_SOLAIRE } from "./pointage-l5.js";
 
 export * from "./machine.js";
 export { poignees, type Poignee } from "./echelle.js";
@@ -25,7 +26,7 @@ export { viser, viserAnnotation, cibleDans, cheminOccurrence, cheminContexte, et
 export { formaterAire as _formaterAire } from "./metre.js";
 
 export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map(
-  [...MACHINES_TRACE, ...MACHINES_FORMES, ...MACHINES_MODIFICATION, ...MACHINES_MESURE, ...MACHINES_MATERIAU, ...MACHINES_PROFILES, ...MACHINES_INTERACTION, ...MACHINES_POINTAGE_L8].map((m) => [m.id, m] as const),
+  [...MACHINES_TRACE, ...MACHINES_FORMES, ...MACHINES_MODIFICATION, ...MACHINES_MESURE, ...MACHINES_MATERIAU, ...MACHINES_PROFILES, ...MACHINES_INTERACTION, ...MACHINES_POINTAGE_L8, MACHINE_COURSE_SOLAIRE].map((m) => [m.id, m] as const),
 );
 
 export function machineParId(id: string): MachineOutil<any> | undefined {
@@ -34,6 +35,9 @@ export function machineParId(id: string): MachineOutil<any> | undefined {
 }
 export * from "./outil-extension.js";
 export { ID_CALER, ID_BOITE, ID_MIROIR, ID_POSER_BAIE, ID_POSER_GARDE_CORPS, IDS_POINTAGE_L8, CONSIGNES_CALER, CONSIGNES_BOITE, CONSIGNES_BOITE_HAUTEUR, CONSIGNES_MIROIR, CONSIGNES_BAIE, CONSIGNES_GARDE_CORPS, ERREUR_CALER_SELECTION, ERREUR_MIROIR_SELECTION, ERREUR_POSE_SANS_COMPOSANT, type EtatPointage } from "./pointage-l8.js";
+export { ID_COURSE_SOLAIRE, CONSIGNES_COURSE_SOLAIRE } from "./pointage-l5.js";
+export { ERREUR_ALTITUDE_SELECTION } from "./deplacer.js";
+export { ERREUR_ALTITUDE_SANS_FACE } from "./pousser-tirer.js";
 export { ID_INTERAGIR, ERREUR_INTERAGIR_AUCUN, type EtatInteragir } from "./interagir.js";
 export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
 export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";

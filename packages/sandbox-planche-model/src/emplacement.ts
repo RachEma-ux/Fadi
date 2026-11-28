@@ -20,7 +20,15 @@ export interface Emplacement {
   readonly nord: number;
   /** Nom du lieu, libre. */
   readonly lieu?: string;
+  /**
+   * (Cas 2, lot 5, n° 105) Fuseau horaire du lieu, nom de la base des fuseaux (« Europe/Zurich ») choisi dans la liste du
+   * navigateur ; absent = non déclaré, les ombres restent à l'heure solaire.
+   */
+  readonly fuseau?: string;
 }
+
+/** Nom de fuseau de la base des fuseaux (forme seulement ; la liste vient du navigateur). */
+export const estNomFuseau = (v: unknown): v is string => typeof v === "string" && v.length <= 64 && /^[A-Za-z_]+(\/[A-Za-z0-9_+\-]+)*$/.test(v);
 
 export type ChampEmplacement = "latitude" | "longitude" | "altitude" | "nord";
 const RAD = Math.PI / 180;
@@ -51,7 +59,7 @@ export function estEmplacement(v: unknown): v is Emplacement {
   if (typeof v !== "object" || v === null) return false;
   const e = v as Record<string, unknown>;
   const fini = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
-  return fini(e["latitude"]) && Math.abs(e["latitude"]) <= 90 && fini(e["longitude"]) && Math.abs(e["longitude"]) <= 180 && fini(e["nord"]) && e["nord"] >= 0 && e["nord"] < 360 && (e["altitude"] === undefined || fini(e["altitude"])) && (e["lieu"] === undefined || (typeof e["lieu"] === "string" && e["lieu"].length <= 120));
+  return fini(e["latitude"]) && Math.abs(e["latitude"]) <= 90 && fini(e["longitude"]) && Math.abs(e["longitude"]) <= 180 && fini(e["nord"]) && e["nord"] >= 0 && e["nord"] < 360 && (e["altitude"] === undefined || fini(e["altitude"])) && (e["lieu"] === undefined || (typeof e["lieu"] === "string" && e["lieu"].length <= 120)) && (e["fuseau"] === undefined || estNomFuseau(e["fuseau"]));
 }
 
 /** Direction horizontale du nord vrai dans le repère du dessin (unitaire). */

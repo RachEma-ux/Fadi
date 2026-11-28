@@ -2,6 +2,8 @@
  * Projection de coordonnées géographiques WGS84 vers le système du projet (cas 4, lot C4, étape 7b : import KML / KMZ).
  *
  *   POST /   { systeme, wkt?, points: [[longitude, latitude], …] } → 200 { points: [[e, n], …], source }
+ *   GET  /systemes → 200 { horizontaux: [{ code, nom }], verticaux: [] } : liste fermée des systèmes dont Fadi a la
+ *   définition (cas 2, lot 5, n° 92) ; aucun système vertical n'est encore connu (source qualifiée à fournir).
  *
  * La définition du système vient soit d'un .prj fourni par la personne (`wkt`, WKT 1 ou 2, source « prj »), soit des
  * définitions déjà connues de Fadi (`SITE_CRS_DEFINITIONS`, source « fadi ») ; aucune autre définition n'est supposée :
@@ -11,7 +13,7 @@
 import express, { Router, type Response } from "express";
 import proj4 from "proj4";
 import { requireAuth } from "../middleware/require-auth.js";
-import { SITE_CRS_DEFINITIONS } from "../lib/site-context.js";
+import { SITE_CRS_DEFINITIONS, SITE_CRS_NOMS } from "../lib/site-context.js";
 
 /** Nombre maximal de points d'une demande (choix Fadi : un fichier KML courant). */
 export const POINTS_MAX = 200_000;
@@ -44,6 +46,11 @@ export function projeterWgs84(systeme: string, wkt: string | undefined, points: 
   return { ok: true, points: sortie, source: wkt && wkt.trim() !== "" ? "prj" : "fadi" };
 }
 
+/** Liste fermée des systèmes du projet : ceux dont Fadi a la définition (horizontaux), aucun vertical pour l'instant. */
+export function systemesConnus(): { readonly horizontaux: { readonly code: string; readonly nom: string }[]; readonly verticaux: { readonly code: string; readonly nom: string }[] } {
+  return { horizontaux: Object.keys(SITE_CRS_DEFINITIONS).map((code) => ({ code, nom: SITE_CRS_NOMS[code] ?? code })), verticaux: [] };
+}
+
 const prive = (_req: unknown, res: Response, next: () => void) => {
   res.setHeader("Cache-Control", "private, no-store");
   next();
@@ -52,6 +59,10 @@ const prive = (_req: unknown, res: Response, next: () => void) => {
 export const sandboxProjectionsRouter = Router();
 sandboxProjectionsRouter.use(requireAuth);
 sandboxProjectionsRouter.use(prive);
+
+sandboxProjectionsRouter.get("/systemes", (_req, res) => {
+  res.json(systemesConnus());
+});
 
 sandboxProjectionsRouter.post("/", express.json({ limit: "12mb" }), (req, res) => {
   const corps = (req.body ?? {}) as { systeme?: unknown; wkt?: unknown; points?: unknown };

@@ -6245,3 +6245,43 @@
   margin-top: 2px;
   color: #6b7672;
 }
+/* Cas 2, lot 5 (n° 110) : course solaire depuis un point, en surcouche de la vue (couleurs déjà en usage). */
+.sandbox-planche .planche-course-solaire {
+  position: absolute;
+  top: 0.75rem;
+  /* À gauche, après la barre d'outils : les icônes des panneaux, à droite, restent libres. */
+  left: 5rem;
+  z-index: 5;
+  max-width: calc(100% - 6rem);
+  max-height: calc(100% - 1.5rem);
+  overflow: auto;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  border: 1px solid #9a9a9a;
+  color: #000;
+  cursor: default;
+}
+.sandbox-planche .planche-course-solaire svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.sandbox-planche .planche-course-solaire-tete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* Cas 2, lot 5 (n° 18) : altitude du point visé, au pied de la vue. */
+.sandbox-planche .planche-vise {
+  position: absolute;
+  left: 5rem;
+  bottom: 0.5rem;
+  z-index: 4;
+  padding: 0.1rem 0.4rem;
+  background: #fff;
+  border: 1px solid #9a9a9a;
+  color: #000;
+  font-size: 0.8rem;
+  pointer-events: none;
+}

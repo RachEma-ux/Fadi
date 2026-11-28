@@ -72,3 +72,5 @@ export * from "./composants-l8.js";
 export * from "./xml-mini.js";
 export * from "./formats-3d.js";
 export * from "./kml.js";
+export * from "./soleil-l5.js";
+export * from "./altitudes-l5.js";
