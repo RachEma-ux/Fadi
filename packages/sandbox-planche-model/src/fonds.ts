@@ -75,6 +75,35 @@ const estPieceCalage = (v: unknown): v is PieceCalage =>
   typeof (v as PieceCalage).id === "string" && (v as PieceCalage).id.length >= 1 && (v as PieceCalage).id.length <= 80 &&
   typeof (v as PieceCalage).empreinte === "string" && /^[0-9a-f]{64}$/.test((v as PieceCalage).empreinte);
 
+/**
+ * Fond redressé (étape 7c) posé dans un plan vertical : la pose envoie un pixel en (s, t) de façade ; le point du dessin
+ * est (x + s·cos azimut, y + s·sin azimut, altitude + t). Le redressement est gardé pour le journal du calage.
+ */
+export interface VerticalFond {
+  readonly x: number;
+  readonly y: number;
+  /** Radians, sens trigonométrique depuis l'axe X. */
+  readonly azimut: number;
+  readonly redressement: {
+    /** Coins pointés sur la photo d'origine (px) : bas gauche, bas droit, haut droit, haut gauche. */
+    readonly points: readonly PixelFond[];
+    readonly largeur: number;
+    readonly hauteur: number;
+    readonly controles: number;
+    /** Écart quadratique moyen des contrôles (m) ; null = non évalué. */
+    readonly residu: number | null;
+  };
+}
+const estVertical = (v: unknown): v is VerticalFond => {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const f = v as VerticalFond;
+  const r = f.redressement as VerticalFond["redressement"] | undefined;
+  return fini(f.x) && fini(f.y) && fini(f.azimut) && Math.abs(f.x) <= 1e7 && Math.abs(f.y) <= 1e7 && typeof r === "object" && r !== null &&
+    Array.isArray(r.points) && r.points.length === 4 && r.points.every((p) => typeof p === "object" && p !== null && fini(p.u) && fini(p.v)) &&
+    fini(r.largeur) && r.largeur > 0 && fini(r.hauteur) && r.hauteur > 0 && Number.isInteger(r.controles) && r.controles >= 0 && r.controles <= POINTS_CALAGE_MAX &&
+    (r.residu === null || (fini(r.residu) && r.residu >= 0));
+};
+
 export interface Fond {
   readonly id: Id;
   /** Nom du fichier importé. */
@@ -97,6 +126,8 @@ export interface Fond {
   readonly original?: OriginalFond;
   /** Posé d'après un fichier de calage d'image ; absent = calé à la main (ou non calé). */
   readonly geo?: GeoFond;
+  /** Redressé et posé dans un plan vertical (étape 7c) ; absent = fond à plat. */
+  readonly vertical?: VerticalFond;
 }
 
 /** Image encodée : 12 Mo de caractères au plus (un scan A3 réduit à 4 096 px en JPEG reste en deçà). */
@@ -107,7 +138,7 @@ export const NOM_FOND_MAX = 120;
 /** Pose provisoire à l'import : 1 px = 1 cm. */
 export const ECHELLE_PROVISOIRE = 0.01;
 
-export type ErreurFond = "image" | "nom" | "taille" | "absent" | "verrouille" | "points" | "longueur" | "cibles" | "degenere" | "pixel" | "position" | "opacite";
+export type ErreurFond = "image" | "nom" | "taille" | "absent" | "verrouille" | "points" | "longueur" | "cibles" | "degenere" | "pixel" | "position" | "opacite" | "vertical";
 
 const fini = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const estPixel = (v: unknown, l: number, h: number): v is PixelFond => typeof v === "object" && v !== null && fini((v as PixelFond).u) && fini((v as PixelFond).v) && (v as PixelFond).u >= 0 && (v as PixelFond).v >= 0 && (v as PixelFond).u <= l && (v as PixelFond).v <= h;
@@ -158,7 +189,8 @@ export function estFond(id: Id, v: unknown): v is Fond {
     (f["points"] as unknown[]).length <= POINTS_CALAGE_MAX &&
     (f["points"] as unknown[]).every((p, i) => typeof p === "object" && p !== null && (p as PointCalage).id === LETTRES[i] && estPixel((p as PointCalage).pixel, l, h) && ((p as PointCalage).cible === null || estPosition((p as PointCalage).cible))) &&
     (f["original"] === undefined || estOriginalFond(f["original"])) &&
-    (f["geo"] === undefined || estGeoFond(f["geo"]))
+    (f["geo"] === undefined || estGeoFond(f["geo"])) &&
+    (f["vertical"] === undefined || estVertical(f["vertical"]))
   );
 }
 
@@ -182,6 +214,13 @@ export function versPixel(p: PoseFond, q: PositionPlan): PixelFond {
   return { u: c * dx + s * dy, v: s * dx - c * dy };
 }
 
+/** Point du dessin d'une position du fond : à plat à son altitude, ou dans son plan vertical (étape 7c). */
+export function pointDuFond(f: Fond, q: PositionPlan): { readonly x: number; readonly y: number; readonly z: number } {
+  if (!f.vertical) return { x: q.x, y: q.y, z: f.altitude };
+  const { x, y, azimut } = f.vertical;
+  return { x: x + q.x * Math.cos(azimut), y: y + q.x * Math.sin(azimut), z: f.altitude + q.y };
+}
+
 /** Coins du fond dans le plan : haut gauche, haut droit, bas droit, bas gauche. */
 export const coinsFond = (f: Fond): PositionPlan[] => [versPlan(f.pose, { u: 0, v: 0 }), versPlan(f.pose, { u: f.largeurPx, v: 0 }), versPlan(f.pose, { u: f.largeurPx, v: f.hauteurPx }), versPlan(f.pose, { u: 0, v: f.hauteurPx })];
 
@@ -189,23 +228,26 @@ const modifierFond = (m: Modele, id: Id, fn: (f: Fond) => Fond | ErreurFond, ver
   const f = m.annotations?.fonds?.[id];
   if (!f) return { ok: false, erreur: "absent" };
   if (verrouExige && f.verrouille) return { ok: false, erreur: "verrouille" };
+  // Un fond redressé est calé par son redressement : le calage à la main ne s'y applique pas.
+  if (verrouExige && f.vertical) return { ok: false, erreur: "vertical" };
   const r = fn(f);
   if (typeof r === "string") return { ok: false, erreur: r };
   return { ok: true, modele: modifierAnnotations(m, (a) => void (a.fonds[id] = r)).modele, id };
 };
 
 /** Importe un fond (un pas) : pose provisoire 1 px = 1 cm, coin haut gauche à l'origine, à l'altitude donnée. */
-export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number; readonly original?: OriginalFond; readonly pose?: PoseFond; readonly geo?: GeoFond }): ResultatFond {
+export function importerFond(m: Modele, v: { readonly nom: string; readonly image: string; readonly largeurPx: number; readonly hauteurPx: number; readonly altitude: number; readonly original?: OriginalFond; readonly pose?: PoseFond; readonly geo?: GeoFond; readonly vertical?: VerticalFond }): ResultatFond {
   const nom = v.nom.trim().slice(0, NOM_FOND_MAX);
   if (!estImage(v.image)) return { ok: false, erreur: "image" };
   if (!estTaille(v.largeurPx) || !estTaille(v.hauteurPx)) return { ok: false, erreur: "taille" };
   if (!fini(v.altitude)) return { ok: false, erreur: "position" };
   if (v.original !== undefined && !estOriginalFond(v.original)) return { ok: false, erreur: "image" };
   if ((v.pose !== undefined && !estPose(v.pose)) || (v.geo !== undefined && !estGeoFond(v.geo))) return { ok: false, erreur: "position" };
+  if (v.vertical !== undefined && (!estVertical(v.vertical) || v.pose === undefined)) return { ok: false, erreur: "vertical" };
   let id = "" as Id;
   const modele = modifierAnnotations(m, (a, nouvel) => {
     id = nouvel("j");
-    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: v.pose ?? { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: v.pose !== undefined, verrouille: v.geo !== undefined, opacite: 0.7, methode: "longueur", longueur: null, points: [], ...(v.original ? { original: v.original } : {}), ...(v.geo ? { geo: v.geo } : {}) };
+    a.fonds[id] = { id, nom, image: v.image, largeurPx: v.largeurPx, hauteurPx: v.hauteurPx, altitude: v.altitude, pose: v.pose ?? { echelle: ECHELLE_PROVISOIRE, rotation: 0, x: 0, y: v.hauteurPx * ECHELLE_PROVISOIRE }, cale: v.pose !== undefined, verrouille: v.geo !== undefined, opacite: 0.7, methode: "longueur", longueur: null, points: [], ...(v.original ? { original: v.original } : {}), ...(v.geo ? { geo: v.geo } : {}), ...(v.vertical ? { vertical: v.vertical } : {}) };
   }).modele;
   return { ok: true, modele, id };
 }

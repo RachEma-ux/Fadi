@@ -283,7 +283,7 @@ export function poseDepuisCalageImage(k: CalageImage, p: PointDeBase | null, fac
  * système du point de base ; null sans point de base.
  */
 export function calageImageDuFond(f: Fond, p: PointDeBase | null, largeurOriginal?: number): CalageImage | null {
-  if (!p) return null;
+  if (!p || f.vertical) return null;
   const facteur = largeurOriginal ? f.largeurPx / largeurOriginal : 1;
   const proj = (i: number, j: number) => {
     const q = versPlan(f.pose, { u: (i + 0.5) * facteur, v: (j + 0.5) * facteur });
