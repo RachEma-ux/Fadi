@@ -310,7 +310,16 @@ try {
   const tete5 = (await api("get", v5)).revision.id;
   const envois5 = [];
   page.on("request", (r) => { if (r.method() === "POST" && new URL(r.url()).pathname === `${v5}/commands`) envois5.push(r.postDataJSON()); });
-  await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${etude5.study.id}/variantes/${etude5.variant.id}`);
+  // Toujours sous le service worker remplacé (section 4) : même cause que les rechargements ci-dessus, l'événement
+  // « load » peut ne jamais venir. On attend le document, puis l'interface ; une seule nouvelle navigation si elle reste
+  // suspendue.
+  const adresse5 = `${BASE}/studio/projets/${projet.id}/etudes/${etude5.study.id}/variantes/${etude5.variant.id}`;
+  try { await page.goto(adresse5, { waitUntil: "domcontentloaded", timeout: 40000 }); }
+  catch (err) {
+    if (err?.name !== "TimeoutError") throw err;
+    console.log("TR-EX-021 : navigation suspendue sous le service worker remplacé — nouvelle navigation vers la même adresse");
+    await page.goto(adresse5, { waitUntil: "domcontentloaded", timeout: 40000 });
+  }
   await outils.waitFor();
   const ids2d = await page.locator("svg [data-studio-architecture]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture")).sort());
   const proprietes5 = page.getByRole("complementary", { name: "Propriétés du dessin" });
