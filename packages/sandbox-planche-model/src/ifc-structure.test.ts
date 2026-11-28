@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { REGLAGES_DEFAUT } from "./annotations.js";
 import { lireModelePlanche } from "./delta.js";
 import { type Id, type Modele, ajouterRectangle, grouper, modeleVide, modifierAnnotations, pousserTirer, rattacherOccurrencesNiveau } from "./geometrie-libre.js";
-import { lireStep, decoderChaineStep } from "./ifc-step.js";
+import { lireStep, decoderChaineIfcStep } from "./ifc-step.js";
 import { SCHEMAS_IFC, classesAExporter, controlerAvantEmissionIfc, exporterIfcStructure, ifczip, importerIfcStructure, lireIfcStructure, pointDeBaseDepuisIfc, relireIfcStructure } from "./ifc-structure.js";
 import { creerLocal } from "./locaux.js";
 import { ajouterNiveau } from "./niveaux.js";
@@ -59,7 +59,7 @@ describe("Lecture STEP", () => {
     expect(f.schema).toBe("IFC4");
     expect(f.entites.get(1)!.args).toEqual([{ texte: "l'aé" }, { ref: 2 }, { enum: "T" }, null, "*", { type: "IFCLABEL", valeur: { texte: "x" } }, [[1, 2], [30, -4]]]);
     expect(f.entites.get(2)!.args).toEqual([]);
-    expect(decoderChaineStep("\\X\\E9t\\X2\\00C9\\X0\\")).toBe("étÉ");
+    expect(decoderChaineIfcStep("\\X\\E9t\\X2\\00C9\\X0\\")).toBe("étÉ");
     expect(() => lireStep("pas un ifc")).toThrow();
   });
 });

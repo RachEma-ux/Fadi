@@ -88,6 +88,8 @@ export interface Arete {
   readonly masquee?: boolean;
   /** Courbe d'appartenance (cercle, polygone, arc) : la gomme efface la courbe entière. */
   readonly courbe?: Id;
+  /** (Cas 2, lot 4) Balise de l'arête nue (balise courante à la création ou classement). */
+  readonly balise?: Id;
 }
 
 export interface Face {
@@ -99,6 +101,8 @@ export interface Face {
   readonly materiauVerso?: string;
   /** Masquée (menu contextuel « Masquer », lot 5) : ni affichée, ni accrochée, ni sélectionnable. */
   readonly masquee?: boolean;
+  /** (Cas 2, lot 4) Balise de la face nue. */
+  readonly balise?: Id;
 }
 
 export type GenreCourbe = "cercle" | "polygone" | "arc";
@@ -144,6 +148,11 @@ export interface Occurrence {
    * gardés pour le réexport. Absente = objet de la Planche.
    */
   readonly ifc?: IdentiteIfc;
+  /**
+   * (Cas 2, lot 8, n° 25) Ouverture découpée par ce composant dans sa face d'appui : contexte de la face (`dans`, absent =
+   * racine) et contour du trou dans ce contexte. Le trou suit l'occurrence (déplacée, remplacée, effacée).
+   */
+  readonly ouverture?: { readonly dans?: Id; readonly contour: readonly Vec3[] };
 }
 
 /** Identité IFC d'un objet : classe IFC en casse d'origine et GlobalId (22 caractères). */
@@ -190,6 +199,22 @@ export interface MetadonneesDefinition {
   readonly piece?: MetadonneesPiece;
   /** (Extension « Composants dynamiques ») Paramètres, options et règles du composant ; absent = composant ordinaire. */
   readonly dynamique?: ComposantDynamique;
+  /** (Cas 2, lot 8) Composant d'agence (fichier `fadi-composant/1` archivé en base) : de quoi le régénérer à la demande. */
+  readonly composantAgence?: ComposantAgenceDefinition;
+}
+
+/** (Cas 2, lot 8) Fenêtre, porte, baie ou garde-corps lu d'un fichier d'agence, avec les valeurs de l'occurrence posée. */
+export interface ComposantAgenceDefinition {
+  readonly fichier: string;
+  /** Identifiant de l'archive du fichier en base (absent si l'archivage a échoué ou n'est pas encore fait). */
+  readonly archive?: string;
+  readonly genre: "fenetre" | "porte" | "baie" | "garde-corps";
+  /** Main déclarée par le fichier (porte, équipement) : le miroir lisible la garde. */
+  readonly main?: "gauche" | "droite";
+  /** Valeurs en mètres (largeur, hauteur, allège, vantaux, longueur, vide maximal…), saisies ou reprises de la baie. */
+  readonly valeurs: Readonly<Record<string, number>>;
+  /** Texte du fichier tel qu'il a été lu (pour régénérer sans relire la base). */
+  readonly texte: string;
 }
 
 /** Option montrée à l'utilisateur pour un paramètre : zone de texte, ou liste quand `choix` est donné. */
@@ -2940,15 +2965,19 @@ function fusionnerSommets(c: Ctx, deplaces: ReadonlySet<Id>): void {
 }
 
 /** Un objet verrouillé (§5.6, lot 5) ne se transforme pas, ne se copie pas et ne s'efface pas. */
-function refuserVerrouilles(c: Ctx, entites: readonly Id[]): void {
+function refuserVerrouilles(c: Ctx, entites: readonly Id[], t?: Travail): void {
   for (const id of entites) {
     const occ = c.occurrences.get(id);
     if (occ?.verrouille) throw new Error(`L'objet ${occ.nom ? `« ${occ.nom} » ` : ""}est verrouillé : déverrouillez-le (Info entité ou menu contextuel) pour le modifier.`);
+    // Cas 2, lot 4 (n° 82) : une entité d'une balise verrouillée n'est ni modifiée ni effacée.
+    const b = t ? (occ ?? c.faces.get(id) ?? c.aretes.get(id))?.balise : undefined;
+    const balise = b ? t!.annotations.balises[b] : undefined;
+    if (balise?.verrouillee) throw new Error(`La balise « ${balise.nom} » est verrouillée : déverrouillez-la (panneau Balises) pour modifier ce qu'elle porte.`);
   }
 }
 
 function transformerSurPlace(t: Travail, c: Ctx, entites: readonly Id[], M: Matrice4): void {
-  refuserVerrouilles(c, entites);
+  refuserVerrouilles(c, entites, t);
   const S = sommetsDe(c, entites);
   for (const s of S) c.sommets.set(s, { id: s, position: appliquer(M, pos(c, s)) });
   const det = determinant3(M);
@@ -3123,6 +3152,39 @@ export function mettreAEchelle(
   });
 }
 
+/**
+ * (Cas 2 du catalogue, lot 8, n° 50) Transformation affine quelconque des entités, sur place, en un pas : calage par deux
+ * points (translation, rotation et échelle uniforme calculées). Les verrous sont respectés comme pour Déplacer.
+ */
+export function transformer(m: Modele, entites: readonly Id[], M: Matrice4, o: OptionsContexte = {}): Resultat {
+  if (Math.abs(determinant3(M)) < EPS) throw new RangeError("Transformation singulière : rien n'a été modifié.");
+  return operer(m, o.dans, (t, c) => transformerSurPlace(t, c, entites, M));
+}
+
+/**
+ * (Cas 2, lot 8, n° 25) Bouche le trou de `face` dont le contour passe par `contour` (positions, à la tolérance) : le trou
+ * disparaît de la face ; ses arêtes et sommets, s'ils ne bordent plus rien, sont effacés. `false` si aucun trou ne
+ * correspond (déjà bouché ou face disparue).
+ */
+export function boucherTrou(m: Modele, contour: readonly Vec3[], o: OptionsContexte = {}): Resultat & { extra: boolean } {
+  return operer(m, o.dans, (_t, c) => {
+    const proche = (s: Id): boolean => contour.some((p) => dist(pos(c, s), p) <= 1e-5);
+    for (const f of [...c.faces.values()]) {
+      const i = f.trous.findIndex((b) => b.length === contour.length && b.every(proche));
+      if (i < 0) continue;
+      const trou = f.trous[i] as readonly Id[];
+      c.faces.set(f.id, { ...f, trous: f.trous.filter((_, j) => j !== i) });
+      for (let k = 0; k < trou.length; k++) {
+        const a = areteEntre(c, trou[k] as Id, trou[(k + 1) % trou.length] as Id);
+        if (a && facesDeArete(c, a).length === 0) c.aretes.delete(a.id);
+      }
+      for (const s of trou) if (aretesDuSommet(c, s).length === 0) c.sommets.delete(s);
+      return true;
+    }
+    return false;
+  });
+}
+
 /** Retourner (Flip) par rapport au plan (origine, normale) ; `copie` = Ctrl. */
 export function retourner(
   m: Modele,
@@ -3288,7 +3350,7 @@ export function eclater(m: Modele, occurrence: Id, o: OptionsContexte = {}): Res
   return operer(m, dans, (t, c) => {
     const occ = c.occurrences.get(occurrence);
     if (!occ) throw new Error(`Occurrence inconnue : ${occurrence}`);
-    refuserVerrouilles(c, [occurrence]);
+    refuserVerrouilles(c, [occurrence], t);
     const def = t.definitions.get(occ.definition);
     if (!def) throw new Error(`Définition inconnue : ${occ.definition}`);
     c.occurrences.delete(occurrence);
@@ -3498,7 +3560,7 @@ export function effacerAretes(m: Modele, aretes: readonly Id[], o: OptionsContex
  */
 export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
-    refuserVerrouilles(c, ids);
+    refuserVerrouilles(c, ids, t);
     for (const id of ids) {
       c.faces.delete(id);
       c.occurrences.delete(id);
@@ -3526,6 +3588,27 @@ export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | nul
       if (!f) continue;
       const { materiauRecto: _ancien, ...reste } = f;
       c.faces.set(id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+    }
+  });
+}
+
+/** Attributs d'une face ou d'une arête reportés après un redessin (préparation d'un fond DAO, cas 2 lot 3). */
+export type AttributsReportFace = Pick<Face, "materiauRecto" | "materiauVerso" | "masquee">;
+export type AttributsReportArete = Pick<Arete, "adoucie" | "masquee" | "courbe">;
+
+/** Reporte des attributs sur des faces et des arêtes existantes du contexte (les champs absents restent absents). */
+export function reporterAttributs(m: Modele, faces: ReadonlyMap<Id, AttributsReportFace>, aretes: ReadonlyMap<Id, AttributsReportArete>, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const [id, x] of faces) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, { ...f, ...x });
+    }
+    for (const [id, x] of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      // Une courbe disparue entre-temps n'est pas rattachée : l'arête reste libre.
+      const { courbe, ...reste } = x;
+      c.aretes.set(id, { ...a, ...reste, ...(courbe !== undefined && c.courbes.has(courbe) ? { courbe } : {}) });
     }
   });
 }
@@ -3644,6 +3727,30 @@ export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise
       const { balise: _ancienne, ...reste } = occ;
       c.occurrences.set(id, balise ? { ...reste, balise } : reste);
     }
+  });
+}
+
+/**
+ * (Cas 2, lot 4) Balise posée (ou retirée, `null`) sur des entités du contexte : arêtes et faces nues comme objets. Rend le
+ * nombre d'entités touchées.
+ */
+export function baliserEntites(m: Modele, ids: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    let n = 0;
+    const poser = <T extends { readonly balise?: Id }>(x: T): T => {
+      n++;
+      const { balise: _ancienne, ...reste } = x;
+      return (balise ? { ...reste, balise } : reste) as T;
+    };
+    for (const id of ids) {
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, poser(a));
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, poser(f));
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, poser(occ));
+    }
+    return n;
   });
 }
 
@@ -3900,7 +4007,7 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   // un rangement (l'objet bougerait dans toutes) : refus.
   if (t.ouvrir(cible) === src) throw new RangeError(ERREUR_DEPLACER_MEME_CONTENU);
   for (const id of ids) if (!src.occurrences.has(id)) throw new RangeError(`L'objet ${id} n'est pas dans le contexte ouvert : seuls les groupes et composants se déplacent vers un groupe.`);
-  refuserVerrouilles(src, ids);
+  refuserVerrouilles(src, ids, t);
   const occs = ids.map((id) => src.occurrences.get(id) as Occurrence);
   let composantPartage = 0;
   if (cible !== undefined) {

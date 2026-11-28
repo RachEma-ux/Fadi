@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "ifc";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation" | "ifc";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-ifc-structure" | "panneau-import-ifc" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "panneau-ifc-structure" | "panneau-import-ifc" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -321,6 +321,14 @@ const commandes: EntreeSandbox[] = [
   // Extension « Contrôle et nettoyage » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("controler", "controle", "stethoscope", "Maj+F8", "panneau-controle", true),
   c("nettoyer", "controle", "sparkles", "Maj+F2", "panneau-controle", true),
+  // Cas 2 du catalogue, lot 3 (27 novembre 2026) : parcours et correction des défauts, fond DAO, volumes, pièces du permis.
+  // Ctrl+Maj+F2 à F6 et F12 étaient libres (F7 à F11 sont pris par les paquets d'essai d'extensions).
+  c("defaut-precedent", "controle", "player-track-prev", "Ctrl+Maj+F2", "panneau-controle", true),
+  c("defaut-suivant", "controle", "player-track-next", "Ctrl+Maj+F3", "panneau-controle", true),
+  c("corriger-defaut", "controle", "tool", "Ctrl+Maj+F4", "panneau-controle", true),
+  c("preparer-fond-dao", "controle", "vector-triangle", "Ctrl+Maj+F5", "panneau-controle", true),
+  c("fusionner-volumes", "controle", "box-multiple", "Ctrl+Maj+F6", "panneau-controle", true),
+  c("pieces-permis", "controle", "file-certificate", "Ctrl+Maj+F12", "panneau-controle", true),
   // Extension « Composants dynamiques » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("composant-dynamique", "dynamique", "math-function", "Maj+F7", "panneau-dynamique", true),
   c("redessiner-composant", "dynamique", "refresh", "Maj+F11", "panneau-dynamique", true),
@@ -392,7 +400,7 @@ const commandes: EntreeSandbox[] = [
   // Lot C4, étape 2 : fiche de calage du projet et orthophoto posée d'après son fichier de calage d'image (F8 à F12 ;
   // Ctrl+Alt+Maj+F est alors épuisée ; Alt+F6 à F12 et Ctrl+Maj+F1 à F12 sont pris ou réservés : Alt+F3 pour Ignorer,
   // Alt+F2 pour Poser ; certains bureaux Linux gardent Alt+F2, la commande reste dans le panneau et la liste Outils).
-  c("exporter-fiche", "fond", "file-certificate", "Ctrl+Alt+Maj+F8", "panneau-fonds", true),
+  c("exporter-fiche", "fond", "file-description", "Ctrl+Alt+Maj+F8", "panneau-fonds", true),
   c("importer-fiche", "fond", "file-search", "Ctrl+Alt+Maj+F9", "panneau-fonds", true),
   c("importer-orthophoto", "fond", "map-2", "Ctrl+Alt+Maj+F10", "panneau-fonds", true),
   c("exporter-calage-fond", "fond", "grid-scan", "Ctrl+Alt+Maj+F11", "panneau-fonds", true),
@@ -424,9 +432,9 @@ const commandes: EntreeSandbox[] = [
   c("statut-a-demolir", "travaux", "home-x", "Ctrl+Maj+Espace, A", "panneau-statut-travaux", true),
   c("statut-projete", "travaux", "home-plus", "Ctrl+Maj+Espace, J", "panneau-statut-travaux", true),
   // Lot C4, étape 6 : IFC structuré (export par classes et géoréférencé, contrôle, import des étages et de la trame).
-  c("ifc-structure", "ifc", "building-skyscraper", "Ctrl+Maj+Espace, G", "outils", true),
-  c("exporter-ifc", "ifc", "cube-send", "Ctrl+Maj+Espace, Maj+G", "panneau-ifc-structure", true),
-  c("controler-ifc", "ifc", "list-check", "Ctrl+Maj+Espace, V", "panneau-ifc-structure", true),
+  c("ifc-structure", "ifc", "building-skyscraper", "Ctrl+Maj+Espace, U", "outils", true),
+  c("exporter-ifc", "ifc", "cube-send", "Ctrl+Maj+Espace, Maj+U", "panneau-ifc-structure", true),
+  c("controler-ifc", "ifc", "list-check", "Ctrl+Maj+Espace, Maj+K", "panneau-ifc-structure", true),
   c("import-ifc", "ifc", "cube-unfolded", "Ctrl+Maj+Espace, O", "outils", true),
   c("importer-ifc", "ifc", "cube-plus", "Ctrl+Maj+Espace, Maj+O", "panneau-import-ifc", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
@@ -443,6 +451,53 @@ const commandes: EntreeSandbox[] = [
   c("guide-reseau", "accrochage", "layout-distribute-horizontal", "Alt+F10", "panneau-metre", true),
   c("repartir", "accrochage", "spacing-horizontal", "Alt+F11", "panneau-metre", true),
   c("remettre-echelle", "accrochage", "scale", "Alt+F12", "panneau-info-entite", true),
+  // Cas 2 du catalogue, lot 4 (27 novembre 2026) : balises, scènes, plans de coupe et gabarit d'agence, hors des 86 entrées.
+  // Ctrl + Alt + Maj + F1 à F12 étaient libres (Ctrl + Alt + lettre reste aux extensions et à AltGr des claviers suisses).
+  c("verrouiller-balise", "balise", "lock", "Ctrl+Maj+1", "panneau-balises", true),
+  c("balises-phase", "balise", "versions", "Ctrl+Maj+2", "panneau-balises", true),
+  c("classer-selection", "balise", "tag-starred", "Ctrl+Maj+3", "panneau-balises", true),
+  c("vue-etat", "balise", "eye-check", "Ctrl+Maj+4", "panneau-balises", true),
+  c("scenes-types", "scene", "template", "Ctrl+Maj+5", "panneau-scenes", true),
+  c("avancer-coupe", "scene", "chevrons-up", "Ctrl+Maj+6", "panneau-info-entite", true),
+  c("reculer-coupe", "scene", "chevrons-down", "Ctrl+Maj+7", "panneau-info-entite", true),
+  c("scene-face-coupe", "scene", "camera-plus", "Ctrl+Maj+8", "panneau-info-entite", true),
+  c("gabarit", "gabarit", "file-settings", "Ctrl+Maj+9", "panneau-gabarit", true),
+  c("importer-gabarit", "gabarit", "file-arrow-left", "Ctrl+Maj+0", "panneau-gabarit", true),
+  c("enregistrer-gabarit", "gabarit", "file-pencil", "Alt+7", "panneau-gabarit", true),
+  c("creer-planche-gabarit", "gabarit", "file-star", "Alt+8", "panneau-gabarit", true),
+  // Cas 2 du catalogue, lot 6 (27 novembre 2026) : Planche complète au format natif (empreinte) et image de la vue ;
+  // Alt + F1 était la dernière touche simple libre (les suivantes passent aux raccourcis en deux temps).
+  c("natif-image", "echange", "file-database", "Alt+F1", "panneau-natif-image", true),
+  // Cas 2 du catalogue, lot 7 (27 novembre 2026) : versions, jalons et brouillon ; raccourcis en deux temps
+  // (Ctrl+Maj+Espace puis une touche), secondes touches accordées avec le cas 4 le 27 novembre.
+  c("versions", "version", "history", "Ctrl+Maj+Espace, V", "panneau-versions", true),
+  c("poser-jalon", "version", "flag", "Ctrl+Maj+Espace, Maj+J", "panneau-versions", true),
+  c("consultation", "version", "lock-access", "Ctrl+Maj+Espace, G", "panneau-versions", true),
+  c("comparer", "version", "git-compare", "Ctrl+Maj+Espace, Q", "panneau-comparer", true),
+  c("brouillon", "version", "git-branch", "Ctrl+Maj+Espace, Maj+V", "panneau-brouillon", true),
+  c("fiche-projet", "version", "id-badge-2", "Ctrl+Maj+Espace, Maj+F", "panneau-fiche-projet", true),
+  // Brouillon ouvert (revue de #514, règle d'or) : appliquer, garder comme variante, abandonner.
+  c("appliquer-brouillon", "version", "git-merge", "Ctrl+Maj+Espace, Maj+A", "panneau-brouillon", true),
+  c("garder-brouillon", "version", "git-fork", "Ctrl+Maj+Espace, Maj+G", "panneau-brouillon", true),
+  c("abandonner-brouillon", "version", "git-branch-deleted", "Ctrl+Maj+Espace, Maj+Z", "panneau-brouillon", true),
+  // Cas 2 du catalogue, lot 8 (27 novembre 2026) : outils de modélisation et composants ; secondes touches en chiffres
+  // (maquettes lot8-1 à lot8-4 acceptées), Maj+5 et Maj+6 pour les deux commandes ajoutées à la mise en œuvre.
+  c("extrusion-hauteur", "modelisation", "arrow-autofit-height", "Ctrl+Maj+Espace, 1", "panneau-extrusion", true),
+  c("creer-couches", "modelisation", "stack-3", "Ctrl+Maj+Espace, 2", "panneau-extrusion", true),
+  c("prolonger-arete", "modelisation", "arrow-bar-to-right", "Ctrl+Maj+Espace, 3", "panneau-extrusion", true),
+  c("composants-agence", "modelisation", "window", "Ctrl+Maj+Espace, 4", "panneau-composants-agence", true),
+  c("ajuster-baie", "modelisation", "aspect-ratio", "Ctrl+Maj+Espace, 5", "panneau-composants-agence", true),
+  c("remplacer-occurrences", "modelisation", "replace", "Ctrl+Maj+Espace, 6", "panneau-composants-agence", true),
+  c("soustraire-garder", "modelisation", "cut", "Ctrl+Maj+Espace, 7", "panneau-soustraire", true),
+  c("caler-deux-points", "modelisation", "vector-spline", "Ctrl+Maj+Espace, 8", "panneau-soustraire", true),
+  c("selection-altitudes", "modelisation", "arrows-vertical", "Ctrl+Maj+Espace, 9", "panneau-soustraire", true),
+  c("selection-boite", "modelisation", "box-margin", "Ctrl+Maj+Espace, Maj+9", "panneau-soustraire", true),
+  c("miroir-lisible", "modelisation", "flip-horizontal", "Ctrl+Maj+Espace, 0", "panneau-soustraire", true),
+  c("ecreter-enveloppe", "modelisation", "crop", "Ctrl+Maj+Espace, Maj+0", "panneau-soustraire", true),
+  c("vue-ortho", "modelisation", "perspective-off", "Ctrl+Maj+Espace, Maj+1", "panneau-vues-mesures", true),
+  c("eclater-axonometrie", "modelisation", "arrows-split", "Ctrl+Maj+Espace, Maj+2", "panneau-vues-mesures", true),
+  c("echelle-graphique", "modelisation", "tallymarks", "Ctrl+Maj+Espace, Maj+3", "panneau-vues-mesures", true),
+  c("aire-projetee", "modelisation", "chart-area", "Ctrl+Maj+Espace, Maj+4", "panneau-vues-mesures", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({

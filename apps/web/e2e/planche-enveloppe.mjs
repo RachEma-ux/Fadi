@@ -49,6 +49,7 @@ const occurrences = async () => Object.keys((await modele()).racine.occurrences)
 async function importer(nom, octets) {
   const deja = new Set(await occurrences());
   const n = deja.size;
+  const ouvert = (await page.locator("[data-planche-enveloppe]").count()) > 0;
   await page.locator("[data-planche-menu-ouvrir]").click();
   if (!(await page.locator("[data-planche-importer='obj']").isVisible().catch(() => false))) await page.locator("[data-planche-menu-item='importer']").click();
   const choix = page.waitForEvent("filechooser");
@@ -56,6 +57,12 @@ async function importer(nom, octets) {
   await (await choix).setFiles({ name: nom, mimeType: "text/plain", buffer: octets });
   await page.waitForFunction((k) => Object.keys(window.fadiPlanche.modele().racine.occurrences).length === k + 1 && !document.querySelector("[data-planche-import-cours]"), n);
   await page.waitForTimeout(200);
+  // Cas 2, lot 6 : l'import OBJ ouvre son rapport (panneau « Importer ») ; on revient au panneau de l'enveloppe.
+  if (ouvert && (await page.locator("[data-planche-enveloppe]").count()) === 0) {
+    await vue.focus();
+    await page.keyboard.press("Control+Alt+Shift+Digit0");
+    await page.locator("[data-planche-enveloppe]").waitFor();
+  }
   return (await occurrences()).find((id) => !deja.has(id));
 }
 const ecran = async (p) => {

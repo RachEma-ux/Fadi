@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { basculerPaquet, codeRepondA, controlesPaquet, controlesReussis, lireBrouillonPaquet, lireChoixPaquets, lireFichesPaquetsCompte, nomFichierPaquet, paquetInstalle, paquetVide, validerChangementReglagePaquet } from "./administration-extensions.js";
 import { jugerImportPaquet } from "./extensions-installees.js";
-import type { PaquetExtension } from "./protocole-extensions.js";
+import { VERSION_PROTOCOLE, type PaquetExtension } from "./protocole-extensions.js";
 
 const essai = (): PaquetExtension => JSON.parse(readFileSync(new URL("../../../apps/web/e2e/donnees/essai-commandes.fadi-addon.json", import.meta.url), "utf8"));
 
@@ -69,7 +69,7 @@ describe("administration des extensions ajoutées", () => {
     expect(lireBrouillonPaquet(p)).toEqual(p);
     const abime = { fiche: { id: "trames", nom: { fr: "Trames" }, permissions: ["modele.lire", "reseau"], commandes: [{ id: "tracer", raccourci: "Ctrl+Z" }] }, code: 12, pages: { "a.svg": "<svg></svg>", b: 3 } };
     const lu = lireBrouillonPaquet(abime)!;
-    expect(lu.fiche).toMatchObject({ id: "trames", nom: { fr: "Trames", en: "" }, permissions: ["modele.lire"], protocole: "1.2" });
+    expect(lu.fiche).toMatchObject({ id: "trames", nom: { fr: "Trames", en: "" }, permissions: ["modele.lire"], protocole: VERSION_PROTOCOLE });
     expect(lu.fiche.commandes).toEqual([{ id: "tracer", libelle: { fr: "", en: "" }, icone: "", raccourci: "Ctrl+Z" }]);
     expect(lu.code).toBe("");
     expect(lu.pages).toEqual({ "a.svg": "<svg></svg>" });
