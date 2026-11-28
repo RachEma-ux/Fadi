@@ -282,7 +282,8 @@ function lireGltfJson(g: Json, bin: Uint8Array | null, format: "gltf" | "glb"): 
 
 // ---------------------------------------------------------------- PLY
 
-export function lirePly(octets: Uint8Array): LectureScene {
+/** (Étape 7f) Sommets et triangles d'un PLY, sans juger : un PLY sans faces est un nuage de points. */
+export function lirePlyBrut(octets: Uint8Array): { readonly xyz: number[]; readonly triangles: number[]; readonly couleurs: boolean } {
   const tete = new TextDecoder("latin1").decode(octets.subarray(0, Math.min(octets.length, 65536)));
   const fin = /end_header\r?\n/.exec(tete);
   if (!tete.startsWith("ply") || !fin) throw new ErreurImport("illisible", "Ce fichier n'est pas un PLY (en-tête absent).");
@@ -368,8 +369,14 @@ export function lirePly(octets: Uint8Array): LectureScene {
   for (let k = 0; k < positions.length; k += 3) for (let c = 0; c < 3; c++) xyz[k + (ordre[c] as number)] = positions[k + c] as number;
   const nb = xyz.length / 3;
   if (triangles.some((x) => x < 0 || x >= nb)) throw new ErreurImport("illisible", "Indices PLY hors des sommets.");
+  return { xyz, triangles, couleurs: elements.some((e) => e.props.some((p) => p.nom === "red")) };
+}
+
+export function lirePly(octets: Uint8Array): LectureScene {
+  const { xyz, triangles, couleurs } = lirePlyBrut(octets);
+  const nb = xyz.length / 3;
   if (triangles.length === 0) throw new ErreurImport("vide", `PLY sans faces (${nb.toLocaleString("fr-CH")} points) : c'est un nuage de points, à poser par la tranche de nuage.`);
-  return { format: "ply", objets: [{ nom: "Objet PLY", positions: xyz, triangles, pose: IDENT, cle: "ply" }], matieres: {}, uniteFichier: null, axeFichier: null, omis: elements.some((e) => e.props.some((p) => p.nom === "red")) ? ["couleurs-sommet"] : [] };
+  return { format: "ply", objets: [{ nom: "Objet PLY", positions: xyz, triangles, pose: IDENT, cle: "ply" }], matieres: {}, uniteFichier: null, axeFichier: null, omis: couleurs ? ["couleurs-sommet"] : [] };
 }
 
 // ---------------------------------------------------------------- 3MF

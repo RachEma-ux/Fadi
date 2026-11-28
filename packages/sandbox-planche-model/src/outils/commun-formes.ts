@@ -151,8 +151,8 @@ export function axesDuPlan(n0: Vec3, repere?: Repere): { u: Vec3; w: Vec3 } {
  * pour que tous les outils lisent le même contexte (concept § 8.2).
  */
 export function axesDeSaisie(
-  ctx: Pick<ContexteOutil, "repere" | "planDeTravail"> & Partial<Pick<ContexteOutil, "modele" | "accrochage">>,
-): { axes?: Repere; sol?: { origine: Vec3; normale: Vec3 }; accrochage?: OptionsAccrochage; guides?: GuideAccrochable[]; coupe?: { origine: Vec3; normale: Vec3 } } {
+  ctx: Pick<ContexteOutil, "repere" | "planDeTravail"> & Partial<Pick<ContexteOutil, "modele" | "accrochage" | "pointsMesures">>,
+): { axes?: Repere; sol?: { origine: Vec3; normale: Vec3 }; accrochage?: OptionsAccrochage; guides?: GuideAccrochable[]; coupe?: { origine: Vec3; normale: Vec3 }; pointsMesures?: Float32Array } {
   // (Cas 2, lot 2) Avec les réglages d'accrochage de l'interface : guides du modèle et plan de coupe actif (le dernier).
   const a = ctx.accrochage;
   const ann = a ? ctx.modele?.annotations : undefined;
@@ -165,6 +165,8 @@ export function axesDeSaisie(
     ...(a ? { accrochage: a } : {}),
     ...(guides.length ? { guides } : {}),
     ...(coupe ? { coupe: { origine: coupe.origine, normale: coupe.normale } } : {}),
+    // (Cas 4, lot C4, étape 7f) Points mesurés d'un nuage : accrochés avec les réglages de l'interface seulement.
+    ...(a && ctx.pointsMesures && ctx.pointsMesures.length >= 3 ? { pointsMesures: ctx.pointsMesures } : {}),
   };
 }
 

@@ -65,6 +65,8 @@ export type TypeInference =
   | "axe-median"
   /** (Cas 2, lot 2) Croisement de deux alignements, ou d'un alignement et d'une arête, sans ligne de construction. */
   | "croisement"
+  /** (Cas 4, lot C4, étape 7f) Point mesuré d'un nuage de points (tranche affichée). */
+  | "point-mesure"
   | "aucune";
 
 export interface Libelle {
@@ -96,6 +98,7 @@ export const COULEURS: Readonly<Record<TypeInference, string>> = {
   "intersection-apparente": "#ff00ff",
   "axe-median": "#2040c0",
   croisement: "#e00000",
+  "point-mesure": "#e05d10",
   aucune: "#000000", // segment élastique noir hors inférence
 };
 
@@ -124,6 +127,7 @@ export const LIBELLES: Readonly<Record<TypeInference, Libelle>> = {
   "intersection-apparente": { en: "Apparent Intersection", fr: "Intersection apparente" },
   "axe-median": { en: "Midline", fr: "Axe entre deux nus" },
   croisement: { en: "Crossing", fr: "Croisement des alignements" },
+  "point-mesure": { en: "Measured Point", fr: "Point mesuré" },
   aucune: { en: "", fr: "" },
 };
 
@@ -132,7 +136,7 @@ export const LIBELLE_LIGNE_CONTRAINTE: Libelle = { en: "Constrained on Line", fr
 export const LIBELLE_PLAN_CONTRAINT: Libelle = { en: "Constrained on Plane", fr: "Contraint sur le plan" };
 
 /** Rang des inférences ponctuelles (plus petit = prioritaire). */
-export const RANG_POINTS: readonly TypeInference[] = ["extremite", "milieu", "intersection", "point-guide", "intersection-apparente", "quadrant", "centre", "origine"];
+export const RANG_POINTS: readonly TypeInference[] = ["extremite", "milieu", "intersection", "point-guide", "intersection-apparente", "quadrant", "centre", "point-mesure", "origine"];
 
 /**
  * (Cas 2, lot 2) Genres d'accrochage du panneau « Accrochage » : chacun peut être coupé, et un seul peut être forcé pour le
@@ -298,6 +302,8 @@ export interface EntreeInference {
   readonly coupe?: { readonly origine: Vec3; readonly normale: Vec3 };
   /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage ». */
   readonly accrochage?: OptionsAccrochage;
+  /** (Cas 4, lot C4, étape 7f) Points mesurés accrochables (tranche du nuage, 3 nombres par point, m). */
+  readonly pointsMesures?: Float32Array;
 }
 
 export interface Inference {
@@ -458,6 +464,7 @@ function construire(
 interface CandidatPoint {
   readonly type: TypeInference;
   readonly point: Vec3;
+  readonly libelle?: Libelle;
   readonly entite?: Id;
   readonly dansObjet?: boolean;
 }
@@ -505,6 +512,20 @@ function candidatsPoints(e: EntreeInference, axes: AxesModele, c: Curseur): Cand
         const y = intersectionApparente(A, B, normalize(e.rayon.direction));
         if (y) r.push({ type: "intersection-apparente", point: y, entite: A.id });
       }
+    }
+  }
+  // (Cas 4, lot C4, étape 7f) Points mesurés : le plus proche du rayon, avec son écart au point visé (mm).
+  const pm = e.pointsMesures;
+  if (pm && pm.length >= 3 && permis(e, "point-mesure")) {
+    let meilleur: { p: Vec3; d: number } | undefined;
+    for (let i = 0; i + 2 < pm.length; i += 3) {
+      const p = { x: pm[i]!, y: pm[i + 1]!, z: pm[i + 2]! };
+      const d = c.ecart(p);
+      if (d <= tol && (!meilleur || d < meilleur.d)) meilleur = { p, d };
+    }
+    if (meilleur) {
+      const mm = Math.round(meilleur.d * 1000);
+      r.push({ type: "point-mesure", point: meilleur.p, libelle: { en: `Measured Point · ${mm} mm from aimed point`, fr: `Point mesuré · écart au point visé ${mm} mm` } });
     }
   }
   return r.filter((x) => c.ecart(x.point) <= tol && permis(e, x.type));
@@ -866,6 +887,7 @@ function infererBase(e: EntreeInference): Inference {
   const pt = meilleurPoint(candidatsPoints(e, axes, c), c);
   if (pt) {
     return construire(pt.type, pt.point, {
+      ...(pt.libelle ? { libelle: pt.libelle } : {}),
       ...(pt.entite !== undefined ? { entite: pt.entite } : {}),
       ...(pt.dansObjet ? { dansObjet: true } : {}),
     });

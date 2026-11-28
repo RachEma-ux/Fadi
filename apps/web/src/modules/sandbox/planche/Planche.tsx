@@ -396,6 +396,17 @@ import {
   dateSuisse,
   empreinteLot,
   type SortieLot,
+  ErreurNuagePoints,
+  ajusterPlan,
+  empriseNuage,
+  estNuage,
+  formatNuageDuNom,
+  lireNuagePoints,
+  nuageDansProjet,
+  placementNuageDefaut,
+  trancheNuage,
+  type BoiteNuage,
+  type NuagePointsLu,
   type FichierLot,
   versionVisionneuse,
   empreinteAbregee,
@@ -505,7 +516,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_VISIONNEUSE, disponibiliteVisionneuse, type IdCommandeVisionneuse, COMMANDES_LOT, disponibiliteLot, type IdCommandeLot, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_VISIONNEUSE, disponibiliteVisionneuse, type IdCommandeVisionneuse, COMMANDES_LOT, disponibiliteLot, type IdCommandeLot, COMMANDES_NUAGE, disponibiliteNuage, type IdCommandeNuage, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -529,6 +540,7 @@ import { PanneauKml, type ResumeKml } from "./panneau-kml";
 import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
 import { PanneauVisionneuse } from "./panneau-visionneuse";
 import { ApercuManifeste, PanneauLotEchange } from "./panneau-lot-echange";
+import { BulleNuage, PanneauNuage } from "./panneau-nuage";
 import { ErreurProjection, projeterVersSysteme } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
@@ -617,6 +629,7 @@ interface CrochetRecette {
       selection: () => readonly string[];
       pas: () => number;
       versEcran: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null;
+      poigneesNuage: () => { x: number; y: number }[] | null;
       /** Lots 4 à 6 : matière et balise courantes, hauteur d'œil, moteur booléen chargé, emprise et caméra. */
       materiau: () => string | null;
       balise: () => string | null;
@@ -686,7 +699,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement" | "visionneuse" | "lot-echange";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement" | "visionneuse" | "lot-echange" | "nuage";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -701,7 +714,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement", "visionneuse", "lot-echange"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement", "visionneuse", "lot-echange", "nuage"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -909,6 +922,11 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [materiau, setMateriauEtat] = useState<string | null>(null);
   const baliseRef = useRef<string | null>(null);
   const fondCourantRef = useRef<string | null>(null);
+  /** (Cas 4, lot C4, étape 7f) Points mesurés accrochables : tranche du nuage posé, quand l'accrochage est coché. */
+  const pointsMesuresRef = useRef<Float32Array | null>(null);
+  const boiteNuageRef = useRef<(b: BoiteNuage) => void>(() => {});
+  /** (Cas 4, lot C4, étape 7f) Clic de l'outil Sélection sur un point mesuré, panneau du nuage ouvert : le choisit. */
+  const choisirPointNuageRef = useRef<(ev: EvenementOutil) => boolean>(() => false);
   const [balise, setBaliseEtat] = useState<string | null>(null);
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
@@ -1129,6 +1147,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(fondCourantRef.current ? { fondCourant: fondCourantRef.current } : {}),
+      ...(pointsMesuresRef.current ? { pointsMesures: pointsMesuresRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
       altitudesBoite: altitudesBoiteRef.current,
@@ -2445,6 +2464,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             if (ev.genre === "clic") validerEditionRef.current();
             return;
           }
+          if (choisirPointNuageRef.current(ev)) return;
           envoyer(ev);
         },
         outilCamera: () => (estOutilCamera(outilRef.current) ? (outilRef.current as OutilCamera) : null),
@@ -2462,6 +2482,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         dans: () => dansRef.current,
         isolement: () => isolementRef.current,
         chemin: () => cheminRef.current,
+        boiteNuage: (b) => boiteNuageRef.current(b),
       });
     } catch {
       setWebgl("indisponible");
@@ -2479,6 +2500,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       selection: () => selectionRef.current,
       pas: () => histRef.current.passe.length,
       versEcran: (p) => vueRef.current?.versEcran(p) ?? null,
+      /** (Cas 4, lot C4, étape 7f) Coins de la boîte du nuage à l'écran (px), panneau ouvert. */
+      poigneesNuage: () => vueRef.current?.poigneesNuageEcran() ?? null,
       materiau: () => materiauRef.current,
       balise: () => baliseRef.current,
       // Cas 2, lot 4 : échelle nominale rendue et plans de rognage de la vue (recette).
@@ -4251,13 +4274,15 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   // fichier posé deux fois avec deux axes garde ses deux orientations).
   const cleFichierReference = (r: { readonly fichier: { readonly empreinte: string }; readonly axe?: string | undefined }) => `${r.fichier.empreinte}|${r.axe ?? "z"}`;
   const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
+  /** (Cas 4, lot C4, étape 7f) Nuages relus du fichier archivé, par empreinte. */
+  const [fichiersNuages, setFichiersNuages] = useState<Readonly<Record<string, NuagePointsLu | "lecture" | "introuvable">>>({});
   const [recolementBrut, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[]; modele: unknown } | null>(null);
   // Le résultat ne vaut que pour le modèle contrôlé : placement, tolérance, version ou dessin modifiés le rendent périmé.
   const recolement = recolementBrut && recolementBrut.modele === hist.present.modele ? recolementBrut : null;
   const importReferenceRef = useRef<HTMLInputElement | null>(null);
   const modeImportReference = useRef<"charger" | "recharger">("charger");
   const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
-    const f = fichiersReferences[cleFichierReference(r)];
+    const f = estNuage(r) ? fichiersNuages[r.fichier.empreinte] : fichiersReferences[cleFichierReference(r)];
     return [r.id, f === undefined || f === "lecture" ? "lecture" : f === "introuvable" ? "introuvable" : "chargee"] as const;
   }));
   const disponibiliteCommandeReference = (id: IdCommandeReference) => disponibiliteReference(id, { reference: referenceChoisie !== null, chargee: referenceChoisie !== null && etatsReferences[referenceChoisie.id] === "chargee", lecture: readOnly });
@@ -4271,6 +4296,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const enLecture = useRef(new Set<string>());
   useEffect(() => {
     for (const r of referencesListe) {
+      if (estNuage(r)) continue;
       const cle = cleFichierReference(r);
       if (fichiersReferences[cle] !== undefined || enLecture.current.has(cle)) continue;
       enLecture.current.add(cle);
@@ -4278,7 +4304,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         let etat: { positions: Float32Array } | "introuvable";
         try {
           const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
-          etat = { positions: positionsReference(maillagesReference(r.format, octets, r.axe ?? "z").maillages).positions };
+          etat = { positions: positionsReference(maillagesReference(r.format as Exclude<typeof r.format, "las" | "xyz" | "pts">, octets, r.axe ?? "z").maillages).positions };
         } catch {
           etat = "introuvable";
         }
@@ -4309,6 +4335,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const chargerFichierReference = async (f: File) => {
     const mode = modeImportReference.current;
     setNoteReference(null);
+    if (formatNuageDuNom(f.name)) return chargerNuage(f, mode);
     const format = formatDuNom(f.name);
     if (!format) return setErreurReference(t("planche.references.erreur.format"));
     const planche = indexRef.current.courante;
@@ -4362,6 +4389,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       return setReferenceChoisie(null);
     }
     if (id === "controler-recolement") {
+      if (estNuage(referenceChoisie)) return setErreurReference(t("planche.nuage.recolement"));
       const f = fichiersReferences[cleFichierReference(referenceChoisie)];
       if (!f || typeof f !== "object") return;
       const points = sommetsDuDessin(m);
@@ -7151,6 +7179,153 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       .catch((e: unknown) => setErreurLot(e instanceof Error ? e.message : String(e)))
       .finally(() => setEmissionLot(false));
   };
+  // Nuage de points (cas 4, lot C4, étape 7f) : relevé posé en référence verrouillée (fichier archivé tel quel, relu à
+  // l'ouverture). Tranche, boîte de découpe et points choisis sont des réglages de la vue : ils ne vont pas au dessin.
+  const nuagesListe = referencesListe.filter(estNuage);
+  const nuageCourant = (referenceChoisie && estNuage(referenceChoisie) ? referenceChoisie : nuagesListe[nuagesListe.length - 1]) ?? null;
+  const luNuage = nuageCourant ? fichiersNuages[nuageCourant.fichier.empreinte] : undefined;
+  const [altitudeNuage, setAltitudeNuage] = useState("1100");
+  const [epaisseurNuage, setEpaisseurNuage] = useState("40");
+  const [boitesNuages, setBoitesNuages] = useState<Readonly<Record<string, BoiteNuage>>>({});
+  const [accrocherNuage, setAccrocherNuage] = useState(true);
+  const [choisisNuage, setChoisisNuage] = useState<readonly Vec3[]>([]);
+  const [resultatNuage, setResultatNuage] = useState<string | null>(null);
+  const [erreurNuage, setErreurNuage] = useState<string | null>(null);
+  const millimetres = (v: string): number | null => {
+    const n = Number(v.replace(/[\s\u00a0\u202f']/g, "").replace(",", "."));
+    return Number.isFinite(n) ? n / 1000 : null;
+  };
+  // Relecture des nuages absents : une fois par empreinte.
+  const nuagesEnLecture = useRef(new Set<string>());
+  useEffect(() => {
+    for (const r of nuagesListe) {
+      const cle = r.fichier.empreinte;
+      if (fichiersNuages[cle] !== undefined || nuagesEnLecture.current.has(cle)) continue;
+      nuagesEnLecture.current.add(cle);
+      void (async () => {
+        let etat: NuagePointsLu | "introuvable";
+        try {
+          etat = lireNuagePoints(`releve.${r.format}`, new Uint8Array(await lireFichierReference(r.fichier.id)));
+        } catch {
+          etat = "introuvable";
+        }
+        nuagesEnLecture.current.delete(cle);
+        setFichiersNuages((a) => ({ ...a, [cle]: etat }));
+      })();
+    }
+  });
+  const mondeNuage = useMemo(() => (nuageCourant && luNuage && typeof luNuage === "object" ? nuageDansProjet(luNuage, nuageCourant.echelle, nuageCourant.placement) : null), [luNuage, nuageCourant?.echelle, nuageCourant?.placement]);
+  const empriseDuNuage = useMemo(() => (mondeNuage ? empriseNuage(mondeNuage) : null), [mondeNuage]);
+  const boiteNuage = nuageCourant ? (boitesNuages[nuageCourant.id] ?? empriseDuNuage?.boite ?? null) : null;
+  const altitudeM = millimetres(altitudeNuage);
+  const epaisseurM = millimetres(epaisseurNuage);
+  const trancheCourante = useMemo(() => (mondeNuage && altitudeM !== null && epaisseurM !== null && epaisseurM > 0 ? trancheNuage(mondeNuage, altitudeM, epaisseurM, boiteNuage) : new Float32Array(0)), [mondeNuage, altitudeM, epaisseurM, boiteNuage]);
+  const nuageVisible = !!nuageCourant?.visible && !!mondeNuage;
+  pointsMesuresRef.current = nuageVisible && accrocherNuage && trancheCourante.length >= 3 ? trancheCourante : null;
+  boiteNuageRef.current = (b) => {
+    if (!nuageCourant) return;
+    setBoitesNuages((a) => ({ ...a, [nuageCourant.id]: b }));
+    setResultatNuage(null);
+  };
+  // Choix d'un point mesuré : outil Sélection, panneau ouvert ; le point le plus proche du rayon, dans la tolérance.
+  choisirPointNuageRef.current = (ev) => {
+    if (ev.genre !== "clic" || panneauRef.current !== "nuage" || outilRef.current !== "selection" || trancheCourante.length < 3) return false;
+    let meilleur: { p: Vec3; d: number } | null = null;
+    const o = ev.rayon.origine;
+    const u = ev.rayon.direction;
+    const lu = Math.hypot(u.x, u.y, u.z) || 1;
+    for (let i = 0; i + 2 < trancheCourante.length; i += 3) {
+      const p = { x: trancheCourante[i]!, y: trancheCourante[i + 1]!, z: trancheCourante[i + 2]! };
+      const w = { x: p.x - o.x, y: p.y - o.y, z: p.z - o.z };
+      const t0 = (w.x * u.x + w.y * u.y + w.z * u.z) / lu;
+      if (t0 < 0) continue;
+      const d = Math.sqrt(Math.max(0, w.x * w.x + w.y * w.y + w.z * w.z - t0 * t0));
+      if (d <= ev.tolerance && (!meilleur || d < meilleur.d)) meilleur = { p, d };
+    }
+    if (!meilleur) return false;
+    const m = meilleur.p;
+    setChoisisNuage((a) => (a.some((q) => q.x === m.x && q.y === m.y && q.z === m.z) ? a.filter((q) => q.x !== m.x || q.y !== m.y || q.z !== m.z) : [...a, m]));
+    setResultatNuage(null);
+    setErreurNuage(null);
+    return true;
+  };
+  // Vue : nuage, tranche, points choisis ; boîte et poignées panneau ouvert.
+  useEffect(() => {
+    const v = vueRef.current;
+    if (!v) return;
+    if (!nuageVisible || !mondeNuage || !boiteNuage || altitudeM === null || !nuageCourant) return v.poserNuage(null);
+    v.poserNuage({ cle: `${nuageCourant.fichier.empreinte}|${nuageCourant.echelle}|${JSON.stringify(nuageCourant.placement)}`, points: mondeNuage, tranche: trancheCourante, choisis: choisisNuage, altitude: altitudeM, boite: boiteNuage, poignees: panneau === "nuage" });
+  }, [nuageVisible, mondeNuage, trancheCourante, choisisNuage, altitudeM, boiteNuage, panneau, nuageCourant]);
+  const chargerNuage = async (f: File, mode: "charger" | "recharger") => {
+    setErreurNuage(null);
+    setErreurReference(null);
+    const planche = indexRef.current.courante;
+    const refuser = (texte: string) => {
+      setErreurNuage(texte);
+      setErreurReference(texte);
+    };
+    let lu: NuagePointsLu;
+    try {
+      lu = lireNuagePoints(f.name, new Uint8Array(await f.arrayBuffer()));
+    } catch (e) {
+      return refuser(t(`planche.nuage.erreur.${e instanceof ErreurNuagePoints ? e.code : "illisible"}` as CleMessage));
+    }
+    const format = lu.format;
+    setNoteReference(t("planche.references.note.archivage"));
+    let fichier: Awaited<ReturnType<typeof archiverFichierReference>>;
+    try {
+      fichier = await archiverFichierReference(f, format);
+    } catch (e) {
+      setNoteReference(null);
+      return refuser(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    setFichiersNuages((a) => ({ ...a, [fichier.empreinte]: lu }));
+    const echelle = ECHELLES_UNITE[uniteReference];
+    const m = histRef.current.present.modele;
+    const message = t("planche.nuage.note.pose", { nom: f.name, total: lu.nombre.toLocaleString(LOCALE), affiches: (lu.points.length / 3).toLocaleString(LOCALE) });
+    setChoisisNuage([]);
+    setResultatNuage(null);
+    if (mode === "recharger" && referenceChoisie) {
+      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, format, fichier, echelle, triangles: 0, date: dateDuJour(), nuage: { points: lu.nombre } });
+      if (!r.ok) setErreurNuage(t(`planche.references.erreur.${r.erreur}`));
+      return operationReference(r, t("planche.references.recharger-reference"), r.ok ? message : null);
+    }
+    const placement = placementNuageDefaut(lu, echelle);
+    const r = ajouterReference(m, { nom: f.name, format, fichier, echelle, triangles: 0, date: dateDuJour(), placement, nuage: { points: lu.nombre } });
+    if (!r.ok) setErreurNuage(t(`planche.references.erreur.${r.erreur}`));
+    operationReference(r, t("planche.references.charger-reference"), r.ok ? message : null);
+    if (r.ok) setReferenceChoisie(r.id);
+    setPanneau("nuage");
+    // Le relevé posé est montré vu de dessus, cadré à côté du panneau (comme la tranche de la maquette).
+    const e = r.ok ? empriseNuage(nuageDansProjet(lu, echelle, placement)) : null;
+    if (e) {
+      requestAnimationFrame(() => {
+        vueRef.current?.vueStandard("dessus");
+        vueRef.current?.cadrer({ min: { x: e.boite.xmin, y: e.boite.ymin, z: e.zmin }, max: { x: e.boite.xmax, y: e.boite.ymax, z: e.zmax } }, margesVue(racineRef.current));
+      });
+    }
+  };
+  const disponibiliteCommandeNuage = (id: IdCommandeNuage) => disponibiliteNuage(id, { nuage: nuageCourant !== null, choisis: choisisNuage.length });
+  const executerNuage = (id: IdCommandeNuage) => {
+    setPanneau("nuage");
+    if (id === "nuage" || !disponibiliteCommandeNuage(id).disponible) return;
+    const r = ajusterPlan(choisisNuage);
+    if (!r.ok) {
+      setResultatNuage(null);
+      return setErreurNuage(t(`planche.nuage.erreur.${r.erreur}`));
+    }
+    setErreurNuage(null);
+    setResultatNuage(t("planche.nuage.resultat", { n: String(r.points), moyen: String(Math.round(r.ecartMoyen * 1000)), max: String(Math.round(r.ecartMax * 1000)) }));
+  };
+  const ficheNuage = nuageCourant
+    ? {
+        fichier: t("planche.nuage.fichier.valeur", { nom: nuageCourant.nom }),
+        points: t("planche.nuage.points.valeur", { total: nuageCourant.nuage.points.toLocaleString(LOCALE), affiches: (luNuage && typeof luNuage === "object" ? luNuage.points.length / 3 : 0).toLocaleString(LOCALE) }),
+        unite: t("planche.nuage.unite.valeur", { unite: t(`planche.nuage.unite.${(Object.entries(ECHELLES_UNITE).find(([, e]) => Math.abs(e - nuageCourant.echelle) < 1e-12)?.[0] ?? "m") as UniteReference}`) }),
+      }
+    : null;
+  const texteBoiteNuage = boiteNuage ? t("planche.nuage.boite", { l: (boiteNuage.xmax - boiteNuage.xmin).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), h: (boiteNuage.ymax - boiteNuage.ymin).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), n: (trancheCourante.length / 3).toLocaleString(LOCALE) }) : null;
   const executerRedr = (id: IdCommandeRedressement) => {
     setPanneau("redressement");
     if (id === "redresser-photo") return photoRedr ? undefined : importRedrRef.current?.click();
@@ -7326,6 +7501,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);
     else if (c.famille === "visionneuse") executerVis(c.id as IdCommandeVisionneuse);
     else if (c.famille === "lot") executerLot(c.id as IdCommandeLot);
+    else if (c.famille === "nuage") executerNuage(c.id as IdCommandeNuage);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
@@ -7438,6 +7614,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_LOT.map((c) => {
           const d = disponibiliteCommandeLot(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.lot.motif.jeu"), executer: () => executerLot(c.id) };
+        }),
+        ...COMMANDES_NUAGE.map((c) => {
+          const d = disponibiliteCommandeNuage(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.nuage.motif.aucun"), executer: () => executerNuage(c.id) };
         }),
         ...COMMANDES_VISIONNEUSE.map((c) => {
           const d = disponibiliteCommandeVis(c.id);
@@ -8336,7 +8516,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       <input
         ref={importReferenceRef}
         type="file"
-        accept=".obj,.stl,.ifc"
+        accept=".obj,.stl,.ifc,.las,.laz,.xyz,.pts,.ply,.e57"
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -8472,6 +8652,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         data-planche-natif-fichier
       />
       {panneau === "lot-echange" && apercuLot && <ApercuManifeste texte={apercuLot.texte} archive={apercuLot.archive} />}
+      {panneau === "nuage" && nuageVisible && <BulleNuage />}
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
@@ -8587,6 +8768,33 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onChoisirFichier={() => importKmlRef.current?.click()}
                 erreur={erreurKml}
                 note={noteKml}
+              />
+            )}
+            {panneau === "nuage" && (
+              <PanneauNuage
+                fiche={ficheNuage}
+                etat={luNuage === undefined || luNuage === "lecture" ? "lecture" : luNuage === "introuvable" ? "introuvable" : "pret"}
+                altitude={altitudeNuage}
+                onAltitude={(v) => { setAltitudeNuage(v); setResultatNuage(null); }}
+                epaisseur={epaisseurNuage}
+                onEpaisseur={(v) => { setEpaisseurNuage(v); setResultatNuage(null); }}
+                boite={texteBoiteNuage}
+                accrocher={accrocherNuage}
+                onAccrocher={setAccrocherNuage}
+                choisis={choisisNuage.length}
+                resultat={resultatNuage}
+                erreur={erreurNuage}
+                executer={executerNuage}
+                disponibilite={disponibiliteCommandeNuage}
+                charger={(() => {
+                  const c = COMMANDES_REFERENCES.find((x) => x.id === "charger-reference")!;
+                  const d = disponibiliteCommandeReference("charger-reference");
+                  return (
+                    <button type="button" disabled={!d.disponible} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})${d.motif ? ` — ${t(d.motif)}` : ""}`} aria-label={t(c.libelle)} onClick={() => { modeImportReference.current = "charger"; importReferenceRef.current?.click(); }} data-planche-commande="charger-reference">
+                      <Pictogramme picto={c.picto} /> {t(c.court)} <kbd>{afficherRaccourci(c.raccourci)}</kbd>
+                    </button>
+                  );
+                })()}
               />
             )}
             {panneau === "lot-echange" && (

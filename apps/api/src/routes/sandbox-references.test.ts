@@ -81,6 +81,13 @@ describe("Fichiers des références — /sandbox/references", () => {
     expect(contenuConforme("3ds", Buffer.from([0x4d, 0x4d, 6, 0, 0, 0]))).toBe(true);
     expect(contenuConforme("glb", IFC)).toBe(false);
     expect(contenuConforme("dae", IFC)).toBe(false);
+    // Nuages de points (lot C4, étape 7f).
+    expect(contenuConforme("las", Buffer.concat([Buffer.from("LASF"), Buffer.alloc(300)]))).toBe(true);
+    expect(contenuConforme("las", Buffer.from("LASF"))).toBe(false);
+    expect(contenuConforme("xyz", Buffer.from("1.5 2 3\n4 5 6\n"))).toBe(true);
+    expect(contenuConforme("pts", Buffer.from("2\n1;2;3 120\n4,5,6\n"))).toBe(true);
+    expect(contenuConforme("xyz", Buffer.from([0, 1, 2]))).toBe(false);
+    expect(contenuConforme("xyz", Buffer.from("bonjour\n"))).toBe(false);
     // PDF reçu (lot C4, étape 4).
     expect(contenuConforme("pdf", Buffer.from("%PDF-1.7\n%\xe2\xe3\n1 0 obj"))).toBe(true);
     expect(contenuConforme("pdf", Buffer.from("PDF ou pas"))).toBe(false);

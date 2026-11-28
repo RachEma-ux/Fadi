@@ -14,8 +14,9 @@ import { appliquer, composer, modifierAnnotations } from "./geometrie-libre.js";
 import { maillagesPlanche } from "./representation.js";
 
 /** (Étape 7) Les formats des fabricants servent aussi aux relevés au capteur posés en référence. */
-export type FormatReference = "obj" | "stl" | "ifc" | "gltf" | "glb" | "ply" | "3mf" | "dae" | "3ds";
-export const FORMATS_REFERENCE: readonly FormatReference[] = ["obj", "stl", "ifc", "gltf", "glb", "ply", "3mf", "dae", "3ds"];
+/** (Étape 7f) Les nuages de points (LAS, XYZ, PTS, PLY sans faces) sont aussi des références, marquées `nuage`. */
+export type FormatReference = "obj" | "stl" | "ifc" | "gltf" | "glb" | "ply" | "3mf" | "dae" | "3ds" | "las" | "xyz" | "pts";
+export const FORMATS_REFERENCE: readonly FormatReference[] = ["obj", "stl", "ifc", "gltf", "glb", "ply", "3mf", "dae", "3ds", "las", "xyz", "pts"];
 const estFormatReference = (v: unknown): v is FormatReference => typeof v === "string" && (FORMATS_REFERENCE as readonly string[]).includes(v);
 
 /** Fichier archivé tel quel en base. */
@@ -57,7 +58,12 @@ export interface Reference {
   readonly tolerance: number | null;
   /** (Étape 7) Axe vertical du fichier quand ce n'est pas Z (relevés glTF, PLY…) ; absent = Z. */
   readonly axe?: "y";
+  /** (Étape 7f) Nuage de points : nombre de points du fichier ; absent = maillage. */
+  readonly nuage?: { readonly points: number };
 }
+
+/** (Étape 7f) Une référence est-elle un nuage de points ? */
+export const estNuage = (r: Pick<Reference, "nuage">): r is Reference & { readonly nuage: { readonly points: number } } => r.nuage !== undefined;
 
 export const NOM_REFERENCE_MAX = 200;
 export const REFERENCES_MAX = 32;
@@ -92,6 +98,8 @@ export function estReference(id: Id, v: unknown): v is Reference {
     typeof v["nom"] === "string" && (v["nom"] as string).length <= NOM_REFERENCE_MAX &&
     estFormatReference(v["format"]) &&
     (v["axe"] === undefined || v["axe"] === "y") &&
+    (v["nuage"] === undefined || (estObjet(v["nuage"]) && Number.isInteger(v["nuage"]["points"]) && (v["nuage"]["points"] as number) > 0 && ["las", "xyz", "pts", "ply"].includes(v["format"] as string))) &&
+    (v["nuage"] !== undefined || !["las", "xyz", "pts"].includes(v["format"] as string)) &&
     estFichierReference(v["fichier"]) &&
     estEchelle(v["echelle"]) &&
     estPlacementReference(v["placement"]) &&
@@ -117,16 +125,17 @@ const modifierReference = (m: Modele, id: Id, fn: (r: Reference) => Reference | 
 };
 
 /** Ajoute une référence (un pas) : verrouillée, visible, à l'origine du projet sauf placement donné. */
-export function ajouterReference(m: Modele, v: { readonly nom: string; readonly format: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly placement?: PlacementReference; readonly axe?: "y" | "z" }): ResultatReference {
+export function ajouterReference(m: Modele, v: { readonly nom: string; readonly format: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly placement?: PlacementReference; readonly axe?: "y" | "z"; readonly nuage?: { readonly points: number } }): ResultatReference {
   if (!estFichierReference(v.fichier) || !Number.isInteger(v.triangles) || v.triangles < 0) return { ok: false, erreur: "fichier" };
   if (!estEchelle(v.echelle)) return { ok: false, erreur: "echelle" };
   if (v.placement !== undefined && !estPlacementReference(v.placement)) return { ok: false, erreur: "position" };
   if (!estDate(v.date)) return { ok: false, erreur: "date" };
+  if (v.nuage !== undefined ? !Number.isInteger(v.nuage.points) || v.nuage.points <= 0 : ["las", "xyz", "pts"].includes(v.format)) return { ok: false, erreur: "fichier" };
   if (referencesDe(m).length >= REFERENCES_MAX) return { ok: false, erreur: "limite" };
   let id = "" as Id;
   const modele = modifierAnnotations(m, (a, nouvel) => {
     id = nouvel("u");
-    a.references[id] = { id, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX), format: v.format, fichier: v.fichier, echelle: v.echelle, placement: v.placement ?? { x: 0, y: 0, z: 0, rotation: 0 }, verrouille: true, visible: true, opacite: 0.6, version: 1, chargeLe: v.date, triangles: v.triangles, tolerance: null, ...(v.axe === "y" ? { axe: "y" as const } : {}) };
+    a.references[id] = { id, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX), format: v.format, fichier: v.fichier, echelle: v.echelle, placement: v.placement ?? { x: 0, y: 0, z: 0, rotation: 0 }, verrouille: true, visible: true, opacite: 0.6, version: 1, chargeLe: v.date, triangles: v.triangles, tolerance: null, ...(v.axe === "y" ? { axe: "y" as const } : {}), ...(v.nuage ? { nuage: { points: v.nuage.points } } : {}) };
   }).modele;
   return { ok: true, modele, id };
 }
@@ -135,16 +144,18 @@ export function ajouterReference(m: Modele, v: { readonly nom: string; readonly 
  * Recharge une référence avec une nouvelle version de son fichier : placement, verrou, affichage et tolérance gardés.
  * Le même fichier (même empreinte) n'est pas une nouvelle version : refusé (« fichier »).
  */
-export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly format?: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly axe?: "y" | "z" }): ResultatReference =>
+export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly format?: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly axe?: "y" | "z"; readonly nuage?: { readonly points: number } }): ResultatReference =>
   modifierReference(m, id, (r) => {
     if (!estFichierReference(v.fichier) || v.fichier.empreinte === r.fichier.empreinte || !Number.isInteger(v.triangles) || v.triangles < 0) return "fichier";
     if (!estEchelle(v.echelle)) return "echelle";
     if (!estDate(v.date)) return "date";
     if (v.format !== undefined && !estFormatReference(v.format)) return "fichier";
+    // (Étape 7f) Un nuage reste un nuage, un maillage un maillage : le fichier nouveau dit lequel il est.
+    if ((v.nuage !== undefined) !== (r.nuage !== undefined) || (v.nuage !== undefined && (!Number.isInteger(v.nuage.points) || v.nuage.points <= 0))) return "fichier";
     // Le format (et l'axe vertical) suit le nouveau fichier : la relecture à l'ouverture emploie le bon lecteur.
-    const { axe: _ancien, ...base } = r;
+    const { axe: _ancien, nuage: _nuage, ...base } = r;
     const axe = v.axe ?? r.axe;
-    return { ...base, ...(axe === "y" ? { axe: "y" as const } : {}), nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, format: v.format ?? r.format, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
+    return { ...base, ...(axe === "y" ? { axe: "y" as const } : {}), ...(v.nuage ? { nuage: { points: v.nuage.points } } : {}), nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, format: v.format ?? r.format, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
   }, false);
 
 export const deplacerReference = (m: Modele, id: Id, placement: PlacementReference): ResultatReference => modifierReference(m, id, (r) => (estPlacementReference(placement) ? { ...r, placement } : "position"), true);

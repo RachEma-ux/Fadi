@@ -1044,3 +1044,23 @@ export function disponibiliteLot(id: IdCommandeLot, s: { readonly jeu: boolean; 
   if (!s.jeu) return { disponible: false, motif: "planche.lot.motif.jeu" };
   return s.sorties > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.lot.motif.sorties" };
 }
+
+/**
+ * Nuage de points (cas 4, lot C4, étape 7f : D10-F23a-009) : un panneau ; ajuster un plan exige trois points mesurés
+ * choisis au moins. Rien n'est écrit dans le dessin : permis en lecture seule.
+ */
+export type IdCommandeNuage = "nuage" | "ajuster-plan-nuage";
+export interface CommandeNuage {
+  readonly id: IdCommandeNuage;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_NUAGE: readonly CommandeNuage[] = (["nuage", "ajuster-plan-nuage"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.nuage.${id}` as CleMessage, court: `planche.nuage.court.${id}` as CleMessage }));
+
+export function disponibiliteNuage(id: IdCommandeNuage, s: { readonly nuage: boolean; readonly choisis: number }): Disponibilite {
+  if (id === "nuage") return { disponible: true, motif: null };
+  if (!s.nuage) return { disponible: false, motif: "planche.nuage.motif.aucun" };
+  return s.choisis >= 3 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.nuage.motif.choisis" };
+}
