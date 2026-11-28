@@ -36,5 +36,7 @@ export { ID_INTERAGIR, ERREUR_INTERAGIR_AUCUN, type EtatInteragir } from "./inte
 export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
 export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";
 export { ID_MUR, CONSIGNE_MUR_1, CONSIGNE_MUR_2, ERREUR_SANS_PARAMETRES, ERREUR_DANS_OBJET, MOTIFS_ERREUR_MUR, type EtatMur } from "./mur.js";
+export { ID_RESERVE, CONSIGNE_RESERVE, type EtatReserve } from "./reserve.js";
+export { ID_CALAGE, CONSIGNE_CALAGE, type EtatCalage, fondVise } from "./calage.js";
 export { ERREUR_SANS_SECTION, CONSIGNE_PROFILE_1, CONSIGNE_PROFILE_2, type EtatProfile } from "./profile.js";
 export { ERREUR_SANS_ARETES, CONSIGNE_PROFILES_ARETES, type EtatProfilesAretes } from "./profiles-aretes.js";

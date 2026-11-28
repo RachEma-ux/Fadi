@@ -7,9 +7,9 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { baliseMasquee, controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { t } from "../messages";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
@@ -46,6 +46,8 @@ const COULEUR_CONTEXTE = "#5b6b63";
 const COULEUR_SELECTION = "#1a5fd6";
 /** Plans de niveau (cas 4, niveaux d'étage) : même bleu que les étiquettes de niveau. */
 const COULEUR_NIVEAU = "#1a5fd6";
+/** Faces hors enveloppe (cas 4, étape 7c), toujours avec une hachure. */
+const COULEUR_HORS_ENVELOPPE = "#d6336c";
 const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
@@ -103,8 +105,17 @@ export interface OptionsAffichage {
   /** (Extension « Emplacement ») Nord vrai, en degrés depuis l'axe vert dans le sens horaire ; flèche du nord affichée. */
   readonly nord: number;
   readonly flecheNord: boolean;
+  /**
+   * (Cas 4, lot C4, étape 5) État montré : `tout`, `existant` (existant + à démolir) ou `projete` (existant + projeté) ;
+   * les objets sans statut sont toujours montrés.
+   */
+  readonly etatTravaux: "tout" | "existant" | "projete";
+  /** Couleurs des arêtes par statut des travaux (convention SIA 400 par défaut, réglables). */
+  readonly couleursStatut: Readonly<Record<StatutTravaux, string>>;
 }
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
+/** Convention SIA 400 : existant noir, à démolir jaune, projeté rouge. */
+export const COULEURS_STATUT_DEFAUT: Readonly<Record<StatutTravaux, string>> = { existant: "#1f1f1f", "a-demolir": "#e0a800", projete: "#d32f2f" };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { etatTravaux: "tout", couleursStatut: COULEURS_STATUT_DEFAUT, aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -255,6 +266,12 @@ export class VuePlanche {
   private readonly groupeAnnotations = new THREE.Group();
   /** Poché de la matière coupée (cas 4, étape 5), posé sur le plan de coupe actif. */
   private readonly groupeCoupe = new THREE.Group();
+  /** Contrôle de l'enveloppe (cas 4, étape 7c) : faces hors enveloppe hachurées et colorées, point le plus défavorable. */
+  private readonly groupeEnveloppe = new THREE.Group();
+  /** Références verrouillées (cas 4, lot C4, étape 3) : maquettes reçues dessinées d'un bloc, jamais fusionnées au dessin. */
+  private readonly groupeReferences = new THREE.Group();
+  private geometriesReferences = new Map<string, { cle: string; geometrie: THREE.BufferGeometry }>();
+  private etiquettesEnveloppe: Etiquette[] = [];
   private readonly texturesHachure = new Map<string, THREE.Texture>();
   private groupeAxes: THREE.Group;
   private readonly etiquettesDom: HTMLDivElement;
@@ -359,7 +376,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -572,6 +589,16 @@ export class VuePlanche {
     return this.geometrie.faces.length;
   }
 
+  /** Arêtes rendues par statut des travaux (instrumentation de recette, lot C4, étape 5). */
+  aretesParStatut(): Readonly<Record<string, number>> {
+    const n: Record<string, number> = {};
+    for (const o of this.groupeModele.children) {
+      const st = o.userData["statut"] as string | undefined;
+      if (st && o instanceof THREE.LineSegments) n[st] = (n[st] ?? 0) + (o.geometry.attributes["position"]?.count ?? 0) / 2;
+    }
+    return n;
+  }
+
   /** Remplace la géométrie affichée par celle du modèle (aplatie : racine et occurrences). */
   majModele(modele: Modele): void {
     vider(this.groupeModele);
@@ -580,7 +607,7 @@ export class VuePlanche {
     const dans = this.rappels.dans?.();
     const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
     const o = this.options;
-    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables });
+    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables, ...(o.etatTravaux !== "tout" ? { etat: o.etatTravaux } : {}) });
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
     const couleurDe = (f: FaceVisible): string => {
@@ -597,7 +624,9 @@ export class VuePlanche {
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
     this.facesRecto.castShadow = this.facesRecto.receiveShadow = o.ombres;
     this.facesVerso.receiveShadow = o.ombres;
-    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte).map((a) => [a.a, a.b] as const);
+    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && !a.statut).map((a) => [a.a, a.b] as const);
+    // Statut des travaux : arêtes à la couleur de leur statut, celles à démolir en tirets ; toujours tracées, même sans « Arêtes ».
+    const statuees = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && a.statut);
     if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
     const delavees = this.geometrie.faces.filter((f) => f.horsContexte);
     if (delavees.length) {
@@ -617,6 +646,15 @@ export class VuePlanche {
       }
     }
     if (o.aretes || o.modeFace === "filaire" || o.modeFace === "lignes-cachees") this.groupeModele.add(new THREE.LineSegments(geometrieSegments(segments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE })));
+    for (const statut of STATUTS_TRAVAUX) {
+      const lot = statuees.filter((a) => a.statut === statut).map((a) => [a.a, a.b] as const);
+      if (!lot.length) continue;
+      const couleur = o.couleursStatut[statut];
+      const l = new THREE.LineSegments(geometrieSegments(lot), statut === "a-demolir" ? new THREE.LineDashedMaterial({ color: couleur, dashSize: 0.15, gapSize: 0.1 }) : new THREE.LineBasicMaterial({ color: couleur }));
+      if (statut === "a-demolir") l.computeLineDistances();
+      l.userData["statut"] = statut;
+      this.groupeModele.add(l);
+    }
     if (o.aretesArriere && o.modeFace !== "filaire") {
       // Arêtes arrière (K) : les arêtes cachées par les faces, en pointillé léger (tracées sans test de profondeur sous les pleines).
       const arriere = new THREE.LineSegments(geometrieSegments(segments), new THREE.LineDashedMaterial({ color: "#6a6a6a", dashSize: 0.12, gapSize: 0.08, depthTest: false, transparent: true, opacity: 0.6 }));
@@ -729,7 +767,7 @@ export class VuePlanche {
       }
       return r;
     };
-    for (const s of sectionsDeCoupe(modele, p)) {
+    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined)) {
       const boucles = s.boucles.map((b) => b.map(vers2));
       // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
       const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);
@@ -765,6 +803,109 @@ export class VuePlanche {
     }
   }
 
+  /**
+   * Références verrouillées (cas 4, lot C4, étape 3) : chaque maquette reçue (triangles dans l'unité du fichier, 9 nombres
+   * par triangle) est posée par son placement (échelle, rotation autour de la verticale, translation), en gris translucide,
+   * sans écrire la profondeur ni être visée par les outils. Les points hors tolérance du récolement sont marqués en rouge.
+   * La géométrie est gardée tant que le fichier (clé) ne change pas.
+   */
+  poserReferences(liste: readonly { readonly id: string; readonly cle: string; readonly positions: Float32Array; readonly echelle: number; readonly placement: { readonly x: number; readonly y: number; readonly z: number; readonly rotation: number }; readonly visible: boolean; readonly opacite: number }[], horsTolerance: readonly Vec3[]): void {
+    for (const enfant of [...this.groupeReferences.children]) {
+      this.groupeReferences.remove(enfant);
+      const m = (enfant as THREE.Mesh).material as THREE.Material | undefined;
+      m?.dispose();
+      if (enfant instanceof THREE.Points) enfant.geometry.dispose();
+    }
+    for (const [id, g] of [...this.geometriesReferences]) {
+      const r = liste.find((x) => x.id === id);
+      if (!r || r.cle !== g.cle) {
+        g.geometrie.dispose();
+        this.geometriesReferences.delete(id);
+      }
+    }
+    for (const r of liste) {
+      let g = this.geometriesReferences.get(r.id)?.geometrie;
+      if (!g) {
+        g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(r.positions, 3));
+        g.computeVertexNormals();
+        g.computeBoundingSphere();
+        this.geometriesReferences.set(r.id, { cle: r.cle, geometrie: g });
+      }
+      if (!r.visible) continue;
+      const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: COULEUR_HORS_CONTEXTE, side: THREE.DoubleSide, transparent: true, opacity: r.opacite, depthWrite: false }));
+      mesh.position.set(r.placement.x, r.placement.y, r.placement.z);
+      mesh.rotation.set(0, 0, r.placement.rotation);
+      mesh.scale.setScalar(r.echelle);
+      mesh.renderOrder = 1;
+      mesh.userData["reference"] = r.id;
+      this.groupeReferences.add(mesh);
+    }
+    if (horsTolerance.length > 0) {
+      const points = new THREE.Points(new THREE.BufferGeometry().setFromPoints(horsTolerance.map(v3)), new THREE.PointsMaterial({ color: "#b3261e", size: 12, sizeAttenuation: false, depthTest: false }));
+      points.renderOrder = 4;
+      points.name = "hors-tolerance";
+      this.groupeReferences.add(points);
+    }
+    this.rendre();
+  }
+
+  /**
+   * Contrôle de l'enveloppe (cas 4, étape 7c) : les triangles hors enveloppe (monde, 9 nombres chacun) sont couverts d'une
+   * hachure colorée — hachure ET couleur, jamais la couleur seule — ; le point le plus défavorable reçoit un anneau et
+   * une étiquette ; chaque seuil de hauteur saisi est tracé en pointillé à son altitude autour du projet. `null` efface.
+   */
+  poserControleEnveloppe(c: { readonly hors: readonly number[]; readonly point: Vec3 | null; readonly texte: string; readonly seuils: readonly { readonly z: number; readonly texte: string }[]; readonly emprise: { min: Vec3; max: Vec3 } | null } | null): void {
+    vider(this.groupeEnveloppe);
+    for (const e of this.etiquettesEnveloppe) e.el.remove();
+    this.etiquettesEnveloppe = [];
+    if (c) {
+      const etiquette = (texte: string, point: Vec3, classe: string): void => {
+        const el = document.createElement("div");
+        el.className = `planche-etiquette ${classe}`;
+        el.textContent = texte;
+        this.etiquettesDom.append(el);
+        this.etiquettesEnveloppe.push({ el, point });
+      };
+      if (c.hors.length >= 9) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.Float32BufferAttribute([...c.hors], 3));
+        // Coordonnées de hachure : projection sur un plan oblique (pas de 0,25 m), lisible quelle que soit l'orientation.
+        const uvs: number[] = [];
+        for (let i = 0; i < c.hors.length; i += 3) {
+          const x = c.hors[i]!;
+          const y = c.hors[i + 1]!;
+          const z = c.hors[i + 2]!;
+          uvs.push(0, (x + y + z) / 0.25);
+        }
+        g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+        const hachure = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: COULEUR_HORS_ENVELOPPE, map: this.textureHachure(), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+        hachure.renderOrder = 2;
+        hachure.name = "hors-enveloppe";
+        this.groupeEnveloppe.add(hachure);
+      }
+      if (c.point) {
+        const anneau = new THREE.Points(new THREE.BufferGeometry().setFromPoints([v3(c.point)]), new THREE.PointsMaterial({ color: COULEUR_HORS_ENVELOPPE, size: 14, sizeAttenuation: false, depthTest: false }));
+        anneau.renderOrder = 3;
+        this.groupeEnveloppe.add(anneau);
+        etiquette(c.texte, c.point, "planche-etiquette-enveloppe");
+      }
+      if (c.emprise) {
+        const { min, max } = c.emprise;
+        const pas = this.metresParPixel(this.cible);
+        for (const s of c.seuils) {
+          const pts = [v3({ x: min.x, y: min.y, z: s.z }), v3({ x: max.x, y: min.y, z: s.z }), v3({ x: max.x, y: max.y, z: s.z }), v3({ x: min.x, y: max.y, z: s.z }), v3({ x: min.x, y: min.y, z: s.z })];
+          const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: COULEUR_NIVEAU, dashSize: pas * 8, gapSize: pas * 5 }));
+          l.computeLineDistances();
+          l.frustumCulled = false;
+          this.groupeEnveloppe.add(l);
+          etiquette(s.texte, { x: max.x, y: min.y, z: s.z }, "planche-etiquette-seuil");
+        }
+      }
+    }
+    this.rendre();
+  }
+
   /** Texture d'une hachure : une ligne noire par période, répétée. */
   private textureHachure(): THREE.Texture {
     const deja = this.texturesHachure.get("ligne");
@@ -787,6 +928,20 @@ export class VuePlanche {
   }
 
   /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */
+  /** Textures des fonds calés (cas 4, lot C4, étape 1), gardées d'une mise à jour à l'autre tant que l'image ne change pas. */
+  private texturesFonds = new Map<string, { cle: string; texture: THREE.Texture }>();
+
+  private textureFond(id: string, image: string): THREE.Texture {
+    const cle = `${image.length}:${image.slice(-48)}`;
+    const deja = this.texturesFonds.get(id);
+    if (deja && deja.cle === cle) return deja.texture;
+    deja?.texture.dispose();
+    const texture = new THREE.TextureLoader().load(image, () => this.rendre());
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.texturesFonds.set(id, { cle, texture });
+    return texture;
+  }
+
   private majAnnotations(modele: Modele, selection: readonly string[]): void {
     vider(this.groupeAnnotations);
     for (const e of this.etiquettesFixes) e.el.remove();
@@ -872,6 +1027,36 @@ export class VuePlanche {
       if (l.centre === null || l.surface === null) continue;
       etiquette(`${l.local.numero} · ${l.local.nom}\n${l.surface.toFixed(2).replace(".", ",")} m²`, { ...l.centre, z: l.centre.z + 0.01 }, "planche-etiquette-local");
     }
+    // Fonds calés (cas 4, lot C4, étape 1) : image à plat à son altitude, sous le dessin ; points de calage en lettres.
+    const fonds = Object.values(a.fonds ?? {});
+    for (const id of [...this.texturesFonds.keys()]) if (!fonds.some((f) => f.id === id)) { this.texturesFonds.get(id)!.texture.dispose(); this.texturesFonds.delete(id); }
+    for (const [i, f] of fonds.entries()) {
+      const [hg, hd, bd, bg] = coinsFond(f);
+      const z = f.altitude - 0.002;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute([bg!.x, bg!.y, z, bd!.x, bd!.y, z, hd!.x, hd!.y, z, hg!.x, hg!.y, z], 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const mat = new THREE.MeshBasicMaterial({ map: this.textureFond(f.id, f.image), transparent: true, opacity: f.opacite, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+      const mesh = new THREE.Mesh(g, mat);
+      // Fonds superposés : le dernier de la liste est dessiné au-dessus, comme l'outil Calage le vise (fondVise).
+      mesh.renderOrder = -2 + (i + 1) / (fonds.length + 1);
+      mesh.userData["fond"] = f.id;
+      this.groupeAnnotations.add(mesh);
+      for (const p of f.points) {
+        const q = versPlan(f.pose, p.pixel);
+        etiquette(p.id, { x: q.x, y: q.y, z: f.altitude }, "planche-etiquette-calage");
+        const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+        el.dataset["calage"] = `${f.id}:${p.id}`;
+      }
+    }
+    // Réserves de chantier (cas 4, étape 7b) : épingle numérotée (ouverte / levée), le numéro toujours écrit.
+    for (const r of Object.values(a.reserves ?? {})) {
+      etiquette(String(r.numero), r.point, `planche-etiquette-reserve est-${r.statut}${sel.has(r.id) ? " est-selectionne" : ""}`);
+      const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+      el.dataset["reserve"] = r.id;
+      el.dataset["statut"] = r.statut;
+    }
     for (const p of Object.values(a.plansDeCoupe)) {
       if (!this.options.plansDeCoupe) break;
       if (baliseMasquee(modele, p.balise)) continue;
@@ -896,7 +1081,7 @@ export class VuePlanche {
       if (!p) q.el.style.display = "none";
       else Object.assign(q.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
     }
-    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
+    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu, ...this.etiquettesEnveloppe]) {
       const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
       if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
         e.el.style.display = "none";

@@ -9,7 +9,7 @@
  * (MetalFab garde Ctrl / Alt pour d'autres usages).
  */
 import { poserPiece } from "../geometrie-libre.js";
-import { type Inference, type Verrou, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type PlacementPiece, type PointPlacement, PLACEMENT_DEFAUT, POINTS_PLACEMENT, prismePiece, repereSegment, sectionPosee } from "../profiles.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, dist, len, normalize, scale, sub } from "../vecteur.js";
@@ -43,7 +43,7 @@ function inferenceProfile(e: EtatProfile, ctx: ContexteOutil, r: Rayon, toleranc
   return inferer({
     rayon: r,
     tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...axesDeSaisie(ctx),

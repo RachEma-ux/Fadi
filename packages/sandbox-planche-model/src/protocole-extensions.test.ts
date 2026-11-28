@@ -85,12 +85,14 @@ describe("paquet d'extension fadi-addon/1", () => {
   });
 
   it("versions : la version courante est acceptée, une plus récente ou une trop ancienne est refusée avec son motif", () => {
-    expect(VERSION_PROTOCOLE).toBe("1.2");
+    expect(VERSION_PROTOCOLE).toBe("1.4");
+    expect(jugerVersionProtocole("1.4")).toBe("acceptee");
+    // 1.1 à 1.4 ne font qu'ajouter : une extension écrite pour 1.0 à 1.3 reste acceptée.
+    expect(jugerVersionProtocole("1.3")).toBe("acceptee");
     expect(jugerVersionProtocole("1.2")).toBe("acceptee");
-    // 1.1 et 1.2 ne font qu'ajouter : une extension écrite pour 1.0 ou 1.1 reste acceptée.
     expect(jugerVersionProtocole("1.1")).toBe("acceptee");
     expect(jugerVersionProtocole("1.0")).toBe("acceptee");
-    expect(jugerVersionProtocole("1.3")).toBe("trop_recente");
+    expect(jugerVersionProtocole("1.5")).toBe("trop_recente");
     expect(jugerVersionProtocole("2.0")).toBe("trop_recente");
     expect(jugerVersionProtocole("0.9")).toBe("trop_ancienne");
     expect(jugerVersionProtocole("un")).toBe("mal_formee");
@@ -98,7 +100,8 @@ describe("paquet d'extension fadi-addon/1", () => {
     expect(jugerVersionProtocole("2.3", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("3.0", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("1.9", "3.1")).toBe("trop_ancienne");
-    expect(refuse(paquet({}, { protocole: "1.3" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.3/);
+    expect(refuse(paquet({}, { protocole: "1.5" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.5/);
+    expect(refuse(paquet({}, { protocole: "1.4" }))).toBe("accepté");
     expect(refuse(paquet({}, { protocole: "1.2" }))).toBe("accepté");
     expect(refuse(paquet({}, { protocole: "1.1" }))).toBe("accepté");
     expect(refuse(paquet({ format: "fadi-addon/2" }))).toMatch(/^version_non_prise_en_charge/);
@@ -141,7 +144,7 @@ describe("espace d'exécution d'une extension", () => {
     expect(x.demarrer()).toBeNull();
     x.recevoir(demandeProtocole(10, "commande.compter"));
     x.recevoir(demandeProtocole(11, "commande.compter"));
-    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.2" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
+    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.4" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
   });
 
   it("demande sans traitement → erreur nommée ; événement sans traitement → simple accusé", () => {
@@ -264,6 +267,24 @@ describe("espace d'exécution — protocole 1.1", () => {
       { nom: "modele.lire", donnees: null },
       { nom: "balises.creer", donnees: { nom: "Murs", couleur: "#aa3300" } },
       { nom: "modele.modifier", donnees: { fonction: "arc", arguments: [[1, 0, 0], [0, 1, 0], [-1, 0, 0]] } },
+    ]);
+  });
+
+  it("(1.3) cotes.creer, textes.creer et objets.verrouiller transmettent leurs arguments", async () => {
+    const { x, demandes, attendre } = relier(
+      'planche.sur("commande.trame", async () => { await planche.cotes.creer([0,0,0],[6,0,0],[0,-1,0]); await planche.cotes.creer([0,0,0],[0,4,0],[-1,0,0],"axe-y"); await planche.textes.creer([0,0,0],[0,-2,0],"A"); await planche.textes.creer([0,0,0],[0,-2,0],"B","b1"); await planche.cotes.creer([0,0,0],[1,0,0],[0,-1,0],undefined,"b1"); await planche.objets.verrouiller("g1"); await planche.objets.verrouiller(["g1"], false); return true; });',
+      () => null,
+    );
+    x.recevoir(demandeProtocole(1, "commande.trame"));
+    expect(await attendre()).toEqual(reponseProtocole(1, true));
+    expect(demandes).toEqual([
+      { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [6, 0, 0], position: [0, -1, 0] } },
+      { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [0, 4, 0], position: [-1, 0, 0], direction: "axe-y" } },
+      { nom: "textes.creer", donnees: { ancre: [0, 0, 0], position: [0, -2, 0], texte: "A" } },
+      { nom: "textes.creer", donnees: { ancre: [0, 0, 0], position: [0, -2, 0], texte: "B", balise: "b1" } },
+      { nom: "cotes.creer", donnees: { a: [0, 0, 0], b: [1, 0, 0], position: [0, -1, 0], balise: "b1" } },
+      { nom: "objets.verrouiller", donnees: { ids: ["g1"], verrou: true } },
+      { nom: "objets.verrouiller", donnees: { ids: ["g1"], verrou: false } },
     ]);
   });
 });

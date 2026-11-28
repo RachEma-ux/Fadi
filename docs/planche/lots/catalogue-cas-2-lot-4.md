@@ -31,6 +31,9 @@ Ctrl+Maj+4, `scenes-types` Ctrl+Maj+5, `avancer-coupe` Ctrl+Maj+6, `reculer-coup
 Ctrl+Maj+8, `gabarit` Ctrl+Maj+9, `importer-gabarit` Ctrl+Maj+0, `enregistrer-gabarit` Alt+7, `creer-planche-gabarit` Alt+8.
 Ctrl+Alt+Maj+F1 à F7 sont pris par le cas 4 (planche/calage), Ctrl+Alt+lettre par les extensions ; Ctrl+Maj+chiffre est lu
 sur la touche physique (`Digit1`…), comme Alt+chiffre, car Maj change le caractère selon la disposition du clavier.
+Icônes du gabarit changées au report de main du 28 novembre 2026, pour rester uniques (règle d'or) face au cas 4 :
+`importer-gabarit` `file-arrow-left` (`file-upload` est à « Ouvrir un PDF »), `enregistrer-gabarit` `file-pencil`
+(`file-download` est à « Exporter en DXF »), `creer-planche-gabarit` `file-star` (`file-plus` est à « Nouvelle feuille »).
 « Vue d'état » n'avait pas de bouton dans la maquette ; la règle d'or (`AGENTS.md`) en exige un : il est ajouté à la barre
 du panneau Balises (revue de #507), à la suite de « Verrouiller ».
 

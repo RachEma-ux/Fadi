@@ -8,6 +8,10 @@
  * Les opérations sont dans `geometrie-libre.ts` (`modifierAnnotations`, `peindreFaces`, `peindreOccurrences`,
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
+import type { Reserve } from "./reserves.js";
+import type { Fond } from "./fonds.js";
+import type { Reference } from "./references.js";
+import type { ReglagesEnveloppe } from "./enveloppe.js";
 import type { Emplacement } from "./emplacement.js";
 import type { PointDeBase } from "./point-de-base.js";
 import type { RepereEnregistre } from "./reperes.js";
@@ -28,11 +32,11 @@ export type Guide =
  * ouvert à la création (association aux sommets d'un groupe ou d'un composant ouvert ; absent = racine).
  */
 export interface ChampsCote {
-  /** (Cas 2, lot 4) Balise de la cote (balise courante ou réservée aux cotes à la création). */
-  readonly balise?: Id;
   readonly texteForce?: string;
   readonly style?: Id;
   readonly chemin?: readonly Id[];
+  /** (Protocole 1.3, cas 2 lot 4) Balise de l'annotation (balise courante ou réservée aux cotes à la création) : la balise cachée, l'annotation l'est aussi ; absent = toujours montrée. */
+  readonly balise?: Id;
 }
 
 /** Direction mesurée d'une cote linéaire : vraie longueur, composante horizontale, dénivelé, ou selon un axe du repère. */
@@ -110,7 +114,7 @@ export type TexteAnnotation =
       readonly position: Vec3;
       readonly texte: string;
       readonly etiquettePiece?: boolean;
-      /** (Cas 2, lot 4) Balise du texte. */
+      /** (Protocole 1.3, cas 2 lot 4) Balise du texte : la balise cachée, le texte l'est aussi ; absent = toujours montré. */
       readonly balise?: Id;
     }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
@@ -373,6 +377,38 @@ export interface FamilleHachure {
   readonly dy: number;
   readonly tirets: readonly number[];
 }
+/**
+ * (Cas 4 du catalogue, étape 6 : D7-F11-013) Fenêtre de vue d'une feuille : le plan vectoriel d'une scène (ou de la vue de
+ * dessus), à une échelle de la série, posé sur la feuille par son coin haut gauche (mm, depuis le coin haut gauche).
+ * Identifiant local à la feuille (« v1 », « v2 »…).
+ */
+export interface FenetreVue {
+  readonly id: string;
+  /** Scène de la Planche ; `null` = vue de dessus. */
+  readonly scene: Id | null;
+  /** Dénominateur de l'échelle (50 pour 1:50). */
+  readonly echelle: number;
+  /** Plan de coupe : identifiant, « aucune », ou `null` = le plan actif. */
+  readonly coupe: Id | "aucune" | null;
+  readonly x: number;
+  readonly y: number;
+}
+/**
+ * (Cas 4, étape 6 : D7-F11-013, D7-F11-012) Feuille de dessin : format ISO 216 (A0 à A4), sens, cartouche saisi (un champ
+ * vide reste vide), fenêtres de vue. Préfixe « k ».
+ */
+export interface Feuille {
+  readonly id: Id;
+  readonly numero: string;
+  readonly nom: string;
+  readonly indice: string;
+  /** Rang du format A (0 = A0 … 4 = A4). */
+  readonly format: 0 | 1 | 2 | 3 | 4;
+  readonly sens: "paysage" | "portrait";
+  readonly cartouche: { readonly projet: string; readonly phase: string; readonly date: string };
+  readonly fenetres: readonly FenetreVue[];
+}
+
 export interface MotifHachure {
   readonly id: Id;
   readonly nom: string;
@@ -412,6 +448,15 @@ export interface Annotations {
   /** (Cas 4, étape 4) Murs à épaisseur : tracé d'axe et paramètres, géométrie dans un groupe de la racine. */
   readonly murs?: Readonly<Record<Id, Mur>>;
   readonly motifs?: Readonly<Record<Id, MotifHachure>>;
+  readonly feuilles?: Readonly<Record<Id, Feuille>>;
+  /** (Cas 4, étape 7b) Réserves de chantier épinglées ; absent = aucune. */
+  readonly reserves?: Readonly<Record<Id, Reserve>>;
+  /** (Cas 4, lot C4, étape 1) Fonds calés (images posées à plat) ; absent = aucun. */
+  readonly fonds?: Readonly<Record<Id, Fond>>;
+  /** (Cas 4, lot C4, étape 3) Références verrouillées (maquettes reçues, non fusionnées) ; absent = aucune. */
+  readonly references?: Readonly<Record<Id, Reference>>;
+  /** (Cas 4, étape 7c) Enveloppe désignée, contrôle actif, règles de hauteur saisies ; absent = aucune. */
+  readonly enveloppe?: ReglagesEnveloppe;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -442,6 +487,11 @@ export interface AnnotationsMutables {
   locaux: Record<Id, Local>;
   murs: Record<Id, Mur>;
   motifs: Record<Id, MotifHachure>;
+  feuilles: Record<Id, Feuille>;
+  reserves: Record<Id, Reserve>;
+  fonds: Record<Id, Fond>;
+  references: Record<Id, Reference>;
+  enveloppe?: ReglagesEnveloppe;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

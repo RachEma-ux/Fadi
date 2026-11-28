@@ -8,7 +8,7 @@
  * ouverte aussitôt. Le texte est figé à la création (CA-TXT-1, choix Fadi). Échap annule.
  */
 import { type Id, aire, contexte, modifierAnnotations } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, dist } from "../vecteur.js";
 import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, viseeElement, vueModif } from "./commun-modif.js";
@@ -33,7 +33,7 @@ export interface EtatTexte {
 const initial = (): EtatTexte => ({ etape: 1, ancre: null, entite: undefined, defaut: "", enEdition: null, inference: null, erreur: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
 }
 
 /** Texte par défaut selon l'entité visée : aire, longueur ou coordonnées. */
@@ -51,7 +51,7 @@ export function texteParDefaut(ctx: ContexteOutil, i: Inference, entite: { genre
     }
   }
   if (entite?.genre === "arete") {
-    const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === entite.id);
+    const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === entite.id);
     return a ? formaterLongueur(dist(a.a, a.b), sep) : "";
   }
   return "";

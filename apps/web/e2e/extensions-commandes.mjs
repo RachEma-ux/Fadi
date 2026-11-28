@@ -1,7 +1,7 @@
 /**
  * Recette du protocole des extensions, lot 3 (images validées le 26 novembre 2026) : une extension installée sur la
  * plateforme (paquet d'essai `donnees/essai-commandes.fadi-addon.json`) apporte ses commandes à la Planche —
- * famille à son nom et pastille « extension » dans la liste « Outils », icône, raccourci, barre ; la commande dessine en
+ * ligne à son nom dans le groupe « Extensions » de la liste « Outils » (case « Afficher » de sa barre), icône, raccourci, barre ; la commande dessine en
  * un seul pas d'annulation et pose la sélection ; avis au-dessus de la barre d'état ; fenêtre de saisie (valeurs
  * validées, annulation) ; données attachées à un objet, à son composant et au projet (lot 5) ; commande qui échoue ou ne répond plus : arrêtée, rien d'appliqué, avis rouge ; anglais.
  *
@@ -15,6 +15,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { inscrireDansLaPage } from "./lib-inscription.mjs";
+import { deplierExtensions, teteExtension } from "./lib-extensions-liste.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? "atelier-captures/extensions-commandes";
@@ -82,12 +83,13 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   check("le serveur rend l'extension installée au compte connecté", reponse.status() === 200 && corps?.extensions?.some((x) => x.fiche?.id === ID), `HTTP ${reponse.status()}`);
 
   await ouvrirListe(page);
-  const famille = page.locator(`[data-outils-extension-installee="${ID}"]`);
+  await deplierExtensions(page);
+  check("liste « Outils » : l'extension n'a qu'une ligne, dans le groupe « Extensions »", (await page.locator(`[data-planche-outils-liste] [data-outils-extension-installee="${ID}"]`).count()) === 1 && (await page.locator(`[data-outils-groupe="extensions"] [data-outils-extension-installee="${ID}"]`).count()) === 1);
+  const famille = page.locator(`[data-outils-groupe="extensions"] [data-outils-extension-installee="${ID}"]`);
   await famille.waitFor();
   const tete = famille.locator("[data-outils-famille]");
-  check("liste « Outils » : une famille au nom de l'extension, repliée, avec la pastille « extension »", (await tete.getAttribute("aria-expanded")) === "false" && /Essai des commandes/.test(await tete.textContent()) && (await famille.locator("[data-outils-pastille-extension]").textContent()) === "extension");
-  const groupes = await page.locator("[data-planche-outils-liste] [data-outils-groupe]").evaluateAll((l) => l.map((g) => g.dataset.outilsGroupe));
-  check("la famille de l'extension vient après les groupes livrés", groupes.at(-1) === `installee:${ID}`, groupes.slice(-3).join(" · "));
+  const caseAfficher = famille.locator(`[data-outils-case-extension="${ID}"]`);
+  check("groupe « Extensions » : une ligne au nom de l'extension, repliée, case de sa barre décochée (« Masquée »)", (await tete.getAttribute("aria-expanded")) === "false" && /Essai des commandes/.test(await tete.textContent()) && (await caseAfficher.getAttribute("aria-checked")) === "false" && (await caseAfficher.textContent()) === "Masquée");
   await tete.click();
   const lignes = await famille.locator("[data-outils-commande]").evaluateAll((l) => l.map((b) => ({ id: b.dataset.outilsCommande, nom: b.querySelector(".planche-outils-libelle")?.textContent, raccourci: b.querySelector("kbd")?.textContent, image: b.querySelector("img.planche-extension-icone")?.getAttribute("src") ?? "" })));
   check("sept commandes, chacune avec son nom, son raccourci et sa propre icône (image du paquet)", lignes.length === 7 && lignes.every((l) => l.nom && l.raccourci && l.image.startsWith("data:image/svg+xml;charset=utf-8,%3Csvg")) && new Set(await famille.locator("img.planche-extension-icone").evaluateAll((l) => l.map((i) => i.getAttribute("src")))).size === 7, lignes.map((l) => `${l.nom} (${l.raccourci})`).join(" · "));
@@ -97,11 +99,11 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   await famille.scrollIntoViewIfNeeded();
   await page.screenshot({ path: join(OUT, "1-famille-dans-outils.png") });
 
-  // Barre de l'extension.
-  await etiquette.click();
+  // Barre de l'extension : la case « Afficher » de sa ligne la montre (même état que l'étiquette des commandes).
+  await caseAfficher.click();
   const barre = page.locator(`[data-barre-outils="extension:${ID}"]`);
   await barre.waitFor();
-  check("l'étiquette affiche la barre de l'extension : sept boutons, icônes du paquet", (await barre.locator("[data-barre-outils-entree]").count()) === 7 && (await barre.locator("img.planche-extension-icone").count()) === 7 && (await etiquette.getAttribute("aria-checked")) === "true");
+  check("la case « Afficher » montre la barre de l'extension : sept boutons, icônes du paquet ; étiquette cochée aussi", (await barre.locator("[data-barre-outils-entree]").count()) === 7 && (await barre.locator("img.planche-extension-icone").count()) === 7 && (await caseAfficher.getAttribute("aria-checked")) === "true" && (await caseAfficher.textContent()) === "Afficher" && (await etiquette.getAttribute("aria-checked")) === "true");
   await page.locator("[data-outils-recherche]").fill("boite mesure");
   check("recherche : la commande de l'extension est trouvée par son nom", (await page.locator("[data-planche-outils-liste] [data-outils-commande]").count()) === 1 && (await commande(page, "boite-sur-mesure").count()) === 1);
   await page.locator("[data-outils-recherche]").fill("");
@@ -216,7 +218,7 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   await fermerAvis(page);
   await page.keyboard.press("Alt+Shift+F6");
   await ouvrirListe(page);
-  await page.locator(`[data-outils-extension-installee="${ID}"] [data-outils-famille]`).waitFor();
+  await teteExtension(page, ID);
   const occupee = commande(page, "compter");
   check("pendant une commande, les autres commandes de l'extension sont grisées et disent pourquoi", (await occupee.getAttribute("aria-disabled")) === "true" && /déjà en cours/.test(await occupee.getAttribute("title")));
   await page.keyboard.press("Escape");
@@ -240,10 +242,9 @@ const commande = (page, id) => page.locator(`[data-outils-commande="extension:${
   const anglais = await page.evaluate(() => document.documentElement.lang);
   await ouvrirListe(page);
   const famille = page.locator(`[data-outils-extension-installee="${ID}"]`);
-  await famille.waitFor();
-  await famille.locator("[data-outils-famille]").click();
-  const noms = await famille.locator(".planche-outils-libelle").allTextContents();
-  check("anglais : nom de l'extension, pastille « add-on » et libellés des commandes", anglais === "en" && /Commands trial/.test(await famille.locator("[data-outils-famille]").textContent()) && (await famille.locator("[data-outils-pastille-extension]").textContent()) === "add-on" && noms[0] === "Place a box", `${anglais} · ${noms.join(" · ")}`);
+  await (await teteExtension(page, ID)).click();
+  const noms = await famille.locator("[data-outils-commande] .planche-outils-libelle").allTextContents();
+  check("anglais : nom de l'extension, case « Show / Hidden » et libellés des commandes", anglais === "en" && /Commands trial/.test(await famille.locator("[data-outils-famille]").textContent()) && /^(Show|Hidden)$/.test(await famille.locator(`[data-outils-case-extension="${ID}"]`).textContent()) && noms[0] === "Place a box", `${anglais} · ${noms.join(" · ")}`);
   await commande(page, "boite-sur-mesure").click();
   const dialogue = page.locator("[data-planche-saisie-extension]");
   await dialogue.waitFor();
