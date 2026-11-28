@@ -170,8 +170,9 @@ export async function deplierZip(d: Uint8Array): Promise<Uint8Array | null> {
   if (e.every((x) => x.methode === 0)) return d;
   const sortie: { nom: string; donnees: Uint8Array }[] = [];
   for (const x of e) {
-    const donnees = x.methode === 0 ? x.brut : await decompresser(x.brut, "deflate-raw");
-    if (!donnees || crc32(donnees) !== x.crc) return null;
+    // Taille annoncée par l'archive : la décompression s'arrête au-delà (archive piégée refusée), puis taille et CRC contrôlés.
+    const donnees = x.methode === 0 ? x.brut : await decompresser(x.brut, "deflate-raw", x.taille);
+    if (!donnees || donnees.length !== x.taille || crc32(donnees) !== x.crc) return null;
     sortie.push({ nom: x.nom, donnees });
   }
   return ecrireZip(sortie, new Date(Date.UTC(1980, 0, 1)));
