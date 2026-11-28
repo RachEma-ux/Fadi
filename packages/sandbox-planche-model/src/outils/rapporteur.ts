@@ -12,7 +12,7 @@
  * cote angulaire (sommet au centre, côtés au départ et à l'angle mesuré), en plus ou à la place du guide.
  */
 import { modifierAnnotations } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, add, cross, dot, len, normalize, scale, sub, tourner } from "../vecteur.js";
 import { contexteSaisie, formaterAngle, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
@@ -41,7 +41,7 @@ const initial = (): EtatRapporteur => ({ etape: 1, centre: null, normale: AXE_Z,
 const retour = (e: EtatRapporteur): EtatRapporteur => ({ ...e, etape: 1, centre: null, depart: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
 /** Normale du plan du rapporteur à l'étape 1 : verrou Maj, flèche, face survolée, sinon sol. */
@@ -51,7 +51,7 @@ function normaleCourante(e: EtatRapporteur, ctx: ContexteOutil, i: Inference): V
   if (e.fleche === "FlecheGauche") return AXE_Y;
   if (e.fleche === "FlecheHaut") return AXE_Z;
   if (i.type === "sur-face" && i.entite !== undefined) {
-    const f = geometrieVisible(ctx.modele).faces.find((x) => x.id === i.entite);
+    const f = geometrieVisible(ctx.modele, etatOutil(ctx)).faces.find((x) => x.id === i.entite);
     if (f) return normalize(f.normale);
   }
   return AXE_Z;

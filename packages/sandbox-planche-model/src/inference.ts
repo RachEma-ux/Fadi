@@ -28,6 +28,7 @@ import {
   type Matrice4,
   type Modele,
   type Occurrence,
+  type StatutTravaux,
   IDENTITE,
   appliquer,
   baseDuPlan,
@@ -183,6 +184,8 @@ export interface Presque {
 export interface AreteVisible {
   /** Arête adoucie (Adoucir / lisser, lot 5) : non tracée par la vue. */
   readonly adoucie?: boolean;
+  /** (Cas 4, C4 étape 5) Statut des travaux de l'objet le plus proche qui en porte un. */
+  readonly statut?: StatutTravaux;
   readonly id: Id;
   readonly a: Vec3;
   readonly b: Vec3;
@@ -205,6 +208,8 @@ export interface FaceVisible {
   readonly materiau?: Id;
   /** Balise de l'objet le plus proche qui en porte une (couleur par balise, lot 5). */
   readonly balise?: Id;
+  /** (Cas 4, C4 étape 5) Statut des travaux de l'objet le plus proche qui en porte un. */
+  readonly statut?: StatutTravaux;
   /** Hors du contexte d'édition ouvert (Objets O-2) : affichée délavée. */
   readonly horsContexte?: boolean;
   readonly horsAccrochage?: boolean;
@@ -1007,7 +1012,19 @@ export interface OptionsGeometrieVisible {
   readonly masquerReste?: boolean;
   /** Masquer les composants semblables (O-5) : dans un composant ouvert, ses autres occurrences ne sont pas rendues. */
   readonly masquerSemblables?: boolean;
+  /**
+   * (Cas 4, C4 étape 5) État affiché : « existant » (existant et à démolir), « projete » (existant et projeté) ; absent =
+   * tout. Ce qui n'a pas de statut est toujours affiché.
+   */
+  readonly etat?: "existant" | "projete";
 }
+
+/** L'objet de ce statut est-il montré dans cet état ? */
+export const montreDansEtat = (statut: StatutTravaux | undefined, etat: "existant" | "projete" | undefined): boolean =>
+  !etat || !statut || (etat === "existant" ? statut !== "projete" : statut !== "a-demolir");
+
+/** (Cas 4, C4 étape 5) Options de géométrie d'un outil : l'état affiché du contexte d'outil, s'il y en a un. */
+export const etatOutil = (ctx: { readonly etatTravaux?: "existant" | "projete" }): OptionsGeometrieVisible => (ctx.etatTravaux ? { etat: ctx.etatTravaux } : {});
 
 export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {
   const aretes: AreteVisible[] = [];
@@ -1046,16 +1063,18 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     if (pile.length === n) return "niveau";
     return retenues.has(pile[n] as Id) ? "libre" : "dehors";
   };
-  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = [], exclu = false): void => {
+  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = [], exclu = false, statut?: StatutTravaux): void => {
     if (profondeur > 32) return;
     const isolement = etatIsolement(pile);
     if (isolement === "dehors") return;
     const hors = !dedans(pile);
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
-    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}), ...(exclu ? { horsAccrochage: true } : {}) };
+    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}), ...(exclu ? { horsAccrochage: true } : {}), ...(statut ? { statut } : {}) };
     // Ni la géométrie d'un contexte traversé pour atteindre l'isolement, ni le reste du modèle quand il est masqué.
     const montrer = (id: Id) => isolement === "libre" || (isolement === "niveau" && retenues.has(id));
-    const rendre = !(o.masquerReste && hors);
+    // (Cas 4, C4 étape 5) Le statut effectif du contexte décide de sa propre géométrie seulement : un enfant au statut
+    // explicite différent est jugé à son tour (le parcours continue).
+    const rendre = !(o.masquerReste && hors) && montreDansEtat(statut, o.etat);
     for (const a of Object.values(c.aretes)) if (!a.masquee && rendre && montrer(a.id)) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
     for (const f of Object.values(c.faces)) {
       if (f.masquee || !rendre || !montrer(f.id)) continue;
@@ -1089,10 +1108,11 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
       if (oc.masquee) continue;
       if (defOuverte !== undefined && oc.definition === defOuverte && !estOuvert([...pile, oc.id])) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
+      const st = oc.statut ?? statut;
       const d = m.definitions[oc.definition];
       // (Cas 2, lot 2) Objet ou balise exclu de l'accrochage : affiché, marqué `horsAccrochage`.
       const exclut = exclu || oc.horsAccrochage === true || (!!oc.balise && !!balises?.[oc.balise]?.horsAccrochage);
-      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id], exclut);
+      if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id], exclut, st);
     }
   };
   parcourir(m.racine, IDENTITE, false, 0, undefined, undefined);

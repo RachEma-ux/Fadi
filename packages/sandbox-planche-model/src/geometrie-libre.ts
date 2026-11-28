@@ -135,9 +135,16 @@ export interface Occurrence {
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
   readonly niveau?: Id;
+  /** (Cas 4, lot C4, étape 5) Statut des travaux ; hérité par le contenu ; absent = sans statut. */
+  readonly statut?: StatutTravaux;
   /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
 }
+
+/** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
+export type StatutTravaux = "existant" | "a-demolir" | "projete";
+export const STATUTS_TRAVAUX: readonly StatutTravaux[] = ["existant", "a-demolir", "projete"];
+export const estStatutTravaux = (v: unknown): v is StatutTravaux => v === "existant" || v === "a-demolir" || v === "projete";
 
 export interface Contexte {
   readonly sommets: Readonly<Record<Id, Sommet>>;
@@ -3600,6 +3607,28 @@ export function rattacherOccurrencesNiveau(m: Modele, occurrences: readonly Id[]
       c.occurrences.set(id, niveau ? { ...reste, niveau } : reste);
     }
   });
+}
+
+/** (Cas 4, lot C4, étape 5) Statut des travaux : pose (ou retire, `null`) le statut des occurrences données du contexte. */
+export function statuerOccurrences(m: Modele, occurrences: readonly Id[], statut: StatutTravaux | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { statut: _ancien, ...reste } = occ;
+      c.occurrences.set(id, statut ? { ...reste, statut } : reste);
+    }
+  });
+}
+
+/**
+ * (Cas 4, lot C4, étape 5) Compte des occurrences par statut des travaux, dans la racine et dans chaque définition
+ * (chaque occurrence écrite est comptée une fois) ; `sans` = occurrences sans statut.
+ */
+export function compterStatuts(m: Modele): Readonly<Record<StatutTravaux | "sans", number>> {
+  const n = { existant: 0, "a-demolir": 0, projete: 0, sans: 0 };
+  for (const c of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) for (const o of Object.values(c.occurrences)) n[o.statut ?? "sans"]++;
+  return n;
 }
 
 /** Balise : pose (ou retire, `null`) la balise des occurrences données du contexte. */

@@ -5537,6 +5537,112 @@
 .sandbox-planche .planche-pdf .planche-debit-barre .est-actif {
   outline: 2px solid rgba(47, 111, 214, 1);
 }
+/* Feuilles en DXF et statut des travaux (cas 4, lot C4, étape 5). */
+.sandbox-planche .planche-dxf-liste label {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 12.5px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+}
+.sandbox-planche .planche-dxf-liste small {
+  margin-left: auto;
+  color: rgba(29, 42, 37, 0.7);
+}
+.sandbox-planche .planche-dxf-contenu {
+  border: 0;
+  margin: 8px 0 4px;
+  padding: 0;
+}
+.sandbox-planche .planche-dxf-contenu legend {
+  font-weight: 600;
+  padding: 0;
+}
+.sandbox-planche .planche-dxf-contenu label {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-dxf input[type="checkbox"],
+.sandbox-planche .planche-dxf input[type="radio"] {
+  width: auto;
+  margin: 2px 0 0;
+}
+.sandbox-planche .planche-dxf-calques {
+  margin: 6px 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.04);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.sandbox-planche .planche-dxf-calques div {
+  display: grid;
+  grid-template-columns: 9.5em minmax(0, 1fr);
+  gap: 6px;
+}
+.sandbox-planche .planche-dxf-calques dt,
+.sandbox-planche .planche-dxf-calques dd {
+  margin: 0;
+}
+.sandbox-planche .planche-statut-boutons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sandbox-planche .planche-statut-ligne {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+.sandbox-planche .planche-statut-ligne.est-actif {
+  outline: 2px solid rgba(47, 111, 214, 1);
+}
+.sandbox-planche .planche-statut-ligne button {
+  flex: 1;
+  border: 0;
+  background: none;
+  font: inherit;
+  padding: 6px;
+}
+.sandbox-planche .planche-statut-couleur {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.sandbox-planche .planche-statut-titre {
+  margin: 8px 0 4px;
+}
+.sandbox-planche .planche-statut-filtre {
+  display: flex;
+  border: 1px solid rgba(27, 77, 66, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sandbox-planche .planche-statut-filtre button {
+  flex: 1;
+  border: 0;
+  background: none;
+  font: inherit;
+  padding: 6px;
+}
+.sandbox-planche .planche-statut-filtre button.est-actif {
+  background: rgba(27, 77, 66, 1);
+  color: rgba(255, 255, 255, 1);
+}
 /* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
 .sandbox-planche .planche-accrochage h4,
 .sandbox-planche .planche-metre h4 {

@@ -9,7 +9,7 @@
  */
 import { coinsFond, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { t } from "../messages";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
@@ -105,8 +105,17 @@ export interface OptionsAffichage {
   /** (Extension « Emplacement ») Nord vrai, en degrés depuis l'axe vert dans le sens horaire ; flèche du nord affichée. */
   readonly nord: number;
   readonly flecheNord: boolean;
+  /**
+   * (Cas 4, lot C4, étape 5) État montré : `tout`, `existant` (existant + à démolir) ou `projete` (existant + projeté) ;
+   * les objets sans statut sont toujours montrés.
+   */
+  readonly etatTravaux: "tout" | "existant" | "projete";
+  /** Couleurs des arêtes par statut des travaux (convention SIA 400 par défaut, réglables). */
+  readonly couleursStatut: Readonly<Record<StatutTravaux, string>>;
 }
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
+/** Convention SIA 400 : existant noir, à démolir jaune, projeté rouge. */
+export const COULEURS_STATUT_DEFAUT: Readonly<Record<StatutTravaux, string>> = { existant: "#1f1f1f", "a-demolir": "#e0a800", projete: "#d32f2f" };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { etatTravaux: "tout", couleursStatut: COULEURS_STATUT_DEFAUT, aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -517,6 +526,16 @@ export class VuePlanche {
     return this.geometrie.faces.length;
   }
 
+  /** Arêtes rendues par statut des travaux (instrumentation de recette, lot C4, étape 5). */
+  aretesParStatut(): Readonly<Record<string, number>> {
+    const n: Record<string, number> = {};
+    for (const o of this.groupeModele.children) {
+      const st = o.userData["statut"] as string | undefined;
+      if (st && o instanceof THREE.LineSegments) n[st] = (n[st] ?? 0) + (o.geometry.attributes["position"]?.count ?? 0) / 2;
+    }
+    return n;
+  }
+
   /** Remplace la géométrie affichée par celle du modèle (aplatie : racine et occurrences). */
   majModele(modele: Modele): void {
     vider(this.groupeModele);
@@ -525,7 +544,7 @@ export class VuePlanche {
     const dans = this.rappels.dans?.();
     const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
     const o = this.options;
-    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables });
+    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables, ...(o.etatTravaux !== "tout" ? { etat: o.etatTravaux } : {}) });
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
     const couleurDe = (f: FaceVisible): string => {
@@ -542,7 +561,9 @@ export class VuePlanche {
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
     this.facesRecto.castShadow = this.facesRecto.receiveShadow = o.ombres;
     this.facesVerso.receiveShadow = o.ombres;
-    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte).map((a) => [a.a, a.b] as const);
+    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && !a.statut).map((a) => [a.a, a.b] as const);
+    // Statut des travaux : arêtes à la couleur de leur statut, celles à démolir en tirets ; toujours tracées, même sans « Arêtes ».
+    const statuees = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && a.statut);
     if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
     const delavees = this.geometrie.faces.filter((f) => f.horsContexte);
     if (delavees.length) {
@@ -562,6 +583,15 @@ export class VuePlanche {
       }
     }
     if (o.aretes || o.modeFace === "filaire" || o.modeFace === "lignes-cachees") this.groupeModele.add(new THREE.LineSegments(geometrieSegments(segments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE })));
+    for (const statut of STATUTS_TRAVAUX) {
+      const lot = statuees.filter((a) => a.statut === statut).map((a) => [a.a, a.b] as const);
+      if (!lot.length) continue;
+      const couleur = o.couleursStatut[statut];
+      const l = new THREE.LineSegments(geometrieSegments(lot), statut === "a-demolir" ? new THREE.LineDashedMaterial({ color: couleur, dashSize: 0.15, gapSize: 0.1 }) : new THREE.LineBasicMaterial({ color: couleur }));
+      if (statut === "a-demolir") l.computeLineDistances();
+      l.userData["statut"] = statut;
+      this.groupeModele.add(l);
+    }
     if (o.aretesArriere && o.modeFace !== "filaire") {
       // Arêtes arrière (K) : les arêtes cachées par les faces, en pointillé léger (tracées sans test de profondeur sous les pleines).
       const arriere = new THREE.LineSegments(geometrieSegments(segments), new THREE.LineDashedMaterial({ color: "#6a6a6a", dashSize: 0.12, gapSize: 0.08, depthTest: false, transparent: true, opacity: 0.6 }));
@@ -671,7 +701,7 @@ export class VuePlanche {
       }
       return r;
     };
-    for (const s of sectionsDeCoupe(modele, p)) {
+    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined)) {
       const boucles = s.boucles.map((b) => b.map(vers2));
       // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
       const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);

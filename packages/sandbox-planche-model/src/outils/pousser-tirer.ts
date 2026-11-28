@@ -15,7 +15,7 @@
  * double-clic sur une autre arête = répéter, Échap.
  */
 import { type Id, type Modele, ERREUR_ETIRER_ISOLEE, instancesEditees, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, pousserTirerFaces, tuberFace } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import {
@@ -190,7 +190,7 @@ const occurrencesPartagees = (m: Modele, dans: Id | undefined): number => instan
 function viseeDistance(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { distance: number; inference: Inference } {
   const n = e.normale as Vec3;
   const o = e.origine as Vec3;
-  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" }, ...axesDeSaisie(ctx) });
+  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" }, ...axesDeSaisie(ctx) });
   return { distance: dot(n, sub(i.point, o)), inference: i };
 }
 
@@ -262,14 +262,14 @@ function aretesDuClic(ctx: ContexteOutil, cible: Cible): Id[] {
 function segmentsMonde(ctx: ContexteOutil, ids: readonly Id[]): Segment[] {
   const set = new Set(ids);
   const dans = (ch: readonly Id[]) => (ctx.dans === undefined ? ch.length === 0 : ch[ch.length - 1] === ctx.dans);
-  return scene(ctx.modele).flatMap((el) => (el.genre === "arete" && set.has(el.id) && dans(el.chemin) ? [{ a: el.a, b: el.b }] : []));
+  return scene(ctx.modele, ctx.etatTravaux).flatMap((el) => (el.genre === "arete" && set.has(el.id) && dans(el.chemin) ? [{ a: el.a, b: el.b }] : []));
 }
 
 /** Point d'arrivée visé (départ = point cliqué sur l'arête), avec inférence et verrou de flèche. */
 function viseeVecteur(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { vecteur: Vec3; inference: Inference } {
   const o = e.origine as Vec3;
   const v = e.fleche?.verrou;
-  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, ...(v ? { verrou: v } : {}), ...axesDeSaisie(ctx) });
+  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), depart: o, ...(v ? { verrou: v } : {}), ...axesDeSaisie(ctx) });
   return { vecteur: sub(i.point, o), inference: i };
 }
 
@@ -727,7 +727,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
           if (ev.double && (der?.genre === "aretes" || der?.genre === "couronne")) {
             return appliquerAretes(etat, ctx, { ...der, aretes: ids }, null, null);
           }
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
           const segments = segmentsMonde(ctx, ids);
           return {
             etat: {

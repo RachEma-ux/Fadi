@@ -669,6 +669,44 @@ export function disponibilitePdf(id: IdCommandePdf, s: { readonly page: boolean;
   return s.image ? { disponible: true, motif: null } : { disponible: false, motif: "planche.pdf.motif.image" };
 }
 
+/**
+ * Feuilles en DXF (cas 4, lot C4, étape 5) : ouvrir le panneau, exporter les feuilles cochées (un fichier DXF par feuille
+ * ou par vue) ; règle d'or : icône, barre, raccourci en deux temps.
+ */
+export type IdCommandeDxf = "feuilles-dxf" | "exporter-dxf";
+export interface CommandeDxf {
+  readonly id: IdCommandeDxf;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_DXF: readonly CommandeDxf[] = (["feuilles-dxf", "exporter-dxf"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.dxf.${id}` as CleMessage, court: `planche.dxf.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; exporter dès qu'une feuille est cochée (l'export ne modifie rien, permis en lecture). */
+export function disponibiliteDxf(id: IdCommandeDxf, s: { readonly cochees: number }): Disponibilite {
+  if (id === "feuilles-dxf") return { disponible: true, motif: null };
+  return s.cochees > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.dxf.motif.cochees" };
+}
+
+/** Statut des travaux (cas 4, lot C4, étape 5) : ouvrir le panneau, poser Existant, À démolir ou Projeté sur la sélection. */
+export type IdCommandeTravaux = "statut-travaux" | "statut-existant" | "statut-a-demolir" | "statut-projete";
+export interface CommandeTravaux {
+  readonly id: IdCommandeTravaux;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_TRAVAUX: readonly CommandeTravaux[] = (["statut-travaux", "statut-existant", "statut-a-demolir", "statut-projete"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.travaux.${id}` as CleMessage, court: `planche.travaux.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; poser un statut sur au moins un objet (groupe ou composant) choisi, hors lecture. */
+export function disponibiliteTravaux(id: IdCommandeTravaux, s: { readonly objets: number; readonly lecture: boolean }): Disponibilite {
+  if (id === "statut-travaux") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.objets > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.travaux.motif.objets" };
+}
+
 /** Disponibilité : ouvrir toujours ; charger hors lecture ; le reste sur la référence choisie ; récolement : chargée et visible. */
 export function disponibiliteReference(id: IdCommandeReference, s: { readonly reference: boolean; readonly chargee: boolean; readonly lecture: boolean }): Disponibilite {
   if (id === "references") return { disponible: true, motif: null };

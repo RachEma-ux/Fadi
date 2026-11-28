@@ -22,6 +22,7 @@ import { estReference, type Reference } from "./references.js";
 import { estReglagesEnveloppe, type ReglagesEnveloppe } from "./enveloppe.js";
 import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Local, Feuille, Materiau, MotifHachure, Mur, Niveau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
+import { estStatutTravaux } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
 
@@ -252,7 +253,7 @@ export const validateursEntites: Record<(typeof CLES_CONTEXTE)[number], (id: Id,
   aretes: (id, v) => estObjet(v) && v["id"] === id && estId(v["a"]) && estId(v["b"]) && v["a"] !== v["b"] && (v["courbe"] === undefined || estId(v["courbe"])),
   faces: (id, v) => estObjet(v) && v["id"] === id && estBoucle(v["exterieur"]) && Array.isArray(v["trous"]) && v["trous"].every(estBoucle) && estVec3(v["normale"]),
   courbes: (id, v) => estObjet(v) && v["id"] === id && ["cercle", "polygone", "arc"].includes(v["genre"] as string) && Array.isArray(v["aretes"]) && v["aretes"].every(estId) && estVec3(v["centre"]) && estNombre(v["rayon"]) && estVec3(v["normale"]),
-  occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre) && (v["niveau"] === undefined || estId(v["niveau"])),
+  occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre) && (v["niveau"] === undefined || estId(v["niveau"])) && (v["statut"] === undefined || estStatutTravaux(v["statut"])),
 };
 
 /** Lien de surface étendue (D-196) : genre, sources, vecteur ou distance, instantanés de positions — jamais cru sur parole. */

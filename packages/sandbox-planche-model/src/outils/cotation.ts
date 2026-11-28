@@ -17,7 +17,7 @@
 import { type Cote } from "../annotations.js";
 import { cotesEnChaine } from "../cotes.js";
 import { type Id, aretesDeLaCourbe, contexte, modifierAnnotations } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_X, AXE_Z, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { contexteSaisie, formaterLongueur, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
@@ -73,7 +73,7 @@ const initial = (): EtatCotation => ({ etape: 1, a: null, b: null, sommets: [und
 const repos = (e: EtatCotation): EtatCotation => ({ ...initial(), genre: e.genre, reference: e.reference, inference: e.inference });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
 }
 
 /** Chemin du contexte ouvert (racine → `dans`), à ranger sur la cote ; vide à la racine. */

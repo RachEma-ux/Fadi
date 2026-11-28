@@ -36,7 +36,7 @@ function pieceVisee(ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: "cl
   };
   const { cible } = viseeElement(ctx, ev);
   if (cible?.genre === "occurrence" && estPiece(cible.id)) return cible.id;
-  const el = viser(ctx.modele, ev.rayon, ev.tolerance, () => false);
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, () => false, ctx.etatTravaux);
   const c2 = el ? cibleDans(el, ctx.dans, ctx.chemin) : null;
   return c2?.genre === "occurrence" && estPiece(c2.id) ? c2.id : null;
 }
@@ -211,7 +211,7 @@ export interface EtatAlignerFace {
 
 /** Point d'impact du rayon sur la face visée et sa normale (monde). */
 function impactFace(ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: "clic" }>): { point: Vec3; normale: Vec3; occurrence: Id | null } | null {
-  const el = viser(ctx.modele, ev.rayon, ev.tolerance, () => false);
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, () => false, ctx.etatTravaux);
   if (!el || el.genre !== "face") return null;
   const n = normalize(el.normale);
   const d = dot(n, ev.rayon.direction);
