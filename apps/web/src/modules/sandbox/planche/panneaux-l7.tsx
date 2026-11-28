@@ -81,7 +81,8 @@ export function PanneauVersions({
   jalons: readonly Jalon[];
   choisi: string | null;
   onChoisir: (id: string) => void;
-  onPoserJalon: (nom: string) => void;
+  /** Pose d'un jalon : son nom se tape ensuite dans Mesures (réglage interactif, aucun champ ajouté au panneau). */
+  onPoserJalon: () => void;
   onDeriver: (jalon: Jalon) => void;
   variantes: readonly VarianteAffichee[];
   emissions: readonly Emission[];
@@ -92,7 +93,6 @@ export function PanneauVersions({
 }) {
   const [statut, setStatut] = useState(revision?.statut ?? "");
   const [indice, setIndice] = useState(revision?.indice ?? "");
-  const [nom, setNom] = useState("");
   useEffect(() => {
     setStatut(revision?.statut ?? "");
     setIndice(revision?.indice ?? "");
@@ -119,12 +119,8 @@ export function PanneauVersions({
         <input value={indice} disabled={lecture} onChange={(e) => setIndice(e.target.value)} onBlur={valider} onKeyDown={(e) => { arreter(e); if (e.key === "Enter") valider(); }} data-planche-versions-indice />
       </label>
       <p className="inspecteur-aide">{t("planche.version.statuts.note")}</p>
-      <label className="planche-accrochage-champ">
-        {t("planche.version.nom-jalon")}
-        <input value={nom} disabled={lecture} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => { arreter(e); if (e.key === "Enter" && nom.trim()) { onPoserJalon(nom); setNom(""); } }} data-planche-versions-nom />
-      </label>
       <div className="planche-debit-barre planche-gabarit-barre" role="toolbar" aria-label={t("planche.version.versions")}>
-        <BoutonVersion id="poser-jalon" libelle={t("planche.version.poser-jalon")} principal d={nom.trim() ? disponibilite("poser-jalon") : { disponible: false, motif: "planche.version.jalon-nom-requis" }} onClick={() => { onPoserJalon(nom); setNom(""); }} attribut="data-planche-versions-poser" />
+        <BoutonVersion id="poser-jalon" libelle={t("planche.version.poser-jalon")} principal d={disponibilite("poser-jalon")} onClick={onPoserJalon} attribut="data-planche-versions-poser" />
         <button type="button" disabled={!jalon} onClick={() => jalon && onDeriver(jalon)} data-planche-versions-deriver>{t("planche.version.deriver")}</button>
       </div>
       <h4>{t("planche.version.jalons")}</h4>

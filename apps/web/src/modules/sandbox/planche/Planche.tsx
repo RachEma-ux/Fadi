@@ -566,6 +566,14 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [vue, setVue] = useState<VueOutil>(() => vueParDefaut(outilRef.current, 35, HAUTEUR_OEIL_DEFAUT));
   const texteRef = useRef<TexteMesures>(null);
   const [texte, setTexteEtat] = useState<TexteMesures>(null);
+  // Cas 2, lot 7 (n° 38) : « Poser un jalon » attend son nom dans Mesures (réglage interactif, pas de champ ajouté).
+  const [attenteNomJalon, setAttenteNomJalonEtat] = useState(false);
+  const attenteNomJalonRef = useRef(false);
+  const setAttenteNomJalon = useCallback((v: boolean) => {
+    attenteNomJalonRef.current = v;
+    setAttenteNomJalonEtat(v);
+  }, []);
+  const poserUnJalonRef = useRef<(nom: string) => void>(() => undefined);
   const [message, setMessage] = useState<string | null>(null);
   const [grille, setGrille] = useState(false);
   const grilleRef = useRef(false);
@@ -1074,6 +1082,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const choisirOutil = useCallback(
     (id: string, options: { garderPrecedent?: boolean } = {}) => {
       frappeRef.current = consommerFrappe(frappeRef.current);
+      setAttenteNomJalon(false);
       // Outil d'une extension installée (lot 6) : il n'est pas au catalogue, sa machine fait le lien avec l'extension.
       if (lireCleOutilExtension(id)) {
         if (!outilExtensionDeclareRef.current(id)) return;
@@ -2054,6 +2063,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const valider = useCallback(() => {
     // Une saisie déjà validée n'est pas renvoyée : Entrée seule va à l'outil (confirmation du Mètre, fin de chaîne).
     const saisie = texteRef.current?.statut === "frappe" ? texteRef.current.texte.trim() : "";
+    if (attenteNomJalonRef.current) {
+      if (!saisie) return setMessage(t("planche.version.jalon-taper-nom"));
+      setAttenteNomJalon(false);
+      setTexte(null);
+      poserUnJalonRef.current(saisie);
+      return;
+    }
     if (!saisie) {
       envoyerTouche("Entree", "enfoncee");
       envoyerTouche("Entree", "relachee");
@@ -2086,7 +2102,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     }
     envoyer({ genre: "saisie", texte: saisie });
     setTexte({ texte: saisie, statut: "valide" });
-  }, [envoyer, envoyerTouche, rafraichir, setHauteurOeil, setTexte, vue.mesures]);
+  }, [envoyer, envoyerTouche, rafraichir, setHauteurOeil, setTexte, setAttenteNomJalon, vue.mesures]);
   const validerRef = useRef(valider);
   validerRef.current = valider;
 
@@ -4325,6 +4341,16 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       setMessage(e instanceof RangeError ? t("planche.version.jalon-nom-requis") : String(e));
     }
   };
+  poserUnJalonRef.current = poserUnJalon;
+  /** « Poser un jalon » (bouton ou Ctrl+Maj+Espace, Maj+J) : le nom se tape ensuite dans Mesures, Entrée pose le jalon. */
+  const demanderNomJalon = () => {
+    if (readOnly) return setMessage(t("planche.lecture.message"));
+    setPanneau("versions-jalons");
+    setTexte(null);
+    setAttenteNomJalon(true);
+    setMessage(t("planche.version.jalon-taper-nom"));
+    champMesures.current?.focus();
+  };
   const poserUneRevision = (r: Revision) => operer(t("planche.version.operation-revision"), (m) => ({ modele: poserRevision(m, r).modele }));
   const poserUneFiche = (f: FicheProjet) => operer(t("planche.fiche.operation"), (m) => ({ modele: poserFiche(m, f).modele }));
   const gabaritApplique = hist.present.modele.annotations?.reglages?.gabarit;
@@ -4421,10 +4447,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     if (!d.disponible) return setMessage(t(d.motif ?? "planche.lecture.message"));
     const basculer = (p: Panneau) => setPanneau(panneauRef.current === p ? null : p);
     if (id === "versions") return basculer("versions-jalons");
-    if (id === "poser-jalon") {
-      setPanneau("versions-jalons");
-      return setMessage(t("planche.version.jalon-nom-requis"));
-    }
+    if (id === "poser-jalon") return demanderNomJalon();
     // Consultation : du jalon choisi quand « Versions et jalons » est ouvert, sinon de la Planche courante ; de nouveau : sortie.
     if (id === "consultation") {
       if (consultationRef.current) return quitterConsultation();
@@ -6199,7 +6222,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 jalons={registre.jalons}
                 choisi={jalonChoisi}
                 onChoisir={setJalonChoisi}
-                onPoserJalon={poserUnJalon}
+                onPoserJalon={demanderNomJalon}
                 onDeriver={(j) => void actionsVersions.deriver(j)}
                 variantes={variantesDe(indexPlanches, plancheCourante).map(varianteAffichee)}
                 emissions={registre.emissions}
@@ -6775,17 +6798,25 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             valider();
           }}
         >
-          <label htmlFor="planche-mesures">{vue.mesures?.libelle ?? t("planche.mesures")}</label>
+          <label htmlFor="planche-mesures">{attenteNomJalon ? t("planche.version.nom-jalon") : (vue.mesures?.libelle ?? t("planche.mesures"))}</label>
           <input
             id="planche-mesures"
             ref={champMesures}
-            inputMode="decimal"
+            inputMode={attenteNomJalon ? "text" : "decimal"}
             autoComplete="off"
             spellCheck={false}
             value={valeurMesures}
             title={t("planche.mesures.aide")}
             aria-describedby="planche-mesures-aide"
             data-planche-mesures
+            data-planche-mesures-jalon={attenteNomJalon || undefined}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && attenteNomJalonRef.current) {
+                setAttenteNomJalon(false);
+                setTexte(null);
+                setMessage(t("planche.version.jalon-abandon"));
+              }
+            }}
             onChange={(e) => setTexte(e.target.value ? { texte: e.target.value, statut: "frappe" } : null)}
           />
           <span id="planche-mesures-aide" className="sr-only">{t("planche.mesures.aide")}</span>
