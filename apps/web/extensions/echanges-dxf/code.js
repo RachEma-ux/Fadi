@@ -493,6 +493,7 @@ planche.sur("commande.importer", async (d) => {
   let arcs = 0;
   let blocs = 0;
   let eclates = 0;
+  let blocsAnnotes = 0;
   let enSegments = 0;
   const omis = {};
   // (1.1) Bilan des annotations : reprises, et non reprises avec leur motif.
@@ -649,7 +650,11 @@ planche.sur("commande.importer", async (d) => {
     for (let i = 0; i < segs.length; i += LOT_SEGMENTS) await planche.modele.lignes(segs.slice(i, i + LOT_SEGMENTS));
     const m = await planche.modele.lire();
     const boucles = h.boucles.map((bc) => bc.map(plan));
+    // Seules les faces dans le plan de pose comptent : une face du modèle ailleurs (autre altitude, autre plan) garde
+    // sa matière.
+    const dansLePlan = (p) => Math.abs((p[0] - origine[0]) * normale[0] + (p[1] - origine[1]) * normale[1] + (p[2] - origine[2]) * normale[2]) < 1e-6;
     const pleines = m.faces.filter((fa) => {
+      if (!fa.points.every(dansLePlan)) return false;
       const g = pointInterieur(fa.points.map(plan));
       return !!g && boucles.filter((bp) => dedansPolygone(g, bp)).length % 2 === 1;
     });
@@ -665,6 +670,10 @@ planche.sur("commande.importer", async (d) => {
     const ex1 = e.ex ?? 1;
     const ey1 = e.ey ?? ex1;
     if (!b || Math.abs(ex1 - 1) > EPS || Math.abs(ey1 - 1) > EPS) return false; // échelle : posé éclaté
+    // (1.1) Un bloc qui porte des textes, cotes ou hachures à reprendre est posé éclaté : un composant n'en garderait
+    // que les traits.
+    const repris = { TEXT: r.textes, MTEXT: r.textes, DIMENSION: r.cotes, HATCH: r.hachures };
+    if (b.entites.some((s) => repris[s.type])) return null;
     const pos = e.pts[0] || [0, 0];
     const rot = e.a0 || 0;
     let id;
@@ -696,8 +705,10 @@ planche.sur("commande.importer", async (d) => {
   const identite = (p) => p;
   for (const e of entitesEspace(dxf, r.espace)) {
     if (e.type === "INSERT") {
-      if (r.blocs && (await poserBloc(e))) continue;
-      if (dxf.blocs[e.nom]) eclates++;
+      const pose = r.blocs ? await poserBloc(e) : false;
+      if (pose) continue;
+      if (pose === null) blocsAnnotes++;
+      else if (dxf.blocs[e.nom]) eclates++;
     }
     dessiner(e, e.calque, identite, 0);
   }
@@ -727,6 +738,7 @@ planche.sur("commande.importer", async (d) => {
   );
   if (enSegments) await planche.message.afficher(enSegments + t(fr, " courbe(s) de blocs déformés (échelles X et Y différentes) : posée(s) en segments.", " curve(s) in distorted blocks (different X and Y scales): placed as segments."), "alerte");
   if (eclates) await planche.message.afficher(eclates + t(fr, " bloc(s) inséré(s) à une échelle autre que 1 : posé(s) éclaté(s).", " block(s) inserted at a scale other than 1: placed exploded."), "alerte");
+  if (blocsAnnotes) await planche.message.afficher(blocsAnnotes + t(fr, " insertion(s) de blocs portant textes, cotes ou hachures : posée(s) éclatée(s) pour les garder.", " block insertion(s) carrying texts, dimensions or hatches: placed exploded to keep them."), "alerte");
   if (bilan.textes + bilan.cotes + bilan.hachures)
     await planche.message.afficher(t(fr, "Annotations reprises : ", "Annotations imported: ") + bilan.textes + t(fr, " textes, ", " texts, ") + bilan.cotes + t(fr, " cotes, ", " dimensions, ") + bilan.hachures + t(fr, " hachures (faces avec matière).", " hatches (faces with a material)."));
   if (bilan.textes) await planche.message.afficher(t(fr, "Textes posés sans leur hauteur ni leur rotation (la Planche ne les porte pas).", "Texts placed without their height or rotation (the Planche does not carry them).") + (bilan.coupes ? t(fr, " " + bilan.coupes + " texte(s) coupé(s) à 200 caractères.", " " + bilan.coupes + " text(s) cut at 200 characters.") : ""), "alerte");
@@ -802,8 +814,11 @@ planche.sur("commande.exporter", async (d) => {
     // occurrences de son chemin est sélectionnée.
     aretes = aretes.filter((a) => sel.has(a.id) || a.chemin.some((o) => sel.has(o)));
   }
-  if (!aretes.length) {
-    await planche.message.afficher(t(fr, "Rien à écrire : aucune arête dans le contenu choisi.", "Nothing to write: no edge in the chosen content."), "alerte");
+  // (1.1) Textes et cotes du modèle (toute la planche ; une sélection ne porte pas d'annotation) : un modèle qui n'a
+  // que des annotations s'écrit aussi.
+  const an = r.annotations && r.contenu === "modele" ? await planche.annotations.lire() : null;
+  if (!aretes.length && !(an && an.textes.length + an.cotes.length)) {
+    await planche.message.afficher(t(fr, "Rien à écrire : aucune arête ni annotation dans le contenu choisi.", "Nothing to write: no edge or annotation in the chosen content."), "alerte");
     return null;
   }
   const noms = {};
@@ -859,8 +874,7 @@ planche.sur("commande.exporter", async (d) => {
   let textesEcrits = 0;
   let cotesEcrites = 0;
   let cotesZ = 0;
-  if (r.annotations && r.contenu === "modele") {
-    const an = await planche.annotations.lire();
+  if (an) {
     const h = Number(r.hauteur) / k;
     for (const x of an.textes) {
       const p = X(x.position);

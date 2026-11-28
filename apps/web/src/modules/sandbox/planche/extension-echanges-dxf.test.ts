@@ -488,6 +488,38 @@ describe("extension « Échanges DXF » 1.1 — textes, cotes et hachures", () =
     expect(faces(p.etat.modele)).toBe(1);
   });
 
+  it("bloc portant un texte : posé éclaté pour le garder, à chaque insertion, et c'est dit", async () => {
+    const p = planche();
+    const blocs = [0, "SECTION", 2, "BLOCKS", 0, "BLOCK", 8, "0", 2, "REPERE", 10, 0, 20, 0, 0, "LINE", 8, "0", 10, 0, 20, 0, 11, 1000, 21, 0, ...texte("0", 0, 500, "P1"), 0, "ENDBLK", 0, "ENDSEC"];
+    const ins = (x: number) => [0, "INSERT", 8, "REPERES", 2, "REPERE", 10, x, 20, 0];
+    p.fichier(dxf(entete(4), blocs, entites(ins(0), ins(5000))));
+    await p.commande("importer", ANNOT);
+    const an = p.etat.modele.annotations!;
+    expect(Object.values(an.textes).map((t) => [t.texte, t.genre === "repere" ? t.ancre.x : null])).toEqual([["P1", 0], ["P1", 5]]);
+    expect(Object.values(p.etat.modele.definitions).some((d) => d.nom === "REPERE")).toBe(false);
+    expect(p.textes()).toContain("2 insertion(s) de blocs portant textes, cotes ou hachures : posée(s) éclatée(s) pour les garder.");
+  });
+
+  it("une hachure ne repeint que les faces de son plan de pose", async () => {
+    // Face existante de même emprise, 10 m plus haut : elle garde sa matière (aucune).
+    const haut = ajouterRectangle(modeleVide(), v3(0, 0, 10), v3(4, 0, 10), v3(0, 3, 10)).modele;
+    const p = planche(haut);
+    p.fichier(dxf(entete(4), entites(rect("MURS", 0, 0, 4000, 3000), aplat("MURS", 0, 0, 4000, 3000))));
+    await p.commande("importer", ANNOT);
+    expect(faces(p.etat.modele)).toBe(1);
+    const z = JSON.stringify(p.etat.modele.definitions);
+    expect(z).toMatch(/"materiauRecto"/);
+  });
+
+  it("un modèle qui n'a que des textes et cotes s'exporte", async () => {
+    const p = planche();
+    p.fichier(dxf(entete(4), entites(texte("TEXTES", 1000, 1000, "Note"), cote("COTES", 0, [0, 0], [4000, 0], [0, -500]))));
+    await p.commande("importer", ANNOT);
+    await p.commande("exporter", { contenu: "modele", unite: "4", calques: true, arcs: true, annotations: true, hauteur: 0.25, nom: "notes.dxf" });
+    expect(p.textes().at(-1)).toBe("DXF écrit : 0 traits, 0 arcs et cercles, 1 textes, 1 cotes, 3 calques.");
+    expect(types(p.etat.fichiers.at(-1)!.texte)).toEqual(expect.arrayContaining(["TEXT", "DIMENSION"]));
+  });
+
   it("exporte textes (calque TEXTES) et cotes (calque COTES, bloc de cote) relus à l'import", async () => {
     const p = planche();
     p.fichier(PLAN());
