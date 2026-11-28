@@ -7070,11 +7070,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   /** Nom d'une sortie DXF : la feuille, sans accents ni espaces, en minuscules (« Étage » → « etage.dxf »). */
   const suffixeFeuille = (f: Feuille) => `${(f.nom || f.numero).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || f.numero}.dxf`;
   const ordreSorties: readonly SortieLot[] = ["ifc", "dxf", "pdf", "csv", "png"];
-  const nomsSortiesLot = (): { sortie: SortieLot; nom: string }[] =>
-    ordreSorties.filter((x) => sortiesLot.has(x)).flatMap((x): { sortie: SortieLot; nom: string }[] => {
+  // Chaque sortie DXF porte sa feuille : la retrouver par son nom confondrait « rez » et « haut-rez » (revue de #533).
+  const nomsSortiesLot = (): { sortie: SortieLot; nom: string; feuille?: Feuille }[] =>
+    ordreSorties.filter((x) => sortiesLot.has(x)).flatMap((x): { sortie: SortieLot; nom: string; feuille?: Feuille }[] => {
       const jeu = nomJeuLot || t("planche.lot.jeu");
       if (x === "ifc") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "modele.ifc") }];
-      if (x === "dxf") return feuillesListe.map((f) => ({ sortie: x, nom: nomSortie(nomCourant, jeu, suffixeFeuille(f)) }));
+      if (x === "dxf") return feuillesListe.map((f) => ({ sortie: x, nom: nomSortie(nomCourant, jeu, suffixeFeuille(f)), feuille: f }));
       if (x === "pdf") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "feuilles.pdf") }];
       if (x === "csv") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "debit.csv") }];
       return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "vue.png") }];
@@ -7111,7 +7112,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         if (!relireIfcStructure(ifc, schemaIfc, ifc.contenu).identique) return refuser(t("planche.lot.erreur.ifc-relecture"));
         fichiers.push({ sortie: "ifc", nom: x.nom, donnees: texte(ifc.contenu), details: `${schemaIfc}, ${ifc.georef ? "géoréférencé" : "non géoréférencé"}, ${ifc.objets} objets` });
       } else if (x.sortie === "dxf") {
-        const f = feuillesListe.find((y) => x.nom.endsWith(`-${suffixeFeuille(y)}`));
+        const f = x.feuille;
         if (!f) continue;
         fichiers.push({ sortie: "dxf", nom: x.nom, donnees: texte(dxfFeuille(composerFeuille(m, f, libellesFeuille()))), details: `feuille ${f.numero} « ${f.nom} », DXF R2000 en millimètres papier` });
       } else if (x.sortie === "pdf") {
