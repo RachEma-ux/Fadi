@@ -341,6 +341,15 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     degrés, `x0`, `y0`, `dx`, `dy`, `tirets`, en mm papier), source « saisie » ou le nom du fichier d'origine ; même nom,
     motif existant rendu. `matieres.lire` rend aussi le `motif` de chaque matière. Permission `modele.modifier` pour la
     création, `modele.lire` pour la lecture.
+  - *Protocole 1.6 — site* (cas 3 du catalogue des extensions, lot 4 ; n'ajoute que des fonctions). `planche.site.lire()`
+    rend l'Emplacement saisi dans Info planche (`latitude`, `longitude`, `altitude`, `lieu`, `nord` : nord vrai en degrés
+    depuis l'axe vert, sens horaire vu de dessus), `altitude` et `lieu` à `null` s'ils manquent, ou `{ emplacement: null }`
+    s'il n'est pas saisi : rien n'est deviné. `planche.geometrie.rayon(rayons, { distanceMax, objets })` lance jusqu'à
+    2 000 rayons `{ origine, direction }` contre les faces visibles du modèle (une balise masquée ou verrouillée n'est pas
+    visée, comme à la souris) et rend pour chacun le premier impact `{ point, distance, face, chemin, normale }` ou
+    `null`. `planche.modele.triangles([[a, b, c], …])` crée jusqu'à 5 000 faces explicites en une opération, les
+    triangles coplanaires de même sens fusionnés (comme l'ouverture d'un maillage) ; un triangle d'aire nulle est refusé
+    avec son rang. Permission `modele.lire` pour les lectures et le lancer de rayons, `modele.modifier` pour les triangles.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,

@@ -220,8 +220,8 @@ function dansPolygone(x: number, y: number, poly: readonly Point2[]): boolean {
   return dedans;
 }
 
-/** Abscisse le long du rayon de son intersection avec la face, ou null. */
-function rayonFace(r: Rayon, f: Extract<ElementScene, { genre: "face" }>): number | null {
+/** Abscisse le long du rayon de son intersection avec la face, ou null. (1.6) Exportée pour `geometrie.rayon`. */
+export function rayonFace(r: Rayon, f: Extract<ElementScene, { genre: "face" }>): number | null {
   const p0 = f.exterieur[0];
   if (!p0) return null;
   const V = normalize(r.direction);

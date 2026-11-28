@@ -80,9 +80,18 @@
  *   planche.motifs.lire()                       [{ id, nom, familles }]
  *   planche.matieres.creer(nom, couleur, motif) matière d'apparence, avec ou sans motif ; rend l'identifiant (celui de la
  *                                               matière du même nom si elle existe) ; matieres.lire rend aussi `motif`
+ * Protocole 1.6 (site, cas 3 lot 4) :
+ *   planche.site.lire()                         { emplacement : { latitude, longitude, altitude, lieu, nord } ou null s'il
+ *                                               n'est pas saisi ; altitude et lieu null s'ils manquent }
+ *   planche.geometrie.rayon(rayons, options)    rayons [{ origine, direction }] (ou un seul) contre les faces visibles :
+ *                                               pour chacun le premier impact { point, distance, face, chemin, normale }
+ *                                               ou null ; options { distanceMax, objets } (objets : n'y viser que ceux-là)
+ *   planche.modele.triangles([[a, b, c], …])    faces explicites, coplanaires de même sens fusionnées, une opération
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
+
+const estObjetSimple = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 import { BORNES_FICHIER } from "./fichiers-extensions.js";
 
 export type ErreurDemarrageExtension = { readonly genre: "import" } | { readonly genre: "syntaxe" | "execution"; readonly texte: string };
@@ -187,7 +196,11 @@ export function creerExecutantExtension(
     niveaux: Object.freeze({
       lire: () => demander("niveaux.lire"),
     }),
+    site: Object.freeze({
+      lire: () => demander("site.lire"),
+    }),
     geometrie: Object.freeze({
+      rayon: (rayons: unknown, options?: unknown) => demander("geometrie.rayon", { rayons: Array.isArray(rayons) ? rayons : [rayons], ...(estObjetSimple(options) ? options : {}) }),
       coupe: (hauteur: unknown, objets?: unknown, sansBalises?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       projection: (objets?: unknown, sansBalises?: unknown) => demander("geometrie.projection", { ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       union: (polygones: unknown) => demander("geometrie.union", { polygones }),

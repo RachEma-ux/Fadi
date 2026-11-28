@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.5";
+export const VERSION_PROTOCOLE = "1.6";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -363,6 +363,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * Protocole 1.5 (cas 3, Échanges DXF 1.1, hachures) : `matieres.creer` (matière d'apparence, avec ou sans motif de
  * hachure), `motifs.lire` et `motifs.creer` (motifs de hachure en familles de lignes du .pat) ; `matieres.lire` rend
  * aussi le motif de chaque matière.
+ * Protocole 1.6 (cas 3, lot 4, site) : `site.lire` (Emplacement saisi : latitude, longitude, altitude, lieu, et nord vrai ;
+ * `null` s'il n'est pas renseigné), `geometrie.rayon` (lancer de rayons contre les faces visibles du modèle) et la fonction
+ * de dessin `triangles` (faces explicites, coplanaires fusionnées, en une opération).
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -397,6 +400,8 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "geometrie.projection": "modele.lire",
   "geometrie.union": null,
   "niveaux.lire": "modele.lire",
+  "site.lire": "modele.lire",
+  "geometrie.rayon": "modele.lire",
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",
@@ -415,7 +420,9 @@ export const FONCTIONS_MODIFICATION_SCRIPT = ["ligne", "rectangle", "boite", "po
  * cercle. Propres aux extensions (un script personnel ne les a pas).
  */
 export const FONCTIONS_MODIFICATION_1_1 = ["lignes", "arc", "cercle"] as const;
-export const FONCTIONS_MODIFICATION = [...FONCTIONS_MODIFICATION_SCRIPT, ...FONCTIONS_MODIFICATION_1_1] as const;
+/** Fonction ajoutée en 1.6 (cas 3, lot 4) : faces explicites données en triangles (enveloppes, volumes de contexte). */
+export const FONCTIONS_MODIFICATION_1_6 = ["triangles"] as const;
+export const FONCTIONS_MODIFICATION = [...FONCTIONS_MODIFICATION_SCRIPT, ...FONCTIONS_MODIFICATION_1_1, ...FONCTIONS_MODIFICATION_1_6] as const;
 export type FonctionModification = (typeof FONCTIONS_MODIFICATION)[number];
 
 /** Juge une demande d'extension : inconnue, refusée faute de permission, ou admise. */
