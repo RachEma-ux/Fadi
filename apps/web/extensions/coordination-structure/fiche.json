@@ -1,0 +1,23 @@
+{
+  "id": "coordination-structure",
+  "nom": { "fr": "Coordination et structure", "en": "Coordination and structure" },
+  "description": {
+    "fr": "Collisions et traversées entre familles d'objets désignées par leurs balises, descente des porteurs d'étage en étage, saillies sur le domaine public. Chaque seuil est saisi avec sa source ; rien n'est corrigé.",
+    "en": "Clashes between object families named by their tags, load path of supports from storey to storey, projections over the public domain. Each threshold is entered with its source; nothing is corrected."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.7",
+  "permissions": ["modele.lire", "selection", "messages", "panneau", "evenements", "donnees"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Coordination et structure", "en": "Coordination and structure" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+C" },
+    { "id": "collisions", "libelle": { "fr": "Collisions", "en": "Clashes" }, "icone": "collisions.svg", "raccourci": "Ctrl+Alt+V" },
+    { "id": "descente", "libelle": { "fr": "Descente des porteurs", "en": "Load path" }, "icone": "descente.svg", "raccourci": "Ctrl+Alt+Z" },
+    { "id": "saillies", "libelle": { "fr": "Saillies", "en": "Projections" }, "icone": "saillies.svg", "raccourci": "Ctrl+Alt+0" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "coordination", "titre": { "fr": "Coordination et structure", "en": "Coordination and structure" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

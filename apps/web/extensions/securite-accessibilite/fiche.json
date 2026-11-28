@@ -1,0 +1,23 @@
+{
+  "id": "securite-accessibilite",
+  "nom": { "fr": "Sécurité et accessibilité", "en": "Safety and accessibility" },
+  "description": {
+    "fr": "Garde-corps, rives et trémies sans protection, largeur des circulations, cercle libre d'un sanitaire, places de stationnement. Chaque valeur exigée est saisie avec sa source ; rien n'est corrigé.",
+    "en": "Guardrails, unprotected slab edges and openings, circulation width, free circle of a toilet, parking spaces. Each required value is entered with its source; nothing is corrected."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.7",
+  "permissions": ["modele.lire", "selection", "messages", "panneau", "evenements"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Sécurité et accessibilité", "en": "Safety and accessibility" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+F9" },
+    { "id": "garde-corps", "libelle": { "fr": "Garde-corps et rives", "en": "Guardrails and edges" }, "icone": "garde-corps.svg", "raccourci": "Ctrl+Alt+F10" },
+    { "id": "accessibilite", "libelle": { "fr": "Circulations et sanitaire", "en": "Circulation and toilet" }, "icone": "accessibilite.svg", "raccourci": "Ctrl+Alt+F11" },
+    { "id": "stationnement", "libelle": { "fr": "Stationnement", "en": "Parking" }, "icone": "stationnement.svg", "raccourci": "Ctrl+Alt+F12" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "securite", "titre": { "fr": "Sécurité et accessibilité", "en": "Safety and accessibility" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
