@@ -13,7 +13,10 @@ import type { Contexte, Id, Matrice4, Modele } from "./geometrie-libre.js";
 import { appliquer, composer, modifierAnnotations } from "./geometrie-libre.js";
 import { maillagesPlanche } from "./representation.js";
 
-export type FormatReference = "obj" | "stl" | "ifc";
+/** (Étape 7) Les formats des fabricants servent aussi aux relevés au capteur posés en référence. */
+export type FormatReference = "obj" | "stl" | "ifc" | "gltf" | "glb" | "ply" | "3mf" | "dae" | "3ds";
+export const FORMATS_REFERENCE: readonly FormatReference[] = ["obj", "stl", "ifc", "gltf", "glb", "ply", "3mf", "dae", "3ds"];
+const estFormatReference = (v: unknown): v is FormatReference => typeof v === "string" && (FORMATS_REFERENCE as readonly string[]).includes(v);
 
 /** Fichier archivé tel quel en base. */
 export interface FichierReference {
@@ -52,6 +55,8 @@ export interface Reference {
   readonly triangles: number;
   /** Tolérance du récolement (m) ; null = non déclarée, rien n'est jugé. */
   readonly tolerance: number | null;
+  /** (Étape 7) Axe vertical du fichier quand ce n'est pas Z (relevés glTF, PLY…) ; absent = Z. */
+  readonly axe?: "y";
 }
 
 export const NOM_REFERENCE_MAX = 200;
@@ -85,7 +90,8 @@ export function estReference(id: Id, v: unknown): v is Reference {
     v["id"] === id &&
     /^u[0-9a-z]+$/.test(id) &&
     typeof v["nom"] === "string" && (v["nom"] as string).length <= NOM_REFERENCE_MAX &&
-    (v["format"] === "obj" || v["format"] === "stl" || v["format"] === "ifc") &&
+    estFormatReference(v["format"]) &&
+    (v["axe"] === undefined || v["axe"] === "y") &&
     estFichierReference(v["fichier"]) &&
     estEchelle(v["echelle"]) &&
     estPlacementReference(v["placement"]) &&
@@ -111,7 +117,7 @@ const modifierReference = (m: Modele, id: Id, fn: (r: Reference) => Reference | 
 };
 
 /** Ajoute une référence (un pas) : verrouillée, visible, à l'origine du projet sauf placement donné. */
-export function ajouterReference(m: Modele, v: { readonly nom: string; readonly format: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly placement?: PlacementReference }): ResultatReference {
+export function ajouterReference(m: Modele, v: { readonly nom: string; readonly format: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly placement?: PlacementReference; readonly axe?: "y" | "z" }): ResultatReference {
   if (!estFichierReference(v.fichier) || !Number.isInteger(v.triangles) || v.triangles < 0) return { ok: false, erreur: "fichier" };
   if (!estEchelle(v.echelle)) return { ok: false, erreur: "echelle" };
   if (v.placement !== undefined && !estPlacementReference(v.placement)) return { ok: false, erreur: "position" };
@@ -120,7 +126,7 @@ export function ajouterReference(m: Modele, v: { readonly nom: string; readonly 
   let id = "" as Id;
   const modele = modifierAnnotations(m, (a, nouvel) => {
     id = nouvel("u");
-    a.references[id] = { id, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX), format: v.format, fichier: v.fichier, echelle: v.echelle, placement: v.placement ?? { x: 0, y: 0, z: 0, rotation: 0 }, verrouille: true, visible: true, opacite: 0.6, version: 1, chargeLe: v.date, triangles: v.triangles, tolerance: null };
+    a.references[id] = { id, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX), format: v.format, fichier: v.fichier, echelle: v.echelle, placement: v.placement ?? { x: 0, y: 0, z: 0, rotation: 0 }, verrouille: true, visible: true, opacite: 0.6, version: 1, chargeLe: v.date, triangles: v.triangles, tolerance: null, ...(v.axe === "y" ? { axe: "y" as const } : {}) };
   }).modele;
   return { ok: true, modele, id };
 }
@@ -129,14 +135,16 @@ export function ajouterReference(m: Modele, v: { readonly nom: string; readonly 
  * Recharge une référence avec une nouvelle version de son fichier : placement, verrou, affichage et tolérance gardés.
  * Le même fichier (même empreinte) n'est pas une nouvelle version : refusé (« fichier »).
  */
-export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly format?: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string }): ResultatReference =>
+export const rechargerReference = (m: Modele, id: Id, v: { readonly nom: string; readonly format?: FormatReference; readonly fichier: FichierReference; readonly echelle: number; readonly triangles: number; readonly date: string; readonly axe?: "y" | "z" }): ResultatReference =>
   modifierReference(m, id, (r) => {
     if (!estFichierReference(v.fichier) || v.fichier.empreinte === r.fichier.empreinte || !Number.isInteger(v.triangles) || v.triangles < 0) return "fichier";
     if (!estEchelle(v.echelle)) return "echelle";
     if (!estDate(v.date)) return "date";
-    if (v.format !== undefined && v.format !== "obj" && v.format !== "stl" && v.format !== "ifc") return "fichier";
-    // Le format suit le nouveau fichier : la relecture à l'ouverture emploie le bon lecteur.
-    return { ...r, nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, format: v.format ?? r.format, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
+    if (v.format !== undefined && !estFormatReference(v.format)) return "fichier";
+    // Le format (et l'axe vertical) suit le nouveau fichier : la relecture à l'ouverture emploie le bon lecteur.
+    const { axe: _ancien, ...base } = r;
+    const axe = v.axe ?? r.axe;
+    return { ...base, ...(axe === "y" ? { axe: "y" as const } : {}), nom: v.nom.trim().slice(0, NOM_REFERENCE_MAX) || r.nom, format: v.format ?? r.format, fichier: v.fichier, echelle: v.echelle, triangles: v.triangles, chargeLe: v.date, version: r.version + 1 };
   }, false);
 
 export const deplacerReference = (m: Modele, id: Id, placement: PlacementReference): ResultatReference => modifierReference(m, id, (r) => (estPlacementReference(placement) ? { ...r, placement } : "position"), true);
