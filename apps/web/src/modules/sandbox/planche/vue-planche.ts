@@ -441,6 +441,69 @@ export class VuePlanche {
     return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
   }
 
+  /**
+   * Cas 2, lot 6 (n° 53) : cadre de l'image à `largeur` × `hauteur` pixels — même proportion, centré et inscrit dans la
+   * vue (pixels CSS de la vue). C'est exactement la partie de la vue écrite par `captureDefinition`.
+   */
+  cadreImage(largeur: number, hauteur: number): { readonly x: number; readonly y: number; readonly l: number; readonly h: number } {
+    const k = Math.min(this.largeur / largeur, this.hauteur / hauteur);
+    const l = largeur * k;
+    const h = hauteur * k;
+    return { x: (this.largeur - l) / 2, y: (this.hauteur - h) / 2, l, h };
+  }
+
+  /**
+   * Image de la vue à une définition choisie (n° 53) : le cadre est rendu par décalage de vue (`setViewOffset`) dans une
+   * cible hors écran de `largeur` × `hauteur` pixels, puis relu ; fond transparent en option (alpha gardé), sinon PNG opaque. La vue à
+   * l'écran n'est pas touchée. `null` si le navigateur refuse une cible de cette taille.
+   */
+  async captureDefinition(largeur: number, hauteur: number, transparent: boolean): Promise<Blob | null> {
+    const max = this.moteur.capabilities.maxTextureSize;
+    if (!(largeur > 0 && hauteur > 0) || largeur > max || hauteur > max) return null;
+    const cadre = this.cadreImage(largeur, hauteur);
+    const cible = new THREE.WebGLRenderTarget(largeur, hauteur);
+    cible.texture.colorSpace = THREE.SRGBColorSpace;
+    const fond = this.scene.background;
+    const couleur = this.moteur.getClearColor(new THREE.Color());
+    const alpha = this.moteur.getClearAlpha();
+    const px = new Uint8Array(largeur * hauteur * 4);
+    try {
+      if (transparent) this.scene.background = null;
+      this.camera.setViewOffset(this.largeur, this.hauteur, cadre.x, cadre.y, cadre.l, cadre.h);
+      this.camera.updateProjectionMatrix();
+      this.camera.updateMatrixWorld();
+      this.eclairerDepuisCamera();
+      this.moteur.setRenderTarget(cible);
+      this.moteur.setClearColor(0x000000, 0);
+      this.moteur.clear();
+      this.moteur.render(this.scene, this.camera);
+      this.moteur.readRenderTargetPixels(cible, 0, 0, largeur, hauteur, px);
+    } catch {
+      return null;
+    } finally {
+      this.scene.background = fond;
+      this.camera.clearViewOffset();
+      this.camera.updateProjectionMatrix();
+      this.moteur.setRenderTarget(null);
+      this.moteur.setClearColor(couleur, alpha);
+      cible.dispose();
+      this.rendre();
+    }
+    const c = document.createElement("canvas");
+    c.width = largeur;
+    c.height = hauteur;
+    // Fond opaque : toile sans canal alpha, l'image est écrite en PNG sans transparence.
+    const g = c.getContext("2d", { alpha: transparent });
+    if (!g) return null;
+    // WebGL lit de bas en haut : les lignes sont retournées.
+    const image = g.createImageData(largeur, hauteur);
+    const ligne = largeur * 4;
+    for (let y = 0; y < hauteur; y++) image.data.set(px.subarray((hauteur - 1 - y) * ligne, (hauteur - y) * ligne), y * ligne);
+    if (!transparent) for (let i = 3; i < image.data.length; i += 4) image.data[i] = 255;
+    g.putImageData(image, 0, 0);
+    return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
+  }
+
   detruire(): void {
     this.observateur?.disconnect();
     cancelAnimationFrame(this.demande);

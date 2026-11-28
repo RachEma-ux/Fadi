@@ -3302,6 +3302,18 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect((await autre.a.get("/sandbox/preferences/fichiers?extension=planche-gabarit")).body.archives).toEqual([]);
       });
 
+      it("fichier importé dans la Planche et son rapport d'échange (cas 2, lot 6) : rangés tels quels sous « planche-echange »", async () => {
+        const user = await account("fichiers-echange");
+        const texte = "ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n";
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-echange", nom: "Immeuble.ifc", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const rapport = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-echange", nom: "Immeuble.ifc.rapport.txt", contenu: Buffer.from("Rapport d'échange — Import IFC\n", "utf8").toString("base64") });
+        expect(rapport.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-echange");
+        expect(liste.body.archives.map((a: { nom: string; version: string }) => [a.nom, a.version]).sort()).toEqual([["Immeuble.ifc", "fadi-echange/1"], ["Immeuble.ifc.rapport.txt", "fadi-echange/1"]]);
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

@@ -60,10 +60,10 @@ async function choixPaquetsDe(userId: string): Promise<ChoixPaquets> {
 
 /** Version d'une extension livrée du Sandbox si elle est active pour le compte (son choix, sinon le réglage de la plateforme). */
 /**
- * Fichiers de données du cœur de la Planche (cas 2, lot 4, 27 novembre 2026) : un gabarit d'agence importé est rangé tel
- * quel en base pour le compte, sous cet identifiant réservé, avec la version de son format.
+ * Fichiers de données du cœur de la Planche (cas 2, lots 4 et 6, 27 novembre 2026) : un gabarit d'agence, un fichier
+ * importé (IFC, OBJ) et son rapport d'échange sont rangés tels quels en base pour le compte, sous cet identifiant réservé, avec la version de son format.
  */
-export const FICHIERS_DU_COEUR: Readonly<Record<string, string>> = { "planche-gabarit": "fadi-gabarit/1" };
+export const FICHIERS_DU_COEUR: Readonly<Record<string, string>> = { "planche-gabarit": "fadi-gabarit/1", "planche-echange": "fadi-echange/1" };
 
 async function versionExtensionLivreeActive(userId: string, id: string): Promise<string | null> {
   const x = extensionSandbox(id);
