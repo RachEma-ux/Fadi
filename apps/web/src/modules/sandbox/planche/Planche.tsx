@@ -5131,6 +5131,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         axes: luIfc.lecture.axes.map((a) => a.etiquette).filter(Boolean),
         georef: luIfc.lecture.georef ? t("planche.ifc.import.georef-detail", { systeme: luIfc.lecture.georef.systeme, e: texteCoordonnee(luIfc.lecture.georef.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(luIfc.lecture.georef.n, SEPARATEUR_DECIMAL) }) : null,
         nonLus: Object.keys(luIfc.lecture.nonLus).length > 0 ? t("planche.ifc.import.non-lus", { nombre: String(Object.values(luIfc.lecture.nonLus).reduce((a, b) => a + b, 0)), classes: Object.keys(luIfc.lecture.nonLus).join(", ") }) : null,
+        partiels: Object.keys(luIfc.lecture.partiels).length > 0 ? t("planche.ifc.import.partiels", { nombre: String(Object.values(luIfc.lecture.partiels).reduce((a, b) => a + b, 0)), classes: Object.keys(luIfc.lecture.partiels).join(", ") }) : null,
         classes: luIfc.lecture.objets.reduce<Record<string, number>>((acc, o) => ({ ...acc, [o.classe]: (acc[o.classe] ?? 0) + 1 }), {}),
       }
     : null;

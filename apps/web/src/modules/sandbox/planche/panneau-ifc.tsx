@@ -122,6 +122,8 @@ export interface ResumeImportIfc {
   /** Texte du géoréférencement lu ; `null` = absent. */
   readonly georef: string | null;
   readonly nonLus: string | null;
+  /** Objets importés en partie (une partie de leur géométrie non lue) ; `null` = aucun. */
+  readonly partiels: string | null;
   readonly classes: Readonly<Record<string, number>>;
 }
 
@@ -179,6 +181,7 @@ export function PanneauImportIfc({
             ))}
           </dl>
           {lu.nonLus && <p className="inspecteur-aide" data-planche-import-ifc-non-lus>{lu.nonLus}</p>}
+          {lu.partiels && <p className="inspecteur-aide" data-planche-import-ifc-partiels>{lu.partiels}</p>}
           <p className="inspecteur-aide">{t("planche.ifc.import.aide")}</p>
         </>
       )}
