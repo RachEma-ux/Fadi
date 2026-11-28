@@ -5,7 +5,7 @@ Captures du panneau livré (accord de Roch « Vas non stop », 27.11.2026) :
 Catalogue : D10-F23a-003.
 
 ## Ce qui est livré
-- Panneau « Redresser une photo » (Ctrl+Maj+Espace, H) : photo PNG ou JPEG choisie (réduite à 2 048 px pour le pointé),
+- Panneau « Redresser une photo » (Ctrl+Maj+Espace, Z) : photo PNG ou JPEG choisie (réduite à 2 048 px pour le pointé),
   quatre coins d'un rectangle de dimensions connues pointés au clic (bas gauche, bas droit, haut droit, haut gauche),
   largeur et hauteur saisies, loupe ×4 qui suit le pointeur (souris, stylet ou doigt).
 - Homographie calculée dans le modèle (`packages/sandbox-planche-model/src/redressement.ts`), photo rééchantillonnée
@@ -33,4 +33,4 @@ Catalogue : D10-F23a-003.
   référence et son empreinte.
 
 ## Raccourcis
-En deux temps après Ctrl+Maj+Espace : H (redresser une photo), Maj+H (poser), Q (effacer les points).
+En deux temps après Ctrl+Maj+Espace : Z (redresser une photo), Maj+R (poser), Maj+X (effacer les points).

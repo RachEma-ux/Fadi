@@ -35,7 +35,16 @@ export function contenuConforme(format: FormatReference, o: Buffer): boolean {
   if (format === "ifczip") return o.length >= 4 && o.readUInt32LE(0) === 0x04034b50;
   // Formats des fabricants (lot C4, étape 7a) : signature de chaque format.
   if (format === "glb") return o.length >= 12 && o.readUInt32LE(0) === 0x46546c67;
-  if (format === "gltf") return /^\s*\{/.test(tete) && /"asset"\s*:/.test(tete);
+  // glTF : JSON entier relu (la propriété « asset » peut suivre de gros tampons intégrés).
+  if (format === "gltf") {
+    if (!/^\s*\{/.test(tete)) return false;
+    try {
+      const j = JSON.parse(o.toString("utf8")) as { asset?: unknown };
+      return typeof j.asset === "object" && j.asset !== null && !Array.isArray(j.asset);
+    } catch {
+      return false;
+    }
+  }
   if (format === "ply") return /^ply\r?\n/.test(tete);
   if (format === "3mf") return o.length >= 4 && o.readUInt32LE(0) === 0x04034b50;
   if (format === "dae") return /<COLLADA[\s>]/.test(tete);

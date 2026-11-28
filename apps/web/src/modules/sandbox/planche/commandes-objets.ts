@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION, ...COMMANDES_MODELISATION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -252,7 +252,7 @@ export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
  * Extension « Contrôle et nettoyage » : ouvrir le relevé, nettoyer ce qui est coché (règle d'or : icône, barre du
  * panneau, raccourci).
  */
-export type IdCommandeControle = "controler" | "nettoyer";
+export type IdCommandeControle = "controler" | "nettoyer" | "defaut-precedent" | "defaut-suivant" | "corriger-defaut" | "preparer-fond-dao" | "fusionner-volumes" | "pieces-permis";
 export interface CommandeControle {
   readonly id: IdCommandeControle;
   readonly picto: Pictogramme;
@@ -263,11 +263,28 @@ export interface CommandeControle {
 export const COMMANDES_CONTROLE: readonly CommandeControle[] = [
   { id: "controler", ...depuisRegistre("controler"), libelle: "planche.controle.controler", court: "planche.controle.court.controler" },
   { id: "nettoyer", ...depuisRegistre("nettoyer"), libelle: "planche.controle.nettoyer", court: "planche.controle.court.nettoyer" },
+  // Cas 2, lot 3 : parcours et correction des défauts, fond DAO, volumes, pièces du permis.
+  { id: "defaut-precedent", ...depuisRegistre("defaut-precedent"), libelle: "planche.controle.defaut-precedent", court: "planche.controle.court.defaut-precedent" },
+  { id: "defaut-suivant", ...depuisRegistre("defaut-suivant"), libelle: "planche.controle.defaut-suivant", court: "planche.controle.court.defaut-suivant" },
+  { id: "corriger-defaut", ...depuisRegistre("corriger-defaut"), libelle: "planche.controle.corriger-defaut", court: "planche.controle.court.corriger-defaut" },
+  { id: "preparer-fond-dao", ...depuisRegistre("preparer-fond-dao"), libelle: "planche.controle.preparer-fond-dao", court: "planche.controle.court.preparer-fond-dao" },
+  { id: "fusionner-volumes", ...depuisRegistre("fusionner-volumes"), libelle: "planche.controle.fusionner-volumes", court: "planche.controle.court.fusionner-volumes" },
+  { id: "pieces-permis", ...depuisRegistre("pieces-permis"), libelle: "planche.controle.pieces-permis", court: "planche.controle.court.pieces-permis" },
 ];
 
 /** Disponibilité : le contrôle toujours ; le nettoyage hors lecture, à la racine, avec quelque chose de coché à retirer. */
-export function disponibiliteControle(id: IdCommandeControle, s: { readonly aNettoyer: boolean; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
-  if (id === "controler") return { disponible: true, motif: null };
+export function disponibiliteControle(
+  id: IdCommandeControle,
+  s: { readonly aNettoyer: boolean; readonly dansObjet: boolean; readonly lecture: boolean; readonly defauts?: number; readonly corrigeable?: boolean; readonly objetsSelectionnes?: number },
+): Disponibilite {
+  if (id === "controler" || id === "pieces-permis") return { disponible: true, motif: null };
+  if (id === "defaut-precedent" || id === "defaut-suivant") return (s.defauts ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.aucun-defaut" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "corriger-defaut") return s.corrigeable ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.sans-correction" };
+  // Le fond DAO se prépare dans l'objet ouvert (l'import) ou dans l'import sélectionné à la racine.
+  if (id === "preparer-fond-dao") return s.dansObjet || (s.objetsSelectionnes ?? 0) === 1 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.import" };
+  if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
+  if (id === "fusionner-volumes") return (s.objetsSelectionnes ?? 0) >= 2 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.volumes" };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
   return s.aNettoyer ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.rien" };
@@ -773,6 +790,128 @@ export function disponibiliteAccrochage(id: IdCommandeAccrochage, s: { readonly 
     return s.selection > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.selection" };
   }
   return s.echelle ? { disponible: true, motif: null } : { disponible: false, motif: "planche.accrochage.motif.echelle" };
+}
+
+/**
+ * Cas 2 du catalogue, lot 4 : balises (panneau Balises), scènes et plans de coupe (panneau Scènes, Info entité) et gabarit
+ * d'agence (panneau « Nouvelle Planche »).
+ */
+export type IdCommandeBalise = "verrouiller-balise" | "balises-phase" | "classer-selection" | "vue-etat";
+export type IdCommandeScene = "scenes-types" | "avancer-coupe" | "reculer-coupe" | "scene-face-coupe";
+export type IdCommandeGabarit = "gabarit" | "importer-gabarit" | "enregistrer-gabarit" | "creer-planche-gabarit";
+export interface CommandeLot4<I extends string> {
+  readonly id: I;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+const lot4 = <I extends string>(famille: "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation") => (id: I): CommandeLot4<I> => ({ id, ...depuisRegistre(id), libelle: `planche.${famille}.${id}` as CleMessage, court: `planche.${famille}.court.${id}` as CleMessage });
+export const COMMANDES_BALISE: readonly CommandeLot4<IdCommandeBalise>[] = (["verrouiller-balise", "balises-phase", "classer-selection", "vue-etat"] as const).map(lot4<IdCommandeBalise>("balise"));
+export const COMMANDES_SCENE: readonly CommandeLot4<IdCommandeScene>[] = (["scenes-types", "avancer-coupe", "reculer-coupe", "scene-face-coupe"] as const).map(lot4<IdCommandeScene>("scene"));
+export const COMMANDES_GABARIT: readonly CommandeLot4<IdCommandeGabarit>[] = (["gabarit", "importer-gabarit", "enregistrer-gabarit", "creer-planche-gabarit"] as const).map(lot4<IdCommandeGabarit>("gabarit"));
+/** Cas 2, lot 6 : panneau « Fichier natif et image » (Alt + F1). L'export avec rapport passe par Fichier > Exporter. */
+export type IdCommandeEchange = "natif-image";
+export const COMMANDES_ECHANGE: readonly CommandeLot4<IdCommandeEchange>[] = (["natif-image"] as const).map(lot4<IdCommandeEchange>("echange"));
+/** Le fichier natif et l'image se lisent et s'écrivent toujours, même en consultation. */
+export const disponibiliteEchange = (_id: IdCommandeEchange): Disponibilite => ({ disponible: true, motif: null });
+/** Cas 2, lot 7 : versions, jalons et brouillon (raccourcis en deux temps : Ctrl+Maj+Espace, puis une touche). */
+export type IdCommandeVersion = "versions" | "poser-jalon" | "consultation" | "comparer" | "brouillon" | "fiche-projet" | "appliquer-brouillon" | "garder-brouillon" | "abandonner-brouillon";
+export const COMMANDES_VERSION: readonly CommandeLot4<IdCommandeVersion>[] = (["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon"] as const).map(lot4<IdCommandeVersion>("version"));
+/**
+ * Poser un jalon écrit dans le registre de la Planche : refusé en lecture (consultation comprise). Les panneaux s'ouvrent
+ * toujours ; la consultation se quitte toujours.
+ */
+export function disponibiliteVersion(id: IdCommandeVersion, s: { readonly lecture: boolean; readonly brouillon?: boolean }): Disponibilite {
+  if (id === "appliquer-brouillon" || id === "garder-brouillon" || id === "abandonner-brouillon") {
+    if (!s.brouillon) return { disponible: false, motif: "planche.brouillon.motif.aucun" };
+    if (s.lecture && id !== "abandonner-brouillon") return { disponible: false, motif: "planche.debit.motif.lecture" };
+    return { disponible: true, motif: null };
+  }
+  if (id === "poser-jalon" && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return { disponible: true, motif: null };
+}
+
+/** Cas 2, lot 8 : outils de modélisation et composants (raccourcis en deux temps : Ctrl+Maj+Espace, puis un chiffre). */
+export type IdCommandeModelisation =
+  | "extrusion-hauteur"
+  | "creer-couches"
+  | "prolonger-arete"
+  | "composants-agence"
+  | "ajuster-baie"
+  | "remplacer-occurrences"
+  | "soustraire-garder"
+  | "caler-deux-points"
+  | "selection-altitudes"
+  | "selection-boite"
+  | "miroir-lisible"
+  | "ecreter-enveloppe"
+  | "vue-ortho"
+  | "eclater-axonometrie"
+  | "echelle-graphique"
+  | "aire-projetee";
+export const COMMANDES_MODELISATION: readonly CommandeLot4<IdCommandeModelisation>[] = ([
+  "extrusion-hauteur",
+  "creer-couches",
+  "prolonger-arete",
+  "composants-agence",
+  "ajuster-baie",
+  "remplacer-occurrences",
+  "soustraire-garder",
+  "caler-deux-points",
+  "selection-altitudes",
+  "selection-boite",
+  "miroir-lisible",
+  "ecreter-enveloppe",
+  "vue-ortho",
+  "eclater-axonometrie",
+  "echelle-graphique",
+  "aire-projetee",
+] as const).map(lot4<IdCommandeModelisation>("modelisation"));
+/** Commandes du lot 8 qui modifient le dessin : refusées en lecture (consultation, vue éclatée comprises). */
+const MODIFIENT_L8: ReadonlySet<IdCommandeModelisation> = new Set(["creer-couches", "prolonger-arete", "ajuster-baie", "remplacer-occurrences", "soustraire-garder", "caler-deux-points", "miroir-lisible", "ecreter-enveloppe"]);
+/**
+ * Disponibilité d'une commande du lot 8. Les panneaux s'ouvrent toujours ; « Soustraire » ouvre son panneau s'il est
+ * fermé (`panneau` faux), puis agit. Les motifs disent ce qu'il faut choisir.
+ */
+export function disponibiliteModelisation(
+  id: IdCommandeModelisation,
+  s: { readonly lecture: boolean; readonly faces: number; readonly aretes: number; readonly objets: number; readonly selection: number; readonly panneau: boolean; readonly gardeCorps?: boolean },
+): Disponibilite {
+  if (id === "soustraire-garder" && !s.panneau) return { disponible: true, motif: null };
+  if (MODIFIENT_L8.has(id) && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "creer-couches" && s.faces !== 1) return { disponible: false, motif: "planche.l8.motif.face" };
+  if (id === "prolonger-arete" && (s.aretes < 1 || s.selection !== 2)) return { disponible: false, motif: "planche.l8.motif.arete-limite" };
+  // Un garde-corps se pose aussi sans rien choisir : ses extrémités sont cliquées dans la vue.
+  if (id === "ajuster-baie" && s.faces + s.aretes < 1 && s.objets !== 1 && !s.gardeCorps) return { disponible: false, motif: "planche.l8.motif.baie" };
+  if ((id === "remplacer-occurrences" || id === "caler-deux-points") && s.objets < 1) return { disponible: false, motif: "planche.l8.motif.objets" };
+  if ((id === "soustraire-garder" || id === "ecreter-enveloppe") && s.objets < 2) return { disponible: false, motif: "planche.l8.motif.deux-objets" };
+  if ((id === "miroir-lisible" || id === "aire-projetee") && s.selection < 1) return { disponible: false, motif: "planche.l8.motif.selection" };
+  return { disponible: true, motif: null };
+}
+
+/** Balises : verrouiller la balise courante ; classer une sélection ; balises de phase et vues d'état sur un dessin modifiable. */
+export function disponibiliteBalise(id: IdCommandeBalise, s: { readonly lecture: boolean; readonly courante: boolean; readonly selection: number; readonly phases: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "verrouiller-balise") return s.courante ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.courante" };
+  if (id === "classer-selection") return s.selection > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.selection" };
+  if (id === "vue-etat") return s.phases ? { disponible: true, motif: null } : { disponible: false, motif: "planche.balise.motif.phases" };
+  return { disponible: true, motif: null };
+}
+
+/** Scènes : scènes types avec un gabarit qui en déclare ; décalage et scène face à la coupe avec un plan de coupe choisi. */
+export function disponibiliteScene(id: IdCommandeScene, s: { readonly lecture: boolean; readonly typesGabarit: number; readonly plan: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "scenes-types") return s.typesGabarit > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.scene.motif.gabarit" };
+  return s.plan ? { disponible: true, motif: null } : { disponible: false, motif: "planche.scene.motif.plan" };
+}
+
+/** Gabarit : le panneau, l'import et la création toujours ; enregistrer avec au moins une balise. */
+export function disponibiliteGabarit(id: IdCommandeGabarit, s: { readonly balises: number; readonly choisi: boolean }): Disponibilite {
+  if (id === "gabarit" || id === "importer-gabarit") return { disponible: true, motif: null };
+  if (id === "enregistrer-gabarit") return s.balises > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.gabarit.motif.balises" };
+  // Créer la Planche : depuis le gabarit choisi, ou vide sans gabarit (« Planche vide »).
+  return { disponible: true, motif: null };
 }
 
 /**

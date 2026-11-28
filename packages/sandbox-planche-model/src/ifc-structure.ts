@@ -16,7 +16,7 @@
 import { ajouterNiveau } from "./niveaux.js";
 import { REGLAGES_DEFAUT } from "./annotations.js";
 import { identifierOccurrencesIfc, modifierAnnotations, rattacherOccurrencesNiveau, type Id, type IdentiteIfc, type Modele } from "./geometrie-libre.js";
-import { type ArgStep, type EntiteStep, ErreurStep, enumDe, listeDe, lireStep, nombreDe, refDe, refsDe, texteDe } from "./ifc-step.js";
+import { type ArgStep, type EntiteIfcStep, ErreurStep, enumDe, listeDe, lireStep, nombreDe, refDe, refsDe, texteDe } from "./ifc-step.js";
 import { chaineIfc, guidIfc } from "./echanges-ifc.js";
 import { construireImport, poserImport, type MaillageLu } from "./echanges-import.js";
 import type { ContenuImporte } from "./geometrie-libre.js";
@@ -33,7 +33,7 @@ export const SCHEMAS_IFC: readonly SchemaIfc[] = ["IFC2X3", "IFC4", "IFC4X3_ADD2
 // Lecture
 // ---------------------------------------------------------------------------------------------------------------
 
-export interface EtageIfc {
+export interface EtageIfcStructure {
   readonly globalId: string;
   readonly nom: string;
   /** Altitude (m) : Elevation, sinon la hauteur du placement de l'étage. */
@@ -57,7 +57,7 @@ export interface GeoreferencementIfc {
   readonly echelle: number;
 }
 
-export interface ObjetIfc {
+export interface ObjetIfcStructure {
   readonly globalId: string;
   readonly classe: string;
   readonly nom: string;
@@ -72,12 +72,14 @@ export interface LectureIfcStructure {
   readonly schema: string | null;
   /** Mètres par unité de longueur du fichier. */
   readonly echelle: number;
-  readonly etages: readonly EtageIfc[];
+  readonly etages: readonly EtageIfcStructure[];
   readonly axes: readonly AxeIfc[];
   readonly georef: GeoreferencementIfc | null;
-  readonly objets: readonly ObjetIfc[];
+  readonly objets: readonly ObjetIfcStructure[];
   /** Objets dont la géométrie n'a pas pu être lue (codage non pris en charge), par classe. */
   readonly nonLus: Readonly<Record<string, number>>;
+  /** Objets importés dont une partie de la géométrie n'a pas pu être lue (codage non pris en charge), par classe. */
+  readonly partiels: Readonly<Record<string, number>>;
   /** Locaux (IfcSpace) lus : nom, nom long ; ils ne sont pas posés comme objets. */
   readonly espaces: number;
 }
@@ -125,23 +127,35 @@ const FACTEURS: Readonly<Record<string, number>> = { MILLI: 0.001, CENTI: 0.01, 
 export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStructure {
   const f = lireStep(texteIfcDe(donnees));
   const E = f.entites;
-  const get = (id: number | null): EntiteStep | undefined => (id === null ? undefined : E.get(id));
+  const get = (id: number | null): EntiteIfcStep | undefined => (id === null ? undefined : E.get(id));
   const parType = (t: string) => [...E.values()].filter((e) => e.type === t);
 
-  // Unité de longueur : SI (préfixe) ou unité convertie (pied, pouce) ; mètre par défaut.
+  // Unité de longueur du projet : celle de IfcProject.UnitsInContext (les unités propres à un repère cartographique,
+  // IfcProjectedCRS.MapUnit, n'y entrent pas) ; à défaut d'affectation, la dernière unité de longueur du fichier ;
+  // mètre par défaut. SI (préfixe) ou unité convertie (pied, pouce).
+  const facteurUnite = (u: EntiteIfcStep): number | null => {
+    if (u.type === "IFCSIUNIT") {
+      if (enumDe(u.args[1]) !== "LENGTHUNIT") return null;
+      const pre = enumDe(u.args[2]);
+      return pre ? (FACTEURS[pre] ?? 1) : 1;
+    }
+    if (u.type === "IFCCONVERSIONBASEDUNIT") {
+      if (enumDe(u.args[1]) !== "LENGTHUNIT") return null;
+      const mesure = get(refDe(u.args[3]));
+      const v = nombreDe(mesure?.args[0]);
+      const base = get(refDe(mesure?.args[1]));
+      const pre = base ? enumDe(base.args[2]) : null;
+      return v !== null ? v * (pre ? (FACTEURS[pre] ?? 1) : 1) : null;
+    }
+    return null;
+  };
   let echelle = 1;
-  for (const u of parType("IFCSIUNIT")) {
-    if (enumDe(u.args[1]) !== "LENGTHUNIT") continue;
-    const pre = enumDe(u.args[2]);
-    echelle = pre ? (FACTEURS[pre] ?? 1) : 1;
-  }
-  for (const u of parType("IFCCONVERSIONBASEDUNIT")) {
-    if (enumDe(u.args[1]) !== "LENGTHUNIT") continue;
-    const mesure = get(refDe(u.args[3]));
-    const v = nombreDe(mesure?.args[0]);
-    const base = get(refDe(mesure?.args[1]));
-    const pre = base ? enumDe(base.args[2]) : null;
-    if (v !== null) echelle = v * (pre ? (FACTEURS[pre] ?? 1) : 1);
+  const affectation = get(refDe(parType("IFCPROJECT")[0]?.args[8]));
+  const unitesProjet = affectation?.type === "IFCUNITASSIGNMENT" ? refsDe(affectation.args[0]).map((r) => get(r)).filter((u): u is EntiteIfcStep => !!u) : null;
+  const candidates = unitesProjet ?? [...parType("IFCSIUNIT"), ...parType("IFCCONVERSIONBASEDUNIT")];
+  for (const u of candidates) {
+    const k = facteurUnite(u);
+    if (k !== null) echelle = k;
   }
 
   const point = (id: number | null): number[] => {
@@ -295,7 +309,11 @@ export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStruct
           const o = point(refDe(cible.args[2]));
           const s = nombreDe(cible.args[3]) ?? 1;
           const z = direction(refDe(cible.args[4]), norme(vect(x, y)));
-          T = [x[0]! * s, y[0]! * s, z[0]! * s, o[0]!, x[1]! * s, y[1]! * s, z[1]! * s, o[1]!, x[2]! * s, y[2]! * s, z[2]! * s, o[2]!, 0, 0, 0, 1];
+          // Opérateur non uniforme : Scale2 (y) et Scale3 (z), Scale à défaut.
+          const nu = cible.type === "IFCCARTESIANTRANSFORMATIONOPERATOR3DNONUNIFORM";
+          const s2 = (nu ? nombreDe(cible.args[5]) : null) ?? s;
+          const s3 = (nu ? nombreDe(cible.args[6]) : null) ?? s;
+          T = [x[0]! * s, y[0]! * s2, z[0]! * s3, o[0]!, x[1]! * s, y[1]! * s2, z[1]! * s3, o[1]!, x[2]! * s, y[2]! * s2, z[2]! * s3, o[2]!, 0, 0, 0, 1];
         }
         const Mm = mul(mul(Mx, T), placementAxes(refDe(source?.args[0])));
         const repr = get(refDe(source?.args[1]));
@@ -313,7 +331,7 @@ export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStruct
   };
 
   // Étages.
-  const etages: EtageIfc[] = parType("IFCBUILDINGSTOREY").map((s) => {
+  const etages: EtageIfcStructure[] = parType("IFCBUILDINGSTOREY").map((s) => {
     const Mz = placementObjet(refDe(s.args[5]));
     const el = nombreDe(s.args[9]);
     return { globalId: texteDe(s.args[0]) ?? "", nom: texteDe(s.args[2]) ?? texteDe(s.args[7]) ?? "Étage", altitude: (el ?? Mz[11]!) * echelle };
@@ -335,8 +353,9 @@ export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStruct
   }
 
   // Objets.
-  const objets: ObjetIfc[] = [];
+  const objets: ObjetIfcStructure[] = [];
   const nonLus: Record<string, number> = {};
+  const partiels: Record<string, number> = {};
   for (const e of E.values()) {
     const classe = CASSE.get(e.type);
     if (!classe || e.type === "IFCOPENINGELEMENT") continue;
@@ -356,6 +375,8 @@ export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStruct
       if (illisible) nonLus[classe] = (nonLus[classe] ?? 0) + 1;
       continue;
     }
+    // Lu en partie : l'objet est importé, la perte est comptée à part.
+    if (illisible) partiels[classe] = (partiels[classe] ?? 0) + 1;
     objets.push({
       globalId: texteDe(e.args[0]) ?? "",
       classe: SANS_STANDARD(classe),
@@ -420,7 +441,7 @@ export function lireIfcStructure(donnees: string | Uint8Array): LectureIfcStruct
     }
   }
 
-  return { schema: f.schema, echelle, etages, axes, georef, objets, nonLus, espaces: parType("IFCSPACE").length };
+  return { schema: f.schema, echelle, etages, axes, georef, objets, nonLus, partiels, espaces: parType("IFCSPACE").length };
 }
 
 /** Point de base déduit d'un géoréférencement lu : E, N, système, rotation (nord du quadrillage depuis +y). */
@@ -444,7 +465,7 @@ export interface ChoixImportIfc {
   readonly georef: boolean;
 }
 
-export interface ResultatImportIfc {
+export interface ResultatImportIfcStructure {
   readonly modele: Modele;
   readonly objets: number;
   readonly niveaux: number;
@@ -459,9 +480,9 @@ export function maillagesDeLecture(l: LectureIfcStructure): MaillageLu[] {
   return l.objets.map((o) => ({ nom: o.nom, positions: o.positions, triangles: o.triangles }));
 }
 
-export function importerIfcStructure(m: Modele, l: LectureIfcStructure, choix: ChoixImportIfc, fichier: string): ResultatImportIfc {
+export function importerIfcStructure(m: Modele, l: LectureIfcStructure, choix: ChoixImportIfc, fichier: string): ResultatImportIfcStructure {
   // Un contenu par objet, gardé avec son objet (les objets sans triangle utile ne sont pas posés).
-  const paires: { objet: ObjetIfc; contenu: ContenuImporte }[] = [];
+  const paires: { objet: ObjetIfcStructure; contenu: ContenuImporte }[] = [];
   let ignores = 0;
   for (const objet of l.objets) {
     const c = construireImport([{ nom: objet.nom, positions: objet.positions, triangles: objet.triangles }], 1, "Import IFC");

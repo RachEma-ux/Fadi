@@ -13,7 +13,9 @@
  * Événements transmis (`outil.<outil>.<evenement>`) : activation, desactivation, pause, reprise, annulation,
  * deplacement, appui, relachement, clic, double-clic, touche, validation, saisie. Un événement de souris porte
  * `{ point: [x, y, z], nature, objet }` : le point accroché, sa nature (sommet, milieu, arete, face, axe, origine,
- * intersection, centre, libre) et l'objet touché, ou `null`.
+ * intersection, centre, libre) et l'objet touché, ou `null`. (1.3) Il porte aussi `vise` : le point visé avant tout
+ * accrochage, intersection du rayon du pointeur avec le plan de travail (le sol du repère à défaut), ou `null` quand
+ * le rayon lui est parallèle ou le regarde de dos.
  *
  * Description rendue par l'outil (tout est facultatif ; `null` ou rien = la description précédente reste) :
  *   apercu     { segments: [[a, b]…], pointilles: [[a, b]…], points: [p…], contours: [[p…]…], textes: [{ point, texte }…] }
@@ -182,6 +184,18 @@ const emettre = (e: EtatOutilExtension, nom: EvenementOutilExtension, donnees: R
   etat: { ...e, inference, emis: { n: (e.emis?.n ?? 0) + 1, nom, donnees } },
 });
 
+/** (1.3) Point visé : le rayon coupe le plan de travail (le plan z = 0 à défaut) devant la caméra ; `null` sinon. */
+export function pointVise(rayon: Rayon, plan: { readonly origine: Vec3; readonly normale: Vec3 } | undefined): readonly [number, number, number] | null {
+  const o = plan?.origine ?? { x: 0, y: 0, z: 0 };
+  const n = plan?.normale ?? { x: 0, y: 0, z: 1 };
+  const d = rayon.direction;
+  const den = d.x * n.x + d.y * n.y + d.z * n.z;
+  if (Math.abs(den) < 1e-12) return null;
+  const t = ((o.x - rayon.origine.x) * n.x + (o.y - rayon.origine.y) * n.y + (o.z - rayon.origine.z) * n.z) / den;
+  if (!Number.isFinite(t) || t < 0) return null;
+  return [rayon.origine.x + t * d.x, rayon.origine.y + t * d.y, rayon.origine.z + t * d.z];
+}
+
 function accrocher(e: EtatOutilExtension, ctx: ContexteOutil, rayon: Rayon, tolerance: number): Inference {
   return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...(e.description.reference ? { depart: e.description.reference } : {}), ...axesDeSaisie(ctx) });
 }
@@ -191,16 +205,16 @@ function traiter(e: EtatOutilExtension, ev: EvenementOutil, ctx: ContexteOutil):
     case "survol":
     case "glisser": {
       const i = accrocher(e, ctx, ev.rayon, ev.tolerance);
-      return emettre(e, "deplacement", { ...pointeDe(i), appuye: ev.genre === "glisser" }, i);
+      return emettre(e, "deplacement", { ...pointeDe(i), vise: pointVise(ev.rayon, ctx.planDeTravail), appuye: ev.genre === "glisser" }, i);
     }
     case "clic": {
       const i = accrocher(e, ctx, ev.rayon, ev.tolerance);
-      return emettre(e, ev.double ? "double-clic" : "clic", pointeDe(i), i);
+      return emettre(e, ev.double ? "double-clic" : "clic", { ...pointeDe(i), vise: pointVise(ev.rayon, ctx.planDeTravail) }, i);
     }
     case "appui":
     case "relache": {
       const i = accrocher(e, ctx, ev.rayon, ev.tolerance);
-      return emettre(e, ev.genre === "appui" ? "appui" : "relachement", pointeDe(i), i);
+      return emettre(e, ev.genre === "appui" ? "appui" : "relachement", { ...pointeDe(i), vise: pointVise(ev.rayon, ctx.planDeTravail) }, i);
     }
     case "touche":
       if (ev.touche === "Entree") return ev.etat === "enfoncee" ? emettre(e, "validation", {}) : { etat: e };

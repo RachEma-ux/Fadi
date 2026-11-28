@@ -237,6 +237,11 @@ export const api = {
   proximite: (coucheId: string, code: string, rayon: number, couches: readonly string[]) =>
     appeler<{ rayon: number; couches: ProximiteCouche[] }>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}/proximite?rayon=${rayon}&couches=${couches.map(encodeURIComponent).join(",")}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
+  /** Proximité d'un point libre (P12, analyse de site) : la coordonnée n'est jamais journalisée par le serveur. */
+  proximitePoint: (lon: number, lat: number, rayon: number, couches: readonly string[]) =>
+    appeler<{ rayon: number; couches: ProximiteCouche[] }>(`/proximite?${new URLSearchParams({ lon: lon.toFixed(6), lat: lat.toFixed(6), rayon: String(rayon), couches: couches.join(",") })}`),
+  /** États de versions (P12) : publiée, retirée (motif) ou inconnue. */
+  etatsVersions: (ids: readonly string[]) => appeler<{ versions: ({ id: string; etat: "publiee"; versionPlusRecente: string | null } | { id: string; etat: "retiree"; motifRetrait: string } | { id: string; etat: "inconnue" })[] }>(`/versions/etats?ids=${ids.map(encodeURIComponent).join(",")}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
   // Catégories du catalogue (D-GD-14) : lecture pour tous, gestion réservée au gestionnaire de données.

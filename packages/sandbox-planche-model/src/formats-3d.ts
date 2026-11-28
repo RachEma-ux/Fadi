@@ -513,7 +513,8 @@ export function lireDae(texte: string): LectureScene {
       if (!vertex) continue;
       const base = r.positions.length / 3;
       const pos = sourceFloat(vertex.attributs["source"]);
-      r.positions.push(...pos);
+      // Ajout un à un : un étalement de tout le tableau dépasserait la limite d'arguments sur une grande source.
+      for (const v of pos) r.positions.push(v);
       const nb = pos.length / 3;
       const decal = Number(vertex.attributs["offset"] ?? "0");
       const pas = Math.max(...entrees.map((i) => Number(i.attributs["offset"] ?? "0"))) + 1;
@@ -774,7 +775,12 @@ export function construireScene(l: LectureScene, echelle: number, axe: AxeHaut, 
   let fait = 0;
   let ignores = 0;
   const parCle = new Map<string, ObjetScene[]>();
-  for (const o of l.objets) parCle.set(o.cle, [...(parCle.get(o.cle) ?? []), o]);
+  // Un maillage partagé dont les poses portent des matières différentes donne un contenu par matière : chaque occurrence
+  // garde la sienne.
+  for (const o of l.objets) {
+    const k = `${o.cle}\u0000${o.matiere ?? ""}`;
+    parCle.set(k, [...(parCle.get(k) ?? []), o]);
+  }
   const sortie: ObjetImportePose[] = [];
   let composants = 0;
   const contenuDe = (o: ObjetScene, pose: Matrice4): ContenuImporte | null => {

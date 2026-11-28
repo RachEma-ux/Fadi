@@ -6,8 +6,8 @@
  *   composant (deux occurrences), la matière lue est ajoutée et posée ; le fichier est archivé en base ; Annuler retire
  *   tout ;
  * - un FBX est refusé avec son motif ;
- * - Ctrl+Maj+Espace puis U ouvre le même panneau pour un relevé au capteur : un PLY sans unité ni axe (à déclarer) est
- *   posé par Maj+U en référence verrouillée, axe Y gardé sur la fiche ;
+ * - Ctrl+Maj+Espace puis H ouvre le même panneau pour un relevé au capteur : un PLY sans unité ni axe (à déclarer) est
+ *   posé par Maj+H en référence verrouillée, axe Y gardé sur la fiche ;
  * - chaque commande : icône et raccourci ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/planche-fabricants node apps/web/e2e/planche-fabricants.mjs
@@ -122,7 +122,7 @@ await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().racine.
 check("Annuler retire les objets et la matière", Object.keys((await modele()).annotations?.materiaux ?? {}).length === 0);
 
 // --- Relevé au capteur en référence --------------------------------------------------------------------------------------
-await deuxTemps("u");
+await deuxTemps("h");
 await pan.waitFor();
 await page.locator("[data-planche-import-fabricant-entree]").setInputFiles(`${OUT}/piece.ply`);
 await page.waitForFunction(() => document.querySelector("[data-planche-fabricant]")?.getAttribute("data-planche-fabricant") === "1");
@@ -130,17 +130,17 @@ check("PLY : unité et axe à déclarer (non portés par le fichier)", ((await p
 await pan.locator("[data-planche-fabricant-axe='y']").check();
 const dims2 = ((await pan.locator("[data-planche-fabricant-dimensions]").textContent()) ?? "").replace(/[  ]/g, " ");
 check("axe Y déclaré : 4 × 3 × 2,5 m", dims2 === "4 × 3 × 2,5 m", dims2);
-await deuxTemps("Shift+U");
+await deuxTemps("Shift+H");
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().annotations?.references ?? {}).length === 1);
 m = await modele();
 const ref = Object.values(m.annotations.references)[0];
-check("Maj+U : relevé posé en référence verrouillée (PLY, axe Y, 2 faces)", ref.format === "ply" && ref.axe === "y" && ref.verrouille === true && ref.triangles === 4 && Object.keys(m.racine.occurrences).length === 0, JSON.stringify(ref));
+check("Maj+H : relevé posé en référence verrouillée (PLY, axe Y, 2 faces)", ref.format === "ply" && ref.axe === "y" && ref.verrouille === true && ref.triangles === 4 && Object.keys(m.racine.occurrences).length === 0, JSON.stringify(ref));
 check("le relevé est archivé en base (PLY)", archives.includes("ply"), archives.join(","));
 await page.screenshot({ path: `${OUT}/03-releve.png` });
 
 // --- Règle d'or ----------------------------------------------------------------------------------------------------------------
 let regle = true;
-for (const [id, r] of [["importer-fabricant", "Maj+N"], ["poser-releve", "Maj+U"]]) regle &&= ((await pan.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await pan.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
+for (const [id, r] of [["importer-fabricant", "Maj+N"], ["poser-releve", "Maj+H"]]) regle &&= ((await pan.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await pan.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
 check("chaque commande du panneau : icône et raccourci", regle);
 
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));

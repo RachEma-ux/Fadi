@@ -68,6 +68,11 @@ export interface HoteExtension {
 
 export interface OptionsHoteExtension {
   readonly creer?: () => WorkerExtension;
+  /**
+   * (Protocole 1.4) Charge le moteur des opérations planes (manifold-3d) avant une demande `geometrie.*` ; le temps
+   * de chargement ne compte pas dans le délai de l'appel. Absent = demande servie telle quelle.
+   */
+  readonly chargerGeometrie?: () => Promise<unknown>;
   readonly delaiCommandeMs?: number;
   readonly delaiEvenementMs?: number;
   /** Ligne écrite par l'extension (`planche.afficher`). */
@@ -297,6 +302,24 @@ export function creerHoteExtension(paquet: PaquetExtension, o: OptionsHoteExtens
       // délai de l'appel est suspendu pendant ce temps.
       const appel = enCours;
       appel.suspendre();
+      if (m.nom.startsWith("geometrie.") && o.chargerGeometrie) {
+        const sv = services;
+        void o
+          .chargerGeometrie()
+          .catch(() => undefined)
+          .then(() => {
+            // L'appel a pu finir (arrêt de l'extension) pendant le chargement : la réponse n'a plus de destinataire.
+            if (enCours !== appel) return;
+            let r: ReturnType<typeof sv.servir>;
+            try {
+              r = sv.servir(m.nom, m.donnees);
+            } finally {
+              appel.reprendre();
+            }
+            w?.postMessage(r.ok ? reponseProtocole(m.id, r.resultat) : refusProtocole(m.id, r.erreur, r.detail));
+          });
+        return;
+      }
       let r: ReturnType<typeof services.servir>;
       try {
         r = services.servir(m.nom, m.donnees);

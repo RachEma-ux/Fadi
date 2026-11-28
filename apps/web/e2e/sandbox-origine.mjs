@@ -86,6 +86,8 @@ try {
   await touche("Control+g");
   await touche("Control+c");
   await touche("Control+v");
+  // Cas 2, lot 6 : le collage interne attend 120 ms qu'un tracé du presse-papiers du système soit lu (Ctrl+V).
+  await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().racine.occurrences).length === 2, null, { timeout: 5000 }).catch(() => undefined);
   let e = await etat();
   check("deux occurrences d'une même définition, la copie sélectionnée", e.occurrences.length === 2 && e.occurrences[0].definition === e.occurrences[1].definition && e.selection.length === 1, JSON.stringify(e.occurrences.map((o) => o.definition)));
   const copie = e.selection[0];

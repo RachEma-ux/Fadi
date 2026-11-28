@@ -68,13 +68,15 @@ export const ICONES = {
   groupeAffichage: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
   /** Aide « Raccourcis clavier » (P5) : clavier. */
   aide: "M3 7h18v10H3zM6 10h1M9 10h1M12 10h1M15 10h1M18 10h0M7 14h10",
+  /** P13 : analyse de site (repère et cercle de lecture). */
+  site: "M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10ZM12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM3 21h18",
 } as const;
 
 /** Groupes de la colonne (P5, décisions D3 et D4) : bouton de divulgation et lettres d'accès dans le groupe ouvert. */
 export type GroupeOutils = "mesurer" | "affichage";
 export const LETTRES_GROUPES: Readonly<Record<GroupeOutils, Readonly<Record<string, string>>>> = {
   mesurer: { distance: "D", surface: "S", zone: "Z", annotation: "A" },
-  affichage: { nord: "N", "plein-ecran": "F", position: "P", etiquettes: "L", "mini-carte": "M", regrouper: "G", legende: "E", synthese: "V", imprimer: "I", lien: "K", aide: "?" },
+  affichage: { nord: "N", "plein-ecran": "F", position: "P", etiquettes: "L", "mini-carte": "M", regrouper: "G", legende: "E", synthese: "V", imprimer: "I", lien: "K", site: "Q", aide: "?" },
 };
 /** Bascules qui laissent le groupe ouvert (enchaîner plusieurs réglages) ; toute autre entrée le referme. */
 const BASCULES = new Set(["etiquettes", "mini-carte", "regrouper"]);
@@ -112,6 +114,9 @@ export interface ActionsBarreCarte {
   regroupement: boolean | null;
   onRegroupement(): void;
   onCopierLien(): void;
+  /** Analyse de site (P13) : volet « Site », lieu = fiche ouverte ou centre de la carte. */
+  onSite(): void;
+  site: boolean;
   /** Groupe ouvert (P5) ; un seul à la fois. */
   groupe: GroupeOutils | null;
   onGroupe(g: GroupeOutils | null): void;
@@ -246,6 +251,7 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
           {bouton("synthese", p.synthese ? "Fermer la synthèse de la vue (Alt+V)" : "Synthèse de la vue (Alt+V)", ICONES.synthese, p.onSynthese, { pressed: p.synthese, disabled: !p.carteDisponible })}
           {bouton("imprimer", "Imprimer la carte (Alt+I)", ICONES.imprimer, p.onImprimer, { disabled: !p.carteDisponible })}
           {bouton("lien", "Copier l'adresse de cette vue (Alt+K)", ICONES.lien, p.onCopierLien)}
+          {bouton("site", "Que sait-on d'ici ? (Alt+Q)", ICONES.site, p.onSite, { pressed: p.site })}
           <button type="button" className="gd-entree-groupe" title="Raccourcis clavier (?)" onClick={() => { fermerGroupe(false); p.onAide(); }} aria-keyshortcuts="? Shift+Slash" data-gd-lettre="?" data-gd-aide-ouvrir>
             <Pictogramme d={ICONES.aide} /><span className="gd-entree-texte">Raccourcis clavier</span><kbd aria-hidden="true">?</kbd>
           </button>

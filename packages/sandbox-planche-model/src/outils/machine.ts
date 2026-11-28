@@ -130,6 +130,13 @@ export interface VueOutil {
 
 /** Contexte partagé fourni par le rendu à chaque événement. */
 export interface ContexteOutil {
+  /** (Cas 2, lot 8, n° 100) Altitudes saisies au panneau « Soustraire et garder » : bornes z d'une boîte tracée à plat. */
+  readonly altitudesBoite?: { readonly zmin: number; readonly zmax: number } | null;
+  /**
+   * (Cas 2, lot 8, n° 61, 79) Pose d'un composant d'agence en cours : fichier et valeurs saisis au panneau « Composants
+   * dynamiques », face visée (baie d'un mur plein) ; les points sont cliqués dans la vue.
+   */
+  readonly poseComposant?: { readonly pose: import("../composants-l8.js").Pose; readonly face?: string } | null;
   readonly modele: Modele;
   /** Sélection courante (ids d'entités ou d'occurrences), tenue par l'interface. */
   readonly selection: readonly string[];
@@ -187,6 +194,29 @@ export interface AdaptateurBooleens {
   union(a: Maillage, b: Maillage): Maillage;
   difference(a: Maillage, b: Maillage): Maillage;
   intersection(a: Maillage, b: Maillage): Maillage;
+  /** (Cas 2, lot 8, n° 15) Aire de l'union de contours plans (x, y), règle de remplissage positive. */
+  aireUnion?(contours: readonly (readonly (readonly [number, number])[])[]): number;
+  /** (Protocole 1.4) Opérations planes du même moteur ; absentes = moteur sans opérations planes. */
+  readonly plans?: AdaptateurPlans;
+}
+
+/** Point du plan horizontal (x, y), en mètres, coordonnées monde. */
+export type PointPlan = readonly [number, number];
+/** Polygone du plan : contour extérieur (sens trigonométrique) et trous (sens horaire). */
+export interface PolygonePlan {
+  readonly exterieur: readonly PointPlan[];
+  readonly trous: readonly (readonly PointPlan[])[];
+}
+
+/**
+ * (Protocole 1.4) Opérations planes : coupe horizontale de solides à une hauteur, projection au sol, union de
+ * polygones. Le résultat est toujours l'union (aucun recouvrement compté deux fois) ; « booléen de maillage », jamais
+ * exact au sens B-Rep.
+ */
+export interface AdaptateurPlans {
+  coupe(solides: readonly Maillage[], hauteur: number): PolygonePlan[];
+  projection(solides: readonly Maillage[]): PolygonePlan[];
+  union(polygones: readonly PolygonePlan[]): PolygonePlan[];
 }
 
 export interface Transition<E> {

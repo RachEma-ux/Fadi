@@ -50,5 +50,5 @@ D10-F14-036, D10-F23a-012.
   `3ds`, signature contrôlée par l'API) avant toute pose, en objets comme en référence (D-GD-29).
 
 ## Raccourcis
-En deux temps après Ctrl+Maj+Espace : N (formats des fabricants), Maj+N (importer en objets), U (relevé au capteur),
-Maj+U (poser en référence).
+En deux temps après Ctrl+Maj+Espace : N (formats des fabricants), Maj+N (importer en objets), H (relevé au capteur),
+Maj+H (poser en référence).

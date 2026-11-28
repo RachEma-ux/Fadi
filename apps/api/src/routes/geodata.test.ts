@@ -320,6 +320,17 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500`)).status).toBe(400);
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=inconnue`)).body.couches[0]).toEqual({ coucheId: "inconnue", accessible: false });
     expect((await bob.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`)).status).toBe(404);
+    // P12 : proximité d'un point libre (analyse de site) — au point A, A est à 0 m ; bornes du rayon ; coordonnée jamais journalisée.
+    const journalAvant = (await pool.query("SELECT count(*)::int AS n FROM geodata_journal WHERE details::text LIKE '%33.05%'")).rows[0].n;
+    const auPoint = await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=500&couches=${id}`);
+    expect(auPoint.status).toBe(200);
+    expect(auPoint.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 3, plusProche: { nom: "Point A", distanceM: 0 }, couverture: { etat: "non-evaluee" } });
+    expect(auPoint.body.couches[0].version.empreinte).toMatch(/^[0-9a-f]{64}$/);
+    expect((await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=49&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=5001&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/proximite?lon=181&lat=33.05&couches=${id}`)).status).toBe(400);
+    expect((await bob.client.get(`${API}/proximite?lon=-6.95&lat=33.05&couches=${id}`)).body.couches[0]).toEqual({ coucheId: id, accessible: false });
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_journal WHERE details::text LIKE '%33.05%'")).rows[0].n).toBe(journalAvant);
     await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
     expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
   });
@@ -480,6 +491,11 @@ describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
     const relue = await alice.client.get(`${API}/cartes/${carte.body.id}`);
     expect(relue.body.composition.couches[0].versionId).toBe(ref.versionId);
     expect(relue.body.disponibilite[ref.coucheId]).toEqual({ etat: "retiree", motif: "Version retirée : Droits retirés par le producteur" });
+    // P12 : états de versions — retirée avec motif ; inconnue = absente ; 1 à 20 identifiants.
+    expect((await alice.client.get(`${API}/versions/etats?ids=${ref.versionId},absente`)).body.versions).toEqual([
+      { id: ref.versionId, etat: "retiree", motifRetrait: "Droits retirés par le producteur" }, { id: "absente", etat: "inconnue" },
+    ]);
+    expect((await alice.client.get(`${API}/versions/etats`)).status).toBe(400);
     expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/121/107`)).status).toBe(404);
     expect((await alice.client.get(`${API}/catalogue`)).body.couches).toEqual([]);
     const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });

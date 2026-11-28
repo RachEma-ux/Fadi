@@ -4,7 +4,8 @@
  * /sandbox/preferences/extensions`, la liste des extensions installées sur la plateforme. Le test d'indépendance
  * n'autorise que ce fichier à appeler le serveur, et seulement ces adresses ; le client API général de Fadi n'est
  * jamais importé. Protocole des extensions 1.2 : `POST /sandbox/preferences/fichiers` range tel quel en base un fichier
- * de données ouvert par une extension (table de règles, bibliothèque de types).
+ * de données ouvert par une extension (table de règles, bibliothèque de types) ; `GET /sandbox/preferences/fichiers` et
+ * `GET /sandbox/preferences/fichiers/:id` relisent les gabarits d'agence de la Planche (cas 2, lot 4).
  */
 import { lireArchiveFichier, lireCatalogue, lirePaquetsInstalles, lirePreferencesSandbox, type FicheCatalogue, type FichierLu, type IssueArchive, type PaquetExtension, type PreferencesSandbox } from "@parcours/sandbox-planche-model";
 
@@ -88,4 +89,42 @@ export async function archiverFichierExtension(extension: string, fichier: Fichi
   if (!r.ok) return { ok: false, motif: "serveur" };
   const archive = lireArchiveFichier(((await r.json().catch(() => null)) as { archive?: unknown } | null)?.archive);
   return archive ? { ok: true, archive } : { ok: false, motif: "illisible" };
+}
+
+/** Fichier rangé en base, tel que la liste le rend (cas 2, lot 4 : gabarits d'agence de la Planche). */
+export interface ArchiveListee {
+  readonly id: string;
+  readonly nom: string;
+  readonly empreinte: string;
+  readonly ajouteLe: string;
+}
+
+/** (Cas 2, lot 4) Fichiers rangés en base pour ce compte sous un identifiant ; liste vide si le serveur ne répond pas. */
+export async function listerFichiersArchives(extension: string): Promise<readonly ArchiveListee[]> {
+  if (!/^[a-z0-9-]{1,40}$/.test(extension)) return [];
+  try {
+    const r = await fetch(`${ADRESSE_FICHIERS}?extension=${extension}`, { credentials: "include", headers: { Accept: "application/json" } });
+    if (!r.ok) return [];
+    const corps = (await r.json().catch(() => null)) as { archives?: unknown } | null;
+    if (!Array.isArray(corps?.archives)) return [];
+    return corps.archives.flatMap((a: unknown) => {
+      const x = a as Record<string, unknown> | null;
+      return x && typeof x["id"] === "string" && typeof x["nom"] === "string" && typeof x["empreinte"] === "string" && typeof x["ajouteLe"] === "string" ? [{ id: x["id"], nom: x["nom"], empreinte: x["empreinte"], ajouteLe: x["ajouteLe"] }] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** (Cas 2, lot 4) Texte d'un fichier rangé en base, ou `null`. */
+export async function lireFichierArchive(id: string): Promise<string | null> {
+  if (!/^[\w-]{1,80}$/.test(id)) return null;
+  try {
+    const r = await fetch(`${ADRESSE_FICHIERS}/${id}`, { credentials: "include", headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const corps = (await r.json().catch(() => null)) as { texte?: unknown } | null;
+    return typeof corps?.texte === "string" ? corps.texte : null;
+  } catch {
+    return null;
+  }
 }

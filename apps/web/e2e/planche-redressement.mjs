@@ -1,11 +1,11 @@
 /**
  * Recette « Redresser une photo » de la Planche (cas 4 du catalogue des extensions, lot C4, étape 7c : D10-F23a-003) :
- * - Ctrl+Maj+Espace puis H ouvre « Redresser une photo » ; sans photo, Poser est grisé avec son motif ;
+ * - Ctrl+Maj+Espace puis Z ouvre « Redresser une photo » ; sans photo, Poser est grisé avec son motif ;
  * - une photo de façade prise de biais (rectangle 4 × 3 m en perspective) est lue ; les quatre coins sont pointés au
  *   clic, la loupe suit le pointeur ; sans dimensions, Poser reste grisé ;
  * - un point de contrôle au croisement des diagonales (centre du rectangle) : résidus « non évalués » avant sa saisie,
  *   écart faible quand il est juste, alerte de façade non plane quand il est faux ;
- * - Maj+H pose la photo redressée en fond, dans un plan vertical (origine, azimut), en un pas ; la photo d'origine est
+ * - Maj+R pose la photo redressée en fond, dans un plan vertical (origine, azimut), en un pas ; la photo d'origine est
  *   archivée en base ; Annuler retire tout ; Q efface les points ;
  * - chaque commande : icône et raccourci ; aucune erreur JavaScript.
  *
@@ -87,10 +87,10 @@ page.on("request", (r) => {
   if (r.method() === "POST" && r.url().endsWith("/sandbox/fonds")) archives.push(r.url());
 });
 
-await deuxTemps("h");
+await deuxTemps("z");
 const pan = page.locator("[data-planche-redressement]");
 await pan.waitFor();
-check("Ctrl+Maj+Espace puis H ouvre « Redresser une photo », hors de la colonne", (await page.evaluate(() => window.fadiPlanche.panneau())) === "redressement" && (await page.locator("[data-planche-panneau-icone='redressement']").count()) === 0);
+check("Ctrl+Maj+Espace puis Z ouvre « Redresser une photo », hors de la colonne", (await page.evaluate(() => window.fadiPlanche.panneau())) === "redressement" && (await page.locator("[data-planche-panneau-icone='redressement']").count()) === 0);
 check("sans photo : Poser grisé avec son motif", (await pan.locator("[data-planche-commande='poser-redressee']").isDisabled()) && ((await pan.locator("[data-planche-commande='poser-redressee']").getAttribute("title")) ?? "").includes("Choisissez d'abord une photo"));
 await page.locator("[data-planche-redressement-entree]").setInputFiles({ name: "facade.png", mimeType: "image/png", buffer: photo });
 const toile = pan.locator("[data-planche-redressement-photo]");
@@ -128,13 +128,13 @@ await pan.locator("[data-planche-redressement-champ='y']").fill("2");
 await pan.locator("[data-planche-redressement-champ='azimut']").fill("90");
 await page.screenshot({ path: `${OUT}/01-pointe.png` });
 const pas0 = await pas();
-await deuxTemps("Shift+H");
+await deuxTemps("Shift+R");
 await page.waitForFunction(() => !!document.querySelector("[data-planche-redressement-note], [data-planche-redressement-erreur]"));
-check("Maj+H : aucune erreur", (await pan.locator("[data-planche-redressement-erreur]").count()) === 0, (await pan.locator("[data-planche-redressement-erreur]").textContent().catch(() => "")) ?? "");
+check("Maj+R : aucune erreur", (await pan.locator("[data-planche-redressement-erreur]").count()) === 0, (await pan.locator("[data-planche-redressement-erreur]").textContent().catch(() => "")) ?? "");
 const m = await modele();
 const fonds = Object.values(m.annotations?.fonds ?? {});
 const f = fonds[0];
-check("Maj+H : un seul pas, un fond posé", (await pas()) === pas0 + 1 && fonds.length === 1);
+check("Maj+R : un seul pas, un fond posé", (await pas()) === pas0 + 1 && fonds.length === 1);
 check("fond vertical : origine (1 ; 2), azimut 90°, rectangle 4 × 3 m journalisé", !!f?.vertical && f.vertical.x === 1 && f.vertical.y === 2 && Math.abs(f.vertical.azimut - Math.PI / 2) < 1e-9 && f.vertical.redressement.largeur === 4 && f.vertical.redressement.hauteur === 3 && f.vertical.redressement.controles === 1 && f.cale === true, JSON.stringify(f?.vertical));
 // Le rectangle va de s = 0 à 4 : son bord gauche (s = 0) tombe sur l'origine ; échelle d'environ 4 m pour la largeur.
 const s0 = f.pose.x, sMax = f.pose.x + f.pose.echelle * f.largeurPx;
@@ -150,11 +150,11 @@ await vue.focus();
 await page.keyboard.press("Control+z");
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().annotations?.fonds ?? {}).length === 0);
 check("Annuler retire le fond redressé", true);
-await deuxTemps("q");
+await deuxTemps("Shift+X");
 check("Q efface les points pointés", (await pan.getAttribute("data-planche-redressement")) === "0");
 
 let regle = true;
-for (const [id, r] of [["poser-redressee", "Maj+H"], ["effacer-points-redressement", "Q"]]) regle &&= ((await pan.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await pan.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
+for (const [id, r] of [["poser-redressee", "Maj+R"], ["effacer-points-redressement", "Maj+X"]]) regle &&= ((await pan.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await pan.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
 check("chaque commande du panneau : icône et raccourci", regle);
 
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));
