@@ -212,7 +212,7 @@ describe("extension « Gabarits et servitudes » — servitudes et scénarios", 
     expect(p.textes().at(-1)).toBe("2 zones posées.");
     const c = await p.action("controler");
     expect(p.textes().at(-1)).toBe("1 intrusion signalée.");
-    expect(c.lignes.map((l) => [l.cellules[0]!.split(" · ")[0], l.cellules[2], l.cellules[3], l.ton])).toEqual([
+    expect(c.lignes.map((l) => [l.cellules[0]!.replace(/ \(.*\)$/, ""), l.cellules[2], l.cellules[3], l.ton])).toEqual([
       ["Servitude de hauteur d'essai", "4,00 m", "intrusion (+2,00 m)", "alerte"],
       ["SUP d'essai", "sans plafond", "non évalué", "gris"],
     ]);

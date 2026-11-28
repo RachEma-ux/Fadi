@@ -66,7 +66,7 @@ var T = {
       volume: "Volume du gabarit", emprise: "Emprise constructible au sol", absentes: "Règles absentes du jeu (non appliquées)",
       emplacement: "Emplacement", zones: "Zones posées", refusees: "Zones refusées (source, date ou contour manquant)", nonLues: "Objets non lus du fichier",
       intrusions: "Intrusions", nonControlees: "Zones non contrôlées (ni plafond ni non aedificandi)",
-      regle: "Règle de stationnement",
+      regle: "Règle de stationnement", sources: "Sources des zones",
     },
     construit: function (n) { return "Gabarit construit : " + n + "."; },
     nomGabarit: function (j) { return "Gabarit " + j.nature + " " + j.commune + (j.relu ? "" : " (à vérifier)"); },
@@ -140,7 +140,7 @@ var T = {
       volume: "Envelope volume", emprise: "Buildable ground area", absentes: "Rules missing from the set (not applied)",
       emplacement: "Location", zones: "Zones placed", refusees: "Zones refused (source, date or outline missing)", nonLues: "File objects not read",
       intrusions: "Intrusions", nonControlees: "Zones not checked (no ceiling, not no-build)",
-      regle: "Parking rule",
+      regle: "Parking rule", sources: "Zone sources",
     },
     construit: function (n) { return "Envelope built: " + n + "."; },
     nomGabarit: function (j) { return "Gabarit " + j.nature + " " + j.commune + (j.relu ? "" : " (à vérifier)"); },
@@ -756,10 +756,13 @@ async function etat() {
       var etatZ = !r ? x.nonEvalue : r.etat === "intrusion" ? x.intrusion(m1(r.ecart, sep)) : r.etat === "libre" ? x.libre : x.nonEvalue;
       if (r && r.etat === "intrusion") intrus++;
       if (r && r.etat === "non-controle") nonC++;
-      return { genre: "ligne", ton: !r ? "gris" : r.etat === "intrusion" ? "alerte" : r.etat === "libre" ? "ok" : "gris", cellules: [z.libelle + " · " + z.source + ", " + z.date, x.natures[z.nature] + (z.alea ? " (" + z.alea + ")" : ""), z.plafond === null ? x.sansPlafond : m1(z.plafond, sep), etatZ] };
+      return { genre: "ligne", ton: !r ? "gris" : r.etat === "intrusion" ? "alerte" : r.etat === "libre" ? "ok" : "gris", cellules: [z.libelle + " (" + z.date + ")", x.natures[z.nature] + (z.alea ? " (" + z.alea + ")" : ""), z.plafond === null ? x.sansPlafond : m1(z.plafond, sep), etatZ] };
     });
     if (g) {
       e.resultats.push({ libelle: x.res.zones, valeur: String(liste.length) });
+      var sources = [];
+      liste.forEach(function (z) { if (sources.indexOf(z.source) < 0) sources.push(z.source); });
+      if (sources.length) e.resultats.push({ libelle: x.res.sources, valeur: sources.slice(0, 5).join(" ; ") + (sources.length > 5 ? " …" : "") });
       if (g.refusees) e.resultats.push({ libelle: x.res.refusees, valeur: String(g.refusees), ton: "limite" });
       var nl = Object.keys(g.nonLues || {});
       if (nl.length) e.resultats.push({ libelle: x.res.nonLues, valeur: nl.map(function (k) { return k + " × " + g.nonLues[k]; }).join(", "), ton: "limite" });

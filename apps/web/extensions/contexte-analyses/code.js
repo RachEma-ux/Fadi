@@ -473,23 +473,33 @@ async function chargerValeurs() {
 
 async function facades(site, baies) {
   var monde = await planche.modele.lire({ portee: "monde" });
-  var noms = {};
-  (await planche.matieres.lire()).forEach(function (m) { noms["m:" + m.id] = m.nom.toLowerCase(); });
+  var noms = {}, translucide = {};
+  (await planche.matieres.lire()).forEach(function (m) { noms["m:" + m.id] = m.nom.toLowerCase(); if (m.opacite < 1) translucide[m.id] = true; });
   (await planche.balises.lire()).forEach(function (b) { noms["b:" + b.id] = b.nom.toLowerCase(); });
   var lus = await planche.modele.lire();
   var matObjet = {};
   lus.objets.forEach(function (o) { matObjet[o.id] = o.matiere; });
   var contexte = ((await donnees())["contexte.objet"] || {}).id || null;
-  var cand = monde.faces.filter(function (f) { return f.chemin[0] !== contexte && Math.abs(normaleDe(f.points)[2]) <= 0.05 && f.aire > 1e-6; });
+  // Un objet de matière translucide (enveloppe de gabarit, zone de servitude, volume d'étude) n'est pas une façade
+  // et n'arrête pas les rayons : seuls les objets opaques servent d'obstacles.
+  var etude = {};
+  lus.objets.forEach(function (o) { if (o.matiere && translucide[o.matiere]) etude[o.id] = true; });
+  var opaques = lus.objets.filter(function (o) { return !etude[o.id]; }).map(function (o) { return o.id; });
+  var filtrer = Object.keys(etude).length > 0;
+  var cand = monde.faces.filter(function (f) { return f.chemin[0] !== contexte && !etude[f.chemin[0]] && Math.abs(normaleDe(f.points)[2]) <= 0.05 && f.aire > 1e-6; });
   var centre = function (f) { var c = [0, 0, 0]; f.points.forEach(function (q) { c = [c[0] + q[0] / f.points.length, c[1] + q[1] / f.points.length, c[2] + q[2] / f.points.length]; }); return c; };
   // Extérieure : un rayon lancé depuis le centre, le long de la normale, ne touche aucune face du projet.
   var dehors = [];
   for (var i = 0; i < cand.length; i += 2000) {
     var lot = cand.slice(i, i + 2000);
-    var r = await planche.geometrie.rayon(lot.map(function (f) { var n = normaleDe(f.points), c = centre(f); return { origine: [c[0] + n[0] * 0.01, c[1] + n[1] * 0.01, c[2]], direction: n }; }));
+    var rayons = lot.map(function (f) { var n = normaleDe(f.points), c = centre(f); return { origine: [c[0] + n[0] * 0.01, c[1] + n[1] * 0.01, c[2]], direction: n }; });
+    var r = !filtrer ? await planche.geometrie.rayon(rayons)
+      : opaques.length > 0 && opaques.length <= 10000 ? await planche.geometrie.rayon(rayons, { objets: opaques })
+      : opaques.length === 0 ? { impacts: rayons.map(function () { return null; }) }
+      : await planche.geometrie.rayon(rayons);
     lot.forEach(function (f, k) {
       var im = r.impacts[k];
-      if (!im || (contexte && im.chemin[0] === contexte)) dehors.push(f);
+      if (!im || (contexte && im.chemin[0] === contexte) || etude[im.chemin[0]]) dehors.push(f);
     });
   }
   var cible = texte(baies).trim().toLowerCase();

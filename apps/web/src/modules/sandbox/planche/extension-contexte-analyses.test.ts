@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ANNOTATIONS_VIDES, REGISTRE_SANDBOX, ajouterNiveau, ajouterRectangle, baliserOccurrences, creerExecutantExtension, creerFonctionsPlanche, jugerImportPaquet, modeleVide, modifierAnnotations, normaliserRaccourci, v3, type AccesPlanche, type AdaptateurBooleens, type AvisExtension, type ExecutantExtension, type Id, type Maillage, type Modele, type PaquetExtension, type PolygonePlan } from "@parcours/sandbox-planche-model";
+import { ANNOTATIONS_VIDES, REGISTRE_SANDBOX, creerExecutantExtension, creerFonctionsPlanche, grouper, jugerImportPaquet, modeleVide, modifierAnnotations, normaliserRaccourci, type AccesPlanche, type AdaptateurBooleens, type AvisExtension, type ExecutantExtension, type Id, type Maillage, type Modele, type PaquetExtension, type PolygonePlan } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const DOSSIER = "../../../../extensions/contexte-analyses/";
@@ -218,5 +218,23 @@ describe("extension « Contexte et analyses » — couleurs et vitrage", () => {
     expect(valeur(e, /Marge/)).toBe("+20,00 m²");
     const sansSource = await p.action("etat", { valeurs: { baies: "Vitrage", shab: "60", part: "1/6", source: "" } });
     expect(valeur(sansSource, /exigées/)).toBe("non évalué");
+  });
+  it("vitrage : une enveloppe translucide (gabarit, zone) n'est ni une façade ni un obstacle", async () => {
+    const base = maison();
+    const avant = new Set(Object.keys(base.racine.faces));
+    const f = creerFonctionsPlanche(base);
+    f.api.boite([-5, -5, 0], 20, 16, 8);
+    let m = f.modele();
+    const g = grouper(m, Object.keys(m.racine.faces).filter((id) => !avant.has(id)));
+    m = g.modele;
+    const an = m.annotations ?? ANNOTATIONS_VIDES;
+    m = { ...m, annotations: { ...an, materiaux: { ...an.materiaux, env: { id: "env", nom: "Gabarit", couleur: "#3b6fd4", opacite: 0.3 } } } };
+    const occ = g.occurrence;
+    m = { ...m, racine: { ...m.racine, occurrences: { ...m.racine.occurrences, [occ]: { ...m.racine.occurrences[occ]!, materiau: "env" } } } };
+    const p = planche(m);
+    await p.commande("vitrage");
+    const e = await p.action("etat", { onglet: "vitrage", valeurs: { baies: "Vitrage", shab: "60", part: "1/6", source: "Essai, pas un texte" } });
+    expect(e.lignes.map((l) => l.cellules.slice(0, 2))).toEqual([["N", "30,00 m²"], ["E", "18,00 m²"], ["S", "30,00 m²"], ["O", "18,00 m²"]]);
+    expect(e.lignes.map((l) => l.cellules[3])).toEqual(["0,0 %", "0,0 %", "100,0 %", "0,0 %"]);
   });
 });
