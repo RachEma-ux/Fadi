@@ -351,6 +351,8 @@ const commandes: EntreeSandbox[] = [
   c("travailler-niveau", "niveau", "stack-front", "Maj+F10", "panneau-niveaux", true),
   c("rattacher-niveau", "niveau", "layers-linked", "Ctrl+Maj+X", "panneau-niveaux", true),
   c("supprimer-niveau", "niveau", "stack-pop", "Ctrl+F2", "panneau-niveaux", true),
+  // Cas 4, lot C1, étape 1a (D4-F5-002) : sélecteur d'étage posé dans la vue (isole l'étage, coupe à la hauteur de plan).
+  c("etage", "niveau", "stack-middle", "Ctrl+Maj+Espace, Maj+B, E", "outils", true),
   c("locaux", "local", "layout-board-split", "Ctrl+Maj+U", "panneau-locaux", true),
   c("creer-local", "local", "square-plus", "Ctrl+Maj+D", "panneau-locaux", true),
   c("supprimer-local", "local", "square-minus", "Ctrl+F3", "panneau-locaux", true),

@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { coinsFond, pointDuFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { type PlanDeCoupe, coinsFond, pointDuFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -73,6 +73,10 @@ export interface RappelsVuePlanche {
   dans?(): string | undefined;
   /** Isolement (Objets O-5) : contexte et entités isolés ; rien d'autre n'est rendu ni accroché. */
   isolement?(): { readonly chemin: readonly string[]; readonly ids: readonly string[] } | null;
+  /** (Cas 4, lot C1, étape 1a) Étage isolé par le sélecteur d'étage : les objets des autres niveaux ne sont pas rendus. */
+  etage?(): string | null;
+  /** (Cas 4, lot C1, étape 1a) Coupe horizontale de l'étage choisi (réglage de la vue) ; elle prime sur les plans du modèle. */
+  coupeEtage?(): PlanDeCoupe | null;
   /** Chemin complet du contexte ouvert (Objets O-2) : distingue les occurrences d'un même composant. */
   chemin?(): readonly string[];
   /** (Cas 2, lot 1) L'outil actif montre une loupe d'accrochage au doigt (Cotation, Texte). */
@@ -660,7 +664,8 @@ export class VuePlanche {
     const dans = this.rappels.dans?.();
     const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
     const o = this.options;
-    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables, ...(o.etatTravaux !== "tout" ? { etat: o.etatTravaux } : {}) });
+    const etage = this.rappels.etage?.() ?? null;
+    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables, ...(o.etatTravaux !== "tout" ? { etat: o.etatTravaux } : {}), ...(etage ? { etage } : {}) });
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
     const couleurDe = (f: FaceVisible): string => {
@@ -807,7 +812,7 @@ export class VuePlanche {
    */
   private majCoupe(modele: Modele): void {
     const actifs = Object.values(modele.annotations?.plansDeCoupe ?? {}).filter((p) => p.actif);
-    const p = actifs[actifs.length - 1];
+    const p = this.rappels.coupeEtage?.() ?? actifs[actifs.length - 1];
     vider(this.groupeCoupe);
     if (!p) {
       this.moteur.clippingPlanes = [];
@@ -840,7 +845,7 @@ export class VuePlanche {
       }
       return r;
     };
-    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined)) {
+    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined, this.rappels.etage?.() ?? null)) {
       const boucles = s.boucles.map((b) => b.map(vers2));
       // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
       const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);

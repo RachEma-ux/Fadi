@@ -159,6 +159,8 @@ export interface ContexteOutil {
    * ni visé, ni sélectionné, ni accroché.
    */
   readonly etatTravaux?: "existant" | "projete";
+  /** (Cas 4, lot C1, étape 1a) Étage isolé par le sélecteur d'étage : les objets des autres niveaux ne sont pas accrochés. */
+  readonly etage?: string;
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
   /** (Cas 4, lot C4) Fond choisi dans le panneau Fonds calés : visé en priorité là où des fonds se superposent. */

@@ -1023,6 +1023,11 @@ export interface OptionsGeometrieVisible {
    * tout. Ce qui n'a pas de statut est toujours affiché.
    */
   readonly etat?: "existant" | "projete";
+  /**
+   * (Cas 4, lot C1, étape 1a) Étage isolé par le sélecteur d'étage : les objets de la racine rattachés à un AUTRE niveau ne
+   * sont ni rendus ni accrochés ; ceux du niveau et ceux sans niveau restent.
+   */
+  readonly etage?: Id | null;
 }
 
 /** L'objet de ce statut est-il montré dans cet état ? */
@@ -1030,7 +1035,7 @@ export const montreDansEtat = (statut: StatutTravaux | undefined, etat: "existan
   !etat || !statut || (etat === "existant" ? statut !== "projete" : statut !== "a-demolir");
 
 /** (Cas 4, C4 étape 5) Options de géométrie d'un outil : l'état affiché du contexte d'outil, s'il y en a un. */
-export const etatOutil = (ctx: { readonly etatTravaux?: "existant" | "projete" }): OptionsGeometrieVisible => (ctx.etatTravaux ? { etat: ctx.etatTravaux } : {});
+export const etatOutil = (ctx: { readonly etatTravaux?: "existant" | "projete"; readonly etage?: string }): OptionsGeometrieVisible => ({ ...(ctx.etatTravaux ? { etat: ctx.etatTravaux } : {}), ...(ctx.etage ? { etage: ctx.etage } : {}) });
 
 export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {
   const aretes: AreteVisible[] = [];
@@ -1121,6 +1126,7 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     for (const oc of Object.values(c.occurrences)) {
       // Objet masqué (lot 5) ou balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
       if (oc.masquee) continue;
+      if (o.etage && pile.length === 0 && oc.niveau !== undefined && oc.niveau !== o.etage) continue;
       if (defOuverte !== undefined && oc.definition === defOuverte && !estOuvert([...pile, oc.id])) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
       const st = oc.statut ?? statut;

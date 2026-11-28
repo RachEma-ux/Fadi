@@ -138,6 +138,9 @@ describe("Extension « Contrôle et nettoyage » — disponibilité des commande
     expect(disponibiliteNiveau("rattacher-niveau", { ...s, choisi: false }).motif).toBe("planche.niveaux.motif.choisi");
     expect(disponibiliteNiveau("rattacher-niveau", { ...s, dansObjet: true }).motif).toBe("planche.niveaux.motif.racine");
     expect(disponibiliteNiveau("rattacher-niveau", { ...s, objets: 0 }).motif).toBe("planche.niveaux.motif.objets");
+    // Lot C1, étape 1a : le sélecteur d'étage, en lecture aussi, dès qu'un niveau est déclaré.
+    expect(disponibiliteNiveau("etage", { ...s, lecture: true, niveaux: 2 }).disponible).toBe(true);
+    expect(disponibiliteNiveau("etage", { ...s, niveaux: 0 }).motif).toBe("planche.etage.motif.aucun");
   });
 });
 

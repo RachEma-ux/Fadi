@@ -1094,6 +1094,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-niveaux node apps/web/e2e/planche-niveaux.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du sélecteur d'étage (cas 4, lot C1, étape 1a) — trois temps Ctrl+Maj+Espace, Maj+B, E ; étage isolé, niveau de travail, coupe à la hauteur de plan, colonne Coupe (apps/web/e2e/planche-etage.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-etage node apps/web/e2e/planche-etage.mjs 2>&1 | tee -a e2e.log
       - name: Recette du point de base du projet (cas 4, étape 2) — section Emplacement, H = niveau de référence, aller-retour, export projeté (apps/web/e2e/planche-point-de-base.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

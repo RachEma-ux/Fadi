@@ -4471,6 +4471,80 @@
   background: #1b4d42;
   border-color: #1b4d42;
 }
+/* Cas 4, lot C1, étape 1a : colonne Coupe du panneau Niveaux et sélecteur d'étage posé dans la vue. */
+.sandbox-planche .planche-niveaux .planche-niveaux-coupe {
+  width: 3.6rem;
+  min-width: 0;
+  padding: 0.15rem 0.35rem;
+  text-align: right;
+}
+.sandbox-planche .planche-etage {
+  position: absolute;
+  left: 4.6rem;
+  top: 0.8rem;
+  z-index: 4;
+  width: 17rem;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  font-size: 0.82rem;
+  cursor: default;
+}
+.sandbox-planche .planche-etage-tete {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.sandbox-planche .planche-etage-tete kbd {
+  margin-left: auto;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-etage [role="listbox"] button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.38rem 0.75rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-etage [role="listbox"] button.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+  font-weight: 700;
+}
+.sandbox-planche .planche-etage .planche-etage-tous {
+  opacity: 0.75;
+}
+.sandbox-planche .planche-etage-point {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: #1a5fd6;
+}
+.sandbox-planche .planche-etage .planche-etage-coupe {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem 0.55rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.sandbox-planche .planche-etage .planche-etage-coupe input {
+  width: 4rem;
+  min-width: 0;
+  padding: 0.15rem 0.35rem;
+  text-align: right;
+}
 /* Cas 4, étape 2 : point de base du projet (section du panneau Emplacement). */
 .sandbox-planche .planche-point-de-base {
   border-top: 1px solid rgba(27, 77, 66, 0.18);

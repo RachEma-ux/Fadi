@@ -199,10 +199,11 @@ await vue.focus();
 await page.keyboard.press("Control+Shift+Space");
 const encadre = page.locator("[data-planche-deux-temps]");
 await encadre.waitFor();
-// Seules les familles qui ont des commandes s'affichent : Échanges (Maj+I) depuis la visionneuse hors ligne (étape 7d).
+// Seules les familles qui ont des commandes s'affichent : Échanges (Maj+I) depuis la visionneuse hors ligne (étape 7d),
+// Bâtiment (Maj+B) depuis le sélecteur d'étage (lot C1, étape 1a) ; Collaboration (Maj+L) n'a encore rien.
 const portes = await encadre.locator("[data-planche-deux-temps-porte]").evaluateAll((l) => l.map((x) => x.getAttribute("data-planche-deux-temps-porte")));
 check("encadré : champ de recherche, seules les familles qui ont des commandes affichées, commandes actuelles listées",
-  (await encadre.locator("[data-planche-deux-temps-recherche]").count()) === 1 && portes.length >= 1 && !portes.includes("batiment") && portes.includes("echanges")
+  (await encadre.locator("[data-planche-deux-temps-recherche]").count()) === 1 && portes.length >= 1 && !portes.includes("collaboration") && portes.includes("echanges")
   && (await encadre.locator("[data-planche-deux-temps-commande='ifc-structure'] kbd").textContent()) === "U");
 await page.keyboard.press("Tab");
 const champ = encadre.locator("[data-planche-deux-temps-recherche]");
@@ -229,9 +230,9 @@ await page.waitForFunction(() => window.fadiPlanche.panneau() === "ifc-structure
 check("Flèches puis Entrée lancent la commande choisie (IFC structuré)", (await encadre.count()) === 0 && (await page.evaluate(() => window.fadiPlanche.panneau())) === "ifc-structure");
 await page.keyboard.press("Control+Shift+Space");
 await encadre.waitFor();
-await page.keyboard.press("Shift+B");
+await page.keyboard.press("Shift+L");
 await page.waitForTimeout(80);
-check("une porte sans famille livrée (Maj+B) ne fait rien et l'encadré se referme", (await encadre.count()) === 0);
+check("une porte sans famille livrée (Maj+L) ne fait rien et l'encadré se referme", (await encadre.count()) === 0);
 await page.screenshot({ path: `${OUT}/03-recherche.png` });
 
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));

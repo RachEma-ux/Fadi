@@ -6,8 +6,14 @@ import { describe, expect, it } from "vitest";
 import { appliquerDeltaPlanche, differencePlanche, empreintePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
 import { type Modele, ajouterRectangle, grouper, modeleVide, verrouillerOccurrences } from "./geometrie-libre.js";
 import {
+  HAUTEUR_PLAN_DEFAUT,
   ajouterNiveau,
   altitudeNGF,
+  coupeDeLEtage,
+  etageVoisin,
+  hauteurDePlan,
+  lireHauteurDePlan,
+  modifierHauteurDePlan,
   empriseNiveaux,
   estNiveau,
   lireSaisieNiveau,
@@ -21,6 +27,8 @@ import {
   supprimerNiveau,
   texteAltitude,
 } from "./niveaux.js";
+import { geometrieVisible } from "./inference.js";
+import { sectionsDeCoupe } from "./plan-vectoriel.js";
 import { v3 } from "./vecteur.js";
 
 const ok = <T extends { ok: boolean }>(r: T): Extract<T, { ok: true }> => {
@@ -161,3 +169,95 @@ describe("niveaux d'étage", () => {
     expect(estNiveau("n1", { id: "n1", nom: "RDC", altitude: 0, hauteur: 2.5 })).toBe(true);
   });
 });
+
+describe("sélecteur d'étage (cas 4, lot C1, étape 1a, D4-F5-002)", () => {
+  const troisNiveaux = () => {
+    let m = modeleVide();
+    const rdc = ok(ajouterNiveau(m, { nom: "RDC", altitude: 0, hauteur: 2.85 }));
+    m = rdc.modele;
+    const r1 = ok(ajouterNiveau(m, { nom: "R+1", altitude: 2.85, hauteur: 2.85 }));
+    m = r1.modele;
+    const r2 = ok(ajouterNiveau(m, { nom: "R+2", altitude: 5.7, hauteur: 2.85 }));
+    return { m: r2.modele, rdc: rdc.id, r1: r1.id, r2: r2.id };
+  };
+
+  it("hauteur de plan : 1,10 m par défaut, réglable par niveau dans la hauteur d'étage, vide = défaut", () => {
+    let { m, r1 } = troisNiveaux();
+    expect(HAUTEUR_PLAN_DEFAUT).toBe(1.1);
+    expect(hauteurDePlan(m.annotations!.niveaux![r1]!)).toBe(1.1);
+    m = ok(modifierHauteurDePlan(m, r1, 1.5)).modele;
+    expect(m.annotations!.niveaux![r1]!.coupe).toBe(1.5);
+    expect(modifierHauteurDePlan(m, r1, 3)).toEqual({ ok: false, erreur: "coupe" });
+    expect(modifierHauteurDePlan(m, r1, 0)).toEqual({ ok: false, erreur: "coupe" });
+    expect(modifierHauteurDePlan(m, "inconnu", 1)).toEqual({ ok: false, erreur: "absent" });
+    expect(lireHauteurDePlan(" 1,25 ")).toEqual({ coupe: 1.25 });
+    expect(lireHauteurDePlan("")).toEqual({ coupe: null });
+    expect(lireHauteurDePlan("-1")).toEqual({ erreur: "coupe" });
+    m = ok(modifierHauteurDePlan(m, r1, null)).modele;
+    expect("coupe" in m.annotations!.niveaux![r1]!).toBe(false);
+  });
+
+  it("modifier le niveau garde la hauteur de plan si elle tient dans l'étage", () => {
+    let { m, r1 } = troisNiveaux();
+    m = ok(modifierHauteurDePlan(m, r1, 1.5)).modele;
+    m = ok(modifierNiveau(m, r1, { nom: "R+1", altitude: 3, hauteur: 3 })).modele;
+    expect(m.annotations!.niveaux![r1]!.coupe).toBe(1.5);
+    m = ok(modifierNiveau(m, r1, { nom: "R+1", altitude: 3, hauteur: 1.2 })).modele;
+    expect(m.annotations!.niveaux![r1]!.coupe).toBeUndefined();
+  });
+
+  it("coupe de l'étage : plan horizontal à l'altitude du niveau plus sa hauteur de plan, partie haute coupée", () => {
+    const { m, r1 } = troisNiveaux();
+    const p = coupeDeLEtage(m, r1)!;
+    expect(p.origine.z).toBeCloseTo(3.95, 9);
+    expect(p.normale).toEqual({ x: 0, y: 0, z: 1 });
+    expect(p.actif && !p.inverse).toBe(true);
+    expect(coupeDeLEtage(m, "inconnu")).toBeNull();
+  });
+
+  it("étage voisin dans l'ordre des altitudes", () => {
+    const { m, rdc, r1, r2 } = troisNiveaux();
+    expect(etageVoisin(m, r1, 1)).toBe(r2);
+    expect(etageVoisin(m, r1, -1)).toBe(rdc);
+    expect(etageVoisin(m, r2, 1)).toBeNull();
+    expect(etageVoisin(m, rdc, -1)).toBeNull();
+  });
+
+  it("l'étage isolé masque les objets des autres niveaux ; ceux sans niveau restent ; le poché suit", () => {
+    const n = troisNiveaux();
+    let m = n.m;
+    const a = dalle(m, 0);
+    m = a.modele;
+    const b = dalle(m, 2.85);
+    m = b.modele;
+    const c = dalle(m, 1);
+    m = c.modele;
+    m = (rattacherAuNiveau(m, [a.occ], n.rdc) as { modele: Modele }).modele;
+    m = (rattacherAuNiveau(m, [b.occ], n.r1) as { modele: Modele }).modele;
+    const tout = geometrieVisible(m).faces.length;
+    const r1 = geometrieVisible(m, { etage: n.r1 }).faces.length;
+    expect(tout).toBe(3);
+    expect(r1).toBe(2);
+    // Un mur vertical rattaché au RDC, coupé à 1,10 m : poché sans isolement, rien quand R+1 est isolé.
+    const mur = ajouterRectangle(m, v3(0, 0, 0), v3(4, 0, 0), v3(0, 0, 2.5));
+    const facesMur = Object.keys(mur.modele.racine.faces).filter((f) => !m.racine.faces[f]);
+    const g = grouper(mur.modele, facesMur);
+    m = (rattacherAuNiveau(g.modele, [g.occurrence], n.rdc) as { modele: Modele }).modele;
+    const plan = coupeDeLEtage(m, n.rdc)!;
+    expect(sectionsDeCoupe(m, plan, undefined, n.r1)).toEqual([]);
+    expect(geometrieVisible(m, { etage: n.r1 }).faces.length).toBe(2);
+    expect(geometrieVisible(m, { etage: n.rdc }).faces.length).toBe(3);
+  });
+
+  it("persistance : la hauteur de plan passe par le delta et la lecture validée ; une valeur hors étage est refusée", () => {
+    const { m: m0, r1 } = troisNiveaux();
+    const m = ok(modifierHauteurDePlan(m0, r1, 1.4)).modele;
+    expect(estNiveau(r1, m.annotations!.niveaux![r1])).toBe(true);
+    expect(estNiveau(r1, { ...m.annotations!.niveaux![r1]!, coupe: 9 })).toBe(false);
+    expect(estNiveau(r1, { ...m.annotations!.niveaux![r1]!, coupe: "1" })).toBe(false);
+    const d = differencePlanche(m0, m);
+    expect(estDeltaPlanche(d)).toBe(true);
+    expect(empreintePlanche(appliquerDeltaPlanche(m0, d!))).toBe(empreintePlanche(m));
+  });
+});
+

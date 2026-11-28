@@ -143,9 +143,10 @@ function enBoucles(bords: readonly Bord[]): { points: Vec3[]; bords: Bord[] }[] 
  * matière est la matière déclarée qui en borde la plus grande longueur (une paroi peinte sur une seule face reste pochée
  * entière de sa matière) ; sans matière déclarée, aplat.
  */
-export function sectionsDeCoupe(m: Modele, plan: PlanDeCoupe, etat?: "existant" | "projete"): { readonly boucles: Vec3[][]; readonly materiau: Id | null; readonly statut?: StatutTravaux }[] {
+export function sectionsDeCoupe(m: Modele, plan: PlanDeCoupe, etat?: "existant" | "projete", etage?: Id | null): { readonly boucles: Vec3[][]; readonly materiau: Id | null; readonly statut?: StatutTravaux }[] {
   const bords: Bord[] = [];
-  for (const f of geometrieVisible(m, etat ? { etat } : {}).faces) {
+  // (Cas 4, lot C1, étape 1a) Étage isolé : seuls ses objets (et ceux sans niveau) sont pochés.
+  for (const f of geometrieVisible(m, { ...(etat ? { etat } : {}), ...(etage ? { etage } : {}) }).faces) {
     // Face couchée dans le plan : déjà au bord de la coupe, elle ne s'y coupe pas.
     if (Math.abs(Math.abs(dot(f.normale, plan.normale)) - 1) < 1e-9 && Math.abs(cote(plan, f.exterieur[0]!)) < 1e-9) continue;
     for (const b of coupeFace([f.exterieur, ...f.trous], plan)) bords.push({ ...b, materiau: f.materiau ?? null, ...(f.statut ? { statut: f.statut } : {}) });

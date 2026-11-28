@@ -4,8 +4,10 @@
  * altitude relative au ±0,00, hauteur d'étage, altitude NGF calculée depuis le niveau de référence de la Planche
  * (« non évaluée » sans lui), nombre d'objets rattachés ; barre : ajouter, travailler sur ce niveau, rattacher la
  * sélection ; Supprimer ; formulaire du niveau choisi (enregistré par Entrée ou en quittant le champ).
+ * Lot C1, étape 1a (D4-F5-002, maquette `c1-etape-1a-selecteur-etage.png`) : colonne « Coupe », hauteur de plan du niveau
+ * saisie dans le tableau (vide = 1,10 m par défaut) ; la commande « Étage » vit dans la vue, pas dans cette barre.
  */
-import { type ErreurNiveau, type Id, type Niveau, altitudeNGF, texteAltitude } from "@parcours/sandbox-planche-model";
+import { type ErreurNiveau, type Id, type Niveau, altitudeNGF, hauteurDePlan, texteAltitude } from "@parcours/sandbox-planche-model";
 import { useEffect, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { Pictogramme } from "../pictogrammes/Pictogramme";
@@ -26,6 +28,19 @@ const metres = (v: number): string => `${deuxDecimales(v)} m`;
 const saisieDe = (n: Niveau | null): SaisieNiveau => ({ nom: n?.nom ?? "", altitude: n ? nombre(n.altitude) : "", hauteur: n ? nombre(n.hauteur) : "" });
 const CHAMPS = ["nom", "altitude", "hauteur"] as const;
 
+/** Hauteur de plan saisie dans le tableau : enregistrée par Entrée ou en quittant le champ. */
+function CelluleCoupe({ niveau, lecture, onCoupe }: { niveau: Niveau; lecture: boolean; onCoupe: (id: Id, texte: string) => void }) {
+  const valeur = deuxDecimales(hauteurDePlan(niveau));
+  const [texte, setTexte] = useState(valeur);
+  useEffect(() => setTexte(valeur), [valeur]);
+  const enregistrer = () => {
+    if (texte !== valeur) onCoupe(niveau.id, texte);
+  };
+  return (
+    <input className="planche-niveaux-coupe" value={texte} disabled={lecture} inputMode="decimal" aria-label={t("planche.niveaux.colonne.coupe")} onClick={arreter} onKeyDown={(e) => { arreter(e); if (e.key === "Enter") enregistrer(); }} onBlur={enregistrer} onChange={(e) => setTexte(e.target.value)} data-planche-niveau-coupe={niveau.id} />
+  );
+}
+
 export function PanneauNiveaux({
   niveaux,
   objets,
@@ -37,6 +52,7 @@ export function PanneauNiveaux({
   onModifier,
   onAjouter,
   onReference,
+  onCoupe,
   executer,
   disponibilite,
   erreur,
@@ -57,6 +73,8 @@ export function PanneauNiveaux({
   /** Sans niveau, « Ajouter » prend la saisie du formulaire. */
   onAjouter: (s: SaisieNiveau) => void;
   onReference: (texte: string) => void;
+  /** Hauteur de plan saisie dans le tableau (vide = valeur par défaut). */
+  onCoupe: (id: Id, texte: string) => void;
   executer: (id: IdCommandeNiveau) => void;
   disponibilite: (id: IdCommandeNiveau) => Disponibilite;
   erreur: ErreurNiveau | "reference" | null;
@@ -96,6 +114,7 @@ export function PanneauNiveaux({
               <th>{t("planche.niveaux.colonne.niveau")}</th>
               <th>{t("planche.niveaux.colonne.altitude")}</th>
               <th>{t("planche.niveaux.colonne.hauteur")}</th>
+              <th>{t("planche.niveaux.colonne.coupe")}</th>
               <th>{t("planche.niveaux.colonne.ngf")}</th>
               <th>{t("planche.niveaux.colonne.objets")}</th>
             </tr>
@@ -108,6 +127,7 @@ export function PanneauNiveaux({
                   <td translate="no">{n.id === travail && <span className="planche-niveaux-point" aria-hidden="true" />}{n.nom}</td>
                   <td>{texteAltitude(n.altitude, separateur())} m</td>
                   <td>{metres(n.hauteur)}</td>
+                  <td><CelluleCoupe niveau={n} lecture={lecture} onCoupe={onCoupe} /></td>
                   <td data-planche-niveau-ngf={ngf === null ? "non-evaluee" : ngf}>{ngf === null ? t("planche.niveaux.non-evaluee") : metres(ngf)}</td>
                   <td>{objets[n.id] ?? 0}</td>
                 </tr>
@@ -117,7 +137,7 @@ export function PanneauNiveaux({
         </table>
       )}
       <div className="planche-debit-barre" role="toolbar" aria-label={t("planche.niveaux.barre")}>
-        {COMMANDES_NIVEAUX.filter((c) => c.id !== "niveaux").map((c) => {
+        {COMMANDES_NIVEAUX.filter((c) => c.id !== "niveaux" && c.id !== "etage").map((c) => {
           const d = disponibilite(c.id);
           return (
             <button key={c.id} type="button" className={c.id === "ajouter-niveau" ? "est-principal" : undefined} disabled={!d.disponible} aria-pressed={c.id === "travailler-niveau" ? choisi !== null && choisi === travail : undefined} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})${d.motif ? ` — ${t(d.motif)}` : ""}`} aria-label={t(c.libelle)} onClick={() => (c.id === "ajouter-niveau" && niveaux.length === 0 ? onAjouter(saisie) : executer(c.id))} data-planche-commande={c.id}>
@@ -136,6 +156,7 @@ export function PanneauNiveaux({
       </div>
       {erreur && <p className="inspecteur-aide" role="alert" data-planche-niveaux-erreur={erreur}>{t(`planche.niveaux.erreur.${erreur}`)}</p>}
       <p className="inspecteur-aide">{t("planche.niveaux.note")}</p>
+      {niveaux.length > 0 && <p className="inspecteur-aide" data-planche-niveaux-coupe-aide>{t("planche.niveaux.coupe.aide")}</p>}
       {note && <p className="inspecteur-aide" role="status" data-planche-niveaux-note>{note}</p>}
     </div>
   );

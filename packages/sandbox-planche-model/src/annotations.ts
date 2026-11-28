@@ -337,6 +337,11 @@ export interface Niveau {
   readonly nom: string;
   readonly altitude: number;
   readonly hauteur: number;
+  /**
+   * (Cas 4, lot C1, étape 1a, D4-F5-002) Hauteur de plan (m, au-dessus du niveau) où le sélecteur d'étage pose la coupe
+   * horizontale ; absente = `HAUTEUR_PLAN_DEFAUT` (convention de dessin, `niveaux.ts`).
+   */
+  readonly coupe?: number;
 }
 
 /**

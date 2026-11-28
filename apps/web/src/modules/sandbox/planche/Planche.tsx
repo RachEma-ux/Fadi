@@ -278,6 +278,10 @@ import {
   lirePat,
   modifierMotif,
   planDeCoupeActif,
+  coupeDeLEtage,
+  hauteurDePlan,
+  lireHauteurDePlan,
+  modifierHauteurDePlan,
   projeterPlan,
   supprimerMotif,
   svgPlan,
@@ -527,6 +531,7 @@ import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-e
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
+import { SelecteurEtage } from "./selecteur-etage";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
@@ -611,6 +616,8 @@ interface CrochetRecette {
       balise: () => string | null;
       echelleRendue: () => number | null;
       plansRognage: () => number;
+      /** Lot C1, étape 1a : altitude de la coupe de l'étage isolé (m) ; `null` sans étage isolé. */
+      coupeEtage: () => number | null;
       hauteurOeil: () => number;
       booleens: () => "absent" | "chargement" | "ok" | "echec";
       emprise: () => { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null;
@@ -634,6 +641,8 @@ interface CrochetRecette {
       projectionRendue: () => string | null;
       modeleAffiche: () => Modele | null;
 }
+/** Lot C1, étape 1a : commande « Étage » (sélecteur d'étage posé dans la vue). */
+const COMMANDE_ETAGE = COMMANDES_NIVEAUX.find((c) => c.id === "etage")!;
 const fenetreRecette = (): { fadiPlanche?: CrochetRecette } => window as unknown as { fadiPlanche?: CrochetRecette };
 
 export interface PropsPlanche {
@@ -857,6 +866,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [dialogueDeplacer, setDialogueDeplacer] = useState<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [renommage, setRenommage] = useState<readonly string[] | null>(null);
   // Objets O-5 : isolement de la vue (contexte et entités isolés) ; jamais écrit dans le modèle, levé par la même commande.
+  // Lot C1, étape 1a : étage isolé par le sélecteur d'étage (réglage de la vue, jamais écrit au modèle).
+  const etageRef = useRef<string | null>(null);
+  const [etageChoisi, setEtageChoisiEtat] = useState<string | null>(null);
+  const [selecteurEtage, setSelecteurEtage] = useState(false);
   const [isolement, setIsolementEtat] = useState<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
   const isolementRef = useRef<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
@@ -1110,6 +1123,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       modele: histRef.current.present.modele,
       // (Cas 4, C4 étape 5) Ce que l'état des travaux masque dans la vue n'est ni visé, ni sélectionné, ni accroché.
       ...etatTravauxOutil(vueRef.current?.lireOptions().etatTravaux),
+      // (Lot C1, étape 1a) Les objets des autres étages ne sont ni visés ni accrochés.
+      ...(etageRef.current ? { etage: etageRef.current } : {}),
       selection: selectionRef.current,
       separateurDecimal: SEPARATEUR_DECIMAL,
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
@@ -2450,6 +2465,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         menuContextuel: (p, rayon, tolerance) => menuRappel.current(p, rayon, tolerance),
         dans: () => dansRef.current,
         isolement: () => isolementRef.current,
+        etage: () => etageRef.current,
+        coupeEtage: () => (etageRef.current ? coupeDeLEtage(histRef.current.present.modele, etageRef.current) : null),
         chemin: () => cheminRef.current,
       });
     } catch {
@@ -2473,6 +2490,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       // Cas 2, lot 4 : échelle nominale rendue et plans de rognage de la vue (recette).
       echelleRendue: () => vueRef.current?.echelleRendue() ?? null,
       plansRognage: () => vueRef.current?.plansRognage() ?? 0,
+      coupeEtage: () => (etageRef.current ? (coupeDeLEtage(histRef.current.present.modele, etageRef.current)?.origine.z ?? null) : null),
       hauteurOeil: () => hauteurOeilRef.current,
       booleens: () => (booleensRef.current ? "ok" : booleensEtatRef.current),
       emprise: () => vueRef.current?.emprise() ?? null,
@@ -4771,12 +4789,58 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     operer(t("planche.mur.depuis-aretes"), () => ({ modele: r.modele, selection: occ, message }));
     if (outilRef.current === "mur") configurerOutil("reference", reference);
   };
+  /**
+   * Lot C1, étape 1a : choisir un étage l'isole, en fait le niveau de travail (plan de travail à son altitude) et pose la
+   * coupe horizontale à sa hauteur de plan ; `null` (« Tous les étages ») lève l'isolement et le niveau de travail.
+   */
+  const choisirEtage = (id: string | null, silencieux = false) => {
+    const n = id ? niveaux.find((x) => x.id === id) : undefined;
+    etageRef.current = n ? n.id : null;
+    setEtageChoisiEtat(etageRef.current);
+    if (n) {
+      setNiveauChoisi(n.id);
+      setNiveauTravailEtat(n.id);
+      niveauTravailRef.current = n.id;
+      changerContexte({ ...contexteTemporaire(histContexte.courant, repereDuNiveau(n)), plan: "xy" });
+      setMessage(t("planche.etage.note", { nom: n.nom, coupe: texteAltitude(hauteurDePlan(n), SEPARATEUR_DECIMAL).replace(/^\+/, ""), altitude: texteAltitude(n.altitude + hauteurDePlan(n), SEPARATEUR_DECIMAL) }));
+    } else {
+      if (niveauTravailRef.current !== null) {
+        setNiveauTravailEtat(null);
+        niveauTravailRef.current = null;
+        changerContexte(contexteDuModele());
+      }
+      if (!silencieux) setMessage(t("planche.etage.note.fin"));
+    }
+    vueRef.current?.majModele(histRef.current.present.modele);
+    rafraichir();
+  };
+  /** Hauteur de plan saisie (sélecteur d'étage ou colonne Coupe du panneau Niveaux) : un pas d'annulation. */
+  const poserCoupeNiveau = (id: string, texte: string) => {
+    const v = lireHauteurDePlan(texte);
+    if ("erreur" in v) return setErreurNiveau(v.erreur);
+    const r = modifierHauteurDePlan(hist.present.modele, id, v.coupe);
+    if (!r.ok) return setErreurNiveau(r.erreur);
+    setErreurNiveau(null);
+    if (r.modele !== hist.present.modele) operer(t("planche.niveaux.colonne.coupe"), () => ({ modele: r.modele }));
+  };
+  // Un étage isolé qui disparaît (suppression, Annuler) : tous les étages reviennent.
+  useEffect(() => {
+    if (etageRef.current !== null && !niveaux.some((n) => n.id === etageRef.current)) choisirEtage(null, true);
+  });
   const disponibiliteCommandeNiveau = (id: IdCommandeNiveau) => {
     const s = etatSelectionObjets();
-    return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly });
+    return disponibiliteNiveau(id, { choisi: niveauChoisi !== null, objets: s.objets, dansObjet: dans !== undefined, lecture: readOnly, niveaux: niveaux.length });
   };
   const executerNiveau = (id: IdCommandeNiveau) => {
     if (!disponibiliteCommandeNiveau(id).disponible) return;
+    if (id === "etage") {
+      // La commande ouvre le sélecteur ; la relancer le ferme et rend tous les étages.
+      if (selecteurEtage) {
+        setSelecteurEtage(false);
+        if (etageRef.current !== null) choisirEtage(null);
+      } else setSelecteurEtage(true);
+      return;
+    }
     if (id === "niveaux") {
       setPanneau("niveaux");
       return;
@@ -7780,6 +7844,22 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           data-planche-curseur={outilId}
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
+          {selecteurEtage && niveaux.length > 0 && (
+            <SelecteurEtage
+              niveaux={niveaux}
+              choisi={etageChoisi}
+              picto={COMMANDE_ETAGE.picto}
+              raccourci={COMMANDE_ETAGE.raccourci}
+              lecture={readOnly}
+              onChoisir={(id) => choisirEtage(id)}
+              onCoupe={poserCoupeNiveau}
+              onFermer={() => {
+                setSelecteurEtage(false);
+                if (etageRef.current !== null) choisirEtage(null);
+                hoteRef.current?.focus();
+              }}
+            />
+          )}
           {cadreImage && (
             <div className="planche-cadre-image" style={{ left: cadreImage.x, top: cadreImage.y, width: cadreImage.l, height: cadreImage.h }} aria-hidden="true" data-planche-cadre-image>
               <span>{t("planche.echange.image.cadre", { largeur: String(tailleImage.largeur), hauteur: String(tailleImage.hauteur) })}{imageTransparente ? t("planche.echange.image.fond") : ""}</span>
@@ -8387,6 +8467,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onModifier={modifierUnNiveau}
                 onAjouter={ajouterUnNiveau}
                 onReference={poserReferenceNiveaux}
+                onCoupe={poserCoupeNiveau}
                 executer={executerNiveau}
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}

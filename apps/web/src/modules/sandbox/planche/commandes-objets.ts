@@ -364,7 +364,7 @@ export function disponibiliteScripts(id: IdCommandeScripts, s: { readonly vide: 
  * Niveaux d'étage (cas 4 du catalogue, étape 1) : ouvrir le panneau, ajouter un niveau, travailler sur le niveau
  * choisi (plan de travail à son altitude), rattacher la sélection au niveau choisi (règle d'or : icône, barre, raccourci).
  */
-export type IdCommandeNiveau = "niveaux" | "ajouter-niveau" | "travailler-niveau" | "rattacher-niveau" | "supprimer-niveau";
+export type IdCommandeNiveau = "niveaux" | "ajouter-niveau" | "travailler-niveau" | "rattacher-niveau" | "supprimer-niveau" | "etage";
 export interface CommandeNiveau {
   readonly id: IdCommandeNiveau;
   readonly picto: Pictogramme;
@@ -378,6 +378,8 @@ export const COMMANDES_NIVEAUX: readonly CommandeNiveau[] = [
   { id: "travailler-niveau", ...depuisRegistre("travailler-niveau"), libelle: "planche.niveaux.travailler", court: "planche.niveaux.court.travailler" },
   { id: "rattacher-niveau", ...depuisRegistre("rattacher-niveau"), libelle: "planche.niveaux.rattacher", court: "planche.niveaux.court.rattacher" },
   { id: "supprimer-niveau", ...depuisRegistre("supprimer-niveau"), libelle: "planche.niveaux.supprimer.libelle", court: "planche.niveaux.supprimer" },
+  // Lot C1, étape 1a : sélecteur d'étage posé dans la vue (Ctrl+Maj+Espace, Maj+B, E).
+  { id: "etage", ...depuisRegistre("etage"), libelle: "planche.etage.ouvrir", court: "planche.etage.court" },
 ];
 
 /**
@@ -385,8 +387,10 @@ export const COMMANDES_NIVEAUX: readonly CommandeNiveau[] = [
  * un état d'interface, permis en lecture) ; rattacher hors lecture, à la racine, avec un niveau choisi et au moins un
  * objet (groupe ou composant) sélectionné.
  */
-export function disponibiliteNiveau(id: IdCommandeNiveau, s: { readonly choisi: boolean; readonly objets: number; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
+export function disponibiliteNiveau(id: IdCommandeNiveau, s: { readonly choisi: boolean; readonly objets: number; readonly dansObjet: boolean; readonly lecture: boolean; readonly niveaux?: number }): Disponibilite {
   if (id === "niveaux") return { disponible: true, motif: null };
+  // Le sélecteur d'étage est un réglage de la vue (permis en lecture) ; il lui faut au moins un niveau déclaré.
+  if (id === "etage") return (s.niveaux ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.etage.motif.aucun" };
   if (id === "travailler-niveau") return s.choisi ? { disponible: true, motif: null } : { disponible: false, motif: "planche.niveaux.motif.choisi" };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (id === "ajouter-niveau") return { disponible: true, motif: null };

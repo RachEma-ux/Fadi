@@ -10,7 +10,7 @@
  * L'altitude NGF d'un niveau est calculée depuis le niveau de référence déclaré avec la Planche (altitude NGF du
  * ±0,00) ; sans niveau de référence, elle est « non évaluée » (`null`), jamais supposée.
  */
-import type { Niveau, Repere } from "./annotations.js";
+import type { Niveau, PlanDeCoupe, Repere } from "./annotations.js";
 import { type Id, type Modele, boiteOccurrence, deplacer, modifierAnnotations, rattacherOccurrencesNiveau } from "./geometrie-libre.js";
 import type { Vec3 } from "./vecteur.js";
 
@@ -18,7 +18,7 @@ import type { Vec3 } from "./vecteur.js";
 export const NOM_NIVEAU_MAX = 60;
 
 /** Motif d'un refus, traduit par l'interface. */
-export type ErreurNiveau = "nom" | "nom-pris" | "altitude" | "hauteur" | "absent" | "verrou";
+export type ErreurNiveau = "nom" | "nom-pris" | "altitude" | "hauteur" | "absent" | "verrou" | "coupe";
 
 export type ResultatNiveau = { readonly ok: true; readonly modele: Modele; readonly id: Id } | { readonly ok: false; readonly erreur: ErreurNiveau };
 
@@ -34,7 +34,7 @@ const fini = (v: unknown): v is number => typeof v === "number" && Number.isFini
 
 /** Niveau reçu (document, delta) : jamais cru sur parole. */
 export function estNiveau(id: Id, v: unknown): v is Niveau {
-  return estObjet(v) && v["id"] === id && typeof v["nom"] === "string" && v["nom"].trim() !== "" && v["nom"].length <= NOM_NIVEAU_MAX && fini(v["altitude"]) && fini(v["hauteur"]) && v["hauteur"] > 0;
+  return estObjet(v) && v["id"] === id && typeof v["nom"] === "string" && v["nom"].trim() !== "" && v["nom"].length <= NOM_NIVEAU_MAX && fini(v["altitude"]) && fini(v["hauteur"]) && v["hauteur"] > 0 && (v["coupe"] === undefined || (fini(v["coupe"]) && v["coupe"] > 0 && v["coupe"] <= v["hauteur"]));
 }
 
 /** Niveaux du document, du plus haut au plus bas (ordre de lecture d'une coupe), puis par nom. */
@@ -121,7 +121,9 @@ export function modifierNiveau(m: Modele, id: Id, v: ValeursNiveau): ResultatNiv
     if (objets.length > 0) modele = deplacer(modele, objets, { x: 0, y: 0, z: dz }).modele;
   }
   modele = modifierAnnotations(modele, (a) => {
-    a.niveaux[id] = { id, nom: v.nom.trim(), altitude: v.altitude, hauteur: v.hauteur };
+    // La hauteur de plan reste si elle tient encore dans l'étage ; sinon elle revient à la valeur par défaut.
+    const coupe = n.coupe !== undefined && n.coupe <= v.hauteur ? { coupe: n.coupe } : {};
+    a.niveaux[id] = { id, nom: v.nom.trim(), altitude: v.altitude, hauteur: v.hauteur, ...coupe };
   }).modele;
   return { ok: true, modele, id };
 }
@@ -201,3 +203,67 @@ export function empriseNiveaux(m: Modele): { readonly min: Vec3; readonly max: V
   if (!Number.isFinite(minX)) return { min: { x: -DEMI_VIDE, y: -DEMI_VIDE, z: 0 }, max: { x: DEMI_VIDE, y: DEMI_VIDE, z: 0 } };
   return { min: { x: minX - MARGE_PLANS, y: minY - MARGE_PLANS, z: 0 }, max: { x: maxX + MARGE_PLANS, y: maxY + MARGE_PLANS, z: 0 } };
 }
+
+// ---------------------------------------------------------------- Sélecteur d'étage (cas 4, lot C1, étape 1a)
+
+/**
+ * Hauteur de plan par défaut (m au-dessus du niveau) : convention de dessin retenue le 28.11.2026 (décision de découpage
+ * du lot C1, étape 1a), modifiable par niveau. Ce n'est pas une valeur réglementaire.
+ */
+export const HAUTEUR_PLAN_DEFAUT = 1.1;
+
+/** Hauteur de plan d'un niveau (m au-dessus de son altitude). */
+export const hauteurDePlan = (n: Niveau): number => n.coupe ?? HAUTEUR_PLAN_DEFAUT;
+
+/** Saisie de la hauteur de plan (virgule ou point) ; vide = retour à la valeur par défaut (`null`). */
+export function lireHauteurDePlan(s: string): { readonly coupe: number | null } | { readonly erreur: ErreurNiveau } {
+  if (s.trim() === "") return { coupe: null };
+  const n = lireNombre(s);
+  return n === null || n <= 0 ? { erreur: "coupe" } : { coupe: n };
+}
+
+/** Règle la hauteur de plan d'un niveau (`null` = valeur par défaut) ; elle reste dans la hauteur d'étage. */
+export function modifierHauteurDePlan(m: Modele, id: Id, coupe: number | null): ResultatNiveau {
+  const n = m.annotations?.niveaux?.[id];
+  if (!n) return refus("absent");
+  if (coupe !== null && (!Number.isFinite(coupe) || coupe <= 0 || coupe > n.hauteur)) return refus("coupe");
+  if ((n.coupe ?? null) === coupe) return { ok: true, modele: m, id };
+  const modele = modifierAnnotations(m, (a) => {
+    const { coupe: _ancienne, ...reste } = n;
+    a.niveaux[id] = coupe === null ? reste : { ...reste, coupe };
+  }).modele;
+  return { ok: true, modele, id };
+}
+
+/**
+ * Coupe horizontale d'un étage : plan à l'altitude du niveau + sa hauteur de plan, la partie au-dessus est coupée. C'est un
+ * réglage de la vue, jamais écrit au modèle ; le rectangle couvre l'emprise du modèle avec une marge.
+ */
+export function coupeDeLEtage(m: Modele, id: Id): PlanDeCoupe | null {
+  const n = m.annotations?.niveaux?.[id];
+  if (!n) return null;
+  const e = empriseNiveaux(m);
+  const cx = (e.min.x + e.max.x) / 2;
+  const cy = (e.min.y + e.max.y) / 2;
+  return {
+    id: `etage:${id}`,
+    origine: { x: cx, y: cy, z: n.altitude + hauteurDePlan(n) },
+    normale: { x: 0, y: 0, z: 1 },
+    u: { x: 1, y: 0, z: 0 },
+    w: { x: 0, y: 1, z: 0 },
+    demiU: Math.max((e.max.x - e.min.x) / 2 + 1, 1),
+    demiW: Math.max((e.max.y - e.min.y) / 2 + 1, 1),
+    actif: true,
+    inverse: false,
+    nom: n.nom,
+  };
+}
+
+/** Niveau voisin dans l'ordre des altitudes (+1 au-dessus, −1 au-dessous) ; `null` au bout de la liste. */
+export function etageVoisin(m: Modele, id: Id, sens: 1 | -1): Id | null {
+  const liste = niveauxTries(m);
+  const i = liste.findIndex((n) => n.id === id);
+  if (i < 0) return null;
+  return liste[i - sens]?.id ?? null;
+}
+
