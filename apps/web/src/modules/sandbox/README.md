@@ -322,6 +322,18 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     `planche.objets.verrouiller(ids, verrou)` verrouille ou déverrouille des groupes et composants du contexte ;
     `planche.annotations.lire()` rend les cotes linéaires et les textes avec repère, `planche.annotations.effacer(ids)`
     en efface (un identifiant inconnu : rien n'est effacé). Les écritures passent par l'opération ouverte ou automatique, en un seul pas d'annulation (permission `modele.modifier`).
+  - *Protocole 1.4 — surfaces réglementaires* (cas 3 du catalogue des extensions, lot 3 ; n'ajoute que des fonctions).
+    **Opérations planes**, par le moteur booléen de la Planche (manifold-3d, chargé à la première demande, jamais à
+    l'ouverture ; le temps de chargement ne compte pas dans le délai de l'appel) : `planche.geometrie.coupe(hauteur,
+    objets)` coupe horizontalement les solides à la hauteur z (en mètres), `planche.geometrie.projection(objets)` les
+    projette au sol ; sans `objets`, tout le modèle ; `sansBalises` écarte les solides de ces balises. Les deux rendent l'union (aucun recouvrement compté deux fois) :
+    `polygones` (contour extérieur, trous, aire nette) et `aire`, puis le détail : `solides` (chaque solide fermé, sa balise (la sienne ou celle de l'objet qui le contient) et
+    son aire ; une instance de composant par chemin), `ecartes` (objets qui ne sont pas des solides fermés, avec le
+    motif) et `facesLibres` (faces de la racine hors de tout groupe) — rien n'est omis en silence.
+    `planche.geometrie.union(polygones)` unit des polygones `{ exterieur, trous }` en `[x, y]`. Permission
+    `modele.lire` (l'union n'en demande aucune). `planche.niveaux.lire()` rend les niveaux d'étage, du plus haut au plus bas (`id`, `nom`,
+    `altitude`, `hauteur`) et `referenceNGF`, l'altitude NGF du ±0,00 de la planche, ou `null`. Booléen de maillage, jamais exact au sens B-Rep ; aucune règle ni
+    déduction réglementaire n'est faite ici.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,
@@ -335,6 +347,15 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     figure-fond** (Ctrl+Alt+Maj+M) : bâti en noir plein, voirie en trait, parcelles en trait fin, chacun choisi par sa
     balise ; SVG en mètres (viewBox, sans échelle imposée) ou DXF (calques BATI, VOIRIE, PARCELLES) ; une face percée
     est remplie sans ses trous, et c'est signalé. Test : `extension-echanges-dxf.test.ts`.
+  - *Extension « Trame d'axes »* (cas 3, lot 2, D1-F2-030, `apps/web/extensions/trame-axes/`, protocole 1.3 ; maquettes
+    validées le 27 novembre 2026) : l'outil « Trame d'axes » (Ctrl+Alt+A) demande les entraxes en X et en Y (liste
+    « 5,40;5,40;7,20 » ou série « 6x5,40 », 40 files au plus par direction), les repères (lettres ou chiffres, jamais
+    les mêmes dans les deux directions), l'angle et le débord ; l'aperçu suit le pointeur, l'origine s'accroche (point
+    visé arrondi au pas d'accrochage du projet hors accrochage) ou se saisit « x;y ». La trame posée : files en traits
+    accrochables (ni case ni disque) dans un groupe verrouillé sur la balise « Trame », bulles (textes avec repère) et
+    cotes d'entraxe et totales ; ses réglages sont gardés sur le groupe. « Modifier la trame » (Ctrl+Alt+F) rouvre les
+    réglages de la trame sélectionnée et la repose en un seul pas, au même endroit, anciennes bulles et cotes retirées.
+    Aucune valeur imposée : les entraxes sont ceux de l'utilisateur.
   - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,
