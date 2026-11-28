@@ -6,6 +6,7 @@ import { machineLigne } from "./ligne.js";
 import { machineMainLevee } from "./main-levee.js";
 import { machineMur } from "./mur.js";
 import { machineReserve } from "./reserve.js";
+import { machineCalage } from "./calage.js";
 import { machineSelection } from "./selection.js";
 
-export const MACHINES_TRACE: readonly MachineOutil<any>[] = [machineSelection, machineLasso, machineGomme, machineLigne, machineMainLevee, machineMur, machineReserve];
+export const MACHINES_TRACE: readonly MachineOutil<any>[] = [machineSelection, machineLasso, machineGomme, machineLigne, machineMainLevee, machineMur, machineReserve, machineCalage];

@@ -41,7 +41,7 @@ import {
   suivezMoi,
   validerParametresRevolution,
 } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { messageErreur, axesDeSaisie } from "./commun-formes.js";
@@ -179,7 +179,7 @@ function infererAxe(etat: EtatSuivezMoi, ctx: ContexteOutil, ev: { rayon: { orig
   return inferer({
     rayon: ev.rayon,
     tolerance: ev.tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     ...axesDeSaisie(ctx),
     ...(etat.axeClique ? { depart: etat.axeClique.a } : {}),
   });

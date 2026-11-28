@@ -147,8 +147,15 @@ export interface ContexteOutil {
    * Absent : retrouvé depuis `dans` (première occurrence).
    */
   readonly chemin?: readonly string[];
+  /**
+   * (Cas 4, C4 étape 5) État des travaux affiché (« existant » ou « projete ») ; absent = tout. Ce que l'état masque n'est
+   * ni visé, ni sélectionné, ni accroché.
+   */
+  readonly etatTravaux?: "existant" | "projete";
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
+  /** (Cas 4, lot C4) Fond choisi dans le panneau Fonds calés : visé en priorité là où des fonds se superposent. */
+  readonly fondCourant?: string;
   /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
   readonly baliseCourante?: string;
   /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */

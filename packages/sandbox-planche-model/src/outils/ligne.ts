@@ -22,7 +22,7 @@ import {
   type ModeAlt,
   type Verrou,
   COULEURS,
-  geometrieVisible,
+  etatOutil, geometrieVisible,
   LIBELLES_MODE_ALT,
   LIBELLE_LIGNE_CONTRAINTE,
   inferer,
@@ -108,7 +108,7 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
   const i = inferer({
     rayon: r,
     tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     modeAlt: e.modeAlt,
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
@@ -124,7 +124,7 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
 /** Mémorise la dernière arête survolée (référence de ↓). */
 function reference(e: EtatLigne, i: Inference, ctx: ContexteOutil): EtatLigne["areteReference"] {
   if (i.entite === undefined || !["extremite", "milieu", "sur-arete"].includes(i.type)) return e.areteReference;
-  const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
+  const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === i.entite);
   return a ? { a: a.a, b: a.b } : e.areteReference;
 }
 

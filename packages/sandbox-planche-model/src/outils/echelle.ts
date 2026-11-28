@@ -10,7 +10,7 @@
  * (un seul pas). Échap au repos avec sélection : vide la sélection.
  */
 import { type Id, mettreAEchelle } from "../geometrie-libre.js";
-import { type Inference, RANG_POINTS, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, RANG_POINTS, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, dist, dot, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import {
@@ -157,7 +157,7 @@ function pointAccroche(e: EtatEchelle, ctx: ContexteOutil, r: Rayon, tolerance: 
   const b = e.boite;
   if (!b) return { point: libre, inference: null };
   const dedans = (q: Vec3) => (["x", "y", "z"] as const).every((a) => q[a] >= b.min[a] - TOL && q[a] <= b.max[a] + TOL);
-  const g = geometrieVisible(ctx.modele);
+  const g = geometrieVisible(ctx.modele, etatOutil(ctx));
   const aretes = g.aretes.filter((a) => !(dedans(a.a) && dedans(a.b)));
   if (aretes.length === 0) return { point: libre, inference: null };
   const inf = inferer({ rayon: r, tolerance, geometrie: { ...g, aretes, faces: [], centres: g.centres }, ...axesDeSaisie(ctx) });

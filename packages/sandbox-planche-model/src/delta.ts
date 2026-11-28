@@ -17,9 +17,12 @@ import { estMur } from "./murs.js";
 import { estMotif } from "./plan-vectoriel.js";
 import { estFeuille } from "./feuilles.js";
 import { estReserve, type Reserve } from "./reserves.js";
+import { estFond, type Fond } from "./fonds.js";
+import { estReference, type Reference } from "./references.js";
 import { estReglagesEnveloppe, type ReglagesEnveloppe } from "./enveloppe.js";
 import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Local, Feuille, Materiau, MotifHachure, Mur, Niveau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
+import { estStatutTravaux } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
 
@@ -49,6 +52,8 @@ export interface DeltaAnnotations {
   readonly motifs?: DeltaTable<MotifHachure>;
   readonly feuilles?: DeltaTable<Feuille>;
   readonly reserves?: DeltaTable<Reserve>;
+  readonly fonds?: DeltaTable<Fond>;
+  readonly references?: DeltaTable<Reference>;
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
@@ -64,7 +69,7 @@ export interface DeltaPlanche {
 }
 
 const CLES_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
-const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes", "correspondances", "niveaux", "locaux", "murs", "motifs", "feuilles", "reserves"] as const;
+const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes", "correspondances", "niveaux", "locaux", "murs", "motifs", "feuilles", "reserves", "fonds", "references"] as const;
 
 function differenceTable<T>(a: Readonly<Record<Id, T>> | undefined, b: Readonly<Record<Id, T>> | undefined): DeltaTable<T> | undefined {
   if (a === b) return undefined;
@@ -170,6 +175,8 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
     if (an["motifs"] !== undefined && Object.keys(an["motifs"] as object).length === 0) delete an["motifs"];
     if (an["feuilles"] !== undefined && Object.keys(an["feuilles"] as object).length === 0) delete an["feuilles"];
     if (an["reserves"] !== undefined && Object.keys(an["reserves"] as object).length === 0) delete an["reserves"];
+    if (an["fonds"] !== undefined && Object.keys(an["fonds"] as object).length === 0) delete an["fonds"];
+    if (an["references"] !== undefined && Object.keys(an["references"] as object).length === 0) delete an["references"];
     if (delta.annotations.repere !== undefined) {
       if (delta.annotations.repere === null) delete an["repere"];
       else an["repere"] = delta.annotations.repere;
@@ -246,7 +253,7 @@ export const validateursEntites: Record<(typeof CLES_CONTEXTE)[number], (id: Id,
   aretes: (id, v) => estObjet(v) && v["id"] === id && estId(v["a"]) && estId(v["b"]) && v["a"] !== v["b"] && (v["courbe"] === undefined || estId(v["courbe"])),
   faces: (id, v) => estObjet(v) && v["id"] === id && estBoucle(v["exterieur"]) && Array.isArray(v["trous"]) && v["trous"].every(estBoucle) && estVec3(v["normale"]),
   courbes: (id, v) => estObjet(v) && v["id"] === id && ["cercle", "polygone", "arc"].includes(v["genre"] as string) && Array.isArray(v["aretes"]) && v["aretes"].every(estId) && estVec3(v["centre"]) && estNombre(v["rayon"]) && estVec3(v["normale"]),
-  occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre) && (v["niveau"] === undefined || estId(v["niveau"])),
+  occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre) && (v["niveau"] === undefined || estId(v["niveau"])) && (v["statut"] === undefined || estStatutTravaux(v["statut"])),
 };
 
 /** Lien de surface étendue (D-196) : genre, sources, vecteur ou distance, instantanés de positions — jamais cru sur parole. */
@@ -330,6 +337,8 @@ export function lireModelePlanche(brut: unknown): Modele | null {
     if (an["motifs"] !== undefined && !(estObjet(an["motifs"]) && Object.entries(an["motifs"]).every(([id, v]) => estMotif(id, v)))) return null;
     if (an["feuilles"] !== undefined && !(estObjet(an["feuilles"]) && Object.entries(an["feuilles"]).every(([id, v]) => estFeuille(id, v)))) return null;
     if (an["reserves"] !== undefined && !(estObjet(an["reserves"]) && Object.entries(an["reserves"]).every(([id, v]) => estReserve(id, v)))) return null;
+    if (an["fonds"] !== undefined && !(estObjet(an["fonds"]) && Object.entries(an["fonds"]).every(([id, v]) => estFond(id, v)))) return null;
+    if (an["references"] !== undefined && !(estObjet(an["references"]) && Object.entries(an["references"]).every(([id, v]) => estReference(id, v)))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
     if (an["enveloppe"] !== undefined && !estReglagesEnveloppe(an["enveloppe"])) return null;
     if (an["reglages"] !== undefined && !(estObjet(an["reglages"]) && (an["reglages"]["emplacement"] === undefined || estEmplacement(an["reglages"]["emplacement"])) && (an["reglages"]["pointDeBase"] === undefined || estPointDeBase(an["reglages"]["pointDeBase"])))) return null;
@@ -348,7 +357,7 @@ export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
     if (!estObjet(an)) return false;
     for (const [k, t] of Object.entries(an)) {
       if ((CLES_ANNOTATIONS as readonly string[]).includes(k)) {
-        if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : k === "reperes" ? table(t, (id, x) => repereEnregistreValide(x) && x.id === id) : k === "niveaux" ? table(t, estNiveau) : k === "locaux" ? table(t, estLocal) : k === "murs" ? table(t, estMur) : k === "motifs" ? table(t, estMotif) : k === "feuilles" ? table(t, estFeuille) : k === "reserves" ? table(t, estReserve) : table(t))) return false;
+        if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : k === "reperes" ? table(t, (id, x) => repereEnregistreValide(x) && x.id === id) : k === "niveaux" ? table(t, estNiveau) : k === "locaux" ? table(t, estLocal) : k === "murs" ? table(t, estMur) : k === "motifs" ? table(t, estMotif) : k === "feuilles" ? table(t, estFeuille) : k === "reserves" ? table(t, estReserve) : k === "fonds" ? table(t, estFond) : k === "references" ? table(t, estReference) : table(t))) return false;
       } else if (k === "repere" || k === "reglages") {
         if (!(t === null || estObjet(t))) return false;
       } else if (k === "enveloppe") {

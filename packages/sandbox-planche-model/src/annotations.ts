@@ -9,6 +9,8 @@
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
 import type { Reserve } from "./reserves.js";
+import type { Fond } from "./fonds.js";
+import type { Reference } from "./references.js";
 import type { ReglagesEnveloppe } from "./enveloppe.js";
 import type { Emplacement } from "./emplacement.js";
 import type { PointDeBase } from "./point-de-base.js";
@@ -449,6 +451,10 @@ export interface Annotations {
   readonly feuilles?: Readonly<Record<Id, Feuille>>;
   /** (Cas 4, étape 7b) Réserves de chantier épinglées ; absent = aucune. */
   readonly reserves?: Readonly<Record<Id, Reserve>>;
+  /** (Cas 4, lot C4, étape 1) Fonds calés (images posées à plat) ; absent = aucun. */
+  readonly fonds?: Readonly<Record<Id, Fond>>;
+  /** (Cas 4, lot C4, étape 3) Références verrouillées (maquettes reçues, non fusionnées) ; absent = aucune. */
+  readonly references?: Readonly<Record<Id, Reference>>;
   /** (Cas 4, étape 7c) Enveloppe désignée, contrôle actif, règles de hauteur saisies ; absent = aucune. */
   readonly enveloppe?: ReglagesEnveloppe;
 }
@@ -483,6 +489,8 @@ export interface AnnotationsMutables {
   motifs: Record<Id, MotifHachure>;
   feuilles: Record<Id, Feuille>;
   reserves: Record<Id, Reserve>;
+  fonds: Record<Id, Fond>;
+  references: Record<Id, Reference>;
   enveloppe?: ReglagesEnveloppe;
 }
 

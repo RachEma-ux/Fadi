@@ -5,7 +5,7 @@
  * en a un ; la fiche (lot, entreprise, description, échéance, photo) se remplit ensuite dans le panneau Réserves. La
  * date du jour vient de l'interface (`ContexteOutil.aujourdhui`). Un pas d'historique « Réserve » par épingle.
  */
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { creerReserve } from "../reserves.js";
 import { axesDeSaisie } from "./commun-formes.js";
 import { vueModif } from "./commun-modif.js";
@@ -26,8 +26,8 @@ export interface EtatReserve {
 }
 
 const viseDe = (ctx: ContexteOutil, r: Rayon, tolerance: number): { inference: Inference; objet: string | null } => {
-  const inference = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
-  const el = viser(ctx.modele, r, tolerance);
+  const inference = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
+  const el = viser(ctx.modele, r, tolerance, undefined, ctx.etatTravaux);
   const objet = el?.chemin[0] ?? null;
   return { inference, objet: objet && ctx.modele.racine.occurrences[objet] ? objet : null };
 };

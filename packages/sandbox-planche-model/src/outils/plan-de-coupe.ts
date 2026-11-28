@@ -8,7 +8,7 @@
  * Inverser et Coupe active se règlent sur le plan sélectionné (interface ; `modifierPlanDeCoupe`).
  */
 import { type Id, modifierAnnotations } from "../geometrie-libre.js";
-import { type Inference, COULEURS, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, COULEURS, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, add, dot, normalize, scale, sub } from "../vecteur.js";
 import { axesDuPlan, contexteSaisie, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, vueModif } from "./commun-modif.js";
@@ -38,7 +38,7 @@ const initial = (): EtatPlanDeCoupe => ({ inference: null, apercu: null, fleche:
 
 /** Rectangle du plan : étendue de la face visée dans son plan, sinon 1 m autour du point. */
 function apercuSurFace(ctx: ContexteOutil, i: Inference): ApercuPlan {
-  const g = geometrieVisible(ctx.modele);
+  const g = geometrieVisible(ctx.modele, etatOutil(ctx));
   const f = i.type === "sur-face" && i.entite !== undefined ? g.faces.find((x) => x.id === i.entite) : undefined;
   const normale = normalize(f ? f.normale : AXE_Z);
   const { u, w } = axesDuPlan(normale);
@@ -91,11 +91,11 @@ export const machinePlanDeCoupe: MachineOutil<EtatPlanDeCoupe> = {
   traiter(etat, ev, ctx): Transition<EtatPlanDeCoupe> {
     switch (ev.genre) {
       case "survol": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
         return { etat: { ...etat, inference: i, apercu: apercuDe(etat, ctx, i), erreur: null } };
       }
       case "clic": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), ...axesDeSaisie(ctx) });
         const a = apercuDe(etat, ctx, i);
         try {
           const r = modifierAnnotations(ctx.modele, (an, id) => {

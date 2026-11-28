@@ -9,9 +9,11 @@
  * - Composition en primitives (mm, y vers le bas), rendue en SVG (aperçu) et en PDF vectoriel multipage à l'échelle
  *   exacte : 1 mm de la feuille = 1 mm du PDF ; relecture du fichier émis pour contrôler ses formats.
  */
-import type { FamilleHachure, Feuille, FenetreVue, MotifHachure, PlanDeCoupe } from "./annotations.js";
-import { type Id, type Modele, modifierAnnotations } from "./geometrie-libre.js";
-import { type ClasseTrait, type P2, type VueProjection, planDeCoupeActif, projeterPlan } from "./plan-vectoriel.js";
+import type { FamilleHachure, Feuille, FenetreVue, MotifHachure, PlanDeCoupe, Scene } from "./annotations.js";
+import { type Id, type Modele, type StatutTravaux, modifierAnnotations } from "./geometrie-libre.js";
+import { dessinerCote } from "./cotes.js";
+import { type ClasseTrait, type P2, type PlanProjete, type VueProjection, planDeCoupeActif, projeterPlan, repereVue } from "./plan-vectoriel.js";
+import { dot } from "./vecteur.js";
 
 /** Épaisseurs des traits (mm papier) : convention graphique du dessin, pas une donnée de projet. */
 export const EPAISSEURS_TRAITS: Readonly<Record<ClasseTrait, number>> = { coupe: 0.5, vu: 0.18, cache: 0.13 };
@@ -165,20 +167,20 @@ export function supprimerFenetre(m: Modele, feuille: Id, fenetre: string): Resul
 }
 
 /** Nom de fichier d'une feuille selon un motif ({numero}, {nom}, {indice}, {projet}, {phase}) ; caractères sûrs seulement. */
-export function nomFichierFeuille(motif: string, f: Feuille): string {
+export function nomFichierFeuille(motif: string, f: Feuille, extension: "pdf" | "dxf" = "pdf"): string {
   const valeurs: Record<string, string> = { numero: f.numero, nom: f.nom, indice: f.indice, projet: f.cartouche.projet, phase: f.cartouche.phase };
   const brut = motif.replace(/\{(numero|nom|indice|projet|phase)\}/g, (_t, k: string) => valeurs[k] ?? "");
   const sur = brut.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/_+/g, "_").replace(/^[_.-]+|[_.-]+$/g, "").slice(0, 120);
-  return `${sur || "feuille"}.pdf`;
+  return `${sur || "feuille"}.${extension}`;
 }
 
 // ————————————————————————————————————————————————————————————— Composition
 
 export type PrimitiveFeuille =
-  | { readonly genre: "trait"; readonly a: P2; readonly b: P2; readonly epaisseur: number; readonly tirets?: readonly number[] }
+  | { readonly genre: "trait"; readonly a: P2; readonly b: P2; readonly epaisseur: number; readonly tirets?: readonly number[]; readonly classe?: ClasseTrait | "cote"; readonly statut?: StatutTravaux }
   | { readonly genre: "cadre"; readonly x: number; readonly y: number; readonly largeur: number; readonly hauteur: number; readonly epaisseur: number }
-  | { readonly genre: "poche"; readonly boucles: readonly (readonly P2[])[]; readonly motif: MotifHachure | null }
-  | { readonly genre: "texte"; readonly x: number; readonly y: number; readonly taille: number; readonly texte: string; readonly gras?: boolean; readonly gris?: boolean; readonly ancre?: "debut" | "fin" };
+  | { readonly genre: "poche"; readonly boucles: readonly (readonly P2[])[]; readonly motif: MotifHachure | null; readonly statut?: StatutTravaux }
+  | { readonly genre: "texte"; readonly x: number; readonly y: number; readonly taille: number; readonly texte: string; readonly gras?: boolean; readonly gris?: boolean; readonly ancre?: "debut" | "fin" | "milieu"; readonly cote?: boolean };
 
 export interface FenetreComposee {
   readonly id: string;
@@ -209,10 +211,48 @@ export interface LibellesFeuille {
   readonly indice: string;
   readonly echelles: string;
   readonly vueDessus: string;
+  /** Séparateur décimal des cotes (langue de l'interface) ; « , » par défaut. */
+  readonly separateur?: "." | ",";
 }
 
 const DESSUS: VueProjection = { direction: { x: 0, y: 0, z: -1 }, haut: { x: 0, y: 1, z: 0 } };
 const TIRETS_CACHE = [EPAISSEURS_TRAITS.cache * 8, EPAISSEURS_TRAITS.cache * 6];
+
+/** Cote projetée dans le repère d'une vue (m) : polylignes (attaches, ligne de cote, extrémités) et texte. */
+export interface CoteProjetee {
+  readonly lignes: readonly (readonly P2[])[];
+  readonly etiquette: P2;
+  readonly texte: string;
+}
+
+/**
+ * Projection d'une fenêtre de vue : scène (ou vue de dessus), plan de coupe de la fenêtre et cotes du modèle, en mètres.
+ * Une cote est reprise si elle n'est pas retirée par le plan de coupe et ne se réduit pas à un point dans la vue ; ses
+ * extrémités mesurent `extremite` mm sur le papier à l'échelle donnée.
+ */
+export function projectionFenetre(m: Modele, w: FenetreVue, o: { readonly separateur?: "." | ","; readonly precision?: number } = {}): { readonly scene: Scene | undefined; readonly plan: PlanProjete; readonly cotes: readonly CoteProjetee[] } {
+  const scene = w.scene ? m.annotations?.scenes?.[w.scene] : undefined;
+  const vue: VueProjection = scene ? { direction: { x: scene.cible.x - scene.position.x, y: scene.cible.y - scene.position.y, z: scene.cible.z - scene.position.z } } : DESSUS;
+  const plan: PlanDeCoupe | null = w.coupe === "aucune" ? null : w.coupe === null ? planDeCoupeActif(m) : (m.annotations?.plansDeCoupe[w.coupe] ?? null);
+  const R = repereVue(vue);
+  const pr = (p: { x: number; y: number; z: number }): P2 => ({ x: dot(p, R.x), y: dot(p, R.y) });
+  const garde = (p: { x: number; y: number; z: number }) => !plan || dot(plan.normale, { x: p.x - plan.origine.x, y: p.y - plan.origine.y, z: p.z - plan.origine.z }) * (plan.inverse ? -1 : 1) <= 1e-9;
+  // Pas « écran » choisi pour que les extrémités fassent environ 2 mm papier (8 pas) à l'échelle de la fenêtre.
+  const pas = (0.25 * w.echelle) / 1000;
+  const cotes: CoteProjetee[] = [];
+  for (const c of Object.values(m.annotations?.cotes ?? {})) {
+    const d = dessinerCote(m, c, pas, o.precision ?? 2, o.separateur ?? ",");
+    if (!d || d.orpheline) continue;
+    const pts = d.lignes.flat();
+    if (!pts.every(garde)) continue;
+    const p2 = pts.map(pr);
+    const xs = p2.map((p) => p.x);
+    const ys = p2.map((p) => p.y);
+    if (Math.max(...xs) - Math.min(...xs) < 1e-6 && Math.max(...ys) - Math.min(...ys) < 1e-6) continue;
+    cotes.push({ lignes: d.lignes.map((l) => l.map(pr)), etiquette: pr(d.etiquette), texte: d.texte });
+  }
+  return { scene, plan: projeterPlan(m, vue, { plan }), cotes };
+}
 
 /** Compose une feuille : cadre, fenêtres de vue (plan vectoriel à l'échelle), titres des vues, cartouche. */
 export function composerFeuille(m: Modele, f: Feuille, l: LibellesFeuille): CompositionFeuille {
@@ -224,19 +264,21 @@ export function composerFeuille(m: Modele, f: Feuille, l: LibellesFeuille): Comp
   const motifs = m.annotations?.motifs ?? {};
   const materiaux = m.annotations?.materiaux ?? {};
   f.fenetres.forEach((w, i) => {
-    const scene = w.scene ? m.annotations?.scenes?.[w.scene] : undefined;
-    const vue: VueProjection = scene ? { direction: { x: scene.cible.x - scene.position.x, y: scene.cible.y - scene.position.y, z: scene.cible.z - scene.position.z } } : DESSUS;
-    const plan: PlanDeCoupe | null = w.coupe === "aucune" ? null : w.coupe === null ? planDeCoupeActif(m) : (m.annotations?.plansDeCoupe[w.coupe] ?? null);
-    const p = projeterPlan(m, vue, { plan });
+    const { scene, plan: p, cotes } = projectionFenetre(m, w, l.separateur ? { separateur: l.separateur } : {});
     const k = 1000 / w.echelle;
     const c = p.cadre ?? { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } };
     const X = (q: P2): P2 => ({ x: w.x + (q.x - c.min.x) * k, y: w.y + (c.max.y - q.y) * k });
     for (const po of p.poches) {
       const motif = po.materiau ? materiaux[po.materiau]?.motif : undefined;
-      prims.push({ genre: "poche", boucles: po.boucles.map((b) => b.map(X)), motif: motif ? (motifs[motif] ?? null) : null });
+      prims.push({ genre: "poche", boucles: po.boucles.map((b) => b.map(X)), motif: motif ? (motifs[motif] ?? null) : null, ...(po.statut ? { statut: po.statut } : {}) });
     }
     for (const cl of ["vu", "cache", "coupe"] as const)
-      for (const t of p.traits) if (t.classe === cl) prims.push({ genre: "trait", a: X(t.a), b: X(t.b), epaisseur: EPAISSEURS_TRAITS[cl], ...(cl === "cache" ? { tirets: TIRETS_CACHE } : {}) });
+      for (const t of p.traits) if (t.classe === cl) prims.push({ genre: "trait", a: X(t.a), b: X(t.b), epaisseur: EPAISSEURS_TRAITS[cl], classe: cl, ...(cl === "cache" ? { tirets: TIRETS_CACHE } : {}), ...(t.statut ? { statut: t.statut } : {}) });
+    for (const ct of cotes) {
+      for (const li of ct.lignes) for (let j = 1; j < li.length; j++) prims.push({ genre: "trait", a: X(li[j - 1]!), b: X(li[j]!), epaisseur: 0.18, classe: "cote" });
+      const e = X(ct.etiquette);
+      prims.push({ genre: "texte", x: e.x, y: e.y - 0.8, taille: 2.5, texte: ct.texte, ancre: "milieu", cote: true });
+    }
     const lw = (c.max.x - c.min.x) * k;
     const hw = (c.max.y - c.min.y) * k;
     const titre = scene ? scene.nom : l.vueDessus;
@@ -282,7 +324,7 @@ export function svgFeuille(c: CompositionFeuille, o: { readonly surligne?: strin
   for (const p of c.primitives) {
     if (p.genre === "cadre") corps.push(`<rect x="${n3(p.x)}" y="${n3(p.y)}" width="${n3(p.largeur)}" height="${n3(p.hauteur)}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(p.epaisseur)}"/>`);
     else if (p.genre === "trait") corps.push(`<line x1="${n3(p.a.x)}" y1="${n3(p.a.y)}" x2="${n3(p.b.x)}" y2="${n3(p.b.y)}" stroke="rgb(0,0,0)" stroke-width="${n3(p.epaisseur)}" stroke-linecap="round"${p.tirets ? ` stroke-dasharray="${p.tirets.map(n3).join(" ")}"` : ""}/>`);
-    else if (p.genre === "texte") corps.push(`<text x="${n3(p.x)}" y="${n3(p.y)}" font-family="Helvetica, Arial, sans-serif" font-size="${n3(p.taille)}"${p.gras ? ' font-weight="700"' : ""}${p.gris ? ' fill="rgb(110,110,110)"' : ""}${p.ancre === "fin" ? ' text-anchor="end"' : ""}>${echapperXml(p.texte)}</text>`);
+    else if (p.genre === "texte") corps.push(`<text x="${n3(p.x)}" y="${n3(p.y)}" font-family="Helvetica, Arial, sans-serif" font-size="${n3(p.taille)}"${p.gras ? ' font-weight="700"' : ""}${p.gris ? ' fill="rgb(110,110,110)"' : ""}${p.ancre === "fin" ? ' text-anchor="end"' : p.ancre === "milieu" ? ' text-anchor="middle"' : ""}>${echapperXml(p.texte)}</text>`);
     else {
       const d = p.boucles.map((b) => `M${b.map((q) => `${n3(q.x)} ${n3(q.y)}`).join(" L")} Z`).join(" ");
       corps.push(`<path d="${d}" fill="${p.motif ? "rgb(255,255,255)" : APLAT}" fill-rule="evenodd"/>`);
@@ -393,7 +435,7 @@ function contenuPage(c: CompositionFeuille): string {
     if (p.genre === "cadre") s += `${n4(p.epaisseur)} w [] 0 d ${n4(p.x)} ${n4(p.y)} ${n4(p.largeur)} ${n4(p.hauteur)} re S\n`;
     else if (p.genre === "trait") s += `${n4(p.epaisseur)} w ${p.tirets ? `[${p.tirets.map(n4).join(" ")}] 0 d` : "[] 0 d"} ${n4(p.a.x)} ${n4(p.a.y)} m ${n4(p.b.x)} ${n4(p.b.y)} l S\n`;
     else if (p.genre === "texte") {
-      const x = p.ancre === "fin" ? p.x - largeurTexte(p.texte, p.taille) : p.x;
+      const x = p.ancre === "fin" ? p.x - largeurTexte(p.texte, p.taille) : p.ancre === "milieu" ? p.x - largeurTexte(p.texte, p.taille) / 2 : p.x;
       s += `${p.gris ? "0.43 g " : ""}BT /${p.gras ? "F2" : "F1"} ${n4(p.taille)} Tf 1 0 0 -1 ${n4(x)} ${n4(p.y)} Tm ${chainePdf(p.texte)} Tj ET${p.gris ? " 0 g" : ""}\n`;
     } else {
       const chemin = p.boucles.map((b) => `${b.map((q, i) => `${n4(q.x)} ${n4(q.y)} ${i ? "l" : "m"}`).join(" ")} h`).join(" ");

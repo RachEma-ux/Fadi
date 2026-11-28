@@ -139,9 +139,16 @@ export interface Occurrence {
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
   readonly niveau?: Id;
+  /** (Cas 4, lot C4, étape 5) Statut des travaux ; hérité par le contenu ; absent = sans statut. */
+  readonly statut?: StatutTravaux;
   /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
 }
+
+/** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
+export type StatutTravaux = "existant" | "a-demolir" | "projete";
+export const STATUTS_TRAVAUX: readonly StatutTravaux[] = ["existant", "a-demolir", "projete"];
+export const estStatutTravaux = (v: unknown): v is StatutTravaux => v === "existant" || v === "a-demolir" || v === "projete";
 
 export interface Contexte {
   readonly sommets: Readonly<Record<Id, Sommet>>;
@@ -688,7 +695,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, reserves: { ...(a.reserves ?? {}) }, ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}), ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, reserves: { ...(a.reserves ?? {}) }, fonds: { ...(a.fonds ?? {}) }, references: { ...(a.references ?? {}) }, ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}), ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -802,6 +809,8 @@ class Travail {
       ...(Object.keys(a.motifs).length ? { motifs: Object.freeze({ ...a.motifs }) } : {}),
       ...(Object.keys(a.feuilles).length ? { feuilles: Object.freeze({ ...a.feuilles }) } : {}),
       ...(Object.keys(a.reserves).length ? { reserves: Object.freeze({ ...a.reserves }) } : {}),
+      ...(Object.keys(a.fonds).length ? { fonds: Object.freeze({ ...a.fonds }) } : {}),
+      ...(Object.keys(a.references).length ? { references: Object.freeze({ ...a.references }) } : {}),
       ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}),
     });
     return suivreAnnotations(this.modele, Object.freeze({ ...base, annotations }));
@@ -868,7 +877,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}, a.feuilles ?? {}, a.reserves ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}, a.feuilles ?? {}, a.reserves ?? {}, a.fonds ?? {}, a.references ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
@@ -3608,6 +3617,28 @@ export function rattacherOccurrencesNiveau(m: Modele, occurrences: readonly Id[]
   });
 }
 
+/** (Cas 4, lot C4, étape 5) Statut des travaux : pose (ou retire, `null`) le statut des occurrences données du contexte. */
+export function statuerOccurrences(m: Modele, occurrences: readonly Id[], statut: StatutTravaux | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { statut: _ancien, ...reste } = occ;
+      c.occurrences.set(id, statut ? { ...reste, statut } : reste);
+    }
+  });
+}
+
+/**
+ * (Cas 4, lot C4, étape 5) Compte des occurrences par statut des travaux, dans la racine et dans chaque définition
+ * (chaque occurrence écrite est comptée une fois) ; `sans` = occurrences sans statut.
+ */
+export function compterStatuts(m: Modele): Readonly<Record<StatutTravaux | "sans", number>> {
+  const n = { existant: 0, "a-demolir": 0, projete: 0, sans: 0 };
+  for (const c of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) for (const o of Object.values(c.occurrences)) n[o.statut ?? "sans"]++;
+  return n;
+}
+
 /** Balise : pose (ou retire, `null`) la balise des occurrences données du contexte. */
 export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (_t, c) => {
@@ -3843,12 +3874,12 @@ export function entitesConnectees(m: Modele, id: Id, o: OptionsContexte = {}): I
  * l'origine du contexte `o.dans`. Elle n'est jamais purgée tant qu'elle a une occurrence (seules les définitions sans
  * occurrence le sont, `Travail.fermer`).
  */
-export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string } = {}): ResultatGroupe {
+export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string; readonly description?: string } = {}): ResultatGroupe {
   const r = operer(m, o.dans, (t, c) => {
     const genre = o.genre ?? "groupe";
     const def = t.id("d");
     const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
-    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu });
+    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu, ...(o.description ? { description: o.description } : {}) });
     const occ = t.id("o");
     c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
     return { occ, def };
