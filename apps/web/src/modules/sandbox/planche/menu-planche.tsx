@@ -28,6 +28,8 @@ export interface ActionsMenuPlanche {
   renommer(nom: string, altitude: number | null): Promise<void>;
   supprimer(): Promise<void>;
   partager(): Promise<void>;
+  /** Liens de consultation (cas 4, étape 7d) : ouvre le panneau « Liens de consultation ». */
+  liensConsultation(): Promise<void>;
   exporter(format: FormatEchange): Promise<void>;
   importer(format: FormatEchange, fichier: File, unite: UniteFichier): Promise<void>;
   telechargerPng(): Promise<void>;
@@ -388,6 +390,7 @@ export function MenuPlanche({ planches, courante, etat, actions, extensions, dep
 
             <li role="none" className="avec-separateur" aria-hidden="true" />
             {item("partager", "menuPartager", t("planche.sb.partager"), () => void executer(() => actions.partager()))}
+            {item("partager-lien", "menuLienConsultation", t("planche.sb.partager-lien"), () => void executer(() => actions.liensConsultation()))}
             {item("exporter", "menuExporter", t("planche.sb.exporter"), () => basculer("exporter"), { etendu: section === "exporter" })}
             {section === "exporter" && (
               <li role="none" className="planche-menu-sous-liste">

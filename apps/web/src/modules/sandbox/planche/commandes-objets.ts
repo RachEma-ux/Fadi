@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -558,6 +558,30 @@ export function disponibiliteEnveloppe(id: IdCommandeEnveloppe, s: { readonly ob
   if (id === "definir-enveloppe" && !s.objet) return { disponible: false, motif: "planche.enveloppe.motif.objet" };
   if (id === "supprimer-regle-hauteur" && !s.regle) return { disponible: false, motif: "planche.enveloppe.motif.regle" };
   if (id === "ajouter-regle-hauteur" && s.plein) return { disponible: false, motif: "planche.enveloppe.motif.plein" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Liens de consultation (cas 4 du catalogue, étape 7d) : ouvrir le panneau (Fichier ▸ Partager un lien), créer un lien
+ * figé, copier et révoquer le lien choisi (règle d'or : icône, barre, raccourci).
+ */
+export type IdCommandeConsultation = "partager-lien" | "creer-lien" | "copier-lien" | "revoquer-lien";
+export interface CommandeConsultation {
+  readonly id: IdCommandeConsultation;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_CONSULTATION: readonly CommandeConsultation[] = (["partager-lien", "creer-lien", "copier-lien", "revoquer-lien"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.consultation.${id}` as CleMessage, court: `planche.consultation.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; créer hors lecture et hors envoi ; copier et révoquer un lien choisi encore actif. */
+export function disponibiliteConsultation(id: IdCommandeConsultation, s: { readonly lien: boolean; readonly actif: boolean; readonly occupe: boolean }): Disponibilite {
+  if (id === "partager-lien") return { disponible: true, motif: null };
+  if (s.occupe) return { disponible: false, motif: "planche.consultation.motif.occupe" };
+  if (id === "creer-lien") return { disponible: true, motif: null };
+  if (!s.lien) return { disponible: false, motif: "planche.consultation.motif.lien" };
+  if (!s.actif) return { disponible: false, motif: "planche.consultation.motif.inactif" };
   return { disponible: true, motif: null };
 }
 

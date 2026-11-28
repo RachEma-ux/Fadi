@@ -5158,6 +5158,38 @@
   text-align: right;
   margin-top: -4px;
 }
+/* Cas 4, étape 7d : liens de consultation (réglages sur une ligne, adresse longue coupée). */
+.sandbox-planche .planche-consultations-reglages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+.sandbox-planche .planche-consultations-reglages select {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-consultations .inspecteur-aide {
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-consultations-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.sandbox-planche .planche-consultations-actions button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(27, 77, 66, 0.4);
+  background: #ffffff;
+  color: #1b4d42;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 /* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
 .sandbox-planche .planche-accrochage h4,
 .sandbox-planche .planche-metre h4 {

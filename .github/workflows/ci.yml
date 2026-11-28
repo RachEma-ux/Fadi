@@ -1134,6 +1134,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-enveloppe node apps/web/e2e/planche-enveloppe.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des liens de consultation (cas 4, étape 7d) — copie figée, page sans compte sur téléphone, mesure, révocation (apps/web/e2e/planche-consultation.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-consultation node apps/web/e2e/planche-consultation.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

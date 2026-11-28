@@ -36,6 +36,7 @@ export const ICONES_INTERFACE = {
   menuRenommer: "pencil",
   menuSupprimer: "trash",
   menuPartager: "share",
+  menuLienConsultation: "link",
   menuExporter: "file-export",
   menuImporter: "file-import",
   menuInformations: "info-circle",

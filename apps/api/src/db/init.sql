@@ -4392,6 +4392,20 @@ CREATE TABLE IF NOT EXISTS sites_liens (
   PRIMARY KEY (site_id, genre, cible)
 );
 CREATE INDEX IF NOT EXISTS sites_liens_cible_idx ON sites_liens (genre, cible);
+-- Liens de consultation de la Planche (cas 4 du catalogue, étape 7d : D11-F18-018) : copie figée d'une Planche du
+-- Sandbox, en lecture seule, ouvrable sans compte par son jeton (`/consultation/:jeton`). Le jeton est aléatoire (24
+-- octets) ; un lien révoqué ou échu répond « lien indisponible ». Le dessin d'origine n'est jamais modifié par le lien.
+CREATE TABLE IF NOT EXISTS sandbox_consultations (
+  jeton text PRIMARY KEY CHECK (jeton ~ '^[A-Za-z0-9_-]{32}$'),
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  modele jsonb NOT NULL,
+  mesure boolean NOT NULL,
+  echeance date,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  revoque_le timestamptz
+);
+CREATE INDEX IF NOT EXISTS sandbox_consultations_proprietaire_idx ON sandbox_consultations (proprietaire_id, cree_le DESC);
 DO $$
 DECLARE
   r record;

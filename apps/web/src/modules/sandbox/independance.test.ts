@@ -49,7 +49,14 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
     const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
     // L'isolement des Workers (scripts personnels, extensions) nomme ces fonctions pour les **retirer** : il n'en appelle aucune.
-    expect(appelants).toEqual(["planche/emplacements-geodata.ts", "planche/isolement-worker.ts", "preferences/client.ts"]);
+    expect(appelants).toEqual(["planche/consultations-client.ts", "planche/emplacements-geodata.ts", "planche/isolement-worker.ts", "preferences/client.ts"]);
+    // Liens de consultation (cas 4, étape 7d) : copie figée créée, listée, révoquée sous /sandbox/consultations, lue sans
+    // compte sous /consultation/api ; ces deux adresses seules, sans adresse absolue.
+    const consultations = code(join(RACINE, "planche/consultations-client.ts"));
+    expect(consultations).toContain('export const ADRESSE_CONSULTATIONS = "/sandbox/consultations";');
+    expect(consultations).toContain('export const ADRESSE_CONSULTATION_PUBLIQUE = "/consultation/api";');
+    expect([...consultations.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["adresse"]);
+    expect(consultations).not.toMatch(/https?:\/\//);
     // « Emplacements Projets » (27 novembre 2026) : lecture seule des emplacements enregistrés dans GeoData, à cette seule adresse.
     const geodata = code(join(RACINE, "planche/emplacements-geodata.ts"));
     expect(geodata).toContain('export const ADRESSE_EMPLACEMENTS_GEODATA = "/geodata/api/emplacements";');

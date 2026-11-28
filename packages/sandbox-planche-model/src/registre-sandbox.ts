@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "accrochage";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "accrochage";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -379,6 +379,12 @@ const commandes: EntreeSandbox[] = [
   c("controler-enveloppe", "enveloppe", "shield-check", "Ctrl+Alt+4", "panneau-enveloppe", true),
   c("ajouter-regle-hauteur", "enveloppe", "playlist-add", "Ctrl+Alt+5", "panneau-enveloppe", true),
   c("supprimer-regle-hauteur", "enveloppe", "playlist-x", "Ctrl+Alt+6", "panneau-enveloppe", true),
+  // Liens de consultation (cas 4, étape 7d) : copie figée en lecture seule, ouvrable sans compte ; panneau ouvert par
+  // Fichier ▸ Partager un lien, Outils ▾ et son raccourci ; créer, copier et révoquer un lien.
+  c("partager-lien", "consultation", "link", "Ctrl+Alt+7", "outils", true),
+  c("creer-lien", "consultation", "link-plus", "Ctrl+Alt+Maj+9", "panneau-consultations", true),
+  c("copier-lien", "consultation", "copy", "Ctrl+Alt+9", "panneau-consultations", true),
+  c("revoquer-lien", "consultation", "link-off", "Ctrl+Alt+8", "panneau-consultations", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -443,6 +449,8 @@ const panneaux: EntreeSandbox[] = [
   p("reserves", "clipboard-list", "outils", true),
   // Enveloppe (cas 4, étape 7c) : hors de la colonne (pleine), ouvert par Outils ▾ et son raccourci.
   p("enveloppe", "home-shield", "outils", true),
+  // Liens de consultation (cas 4, étape 7d) : hors de la colonne (pleine).
+  p("consultations", "link", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -470,6 +478,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:feuilles", "panneau:feuilles"],
   ["commande:reserves", "panneau:reserves"],
   ["commande:enveloppe", "panneau:enveloppe"],
+  ["commande:partager-lien", "panneau:consultations"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */
