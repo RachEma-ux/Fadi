@@ -8,6 +8,7 @@
  * - une poignée de la boîte, glissée dans la vue, réduit la boîte et la tranche ;
  * - points choisis au clic (outil Sélection) sur le mur est : trois dans une seule tranche sont refusés (presque
  *   alignés) ; six dans deux tranches, Maj+N ajuste un plan, écarts en millimètres ;
+ * - la tranche change sans perdre les points choisis ; déplacer le nuage les retire avec le plan ajusté ;
  * - après rechargement, le nuage est relu de l'archive ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/planche-nuage node apps/web/e2e/planche-nuage.mjs
@@ -40,6 +41,13 @@ await page.waitForTimeout(800);
 
 const vue = page.locator("[data-planche-vue]");
 const panneau = () => page.evaluate(() => window.fadiPlanche.panneau());
+const deuxTemps = async (touche) => {
+  await vue.focus();
+  await page.keyboard.press("Control+Shift+Space");
+  await page.locator("[data-planche-deux-temps]").waitFor();
+  await page.keyboard.press(touche);
+  await page.waitForTimeout(120);
+};
 /** Trois temps : Ctrl+Maj+Espace, la porte de la famille, puis la touche de la commande. */
 const troisTemps = async (porte, touche) => {
   await vue.focus();
@@ -204,6 +212,19 @@ await page.screenshot({ path: `${OUT}/plan-ajuste.png` });
 await pan.locator("[data-planche-nuage-altitude]").fill("9000");
 check("tranche hors du relevé : aucun point", dansTranche((await pan.locator("[data-planche-nuage-boite]").textContent()) ?? "") === 0);
 await pan.locator("[data-planche-nuage-altitude]").fill("1100");
+check("la tranche change, les points choisis restent", ((await pan.locator("[data-planche-nuage-resultat]").textContent()) ?? "").includes("Points choisis : 6"));
+
+// Changer la pose du nuage retire les points choisis et le plan ajusté (revue de #536).
+await deuxTemps("r");
+await page.locator("[data-planche-reference-placement='x']").waitFor();
+await deuxTemps("l");
+await page.waitForFunction(() => !Object.values(window.fadiPlanche.modele().annotations.references)[0].verrouille);
+await page.locator("[data-planche-reference-placement='x']").fill("1");
+await page.locator("[data-planche-reference-placement='x']").press("Enter");
+await page.waitForFunction(() => Object.values(window.fadiPlanche.modele().annotations.references)[0].placement.x === 1);
+await troisTemps("Shift+I", "n");
+await pan.waitFor();
+check("nuage déplacé : points choisis et plan ajusté retirés", ((await pan.locator("[data-planche-nuage-resultat]").textContent()) ?? "").includes("Points choisis : 0") && (await ajuster().isDisabled()));
 
 await page.reload();
 await page.waitForSelector("[data-planche-vue] canvas", { timeout: 60000 });

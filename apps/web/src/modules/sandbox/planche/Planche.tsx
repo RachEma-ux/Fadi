@@ -7192,6 +7192,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [choisisNuage, setChoisisNuage] = useState<readonly Vec3[]>([]);
   const [resultatNuage, setResultatNuage] = useState<string | null>(null);
   const [erreurNuage, setErreurNuage] = useState<string | null>(null);
+  // Les points choisis et le plan ajusté appartiennent à un nuage dans une pose : changer de nuage, d'échelle ou de
+  // placement les retire (revue de #536) ; la tranche (altitude, épaisseur) les garde.
+  const contexteNuage = nuageCourant ? `${nuageCourant.id}|${nuageCourant.echelle}|${JSON.stringify(nuageCourant.placement)}` : null;
+  useEffect(() => {
+    setChoisisNuage([]);
+    setResultatNuage(null);
+  }, [contexteNuage]);
   const millimetres = (v: string): number | null => {
     const n = Number(v.replace(/[\s\u00a0\u202f']/g, "").replace(",", "."));
     return Number.isFinite(n) ? n / 1000 : null;
