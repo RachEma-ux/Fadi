@@ -4392,6 +4392,52 @@ CREATE TABLE IF NOT EXISTS sites_liens (
   PRIMARY KEY (site_id, genre, cible)
 );
 CREATE INDEX IF NOT EXISTS sites_liens_cible_idx ON sites_liens (genre, cible);
+-- Liens de consultation de la Planche (cas 4 du catalogue, étape 7d : D11-F18-018) : copie figée d'une Planche du
+-- Sandbox, en lecture seule, ouvrable sans compte par son jeton (`/consultation/:jeton`). Le jeton est aléatoire (24
+-- octets) ; un lien révoqué ou échu répond « lien indisponible ». Le dessin d'origine n'est jamais modifié par le lien.
+CREATE TABLE IF NOT EXISTS sandbox_consultations (
+  jeton text PRIMARY KEY CHECK (jeton ~ '^[A-Za-z0-9_-]{32}$'),
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  modele jsonb NOT NULL,
+  mesure boolean NOT NULL,
+  echeance date,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  revoque_le timestamptz
+);
+CREATE INDEX IF NOT EXISTS sandbox_consultations_proprietaire_idx ON sandbox_consultations (proprietaire_id, cree_le DESC);
+-- Originaux des fonds calés de la Planche (cas 4, lot C4, étape 1 ; décision du maître d'ouvrage du 27 novembre 2026) :
+-- l'image reçue (PNG ou JPEG) rangée telle quelle avec son empreinte SHA-256, au nom du compte ; le même fichier n'est
+-- rangé qu'une fois par compte. Jamais effacé par l'application. Additive.
+CREATE TABLE IF NOT EXISTS sandbox_fonds_originaux (
+  id text PRIMARY KEY,
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  type text NOT NULL CHECK (type IN ('image/png', 'image/jpeg', 'text/plain')),
+  taille integer NOT NULL CHECK (taille > 0),
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  contenu bytea NOT NULL,
+  ajoute_le timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (proprietaire_id, empreinte)
+);
+-- Fichiers des références verrouillées de la Planche (cas 4, lot C4, étape 3) : maquette reçue rangée telle quelle.
+CREATE TABLE IF NOT EXISTS sandbox_references_fichiers (
+  id text PRIMARY KEY,
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 200),
+  format text NOT NULL CHECK (format IN ('obj', 'stl', 'ifc')),
+  taille integer NOT NULL CHECK (taille > 0),
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  contenu bytea NOT NULL,
+  ajoute_le timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (proprietaire_id, empreinte)
+);
+-- PDF reçu (cas 4, lot C4, étape 4) : le PDF d'origine est rangé tel quel dans la même archive.
+ALTER TABLE sandbox_references_fichiers DROP CONSTRAINT IF EXISTS sandbox_references_fichiers_format_check;
+ALTER TABLE sandbox_references_fichiers ADD CONSTRAINT sandbox_references_fichiers_format_check CHECK (format IN ('obj', 'stl', 'ifc', 'pdf'));
+-- Fichiers de calage des orthophotos (world file, .prj ; lot C4, étape 2) rangés tels quels avec les originaux.
+ALTER TABLE sandbox_fonds_originaux DROP CONSTRAINT IF EXISTS sandbox_fonds_originaux_type_check;
+ALTER TABLE sandbox_fonds_originaux ADD CONSTRAINT sandbox_fonds_originaux_type_check CHECK (type IN ('image/png', 'image/jpeg', 'text/plain'));
 DO $$
 DECLARE
   r record;

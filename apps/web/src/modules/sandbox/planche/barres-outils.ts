@@ -73,7 +73,7 @@ export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, rea
     mesurer: ["cotation", "texte", "plan-de-coupe", "balise"],
   },
   annotations: {
-    creer: ["cotation", "texte", "plan-de-coupe", "balise"],
+    creer: ["cotation", "texte", "plan-de-coupe", "balise", "reserve", "calage"],
     modifier: ["deplacer", "faire-pivoter", "gomme"],
     mesurer: ["metre", "rapporteur", "axes"],
   },
@@ -117,6 +117,8 @@ export const OBJET_DE: Readonly<Record<string, ObjetBarre>> = {
   "aligner-face": "volumes",
   epaissir: "volumes",
   mur: "volumes",
+  reserve: "annotations",
+  calage: "annotations",
   "enveloppe-exterieure": "solides",
   intersection: "solides",
   union: "solides",

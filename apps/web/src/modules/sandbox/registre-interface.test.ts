@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { BARRE_GAUCHE_SANDBOX, OUTILS, REGISTRE_SANDBOX, entreeCommande, entreeOutil, entreesSandbox } from "@parcours/sandbox-planche-model";
-import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_CONTROLE, COMMANDES_DEBIT, COMMANDES_DYNAMIQUE, COMMANDES_EMPLACEMENT, COMMANDES_NAVIGATEUR, COMMANDES_SCRIPTS, COMMANDES_NIVEAUX, COMMANDES_LOCAUX, COMMANDES_NUMEROTATION, COMMANDES_MUR, COMMANDES_PLAN, COMMANDES_ACCROCHAGE, COMMANDES_BALISE, COMMANDES_SCENE, COMMANDES_GABARIT, COMMANDES_ECHANGE, COMMANDES_VERSION, COMMANDES_OBJETS, COMMANDES_PIECE, COMMANDES_VUE } from "./planche/commandes-objets";
+import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_CONTROLE, COMMANDES_DEBIT, COMMANDES_DYNAMIQUE, COMMANDES_EMPLACEMENT, COMMANDES_NAVIGATEUR, COMMANDES_SCRIPTS, COMMANDES_NIVEAUX, COMMANDES_LOCAUX, COMMANDES_NUMEROTATION, COMMANDES_MUR, COMMANDES_PLAN, COMMANDES_FEUILLES, COMMANDES_ACCROCHAGE, COMMANDES_RESERVES, COMMANDES_ENVELOPPE, COMMANDES_CONSULTATION, COMMANDES_FONDS, COMMANDES_REFERENCES, COMMANDES_PDF, COMMANDES_DXF, COMMANDES_TRAVAUX, COMMANDES_BALISE, COMMANDES_SCENE, COMMANDES_GABARIT, COMMANDES_ECHANGE, COMMANDES_VERSION, COMMANDES_OBJETS, COMMANDES_PIECE, COMMANDES_VUE } from "./planche/commandes-objets";
 import { outilsBarre, pictoOutil, raccourciOutil, sectionsGrille } from "./planche/outils-planche";
 import { COMMANDES_REPERES } from "./planche/commandes-reperes";
 import { REGISTRE_COMMANDES } from "./planche/registre-commandes";
@@ -37,7 +37,7 @@ describe("Sandbox — l'interface lit le registre unique (lot 2)", () => {
   });
 
   it("commandes : chaque liste de famille et le registre des commandes portent le pictogramme et le raccourci du registre", () => {
-    const listes = [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_ACCROCHAGE, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION];
+    const listes = [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS, ...COMMANDES_REFERENCES, ...COMMANDES_PDF, ...COMMANDES_DXF, ...COMMANDES_TRAVAUX, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION];
     expect(listes.map((c) => c.id).sort()).toEqual(entreesSandbox("commande").map((e) => e.id).sort());
     for (const c of listes) {
       expect(c.picto, c.id).toBe(entreeCommande(c.id).pictogramme);
@@ -63,7 +63,8 @@ describe("Sandbox — l'interface lit le registre unique (lot 2)", () => {
 
   it("colonne de droite : chaque panneau du registre à un clic, dans l'ordre du registre, pictogramme lu au registre (lot 4)", () => {
     const planche = readFileSync(join(RACINE, "planche/Planche.tsx"), "utf8");
-    expect(planche).toMatch(/const COLONNE[^=]*= entreesSandbox\("panneau"\)\.map\(\(e\) => \(\{\s*id: e\.id as Panneau,\s*picto: e\.pictogramme,\s*bas: e\.emplacement === "colonne-bas",/);
+    // Les panneaux ouverts depuis un autre panneau (Feuilles, cas 4 étape 6) restent hors de la colonne.
+    expect(planche).toMatch(/const COLONNE[^=]*= entreesSandbox\("panneau"\)\.filter\(\(e\) => e\.emplacement === "colonne" \|\| e\.emplacement === "colonne-bas"\)\.map\(\(e\) => \(\{\s*id: e\.id as Panneau,\s*picto: e\.pictogramme,\s*bas: e\.emplacement === "colonne-bas",/);
     expect(planche).toContain("{COLONNE.map(({ id, picto, bas }) => (");
     expect(planche).not.toMatch(/"objets-et-vue"|setPanneau\("objets"\)/);
     expect(REGISTRE_SANDBOX.length).toBeGreaterThanOrEqual(86);

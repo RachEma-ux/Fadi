@@ -16,7 +16,7 @@
  * (accroché aux multiples de 15°) ou saisi, sens du curseur ; Échap abandonne.
  */
 import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer, tourner } from "../geometrie-libre.js";
-import { type Inference, type ModeAlt, type Verrou, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, type ModeAlt, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, add, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { type Derniere, angleSigne, contexteSaisie, corrigeable, formaterAngle, formaterLongueur, intersectionRayonPlan, mesures, messageErreur, prefixe, axesDeSaisie } from "./commun-formes.js";
@@ -173,7 +173,7 @@ function inferer3(e: EtatDeplacer, ctx: ContexteOutil, ev: Extract<EvenementOuti
   const v = verrouCourant(e);
   // Lot L17 : inférence « axe de pièce » — à la racine, les axes des pièces de profilé s'ajoutent aux arêtes visées
   // (extrémités, milieu, sur l'axe), comme des arêtes cachées au milieu de leur section.
-  const g = geometrieVisible(ctx.modele);
+  const g = geometrieVisible(ctx.modele, etatOutil(ctx));
   const axes = ctx.dans === undefined ? axesDesPieces(ctx.modele).map((x) => ({ id: `axe:${x.occurrence}`, a: x.a, b: x.b })) : [];
   return inferer({
     rayon: ev.rayon,

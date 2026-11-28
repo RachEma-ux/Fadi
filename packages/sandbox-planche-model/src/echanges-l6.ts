@@ -12,7 +12,6 @@
 import type { Repere } from "./annotations.js";
 import { ajouterSegments, ajouterTriangles, grouper, modifierAnnotations, type Id, type Modele, type Occurrence } from "./geometrie-libre.js";
 import { sha256Hex } from "./empreinte.js";
-import { MAX_TRIANGLES_IMPORT } from "./echanges-import.js";
 import type { ExportMaillage } from "./echanges.js";
 import type { LectureIfc, ObjetIfc } from "./echanges-ifc-lecture.js";
 import { add, cross, len, scale, sub, v3, type Vec3 } from "./vecteur.js";
@@ -105,8 +104,15 @@ export function rapportImportMaillages(format: "obj" | "stl" | "ifc", fichier: s
 
 // ————————————————————————————————————————————————————————————— Import IFC (n° 2, 22, 91)
 
-/** Plafond de triangles d'un import IFC complet (un objet reste borné à `MAX_TRIANGLES_IMPORT`). */
+/** Plafond de triangles d'un import IFC complet (un objet reste borné à `MAX_TRIANGLES_OBJET_IFC`). */
 export const MAX_TRIANGLES_IFC = 20000;
+
+/**
+ * Plafond de triangles d'un objet IFC : l'import IFC objet par objet pose chaque objet par `ajouterTriangles` (géométrie
+ * collante), pas par la construction quasi linéaire des imports OBJ / STL (cas 4, étape 7a) ; il garde donc la borne
+ * de 1 500 triangles que ces imports avaient avant elle.
+ */
+export const MAX_TRIANGLES_OBJET_IFC = 1500;
 
 /** Données IFC gardées sur l'objet (`donnees.ifc` de sa définition). */
 export interface DonneesIfc {
@@ -155,7 +161,7 @@ export function importerIfc(m: Modele, lu: LectureIfc, fichier: string, date: st
     const nomObjet = o.nom ?? o.globalId ?? o.classe;
     for (const c of o.nonLues) nonLues.push({ classe: c, objet: nomObjet });
     const tris = o.triangles.filter((t) => aire(t) > 1e-12);
-    if (tris.length === 0 || tris.length > MAX_TRIANGLES_IMPORT) {
+    if (tris.length === 0 || tris.length > MAX_TRIANGLES_OBJET_IFC) {
       refuses++;
       continue;
     }

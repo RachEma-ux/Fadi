@@ -94,8 +94,6 @@ import {
   basculerExtension,
   BORNES_EXTENSION,
   normaliserRaccourci,
-  ENTREE_DEUX_TEMPS,
-  secondTemps,
   choixEffectif,
   cleCommandeExtension,
   clesMasquees,
@@ -130,6 +128,7 @@ import {
   entreeOutil,
   entreePanneau,
   entreesSandbox,
+  entreeSandbox,
   type Pictogramme as DescriptionPictogramme,
   peindreFacesCote,
   peindreOccurrences,
@@ -250,6 +249,28 @@ import {
   supprimerMotif,
   svgPlan,
   type ResultatMotif,
+  ajouterFenetre,
+  composerFeuille,
+  creerFeuille,
+  modifierFenetre,
+  modifierFeuille,
+  nomFichierFeuille,
+  numeroFeuilleSuivant,
+  pdfFeuilles,
+  dxfFeuille,
+  dxfVue,
+  relireDxf,
+  compterStatuts,
+  statuerOccurrences,
+  type StatutTravaux,
+  hachuresTropDenses,
+  relirePdf,
+  supprimerFenetre,
+  supprimerFeuille,
+  type Feuille,
+  type FenetreVue,
+  type LibellesFeuille,
+  type ResultatFeuille,
   poserMurs,
   chainesDAretes,
   lireNombreSaisi,
@@ -279,6 +300,82 @@ import {
   pousserContexte,
   repereDepuisFace,
   repereDuContexte,
+  ID_RESERVE,
+  ID_CALAGE,
+  calerFond,
+  choisirMethode,
+  fondsDe,
+  importerFond,
+  appliquerFiche,
+  ENTREE_DEUX_TEMPS,
+  afficherReference,
+  echelleDeLaBarre,
+  echellesDuTexte,
+  estEchellePdf,
+  insererPagePdf,
+  lirePdfRecu,
+  poseImagePdf,
+  type PointPdf,
+  ajouterReference,
+  controlerRecolement,
+  deplacerReference,
+  lireMaillages,
+  positionsReference,
+  rechargerReference,
+  referencesDe,
+  reglerOpaciteReference,
+  reglerTolerance,
+  sommetsDuDessin,
+  supprimerReference,
+  trianglesAuProjet,
+  verrouillerReference,
+  ErreurImport,
+  type FormatReference,
+  type ResultatRecolement,
+  type ResultatReference,
+  secondTemps,
+  calageImageDuFond,
+  comparerFiche,
+  ecrireCalageImage,
+  ecrireFicheCalage,
+  ficheDuProjet,
+  lireCalageImage,
+  lireFicheCalage,
+  normaliserSysteme,
+  poseDepuisCalageImage,
+  systemeDuPrj,
+  EXTENSIONS_CALAGE_IMAGE,
+  FICHE_MAX,
+  type CalageImage,
+  type FicheCalage,
+  type GeoFond,
+  type PoseFond,
+  reglerOpacite,
+  saisirCible,
+  saisirLongueur,
+  supprimerFond,
+  supprimerPointCalage,
+  verrouillerFond,
+  type ResultatFond,
+  type OriginalFond,
+  filtrerReserves,
+  leverReserve,
+  lotsDesReserves,
+  modifierReserve,
+  reservesDe,
+  supprimerReserve,
+  type ResultatReserve,
+  type StatutReserve,
+  ajouterRegleHauteur,
+  REGLES_HAUTEUR_MAX,
+  basculerControle,
+  definirEnveloppe,
+  enveloppeDe,
+  modifierRegleHauteur,
+  supprimerRegleHauteur,
+  type LigneControle,
+  type ResultatControleEnveloppe,
+  type ResultatReglages,
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
@@ -298,7 +395,8 @@ import {
   supprimerRepere,
 } from "@parcours/sandbox-planche-model";
 import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
-import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
+import { compter as compterContexte, exporterIfc, maillagesPlanche, nonEtanchesDe, omisExport, poserImport } from "@parcours/sandbox-planche-model";
+import { type EtatImport, lancerImport, noterPose } from "./import-hors-fil";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enVariante, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, variantesDe, type IndexPlanches, type InfoPlanche } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
@@ -323,7 +421,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -334,6 +432,18 @@ import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
+import { PanneauFeuilles } from "./panneau-feuilles";
+import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
+import { PanneauEnveloppe } from "./panneau-enveloppe";
+import { PanneauConsultations } from "./panneau-consultations";
+import { PanneauFonds, reduireFond } from "./panneau-fonds";
+import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
+import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
+import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
+import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
+import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
+import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
+import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
@@ -430,6 +540,8 @@ interface CrochetRecette {
       menu: () => readonly string[] | null;
       /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
       facesRendues: () => number;
+      /** Cas 4, lot C4, étape 5 : arêtes rendues par statut des travaux. */
+      aretesParStatut: () => Readonly<Record<string, number>>;
       pressePapiers: () => number;
       /** Chantier Axes (AX-1) : contexte de travail courant (repère, plan, verrou) et nombre de contextes précédents. */
       contexteTravail: () => { contexte: ContexteTravail; precedents: number };
@@ -445,6 +557,11 @@ export interface PropsPlanche {
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+/** Date du jour « AAAA-MM-JJ », heure locale de l'appareil (réserves de chantier). */
+const dateDuJour = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 /** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
 const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
@@ -459,6 +576,9 @@ function pieceEmise(m: Modele): { readonly projet: readonly (readonly [string, s
   return { projet: lignesFiche(ficheDe(m)), revision: texteRevision(revisionDe(m)) };
 }
 
+/** (Cas 4, C4 étape 5) État des travaux affiché, pour le contexte d'outil ; « tout » n'en pose aucun. */
+export const etatTravauxOutil = (e: "tout" | "existant" | "projete" | undefined): { etatTravaux?: "existant" | "projete" } => (e && e !== "tout" ? { etatTravaux: e } : {});
+
 function telechargerFichier(blob: Blob, nom: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -469,12 +589,12 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "accrochage" | "metre-mesure" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
  */
-const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").map((e) => ({
+const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").filter((e) => e.emplacement === "colonne" || e.emplacement === "colonne-bas").map((e) => ({
   id: e.id as Panneau,
   picto: e.pictogramme,
   bas: e.emplacement === "colonne-bas",
@@ -482,7 +602,11 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet"]);
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet"]);
+/** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux"]);
+/** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
+const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 /** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
 export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
@@ -492,7 +616,9 @@ export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | 
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
   try {
-    const v = Number(window.localStorage.getItem(CLE_PRECISION));
+    // Aucune préférence enregistrée : 2 décimales (Number(null) vaudrait 0 et effacerait les centimètres).
+    const brut = window.localStorage.getItem(CLE_PRECISION);
+    const v = brut === null || brut.trim() === "" ? Number.NaN : Number(brut);
     return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 2;
   } catch {
     return 2;
@@ -575,6 +701,24 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   }, []);
   const poserUnJalonRef = useRef<(nom: string) => void>(() => undefined);
   const [message, setMessage] = useState<string | null>(null);
+  // Cas 4, étape 7a : import hors du fil principal (progression, Annuler / Échap).
+  const [importCours, setImportCours] = useState<(EtatImport & { readonly fichier: string; readonly octets: number }) | null>(null);
+  const annulerImportRef = useRef<(() => void) | null>(null);
+  const surReservePoseeRef = useRef<(id: string) => void>(() => {});
+  const surPointCalagePoseRef = useRef<(fond: string, point: string) => void>(() => {});
+  const importActif = importCours !== null;
+  useEffect(() => {
+    if (!importActif) return;
+    // Échap annule l'import où que soit le focus (menu, champ, vue).
+    const surTouche = (e: KeyboardEvent): void => {
+      if (e.key !== "Escape" || !annulerImportRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      annulerImportRef.current();
+    };
+    window.addEventListener("keydown", surTouche, true);
+    return () => window.removeEventListener("keydown", surTouche, true);
+  }, [importActif]);
   const [grille, setGrille] = useState(false);
   const grilleRef = useRef(false);
   grilleRef.current = grille;
@@ -630,6 +774,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
+  /** (Protocole 1.3) Précision lue par les extensions à chaque appel (`unites.lire`). */
+  const precisionRef = useRef(precision);
+  precisionRef.current = precision;
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
   // Cas 2, lot 4 : scène rappelée, pas et échelle de la coupe, gabarits d'agence du compte (lus en base à l'ouverture du
   // panneau « Nouvelle Planche »), gabarit choisi. État d'interface.
@@ -662,6 +809,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
   const baliseRef = useRef<string | null>(null);
+  const fondCourantRef = useRef<string | null>(null);
   const [balise, setBaliseEtat] = useState<string | null>(null);
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
@@ -868,6 +1016,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const contexte = useCallback(
     (): ContexteOutil => ({
       modele: histRef.current.present.modele,
+      // (Cas 4, C4 étape 5) Ce que l'état des travaux masque dans la vue n'est ni visé, ni sélectionné, ni accroché.
+      ...etatTravauxOutil(vueRef.current?.lireOptions().etatTravaux),
       selection: selectionRef.current,
       separateurDecimal: SEPARATEUR_DECIMAL,
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
@@ -875,8 +1025,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       ...(dansRef.current !== undefined ? { dans: dansRef.current, chemin: cheminRef.current } : {}),
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
+      ...(fondCourantRef.current ? { fondCourant: fondCourantRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
+      aujourdhui: dateDuJour(),
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
@@ -978,6 +1130,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         setSelection(tr.selection);
         change = true;
       }
+      // Cas 4, étape 7b : la réserve épinglée s'ouvre dans le panneau Réserves.
+      const posee = (tr.etat as { posee?: string | null } | null)?.posee;
+      if (outilRef.current === ID_RESERVE && posee && posee !== (avant as { posee?: string | null } | null)?.posee) surReservePoseeRef.current(posee);
+      // Cas 4, lot C4, étape 1 : le point de calage posé ouvre le panneau Fonds calés sur son fond.
+      const pose = (tr.etat as { pose?: { fond: string; point: string } | null } | null)?.pose;
+      if (outilRef.current === ID_CALAGE && pose && pose !== (avant as { pose?: unknown } | null)?.pose) surPointCalagePoseRef.current(pose.fond, pose.point);
       if (tr.dans !== undefined) {
         poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
@@ -2207,6 +2365,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
       facesRendues: () => vueRef.current?.facesRendues() ?? 0,
+      aretesParStatut: () => vueRef.current?.aretesParStatut() ?? {},
       contexteTravail: () => ({ contexte: histContexteRef.current.courant, precedents: histContexteRef.current.precedents.length }),
       // Cas 2, lot 7 : traits de différence surlignés et consultation en cours (recette).
       differences: () => vueRef.current?.differencesAffichees() ?? null,
@@ -2424,7 +2583,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         setPanneau("echange-export");
         setMessage(t("planche.echange.export.consigne", { format: format.toUpperCase() }));
       },
+      liensConsultation: async () => setPanneau("consultations"),
+      importerFond: async () => {
+        setPanneau("fonds");
+        importFondRef.current?.click();
+      },
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
+        if (annulerImportRef.current) return;
         try {
           const date = horodatage();
           if (format === "ifc") {
@@ -2446,11 +2611,29 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             return;
           }
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
-          const lu = lireMaillages(format, donnees);
-          const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
-          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""), { format, fichier: fichier.name });
+          const enCours = lancerImport({ format, donnees, echelle: ECHELLE_UNITE[unite], nom: fichier.name.replace(/\.[^.]+$/, "") }, (e) => setImportCours({ ...e, fichier: fichier.name, octets: fichier.size }));
+          annulerImportRef.current = enCours.annuler;
+          const issue = await enCours.issue;
+          annulerImportRef.current = null;
+          setImportCours(null);
+          if (issue.genre === "annule") {
+            setMessage(t("planche.import.annule"));
+            return;
+          }
+          if (issue.genre === "trop-gros") {
+            setMessage(t("planche.import.tropGros", { triangles: issue.triangles.toLocaleString(LOCALE), borne: issue.borne.toLocaleString(LOCALE) }));
+            return;
+          }
+          if (issue.genre === "erreur") {
+            setMessage(t("planche.sb.import.erreur", { motif: issue.message }));
+            return;
+          }
+          const t0 = performance.now();
+          const r = poserImport(histRef.current.present.modele, issue.contenus, issue.ignores, issue.echelle, { format, fichier: fichier.name });
+          noterPose(performance.now() - t0);
           poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
           rafraichir();
+          const echelle = issue.echelle;
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
           setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
           // Cas 2, lot 6 (n° 6) : rapport chiffré de l'import OBJ / STL aussi, archivé avec le fichier tel quel.
@@ -2460,7 +2643,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           setPanneau("echange-import");
           void archiverEchange(fichier.name, donnees, rapport);
         } catch (e) {
-          setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
+          annulerImportRef.current = null;
+          setImportCours(null);
+          setMessage(t("planche.sb.import.erreur", { motif: e instanceof Error ? e.message : String(e) }));
         }
       },
       telechargerPng: async () => {
@@ -2629,6 +2814,11 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       if (e.key === "Home" && e.shiftKey && !mod && dansRef.current !== undefined && !dansMesures) {
         e.preventDefault();
         fermerContexte("fermer-tout");
+        return;
+      }
+      if (e.key === "Escape" && annulerImportRef.current) {
+        e.preventDefault();
+        annulerImportRef.current();
         return;
       }
       if (e.key === "Escape") {
@@ -3570,6 +3760,792 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     operationMotif(modifierMotif(hist.present.modele, id, { nom: v.nom, angle, pas }), t("planche.plan.motifs-hachure"), null);
   };
   const associerUnMotif = (materiau: string, motif: string | null) => operationMotif(associerMotif(hist.present.modele, materiau, motif), t("planche.plan.motifs-hachure"), null);
+  /**
+   * Feuilles (cas 4 du catalogue, étape 6) : feuilles ISO, fenêtres de vue (plan vectoriel d'une scène à une échelle de la
+   * série), PDF vectoriel à l'échelle relu avant téléchargement. Cochage du jeu et motif des noms : préférences de la
+   * session, pas des données du projet.
+   */
+  const feuillesListe = Object.values(hist.present.modele.annotations?.feuilles ?? {}).sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
+  const [feuilleChoisieEtat, setFeuilleChoisie] = useState<string | null>(null);
+  const feuilleChoisie = feuillesListe.find((f) => f.id === feuilleChoisieEtat) ?? feuillesListe[0] ?? null;
+  const [fenetreChoisieEtat, setFenetreChoisie] = useState<string | null>(null);
+  const fenetreChoisie = feuilleChoisie?.fenetres.some((w) => w.id === fenetreChoisieEtat) ? fenetreChoisieEtat : null;
+  const [decochees, setDecochees] = useState<ReadonlySet<string>>(new Set());
+  const cocheesFeuilles = new Set(feuillesListe.filter((f) => !decochees.has(f.id)).map((f) => f.id));
+  const [motifNomsFeuilles, setMotifNomsFeuilles] = useState("{numero}-{nom}-{indice}");
+  const [erreurFeuille, setErreurFeuille] = useState<string | null>(null);
+  const [noteFeuille, setNoteFeuille] = useState<string | null>(null);
+  const libellesFeuille = (): LibellesFeuille => ({ projet: t("planche.feuilles.cartouche.projet"), phase: t("planche.feuilles.cartouche.phase"), titre: t("planche.feuilles.cartouche.titre"), date: t("planche.feuilles.cartouche.date"), numero: t("planche.feuilles.cartouche.numero"), indice: t("planche.feuilles.cartouche.indice"), echelles: t("planche.feuilles.cartouche.echelles"), vueDessus: t("planche.feuilles.scene.dessus"), separateur: LANGUE_INTERFACE === "en" ? "." : "," });
+  const compositionFeuille = useMemo(
+    () => (panneau === "feuilles" && feuilleChoisie ? composerFeuille(hist.present.modele, feuilleChoisie, libellesFeuille()) : null),
+    [panneau, feuilleChoisie, hist.present.modele], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const disponibiliteCommandeFeuille = (id: IdCommandeFeuille) => disponibiliteFeuille(id, { feuille: feuilleChoisie !== null, fenetre: fenetreChoisie !== null, cochees: cocheesFeuilles.size, lecture: readOnly });
+  const operationFeuille = (r: ResultatFeuille, libelle: string, message: string | null): ResultatFeuille | null => {
+    if (!r.ok) {
+      setErreurFeuille(t(`planche.feuilles.erreur.${r.erreur}`));
+      return null;
+    }
+    setErreurFeuille(null);
+    setNoteFeuille(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return r;
+  };
+  const emettrePdf = (feuilles: readonly Feuille[], fichier: string) => {
+    const pages = feuilles.map((f) => composerFeuille(hist.present.modele, f, libellesFeuille()));
+    // Une hachure trop dense n'est jamais omise du PDF : l'export est refusé.
+    const denses = hachuresTropDenses(pages);
+    if (denses) return setErreurFeuille(t("planche.feuilles.erreur.densite", { familles: String(denses) }));
+    const octets = pdfFeuilles(pages, fichier.replace(/\.pdf$/, ""));
+    // Contrôle de l'échelle exacte : le fichier émis est relu, ses formats comparés aux feuilles.
+    const relu = relirePdf(octets);
+    if (!relu || relu.pages.length !== pages.length || relu.pages.some((p, i) => Math.abs(p.largeur - pages[i]!.largeur) > 0.05 || Math.abs(p.hauteur - pages[i]!.hauteur) > 0.05)) return setErreurFeuille(t("planche.feuilles.erreur.pdf"));
+    setErreurFeuille(null);
+    telechargerFichier(new Blob([octets as BlobPart], { type: "application/pdf" }), fichier);
+    setNoteFeuille(t("planche.feuilles.note.pdf", { pages: String(relu.pages.length), formats: [...new Set(relu.pages.map((p) => `${p.largeur} × ${p.hauteur} mm`))].join(", ") }));
+  };
+  /**
+   * Feuilles en DXF (cas 4, lot C4, étape 5) : un fichier DXF R2000 par feuille cochée (feuille entière en millimètres
+   * papier) ou par vue (en mètres, à l'échelle réelle) ; chaque fichier émis est relu avant d'être téléchargé.
+   */
+  const [decocheesDxf, setDecocheesDxf] = useState<ReadonlySet<string>>(new Set());
+  const cocheesDxf = new Set(feuillesListe.filter((f) => !decocheesDxf.has(f.id)).map((f) => f.id));
+  const [contenuDxf, setContenuDxf] = useState<ContenuDxf>("feuille");
+  const [erreurDxf, setErreurDxf] = useState<string | null>(null);
+  const [noteDxf, setNoteDxf] = useState<string | null>(null);
+  const disponibiliteCommandeDxf = (id: IdCommandeDxf) => disponibiliteDxf(id, { cochees: cocheesDxf.size });
+  const executerDxf = (id: IdCommandeDxf) => {
+    setPanneau("feuilles-dxf");
+    if (id === "feuilles-dxf" || !disponibiliteCommandeDxf(id).disponible) return;
+    const m = hist.present.modele;
+    const fichiers: { nom: string; texte: string }[] = [];
+    let vides = 0;
+    for (const f of feuillesListe.filter((x) => cocheesDxf.has(x.id))) {
+      const base = nomFichierFeuille(motifNomsFeuilles, f, "dxf").replace(/\.dxf$/, "");
+      if (contenuDxf === "feuille") fichiers.push({ nom: `${base}.dxf`, texte: dxfFeuille(composerFeuille(m, f, libellesFeuille())) });
+      else
+        f.fenetres.forEach((w, i) => {
+          const texte = dxfVue(m, f, w.id, { separateur: LANGUE_INTERFACE === "en" ? "." : "," });
+          if (texte === null) vides++;
+          else fichiers.push({ nom: `${base}-v${i + 1}.dxf`, texte });
+        });
+    }
+    if (fichiers.length === 0) return setErreurDxf(t("planche.dxf.erreur.vide"));
+    // Contrôle : chaque fichier est relu (version R2000, calques déclarés) avant d'être téléchargé.
+    if (fichiers.some((x) => relireDxf(x.texte)?.version !== "AC1015")) return setErreurDxf(t("planche.dxf.erreur.relecture"));
+    setErreurDxf(null);
+    for (const x of fichiers) telechargerFichier(new Blob([x.texte], { type: "application/dxf" }), x.nom);
+    setNoteDxf(t(vides ? "planche.dxf.note.vides" : "planche.dxf.note.ecrits", { nombre: String(fichiers.length), noms: fichiers.map((x) => x.nom).join(", "), vides: String(vides) }));
+  };
+  /**
+   * Réserves de chantier (cas 4 du catalogue, étape 7b) : panneau hors colonne, outil Réserve, fiche saisie, levée datée.
+   */
+  /**
+   * Fonds calés (cas 4 du catalogue, lot C4, étape 1) : panneau hors colonne, outil Calage, import d'une image, calage
+   * sur deux points de longueur connue ou sur des paires de points, verrouillage.
+   */
+  const fondsListe = fondsDe(hist.present.modele);
+  const [fondChoisiEtat, setFondChoisi] = useState<string | null>(null);
+  const fondChoisi = fondsListe.find((f) => f.id === fondChoisiEtat) ?? fondsListe[0] ?? null;
+  fondCourantRef.current = fondChoisi?.id ?? null;
+  const [pointChoisiEtat, setPointChoisi] = useState<string | null>(null);
+  const pointChoisi = fondChoisi?.points.some((p) => p.id === pointChoisiEtat) ? pointChoisiEtat : null;
+  const [erreurFond, setErreurFond] = useState<string | null>(null);
+  const [noteFond, setNoteFond] = useState<string | null>(null);
+  const importFondRef = useRef<HTMLInputElement | null>(null);
+  surPointCalagePoseRef.current = (fond, point) => {
+    setFondChoisi(fond);
+    setPointChoisi(point);
+    setErreurFond(null);
+    setNoteFond(null);
+    setPanneau("fonds");
+  };
+  const disponibiliteCommandeFond = (id: IdCommandeFond) => disponibiliteFond(id, { fond: fondChoisi !== null, verrouille: fondChoisi?.verrouille ?? false, point: pointChoisi !== null, lecture: readOnly, cale: fondChoisi?.cale ?? false, pointDeBase: (hist.present.modele.annotations?.reglages?.pointDeBase ?? null) !== null, fiche: ficheRecue !== null, orthophoto: orthoAttente !== null });
+  const operationFond = (r: ResultatFond, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+    setErreurFond(null);
+    setNoteFond(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  /** `calage` : orthophoto posée d'après son fichier de calage d'image, dans le système déclaré (déjà comparé au projet). */
+  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string; readonly pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] }, pdf?: { readonly pose: (largeurPx: number, hauteurPx: number) => PoseFond | null; readonly message: string; readonly altitude: number }) => {
+    // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
+    const planche = indexRef.current.courante;
+    let image: Awaited<ReturnType<typeof reduireFond>>;
+    try {
+      image = await reduireFond(f);
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.image"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    // Orthophoto : pose calculée avant l'archivage (un fichier de calage refusé n'archive rien).
+    let pose: { pose: PoseFond; geo: GeoFond } | undefined;
+    if (calage) {
+      const r = poseDepuisCalageImage(calage.k, histRef.current.present.modele.annotations?.reglages?.pointDeBase ?? null, image.largeur / image.largeurOriginal);
+      if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.calage-${r.erreur}`));
+      pose = { pose: r.pose, geo: { fichier: calage.fichier.slice(0, 200), systeme: calage.systeme, coefficients: [calage.k.a, calage.k.d, calage.k.b, calage.k.e, calage.k.c, calage.k.f] } };
+    }
+    // Page scannée d'un PDF reçu (lot C4, étape 4) : posée à l'échelle de la page, calée (non verrouillée).
+    const posePdf = pdf ? pdf.pose(image.largeur, image.hauteur) : null;
+    if (pdf && !posePdf) return setErreurFond(t("planche.pdf.erreur.cisaillement"));
+    // L'original est archivé tel quel en base avant la pose (décision du 27 novembre 2026) : sans archive, pas de fond.
+    setNoteFond(t("planche.fonds.note.archivage"));
+    let original: OriginalFond;
+    try {
+      original = { ...(await archiverOriginalFond(f)), largeurPx: image.largeurOriginal, hauteurPx: image.hauteurOriginal };
+      // Fichiers de calage (world file, .prj) archivés tels quels eux aussi (D-GD-29) : leurs références vont au fond.
+      if (pose && calage && calage.pieces.length) {
+        const archives = [];
+        for (const p of calage.pieces) archives.push(await archiverPieceCalage(p.fichier, p.role));
+        pose = { ...pose, geo: { ...pose.geo, archives } };
+      }
+    } catch (e) {
+      setNoteFond(null);
+      return setErreurFond(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
+    let pose2: string | null = null;
+    let erreur: string | null = null;
+    const message = pdf ? pdf.message : calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
+    operer(t(pdf ? "planche.pdf.poser-fond-pdf" : calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: pdf ? pdf.altitude : (n?.altitude ?? 0), original, ...(pose ?? {}), ...(posePdf ? { pose: posePdf } : {}) });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      pose2 = r.id;
+      return { modele: r.modele, message };
+    });
+    if (erreur) return setErreurFond(t(`planche.fonds.erreur.${erreur}`));
+    setErreurFond(null);
+    setNoteFond(message);
+    if (pose2) {
+      setFondChoisi(pose2);
+      setPointChoisi(null);
+    }
+    setPanneau("fonds");
+  };
+  // Fiche de calage (lot C4, étape 2) : fiche du projet, fiche reçue comparée, orthophoto en attente de son système.
+  const [auteurFiche, setAuteurFiche] = useState("");
+  const [dateFiche, setDateFiche] = useState(dateDuJour);
+  const [ficheRecue, setFicheRecue] = useState<{ nom: string; fiche: FicheCalage } | null>(null);
+  const [orthoAttente, setOrthoAttente] = useState<{ fichier: File; k: CalageImage; calage: string; nomPrj: string | null; pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] } | null>(null);
+  const [systemeOrtho, setSystemeOrtho] = useState("");
+  const importFicheRef = useRef<HTMLInputElement | null>(null);
+  const importOrthoRef = useRef<HTMLInputElement | null>(null);
+  const ficheProjet = ficheDuProjet(hist.present.modele, referenceNiveaux, auteurFiche, /^\d{4}-\d{2}-\d{2}$/.test(dateFiche) ? dateFiche : dateDuJour());
+  const nomFichierSur = (s: string): string => s.normalize("NFC").replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "planche";
+  const lireFiche = async (f: File) => {
+    setNoteFond(null);
+    if (f.size > FICHE_MAX * 4) return setErreurFond(t("planche.fonds.erreur.fiche-taille"));
+    let texte: string;
+    try {
+      texte = await f.text();
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.fiche-lecture"));
+    }
+    const r = lireFicheCalage(texte);
+    if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.fiche-${r.erreur}`, { ligne: String(r.ligne) }));
+    setErreurFond(null);
+    setFicheRecue({ nom: f.name, fiche: r.fiche });
+    setNoteFond(t("planche.fonds.note.fiche-recue", { nom: f.name }));
+    setPanneau("fonds");
+  };
+  const lireOrthophoto = async (fichiers: readonly File[]) => {
+    setNoteFond(null);
+    setOrthoAttente(null);
+    const extension = (f: File) => f.name.toLowerCase().split(".").pop() ?? "";
+    const image = fichiers.find((f) => f.type === "image/png" || f.type === "image/jpeg");
+    const monde = fichiers.find((f) => (EXTENSIONS_CALAGE_IMAGE as readonly string[]).includes(extension(f)));
+    const prj = fichiers.find((f) => extension(f) === "prj");
+    if (!image) return setErreurFond(t("planche.fonds.erreur.ortho-image"));
+    if (!monde) return setErreurFond(t("planche.fonds.erreur.ortho-calage"));
+    let k: CalageImage | null = null;
+    let wkt: string | null = null;
+    try {
+      k = monde.size <= 4096 ? lireCalageImage(await monde.text()) : null;
+      wkt = prj && prj.size <= 65536 ? await prj.text() : null;
+    } catch {
+      k = null;
+    }
+    if (!k) return setErreurFond(t("planche.fonds.erreur.ortho-calage-illisible"));
+    const systeme = wkt ? systemeDuPrj(wkt) : null;
+    const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? null;
+    if (!projet) return setErreurFond(t("planche.fonds.erreur.calage-point-de-base"));
+    if (systeme?.code) {
+      if (normaliserSysteme(systeme.code) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: systeme.code, projet }));
+      return importerUnFond(image, { k, fichier: monde.name, systeme: systeme.code, pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
+    }
+    // Sans .prj lisible : le système est demandé, jamais supposé.
+    setErreurFond(null);
+    setSystemeOrtho("");
+    setOrthoAttente({ fichier: image, k, calage: monde.name, nomPrj: systeme?.nom ?? (prj ? prj.name : null), pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
+    setPanneau("fonds");
+  };
+  const executerFond = (id: IdCommandeFond) => {
+    if (id === "fonds") return setPanneau("fonds");
+    if (!disponibiliteCommandeFond(id).disponible) return;
+    setPanneau("fonds");
+    if (id === "importer-fond") return importFondRef.current?.click();
+    if (id === "importer-fiche") return importFicheRef.current?.click();
+    if (id === "importer-orthophoto") return importOrthoRef.current?.click();
+    if (id === "exporter-fiche") {
+      const fichier = `fiche-calage-${nomFichierSur(plancheDe(indexRef.current).nom)}.txt`;
+      telechargerFichier(new Blob([ecrireFicheCalage(ficheProjet)], { type: "text/plain;charset=utf-8" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-exportee", { fichier }));
+    }
+    if (id === "ignorer-fiche") {
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-ignoree"));
+    }
+    if (id === "appliquer-fiche" && ficheRecue) {
+      const r = appliquerFiche(hist.present.modele, ficheRecue.fiche);
+      if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+      const message = t("planche.fonds.note.fiche-appliquee", { pdb: t(r.pointDeBase ? "planche.fonds.note.pdb-repris" : "planche.fonds.note.pdb-inchange"), niveaux: String(r.niveauxAjoutes) });
+      operer(t("planche.fonds.appliquer-fiche"), () => ({ modele: r.modele, message }));
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(message);
+    }
+    if (id === "poser-orthophoto" && orthoAttente) {
+      const saisi = systemeOrtho.trim();
+      if (saisi === "") return setErreurFond(t("planche.fonds.erreur.ortho-systeme-vide"));
+      const projet = hist.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
+      if (normaliserSysteme(saisi) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: saisi, projet }));
+      const o = orthoAttente;
+      setOrthoAttente(null);
+      // Système retenu sous l'écriture du projet (comparaison sans casse ni espaces).
+      return void importerUnFond(o.fichier, { k: o.k, fichier: o.calage, systeme: projet, pieces: o.pieces });
+    }
+    if (id === "exporter-calage-fond" && fondChoisi) {
+      const k = calageImageDuFond(fondChoisi, hist.present.modele.annotations?.reglages?.pointDeBase ?? null, fondChoisi.original?.largeurPx);
+      if (!k) return setErreurFond(t("planche.fonds.erreur.calage-export"));
+      const base = (fondChoisi.nom || "fond").replace(/\.[^.]*$/, "");
+      const fichier = `${nomFichierSur(base)}.${fondChoisi.original?.type === "image/png" ? "pgw" : "jgw"}`;
+      telechargerFichier(new Blob([ecrireCalageImage(k)], { type: "text/plain" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.calage-exporte", { fichier }));
+    }
+    if (!fondChoisi) return;
+    const m = hist.present.modele;
+    if (id === "caler-fond") return operationFond(calerFond(m, fondChoisi.id), t("planche.fonds.caler-fond"), t("planche.fonds.note.cale", { nom: fondChoisi.nom }));
+    if (id === "verrouiller-fond") return operationFond(verrouillerFond(m, fondChoisi.id, !fondChoisi.verrouille), t(fondChoisi.verrouille ? "planche.fonds.deverrouiller" : "planche.fonds.verrouiller-fond"), t(fondChoisi.verrouille ? "planche.fonds.note.deverrouille" : "planche.fonds.note.verrouille"));
+    if (id === "supprimer-point-calage" && pointChoisi) {
+      operationFond(supprimerPointCalage(m, fondChoisi.id, pointChoisi), t("planche.fonds.supprimer-point-calage"), t("planche.fonds.note.point-supprime", { point: pointChoisi }));
+      return setPointChoisi(null);
+    }
+    if (id === "supprimer-fond") {
+      operationFond(supprimerFond(m, fondChoisi.id), t("planche.fonds.supprimer-fond"), t("planche.fonds.note.supprime", { nom: fondChoisi.nom }));
+      setFondChoisi(null);
+    }
+  };
+  // Références verrouillées (lot C4, étape 3) : fiche dans le dessin, fichier archivé en base et relu à l'ouverture.
+  const referencesListe = referencesDe(hist.present.modele);
+  const [referenceChoisieEtat, setReferenceChoisie] = useState<string | null>(null);
+  const referenceChoisie = referencesListe.find((r) => r.id === referenceChoisieEtat) ?? referencesListe[0] ?? null;
+  const [erreurReference, setErreurReference] = useState<string | null>(null);
+  const [noteReference, setNoteReference] = useState<string | null>(null);
+  const [uniteReference, setUniteReference] = useState<UniteReference>("m");
+  /** Triangles relus de chaque fichier (unité du fichier), par empreinte ; « lecture » / « introuvable » sinon. */
+  const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
+  const [recolementBrut, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[]; modele: unknown } | null>(null);
+  // Le résultat ne vaut que pour le modèle contrôlé : placement, tolérance, version ou dessin modifiés le rendent périmé.
+  const recolement = recolementBrut && recolementBrut.modele === hist.present.modele ? recolementBrut : null;
+  const importReferenceRef = useRef<HTMLInputElement | null>(null);
+  const modeImportReference = useRef<"charger" | "recharger">("charger");
+  const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
+    const f = fichiersReferences[r.fichier.empreinte];
+    return [r.id, f === undefined || f === "lecture" ? "lecture" : f === "introuvable" ? "introuvable" : "chargee"] as const;
+  }));
+  const disponibiliteCommandeReference = (id: IdCommandeReference) => disponibiliteReference(id, { reference: referenceChoisie !== null, chargee: referenceChoisie !== null && etatsReferences[referenceChoisie.id] === "chargee", lecture: readOnly });
+  const operationReference = (r: ResultatReference, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReference(t(`planche.references.erreur.${r.erreur}`));
+    setErreurReference(null);
+    setNoteReference(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  // Relecture des fichiers absents (ouverture d'un dessin, annulation d'une suppression) : une fois par empreinte.
+  const enLecture = useRef(new Set<string>());
+  useEffect(() => {
+    for (const r of referencesListe) {
+      const cle = r.fichier.empreinte;
+      if (fichiersReferences[cle] !== undefined || enLecture.current.has(cle)) continue;
+      enLecture.current.add(cle);
+      void (async () => {
+        let etat: { positions: Float32Array } | "introuvable";
+        try {
+          const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
+          etat = { positions: positionsReference(lireMaillages(r.format, octets).maillages).positions };
+        } catch {
+          etat = "introuvable";
+        }
+        enLecture.current.delete(cle);
+        setFichiersReferences((a) => ({ ...a, [cle]: etat }));
+      })();
+    }
+  });
+  // Vue mise à jour seulement quand les références, leurs fichiers relus, le récolement ou la vue elle-même changent.
+  const dernierePoseReferences = useRef<{ vue: unknown; refs: unknown; fichiers: unknown; recolement: unknown; cle: string } | null>(null);
+  useEffect(() => {
+    const v = vueRef.current;
+    if (!v) return;
+    const cle = JSON.stringify(referencesListe.map((r) => [r.id, r.fichier.empreinte, r.echelle, r.placement, r.visible, r.opacite]));
+    const d = dernierePoseReferences.current;
+    if (d && d.vue === v && d.cle === cle && d.fichiers === fichiersReferences && d.recolement === recolement) return;
+    dernierePoseReferences.current = { vue: v, refs: null, fichiers: fichiersReferences, recolement, cle };
+    const liste = referencesListe.flatMap((r) => {
+      const f = fichiersReferences[r.fichier.empreinte];
+      return f && typeof f === "object" ? [{ id: r.id, cle: r.fichier.empreinte, positions: f.positions, echelle: r.echelle, placement: r.placement, visible: r.visible, opacite: r.opacite }] : [];
+    });
+    v.poserReferences(liste, recolement?.points ?? []);
+  });
+  const formatDuNom = (nom: string): FormatReference | null => {
+    const e = nom.toLowerCase().split(".").pop();
+    return e === "obj" || e === "stl" || e === "ifc" ? e : null;
+  };
+  const chargerFichierReference = async (f: File) => {
+    const mode = modeImportReference.current;
+    setNoteReference(null);
+    const format = formatDuNom(f.name);
+    if (!format) return setErreurReference(t("planche.references.erreur.format"));
+    const planche = indexRef.current.courante;
+    let octets: Uint8Array;
+    let lu: ReturnType<typeof lireMaillages>;
+    try {
+      octets = new Uint8Array(await f.arrayBuffer());
+      lu = lireMaillages(format, octets);
+    } catch (e) {
+      return setErreurReference(t(e instanceof ErreurImport && e.code === "unite" ? "planche.references.erreur.unite" : "planche.references.erreur.lecture"));
+    }
+    const { positions, triangles } = positionsReference(lu.maillages);
+    if (triangles === 0) return setErreurReference(t("planche.references.erreur.lecture"));
+    const echelle = lu.echelleFichier ?? ECHELLES_UNITE[uniteReference];
+    setNoteReference(t("planche.references.note.archivage"));
+    let fichier: Awaited<ReturnType<typeof archiverFichierReference>>;
+    try {
+      fichier = await archiverFichierReference(f, format);
+    } catch (e) {
+      setNoteReference(null);
+      return setErreurReference(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
+    const m = histRef.current.present.modele;
+    if (mode === "recharger" && referenceChoisie) {
+      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
+      setRecolement(null);
+      return operationReference(r, t("planche.references.recharger-reference"), r.ok ? t("planche.references.note.rechargee", { version: String(referenceChoisie.version + 1), triangles: triangles.toLocaleString(LOCALE) }) : null);
+    }
+    const r = ajouterReference(m, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
+    operationReference(r, t("planche.references.charger-reference"), t("planche.references.note.chargee", { nom: f.name, triangles: triangles.toLocaleString(LOCALE) }));
+    if (r.ok) setReferenceChoisie(r.id);
+    setPanneau("references");
+  };
+  const executerReference = (id: IdCommandeReference) => {
+    if (id === "references") return setPanneau("references");
+    if (!disponibiliteCommandeReference(id).disponible) return;
+    setPanneau("references");
+    if (id === "charger-reference" || id === "recharger-reference") {
+      modeImportReference.current = id === "charger-reference" ? "charger" : "recharger";
+      return importReferenceRef.current?.click();
+    }
+    if (!referenceChoisie) return;
+    const m = hist.present.modele;
+    if (id === "verrouiller-reference") return operationReference(verrouillerReference(m, referenceChoisie.id, !referenceChoisie.verrouille), t(referenceChoisie.verrouille ? "planche.references.deverrouiller" : "planche.references.verrouiller-reference"), t(referenceChoisie.verrouille ? "planche.references.note.deverrouillee" : "planche.references.note.verrouillee"));
+    if (id === "afficher-reference") return operationReference(afficherReference(m, referenceChoisie.id, !referenceChoisie.visible), t(referenceChoisie.visible ? "planche.references.afficher-reference" : "planche.references.montrer"), t(referenceChoisie.visible ? "planche.references.note.masquee" : "planche.references.note.affichee"));
+    if (id === "supprimer-reference") {
+      operationReference(supprimerReference(m, referenceChoisie.id), t("planche.references.supprimer-reference"), t("planche.references.note.supprimee", { nom: referenceChoisie.nom }));
+      setRecolement(null);
+      return setReferenceChoisie(null);
+    }
+    if (id === "controler-recolement") {
+      const f = fichiersReferences[referenceChoisie.fichier.empreinte];
+      if (!f || typeof f !== "object") return;
+      const points = sommetsDuDessin(m);
+      const resultat = controlerRecolement(points, trianglesAuProjet(referenceChoisie, f.positions), referenceChoisie.tolerance);
+      setErreurReference(null);
+      setNoteReference(null);
+      setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, modele: m, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
+    }
+  };
+  // PDF reçu (lot C4, étape 4) : PDF lu dans le navigateur, original archivé en base, échelle confirmée avant insertion.
+  const [pdfRecu, setPdfRecu] = useState<EtatPdf | null>(null);
+  const [pagePdf, setPagePdf] = useState(0);
+  const [modePdf, setModePdf] = useState<"mesure" | "barre" | null>(null);
+  const [pointsPdf, setPointsPdf] = useState<readonly PointPdf[]>([]);
+  const [longueurBarrePdf, setLongueurBarrePdf] = useState("");
+  const [echellePdf, setEchellePdf] = useState("");
+  const [echelleConfirmee, setEchelleConfirmee] = useState<number | null>(null);
+  const [niveauPdfEtat, setNiveauPdf] = useState<string | null>(null);
+  const niveauPdf = niveaux.some((n) => n.id === niveauPdfEtat) ? niveauPdfEtat : niveauChoisi;
+  const [originePdf, setOriginePdf] = useState({ x: "0", y: "0" });
+  const [erreurPdf, setErreurPdf] = useState<string | null>(null);
+  const [notePdf, setNotePdf] = useState<string | null>(null);
+  const importPdfRef = useRef<HTMLInputElement | null>(null);
+  const pageCourantePdf = pdfRecu?.pages[pagePdf] ?? null;
+  const propositionPdf = pageCourantePdf ? (echellesDuTexte(pageCourantePdf.textes)[0] ?? null) : null;
+  const papierBarre = modePdf === "barre" && pointsPdf.length === 2 ? Math.hypot(pointsPdf[1]!.x - pointsPdf[0]!.x, pointsPdf[1]!.y - pointsPdf[0]!.y) : null;
+  const echelleBarrePdf = papierBarre !== null ? echelleDeLaBarre(papierBarre, Number(longueurBarrePdf.trim().replace(",", "."))) : null;
+  const echelleSaisiePdf = (() => {
+    const v = echellePdf.trim().replace(",", ".");
+    return v === "" ? null : Number(v);
+  })();
+  const disponibiliteCommandePdf = (id: IdCommandePdf) =>
+    disponibilitePdf(id, {
+      page: pageCourantePdf !== null,
+      vectorielle: pageCourantePdf !== null && pageCourantePdf.traits.length + pageCourantePdf.arcs.length > 0,
+      image: pageCourantePdf !== null && pageCourantePdf.images.length > 0,
+      proposee: echelleSaisiePdf !== null || echelleBarrePdf !== null || propositionPdf !== null,
+      confirmee: echelleConfirmee !== null,
+      lecture: readOnly,
+    });
+  const changerPagePdf = (i: number) => {
+    setPagePdf(i);
+    setPointsPdf([]);
+    setModePdf(null);
+    setEchelleConfirmee(null);
+    setEchellePdf("");
+    setErreurPdf(null);
+  };
+  const lireFichierPdf = async (f: File) => {
+    setErreurPdf(null);
+    setNotePdf(null);
+    const octets = new Uint8Array(await f.arrayBuffer());
+    const lu = lirePdfRecu(octets);
+    if (!lu.ok) return setErreurPdf(t(`planche.pdf.erreur.${lu.erreur}`));
+    setPdfRecu({ nom: f.name, fichier: null, pages: lu.pages });
+    changerPagePdf(0);
+    setPanneau("pdf-recu");
+    // L'original est archivé tel quel en base ; sans archive, la page reste consultable mais n'est pas insérée.
+    setNotePdf(t("planche.pdf.note.archivage"));
+    try {
+      const fichier = await archiverFichierReference(f, "pdf");
+      setPdfRecu((a) => (a && a.nom === f.name ? { ...a, fichier: { id: fichier.id, empreinte: fichier.empreinte } } : a));
+      setNotePdf(t("planche.pdf.note.lu", { nom: f.name, pages: String(lu.pages.length) }));
+    } catch (e) {
+      setNotePdf(null);
+      setErreurPdf(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+  };
+  const executerPdf = (id: IdCommandePdf) => {
+    if (id === "pdf-recu") return setPanneau("pdf-recu");
+    if (!disponibiliteCommandePdf(id).disponible) return;
+    setPanneau("pdf-recu");
+    if (id === "ouvrir-pdf") return importPdfRef.current?.click();
+    if (id === "mesurer-pdf" || id === "barre-echelle-pdf") {
+      const m = id === "mesurer-pdf" ? "mesure" : "barre";
+      setPointsPdf([]);
+      return setModePdf(modePdf === m ? null : m);
+    }
+    const page = pageCourantePdf;
+    if (!page) return;
+    if (id === "confirmer-echelle-pdf") {
+      // Priorité : l'échelle tapée, puis la barre pointée, puis l'échelle écrite dans la page.
+      const e = echelleSaisiePdf ?? echelleBarrePdf ?? propositionPdf?.echelle ?? null;
+      if (!estEchellePdf(e)) return setErreurPdf(t("planche.pdf.erreur.echelle"));
+      setErreurPdf(null);
+      setEchelleConfirmee(e);
+      setEchellePdf(String(Math.round(e * 1000) / 1000));
+      return setNotePdf(t("planche.pdf.echelle.confirmee", { echelle: String(Math.round(e * 1000) / 1000) }));
+    }
+    if (echelleConfirmee === null) return;
+    const x = Number(originePdf.x.trim().replace(",", "."));
+    const y = Number(originePdf.y.trim().replace(",", "."));
+    if (!Number.isFinite(x) || !Number.isFinite(y) || originePdf.x.trim() === "" || originePdf.y.trim() === "") return setErreurPdf(t("planche.pdf.erreur.position"));
+    const altitude = niveaux.find((n) => n.id === niveauPdf)?.altitude ?? 0;
+    const echelleTexte = String(Math.round(echelleConfirmee * 1000) / 1000);
+    // Le PDF d'origine doit être archivé tel quel avant toute pose, tracé inséré comme page posée en fond.
+    if (!pdfRecu?.fichier) return setErreurPdf(t("planche.references.erreur.archive-serveur"));
+    if (id === "inserer-pdf") {
+      const nom = t("planche.pdf.groupe", { nom: pdfRecu.nom, numero: String(page.numero) });
+      const description = t("planche.pdf.description", { nom: pdfRecu.nom, numero: String(page.numero), echelle: echelleTexte, id: pdfRecu.fichier.id, empreinte: pdfRecu.fichier.empreinte });
+      let erreur: string | null = null;
+      let compte = { traits: 0, arcs: 0 };
+      const message = t("planche.pdf.note.inseree", { numero: String(page.numero), echelle: echelleTexte, traits: page.traits.length.toLocaleString(LOCALE), arcs: page.arcs.length.toLocaleString(LOCALE), nom });
+      operer(t("planche.pdf.inserer-pdf"), (m) => {
+        const r = insererPagePdf(m, page, { echelle: echelleConfirmee, x, y, altitude, nom, description });
+        if (!r.ok) {
+          erreur = r.erreur;
+          return null;
+        }
+        compte = { traits: r.traits, arcs: r.arcs };
+        return { modele: r.modele, message };
+      });
+      if (erreur) return setErreurPdf(t(`planche.pdf.erreur.${erreur}`));
+      setErreurPdf(null);
+      return setNotePdf(compte.traits + compte.arcs > 0 ? message : null);
+    }
+    // Poser en fond : la plus grande image de la page, posée à l'échelle de la page.
+    const img = [...page.images].sort((a, b) => b.largeurPx * b.hauteurPx - a.largeurPx * a.hauteurPx)[0];
+    if (!img) return;
+    const essai = poseImagePdf(img, echelleConfirmee, x, y);
+    if ("erreur" in essai) return setErreurPdf(t(`planche.pdf.erreur.${essai.erreur}`));
+    void (async () => {
+      let fichier: File;
+      try {
+        fichier = await fichierImagePdf(img, `${(pdfRecu?.nom ?? "plan.pdf").replace(/\.pdf$/i, "")}-p${page.numero}`);
+      } catch {
+        return setErreurPdf(t("planche.pdf.erreur.image"));
+      }
+      setErreurPdf(null);
+      await importerUnFond(fichier, undefined, {
+        pose: (l, h) => {
+          const r = poseImagePdf({ ...img, largeurPx: l, hauteurPx: h }, echelleConfirmee, x, y);
+          return "pose" in r ? r.pose : null;
+        },
+        message: t("planche.pdf.note.fond", { numero: String(page.numero), echelle: echelleTexte }),
+        altitude,
+      });
+    })();
+  };
+  const reservesListe = reservesDe(hist.present.modele);
+  const [reserveChoisieEtat, setReserveChoisie] = useState<string | null>(null);
+  const reserveChoisie = reservesListe.find((r) => r.id === reserveChoisieEtat) ?? null;
+  const [filtreReserves, setFiltreReserves] = useState<{ lot: string | null; statut: StatutReserve | null }>({ lot: null, statut: null });
+  const [erreurReserve, setErreurReserve] = useState<string | null>(null);
+  const [noteReserve, setNoteReserve] = useState<string | null>(null);
+  surReservePoseeRef.current = (id) => {
+    setReserveChoisie(id);
+    setErreurReserve(null);
+    setNoteReserve(null);
+    setPanneau("reserves");
+  };
+  const disponibiliteCommandeReserve = (id: IdCommandeReserve) => disponibiliteReserve(id, { reserve: reserveChoisie !== null, lecture: readOnly });
+  const operationReserve = (r: ResultatReserve, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReserve(t(`planche.reserves.erreur.${r.erreur}`));
+    setErreurReserve(null);
+    setNoteReserve(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  const executerReserve = (id: IdCommandeReserve) => {
+    if (id === "reserves") return setPanneau("reserves");
+    if (!disponibiliteCommandeReserve(id).disponible || !reserveChoisie) return;
+    setPanneau("reserves");
+    const m = hist.present.modele;
+    if (id === "lever-reserve") {
+      const levee = reserveChoisie.statut === "ouverte";
+      return operationReserve(leverReserve(m, reserveChoisie.id, dateDuJour()), t(levee ? "planche.reserves.lever-reserve" : "planche.reserves.rouvrir"), t(levee ? "planche.reserves.note.levee" : "planche.reserves.note.rouverte", { numero: String(reserveChoisie.numero) }));
+    }
+    if (id === "supprimer-reserve") {
+      operationReserve(supprimerReserve(m, reserveChoisie.id), t("planche.reserves.supprimer-reserve"), t("planche.reserves.note.supprimee", { numero: String(reserveChoisie.numero) }));
+      setReserveChoisie(null);
+    }
+  };
+  const modifierUneReserve = (v: Parameters<typeof modifierReserve>[2]) => reserveChoisie && operationReserve(modifierReserve(hist.present.modele, reserveChoisie.id, v), t("planche.reserves.fiche"), null);
+  const joindrePhoto = async (f: File) => {
+    // La réserve et la Planche visées sont retenues avant le décodage ; la photo s'applique ensuite au modèle courant
+    // (dans `operer`), jamais à un instantané : une modification faite pendant le décodage n'est pas perdue.
+    const cible = reserveChoisie?.id;
+    const planche = indexRef.current.courante;
+    if (!cible) return;
+    let photo: Awaited<ReturnType<typeof reduirePhoto>>;
+    try {
+      photo = await reduirePhoto(f);
+    } catch {
+      return setErreurReserve(t("planche.reserves.erreur.photo"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    let erreur: string | null = null;
+    operer(t("planche.reserves.fiche"), (m) => {
+      const r = modifierReserve(m, cible, { photo });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      return { modele: r.modele };
+    });
+    setErreurReserve(erreur ? t(`planche.reserves.erreur.${erreur}`) : null);
+  };
+  /**
+   * Contrôle de l'enveloppe (cas 4 du catalogue, étape 7c) : panneau hors colonne ; le calcul tourne dans un travailleur,
+   * relancé à la fin de chaque opération (après un court délai) tant que le contrôle est actif ; rien n'est modifié.
+   */
+  const enveloppe = enveloppeDe(hist.present.modele);
+  const [regleChoisieEtat, setRegleChoisie] = useState<string | null>(null);
+  const regleChoisie = enveloppe.regles.find((r) => r.id === regleChoisieEtat) ?? null;
+  const [controleEnveloppe, setControleEnveloppe] = useState<{ resultat: ResultatControleEnveloppe | null; calcul: boolean }>({ resultat: null, calcul: false });
+  const [erreurEnveloppe, setErreurEnveloppe] = useState<string | null>(null);
+  const [noteEnveloppe, setNoteEnveloppe] = useState<string | null>(null);
+  const controleurEnveloppeRef = useRef<ControleurEnveloppe | null>(null);
+  useEffect(() => {
+    if (!enveloppe.controle) {
+      controleurEnveloppeRef.current?.arreter();
+      setControleEnveloppe({ resultat: null, calcul: false });
+      return;
+    }
+    const c = (controleurEnveloppeRef.current ??= creerControleurEnveloppe((resultat, err) => {
+      setControleEnveloppe({ resultat, calcul: false });
+      if (err) setErreurEnveloppe(err);
+    }));
+    setControleEnveloppe((x) => ({ ...x, calcul: true }));
+    const m = hist.present.modele;
+    const minuterie = window.setTimeout(() => c.demander(m), 150);
+    return () => window.clearTimeout(minuterie);
+  }, [hist.present.modele, enveloppe.controle]);
+  useEffect(() => () => controleurEnveloppeRef.current?.arreter(), []);
+  useEffect(() => {
+    const r = controleEnveloppe.resultat;
+    const v = vueRef.current;
+    if (!v) return;
+    if (!r || !enveloppe.controle) return v.poserControleEnveloppe(null);
+    const contenu = r.lignes.find((l) => l.genre === "contenu");
+    const m = hist.present.modele;
+    const env = enveloppe.objet ? m.racine.occurrences[enveloppe.objet] : undefined;
+    v.poserControleEnveloppe({
+      hors: r.hors,
+      point: contenu?.etat === "ecart" ? contenu.point : null,
+      texte: contenu?.valeur ? t("planche.enveloppe.hors", { valeur: `${contenu.valeur.toLocaleString(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} m` }) : "",
+      seuils: enveloppe.regles.filter((x) => x.seuil !== null).map((x) => ({ z: x.seuil as number, texte: t("planche.enveloppe.seuil-vue", { libelle: x.libelle }) })),
+      emprise: (env ? boiteOccurrence(m, env.id) : null) ?? v.emprise(),
+    });
+  }, [controleEnveloppe.resultat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const objetEnveloppe = (): string | null => {
+    const s = selectionRef.current;
+    return s.length === 1 && hist.present.modele.racine.occurrences[s[0]!] ? s[0]! : null;
+  };
+  const nomObjetEnveloppe = (id: string | null): string | null => {
+    const o = id ? hist.present.modele.racine.occurrences[id] : undefined;
+    return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null;
+  };
+  const disponibiliteCommandeEnveloppe = (id: IdCommandeEnveloppe) => disponibiliteEnveloppe(id, { objet: objetEnveloppe() !== null, regle: regleChoisie !== null, lecture: readOnly, plein: enveloppeDe(hist.present.modele).regles.length >= REGLES_HAUTEUR_MAX });
+  const operationEnveloppe = (r: ResultatReglages, libelle: string, message: string | null): boolean => {
+    if (!r.ok) {
+      setErreurEnveloppe(t(`planche.enveloppe.erreur.${r.erreur}`));
+      return false;
+    }
+    setErreurEnveloppe(null);
+    setNoteEnveloppe(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return true;
+  };
+  const executerEnveloppe = (id: IdCommandeEnveloppe) => {
+    if (id === "enveloppe") return setPanneau("enveloppe");
+    if (!disponibiliteCommandeEnveloppe(id).disponible) return;
+    setPanneau("enveloppe");
+    const m = hist.present.modele;
+    if (id === "definir-enveloppe") {
+      const objet = objetEnveloppe();
+      operationEnveloppe(definirEnveloppe(m, objet), t("planche.enveloppe.definir-enveloppe"), t("planche.enveloppe.note.definie", { nom: nomObjetEnveloppe(objet) ?? "" }));
+    } else if (id === "controler-enveloppe") {
+      operationEnveloppe(basculerControle(m), t("planche.enveloppe.controler-enveloppe"), t(enveloppe.controle ? "planche.enveloppe.note.inactif" : "planche.enveloppe.note.actif"));
+    } else if (id === "ajouter-regle-hauteur") {
+      const r = ajouterRegleHauteur(m, t("planche.enveloppe.regle-nouvelle"));
+      if (operationEnveloppe(r, t("planche.enveloppe.ajouter-regle-hauteur"), null) && r.id) setRegleChoisie(r.id);
+    } else if (id === "supprimer-regle-hauteur" && regleChoisie) {
+      operationEnveloppe(supprimerRegleHauteur(m, regleChoisie.id), t("planche.enveloppe.supprimer-regle-hauteur"), t("planche.enveloppe.note.supprimee", { libelle: regleChoisie.libelle }));
+      setRegleChoisie(null);
+    }
+  };
+  const cadrerLigneEnveloppe = (l: LigneControle) => {
+    const p = l.point;
+    if (!p) return;
+    const d = 1.5;
+    vueRef.current?.cadrer({ min: { x: p.x - d, y: p.y - d, z: p.z - d }, max: { x: p.x + d, y: p.y + d, z: p.z + d } }, margesVue(racineRef.current));
+  };
+  /**
+   * Liens de consultation (cas 4 du catalogue, étape 7d) : copie figée de la Planche, lue sans compte par son lien ;
+   * le dessin n'est jamais modifié par le lien. Liste relue à l'ouverture du panneau.
+   */
+  const [liensConsultation, setLiensConsultation] = useState<readonly LienConsultation[]>([]);
+  const [liensCharges, setLiensCharges] = useState(false);
+  const [lienChoisiEtat, setLienChoisi] = useState<string | null>(null);
+  const lienChoisi = liensConsultation.find((l) => l.jeton === lienChoisiEtat) ?? null;
+  const [echeanceLien, setEcheanceLien] = useState("");
+  const [mesureLien, setMesureLien] = useState(true);
+  const [envoiLien, setEnvoiLien] = useState(false);
+  const [erreurLien, setErreurLien] = useState<string | null>(null);
+  const [noteLien, setNoteLien] = useState<string | null>(null);
+  const messageErreurLien = (e: unknown): string => {
+    const code = e instanceof ErreurConsultation ? e.code : "";
+    return t(code === "unauthorized" || (e instanceof ErreurConsultation && e.statut === 401) ? "planche.consultation.erreur.compte" : code === "reseau" ? "planche.consultation.erreur.reseau" : e instanceof ErreurConsultation && e.statut === 413 ? "planche.consultation.erreur.taille" : code === "limite" ? "planche.consultation.erreur.limite" : "planche.consultation.erreur.serveur");
+  };
+  useEffect(() => {
+    if (panneau !== "consultations") return;
+    let annule = false;
+    listerLiens()
+      .then((l) => { if (!annule) { setLiensConsultation(l); setLiensCharges(true); } })
+      .catch((e) => { if (!annule) { setErreurLien(messageErreurLien(e)); setLiensCharges(true); } });
+    return () => { annule = true; };
+  }, [panneau]); // eslint-disable-line react-hooks/exhaustive-deps
+  const disponibiliteCommandeConsultation = (id: IdCommandeConsultation) => disponibiliteConsultation(id, { lien: lienChoisi !== null, actif: lienChoisi !== null && lienActif(lienChoisi, dateDuJour()), occupe: envoiLien });
+  const executerConsultation = (id: IdCommandeConsultation) => {
+    if (id === "partager-lien") return setPanneau("consultations");
+    if (!disponibiliteCommandeConsultation(id).disponible) return;
+    setPanneau("consultations");
+    if (id === "creer-lien") {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void creerLien({ nom: nomCourant, modele: hist.present.modele, echeance: echeanceLien || null, mesure: mesureLien })
+        .then((l) => {
+          setLiensConsultation((x) => [l, ...x]);
+          setLienChoisi(l.jeton);
+          setNoteLien(t("planche.consultation.note.cree"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    } else if (id === "copier-lien" && lienChoisi) {
+      const adresse = adresseLien(lienChoisi.jeton, window.location.origin);
+      if (!navigator.clipboard) setNoteLien(adresse);
+      else void navigator.clipboard.writeText(adresse).then(
+        () => setNoteLien(t("planche.consultation.note.copie", { adresse })),
+        () => setNoteLien(adresse),
+      );
+    } else if (id === "revoquer-lien" && lienChoisi) {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void revoquerLien(lienChoisi.jeton)
+        .then((l) => {
+          setLiensConsultation((x) => x.map((y) => (y.jeton === l.jeton ? l : y)));
+          setNoteLien(t("planche.consultation.note.revoque"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    }
+  };
+  const executerFeuille = (id: IdCommandeFeuille) => {
+    if (id === "feuilles") return setPanneau("feuilles");
+    if (!disponibiliteCommandeFeuille(id).disponible) return;
+    setPanneau("feuilles");
+    const m = hist.present.modele;
+    if (id === "nouvelle-feuille") {
+      const numero = numeroFeuilleSuivant(m);
+      const r = operationFeuille(creerFeuille(m, { numero, nom: t("planche.feuilles.nom-defaut", { numero }) }), t("planche.feuilles.nouvelle-feuille"), t("planche.feuilles.note.creee", { numero }));
+      if (r?.ok) {
+        setFeuilleChoisie(r.id);
+        setFenetreChoisie(null);
+      }
+      return;
+    }
+    if (!feuilleChoisie) return;
+    if (id === "supprimer-feuille") return void operationFeuille(supprimerFeuille(m, feuilleChoisie.id), t("planche.feuilles.supprimer-feuille"), t("planche.feuilles.note.supprimee", { numero: feuilleChoisie.numero }));
+    if (id === "ajouter-fenetre") {
+      const n = feuilleChoisie.fenetres.length;
+      const r = operationFeuille(ajouterFenetre(m, feuilleChoisie.id, { scene: null, echelle: 50, coupe: null, x: 30 + 10 * n, y: 20 + 10 * n }), t("planche.feuilles.ajouter-fenetre"), null);
+      if (r?.ok) setFenetreChoisie(r.id);
+      return;
+    }
+    if (id === "supprimer-fenetre") return void (fenetreChoisie && operationFeuille(supprimerFenetre(m, feuilleChoisie.id, fenetreChoisie), t("planche.feuilles.supprimer-fenetre"), null));
+    if (id === "exporter-feuille-pdf") return emettrePdf([feuilleChoisie], nomFichierFeuille(motifNomsFeuilles, feuilleChoisie));
+    if (id === "exporter-jeu-pdf") {
+      const jeu = feuillesListe.filter((f) => cocheesFeuilles.has(f.id));
+      const premier = nomFichierFeuille(motifNomsFeuilles, jeu[0]!).replace(/\.pdf$/, "");
+      emettrePdf(jeu, `${premier}${jeu.length > 1 ? `-${jeu.length}` : ""}.pdf`);
+    }
+  };
+  const modifierUneFeuille = (v: Partial<Omit<Feuille, "id" | "fenetres">>) => feuilleChoisie && operationFeuille(modifierFeuille(hist.present.modele, feuilleChoisie.id, v), t("planche.feuilles.feuilles"), null);
+  const modifierUneFenetre = (v: Partial<Omit<FenetreVue, "id">> | { position: string }) => {
+    if (!feuilleChoisie || !fenetreChoisie) return;
+    let patch: Partial<Omit<FenetreVue, "id">>;
+    if ("position" in v) {
+      const morceaux = v.position.split(";").map((x) => lireNombreSaisi(x));
+      if (morceaux.length !== 2 || morceaux.some((x) => x === null)) return setErreurFeuille(t("planche.feuilles.erreur.position"));
+      patch = { x: morceaux[0]!, y: morceaux[1]! };
+    } else patch = v;
+    operationFeuille(modifierFenetre(hist.present.modele, feuilleChoisie.id, fenetreChoisie, patch), t("planche.feuilles.feuilles"), null);
+  };
   /**
    * Murs à épaisseur (cas 4 du catalogue, étape 4) : épaisseur et hauteur saisies dans la barre d'options de l'outil Mur
    * (valeurs de départ de l'outil, jamais une donnée du projet) ; « Murs depuis les arêtes » pose un mur par chaîne
@@ -4539,6 +5515,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     selection: () => selectionRef.current,
     dans: () => dansRef.current,
     separateur: () => (LANGUE_INTERFACE === "en" ? "." : ","),
+    decimales: () => precisionRef.current,
+    booleens: () => booleensRef.current,
+    referenceNGF: () => plancheDe(indexRef.current).altitudeRef,
     appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
       const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
@@ -4593,7 +5572,15 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const nom = texteFiche(p.fiche.nom);
     const acces = (): AccesPlanche => accesExtensionRef.current(id);
     const hote = creerHoteExtension(p, {
-      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? "," },
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? ",", decimales: () => acces().decimales?.() ?? 2, booleens: () => acces().booleens?.() ?? null, referenceNGF: () => acces().referenceNGF?.() ?? null },
+      // (Protocole 1.4) Le moteur des opérations planes est chargé à la première demande `geometrie.*`, jamais à l'ouverture.
+      chargerGeometrie: () =>
+        booleensRef.current
+          ? Promise.resolve()
+          : chargerBooleens().then((b) => {
+              booleensRef.current = b;
+              setBooleens("ok");
+            }),
       surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
       libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
@@ -5075,6 +6062,31 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const c = contexteDe(hist.present.modele, dans);
     return selectionRef.current.filter((id) => c.occurrences[id] !== undefined);
   };
+  /**
+   * Statut des travaux (cas 4, lot C4, étape 5) : Existant, À démolir, Projeté posés sur les objets choisis (un second clic
+   * sur le statut commun le retire) ; filtre d'affichage et couleurs de la vue (options d'affichage, hors document).
+   */
+  const [noteTravaux, setNoteTravaux] = useState<string | null>(null);
+  const statutsSelection = () => {
+    const c = contexteDe(hist.present.modele, dans);
+    return occurrencesSelectionnees().map((id) => c.occurrences[id]?.statut ?? null);
+  };
+  const statutCommunSelection = (): StatutTravaux | null => {
+    const l = statutsSelection();
+    return l.length > 0 && l.every((x) => x === l[0]) ? (l[0] ?? null) : null;
+  };
+  const disponibiliteCommandeTravaux = (id: IdCommandeTravaux) => disponibiliteTravaux(id, { objets: occurrencesSelectionnees().length, lecture: readOnly });
+  const executerTravaux = (id: IdCommandeTravaux) => {
+    setPanneau("statut-travaux");
+    if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
+    const statut: StatutTravaux = id === "statut-existant" ? "existant" : id === "statut-a-demolir" ? "a-demolir" : "projete";
+    const ids = occurrencesSelectionnees();
+    const retirer = statutCommunSelection() === statut;
+    const libelle = t(`planche.travaux.${id}`);
+    const message = t(retirer ? "planche.travaux.note.retire" : "planche.travaux.note.pose", { nombre: String(ids.length), statut: t(`planche.travaux.court.${id}`) });
+    setNoteTravaux(message);
+    operer(libelle, (m) => ({ modele: statuerOccurrences(m, ids, retirer ? null : statut, o()).modele, message }));
+  };
   const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
   const [origineOuverte, setOrigineOuverte] = useState(false);
   /** Revue Codex de #303 : chemin complet de chaque objet sélectionné (l'instance ouverte, pas la première rencontrée). */
@@ -5214,6 +6226,15 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
+    else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
+    else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
+    else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
+    else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
+    else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
+    else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
+    else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
+    else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
+    else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
@@ -5281,6 +6302,42 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_NIVEAUX.map((c) => {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
+        }),
+        ...COMMANDES_FEUILLES.map((c) => {
+          const d = disponibiliteCommandeFeuille(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.feuilles.motif.feuille"), executer: () => executerFeuille(c.id) };
+        }),
+        ...COMMANDES_RESERVES.map((c) => {
+          const d = disponibiliteCommandeReserve(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
+        }),
+        ...COMMANDES_FONDS.map((c) => {
+          const d = disponibiliteCommandeFond(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fonds.motif.fond"), executer: () => executerFond(c.id) };
+        }),
+        ...COMMANDES_REFERENCES.map((c) => {
+          const d = disponibiliteCommandeReference(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.references.motif.reference"), executer: () => executerReference(c.id) };
+        }),
+        ...COMMANDES_PDF.map((c) => {
+          const d = disponibiliteCommandePdf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.pdf.motif.page"), executer: () => executerPdf(c.id) };
+        }),
+        ...COMMANDES_DXF.map((c) => {
+          const d = disponibiliteCommandeDxf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.dxf.motif.cochees"), executer: () => executerDxf(c.id) };
+        }),
+        ...COMMANDES_TRAVAUX.map((c) => {
+          const d = disponibiliteCommandeTravaux(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.travaux.motif.objets"), executer: () => executerTravaux(c.id) };
+        }),
+        ...COMMANDES_CONSULTATION.map((c) => {
+          const d = disponibiliteCommandeConsultation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.consultation.motif.lien"), executer: () => executerConsultation(c.id) };
+        }),
+        ...COMMANDES_ENVELOPPE.map((c) => {
+          const d = disponibiliteCommandeEnveloppe(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.enveloppe.motif.objet"), executer: () => executerEnveloppe(c.id) };
         }),
         ...COMMANDES_PLAN.map((c) => {
           const d = disponibiliteCommandePlan(c.id);
@@ -6032,6 +7089,71 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         </section>
       )}
 
+      {/* Image d'un fond : montée hors du panneau pour que « Importer un fond » (Fichier, Ctrl+Alt+Maj+F3) l'ouvre partout. */}
+      <input
+        ref={importFondRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerUnFond(f);
+        }}
+        data-planche-fond-fichier
+      />
+      {/* Fiche de calage reçue (Ctrl+Alt+Maj+F9) et orthophoto avec son fichier de calage (Ctrl+Alt+Maj+F10) : montés hors du panneau. */}
+      <input
+        ref={importFicheRef}
+        type="file"
+        accept=".txt,text/plain"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFiche(f);
+        }}
+        data-planche-fiche-fichier
+      />
+      <input
+        ref={importOrthoRef}
+        type="file"
+        multiple
+        accept={["image/png", "image/jpeg", ...EXTENSIONS_CALAGE_IMAGE.map((x) => `.${x}`), ".prj"].join(",")}
+        hidden
+        onChange={(e) => {
+          const f = [...(e.target.files ?? [])];
+          e.target.value = "";
+          if (f.length > 0) void lireOrthophoto(f);
+        }}
+        data-planche-orthophoto-fichier
+      />
+      {/* Fichier d'une référence (Ctrl+Maj+Espace, C ou Maj+C) : monté hors du panneau. */}
+      <input
+        ref={importReferenceRef}
+        type="file"
+        accept=".obj,.stl,.ifc"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void chargerFichierReference(f);
+        }}
+        data-planche-reference-fichier
+      />
+      {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
+      <input
+        ref={importPdfRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierPdf(f);
+        }}
+        data-planche-pdf-fichier-entree
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -6073,11 +7195,13 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
             <h3>
+              {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
               {panneau === "echange-import" && rapportImport ? t("planche.echange.titre-import", { format: rapportImport.rapport.format.toUpperCase() }) : t(`panneau.${panneau}` as "panneau.info-entite")}
               {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
               {panneau === "info-entite" && planChoisi() ? ` · ${t("planche.info.plan")}` : ""}
               {RACCOURCI_PANNEAU_L7[panneau] && <small className="planche-versions-raccourci"> {afficherRaccourci(RACCOURCI_PANNEAU_L7[panneau]!)}</small>}
             </h3>
+            {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
@@ -6107,6 +7231,184 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 note={noteNiveau}
               />
             )}
+            {panneau === "feuilles-dxf" && (
+              <PanneauFeuillesDxf
+                feuilles={feuillesListe}
+                cochees={cocheesDxf}
+                onCocher={(id, coche) => setDecocheesDxf((a) => { const n = new Set(a); if (coche) n.delete(id); else n.add(id); return n; })}
+                contenu={contenuDxf}
+                onContenu={setContenuDxf}
+                executer={executerDxf}
+                disponibilite={disponibiliteCommandeDxf}
+                erreur={erreurDxf}
+                note={noteDxf}
+              />
+            )}
+            {panneau === "statut-travaux" && (
+              <PanneauStatutTravaux
+                objets={occurrencesSelectionnees().length}
+                statutCommun={statutCommunSelection()}
+                compte={compterStatuts(hist.present.modele)}
+                etat={options.etatTravaux}
+                onEtat={(etatTravaux) => majOptions({ etatTravaux })}
+                couleurs={options.couleursStatut}
+                onCouleur={(st, couleur) => majOptions({ couleursStatut: { ...options.couleursStatut, [st]: couleur } })}
+                executer={executerTravaux}
+                disponibilite={disponibiliteCommandeTravaux}
+                note={noteTravaux}
+              />
+            )}
+            {panneau === "pdf-recu" && (
+              <PanneauPdfRecu
+                pdf={pdfRecu}
+                choisie={pagePdf}
+                onChoisir={changerPagePdf}
+                mode={modePdf}
+                points={pointsPdf}
+                onPoint={(p) => setPointsPdf((a) => (a.length >= 2 ? [p] : [...a, p]))}
+                proposition={propositionPdf}
+                echelleBarre={echelleBarrePdf}
+                longueurBarre={longueurBarrePdf}
+                onLongueurBarre={setLongueurBarrePdf}
+                echelle={echellePdf}
+                onEchelle={(v) => { setEchellePdf(v); setEchelleConfirmee(null); }}
+                confirmee={echelleConfirmee}
+                niveaux={niveaux}
+                niveau={niveauPdf}
+                onNiveau={setNiveauPdf}
+                origine={originePdf}
+                onOrigine={setOriginePdf}
+                lecture={readOnly}
+                executer={executerPdf}
+                disponibilite={disponibiliteCommandePdf}
+                erreur={erreurPdf}
+                note={notePdf}
+              />
+            )}
+            {panneau === "references" && (
+              <PanneauReferences
+                references={referencesListe}
+                choisie={referenceChoisie}
+                etats={etatsReferences}
+                lecture={readOnly}
+                unite={uniteReference}
+                recolement={recolement}
+                onChoisir={(id) => { setReferenceChoisie(id); setErreurReference(null); setNoteReference(null); }}
+                onUnite={setUniteReference}
+                onPlacement={(p) => referenceChoisie && operationReference(deplacerReference(hist.present.modele, referenceChoisie.id, p), t("planche.references.placement"), null)}
+                onOpacite={(v) => referenceChoisie && operationReference(reglerOpaciteReference(hist.present.modele, referenceChoisie.id, v), t("planche.references.opacite"), null)}
+                onTolerance={(v) => referenceChoisie && operationReference(reglerTolerance(hist.present.modele, referenceChoisie.id, v), t("planche.references.tolerance"), null)}
+                executer={executerReference}
+                disponibilite={disponibiliteCommandeReference}
+                erreur={erreurReference}
+                note={noteReference}
+              />
+            )}
+            {panneau === "fonds" && (
+              <PanneauFonds
+                fonds={fondsListe}
+                choisi={fondChoisi}
+                point={pointChoisi}
+                lecture={readOnly}
+                onChoisir={(id) => { setFondChoisi(id); setPointChoisi(null); setErreurFond(null); setNoteFond(null); }}
+                onChoisirPoint={setPointChoisi}
+                onMethode={(v) => fondChoisi && operationFond(choisirMethode(hist.present.modele, fondChoisi.id, v), t("planche.fonds.methode"), null)}
+                onLongueur={(v) => fondChoisi && operationFond(saisirLongueur(hist.present.modele, fondChoisi.id, v), t("planche.fonds.longueur"), null)}
+                onCible={(p, v) => fondChoisi && operationFond(saisirCible(hist.present.modele, fondChoisi.id, p, v), t("planche.fonds.position-de", { point: p }), null)}
+                onOpacite={(v) => fondChoisi && operationFond(reglerOpacite(hist.present.modele, fondChoisi.id, v), t("planche.fonds.opacite"), null)}
+                executer={executerFond}
+                disponibilite={disponibiliteCommandeFond}
+                erreur={erreurFond}
+                note={noteFond}
+                fiche={ficheProjet}
+                auteur={auteurFiche}
+                date={dateFiche}
+                onAuteur={setAuteurFiche}
+                onDate={setDateFiche}
+                recue={ficheRecue ? { ...ficheRecue, comparaison: comparerFiche(hist.present.modele, referenceNiveaux, ficheRecue.fiche) } : null}
+                orthophoto={orthoAttente ? { image: orthoAttente.fichier.name, calage: orthoAttente.calage, nomPrj: orthoAttente.nomPrj } : null}
+                systemeOrthophoto={systemeOrtho}
+                onSystemeOrthophoto={setSystemeOrtho}
+              />
+            )}
+            {panneau === "consultations" && (
+              <PanneauConsultations
+                liens={liensConsultation}
+                charge={liensCharges}
+                choisi={lienChoisi}
+                echeance={echeanceLien}
+                mesure={mesureLien}
+                aujourdhui={dateDuJour()}
+                origine={window.location.origin}
+                onEcheance={setEcheanceLien}
+                onMesure={setMesureLien}
+                onChoisir={(j) => { setLienChoisi(j); setErreurLien(null); setNoteLien(null); }}
+                executer={executerConsultation}
+                disponibilite={disponibiliteCommandeConsultation}
+                erreur={erreurLien}
+                note={noteLien}
+              />
+            )}
+            {panneau === "enveloppe" && (
+              <PanneauEnveloppe
+                reglages={enveloppe}
+                resultat={controleEnveloppe.resultat}
+                calcul={controleEnveloppe.calcul}
+                nomEnveloppe={nomObjetEnveloppe(enveloppe.objet)}
+                choisie={regleChoisie}
+                lecture={readOnly}
+                onChoisir={(id) => { setRegleChoisie(id); setErreurEnveloppe(null); setNoteEnveloppe(null); }}
+                onCadrer={cadrerLigneEnveloppe}
+                onModifier={(v) => regleChoisie && operationEnveloppe(modifierRegleHauteur(hist.present.modele, regleChoisie.id, v), t("planche.enveloppe.fiche"), null)}
+                executer={executerEnveloppe}
+                disponibilite={disponibiliteCommandeEnveloppe}
+                erreur={erreurEnveloppe}
+                note={noteEnveloppe}
+              />
+            )}
+            {panneau === "reserves" && (
+              <PanneauReserves
+                reserves={filtrerReserves(reservesListe, filtreReserves)}
+                total={reservesListe.length}
+                lots={lotsDesReserves(hist.present.modele)}
+                filtre={filtreReserves}
+                choisie={reserveChoisie}
+                aujourdhui={dateDuJour()}
+                nomObjet={(id) => { const o = hist.present.modele.racine.occurrences[id]; return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null; }}
+                lecture={readOnly}
+                onFiltre={setFiltreReserves}
+                onChoisir={(id) => { setReserveChoisie(id); setErreurReserve(null); setNoteReserve(null); }}
+                onModifier={modifierUneReserve}
+                onPhoto={(f) => void joindrePhoto(f)}
+                executer={executerReserve}
+                disponibilite={disponibiliteCommandeReserve}
+                erreur={erreurReserve}
+                note={noteReserve}
+              />
+            )}
+            {panneau === "feuilles" && (
+              <PanneauFeuilles
+                feuilles={feuillesListe}
+                choisie={feuilleChoisie}
+                composition={compositionFeuille}
+                fenetre={fenetreChoisie}
+                cochees={cocheesFeuilles}
+                scenes={Object.values(hist.present.modele.annotations?.scenes ?? {})}
+                plans={Object.values(hist.present.modele.annotations?.plansDeCoupe ?? {})}
+                motifNoms={motifNomsFeuilles}
+                lecture={readOnly}
+                onChoisir={(id) => { setFeuilleChoisie(id); setFenetreChoisie(null); setErreurFeuille(null); }}
+                onCocher={(id, coche) => setDecochees((d) => { const n = new Set(d); if (coche) n.delete(id); else n.add(id); return n; })}
+                onChoisirFenetre={setFenetreChoisie}
+                onModifierFeuille={modifierUneFeuille}
+                onModifierFenetre={modifierUneFenetre}
+                onMotifNoms={setMotifNomsFeuilles}
+                executer={executerFeuille}
+                disponibilite={disponibiliteCommandeFeuille}
+                erreur={erreurFeuille}
+                note={noteFeuille}
+              />
+            )}
             {panneau === "plan-vectoriel" && (
               <>
                 <PanneauPlanVectoriel
@@ -6126,6 +7428,14 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                   refMotifs={titreMotifsRef}
                   erreur={erreurPlan}
                   note={notePlan}
+                  suite={(() => {
+                    const c = COMMANDES_FEUILLES[0]!;
+                    return (
+                      <button type="button" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => executerFeuille("feuilles")} data-planche-commande="feuilles">
+                        <Pictogramme picto={c.picto} /> {t(c.court)}
+                      </button>
+                    );
+                  })()}
                 />
               </>
             )}
@@ -6611,6 +7921,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             {outilExtensionActif && vue.consigne ? " — " : ""}
             {vue.consigne}
           </span>
+          {panneau === "feuilles" && feuilleChoisie && <span className="planche-plan-etat" data-planche-feuilles-etat>{vue.consigne ? " | " : ""}{t("planche.feuilles.etat", { numero: feuilleChoisie.numero, format: `A${feuilleChoisie.format}`, sens: t(`planche.feuilles.sens.${feuilleChoisie.sens}`), nombre: String(feuilleChoisie.fenetres.length), echelles: compositionFeuille?.echelles.length ? ` (${compositionFeuille.echelles.map((e) => `1:${e}`).join(", ")})` : "" })}</span>}
           {panneau === "plan-vectoriel" && apercuPlan && <span className="planche-plan-etat" data-planche-plan-etat>{vue.consigne ? " | " : ""}{t("planche.plan.etat", { echelle: String(optionsPlan.echelle), traits: String(apercuPlan.classes), motifs: String(apercuPlan.motifs) })}</span>}
           {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
@@ -6826,6 +8137,33 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       </div>
       </div>
 
+      {importCours && (
+        <div className="planche-import-cours" role="dialog" aria-modal="false" aria-label={t("planche.import.titre")} data-planche-import-cours data-phase={importCours.phase}>
+          <h3>
+            <IconeSandbox nom="menuImporter" />
+            {t("planche.import.titre")}
+            <small>{t("planche.import.echap")}</small>
+          </h3>
+          <p className="planche-import-aide">{t("planche.import.aide", { fichier: importCours.fichier })}</p>
+          <div>{importCours.phase === "etalonnage" ? t("planche.import.etalonnage") : t("planche.import.lecture", { mo: (importCours.octets / 1e6).toLocaleString(LOCALE, { maximumFractionDigits: 1 }), etat: importCours.phase === "lecture" ? t("planche.import.enCours") : t("planche.import.terminee") })}</div>
+          <div className="planche-import-barre"><i style={{ width: importCours.phase === "lecture" || importCours.phase === "etalonnage" ? "30%" : "100%" }} className={importCours.phase === "insertion" ? undefined : "planche-import-indetermine"} /></div>
+          {importCours.phase === "insertion" && (
+            <>
+              <div data-planche-import-insertion>{t("planche.import.insertion", { fait: importCours.fait.toLocaleString(LOCALE), total: importCours.total.toLocaleString(LOCALE), pc: String(importCours.total > 0 ? Math.floor((importCours.fait / importCours.total) * 100) : 0) })}</div>
+              <div className="planche-import-barre"><i style={{ width: `${importCours.total > 0 ? (importCours.fait / importCours.total) * 100 : 0}%` }} /></div>
+            </>
+          )}
+          <button type="button" className="planche-import-annuler" data-planche-import-annuler onClick={() => annulerImportRef.current?.()}>
+            <IconeSandbox nom="fermer" />
+            {t("planche.import.annuler")}
+          </button>
+          {importCours.borne !== null && importCours.debit && (
+            <p className="planche-import-note" data-planche-import-borne={importCours.borne}>
+              {t("planche.import.borne", { borne: importCours.borne.toLocaleString(LOCALE), debit: importCours.debit.trianglesParSeconde.toLocaleString(LOCALE), date: new Date(importCours.debit.mesure).toLocaleDateString(LOCALE), budget: "20" })}
+            </p>
+          )}
+        </div>
+      )}
       {recherche && (
         <RechercheOutil
           lecture={readOnly}
