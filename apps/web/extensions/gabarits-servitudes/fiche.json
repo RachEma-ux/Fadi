@@ -1,0 +1,23 @@
+{
+  "id": "gabarits-servitudes",
+  "nom": { "fr": "Gabarits et servitudes", "en": "Envelopes and easements" },
+  "description": {
+    "fr": "Gabarit constructible en 3D depuis la parcelle et les règles d'un PLU ou du RNU (table sourcée et datée), servitudes et zones de risque posées depuis un GeoJSON en volumes avec plafond et contrôlées, comparaison de scénarios de capacité.",
+    "en": "Buildable envelope in 3D from the plot and the rules of a local plan or the national rules (sourced and dated table), easements and risk zones placed from a GeoJSON as volumes with ceiling and checked, comparison of capacity scenarios."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.6",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Gabarits et servitudes", "en": "Envelopes and easements" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+B" },
+    { "id": "gabarit", "libelle": { "fr": "Gabarit constructible", "en": "Buildable envelope" }, "icone": "gabarit.svg", "raccourci": "Ctrl+Alt+H" },
+    { "id": "servitudes", "libelle": { "fr": "Servitudes et zones", "en": "Easements and zones" }, "icone": "servitudes.svg", "raccourci": "Ctrl+Alt+J" },
+    { "id": "scenarios", "libelle": { "fr": "Scénarios de capacité", "en": "Capacity scenarios" }, "icone": "scenarios.svg", "raccourci": "Ctrl+Alt+Q" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "gabarits", "titre": { "fr": "Gabarits et servitudes", "en": "Envelopes and easements" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}

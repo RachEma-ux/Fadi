@@ -1,0 +1,23 @@
+{
+  "id": "contexte-analyses",
+  "nom": { "fr": "Contexte et analyses", "en": "Context and analyses" },
+  "description": {
+    "fr": "Contexte bâti posé depuis un fichier GeoJSON ou OSM (hauteur lue, jamais devinée), faces colorées selon une valeur d'analyse avec légende, ratio de vitrage par façade et par secteur d'orientation.",
+    "en": "Built context placed from a GeoJSON or OSM file (height read, never guessed), faces coloured by an analysis value with a legend, glazing ratio by facade and orientation sector."
+  },
+  "version": "1.0.0",
+  "auteur": "Fadi",
+  "protocole": "1.6",
+  "permissions": ["modele.lire", "modele.modifier", "selection", "messages", "panneau", "evenements", "donnees", "fichiers"],
+  "commandes": [
+    { "id": "ouvrir-panneau", "libelle": { "fr": "Contexte et analyses", "en": "Context and analyses" }, "icone": "ouvrir.svg", "raccourci": "Ctrl+Alt+M" },
+    { "id": "contexte", "libelle": { "fr": "Contexte bâti", "en": "Built context" }, "icone": "contexte.svg", "raccourci": "Ctrl+Alt+X" },
+    { "id": "couleurs", "libelle": { "fr": "Couleurs d'analyse", "en": "Analysis colours" }, "icone": "couleurs.svg", "raccourci": "Ctrl+Alt+W" },
+    { "id": "vitrage", "libelle": { "fr": "Vitrage par façade", "en": "Glazing by facade" }, "icone": "vitrage.svg", "raccourci": "Ctrl+Alt+L" }
+  ],
+  "outils": [],
+  "panneaux": [
+    { "id": "analyses", "titre": { "fr": "Contexte et analyses", "en": "Context and analyses" }, "page": "panneau.html", "icone": "panneau.svg" }
+  ],
+  "abonnements": ["modele.change", "selection.change"]
+}
