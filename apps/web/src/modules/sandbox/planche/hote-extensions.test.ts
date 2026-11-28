@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type AvisExtension, type DemandeSaisie, type ValeursSaisie, type ExecutantExtension, type Id, type Modele, type PaquetExtension } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type AvisExtension, type DemandeSaisie, type ValeursSaisie, type ExecutantExtension, type Id, type Modele, type PaquetExtension, VERSION_PROTOCOLE } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const lu = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-socle.fadi-addon.json", import.meta.url)), "utf8")));
@@ -204,7 +204,7 @@ describe("hôte d'une extension — l'extension d'essai du socle", () => {
     const h = creerHoteExtension(ESSAI, { creer });
     expect(await h.appeler("demande", "commande.compter")).toEqual({ genre: "fini", resultat: "fait" });
     await new Promise((r) => setTimeout(r, 5));
-    expect(recus).toEqual([{ protocole: "1.2", sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
+    expect(recus).toEqual([{ protocole: VERSION_PROTOCOLE, sorte: "reponse", id: 7, ok: false, resultat: null, erreur: { nom: "demande_inconnue", detail: "serveur.appeler" } }]);
   });
 });
 
