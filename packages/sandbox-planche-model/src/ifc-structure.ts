@@ -23,7 +23,7 @@ import type { ContenuImporte } from "./geometrie-libre.js";
 import { maillagesPlanche } from "./representation.js";
 import { axesQuadrillage, type PointDeBase } from "./point-de-base.js";
 import { nonEtanchesDe } from "./echanges.js";
-import { ecrireZip, estZip, lireZip } from "./zip.js";
+import { ecrireZipCompresse, estZip, lireZip } from "./zip.js";
 import { locauxTries, mesurerLocal } from "./locaux.js";
 
 export type SchemaIfc = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
@@ -765,9 +765,9 @@ export function exporterIfcStructure(m: Modele, o: OptionsExportIfcStructure): E
   return { contenu, nomFichier, etages: etage.size, objets: maillages.length, locaux: locaux.length, triangles, globalIds, georef, classes, ramenees, renouveles };
 }
 
-/** `.ifczip` : l'IFC dans une archive stockée (méthode 0, écart déclaré : pas de compression). */
-export function ifczip(x: ExportIfcStructure, maintenant: Date): Uint8Array {
-  return ecrireZip([{ nom: x.nomFichier, donnees: new TextEncoder().encode(x.contenu) }], maintenant);
+/** `.ifczip` : l'IFC dans une archive compressée (« deflate-raw » des navigateurs, décision « 3 A » du 28.11.2026). */
+export function ifczip(x: ExportIfcStructure, maintenant: Date): Promise<Uint8Array> {
+  return ecrireZipCompresse([{ nom: x.nomFichier, donnees: new TextEncoder().encode(x.contenu) }], maintenant);
 }
 
 // ---------------------------------------------------------------------------------------------------------------

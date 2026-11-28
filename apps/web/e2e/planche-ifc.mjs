@@ -14,6 +14,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
+import { inflateRawSync } from "node:zlib";
 import { inscrireDansLaPage } from "./lib-inscription.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -182,7 +183,15 @@ await exp.locator("[data-planche-ifc-schema='IFC2X3']").check();
 await exp.locator("[data-planche-commande='exporter-ifc']").click();
 fichiers = await attendre(1);
 const zip = fichiers[0];
-check(".ifczip en IFC2X3 : archive ZIP contenant le fichier .ifc", !!zip && zip.nom.endsWith(".ifczip") && zip.octets.readUInt32LE(0) === 0x04034b50 && zip.octets.includes(Buffer.from("FILE_SCHEMA(('IFC2X3'))")), zip?.nom);
+// Décision « 3 A » : l'entrée est compressée (méthode 8, deflate brut des navigateurs), relue ici par zlib.
+const entreeZip = (o) => {
+  if (!o || o.readUInt32LE(0) !== 0x04034b50) return null;
+  const methode = o.readUInt16LE(8), taille = o.readUInt32LE(18), debut = 30 + o.readUInt16LE(26) + o.readUInt16LE(28);
+  const brut = o.subarray(debut, debut + taille);
+  return { methode, texte: (methode === 8 ? inflateRawSync(brut) : brut).toString("utf8") };
+};
+const entreeIfc = entreeZip(zip?.octets);
+check(".ifczip en IFC2X3 : archive ZIP compressée contenant le fichier .ifc", !!zip && zip.nom.endsWith(".ifczip") && entreeIfc?.methode === 8 && entreeIfc.texte.includes("FILE_SCHEMA(('IFC2X3'))") && zip.octets.length < entreeIfc.texte.length, zip ? `${zip.nom} : ${zip.octets.length} o pour ${entreeIfc?.texte.length} o` : "");
 if (zip) writeFileSync(`${OUT}/${zip.nom}`, zip.octets);
 await page.screenshot({ path: `${OUT}/02-export.png` });
 
@@ -233,6 +242,13 @@ await page.keyboard.press("Shift+B");
 await page.waitForTimeout(80);
 check("une porte sans famille livrée (Maj+B) ne fait rien et l'encadré se referme", (await encadre.count()) === 0);
 await page.screenshot({ path: `${OUT}/03-recherche.png` });
+
+// --- Relecture d'un .ifczip compressé (décision « 3 A ») ---------------------------------------------------------------
+await deuxTemps("o");
+await imp.waitFor();
+await page.locator("[data-planche-import-ifc-entree]").setInputFiles(`${OUT}/${zip?.nom}`);
+await page.waitForFunction(() => document.querySelector("[data-planche-import-ifc]")?.getAttribute("data-planche-import-ifc") === "2");
+check("le .ifczip compressé se relit à l'import : 2 objets", true);
 
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));
 await browser.close();

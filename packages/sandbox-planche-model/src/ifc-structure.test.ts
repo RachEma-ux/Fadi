@@ -12,7 +12,7 @@ import { creerLocal } from "./locaux.js";
 import { ajouterNiveau } from "./niveaux.js";
 import { poserMurs } from "./murs.js";
 import { v3 } from "./vecteur.js";
-import { crc32, ecrireZip, lireZip } from "./zip.js";
+import { crc32, deplierZip, ecrireZip, ecrireZipCompresse, lireZip } from "./zip.js";
 
 const DATE = new Date("2026-11-27T21:00:00Z");
 
@@ -74,10 +74,24 @@ describe("Archive ZIP", () => {
     abime[36] = abime[36]! ^ 0xff;
     expect(lireZip(abime)).toBeNull();
   });
+
+  it("compresse par les flux des navigateurs (« deflate-raw », méthode 8) et se relit une fois dépliée", async () => {
+    const d = new TextEncoder().encode("ISO-10303-21;\n".repeat(400));
+    const z = await ecrireZipCompresse([{ nom: "a.ifc", donnees: d }, { nom: "b.txt", donnees: new Uint8Array([1]) }], DATE);
+    expect(z.length).toBeLessThan(d.length / 10);
+    expect(new DataView(z.buffer).getUint16(8, true)).toBe(8);
+    // Lecture synchrone : une entrée compressée exige le dépliage.
+    expect(lireZip(z)).toBeNull();
+    expect(lireZip((await deplierZip(z))!)).toEqual([{ nom: "a.ifc", donnees: d }, { nom: "b.txt", donnees: new Uint8Array([1]) }]);
+    // CRC abîmé : refus.
+    const abime = z.slice();
+    abime[40] = abime[40]! ^ 0xff;
+    expect(await deplierZip(abime)).toBeNull();
+  });
 });
 
 describe("Export IFC structuré", () => {
-  it.each(SCHEMAS_IFC)("%s : étages, classes, géoréférencement ; relu à l'identique, en .ifc et en .ifczip", (schema) => {
+  it.each(SCHEMAS_IFC)("%s : étages, classes, géoréférencement ; relu à l'identique, en .ifc et en .ifczip", async (schema) => {
     const m = modele();
     const x = exporterIfcStructure(m, { schema, georef: true, nom: "Essai", maintenant: DATE, reference: 432.15 });
     writeFileSync(`/tmp/fadi-ifc-${schema}.ifc`, x.contenu);
@@ -92,7 +106,9 @@ describe("Export IFC structuré", () => {
     const r = relireIfcStructure(x, schema, x.contenu);
     expect(r.ecarts).toEqual([]);
     expect(r.identique).toBe(true);
-    expect(relireIfcStructure(x, schema, ifczip(x, DATE)).identique).toBe(true);
+    const zip = await ifczip(x, DATE);
+    expect(zip.length).toBeLessThan(x.contenu.length / 2);
+    expect(relireIfcStructure(x, schema, (await deplierZip(zip))!).identique).toBe(true);
     // Reproductible : même modèle, même date, mêmes octets.
     expect(exporterIfcStructure(m, { schema, georef: true, nom: "Essai", maintenant: DATE, reference: 432.15 }).contenu).toBe(x.contenu);
     // Le géoréférencement relu redonne le point de base (rotation comprise).
