@@ -3276,6 +3276,18 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, contenu: b64("é".repeat(150_000)) })).status).toBe(201);
       });
 
+      it("extension livrée du Sandbox : son fichier de règles n'est archivé que si le compte l'a activée", async () => {
+        const user = await account("fichiers-livree");
+        const corps = { extension: "controle", nom: "pieces.json", contenu: Buffer.from('{"source":"essai","pieces":[]}', "utf8").toString("base64") };
+        // « Contrôle et nettoyage » est inactive d'origine : 404 tant que le compte ne l'a pas activée.
+        expect((await user.a.post("/sandbox/preferences/fichiers").send(corps)).status).toBe(404);
+        expect((await user.a.put("/sandbox/preferences").send({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: { controle: true } })).status).toBe(200);
+        const r = await user.a.post("/sandbox/preferences/fichiers").send(corps);
+        expect(r.status).toBe(201);
+        const lu = await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`);
+        expect(lu.body).toMatchObject({ extension: "controle", nom: "pieces.json", texte: '{"source":"essai","pieces":[]}' });
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

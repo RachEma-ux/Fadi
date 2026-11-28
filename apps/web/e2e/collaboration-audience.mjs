@@ -126,6 +126,9 @@ await pOwner.goto(`${BASE}/projets/${pid}?module=collaboration`);
 await pOwner.waitForSelector("#collab-comments", { timeout: 20000 });
 const formulaire = pOwner.locator("section[aria-labelledby='collab-comments'] form.comment-form").last();
 check("interface propriétaire : « Visible par les lecteurs » au formulaire, décoché", await formulaire.locator("[data-comment-audience]").count() === 1 && !(await formulaire.locator("[data-comment-audience]").isChecked()));
+// Les fils et la liste des membres arrivent après le formulaire (requêtes distinctes) : on attend que les trois commandes
+// soient affichées avant de les contrôler, sans quoi le contrôle dépend de l'ordre d'arrivée des réponses.
+await pOwner.waitForFunction(() => ["visible-lecteurs", "rendre-visible", "export-lecteur"].every((c) => document.querySelector(`[data-commande-collaboration="${c}"]`)), null, { timeout: 15000 }).catch(() => {});
 check("règle d'or : chaque commande du propriétaire porte son icône, son raccourci affiché et déclaré",
   await pOwner.evaluate(() => ["visible-lecteurs", "rendre-visible", "export-lecteur"].every((c) => {
     const el = document.querySelector(`[data-commande-collaboration="${c}"]`);

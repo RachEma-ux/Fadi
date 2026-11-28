@@ -252,7 +252,7 @@ export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
  * Extension « Contrôle et nettoyage » : ouvrir le relevé, nettoyer ce qui est coché (règle d'or : icône, barre du
  * panneau, raccourci).
  */
-export type IdCommandeControle = "controler" | "nettoyer";
+export type IdCommandeControle = "controler" | "nettoyer" | "defaut-precedent" | "defaut-suivant" | "corriger-defaut" | "preparer-fond-dao" | "fusionner-volumes" | "pieces-permis";
 export interface CommandeControle {
   readonly id: IdCommandeControle;
   readonly picto: Pictogramme;
@@ -263,11 +263,28 @@ export interface CommandeControle {
 export const COMMANDES_CONTROLE: readonly CommandeControle[] = [
   { id: "controler", ...depuisRegistre("controler"), libelle: "planche.controle.controler", court: "planche.controle.court.controler" },
   { id: "nettoyer", ...depuisRegistre("nettoyer"), libelle: "planche.controle.nettoyer", court: "planche.controle.court.nettoyer" },
+  // Cas 2, lot 3 : parcours et correction des défauts, fond DAO, volumes, pièces du permis.
+  { id: "defaut-precedent", ...depuisRegistre("defaut-precedent"), libelle: "planche.controle.defaut-precedent", court: "planche.controle.court.defaut-precedent" },
+  { id: "defaut-suivant", ...depuisRegistre("defaut-suivant"), libelle: "planche.controle.defaut-suivant", court: "planche.controle.court.defaut-suivant" },
+  { id: "corriger-defaut", ...depuisRegistre("corriger-defaut"), libelle: "planche.controle.corriger-defaut", court: "planche.controle.court.corriger-defaut" },
+  { id: "preparer-fond-dao", ...depuisRegistre("preparer-fond-dao"), libelle: "planche.controle.preparer-fond-dao", court: "planche.controle.court.preparer-fond-dao" },
+  { id: "fusionner-volumes", ...depuisRegistre("fusionner-volumes"), libelle: "planche.controle.fusionner-volumes", court: "planche.controle.court.fusionner-volumes" },
+  { id: "pieces-permis", ...depuisRegistre("pieces-permis"), libelle: "planche.controle.pieces-permis", court: "planche.controle.court.pieces-permis" },
 ];
 
 /** Disponibilité : le contrôle toujours ; le nettoyage hors lecture, à la racine, avec quelque chose de coché à retirer. */
-export function disponibiliteControle(id: IdCommandeControle, s: { readonly aNettoyer: boolean; readonly dansObjet: boolean; readonly lecture: boolean }): Disponibilite {
-  if (id === "controler") return { disponible: true, motif: null };
+export function disponibiliteControle(
+  id: IdCommandeControle,
+  s: { readonly aNettoyer: boolean; readonly dansObjet: boolean; readonly lecture: boolean; readonly defauts?: number; readonly corrigeable?: boolean; readonly objetsSelectionnes?: number },
+): Disponibilite {
+  if (id === "controler" || id === "pieces-permis") return { disponible: true, motif: null };
+  if (id === "defaut-precedent" || id === "defaut-suivant") return (s.defauts ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.aucun-defaut" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "corriger-defaut") return s.corrigeable ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.sans-correction" };
+  // Le fond DAO se prépare dans l'objet ouvert (l'import) ou dans l'import sélectionné à la racine.
+  if (id === "preparer-fond-dao") return s.dansObjet || (s.objetsSelectionnes ?? 0) === 1 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.import" };
+  if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
+  if (id === "fusionner-volumes") return (s.objetsSelectionnes ?? 0) >= 2 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.volumes" };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (s.dansObjet) return { disponible: false, motif: "planche.controle.motif.objet" };
   return s.aNettoyer ? { disponible: true, motif: null } : { disponible: false, motif: "planche.controle.motif.rien" };
