@@ -214,6 +214,21 @@ describe("COLLADA", () => {
     expect(l.objets[1]?.pose[1]).toBeCloseTo(-1);
     expect(() => lireDae(dae.replace("Z_UP", "X_UP"))).toThrow(ErreurImport);
   });
+  it("même maillage lié à deux matières : chaque occurrence garde la sienne", () => {
+    const deux = dae
+      .replace('<library_materials><material id="bleu" name="Bleu"><instance_effect url="#e1"/></material>', '<library_materials><material id="bleu" name="Bleu"><instance_effect url="#e1"/></material><material id="bleu2" name="Bleu 2"><instance_effect url="#e1"/></material>')
+      .replace('<translate>1000 0 0</translate><rotate>0 0 1 90</rotate><instance_geometry url="#g"/>', '<translate>1000 0 0</translate><instance_geometry url="#g"><bind_material><technique_common><instance_material symbol="M" target="#bleu2"/></technique_common></bind_material></instance_geometry>');
+    const l = lireDae(deux);
+    const s = construireScene(l, 0.001, "z");
+    expect(new Set(s.objets.map((o) => o.matiere))).toEqual(new Set([l.objets[0]?.matiere, l.objets[1]?.matiere]));
+    expect(l.objets[0]?.matiere).not.toBe(l.objets[1]?.matiere);
+  });
+  it("une grande source de positions est lue sans dépasser la limite d'arguments", () => {
+    const n = 100_000;
+    const flottants = Array.from({ length: n * 3 }, (_v, i) => String(i % 7)).join(" ");
+    const grand = dae.replace(/<float_array id="g-a" count="24">[^<]*<\/float_array><technique_common><accessor source="#g-a" count="8"/, `<float_array id="g-a" count="${n * 3}">${flottants}</float_array><technique_common><accessor source="#g-a" count="${n}"`);
+    expect(() => lireDae(grand)).not.toThrow();
+  });
 });
 
 describe("3DS", () => {

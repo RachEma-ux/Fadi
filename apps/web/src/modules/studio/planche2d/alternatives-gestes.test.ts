@@ -19,7 +19,7 @@ import type { ContexteCreation } from "./outils/type";
 import { panoramiqueClavier, TOUCHES_PANORAMIQUE } from "./vue-clavier";
 import { commandesExtrusion, VALEURS_VIDES } from "../vue3d/extrusion";
 import { commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, BOITE_VIDE, PRISME_VIDE } from "../vue3d/volume-libre";
-import { cibleFocusBascule, SELECTEURS_FOCUS_BASCULE } from "../variante/focus-bascule";
+import { cibleFocusBascule, focusDejaDansPlanche, SELECTEURS_FOCUS_BASCULE } from "../variante/focus-bascule";
 import { commandeModifierPole, commandeSubdivision, commandeSurfacePlane, valeursPole } from "../vue3d/surfaces-ui";
 import { commandeComposant, commandeNiveau, commandeOccurrence, commandeStructure, SAISIE_STRUCTURE_VIDE } from "../batiment/batiment-ui";
 
@@ -146,6 +146,16 @@ describe("TR-EX-036 — chaque geste a une alternative au clavier ou par saisie 
     expect(cibleFocusBascule("double", "2d")).toBe("2d");
     expect(cibleFocusBascule("2d", "2d")).toBeNull();
     expect(SELECTEURS_FOCUS_BASCULE).toEqual({ "2d": 'svg[aria-label="Planche de dessin 2D"]', "3d": "section[data-studio-vue3d]" });
+  });
+
+  it("TR-EX-036 [+] la bascule ne reprend pas le focus que l'utilisateur a déjà porté sur un objet de la planche apparue", () => {
+    const forme = { nom: "forme P" }, ailleurs = { nom: "barre" };
+    const planche = { contains: (n: unknown) => n === planche || n === forme };
+    expect(focusDejaDansPlanche(planche, forme)).toBe(true);
+    // Focus sur la planche elle-même, hors de la planche ou nulle part : la bascule pose le focus sur la planche.
+    expect(focusDejaDansPlanche(planche, planche)).toBe(false);
+    expect(focusDejaDansPlanche(planche, ailleurs)).toBe(false);
+    expect(focusDejaDansPlanche(planche, null)).toBe(false);
   });
 
   it("TR-EX-036 [−] garde construite : un outil sans alternative, une déclaration hors registre ou sans moyen est détecté ; un essai cassé échoue", () => {

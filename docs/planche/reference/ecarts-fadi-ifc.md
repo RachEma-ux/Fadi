@@ -48,5 +48,5 @@ N-D10-1, D10-R-002, D10-R-006, N-D10-2, D10-F14-124.
 - La référence verrouillée de l'étape 3 reste le moyen de poser un IFC sans le modifier.
 
 ## Raccourcis
-En deux temps après Ctrl+Maj+Espace : G (IFC structuré), Maj+G (exporter), V (contrôler), O (import IFC structuré),
+En deux temps après Ctrl+Maj+Espace : U (IFC structuré), Maj+U (exporter), Maj+K (contrôler), O (import IFC structuré),
 Maj+O (importer).

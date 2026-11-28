@@ -93,7 +93,7 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     expect(client).toContain('export const ADRESSE_EXTENSIONS = "/sandbox/preferences/extensions";');
     // Protocole des extensions 1.2 (27 novembre 2026) : archivage en base des fichiers de données ouverts par une extension.
     expect(client).toContain('export const ADRESSE_FICHIERS = "/sandbox/preferences/fichiers";');
-    expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES", "ADRESSE_EXTENSIONS", "ADRESSE_FICHIERS"]);
+    expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES", "ADRESSE_EXTENSIONS", "ADRESSE_FICHIERS", "`${ADRESSE_FICHIERS}?extension=${extension}`", "`${ADRESSE_FICHIERS}/${id}`"]);
     expect(client).not.toMatch(/https?:\/\//);
   });
 

@@ -14,8 +14,8 @@ aucune donnée dans le code (D-GD-29).
 | P2 | B Carte robuste | État du moteur, avis par couche, restauration du contexte | livrée (PR #482) |
 | P3-P5 | C Commandes | Table unique des raccourcis, panneaux extraits, groupes nommés | livrée (PR #487) |
 | P6-P7 | D Clavier | Outils extraits, saisie de coordonnées, voie clavier | livrée (PR #491) |
-| P8-P10 | E Légende | Version et couverture, légende complète, hachures | livrée (cette PR) |
-| P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | à faire |
+| P8-P10 | E Légende | Version et couverture, légende complète, hachures | livrée (PR #494) |
+| P11-P14 | F Site | Sélection extraite, analyse de site, référence copiable | livrée (cette PR) |
 
 ## Décisions prises pour avancer (recommandations de la feuille de route, réversibles)
 
@@ -112,3 +112,40 @@ aucune donnée dans le code (D-GD-29).
   1440 px et sur Pixel 7, carte colorée sur Pixel 7.
 - Recette : contrôles « P8 », « P9 », « P10 » de `geodata.mjs` (version et couverture, légende complète, pastille
   hachurée, axe-core moderate, hachures sur la carte).
+
+## P11-P14 · Site (jalon F : E-07, donnees-1)
+
+- **P11, extraction sans changement visible** : `etat/selection-ops.ts` (`decisionPremierClic` : objet, administratif,
+  raster, unités au point ou effacer ; pur et testé) et `etat/useSelectionFiche.ts`.
+- **P12, API et modèle** : `GET /geodata/api/versions/etats?ids=` (publiée, retirée, inconnue ; `disponibilites` s'en
+  sert) et `GET /geodata/api/proximite?lon&lat&rayon&couches` (rien n'est journalisé). Modèle pur
+  `packages/geodata-model/src/site.ts` : une rubrique est **soit** une valeur avec sa provenance, **soit** « non
+  évaluée » avec son motif (jamais 0, jamais « — ») ; `assemblerLectureSite` assemble ≈ 5 réponses de l'API.
+- **P13, « Que sait-on d'ici ? »** (Alt+Q, groupe « Affichage › Lire et partager », icône propre) : volet
+  `panneaux/VoletSite.tsx` pour la fiche ouverte, le centre de la carte ou des coordonnées saisies (sans souris, sans
+  WebGL aussi). Six rubriques : territoires qui contiennent le lieu, indicateurs du plus fin, équipements des couches
+  de points affichées dans 500 m (couverture du rayon non évaluée), prix publiés, altitude du terrain, parcelle et
+  urbanisme (« Non évalué, source à qualifier »). Repère et cercle sur la carte, hors composition, masqués à l'export.
+  Heure de lecture en heure suisse.
+- **P14, référence du site** (`packages/geodata-model/src/reference-site.ts`) : format `geodata.reference-site/1`,
+  **renvoi et non copie** (versions lues, empreintes, méthode, provenance ; aucune valeur), sans expiration, empreinte
+  canonique SHA-256 vérifiable (`verifierEmpreinteReference`). Exclusions motivées : source provisoire, données
+  personnelles, empreinte ou droits non lus (« droit absent = inconnu »), partage ou export non autorisé, prix sans la
+  capacité d'export. Copiée dans le presse-papiers.
+- Suite (après P14, en attente de fusion) : rubrique « Grilles affichées sur la carte » (I3 population carroyée, I6
+  altitude indicative) : valeur de chaque couche de grille visible au point (`GET /raster/:id/valeur`), avec sa version ;
+  cellule sans donnée ou hors emprise « non évaluée » (jamais 0), aucune grille affichée « aucune couche de grille
+  affichée », couche refusée « couche inaccessible ». Distincte du terrain (I7). La référence renvoie à la version lue
+  (méthode `valeur-grille-au-point`) sans la valeur. Capture `captures/site-grille/`, contrôles « site · grille » de
+  `geodata.mjs`.
+- Revue Codex de la PR #497, deux remarques jaunes reprises : (1) les prix publiés sont cherchés du territoire le plus
+  fin au plus global qui contient le lieu, et l'édition trouvée garde son **périmètre réel** (« périmètre : commune… »),
+  jamais attribuée au territoire plus fin ; (2) lecture partielle : une couche de points ou de grille demandée et non
+  lue (refusée, retirée) reste dite dans le volet (« Lecture partielle : … — Couche inaccessible ») et figure aux
+  exclusions de la référence, au lieu de disparaître d'une rubrique évaluée.
+- Écarts connus : les rubriques dont la
+  version n'a pas de droits lus (unités, prix, terrain le plus souvent) sont exclues de la référence avec leur motif.
+- Captures : `captures/p13/`, lecture à Casablanca (−7,6189 ; 33,5731) avec la couche des villes, bureau 1440 px et
+  Pixel 7 ; données réelles du Maroc.
+- Recette : contrôles « P13 » et « P14 » de `geodata.mjs` (sept rubriques depuis la suite, motifs, signes sur la carte, axe-core
+  moderate, unités lues en base, sans WebGL, référence sans valeur ni mot « projet », empreinte).

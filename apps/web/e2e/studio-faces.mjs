@@ -280,6 +280,9 @@ try {
   await page.locator('[data-studio-objet="P"]').waitFor({ state: "attached" });
   await page.locator('[data-studio-objet="P"]').focus();
   await page.keyboard.press("Enter");
+  // La suppression ne vise que la sélection : attendre que P soit sélectionné avant d'appuyer sur Suppr (sous charge, la
+  // touche partait avant la sélection et rien n'était supprimé).
+  await page.locator('[data-studio-selection="P"]').waitFor();
   await flou();
   await page.keyboard.press("Delete");
   await attendre(1);

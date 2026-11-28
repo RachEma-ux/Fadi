@@ -9,10 +9,15 @@
  * racine ; les solides d'origine disparaissent selon l'outil (Découpe garde le premier). Un seul pas d'annulation.
  * Matières : celles des faces d'origine coplanaires et superposées sont reportées sur les faces du résultat ; la
  * matière du groupe revient par défaut (obs). Sans moteur chargé, les outils le disent.
+ *
+ * Cas 2 du catalogue, lot 8 : chaque booléen est calculé dans une origine recentrée (n° 68 : le moteur travaille en
+ * simple précision, loin de l'origine les sommets dérivaient) et les faces du résultat sont recalées sur les plans des
+ * faces d'origine (n° 72 : les cotes d'origine sont gardées).
  */
 import { type FacesPolygonales, type Id, type Modele, contexte, creerGroupeDepuisFaces, effacerEntites, matriceMonde, appliquer, positionsFace, transformerNormale } from "../geometrie-libre.js";
 import { type Maillage, PasUnSolide, facesDuMaillage, maillageDuSolide, motifNonSolide, volumeDuMaillage } from "../maillage.js";
 import { type Vec3, add, cross, dot, len, normalize, scale, sub, v3 } from "../vecteur.js";
+import { booleenRecentre, plansOrigine, recalerFaces, type PlanOrigine } from "../modelisation-l8.js";
 import { contexteSaisie, mesures, messageErreur } from "./commun-formes.js";
 import { consigneDe, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Transition, VueOutil } from "./machine.js";
@@ -84,9 +89,9 @@ function materiauxDuResultat(faces: FacesPolygonales, origines: ReturnType<typeo
   });
 }
 
-function groupeDepuisMaillage(m: Modele, mesh: Maillage, nom: string, origines: ReturnType<typeof facesOrigine>): { modele: Modele; occurrence: Id } | null {
+function groupeDepuisMaillage(m: Modele, mesh: Maillage, nom: string, origines: ReturnType<typeof facesOrigine>, plans: readonly PlanOrigine[]): { modele: Modele; occurrence: Id } | null {
   if (mesh.triangles.length === 0 || Math.abs(volumeDuMaillage(mesh)) < 1e-12) return null;
-  const { faces } = facesDuMaillage(mesh);
+  const faces = recalerFaces(facesDuMaillage(mesh).faces, plans);
   if (faces.length === 0) return null;
   const r = creerGroupeDepuisFaces(m, faces, { nom, materiauxFaces: materiauxDuResultat(faces, origines) });
   return { modele: r.modele, occurrence: r.occurrence };
@@ -100,11 +105,15 @@ export function opererSolides(ctx: ContexteOutil, op: OperationSolide, a: Id, b:
   const A = maillageDuSolide(m0, a);
   const B = maillageDuSolide(m0, b);
   const origines = facesOrigine(m0, [a, b]);
+  const plans = plansOrigine(m0, [a, b]);
+  const union = (x: Maillage, y: Maillage) => booleenRecentre((p, q) => moteur.union(p, q), x, y);
+  const difference = (x: Maillage, y: Maillage) => booleenRecentre((p, q) => moteur.difference(p, q), x, y);
+  const intersection = (x: Maillage, y: Maillage) => booleenRecentre((p, q) => moteur.intersection(p, q), x, y);
   const o = ctx.dans !== undefined ? { dans: ctx.dans } : {};
   let m = m0;
   const crees: Id[] = [];
   const poser = (mesh: Maillage, nom: string): void => {
-    const g = groupeDepuisMaillage(m, mesh, nom, origines);
+    const g = groupeDepuisMaillage(m, mesh, nom, origines, plans);
     if (g) {
       m = g.modele;
       crees.push(g.occurrence);
@@ -113,25 +122,25 @@ export function opererSolides(ctx: ContexteOutil, op: OperationSolide, a: Id, b:
   switch (op) {
     case "enveloppe-exterieure":
     case "union":
-      poser(moteur.union(A, B), NOMS[op]);
+      poser(union(A, B), NOMS[op]);
       m = effacerEntites(m, [a, b], o).modele;
       break;
     case "soustraction":
-      poser(moteur.difference(B, A), NOMS[op]);
+      poser(difference(B, A), NOMS[op]);
       m = effacerEntites(m, [a, b], o).modele;
       break;
     case "ajuster":
-      poser(moteur.difference(B, A), NOMS[op]);
+      poser(difference(B, A), NOMS[op]);
       m = effacerEntites(m, [b], o).modele;
       break;
     case "intersection":
-      poser(moteur.intersection(A, B), NOMS[op]);
+      poser(intersection(A, B), NOMS[op]);
       m = effacerEntites(m, [a, b], o).modele;
       break;
     case "scinder":
-      poser(moteur.difference(A, B), `${NOMS[op]} A − B`);
-      poser(moteur.intersection(A, B), `${NOMS[op]} A ∩ B`);
-      poser(moteur.difference(B, A), `${NOMS[op]} B − A`);
+      poser(difference(A, B), `${NOMS[op]} A − B`);
+      poser(intersection(A, B), `${NOMS[op]} A ∩ B`);
+      poser(difference(B, A), `${NOMS[op]} B − A`);
       m = effacerEntites(m, [a, b], o).modele;
       break;
   }

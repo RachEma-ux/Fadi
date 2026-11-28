@@ -102,16 +102,20 @@ export function scene(m: Modele, etat?: "existant" | "projete"): readonly Elemen
   const c0 = parEtat.get(cle);
   if (c0) return c0;
   const r: ElementScene[] = [];
+  // (Cas 2, lot 4) Ce que porte une balise masquée ou verrouillée n'est pas visé : ni sélection, ni modification.
+  const balises = m.annotations?.balises;
+  const horsVisee = (b: Id | undefined) => !!b && (balises?.[b]?.visible === false || balises?.[b]?.verrouillee === true);
   const parcourir = (c: Contexte, M: Matrice4, chemin: readonly Id[], statut?: StatutTravaux): void => {
     if (chemin.length > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
     const montre = montreDansEtat(statut, etat);
     if (montre) {
       for (const a of Object.values(c.aretes)) {
+        if (horsVisee(a.balise)) continue;
         r.push({ genre: "arete", id: a.id, chemin, a: p(a.a), b: p(a.b), masquee: a.masquee === true, adoucie: a.adoucie === true });
       }
       for (const f of Object.values(c.faces)) {
-        if (f.masquee) continue;
+        if (f.masquee || horsVisee(f.balise)) continue;
         r.push({
           genre: "face",
           id: f.id,
@@ -124,8 +128,7 @@ export function scene(m: Modele, etat?: "existant" | "projete"): readonly Elemen
     }
     for (const o of Object.values(c.occurrences)) {
       if (o.masquee) continue;
-      const bal = o.balise ? m.annotations?.balises[o.balise] : undefined;
-      if (bal && !bal.visible) continue;
+      if (horsVisee(o.balise)) continue;
       const d = m.definitions[o.definition];
       if (d) parcourir(d.contenu, composer(M, o.transformation), [...chemin, o.id], o.statut ?? statut);
     }
@@ -154,7 +157,10 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const retenir = (id: Id, t: number): void => {
     if (t > 0 && (!meilleur || t < meilleur.t)) meilleur = { id, t };
   };
+  // (Cas 2, lot 4) Annotation portée par une balise masquée ou verrouillée : jamais visée.
+  const libre = (b: Id | undefined) => !b || (a.balises[b]?.visible !== false && a.balises[b]?.verrouillee !== true);
   for (const p of Object.values(a.plansDeCoupe)) {
+    if (!libre(p.balise)) continue;
     const den = dot(p.normale, V);
     if (Math.abs(den) < 1e-9) continue;
     const t = dot(p.normale, sub(p.origine, r.origine)) / den;
@@ -165,8 +171,9 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const pres = (id: Id, P: Vec3, tol: number): void => {
     if (ecartRayonPointLibre(r, P) <= tol) retenir(id, Math.max(0, dot(sub(P, r.origine), V)));
   };
-  for (const c of Object.values(a.cotes)) pres(c.id, c.position, tolerance * 3);
+  for (const c of Object.values(a.cotes)) if (libre(c.balise)) pres(c.id, c.position, tolerance * 3);
   for (const t of Object.values(a.textes)) {
+    if (!libre(t.balise)) continue;
     if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
     // Texte écran : étiquette posée en pixels depuis son coin haut gauche ; le clic la vise dans une boîte de 160 × 28 px.
     else if (ecran && ecran.x >= t.ecran.x - 4 && ecran.x <= t.ecran.x + 160 && ecran.y >= t.ecran.y - 4 && ecran.y <= t.ecran.y + 28) retenir(t.id, 1e-6);
@@ -619,7 +626,10 @@ export type ModeSelectionEtendue = "aretes-bordantes" | "faces-connectees" | "to
 /** Sous-menu « Sélectionner ▸ » du menu contextuel (§5.8) : nouvelle sélection à partir de la sélection courante. */
 export function etendreSelection(m: Modele, selection: readonly Id[], mode: ModeSelectionEtendue, dans?: Id): Id[] {
   const c = contexte(m, dans);
-  const visibles = (ids: Iterable<Id>): Id[] => [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee));
+  // Cas 2, lot 4 (n° 82) : ni les entités masquées, ni celles d'une balise masquée ou verrouillée.
+  const horsBalise = (b: Id | undefined) => b !== undefined && (m.annotations?.balises[b]?.visible === false || m.annotations?.balises[b]?.verrouillee === true);
+  const visibles = (ids: Iterable<Id>): Id[] =>
+    [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee) && !horsBalise((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id])?.balise));
   const tout = visibles([...Object.keys(c.faces), ...Object.keys(c.aretes), ...Object.keys(c.occurrences)]);
   const sel = new Set(selection.filter((id) => c.faces[id] || c.aretes[id] || c.occurrences[id]));
   switch (mode) {

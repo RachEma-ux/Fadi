@@ -5,18 +5,18 @@ const libre: ContexteClavier = { saisie: false, dansRecherche: false, carteDispo
 const alt = (key: string, code = `Key${key.toUpperCase()}`) => ({ altKey: true, key, code });
 
 describe("table unique des raccourcis (P3)", () => {
-  it("20 lettres Alt (dont les groupes Alt+N et Alt+A, P5), deux flèches et « ? », chacune une seule fois ; tables des barres dérivées et inchangées", () => {
+  it("21 lettres Alt (dont les groupes Alt+N et Alt+A, P5), deux flèches et « ? », chacune une seule fois ; tables des barres dérivées et inchangées", () => {
     const touches = RACCOURCIS.map((x) => x.touche);
     expect(new Set(touches).size).toBe(touches.length);
-    expect(touches.filter((t) => /^Alt\+[A-Z]$/.test(t))).toHaveLength(20);
-    expect(RACCOURCIS_BARRE).toEqual({ etiquettes: "Alt+L", "mini-carte": "Alt+M", imprimer: "Alt+I", synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K" });
+    expect(touches.filter((t) => /^Alt\+[A-Z]$/.test(t))).toHaveLength(21);
+    expect(RACCOURCIS_BARRE).toEqual({ etiquettes: "Alt+L", "mini-carte": "Alt+M", imprimer: "Alt+I", synthese: "Alt+V", regrouper: "Alt+G", lien: "Alt+K", site: "Alt+Q" });
     expect(RACCOURCIS_TERRAIN).toEqual({ terrain: "Alt+H", altitude: "Alt+O", profil: "Alt+U" });
     expect(RACCOURCIS_BARRE_BAS).toEqual({ carte: "Alt+X", chercher: "Alt+R", couches: "Alt+C", enregistrer: "Alt+E" });
   });
 
   it("sans Alt, rien ; touche inconnue, rien ; minuscule, majuscule et code physique équivalents", () => {
     expect(commandeDeTouche({ altKey: false, key: "m", code: "KeyM" }, libre)).toBeNull();
-    expect(commandeDeTouche(alt("q"), libre)).toBeNull();
+    expect(commandeDeTouche(alt("w"), libre)).toBeNull();
     expect(commandeDeTouche(alt("m"), libre)).toBe("mini-carte");
     expect(commandeDeTouche(alt("M"), libre)).toBe("mini-carte");
     expect(commandeDeTouche({ altKey: true, key: "µ", code: "KeyM" }, libre)).toBe("mini-carte");
