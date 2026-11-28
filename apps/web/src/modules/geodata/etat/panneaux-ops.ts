@@ -4,7 +4,7 @@
  * panneau ouvert à la fois, GEO 12), jamais lu ici.
  */
 export type OngletPanneau = "catalogue" | "couches" | "legende";
-export type VoletPage = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain" | "emplacements";
+export type VoletPage = "fiche" | "valeur" | "donnees" | "cartes" | "collection" | "etudes" | "import" | "export" | "terrain" | "emplacements" | "site";
 
 export interface EtatPanneaux {
   readonly onglet: OngletPanneau;

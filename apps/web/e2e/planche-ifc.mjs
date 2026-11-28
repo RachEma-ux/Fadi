@@ -5,7 +5,7 @@
  *   géoréférencement, classes, géométries non lues comptées) ; Maj+O importe en un pas : étages en niveaux, objets
  *   rattachés à leur étage avec leur classe et leur GlobalId, trame en guides étiquetés, point de base posé ;
  *   le fichier reçu est archivé en base ;
- * - Ctrl+Maj+Espace puis G ouvre « IFC structuré » ; V contrôle avant émission (constats) ; Maj+G exporte, relu à
+ * - Ctrl+Maj+Espace puis U ouvre « IFC structuré » ; Maj+K contrôle avant émission (constats) ; Maj+U exporte, relu à
  *   l'identique avant le téléchargement : classes et GlobalId gardés, géoréférencement depuis le point de base et le
  *   niveau de référence ; .ifczip ; IFC2X3 ;
  * - chaque commande : icône et raccourci ; aucune erreur JavaScript.
@@ -155,24 +155,24 @@ await page.locator("[data-planche-niveaux-reference]").press("Enter");
 await page.waitForTimeout(300);
 
 // --- Export IFC structuré -------------------------------------------------------------------------------------------------
-await deuxTemps("g");
+await deuxTemps("u");
 const exp = page.locator("[data-planche-ifc]");
 await exp.waitFor();
-check("Ctrl+Maj+Espace puis G ouvre « IFC structuré », IFC4 par défaut", (await page.evaluate(() => window.fadiPlanche.panneau())) === "ifc-structure" && (await exp.getAttribute("data-planche-ifc")) === "IFC4");
+check("Ctrl+Maj+Espace puis U ouvre « IFC structuré », IFC4 par défaut", (await page.evaluate(() => window.fadiPlanche.panneau())) === "ifc-structure" && (await exp.getAttribute("data-planche-ifc")) === "IFC4");
 const classes = (await exp.locator("[data-planche-ifc-classes]").textContent()) ?? "";
 check("classes écrites : 2 niveaux, IfcSlab, IfcWall, classe importée", classes.includes("2 niveau(x)") && classes.includes("IfcSlab") && classes.includes("IfcWall") && classes.includes("2 objet(s) réexporté(s)"), classes);
 const georefTexte = ((await exp.locator("[data-planche-ifc-georef-texte]").textContent()) ?? "").replace(/[\u202f\u00a0]/g, " ");
 check("géoréférencement : EPSG:2056 · E 2 600 120,000 · H 432,150", georefTexte.includes("E 2 600 120,000") && georefTexte.includes("H 432,150") && (await exp.locator("[data-planche-ifc-georef]").isChecked()), georefTexte);
-await deuxTemps("v");
+await deuxTemps("Shift+K");
 await page.waitForFunction(() => (document.querySelector("[data-planche-ifc-constats]")?.getAttribute("data-planche-ifc-constats") ?? "") !== "");
 const constats = (await exp.locator("[data-planche-ifc-constats]").getAttribute("data-planche-ifc-constats")) ?? "";
-check("V : contrôle avant émission (géoréférencement déclaré, objets rattachés)", constats.includes("georef-declare") && constats.includes("objets-niveau"), constats);
-await deuxTemps("Shift+G");
+check("Maj+K : contrôle avant émission (géoréférencement déclaré, objets rattachés)", constats.includes("georef-declare") && constats.includes("objets-niveau"), constats);
+await deuxTemps("Shift+U");
 let fichiers = await attendre(1);
 const ifc = fichiers[0];
 const texte = ifc ? ifc.octets.toString("utf8") : "";
 if (ifc) writeFileSync(`${OUT}/${ifc.nom}`, ifc.octets);
-check("Maj+G : un fichier .ifc IFC4 téléchargé", !!ifc && ifc.nom.endsWith(".ifc") && texte.includes("FILE_SCHEMA(('IFC4'))"), ifc?.nom);
+check("Maj+U : un fichier .ifc IFC4 téléchargé", !!ifc && ifc.nom.endsWith(".ifc") && texte.includes("FILE_SCHEMA(('IFC4'))"), ifc?.nom);
 check("classes et GlobalId réexportés à l'identique", texte.includes("IFCWALL('0W000000000000000000a1'") && texte.includes("IFCSLAB('0D000000000000000000a1'"));
 check("géoréférencé : IfcMapConversion (E, N, H) et IfcProjectedCRS", /IFCMAPCONVERSION\(#\d+,#\d+,2600120\.,1199870\.,432\.15,/.test(texte) && texte.includes("IFCPROJECTEDCRS('EPSG:2056'"));
 check("deux IfcBuildingStorey (0 et 3 m)", (texte.match(/IFCBUILDINGSTOREY\(/g) ?? []).length === 2);
@@ -188,7 +188,7 @@ await page.screenshot({ path: `${OUT}/02-export.png` });
 
 // --- Règle d'or ----------------------------------------------------------------------------------------------------------------
 let regle = true;
-for (const [id, r] of [["exporter-ifc", "Maj+G"], ["controler-ifc", "V"]]) regle &&= ((await exp.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await exp.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
+for (const [id, r] of [["exporter-ifc", "Maj+U"], ["controler-ifc", "Maj+K"]]) regle &&= ((await exp.locator(`[data-planche-commande='${id}']`).getAttribute("title")) ?? "").includes(`Ctrl+Maj+Espace, ${r}`) && (await exp.locator(`[data-planche-commande='${id}'] svg`).count()) === 1;
 await deuxTemps("o");
 await imp.waitFor();
 regle &&= ((await imp.locator("[data-planche-commande='importer-ifc']").getAttribute("title")) ?? "").includes("Ctrl+Maj+Espace, Maj+O") && (await imp.locator("[data-planche-commande='importer-ifc'] svg").count()) === 1;

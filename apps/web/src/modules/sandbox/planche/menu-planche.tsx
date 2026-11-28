@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
-import type { Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import type { Modele, Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { DELAI_APPUI_MS, SEUIL_MOUVEMENT_PX, bornerPosition, coteOuverture, ecrirePositionMenu, lirePositionMenu, stockageLocal, type PositionMenu } from "./deplacement-menu";
 import { InformationsPlancheVue, type InformationsPlanche } from "./informations-planche";
@@ -22,7 +22,8 @@ const ACCEPT: Readonly<Record<FormatEchange, string>> = { ifc: ".ifc", obj: ".ob
 
 export interface ActionsMenuPlanche {
   ouvrir(id: string): Promise<void>;
-  creer(nom: string, altitude: number | null): Promise<void>;
+  /** Cas 2, lot 4 : `modele` = Planche créée depuis un gabarit d'agence ; absent, Planche vide. */
+  creer(nom: string, altitude: number | null, modele?: Modele): Promise<void>;
   enregistrer(): Promise<void>;
   enregistrerSous(nom: string): Promise<void>;
   renommer(nom: string, altitude: number | null): Promise<void>;

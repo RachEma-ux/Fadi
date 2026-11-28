@@ -6,7 +6,7 @@ import { validerPaquetExtension } from "../protocole-extensions.js";
 import { clic, echap, partie, saisie, survol, touche } from "./essais-formes.js";
 import { machineParId } from "./index.js";
 import {
-  BORNES_OUTIL, DESCRIPTION_OUTIL_VIDE, MACHINE_OUTIL_EXTENSION, avecDescription, cleOutilExtension, lireCleOutilExtension, lireDescriptionOutil, nomAppelOutil,
+  BORNES_OUTIL, DESCRIPTION_OUTIL_VIDE, MACHINE_OUTIL_EXTENSION, avecDescription, cleOutilExtension, lireCleOutilExtension, lireDescriptionOutil, nomAppelOutil, pointVise,
   type DescriptionOutil, type EtatOutilExtension,
 } from "./outil-extension.js";
 
@@ -42,6 +42,20 @@ describe("événements préparés pour l'extension", () => {
     expect(face.emis!.donnees).toMatchObject({ nature: "face" });
     const vide = partie(MACHINE_OUTIL_EXTENSION, sol()).jouer(survol(9, 9)).etat as EtatOutilExtension;
     expect(vide.emis!.donnees).toMatchObject({ nature: "libre", objet: null });
+  });
+
+  it("(1.3) un événement de souris porte aussi le point visé, avant accrochage, sur le plan de travail", () => {
+    const e = partie(MACHINE_OUTIL_EXTENSION, sol()).jouer(survol(0.004, 0.003)).etat as EtatOutilExtension;
+    expect(e.emis!.donnees).toMatchObject({ point: [0, 0, 0], nature: "sommet" });
+    const v = e.emis!.donnees["vise"] as number[];
+    expect(v[0]).toBeCloseTo(0.004, 9);
+    expect(v[1]).toBeCloseTo(0.003, 9);
+    expect(v[2]).toBeCloseTo(0, 9);
+    const c = partie(MACHINE_OUTIL_EXTENSION, sol()).jouer(clic(9, 9)).etat as EtatOutilExtension;
+    expect((c.emis!.donnees["vise"] as number[]).map((x) => Math.round(x * 1e6) / 1e6)).toEqual([9, 9, 0]);
+    expect(pointVise({ origine: v3(0, 0, 5), direction: v3(1, 0, 0) }, undefined)).toBeNull();
+    expect(pointVise({ origine: v3(0, 0, 5), direction: v3(0, 0, 1) }, undefined)).toBeNull();
+    expect(pointVise({ origine: v3(1, 2, 5), direction: v3(0, 0, -1) }, { origine: v3(0, 0, 3), normale: v3(0, 0, 1) })).toEqual([1, 2, 3]);
   });
 
   it("clic, double clic, touche, validation, saisie et annulation ont chacun leur événement, numéroté", () => {

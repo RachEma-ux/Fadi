@@ -14,7 +14,7 @@ export type ArgStep =
   | { readonly type: string; readonly valeur: ArgStep }
   | readonly ArgStep[];
 
-export interface EntiteStep {
+export interface EntiteIfcStep {
   readonly id: number;
   readonly type: string;
   readonly args: readonly ArgStep[];
@@ -23,13 +23,13 @@ export interface EntiteStep {
 export interface FichierStep {
   /** Schéma déclaré (« IFC2X3 », « IFC4 », « IFC4X3_ADD2 »…), en capitales ; `null` = absent. */
   readonly schema: string | null;
-  readonly entites: ReadonlyMap<number, EntiteStep>;
+  readonly entites: ReadonlyMap<number, EntiteIfcStep>;
 }
 
 export class ErreurStep extends Error {}
 
 /** Décodage des chaînes STEP : `''`, `\\`, `\X2\…\X0\` (UTF-16), `\X4\…\X0\`, `\X\hh` (ISO 8859-1), `\S\c`. */
-export function decoderChaineStep(s: string): string {
+export function decoderChaineIfcStep(s: string): string {
   let r = "";
   for (let i = 0; i < s.length; i++) {
     const c = s[i]!;
@@ -95,7 +95,7 @@ function lireArguments(t: string, debut: number): { args: ArgStep[]; fin: number
         }
         const brut = t.slice(i + 1, k);
         i = k + 1;
-        return { texte: decoderChaineStep(brut) };
+        return { texte: decoderChaineIfcStep(brut) };
       }
     }
     if (c === "\"") {
@@ -153,7 +153,7 @@ export function lireStep(texte: string): FichierStep {
   const schema = /FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/i.exec(texte)?.[1]?.trim().toUpperCase() ?? null;
   const debut = texte.search(/\bDATA\s*;/);
   if (debut < 0) throw new ErreurStep("section DATA absente");
-  const entites = new Map<number, EntiteStep>();
+  const entites = new Map<number, EntiteIfcStep>();
   let i = texte.indexOf(";", debut) + 1;
   const n = texte.length;
   while (i < n) {

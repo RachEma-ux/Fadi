@@ -3276,6 +3276,54 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect((await user.a.post("/sandbox/preferences/fichiers").send({ ...corps, contenu: b64("é".repeat(150_000)) })).status).toBe(201);
       });
 
+      it("extension livrée du Sandbox : son fichier de règles n'est archivé que si le compte l'a activée", async () => {
+        const user = await account("fichiers-livree");
+        const corps = { extension: "controle", nom: "pieces.json", contenu: Buffer.from('{"source":"essai","pieces":[]}', "utf8").toString("base64") };
+        // « Contrôle et nettoyage » est inactive d'origine : 404 tant que le compte ne l'a pas activée.
+        expect((await user.a.post("/sandbox/preferences/fichiers").send(corps)).status).toBe(404);
+        expect((await user.a.put("/sandbox/preferences").send({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], extensions: { controle: true } })).status).toBe(200);
+        const r = await user.a.post("/sandbox/preferences/fichiers").send(corps);
+        expect(r.status).toBe(201);
+        const lu = await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`);
+        expect(lu.body).toMatchObject({ extension: "controle", nom: "pieces.json", texte: '{"source":"essai","pieces":[]}' });
+      });
+
+      it("gabarit d'agence de la Planche (cas 2, lot 4) : rangé tel quel pour le compte, relu par la liste", async () => {
+        const user = await account("fichiers-gabarit");
+        const texte = '{"format":"fadi-gabarit/1","nom":"Agence","source":"essai","balises":[{"nom":"Existant","couleur":"#222222"}]}';
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-gabarit", nom: "agence.fadi-gabarit.json", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-gabarit");
+        expect(liste.body.archives).toHaveLength(1);
+        expect(liste.body.archives[0]).toMatchObject({ extension: "planche-gabarit", version: "fadi-gabarit/1", nom: "agence.fadi-gabarit.json" });
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+        // Un autre compte ne voit pas ce gabarit.
+        const autre = await account("fichiers-gabarit-autre");
+        expect((await autre.a.get("/sandbox/preferences/fichiers?extension=planche-gabarit")).body.archives).toEqual([]);
+      });
+
+      it("fichier importé dans la Planche et son rapport d'échange (cas 2, lot 6) : rangés tels quels sous « planche-echange »", async () => {
+        const user = await account("fichiers-echange");
+        const texte = "ISO-10303-21;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n";
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-echange", nom: "Immeuble.ifc", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const rapport = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-echange", nom: "Immeuble.ifc.rapport.txt", contenu: Buffer.from("Rapport d'échange — Import IFC\n", "utf8").toString("base64") });
+        expect(rapport.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-echange");
+        expect(liste.body.archives.map((a: { nom: string; version: string }) => [a.nom, a.version]).sort()).toEqual([["Immeuble.ifc", "fadi-echange/1"], ["Immeuble.ifc.rapport.txt", "fadi-echange/1"]]);
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+      });
+
+      it("fichier de composant d'agence (cas 2, lot 8) : rangé tel quel sous « planche-composant »", async () => {
+        const user = await account("fichiers-composant");
+        const texte = JSON.stringify({ format: "fadi-composant/1", source: "Agence (essai)", nom: "Fenêtre bois", genre: "fenetre", cadre: { largeur: 0.06, profondeur: 0.07 } });
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-composant", nom: "fenetre.json", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-composant");
+        expect(liste.body.archives.map((a: { nom: string; version: string }) => [a.nom, a.version])).toEqual([["fenetre.json", "fadi-composant/1"]]);
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();

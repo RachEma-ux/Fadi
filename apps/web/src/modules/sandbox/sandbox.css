@@ -2847,7 +2847,8 @@
   margin: 0;
   color: var(--danger, #a12626);
 }
-.sandbox-planche .planche-info {
+/* Fenêtre « Informations » de la Planche (un div) : à ne pas confondre avec la liste d'Info entité (un dl, même classe). */
+.sandbox-planche div.planche-info {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -4098,6 +4099,87 @@
 .sandbox-planche .planche-outils-extension-commandes {
   margin-left: 22px;
   border-left: 1px solid rgba(15, 76, 58, 0.18);
+}
+/* Extensions installées, rangées dans « Extensions » (maquette du 27 novembre 2026) : nom dépliable sur ses commandes,
+   case « Afficher / Masquer » de sa barre dans la Planche. */
+.sandbox-planche .planche-outils-ajoutees-titre {
+  display: block;
+  margin: 6px 0 2px 28px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(15, 76, 58, 0.18);
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-outils-ajoutee-tete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 20px;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-ajoutee-nom {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-liste button.planche-outils-ajoutee-nom:hover,
+.sandbox-planche .planche-outils-liste .planche-outils-case:hover {
+  background: rgba(15, 76, 58, 0.08);
+}
+.sandbox-planche .planche-outils-ajoutee-nom .planche-outils-libelle {
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-case {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-case-boite {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1.5px solid #1f7a57;
+  border-radius: 3px;
+  background: #fff;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche] {
+  background: #1f7a57;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche]::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.sandbox-planche .planche-outils-ajoutee .planche-outils-extension-commandes {
+  margin-left: 42px;
 }
 
 /* Extensions installées (protocole des extensions, lot 3) : icône d'une commande (image du paquet), pastille de la
@@ -5690,4 +5772,430 @@
 }
 .sandbox-planche .planche-ifc .planche-dxf-calques div {
   grid-template-columns: 13em minmax(0, 1fr);
+}
+/* Cas 2, lot 3 : relevé du Contrôle (tolérances, parcours, correction), fond DAO, pièces du permis. */
+.sandbox-planche .planche-controle-releve {
+  margin: 0 0 6px;
+}
+.sandbox-planche .planche-controle-seuil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-controle-seuil input {
+  width: 4.2em;
+  min-height: 28px;
+  padding: 1px 4px;
+  font: inherit;
+}
+.sandbox-planche .planche-controle-lim {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-controle-position {
+  align-self: center;
+  font-weight: 600;
+}
+.sandbox-planche .planche-debit-barre button.planche-controle-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-controle-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-controle-case,
+.sandbox-planche .planche-controle-fichier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.sandbox-planche .planche-controle-fichier input[type="file"] {
+  max-width: 100%;
+}
+/* Cas 2, lot 4 : panneau Balises (épaisseur, trait, verrou), panneau Scènes, Info entité · Plan de coupe, Nouvelle Planche. */
+.sandbox-planche .planche-balises h4,
+.sandbox-planche .planche-scenes-l4 h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-balises-tete,
+.sandbox-planche .planche-liste-panneau li.planche-balises-ligne {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) 3.4rem 5.8rem 1rem;
+  align-items: center;
+  gap: 0.25rem;
+}
+.sandbox-planche .planche-balises-ligne .planche-ligne-choix {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-height: 32px;
+  text-align: left;
+}
+.sandbox-planche .planche-balises-tete {
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-balises-ligne input:not([type="checkbox"]),
+.sandbox-planche .planche-balises-ligne select {
+  min-width: 0;
+  width: 100%;
+  min-height: 28px;
+  box-sizing: border-box;
+  font: inherit;
+}
+.sandbox-planche .planche-balises-verrou {
+  display: inline-flex;
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-balises-selection {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 6px 0;
+}
+.sandbox-planche .planche-scenes-l4 .est-actif {
+  font-weight: 600;
+}
+.sandbox-planche .planche-gabarit-barre {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-balises-tete,
+  .sandbox-planche .planche-liste-panneau li.planche-balises-ligne {
+    grid-template-columns: 1.4rem minmax(0, 1fr) 3.2rem 5.4rem 1rem;
+  }
+}
+/* Cas 2, lot 6 : rapport d'échange, rangement de l'import, export préparé, fichier natif et image, coller un tracé. */
+.sandbox-planche .planche-echange h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-rapport-echange {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.sandbox-planche .planche-rapport-echange th,
+.sandbox-planche .planche-rapport-echange td {
+  padding: 3px 2px;
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  text-align: right;
+}
+.sandbox-planche .planche-rapport-echange thead th {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-rapport-echange tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+.sandbox-planche .planche-rapport-echange .est-total th,
+.sandbox-planche .planche-rapport-echange .est-total td {
+  font-weight: 700;
+}
+.sandbox-planche .planche-rapport-echange .planche-invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.sandbox-planche .planche-echange-avertissement {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #b54708;
+  background: color-mix(in srgb, #b54708 10%, transparent);
+}
+.sandbox-planche .planche-echange-arbre,
+.sandbox-planche .planche-echange-arbre ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sandbox-planche .planche-echange-arbre ul {
+  padding-left: 16px;
+}
+.sandbox-planche .planche-echange-arbre li {
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  padding: 2px 0;
+}
+.sandbox-planche .planche-echange-arbre button {
+  min-height: 28px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-echange-arbre button::before {
+  content: "";
+  display: inline-block;
+  margin-right: 6px;
+  border: 4px solid transparent;
+  border-left: 6px solid currentColor;
+  vertical-align: 1px;
+}
+.sandbox-planche .planche-echange-arbre button[aria-expanded="true"]::before {
+  transform: rotate(90deg) translateX(2px);
+}
+.sandbox-planche .planche-echange-arbre small,
+.sandbox-planche .planche-echange-pset summary {
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-echange-case {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.sandbox-planche .planche-echange-conforme {
+  color: var(--accent, #2f6f4f);
+}
+.sandbox-planche .planche-echange-refuse {
+  color: var(--atelier-erreur, #a1260d);
+}
+.sandbox-planche .planche-cadre-image {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed #1a5fd6;
+  pointer-events: none;
+}
+.sandbox-planche .planche-cadre-image span {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  background: #1a5fd6;
+  font-size: 0.8rem;
+}
+
+/* Raccourcis en deux temps (repris tels quels du cas 4, lot C4, étape 3) : encadré des secondes touches. */
+.sandbox-planche .planche-deux-temps {
+  position: absolute;
+  left: 72px;
+  bottom: 12px;
+  z-index: 30;
+  max-width: min(460px, calc(100% - 96px));
+  max-height: 60%;
+  overflow: auto;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #161616;
+  color: #f4f4f4;
+  font-size: 13px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.sandbox-planche .planche-deux-temps p {
+  margin: 0;
+}
+.sandbox-planche .planche-deux-temps ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 3px 12px;
+}
+.sandbox-planche .planche-deux-temps kbd {
+  font: 600 11.5px inherit;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Cas 2, lot 7 : versions et jalons, comparaison, brouillon, fiche du projet (maquettes du 27 novembre 2026). */
+.sandbox-planche .planche-bandeau-version {
+  position: absolute;
+  top: 8px;
+  left: 72px;
+  right: 8px;
+  z-index: 6;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  pointer-events: none;
+}
+.sandbox-planche .planche-bandeau-consultation {
+  color: #1a5fd6;
+  background: color-mix(in srgb, #1a5fd6 10%, #ffffff);
+}
+.sandbox-planche .planche-bandeau-brouillon {
+  color: #9a2c1c;
+  background: color-mix(in srgb, #c2410c 10%, #ffffff);
+}
+.sandbox-planche .planche-versions-raccourci {
+  color: #6b7672;
+  font-weight: 400;
+}
+.sandbox-planche .planche-versions-origine {
+  margin: 0 0 8px;
+  color: #6b7672;
+}
+.sandbox-planche .planche-versions-liste,
+.sandbox-planche .planche-versions-registre {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.sandbox-planche .planche-versions-liste li,
+.sandbox-planche .planche-versions-registre li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #e9edeb;
+}
+.sandbox-planche .planche-versions-ligne {
+  display: grid;
+  grid-template-columns: 1fr 70px 34px;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.sandbox-planche .planche-versions-ligne small {
+  display: block;
+  color: #6b7672;
+}
+.sandbox-planche .planche-versions-choisi .planche-versions-ligne {
+  background: #eef4f0;
+}
+.sandbox-planche .planche-versions-indice {
+  text-align: center;
+}
+.sandbox-planche .planche-versions-registre input {
+  width: 9em;
+}
+.sandbox-planche .planche-diff-pastille {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.sandbox-planche .planche-diff-ajoute {
+  background: #2f6f4f;
+}
+.sandbox-planche .planche-diff-supprime {
+  background: #a1260d;
+}
+.sandbox-planche .planche-diff-modifie {
+  background: #b54708;
+}
+.sandbox-planche .planche-fiche-vide::placeholder {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-versions-raccourci-bouton {
+  opacity: 0.7;
+  font-weight: 400;
+}
+.sandbox-planche .planche-lien-bouton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1a5fd6;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* Cas 2, lot 8 : outils de modélisation et composants d'agence (couleurs reprises de la feuille). */
+.sandbox-planche .planche-l8-texte {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-l8-note {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #eef4f0;
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-l8-case {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.sandbox-planche .planche-l8-case input {
+  width: auto;
+}
+.sandbox-planche .planche-l8-mesures {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  margin: 0 0 8px;
+}
+.sandbox-planche .planche-l8-mesures dt {
+  color: #6b7672;
+}
+.sandbox-planche .planche-l8-mesures dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+.sandbox-planche .planche-l8-echelle {
+  position: absolute;
+  /* À droite de la colonne d'outils, au pied du dessin (maquette lot8-4). */
+  left: 76px;
+  bottom: 12px;
+  padding: 6px 8px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #ffffff 85%, transparent);
+  color: #161616;
+  font-size: 11px;
+  pointer-events: none;
+}
+.sandbox-planche .planche-l8-echelle-barre {
+  display: flex;
+  height: 8px;
+  border: 1px solid #161616;
+}
+.sandbox-planche .planche-l8-echelle-plein {
+  background: #161616;
+}
+.sandbox-planche .planche-l8-echelle-vide {
+  background: #ffffff;
+}
+.sandbox-planche .planche-l8-echelle-graduations {
+  position: relative;
+  height: 14px;
+}
+.sandbox-planche .planche-l8-echelle-graduations span {
+  position: absolute;
+  top: 1px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.sandbox-planche .planche-l8-echelle-graduations span:first-child {
+  transform: none;
+}
+.sandbox-planche .planche-l8-echelle small {
+  display: block;
+  margin-top: 2px;
+  color: #6b7672;
 }

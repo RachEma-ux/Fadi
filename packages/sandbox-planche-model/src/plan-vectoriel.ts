@@ -13,6 +13,8 @@
 import type { FamilleHachure, Materiau, MotifHachure, PlanDeCoupe } from "./annotations.js";
 import { type Id, type Modele, type StatutTravaux, modifierAnnotations } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
+import { tiretsDuTrait } from "./balises-l4.js";
+import { ficheDe, lignesFiche, revisionDe, texteRevision } from "./versions-l7.js";
 import { type Vec3, add, cross, dot, len, normalize, scale, sub } from "./vecteur.js";
 
 export type ClasseTrait = "coupe" | "vu" | "cache";
@@ -25,6 +27,8 @@ export interface TraitProjete {
   readonly a: P2;
   readonly b: P2;
   readonly classe: ClasseTrait;
+  /** (Cas 2, lot 4) Balise de l'arête : son épaisseur et son type de trait, s'ils sont saisis, priment à la sortie. */
+  readonly balise?: Id;
   /** (C4 étape 5) Statut des travaux de l'objet tracé ; absent = sans statut. */
   readonly statut?: StatutTravaux;
 }
@@ -195,7 +199,8 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
   const R = repereVue(vue);
   const pr = (p: Vec3): P2 => ({ x: dot(p, R.x), y: dot(p, R.y) });
   const prof = (p: Vec3) => dot(p, R.z);
-  const garde = (p: Vec3) => !plan || cote(plan, p) <= 1e-9;
+  // (Cas 2, lot 4, n° 59) Profondeur vue limitée : au-delà, rien n'est dessiné.
+  const garde = (p: Vec3) => !plan || (cote(plan, p) <= 1e-9 && (plan.profondeur === undefined || -cote(plan, p) <= plan.profondeur + 1e-9));
   const geo = geometrieVisible(m, o.etat ? { etat: o.etat } : {});
   const occulteurs: Occulteur[] = [];
   for (const f of geo.faces) {
@@ -237,6 +242,14 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
       if (sa > 1e-9 && sb > 1e-9) continue;
       if (sa > 1e-9) a = add(a, scale(sub(b, a), sa / (sa - sb)));
       else if (sb > 1e-9) b = add(a, scale(sub(b, a), sa / (sa - sb)));
+      if (plan.profondeur !== undefined) {
+        // Second plan, à la profondeur vue : la partie plus lointaine n'est pas tracée.
+        const ta = -cote(plan, a) - plan.profondeur;
+        const tb = -cote(plan, b) - plan.profondeur;
+        if (ta > 1e-9 && tb > 1e-9) continue;
+        if (ta > 1e-9) a = add(a, scale(sub(b, a), ta / (ta - tb)));
+        else if (tb > 1e-9) b = add(a, scale(sub(b, a), ta / (ta - tb)));
+      }
     }
     const pa = pr(a);
     const pb = pr(b);
@@ -251,12 +264,12 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
       const c: ClasseTrait = cache(milieu) ? "cache" : "vu";
       if (classe === null) classe = c;
       if (c !== classe) {
-        traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(add(a, scale(sub(b, a), i / n))), classe, ...st });
+        traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(add(a, scale(sub(b, a), i / n))), classe, ...st , ...(ar.balise ? { balise: ar.balise } : {}) });
         debut = i;
         classe = c;
       }
     }
-    if (classe) traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(b), classe, ...st });
+    if (classe) traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(b), classe, ...st , ...(ar.balise ? { balise: ar.balise } : {}) });
   }
   const poches: PocheProjetee[] = [];
   if (plan) {
@@ -462,16 +475,34 @@ export function svgPlan(plan: PlanProjete, m: Modele, o: OptionsSvg): string {
       defs.push(`<pattern id="${id}-${i}" patternUnits="userSpaceOnUse" width="${n3(periode)}" height="${n3(pas)}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})${cisaillement}"><line x1="0" y1="0" x2="${n3(periode)}" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${tirets}/></pattern>`);
     });
   }
+  // (Cas 2, lot 4, n° 115) Un trait « vu » d'une balise dont l'épaisseur ou le type de trait est saisi est rangé dans un
+  // sous-groupe à ses valeurs ; sinon il garde l'épaisseur de sa classe.
+  const balises = m.annotations?.balises ?? {};
+  const propre = (t: TraitProjete) => t.classe === "vu" && !!t.balise && (balises[t.balise]?.epaisseur !== undefined || (balises[t.balise]?.trait ?? "continu") !== "continu");
+  const lignes = (ts: readonly TraitProjete[]) => ts.map((t) => `<line x1="${X(t.a)}" y1="${Y(t.a)}" x2="${X(t.b)}" y2="${Y(t.b)}"/>`).join("");
   const groupe = (cl: ClasseTrait, attrs: string) => {
-    const ts = plan.traits.filter((t) => t.classe === cl);
+    const ts = plan.traits.filter((t) => t.classe === cl && !propre(t));
     if (!ts.length || (cl === "cache" && o.cachees === "masquees")) return "";
-    return `<g id="${cl}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(o.traits[cl])}" stroke-linecap="round"${attrs}>${ts.map((t) => `<line x1="${X(t.a)}" y1="${Y(t.a)}" x2="${X(t.b)}" y2="${Y(t.b)}"/>`).join("")}</g>`;
+    return `<g id="${cl}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(o.traits[cl])}" stroke-linecap="round"${attrs}>${lignes(ts)}</g>`;
   };
+  const parBalise = [...new Set(plan.traits.filter(propre).map((t) => t.balise!))].map((id) => {
+    const b = balises[id]!;
+    const e = b.epaisseur ?? o.traits.vu;
+    const tirets = tiretsDuTrait(b.trait, e);
+    return `<g id="vu-${id}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(e)}" stroke-linecap="round"${tirets.length ? ` stroke-dasharray="${tirets.map(n3).join(" ")}"` : ""}>${lignes(plan.traits.filter((t) => propre(t) && t.balise === id))}</g>`;
+  });
+  // (Cas 2, lot 7, n° 109) Fiche du projet et révision reprises dans le fichier (titre et description du SVG).
+  const xml = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fiche = ficheDe(m);
+  const revision = texteRevision(revisionDe(m));
+  const cartouche = `<title>${xml(fiche.projet ?? "non renseigné")}</title><desc>${xml([...lignesFiche(fiche).map(([l, v]) => `${l} : ${v}`), ...(revision ? [`Révision : ${revision}`] : [])].join("\n"))}</desc>`;
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${n3(larg)}mm" height="${n3(haut)}mm" viewBox="0 0 ${n3(larg)} ${n3(haut)}">`,
+    cartouche,
     defs.length ? `<defs>${defs.join("")}</defs>` : "",
     `<g id="poche">${corps.join("")}</g>`,
     groupe("vu", ""),
+    ...parBalise,
     groupe("cache", ` stroke-dasharray="${n3(Math.max(o.traits.cache * 8, 1))} ${n3(Math.max(o.traits.cache * 6, 0.8))}"`),
     groupe("coupe", ""),
     `</svg>`,

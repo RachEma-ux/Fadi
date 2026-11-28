@@ -72,10 +72,10 @@ export const EXTENSIONS_SANDBOX: readonly ExtensionSandbox[] = Object.freeze([
     id: "controle",
     version: "1.0.0",
     libelle: "Contrôle et nettoyage",
-    description: "Relevé des objets vides, matières et balises inutilisées, arêtes isolées, solides ouverts ; nettoyage sur commande.",
+    description: "Relevé des objets vides, matières et balises inutilisées, arêtes isolées, solides ouverts, défauts de dessin ; nettoyage et corrections sur commande ; fond DAO, volumes fusionnés, pièces du permis.",
     pictogramme: "commande:controler",
     activeParDefaut: false,
-    entrees: ["commande:controler", "commande:nettoyer", "panneau:controle"],
+    entrees: ["commande:controler", "commande:nettoyer", "commande:defaut-precedent", "commande:defaut-suivant", "commande:corriger-defaut", "commande:preparer-fond-dao", "commande:fusionner-volumes", "commande:pieces-permis", "panneau:controle"],
   },
   {
     // D'après les Dynamic Components de SketchUp : paramètres, options et règles par formules, sans code.
