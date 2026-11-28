@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "accrochage" | "balise" | "scene" | "gabarit";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "accrochage" | "balise" | "scene" | "gabarit";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -97,6 +97,7 @@ const PICTOS_OUTILS: Readonly<Record<string, string>> = {
   profile: "fadi:profile",
   "profiles-aretes": "frame",
   mur: "wall",
+  reserve: "pin",
   onglet: "fadi:onglet",
   "coupe-profil": "fadi:coupe-profil",
   "allonger-piece": "fadi:allonger",
@@ -179,6 +180,10 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   "profiles-aretes": "Alt+Maj+Q",
   // Cas 4, étape 4 : murs à épaisseur. Maj+W est le Zoom fenêtre, Maj+X commencerait une saisie : M comme « mur ».
   mur: "Ctrl+Maj+M",
+  // Cas 4, étape 7b : réserves de chantier. Un outil se tape Maj (+ Alt ou Ctrl) + lettre (la maquette disait
+  // Ctrl+Alt+Maj+9, forme refusée aux outils) ; parmi les lettres libres de Ctrl+Maj, V est la seule que le navigateur
+  // ne garde pas (A, O, P et Q ouvrent ou ferment une fenêtre du navigateur).
+  reserve: "Ctrl+Maj+V",
   onglet: "Alt+Maj+O",
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
@@ -355,6 +360,25 @@ const commandes: EntreeSandbox[] = [
   c("nouveau-motif", "plan", "row-insert-bottom", "Ctrl+F10", "panneau-plan-vectoriel", true),
   c("importer-motif", "plan", "file-import", "Ctrl+F11", "panneau-plan-vectoriel", true),
   c("supprimer-motif", "plan", "row-remove", "Ctrl+F12", "panneau-plan-vectoriel", true),
+  // Feuilles (cas 4, étape 6) : feuilles ISO, fenêtres de vue, PDF vectoriel ; ouvert depuis le panneau Plan vectoriel.
+  c("feuilles", "feuille", "files", "Ctrl+Alt+Maj+1", "panneau-plan-vectoriel", true),
+  c("nouvelle-feuille", "feuille", "file-plus", "Ctrl+Alt+Maj+2", "panneau-feuilles", true),
+  c("supprimer-feuille", "feuille", "file-minus", "Ctrl+Alt+Maj+3", "panneau-feuilles", true),
+  c("ajouter-fenetre", "feuille", "browser-plus", "Ctrl+Alt+Maj+4", "panneau-feuilles", true),
+  c("supprimer-fenetre", "feuille", "browser-x", "Ctrl+Alt+Maj+5", "panneau-feuilles", true),
+  c("exporter-feuille-pdf", "feuille", "file-type-pdf", "Ctrl+Alt+Maj+6", "panneau-feuilles", true),
+  c("exporter-jeu-pdf", "feuille", "file-stack", "Ctrl+Alt+Maj+7", "panneau-feuilles", true),
+  // Réserves de chantier (cas 4, étape 7b) : panneau hors colonne (Outils ▾ et raccourci), outil Réserve (Ctrl+Maj+V).
+  c("reserves", "reserve", "clipboard-list", "Ctrl+Alt+Maj+8", "outils", true),
+  c("lever-reserve", "reserve", "circle-check", "Ctrl+Alt+1", "panneau-reserves", true),
+  c("supprimer-reserve", "reserve", "trash-x", "Ctrl+Alt+2", "panneau-reserves", true),
+  // Contrôle de l'enveloppe (cas 4, étape 7c) : panneau hors colonne (Outils ▾ et raccourci), désigner l'enveloppe,
+  // basculer le contrôle, ajouter / supprimer une règle de hauteur (seuils saisis avec leur source).
+  c("enveloppe", "enveloppe", "home-shield", "Ctrl+Alt+Maj+0", "outils", true),
+  c("definir-enveloppe", "enveloppe", "square-check", "Ctrl+Alt+3", "panneau-enveloppe", true),
+  c("controler-enveloppe", "enveloppe", "shield-check", "Ctrl+Alt+4", "panneau-enveloppe", true),
+  c("ajouter-regle-hauteur", "enveloppe", "playlist-add", "Ctrl+Alt+5", "panneau-enveloppe", true),
+  c("supprimer-regle-hauteur", "enveloppe", "playlist-x", "Ctrl+Alt+6", "panneau-enveloppe", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -382,10 +406,10 @@ const commandes: EntreeSandbox[] = [
   c("gabarit", "gabarit", "file-settings", "Ctrl+Maj+9", "panneau-gabarit", true),
   c("importer-gabarit", "gabarit", "file-upload", "Ctrl+Maj+0", "panneau-gabarit", true),
   c("enregistrer-gabarit", "gabarit", "file-download", "Alt+7", "panneau-gabarit", true),
-  c("creer-planche-gabarit", "gabarit", "file-plus", "Alt+8", "panneau-gabarit", true),
+  c("creer-planche-gabarit", "gabarit", "file-star", "Alt+8", "panneau-gabarit", true),
 ];
 
-const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
+const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas" | "panneau-plan-vectoriel" | "outils", horsCatalogue = false): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
@@ -427,6 +451,12 @@ const panneaux: EntreeSandbox[] = [
   p("locaux", "layout-board-split", "colonne", true),
   // Plan vectoriel (cas 4, étape 5) : dessin 2D de la vue, coupe pochée, motifs de hachure ; fonction du noyau.
   p("plan-vectoriel", "background", "colonne", true),
+  // Feuilles (cas 4, étape 6) : hors de la colonne (pleine), ouvert depuis Plan vectoriel, Outils ▾ et son raccourci.
+  p("feuilles", "files", "panneau-plan-vectoriel", true),
+  // Réserves (cas 4, étape 7b) : hors de la colonne (pleine), ouvert par Outils ▾, son raccourci et l'outil Réserve.
+  p("reserves", "clipboard-list", "outils", true),
+  // Enveloppe (cas 4, étape 7c) : hors de la colonne (pleine), ouvert par Outils ▾ et son raccourci.
+  p("enveloppe", "home-shield", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -451,6 +481,9 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:niveaux", "panneau:niveaux"],
   ["commande:locaux", "panneau:locaux"],
   ["commande:plan-vectoriel", "panneau:plan-vectoriel"],
+  ["commande:feuilles", "panneau:feuilles"],
+  ["commande:reserves", "panneau:reserves"],
+  ["commande:enveloppe", "panneau:enveloppe"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

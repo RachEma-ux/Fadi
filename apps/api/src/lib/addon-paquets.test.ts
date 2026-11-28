@@ -15,7 +15,7 @@ const renomme = (id: string, raccourcis: (i: number) => string): Record<string, 
 
 describe("extensions installées — lignes de la base", () => {
   it("les paquets valides sont servis, dans l'ordre des identifiants", () => {
-    const servis = paquetsDeLignes([ligne("essai-commandes", essai()), ligne("autre", renomme("autre", (i) => `Ctrl+Alt+${i + 1}`))]);
+    const servis = paquetsDeLignes([ligne("essai-commandes", essai()), ligne("autre", renomme("autre", (i) => `Ctrl+Alt+${"KJYZXWT"[i]}`))]);
     expect(servis.map((p) => p.fiche.id)).toEqual(["autre", "essai-commandes"]);
     expect(servis[1]!.code).toContain("planche.sur(");
   });

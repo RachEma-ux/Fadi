@@ -3,6 +3,8 @@ export * from "./mesures.js";
 export * from "./valeurs.js";
 export * from "./classification.js";
 export * from "./legende-lue.js";
+export * from "./site.js";
+export * from "./reference-site.js";
 export * from "./composition.js";
 export * from "./geojson.js";
 export * from "./droits.js";

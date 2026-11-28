@@ -48,5 +48,8 @@ export * from "./evenements-extensions.js";
 export * from "./fichiers-extensions.js";
 export * from "./panneaux-extensions.js";
 export * from "./plan-vectoriel.js";
+export * from "./feuilles.js";
+export * from "./reserves.js";
+export * from "./enveloppe.js";
 export * from "./controle-l3.js";
 export * from "./balises-l4.js";
