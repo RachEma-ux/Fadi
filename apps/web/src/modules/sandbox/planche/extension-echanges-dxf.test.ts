@@ -123,9 +123,9 @@ describe("extension « Échanges DXF » — paquet", () => {
     expect(PAQUET).toEqual(assembler());
   });
 
-  it("passe l'import de l'administrateur en protocole 1.1 : une icône et un raccourci par commande (règle d'or)", () => {
+  it("passe l'import de l'administrateur en protocole 1.5 : une icône et un raccourci par commande (règle d'or)", () => {
     expect(jugerImportPaquet(PAQUET)).toMatchObject({ ok: true });
-    expect(PAQUET.fiche.protocole).toBe("1.1");
+    expect(PAQUET.fiche.protocole).toBe("1.5");
     const icones = PAQUET.fiche.commandes.map((c) => c.icone);
     expect(icones.every((i) => typeof i === "string" && PAQUET.pages[i!]?.startsWith("<svg"))).toBe(true);
     expect(new Set(icones).size).toBe(icones.length);
@@ -150,15 +150,16 @@ describe("extension « Échanges DXF » — importer", () => {
     const champs = p.saisies[0]!.champs as { id: string; valeur: unknown; choix?: { libelle: string }[]; libelle: string }[];
     expect(champs.find((c) => c.id === "unite")).toMatchObject({ valeur: "4" });
     expect(champs.find((c) => c.id === "unite")!.choix![0]!.libelle).toBe("Millimètres (lue dans le fichier)");
-    expect(champs.find((c) => c.id === "balises")!.libelle).toBe("Calques en balises (2)");
+    expect(champs.find((c) => c.id === "balises")!.libelle).toBe("Calques en balises (3)");
     expect(p.etat.pas).toEqual(["Importer plan.dxf"]);
     expect(balises(p.etat.modele)).toEqual(["CLOISONS", "MURS"]);
     expect(occurrences(p.etat.modele)).toHaveLength(2);
     const xs = sommets(p.etat.modele).map((s) => s[0]!);
     expect(Math.max(...xs)).toBeCloseTo(12, 9);
     expect(p.textes()).toContain("Plan repris : 2 traits, 0 arcs et cercles, 0 blocs, 2 calques en balises.");
-    // Rien n'est perdu en silence.
-    expect(p.textes()).toContain("Non repris : 1 TEXT (textes, hachures et cotes : à venir).");
+    // Case « Textes » décochée : rien n'est perdu en silence.
+    expect(p.textes()).toContain("Non repris : 1 TEXT.");
+    expect(p.textes().join(" ")).not.toMatch(/à venir/);
   });
 
   it("une unité absente du fichier est dite « non indiquée » et choisie par l'utilisateur", async () => {
@@ -303,7 +304,7 @@ describe("extension « Échanges DXF » — exporter et plan masse", () => {
     const bout = v.slice(a);
     expect(Number(bout.find(([c]) => c === 50)![1])).toBeCloseTo(0, 6);
     expect(Number(bout.find(([c]) => c === 51)![1])).toBeCloseTo(90, 6);
-    expect(p.textes().at(-1)).toBe("DXF écrit : 4 traits, 2 arcs et cercles, 4 calques.");
+    expect(p.textes().at(-1)).toBe("DXF écrit : 4 traits, 2 arcs et cercles, 0 textes, 0 cotes, 4 calques.");
     // Relu par la commande d'import : même plan, même échelle.
     const q = planche();
     q.fichier(f.texte);
@@ -376,5 +377,124 @@ describe("extension « Échanges DXF » — exporter et plan masse", () => {
     expect(await p.commande("figure-fond", { bati: id("VOIRIE"), voirie: "-", parcelles: "-", format: "svg" })).toBeNull();
     expect(p.etat.fichiers).toHaveLength(n);
     expect(p.textes().at(-1)).toMatch(/Rien à dessiner/);
+  });
+});
+
+describe("extension « Échanges DXF » 1.1 — textes, cotes et hachures", () => {
+  const ANNOT = { ...IMPORT, textes: true, cotes: true, hachures: true } as ValeursSaisie;
+  const texte = (calque: string, x: number, y: number, t: string) => [0, "TEXT", 8, calque, 10, x, 20, y, 40, 250, 1, t];
+  const mtexte = (calque: string, x: number, y: number, t: string) => [0, "MTEXT", 8, calque, 10, x, 20, y, 1, t];
+  const cote = (calque: string, genre: number, a: [number, number], b: [number, number], pos: [number, number], angle = 0) => [0, "DIMENSION", 8, calque, 70, genre, 10, pos[0], 20, pos[1], 13, a[0], 23, a[1], 14, b[0], 24, b[1], 50, angle];
+  const contour = (x0: number, y0: number, x1: number, y1: number) => [91, 1, 92, 2, 72, 0, 73, 1, 93, 4, 10, x0, 20, y0, 10, x1, 20, y0, 10, x1, 20, y1, 10, x0, 20, y1, 97, 0];
+  const aplat = (calque: string, x0: number, y0: number, x1: number, y1: number) => [0, "HATCH", 8, calque, 2, "SOLID", 70, 1, ...contour(x0, y0, x1, y1)];
+  // ANSI31 : une famille à 45°, pas de 3,175 unités du dessin, décalage donné dans le repère du dessin.
+  const ansi31 = (calque: string, x0: number, y0: number, x1: number, y1: number) => [0, "HATCH", 8, calque, 2, "ANSI31", 70, 0, ...contour(x0, y0, x1, y1), 75, 0, 76, 1, 52, 0, 41, 1, 77, 0, 78, 1, 53, 45, 43, 0, 44, 0, 45, -2.245064, 46, 2.245064, 79, 0];
+  const paires = (texte: string) => {
+    const l = texte.trim().split("\n");
+    const r: [number, string][] = [];
+    for (let i = 0; i + 1 < l.length; i += 2) r.push([Number(l[i]), l[i + 1]!]);
+    return r;
+  };
+  const types = (texte: string) => paires(texte).filter(([c, v]) => c === 0 && v !== "SECTION" && v !== "ENDSEC" && v !== "EOF").map(([, v]) => v);
+  const faces = (m: Modele) => (JSON.stringify(m.definitions).match(/"materiauRecto":"[^"]+"/g) ?? []).length;
+  const PLAN = () =>
+    dxf(
+      entete(4),
+      entites(
+        rect("MURS", 0, 0, 12000, 9000),
+        texte("TEXTES", 2000, 3000, "Poteau %%c30"),
+        mtexte("TEXTES", 8000, 3000, "{\\fArial|b1;Chambre}\\PNord"),
+        cote("COTES", 0, [0, 0], [12000, 0], [0, -1500]),
+        cote("COTES", 1, [0, 0], [12000, 9000], [-1000, 1000]),
+        cote("COTES", 2, [0, 0], [12000, 0], [0, -1500]),
+        aplat("MURS", 0, 0, 12000, 9000),
+      ),
+    );
+
+  it("propose les cases Textes, Cotes et Hachures avec leurs comptes", async () => {
+    const p = planche();
+    p.fichier(PLAN());
+    await p.commande("importer", ANNOT);
+    const champs = p.saisies[0]!.champs as { id: string; libelle: string }[];
+    const libelle = (id: string) => champs.find((c) => c.id === id)?.libelle;
+    expect(libelle("textes")).toBe("Textes (TEXT, MTEXT) : 2");
+    expect(libelle("cotes")).toBe("Cotes linéaires (DIMENSION) : 3");
+    expect(libelle("hachures")).toBe("Hachures en faces avec matière (HATCH) : 1");
+    // Aplat plein seulement : pas d'échelle demandée.
+    expect(libelle("echelle")).toBeUndefined();
+  });
+
+  it("reprend textes et cotes linéaires comme annotations balisées par calque, dit ce qui ne l'est pas", async () => {
+    const p = planche();
+    p.fichier(PLAN());
+    await p.commande("importer", ANNOT);
+    expect(p.etat.pas).toEqual(["Importer plan.dxf"]);
+    const an = p.etat.modele.annotations!;
+    const nomBalise = (id?: string) => (id ? an.balises[id]?.nom : undefined);
+    const tx = Object.values(an.textes).filter((t) => t.genre === "repere");
+    expect(tx.map((t) => t.texte)).toEqual(["Poteau Ø30", "Chambre Nord"]);
+    expect(tx.every((t) => nomBalise(t.balise) === "TEXTES")).toBe(true);
+    expect(tx[0]).toMatchObject({ ancre: { x: 2, y: 3, z: 0 }, position: { x: 2, y: 3, z: 0 } });
+    const co = Object.values(an.cotes).filter((c) => c.genre === "lineaire");
+    expect(co).toHaveLength(2);
+    expect(co[0]).toMatchObject({ a: { x: 0, y: 0 }, b: { x: 12, y: 0 }, position: { x: 0, y: -1.5 }, direction: "axe-x" });
+    expect(co[1]!.direction).toBeUndefined();
+    expect(co.every((c) => nomBalise(c.balise) === "COTES")).toBe(true);
+    expect(p.textes()).toContain("Annotations reprises : 2 textes, 2 cotes, 1 hachures (faces avec matière).");
+    expect(p.textes()).toContain("Textes posés sans leur hauteur ni leur rotation (la Planche ne les porte pas).");
+    expect(p.textes()).toContain("1 cote(s) non reprise(s) : 1 angulaire(s), de rayon, de diamètre ou d'ordonnée.");
+    // L'aplat plein devient une matière posée sur la face qu'il couvre.
+    expect(Object.values(an.materiaux).map((x) => x.nom)).toEqual(["Aplat plein (DXF)"]);
+    expect(faces(p.etat.modele)).toBeGreaterThan(0);
+  });
+
+  it("cases décochées : rien n'est repris, tout est compté", async () => {
+    const p = planche();
+    p.fichier(PLAN());
+    await p.commande("importer", IMPORT);
+    const an = p.etat.modele.annotations!;
+    expect(Object.keys(an.textes)).toHaveLength(0);
+    expect(Object.keys(an.cotes)).toHaveLength(0);
+    expect(faces(p.etat.modele)).toBe(0);
+    expect(p.textes().join(" ")).toMatch(/Non repris : .*2 TEXT|Non repris : .*TEXT/);
+  });
+
+  it("une hachure à motif demande l'échelle de tracé et crée son motif en mm papier", async () => {
+    const p = planche();
+    p.fichier(dxf(entete(4), entites(rect("MURS", 0, 0, 4000, 3000), ansi31("MURS", 0, 0, 4000, 3000))));
+    await p.commande("importer", { ...ANNOT, echelle: 50 } as ValeursSaisie);
+    const champs = p.saisies[0]!.champs as { id: string; valeur: unknown }[];
+    expect(champs.find((c) => c.id === "echelle")).toMatchObject({ valeur: 50 });
+    const an = p.etat.modele.annotations!;
+    const motifs = Object.values(an.motifs ?? {});
+    expect(motifs).toHaveLength(1);
+    expect(motifs[0]!.familles[0]!.angle).toBe(45);
+    // 3,175 mm du dessin au 1:50 = 0,0635 mm papier.
+    expect(Math.abs(motifs[0]!.familles[0]!.dy)).toBeCloseTo(0.0635, 4);
+    const mat = Object.values(an.materiaux);
+    expect(mat.map((x) => x.nom)).toEqual(["Hachure ANSI31 (DXF)"]);
+    expect(mat[0]!.motif).toBe(motifs[0]!.id);
+    expect(faces(p.etat.modele)).toBeGreaterThan(0);
+  });
+
+  it("exporte textes (calque TEXTES) et cotes (calque COTES, bloc de cote) relus à l'import", async () => {
+    const p = planche();
+    p.fichier(PLAN());
+    await p.commande("importer", ANNOT);
+    await p.commande("exporter", { contenu: "modele", unite: "4", calques: true, arcs: true, annotations: true, hauteur: 0.25, nom: "plan.dxf" });
+    const f = p.etat.fichiers.at(-1)!;
+    expect(p.textes().at(-1)).toMatch(/^DXF écrit : \d+ traits, 0 arcs et cercles, 2 textes, 2 cotes, \d+ calques\.$/);
+    const v = paires(f.texte);
+    const calques = v.filter(([c], i) => c === 2 && v[i - 1]?.[1] === "LAYER").map(([, x]) => x);
+    expect(calques).toEqual(expect.arrayContaining(["TEXTES", "COTES"]));
+    expect(types(f.texte).filter((t) => t === "DIMENSION")).toHaveLength(2);
+    expect(f.texte).toMatch(/\*D1/);
+    // Relu : mêmes textes et deux cotes linéaires.
+    const q = planche();
+    q.fichier(f.texte);
+    await q.commande("importer", ANNOT);
+    const an = q.etat.modele.annotations!;
+    expect(Object.values(an.textes).map((t) => t.texte).sort()).toEqual(["Chambre Nord", "Poteau Ø30"]);
+    expect(Object.values(an.cotes)).toHaveLength(2);
   });
 });

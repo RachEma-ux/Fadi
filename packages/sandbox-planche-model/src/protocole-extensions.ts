@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.4";
+export const VERSION_PROTOCOLE = "1.5";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -360,6 +360,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * hauteur), `geometrie.projection` (projection au sol) et `geometrie.union` (union de polygones), par le moteur
  * booléen de la Planche ; le résultat est toujours une union, sans recouvrement compté deux fois ; `niveaux.lire`
  * (niveaux d'étage et altitude NGF du ±0,00).
+ * Protocole 1.5 (cas 3, Échanges DXF 1.1, hachures) : `matieres.creer` (matière d'apparence, avec ou sans motif de
+ * hachure), `motifs.lire` et `motifs.creer` (motifs de hachure en familles de lignes du .pat) ; `matieres.lire` rend
+ * aussi le motif de chaque matière.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -377,6 +380,9 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "donnees.effacer": "donnees",
   "matieres.lire": "modele.lire",
   "matieres.appliquer": "modele.modifier",
+  "matieres.creer": "modele.modifier",
+  "motifs.lire": "modele.lire",
+  "motifs.creer": "modele.modifier",
   "balises.lire": "modele.lire",
   "balises.appliquer": "modele.modifier",
   "balises.creer": "modele.modifier",

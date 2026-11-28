@@ -1,6 +1,8 @@
 // Extension « Échanges DXF » (catalogue des extensions, cas 3, lot 1 ; maquettes validées le 27 novembre 2026).
 // Trois commandes : reprendre un plan DXF à l'échelle, écrire le modèle en DXF, écrire un plan masse en figure-fond.
 // Protocole 1.1 : fichier lu en flux, segments en lot, vrais arcs, balises créées, lecture du modèle entier.
+// Version 1.1 (protocole 1.5) : textes (TEXT, MTEXT), cotes linéaires (DIMENSION) et hachures (HATCH, en faces portant une
+// matière à motif) repris à la lecture d'un plan ; textes et cotes du modèle écrits à l'export.
 // Rien n'est perdu en silence : chaque entité non reprise est comptée et signalée.
 
 const FR = (d) => !(d && d.langue === "en");
@@ -15,6 +17,10 @@ const UNITES = {
   6: ["Mètres", "Metres", 1],
 };
 const REPRIS = ["LINE", "LWPOLYLINE", "POLYLINE", "ARC", "CIRCLE", "INSERT"];
+/** (1.1) Entités annotées, lues à part : leurs codes sont gardés tels quels. */
+const ANNOTEES = ["TEXT", "MTEXT", "DIMENSION", "HATCH"];
+/** (1.1) Texte d'une annotation de la Planche, en caractères (borne du protocole 1.3). */
+const MAX_TEXTE = 200;
 const EPS = 1e-9;
 /** Segments envoyés par appel à « lignes » : la borne du protocole 1.1 (MAX_SEGMENTS_APPEL). */
 const LOT_SEGMENTS = 20000;
@@ -91,7 +97,7 @@ function lireDxf(texte) {
         ent = { type: "LAYOUT", nom: "", enregistrement: "" };
         continue;
       }
-      if (section === "ENTITIES" || (section === "BLOCKS" && bloc)) ent = { type: v, calque: "0", pts: [], bombes: [] };
+      if (section === "ENTITIES" || (section === "BLOCKS" && bloc)) ent = { type: v, calque: "0", pts: [], bombes: [], brut: ANNOTEES.includes(v) ? [] : null };
       continue;
     }
     if (enreg) {
@@ -113,6 +119,7 @@ function lireDxf(texte) {
       else if (c === 330) ent.enregistrement = v; // le dernier 330 de l'objet désigne l'enregistrement de son bloc
       continue;
     }
+    if (ent.brut) ent.brut.push([c, v]);
     if (c === 8) ent.calque = v;
     else if (c === 2) ent.nom = v;
     else if ((c === 10 || c === 20) && ent.type === "POLYLINE") continue; // point factice de l'en-tête : les sommets sont les VERTEX
@@ -187,6 +194,197 @@ function pointsArc(a, m, b) {
   return pts;
 }
 
+// ———————————————————————————————————— (1.1) Textes, cotes et hachures lus ————————————————————————————————————
+
+/** Valeurs d'une entité annotée : première valeur d'un code, en texte ou en nombre. */
+const code = (e, c) => {
+  const x = e.brut.find((p) => p[0] === c);
+  return x ? x[1] : undefined;
+};
+const nbr = (e, c, d = 0) => {
+  const x = code(e, c);
+  return x === undefined || !Number.isFinite(Number(x)) ? d : Number(x);
+};
+
+/** Texte lisible : mise en forme MTEXT retirée, \U+XXXX et %%c, %%d, %%p décodés, blancs resserrés. */
+function texteLisible(t) {
+  return String(t)
+    .replace(/\\U\+([0-9A-Fa-f]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\\\/g, "\u0000")
+    .replace(/\\[Pp]/g, " ")
+    .replace(/\\~/g, " ")
+    .replace(/\\S([^;]*);/g, (_, x) => x.replace(/[\^#]/g, "/"))
+    .replace(/\\[ACFHQTWfacfhqtw][^;]*;/g, "")
+    .replace(/\\[LlOoKkNn]/g, "")
+    .replace(/[{}]/g, "")
+    .replace(/%%[cC]/g, "Ø")
+    .replace(/%%[dD]/g, "°")
+    .replace(/%%[pP]/g, "±")
+    .replace(/%%%/g, "%")
+    .replace(/\u0000/g, "\\")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** TEXT ou MTEXT : point d'insertion (ou d'alignement) et texte lisible. */
+function texteDe(e) {
+  const brut = e.type === "MTEXT" ? e.brut.filter((p) => p[0] === 3).map((p) => p[1]).join("") + (code(e, 1) || "") : code(e, 1) || "";
+  const aligne = e.type === "TEXT" && (nbr(e, 72) !== 0 || nbr(e, 73) !== 0) && code(e, 11) !== undefined;
+  return { p: aligne ? [nbr(e, 11), nbr(e, 21)] : [nbr(e, 10), nbr(e, 20)], texte: texteLisible(brut) };
+}
+
+/**
+ * DIMENSION linéaire : points d'attache (13, 14) et point de la ligne de cote (10). Une cote tournée à 0° ou 90° devient
+ * horizontale ou verticale ; une cote alignée reste alignée ; angulaire, rayon, diamètre, ordonnée et autre angle : `null`.
+ */
+function coteDe(e) {
+  const genre = nbr(e, 70) & 7;
+  if (genre !== 0 && genre !== 1) return { motif: "genre" };
+  const a = [nbr(e, 13), nbr(e, 23)];
+  const b = [nbr(e, 14), nbr(e, 24)];
+  if (Math.hypot(b[0] - a[0], b[1] - a[1]) < EPS) return { motif: "nulle" };
+  let direction = "alignee";
+  if (genre === 0) {
+    const ang = (((nbr(e, 50) % 180) + 180) % 180 + 180) % 180;
+    if (ang < 1e-6 || Math.abs(ang - 180) < 1e-6) direction = "horizontale";
+    else if (Math.abs(ang - 90) < 1e-6) direction = "verticale";
+    else {
+      // Cote tournée : elle n'est juste que si elle suit la droite de ses deux points (alors elle est alignée).
+      const d = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+      if (Math.abs((((d - ang) % 180) + 180) % 180) > 1e-6 && Math.abs(((((d - ang) % 180) + 180) % 180) - 180) > 1e-6) return { motif: "angle" };
+    }
+  }
+  return { a, b, pos: [nbr(e, 10), nbr(e, 20)], direction };
+}
+
+/** Points d'un arc de centre c, de rayon r, de a0 à a1 (radians, sens trigonométrique), 24 par tour au moins. */
+function pointsAngles(c, r, a0, a1, rx = null) {
+  const k = Math.max(2, Math.ceil((Math.abs(a1 - a0) / (2 * Math.PI)) * 24));
+  const pts = [];
+  for (let i = 0; i <= k; i++) {
+    const a = a0 + ((a1 - a0) * i) / k;
+    pts.push(rx ? [c[0] + rx[0][0] * Math.cos(a) + rx[1][0] * Math.sin(a), c[1] + rx[0][1] * Math.cos(a) + rx[1][1] * Math.sin(a)] : [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]);
+  }
+  return pts;
+}
+
+/**
+ * HATCH : contours (polylignes, droites, arcs, ellipses ; une spline rend la hachure illisible), aplat plein ou motif
+ * (familles 53 angle, 43 et 44 origine, 45 et 46 décalage, 49 tirets, en unités du dessin).
+ */
+function hachureDe(e) {
+  const b = e.brut;
+  const res = { plein: false, nom: e.nom || "", boucles: [], familles: [], illisible: false };
+  let i = b.findIndex((p) => p[0] === 91);
+  const avant = b.slice(0, i < 0 ? b.length : i);
+  res.plein = avant.some((p) => p[0] === 70 && Number(p[1]) === 1);
+  if (i < 0) return { ...res, illisible: true };
+  const n = Number(b[i][1]);
+  i++;
+  const num = (c) => {
+    if (!b[i] || b[i][0] !== c) throw new Error("code " + c);
+    return Number(b[i++][1]);
+  };
+  const opt = (c, d) => (b[i] && b[i][0] === c ? Number(b[i++][1]) : d);
+  const rad = (d) => (d * Math.PI) / 180;
+  try {
+    for (let k = 0; k < n; k++) {
+      const drapeaux = num(92);
+      const pts = [];
+      if (drapeaux & 2) {
+        const bombees = num(72);
+        num(73);
+        const nv = num(93);
+        const s = [];
+        for (let j = 0; j < nv; j++) {
+          const x = num(10);
+          const y = num(20);
+          s.push([x, y, bombees ? opt(42, 0) : 0]);
+        }
+        for (let j = 0; j < s.length; j++) {
+          const a = [s[j][0], s[j][1]];
+          const c = [s[(j + 1) % s.length][0], s[(j + 1) % s.length][1]];
+          pts.push(a);
+          if (Math.abs(s[j][2]) > EPS) pts.push(...pointsArc(a, milieuBombe(a, c, s[j][2]), c).slice(1, -1));
+        }
+      } else {
+        const ne = num(93);
+        for (let j = 0; j < ne; j++) {
+          const t = num(72);
+          if (t === 1) {
+            const a = [num(10), num(20)];
+            num(11);
+            num(21);
+            pts.push(a);
+          } else if (t === 2) {
+            const c = [num(10), num(20)];
+            const r = num(40);
+            let a0 = rad(num(50));
+            let a1 = rad(num(51));
+            const trigo = opt(73, 1);
+            if (!trigo) [a0, a1] = [-a0, -a1];
+            if (trigo && a1 <= a0) a1 += 2 * Math.PI;
+            if (!trigo && a1 >= a0) a1 -= 2 * Math.PI;
+            pts.push(...pointsAngles(c, r, a0, a1).slice(0, -1));
+          } else if (t === 3) {
+            const c = [num(10), num(20)];
+            const maj = [num(11), num(21)];
+            const rapport = num(40);
+            let a0 = rad(num(50));
+            let a1 = rad(num(51));
+            const trigo = opt(73, 1);
+            if (!trigo) [a0, a1] = [-a0, -a1];
+            if (trigo && a1 <= a0) a1 += 2 * Math.PI;
+            if (!trigo && a1 >= a0) a1 -= 2 * Math.PI;
+            pts.push(...pointsAngles(c, 0, a0, a1, [maj, [-maj[1] * rapport, maj[0] * rapport]]).slice(0, -1));
+          } else throw new Error("spline");
+        }
+      }
+      const ns = opt(97, 0);
+      for (let j = 0; j < ns && b[i] && b[i][0] === 330; j++) i++;
+      if (pts.length >= 3) res.boucles.push(pts);
+    }
+    if (!res.plein) {
+      while (b[i] && b[i][0] !== 78 && b[i][0] !== 98) i++;
+      const nl = opt(78, 0);
+      for (let j = 0; j < nl; j++) {
+        const f = { angle: num(53), x0: num(43), y0: num(44), ox: num(45), oy: num(46), tirets: [] };
+        const nt = num(79);
+        for (let q = 0; q < nt; q++) f.tirets.push(num(49));
+        res.familles.push(f);
+      }
+    }
+  } catch {
+    res.illisible = true;
+  }
+  return res;
+}
+
+/**
+ * Famille de motif de la Planche (mm papier, comme un .pat) depuis une ligne de motif DXF (unités du dessin, décalage
+ * dans le repère du dessin) : `k` mètres par unité, tracé à l'échelle 1:`echelle`. `null` si le pas est nul.
+ */
+function familleMotif(f, k, echelle) {
+  const a = (f.angle * Math.PI) / 180;
+  const u = [Math.cos(a), Math.sin(a)];
+  const nrm = [-u[1], u[0]];
+  const mm = (v) => Number(((v * k * 1000) / echelle).toFixed(6));
+  const dy = -(f.ox * nrm[0] + f.oy * nrm[1]);
+  if (Math.abs(dy) < EPS) return null;
+  return { angle: f.angle, x0: mm(f.x0), y0: mm(-f.y0), dx: mm(f.ox * u[0] + f.oy * u[1]), dy: mm(dy), tirets: f.tirets.slice(0, 32).map(mm) };
+}
+
+/** Point dans un polygone (plan), règle pair-impair. */
+function dedansPolygone(q, poly) {
+  let dedans = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    if (a[1] > q[1] !== b[1] > q[1] && q[0] < ((b[0] - a[0]) * (q[1] - a[1])) / (b[1] - a[1]) + a[0]) dedans = !dedans;
+  }
+  return dedans;
+}
+
 // ——————————————————————————————————————————————— Reprise d'un plan ———————————————————————————————————————————————
 
 planche.sur("commande.importer", async (d) => {
@@ -195,8 +393,16 @@ planche.sur("commande.importer", async (d) => {
   if (!f) return null;
   const dxf = lireDxf(await f.texte());
   const lue = UNITES[dxf.unite];
-  const calquesDe = (liste) => [...new Set(liste.filter((e) => REPRIS.includes(e.type)).map((e) => e.calque))];
-  const calques = calquesDe(entitesEspace(dxf, "objet"));
+  const calquesDe = (liste) => [...new Set(liste.filter((e) => REPRIS.includes(e.type) || ANNOTEES.includes(e.type)).map((e) => e.calque))];
+  const objet = entitesEspace(dxf, "objet");
+  const calques = calquesDe(objet);
+  // (1.1) Annotations du fichier, comptées dans l'espace objet et dans les blocs qu'il insère.
+  const toutes = [...objet, ...Object.values(dxf.blocs).filter((x) => !x.nom.startsWith("*")).flatMap((x) => x.entites)];
+  const nb = (types) => toutes.filter((e) => types.includes(e.type)).length;
+  const nTextes = nb(["TEXT", "MTEXT"]);
+  const nCotes = nb(["DIMENSION"]);
+  const nHachures = nb(["HATCH"]);
+  const avecMotif = toutes.some((e) => e.type === "HATCH" && !hachureDe(e).plein);
   const choixUnite = [4, 5, 6, 1, 2].map((u) => ({
     valeur: String(u),
     libelle: UNITES[u][fr ? 0 : 1] + (u === dxf.unite ? t(fr, " (lue dans le fichier)", " (read from the file)") : ""),
@@ -228,9 +434,14 @@ planche.sur("commande.importer", async (d) => {
     },
     { id: "balises", libelle: t(fr, "Calques en balises (", "Layers as tags (") + calques.length + ")", genre: "case", valeur: true },
     { id: "blocs", libelle: t(fr, "Blocs en composants", "Blocks as components"), genre: "case", valeur: true },
+    { id: "textes", libelle: t(fr, "Textes (TEXT, MTEXT) : ", "Texts (TEXT, MTEXT): ") + nTextes, genre: "case", valeur: nTextes > 0 },
+    { id: "cotes", libelle: t(fr, "Cotes linéaires (DIMENSION) : ", "Linear dimensions (DIMENSION): ") + nCotes, genre: "case", valeur: nCotes > 0 },
+    { id: "hachures", libelle: t(fr, "Hachures en faces avec matière (HATCH) : ", "Hatches as faces with a material (HATCH): ") + nHachures, genre: "case", valeur: nHachures > 0 },
+    ...(avecMotif ? [{ id: "echelle", libelle: t(fr, "Échelle de tracé des motifs de hachure (1:…)", "Hatch pattern plotting scale (1:…)"), genre: "nombre", valeur: 50, min: 1, max: 10000, unite: null }] : []),
   ]);
   if (!r) return null;
   const k = UNITES[Number(r.unite)][2];
+  const echelle = Number(r.echelle) || 1;
 
   // Repère de pose : à plat (X, Y du plan) ou debout sur l'arête sélectionnée (X le long de l'arête, Y vertical).
   let origine = [0, 0, 0];
@@ -261,9 +472,17 @@ planche.sur("commande.importer", async (d) => {
   let eclates = 0;
   let enSegments = 0;
   const omis = {};
+  // (1.1) Bilan des annotations : reprises, et non reprises avec leur motif.
+  const bilan = { textes: 0, coupes: 0, vides: 0, cotes: 0, cotesGenre: 0, cotesAngle: 0, hachures: 0, hachuresIllisibles: 0, sansMotif: 0 };
   // Tracés différés, par calque : chaque calque est tracé puis groupé aussitôt, pour qu'il ne se fonde pas aux autres.
   let parCalque = {};
-  const du = (c) => (parCalque[c] ||= { segs: [], courbes: [], objets: [] });
+  const du = (c) => (parCalque[c] ||= { segs: [], courbes: [], objets: [], textes: [], cotes: [], hachures: [] });
+  /** Direction d'une cote dans le monde : axe X, Y ou Z si le vecteur `v` (monde) en suit un, sinon `null`. */
+  const axeMonde = (v) => {
+    const n = Math.hypot(v[0], v[1], v[2]) || 1;
+    const i = [0, 1, 2].find((j) => Math.abs(Math.abs(v[j] / n) - 1) < 1e-6);
+    return i === undefined ? null : ["axe-x", "axe-y", "axe-z"][i];
+  };
 
   /**
    * Range une entité dans le calque `calque`, à travers la transformation 2D `T`. `deforme` : une insertion en amont
@@ -317,6 +536,36 @@ planche.sur("commande.importer", async (d) => {
       arcs++;
       return;
     }
+    if (e.type === "TEXT" || e.type === "MTEXT") {
+      if (!r.textes) return void (omis[e.type] = (omis[e.type] || 0) + 1);
+      const tx = texteDe(e);
+      if (!tx.texte) return void bilan.vides++;
+      if (tx.texte.length > MAX_TEXTE) bilan.coupes++;
+      x.textes.push({ p: q(tx.p), texte: tx.texte.slice(0, MAX_TEXTE) });
+      return;
+    }
+    if (e.type === "DIMENSION") {
+      if (!r.cotes) return void (omis.DIMENSION = (omis.DIMENSION || 0) + 1);
+      const cd = coteDe(e);
+      if (!cd.a) return void (cd.motif === "genre" ? bilan.cotesGenre++ : bilan.cotesAngle++);
+      const [a, b, pos] = [q(cd.a), q(cd.b), q(cd.pos)];
+      let direction = "alignee";
+      if (cd.direction !== "alignee") {
+        const o = q([0, 0]);
+        const u = q(cd.direction === "horizontale" ? [1, 0] : [0, 1]);
+        direction = axeMonde([u[0] - o[0], u[1] - o[1], u[2] - o[2]]);
+        if (!direction) return void bilan.cotesAngle++;
+      }
+      x.cotes.push({ a, b, pos, direction });
+      return;
+    }
+    if (e.type === "HATCH") {
+      if (!r.hachures) return void (omis.HATCH = (omis.HATCH || 0) + 1);
+      const h = hachureDe(e);
+      if (h.illisible || !h.boucles.length) return void bilan.hachuresIllisibles++;
+      x.hachures.push({ ...h, boucles: h.boucles.map((bc) => bc.map(q)) });
+      return;
+    }
     if (e.type === "INSERT") {
       const b = dxf.blocs[e.nom];
       if (!b || profondeur > 8) {
@@ -345,6 +594,48 @@ planche.sur("commande.importer", async (d) => {
     }
     for (let i = 0; i < x.segs.length; i += LOT_SEGMENTS) await planche.modele.lignes(x.segs.slice(i, i + LOT_SEGMENTS));
     return [...(await libres())].filter((id) => !avant.has(id));
+  };
+
+  /** (1.1) Plan de pose : coordonnées (le long de ex, le long de ey) d'un point du monde. */
+  const plan = (p) => {
+    const d = [p[0] - origine[0], p[1] - origine[1], p[2] - origine[2]];
+    return [d[0] * ex[0] + d[1] * ex[1] + d[2] * ex[2], d[0] * ey[0] + d[1] * ey[1] + d[2] * ey[2]];
+  };
+  const matieres = {};
+  /** (1.1) Matière d'une hachure : aplat plein, ou motif repris du fichier (une par nom de motif). */
+  const matiereDe = async (h) => {
+    const cle = h.plein ? "*plein" : h.nom || "DXF";
+    if (matieres[cle]) return matieres[cle];
+    let motif;
+    if (!h.plein) {
+      const familles = h.familles.map((y) => familleMotif(y, k, echelle)).filter(Boolean).slice(0, 64);
+      if (familles.length) motif = await planche.motifs.creer(cle, familles, f.nom);
+      else bilan.sansMotif++;
+    }
+    matieres[cle] = await planche.matieres.creer(h.plein ? t(fr, "Aplat plein (DXF)", "Solid fill (DXF)") : t(fr, "Hachure ", "Hatch ") + cle + " (DXF)", h.plein ? "#8c8c8c" : "#d9d9d9", motif);
+    return matieres[cle];
+  };
+  /**
+   * (1.1) Pose les contours d'une hachure (faces automatiques), puis donne sa matière aux faces qui sont dedans
+   * (règle pair-impair : une île reste vide). Rend ce qu'elle a créé.
+   */
+  const poserHachure = async (h) => {
+    const avant = await libres();
+    const segs = [];
+    for (const bc of h.boucles) for (let i = 0; i < bc.length; i++) segs.push([bc[i], bc[(i + 1) % bc.length]]);
+    for (let i = 0; i < segs.length; i += LOT_SEGMENTS) await planche.modele.lignes(segs.slice(i, i + LOT_SEGMENTS));
+    const m = await planche.modele.lire();
+    const boucles = h.boucles.map((bc) => bc.map(plan));
+    const pleines = m.faces.filter((fa) => {
+      const tri = trianguler(fa.points.map(plan));
+      if (!tri.length) return false;
+      const [a, b, c] = tri[0];
+      const g = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3];
+      return boucles.filter((bp) => dedansPolygone(g, bp)).length % 2 === 1;
+    });
+    if (pleines.length) await planche.matieres.appliquer(pleines.map((fa) => fa.id), await matiereDe(h));
+    bilan.hachures++;
+    return [...m.faces.map((fa) => fa.id), ...m.aretes.map((a) => a.id)].filter((id) => !avant.has(id));
   };
 
   // Blocs en composants : une définition par bloc, une occurrence par insertion (copiée, déplacée, tournée).
@@ -394,12 +685,19 @@ planche.sur("commande.importer", async (d) => {
   const ids = {};
   for (const [c, x] of Object.entries(parCalque)) {
     const crees = [...(await tracer(x)), ...x.objets];
-    if (!crees.length) continue;
-    const g = await planche.modele.grouper(crees, c);
-    if (r.balises) {
-      ids[c] = await planche.balises.creer(c);
-      await planche.balises.appliquer([g], ids[c]);
+    for (const h of x.hachures) crees.push(...(await poserHachure(h)));
+    const annote = x.textes.length + x.cotes.length > 0;
+    if (!crees.length && !annote) continue;
+    if (r.balises) ids[c] = await planche.balises.creer(c);
+    if (crees.length) {
+      const g = await planche.modele.grouper([...new Set(crees)], c);
+      if (r.balises) await planche.balises.appliquer([g], ids[c]);
     }
+    // Textes et cotes : annotations de la Planche, cachées avec la balise de leur calque.
+    for (const tx of x.textes) await planche.textes.creer(tx.p, tx.p, tx.texte, ids[c]);
+    for (const cd of x.cotes) await planche.cotes.creer(cd.a, cd.b, cd.pos, cd.direction, ids[c]);
+    bilan.textes += x.textes.length;
+    bilan.cotes += x.cotes.length;
   }
   await planche.operation.valider();
 
@@ -409,8 +707,15 @@ planche.sur("commande.importer", async (d) => {
   );
   if (enSegments) await planche.message.afficher(enSegments + t(fr, " courbe(s) de blocs déformés (échelles X et Y différentes) : posée(s) en segments.", " curve(s) in distorted blocks (different X and Y scales): placed as segments."), "alerte");
   if (eclates) await planche.message.afficher(eclates + t(fr, " bloc(s) inséré(s) à une échelle autre que 1 : posé(s) éclaté(s).", " block(s) inserted at a scale other than 1: placed exploded."), "alerte");
+  if (bilan.textes + bilan.cotes + bilan.hachures)
+    await planche.message.afficher(t(fr, "Annotations reprises : ", "Annotations imported: ") + bilan.textes + t(fr, " textes, ", " texts, ") + bilan.cotes + t(fr, " cotes, ", " dimensions, ") + bilan.hachures + t(fr, " hachures (faces avec matière).", " hatches (faces with a material)."));
+  if (bilan.textes) await planche.message.afficher(t(fr, "Textes posés sans leur hauteur ni leur rotation (la Planche ne les porte pas).", "Texts placed without their height or rotation (the Planche does not carry them).") + (bilan.coupes ? t(fr, " " + bilan.coupes + " texte(s) coupé(s) à 200 caractères.", " " + bilan.coupes + " text(s) cut at 200 characters.") : ""), "alerte");
+  const nonCotes = bilan.cotesGenre + bilan.cotesAngle;
+  if (nonCotes) await planche.message.afficher(nonCotes + t(fr, " cote(s) non reprise(s) : ", " dimension(s) not imported: ") + [bilan.cotesGenre ? bilan.cotesGenre + t(fr, " angulaire(s), de rayon, de diamètre ou d'ordonnée", " angular, radius, diameter or ordinate") : "", bilan.cotesAngle ? bilan.cotesAngle + t(fr, " tournée(s) hors des axes", " rotated off the axes") : ""].filter(Boolean).join(", ") + ".", "alerte");
+  if (bilan.hachuresIllisibles) await planche.message.afficher(bilan.hachuresIllisibles + t(fr, " hachure(s) non reprise(s) : contour en spline ou illisible.", " hatch(es) not imported: spline or unreadable boundary."), "alerte");
+  if (bilan.sansMotif) await planche.message.afficher(bilan.sansMotif + t(fr, " motif(s) sans définition dans le fichier : matière sans motif.", " pattern(s) with no definition in the file: material without a pattern."), "alerte");
   const o = Object.entries(omis).map(([type, nb]) => nb + " " + type).join(", ");
-  if (o) await planche.message.afficher(t(fr, "Non repris : ", "Not imported: ") + o + t(fr, " (textes, hachures et cotes : à venir).", " (texts, hatches and dimensions: to come)."), "alerte");
+  if (o) await planche.message.afficher(t(fr, "Non repris : ", "Not imported: ") + o + ".", "alerte");
   return traits;
 });
 
@@ -419,12 +724,31 @@ planche.sur("commande.importer", async (d) => {
 const nomCalque = (s) => (String(s || "0").replace(/[<>/\\":;?*|=`,]/g, "_").trim() || "0").slice(0, 255);
 const nombre = (v) => (Math.abs(v) < 1e-12 ? 0 : Number(v.toFixed(9))).toString();
 
-/** DXF texte (AC1009, lisible partout) : en-tête avec l'unité, table des calques, entités. */
-function ecrireDxf(unite, calques, entites) {
+/** (1.1) Texte DXF ASCII : hors ASCII en \U+XXXX, sans saut de ligne (comme l'export des feuilles). */
+const texteDxf = (s) =>
+  [...String(s).replace(/[\r\n]+/g, " ")]
+    .map((c) => {
+      const n = c.codePointAt(0);
+      return n >= 32 && n < 127 ? c : n > 0xffff ? "?" : "\\U+" + n.toString(16).toUpperCase().padStart(4, "0");
+    })
+    .join("");
+
+/** DXF texte (AC1009, lisible partout) : en-tête avec l'unité, table des calques, blocs (1.1 : ceux des cotes), entités. */
+function ecrireDxf(unite, calques, entites, blocs = []) {
   const l = ["0", "SECTION", "2", "HEADER", "9", "$ACADVER", "1", "AC1009", "9", "$INSUNITS", "70", String(unite), "0", "ENDSEC"];
   l.push("0", "SECTION", "2", "TABLES", "0", "TABLE", "2", "LAYER", "70", String(calques.length));
   for (const c of calques) l.push("0", "LAYER", "2", c, "70", "0", "62", "7", "6", "CONTINUOUS");
-  l.push("0", "ENDTAB", "0", "ENDSEC", "0", "SECTION", "2", "ENTITIES");
+  l.push("0", "ENDTAB", "0", "ENDSEC");
+  if (blocs.length) {
+    l.push("0", "SECTION", "2", "BLOCKS");
+    for (const b of blocs) {
+      l.push("0", "BLOCK", "8", "0", "2", b.nom, "70", "1", "10", "0", "20", "0", "30", "0", "3", b.nom);
+      for (const e of b.entites) l.push(...e);
+      l.push("0", "ENDBLK", "8", "0");
+    }
+    l.push("0", "ENDSEC");
+  }
+  l.push("0", "SECTION", "2", "ENTITIES");
   for (const e of entites) l.push(...e);
   l.push("0", "ENDSEC", "0", "EOF");
   return l.join("\n") + "\n";
@@ -444,6 +768,8 @@ planche.sur("commande.exporter", async (d) => {
     { id: "unite", libelle: t(fr, "Unité déclarée dans le fichier", "Unit declared in the file"), genre: "choix", valeur: "4", choix: [4, 5, 6].map((u) => ({ valeur: String(u), libelle: UNITES[u][fr ? 0 : 1] })) },
     { id: "calques", libelle: t(fr, "Un calque par balise", "One layer per tag"), genre: "case", valeur: true },
     { id: "arcs", libelle: t(fr, "Arcs et cercles en vrais arcs", "Arcs and circles as true arcs"), genre: "case", valeur: true },
+    { id: "annotations", libelle: t(fr, "Textes (TEXT) et cotes (DIMENSION) du modèle", "Model texts (TEXT) and dimensions (DIMENSION)"), genre: "case", valeur: true },
+    { id: "hauteur", libelle: t(fr, "Hauteur des textes écrits", "Height of written texts"), genre: "nombre", valeur: 0.25, min: 0.01, max: 10, unite: "m" },
     { id: "nom", libelle: t(fr, "Nom du fichier", "File name"), genre: "texte", valeur: "plan.dxf" },
   ]);
   if (!r) return null;
@@ -507,10 +833,67 @@ planche.sur("commande.exporter", async (d) => {
     entites.push(["0", "ARC", ...base, "50", nombre((a0 * 180) / Math.PI), "51", nombre((a1 * 180) / Math.PI)]);
     vrais++;
   }
+  const traitsEcrits = entites.length - vrais;
+  // (1.1) Textes et cotes du modèle (toute la planche ; une sélection ne porte pas d'annotation).
+  const blocs = [];
+  let textesEcrits = 0;
+  let cotesEcrites = 0;
+  let cotesZ = 0;
+  if (r.annotations && r.contenu === "modele") {
+    const an = await planche.annotations.lire();
+    const h = Number(r.hauteur) / k;
+    for (const x of an.textes) {
+      const p = X(x.position);
+      entites.push(["0", "TEXT", "8", "TEXTES", "10", nombre(p[0]), "20", nombre(p[1]), "30", nombre(p[2]), "40", nombre(h), "1", texteDxf(x.texte)]);
+      textesEcrits++;
+    }
+    for (const c of an.cotes) {
+      const [a, b, pos] = [X(c.a), X(c.b), X(c.position)];
+      // Alignée et horizontale (composante horizontale) : le long de a → b dans le plan ; axes X et Y : selon l'axe ;
+      // verticale (dénivelé) et axe Z : hors du plan DXF.
+      const u0 = c.direction === "axe-x" ? [1, 0] : c.direction === "axe-y" ? [0, 1] : c.direction === "alignee" || c.direction === "horizontale" ? [b[0] - a[0], b[1] - a[1]] : null;
+      const lu = u0 ? Math.hypot(u0[0], u0[1]) : 0;
+      if (!u0 || lu < EPS) {
+        cotesZ++;
+        continue;
+      }
+      const u = [u0[0] / lu, u0[1] / lu];
+      const nrm = [-u[1], u[0]];
+      const pied = (p) => {
+        const s = (p[0] - pos[0]) * u[0] + (p[1] - pos[1]) * u[1];
+        return [pos[0] + u[0] * s, pos[1] + u[1] * s];
+      };
+      const [d1, d2] = [pied(a), pied(b)];
+      const valeur = Math.abs((b[0] - a[0]) * u[0] + (b[1] - a[1]) * u[1]) * k;
+      const texte = await planche.unites.formater(valeur, "longueur");
+      const z = nombre(pos[2]);
+      const L = (p, q) => ["0", "LINE", "8", "COTES", "10", nombre(p[0]), "20", nombre(p[1]), "30", z, "11", nombre(q[0]), "21", nombre(q[1]), "31", z];
+      const tic = (p) => [p[0] + (u[0] + nrm[0]) * h * 0.35, p[1] + (u[1] + nrm[1]) * h * 0.35];
+      const ticB = (p) => [p[0] - (u[0] + nrm[0]) * h * 0.35, p[1] - (u[1] + nrm[1]) * h * 0.35];
+      const mi = [(d1[0] + d2[0]) / 2 + nrm[0] * h * 0.6, (d1[1] + d2[1]) / 2 + nrm[1] * h * 0.6];
+      const angle = (Math.atan2(u[1], u[0]) * 180) / Math.PI;
+      const nomBloc = "*D" + (blocs.length + 1);
+      blocs.push({
+        nom: nomBloc,
+        entites: [
+          L(d1, d2),
+          L([a[0], a[1]], d1),
+          L([b[0], b[1]], d2),
+          L(ticB(d1), tic(d1)),
+          L(ticB(d2), tic(d2)),
+          ["0", "TEXT", "8", "COTES", "10", nombre(mi[0]), "20", nombre(mi[1]), "30", z, "40", nombre(h), "1", texteDxf(texte), "50", nombre(angle), "72", "1", "11", nombre(mi[0]), "21", nombre(mi[1]), "31", z],
+        ],
+      });
+      entites.push(["0", "DIMENSION", "8", "COTES", "2", nomBloc, "10", nombre(d2[0]), "20", nombre(d2[1]), "30", z, "11", nombre(mi[0]), "21", nombre(mi[1]), "31", z, "70", c.direction === "alignee" || c.direction === "horizontale" ? "1" : "0", "1", "", "13", nombre(a[0]), "23", nombre(a[1]), "33", nombre(a[2]), "14", nombre(b[0]), "24", nombre(b[1]), "34", nombre(b[2]), "50", nombre(c.direction === "alignee" || c.direction === "horizontale" ? 0 : angle)]);
+      cotesEcrites++;
+    }
+  }
   const calques = [...new Set(["0", ...entites.map((e) => e[3])])];
   const nom = /\.dxf$/i.test(r.nom) ? r.nom : r.nom + ".dxf";
-  const fait = await planche.fichiers.enregistrer(nom, ecrireDxf(Number(r.unite), calques, entites));
-  if (fait) await planche.message.afficher(t(fr, "DXF écrit : ", "DXF written: ") + (entites.length - vrais) + t(fr, " traits, ", " lines, ") + vrais + t(fr, " arcs et cercles, ", " arcs and circles, ") + calques.length + t(fr, " calques.", " layers."));
+  const fait = await planche.fichiers.enregistrer(nom, ecrireDxf(Number(r.unite), calques, entites, blocs));
+  if (fait) await planche.message.afficher(t(fr, "DXF écrit : ", "DXF written: ") + traitsEcrits + t(fr, " traits, ", " lines, ") + vrais + t(fr, " arcs et cercles, ", " arcs and circles, ") + textesEcrits + t(fr, " textes, ", " texts, ") + cotesEcrites + t(fr, " cotes, ", " dimensions, ") + calques.length + t(fr, " calques.", " layers."));
+  if (fait && cotesZ) await planche.message.afficher(cotesZ + t(fr, " cote(s) verticale(s) (axe Z) non écrite(s) : un plan DXF ne les porte pas.", " vertical dimension(s) (Z axis) not written: a DXF plan does not carry them."), "alerte");
+  if (fait && r.annotations && r.contenu === "selection") await planche.message.afficher(t(fr, "Sélection : textes et cotes non écrits (ils ne se sélectionnent pas).", "Selection: texts and dimensions not written (they cannot be selected)."), "alerte");
   return fait;
 });
 

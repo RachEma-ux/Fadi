@@ -19,6 +19,7 @@ import type { Cote, DirectionCote, FormatCote } from "./annotations.js";
 import { reglagesDe } from "./cotes.js";
 import { ajouterArc, ajouterPolygone, ajouterSegments, appliquer, baliserOccurrences, composer, contexte, IDENTITE, modifierAnnotations, peindreFaces, peindreOccurrences, positionsFace, verrouillerOccurrences, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { arcParTroisPoints, formaterNombre, pointsArc } from "./outils/commun-formes.js";
+import { estMotif, NOM_MOTIF_MAX } from "./plan-vectoriel.js";
 import { formaterAire } from "./outils/metre.js";
 import { FONCTIONS_MODIFICATION, FONCTIONS_MODIFICATION_SCRIPT, jugerDemandeExtension, type ErreurProtocole, type FicheExtension, type FonctionModification } from "./protocole-extensions.js";
 import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type FonctionsPlanche } from "./scripts.js";
@@ -73,6 +74,10 @@ export const COTES_ARC_DEFAUT = 12;
 export const COTES_CERCLE_DEFAUT = 24;
 /** (1.1) Nom d'une balise créée par une extension, en caractères. */
 export const MAX_NOM_BALISE = 80;
+/** (1.5) Nom d'une matière créée par une extension, en caractères. */
+export const MAX_NOM_MATIERE = 80;
+/** (1.5) Couleur d'une matière créée sans couleur : gris neutre de la Planche. */
+export const COULEUR_MATIERE_DEFAUT = "#bdbdbd";
 /** (1.4) Solides d'une coupe ou d'une projection ; polygones et points d'une union ; hauteur de coupe (± m). */
 export const BORNES_PLANS = { solides: 5_000, polygones: 10_000, points: 200_000, hauteur: 10_000 } as const;
 
@@ -567,6 +572,58 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     return rendu(r.extra);
   };
 
+  /**
+   * (1.5) `matieres.creer { nom, couleur?, motif? }` : une matière d'apparence, avec ou sans motif de hachure
+   * (`motifs.creer`) ; une matière du même nom est rendue telle quelle. Rend son identifiant.
+   */
+  const creerMatiere = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const nom = d && typeof d["nom"] === "string" ? d["nom"].trim() : "";
+    const couleur = d ? (d["couleur"] ?? COULEUR_MATIERE_DEFAUT) : COULEUR_MATIERE_DEFAUT;
+    const motif = d ? (d["motif"] ?? null) : null;
+    if (nom.length === 0 || nom.length > MAX_NOM_MATIERE) return refus("argument_invalide", `nom : texte de 1 à ${MAX_NOM_MATIERE} caractères attendu`);
+    if (typeof couleur !== "string" || !MOTIF_COULEUR.test(couleur)) return refus("argument_invalide", "couleur : « #rrggbb » attendue");
+    if (motif !== null && typeof motif !== "string") return refus("argument_invalide", "motif : identifiant de motif, ou absent");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const an = op.travail.modele().annotations;
+    if (motif !== null && !an?.motifs?.[motif]) return refus("objet_introuvable", motif);
+    const existante = Object.values(an?.materiaux ?? {}).find((x) => x.nom === nom);
+    if (existante) return rendu(existante.id);
+    const r = modifierAnnotations(op.travail.modele(), (a, id) => {
+      const k = id("m");
+      a.materiaux[k] = { id: k, nom, couleur: couleur.toLowerCase(), ...(motif !== null ? { motif } : {}) };
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
+  /**
+   * (1.5) `motifs.creer { nom, familles, fichier? }` : un motif de hachure (familles de lignes du .pat : angle en degrés,
+   * origine, décalage et tirets en mm papier). `fichier` : nom du fichier d'où il vient, sinon « saisi ». Un motif du même
+   * nom est rendu tel quel. Rend son identifiant.
+   */
+  const creerMotif = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : null;
+    const nom = d && typeof d["nom"] === "string" ? d["nom"].trim() : "";
+    const fichier = d ? d["fichier"] : undefined;
+    if (nom.length === 0 || nom.length > NOM_MOTIF_MAX) return refus("argument_invalide", `nom : texte de 1 à ${NOM_MOTIF_MAX} caractères attendu`);
+    if (fichier !== undefined && (typeof fichier !== "string" || fichier.length === 0 || fichier.length > 200)) return refus("argument_invalide", "fichier : nom de 1 à 200 caractères");
+    const source = typeof fichier === "string" ? ({ genre: "pat", fichier } as const) : ({ genre: "saisie" } as const);
+    const familles = d ? d["familles"] : null;
+    if (!estMotif("h0", { id: "h0", nom, familles, source })) return refus("argument_invalide", "familles : 1 à 64 familles { angle, x0, y0, dx, dy (non nul), tirets (32 au plus) } attendues");
+    const op = operation ?? ouvrir(appel ?? "extension", true);
+    const existant = Object.values(op.travail.modele().annotations?.motifs ?? {}).find((x) => x.nom === nom);
+    if (existant) return rendu(existant.id);
+    const r = modifierAnnotations(op.travail.modele(), (a, id) => {
+      const k = id("h");
+      a.motifs[k] = { id: k, nom, familles: (familles as { angle: number; x0: number; y0: number; dx: number; dy: number; tirets: number[] }[]).map((f) => ({ angle: f.angle, x0: f.x0, y0: f.y0, dx: f.dx, dy: f.dy, tirets: [...f.tirets] })), source };
+      return k;
+    });
+    op.travail.appliquer(r);
+    return rendu(r.extra);
+  };
+
   const unites = (): UnitesLues => {
     const r = reglagesDe(vue().modele());
     const d = acces.decimales?.();
@@ -866,7 +923,13 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
         case "selection.definir":
           return definirSelection(donnees);
         case "matieres.lire":
-          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur })));
+          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, motif: x.motif ?? null })));
+        case "matieres.creer":
+          return creerMatiere(donnees);
+        case "motifs.lire":
+          return rendu(Object.values(vue().modele().annotations?.motifs ?? {}).map((x) => ({ id: x.id, nom: x.nom, familles: x.familles })));
+        case "motifs.creer":
+          return creerMotif(donnees);
         case "matieres.appliquer":
           return appliquerAttribut(donnees, "matiere");
         case "balises.lire":
