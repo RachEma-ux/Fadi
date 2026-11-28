@@ -599,6 +599,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const nom = d && typeof d["nom"] === "string" ? d["nom"].trim() : "";
     const couleur = d ? (d["couleur"] ?? COULEUR_MATIERE_DEFAUT) : COULEUR_MATIERE_DEFAUT;
     const motif = d ? (d["motif"] ?? null) : null;
+    const opacite = d ? (d["opacite"] ?? null) : null;
+    if (opacite !== null && !(typeof opacite === "number" && Number.isFinite(opacite) && opacite >= 0.05 && opacite <= 1)) return refus("argument_invalide", "opacite : nombre de 0,05 à 1 attendu, ou absent");
     if (nom.length === 0 || nom.length > MAX_NOM_MATIERE) return refus("argument_invalide", `nom : texte de 1 à ${MAX_NOM_MATIERE} caractères attendu`);
     if (typeof couleur !== "string" || !MOTIF_COULEUR.test(couleur)) return refus("argument_invalide", "couleur : « #rrggbb » attendue");
     if (motif !== null && typeof motif !== "string") return refus("argument_invalide", "motif : identifiant de motif, ou absent");
@@ -609,7 +611,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (existante) return rendu(existante.id);
     const r = modifierAnnotations(op.travail.modele(), (a, id) => {
       const k = id("m");
-      a.materiaux[k] = { id: k, nom, couleur: couleur.toLowerCase(), ...(motif !== null ? { motif } : {}) };
+      a.materiaux[k] = { id: k, nom, couleur: couleur.toLowerCase(), ...(motif !== null ? { motif } : {}), ...(opacite !== null && opacite < 1 ? { opacite } : {}) };
       return k;
     });
     op.travail.appliquer(r);
@@ -986,7 +988,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
         case "selection.definir":
           return definirSelection(donnees);
         case "matieres.lire":
-          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, motif: x.motif ?? null })));
+          return rendu(Object.values(vue().modele().annotations?.materiaux ?? {}).map((x) => ({ id: x.id, nom: x.nom, couleur: x.couleur, motif: x.motif ?? null, opacite: x.opacite ?? 1 })));
         case "matieres.creer":
           return creerMatiere(donnees);
         case "motifs.lire":

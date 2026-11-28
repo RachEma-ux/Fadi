@@ -349,7 +349,10 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     visée, comme à la souris) et rend pour chacun le premier impact `{ point, distance, face, chemin, normale }` ou
     `null`. `planche.modele.triangles([[a, b, c], …])` crée jusqu'à 5 000 faces explicites en une opération, les
     triangles coplanaires de même sens fusionnés (comme l'ouverture d'un maillage) ; un triangle d'aire nulle est refusé
-    avec son rang. Permission `modele.lire` pour les lectures et le lancer de rayons, `modele.modifier` pour les triangles.
+    avec son rang. `planche.matieres.creer(nom, couleur, motif, opacite)` accepte une opacité de rendu de 0,05 à 1 (gabarit
+    ou servitude translucide ; la vue rend ces faces à part, sans masquer ce qui est derrière ; en monochrome, par balise
+    ou en rayons X, rien ne change) et `matieres.lire` la rend (1 = opaque). Types de fichier admis en plus : `.geojson`
+    et `.osm`. Permission `modele.lire` pour les lectures et le lancer de rayons, `modele.modifier` pour les triangles.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,

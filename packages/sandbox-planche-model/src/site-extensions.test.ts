@@ -5,6 +5,7 @@ import { ajouterRectangle, baliserOccurrences, grouper, modeleVide, modifierAnno
 import type { PermissionExtension } from "./protocole-extensions.js";
 import { MAX_RAYONS_APPEL, MAX_TRIANGLES_APPEL, creerServicesExtension, type AccesPlanche } from "./services-extensions.js";
 import { v3 } from "./vecteur.js";
+import { TYPES_FICHIER_EXTENSION } from "./fichiers-extensions.js";
 
 function planche(depart: Modele = modeleVide()) {
   const etat = { modele: depart, pas: [] as string[] };
@@ -114,4 +115,21 @@ describe("protocole 1.6 : geometrie.rayon", () => {
     expect(servir(acces, "geometrie.rayon", { rayons: [{ origine: [0, 0, 1], direction: [0, 0, -1] }], objets: ["inconnu"] })).toEqual({ ok: false, erreur: "objet_introuvable", detail: "inconnu" });
     expect(servir(acces, "geometrie.rayon", { rayons: [{ origine: [0, 0, 1], direction: [0, 0, -1] }] }, [])).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.lire" });
   });
+});
+
+describe("protocole 1.6 : opacité de matière et types de fichier", () => {
+  it("matieres.creer accepte une opacité de 0,05 à 1, la garde sous 1 et matieres.lire la rend (1 = opaque)", () => {
+    const { etat, acces } = planche();
+    const id = ok<string>(servir(acces, "matieres.creer", { nom: "Gabarit PLU", couleur: "#3366cc", opacite: 0.3 }));
+    expect(etat.modele.annotations?.materiaux[id]).toMatchObject({ nom: "Gabarit PLU", opacite: 0.3 });
+    const plein = ok<string>(servir(acces, "matieres.creer", { nom: "Plein", opacite: 1 }));
+    expect(etat.modele.annotations?.materiaux[plein]?.opacite).toBeUndefined();
+    const lues = ok<{ nom: string; opacite: number }[]>(servir(acces, "matieres.lire", null));
+    expect(lues.map((x) => [x.nom, x.opacite])).toEqual([["Gabarit PLU", 0.3], ["Plein", 1]]);
+    for (const faux of [0, 0.01, 1.5, "0,3", Number.NaN]) expect(servir(acces, "matieres.creer", { nom: "X", opacite: faux })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+  });
+});
+
+it("types de fichier : .geojson et .osm admis en 1.6", () => {
+  expect(TYPES_FICHIER_EXTENSION).toEqual(expect.arrayContaining([".geojson", ".osm"]));
 });

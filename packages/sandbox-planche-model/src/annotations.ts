@@ -146,6 +146,8 @@ export interface Materiau {
   readonly couleur: string;
   /** (Cas 4, étape 5) Motif de hachure de la matière coupée (`annotations.motifs`) ; absent = aplat gris. */
   readonly motif?: Id;
+  /** (Protocole 1.6) Opacité de rendu, de 0,05 à 1 exclu (gabarits, servitudes en volumes) ; absente = opaque. */
+  readonly opacite?: number;
 }
 
 export interface Balise {

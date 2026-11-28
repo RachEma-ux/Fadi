@@ -87,6 +87,8 @@
  *                                               pour chacun le premier impact { point, distance, face, chemin, normale }
  *                                               ou null ; options { distanceMax, objets } (objets : n'y viser que ceux-là)
  *   planche.modele.triangles([[a, b, c], …])    faces explicites, coplanaires de même sens fusionnées, une opération
+ *   planche.matieres.creer(nom, couleur, motif, opacite)  opacité de rendu de 0,05 à 1 (1 = opaque) ; matieres.lire la rend
+ *   planche.fichiers.ouvrir([".geojson", ".osm"]) types admis en plus (contexte bâti, servitudes)
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -168,7 +170,7 @@ export function creerExecutantExtension(
     matieres: Object.freeze({
       lire: () => demander("matieres.lire"),
       appliquer: (ids: unknown, matiere: unknown = null) => demander("matieres.appliquer", { ids: typeof ids === "string" ? [ids] : ids, matiere }),
-      creer: (nom: unknown, couleur?: unknown, motif?: unknown) => demander("matieres.creer", { nom, ...(couleur === undefined ? {} : { couleur }), ...(motif === undefined ? {} : { motif }) }),
+      creer: (nom: unknown, couleur?: unknown, motif?: unknown, opacite?: unknown) => demander("matieres.creer", { nom, ...(couleur === undefined ? {} : { couleur }), ...(motif === undefined || motif === null ? {} : { motif }), ...(opacite === undefined ? {} : { opacite }) }),
     }),
     motifs: Object.freeze({
       lire: () => demander("motifs.lire"),

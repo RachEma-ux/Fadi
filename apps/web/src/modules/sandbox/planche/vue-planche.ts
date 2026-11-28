@@ -668,7 +668,20 @@ export class VuePlanche {
       if (o.couleurParBalise) return f.balise ? balises[f.balise]?.couleur ?? COULEUR_RECTO : COULEUR_RECTO;
       return f.materiau ? materiaux[f.materiau]?.couleur ?? COULEUR_MATERIAU_DEFAUT : COULEUR_RECTO;
     };
-    const g = geometrieFaces(this.geometrie.faces.filter((f) => !f.horsContexte), couleurDe);
+    // (Protocole 1.6) Une matière translucide (`opacite` < 1, posée par une extension : gabarit, servitude) se rend à part,
+    // sans écrire la profondeur ; en monochrome, par balise ou en rayons X, toutes les faces restent ensemble.
+    const opaciteDe = (f: FaceVisible): number => {
+      if (o.rayonsX || o.modeFace === "monochrome" || o.modeFace === "lignes-cachees" || o.couleurParBalise || !f.materiau) return 1;
+      const a = materiaux[f.materiau]?.opacite;
+      return typeof a === "number" && a > 0 && a < 1 ? a : 1;
+    };
+    const dansContexte = this.geometrie.faces.filter((f) => !f.horsContexte);
+    const translucides = new Map<number, FaceVisible[]>();
+    for (const f of dansContexte) {
+      const a = opaciteDe(f);
+      if (a < 1) translucides.set(a, [...(translucides.get(a) ?? []), f]);
+    }
+    const g = geometrieFaces(translucides.size ? dansContexte.filter((f) => opaciteDe(f) === 1) : dansContexte, couleurDe);
     const transparent = o.rayonsX;
     const base = { vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, transparent, opacity: transparent ? 0.45 : 1, depthWrite: !transparent };
     const recto = o.modeFace === "lignes-cachees" ? new THREE.MeshBasicMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base }) : new THREE.MeshLambertMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base });
@@ -681,6 +694,13 @@ export class VuePlanche {
     // Statut des travaux : arêtes à la couleur de leur statut, celles à démolir en tirets ; toujours tracées, même sans « Arêtes ».
     const statuees = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && a.statut);
     if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
+    if (o.modeFace !== "filaire")
+      for (const [a, fs] of translucides) {
+        const voile = new THREE.Mesh(geometrieFaces(fs, couleurDe), new THREE.MeshLambertMaterial({ color: "#ffffff", vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: a, depthWrite: false }));
+        voile.renderOrder = 1;
+        voile.userData["opacite"] = a;
+        this.groupeModele.add(voile);
+      }
     const delavees = this.geometrie.faces.filter((f) => f.horsContexte);
     if (delavees.length) {
       // Hors contexte : faces grises translucides, arêtes claires — visibles pour se repérer, jamais confondues avec l'objet ouvert.
