@@ -387,6 +387,16 @@ import {
   ecrireVisionneuse,
   trianglesVisionneuse,
   maquetteVisionneuseNonVide,
+  ecrireLot,
+  apercuManifeste,
+  nomSortie,
+  nomArchive,
+  noterLot,
+  enregistrerJeu,
+  dateSuisse,
+  empreinteLot,
+  type SortieLot,
+  type FichierLot,
   versionVisionneuse,
   empreinteAbregee,
   empreintePlanche as empreinteDeLaPlanche,
@@ -495,7 +505,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_VISIONNEUSE, disponibiliteVisionneuse, type IdCommandeVisionneuse, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_VISIONNEUSE, disponibiliteVisionneuse, type IdCommandeVisionneuse, COMMANDES_LOT, disponibiliteLot, type IdCommandeLot, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -518,6 +528,7 @@ import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
 import { PanneauKml, type ResumeKml } from "./panneau-kml";
 import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
 import { PanneauVisionneuse } from "./panneau-visionneuse";
+import { ApercuManifeste, PanneauLotEchange } from "./panneau-lot-echange";
 import { ErreurProjection, projeterVersSysteme } from "./projections-client";
 import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
 import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
@@ -675,7 +686,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement" | "visionneuse";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement" | "visionneuse" | "lot-echange";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -690,7 +701,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement", "visionneuse"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement", "visionneuse", "lot-echange"]);
 /** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
 const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
@@ -7037,6 +7048,110 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       }
     })();
   };
+  // Lot d'échange daté (cas 4, lot C4, étape 7e) : sorties produites ensemble, archive ZIP datée avec un rapport par
+  // sortie et un manifeste d'empreintes ; jeux et lots notés au registre de la Planche. Une sortie impossible arrête tout.
+  const [jeuLot, setJeuLot] = useState("");
+  const [nomJeuLot, setNomJeuLot] = useState("");
+  const [sortiesLot, setSortiesLot] = useState<ReadonlySet<SortieLot>>(() => new Set<SortieLot>(["ifc", "dxf", "pdf", "csv"]));
+  const [destinataireLot, setDestinataireLot] = useState("");
+  const [erreurLot, setErreurLot] = useState<string | null>(null);
+  const [noteLot, setNoteLot] = useState<string | null>(null);
+  const [emissionLot, setEmissionLot] = useState(false);
+  const jeuxLot = registre.jeux ?? [];
+  const choisirJeuLot = (id: string) => {
+    setJeuLot(id);
+    const j = jeuxLot.find((x) => x.id === id);
+    if (j) {
+      setNomJeuLot(j.nom);
+      setSortiesLot(new Set(j.sorties));
+    } else setNomJeuLot("");
+  };
+  const disponibiliteCommandeLot = (id: IdCommandeLot) => disponibiliteLot(id, { jeu: nomJeuLot.trim() !== "", sorties: sortiesLot.size, enCours: emissionLot });
+  /** Nom d'une sortie DXF : la feuille, sans accents ni espaces, en minuscules (« Étage » → « etage.dxf »). */
+  const suffixeFeuille = (f: Feuille) => `${(f.nom || f.numero).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || f.numero}.dxf`;
+  const ordreSorties: readonly SortieLot[] = ["ifc", "dxf", "pdf", "csv", "png"];
+  // Chaque sortie DXF porte sa feuille : la retrouver par son nom confondrait « rez » et « haut-rez » (revue de #533).
+  const nomsSortiesLot = (): { sortie: SortieLot; nom: string; feuille?: Feuille }[] =>
+    ordreSorties.filter((x) => sortiesLot.has(x)).flatMap((x): { sortie: SortieLot; nom: string; feuille?: Feuille }[] => {
+      const jeu = nomJeuLot || t("planche.lot.jeu");
+      if (x === "ifc") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "modele.ifc") }];
+      if (x === "dxf") return feuillesListe.map((f) => ({ sortie: x, nom: nomSortie(nomCourant, jeu, suffixeFeuille(f)), feuille: f }));
+      if (x === "pdf") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "feuilles.pdf") }];
+      if (x === "csv") return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "debit.csv") }];
+      return [{ sortie: x, nom: nomSortie(nomCourant, jeu, "vue.png") }];
+    });
+  const optionsLot = (date: Date) => ({ jeu: nomJeuLot, planche: nomCourant, empreinteModele: empreinteModele(hist.present.modele), destinataire: destinataireLot, date });
+  const apercuLot = useMemo(() => (panneau === "lot-echange" ? { texte: apercuManifeste(nomsSortiesLot().map((x) => ({ nom: x.nom, empreinte: null })), optionsLot(new Date())), archive: nomArchive(nomCourant, nomJeuLot || t("planche.lot.jeu"), new Date()) } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panneau, hist.present.modele, nomJeuLot, sortiesLot, destinataireLot, nomCourant, feuillesListe.length]);
+  const detailsLot: Partial<Record<SortieLot, string>> = {
+    ifc: t("planche.lot.detail.ifc", { schema: schemaIfc, georef: t(georefIfc && georefIfcTexte.possible ? "planche.lot.detail.georef" : "planche.lot.detail.sans-georef") }),
+    dxf: feuillesListe.length ? t("planche.lot.detail.feuilles", { noms: feuillesListe.map((f) => f.nom || f.numero).join(", ") }) : t("planche.lot.detail.aucune-feuille"),
+    pdf: feuillesListe.length ? t("planche.lot.detail.pages", { nombre: String(feuillesListe.length) }) : t("planche.lot.detail.aucune-feuille"),
+  };
+  const registreLot = (registre.lots ?? []).map((l) => {
+    const d = dateSuisse(new Date(l.date));
+    return { id: l.id, date: `${d.jour} ${d.heure}`, jeu: l.jeu, destinataire: l.destinataire ?? t("planche.lot.registre.non-renseigne"), manifeste: empreinteLot(l.manifeste) };
+  });
+  const emettreLot = async () => {
+    const m = histRef.current.present.modele;
+    const date = new Date();
+    const fichiers: FichierLot[] = [];
+    const texte = (x: string) => new TextEncoder().encode(x);
+    const refuser = (motif: string) => {
+      setNoteLot(null);
+      setErreurLot(motif);
+    };
+    // DXF et PDF exigent des feuilles : une sortie cochée sans feuille arrête l'émission.
+    for (const s of ["dxf", "pdf"] as const) if (sortiesLot.has(s) && feuillesListe.length === 0) return refuser(t("planche.lot.erreur.feuilles", { sortie: t(`planche.lot.sortie.${s}`) }));
+    for (const x of nomsSortiesLot()) {
+      if (x.sortie === "ifc") {
+        const bloquant = controlerIfc().find((c) => c.niveau === "bloquant");
+        if (bloquant) return refuser(t("planche.lot.erreur.ifc", { motif: t(`planche.ifc.controle.${bloquant.cle}` as CleMessage, { nombre: String(bloquant.nombre ?? 0), noms: bloquant.noms ?? "" }) }));
+        const ifc = exporterIfcStructure(m, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, nom: nomCourant || "planche", maintenant: date, reference: referenceIfc });
+        if (!relireIfcStructure(ifc, schemaIfc, ifc.contenu).identique) return refuser(t("planche.lot.erreur.ifc-relecture"));
+        fichiers.push({ sortie: "ifc", nom: x.nom, donnees: texte(ifc.contenu), details: `${schemaIfc}, ${ifc.georef ? "géoréférencé" : "non géoréférencé"}, ${ifc.objets} objets` });
+      } else if (x.sortie === "dxf") {
+        const f = x.feuille;
+        if (!f) continue;
+        fichiers.push({ sortie: "dxf", nom: x.nom, donnees: texte(dxfFeuille(composerFeuille(m, f, libellesFeuille()))), details: `feuille ${f.numero} « ${f.nom} », DXF R2000 en millimètres papier` });
+      } else if (x.sortie === "pdf") {
+        const pages = feuillesListe.map((f) => composerFeuille(m, f, libellesFeuille()));
+        const denses = hachuresTropDenses(pages);
+        if (denses) return refuser(t("planche.lot.erreur.densite", { familles: String(denses) }));
+        const octets = pdfFeuilles(pages, x.nom.replace(/\.pdf$/, ""));
+        if (relirePdf(octets)?.pages.length !== pages.length) return refuser(t("planche.feuilles.erreur.pdf"));
+        fichiers.push({ sortie: "pdf", nom: x.nom, donnees: octets, details: `${pages.length} feuilles` });
+      } else if (x.sortie === "csv") {
+        const lignes = listeDebit(m, { portee: "tout" });
+        if (!lignes.length) return refuser(t("planche.lot.erreur.debit"));
+        fichiers.push({ sortie: "csv", nom: x.nom, donnees: texte(csvDebit(lignes)), details: `${lignes.length} lignes de débit` });
+      } else {
+        const blob = await vueRef.current?.capture();
+        if (!blob) return refuser(t("planche.lot.erreur.png"));
+        fichiers.push({ sortie: "png", nom: x.nom, donnees: new Uint8Array(await blob.arrayBuffer()), details: "image de la vue courante" });
+      }
+    }
+    const r = ecrireLot(fichiers, optionsLot(date));
+    if (!r.ok) return refuser(t(`planche.lot.erreur.${r.erreur}`));
+    telechargerFichier(new Blob([r.lot.octets as BlobPart], { type: "application/zip" }), r.lot.archive);
+    const idJeu = jeuLot || idVersion("j");
+    let reg = enregistrerJeu(registreRef.current, { id: idJeu, nom: nomJeuLot, sorties: [...sortiesLot] });
+    reg = noterLot(reg, { id: idVersion("l"), date: date.toISOString(), jeu: nomJeuLot, destinataire: destinataireLot || null, archive: r.lot.archive, manifeste: r.lot.empreinteManifeste, fichiers: r.lot.fichiers });
+    poserRegistre(reg);
+    noterEmissionRef.current("ZIP", r.lot.archive, "emission");
+    setJeuLot(reg.jeux?.find((j) => j.nom === nomJeuLot.replace(/\s+/g, " ").trim())?.id ?? idJeu);
+    setErreurLot(null);
+    setNoteLot(t("planche.lot.note", { jeu: nomJeuLot.trim(), archive: r.lot.archive, fichiers: String(r.lot.fichiers), manifeste: empreinteLot(r.lot.empreinteManifeste) }));
+  };
+  const executerLot = (id: IdCommandeLot) => {
+    setPanneau("lot-echange");
+    if (id === "lot-echange" || !disponibiliteCommandeLot(id).disponible) return;
+    setEmissionLot(true);
+    void emettreLot()
+      .catch((e: unknown) => setErreurLot(e instanceof Error ? e.message : String(e)))
+      .finally(() => setEmissionLot(false));
+  };
   const executerRedr = (id: IdCommandeRedressement) => {
     setPanneau("redressement");
     if (id === "redresser-photo") return photoRedr ? undefined : importRedrRef.current?.click();
@@ -7211,6 +7326,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
     else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);
     else if (c.famille === "visionneuse") executerVis(c.id as IdCommandeVisionneuse);
+    else if (c.famille === "lot") executerLot(c.id as IdCommandeLot);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
@@ -7319,6 +7435,10 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         ...COMMANDES_KML.map((c) => {
           const d = disponibiliteCommandeKml(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
+        }),
+        ...COMMANDES_LOT.map((c) => {
+          const d = disponibiliteCommandeLot(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.lot.motif.jeu"), executer: () => executerLot(c.id) };
         }),
         ...COMMANDES_VISIONNEUSE.map((c) => {
           const d = disponibiliteCommandeVis(c.id);
@@ -8352,6 +8472,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         }}
         data-planche-natif-fichier
       />
+      {panneau === "lot-echange" && apercuLot && <ApercuManifeste texte={apercuLot.texte} archive={apercuLot.archive} />}
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
@@ -8467,6 +8588,25 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
                 onChoisirFichier={() => importKmlRef.current?.click()}
                 erreur={erreurKml}
                 note={noteKml}
+              />
+            )}
+            {panneau === "lot-echange" && (
+              <PanneauLotEchange
+                jeux={jeuxLot}
+                jeuChoisi={jeuLot}
+                onJeuChoisi={choisirJeuLot}
+                nomJeu={nomJeuLot}
+                onNomJeu={setNomJeuLot}
+                sorties={sortiesLot}
+                onSortie={(x, v) => setSortiesLot((e) => { const n = new Set(e); if (v) n.add(x); else n.delete(x); return n; })}
+                details={detailsLot}
+                destinataire={destinataireLot}
+                onDestinataire={setDestinataireLot}
+                registre={registreLot}
+                executer={executerLot}
+                disponibilite={disponibiliteCommandeLot}
+                erreur={erreurLot}
+                note={noteLot}
               />
             )}
             {panneau === "visionneuse" && resumeVis && (

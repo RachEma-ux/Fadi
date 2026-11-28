@@ -125,9 +125,37 @@ export interface Emission {
   readonly destinataire: string | null;
 }
 
+/** (Cas 4, étape 7e) Sorties qu'un lot d'échange peut contenir. */
+export type SortieLot = "ifc" | "dxf" | "pdf" | "csv" | "png";
+export const SORTIES_LOT: readonly SortieLot[] = ["ifc", "dxf", "pdf", "csv", "png"];
+
+/** (Cas 4, étape 7e) Jeu d'échange nommé : quelles sorties produire ensemble. */
+export interface JeuLot {
+  readonly id: string;
+  readonly nom: string;
+  readonly sorties: readonly SortieLot[];
+}
+
+/** (Cas 4, étape 7e) Lot émis : jeu, destinataire, archive et empreinte (SHA-256) de son manifeste. */
+export interface LotEmis {
+  readonly id: string;
+  /** Date ISO de l'émission. */
+  readonly date: string;
+  readonly jeu: string;
+  /** Destinataire saisi ; `null` = non renseigné. */
+  readonly destinataire: string | null;
+  readonly archive: string;
+  readonly manifeste: string;
+  readonly fichiers: number;
+}
+
 export interface RegistreVersions {
   readonly jalons: readonly Jalon[];
   readonly emissions: readonly Emission[];
+  /** (Cas 4, étape 7e) Jeux d'échange enregistrés ; absent = aucun. */
+  readonly jeux?: readonly JeuLot[];
+  /** (Cas 4, étape 7e) Lots émis, le plus récent en tête ; absent = aucun. */
+  readonly lots?: readonly LotEmis[];
 }
 
 export const registreVide = (): RegistreVersions => ({ jalons: [], emissions: [] });
@@ -154,13 +182,23 @@ export function lireRegistreVersions(t: string | null): RegistreVersions | null 
       if (x["genre"] !== "emission" && x["genre"] !== "partage") return null;
       emissions.push({ id: x["id"], date: x["date"], jalon: x["jalon"], indice: x["indice"], format: x["format"], fichier: x["fichier"], genre: x["genre"], destinataire: x["destinataire"] });
     }
-    return { jalons, emissions };
+    // Jeux et lots (étape 7e) : facultatifs ; une entrée mal formée est écartée sans bloquer la lecture du registre.
+    const jeux: JeuLot[] = [];
+    if (Array.isArray(j["jeux"]))
+      for (const x of j["jeux"])
+        if (estObjet(x) && texte(x["id"]) && texte(x["nom"]) && Array.isArray(x["sorties"])) jeux.push({ id: x["id"], nom: x["nom"], sorties: (x["sorties"] as unknown[]).filter((s): s is SortieLot => SORTIES_LOT.includes(s as SortieLot)) });
+    const lots: LotEmis[] = [];
+    if (Array.isArray(j["lots"]))
+      for (const x of j["lots"])
+        if (estObjet(x) && texte(x["id"]) && texte(x["date"]) && texte(x["jeu"]) && (x["destinataire"] === null || texte(x["destinataire"])) && texte(x["archive"]) && texte(x["manifeste"]) && typeof x["fichiers"] === "number")
+          lots.push({ id: x["id"], date: x["date"], jeu: x["jeu"], destinataire: x["destinataire"], archive: x["archive"], manifeste: x["manifeste"], fichiers: x["fichiers"] });
+    return { jalons, emissions, ...(jeux.length ? { jeux } : {}), ...(lots.length ? { lots } : {}) };
   } catch {
     return null;
   }
 }
 
-export const serialiserRegistreVersions = (r: RegistreVersions): string => JSON.stringify({ format: FORMAT_VERSIONS, jalons: r.jalons, emissions: r.emissions });
+export const serialiserRegistreVersions = (r: RegistreVersions): string => JSON.stringify({ format: FORMAT_VERSIONS, jalons: r.jalons, emissions: r.emissions, ...(r.jeux?.length ? { jeux: r.jeux } : {}), ...(r.lots?.length ? { lots: r.lots } : {}) });
 
 /** Texte JSON canonique (clés triées) : deux modèles égaux donnent le même texte, donc la même empreinte. */
 export function texteCanonique(v: unknown): string {

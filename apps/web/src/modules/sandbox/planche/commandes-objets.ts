@@ -1023,3 +1023,24 @@ export function disponibiliteVisionneuse(id: IdCommandeVisionneuse, s: { readonl
   if (id === "visionneuse") return { disponible: true, motif: null };
   return s.nonVide ? { disponible: true, motif: null } : { disponible: false, motif: "planche.visionneuse.motif.vide" };
 }
+
+/**
+ * Lot d'échange daté (cas 4, lot C4, étape 7e : D10-F14-082) : un panneau ; émettre exige un nom de jeu et au moins une
+ * sortie cochée. L'émission ne modifie pas le dessin : elle reste permise en lecture seule.
+ */
+export type IdCommandeLot = "lot-echange" | "emettre-lot";
+export interface CommandeLot {
+  readonly id: IdCommandeLot;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_LOT: readonly CommandeLot[] = (["lot-echange", "emettre-lot"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.lot.${id}` as CleMessage, court: `planche.lot.court.${id}` as CleMessage }));
+
+export function disponibiliteLot(id: IdCommandeLot, s: { readonly jeu: boolean; readonly sorties: number; readonly enCours: boolean }): Disponibilite {
+  if (id === "lot-echange") return { disponible: true, motif: null };
+  if (s.enCours) return { disponible: false, motif: "planche.lot.motif.en-cours" };
+  if (!s.jeu) return { disponible: false, motif: "planche.lot.motif.jeu" };
+  return s.sorties > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.lot.motif.sorties" };
+}
