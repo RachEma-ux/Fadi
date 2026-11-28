@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type AvisExtension, type DemandeSaisie, type ValeursSaisie, type ExecutantExtension, type Id, type Modele, type PaquetExtension, VERSION_PROTOCOLE } from "@parcours/sandbox-planche-model";
+import { ajouterRectangle, creerExecutantExtension, modeleVide, v3, validerPaquetExtension, type AccesPlanche, type AdaptateurBooleens, type AdaptateurPlans, type AvisExtension, type DemandeSaisie, type ValeursSaisie, type ExecutantExtension, type Id, type Modele, type PaquetExtension, VERSION_PROTOCOLE } from "@parcours/sandbox-planche-model";
 import { creerHoteExtension, type WorkerExtension } from "./hote-extensions";
 
 const lu = validerPaquetExtension(JSON.parse(readFileSync(fileURLToPath(new URL("../../../../e2e/donnees/essai-socle.fadi-addon.json", import.meta.url)), "utf8")));
@@ -272,6 +272,25 @@ describe("hôte d'une extension — lot 2 : modèle, opération, sélection", ()
   });
 });
 
+
+describe("hôte d'une extension — protocole 1.4 : moteur des opérations planes chargé à la demande", () => {
+  it("geometrie.union attend le chargement du moteur (hors délai de l'appel), une seule fois, puis répond", async () => {
+    const p = plancheFausse();
+    let moteur: AdaptateurBooleens | null = null;
+    let chargements = 0;
+    const plans: AdaptateurPlans = { coupe: () => [], projection: () => [], union: (ps) => [...ps] };
+    const chargerGeometrie = async () => {
+      chargements++;
+      await pause(120);
+      moteur = { union: (a) => a, difference: (a) => a, intersection: (a) => a, plans };
+    };
+    const code = 'planche.sur("commande.union", async () => (await planche.geometrie.union([{ exterieur: [[0, 0], [2, 0], [2, 3], [0, 3]] }])).aire);';
+    const h = creerHoteExtension(avecCode(code, ["modele.lire"]), { creer: faux().creer, delaiCommandeMs: 80, acces: { ...p.acces, booleens: () => moteur }, chargerGeometrie: () => (moteur ? Promise.resolve() : chargerGeometrie()) });
+    expect(await h.appeler("demande", "commande.union")).toEqual({ genre: "fini", resultat: 6 });
+    expect(await h.appeler("demande", "commande.union")).toEqual({ genre: "fini", resultat: 6 });
+    expect(chargements).toBe(1);
+  });
+});
 
 describe("hôte d'une extension — lot 3 : commandes, avis, saisie", () => {
   it("une commande reçoit la langue, dessine dans une opération et pose un avis ; le libellé nomme l'opération automatique", async () => {
