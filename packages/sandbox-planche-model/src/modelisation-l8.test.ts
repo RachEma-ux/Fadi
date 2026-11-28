@@ -27,6 +27,7 @@ import {
   empreintesEnPlan,
   lireAltitudes,
   lireEpaisseurs,
+  lireCouches,
   lireExtrusion,
   longueurCourbes,
   matriceCalage,
@@ -118,6 +119,21 @@ describe("n° 71 — couches en une saisie", () => {
     expect(loin).toBeCloseTo(0.29, 9);
     expect(() => creerCouches(m, f, [], "exterieur")).toThrow(ErreurL8);
   });
+
+  it("noms facultatifs saisis devant les épaisseurs : chaque groupe porte le nom de sa couche", () => {
+    expect(lireCouches("enduit 0,015 ; maçonnerie 0,175 m ; 0,10")).toEqual([
+      { nom: "enduit", epaisseur: 0.015 },
+      { nom: "maçonnerie", epaisseur: 0.175 },
+      { nom: null, epaisseur: 0.1 },
+    ]);
+    expect(lireCouches("enduit")).toBeNull();
+    expect(lireCouches("enduit -0,1")).toBeNull();
+    const m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 0, 3)).modele;
+    const f = Object.keys(m.racine.faces)[0]!;
+    const r = creerCouches(m, f, lireCouches("enduit 0,015 ; maçonnerie 0,175 ; 0,10")!, "interieur");
+    const noms = r.occurrences.map((o) => r.modele.definitions[r.modele.racine.occurrences[o]!.definition]!.nom);
+    expect(noms).toEqual(["enduit · 0,015 m", "maçonnerie · 0,175 m", "Couche 3 · 0,1 m"]);
+  });
 });
 
 describe("n° 98 — prolonger jusqu'à une limite", () => {
@@ -208,6 +224,16 @@ describe("n° 104 — miroir lisible", () => {
     expect(k.b.x).toBeCloseTo(4, 9);
     const centre = appliquer(r.modele.racine.occurrences[g.occurrence]!.transformation, v3(1.5, 0.5, 0.5));
     expect(centre.x).toBeCloseTo(3.5, 9);
+  });
+
+  it("axe pointé dans la vue : plan vertical passant par les deux points ; points confondus en plan refusés", () => {
+    const h = boiteGroupee(modeleVide(), v3(3, 0, 0), 1, 1, 1, "Bloc");
+    // Axe x = 5 (deux points sur la verticale x = 5, à des hauteurs différentes) : le bloc 3..4 passe en 6..7.
+    const r = miroirLisible(h.modele, [h.occurrence], { a: v3(5, 0, 0), b: v3(5, 2, 1) });
+    const c = appliquer(r.modele.racine.occurrences[h.occurrence]!.transformation, v3(3.5, 0.5, 0.5));
+    expect(c.x).toBeCloseTo(6.5, 9);
+    expect(c.y).toBeCloseTo(0.5, 9);
+    expect(() => miroirLisible(h.modele, [h.occurrence], { a: v3(5, 0, 0), b: v3(5, 0, 3) })).toThrow(ErreurL8);
   });
 });
 

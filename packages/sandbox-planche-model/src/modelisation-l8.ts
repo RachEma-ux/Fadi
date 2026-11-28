@@ -77,6 +77,8 @@ export const MESSAGES_L8 = {
   "selection-vide": "Sélectionnez d'abord les objets.",
   "enveloppe-absente": "Choisissez les volumes à écrêter puis l'enveloppe (dernière choisie).",
   "ecart-invalide": "Saisissez un écart positif.",
+  "axe-miroir": "Les deux points de l'axe du miroir sont confondus en plan : cliquez deux points distincts.",
+  "hauteur-boite": "La boîte n'a pas de hauteur : cliquez ou tapez une hauteur non nulle.",
 } as const;
 export type CleErreurL8 = keyof typeof MESSAGES_L8;
 
@@ -163,20 +165,37 @@ export function changerHauteurExtrusion(m: Modele, face: Id, hauteur: number, o:
 
 // ————————————————————————————————————————————————————————————— n° 71 Couches en une saisie
 
-/** Liste d'épaisseurs saisie (« 0,015 ; 0,175 ; 0,10 ») : nombres positifs en mètres, sinon `null`. */
-export function lireEpaisseurs(texte: string): number[] | null {
+/** Une couche saisie : épaisseur en mètres, précédée d'un nom facultatif (« enduit 0,015 »). */
+export interface CoucheSaisie {
+  readonly nom: string | null;
+  readonly epaisseur: number;
+}
+
+/**
+ * Couches saisies en une ligne (« enduit 0,015 ; maçonnerie 0,175 ; isolant 0,10 » ou « 0,015 ; 0,175 ; 0,10 ») : chaque
+ * morceau est un nom facultatif suivi d'une épaisseur positive en mètres ; sinon `null`. Aucun nom n'est proposé.
+ */
+export function lireCouches(texte: string): CoucheSaisie[] | null {
   const morceaux = texte
     .split(/[;\n]/)
     .map((x) => x.trim())
     .filter((x) => x !== "");
   if (morceaux.length === 0) return null;
-  const r: number[] = [];
+  const r: CoucheSaisie[] = [];
   for (const x of morceaux) {
-    const v = Number(x.replace(/\s*m$/i, "").replace(",", "."));
+    const k = /^(.*?)\s*(-?\d+(?:[.,]\d+)?)\s*m?$/i.exec(x);
+    if (!k) return null;
+    const v = Number(k[2]!.replace(",", "."));
     if (!Number.isFinite(v) || v <= TOL) return null;
-    r.push(v);
+    const nom = k[1]!.trim();
+    r.push({ nom: nom === "" ? null : nom, epaisseur: v });
   }
   return r;
+}
+
+/** Liste d'épaisseurs saisie (« 0,015 ; 0,175 ; 0,10 », noms facultatifs) : nombres positifs en mètres, sinon `null`. */
+export function lireEpaisseurs(texte: string): number[] | null {
+  return lireCouches(texte)?.map((c) => c.epaisseur) ?? null;
 }
 
 export const epaisseurTotale = (e: readonly number[]): number => e.reduce((a, b) => a + b, 0);
@@ -197,9 +216,12 @@ function prisme(boucles: readonly (readonly Vec3[])[], k: Vec3, d0: number, d1: 
 
 /**
  * Crée une couche par épaisseur, empilées sur la face (monde) vers l'extérieur (sens de sa normale) ou vers l'intérieur.
- * Chaque couche est un groupe de la racine nommé « Couche i · e m » ; la face d'origine reste.
+ * Chaque couche est un groupe de la racine nommé « nom · e m » quand un nom est saisi, sinon « Couche i · e m » ; la face
+ * d'origine reste.
  */
-export function creerCouches(m: Modele, face: Id, epaisseurs: readonly number[], sens: "exterieur" | "interieur", o: OptionsContexte = {}): { readonly modele: Modele; readonly occurrences: readonly Id[] } {
+export function creerCouches(m: Modele, face: Id, couches: readonly (number | CoucheSaisie)[], sens: "exterieur" | "interieur", o: OptionsContexte = {}): { readonly modele: Modele; readonly occurrences: readonly Id[] } {
+  const epaisseurs = couches.map((c) => (typeof c === "number" ? c : c.epaisseur));
+  const noms = couches.map((c) => (typeof c === "number" ? null : c.nom));
   if (epaisseurs.length === 0 || epaisseurs.some((e) => !Number.isFinite(e) || e <= TOL)) throw new ErreurL8("epaisseurs-invalides");
   const c = contexte(m, o.dans);
   const f = c.faces[face];
@@ -215,7 +237,7 @@ export function creerCouches(m: Modele, face: Id, epaisseurs: readonly number[],
   const occurrences: Id[] = [];
   let d = 0;
   epaisseurs.forEach((e, i) => {
-    const r = creerGroupeDepuisFaces(modele, prisme(boucles, k, d, d + e), { nom: `Couche ${i + 1} · ${String(Number(e.toFixed(4))).replace(".", ",")} m` });
+    const r = creerGroupeDepuisFaces(modele, prisme(boucles, k, d, d + e), { nom: `${noms[i] ?? `Couche ${i + 1}`} · ${String(Number(e.toFixed(4))).replace(".", ",")} m` });
     modele = r.modele;
     occurrences.push(r.occurrence);
     d += e;
@@ -570,6 +592,18 @@ export function boiteDeCoins(a: Vec3, b: Vec3, altitudes: { readonly zmin: numbe
 
 /** Axe du miroir : plan vertical perpendiculaire à l'axe rouge (x) ou vert (y), passant par le centre de la sélection. */
 export type AxeMiroir = "x" | "y";
+/** Axe du miroir pointé dans la vue : deux points ; le plan est vertical et passe par eux. */
+export interface AxePointe {
+  readonly a: Vec3;
+  readonly b: Vec3;
+}
+
+/** Plan vertical passant par deux points pointés (leur écart en plan doit être non nul). */
+export function planDeMiroir(axe: AxePointe): { readonly origine: Vec3; readonly normale: Vec3 } {
+  const d = v3(axe.b.x - axe.a.x, axe.b.y - axe.a.y, 0);
+  if (len(d) <= TOL) throw new ErreurL8("axe-miroir");
+  return { origine: axe.a, normale: normalize(cross(d, v3(0, 0, 1))) };
+}
 
 /** Une définition « a une main » quand son fichier de composant la déclare (porte, équipement) : elle garde son sens. */
 export const aUneMain = (d: Definition | undefined): boolean => !!d?.composantAgence?.main;
@@ -579,8 +613,15 @@ export const aUneMain = (d: Definition | undefined): boolean => !!d?.composantAg
  * sont relues dans le bon sens (extrémités échangées), les textes suivent (ils restent face à la caméra), et les
  * composants qui ont une main sont replacés en miroir sans être retournés (une porte gauche reste gauche).
  */
-export function miroirLisible(m: Modele, ids: readonly Id[], axe: AxeMiroir, o: OptionsContexte = {}): Resultat & { readonly gardes: number } {
+export function miroirLisible(m: Modele, ids: readonly Id[], axe: AxeMiroir | AxePointe, o: OptionsContexte = {}): Resultat & { readonly gardes: number } {
   if (ids.length === 0) throw new ErreurL8("selection-vide");
+  let pointe = typeof axe === "string" ? null : planDeMiroir(axe);
+  // Points pointés dans le monde ; dans un groupe ouvert, le plan est ramené dans son repère.
+  if (pointe && o.dans) {
+    const W = matriceMonde(m, o.dans);
+    const Wi = W ? inverserMatrice(W) : null;
+    if (Wi) pointe = { origine: appliquer(Wi, pointe.origine), normale: normalize(transformerNormale(Wi, pointe.normale)) };
+  }
   const a = annotationsDe(m.annotations);
   const c = contexte(m, o.dans);
   const geom = ids.filter((id) => c.occurrences[id] || c.faces[id] || c.aretes[id]);
@@ -610,8 +651,8 @@ export function miroirLisible(m: Modele, ids: readonly Id[], axe: AxeMiroir, o: 
     min = v3(Math.min(min.x, p.x), Math.min(min.y, p.y), Math.min(min.z, p.z));
     max = v3(Math.max(max.x, p.x), Math.max(max.y, p.y), Math.max(max.z, p.z));
   }
-  const centre = scale(add(min, max), 0.5);
-  const normale = axe === "x" ? v3(1, 0, 0) : v3(0, 1, 0);
+  const centre = pointe ? pointe.origine : scale(add(min, max), 0.5);
+  const normale = pointe ? pointe.normale : axe === "x" ? v3(1, 0, 0) : v3(0, 1, 0);
   const R = miroir(centre, normale);
   let modele = geom.length ? retourner(m, geom, { origine: centre, normale }, o).modele : m;
   // Composants qui ont une main : position en miroir, forme non retournée (miroir local autour du centre de leur boîte).

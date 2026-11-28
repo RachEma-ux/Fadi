@@ -1,7 +1,7 @@
 /** Cas 2 du catalogue, lot 8 — composants d'agence : fichier, pose dans la baie, ouverture qui suit, remplacement. */
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, ajouterSegment, contexte, deplacer, effacerEntites, modeleVide, type Modele } from "./geometrie-libre.js";
-import { ErreurComposant, composantDe, definitionDepuisFichier, facesComposant, lireFichierComposant, nombreBarreaux, poserComposant, regenererComposant, remplacerOccurrences, suivreOuvertures, type FichierComposant } from "./composants-l8.js";
+import { ajouterRectangle, ajouterSegment, appliquer, contexte, deplacer, effacerEntites, modeleVide, type Modele } from "./geometrie-libre.js";
+import { ErreurComposant, composantDe, genreBaie, definitionDepuisFichier, facesComposant, lireFichierComposant, nombreBarreaux, poserComposant, regenererComposant, remplacerOccurrences, suivreOuvertures, type FichierComposant } from "./composants-l8.js";
 
 const v3 = (x: number, y: number, z: number) => ({ x, y, z });
 const FENETRE = JSON.stringify({ format: "fadi-composant/1", source: "Agence, détail menuiserie (essai)", nom: "Fenêtre bois", genre: "fenetre", cadre: { largeur: 0.06, profondeur: 0.07 }, vantaux: 2 });
@@ -97,6 +97,22 @@ describe("n° 32, 79, 25 — pose dans la baie, ouverture découpée qui suit", 
     const def = r.modele.definitions[r.modele.racine.occurrences[r.occurrence]!.definition]!;
     expect(Object.keys(def.contenu.faces)).toHaveLength(6 * 18); // lisse + 17 barreaux
     expect(() => poserComposant(m, { fichier: fichier(GARDE_CORPS), texte: GARDE_CORPS, nomFichier: "gc.json", valeurs: {}, decouper: false }, { arete: a })).toThrow(ErreurComposant);
+  });
+  it("garde-corps pointé par ses extrémités : longueur des points, ou longueur saisie dans la direction cliquée", () => {
+    const pose = { fichier: fichier(GARDE_CORPS), texte: GARDE_CORPS, nomFichier: "gc.json", valeurs: { vide: 0.11 }, decouper: false };
+    const r = poserComposant(modeleVide(), pose, { segment: { a: v3(0, 0, 3), b: v3(0, 3, 3) } });
+    expect(r.valeurs["longueur"]).toBeCloseTo(3, 9);
+    const fin = appliquer(r.modele.racine.occurrences[r.occurrence]!.transformation, v3(3, 0, 0));
+    expect(fin.y).toBeCloseTo(3, 9);
+    const s = poserComposant(modeleVide(), { ...pose, valeurs: { vide: 0.11, longueur: 2 } }, { segment: { a: v3(0, 0, 3), b: v3(0, 3, 3.4) } });
+    expect(s.valeurs["longueur"]).toBe(2);
+    expect(() => poserComposant(modeleVide(), pose, { segment: { a: v3(0, 0, 3), b: v3(0, 0, 4) } })).toThrow(ErreurComposant);
+  });
+  it("baie d'un mur plein placée d'un clic : le point cliqué donne le milieu de la largeur", () => {
+    const { m, face } = mur();
+    expect(genreBaie(m, face)).toBe("saisie");
+    const r = poserComposant(m, { fichier: fichier(FENETRE), texte: FENETRE, nomFichier: "f.json", valeurs: { largeur: 1.6, hauteur: 1.8, allege: 0.9 }, decouper: true }, { face, point: v3(3, 0, 1.5) });
+    expect(xsTrou(r.modele)[0]).toBeCloseTo(2.2, 9);
   });
 });
 

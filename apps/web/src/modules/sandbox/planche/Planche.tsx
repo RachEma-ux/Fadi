@@ -101,6 +101,7 @@ import {
   lireExtrusion,
   changerHauteurExtrusion,
   lireEpaisseurs,
+  lireCouches,
   epaisseurTotale,
   creerCouches,
   prolongerArete,
@@ -108,7 +109,6 @@ import {
   ecreterParEnveloppe,
   objetsEntreAltitudes,
   lireAltitudes,
-  miroirLisible,
   empreintesEnPlan,
   aireProjetee,
   longueurCourbes,
@@ -122,6 +122,12 @@ import {
   suivreOuvertures,
   ID_CALER,
   ID_BOITE,
+  ID_MIROIR,
+  ID_POSER_BAIE,
+  ID_POSER_GARDE_CORPS,
+  IDS_POINTAGE_L8,
+  genreBaie,
+  type Pose,
   type ParEclatement,
   choixEffectif,
   cleCommandeExtension,
@@ -696,6 +702,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const murRef = useRef<{ epaisseur: number; hauteur: number } | null>({ epaisseur: 0.2, hauteur: 2.5 });
   // Cas 2, lot 8 (n° 100) : altitudes saisies qui bornent la boîte 3D de sélection.
   const altitudesBoiteRef = useRef<{ zmin: number; zmax: number } | null>(null);
+  /** Pose en cours d'un composant d'agence, lue par les outils de pointage (baie dans un mur plein, garde-corps). */
+  const poseComposantRef = useRef<{ readonly pose: Pose; readonly face?: string } | null>(null);
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "saisie", dimensions: { forme: "rectangle", largeur: "", hauteur: "", epaisseur: "", epaisseurAile: "", segments: "" } });
   const [angleRotation, setAngleRotation] = useState("90");
   const [erreurFace, setErreurFace] = useState<string | null>(null);
@@ -907,6 +915,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
       altitudesBoite: altitudesBoiteRef.current,
+      poseComposant: poseComposantRef.current,
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
@@ -1142,8 +1151,8 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         return;
       }
       // Cas 2, lot 8 : outils de pointage (Caler par deux points, Boîte 3D), lancés par leur commande, hors catalogue.
-      if (id === ID_CALER || id === ID_BOITE) {
-        if (readOnly && id === ID_CALER) return;
+      if (IDS_POINTAGE_L8.includes(id)) {
+        if (readOnly && id !== ID_BOITE) return;
         setGrille(false);
         setEdition(null);
         if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
@@ -4520,6 +4529,12 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   const [echelleL8, setEchelleL8] = useState(false);
   const fichierComposantRef = useRef<HTMLInputElement | null>(null);
   const nbL8 = (x: number, d = 3) => (Number.isInteger(x) ? String(x) : String(Math.round(x * 10 ** d) / 10 ** d)).replace(".", SEPARATEUR_DECIMAL);
+  // Préréglage « Mur » (n° 35) : les couches saisies donnent l'épaisseur de l'outil Mur du cas 4 (somme des couches) ;
+  // l'axe se trace dans la vue (accroché au tracé existant), le nu de référence se règle à l'outil (Ctrl).
+  useEffect(() => {
+    const e = lireEpaisseurs(saisiesL8.epaisseurs);
+    if (e) setSaisieMur((m) => ({ ...m, epaisseur: nbL8(epaisseurTotale(e)) }));
+  }, [saisiesL8.epaisseurs]); // eslint-disable-line react-hooks/exhaustive-deps
   const messageL8 = (err: unknown): string =>
     err instanceof ErreurL8 ? t(`planche.l8.erreur.${err.cle}` as CleMessage, err.args) : err instanceof ErreurComposant ? t(`planche.composant.erreur.${err.cle}` as CleMessage, err.args) : err instanceof Error ? err.message : String(err);
   const echecL8 = (err: unknown) => {
@@ -4531,11 +4546,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     "extrusion-hauteur": "extrusion",
     "creer-couches": "extrusion",
     "prolonger-arete": "extrusion",
-    "murs-en-couches": "extrusion",
     "composants-agence": "composants-agence",
     "ajuster-baie": "composants-agence",
     "remplacer-occurrences": "composants-agence",
-    "importer-composant": "composants-agence",
     "soustraire-garder": "soustraire",
     "caler-deux-points": "soustraire",
     "selection-altitudes": "soustraire",
@@ -4703,10 +4716,11 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     switch (id) {
       case "creer-couches":
         return faireL8(t("planche.modelisation.creer-couches"), (m) => {
-          const e = lireEpaisseurs(saisiesL8.epaisseurs);
-          if (!e) throw new ErreurL8("epaisseurs-invalides");
-          const r = creerCouches(m, s.faces[0]!, e, saisiesL8.sens, o());
-          return { modele: r.modele, selection: r.occurrences, note: t("planche.l8.note.couches", { nombre: String(r.occurrences.length), total: nbL8(epaisseurTotale(e)) }) };
+          // Couches saisies en une ligne, nom facultatif devant chaque épaisseur (« enduit 0,015 ; maçonnerie 0,175 »).
+          const couches = lireCouches(saisiesL8.epaisseurs);
+          if (!couches) throw new ErreurL8("epaisseurs-invalides");
+          const r = creerCouches(m, s.faces[0]!, couches, saisiesL8.sens, o());
+          return { modele: r.modele, selection: r.occurrences, note: t("planche.l8.note.couches", { nombre: String(r.occurrences.length), total: nbL8(epaisseurTotale(couches.map((c) => c.epaisseur))) }) };
         });
       case "prolonger-arete":
         return faireL8(t("planche.modelisation.prolonger-arete"), (m) => {
@@ -4716,21 +4730,30 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           if (!l) throw new ErreurL8("limite-inconnue");
           return { modele: prolongerArete(m, a, l, o()).modele, selection: [a], note: t("planche.l8.note.prolongee") };
         });
-      case "murs-en-couches":
-        return faireL8(t("planche.modelisation.murs-en-couches"), (m) => {
-          const e = lireEpaisseurs(saisiesL8.epaisseurs);
-          if (!e) throw new ErreurL8("epaisseurs-invalides");
-          const h = longueurL8(saisiesL8.hauteurMur, "hauteur-invalide");
-          const c = m.racine;
-          const horizontales = s.aretes.filter((x) => c.aretes[x] && Math.abs(c.sommets[c.aretes[x]!.a]!.position.z - c.sommets[c.aretes[x]!.b]!.position.z) < 1e-6);
-          const r = poserMurs(m, chainesDAretes(m, horizontales), { epaisseur: epaisseurTotale(e), hauteur: h, reference: saisiesL8.reference });
-          if (!r.ok) throw new Error(t(`planche.mur.erreur.${r.erreur}`));
-          const occ = r.ids.map((w) => r.modele.annotations?.murs?.[w]?.occurrence).filter((x): x is string => !!x);
-          return { modele: r.modele, selection: occ, note: `${noteJonctions(r.ids.length, r.jonctions)} ${t("planche.l8.note.murs-couches", { couches: e.map((x) => nbL8(x)).join(" ; "), total: nbL8(epaisseurTotale(e)) })}` };
-        });
-      case "importer-composant":
-        return fichierComposantRef.current?.click();
-      case "ajuster-baie":
+      case "ajuster-baie": {
+        // Réglage par interaction : une baie dans un mur plein se place d'un clic sur le mur, un garde-corps sans arête
+        // choisie se pointe par ses deux extrémités ; le panneau garde les valeurs saisies.
+        const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+        const posee = s.objets.length === 1 && composantDe(s.m, s.objets[0]!);
+        if (f && !posee) {
+          let valeurs: Record<string, number>;
+          try {
+            valeurs = valeursComposantL8();
+          } catch (err) {
+            return echecL8(err);
+          }
+          const pose = { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs, decouper: saisiesL8.decouper };
+          if (f.fichier.genre === "garde-corps" && s.aretes.length === 0) {
+            poseComposantRef.current = { pose };
+            setNoteL8(t("planche.l8.note.garde-corps-pointer"));
+            return choisirOutil(ID_POSER_GARDE_CORPS);
+          }
+          if (f.fichier.genre !== "garde-corps" && s.faces[0] && genreBaie(s.m, s.faces[0], dansRef.current) === "saisie") {
+            poseComposantRef.current = { pose, face: s.faces[0] };
+            setNoteL8(t("planche.l8.note.baie-pointer"));
+            return choisirOutil(ID_POSER_BAIE);
+          }
+        }
         return faireL8(t("planche.modelisation.ajuster-baie"), (m) => {
           const valeurs = valeursComposantL8();
           if (s.objets.length === 1 && composantDe(m, s.objets[0]!)) {
@@ -4741,6 +4764,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           const r = poserComposant(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs, decouper: saisiesL8.decouper }, { ...(s.faces[0] ? { face: s.faces[0] } : { arete: s.aretes[0]! }), ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
           return { modele: r.modele, selection: [r.occurrence], note: t("planche.l8.note.pose", { nom: f.fichier.nom, baie: t(`planche.l8.baie.${r.baie}` as CleMessage) }) };
         });
+      }
       case "remplacer-occurrences":
         return faireL8(t("planche.modelisation.remplacer-occurrences"), (m) => {
           const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
@@ -4774,10 +4798,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
         setNoteL8(t(altitudesBoiteRef.current ? "planche.l8.note.boite-altitudes" : "planche.l8.note.boite"));
         return choisirOutil(ID_BOITE);
       case "miroir-lisible":
-        return faireL8(t("planche.modelisation.miroir-lisible"), (m) => {
-          const r = miroirLisible(m, s.tous, saisiesL8.axe, o());
-          return { modele: r.modele, note: t("planche.l8.note.miroir", { gardes: String(r.gardes) }) };
-        });
+        // L'axe du miroir se pointe dans la vue (deux points), au lieu d'une liste d'axes.
+        setNoteL8(t("planche.l8.note.miroir"));
+        return choisirOutil(ID_MIROIR);
       case "ecreter-enveloppe":
         return avecBooleens((b) =>
           faireL8(t("planche.modelisation.ecreter-enveloppe"), (m) => {
@@ -6080,7 +6103,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
           // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
-          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || outilId === ID_CALER || outilId === ID_BOITE ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
+          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || IDS_POINTAGE_L8.includes(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
           data-planche-curseur={outilId}
         >
@@ -6591,7 +6614,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             )}
             {panneau === "gabarit" && <PanneauGabarit gabarits={gabarits} choisi={gabaritChoisi} onChoisir={setGabaritChoisi} separateur={SEPARATEUR_DECIMAL} note={noteGabarit} executer={executerGabarit} disponibilite={disponibiliteCommandeGabarit} />}
             {panneau === "extrusion" && <PanneauExtrusion s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} extrusion={lectureExtrusionL8} onHauteur={appliquerHauteurL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
-            {panneau === "composants-agence" && <PanneauComposantsAgence s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} fichiers={fichiersAgence} choisi={composantChoisiL8} onValeurs={() => executerModelisation("ajuster-baie")} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "composants-agence" && <PanneauComposantsAgence s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} fichiers={fichiersAgence} choisi={composantChoisiL8} onValeurs={() => executerModelisation("ajuster-baie")} onImporter={() => fichierComposantRef.current?.click()} onDeposer={importerComposantAgence} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
             {panneau === "soustraire" && <PanneauSoustraire s={saisiesL8} poser={poserSaisiesL8} balises={Object.entries(hist.present.modele.annotations?.balises ?? {}).map(([id, b]) => ({ id, nom: b.nom }))} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
             {panneau === "vues-mesures" && <PanneauVuesMesures s={saisiesL8} poser={poserSaisiesL8} exacte={camera.projection === "parallele"} onProjection={(x) => poserProjection(x ? "parallele" : "perspective")} eclatee={eclatement !== null} echelle={echelleL8} aire={aireL8} courbes={courbesL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
             {panneau === "versions-jalons" && (

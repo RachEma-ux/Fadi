@@ -33,7 +33,7 @@ export function machineParId(id: string): MachineOutil<any> | undefined {
   return id.startsWith(PREFIXE_OUTIL_EXTENSION) ? MACHINE_OUTIL_EXTENSION : MACHINES.get(id);
 }
 export * from "./outil-extension.js";
-export { ID_CALER, ID_BOITE, CONSIGNES_CALER, CONSIGNES_BOITE, ERREUR_CALER_SELECTION, type EtatPointage } from "./pointage-l8.js";
+export { ID_CALER, ID_BOITE, ID_MIROIR, ID_POSER_BAIE, ID_POSER_GARDE_CORPS, IDS_POINTAGE_L8, CONSIGNES_CALER, CONSIGNES_BOITE, CONSIGNES_BOITE_HAUTEUR, CONSIGNES_MIROIR, CONSIGNES_BAIE, CONSIGNES_GARDE_CORPS, ERREUR_CALER_SELECTION, ERREUR_MIROIR_SELECTION, ERREUR_POSE_SANS_COMPOSANT, type EtatPointage } from "./pointage-l8.js";
 export { ID_INTERAGIR, ERREUR_INTERAGIR_AUCUN, type EtatInteragir } from "./interagir.js";
 export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
 export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";

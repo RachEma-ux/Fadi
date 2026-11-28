@@ -1,12 +1,13 @@
 /**
  * Recette « Outils de modélisation et composants d'agence » de la Planche (cas 2 du catalogue, lot 8 ; maquettes
  * `analyses/catalogue-extensions/cas-2/lot-8/lot8-1` à `lot8-4`, acceptées le 27 novembre 2026) :
- * - Ctrl+Maj+Espace affiche les dix-huit commandes du lot 8 (secondes touches 1 à 0 et Maj + chiffre) ;
- * - « Info entité · Extrusion » (Ctrl+Maj+Espace, 1) : hauteur lue (2,80 m) puis portée à 3,10 m ; couches en une saisie ;
- * - « Composants dynamiques » (4) : fichier d'agence importé (archivé en base), fenêtre posée dans le mur aux dimensions
- *   saisies, ouverture découpée ; régénérée à trois vantaux, le trou suit ;
- * - « Soustraire et garder » (7) : B − A gardé comme « Démolition 1 » ; sélection entre altitudes ; miroir lisible ;
- *   Caler par deux points lance son outil de pointage ;
+ * - Ctrl+Maj+Espace affiche les seize commandes du lot 8 (secondes touches 1 à 0 et Maj + chiffre), aucune hors maquette ;
+ * - « Info entité · Extrusion » (Ctrl+Maj+Espace, 1) : hauteur lue (2,80 m) puis portée à 3,10 m ; couches nommées en une
+ *   saisie ; préréglage « Mur » (l'outil Mur reprend l'épaisseur des couches) ;
+ * - « Composants dynamiques » (4) : fichier d'agence importé par la liste « Composant » (archivé en base), fenêtre placée
+ *   d'un clic sur le mur, ouverture découpée ; régénérée à trois vantaux, le trou suit ;
+ * - « Soustraire et garder » (7) : B − A gardé comme « Démolition 1 » ; sélection entre altitudes ; miroir lisible par
+ *   deux points de l'axe ; Caler par deux points ; boîte 3D bornée par les altitudes, ou de hauteur tapée ;
  * - « Vue orthographique » (Maj+1) : image rendue par une caméra orthographique ; échelle graphique ; axonométrie
  *   éclatée sans toucher au modèle ; aire projetée union / somme ;
  * - aucune erreur JavaScript. Captures dans OUT.
@@ -162,8 +163,9 @@ await vue.focus();
 await page.keyboard.press("Control+Shift+Space");
 await racine.locator("[data-planche-deux-temps]").waitFor({ timeout: 5000 });
 const secondes = await racine.locator("[data-planche-deux-temps-commande]").evaluateAll((l) => l.map((x) => x.getAttribute("data-planche-deux-temps-commande")));
-const L8 = ["extrusion-hauteur", "creer-couches", "prolonger-arete", "murs-en-couches", "composants-agence", "ajuster-baie", "remplacer-occurrences", "importer-composant", "soustraire-garder", "caler-deux-points", "selection-altitudes", "selection-boite", "miroir-lisible", "ecreter-enveloppe", "vue-ortho", "eclater-axonometrie", "echelle-graphique", "aire-projetee"];
-check("Ctrl+Maj+Espace : les dix-huit commandes du lot 8 dans l'encadré", L8.every((id) => secondes.includes(id)), L8.filter((id) => !secondes.includes(id)).join(", "));
+const L8 = ["extrusion-hauteur", "creer-couches", "prolonger-arete", "composants-agence", "ajuster-baie", "remplacer-occurrences", "soustraire-garder", "caler-deux-points", "selection-altitudes", "selection-boite", "miroir-lisible", "ecreter-enveloppe", "vue-ortho", "eclater-axonometrie", "echelle-graphique", "aire-projetee"];
+check("Ctrl+Maj+Espace : les seize commandes du lot 8 dans l'encadré", L8.every((id) => secondes.includes(id)), L8.filter((id) => !secondes.includes(id)).join(", "));
+check("aucune commande hors maquette : ni « Mur depuis le tracé », ni « Importer »", !secondes.includes("murs-en-couches") && !secondes.includes("importer-composant"));
 await page.keyboard.press("Escape");
 
 // --- Extrusion et couches (maquette lot8-1) ---------------------------------------------------------------------------
@@ -184,13 +186,26 @@ const zmax = Math.max(...Object.values(m.racine.sommets).map((s) => s.position.z
 check("hauteur portée à 3,10 m en un pas, la face d'origine reste", Math.abs(zmax - 3.1) < 1e-9 && (await pas()) === pas0 + 1 && Object.keys(m.racine.faces).length === 6, `z ${zmax}, pas ${await pas()}`);
 await page.screenshot({ path: `${OUT}/lot8-1-extrusion.png` });
 await choisir(await facesOu("Math.abs(p.z - 3.1) < 1e-6"));
-await champ("data-planche-l8-epaisseurs", "0,015 ; 0,175 ; 0,10");
+await champ("data-planche-l8-epaisseurs", "enduit 0,015 ; maçonnerie 0,175 ; isolant 0,10");
 await deuxTemps("Digit2");
 m = await modele();
 check("Ctrl+Maj+Espace, 2 : trois couches saisies en une liste, trois groupes", Object.keys(m.racine.occurrences).length === 3, `${Object.keys(m.racine.occurrences).length} ; ${await note()}`);
 check("note : épaisseur totale 0,29 m", /0,29 m/.test(await note()), await note());
+const nomsCouches = Object.values(m.racine.occurrences).map((o) => m.definitions[o.definition].nom).sort();
+check("les couches portent les noms saisis (enduit, maçonnerie, isolant)", JSON.stringify(nomsCouches) === JSON.stringify(["enduit · 0,015 m", "isolant · 0,1 m", "maçonnerie · 0,175 m"]), JSON.stringify(nomsCouches));
+check("« Mur depuis un tracé » : aucun bouton ni champ ajouté au panneau", (await racine.locator("[data-planche-l8='murs-en-couches'], [data-planche-l8-reference], [data-planche-l8-hauteur-mur]").count()) === 0);
 await page.keyboard.press("Control+z");
 await page.waitForTimeout(150);
+// Préréglage « Mur » : l'outil Mur du cas 4 reprend l'épaisseur totale des couches saisies.
+await vue.focus();
+await page.keyboard.press("Control+Shift+KeyM");
+await racine.locator("[data-planche-mur-champ='epaisseur']").waitFor({ timeout: 5000 }).catch(() => {});
+const epMur = await racine.locator("[data-planche-mur-champ='epaisseur']").inputValue().catch(() => "");
+check("préréglage « Mur » : l'outil Mur prend l'épaisseur des couches (0,29 m)", epMur === "0,29", epMur);
+await vue.focus();
+await page.keyboard.press("Escape");
+await page.keyboard.press(" ");
+await page.waitForTimeout(100);
 
 // --- Composants d'agence (maquette lot8-2) -----------------------------------------------------------------------------
 const mur = await facesOu("Math.abs(p.y) < 1e-6");
@@ -200,7 +215,9 @@ await deuxTemps("Digit4");
 await panneau("composants-agence").waitFor({ timeout: 5000 });
 check("Ctrl+Maj+Espace, 4 : « Composants dynamiques » s'ouvre", true);
 const fenetre = JSON.stringify({ format: "fadi-composant/1", source: "Agence, détail menuiserie (essai de recette)", nom: "Fenêtre bois", genre: "fenetre", main: "gauche", cadre: { largeur: 0.06, profondeur: 0.07 }, vantaux: 2 });
-await racine.locator("[data-planche-composant-fichier]").setInputFiles({ name: "fenetre-bois.json", mimeType: "application/json", buffer: Buffer.from(fenetre, "utf8") });
+check("aucun bouton « Importer » ajouté : l'import passe par la liste « Composant »", (await racine.locator("[data-planche-l8='importer-composant']").count()) === 0);
+const [selecteur] = await Promise.all([page.waitForEvent("filechooser", { timeout: 5000 }), racine.locator("[data-planche-l8-composant]").selectOption("__importer")]);
+await selecteur.setFiles({ name: "fenetre-bois.json", mimeType: "application/json", buffer: Buffer.from(fenetre, "utf8") });
 await page.waitForFunction(() => /archivé en base/.test(document.querySelector("[data-planche-l8-note]")?.textContent ?? ""), null, { timeout: 10000 }).catch(() => {});
 check("fichier d'agence importé et archivé en base", /archivé en base/.test(await note()), await note());
 check("le composant est proposé dans la liste", ((await racine.locator("[data-planche-l8-composant]").textContent()) ?? "").includes("Fenêtre bois"));
@@ -210,9 +227,17 @@ await champ("data-planche-l8-valeur-allege", "0,9");
 await choisir(mur);
 const pas1 = await pas();
 await deuxTemps("Digit5");
+check("Ctrl+Maj+Espace, 5 sur un mur plein : la baie se place d'un clic (outil de pointage)", (await page.evaluate(() => window.fadiPlanche.outil())) === "pointage-baie", await page.evaluate(() => window.fadiPlanche.outil()));
+await racine.locator("section.planche-panneau .canevas-fermer").first().click();
+await cliquer({ x: 2.5, y: 0, z: 1.5 });
+await page.waitForTimeout(150);
 m = await modele();
 const occFenetre = Object.values(m.racine.occurrences).find((o) => m.definitions[o.definition]?.composantAgence);
-check("Ctrl+Maj+Espace, 5 : fenêtre posée en un pas, ouverture découpée dans le mur", !!occFenetre && (await trous()) === 1 && (await pas()) === pas1 + 1, `${await trous()} trou(s) ; ${await note()}`);
+check("clic sur le mur : fenêtre posée en un pas, ouverture découpée dans le mur", !!occFenetre && (await trous()) === 1 && (await pas()) === pas1 + 1, `${await trous()} trou(s) ; ${await note()}`);
+const xsBaie = Object.values(m.racine.faces).flatMap((f) => f.trous.flat().map((s) => m.racine.sommets[s].position.x));
+check("le point cliqué donne le milieu de la largeur (x 1,70 à 3,30)", xsBaie.length > 0 && Math.abs(Math.min(...xsBaie) - 1.7) < 1e-6 && Math.abs(Math.max(...xsBaie) - 3.3) < 1e-6, JSON.stringify([Math.min(...xsBaie), Math.max(...xsBaie)]));
+await deuxTemps("Digit4");
+await panneau("composants-agence").waitFor({ timeout: 5000 });
 check("composant : fichier archivé cité, valeurs saisies gardées", !!occFenetre && !!m.definitions[occFenetre.definition].composantAgence.archive && m.definitions[occFenetre.definition].composantAgence.valeurs.largeur === 1.6, JSON.stringify(occFenetre && m.definitions[occFenetre.definition].composantAgence?.valeurs));
 await page.screenshot({ path: `${OUT}/lot8-2-composants.png` });
 if (occFenetre) {
@@ -260,11 +285,20 @@ await champ("data-planche-l8-altitudes", "2 ; 3");
 await deuxTemps("Digit9");
 check("entre 2 et 3 m : aucun objet", (await page.evaluate(() => window.fadiPlanche.selection().length)) === 0, await note());
 const pas2 = await pas();
-await choisir(Object.keys((await modele()).racine.occurrences));
+check("miroir : aucune liste « Axe du miroir » ajoutée", (await racine.locator("[data-planche-l8-axe]").count()) === 0);
+const avantMiroir = await modele();
+await choisir(Object.keys(avantMiroir.racine.occurrences));
 await deuxTemps("Digit0");
-check("Ctrl+Maj+Espace, 0 : miroir lisible en un pas", (await pas()) === pas2 + 1 && /Miroir fait/.test(await note()), await note());
+check("Ctrl+Maj+Espace, 0 : l'axe du miroir se pointe dans la vue", (await page.evaluate(() => window.fadiPlanche.outil())) === "pointage-miroir", await page.evaluate(() => window.fadiPlanche.outil()));
+await racine.locator("section.planche-panneau .canevas-fermer").first().click();
+await cliquer({ x: 4, y: 0, z: 0 });
+await cliquer({ x: 4, y: 2, z: 0 });
+await page.waitForTimeout(150);
+check("deux points de l'axe : miroir lisible en un pas", (await pas()) === pas2 + 1 && (await page.evaluate(() => window.fadiPlanche.outil())) === "selection", `${await pas()} ; ${await page.evaluate(() => window.fadiPlanche.outil())} ; ${await racine.locator(".planche-consigne").textContent().catch(() => "")}`);
 await page.keyboard.press("Control+z");
 await page.waitForTimeout(120);
+await deuxTemps("Digit7");
+await panneau("soustraire").waitFor({ timeout: 5000 });
 await choisir(Object.keys((await modele()).racine.occurrences).slice(0, 1));
 await deuxTemps("Digit8");
 check("Ctrl+Maj+Espace, 8 : l'outil Caler par deux points est actif", (await page.evaluate(() => window.fadiPlanche.outil())) === "pointage-caler", await page.evaluate(() => window.fadiPlanche.outil()));
@@ -279,6 +313,19 @@ await racine.locator("section.planche-panneau .canevas-fermer").first().click();
 await cliquer({ x: -1, y: -1, z: 0 });
 await cliquer({ x: 3.5, y: 2.5, z: 0 });
 check("boîte 3D tracée à plat, bornée par les altitudes saisies : les deux objets sont sélectionnés", (await page.evaluate(() => window.fadiPlanche.selection().length)) === 2, String(await page.evaluate(() => window.fadiPlanche.selection().length)));
+// Sans altitudes saisies, la hauteur de la boîte se donne dans la vue : ici tapée au champ Mesures (1,5 m).
+await deuxTemps("Digit7");
+await panneau("soustraire").waitFor({ timeout: 5000 });
+await champ("data-planche-l8-altitudes", "");
+await deuxTemps("Shift+Digit9");
+await racine.locator("section.planche-panneau .canevas-fermer").first().click();
+await choisir([]);
+await cliquer({ x: -1, y: -1, z: 0 });
+await cliquer({ x: 3.5, y: 2.5, z: 0 });
+check("boîte 3D sans altitudes : un troisième temps attend la hauteur", (await page.evaluate(() => window.fadiPlanche.outil())) === "pointage-boite");
+await vue.focus();
+await saisir("1,5");
+check("hauteur tapée (1,5 m) : les deux objets sont sélectionnés", (await page.evaluate(() => window.fadiPlanche.selection().length)) === 2, String(await page.evaluate(() => window.fadiPlanche.selection().length)));
 
 // --- Vue orthographique, échelle, éclatement, aire projetée (maquette lot8-4) -------------------------------------------
 await deuxTemps("Shift+Digit1");

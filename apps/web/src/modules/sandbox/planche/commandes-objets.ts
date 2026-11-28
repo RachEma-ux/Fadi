@@ -608,11 +608,9 @@ export type IdCommandeModelisation =
   | "extrusion-hauteur"
   | "creer-couches"
   | "prolonger-arete"
-  | "murs-en-couches"
   | "composants-agence"
   | "ajuster-baie"
   | "remplacer-occurrences"
-  | "importer-composant"
   | "soustraire-garder"
   | "caler-deux-points"
   | "selection-altitudes"
@@ -627,11 +625,9 @@ export const COMMANDES_MODELISATION: readonly CommandeLot4<IdCommandeModelisatio
   "extrusion-hauteur",
   "creer-couches",
   "prolonger-arete",
-  "murs-en-couches",
   "composants-agence",
   "ajuster-baie",
   "remplacer-occurrences",
-  "importer-composant",
   "soustraire-garder",
   "caler-deux-points",
   "selection-altitudes",
@@ -644,21 +640,21 @@ export const COMMANDES_MODELISATION: readonly CommandeLot4<IdCommandeModelisatio
   "aire-projetee",
 ] as const).map(lot4<IdCommandeModelisation>("modelisation"));
 /** Commandes du lot 8 qui modifient le dessin : refusées en lecture (consultation, vue éclatée comprises). */
-const MODIFIENT_L8: ReadonlySet<IdCommandeModelisation> = new Set(["creer-couches", "prolonger-arete", "murs-en-couches", "ajuster-baie", "remplacer-occurrences", "soustraire-garder", "caler-deux-points", "miroir-lisible", "ecreter-enveloppe"]);
+const MODIFIENT_L8: ReadonlySet<IdCommandeModelisation> = new Set(["creer-couches", "prolonger-arete", "ajuster-baie", "remplacer-occurrences", "soustraire-garder", "caler-deux-points", "miroir-lisible", "ecreter-enveloppe"]);
 /**
  * Disponibilité d'une commande du lot 8. Les panneaux s'ouvrent toujours ; « Soustraire » ouvre son panneau s'il est
  * fermé (`panneau` faux), puis agit. Les motifs disent ce qu'il faut choisir.
  */
 export function disponibiliteModelisation(
   id: IdCommandeModelisation,
-  s: { readonly lecture: boolean; readonly faces: number; readonly aretes: number; readonly objets: number; readonly selection: number; readonly panneau: boolean },
+  s: { readonly lecture: boolean; readonly faces: number; readonly aretes: number; readonly objets: number; readonly selection: number; readonly panneau: boolean; readonly gardeCorps?: boolean },
 ): Disponibilite {
   if (id === "soustraire-garder" && !s.panneau) return { disponible: true, motif: null };
   if (MODIFIENT_L8.has(id) && s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (id === "creer-couches" && s.faces !== 1) return { disponible: false, motif: "planche.l8.motif.face" };
   if (id === "prolonger-arete" && (s.aretes < 1 || s.selection !== 2)) return { disponible: false, motif: "planche.l8.motif.arete-limite" };
-  if (id === "murs-en-couches" && s.aretes < 1) return { disponible: false, motif: "planche.l8.motif.aretes" };
-  if (id === "ajuster-baie" && s.faces + s.aretes < 1 && s.objets !== 1) return { disponible: false, motif: "planche.l8.motif.baie" };
+  // Un garde-corps se pose aussi sans rien choisir : ses extrémités sont cliquées dans la vue.
+  if (id === "ajuster-baie" && s.faces + s.aretes < 1 && s.objets !== 1 && !s.gardeCorps) return { disponible: false, motif: "planche.l8.motif.baie" };
   if ((id === "remplacer-occurrences" || id === "caler-deux-points") && s.objets < 1) return { disponible: false, motif: "planche.l8.motif.objets" };
   if ((id === "soustraire-garder" || id === "ecreter-enveloppe") && s.objets < 2) return { disponible: false, motif: "planche.l8.motif.deux-objets" };
   if ((id === "miroir-lisible" || id === "aire-projetee") && s.selection < 1) return { disponible: false, motif: "planche.l8.motif.selection" };

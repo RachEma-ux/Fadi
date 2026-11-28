@@ -54,7 +54,7 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: false, altKey: false })).toBe(false);
     expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual([
       "versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon",
-      "extrusion-hauteur", "creer-couches", "prolonger-arete", "murs-en-couches", "composants-agence", "ajuster-baie", "remplacer-occurrences", "importer-composant",
+      "extrusion-hauteur", "creer-couches", "prolonger-arete", "composants-agence", "ajuster-baie", "remplacer-occurrences",
       "soustraire-garder", "caler-deux-points", "selection-altitudes", "selection-boite", "miroir-lisible", "ecreter-enveloppe", "vue-ortho", "eclater-axonometrie", "echelle-graphique", "aire-projetee",
     ]);
     // Lot 8 : un chiffre est lu sur la touche physique (AZERTY : « & » sans Maj, « 1 » avec ; QWERTY : « ! » avec Maj).

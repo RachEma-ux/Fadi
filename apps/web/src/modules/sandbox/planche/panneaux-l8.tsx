@@ -52,8 +52,6 @@ export interface SaisiesL8 {
   hauteur: string;
   epaisseurs: string;
   sens: "interieur" | "exterieur";
-  reference: "axe" | "interieur" | "exterieur";
-  hauteurMur: string;
   composant: string;
   valeurs: Readonly<Record<string, string>>;
   decouper: boolean;
@@ -61,13 +59,12 @@ export interface SaisiesL8 {
   nom: string;
   balise: string;
   altitudes: string;
-  axe: "x" | "y";
   par: "niveau" | "balise";
   ecart: string;
 }
 
 export function useSaisiesL8(): [SaisiesL8, (p: Partial<SaisiesL8>) => void] {
-  const [s, poser] = useState<SaisiesL8>({ hauteur: "", epaisseurs: "", sens: "interieur", reference: "axe", hauteurMur: "", composant: "", valeurs: {}, decouper: true, garder: true, nom: "", balise: "", altitudes: "", axe: "x", par: "niveau", ecart: "" });
+  const [s, poser] = useState<SaisiesL8>({ hauteur: "", epaisseurs: "", sens: "interieur", composant: "", valeurs: {}, decouper: true, garder: true, nom: "", balise: "", altitudes: "", par: "niveau", ecart: "" });
   return [s, (p) => poser((x) => ({ ...x, ...p }))];
 }
 
@@ -112,11 +109,6 @@ export function PanneauExtrusion({ s, poser, lecture, extrusion, onHauteur, exec
       </div>
       <h4>{t("planche.l8.mur.titre")}</h4>
       <p className="planche-l8-texte">{t("planche.l8.mur.texte")}</p>
-      <Liste libelle={t("planche.l8.mur.reference")} valeur={s.reference} options={[["axe", t("planche.l8.mur.axe")], ["interieur", t("planche.l8.mur.gauche")], ["exterieur", t("planche.l8.mur.droit")]]} onChange={(v) => poser({ reference: v })} attribut="data-planche-l8-reference" />
-      <Champ libelle={t("planche.l8.mur.hauteur")} valeur={s.hauteurMur} onChange={(v) => poser({ hauteurMur: v })} indication={t("planche.l8.saisir")} attribut="data-planche-l8-hauteur-mur" />
-      <div className="planche-debit-barre planche-gabarit-barre">
-        <BoutonL8 id="murs-en-couches" d={disponibilite("murs-en-couches")} onClick={() => executer("murs-en-couches")} />
-      </div>
       <p className="inspecteur-aide">{t("planche.l8.couches.note")}</p>
       {note && <p className="planche-l8-note" role="status" data-planche-l8-note>{note}</p>}
     </div>
@@ -139,18 +131,40 @@ const LIBELLE_VALEUR: Readonly<Record<string, CleMessage>> = {
   vide: "planche.l8.composant.vide",
 };
 
-export function PanneauComposantsAgence({ s, poser, lecture, fichiers, choisi, onValeurs, executer, disponibilite, note }: { s: SaisiesL8; poser: (p: Partial<SaisiesL8>) => void; lecture: boolean; fichiers: readonly FichierAgence[]; choisi: { readonly nom: string; readonly genre: GenreComposant; readonly valeurs: Readonly<Record<string, number>> } | null; onValeurs: () => void; executer: Exec; disponibilite: Dispo; note: string | null }) {
+/** Valeur réservée de la liste « Composant » : ouvre le choix d'un fichier d'agence (aucune commande ajoutée). */
+export const IMPORTER_COMPOSANT = "__importer";
+
+export function PanneauComposantsAgence({ s, poser, lecture, fichiers, choisi, onValeurs, onImporter, onDeposer, executer, disponibilite, note }: { s: SaisiesL8; poser: (p: Partial<SaisiesL8>) => void; lecture: boolean; fichiers: readonly FichierAgence[]; choisi: { readonly nom: string; readonly genre: GenreComposant; readonly valeurs: Readonly<Record<string, number>> } | null; onValeurs: () => void; onImporter: () => void; onDeposer: (f: File) => void; executer: Exec; disponibilite: Dispo; note: string | null }) {
   const f = fichiers.find((x) => x.id === s.composant) ?? null;
   const genre = choisi?.genre ?? f?.fichier.genre ?? null;
   return (
-    <div className="planche-accrochage planche-versions" data-planche-l8-panneau="composants-agence">
+    // Un fichier d'agence arrive par la liste « Composant » (dernière entrée) ou en le déposant sur le panneau.
+    <div
+      className="planche-accrochage planche-versions"
+      data-planche-l8-panneau="composants-agence"
+      onDragOver={(e) => {
+        if (!lecture && e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const f = e.dataTransfer.files[0];
+        if (lecture || !f) return;
+        e.preventDefault();
+        onDeposer(f);
+      }}
+    >
       <label className="planche-accrochage-champ">
         {t("planche.l8.composant.choix")}
-        <select value={s.composant} onChange={(e) => poser({ composant: e.target.value })} onKeyDown={arreter} data-planche-l8-composant>
+        <select
+          value={s.composant}
+          onChange={(e) => (e.target.value === IMPORTER_COMPOSANT ? onImporter() : poser({ composant: e.target.value }))}
+          onKeyDown={arreter}
+          data-planche-l8-composant
+        >
           {fichiers.length === 0 && <option value="">{t("planche.l8.composant.aucun")}</option>}
           {fichiers.map((x) => (
             <option key={x.id} value={x.id}>{t("planche.l8.composant.option", { nom: x.fichier.nom, genre: t(`planche.l8.genre.${x.fichier.genre}` as CleMessage) })}</option>
           ))}
+          {!lecture && <option value={IMPORTER_COMPOSANT}>{t("planche.l8.composant.importer")}</option>}
         </select>
       </label>
       {choisi && <p className="planche-l8-texte" data-planche-l8-choisi>{t("planche.l8.composant.choisi", { nom: choisi.nom })}</p>}
@@ -166,7 +180,6 @@ export function PanneauComposantsAgence({ s, poser, lecture, fichiers, choisi, o
       <div className="planche-debit-barre planche-gabarit-barre">
         <BoutonL8 id="ajuster-baie" d={disponibilite("ajuster-baie")} onClick={() => executer("ajuster-baie")} principal />
         <BoutonL8 id="remplacer-occurrences" d={disponibilite("remplacer-occurrences")} onClick={() => executer("remplacer-occurrences")} />
-        <BoutonL8 id="importer-composant" d={disponibilite("importer-composant")} onClick={() => executer("importer-composant")} />
       </div>
       <p className="inspecteur-aide">{t("planche.l8.composant.note")}</p>
       {note && <p className="planche-l8-note" role="status" data-planche-l8-note>{note}</p>}
@@ -192,7 +205,6 @@ export function PanneauSoustraire({ s, poser, balises, executer, disponibilite, 
         <BoutonL8 id="selection-boite" d={disponibilite("selection-boite")} onClick={() => executer("selection-boite")} />
       </div>
       <h4>{t("planche.l8.miroir.titre")}</h4>
-      <Liste libelle={t("planche.l8.miroir.axe")} valeur={s.axe} options={[["x", t("planche.l8.miroir.rouge")], ["y", t("planche.l8.miroir.vert")]]} onChange={(v) => poser({ axe: v })} attribut="data-planche-l8-axe" />
       <div className="planche-debit-barre planche-gabarit-barre">
         <BoutonL8 id="miroir-lisible" d={disponibilite("miroir-lisible")} onClick={() => executer("miroir-lisible")} />
         <BoutonL8 id="ecreter-enveloppe" d={disponibilite("ecreter-enveloppe")} onClick={() => executer("ecreter-enveloppe")} />

@@ -73,7 +73,7 @@ export const MESSAGES_COMPOSANT = {
   valeur: "Saisissez « {nom} » (nombre positif, en mètres).",
   "face-non-verticale": "Visez une face verticale (un mur, une baie).",
   "face-inconnue": "Choisissez la face d'appui (la baie ou le mur).",
-  "arete-garde-corps": "Pour un garde-corps, choisissez l'arête horizontale qui le porte.",
+  "arete-garde-corps": "Pour un garde-corps, cliquez ses deux extrémités dans la vue, ou choisissez l'arête horizontale qui le porte.",
   "trop-petit": "La baie est plus petite que deux fois le cadre : le composant ne tient pas.",
   "hors-face": "L'ouverture ne tient pas dans la face d'appui : rien n'a été découpé.",
   "pas-composant": "Choisissez un composant posé depuis un fichier d'agence.",
@@ -253,18 +253,29 @@ export function percer(m: Modele, contour: readonly Vec3[], dans: Id | undefined
   return effacerEntites(r.modele, [interieure.id], o).modele;
 }
 
+/** Genre de baie qu'offre une face : un trou, une face dessinée dans une autre, ou un mur plein (baie à placer). */
+export function genreBaie(m: Modele, face: Id, dans?: Id): "trou" | "face" | "saisie" | null {
+  const c = contexte(m, dans);
+  const f = c.faces[face];
+  if (!f) return null;
+  if (f.trous.length > 0) return "trou";
+  const contour = f.exterieur.map((s) => c.sommets[s]!.position);
+  return Object.values(c.faces).some((g) => g.id !== f.id && g.trous.some((t) => egal(t.map((s) => c.sommets[s]!.position), contour))) ? "face" : "saisie";
+}
+
 /** Pose le composant dans la baie visée (n° 79) : trou, face dessinée (découpée si demandé) ou face de mur (saisie). */
-export function poserComposant(m: Modele, pose: Pose, cible: { readonly face?: Id; readonly arete?: Id; readonly dans?: Id }): ResultatPose {
+export function poserComposant(m: Modele, pose: Pose, cible: { readonly face?: Id; readonly arete?: Id; readonly dans?: Id; readonly point?: Vec3; readonly segment?: { readonly a: Vec3; readonly b: Vec3 } }): ResultatPose {
   const f = pose.fichier;
   const M = cible.dans !== undefined ? matriceMonde(m, cible.dans) : null;
   const monde = (p: Vec3): Vec3 => (M ? appliquer(M, p) : p);
   const c = contexte(m, cible.dans);
   const meta0 = { fichier: pose.nomFichier, ...(pose.archive ? { archive: pose.archive } : {}), genre: f.genre, ...(f.main ? { main: f.main } : {}), texte: pose.texte };
   if (f.genre === "garde-corps") {
+    // Deux points pointés dans la vue (le second donne la direction ; le premier fixe la hauteur), ou une arête choisie.
     const a = cible.arete ? c.aretes[cible.arete] : undefined;
-    if (!a) throw new ErreurComposant("arete-garde-corps");
-    const A = monde(c.sommets[a.a]!.position), B = monde(c.sommets[a.b]!.position);
-    if (Math.abs(A.z - B.z) > 1e-6) throw new ErreurComposant("arete-garde-corps");
+    const A = cible.segment ? cible.segment.a : a ? monde(c.sommets[a.a]!.position) : null;
+    const B = cible.segment ? v3(cible.segment.b.x, cible.segment.b.y, cible.segment.a.z) : a ? monde(c.sommets[a.b]!.position) : null;
+    if (!A || !B || Math.abs(A.z - B.z) > 1e-6 || Math.hypot(B.x - A.x, B.y - A.y) <= 1e-9) throw new ErreurComposant("arete-garde-corps");
     const longueur = pose.valeurs["longueur"] ?? dist(A, B);
     const valeurs = { ...pose.valeurs, longueur };
     const d = creerDefinition(m, f, { ...meta0, valeurs });
@@ -312,7 +323,8 @@ export function poserComposant(m: Modele, pose: Pose, cible: { readonly face?: I
       const H = exiger(pose.valeurs, "hauteur");
       const allege = f.genre === "porte" ? 0 : (pose.valeurs["allege"] ?? NaN);
       if (f.genre !== "porte" && !(Number.isFinite(allege) && allege >= 0)) throw new ErreurComposant("valeur", { nom: "allege" });
-      const centre = (fb.u0 + fb.u1) / 2;
+      // Le point cliqué sur le mur donne le milieu de la largeur ; sans point, la baie est centrée sur la face.
+      const centre = cible.point ? dot(cible.point, u) : (fb.u0 + fb.u1) / 2;
       b = { u0: centre - L / 2, u1: centre + L / 2, z0: fb.z0 + allege, z1: fb.z0 + allege + H };
     }
   }
