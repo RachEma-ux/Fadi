@@ -149,6 +149,8 @@ export interface ContexteOutil {
   readonly chemin?: readonly string[];
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
+  /** (Cas 4, lot C4) Fond choisi dans le panneau Fonds calés : visé en priorité là où des fonds se superposent. */
+  readonly fondCourant?: string;
   /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
   readonly baliseCourante?: string;
   /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */
