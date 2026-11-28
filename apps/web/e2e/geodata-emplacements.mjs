@@ -52,8 +52,10 @@ await panneau.waitFor({ timeout: 60000 });
 await page.waitForFunction(() => document.querySelector("[data-planche-lieu]")?.getAttribute("data-planche-lieu") === "renseigne", null, { timeout: 30000 }).catch(() => undefined);
 const valeur = async (c) => page.locator(`[data-planche-lieu-champ='${c}']`).inputValue();
 check("Planche : l'emplacement geoData devient l'Emplacement", await panneau.getAttribute("data-planche-lieu") === "renseigne"
-  && await valeur("lieu") === "Parcelle Anfa" && await valeur("latitude") === "33,5731" && await valeur("longitude") === "-7,5898" && await valeur("altitude") === "45" && await valeur("nord") === "12",
-  `${await valeur("lieu")} ${await valeur("latitude")} ${await valeur("longitude")} ${await valeur("altitude")} ${await valeur("nord")}`);
+  && await valeur("lieu") === "Parcelle Anfa" && await valeur("latitude") === "33,5731" && await valeur("longitude") === "-7,5898" && await valeur("nord") === "12",
+  `${await valeur("lieu")} ${await valeur("latitude")} ${await valeur("longitude")} ${await valeur("nord")}`);
+// Cas 2, lot 5 (n° 5) : plus de champ « Altitude » ; l'altitude reçue déclare le ±0,00 unique (non déclaré jusque-là).
+check("Planche : l'altitude geoData devient le ±0,00 du projet", await page.locator("[data-planche-zero]").getAttribute("data-planche-zero") === "45", await page.locator("[data-planche-zero]").getAttribute("data-planche-zero"));
 check("adresse nettoyée du paramètre", !page.url().includes("emplacement-geodata"), page.url());
 await page.locator("[data-planche-lieu-geodata-charger]").click();
 await page.locator("[data-planche-lieu-geodata-choix]").waitFor();

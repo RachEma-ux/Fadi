@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "panneau-ifc-structure" | "panneau-import-ifc" | "panneau-import-fabricant" | "panneau-import-kml" | "panneau-redressement" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "panneau-ifc-structure" | "panneau-import-ifc" | "panneau-import-fabricant" | "panneau-import-kml" | "panneau-redressement" | "panneau-ombres" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -337,6 +337,8 @@ const commandes: EntreeSandbox[] = [
   c("nord-arete", "emplacement", "compass", "Maj+F9", "panneau-emplacement", true),
   c("afficher-nord", "emplacement", "navigation-north", "Maj+F12", "panneau-emplacement", true),
   c("point-de-base", "emplacement", "current-location", "Ctrl+Maj+B", "panneau-emplacement", true),
+  // Cas 2, lot 5 (n° 110) : course solaire et masques depuis un point cliqué, barre du panneau Ombres.
+  c("course-solaire", "emplacement", "sunset-2", "Ctrl+Maj+Espace, Maj+T, S", "panneau-ombres", true),
   // Extension « Scripts » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("scripts", "scripts", "code", "Maj+F3", "panneau-scripts", true),
   c("executer-script", "scripts", "player-play", "Maj+F6", "panneau-scripts", true),

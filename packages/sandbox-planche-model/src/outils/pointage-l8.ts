@@ -56,7 +56,7 @@ export const ERREUR_CALER_SELECTION = "Sélectionnez d'abord l'objet à caler.";
 export const ERREUR_MIROIR_SELECTION = "Sélectionnez d'abord ce qu'il faut retourner.";
 export const ERREUR_POSE_SANS_COMPOSANT = "Choisissez d'abord le composant au panneau « Composants dynamiques ».";
 
-interface Regles {
+export interface Regles {
   readonly consignes: (ctx: ContexteOutil) => readonly string[];
   /** Message si l'outil ne peut pas commencer (sélection ou composant absent). */
   readonly prealable?: (ctx: ContexteOutil) => string | null;
@@ -67,7 +67,8 @@ interface Regles {
   readonly plan?: (ctx: ContexteOutil) => { readonly origine: Vec3; readonly normale: Vec3 } | null;
 }
 
-function machine(id: string, r: Regles): MachineOutil<EtatPointage> {
+/** (Cas 2, lot 5) Fabrique commune des outils de pointage, reprise par la course solaire. */
+export function machinePointage(id: string, r: Regles): MachineOutil<EtatPointage> {
   const point = (ctx: ContexteOutil, rayon: Rayon, tolerance: number, depart?: Vec3): Inference => {
     const inf = viser(ctx, rayon, tolerance, depart);
     const pl = r.plan?.(ctx) ?? null;
@@ -139,7 +140,7 @@ function machine(id: string, r: Regles): MachineOutil<EtatPointage> {
 
 const dans = (ctx: ContexteOutil) => (ctx.dans !== undefined ? { dans: ctx.dans } : {});
 
-export const MACHINE_CALER = machine(ID_CALER, {
+export const MACHINE_CALER = machinePointage(ID_CALER, {
   consignes: () => CONSIGNES_CALER,
   prealable: (ctx) => (ctx.selection.length === 0 ? ERREUR_CALER_SELECTION : null),
   fin: (pts, ctx) => {
@@ -148,7 +149,7 @@ export const MACHINE_CALER = machine(ID_CALER, {
   },
 });
 
-export const MACHINE_BOITE = machine(ID_BOITE, {
+export const MACHINE_BOITE = machinePointage(ID_BOITE, {
   consignes: (ctx) => (ctx.altitudesBoite ? CONSIGNES_BOITE : CONSIGNES_BOITE_HAUTEUR),
   // Hauteur tapée : comptée depuis le premier coin, vers le haut (négative : vers le bas).
   saisie: { libelle: "Hauteur", valeur: (pts, _ctx, h) => [...pts, { ...pts[1]!, z: pts[0]!.z + h }] },
@@ -165,7 +166,7 @@ export const MACHINE_BOITE = machine(ID_BOITE, {
   },
 });
 
-export const MACHINE_MIROIR = machine(ID_MIROIR, {
+export const MACHINE_MIROIR = machinePointage(ID_MIROIR, {
   consignes: () => CONSIGNES_MIROIR,
   prealable: (ctx) => (ctx.lecture ? null : ctx.selection.length === 0 ? ERREUR_MIROIR_SELECTION : null),
   fin: (pts, ctx) => {
@@ -195,14 +196,14 @@ function planFace(ctx: ContexteOutil): { readonly origine: Vec3; readonly normal
   return { origine: M ? appliquer(M, p0) : p0, normale: normalize(M ? transformerNormale(M, f.normale) : f.normale) };
 }
 
-export const MACHINE_POSER_BAIE = machine(ID_POSER_BAIE, {
+export const MACHINE_POSER_BAIE = machinePointage(ID_POSER_BAIE, {
   consignes: () => CONSIGNES_BAIE,
   plan: planFace,
   prealable: (ctx) => (ctx.poseComposant?.face ? null : ERREUR_POSE_SANS_COMPOSANT),
   fin: (pts, ctx) => poser(pts, ctx, { face: ctx.poseComposant!.face!, point: pts[0]! }),
 });
 
-export const MACHINE_POSER_GARDE_CORPS = machine(ID_POSER_GARDE_CORPS, {
+export const MACHINE_POSER_GARDE_CORPS = machinePointage(ID_POSER_GARDE_CORPS, {
   consignes: () => CONSIGNES_GARDE_CORPS,
   prealable: (ctx) => (ctx.poseComposant ? null : ERREUR_POSE_SANS_COMPOSANT),
   fin: (pts, ctx) => poser(pts, ctx, { segment: { a: pts[0]!, b: pts[1]! } }),

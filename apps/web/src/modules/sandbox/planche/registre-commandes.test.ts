@@ -41,7 +41,8 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   });
 
   it("chaque commande routée par le registre se retrouve depuis son événement clavier, y compris sous macOS (Option)", () => {
-    for (const c of REGISTRE_COMMANDES.filter((x) => routeeParLeRegistre(x) && secondTemps(x.raccourci) === null)) {
+    // Les commandes en deux ou trois temps se résolvent par l'encadré (tests plus bas), pas par commandeDuClavier.
+    for (const c of REGISTRE_COMMANDES.filter((x) => routeeParLeRegistre(x) && secondTemps(x.raccourci) === null && !COMMANDES_TROIS_TEMPS.includes(x))) {
       expect(commandeDuClavier(evenement(c.raccourci))?.id, c.raccourci).toBe(c.id);
       if (c.raccourci.includes("Alt")) expect(commandeDuClavier(evenement(c.raccourci, true))?.id, `${c.raccourci} (macOS)`).toBe(c.id);
     }
@@ -130,6 +131,9 @@ describe("Menu par familles (raccourcis en trois temps, 28 novembre 2026)", () =
   });
   it("aucune famille affichée sans commande ; les commandes en deux temps restent inchangées", () => {
     expect(FAMILLES_AFFICHEES.every((f) => commandesDeLaFamille(f.id).length > 0)).toBe(true);
+    // Cas 2, lot 5 : première commande livrée d'une famille, « Course solaire depuis un point » dans Site (Maj+T, S).
+    expect(FAMILLES_AFFICHEES.map((f) => f.id)).toContain("site");
+    expect(commandeDuTroisiemeTemps("site", cle("s"))?.id).toBe("course-solaire");
     expect(COMMANDES_TROIS_TEMPS.every((e) => routeeParLeRegistre(e))).toBe(true);
   });
 });

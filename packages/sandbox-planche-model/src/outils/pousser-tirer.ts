@@ -17,6 +17,7 @@
 import { type Id, type Modele, ERREUR_ETIRER_ISOLEE, instancesEditees, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, pousserTirerFaces, tuberFace } from "../geometrie-libre.js";
 import { type Inference, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
+import { type MesureAltitude, CONSIGNE_TAB_ALTITUDE, ERREUR_ALTITUDE_FACE, ERREUR_ALTITUDE_GROUPE, ERREUR_ALTITUDE_NGF, ERREUR_ALTITUDE_SAISIE, LIBELLE_MESURE_ALTITUDE, altitudeCible, lireAltitude, mesureSuivante, versNGF } from "../altitudes-l5.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import {
   type Apercu,
@@ -121,6 +122,25 @@ export interface EtatPousserTirer {
   readonly jusquAFace: boolean;
   /** (Lot 10b, EX-LINK-02) Garder le lien de la surface à ses arêtes sources (racine seulement ; activé par défaut). */
   readonly lier: boolean;
+  /** (Cas 2, lot 5, n° 70) Ce qu'attend le champ Mesures : distance (défaut), altitude ±0,00 ou altitude NGF (Tab). */
+  readonly altitude?: MesureAltitude;
+}
+
+export const ERREUR_ALTITUDE_SANS_FACE = "Cliquez d'abord sur la face horizontale à porter à cette altitude.";
+
+/** Normale verticale (face horizontale) : seule une telle face se porte à une altitude. */
+const horizontale = (n: Vec3 | null): n is Vec3 => n !== null && Math.abs(n.z) > 1 - 1e-6;
+
+/** (Cas 2, lot 5, n° 70) Pousse ou tire la face cliquée jusqu'à l'altitude tapée (relative au ±0,00 ou NGF). */
+function saisirAltitude(e: EtatPousserTirer, ctx: ContexteOutil, texte: string, mesure: Exclude<MesureAltitude, "distance">): Transition<EtatPousserTirer> {
+  if (ctx.dans !== undefined) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_GROUPE } };
+  if (e.etape !== 2 || !e.face || !e.origine) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_SANS_FACE } };
+  if (!horizontale(e.normale)) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_FACE } };
+  const v = lireAltitude(texte);
+  if (v === null) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_SAISIE } };
+  const z = altitudeCible(v, mesure, ctx.referenceNGF ?? null);
+  if (z === null) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_NGF } };
+  return appliquer(e, ctx, e.face, (z - e.origine.z) / e.normale.z, texte, null);
 }
 
 function initial(): EtatPousserTirer {
@@ -476,6 +496,7 @@ function apercuAretes(segments: readonly Segment[], v: Vec3, symetrique: boolean
 }
 
 function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transition<EtatPousserTirer> {
+  if (e.altitude && e.altitude !== "distance") return saisirAltitude(e, ctx, texte, e.altitude);
   const res = analyserSaisie(texte, contexteSaisie("longueur", ctx));
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
   if (res.genre !== "longueur") return { etat: { ...e, texte, erreur: `Saisie « ${texte} » non reconnue.` } };
@@ -769,6 +790,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         return saisir(etat, ctx, ev.texte);
       case "touche": {
         if (ev.etat !== "enfoncee") return { etat };
+        if (ev.touche === "Tab") return { etat: { ...etat, altitude: mesureSuivante(etat.altitude), texte: null, erreur: null } };
         // Lot 9 (EX-CMD-04) : Ctrl, Alt et Maj ne basculent plus à l'appui, mais frappés seuls (`modificateurSeul`) ;
         // ainsi Ctrl + Z, Maj + F, Maj + Tab ou Maj + chiffre ne changent jamais de mode.
         if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
@@ -851,6 +873,11 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
           : `${prefixe(etat.inference)}${formaterLongueur(etat.distance, sep)}`
         : formaterLongueur(0, sep));
     const dep = etat.normale ? { x: etat.normale.x * etat.distance, y: etat.normale.y * etat.distance, z: etat.normale.z * etat.distance } : null;
+    // Cas 2, lot 5 (n° 70) : en altitude, Mesures montre l'altitude où la face est portée et attend l'altitude visée.
+    const alt = etat.altitude && etat.altitude !== "distance" ? etat.altitude : null;
+    const zFace = alt && etat.etape === 2 && etat.origine && horizontale(etat.normale) ? etat.origine.z + etat.distance * etat.normale.z : null;
+    const zAffiche = zFace === null ? null : alt === "relative" ? zFace : versNGF(zFace, ctx.referenceNGF ?? null);
+    const mesuresAlt = alt ? mesures(LIBELLE_MESURE_ALTITUDE[alt], etat.texte ?? (zAffiche === null ? "" : formaterLongueur(zAffiche, sep)), contexteSaisie("longueur", ctx)) : null;
     return vueModif({
       consigne:
         etat.etape === 1 && etat.survolArete
@@ -859,8 +886,10 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
             ? CONSIGNE_JUSQU_A_FACE
             : etat.sansFond
             ? `${etat.etape === 1 ? CONSIGNE_TUBE_FACE : CONSIGNE_TUBE_TIRAGE}${ctx.dans !== undefined ? ` · ${CONSIGNE_LIEN_RACINE}` : ""}`
-            : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
-      mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, etat.etape - 1), valeur, contexteSaisie("longueur", ctx)),
+            : alt
+              ? `${consigneDe(ID_POUSSER_TIRER, etat.etape - 1)} · ${CONSIGNE_TAB_ALTITUDE}`
+              : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
+      mesures: mesuresAlt ?? mesures(libelleMesuresDe(ID_POUSSER_TIRER, etat.etape - 1), valeur, contexteSaisie("longueur", ctx)),
       inference: etat.etape === 2 ? etat.inference : null,
       apercu:
         etat.etape === 2 && dep && Math.abs(etat.distance) > TOL

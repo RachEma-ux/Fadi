@@ -37,7 +37,9 @@ export type Touche =
   | "CtrlPlus"
   | "CtrlMoins"
   | "Entree"
-  | "Suppr";
+  | "Suppr"
+  /** (Cas 2, lot 5, n° 55 et 70) Tab : ce qu'attend le champ Mesures (distance, altitude ±0,00, altitude NGF). */
+  | "Tab";
 
 export type EvenementOutil =
   /** Déplacement du pointeur ; `tolerance` = rayon d'accrochage en mètres à la profondeur visée. */
@@ -130,6 +132,8 @@ export interface VueOutil {
 
 /** Contexte partagé fourni par le rendu à chaque événement. */
 export interface ContexteOutil {
+  /** (Cas 2, lot 5) Altitude NGF du ±0,00 du projet ; `null` ou absent = non déclarée (altitudes NGF non évaluées). */
+  readonly referenceNGF?: number | null;
   /** (Cas 2, lot 8, n° 100) Altitudes saisies au panneau « Soustraire et garder » : bornes z d'une boîte tracée à plat. */
   readonly altitudesBoite?: { readonly zmin: number; readonly zmax: number } | null;
   /**
@@ -248,6 +252,8 @@ export interface Transition<E> {
   readonly baliseCourante?: string | null;
   /** (Lot 4) Texte à faire saisir par l'interface (outil Texte) : l'interface renvoie le résultat par `saisie`. */
   readonly editerTexte?: { readonly id: string; readonly texte: string };
+  /** (Cas 2, lot 5, n° 110) Point d'observation cliqué (monde) : l'interface trace la course solaire et les masques. */
+  readonly pointObserve?: Vec3;
 }
 
 /** (Lot Planche 9, EX-CMD-04) Touche de modification enfoncée puis relâchée seule (sans autre touche ni geste). */

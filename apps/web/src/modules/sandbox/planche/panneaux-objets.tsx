@@ -6,9 +6,10 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, murDeOccurrence, murIntact, jonctionsDuMur, longueurAxe, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene, type Vec3 } from "@parcours/sandbox-planche-model";
+import { type Emplacement, dateDuRang, positionSoleil, rangDuJour, type Pictogramme as DescriptionPictogramme, type FormatCote, REGLAGES_DEFAUT, controlerCotes, aire, altitudeNGF, contexte, texteCoordonnee, versProjete, type CoordonneesProjetees, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, niveauxTries, texteAltitude, murDeOccurrence, murIntact, jonctionsDuMur, longueurAxe, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene, type Vec3 } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import { SectionAltitudes } from "./panneaux-l5";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
 import { afficherRaccourci } from "./outils-planche";
 import { type ActionsInfoCote, PanneauInfoCote } from "./panneau-info-cote";
@@ -309,6 +310,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
             <dd>{recto.size > 1 ? t("planche.info.multiple") : choixMateriau([...recto][0] || undefined, (v) => faces.forEach((id) => actions.materiauFace(id, "recto", v)), t("planche.info.recto"))}</dd>
           </>
         )}
+        {dans === undefined && <SectionAltitudes modele={modele} ids={ids} reference={referenceNiveaux} />}
       </dl>
     );
   }
@@ -327,6 +329,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
         <dd>{choixMateriau(f.materiauVerso, (v) => actions.materiauFace(id, "verso", v), t("planche.info.verso"))}</dd>
         <dt>{t("planche.info.ombres")}</dt>
         <dd />
+        {dans === undefined && <SectionAltitudes modele={modele} ids={[id]} reference={referenceNiveaux} />}
       </dl>
     );
   }
@@ -411,6 +414,7 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
         <dt>{t("planche.info.balise")}</dt>
         <dd>{choixBalise(occ.balise, (v) => actions.balise(id, v))}</dd>
         {dans === undefined && <InfoNiveau modele={modele} occ={occ} lecture={lecture} separateur={separateur} reference={referenceNiveaux} onNiveau={(v) => actions.niveau(id, v)} />}
+        {dans === undefined && <SectionAltitudes modele={modele} ids={[id]} reference={referenceNiveaux} />}
         <dt>{t("planche.info.ombres")}</dt>
         <dd />
         <dt>
@@ -546,26 +550,80 @@ export function PanneauStyles({ options, onOptions }: { options: OptionsAffichag
   );
 }
 
-export function PanneauOmbres({ options, onOptions, latitudeParcelle }: { options: OptionsAffichage; onOptions: (o: Partial<OptionsAffichage>) => void; latitudeParcelle: number | null }) {
+/**
+ * Ombres (cas 2, lot 5 : n° 77, 105, 110) : date du calendrier, heure légale (fuseau de l'Emplacement, longitude,
+ * équation du temps) ou heure solaire sans fuseau ; position du soleil par l'algorithme de référence ; commande
+ * « Course solaire depuis un point ».
+ */
+export function PanneauOmbres({ options, onOptions, latitudeParcelle, emplacement = null, lecture = false, fuseaux = [], onFuseau, courseSolaire }: {
+  options: OptionsAffichage;
+  onOptions: (o: Partial<OptionsAffichage>) => void;
+  latitudeParcelle: number | null;
+  emplacement?: Emplacement | null;
+  lecture?: boolean;
+  fuseaux?: readonly string[];
+  onFuseau?: (fuseau: string | null) => void;
+  courseSolaire?: ReactNode;
+}) {
   const h = Math.floor(options.heure);
   const mn = Math.round((options.heure - h) * 60);
+  const annee = Number.isFinite(options.annee) ? options.annee : new Date().getFullYear();
+  const date = dateDuRang(annee, options.jour);
+  const iso = `${String(annee).padStart(4, "0")}-${String(date.mois).padStart(2, "0")}-${String(date.jour).padStart(2, "0")}`;
+  const s = positionSoleil({ annee, ...date, heure: options.heure, decalageMinutes: options.decalage ?? null, latitude: options.latitude, longitude: options.longitude ?? null });
+  const eq = Math.abs(s.equationTemps);
+  const eqTexte = `${s.equationTemps < 0 ? "−" : "+"}${t("planche.l5.ombres.minutes", { m: String(Math.floor(eq)), s: String(Math.round((eq - Math.floor(eq)) * 60)).padStart(2, "0") })}`;
+  const hs = Math.floor(s.heureSolaire);
+  const ms = Math.round((s.heureSolaire - hs) * 60);
+  const fuseau = emplacement?.fuseau ?? "";
   return (
-    <div className="planche-options" data-planche-ombres>
+    <div className="planche-options" data-planche-ombres data-planche-ombres-heure={s.legale ? "legale" : "solaire"}>
       <Bascule cle="ombres" libelle={t("planche.ombres.activer")} options={options} onOptions={onOptions} />
       <Bascule cle="ombresSol" libelle={t("planche.ombres.sol")} options={options} onOptions={onOptions} />
       <label>
-        {t("planche.ombres.heure")} : {h}:{String(mn).padStart(2, "0")}
-        <input type="range" min={5} max={21} step={0.25} value={options.heure} onChange={(e) => onOptions({ heure: Number(e.target.value) })} data-planche-option="heure" />
+        {t("planche.l5.ombres.date")}
+        <input
+          type="date"
+          value={iso}
+          onChange={(e) => {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value);
+            if (m) onOptions({ annee: Number(m[1]), jour: rangDuJour(Number(m[1]), Number(m[2]), Number(m[3])) });
+          }}
+          data-planche-option="date"
+        />
       </label>
       <label>
-        {t("planche.ombres.date")} : {options.jour}
-        <input type="range" min={1} max={365} step={1} value={options.jour} onChange={(e) => onOptions({ jour: Number(e.target.value) })} data-planche-option="jour" />
+        {t(s.legale ? "planche.l5.ombres.heure-legale" : "planche.l5.ombres.heure-solaire")} : {h}:{String(mn).padStart(2, "0")}
+        <input type="range" min={0} max={24} step={0.25} value={options.heure} onChange={(e) => onOptions({ heure: Number(e.target.value) })} data-planche-option="heure" />
       </label>
+      <label>
+        {t("planche.l5.ombres.fuseau")}
+        <select value={fuseau} disabled={lecture || !emplacement || !onFuseau} onChange={(e) => onFuseau?.(e.target.value || null)} data-planche-ombres-fuseau>
+          <option value="">{t("planche.l5.ombres.fuseau-aucun")}</option>
+          {fuseau && !fuseaux.includes(fuseau) && <option value={fuseau} translate="no">{fuseau}</option>}
+          {fuseaux.map((f) => (
+            <option key={f} value={f} translate="no">{f}</option>
+          ))}
+        </select>
+      </label>
+      {!emplacement && <p className="inspecteur-aide" data-planche-ombres-fuseau-absent>{t("planche.l5.ombres.fuseau-sans-emplacement")}</p>}
       <label>
         {t("planche.ombres.latitude")} : {virgule(options.latitude, 1)}°
         <input type="range" min={-66} max={66} step={0.5} value={options.latitude} disabled={latitudeParcelle !== null} onChange={(e) => onOptions({ latitude: Number(e.target.value) })} data-planche-option="latitude" />
       </label>
       {latitudeParcelle === null ? <p className="inspecteur-aide">{t("planche.ombres.non-evalue")}</p> : <p className="inspecteur-aide" data-planche-ombres-emplacement>{t("planche.ombres.latitude.emplacement")}</p>}
+      <dl data-planche-ombres-soleil>
+        <dt>{t("planche.l5.ombres.solaire-vraie")}</dt>
+        <dd data-planche-ombres-solaire={s.heureSolaire}>{`${hs % 24}:${String(ms % 60).padStart(2, "0")}`}</dd>
+        <dt>{t("planche.l5.ombres.equation")}</dt>
+        <dd>{eqTexte}</dd>
+        <dt>{t("planche.l5.ombres.azimut")}</dt>
+        <dd data-planche-ombres-azimut={s.azimut}>{`${virgule(s.azimut, 1)}°`}</dd>
+        <dt>{t("planche.l5.ombres.hauteur")}</dt>
+        <dd data-planche-ombres-hauteur={s.hauteur}>{`${virgule(s.hauteur, 1)}°`}</dd>
+      </dl>
+      <p className="inspecteur-aide">{t("planche.l5.ombres.source")}</p>
+      {courseSolaire}
       <p className="inspecteur-aide">{t("planche.styles.note")}</p>
     </div>
   );
@@ -717,7 +775,7 @@ function enregistrerStyle(r: ReglagesPlanche, nom: string): ReglagesPlanche {
   return { ...r, stylesCote: styles, styleCote: id };
 }
 
-export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages, onAppliquerStyle, unites, parametres }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void; onAppliquerStyle?: (style: Id | null) => void; /** (Cas 2, lot 2) Unité d'affichage et de saisie, contrôle d'écart. */ unites?: ReactNode; /** (Cas 2, lot 2) Paramètres du projet. */ parametres?: ReactNode }) {
+export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onReglages, onAppliquerStyle, unites, parametres, rappelSysteme }: { modele: Modele; lecture: boolean; precision: number; onPrecision: (d: number) => void; onReglages: (r: ReglagesPlanche) => void; onAppliquerStyle?: (style: Id | null) => void; /** (Cas 2, lot 2) Unité d'affichage et de saisie, contrôle d'écart. */ unites?: ReactNode; /** (Cas 2, lot 2) Paramètres du projet. */ parametres?: ReactNode; /** (Cas 2, lot 5, n° 92) Rappel du système et du ±0,00. */ rappelSysteme?: ReactNode }) {
   const r = modele.annotations?.reglages ?? REGLAGES_DEFAUT;
   const [brouillon, setBrouillon] = useState(r);
   const [nomStyle, setNomStyle] = useState("");
@@ -752,6 +810,7 @@ export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onR
       }}
     >
       <h4>{t("planche.infomodele.unites")}</h4>
+      {rappelSysteme}
       {unites}
       <p className="inspecteur-aide">{t("planche.infomodele.longueur", { precision: `0,${"0".repeat(precision)} m` })}</p>
       <label>

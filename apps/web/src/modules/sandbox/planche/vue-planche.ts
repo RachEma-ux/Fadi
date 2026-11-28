@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { coinsFond, pointDuFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond, pointDuFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, positionSoleil, dateDuRang, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -102,6 +102,10 @@ export interface OptionsAffichage {
   readonly heure: number;
   readonly jour: number;
   readonly latitude: number;
+  /** (Cas 2, lot 5) Année du soleil, longitude de l'Emplacement et décalage du fuseau (minutes) : heure légale si les deux sont connus. */
+  readonly annee: number;
+  readonly longitude: number | null;
+  readonly decalage: number | null;
   /** (Extension « Emplacement ») Nord vrai, en degrés depuis l'axe vert dans le sens horaire ; flèche du nord affichée. */
   readonly nord: number;
   readonly flecheNord: boolean;
@@ -115,7 +119,7 @@ export interface OptionsAffichage {
 }
 /** Convention SIA 400 : existant noir, à démolir jaune, projeté rouge. */
 export const COULEURS_STATUT_DEFAUT: Readonly<Record<StatutTravaux, string>> = { existant: "#1f1f1f", "a-demolir": "#e0a800", projete: "#d32f2f" };
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { etatTravaux: "tout", couleursStatut: COULEURS_STATUT_DEFAUT, aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { etatTravaux: "tout", couleursStatut: COULEURS_STATUT_DEFAUT, aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, annee: new Date().getFullYear(), longitude: null, decalage: null, nord: 0, flecheNord: false };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -1934,7 +1938,10 @@ export class VuePlanche {
   /** Position du soleil d'après l'heure, le jour de l'année et la latitude (formule de déclinaison simplifiée, nv). */
   private majSoleil(): void {
     // Calcul pur du modèle (`soleil`) : azimut depuis le nord vrai vers l'est, nord vrai tourné de `nord` depuis l'axe vert.
-    const s = soleil(this.options).direction;
+    // Cas 2, lot 5 : algorithme de référence (NOAA), à l'heure légale quand le fuseau et la longitude sont déclarés.
+    const o = this.options;
+    const annee = Number.isFinite(o.annee) ? o.annee : new Date().getFullYear();
+    const s = positionSoleil({ annee, ...dateDuRang(annee, o.jour), heure: o.heure, decalageMinutes: o.decalage ?? null, latitude: o.latitude, longitude: o.longitude ?? null, nord: o.nord }).direction;
     const d = 120;
     this.soleil.position.set(s.x * d, s.y * d, Math.max(0.05, s.z) * d);
     this.soleil.target.position.set(0, 0, 0);

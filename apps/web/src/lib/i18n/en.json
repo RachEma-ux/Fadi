@@ -15136,5 +15136,15 @@
 "Lecture du site terminée.": "Site reading finished.",
 "Aucune lecture à référencer.": "No reading to reference.",
 "Copie refusée par le navigateur.": "Copy refused by the browser.",
-"Référence du site copiée : {0} lecture(s), {1} exclusion(s).": "Site reference copied: {0} reading(s), {1} exclusion(s)."
+"Référence du site copiée : {0} lecture(s), {1} exclusion(s).": "Site reference copied: {0} reading(s), {1} exclusion(s).",
+"Altitude ±0,00": "Elevation ±0.00",
+"Altitude NGF": "NGF elevation",
+"Altitude NGF non évaluée : déclarez d'abord l'altitude NGF du ±0,00 (Emplacement ou Niveaux).": "NGF elevation not evaluated: first declare the NGF elevation of ±0.00 (Location or Levels).",
+"Les altitudes se posent à la racine de la Planche : fermez d'abord le groupe ouvert.": "Elevations are set at the root of the Planche: first close the open group.",
+"Une altitude ne se donne qu'à une face horizontale.": "An elevation can only be given to a horizontal face.",
+"Tapez une altitude en mètres (par exemple 3,10 ou −1,20).": "Type an elevation in metres (for example 3.10 or −1.20).",
+"Tab : distance, altitude ±0,00 ou altitude NGF.": "Tab: distance, elevation ±0.00 or NGF elevation.",
+"Course solaire : cliquez le point d'observation (une fenêtre, un jardin) ; les objets de la Planche forment les masques.": "Sun path: click the observation point (a window, a garden); the Planche objects form the obstructions.",
+"Sélectionnez d'abord ce qu'il faut poser à cette altitude.": "First select what to set at this elevation.",
+"Cliquez d'abord sur la face horizontale à porter à cette altitude.": "First click the horizontal face to bring to this elevation."
 }

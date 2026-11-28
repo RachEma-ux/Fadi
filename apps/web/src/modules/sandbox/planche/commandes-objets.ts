@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION, ...COMMANDES_MODELISATION].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION, ...COMMANDES_MODELISATION, ...COMMANDES_SOLEIL].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -995,6 +995,19 @@ export interface CommandeRedressement {
   readonly raccourci: string;
 }
 export const COMMANDES_REDRESSEMENT: readonly CommandeRedressement[] = (["redresser-photo", "poser-redressee", "effacer-points-redressement"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.redressement.${id}` as CleMessage, court: `planche.redressement.court.${id}` as CleMessage }));
+
+/** Cas 2, lot 5 (n° 110) : course solaire et masques depuis un point (barre du panneau Ombres). */
+export type IdCommandeSoleil = "course-solaire";
+export interface CommandeSoleil {
+  readonly id: IdCommandeSoleil;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_SOLEIL: readonly CommandeSoleil[] = [{ id: "course-solaire", ...depuisRegistre("course-solaire"), libelle: "planche.l5.course-solaire", court: "planche.l5.court.course-solaire" }];
+/** Toujours disponible, consultation comprise : rien n'est modifié ; sans position, la latitude du panneau Ombres sert. */
+export const disponibiliteSoleil = (_id: IdCommandeSoleil): Disponibilite => ({ disponible: true, motif: null });
 
 export function disponibiliteRedressement(id: IdCommandeRedressement, s: { readonly photo: boolean; readonly points: number; readonly dimensions: boolean; readonly lecture: boolean }): Disponibilite {
   if (id === "redresser-photo") return { disponible: true, motif: null };

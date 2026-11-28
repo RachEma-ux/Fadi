@@ -63,7 +63,8 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     // Projection des fichiers KML / KMZ (cas 4, lot C4, étape 7b) : coordonnées envoyées à /sandbox/projections seulement.
     const projections = code(join(RACINE, "planche/projections-client.ts"));
     expect(projections).toContain('export const ADRESSE_PROJECTIONS = "/sandbox/projections";');
-    expect([...projections.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PROJECTIONS"]);
+    // Cas 2, lot 5 (n° 92) : la liste fermée des systèmes connus se lit sous la même adresse.
+    expect([...projections.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PROJECTIONS", "`${ADRESSE_PROJECTIONS}/systemes`"]);
     expect(projections).not.toMatch(/https?:\/\//);
     // Liens de consultation (cas 4, étape 7d) : copie figée créée, listée, révoquée sous /sandbox/consultations, lue sans
     // compte sous /consultation/api ; ces deux adresses seules, sans adresse absolue.

@@ -7,7 +7,7 @@
  * Projets » de la carte) se choisissent dans une liste et deviennent l'Emplacement de la Planche (un pas d'historique).
  */
 import { type ChampEmplacement, type Emplacement, lireEmplacement } from "@parcours/sandbox-planche-model";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { t } from "../messages";
 import { Pictogramme } from "../pictogrammes/Pictogramme";
 import { COMMANDES_EMPLACEMENT, type Disponibilite, type IdCommandeEmplacement } from "./commandes-objets";
@@ -26,7 +26,9 @@ export interface EmplacementsGeoDataPanneau {
 const arreter = (e: { stopPropagation(): void }) => e.stopPropagation();
 const texte = (n: number | undefined): string => (n === undefined ? "" : String(n).replace(".", ","));
 const saisieDe = (e: Emplacement | null) => ({ lieu: e?.lieu ?? "", latitude: texte(e?.latitude), longitude: texte(e?.longitude), altitude: texte(e?.altitude), nord: texte(e?.nord) });
-const CHAMPS = ["lieu", "latitude", "longitude", "altitude", "nord"] as const;
+// Cas 2, lot 5 (n° 5) : l'ancien champ « Altitude » disparaît ; le ±0,00 NGF unique se saisit dans sa section. La valeur
+// déjà enregistrée (sites, GeoData) reste dans la saisie et se conserve.
+const CHAMPS = ["lieu", "latitude", "longitude", "nord"] as const;
 
 export function PanneauEmplacement({
   emplacement,
@@ -37,6 +39,8 @@ export function PanneauEmplacement({
   disponibilite,
   note,
   geodata,
+  zero,
+  systemes,
 }: {
   emplacement: Emplacement | null;
   lecture: boolean;
@@ -46,6 +50,9 @@ export function PanneauEmplacement({
   disponibilite: (id: IdCommandeEmplacement) => Disponibilite;
   note: string | null;
   geodata: EmplacementsGeoDataPanneau;
+  /** Cas 2, lot 5 : sections « ±0,00 du projet » (n° 5) et « Système de coordonnées et d'altitudes » (n° 92). */
+  zero?: ReactNode;
+  systemes?: ReactNode;
 }) {
   const [choixGeoData, setChoixGeoData] = useState("");
   const choisi = geodata.liste?.find((g) => g.id === choixGeoData) ?? geodata.liste?.[0] ?? null;
@@ -63,7 +70,8 @@ export function PanneauEmplacement({
       return;
     }
     setErreur(null);
-    onEnregistrer(r.emplacement);
+    // Le fuseau (lot 5, n° 105) se règle dans Ombres : l'enregistrement de la position le garde.
+    onEnregistrer(emplacement?.fuseau ? { ...r.emplacement, fuseau: emplacement.fuseau } : r.emplacement);
   };
   return (
     <div className="planche-controle" data-planche-lieu={emplacement ? "renseigne" : "absent"}>
@@ -92,6 +100,8 @@ export function PanneauEmplacement({
         <button type="button" disabled={lecture} onClick={enregistrer} data-planche-lieu-enregistrer>{t("planche.emplacement.enregistrer")}</button>
         <button type="button" disabled={lecture || !emplacement} onClick={() => onEnregistrer(null)} data-planche-lieu-retirer>{t("planche.emplacement.retirer")}</button>
       </div>
+      {zero}
+      {systemes}
       <div className="planche-debit-reglages" data-planche-lieu-geodata={geodata.liste === null ? "non-lu" : String(geodata.liste.length)}>
         <p className="inspecteur-aide">{t("planche.emplacement.geodata.aide")}</p>
         {geodata.liste !== null && geodata.liste.length > 0 && (

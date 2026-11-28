@@ -18,6 +18,7 @@
 import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer, tourner } from "../geometrie-libre.js";
 import { type Inference, type ModeAlt, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
+import { type MesureAltitude, CONSIGNE_TAB_ALTITUDE, ERREUR_ALTITUDE_GROUPE, ERREUR_ALTITUDE_NGF, ERREUR_ALTITUDE_SAISIE, LIBELLE_MESURE_ALTITUDE, altitudeCible, boiteElements, lireAltitude, mesureSuivante, versNGF } from "../altitudes-l5.js";
 import { type Vec3, AXE_Z, EPS, TOL, add, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { type Derniere, angleSigne, contexteSaisie, corrigeable, formaterAngle, formaterLongueur, intersectionRayonPlan, mesures, messageErreur, prefixe, axesDeSaisie } from "./commun-formes.js";
 import {
@@ -69,6 +70,24 @@ export interface EtatDeplacer {
   readonly derniere: Derniere<ParamsDeplacement> | null;
   /** Lot L18 : rotation par une poignée de la boîte (centre de la face, normale, point de départ, angle courant). */
   readonly rotation: { readonly entites: readonly Id[]; readonly centre: Vec3; readonly normale: Vec3; readonly depart: Vec3; readonly angle: number; readonly accroche: boolean } | null;
+  /** (Cas 2, lot 5, n° 55) Ce qu'attend le champ Mesures : distance (défaut), altitude ±0,00 ou altitude NGF (Tab). */
+  readonly altitude?: MesureAltitude;
+}
+
+export const ERREUR_ALTITUDE_SELECTION = "Sélectionnez d'abord ce qu'il faut poser à cette altitude.";
+
+/** (Cas 2, lot 5, n° 55) Pose le bas des éléments (sélection, ou éléments en cours) à l'altitude tapée, verticalement. */
+function saisirAltitude(e: EtatDeplacer, ctx: ContexteOutil, texte: string, mesure: Exclude<MesureAltitude, "distance">): Transition<EtatDeplacer> {
+  if (ctx.dans !== undefined) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_GROUPE } };
+  const v = lireAltitude(texte);
+  if (v === null) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_SAISIE } };
+  const z = altitudeCible(v, mesure, ctx.referenceNGF ?? null);
+  if (z === null) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_NGF } };
+  const entites = e.etape === 2 ? e.entites : selectionValide(ctx);
+  const b = entites.length ? boiteElements(ctx.modele, entites) : null;
+  if (!b) return { etat: { ...e, texte, erreur: ERREUR_ALTITUDE_SELECTION } };
+  const copie = e.mode !== "deplacer" && !e.sommet;
+  return appliquer(e, ctx, { entites, vecteur: { x: 0, y: 0, z: z - b.min.z }, copie, reseau: copie ? { copies: 1 } : null }, texte, null, "pose");
 }
 
 /** Lot L18 : poignée de rotation d'une boîte (point monde, centre et normale de sa face). */
@@ -257,6 +276,7 @@ function saisir(e: EtatDeplacer, ctx: ContexteOutil, texte: string): Transition<
     if (ra.genre !== "angle") return { etat: { ...e, texte, erreur: ra.genre === "erreur" ? ra.message : `Saisie « ${texte} » non reconnue : un angle est attendu.` } };
     return tournerPoignee(e, ctx, (e.rotation.angle < 0 ? -1 : 1) * ra.radians, texte);
   }
+  if (e.altitude && e.altitude !== "distance") return saisirAltitude(e, ctx, texte, e.altitude);
   const res = analyserSaisie(texte, contexteSaisie("distance-reseau", ctx));
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
   const L = enLocal(ctx);
@@ -345,6 +365,7 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
           return { etat };
         }
         if (ev.etat !== "enfoncee") return { etat };
+        if (t === "Tab") return { etat: { ...etat, altitude: mesureSuivante(etat.altitude), texte: null, erreur: null } };
         if (t === "Ctrl") {
           if (etat.sommet) return { etat }; // un sommet ne se copie pas
           return { etat: { ...etat, mode: cyclerCtrl(etat), erreur: null } };
@@ -426,9 +447,14 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
         if (a) lignes.push([add((c.sommets[a.a] as { position: Vec3 }).position, v), add((c.sommets[a.b] as { position: Vec3 }).position, v)]);
       }
     }
+    // Cas 2, lot 5 (n° 55) : en altitude, Mesures montre l'altitude du bas des éléments et attend l'altitude visée.
+    const alt = etat.altitude && etat.altitude !== "distance" ? etat.altitude : null;
+    const entitesAlt = alt ? (etat.etape === 2 ? etat.entites : selectionValide(ctx)) : [];
+    const boiteAlt = alt && entitesAlt.length && ctx.dans === undefined ? boiteElements(ctx.modele, entitesAlt) : null;
+    const zAlt = boiteAlt ? (alt === "relative" ? boiteAlt.min.z : versNGF(boiteAlt.min.z, ctx.referenceNGF ?? null)) : null;
     return vueModif({
-      consigne: consigneDe(ID_DEPLACER, indice),
-      mesures: mesures(libelleMesuresDe(ID_DEPLACER, indice), valeur, contexteSaisie("distance-reseau", ctx)),
+      consigne: alt ? `${consigneDe(ID_DEPLACER, indice)} · ${CONSIGNE_TAB_ALTITUDE}` : consigneDe(ID_DEPLACER, indice),
+      mesures: alt ? mesures(LIBELLE_MESURE_ALTITUDE[alt], etat.texte ?? (zAlt === null ? "" : formaterLongueur(zAlt, sep)), contexteSaisie("longueur", ctx)) : mesures(libelleMesuresDe(ID_DEPLACER, indice), valeur, contexteSaisie("distance-reseau", ctx)),
       inference: etat.inference,
       apercu: { lignes, faces: [] },
       ctx,
