@@ -73,6 +73,13 @@
  *   planche.geometrie.union(polygones)          union de polygones { exterieur, trous } en [x, y] : { polygones, aire }
  *   planche.niveaux.lire()                      { niveaux : [{ id, nom, altitude, hauteur }] du plus haut au plus bas, referenceNGF :
  *                                               altitude NGF du ±0,00, ou null si elle n'est pas renseignée }
+ * Protocole 1.5 (hachures, Échanges DXF 1.1) :
+ *   planche.motifs.creer(nom, familles, fichier) motif de hachure : familles { angle (degrés), x0, y0, dx, dy, tirets }
+ *                                               en mm papier, comme un .pat ; `fichier` : d'où il vient ; rend l'identifiant
+ *                                               (celui du motif du même nom s'il existe)
+ *   planche.motifs.lire()                       [{ id, nom, familles }]
+ *   planche.matieres.creer(nom, couleur, motif) matière d'apparence, avec ou sans motif ; rend l'identifiant (celui de la
+ *                                               matière du même nom si elle existe) ; matieres.lire rend aussi `motif`
  */
 import { FONCTIONS_MODIFICATION, type FicheExtension, type MessageProtocole, VERSION_PROTOCOLE, demandeProtocole, lireMessageProtocole, refusProtocole, reponseProtocole } from "./protocole-extensions.js";
 import { MAX_LONGUEUR_LIGNE_JOURNAL } from "./scripts.js";
@@ -152,6 +159,11 @@ export function creerExecutantExtension(
     matieres: Object.freeze({
       lire: () => demander("matieres.lire"),
       appliquer: (ids: unknown, matiere: unknown = null) => demander("matieres.appliquer", { ids: typeof ids === "string" ? [ids] : ids, matiere }),
+      creer: (nom: unknown, couleur?: unknown, motif?: unknown) => demander("matieres.creer", { nom, ...(couleur === undefined ? {} : { couleur }), ...(motif === undefined ? {} : { motif }) }),
+    }),
+    motifs: Object.freeze({
+      lire: () => demander("motifs.lire"),
+      creer: (nom: unknown, familles: unknown, fichier?: unknown) => demander("motifs.creer", { nom, familles, ...(fichier === undefined ? {} : { fichier }) }),
     }),
     balises: Object.freeze({
       lire: () => demander("balises.lire"),

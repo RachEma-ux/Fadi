@@ -5,12 +5,12 @@
     "en": "DXF exchange"
   },
   "description": {
-    "fr": "Reprend un plan DXF à l'échelle (calques en balises, arcs, blocs en composants) et écrit le modèle en DXF ou un plan masse en figure-fond (SVG ou DXF).",
-    "en": "Imports a DXF plan to scale (layers as tags, arcs, blocks as components) and writes the model to DXF or a figure-ground site plan (SVG or DXF)."
+    "fr": "Reprend un plan DXF à l'échelle (calques en balises, arcs, blocs en composants, textes, cotes linéaires, hachures en faces avec matière) et écrit le modèle en DXF (avec ses textes et ses cotes) ou un plan masse en figure-fond (SVG ou DXF).",
+    "en": "Imports a DXF plan to scale (layers as tags, arcs, blocks as components, texts, linear dimensions, hatches as faces with a material) and writes the model to DXF (with its texts and dimensions) or a figure-ground site plan (SVG or DXF)."
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "auteur": "Fadi",
-  "protocole": "1.1",
+  "protocole": "1.5",
   "permissions": [
     "modele.lire",
     "modele.modifier",

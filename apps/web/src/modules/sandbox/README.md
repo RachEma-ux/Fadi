@@ -334,6 +334,13 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     `modele.lire` (l'union n'en demande aucune). `planche.niveaux.lire()` rend les niveaux d'étage, du plus haut au plus bas (`id`, `nom`,
     `altitude`, `hauteur`) et `referenceNGF`, l'altitude NGF du ±0,00 de la planche, ou `null`. Booléen de maillage, jamais exact au sens B-Rep ; aucune règle ni
     déduction réglementaire n'est faite ici.
+  - *Protocole 1.5 — matières et motifs de hachure* (cas 3 du catalogue des extensions ; n'ajoute que des fonctions).
+    `planche.matieres.creer(nom, couleur, motif)` crée une matière (couleur `#rrggbb`, gris par défaut ; `motif` = un
+    motif de hachure existant) et rend celle du même nom si elle existe ; `planche.motifs.lire()` liste les motifs ;
+    `planche.motifs.creer(nom, familles, fichier)` crée un motif de hachure : familles de lignes d'un .pat (angle en
+    degrés, `x0`, `y0`, `dx`, `dy`, `tirets`, en mm papier), source « saisie » ou le nom du fichier d'origine ; même nom,
+    motif existant rendu. `matieres.lire` rend aussi le `motif` de chaque matière. Permission `modele.modifier` pour la
+    création, `modele.lire` pour la lecture.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,
@@ -346,7 +353,17 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     déclarée, un calque par balise, arcs et cercles plans en vrais arcs, sinon en segments. **Plan masse en
     figure-fond** (Ctrl+Alt+Maj+M) : bâti en noir plein, voirie en trait, parcelles en trait fin, chacun choisi par sa
     balise ; SVG en mètres (viewBox, sans échelle imposée) ou DXF (calques BATI, VOIRIE, PARCELLES) ; une face percée
-    est remplie sans ses trous, et c'est signalé. Test : `extension-echanges-dxf.test.ts`.
+    est remplie sans ses trous, et c'est signalé. **Version 1.1** (protocole 1.5 ; maquettes validées le 28 novembre
+    2026) : à l'import, trois cases avec leurs comptes. Textes TEXT et MTEXT repris en textes de la Planche (formatage
+    MTEXT retiré, %%c, %%d, %%p et \U+ décodés ; 200 caractères au plus, coupe signalée ; hauteur et rotation non
+    portées, et c'est dit). Cotes linéaires DIMENSION reprises (sur un axe ou alignées) ; angulaires, de rayon, de
+    diamètre, d'ordonnée ou tournées hors des axes comptées non reprises. Hachures HATCH : contours tracés, les faces
+    dedans (règle pair-impair) reçoivent une matière, « Aplat plein (DXF) » ou « Hachure <nom> (DXF) » avec son motif
+    converti en mm papier à l'échelle de tracé saisie (1:50 par défaut) ; contour en spline compté illisible. Textes et
+    cotes balisés du calque. À l'export du modèle, case « Textes et cotes » : TEXT sur le calque TEXTES (hauteur
+    saisie), DIMENSION sur le calque COTES avec son bloc de cote ; une cote en Z n'est pas écrite et c'est dit ; les
+    hachures du modèle ne sont pas écrites (les feuilles de l'hôte les exportent).
+    Test : `extension-echanges-dxf.test.ts`, `hachures-extensions.test.ts`.
   - *Extension « Trame d'axes »* (cas 3, lot 2, D1-F2-030, `apps/web/extensions/trame-axes/`, protocole 1.3 ; maquettes
     validées le 27 novembre 2026) : l'outil « Trame d'axes » (Ctrl+Alt+A) demande les entraxes en X et en Y (liste
     « 5,40;5,40;7,20 » ou série « 6x5,40 », 40 files au plus par direction), les repères (lettres ou chiffres, jamais
