@@ -356,6 +356,17 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     cotes d'entraxe et totales ; ses réglages sont gardés sur le groupe. « Modifier la trame » (Ctrl+Alt+F) rouvre les
     réglages de la trame sélectionnée et la repose en un seul pas, au même endroit, anciennes bulles et cotes retirées.
     Aucune valeur imposée : les entraxes sont ceux de l'utilisateur.
+  - *Extension « Surfaces réglementaires »* (cas 3, lot 3, `apps/web/extensions/surfaces-reglementaires/`, protocole 1.4 ;
+    périmètre à cinq entrées et maquettes validés le 28 novembre 2026, trémie d'escalier reportée au lot 5) : un panneau à
+    cinq onglets, ouvert par cinq commandes (Ctrl+Alt+U panneau, N par niveau, E emprise, O programme, I PPRI). **Par
+    niveau** : chaque niveau d'étage coupé à une hauteur au-dessus de son altitude (`geometrie.coupe`), union des seuls
+    solides, balises déduites et abattement. **Emprise au sol** : projection (`geometrie.projection`) détaillée par
+    balise, balises écartées, rapport à la surface du terrain saisie. **Programme** : CSV « niveau ; surface » archivé,
+    comparé niveau par niveau par le nom. **PPRI** : cote de référence saisie avec sa source, altitude NGF du premier
+    plancher (±0,00 de la planche + altitude du niveau), zone refuge mesurée sur la sélection. **Règles** : table
+    `fadi-regles-surfaces/1` archivée, un ou plusieurs jeux datés, chaque règle avec sa source ; une règle non relue est
+    « à vérifier ». Aucune règle n'est écrite dans l'extension : sans table, la surface de plancher et l'emprise
+    réglementaire sont « non évaluées » et seules les mesures sont données. Test : `extension-surfaces-reglementaires.test.ts`.
   - *Panneau* (lot 4, permission « panneau ») : la fiche déclare `panneaux: [{ id, titre, page, icone }]` — l'icône est
     un dessin SVG du paquet, propre au panneau. Le panneau paraît dans la colonne de la Planche, à la suite des siens,
     et s'ouvre à leur place (titre, pastille « extension », note d'isolement). Sa page est un fragment HTML du paquet,
