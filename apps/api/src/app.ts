@@ -31,7 +31,7 @@ import { studioMcpRouter } from "./routes/mcp-studio.js";
 import { surveillanceStudio } from "./lib/studio-surveillance.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|sandbox\/consultations|sandbox\/fonds|sandbox\/references|consultation\/api|geodata\/api|sites\/api|version|reviews|mcp)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|sandbox\/consultations|sandbox\/fonds|sandbox\/references|sandbox\/projections|consultation\/api|geodata\/api|sites\/api|version|reviews|mcp)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -60,7 +60,7 @@ export function createApp() {
   // routes/sandbox-fonds.ts), le fichier d'une référence (60 Mo, brut, routes/sandbox-references.ts) ont leur propre
   // lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|^\/geodata\/api\/prix\/officielles\/imports$|^\/admin\/addons\/paquets$|^\/sandbox\/preferences\/fichiers$|^\/sandbox\/consultations\/?$|^\/sandbox\/fonds\/?$|^\/sandbox\/references\/?$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|^\/geodata\/api\/prix\/officielles\/imports$|^\/admin\/addons\/paquets$|^\/sandbox\/preferences\/fichiers$|^\/sandbox\/consultations\/?$|^\/sandbox\/fonds\/?$|^\/sandbox\/references\/?$|^\/sandbox\/projections\/?$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());

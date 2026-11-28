@@ -5259,7 +5259,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // KML / KMZ (cas 4, lot C4, étape 7b) : lu sans bibliothèque, projeté par l'API dans le système du point de base
   // (définition connue de Fadi ou .prj fourni), posé à plat en un seul pas.
   const [luKml, setLuKml] = useState<{ readonly nom: string; readonly format: "kml" | "kmz"; readonly lecture: LectureKml; readonly fichier: File } | null>(null);
-  const [prjKml, setPrjKml] = useState<{ readonly nom: string; readonly wkt: string; readonly fichier: File } | null>(null);
+  const [prjKml, setPrjKml] = useState<{ readonly nom: string; readonly wkt: string; readonly fichier: File; readonly systeme: string } | null>(null);
   const [erreurKml, setErreurKml] = useState<string | null>(null);
   const [noteKml, setNoteKml] = useState<string | null>(null);
   const importKmlRef = useRef<HTMLInputElement | null>(null);
@@ -5288,7 +5288,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
     // Un .prj qui porte un code d'autorité doit décrire le système du point de base ; sans code (ESRI), son nom est affiché.
     if (s.code && normaliserSysteme(s.code) !== normaliserSysteme(projet)) return setErreurKml(t("planche.kml.erreur.prj-different", { lu: s.code, systeme: projet }));
-    setPrjKml({ nom: f.name, wkt, fichier: f });
+    setPrjKml({ nom: f.name, wkt, fichier: f, systeme: projet });
     setErreurKml(null);
     setNoteKml(t("planche.kml.note.prj", { nom: f.name, systeme: s.code ?? s.nom ?? "" }));
   };
@@ -5298,6 +5298,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (!lu || !pdb || readOnly) return;
     const points = pointsKml(lu.lecture);
     if (points.length === 0) return setErreurKml(t("planche.kml.erreur.demande"));
+    // La définition fournie n'a été contrôlée que pour le système du point de base au moment de sa lecture : si ce système a
+    // changé depuis, elle est écartée plutôt que d'interpréter les coordonnées dans un autre repère.
+    if (prjKml && normaliserSysteme(prjKml.systeme) !== normaliserSysteme(pdb.systeme)) {
+      setPrjKml(null);
+      return setErreurKml(t("planche.kml.erreur.prj-perime", { nom: prjKml.nom }));
+    }
     try {
       await archiverFichierReference(lu.fichier, lu.format);
       if (prjKml) await archiverFichierReference(prjKml.fichier, "prj");
