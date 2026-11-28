@@ -6339,3 +6339,72 @@
     display: none;
   }
 }
+/* Nuage de points (cas 4, lot C4, étape 7f). */
+.sandbox-planche .planche-nuage-fiche {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 6px 0;
+  padding: 6px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.04);
+}
+.sandbox-planche .planche-nuage-fiche dt,
+.sandbox-planche .planche-nuage-fiche dd {
+  margin: 0;
+}
+.sandbox-planche .planche-nuage-tranche {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-nuage-tranche label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sandbox-planche .planche-nuage-tranche input {
+  min-width: 0;
+}
+.sandbox-planche .planche-nuage-accrocher {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  text-align: left;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 2px;
+}
+.sandbox-planche .planche-nuage-accrocher small {
+  opacity: 0.7;
+}
+.sandbox-planche .planche-nuage-resultat {
+  margin: 6px 0;
+  padding: 6px 10px;
+  font-size: 0.9em;
+  border: 1px solid #b7c9c0;
+  border-radius: 8px;
+  background: #e3efe8;
+}
+.sandbox-planche .planche-nuage-bulle {
+  justify-self: start;
+  align-self: end;
+  z-index: 7;
+  margin: 0 0 7rem 4.5rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #e3a23a;
+  color: #161616;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+@media (max-width: 1100px) {
+  .sandbox-planche .planche-nuage-bulle {
+    display: none;
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement, disponibiliteVisionneuse, disponibiliteLot } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement, disponibiliteVisionneuse, disponibiliteLot, disponibiliteNuage } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -302,5 +302,14 @@ describe("lot d'échange daté (lot C4, étape 7e) : disponibilité des commande
     expect(disponibiliteLot("emettre-lot", { ...s, sorties: 0 }).motif).toBe("planche.lot.motif.sorties");
     expect(disponibiliteLot("emettre-lot", { ...s, enCours: true }).motif).toBe("planche.lot.motif.en-cours");
     expect(disponibiliteLot("emettre-lot", s).disponible).toBe(true);
+  });
+});
+
+describe("nuage de points (lot C4, étape 7f) : disponibilité des commandes", () => {
+  it("le panneau s'ouvre toujours ; ajuster un plan exige un nuage et trois points choisis", () => {
+    expect(disponibiliteNuage("nuage", { nuage: false, choisis: 0 }).disponible).toBe(true);
+    expect(disponibiliteNuage("ajuster-plan-nuage", { nuage: false, choisis: 6 }).motif).toBe("planche.nuage.motif.aucun");
+    expect(disponibiliteNuage("ajuster-plan-nuage", { nuage: true, choisis: 2 }).motif).toBe("planche.nuage.motif.choisis");
+    expect(disponibiliteNuage("ajuster-plan-nuage", { nuage: true, choisis: 3 }).disponible).toBe(true);
   });
 });

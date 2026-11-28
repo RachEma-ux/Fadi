@@ -49,6 +49,9 @@ const COULEUR_NIVEAU = "#1a5fd6";
 /** Faces hors enveloppe (cas 4, étape 7c), toujours avec une hachure. */
 const COULEUR_HORS_ENVELOPPE = "#d6336c";
 const COULEUR_SURVOL = "#5b8fe8";
+/** (Cas 4, lot C4, étape 7f) Points mesurés choisis pour ajuster un plan (maquette validée). */
+const COULEUR_POINT_CHOISI = "#e8a33d";
+const boiteDe = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ xmin: Math.min(a.x, b.x), ymin: Math.min(a.y, b.y), xmax: Math.max(a.x, b.x), ymax: Math.max(a.y, b.y) });
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
 /** Aperçu noir hors inférence ; couleur de l'axe ou de la direction quand une inférence linéaire est active (§5.1). */
@@ -77,6 +80,20 @@ export interface RappelsVuePlanche {
   chemin?(): readonly string[];
   /** (Cas 2, lot 1) L'outil actif montre une loupe d'accrochage au doigt (Cotation, Texte). */
   loupe?(): boolean;
+  /** (Cas 4, lot C4, étape 7f) Boîte de découpe du nuage réglée par ses poignées (relâchement). */
+  boiteNuage?(b: { xmin: number; ymin: number; xmax: number; ymax: number }): void;
+}
+
+/** (Cas 4, lot C4, étape 7f) Nuage posé : points (m), tranche, points choisis, boîte et poignées. */
+export interface NuageVue {
+  readonly cle: string;
+  readonly points: Float32Array;
+  readonly tranche: Float32Array;
+  readonly choisis: readonly Vec3[];
+  readonly altitude: number;
+  readonly boite: { readonly xmin: number; readonly ymin: number; readonly xmax: number; readonly ymax: number };
+  /** Boîte et poignées affichées (panneau ouvert). */
+  readonly poignees: boolean;
 }
 
 /** Options d'affichage (panneaux Styles, Affichage, Ombres — état de vue, R10). */
@@ -138,7 +155,9 @@ type Geste =
   | { genre: "regarder"; id: number; dernier: Point2 }
   | { genre: "marcher"; id: number; depart: Point2; dernier: Point2 }
   | { genre: "orbite" | "pan" | "zoom"; id: number; dernier: Point2 }
-  | { genre: "deux"; distance: number; centre: Point2 };
+  | { genre: "deux"; distance: number; centre: Point2 }
+  /** (Cas 4, lot C4, étape 7f) Poignée de la boîte de découpe d'un nuage : le coin opposé reste fixe. */
+  | { genre: "poignee"; id: number; dernier: Point2; oppose: { x: number; y: number } };
 
 const v3 = (p: Vec3) => new THREE.Vector3(p.x, p.y, p.z);
 const versVec3 = (v: THREE.Vector3): Vec3 => ({ x: v.x, y: v.y, z: v.z });
@@ -287,6 +306,10 @@ export class VuePlanche {
   private readonly groupeEnveloppe = new THREE.Group();
   /** Références verrouillées (cas 4, lot C4, étape 3) : maquettes reçues dessinées d'un bloc, jamais fusionnées au dessin. */
   private readonly groupeReferences = new THREE.Group();
+  /** (Cas 4, lot C4, étape 7f) Nuage de points : géométrie gardée tant que la clé ne change pas. */
+  private readonly groupeNuage = new THREE.Group();
+  private geometrieNuage: { cle: string; geometrie: THREE.BufferGeometry } | null = null;
+  private nuage: NuageVue | null = null;
   private geometriesReferences = new Map<string, { cle: string; geometrie: THREE.BufferGeometry }>();
   private etiquettesEnveloppe: Etiquette[] = [];
   private readonly texturesHachure = new Map<string, THREE.Texture>();
@@ -397,7 +420,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeDifferences, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeNuage, this.groupeDifferences, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -921,6 +944,89 @@ export class VuePlanche {
       this.groupeReferences.add(points);
     }
     this.rendre();
+  }
+
+  /**
+   * Nuage de points (cas 4, lot C4, étape 7f) : tout le nuage affiché en gris clair, la tranche en sombre, les points
+   * choisis en orange ; panneau ouvert, la boîte de découpe en pointillé bleu à l'altitude de la tranche, avec ses quatre
+   * poignées (glisser une poignée règle la boîte, le coin opposé reste fixe). `null` efface. Rien n'est visé par les
+   * outils : l'accrochage aux points mesurés passe par le contexte des outils.
+   */
+  poserNuage(n: NuageVue | null): void {
+    this.nuage = n;
+    this.dessinerNuage(n?.boite ?? null);
+  }
+
+  private dessinerNuage(boite: NuageVue["boite"] | null): void {
+    for (const enfant of [...this.groupeNuage.children]) {
+      this.groupeNuage.remove(enfant);
+      const o = enfant as THREE.Points;
+      if (o.geometry !== this.geometrieNuage?.geometrie) o.geometry?.dispose();
+      (o.material as THREE.Material | undefined)?.dispose();
+    }
+    const n = this.nuage;
+    if (!n) {
+      this.geometrieNuage?.geometrie.dispose();
+      this.geometrieNuage = null;
+      this.rendre();
+      return;
+    }
+    if (this.geometrieNuage?.cle !== n.cle) {
+      this.geometrieNuage?.geometrie.dispose();
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(n.points, 3));
+      g.computeBoundingSphere();
+      this.geometrieNuage = { cle: n.cle, geometrie: g };
+    }
+    const tous = new THREE.Points(this.geometrieNuage.geometrie, new THREE.PointsMaterial({ color: COULEUR_HORS_CONTEXTE, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.55, depthWrite: false }));
+    tous.renderOrder = 1;
+    tous.name = "nuage";
+    this.groupeNuage.add(tous);
+    if (n.tranche.length >= 3) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(n.tranche, 3));
+      const tranche = new THREE.Points(g, new THREE.PointsMaterial({ color: COULEUR_CONTEXTE, size: 3, sizeAttenuation: false, depthTest: false }));
+      tranche.renderOrder = 3;
+      tranche.name = "nuage-tranche";
+      this.groupeNuage.add(tranche);
+    }
+    if (n.choisis.length > 0) {
+      const choisis = new THREE.Points(new THREE.BufferGeometry().setFromPoints(n.choisis.map(v3)), new THREE.PointsMaterial({ color: COULEUR_POINT_CHOISI, size: 8, sizeAttenuation: false, depthTest: false }));
+      choisis.renderOrder = 4;
+      choisis.name = "nuage-choisis";
+      this.groupeNuage.add(choisis);
+    }
+    if (n.poignees && boite) {
+      const z = n.altitude;
+      const coins = [new THREE.Vector3(boite.xmin, boite.ymin, z), new THREE.Vector3(boite.xmax, boite.ymin, z), new THREE.Vector3(boite.xmax, boite.ymax, z), new THREE.Vector3(boite.xmin, boite.ymax, z)];
+      const cadre = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(coins), new THREE.LineDashedMaterial({ color: COULEUR_SELECTION, dashSize: 0.12, gapSize: 0.08, depthTest: false }));
+      cadre.computeLineDistances();
+      cadre.renderOrder = 4;
+      cadre.name = "nuage-boite";
+      this.groupeNuage.add(cadre);
+      const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(coins), new THREE.PointsMaterial({ color: COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
+      poignees.renderOrder = 5;
+      poignees.name = "nuage-poignees";
+      this.groupeNuage.add(poignees);
+    }
+    this.rendre();
+  }
+
+  /** Recette : coins de la boîte du nuage à l'écran (px), ou `null` sans poignées. */
+  poigneesNuageEcran(): Point2[] | null {
+    const n = this.nuage;
+    if (!n?.poignees) return null;
+    const b = n.boite;
+    const r = [[b.xmin, b.ymin], [b.xmax, b.ymin], [b.xmax, b.ymax], [b.xmin, b.ymax]].map(([x, y]) => this.versEcran({ x: x!, y: y!, z: n.altitude }));
+    return r.every((p): p is Point2 => p !== null) ? r : null;
+  }
+
+  /** Point du plan horizontal z = altitude sous le curseur, ou `null` (rayon parallèle ou derrière). */
+  private surPlanHorizontal(ecran: Point2, z: number): { x: number; y: number } | null {
+    const r = this.rayon(ecran);
+    if (Math.abs(r.direction.z) < 1e-9) return null;
+    const t = (z - r.origine.z) / r.direction.z;
+    return t > 0 ? { x: r.origine.x + r.direction.x * t, y: r.origine.y + r.direction.y * t } : null;
   }
 
   /**
@@ -2139,6 +2245,18 @@ export class VuePlanche {
       return;
     }
     if (e.button !== 0) return;
+    // (Cas 4, lot C4, étape 7f) Poignée de la boîte du nuage sous le pointeur : elle se glisse, l'outil ne reçoit rien.
+    const coins = this.poigneesNuageEcran();
+    if (coins && this.nuage) {
+      const rayonPx = e.pointerType === "touch" ? TOLERANCE_TACTILE_PX : TOLERANCE_PX;
+      const i = coins.findIndex((c) => Math.hypot(c.x - p.x, c.y - p.y) <= rayonPx);
+      if (i >= 0) {
+        const b = this.nuage.boite;
+        const oppose = [{ x: b.xmax, y: b.ymax }, { x: b.xmin, y: b.ymax }, { x: b.xmin, y: b.ymin }, { x: b.xmax, y: b.ymin }][i]!;
+        this.geste = { genre: "poignee", id: e.pointerId, dernier: p, oppose };
+        return;
+      }
+    }
     const camera = this.rappels.outilCamera();
     if (camera) {
       if (camera === "zoom-fenetre") this.geste = { genre: "fenetre", id: e.pointerId, depart: p, dernier: p };
@@ -2176,6 +2294,13 @@ export class VuePlanche {
       if (nav.deuxDoigts === "orbite") this.orbiter(dx * borneSensibilite(nav.sensibiliteOrbite) * (nav.inverserOrbite ? -1 : 1), dy * borneSensibilite(nav.sensibiliteOrbite) * (nav.inverserOrbite ? -1 : 1));
       else this.panoramique(dx * facteurPan(nav), dy * facteurPan(nav));
       this.geste = { genre: "deux", distance, centre };
+      return;
+    }
+    if (g?.genre === "poignee") {
+      if (g.id !== e.pointerId || !this.nuage) return;
+      g.dernier = p;
+      const q = this.surPlanHorizontal(p, this.nuage.altitude);
+      if (q) this.dessinerNuage(boiteDe(g.oppose, q));
       return;
     }
     if (g && g.genre !== "outil") {
@@ -2232,6 +2357,15 @@ export class VuePlanche {
     const g = this.geste;
     if (g?.genre === "deux") {
       if (this.pointeurs.size === 0) this.geste = null;
+      return;
+    }
+    if (g?.genre === "poignee" && g.id === e.pointerId) {
+      this.geste = null;
+      const q = this.nuage ? this.surPlanHorizontal(p, this.nuage.altitude) : null;
+      const b = q ? boiteDe(g.oppose, q) : null;
+      // Une boîte réduite à un trait (moins d'un centimètre) n'est pas retenue : la boîte précédente revient.
+      if (b && b.xmax - b.xmin >= 0.01 && b.ymax - b.ymin >= 0.01) this.rappels.boiteNuage?.(b);
+      else this.dessinerNuage(this.nuage?.boite ?? null);
       return;
     }
     if (g?.genre === "outil" && g.id === e.pointerId) {

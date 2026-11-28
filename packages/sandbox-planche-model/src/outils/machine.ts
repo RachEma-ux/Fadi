@@ -187,6 +187,8 @@ export interface ContexteOutil {
   readonly aujourdhui?: string;
   /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage » (genre forcé, genres coupés, presque, pas). */
   readonly accrochage?: OptionsAccrochage;
+  /** (Cas 4, lot C4, étape 7f) Points mesurés accrochables d'un nuage (tranche affichée, 3 nombres par point, m). */
+  readonly pointsMesures?: Float32Array;
 }
 
 /** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */

@@ -17,9 +17,9 @@ describe("init.sql rejouable", () => {
     expect(fautifs).toEqual([]);
   });
 
-  it("formats des fichiers de référence : une seule liste, qui couvre KML, KMZ et PRJ", () => {
+  it("formats des fichiers de référence : une seule liste, qui couvre KML, KMZ, PRJ et les nuages de points", () => {
     const listes = [...sql.matchAll(/ADD CONSTRAINT sandbox_references_fichiers_format_check CHECK \(format IN \(([^)]*)\)\)/g)];
     expect(listes).toHaveLength(1);
-    for (const f of ["ifczip", "gltf", "kml", "kmz", "prj"]) expect(listes[0]![1]).toContain(`'${f}'`);
+    for (const f of ["ifczip", "gltf", "kml", "kmz", "prj", "las", "xyz", "pts"]) expect(listes[0]![1]).toContain(`'${f}'`);
   });
 });
