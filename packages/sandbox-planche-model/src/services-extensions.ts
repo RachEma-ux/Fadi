@@ -26,6 +26,7 @@ import { ErreurScript, creerFonctionsPlanche, type FonctionScript, type Fonction
 import { type Vec3, v3 } from "./vecteur.js";
 import { niveauxTries } from "./niveaux.js";
 import { rayonFace, scene } from "./outils/selection.js";
+import { collisionsEntreObjets, normaleNewell, type FacePlacee } from "./intersections-extensions.js";
 import { PasUnSolide, maillageDuSolide, motifNonSolide, type Maillage } from "./maillage.js";
 import type { AdaptateurBooleens, PointPlan, PolygonePlan } from "./outils/machine.js";
 
@@ -68,6 +69,29 @@ export const MAX_NOM_OPERATION = 80;
 export const MAX_ENTITES_LECTURE = 50_000;
 /** (1.1) Niveaux d'occurrences imbriquées descendus par la lecture du modèle entier ; au-delà, la lecture est refusée. */
 export const MAX_PROFONDEUR_MONDE = 32;
+
+/** Nombre de niveaux d'objets imbriqués du modèle (0 sans objet), calculé par définition (mémoïsé, sans boucle). */
+export function profondeurObjets(m: Modele): number {
+  const memo = new Map<Id, number>();
+  const enCours = new Set<Id>();
+  const contexte = (c: Contexte): number => {
+    let h = 0;
+    for (const o of Object.values(c.occurrences)) h = Math.max(h, 1 + definition(o.definition));
+    return h;
+  };
+  const definition = (id: Id): number => {
+    const connu = memo.get(id);
+    if (connu !== undefined) return connu;
+    const d = m.definitions[id];
+    if (!d || enCours.has(id)) return 0;
+    enCours.add(id);
+    const h = contexte(d.contenu);
+    enCours.delete(id);
+    memo.set(id, h);
+    return h;
+  };
+  return contexte(m.racine);
+}
 export const MAX_SELECTION_EXTENSION = 10_000;
 /** (1.1) Segments d'un seul appel « lignes » ; côtés d'un arc ou d'un cercle (bornes de la Planche, 3 à 999). */
 export const MAX_SEGMENTS_APPEL = 20_000;
@@ -191,6 +215,10 @@ export interface FaceLue {
   readonly aire: number;
   /** (Lot 7) Matière du recto, ou `null`. */
   readonly matiere: Id | null;
+  /** (1.7) Avec `details: true` : normale unitaire du recto, dans les coordonnées de la lecture. */
+  readonly normale?: readonly [number, number, number];
+  /** (1.7) Avec `details: true` : contour de chaque trou, dans les coordonnées de la lecture. */
+  readonly contoursTrous?: readonly (readonly (readonly [number, number, number])[])[];
 }
 export interface AreteLue {
   readonly id: Id;
@@ -235,6 +263,25 @@ export interface ObjetLu {
   /** (Lot 7) Matière et balise posées sur l'objet, ou `null`. */
   readonly matiere: Id | null;
   readonly balise: Id | null;
+}
+
+/** (1.7) Groupe ou composant placé, lu par `objets.lire` (coordonnées du modèle, en mètres). */
+export interface ObjetPlace {
+  readonly id: Id;
+  readonly nom: string;
+  readonly genre: "groupe" | "composant";
+  readonly definition: Id;
+  readonly parent: Id | null;
+  readonly chemin: readonly Id[];
+  readonly matrice: readonly number[];
+  readonly origine: readonly [number, number, number];
+  readonly axes: { readonly x: readonly [number, number, number]; readonly y: readonly [number, number, number]; readonly z: readonly [number, number, number] };
+  readonly contenu: { readonly faces: number; readonly aretes: number; readonly objets: number };
+  readonly matiere: Id | null;
+  readonly balise: Id | null;
+  readonly niveau: Id | null;
+  readonly masque: boolean;
+  readonly verrouille: boolean;
 }
 
 /** (Lot 7) Unités de la Planche : le dessin est en mètres ; l'affichage suit la langue de l'interface. */
@@ -325,12 +372,18 @@ function courbeLue(c: Contexte, id: Id | undefined, M: Matrice4 | null): CourbeL
   return { id: k.id, genre: k.genre, centre: triplet(centre), rayon, normale: [n.x / ln, n.y / ln, n.z / ln] };
 }
 
+/** (1.7) Normale (Newell, sens du contour extérieur) et contours des trous d'une face lue. */
+function detailsFace(pts: readonly [number, number, number][], trous: readonly [number, number, number][][]): Pick<FaceLue, "normale" | "contoursTrous"> {
+  const n = normaleNewell(pts.map(([x, y, z]) => v3(x, y, z)));
+  return { normale: [n.x, n.y, n.z], contoursTrous: trous };
+}
+
 /**
  * (1.1) Modèle entier en coordonnées du modèle : racine puis occurrences, descendues avec leur transformation composée
  * (masquées exclues, comme à l'affichage et à l'export). Rend le motif du refus quand le modèle dépasse `max` entités ou
  * `MAX_PROFONDEUR_MONDE` niveaux d'imbrication : rien n'est omis en silence.
  */
-function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteMonde[] } | string {
+function lireMonde(m: Modele, max: number, details = false): { faces: FaceMonde[]; aretes: AreteMonde[] } | string {
   const faces: FaceMonde[] = [];
   const aretes: AreteMonde[] = [];
   let motif = null as string | null;
@@ -345,7 +398,8 @@ function lireMonde(m: Modele, max: number): { faces: FaceMonde[]; aretes: AreteM
       if (f.masquee) continue;
       const p = positionsFace(c, f);
       const pts = p.exterieur.map(T);
-      faces.push({ id: f.id, chemin, balise, points: pts, trous: f.trous.length, aire: aireContour(pts, p.trous.map((t) => t.map(T))), matiere: f.materiauRecto ?? null });
+      const trous = p.trous.map((t) => t.map(T));
+      faces.push({ id: f.id, chemin, balise, points: pts, trous: f.trous.length, aire: aireContour(pts, trous), matiere: f.materiauRecto ?? null, ...(details ? detailsFace(pts, trous) : {}) });
     }
     for (const a of Object.values(c.aretes)) {
       if (a.masquee) continue;
@@ -470,10 +524,12 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
   const lire = (donnees: unknown): ReponseService => {
     const portee = estObjet(donnees) ? (donnees["portee"] ?? "contexte") : "contexte";
     if (portee !== "contexte" && portee !== "monde") return refus("argument_invalide", "portee : « contexte » ou « monde »");
+    const details = estObjet(donnees) ? (donnees["details"] ?? false) : false;
+    if (typeof details !== "boolean") return refus("argument_invalide", "details : vrai ou faux");
     const f = vue();
     const m = f.modele();
     if (portee === "monde") {
-      const monde = lireMonde(m, MAX_ENTITES_LECTURE);
+      const monde = lireMonde(m, MAX_ENTITES_LECTURE, details);
       if (typeof monde === "string") return refus("argument_invalide", monde);
       const lu: ModeleLuMonde = { portee: "monde", ...monde, enOperation: operation !== null };
       return rendu(lu);
@@ -486,7 +542,11 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     if (faces.length + aretes.length + objets.length > MAX_ENTITES_LECTURE) return refus("argument_invalide", `modèle de plus de ${MAX_ENTITES_LECTURE} entités`);
     const points = (id: Id) => f.api.points(id) as [number, number, number][];
     const lu: ModeleLu = {
-      faces: faces.map((id) => ({ id, points: points(id), trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null })),
+      faces: faces.map((id) => {
+        const pts = points(id);
+        const base = { id, points: pts, trous: c.faces[id]!.trous.length, aire: f.api.aire(id) as number, matiere: c.faces[id]!.materiauRecto ?? null };
+        return details ? { ...base, ...detailsFace(pts, positionsFace(c, c.faces[id]!).trous.map((t) => t.map(triplet))) } : base;
+      }),
       aretes: aretes.map((id) => ({ id, points: points(id), longueur: f.api.longueur(id) as number, courbe: courbeLue(c, c.aretes[id]!.courbe, null) })),
       objets: objets.map((occ) => ({ id: occ.id, nom: f.api.nom(occ.id) as string, genre: m.definitions[occ.definition]?.genre ?? "groupe", matiere: occ.materiau ?? null, balise: occ.balise ?? null })),
       dans: dans ?? null,
@@ -894,6 +954,89 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
    * modèle (coordonnées du modèle ; une balise masquée ou verrouillée n'est pas visée, comme à la souris). `objets` limite
    * aux faces contenues dans ces groupes ou composants. Les deux faces d'une paroi comptent : la plus proche gagne.
    */
+  /**
+   * (1.7) `objets.lire` : tous les groupes et composants du modèle, à tous les niveaux, avec leur place : `parent`
+   * (occurrence contenante, `null` à la racine), `chemin` (occurrences depuis la racine, l'objet compris), `matrice`
+   * (transformation dans le modèle, 4 × 4 en lignes), `origine` et `axes` (colonnes de la matrice), `contenu` (faces,
+   * arêtes et objets directement contenus), matière, balise, niveau, masqué et verrouillé. Rien n'est omis en silence :
+   * au-delà de `MAX_ENTITES_LECTURE` objets ou de `MAX_PROFONDEUR_MONDE` niveaux, la lecture est refusée.
+   */
+  const lireObjets = (): ReponseService => {
+    const m = vue().modele();
+    const objets: ObjetPlace[] = [];
+    let motif: string | null = null;
+    const parcourir = (c: Contexte, M: Matrice4, chemin: readonly Id[], prof: number): void => {
+      if (motif) return;
+      if (prof > MAX_PROFONDEUR_MONDE) {
+        motif = `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`;
+        return;
+      }
+      for (const o of Object.values(c.occurrences)) {
+        const d = m.definitions[o.definition];
+        const M2 = composer(M, o.transformation);
+        const ch = [...chemin, o.id];
+        objets.push({
+          id: o.id,
+          nom: o.nom ?? d?.nom ?? "",
+          genre: d?.genre === "composant" ? "composant" : "groupe",
+          definition: o.definition,
+          parent: chemin.length ? (chemin[chemin.length - 1] as Id) : null,
+          chemin: ch,
+          matrice: [...M2],
+          origine: [M2[3] as number, M2[7] as number, M2[11] as number],
+          axes: { x: [M2[0] as number, M2[4] as number, M2[8] as number], y: [M2[1] as number, M2[5] as number, M2[9] as number], z: [M2[2] as number, M2[6] as number, M2[10] as number] },
+          contenu: { faces: d ? Object.keys(d.contenu.faces).length : 0, aretes: d ? Object.keys(d.contenu.aretes).length : 0, objets: d ? Object.keys(d.contenu.occurrences).length : 0 },
+          matiere: o.materiau ?? null,
+          balise: o.balise ?? null,
+          niveau: o.niveau ?? null,
+          masque: o.masquee === true,
+          verrouille: o.verrouille === true,
+        });
+        if (objets.length > MAX_ENTITES_LECTURE) {
+          motif = `modèle de plus de ${MAX_ENTITES_LECTURE} objets`;
+          return;
+        }
+        if (d) parcourir(d.contenu, M2, ch, prof + 1);
+      }
+    };
+    parcourir(m.racine, IDENTITE, [], 1);
+    if (motif) return refus("argument_invalide", motif);
+    return rendu({ objets });
+  };
+
+  /**
+   * (1.7) `geometrie.intersection { objets, contre? }` : traversées face contre face entre objets (faces visibles,
+   * comme `geometrie.rayon`). Sans `contre`, les objets listés sont confrontés entre eux ; avec, chaque objet de `objets`
+   * l'est à chaque objet de `contre`. Une face compte pour l'objet listé qui la contient (le plus proche de la racine).
+   * Rend `{ collisions: [{ a, b, longueur, segments, faces }], tronque }` ; un contact sans traversée n'est pas une
+   * collision.
+   */
+  const intersecter = (donnees: unknown): ReponseService => {
+    const d = estObjet(donnees) ? donnees : {};
+    const liste = (v: unknown): Id[] | null => (Array.isArray(v) && v.length > 0 && v.length <= MAX_SELECTION_EXTENSION && v.every((x): x is string => typeof x === "string") ? [...new Set(v)] : null);
+    const objets = liste(d["objets"]);
+    if (!objets) return refus("argument_invalide", "objets : liste de 1 à " + MAX_SELECTION_EXTENSION + " identifiants de groupes ou composants attendue");
+    const contre = d["contre"] === undefined ? undefined : liste(d["contre"]);
+    if (contre === null) return refus("argument_invalide", "contre : liste d'identifiants de groupes ou composants attendue");
+    const m = vue().modele();
+    const absent = [...objets, ...(contre ?? [])].find((id) => cheminsVers(m, id).length === 0);
+    if (absent !== undefined) return refus("objet_introuvable", absent);
+    // La scène s'arrête à `MAX_PROFONDEUR_MONDE` niveaux : un modèle plus profond est refusé, jamais contrôlé en partie.
+    if (profondeurObjets(m) > MAX_PROFONDEUR_MONDE) return refus("argument_invalide", `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`);
+    const faces: FacePlacee[] = scene(m)
+      .filter((el): el is Extract<ReturnType<typeof scene>[number], { genre: "face" }> => el.genre === "face")
+      .map((el) => ({ id: el.id, chemin: el.chemin, exterieur: el.exterieur, trous: el.trous, normale: el.normale }));
+    const groupe = (ids: readonly Id[]) => {
+      const set = new Set(ids);
+      return (f: FacePlacee): Id | null => f.chemin.find((c) => set.has(c)) ?? null;
+    };
+    const r = collisionsEntreObjets(faces, groupe(objets), contre ? groupe(contre) : undefined);
+    return rendu({
+      collisions: r.collisions.map((c) => ({ a: c.a, b: c.b, longueur: c.longueur, segments: c.segments.map(([p, q]) => [triplet(p), triplet(q)]), faces: c.faces.map(([x, y]) => [x, y]) })),
+      tronque: r.tronque,
+    });
+  };
+
   const lancerRayons = (donnees: unknown): ReponseService => {
     const d = estObjet(donnees) ? donnees : {};
     const rs = d["rayons"];
@@ -913,6 +1056,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     // Un objet imbriqué (groupe dans un groupe) se cherche dans tout le modèle, comme le parcours des rayons.
     const absent = (objets ?? []).find((id) => !f.existe(id) && cheminsVers(f.modele(), id).length === 0);
     if (absent !== undefined) return refus("objet_introuvable", absent);
+    if (profondeurObjets(f.modele()) > MAX_PROFONDEUR_MONDE) return refus("argument_invalide", `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`);
     const filtre = objets && objets.length > 0 ? new Set(objets) : null;
     const faces = scene(f.modele()).filter((el): el is Extract<typeof el, { genre: "face" }> => el.genre === "face" && (!filtre || el.chemin.some((c) => filtre.has(c))));
     const impacts = lus.map((r) => {
@@ -1035,6 +1179,10 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
           return lireSite();
         case "geometrie.rayon":
           return lancerRayons(donnees);
+        case "objets.lire":
+          return lireObjets();
+        case "geometrie.intersection":
+          return intersecter(donnees);
         case "niveaux.lire": {
           const ref = acces.referenceNGF?.() ?? null;
           return rendu({

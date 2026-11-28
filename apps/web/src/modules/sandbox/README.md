@@ -353,6 +353,16 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     ou servitude translucide ; la vue rend ces faces à part, sans masquer ce qui est derrière ; en monochrome, par balise
     ou en rayons X, rien ne change) et `matieres.lire` la rend (1 = opaque). Types de fichier admis en plus : `.geojson`
     et `.osm`. Permission `modele.lire` pour les lectures et le lancer de rayons, `modele.modifier` pour les triangles.
+  - *Protocole 1.7 — géométrie placée et contrôles* (cas 3, lot 5 ; n'ajoute que des fonctions). `planche.objets.lire()`
+    rend tous les groupes et composants, à tous les niveaux : `parent`, `chemin`, `matrice` (transformation dans le
+    modèle, 4 × 4 en lignes), `origine`, `axes`, `contenu` (faces, arêtes, objets directement contenus), matière, balise,
+    niveau, masqué, verrouillé. `planche.geometrie.intersection(objets, contre)` rend les traversées face contre face entre
+    objets (`{ collisions: [{ a, b, longueur, segments, faces }], tronque }`) : un contact (boîtes accolées, bord posé sur
+    une face) ou des faces coplanaires ne sont pas une traversée ; sans `contre`, les objets sont confrontés entre eux. Les
+    faces sont balayées le long de x et toute paire confrontée compte dans la borne (2 000 000, puis `tronque`) ; un modèle
+    imbriqué sur plus de 32 niveaux est refusé (comme `geometrie.rayon`), jamais contrôlé en partie.
+    `planche.modele.lire({ details: true })` rend aussi la `normale` et les `contoursTrous` de chaque face, en portée
+    contexte comme monde. Permission `modele.lire`.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur
     `assembler.mjs` et paquet assemblé, importé par l'administrateur) : trois commandes, chacune avec son icône et son
     raccourci. **Importer un plan DXF** (Ctrl+Alt+Maj+I) : unité lue dans le fichier (`$INSUNITS`, « non indiquée » sinon,
