@@ -4099,6 +4099,87 @@
   margin-left: 22px;
   border-left: 1px solid rgba(15, 76, 58, 0.18);
 }
+/* Extensions installées, rangées dans « Extensions » (maquette du 27 novembre 2026) : nom dépliable sur ses commandes,
+   case « Afficher / Masquer » de sa barre dans la Planche. */
+.sandbox-planche .planche-outils-ajoutees-titre {
+  display: block;
+  margin: 6px 0 2px 28px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(15, 76, 58, 0.18);
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-outils-ajoutee-tete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 20px;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-ajoutee-nom {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-liste button.planche-outils-ajoutee-nom:hover,
+.sandbox-planche .planche-outils-liste .planche-outils-case:hover {
+  background: rgba(15, 76, 58, 0.08);
+}
+.sandbox-planche .planche-outils-ajoutee-nom .planche-outils-libelle {
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-case {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-case-boite {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1.5px solid #1f7a57;
+  border-radius: 3px;
+  background: #fff;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche] {
+  background: #1f7a57;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche]::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.sandbox-planche .planche-outils-ajoutee .planche-outils-extension-commandes {
+  margin-left: 42px;
+}
 
 /* Extensions installées (protocole des extensions, lot 3) : icône d'une commande (image du paquet), pastille de la
    famille dans la liste « Outils », avis au-dessus de la barre d'état, fenêtre de saisie. */
@@ -5513,4 +5594,49 @@
 }
 .sandbox-planche .planche-info-large {
   grid-column: 1 / -1;
+}
+/* Cas 2, lot 3 : relevé du Contrôle (tolérances, parcours, correction), fond DAO, pièces du permis. */
+.sandbox-planche .planche-controle-releve {
+  margin: 0 0 6px;
+}
+.sandbox-planche .planche-controle-seuil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-controle-seuil input {
+  width: 4.2em;
+  min-height: 28px;
+  padding: 1px 4px;
+  font: inherit;
+}
+.sandbox-planche .planche-controle-lim {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-controle-position {
+  align-self: center;
+  font-weight: 600;
+}
+.sandbox-planche .planche-debit-barre button.planche-controle-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-controle-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-controle-case,
+.sandbox-planche .planche-controle-fichier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.sandbox-planche .planche-controle-fichier input[type="file"] {
+  max-width: 100%;
 }

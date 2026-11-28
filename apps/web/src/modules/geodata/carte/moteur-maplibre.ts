@@ -19,6 +19,15 @@ const FOND_NEUTRE = "#eef2f0";
 /** Carte d'arrivée (P1) : source et calques hors composition (jamais enregistrés, jamais exportés). */
 const SOURCE_ACCUEIL = "gd-accueil";
 const CALQUES_ACCUEIL = ["gd-accueil-remplissage", "gd-accueil-contour"] as const;
+/** Signes de l'analyse de site (P13) : calques hors composition. */
+const CALQUES_SITE = ["gd-site-cercle", "gd-site-point"] as const;
+
+/** Cercle géodésique approché (64 sommets) d'un rayon en mètres autour d'un point WGS 84 (signe seulement, aucune mesure). */
+function cercleSite(lon: number, lat: number, rayonM: number): number[][] {
+  const dLat = rayonM / 111_320;
+  const dLon = rayonM / (111_320 * Math.max(Math.cos((lat * Math.PI) / 180), 1e-6));
+  return Array.from({ length: 65 }, (_, i) => { const a = (2 * Math.PI * (i % 64)) / 64; return [lon + dLon * Math.cos(a), lat + dLat * Math.sin(a)]; });
+}
 /** Image du motif de la valeur absente (P10). */
 const IMAGE_HACHURES = "gd-hachures-absente";
 
@@ -596,6 +605,21 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       mini = { carte: m, conteneur: conteneurMini, coucheId };
       m.on("load", synchroniserMini);
     },
+    afficherSite(site) {
+      const f = () => {
+        if (!carte.getSource("gd-site")) {
+          carte.addSource("gd-site", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+          carte.addLayer({ id: CALQUES_SITE[0], type: "line", source: "gd-site", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#c77b35", "line-width": 2, "line-dasharray": [2, 2] } });
+          carte.addLayer({ id: CALQUES_SITE[1], type: "circle", source: "gd-site", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#c77b35", "circle-radius": 7, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+        }
+        (carte.getSource("gd-site") as GeoJSONSource).setData(site ? { type: "FeatureCollection", features: [
+          { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [cercleSite(site.lon, site.lat, site.rayonM)] } },
+          { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [site.lon, site.lat] } },
+        ] } : { type: "FeatureCollection", features: [] });
+        conteneur.setAttribute("data-gd-site-signes", site ? "1" : "");
+      };
+      if (pret) f(); else carte.once("load", f);
+    },
     afficherAccueil(coucheId) {
       accueilVoulu = coucheId;
       if (pret) { posees(); appliquerAccueil(); } else carte.once("load", () => { posees(); appliquerAccueil(); });
@@ -622,7 +646,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (!pret) return;
       // Le terrain (TER-05) n'appartient pas à la carte enregistrée : ses droits d'export ne sont pas jugés par l'export
       // de la carte, il n'entre donc jamais dans l'image (export PNG, impression).
-      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_ACCUEIL, ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_ACCUEIL, ...CALQUES_TERRAIN, ...CALQUES_SITE]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
       await new Promise<void>((resoudre) => {
         const fin = setTimeout(resoudre, 2000);
         carte.once("idle", () => { clearTimeout(fin); resoudre(); });
