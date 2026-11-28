@@ -374,6 +374,29 @@ function familleMotif(f, k, echelle) {
   return { angle: f.angle, x0: mm(f.x0), y0: mm(-f.y0), dx: mm(f.ox * u[0] + f.oy * u[1]), dy: mm(dy), tirets: f.tirets.slice(0, 32).map(mm) };
 }
 
+/**
+ * Point de la face, à coup sûr hors de ses trous (la lecture ne rend que le contour extérieur) : milieu du plus long
+ * côté, décalé d'un centième de millimètre vers l'intérieur. `null` pour un contour dégénéré.
+ */
+function pointInterieur(pts) {
+  let aire = 0;
+  let k = -1;
+  let lmax = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    aire += a[0] * b[1] - b[0] * a[1];
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (l > lmax) (lmax = l), (k = i);
+  }
+  if (k < 0 || Math.abs(aire) < EPS) return null;
+  const a = pts[k];
+  const b = pts[(k + 1) % pts.length];
+  const s = aire > 0 ? 1 : -1;
+  const d = 1e-5;
+  return [(a[0] + b[0]) / 2 - (s * d * (b[1] - a[1])) / lmax, (a[1] + b[1]) / 2 + (s * d * (b[0] - a[0])) / lmax];
+}
+
 /** Point dans un polygone (plan), règle pair-impair. */
 function dedansPolygone(q, poly) {
   let dedans = false;
@@ -627,11 +650,8 @@ planche.sur("commande.importer", async (d) => {
     const m = await planche.modele.lire();
     const boucles = h.boucles.map((bc) => bc.map(plan));
     const pleines = m.faces.filter((fa) => {
-      const tri = trianguler(fa.points.map(plan));
-      if (!tri.length) return false;
-      const [a, b, c] = tri[0];
-      const g = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3];
-      return boucles.filter((bp) => dedansPolygone(g, bp)).length % 2 === 1;
+      const g = pointInterieur(fa.points.map(plan));
+      return !!g && boucles.filter((bp) => dedansPolygone(g, bp)).length % 2 === 1;
     });
     if (pleines.length) await planche.matieres.appliquer(pleines.map((fa) => fa.id), await matiereDe(h));
     bilan.hachures++;

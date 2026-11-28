@@ -477,6 +477,17 @@ describe("extension « Échanges DXF » 1.1 — textes, cotes et hachures", () =
     expect(faces(p.etat.modele)).toBeGreaterThan(0);
   });
 
+  it("hachure à deux contours (mur autour d'une pièce) : la bande est hachurée, la pièce reste vide", async () => {
+    const p = planche();
+    const mur = [0, "HATCH", 8, "MURS", 2, "ANSI31", 70, 0, 91, 2, ...contour(0, 0, 12000, 9000).slice(2), ...contour(200, 200, 11800, 8800).slice(2), 75, 0, 76, 1, 52, 0, 41, 1, 77, 0, 78, 1, 53, 45, 43, 0, 44, 0, 45, -2.245064, 46, 2.245064, 79, 0];
+    p.fichier(dxf(entete(4), entites(rect("MURS", 0, 0, 12000, 9000), rect("MURS", 200, 200, 11800, 8800), mur)));
+    await p.commande("importer", { ...ANNOT, echelle: 50 } as ValeursSaisie);
+    const an = p.etat.modele.annotations!;
+    expect(Object.values(an.materiaux).map((x) => x.nom)).toEqual(["Hachure ANSI31 (DXF)"]);
+    // Une seule face porte la matière : la bande du mur, pas la pièce.
+    expect(faces(p.etat.modele)).toBe(1);
+  });
+
   it("exporte textes (calque TEXTES) et cotes (calque COTES, bloc de cote) relus à l'import", async () => {
     const p = planche();
     p.fichier(PLAN());
