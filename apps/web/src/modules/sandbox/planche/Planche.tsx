@@ -2825,7 +2825,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   ouvrirDeuxTempsRef.current = () => {
     deuxTempsRef.current = true;
     familleDTRef.current = null;
-    focusAvantDT.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Fenêtre détachée : le focus se lit dans le document qui porte la Planche (autre royaume, pas d'instanceof).
+    const actifDT = (racineRef.current?.ownerDocument ?? document).activeElement;
+    focusAvantDT.current = actifDT && typeof (actifDT as HTMLElement).focus === "function" ? (actifDT as HTMLElement) : null;
     arreterMinuteurDT();
     minuteurDeuxTemps.current = setTimeout(() => finirDeuxTempsRef.current(), 5000);
     setDeuxTemps(true);
