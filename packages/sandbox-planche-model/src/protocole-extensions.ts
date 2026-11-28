@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.2";
+export const VERSION_PROTOCOLE = "1.3";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -353,6 +353,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * cette table, et rien d'autre n'est accepté. Protocole 1.1 (cas 3, lot 1, plans DXF) : `balises.creer`, lecture d'un
  * fichier en flux (`fichiers.lire`) et enregistrement par morceaux (`fichiers.preparer`, `fichiers.ajouter`). Une
  * version mineure ne fait qu'ajouter : une extension qui attend « 1.0 » garde exactement ce qu'elle avait.
+ * Protocole 1.3 (cas 3, lot 2, précision et trame) : `cotes.creer` (cote linéaire), `textes.creer` (texte avec
+ * repère), `objets.verrouiller`, `annotations.lire` et `annotations.effacer` (cotes et textes) ; `unites.lire` rend la précision réelle du projet et ses pas d'accrochage ; les
+ * événements de souris d'un outil portent aussi le point visé (`vise`).
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -373,6 +376,11 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "balises.lire": "modele.lire",
   "balises.appliquer": "modele.modifier",
   "balises.creer": "modele.modifier",
+  "cotes.creer": "modele.modifier",
+  "textes.creer": "modele.modifier",
+  "objets.verrouiller": "modele.modifier",
+  "annotations.lire": "modele.lire",
+  "annotations.effacer": "modele.modifier",
   "unites.lire": null,
   "unites.formater": null,
   "minuterie.armer": "evenements",

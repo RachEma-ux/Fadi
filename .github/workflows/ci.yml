@@ -93,6 +93,9 @@ jobs:
       - name: Installer le Chromium attendu par Playwright
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: |
+          # Seules les sources Ubuntu servent aux dépendances de Chromium : les dépôts tiers de l'image du runner
+          # (packages.microsoft.com, refusé en 403 le 27.11.2026) font échouer `apt-get update`, donc l'installation.
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
@@ -309,7 +312,10 @@ jobs:
       # Terrain TER-03 (TER-D6) : les tests du travailleur exigent GDAL ; installé ici (Ubuntu 24.04 : GDAL 3.8.4), le
       # travailleur de préproduction épingle Debian bookworm 3.6.2 (essai dans le job image).
       - name: GDAL pour les tests du travailleur terrain
-        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gdal-bin && gdalinfo --version
+        run: |
+          # Sources Ubuntu seules (dépôts tiers du runner refusés en 403 le 27.11.2026, voir l'installation de Chromium).
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gdal-bin && gdalinfo --version
       - name: Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées
         env:
           FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
@@ -447,6 +453,9 @@ jobs:
       # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
       - name: Installer le Chromium attendu par Playwright
         run: |
+          # Seules les sources Ubuntu servent aux dépendances de Chromium : les dépôts tiers de l'image du runner
+          # (packages.microsoft.com, refusé en 403 le 27.11.2026) font échouer `apt-get update`, donc l'installation.
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
@@ -1130,6 +1139,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-accrochage node apps/web/e2e/planche-accrochage-saisie.mjs 2>&1 | tee -a e2e.log
+      - name: Recette contrôle du modèle (cas 2, lot 3) — relevé et parcours des défauts, correction, fond DAO, pièces du permis (apps/web/e2e/planche-controle-modele.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-controle node apps/web/e2e/planche-controle-modele.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

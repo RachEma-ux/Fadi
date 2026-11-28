@@ -51,3 +51,4 @@ export * from "./plan-vectoriel.js";
 export * from "./feuilles.js";
 export * from "./reserves.js";
 export * from "./enveloppe.js";
+export * from "./controle-l3.js";
