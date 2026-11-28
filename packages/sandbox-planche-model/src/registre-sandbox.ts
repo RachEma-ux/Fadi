@@ -400,7 +400,7 @@ const commandes: EntreeSandbox[] = [
   // Lot C4, étape 2 : fiche de calage du projet et orthophoto posée d'après son fichier de calage d'image (F8 à F12 ;
   // Ctrl+Alt+Maj+F est alors épuisée ; Alt+F6 à F12 et Ctrl+Maj+F1 à F12 sont pris ou réservés : Alt+F3 pour Ignorer,
   // Alt+F2 pour Poser ; certains bureaux Linux gardent Alt+F2, la commande reste dans le panneau et la liste Outils).
-  c("exporter-fiche", "fond", "file-certificate", "Ctrl+Alt+Maj+F8", "panneau-fonds", true),
+  c("exporter-fiche", "fond", "file-description", "Ctrl+Alt+Maj+F8", "panneau-fonds", true),
   c("importer-fiche", "fond", "file-search", "Ctrl+Alt+Maj+F9", "panneau-fonds", true),
   c("importer-orthophoto", "fond", "map-2", "Ctrl+Alt+Maj+F10", "panneau-fonds", true),
   c("exporter-calage-fond", "fond", "grid-scan", "Ctrl+Alt+Maj+F11", "panneau-fonds", true),
