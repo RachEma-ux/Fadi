@@ -19,7 +19,7 @@ import { OUTILS, type EmplacementOutil, type FamilleOutil } from "./catalogue-ou
 
 export type NatureEntree = "outil" | "commande" | "panneau";
 /** Familles des commandes (« Outils ▾ », groupe « Objets ») et des panneaux. */
-export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation" | "ifc" | "fabricant" | "kml" | "redressement" | "visionneuse";
+export type FamilleCommandeSandbox = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece" | "repere" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveau" | "local" | "numerotation" | "mur" | "plan" | "feuille" | "reserve" | "enveloppe" | "consultation" | "fond" | "reference" | "pdf" | "accrochage" | "dxf" | "travaux" | "balise" | "scene" | "gabarit" | "echange" | "version" | "modelisation" | "ifc" | "fabricant" | "kml" | "redressement" | "visionneuse" | "lot";
 export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
@@ -28,7 +28,7 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
  * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
  * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "panneau-ifc-structure" | "panneau-import-ifc" | "panneau-import-fabricant" | "panneau-import-kml" | "panneau-redressement" | "panneau-visionneuse" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "panneau-controle" | "panneau-dynamique" | "panneau-emplacement" | "panneau-scripts" | "panneau-niveaux" | "panneau-locaux" | "panneau-numerotation" | "panneau-plan-vectoriel" | "panneau-feuilles" | "panneau-accrochage" | "panneau-metre" | "panneau-info-entite" | "panneau-reserves" | "panneau-enveloppe" | "panneau-consultations" | "panneau-fonds" | "panneau-references" | "panneau-pdf-recu" | "panneau-feuilles-dxf" | "panneau-statut-travaux" | "panneau-balises" | "panneau-scenes" | "panneau-gabarit" | "panneau-natif-image" | "panneau-versions" | "panneau-comparer" | "panneau-brouillon" | "panneau-fiche-projet" | "panneau-extrusion" | "panneau-composants-agence" | "panneau-soustraire" | "panneau-vues-mesures" | "panneau-ifc-structure" | "panneau-import-ifc" | "panneau-import-fabricant" | "panneau-import-kml" | "panneau-redressement" | "panneau-visionneuse" | "panneau-lot-echange" | "barre-mur" | "barre-piece" | "colonne" | "colonne-bas" | "barre-reperes";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -452,6 +452,9 @@ const commandes: EntreeSandbox[] = [
   // Visionneuse hors ligne (cas 4, lot C4, étape 7d) : premières commandes en trois temps, famille Échanges (Maj+I).
   c("visionneuse", "visionneuse", "eye-share", "Ctrl+Maj+Espace, Maj+I, V", "outils", true),
   c("exporter-visionneuse", "visionneuse", "file-type-html", "Ctrl+Maj+Espace, Maj+I, Maj+V", "panneau-visionneuse", true),
+  // Lot d'échange daté (cas 4, lot C4, étape 7e), famille Échanges (Maj+I).
+  c("lot-echange", "lot", "archive", "Ctrl+Maj+Espace, Maj+I, L", "outils", true),
+  c("emettre-lot", "lot", "file-zip", "Ctrl+Maj+Espace, Maj+I, Maj+L", "panneau-lot-echange", true),
   // Cas 2 du catalogue, lot 2 (27 novembre 2026) : accrochage et saisie, hors des 86 entrées. Panneaux contextuels
   // (« Accrochage », « Mètre · Mesure ») ouverts par leur commande : la colonne garde ses dix-sept panneaux. Alt + 1 à 6
   // forcent un seul genre d'accrochage pour le prochain point (n° 111) ; Alt + F8 à F12 étaient libres.
@@ -583,6 +586,7 @@ const panneaux: EntreeSandbox[] = [
   p("import-kml", "world-upload", "outils", true),
   p("redressement", "perspective", "outils", true),
   p("visionneuse", "eye-share", "outils", true),
+  p("lot-echange", "archive", "outils", true),
   // Extension « Scripts » : scripts personnels écrits par la personne, exécutés sur une copie du dessin.
   p("scripts", "code", "colonne", true),
   // Cas 2, lot 1 : numérotation en série des locaux, menuiseries ou composants (préfixes, ordre de lecture, niveaux).
@@ -622,6 +626,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["commande:import-kml", "panneau:import-kml"],
   ["commande:redresser-photo", "panneau:redressement"],
   ["commande:visionneuse", "panneau:visionneuse"],
+  ["commande:lot-echange", "panneau:lot-echange"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

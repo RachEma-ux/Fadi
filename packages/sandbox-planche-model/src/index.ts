@@ -57,6 +57,7 @@ export * from "./reserves.js";
 export * from "./fonds.js";
 export * from "./redressement.js";
 export * from "./visionneuse.js";
+export * from "./lot-echange.js";
 export * from "./fiche-calage.js";
 export * from "./pdf-recu.js";
 export * from "./ifc-step.js";

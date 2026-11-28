@@ -6273,3 +6273,69 @@
   border-color: #1b4d42;
   color: #fff;
 }
+/* Lot d'échange daté (cas 4, lot C4, étape 7e). */
+.sandbox-planche .planche-lot-ligne {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.sandbox-planche .planche-lot-ligne input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-lot-sorties small {
+  display: inline;
+  margin-left: 0;
+}
+.sandbox-planche .planche-lot-registre {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+.sandbox-planche .planche-lot-registre th,
+.sandbox-planche .planche-lot-registre td {
+  text-align: left;
+  padding: 3px 4px;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.2);
+}
+.sandbox-planche .planche-lot-mono,
+.sandbox-planche .planche-lot-apercu pre {
+  font-family: ui-monospace, monospace;
+}
+.sandbox-planche .planche-lot .planche-debit-barre button.est-principal:not(:disabled) {
+  background: #1b4d42;
+  border-color: #1b4d42;
+  color: #fff;
+}
+.sandbox-planche .planche-lot-apercu {
+  justify-self: start;
+  align-self: start;
+  z-index: 7;
+  margin: 0.5rem 0 0 4.5rem;
+  width: min(32rem, calc(100% - 30rem));
+  padding: 10px 14px;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+  font-size: 0.85em;
+}
+.sandbox-planche .planche-lot-apercu span {
+  opacity: 0.7;
+}
+.sandbox-planche .planche-lot-apercu pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  font-size: 0.92em;
+  line-height: 1.5;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.04);
+}
+@media (max-width: 1100px) {
+  .sandbox-planche .planche-lot-apercu {
+    display: none;
+  }
+}

@@ -73,10 +73,11 @@ studio-exigences studio-preuves-b studio-preuves-c studio-preuves-a studio-contr
 atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
 planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18 planche-diagnostics-l19 planche-etirement-plis planche-epaissir
 planche-effilement-loft planche-niveaux planche-point-de-base planche-locaux planche-murs planche-plan-vectoriel planche-feuilles planche-import planche-reserves planche-enveloppe planche-consultation
-planche-fonds planche-fiche-calage planche-references planche-pdf-recu planche-dxf planche-ifc planche-fabricants planche-kml planche-redressement planche-visionneuse planche-accrochage-saisie
-planche-controle-modele planche-balises-scenes planche-echanges planche-versions planche-modelisation planche-lots-4-6 planche-lot-5 sandbox-module extensions-page extensions-commandes
-extensions-evenements extensions-fichiers extensions-panneau extensions-outil sandbox-axes sandbox-reperes sandbox-origine sandbox-reperes-lies planche-lot-7 porte-p1-reduite p2-noyau-exact
-porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents atelier-barre planche-barre-outils"
+planche-fonds planche-fiche-calage planche-references planche-pdf-recu planche-dxf planche-ifc planche-fabricants planche-kml planche-redressement planche-visionneuse planche-lot-echange
+planche-accrochage-saisie planche-controle-modele planche-balises-scenes planche-echanges planche-versions planche-modelisation planche-lots-4-6 planche-lot-5 sandbox-module extensions-page
+extensions-commandes extensions-evenements extensions-fichiers extensions-panneau extensions-outil sandbox-axes sandbox-reperes sandbox-origine sandbox-reperes-lies planche-lot-7 porte-p1-reduite
+p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents atelier-barre
+planche-barre-outils"
 
 die() { echo "fadi-preprod : $*" >&2; exit 1; }
 log() { echo "── $*"; }

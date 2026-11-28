@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement, disponibiliteVisionneuse } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement, disponibiliteVisionneuse, disponibiliteLot } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -291,5 +291,16 @@ describe("visionneuse hors ligne (lot C4, étape 7d) : disponibilité des comman
     expect(disponibiliteVisionneuse("visionneuse", { nonVide: false }).disponible).toBe(true);
     expect(disponibiliteVisionneuse("exporter-visionneuse", { nonVide: false }).motif).toBe("planche.visionneuse.motif.vide");
     expect(disponibiliteVisionneuse("exporter-visionneuse", { nonVide: true }).disponible).toBe(true);
+  });
+});
+
+describe("lot d'échange daté (lot C4, étape 7e) : disponibilité des commandes", () => {
+  it("le panneau s'ouvre toujours ; émettre exige un nom de jeu et une sortie, et une seule émission à la fois", () => {
+    const s = { jeu: true, sorties: 2, enCours: false };
+    expect(disponibiliteLot("lot-echange", { ...s, jeu: false }).disponible).toBe(true);
+    expect(disponibiliteLot("emettre-lot", { ...s, jeu: false }).motif).toBe("planche.lot.motif.jeu");
+    expect(disponibiliteLot("emettre-lot", { ...s, sorties: 0 }).motif).toBe("planche.lot.motif.sorties");
+    expect(disponibiliteLot("emettre-lot", { ...s, enCours: true }).motif).toBe("planche.lot.motif.en-cours");
+    expect(disponibiliteLot("emettre-lot", s).disponible).toBe(true);
   });
 });

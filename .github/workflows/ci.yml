@@ -1189,6 +1189,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-visionneuse node apps/web/e2e/planche-visionneuse.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du lot d'échange daté (cas 4, lot C4, étape 7e) — trois temps Ctrl+Maj+Espace, Maj+I, L ; jeu nommé, sorties cochées, archive ZIP datée avec rapports et manifeste SHA-256, registre des lots (apps/web/e2e/planche-lot-echange.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-lot-echange node apps/web/e2e/planche-lot-echange.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
