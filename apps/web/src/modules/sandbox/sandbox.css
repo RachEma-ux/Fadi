@@ -5434,6 +5434,52 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.12);
 }
+/* Menu par familles (28 novembre 2026, maquette c4-deux-temps-familles.png) : recherche, familles, liste d'une famille. */
+.sandbox-planche .planche-deux-temps .planche-deux-temps-recherche {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 6px 0 2px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+}
+.sandbox-planche .planche-deux-temps .planche-deux-temps-recherche::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+.sandbox-planche .planche-deux-temps .planche-deux-temps-recherche:focus {
+  outline: 2px solid #1a5fd6;
+  outline-offset: 0;
+}
+.sandbox-planche .planche-deux-temps-titre {
+  margin: 8px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sandbox-planche .planche-deux-temps small,
+.sandbox-planche .planche-deux-temps .planche-deux-temps-pied {
+  color: rgba(255, 255, 255, 0.6);
+}
+.sandbox-planche .planche-deux-temps .planche-deux-temps-pied {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.sandbox-planche .planche-deux-temps ul.planche-deux-temps-une {
+  grid-template-columns: 1fr;
+}
+.sandbox-planche .planche-deux-temps li.est-choisi {
+  margin: 0 -4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #1a5fd6;
+}
+.sandbox-planche .planche-deux-temps [data-planche-deux-temps-resultat] {
+  cursor: pointer;
+}
 /* Références verrouillées (cas 4, lot C4, étape 3) : placement en quatre champs. */
 .sandbox-planche .planche-references-placement {
   display: grid;

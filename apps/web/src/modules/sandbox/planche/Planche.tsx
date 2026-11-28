@@ -351,6 +351,9 @@ import {
   importerFond,
   appliquerFiche,
   ENTREE_DEUX_TEMPS,
+  FAMILLES_DEUX_TEMPS,
+  troisTemps,
+  type FamilleDeuxTemps,
   afficherReference,
   echelleDeLaBarre,
   echellesDuTexte,
@@ -480,7 +483,7 @@ import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { MenusBandeau, type EntreeMenuBandeau, type MenuBandeau } from "../panneaux/MenusBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
 import { largeurVueEcranLarge } from "./ecran-large";
-import { COMMANDES_DEUX_TEMPS, commandeDuClavier, commandeDuSecondTemps, estEntreeDeuxTemps, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
+import { COMMANDES_DEUX_TEMPS, FAMILLES_AFFICHEES, commandeDuClavier, commandeDuSecondTemps, commandeDuTroisiemeTemps, commandesDeLaFamille, estEntreeDeuxTemps, familleDeLaPorte, rechercherCommandes, routeeParLeRegistre, touchesApresEntree, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
@@ -2794,21 +2797,58 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
   // Raccourcis en deux temps : encadré ouvert après la touche d'entrée, refermé à la touche suivante ou après 5 s.
   const [deuxTemps, setDeuxTemps] = useState(false);
   const deuxTempsRef = useRef(false);
+  // Menu par familles (28 novembre 2026, maquette c4-deux-temps-familles.png) : famille ouverte par sa porte (Maj + lettre),
+  // ou recherche par nom (champ de l'encadré, Tab ou clic) ; ni l'une ni l'autre ne se referme d'elle-même.
+  const [familleDT, setFamilleDT] = useState<FamilleDeuxTemps | null>(null);
+  const familleDTRef = useRef<FamilleDeuxTemps | null>(null);
+  const [rechercheDT, setRechercheDT] = useState<string | null>(null);
+  const [choixDT, setChoixDT] = useState(0);
+  const focusAvantDT = useRef<HTMLElement | null>(null);
   const minuteurDeuxTemps = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finirDeuxTempsRef = useRef(() => {});
   const ouvrirDeuxTempsRef = useRef(() => {});
-  finirDeuxTempsRef.current = () => {
-    deuxTempsRef.current = false;
+  const arreterMinuteurDT = () => {
     if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
     minuteurDeuxTemps.current = null;
+  };
+  finirDeuxTempsRef.current = () => {
+    deuxTempsRef.current = false;
+    familleDTRef.current = null;
+    arreterMinuteurDT();
     setDeuxTemps(false);
+    setFamilleDT(null);
+    // Le focus quitte le champ de recherche : il revient où il était à l'ouverture.
+    if (rechercheDT !== null && focusAvantDT.current?.isConnected) focusAvantDT.current.focus();
+    setRechercheDT(null);
+    setChoixDT(0);
   };
   ouvrirDeuxTempsRef.current = () => {
     deuxTempsRef.current = true;
-    if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
+    familleDTRef.current = null;
+    focusAvantDT.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    arreterMinuteurDT();
     minuteurDeuxTemps.current = setTimeout(() => finirDeuxTempsRef.current(), 5000);
     setDeuxTemps(true);
+    setFamilleDT(null);
+    setRechercheDT(null);
+    setChoixDT(0);
   };
+  const ouvrirFamilleDT = (f: FamilleDeuxTemps | null) => {
+    familleDTRef.current = f;
+    setFamilleDT(f);
+    setRechercheDT(null);
+    setChoixDT(0);
+    arreterMinuteurDT();
+  };
+  const ouvrirRechercheDT = () => {
+    arreterMinuteurDT();
+    setRechercheDT((r) => r ?? "");
+    setChoixDT(0);
+  };
+  const ouvrirFamilleDTRef = useRef(ouvrirFamilleDT);
+  ouvrirFamilleDTRef.current = ouvrirFamilleDT;
+  const ouvrirRechercheDTRef = useRef(ouvrirRechercheDT);
+  ouvrirRechercheDTRef.current = ouvrirRechercheDT;
   useEffect(() => () => void (minuteurDeuxTemps.current && clearTimeout(minuteurDeuxTemps.current)), []);
 
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
@@ -2842,6 +2882,28 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       if (deuxTempsRef.current && !dansMesures) {
         if (modif === "Maj" || modif === "Ctrl" || modif === "Alt" || e.key === "Meta") return;
         e.preventDefault();
+        // Menu par familles : Tab ouvre la recherche ; une porte ouvre sa famille ; Retour arrière revient aux familles ;
+        // dans une famille, la touche suivante exécute sa commande.
+        if (e.key === "Tab") {
+          ouvrirRechercheDTRef.current();
+          return;
+        }
+        const famille = familleDTRef.current;
+        if (famille) {
+          if (e.key === "Backspace") {
+            ouvrirFamilleDTRef.current(null);
+            return;
+          }
+          finirDeuxTempsRef.current();
+          const troisieme = e.key === "Escape" ? null : commandeDuTroisiemeTemps(famille, e);
+          if (troisieme) executerCommandeRef.current(troisieme);
+          return;
+        }
+        const porte = e.key === "Escape" ? null : familleDeLaPorte(e);
+        if (porte) {
+          ouvrirFamilleDTRef.current(porte);
+          return;
+        }
         finirDeuxTempsRef.current();
         if (e.key === "Escape") return;
         const seconde = commandeDuSecondTemps(e) ?? commandeDuSecondTemps({ key: e.key, code: e.code, ctrlKey: false, metaKey: false, altKey: false, shiftKey: e.shiftKey });
@@ -7667,20 +7729,103 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
             </div>
           )
         )}
-        {deuxTemps && (
-          <div className="planche-deux-temps" role="status" aria-live="polite" data-planche-deux-temps>
-            <p>
-              <b>{afficherRaccourci(ENTREE_DEUX_TEMPS)}…</b> {t("planche.deux-temps.puis")}
-            </p>
-            <ul>
-              {COMMANDES_DEUX_TEMPS.map((c) => (
-                <li key={c.id} data-planche-deux-temps-commande={c.id}>
-                  <kbd>{afficherRaccourci(secondTemps(c.raccourci) ?? "")}</kbd> {t(c.libelle)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {deuxTemps && (() => {
+          // Menu par familles (maquette c4-deux-temps-familles.png) : familles en tête, commandes actuelles ensuite ; une
+          // famille ouverte montre ses commandes ; la recherche filtre par nom et Entrée lance la commande choisie.
+          const nomFamille = (f: FamilleDeuxTemps) => t(`planche.deux-temps.famille.${f}` as CleMessage);
+          const porteDe = (f: FamilleDeuxTemps) => FAMILLES_DEUX_TEMPS.find((x) => x.id === f)!.porte;
+          const resultats = rechercheDT === null ? [] : rechercherCommandes(rechercheDT, (c) => t(c.libelle), familleDT);
+          const choisi = Math.min(choixDT, Math.max(0, resultats.length - 1));
+          const lancer = (c: EntreeRegistre) => {
+            finirDeuxTempsRef.current();
+            executerCommandeRef.current(c);
+          };
+          return (
+            <div className="planche-deux-temps" role="status" aria-live="polite" data-planche-deux-temps data-planche-deux-temps-famille={familleDT ?? undefined}>
+              <p>
+                <b>{afficherRaccourci(familleDT ? `${ENTREE_DEUX_TEMPS}, ${porteDe(familleDT)}` : ENTREE_DEUX_TEMPS)}…</b>{" "}
+                {rechercheDT !== null ? t("planche.deux-temps.recherche") : familleDT ? t("planche.deux-temps.famille-puis", { famille: nomFamille(familleDT) }) : t("planche.deux-temps.puis-ou-nom")}
+              </p>
+              <input
+                type="search"
+                className="planche-deux-temps-recherche"
+                data-planche-deux-temps-recherche
+                aria-label={familleDT ? t("planche.deux-temps.chercher-dans", { famille: nomFamille(familleDT) }) : t("planche.deux-temps.chercher")}
+                placeholder={familleDT ? t("planche.deux-temps.chercher-dans", { famille: nomFamille(familleDT) }) : t("planche.deux-temps.chercher")}
+                value={rechercheDT ?? ""}
+                ref={(el) => {
+                  if (el && rechercheDT !== null && document.activeElement !== el) el.focus();
+                }}
+                onFocus={() => ouvrirRechercheDT()}
+                onChange={(e) => {
+                  setRechercheDT(e.target.value);
+                  setChoixDT(0);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    finirDeuxTempsRef.current();
+                  } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (resultats.length) setChoixDT((choisi + (e.key === "ArrowDown" ? 1 : resultats.length - 1)) % resultats.length);
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    const c = resultats[choisi];
+                    if (c) lancer(c);
+                  }
+                }}
+              />
+              {rechercheDT !== null && rechercheDT.trim() !== "" ? (
+                <ul className="planche-deux-temps-une" data-planche-deux-temps-resultats>
+                  {resultats.length === 0 && <li>{t("planche.deux-temps.aucune")}</li>}
+                  {resultats.map((c, i) => {
+                    const f = troisTemps(c.raccourci)?.famille;
+                    return (
+                      <li key={c.id} className={i === choisi ? "est-choisi" : undefined} data-planche-deux-temps-resultat={c.id} aria-selected={i === choisi} onPointerDown={(e) => { e.preventDefault(); lancer(c); }}>
+                        <kbd>{afficherRaccourci(touchesApresEntree(c))}</kbd> {t(c.libelle)}
+                        {f && <small> · {nomFamille(f)}</small>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : familleDT ? (
+                <ul className="planche-deux-temps-une">
+                  {commandesDeLaFamille(familleDT).map((c) => (
+                    <li key={c.id} data-planche-deux-temps-commande={c.id}>
+                      <kbd>{afficherRaccourci(troisTemps(c.raccourci)!.touche)}</kbd> {t(c.libelle)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <>
+                  {FAMILLES_AFFICHEES.length > 0 && (
+                    <>
+                      <div className="planche-deux-temps-titre">{t("planche.deux-temps.familles")}</div>
+                      <ul>
+                        {FAMILLES_AFFICHEES.map((f) => (
+                          <li key={f.id} className="planche-deux-temps-porte" data-planche-deux-temps-porte={f.id}>
+                            <kbd>{afficherRaccourci(f.porte)}</kbd> {nomFamille(f.id)} <small>›</small>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  <div className="planche-deux-temps-titre">{t("planche.deux-temps.commandes")}</div>
+                  <ul>
+                    {COMMANDES_DEUX_TEMPS.map((c) => (
+                      <li key={c.id} data-planche-deux-temps-commande={c.id}>
+                        <kbd>{afficherRaccourci(secondTemps(c.raccourci) ?? "")}</kbd> {t(c.libelle)}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <p className="planche-deux-temps-pied">
+                {rechercheDT !== null ? t("planche.deux-temps.pied-recherche") : familleDT ? t("planche.deux-temps.pied-famille") : t("planche.deux-temps.pied")}
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon, sans logo ni marque) : 48 px sombres en
