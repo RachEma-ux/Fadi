@@ -311,11 +311,26 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect(proche.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 2 });
     expect(proche.body.couches[0].plusProche.distanceM).toBeGreaterThan(50);
     expect(proche.body.couches[0].plusProche.distanceM).toBeLessThan(500);
+    // P8 (champs additifs) : version comptée (empreinte SHA-256) et couverture du rayon « non évaluée », jamais déduite.
+    expect(proche.body.couches[0].version.empreinte).toMatch(/^[0-9a-f]{64}$/);
+    expect(proche.body.couches[0].couverture).toMatchObject({ etat: "non-evaluee" });
+    expect(proche.body.couches[0].couverture).toHaveProperty("declaree");
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=50&couches=${id}`)).body.couches[0]).toMatchObject({ nombre: 0, plusProche: null });
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=10&couches=${id}`)).status).toBe(400);
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500`)).status).toBe(400);
     expect((await alice.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=inconnue`)).body.couches[0]).toEqual({ coucheId: "inconnue", accessible: false });
     expect((await bob.client.get(`${API}/couches/${id}/objets/1/proximite?rayon=500&couches=${id}`)).status).toBe(404);
+    // P12 : proximité d'un point libre (analyse de site) — au point A, A est à 0 m ; bornes du rayon ; coordonnée jamais journalisée.
+    const journalAvant = (await pool.query("SELECT count(*)::int AS n FROM geodata_journal WHERE details::text LIKE '%33.05%'")).rows[0].n;
+    const auPoint = await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=500&couches=${id}`);
+    expect(auPoint.status).toBe(200);
+    expect(auPoint.body.couches[0]).toMatchObject({ coucheId: id, accessible: true, nombre: 3, plusProche: { nom: "Point A", distanceM: 0 }, couverture: { etat: "non-evaluee" } });
+    expect(auPoint.body.couches[0].version.empreinte).toMatch(/^[0-9a-f]{64}$/);
+    expect((await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=49&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/proximite?lon=-6.95&lat=33.05&rayon=5001&couches=${id}`)).status).toBe(400);
+    expect((await alice.client.get(`${API}/proximite?lon=181&lat=33.05&couches=${id}`)).status).toBe(400);
+    expect((await bob.client.get(`${API}/proximite?lon=-6.95&lat=33.05&couches=${id}`)).body.couches[0]).toEqual({ coucheId: id, accessible: false });
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_journal WHERE details::text LIKE '%33.05%'")).rows[0].n).toBe(journalAvant);
     await alice.client.post(`${API}/zones/${zone.body.id}/archiver`).send({});
     expect((await alice.client.get(`${API}/couches/${id}/vue?zone=${zone.body.id}`)).status).toBe(404);
   });
@@ -476,6 +491,11 @@ describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
     const relue = await alice.client.get(`${API}/cartes/${carte.body.id}`);
     expect(relue.body.composition.couches[0].versionId).toBe(ref.versionId);
     expect(relue.body.disponibilite[ref.coucheId]).toEqual({ etat: "retiree", motif: "Version retirée : Droits retirés par le producteur" });
+    // P12 : états de versions — retirée avec motif ; inconnue = absente ; 1 à 20 identifiants.
+    expect((await alice.client.get(`${API}/versions/etats?ids=${ref.versionId},absente`)).body.versions).toEqual([
+      { id: ref.versionId, etat: "retiree", motifRetrait: "Droits retirés par le producteur" }, { id: "absente", etat: "inconnue" },
+    ]);
+    expect((await alice.client.get(`${API}/versions/etats`)).status).toBe(400);
     expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/121/107`)).status).toBe(404);
     expect((await alice.client.get(`${API}/catalogue`)).body.couches).toEqual([]);
     const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });
@@ -545,6 +565,8 @@ describe("Couches raster (D-GD-13)", () => {
     expect(t.headers["content-type"]).toBe("image/png");
     expect((t.body as Buffer).subarray(1, 4).toString("ascii")).toBe("PNG");
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body).toMatchObject({ valeur: 225, unite: "u" });
+    // P8 (additif) : la valeur au point porte sa version publiée.
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body.version.empreinte).toMatch(/^[0-9a-f]{64}$/);
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.995&lat=30.295`)).body.valeur).toBeNull();
     expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=10&lat=10`)).body.valeur).toBeNull();
     expect((await alice.client.get(`${API}/raster/gdcou_inconnue/0/0/0.png`)).status).toBe(404);

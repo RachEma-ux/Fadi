@@ -49,7 +49,29 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
     const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
     // L'isolement des Workers (scripts personnels, extensions) nomme ces fonctions pour les **retirer** : il n'en appelle aucune.
-    expect(appelants).toEqual(["planche/emplacements-geodata.ts", "planche/isolement-worker.ts", "preferences/client.ts"]);
+    expect(appelants).toEqual(["planche/consultations-client.ts", "planche/emplacements-geodata.ts", "planche/fonds-client.ts", "planche/isolement-worker.ts", "planche/projections-client.ts", "planche/references-client.ts", "preferences/client.ts"]);
+    // Originaux des fonds calés (cas 4, lot C4 ; décision du 27 novembre 2026) : archivés tels quels sous /sandbox/fonds, seule adresse.
+    const fonds = code(join(RACINE, "planche/fonds-client.ts"));
+    expect(fonds).toContain('export const ADRESSE_FONDS = "/sandbox/fonds";');
+    expect([...fonds.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_FONDS"]);
+    expect(fonds).not.toMatch(/https?:\/\//);
+    // Références verrouillées (cas 4, lot C4, étape 3) : fichiers rangés et relus sous /sandbox/references, seule adresse.
+    const references = code(join(RACINE, "planche/references-client.ts"));
+    expect(references).toContain('export const ADRESSE_REFERENCES = "/sandbox/references";');
+    expect([...references.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_REFERENCES", "adresse"]);
+    expect(references).not.toMatch(/https?:\/\//);
+    // Projection des fichiers KML / KMZ (cas 4, lot C4, étape 7b) : coordonnées envoyées à /sandbox/projections seulement.
+    const projections = code(join(RACINE, "planche/projections-client.ts"));
+    expect(projections).toContain('export const ADRESSE_PROJECTIONS = "/sandbox/projections";');
+    expect([...projections.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PROJECTIONS"]);
+    expect(projections).not.toMatch(/https?:\/\//);
+    // Liens de consultation (cas 4, étape 7d) : copie figée créée, listée, révoquée sous /sandbox/consultations, lue sans
+    // compte sous /consultation/api ; ces deux adresses seules, sans adresse absolue.
+    const consultations = code(join(RACINE, "planche/consultations-client.ts"));
+    expect(consultations).toContain('export const ADRESSE_CONSULTATIONS = "/sandbox/consultations";');
+    expect(consultations).toContain('export const ADRESSE_CONSULTATION_PUBLIQUE = "/consultation/api";');
+    expect([...consultations.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["adresse"]);
+    expect(consultations).not.toMatch(/https?:\/\//);
     // « Emplacements Projets » (27 novembre 2026) : lecture seule des emplacements enregistrés dans GeoData, à cette seule adresse.
     const geodata = code(join(RACINE, "planche/emplacements-geodata.ts"));
     expect(geodata).toContain('export const ADRESSE_EMPLACEMENTS_GEODATA = "/geodata/api/emplacements";');
@@ -71,7 +93,7 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     expect(client).toContain('export const ADRESSE_EXTENSIONS = "/sandbox/preferences/extensions";');
     // Protocole des extensions 1.2 (27 novembre 2026) : archivage en base des fichiers de données ouverts par une extension.
     expect(client).toContain('export const ADRESSE_FICHIERS = "/sandbox/preferences/fichiers";');
-    expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES", "ADRESSE_EXTENSIONS", "ADRESSE_FICHIERS"]);
+    expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES", "ADRESSE_EXTENSIONS", "ADRESSE_FICHIERS", "`${ADRESSE_FICHIERS}?extension=${extension}`", "`${ADRESSE_FICHIERS}/${id}`"]);
     expect(client).not.toMatch(/https?:\/\//);
   });
 

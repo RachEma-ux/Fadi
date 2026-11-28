@@ -7,10 +7,11 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { controlerCotes, dessinerCote, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond, pointDuFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
+import { t } from "../messages";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
@@ -45,6 +46,8 @@ const COULEUR_CONTEXTE = "#5b6b63";
 const COULEUR_SELECTION = "#1a5fd6";
 /** Plans de niveau (cas 4, niveaux d'étage) : même bleu que les étiquettes de niveau. */
 const COULEUR_NIVEAU = "#1a5fd6";
+/** Faces hors enveloppe (cas 4, étape 7c), toujours avec une hachure. */
+const COULEUR_HORS_ENVELOPPE = "#d6336c";
 const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
@@ -102,8 +105,17 @@ export interface OptionsAffichage {
   /** (Extension « Emplacement ») Nord vrai, en degrés depuis l'axe vert dans le sens horaire ; flèche du nord affichée. */
   readonly nord: number;
   readonly flecheNord: boolean;
+  /**
+   * (Cas 4, lot C4, étape 5) État montré : `tout`, `existant` (existant + à démolir) ou `projete` (existant + projeté) ;
+   * les objets sans statut sont toujours montrés.
+   */
+  readonly etatTravaux: "tout" | "existant" | "projete";
+  /** Couleurs des arêtes par statut des travaux (convention SIA 400 par défaut, réglables). */
+  readonly couleursStatut: Readonly<Record<StatutTravaux, string>>;
 }
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
+/** Convention SIA 400 : existant noir, à démolir jaune, projeté rouge. */
+export const COULEURS_STATUT_DEFAUT: Readonly<Record<StatutTravaux, string>> = { existant: "#1f1f1f", "a-demolir": "#e0a800", projete: "#d32f2f" };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { etatTravaux: "tout", couleursStatut: COULEURS_STATUT_DEFAUT, aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46, nord: 0, flecheNord: false };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -202,6 +214,11 @@ function geometrieSegments(segments: readonly (readonly [Vec3, Vec3])[]): THREE.
   return g;
 }
 
+/** (Cas 2, lot 7) Couleurs du surlignage des différences : celles des états « conforme », « à reprendre », « refusé ». */
+const COULEUR_DIFF_AJOUTE = "#2f6f4f";
+const COULEUR_DIFF_MODIFIE = "#b54708";
+const COULEUR_DIFF_SUPPRIME = "#a1260d";
+
 function vider(groupe: THREE.Group): void {
   for (const enfant of [...groupe.children]) {
     groupe.remove(enfant);
@@ -236,6 +253,9 @@ export class VuePlanche {
   private readonly canvas: HTMLCanvasElement;
   private readonly surcouche: HTMLDivElement;
   private readonly marqueur: HTMLDivElement;
+  /** Cas 2, lot 8 (n° 29) : échelle graphique de la vue orthographique exacte, recalculée à chaque image. */
+  private readonly echelleDom: HTMLDivElement;
+  private echelleActive = false;
   /** (Cas 2, lot 1) Loupe d'accrochage au doigt : agrandit la zone sous le doigt, au-dessus de lui. */
   private readonly loupeCanvas: HTMLCanvasElement;
   private loupeEn: Point2 | null = null;
@@ -247,6 +267,13 @@ export class VuePlanche {
   private readonly moteur: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(CHAMP_DE_VISION_INITIAL, 1, 0.02, 20000);
+  /**
+   * Cas 2, lot 8 (n° 12) : projection parallèle exacte. La caméra perspective reste le pilote (orbite, zoom, scènes,
+   * échelle nominale) ; en projection parallèle, l'image, la visée et la projection à l'écran passent par cette caméra
+   * orthographique, recalée à chaque usage sur la perspective (même position, même orientation, même demi-hauteur au plan
+   * de la cible) : les parallèles restent parallèles, sans approximation.
+   */
+  private readonly cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.02, 20000);
   private readonly cible = new THREE.Vector3(0, 0, 0);
   private readonly groupeModele = new THREE.Group();
   private readonly groupeSelection = new THREE.Group();
@@ -254,6 +281,14 @@ export class VuePlanche {
   private readonly groupeAnnotations = new THREE.Group();
   /** Poché de la matière coupée (cas 4, étape 5), posé sur le plan de coupe actif. */
   private readonly groupeCoupe = new THREE.Group();
+  /** (Cas 2, lot 7, n° 48) Différences entre deux états : ajoutés, modifiés, supprimés (en pointillé). */
+  private readonly groupeDifferences = new THREE.Group();
+  /** Contrôle de l'enveloppe (cas 4, étape 7c) : faces hors enveloppe hachurées et colorées, point le plus défavorable. */
+  private readonly groupeEnveloppe = new THREE.Group();
+  /** Références verrouillées (cas 4, lot C4, étape 3) : maquettes reçues dessinées d'un bloc, jamais fusionnées au dessin. */
+  private readonly groupeReferences = new THREE.Group();
+  private geometriesReferences = new Map<string, { cle: string; geometrie: THREE.BufferGeometry }>();
+  private etiquettesEnveloppe: Etiquette[] = [];
   private readonly texturesHachure = new Map<string, THREE.Texture>();
   private groupeAxes: THREE.Group;
   private readonly etiquettesDom: HTMLDivElement;
@@ -287,6 +322,7 @@ export class VuePlanche {
   private hauteur = 1;
   private demande = 0;
   private inference: Inference | null = null;
+  private presque: Presque | null = null;
   private dernierEcran: Point2 | null = null;
   private pointeurs = new Map<number, Point2>();
   private geste: Geste | null = null;
@@ -302,6 +338,10 @@ export class VuePlanche {
     this.surcouche.setAttribute("aria-hidden", "true");
     this.marqueur = document.createElement("div");
     this.marqueur.className = "planche-marqueur";
+    this.echelleDom = document.createElement("div");
+    this.echelleDom.className = "planche-l8-echelle";
+    this.echelleDom.setAttribute("data-planche-echelle-graphique", "");
+    this.echelleDom.style.display = "none";
     this.infobulle = document.createElement("div");
     this.infobulle.className = "planche-infobulle";
     this.cadre = document.createElement("div");
@@ -330,7 +370,7 @@ export class VuePlanche {
     this.loupeCanvas.height = TAILLE_LOUPE;
     this.loupeCanvas.setAttribute("data-planche-loupe", "");
     // Posée dans la surcouche seulement pendant qu'elle sert (un seul canevas dans la vue le reste du temps).
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg);
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg, this.echelleDom);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -357,7 +397,7 @@ export class VuePlanche {
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
     this.groupeAxes = this.axes();
-    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeSelection, this.groupeApercu);
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeCoupe, this.groupeEnveloppe, this.groupeReferences, this.groupeDifferences, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -387,7 +427,7 @@ export class VuePlanche {
       return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
     }
     this.camera.updateMatrixWorld();
-    this.moteur.render(this.scene, this.camera);
+    this.moteur.render(this.scene, this.cameraRendue());
     const c = document.createElement("canvas");
     c.width = this.canvas.width;
     c.height = this.canvas.height;
@@ -420,6 +460,101 @@ export class VuePlanche {
     }
     g.restore();
     return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
+  }
+
+  /**
+   * Cas 2, lot 6 (n° 53) : cadre de l'image à `largeur` × `hauteur` pixels — même proportion, centré et inscrit dans la
+   * vue (pixels CSS de la vue). C'est exactement la partie de la vue écrite par `captureDefinition`.
+   */
+  cadreImage(largeur: number, hauteur: number): { readonly x: number; readonly y: number; readonly l: number; readonly h: number } {
+    const k = Math.min(this.largeur / largeur, this.hauteur / hauteur);
+    const l = largeur * k;
+    const h = hauteur * k;
+    return { x: (this.largeur - l) / 2, y: (this.hauteur - h) / 2, l, h };
+  }
+
+  /**
+   * Image de la vue à une définition choisie (n° 53) : le cadre est rendu par décalage de vue (`setViewOffset`) dans une
+   * cible hors écran de `largeur` × `hauteur` pixels, puis relu ; fond transparent en option (alpha gardé), sinon PNG opaque. La vue à
+   * l'écran n'est pas touchée. `null` si le navigateur refuse une cible de cette taille.
+   */
+  async captureDefinition(largeur: number, hauteur: number, transparent: boolean): Promise<Blob | null> {
+    const max = this.moteur.capabilities.maxTextureSize;
+    if (!(largeur > 0 && hauteur > 0) || largeur > max || hauteur > max) return null;
+    const cadre = this.cadreImage(largeur, hauteur);
+    const cible = new THREE.WebGLRenderTarget(largeur, hauteur);
+    cible.texture.colorSpace = THREE.SRGBColorSpace;
+    const fond = this.scene.background;
+    const couleur = this.moteur.getClearColor(new THREE.Color());
+    const alpha = this.moteur.getClearAlpha();
+    const px = new Uint8Array(largeur * hauteur * 4);
+    try {
+      if (transparent) this.scene.background = null;
+      this.camera.setViewOffset(this.largeur, this.hauteur, cadre.x, cadre.y, cadre.l, cadre.h);
+      this.camera.updateProjectionMatrix();
+      this.camera.updateMatrixWorld();
+      this.eclairerDepuisCamera();
+      this.moteur.setRenderTarget(cible);
+      this.moteur.setClearColor(0x000000, 0);
+      this.moteur.clear();
+      this.moteur.render(this.scene, this.cameraRendue());
+      this.moteur.readRenderTargetPixels(cible, 0, 0, largeur, hauteur, px);
+    } catch {
+      return null;
+    } finally {
+      this.scene.background = fond;
+      this.camera.clearViewOffset();
+      this.camera.updateProjectionMatrix();
+      this.moteur.setRenderTarget(null);
+      this.moteur.setClearColor(couleur, alpha);
+      cible.dispose();
+      this.rendre();
+    }
+    const c = document.createElement("canvas");
+    c.width = largeur;
+    c.height = hauteur;
+    // Fond opaque : toile sans canal alpha, l'image est écrite en PNG sans transparence.
+    const g = c.getContext("2d", { alpha: transparent });
+    if (!g) return null;
+    // WebGL lit de bas en haut : les lignes sont retournées.
+    const image = g.createImageData(largeur, hauteur);
+    const ligne = largeur * 4;
+    for (let y = 0; y < hauteur; y++) image.data.set(px.subarray((hauteur - 1 - y) * ligne, (hauteur - y) * ligne), y * ligne);
+    if (!transparent) for (let i = 3; i < image.data.length; i += 4) image.data[i] = 255;
+    g.putImageData(image, 0, 0);
+    return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
+  }
+
+  /**
+   * (Cas 2, lot 7, n° 48) Surligne les différences entre deux états : arêtes des objets ajoutés (vert) et modifiés (ocre)
+   * de l'état affiché, arêtes des objets supprimés (rouge, pointillé) de l'état de départ. `null` efface le surlignage.
+   */
+  poserDifferences(d: { readonly ajoutes: readonly (readonly [Vec3, Vec3])[]; readonly modifies: readonly (readonly [Vec3, Vec3])[]; readonly supprimes: readonly (readonly [Vec3, Vec3])[] } | null): void {
+    vider(this.groupeDifferences);
+    if (d) {
+      const lignes = (segs: readonly (readonly [Vec3, Vec3])[], couleur: string, pointille: boolean) => {
+        if (!segs.length) return;
+        const geo = new THREE.BufferGeometry().setFromPoints(segs.flatMap(([a, b]) => [new THREE.Vector3(a.x, a.y, a.z), new THREE.Vector3(b.x, b.y, b.z)]));
+        const l = new THREE.LineSegments(geo, pointille ? new THREE.LineDashedMaterial({ color: couleur, dashSize: 0.15, gapSize: 0.1, depthTest: false }) : new THREE.LineBasicMaterial({ color: couleur, depthTest: false }));
+        if (pointille) l.computeLineDistances();
+        l.renderOrder = 4;
+        l.name = couleur;
+        this.groupeDifferences.add(l);
+      };
+      lignes(d.ajoutes, COULEUR_DIFF_AJOUTE, false);
+      lignes(d.modifies, COULEUR_DIFF_MODIFIE, false);
+      lignes(d.supprimes, COULEUR_DIFF_SUPPRIME, true);
+    }
+    this.rendre();
+  }
+
+  /** Nombre de segments surlignés par genre (recette). */
+  differencesAffichees(): { readonly ajoutes: number; readonly modifies: number; readonly supprimes: number } {
+    const n = (c: string) => {
+      const l = this.groupeDifferences.children.find((x) => x.name === c) as THREE.LineSegments | undefined;
+      return l ? (l.geometry.getAttribute("position")?.count ?? 0) / 2 : 0;
+    };
+    return { ajoutes: n(COULEUR_DIFF_AJOUTE), modifies: n(COULEUR_DIFF_MODIFIE), supprimes: n(COULEUR_DIFF_SUPPRIME) };
   }
 
   detruire(): void {
@@ -507,6 +642,16 @@ export class VuePlanche {
     return this.geometrie.faces.length;
   }
 
+  /** Arêtes rendues par statut des travaux (instrumentation de recette, lot C4, étape 5). */
+  aretesParStatut(): Readonly<Record<string, number>> {
+    const n: Record<string, number> = {};
+    for (const o of this.groupeModele.children) {
+      const st = o.userData["statut"] as string | undefined;
+      if (st && o instanceof THREE.LineSegments) n[st] = (n[st] ?? 0) + (o.geometry.attributes["position"]?.count ?? 0) / 2;
+    }
+    return n;
+  }
+
   /** Remplace la géométrie affichée par celle du modèle (aplatie : racine et occurrences). */
   majModele(modele: Modele): void {
     vider(this.groupeModele);
@@ -515,7 +660,7 @@ export class VuePlanche {
     const dans = this.rappels.dans?.();
     const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
     const o = this.options;
-    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables });
+    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables, ...(o.etatTravaux !== "tout" ? { etat: o.etatTravaux } : {}) });
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
     const couleurDe = (f: FaceVisible): string => {
@@ -532,7 +677,9 @@ export class VuePlanche {
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
     this.facesRecto.castShadow = this.facesRecto.receiveShadow = o.ombres;
     this.facesVerso.receiveShadow = o.ombres;
-    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte).map((a) => [a.a, a.b] as const);
+    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && !a.statut).map((a) => [a.a, a.b] as const);
+    // Statut des travaux : arêtes à la couleur de leur statut, celles à démolir en tirets ; toujours tracées, même sans « Arêtes ».
+    const statuees = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte && a.statut);
     if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
     const delavees = this.geometrie.faces.filter((f) => f.horsContexte);
     if (delavees.length) {
@@ -552,6 +699,15 @@ export class VuePlanche {
       }
     }
     if (o.aretes || o.modeFace === "filaire" || o.modeFace === "lignes-cachees") this.groupeModele.add(new THREE.LineSegments(geometrieSegments(segments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE })));
+    for (const statut of STATUTS_TRAVAUX) {
+      const lot = statuees.filter((a) => a.statut === statut).map((a) => [a.a, a.b] as const);
+      if (!lot.length) continue;
+      const couleur = o.couleursStatut[statut];
+      const l = new THREE.LineSegments(geometrieSegments(lot), statut === "a-demolir" ? new THREE.LineDashedMaterial({ color: couleur, dashSize: 0.15, gapSize: 0.1 }) : new THREE.LineBasicMaterial({ color: couleur }));
+      if (statut === "a-demolir") l.computeLineDistances();
+      l.userData["statut"] = statut;
+      this.groupeModele.add(l);
+    }
     if (o.aretesArriere && o.modeFace !== "filaire") {
       // Arêtes arrière (K) : les arêtes cachées par les faces, en pointillé léger (tracées sans test de profondeur sous les pleines).
       const arriere = new THREE.LineSegments(geometrieSegments(segments), new THREE.LineDashedMaterial({ color: "#6a6a6a", dashSize: 0.12, gapSize: 0.08, depthTest: false, transparent: true, opacity: 0.6 }));
@@ -638,7 +794,10 @@ export class VuePlanche {
       return;
     }
     const n = v3(p.normale).multiplyScalar(p.inverse ? 1 : -1);
-    this.moteur.clippingPlanes = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+    const plans = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+    // Cas 2, lot 4 (n° 59) : profondeur vue limitée au-delà de la coupe (même règle que `gardeParCoupe`).
+    if (p.profondeur !== undefined) plans.push(new THREE.Plane(n.clone().negate(), n.dot(v3(p.origine)) + p.profondeur));
+    this.moteur.clippingPlanes = plans;
     this.majPoche(modele, p);
   }
 
@@ -661,7 +820,7 @@ export class VuePlanche {
       }
       return r;
     };
-    for (const s of sectionsDeCoupe(modele, p)) {
+    for (const s of sectionsDeCoupe(modele, p, this.options.etatTravaux !== "tout" ? this.options.etatTravaux : undefined)) {
       const boucles = s.boucles.map((b) => b.map(vers2));
       // Pair-impair : une boucle contenue dans un nombre impair d'autres est un trou de la plus petite qui la contient.
       const profondeur = boucles.map((b, i) => boucles.filter((c, j) => j !== i && dans(b[0]!, c)).length);
@@ -697,6 +856,109 @@ export class VuePlanche {
     }
   }
 
+  /**
+   * Références verrouillées (cas 4, lot C4, étape 3) : chaque maquette reçue (triangles dans l'unité du fichier, 9 nombres
+   * par triangle) est posée par son placement (échelle, rotation autour de la verticale, translation), en gris translucide,
+   * sans écrire la profondeur ni être visée par les outils. Les points hors tolérance du récolement sont marqués en rouge.
+   * La géométrie est gardée tant que le fichier (clé) ne change pas.
+   */
+  poserReferences(liste: readonly { readonly id: string; readonly cle: string; readonly positions: Float32Array; readonly echelle: number; readonly placement: { readonly x: number; readonly y: number; readonly z: number; readonly rotation: number }; readonly visible: boolean; readonly opacite: number }[], horsTolerance: readonly Vec3[]): void {
+    for (const enfant of [...this.groupeReferences.children]) {
+      this.groupeReferences.remove(enfant);
+      const m = (enfant as THREE.Mesh).material as THREE.Material | undefined;
+      m?.dispose();
+      if (enfant instanceof THREE.Points) enfant.geometry.dispose();
+    }
+    for (const [id, g] of [...this.geometriesReferences]) {
+      const r = liste.find((x) => x.id === id);
+      if (!r || r.cle !== g.cle) {
+        g.geometrie.dispose();
+        this.geometriesReferences.delete(id);
+      }
+    }
+    for (const r of liste) {
+      let g = this.geometriesReferences.get(r.id)?.geometrie;
+      if (!g) {
+        g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(r.positions, 3));
+        g.computeVertexNormals();
+        g.computeBoundingSphere();
+        this.geometriesReferences.set(r.id, { cle: r.cle, geometrie: g });
+      }
+      if (!r.visible) continue;
+      const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: COULEUR_HORS_CONTEXTE, side: THREE.DoubleSide, transparent: true, opacity: r.opacite, depthWrite: false }));
+      mesh.position.set(r.placement.x, r.placement.y, r.placement.z);
+      mesh.rotation.set(0, 0, r.placement.rotation);
+      mesh.scale.setScalar(r.echelle);
+      mesh.renderOrder = 1;
+      mesh.userData["reference"] = r.id;
+      this.groupeReferences.add(mesh);
+    }
+    if (horsTolerance.length > 0) {
+      const points = new THREE.Points(new THREE.BufferGeometry().setFromPoints(horsTolerance.map(v3)), new THREE.PointsMaterial({ color: "#b3261e", size: 12, sizeAttenuation: false, depthTest: false }));
+      points.renderOrder = 4;
+      points.name = "hors-tolerance";
+      this.groupeReferences.add(points);
+    }
+    this.rendre();
+  }
+
+  /**
+   * Contrôle de l'enveloppe (cas 4, étape 7c) : les triangles hors enveloppe (monde, 9 nombres chacun) sont couverts d'une
+   * hachure colorée — hachure ET couleur, jamais la couleur seule — ; le point le plus défavorable reçoit un anneau et
+   * une étiquette ; chaque seuil de hauteur saisi est tracé en pointillé à son altitude autour du projet. `null` efface.
+   */
+  poserControleEnveloppe(c: { readonly hors: readonly number[]; readonly point: Vec3 | null; readonly texte: string; readonly seuils: readonly { readonly z: number; readonly texte: string }[]; readonly emprise: { min: Vec3; max: Vec3 } | null } | null): void {
+    vider(this.groupeEnveloppe);
+    for (const e of this.etiquettesEnveloppe) e.el.remove();
+    this.etiquettesEnveloppe = [];
+    if (c) {
+      const etiquette = (texte: string, point: Vec3, classe: string): void => {
+        const el = document.createElement("div");
+        el.className = `planche-etiquette ${classe}`;
+        el.textContent = texte;
+        this.etiquettesDom.append(el);
+        this.etiquettesEnveloppe.push({ el, point });
+      };
+      if (c.hors.length >= 9) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.Float32BufferAttribute([...c.hors], 3));
+        // Coordonnées de hachure : projection sur un plan oblique (pas de 0,25 m), lisible quelle que soit l'orientation.
+        const uvs: number[] = [];
+        for (let i = 0; i < c.hors.length; i += 3) {
+          const x = c.hors[i]!;
+          const y = c.hors[i + 1]!;
+          const z = c.hors[i + 2]!;
+          uvs.push(0, (x + y + z) / 0.25);
+        }
+        g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+        const hachure = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: COULEUR_HORS_ENVELOPPE, map: this.textureHachure(), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+        hachure.renderOrder = 2;
+        hachure.name = "hors-enveloppe";
+        this.groupeEnveloppe.add(hachure);
+      }
+      if (c.point) {
+        const anneau = new THREE.Points(new THREE.BufferGeometry().setFromPoints([v3(c.point)]), new THREE.PointsMaterial({ color: COULEUR_HORS_ENVELOPPE, size: 14, sizeAttenuation: false, depthTest: false }));
+        anneau.renderOrder = 3;
+        this.groupeEnveloppe.add(anneau);
+        etiquette(c.texte, c.point, "planche-etiquette-enveloppe");
+      }
+      if (c.emprise) {
+        const { min, max } = c.emprise;
+        const pas = this.metresParPixel(this.cible);
+        for (const s of c.seuils) {
+          const pts = [v3({ x: min.x, y: min.y, z: s.z }), v3({ x: max.x, y: min.y, z: s.z }), v3({ x: max.x, y: max.y, z: s.z }), v3({ x: min.x, y: max.y, z: s.z }), v3({ x: min.x, y: min.y, z: s.z })];
+          const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: COULEUR_NIVEAU, dashSize: pas * 8, gapSize: pas * 5 }));
+          l.computeLineDistances();
+          l.frustumCulled = false;
+          this.groupeEnveloppe.add(l);
+          etiquette(s.texte, { x: max.x, y: min.y, z: s.z }, "planche-etiquette-seuil");
+        }
+      }
+    }
+    this.rendre();
+  }
+
   /** Texture d'une hachure : une ligne noire par période, répétée. */
   private textureHachure(): THREE.Texture {
     const deja = this.texturesHachure.get("ligne");
@@ -719,6 +981,20 @@ export class VuePlanche {
   }
 
   /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */
+  /** Textures des fonds calés (cas 4, lot C4, étape 1), gardées d'une mise à jour à l'autre tant que l'image ne change pas. */
+  private texturesFonds = new Map<string, { cle: string; texture: THREE.Texture }>();
+
+  private textureFond(id: string, image: string): THREE.Texture {
+    const cle = `${image.length}:${image.slice(-48)}`;
+    const deja = this.texturesFonds.get(id);
+    if (deja && deja.cle === cle) return deja.texture;
+    deja?.texture.dispose();
+    const texture = new THREE.TextureLoader().load(image, () => this.rendre());
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.texturesFonds.set(id, { cle, texture });
+    return texture;
+  }
+
   private majAnnotations(modele: Modele, selection: readonly string[]): void {
     vider(this.groupeAnnotations);
     for (const e of this.etiquettesFixes) e.el.remove();
@@ -742,8 +1018,6 @@ export class VuePlanche {
       this.etiquettesFixes.push({ el, point });
     };
     const cs = (id: string, defaut: string): string => (sel.has(id) ? COULEUR_SELECTION : defaut);
-    // (Protocole 1.3) Une annotation balisée suit la visibilité de sa balise.
-    const cachee = (x: { readonly balise?: string }): boolean => !!x.balise && a.balises[x.balise]?.visible === false;
     for (const g of Object.values(a.guides)) {
       if (!this.options.guides) break;
       const c = cs(g.id, "#222222");
@@ -764,7 +1038,8 @@ export class VuePlanche {
     const controle = Object.keys(a.cotes).length ? controlerCotes(modele, this.precisionCotes) : null;
     const alertes = new Set(controle?.chaines.map((x) => x.total) ?? []);
     for (const c of Object.values(a.cotes)) {
-      if (cachee(c)) continue;
+      // Cas 2, lot 4 : une cote ou un texte d'une balise masquée n'est pas dessiné.
+      if (baliseMasquee(modele, c.balise)) continue;
       const d = dessinerCote(modele, c, pas, this.precisionCotes, this.separateurCotes);
       if (!d) continue;
       const couleur = cs(c.id, d.orpheline ? "#b3261e" : "#333333");
@@ -778,7 +1053,7 @@ export class VuePlanche {
       }
     }
     for (const t of Object.values(a.textes)) {
-      if (t.genre === "repere" && cachee(t)) continue;
+      if (baliseMasquee(modele, t.balise)) continue;
       if (t.genre === "repere") {
         this.groupeAnnotations.add(plein(cs(t.id, "#333333"), [t.ancre, t.position]));
         etiquette(t.texte, t.position, `planche-etiquette-texte${sel.has(t.id) ? " est-selectionne" : ""}`);
@@ -805,8 +1080,38 @@ export class VuePlanche {
       if (l.centre === null || l.surface === null) continue;
       etiquette(`${l.local.numero} · ${l.local.nom}\n${l.surface.toFixed(2).replace(".", ",")} m²`, { ...l.centre, z: l.centre.z + 0.01 }, "planche-etiquette-local");
     }
+    // Fonds calés (cas 4, lot C4, étape 1) : image à plat à son altitude, sous le dessin ; points de calage en lettres.
+    const fonds = Object.values(a.fonds ?? {});
+    for (const id of [...this.texturesFonds.keys()]) if (!fonds.some((f) => f.id === id)) { this.texturesFonds.get(id)!.texture.dispose(); this.texturesFonds.delete(id); }
+    for (const [i, f] of fonds.entries()) {
+      // Fond redressé (étape 7c) : dans son plan vertical ; sinon à plat, juste sous son altitude.
+      const [hg, hd, bd, bg] = coinsFond(f).map((q) => (f.vertical ? pointDuFond(f, q) : { x: q.x, y: q.y, z: f.altitude - 0.002 }));
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute([bg!.x, bg!.y, bg!.z, bd!.x, bd!.y, bd!.z, hd!.x, hd!.y, hd!.z, hg!.x, hg!.y, hg!.z], 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const mat = new THREE.MeshBasicMaterial({ map: this.textureFond(f.id, f.image), transparent: true, opacity: f.opacite, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+      const mesh = new THREE.Mesh(g, mat);
+      // Fonds superposés : le dernier de la liste est dessiné au-dessus, comme l'outil Calage le vise (fondVise).
+      mesh.renderOrder = -2 + (i + 1) / (fonds.length + 1);
+      mesh.userData["fond"] = f.id;
+      this.groupeAnnotations.add(mesh);
+      for (const p of f.points) {
+        etiquette(p.id, pointDuFond(f, versPlan(f.pose, p.pixel)), "planche-etiquette-calage");
+        const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+        el.dataset["calage"] = `${f.id}:${p.id}`;
+      }
+    }
+    // Réserves de chantier (cas 4, étape 7b) : épingle numérotée (ouverte / levée), le numéro toujours écrit.
+    for (const r of Object.values(a.reserves ?? {})) {
+      etiquette(String(r.numero), r.point, `planche-etiquette-reserve est-${r.statut}${sel.has(r.id) ? " est-selectionne" : ""}`);
+      const el = this.etiquettesFixes[this.etiquettesFixes.length - 1]!.el;
+      el.dataset["reserve"] = r.id;
+      el.dataset["statut"] = r.statut;
+    }
     for (const p of Object.values(a.plansDeCoupe)) {
       if (!this.options.plansDeCoupe) break;
+      if (baliseMasquee(modele, p.balise)) continue;
       const couleur = sel.has(p.id) ? "#e8891c" : "#8a8a8a";
       this.groupeAnnotations.add(...rectanglePlan(p.origine, p.u, p.w, p.demiU, p.demiW, couleur, p.inverse ? v3(p.normale).multiplyScalar(-1) : v3(p.normale), pas));
     }
@@ -828,7 +1133,7 @@ export class VuePlanche {
       if (!p) q.el.style.display = "none";
       else Object.assign(q.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
     }
-    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
+    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu, ...this.etiquettesEnveloppe]) {
       const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
       if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
         e.el.style.display = "none";
@@ -899,6 +1204,8 @@ export class VuePlanche {
       }
     }
     this.inference = vue?.inference && vue.inference.type !== "aucune" ? vue.inference : null;
+    // (Cas 2, lot 2, n° 17) Presque accroché : signalé près du point, jamais corrigé.
+    this.presque = vue?.inference?.presque ?? null;
     if (vue) {
       const lineaire = vue.inference && INFERENCES_LINEAIRES.has(vue.inference.type);
       const direction = lineaire ? vue.inference!.direction : undefined;
@@ -1062,6 +1369,15 @@ export class VuePlanche {
       return;
     }
     const inf = this.inference;
+    const presque = this.presque;
+    if (presque && this.dernierEcran) {
+      const ecart = presque.genre === "angle-droit" ? `${presque.ecart.toFixed(1).replace(".", ",")}°` : `${Math.round(presque.ecart * 1000)} mm`;
+      this.infobulle.textContent = t(`planche.presque.${presque.genre}`, { ecart });
+      this.infobulle.dataset["presque"] = presque.genre;
+      Object.assign(this.infobulle.style, { display: "block", left: `${this.dernierEcran.x + 16}px`, top: `${this.dernierEcran.y + 18}px` });
+      return;
+    }
+    delete this.infobulle.dataset["presque"];
     if (!inf || !inf.libelle.fr || !this.dernierEcran) {
       this.infobulle.style.display = "none";
       return;
@@ -1088,13 +1404,59 @@ export class VuePlanche {
       this.camera.updateMatrixWorld();
       this.ajusterAxes();
       this.eclairerDepuisCamera();
-      this.moteur.render(this.scene, this.camera);
+      this.moteur.render(this.scene, this.cameraRendue());
       this.dessinerLoupe();
       this.placerMarqueur();
       this.placerEtiquettes();
       this.majTriade();
       this.recalerCotes();
+      this.placerEchelle();
     });
+  }
+
+  /** Affiche ou masque l'échelle graphique (n° 29) ; elle n'a de sens qu'en projection parallèle exacte. */
+  poserEchelleGraphique(active: boolean): void {
+    this.echelleActive = active;
+    this.rendre();
+  }
+
+  get echelleGraphiqueActive(): boolean {
+    return this.echelleActive;
+  }
+
+  private placerEchelle(): void {
+    const ppm = this.pixelsParMetre();
+    const e = this.echelleActive && ppm !== null ? echelleGraphique(ppm) : null;
+    if (!e) {
+      this.echelleDom.style.display = "none";
+      return;
+    }
+    const sep = (x: number) => String(Math.round(x * 1000) / 1000).replace(".", ",");
+    this.echelleDom.style.display = "block";
+    this.echelleDom.dataset["longueur"] = String(e.longueur);
+    this.echelleDom.dataset["denominateur"] = String(Math.round(e.denominateur));
+    const barre = document.createElement("div");
+    barre.className = "planche-l8-echelle-barre";
+    barre.style.width = `${e.pixels}px`;
+    // Graduations 0, L/4, L/2, L : trois cases alternées, la dernière deux fois plus longue.
+    [25, 25, 50].forEach((part, i) => {
+      const s = document.createElement("span");
+      s.className = i % 2 === 0 ? "planche-l8-echelle-plein" : "planche-l8-echelle-vide";
+      s.style.width = `${part}%`;
+      barre.append(s);
+    });
+    const graduations = document.createElement("div");
+    graduations.className = "planche-l8-echelle-graduations";
+    graduations.style.width = `${e.pixels}px`;
+    for (const g of e.graduations) {
+      const s = document.createElement("span");
+      s.style.left = `${(g / e.longueur) * 100}%`;
+      s.textContent = g === e.longueur ? `${sep(g)} m` : sep(g);
+      graduations.append(s);
+    }
+    const nominale = document.createElement("small");
+    nominale.textContent = t("planche.l8.echelle.nominale", { n: String(Math.round(e.denominateur)) });
+    this.echelleDom.replaceChildren(barre, graduations, nominale);
   }
 
   /**
@@ -1269,14 +1631,14 @@ export class VuePlanche {
 
   /** Position écran (px, relative au canevas) d'un point, ou `null` s'il est derrière la caméra. */
   versEcran(p: Vec3): Point2 | null {
-    const v = v3(p).project(this.camera);
+    const v = v3(p).project(this.cameraRendue());
     if (v.z < -1 || v.z > 1) return null;
     return { x: ((v.x + 1) / 2) * this.largeur, y: ((1 - v.y) / 2) * this.hauteur };
   }
 
   /** Rayon caméra → curseur (repère local du projet, mètres). */
   rayon(ecran: Point2): Rayon {
-    this.lanceur.setFromCamera(new THREE.Vector2((ecran.x / this.largeur) * 2 - 1, -(ecran.y / this.hauteur) * 2 + 1), this.camera);
+    this.lanceur.setFromCamera(new THREE.Vector2((ecran.x / this.largeur) * 2 - 1, -(ecran.y / this.hauteur) * 2 + 1), this.cameraRendue());
     return { origine: versVec3(this.lanceur.ray.origin), direction: versVec3(this.lanceur.ray.direction.clone().normalize()) };
   }
 
@@ -1293,7 +1655,55 @@ export class VuePlanche {
     return this.cible.clone();
   }
 
+  /** Demi-hauteur (m) de la vue au plan de la cible : la mesure commune à la perspective très fermée et à l'orthographique. */
+  private demiHauteurParallele(): number {
+    const avant = this.camera.getWorldDirection(new THREE.Vector3());
+    const d = Math.max(0.01, this.cible.clone().sub(this.camera.position).dot(avant));
+    return d * Math.tan((this.camera.fov * Math.PI) / 360);
+  }
+
+  /** Caméra du rendu et de la visée : la perspective, ou en projection parallèle l'orthographique recalée sur elle. */
+  private cameraRendue(): THREE.Camera {
+    if (!this.projectionParallele) return this.camera;
+    const c = this.camera;
+    const o = this.cameraOrtho;
+    const demi = this.demiHauteurParallele();
+    o.top = demi;
+    o.bottom = -demi;
+    o.left = -demi * c.aspect;
+    o.right = demi * c.aspect;
+    o.near = c.near;
+    o.far = c.far;
+    c.updateMatrixWorld();
+    o.position.copy(c.position);
+    o.quaternion.copy(c.quaternion);
+    o.up.copy(c.up);
+    const vue = c.view;
+    if (vue?.enabled) o.setViewOffset(vue.fullWidth, vue.fullHeight, vue.offsetX, vue.offsetY, vue.width, vue.height);
+    else o.clearViewOffset();
+    o.updateProjectionMatrix();
+    o.updateMatrixWorld();
+    return o;
+  }
+
+  /** Recette : genre de la caméra qui rend l'image (« OrthographicCamera » en projection parallèle exacte). */
+  cameraRendueType(): string {
+    return this.cameraRendue().type;
+  }
+
+  /** Recette : modèle affiché (le modèle d'affichage dérivé pendant une axonométrie éclatée). */
+  modeleAffiche(): Modele | null {
+    return this.modele ?? null;
+  }
+
+  /** Pixels par mètre à l'écran en projection parallèle (échelle graphique, n° 29) ; `null` en perspective. */
+  pixelsParMetre(): number | null {
+    return this.projectionParallele ? this.hauteur / (2 * this.demiHauteurParallele()) : null;
+  }
+
   private metresParPixel(p: Vec3 | THREE.Vector3): number {
+    // Projection parallèle exacte : la même valeur partout, quelle que soit la profondeur du point.
+    if (this.projectionParallele) return (2 * this.demiHauteurParallele()) / this.hauteur;
     const d = Math.max(0.01, this.camera.position.distanceTo(new THREE.Vector3(p.x, p.y, p.z)));
     return (2 * d * Math.tan((this.camera.fov * Math.PI) / 360)) / this.hauteur;
   }
@@ -1554,7 +1964,7 @@ export class VuePlanche {
     });
   }
 
-  /** Projection : la projection parallèle est rendue par une perspective très fermée (1°) depuis loin — approximation déclarée. */
+  /** Projection : la perspective très fermée (1°) pilote la vue parallèle ; elle est rendue exacte par `cameraRendue` (lot 8). */
   get projection(): "perspective" | "parallele" {
     return this.projectionParallele ? "parallele" : "perspective";
   }
@@ -1594,6 +2004,35 @@ export class VuePlanche {
     this.camera.updateProjectionMatrix();
     if (s.projection === "parallele") this.projection = "parallele";
     this.rendre();
+  }
+
+  /**
+   * Cas 2, lot 4 (n° 43) : échelle nominale 1:n en projection parallèle — la hauteur de la vue à l'écran (pixels CSS à
+   * 96 ppp) vaut la hauteur du modèle divisée par n. Sans effet en perspective.
+   */
+  poserEchelleNominale(echelle: number): void {
+    if (!this.projectionParallele || !(echelle > 0)) return;
+    const hauteurPx = this.moteur.domElement.clientHeight || this.moteur.domElement.height;
+    const demiHauteur = ((hauteurPx / 2) * (25.4 / 96) * echelle) / 1000;
+    const direction = this.camera.position.clone().sub(this.cible).normalize();
+    const d = demiHauteur / Math.tan((this.camera.fov * Math.PI) / 360);
+    this.camera.position.copy(this.cible).add(direction.multiplyScalar(d));
+    this.camera.far = Math.max(20000, d * 4);
+    this.camera.updateProjectionMatrix();
+    this.rendre();
+  }
+
+  /** Nombre de plans de rognage posés par la coupe active (instrumentation). */
+  plansRognage(): number {
+    return this.moteur.clippingPlanes.length;
+  }
+
+  /** Échelle nominale rendue (dénominateur), en projection parallèle ; `null` en perspective (instrumentation). */
+  echelleRendue(): number | null {
+    if (!this.projectionParallele) return null;
+    const hauteurPx = this.moteur.domElement.clientHeight || this.moteur.domElement.height;
+    const demiHauteur = this.camera.position.distanceTo(this.cible) * Math.tan((this.camera.fov * Math.PI) / 360);
+    return (demiHauteur * 1000) / ((hauteurPx / 2) * (25.4 / 96));
   }
 
   /** Vue standard autour de la cible courante, à la même distance (sud = −y, D-017). */

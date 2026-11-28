@@ -8,6 +8,10 @@
  * Les opérations sont dans `geometrie-libre.ts` (`modifierAnnotations`, `peindreFaces`, `peindreOccurrences`,
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
+import type { Reserve } from "./reserves.js";
+import type { Fond } from "./fonds.js";
+import type { Reference } from "./references.js";
+import type { ReglagesEnveloppe } from "./enveloppe.js";
 import type { Emplacement } from "./emplacement.js";
 import type { PointDeBase } from "./point-de-base.js";
 import type { RepereEnregistre } from "./reperes.js";
@@ -31,7 +35,7 @@ export interface ChampsCote {
   readonly texteForce?: string;
   readonly style?: Id;
   readonly chemin?: readonly Id[];
-  /** (Protocole 1.3) Balise de l'annotation : la balise cachée, l'annotation l'est aussi ; absent = toujours montrée. */
+  /** (Protocole 1.3, cas 2 lot 4) Balise de l'annotation (balise courante ou réservée aux cotes à la création) : la balise cachée, l'annotation l'est aussi ; absent = toujours montrée. */
   readonly balise?: Id;
 }
 
@@ -110,11 +114,11 @@ export type TexteAnnotation =
       readonly position: Vec3;
       readonly texte: string;
       readonly etiquettePiece?: boolean;
-      /** (Protocole 1.3) Balise du texte : la balise cachée, le texte l'est aussi ; absent = toujours montré. */
+      /** (Protocole 1.3, cas 2 lot 4) Balise du texte : la balise cachée, le texte l'est aussi ; absent = toujours montré. */
       readonly balise?: Id;
     }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
-  | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string };
+  | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string; readonly balise?: Id };
 
 export interface PlanDeCoupe {
   readonly id: Id;
@@ -129,6 +133,10 @@ export interface PlanDeCoupe {
   readonly actif: boolean;
   readonly inverse: boolean;
   readonly nom: string;
+  /** (Cas 2, lot 4) Profondeur vue au-delà de la coupe (m) : plus loin, rien n'est dessiné ; absente = sans limite. */
+  readonly profondeur?: number;
+  /** (Cas 2, lot 4) Balise du plan de coupe. */
+  readonly balise?: Id;
 }
 
 /** Matière d'apparence : nom et couleur unie (`#rrggbb`), jamais une donnée de projet (C15, P-8). */
@@ -145,6 +153,16 @@ export interface Balise {
   readonly nom: string;
   readonly couleur: string;
   readonly visible: boolean;
+  /** (Cas 2, lot 2) Balise exclue de l'accrochage : ses objets restent affichés, rien ne s'y accroche. */
+  readonly horsAccrochage?: boolean;
+  /** (Cas 2, lot 4) Verrouillée : ce qu'elle porte n'est ni sélectionnable ni modifiable (fond de plan protégé). */
+  readonly verrouillee?: boolean;
+  /** (Cas 2, lot 4) Épaisseur de trait en mm papier, saisie ou reprise du gabarit ; absente = épaisseur de la sortie. */
+  readonly epaisseur?: number;
+  /** (Cas 2, lot 4) Type de trait des sorties ; absent = continu. */
+  readonly trait?: import("./balises-l4.js").TraitBalise;
+  /** (Cas 2, lot 4) Phase : existant, à démolir ou projeté (vues d'état) ; absente = hors phase. */
+  readonly phase?: import("./balises-l4.js").PhaseBalise;
 }
 
 /** Repère de saisie (outil Axes) : origine et axes unitaires rouge / vert / bleu dans le repère stocké. */
@@ -171,6 +189,12 @@ export interface Scene {
    * scène ne rappelle que la caméra (scènes antérieures inchangées).
    */
   readonly repere?: CaptureRepere;
+  /** (Cas 2, lot 4) État de la vue mémorisé : balises visibles, plans actifs, objets masqués, style ; absent = caméra seule. */
+  readonly etat?: import("./balises-l4.js").EtatScene;
+  /** (Cas 2, lot 4) Échelle nominale (dénominateur, 100 pour 1:100) d'une scène en projection parallèle. */
+  readonly echelle?: number;
+  /** (Cas 2, lot 4) Date et heure du soleil rappelées par la scène (heure locale du projet, saisie). */
+  readonly soleil?: import("./balises-l4.js").SoleilScene;
 }
 
 /**
@@ -180,7 +204,7 @@ export interface Scene {
  */
 export interface CorrespondanceImport {
   readonly id: Id;
-  readonly format: "obj" | "stl" | "ifc";
+  readonly format: "obj" | "stl" | "ifc" | "gltf" | "glb" | "ply" | "3mf" | "dae" | "3ds";
   readonly fichier: string;
   readonly metresParUnite: number;
 }
@@ -214,6 +238,32 @@ export interface ReglagesPlanche {
   readonly donneesExtensions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   /** (Cas 4, étape 2) Point de base du projet : coordonnées projetées déclarées de l'origine ; absent = non déclaré. */
   readonly pointDeBase?: PointDeBase;
+  /** (Cas 2, lot 2) Unité d'affichage et de saisie des longueurs ; absent = mètres. Les valeurs stockées restent en mètres. */
+  readonly uniteSaisie?: UniteSaisie;
+  /** (Cas 2, lot 2) Paramètres nommés du projet (valeurs saisies par l'utilisateur, en mètres). */
+  readonly parametres?: Readonly<Record<Id, ParametreProjet>>;
+  /** (Cas 2, lot 2) Ressaut maximal à signaler, saisi par l'utilisateur avec sa source ; absent = « non évalué ». */
+  readonly ressautMax?: { readonly valeur: number; readonly source: string };
+  /** (Cas 2, lot 3) Tolérances du relevé du Contrôle, saisies dans le panneau ; absent = tolérances d'origine. */
+  readonly controle?: import("./controle-l3.js").ReglagesControle;
+  /** (Cas 2, lot 3) Fichier de règles des pièces du permis, sourcé, archivé tel quel ; absent = complétude non évaluée. */
+  readonly reglesPieces?: import("./controle-l3.js").ReglesPieces;
+  /** (Cas 2, lot 4) Balises réservées par genre : chaque cote, texte ou plan de coupe créé reçoit la sienne. */
+  readonly balisesReservees?: import("./balises-l4.js").BalisesReservees;
+  /** (Cas 2, lot 4) Gabarit d'agence appliqué à la création de la Planche : fichier archivé tel quel. */
+  readonly gabarit?: import("./balises-l4.js").GabaritApplique;
+  /** (Cas 2, lot 7) Statut et indice de révision de la Planche, saisis ; repris par chaque jalon. Absent = non renseigné. */
+  readonly revision?: import("./versions-l7.js").Revision;
+  /** (Cas 2, lot 7) Fiche d'identité du projet, saisie une fois, reprise dans les pièces émises ; champ absent = non renseigné. */
+  readonly ficheProjet?: import("./versions-l7.js").FicheProjet;
+}
+/** (Cas 2, lot 2) Unité d'affichage et de saisie. */
+export type UniteSaisie = "m" | "cm" | "mm" | "pieds-pouces";
+/** (Cas 2, lot 2) Paramètre nommé du projet (épaisseur de mur, hauteur sous plafond, module…), valeur en mètres. */
+export interface ParametreProjet {
+  readonly id: Id;
+  readonly nom: string;
+  readonly valeur: number;
 }
 /** Format des valeurs de cote : mètres, mètres avec le millimètre en exposant (à la française), centimètres sans unité. */
 export type FormatCote = "metres" | "metres-mm" | "centimetres";
@@ -331,6 +381,38 @@ export interface FamilleHachure {
   readonly dy: number;
   readonly tirets: readonly number[];
 }
+/**
+ * (Cas 4 du catalogue, étape 6 : D7-F11-013) Fenêtre de vue d'une feuille : le plan vectoriel d'une scène (ou de la vue de
+ * dessus), à une échelle de la série, posé sur la feuille par son coin haut gauche (mm, depuis le coin haut gauche).
+ * Identifiant local à la feuille (« v1 », « v2 »…).
+ */
+export interface FenetreVue {
+  readonly id: string;
+  /** Scène de la Planche ; `null` = vue de dessus. */
+  readonly scene: Id | null;
+  /** Dénominateur de l'échelle (50 pour 1:50). */
+  readonly echelle: number;
+  /** Plan de coupe : identifiant, « aucune », ou `null` = le plan actif. */
+  readonly coupe: Id | "aucune" | null;
+  readonly x: number;
+  readonly y: number;
+}
+/**
+ * (Cas 4, étape 6 : D7-F11-013, D7-F11-012) Feuille de dessin : format ISO 216 (A0 à A4), sens, cartouche saisi (un champ
+ * vide reste vide), fenêtres de vue. Préfixe « k ».
+ */
+export interface Feuille {
+  readonly id: Id;
+  readonly numero: string;
+  readonly nom: string;
+  readonly indice: string;
+  /** Rang du format A (0 = A0 … 4 = A4). */
+  readonly format: 0 | 1 | 2 | 3 | 4;
+  readonly sens: "paysage" | "portrait";
+  readonly cartouche: { readonly projet: string; readonly phase: string; readonly date: string };
+  readonly fenetres: readonly FenetreVue[];
+}
+
 export interface MotifHachure {
   readonly id: Id;
   readonly nom: string;
@@ -370,6 +452,15 @@ export interface Annotations {
   /** (Cas 4, étape 4) Murs à épaisseur : tracé d'axe et paramètres, géométrie dans un groupe de la racine. */
   readonly murs?: Readonly<Record<Id, Mur>>;
   readonly motifs?: Readonly<Record<Id, MotifHachure>>;
+  readonly feuilles?: Readonly<Record<Id, Feuille>>;
+  /** (Cas 4, étape 7b) Réserves de chantier épinglées ; absent = aucune. */
+  readonly reserves?: Readonly<Record<Id, Reserve>>;
+  /** (Cas 4, lot C4, étape 1) Fonds calés (images posées à plat) ; absent = aucun. */
+  readonly fonds?: Readonly<Record<Id, Fond>>;
+  /** (Cas 4, lot C4, étape 3) Références verrouillées (maquettes reçues, non fusionnées) ; absent = aucune. */
+  readonly references?: Readonly<Record<Id, Reference>>;
+  /** (Cas 4, étape 7c) Enveloppe désignée, contrôle actif, règles de hauteur saisies ; absent = aucune. */
+  readonly enveloppe?: ReglagesEnveloppe;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -400,6 +491,11 @@ export interface AnnotationsMutables {
   locaux: Record<Id, Local>;
   murs: Record<Id, Mur>;
   motifs: Record<Id, MotifHachure>;
+  feuilles: Record<Id, Feuille>;
+  reserves: Record<Id, Reserve>;
+  fonds: Record<Id, Fond>;
+  references: Record<Id, Reference>;
+  enveloppe?: ReglagesEnveloppe;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

@@ -16,6 +16,7 @@ import { AnnulerSuppressionPage, InvitationPage, MotDePasseOubliePage, Reinitial
 
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
+const PageConsultation = lazy(() => import("./modules/sandbox/consultation/PageConsultation").then((m) => ({ default: m.PageConsultation })));
 const PageSandbox = lazy(() => import("./modules/sandbox/PageSandbox").then((m) => ({ default: m.PageSandbox })));
 const PageGeoData = lazy(() => import("./modules/geodata/PageGeoData").then((m) => ({ default: m.PageGeoData })));
 const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
@@ -72,6 +73,15 @@ export function App() {
         <Route path="/compte/reinitialiser" element={<ReinitialiserPage />} />
         <Route path="/compte/verifier-email" element={<VerifierEmailPage />} />
         <Route path="/compte/annuler-suppression" element={<AnnulerSuppressionPage />} />
+        {/* Lien de consultation d'une Planche (cas 4, étape 7d) : copie figée, lecture seule, sans compte. */}
+        <Route
+          path="/consultation/:jeton"
+          element={
+            <Suspense fallback={<Loading />}>
+              <PageConsultation />
+            </Suspense>
+          }
+        />
 
         <Route
           element={

@@ -12,6 +12,7 @@
  * - Échap annule l'opération en cours (sinon : sans effet, l'interface gère le retour à l'outil précédent).
  */
 import type { PlanDeTravail } from "../reperes.js";
+import type { OptionsAccrochage } from "../inference.js";
 import type { Modele } from "../geometrie-libre.js";
 import type { Maillage } from "../maillage.js";
 import type { Repere } from "../annotations.js";
@@ -119,12 +120,23 @@ export interface VueOutil {
   readonly survol: readonly string[];
   /** Message d'erreur transitoire (saisie refusée…), annoncé par `aria-live`. */
   readonly erreur: string | null;
+  /** (Cas 2, lot 2) Note d'information de l'outil (ex. ressaut d'un chanfrein comparé au maximum saisi). */
+  readonly note?: string;
+  /** (Cas 2, lot 2) Mètre : dernière mesure (décomposée par le panneau Mètre · Mesure) et dernier guide créé. */
+  readonly metre?: { readonly derniere: { readonly a: Vec3; readonly b: Vec3 } | null; readonly guide: { readonly id: string; readonly pas: Vec3 } | null };
   /** (Lot Planche 8) Options de l'outil actif, affichées en boutons (barre d'options, toucher). */
   readonly options?: readonly OptionOutil[];
 }
 
 /** Contexte partagé fourni par le rendu à chaque événement. */
 export interface ContexteOutil {
+  /** (Cas 2, lot 8, n° 100) Altitudes saisies au panneau « Soustraire et garder » : bornes z d'une boîte tracée à plat. */
+  readonly altitudesBoite?: { readonly zmin: number; readonly zmax: number } | null;
+  /**
+   * (Cas 2, lot 8, n° 61, 79) Pose d'un composant d'agence en cours : fichier et valeurs saisis au panneau « Composants
+   * dynamiques », face visée (baie d'un mur plein) ; les points sont cliqués dans la vue.
+   */
+  readonly poseComposant?: { readonly pose: import("../composants-l8.js").Pose; readonly face?: string } | null;
   readonly modele: Modele;
   /** Sélection courante (ids d'entités ou d'occurrences), tenue par l'interface. */
   readonly selection: readonly string[];
@@ -142,8 +154,15 @@ export interface ContexteOutil {
    * Absent : retrouvé depuis `dans` (première occurrence).
    */
   readonly chemin?: readonly string[];
+  /**
+   * (Cas 4, C4 étape 5) État des travaux affiché (« existant » ou « projete ») ; absent = tout. Ce que l'état masque n'est
+   * ni visé, ni sélectionné, ni accroché.
+   */
+  readonly etatTravaux?: "existant" | "projete";
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
+  /** (Cas 4, lot C4) Fond choisi dans le panneau Fonds calés : visé en priorité là où des fonds se superposent. */
+  readonly fondCourant?: string;
   /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
   readonly baliseCourante?: string;
   /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */
@@ -164,6 +183,10 @@ export interface ContexteOutil {
   readonly sectionCourante?: SectionCourante;
   /** (Cas 4, étape 4) Épaisseur et hauteur du mur, saisies dans la barre d'options de l'outil Mur ; absent = saisie invalide. */
   readonly parametresMur?: { readonly epaisseur: number; readonly hauteur: number };
+  /** (Cas 4, étape 7b) Date du jour « AAAA-MM-JJ » (outil Réserve) ; absent = aucune réserve posée. */
+  readonly aujourdhui?: string;
+  /** (Cas 2, lot 2) Réglages d'accrochage du panneau « Accrochage » (genre forcé, genres coupés, presque, pas). */
+  readonly accrochage?: OptionsAccrochage;
 }
 
 /** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */
@@ -171,6 +194,8 @@ export interface AdaptateurBooleens {
   union(a: Maillage, b: Maillage): Maillage;
   difference(a: Maillage, b: Maillage): Maillage;
   intersection(a: Maillage, b: Maillage): Maillage;
+  /** (Cas 2, lot 8, n° 15) Aire de l'union de contours plans (x, y), règle de remplissage positive. */
+  aireUnion?(contours: readonly (readonly (readonly [number, number])[])[]): number;
   /** (Protocole 1.4) Opérations planes du même moteur ; absentes = moteur sans opérations planes. */
   readonly plans?: AdaptateurPlans;
 }

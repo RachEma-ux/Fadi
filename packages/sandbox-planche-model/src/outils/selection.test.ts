@@ -244,11 +244,11 @@ describe("Sélection — vide, Échap, Suppr, groupes", () => {
 });
 
 describe("Registre des machines de tracé", () => {
-  it("MACHINES_TRACE : 6 machines (Mur compris, cas 4), ids du catalogue, accessibles par machineParId", async () => {
+  it("MACHINES_TRACE : 8 machines (Mur, Réserve et Calage compris, cas 4), ids du catalogue, accessibles par machineParId", async () => {
     const { MACHINES_TRACE } = await import("./registre-trace.js");
     const { machineParId } = await import("./index.js");
     const ids = MACHINES_TRACE.map((m) => m.id);
-    expect(ids).toEqual(["selection", "lasso", "gomme", "ligne", "main-levee", "mur"]);
+    expect(ids).toEqual(["selection", "lasso", "gomme", "ligne", "main-levee", "mur", "reserve", "calage"]);
     for (const id of ids) {
       expect(outilParId(id)).not.toBeNull();
       expect(machineParId(id)?.id).toBe(id);

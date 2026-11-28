@@ -1,8 +1,9 @@
+import { lireModelePlanche } from "./delta.js";
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, grouper, modeleVide, pousserTirer } from "./geometrie-libre.js";
 import { exporterIfc, guidIfc, chaineIfc } from "./echanges-ifc.js";
 import { exporterObj, exporterStl } from "./echanges.js";
-import { ErreurImport, MAX_TRIANGLES_IMPORT, importerMaillages, lireIfc, lireMaillages, lireObj, lireStl } from "./echanges-import.js";
+import { ErreurImport, construireImport, importerMaillages, poserImport, lireIfc, lireMaillages, lireObj, lireStl } from "./echanges-import.js";
 import { maillagesPlanche } from "./representation.js";
 import { v3 } from "./vecteur.js";
 
@@ -86,12 +87,48 @@ describe("menu de la Planche — insertion", () => {
     const xs = [...Array(mesh.positions.length / 3).keys()].map((i) => mesh.positions[i * 3]!);
     expect(Math.max(...xs)).toBeCloseTo(0.002, 6);
   });
-  it("triangle d'aire nulle ignoré et compté ; au-delà du plafond, refus", () => {
+  it("triangle d'aire nulle ignoré et compté", () => {
     const r = importerMaillages(modeleVide(), [{ nom: "T", positions: [0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0], triangles: [0, 1, 2, 0, 1, 3] }], 1);
     expect(r.triangles).toBe(1);
     expect(r.ignores).toBe(1);
-    const gros = { nom: "G", positions: [0, 0, 0, 1, 0, 0, 0, 1, 0], triangles: Array.from({ length: (MAX_TRIANGLES_IMPORT + 1) * 3 }, (_, i) => i % 3) };
-    expect(() => importerMaillages(modeleVide(), [gros], 1)).toThrow(/au plus/);
+  });
+  it("cas 4, étape 7a : construction quasi linéaire, hors du modèle, progression par paquets, puis pose", () => {
+    // Terrain gaufré de n × n cases, deux triangles par case, aucune paire coplanaire : rien ne fusionne.
+    const gaufre = (n: number) => {
+      const positions: number[] = [];
+      for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) positions.push(i, j, ((i * 7 + j * 13) % 5) * 0.1 + i * j * 1e-3);
+      const triangles: number[] = [];
+      const k = (i: number, j: number) => j * (n + 1) + i;
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) triangles.push(k(i, j), k(i + 1, j), k(i + 1, j + 1), k(i, j), k(i + 1, j + 1), k(i, j + 1));
+      return { nom: "Terrain", positions, triangles };
+    };
+    const duree = (n: number) => {
+      const t0 = performance.now();
+      construireImport([gaufre(n)], 1);
+      return performance.now() - t0;
+    };
+    duree(20);
+    const petit = duree(50); // 5 000 triangles
+    const grand = duree(100); // 20 000 triangles
+    expect(grand / Math.max(petit, 1)).toBeLessThan(10); // quadratique : × 16
+    const avance: number[] = [];
+    const c = construireImport([gaufre(60)], 1, "x", (f) => avance.push(f));
+    expect(avance.at(-1)).toBe(7200);
+    expect(avance.length).toBeGreaterThan(2);
+    const r = poserImport(modeleVide(), c.contenus, c.ignores, 1);
+    expect([r.objets, r.triangles]).toEqual([1, 7200]);
+    expect(lireModelePlanche(JSON.parse(JSON.stringify(r.modele)))).not.toBeNull();
+    // Un plan carré découpé en 2 × 2 cases (8 triangles) fusionne en une face de 4 côtés (sommets alignés retirés).
+    const plan = { nom: "P", positions: [0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 1, 1, 0, 2, 1, 0, 0, 2, 0, 1, 2, 0, 2, 2, 0], triangles: [0, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 3, 4, 7, 3, 7, 6, 4, 5, 8, 4, 8, 7] };
+    const p = importerMaillages(modeleVide(), [plan], 1);
+    const def = Object.values(p.modele.definitions)[0]!;
+    expect(Object.values(def.contenu.faces).map((f) => f.exterieur.length)).toEqual([4]);
+    expect(Object.keys(def.contenu.aretes)).toHaveLength(4);
+    // Un carré percé (anneau de 8 triangles) garde son trou.
+    const anneau = { nom: "A", positions: [0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3, 0, 1, 1, 0, 2, 1, 0, 2, 2, 0, 1, 2, 0], triangles: [0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7] };
+    const a = Object.values(importerMaillages(modeleVide(), [anneau], 1).modele.definitions)[0]!;
+    const fa = Object.values(a.contenu.faces);
+    expect(fa.map((f) => [f.exterieur.length, f.trous.map((t) => t.length)])).toEqual([[4, [4]]]);
   });
 });
 

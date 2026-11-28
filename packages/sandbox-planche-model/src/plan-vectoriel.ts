@@ -11,8 +11,10 @@
  * - Sortie SVG à l'échelle : viewBox en millimètres papier, un groupe par classe de trait.
  */
 import type { FamilleHachure, Materiau, MotifHachure, PlanDeCoupe } from "./annotations.js";
-import { type Id, type Modele, modifierAnnotations } from "./geometrie-libre.js";
+import { type Id, type Modele, type StatutTravaux, modifierAnnotations } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
+import { tiretsDuTrait } from "./balises-l4.js";
+import { ficheDe, lignesFiche, revisionDe, texteRevision } from "./versions-l7.js";
 import { type Vec3, add, cross, dot, len, normalize, scale, sub } from "./vecteur.js";
 
 export type ClasseTrait = "coupe" | "vu" | "cache";
@@ -25,11 +27,16 @@ export interface TraitProjete {
   readonly a: P2;
   readonly b: P2;
   readonly classe: ClasseTrait;
+  /** (Cas 2, lot 4) Balise de l'arête : son épaisseur et son type de trait, s'ils sont saisis, priment à la sortie. */
+  readonly balise?: Id;
+  /** (C4 étape 5) Statut des travaux de l'objet tracé ; absent = sans statut. */
+  readonly statut?: StatutTravaux;
 }
 export interface PocheProjetee {
   /** Boucles fermées (remplissage pair-impair : une boucle intérieure est un trou). */
   readonly boucles: readonly (readonly P2[])[];
   readonly materiau: Id | null;
+  readonly statut?: StatutTravaux;
 }
 export interface PlanProjete {
   readonly traits: readonly TraitProjete[];
@@ -70,6 +77,7 @@ interface Bord {
   readonly a: Vec3;
   readonly b: Vec3;
   readonly materiau?: Id | null;
+  readonly statut?: StatutTravaux;
 }
 
 /** Segments d'intersection d'une face plane (contour et trous) avec un plan : pairs de points de franchissement. */
@@ -135,21 +143,29 @@ function enBoucles(bords: readonly Bord[]): { points: Vec3[]; bords: Bord[] }[] 
  * matière est la matière déclarée qui en borde la plus grande longueur (une paroi peinte sur une seule face reste pochée
  * entière de sa matière) ; sans matière déclarée, aplat.
  */
-export function sectionsDeCoupe(m: Modele, plan: PlanDeCoupe): { readonly boucles: Vec3[][]; readonly materiau: Id | null }[] {
+export function sectionsDeCoupe(m: Modele, plan: PlanDeCoupe, etat?: "existant" | "projete"): { readonly boucles: Vec3[][]; readonly materiau: Id | null; readonly statut?: StatutTravaux }[] {
   const bords: Bord[] = [];
-  for (const f of geometrieVisible(m).faces) {
+  for (const f of geometrieVisible(m, etat ? { etat } : {}).faces) {
     // Face couchée dans le plan : déjà au bord de la coupe, elle ne s'y coupe pas.
     if (Math.abs(Math.abs(dot(f.normale, plan.normale)) - 1) < 1e-9 && Math.abs(cote(plan, f.exterieur[0]!)) < 1e-9) continue;
-    for (const b of coupeFace([f.exterieur, ...f.trous], plan)) bords.push({ ...b, materiau: f.materiau ?? null });
+    for (const b of coupeFace([f.exterieur, ...f.trous], plan)) bords.push({ ...b, materiau: f.materiau ?? null, ...(f.statut ? { statut: f.statut } : {}) });
   }
-  const parMatiere = new Map<Id | null, Vec3[][]>();
+  // Clé « matière|statut » : la matière et le statut retenus sont ceux qui bordent la plus grande longueur de la boucle.
+  const parCle = new Map<string, { materiau: Id | null; statut?: StatutTravaux; boucles: Vec3[][] }>();
+  const dominant = <T>(boucle: { bords: Bord[] }, f: (b: Bord) => T, prefere: (t: T) => boolean): T => {
+    const longueurs = new Map<T, number>();
+    for (const b of boucle.bords) longueurs.set(f(b), (longueurs.get(f(b)) ?? 0) + len(sub(b.b, b.a)));
+    return [...longueurs.entries()].sort((x, y) => (prefere(x[0]) ? 0 : 1) - (prefere(y[0]) ? 0 : 1) || y[1] - x[1])[0]![0];
+  };
   for (const boucle of enBoucles(bords)) {
-    const longueurs = new Map<Id | null, number>();
-    for (const b of boucle.bords) longueurs.set(b.materiau ?? null, (longueurs.get(b.materiau ?? null) ?? 0) + len(sub(b.b, b.a)));
-    const k = [...longueurs.entries()].sort((x, y) => (x[0] === null ? 1 : 0) - (y[0] === null ? 1 : 0) || y[1] - x[1])[0]![0];
-    parMatiere.set(k, [...(parMatiere.get(k) ?? []), boucle.points]);
+    const materiau = dominant(boucle, (b) => b.materiau ?? null, (k) => k !== null);
+    const statut = dominant(boucle, (b) => b.statut, (k) => k !== undefined);
+    const cle = `${materiau ?? ""}|${statut ?? ""}`;
+    const g = parCle.get(cle) ?? { materiau, ...(statut ? { statut } : {}), boucles: [] };
+    g.boucles.push(boucle.points);
+    parCle.set(cle, g);
   }
-  return [...parMatiere.entries()].map(([materiau, boucles]) => ({ boucles, materiau }));
+  return [...parCle.values()];
 }
 
 interface Occulteur {
@@ -178,13 +194,14 @@ function dedans(p: P2, boucles: readonly (readonly P2[])[]): boolean {
  * Projette le modèle selon la vue : traits vus et cachés (les arêtes adoucies ne sont pas tracées), contour et poché de
  * la matière coupée par le plan de coupe actif (la partie coupée disparaît).
  */
-export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?: PlanDeCoupe | null } = {}): PlanProjete {
+export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?: PlanDeCoupe | null; readonly etat?: "existant" | "projete" } = {}): PlanProjete {
   const plan = o.plan === undefined ? planDeCoupeActif(m) : o.plan;
   const R = repereVue(vue);
   const pr = (p: Vec3): P2 => ({ x: dot(p, R.x), y: dot(p, R.y) });
   const prof = (p: Vec3) => dot(p, R.z);
-  const garde = (p: Vec3) => !plan || cote(plan, p) <= 1e-9;
-  const geo = geometrieVisible(m);
+  // (Cas 2, lot 4, n° 59) Profondeur vue limitée : au-delà, rien n'est dessiné.
+  const garde = (p: Vec3) => !plan || (cote(plan, p) <= 1e-9 && (plan.profondeur === undefined || -cote(plan, p) <= plan.profondeur + 1e-9));
+  const geo = geometrieVisible(m, o.etat ? { etat: o.etat } : {});
   const occulteurs: Occulteur[] = [];
   for (const f of geo.faces) {
     const nz = dot(f.normale, R.z);
@@ -225,6 +242,14 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
       if (sa > 1e-9 && sb > 1e-9) continue;
       if (sa > 1e-9) a = add(a, scale(sub(b, a), sa / (sa - sb)));
       else if (sb > 1e-9) b = add(a, scale(sub(b, a), sa / (sa - sb)));
+      if (plan.profondeur !== undefined) {
+        // Second plan, à la profondeur vue : la partie plus lointaine n'est pas tracée.
+        const ta = -cote(plan, a) - plan.profondeur;
+        const tb = -cote(plan, b) - plan.profondeur;
+        if (ta > 1e-9 && tb > 1e-9) continue;
+        if (ta > 1e-9) a = add(a, scale(sub(b, a), ta / (ta - tb)));
+        else if (tb > 1e-9) b = add(a, scale(sub(b, a), ta / (ta - tb)));
+      }
     }
     const pa = pr(a);
     const pb = pr(b);
@@ -233,24 +258,26 @@ export function projeterPlan(m: Modele, vue: VueProjection, o: { readonly plan?:
     const n = Math.min(400, Math.max(1, Math.ceil(l2 / pasEch)));
     let debut = 0;
     let classe: ClasseTrait | null = null;
+    const st = ar.statut ? { statut: ar.statut } : {};
     for (let i = 0; i < n; i++) {
       const milieu = add(a, scale(sub(b, a), (i + 0.5) / n));
       const c: ClasseTrait = cache(milieu) ? "cache" : "vu";
       if (classe === null) classe = c;
       if (c !== classe) {
-        traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(add(a, scale(sub(b, a), i / n))), classe });
+        traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(add(a, scale(sub(b, a), i / n))), classe, ...st , ...(ar.balise ? { balise: ar.balise } : {}) });
         debut = i;
         classe = c;
       }
     }
-    if (classe) traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(b), classe });
+    if (classe) traits.push({ a: pr(add(a, scale(sub(b, a), debut / n))), b: pr(b), classe, ...st , ...(ar.balise ? { balise: ar.balise } : {}) });
   }
   const poches: PocheProjetee[] = [];
   if (plan) {
-    for (const s of sectionsDeCoupe(m, plan)) {
+    for (const s of sectionsDeCoupe(m, plan, o.etat)) {
       const boucles = s.boucles.map((bo) => bo.map(pr));
-      poches.push({ boucles, materiau: s.materiau });
-      for (const bo of boucles) for (let i = 0; i < bo.length; i++) traits.push({ a: bo[i]!, b: bo[(i + 1) % bo.length]!, classe: "coupe" });
+      const st = s.statut ? { statut: s.statut } : {};
+      poches.push({ boucles, materiau: s.materiau, ...st });
+      for (const bo of boucles) for (let i = 0; i < bo.length; i++) traits.push({ a: bo[i]!, b: bo[(i + 1) % bo.length]!, classe: "coupe", ...st });
     }
   }
   const pts = traits.flatMap((t) => [t.a, t.b]);
@@ -448,16 +475,34 @@ export function svgPlan(plan: PlanProjete, m: Modele, o: OptionsSvg): string {
       defs.push(`<pattern id="${id}-${i}" patternUnits="userSpaceOnUse" width="${n3(periode)}" height="${n3(pas)}" patternTransform="rotate(${n3(-f.angle)}) translate(${n3(f.x0)} ${n3(f.y0)})${cisaillement}"><line x1="0" y1="0" x2="${n3(periode)}" y2="0" stroke="rgb(0,0,0)" stroke-width="0.13"${tirets}/></pattern>`);
     });
   }
+  // (Cas 2, lot 4, n° 115) Un trait « vu » d'une balise dont l'épaisseur ou le type de trait est saisi est rangé dans un
+  // sous-groupe à ses valeurs ; sinon il garde l'épaisseur de sa classe.
+  const balises = m.annotations?.balises ?? {};
+  const propre = (t: TraitProjete) => t.classe === "vu" && !!t.balise && (balises[t.balise]?.epaisseur !== undefined || (balises[t.balise]?.trait ?? "continu") !== "continu");
+  const lignes = (ts: readonly TraitProjete[]) => ts.map((t) => `<line x1="${X(t.a)}" y1="${Y(t.a)}" x2="${X(t.b)}" y2="${Y(t.b)}"/>`).join("");
   const groupe = (cl: ClasseTrait, attrs: string) => {
-    const ts = plan.traits.filter((t) => t.classe === cl);
+    const ts = plan.traits.filter((t) => t.classe === cl && !propre(t));
     if (!ts.length || (cl === "cache" && o.cachees === "masquees")) return "";
-    return `<g id="${cl}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(o.traits[cl])}" stroke-linecap="round"${attrs}>${ts.map((t) => `<line x1="${X(t.a)}" y1="${Y(t.a)}" x2="${X(t.b)}" y2="${Y(t.b)}"/>`).join("")}</g>`;
+    return `<g id="${cl}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(o.traits[cl])}" stroke-linecap="round"${attrs}>${lignes(ts)}</g>`;
   };
+  const parBalise = [...new Set(plan.traits.filter(propre).map((t) => t.balise!))].map((id) => {
+    const b = balises[id]!;
+    const e = b.epaisseur ?? o.traits.vu;
+    const tirets = tiretsDuTrait(b.trait, e);
+    return `<g id="vu-${id}" fill="none" stroke="rgb(0,0,0)" stroke-width="${n3(e)}" stroke-linecap="round"${tirets.length ? ` stroke-dasharray="${tirets.map(n3).join(" ")}"` : ""}>${lignes(plan.traits.filter((t) => propre(t) && t.balise === id))}</g>`;
+  });
+  // (Cas 2, lot 7, n° 109) Fiche du projet et révision reprises dans le fichier (titre et description du SVG).
+  const xml = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fiche = ficheDe(m);
+  const revision = texteRevision(revisionDe(m));
+  const cartouche = `<title>${xml(fiche.projet ?? "non renseigné")}</title><desc>${xml([...lignesFiche(fiche).map(([l, v]) => `${l} : ${v}`), ...(revision ? [`Révision : ${revision}`] : [])].join("\n"))}</desc>`;
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${n3(larg)}mm" height="${n3(haut)}mm" viewBox="0 0 ${n3(larg)} ${n3(haut)}">`,
+    cartouche,
     defs.length ? `<defs>${defs.join("")}</defs>` : "",
     `<g id="poche">${corps.join("")}</g>`,
     groupe("vu", ""),
+    ...parBalise,
     groupe("cache", ` stroke-dasharray="${n3(Math.max(o.traits.cache * 8, 1))} ${n3(Math.max(o.traits.cache * 6, 0.8))}"`),
     groupe("coupe", ""),
     `</svg>`,

@@ -35,7 +35,7 @@ import { sandboxToolPreferences } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { lireCorpsPreferencesSandbox, reponsePreferences } from "../lib/sandbox-preferences.js";
 import { lireReglagesPlateforme } from "../lib/addons-lecture.js";
-import { basculerPaquet, lireChoixPaquets, type ChoixPaquets } from "@parcours/sandbox-planche-model";
+import { basculerPaquet, extensionSandbox, lireChoixPaquets, reglageEnVigueur, type ChoixPaquets } from "@parcours/sandbox-planche-model";
 import { fichesComptePaquets, paquetsDuCompte } from "../lib/addon-paquets.js";
 import { lireLignesPaquets } from "../lib/addon-paquets-lecture.js";
 import { archiverFichierExtension, BORNES_ARCHIVE, estNomArchive, lireArchive, lireOctetsArchive, listerArchives } from "../lib/sandbox-fichiers.js";
@@ -56,6 +56,23 @@ sandboxPreferencesRouter.get("/", async (req, res) => {
 async function choixPaquetsDe(userId: string): Promise<ChoixPaquets> {
   const [ligne] = await db.select({ packages: sandboxToolPreferences.packages }).from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, userId)).limit(1);
   return lireChoixPaquets(ligne?.packages);
+}
+
+/** Version d'une extension livrée du Sandbox si elle est active pour le compte (son choix, sinon le réglage de la plateforme). */
+/**
+ * Fichiers de données du cœur de la Planche (cas 2, lots 4 et 6, 27 novembre 2026) : un gabarit d'agence, un fichier
+ * importé (IFC, OBJ) et son rapport d'échange sont rangés tels quels en base pour le compte, sous cet identifiant réservé, avec la version de son format.
+ */
+export const FICHIERS_DU_COEUR: Readonly<Record<string, string>> = { "planche-gabarit": "fadi-gabarit/1", "planche-echange": "fadi-echange/1", "planche-composant": "fadi-composant/1" };
+
+async function versionExtensionLivreeActive(userId: string, id: string): Promise<string | null> {
+  const x = extensionSandbox(id);
+  if (!x) return null;
+  const reglage = reglageEnVigueur(x, await lireReglagesPlateforme());
+  if (reglage.etat === "retiree") return null;
+  const [ligne] = await db.select({ extensions: sandboxToolPreferences.extensions }).from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, userId)).limit(1);
+  const choix = (ligne?.extensions ?? {}) as Readonly<Record<string, boolean>>;
+  return (choix[id] ?? reglage.activeParDefaut) ? x.version : null;
 }
 
 sandboxPreferencesRouter.get("/extensions", async (req, res) => {
@@ -97,10 +114,12 @@ sandboxPreferencesRouter.post("/fichiers", express.json({ limit: BORNES_ARCHIVE.
   }
   const octets = lireOctetsArchive(contenu);
   if (!octets.ok) return void res.status(octets.statut).json({ error: octets.statut === 413 ? "too_large" : "invalid_input", detail: octets.detail });
-  // Seule une extension que ce compte a installée peut faire archiver ; sa version est gardée avec le fichier.
+  // Seule une extension que ce compte a installée (paquet) ou activée (extension livrée du Sandbox, par exemple « Contrôle
+  // et nettoyage » pour ses fichiers de règles des pièces du permis) peut faire archiver ; sa version est gardée avec le fichier.
   const paquet = paquetsDuCompte(await lireLignesPaquets(), await choixPaquetsDe(req.user!.id)).find((p) => p.fiche.id === extension);
-  if (!paquet) return void res.status(404).json({ error: "not_found" });
-  const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, paquet.fiche.version, nom, octets.octets);
+  const version = paquet?.fiche.version ?? FICHIERS_DU_COEUR[extension] ?? (await versionExtensionLivreeActive(req.user!.id, extension));
+  if (!version) return void res.status(404).json({ error: "not_found" });
+  const { archive, deja } = await archiverFichierExtension(req.user!.id, extension, version, nom, octets.octets);
   res.status(deja ? 200 : 201).json({ archive });
 });
 

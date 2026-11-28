@@ -36,8 +36,10 @@ export const ICONES_INTERFACE = {
   menuRenommer: "pencil",
   menuSupprimer: "trash",
   menuPartager: "share",
+  menuLienConsultation: "link",
   menuExporter: "file-export",
   menuImporter: "file-import",
+  menuImporterFond: "photo-up",
   menuInformations: "info-circle",
   menuImage: "photo-down",
   menuExtensions: "puzzle",
@@ -49,6 +51,9 @@ export const ICONES_INTERFACE = {
   // Ordre des entrées d'une barre personnelle (panneau « Personnaliser les outils »).
   monter: "arrow-up",
   descendre: "arrow-down",
+  // Constats du contrôle avant émission (IFC structuré, cas 4, lot C4, étape 6).
+  constatOk: "circle-check",
+  constatAttention: "alert-triangle",
 } as const;
 
 export type IconeInterface = keyof typeof ICONES_INTERFACE;

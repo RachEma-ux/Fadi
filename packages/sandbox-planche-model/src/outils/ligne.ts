@@ -12,7 +12,9 @@
  * l'inférence courante (le segment « Alt = … » disparaît de la consigne) ; Alt = cycle des inférences linéaires,
  * appliqué au RELÂCHEMENT. Échap : annule le segment en cours, vide Mesures, l'outil reste actif.
  */
-import { axesDeSaisie, contraindreAuPlan, planDeTravailDe } from "./commun-formes.js";
+import { axesDeSaisie, contraindreAuPlan, formaterNombre, planDeTravailDe } from "./commun-formes.js";
+import { controlerRessaut, pointChanfrein, saisieDuProjet } from "../saisie-projet.js";
+import { REPERE_DU_MODELE } from "../reperes.js";
 import { type Modele, ajouterSegment } from "../geometrie-libre.js";
 import {
   type Inference,
@@ -20,7 +22,7 @@ import {
   type ModeAlt,
   type Verrou,
   COULEURS,
-  geometrieVisible,
+  etatOutil, geometrieVisible,
   LIBELLES_MODE_ALT,
   LIBELLE_LIGNE_CONTRAINTE,
   inferer,
@@ -53,6 +55,8 @@ export interface EtatLigne {
   /** Texte tapé, affiché dans Mesures après validation (jusqu'au prochain mouvement). */
   readonly texte: string | null;
   readonly erreur: string | null;
+  /** (Cas 2, lot 2) Note après un chanfrein : ressaut comparé au maximum saisi, ou « non évalué ». */
+  readonly note?: string | null;
   /** Dernier segment terminé (correction après coup). */
   readonly dernier: { readonly modeleAvant: Modele; readonly depart: Vec3; readonly direction: Vec3 } | null;
   /** Dernier rayon reçu, pour recalculer l'inférence après un changement de verrou. */
@@ -104,7 +108,7 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
   const i = inferer({
     rayon: r,
     tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     modeAlt: e.modeAlt,
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
@@ -120,7 +124,7 @@ function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, toleran
 /** Mémorise la dernière arête survolée (référence de ↓). */
 function reference(e: EtatLigne, i: Inference, ctx: ContexteOutil): EtatLigne["areteReference"] {
   if (i.entite === undefined || !["extremite", "milieu", "sur-arete"].includes(i.type)) return e.areteReference;
-  const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
+  const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === i.entite);
   return a ? { a: a.a, b: a.b } : e.areteReference;
 }
 
@@ -195,11 +199,31 @@ function poser(e: EtatLigne, ctx: ContexteOutil, q: Vec3, texte: string | null):
 }
 
 function saisir(e: EtatLigne, ctx: ContexteOutil, texte: string): Transition<EtatLigne> {
-  const res = analyserSaisie(texte, { attendu: ATTENDU, separateurDecimal: ctx.separateurDecimal });
-  const avecTexte = { ...e, texte, erreur: null };
+  const res = analyserSaisie(texte, { ...saisieDuProjet(ctx.modele), attendu: ATTENDU, separateurDecimal: ctx.separateurDecimal });
+  const avecTexte = { ...e, texte, erreur: null, note: null };
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
+  if (res.genre === "chanfrein") {
+    // (Cas 2, lot 2) Chanfrein : pente et hauteur, dans la direction horizontale du curseur ; ressaut signalé, jamais corrigé.
+    if (e.etape !== 2 || !e.depart) return { etat: { ...e, texte, erreur: "Placez d'abord le pied du chanfrein." } };
+    const vers = e.inference ? sub(e.inference.point, e.depart) : null;
+    const P = vers ? pointChanfrein(e.depart, vers, res.pente, res.hauteur, (ctx.repere ?? REPERE_DU_MODELE).z) : null;
+    if (!P) return { etat: { ...e, texte, erreur: "Orientez le curseur à l'horizontale pour donner la direction du chanfrein." } };
+    const t = poser(e, ctx, P, texte);
+    const c = controlerRessaut(ctx.modele, res.hauteur);
+    const h = formaterNombre(Math.abs(res.hauteur), 3, ctx.separateurDecimal);
+    const note =
+      c.etat === "non-evalue"
+        ? `Ressaut de ${h} m : non évalué (aucun maximum saisi dans Info modèle).`
+        : c.etat === "au-dessus"
+          ? `Ressaut de ${h} m au-dessus du maximum saisi (${formaterNombre(c.max, 3, ctx.separateurDecimal)} m, ${c.source}).`
+          : `Ressaut de ${h} m dans le maximum saisi (${formaterNombre(c.max, 3, ctx.separateurDecimal)} m, ${c.source}).`;
+    return { ...t, etat: { ...t.etat, note } };
+  }
   if (res.genre === "point") {
-    const base = res.reference === "absolue" ? ORIGINE : (e.depart ?? ORIGINE);
+    // (Cas 2, lot 2) « @ » : décalage depuis le point visé (désigné par le curseur, non posé).
+    const vise = e.inference && e.inference.type !== "aucune" ? e.inference.point : null;
+    if (res.reference === "depuis" && !vise) return { etat: { ...e, texte, erreur: "Visez d'abord le point de référence, puis tapez « @ » et le décalage." } };
+    const base = res.reference === "absolue" ? ORIGINE : res.reference === "depuis" ? (vise as Vec3) : (e.depart ?? ORIGINE);
     const P = add(base, res.point);
     if (e.etape === 1) return { etat: { ...avecTexte, etape: 2, depart: P, debutChaine: P, dernier: null } };
     return poser(e, ctx, P, texte);
@@ -284,7 +308,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
         return { etat: { ...acquerir(e0, i), inference: i, areteReference: reference(e0, i, ctx), texte: null, erreur: null } };
       }
       case "clic": {
-        const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance }, texte: null, erreur: null };
+        const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance }, texte: null, erreur: null, note: null };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
         if (e0.etape === 1) {
           return { etat: { ...avecAcquis(e0, i.point), etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
@@ -334,6 +358,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       selection: ctx.selection,
       survol: [],
       erreur: etat.erreur,
+      ...(etat.note ? { note: etat.note } : {}),
     };
   },
 };

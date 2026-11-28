@@ -118,6 +118,19 @@ export function chargerBooleens(): Promise<AdaptateurBooleens> {
         union: op((a, b) => M.Manifold.union(a, b)),
         difference: op((a, b) => M.Manifold.difference(a, b)),
         intersection: op((a, b) => M.Manifold.intersection(a, b)),
+        // Cas 2, lot 8 (n° 15) : union de contours plans (règle positive), recentrée pour la précision.
+        aireUnion: (contours) => {
+          const pts = contours.flat();
+          if (pts.length === 0) return 0;
+          const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+          const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+          const cs = new M.CrossSection(contours.map((c) => c.map((p) => [p[0] - cx, p[1] - cy] as [number, number])), "Positive");
+          try {
+            return cs.area();
+          } finally {
+            cs.delete();
+          }
+        },
         plans: plansManifold(M),
       };
     })();

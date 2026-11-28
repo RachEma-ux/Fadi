@@ -116,7 +116,8 @@ describe("Couche de raccourcis Fadi (écart déclaré, D-198)", () => {
       expect(commenceSaisie(e.key), `${id} : ${r} commencerait une saisie`).toBe(false);
       // Forme : Maj + lettre ou Alt + Maj + lettre ; Ctrl + Maj + lettre depuis la phase 1 (lot 1, outil Interagir),
       // toutes les lettres des deux premières formes étant prises — jamais une combinaison que garde le navigateur.
-      expect(/^((Alt|Ctrl)\+)?Maj\+[A-Z]$/.test(r), r).toBe(true);
+      // Ctrl + Alt + Maj + F1 à F12 depuis le lot C4 (outil Calage) : toutes les formes à lettre sont prises (écart déclaré).
+      expect(/^((Alt|Ctrl)\+)?Maj\+[A-Z]$/.test(r) || /^Ctrl\+Alt\+Maj\+F([1-9]|1[0-2])$/.test(r), r).toBe(true);
       expect(RACCOURCIS_NAVIGATEUR, `${id} : ${r}`).not.toContain(r);
     }
   });

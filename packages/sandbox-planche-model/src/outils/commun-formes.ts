@@ -6,7 +6,8 @@
 import { type CodeDiagnostic, CODES_DIAGNOSTIC, codeDe } from "../diagnostics.js";
 import { type EtapeOutil, type Outil, INFERENCES, outilParId } from "../catalogue-outils.js";
 import type { Modele } from "../geometrie-libre.js";
-import { type Inference, COULEURS, LIBELLES, LIBELLE_PLAN_CONTRAINT, geometrieVisible, inferer } from "../inference.js";
+import { saisieDuProjet } from "../saisie-projet.js";
+import { type GuideAccrochable, type Inference, type OptionsAccrochage, COULEURS, LIBELLES, LIBELLE_PLAN_CONTRAINT, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { type AttenduSaisie, type ContexteSaisie, SEGMENTS_MAX, SEGMENTS_MIN } from "../saisie-vcb.js";
 import {
   type Vec3,
@@ -69,7 +70,8 @@ export const approchee = (i: Inference | null): boolean => !i || i.type === "auc
 export const prefixe = (i: Inference | null): string => (approchee(i) ? "~ " : "");
 
 export function contexteSaisie(attendu: AttenduSaisie, ctx: ContexteOutil, extra: Partial<ContexteSaisie> = {}): ContexteSaisie {
-  return { ...extra, attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) };
+  // (Cas 2, lot 2) Unité de saisie et paramètres nommés du projet.
+  return { ...saisieDuProjet(ctx.modele), ...extra, attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) };
 }
 
 export function mesures(
@@ -148,10 +150,21 @@ export function axesDuPlan(n0: Vec3, repere?: Repere): { u: Vec3; w: Vec3 } {
  * (Chantier Axes, AX-1) Axes et sol de l'inférence pour un outil : repère de saisie et plan de travail. Un seul endroit,
  * pour que tous les outils lisent le même contexte (concept § 8.2).
  */
-export function axesDeSaisie(ctx: Pick<ContexteOutil, "repere" | "planDeTravail">): { axes?: Repere; sol?: { origine: Vec3; normale: Vec3 } } {
+export function axesDeSaisie(
+  ctx: Pick<ContexteOutil, "repere" | "planDeTravail"> & Partial<Pick<ContexteOutil, "modele" | "accrochage">>,
+): { axes?: Repere; sol?: { origine: Vec3; normale: Vec3 }; accrochage?: OptionsAccrochage; guides?: GuideAccrochable[]; coupe?: { origine: Vec3; normale: Vec3 } } {
+  // (Cas 2, lot 2) Avec les réglages d'accrochage de l'interface : guides du modèle et plan de coupe actif (le dernier).
+  const a = ctx.accrochage;
+  const ann = a ? ctx.modele?.annotations : undefined;
+  const guides = ann ? (Object.values(ann.guides) as GuideAccrochable[]) : [];
+  const plans = ann ? Object.values(ann.plansDeCoupe).filter((p) => p.actif) : [];
+  const coupe = plans[plans.length - 1];
   return {
     ...(ctx.repere ? { axes: ctx.repere } : {}),
     ...(ctx.planDeTravail ? { sol: { origine: ctx.planDeTravail.origine, normale: ctx.planDeTravail.normale } } : {}),
+    ...(a ? { accrochage: a } : {}),
+    ...(guides.length ? { guides } : {}),
+    ...(coupe ? { coupe: { origine: coupe.origine, normale: coupe.normale } } : {}),
   };
 }
 
@@ -235,7 +248,7 @@ interface Viser {
 
 /** Inférence libre (accrochages, axes depuis `depart`), et normale du plan inféré : face survolée, sinon sol. */
 export function viserLibre(ctx: ContexteOutil, ev: Viser, depart?: Vec3): { inference: Inference; normale: Vec3 } {
-  const geometrie = geometrieVisible(ctx.modele);
+  const geometrie = geometrieVisible(ctx.modele, etatOutil(ctx));
   const brute = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
   // AX-1 : hors face, la normale est celle du plan de travail (plus jamais Z du monde sous un repère incliné, AX05) ;
   // plan verrouillé : le point reste sur le plan et la normale ne suit plus les faces survolées.

@@ -18,6 +18,10 @@ import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
 import { geodataRouter } from "./routes/geodata/index.js";
 import { sitesRouter } from "./routes/sites.js";
+import { consultationPubliqueRouter, sandboxConsultationsRouter } from "./routes/sandbox-consultations.js";
+import { sandboxFondsRouter } from "./routes/sandbox-fonds.js";
+import { sandboxReferencesRouter } from "./routes/sandbox-references.js";
+import { sandboxProjectionsRouter } from "./routes/sandbox-projections.js";
 import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
 import { organizationsRouter } from "./routes/organizations.js";
@@ -27,7 +31,7 @@ import { studioMcpRouter } from "./routes/mcp-studio.js";
 import { surveillanceStudio } from "./lib/studio-surveillance.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|sites\/api|version|reviews|mcp)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit|surveillance|addons)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|sandbox\/consultations|sandbox\/fonds|sandbox\/references|sandbox\/projections|consultation\/api|geodata\/api|sites\/api|version|reviews|mcp)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -51,11 +55,12 @@ export function createApp() {
 
   // Limite générale de 256 ko ; les lots de commandes de l'Atelier (1 Mo, routes/atelier-commands.ts), les pièces
   // jointes des étapes, les exports de l'Atelier, l'import IFC, l'import d'archive et la réception d'un modèle externe Studio
-  // (6 Mo, routes/studio.ts), l'import d'un paquet d'extension (1,3 Mo, routes/admin/addons.ts) et l'archivage d'un fichier d'extension (1,2 Mo,
-  // routes/sandbox-preferences.ts) ont leur propre
+  // (6 Mo, routes/studio.ts), l'import d'un paquet d'extension (1,3 Mo, routes/admin/addons.ts), l'archivage d'un fichier d'extension (1,2 Mo,
+  // routes/sandbox-preferences.ts) le lien de consultation de la Planche (8 Mo, routes/sandbox-consultations.ts) et l'original d'un fond calé (25 Mo, brut,
+  // routes/sandbox-fonds.ts), le fichier d'une référence (60 Mo, brut, routes/sandbox-references.ts) ont leur propre
   // lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|^\/geodata\/api\/prix\/officielles\/imports$|^\/admin\/addons\/paquets$|^\/sandbox\/preferences\/fichiers$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$|^\/geodata\/api\/imports$|^\/geodata\/api\/prix\/imports$|^\/geodata\/api\/prix\/officielles\/imports$|^\/admin\/addons\/paquets$|^\/sandbox\/preferences\/fichiers$|^\/sandbox\/consultations\/?$|^\/sandbox\/fonds\/?$|^\/sandbox\/references\/?$|^\/sandbox\/projections\/?$|\/studio\/studies\/[^/]+\/variants\/[^/]+\/(?:modeles-externes|illustrations)$/.test(req.path) ? next() : jsonBody(req, res, next)));
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());
@@ -97,6 +102,14 @@ export function createApp() {
   app.use("/preferences", apiLimiter, preferencesRouter);
   // Sandbox (lot 5) : seules ses préférences d'outils passent par le serveur ; la page `/sandbox` reste celle du client.
   app.use("/sandbox/preferences", apiLimiter, sandboxPreferencesRouter);
+  // Liens de consultation de la Planche (cas 4, étape 7d) : copie figée, lue sans compte par son jeton (`/consultation/api`) ;
+  // la page `/consultation/:jeton` reste celle du client.
+  app.use("/sandbox/consultations", apiLimiter, sandboxConsultationsRouter);
+  app.use("/consultation/api", apiLimiter, consultationPubliqueRouter);
+  // Originaux des fonds calés de la Planche (cas 4, lot C4) : l'image reçue archivée telle quelle.
+  app.use("/sandbox/fonds", apiLimiter, sandboxFondsRouter);
+  app.use("/sandbox/references", apiLimiter, sandboxReferencesRouter);
+  app.use("/sandbox/projections", apiLimiter, sandboxProjectionsRouter);
   // GeoData (9ᵉ module, ADR-GEODATA-02) : API sous `/geodata/api` ; la page `/geodata` reste celle du client. Les tuiles
   // ont leur propre limite (une carte en demande des dizaines par déplacement).
   const tuilesLimiter = rateLimit({ windowMs: 60 * 1000, limit: Number(process.env["GEODATA_TILE_RATE_LIMIT"] ?? 3000), standardHeaders: true, legacyHeaders: false });

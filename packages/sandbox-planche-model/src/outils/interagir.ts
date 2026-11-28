@@ -26,7 +26,7 @@ const initial = (): EtatInteragir => ({ survol: null, surligne: null, erreur: nu
 
 /** Composant interactif sous le pointeur, et l'occurrence à surligner. */
 function vise(ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: "clic" | "survol" }>): { definition: Id | null; surligne: Id | null } {
-  const el = viser(ctx.modele, ev.rayon, ev.tolerance);
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, undefined, ctx.etatTravaux);
   if (!el) return { definition: null, surligne: null };
   const definition = definitionInteractive(ctx.modele, el.chemin);
   return { definition, surligne: definition ? (el.chemin[0] ?? null) : null };

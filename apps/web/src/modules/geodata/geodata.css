@@ -394,8 +394,15 @@
 .geodata-page .gd-legende-indicateur h3{margin:0 0 4px;font-size:.84rem}
 .geodata-page .gd-legende-indicateur .gd-entrees{list-style:none;margin:0;padding:0}
 .geodata-page .gd-legende-indicateur p{margin:4px 0 0}
+/* Légende lue (P9) : lieu sélectionné (trait épais, pas seulement une couleur), absences par motif, source dépliable. */
+.geodata-page .gd-entree-courante{font-weight:600}
+.geodata-page .gd-entree-courante .gd-pastille{border-width:3px}
+.geodata-page .gd-legende-motifs-ligne{list-style:none}
+.geodata-page .gd-legende-motifs{list-style:none;margin:0 0 2px 26px;padding:0;font-size:.92em}
+.geodata-page .gd-legende-lieu{margin:4px 0 0;font-weight:600}
+.geodata-page .gd-legende-source details summary{cursor:pointer}
 @media not all and (max-width:700px){.geodata-page .gd-legende-indicateur.gd-legende-decalee{left:380px}}
-@media (max-width:700px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:35%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}
+@media (max-width:700px){.geodata-page .gd-legende-indicateur{bottom:calc(34px + var(--gd-barre-bas));font-size:.74rem;max-height:25%}/* Panneau ouvert au téléphone : légende dans l'onglet « Légende » du panneau (place insuffisante au-dessus). */.geodata-page .gd-legende-indicateur.gd-legende-decalee{display:none}}
 /* Terrain haute résolution (TER-05) : bouton « Terrain » à droite de « Données », panneau Terrain, légendes, profil. */
 .geodata-page .gd-bouton-terrain{left:142px}
 .geodata-page .gd-terrain fieldset{border:1px solid var(--gd-ligne);border-radius:8px;margin:8px 0;padding:6px 8px}
@@ -473,3 +480,11 @@
 .geodata-page .gd-aide-raccourcis h2{font-size:16px;margin:0}
 .geodata-page .gd-aide-raccourcis kbd{font:inherit;font-size:12px;border:1px solid var(--gd-ligne);border-radius:4px;padding:0 6px;background:#f7faf9;white-space:nowrap}
 .geodata-page .gd-panneau-groupe[hidden]{display:none}
+/* Analyse de site (P13) : rubriques du volet « Que sait-on d'ici ? ». */
+.geodata-page .gd-site-rubrique{border-top:1px solid var(--gd-ligne);padding:6px 0;margin:0}
+.geodata-page .gd-site-rubrique h3{margin:0 0 4px;font-size:.9rem}
+.geodata-page .gd-site-rubrique ul{margin:0;padding-left:18px}
+.geodata-page .gd-site-valeurs{margin:0}
+.geodata-page .gd-site-valeurs dt{font-weight:600}
+.geodata-page .gd-site-valeurs dd{margin:0 0 4px}
+.geodata-page .gd-site-provenance{list-style:none;padding:0 !important;margin:4px 0 0}

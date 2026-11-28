@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus, COMMANDES_NUMEROTATION, disponibiliteNumerotation, disponibilitePdf, disponibiliteDxf, disponibiliteTravaux, disponibiliteIfc, disponibiliteFabricant, disponibiliteKml, disponibiliteRedressement } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -209,5 +209,79 @@ describe("Extension « Scripts » — commandes, erreurs et aide traduites", () 
       expect(CATALOGUE.fr[k], k).toBe(e.nom);
       expect(CATALOGUE.en[k], k).toBeTruthy();
     }
+  });
+});
+
+describe("PDF reçu (lot C4, étape 4) : disponibilité des commandes", () => {
+  const s = { page: true, vectorielle: true, image: false, proposee: true, confirmee: false, lecture: false };
+  it("rien n'est inséré sans échelle confirmée ; fond seulement d'une page scannée ; lecture seule", () => {
+    expect(disponibilitePdf("pdf-recu", { ...s, page: false }).disponible).toBe(true);
+    expect(disponibilitePdf("mesurer-pdf", { ...s, page: false }).motif).toBe("planche.pdf.motif.page");
+    expect(disponibilitePdf("mesurer-pdf", { ...s, vectorielle: false }).motif).toBe("planche.pdf.motif.vectorielle");
+    expect(disponibilitePdf("confirmer-echelle-pdf", { ...s, proposee: false }).motif).toBe("planche.pdf.motif.proposee");
+    expect(disponibilitePdf("inserer-pdf", s).motif).toBe("planche.pdf.motif.confirmee");
+    expect(disponibilitePdf("inserer-pdf", { ...s, confirmee: true }).disponible).toBe(true);
+    expect(disponibilitePdf("poser-fond-pdf", { ...s, confirmee: true }).motif).toBe("planche.pdf.motif.image");
+    expect(disponibilitePdf("poser-fond-pdf", { ...s, confirmee: true, image: true }).disponible).toBe(true);
+    expect(disponibilitePdf("inserer-pdf", { ...s, confirmee: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibilitePdf("ouvrir-pdf", { ...s, lecture: true }).disponible).toBe(false);
+  });
+});
+
+describe("Feuilles en DXF et statut des travaux (lot C4, étape 5) : disponibilité des commandes", () => {
+  it("exporter seulement des feuilles cochées, même en lecture ; statut sur des objets choisis, hors lecture", () => {
+    expect(disponibiliteDxf("feuilles-dxf", { cochees: 0 }).disponible).toBe(true);
+    expect(disponibiliteDxf("exporter-dxf", { cochees: 0 }).motif).toBe("planche.dxf.motif.cochees");
+    expect(disponibiliteDxf("exporter-dxf", { cochees: 3 }).disponible).toBe(true);
+    expect(disponibiliteTravaux("statut-travaux", { objets: 0, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteTravaux("statut-projete", { objets: 0, lecture: false }).motif).toBe("planche.travaux.motif.objets");
+    expect(disponibiliteTravaux("statut-a-demolir", { objets: 2, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteTravaux("statut-existant", { objets: 2, lecture: false }).disponible).toBe(true);
+  });
+});
+
+describe("IFC structuré (lot C4, étape 6) : disponibilité des commandes", () => {
+  it("ouvrir et contrôler toujours ; exporter sauf modèle vide, même en lecture ; importer un fichier lu, hors lecture", () => {
+    const s = { bloquant: false, lu: false, lecture: false };
+    expect(disponibiliteIfc("ifc-structure", { ...s, bloquant: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("controler-ifc", { ...s, bloquant: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("exporter-ifc", { ...s, bloquant: true }).motif).toBe("planche.ifc.motif.vide");
+    expect(disponibiliteIfc("exporter-ifc", { ...s, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteIfc("importer-ifc", s).motif).toBe("planche.ifc.motif.fichier");
+    expect(disponibiliteIfc("importer-ifc", { ...s, lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteIfc("importer-ifc", { ...s, lu: true }).disponible).toBe(true);
+  });
+});
+
+describe("Formats des fabricants (lot C4, étape 7a) : disponibilité des commandes", () => {
+  it("ouvrir toujours ; poser un fichier lu, hors lecture", () => {
+    expect(disponibiliteFabricant("import-fabricant", { lu: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteFabricant("releve-capteur", { lu: false, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteFabricant("importer-fabricant", { lu: false, lecture: false }).motif).toBe("planche.fabricant.motif.fichier");
+    expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteFabricant("poser-releve", { lu: true, lecture: false }).disponible).toBe(true);
+  });
+});
+
+describe("KML / KMZ (lot C4, étape 7b) : disponibilité des commandes", () => {
+  it("ouvrir toujours ; importer un fichier lu avec un point de base, hors lecture ; .prj avec un point de base", () => {
+    const s = { lu: true, pointDeBase: true, lecture: false };
+    expect(disponibiliteKml("import-kml", { ...s, lecture: true, lu: false }).disponible).toBe(true);
+    expect(disponibiliteKml("importer-kml", { ...s, lu: false }).motif).toBe("planche.kml.motif.fichier");
+    expect(disponibiliteKml("importer-kml", { ...s, pointDeBase: false }).motif).toBe("planche.kml.motif.point-de-base");
+    expect(disponibiliteKml("definition-systeme", { ...s, pointDeBase: false }).motif).toBe("planche.kml.motif.point-de-base");
+    expect(disponibiliteKml("importer-kml", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteKml("importer-kml", s).disponible).toBe(true);
+  });
+
+  it("redressement (étape 7c) : photo, quatre coins et dimensions avant la pose", () => {
+    const s = { photo: true, points: 4, dimensions: true, lecture: false };
+    expect(disponibiliteRedressement("redresser-photo", { ...s, lecture: true, photo: false }).disponible).toBe(true);
+    expect(disponibiliteRedressement("poser-redressee", { ...s, photo: false }).motif).toBe("planche.redressement.motif.photo");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, points: 3 }).motif).toBe("planche.redressement.motif.points");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, dimensions: false }).motif).toBe("planche.redressement.motif.dimensions");
+    expect(disponibiliteRedressement("effacer-points-redressement", { ...s, points: 0 }).motif).toBe("planche.redressement.motif.aucun-point");
+    expect(disponibiliteRedressement("poser-redressee", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteRedressement("poser-redressee", s).disponible).toBe(true);
   });
 });

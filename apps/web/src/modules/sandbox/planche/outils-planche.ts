@@ -130,9 +130,14 @@ export function nomOutil(o: Pick<Outil, "libelle" | "libelleSketchUp">, langue: 
 export function afficherRaccourci(r: string, langue: Langue = LANGUE_INTERFACE): string {
   if (langue !== "en") return r;
   return r
-    .split("+")
-    .map((x) => (x === "Maj" ? "Shift" : x === "Espace" ? "Space" : x))
-    .join("+");
+    .split(", ")
+    .map((t) =>
+      t
+        .split("+")
+        .map((x) => (x === "Maj" ? "Shift" : x === "Espace" ? "Space" : x))
+        .join("+"),
+    )
+    .join(", ");
 }
 
 /** Titre d'un bouton d'outil : « Nom (raccourci) » (relevé, ou couche Fadi), suivi du motif d'indisponibilité. */
@@ -187,7 +192,8 @@ export function raccourciClavier(c: Cle): string {
   // touche physique (`code`). Une lettre lisible dans `key` reste prioritaire (dispositions AZERTY, QWERTZ…).
   else if (c.altKey && !/^[a-z]$/i.test(c.key) && c.code && /^Key[A-Z]$/.test(c.code)) parts.push(c.code.slice(3));
   // Chantier Axes (AX-D6) : Alt + Maj + chiffre, lu sur la touche physique (AZERTY donne « & », QWERTY « ! » sous Maj).
-  else if (c.altKey && c.code && /^Digit[0-9]$/.test(c.code)) parts.push(c.code.slice(5));
+  // Cas 2 du catalogue, lot 4 : Ctrl + Maj + chiffre, lu lui aussi sur la touche physique (Maj change le caractère).
+  else if ((c.altKey || (c.shiftKey && (c.ctrlKey || c.metaKey))) && c.code && /^Digit[0-9]$/.test(c.code)) parts.push(c.code.slice(5));
   else if (c.key.length === 1) parts.push(c.key.toUpperCase());
   // Lot 9 : touches de fonction (F2 Renommer) — le registre des commandes les résout comme les autres.
   else if (/^F([1-9]|1[0-2])$/.test(c.key)) parts.push(c.key);

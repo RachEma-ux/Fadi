@@ -6,9 +6,9 @@
  * barres, « Outils ▾ », le menu et le clavier lisent ces mêmes entrées ; l'exécution et la disponibilité restent celles
  * de chaque famille (aucune logique d'opération dupliquée ici). Sans React ni DOM.
  */
-import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox, type Pictogramme } from "@parcours/sandbox-planche-model";
+import { ENTREE_DEUX_TEMPS, entreesSandbox, normaliserRaccourci, secondTemps, type FamilleCommandeSandbox, type Pictogramme } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
-import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_CONTROLE, COMMANDES_DEBIT, COMMANDES_DYNAMIQUE, COMMANDES_EMPLACEMENT, COMMANDES_NAVIGATEUR, COMMANDES_NIVEAUX, COMMANDES_LOCAUX, COMMANDES_NUMEROTATION, COMMANDES_MUR, COMMANDES_PLAN, COMMANDES_SCRIPTS, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
+import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_CONTROLE, COMMANDES_DEBIT, COMMANDES_DYNAMIQUE, COMMANDES_EMPLACEMENT, COMMANDES_NAVIGATEUR, COMMANDES_NIVEAUX, COMMANDES_LOCAUX, COMMANDES_NUMEROTATION, COMMANDES_MUR, COMMANDES_PLAN, COMMANDES_FEUILLES, COMMANDES_ACCROCHAGE, COMMANDES_RESERVES, COMMANDES_ENVELOPPE, COMMANDES_CONSULTATION, COMMANDES_FONDS, COMMANDES_REFERENCES, COMMANDES_PDF, COMMANDES_DXF, COMMANDES_TRAVAUX, COMMANDES_BALISE, COMMANDES_SCENE, COMMANDES_GABARIT, COMMANDES_ECHANGE, COMMANDES_VERSION, COMMANDES_MODELISATION, COMMANDES_IFC, COMMANDES_FABRICANT, COMMANDES_KML, COMMANDES_REDRESSEMENT, COMMANDES_SCRIPTS, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
 import { COMMANDES_REPERES } from "./commandes-reperes";
 import { type Cle, raccourciClavier } from "./outils-planche";
 
@@ -25,7 +25,7 @@ export interface EntreeRegistre {
 
 /** Libellé de chaque commande livrée, par identifiant. */
 const LIBELLES: ReadonlyMap<string, CleMessage> = new Map(
-  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN].map((c) => [c.id, c.libelle] as const),
+  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE, ...COMMANDES_CONSULTATION, ...COMMANDES_FONDS, ...COMMANDES_REFERENCES, ...COMMANDES_PDF, ...COMMANDES_DXF, ...COMMANDES_TRAVAUX, ...COMMANDES_BALISE, ...COMMANDES_SCENE, ...COMMANDES_GABARIT, ...COMMANDES_ECHANGE, ...COMMANDES_VERSION, ...COMMANDES_MODELISATION, ...COMMANDES_IFC, ...COMMANDES_FABRICANT, ...COMMANDES_KML, ...COMMANDES_REDRESSEMENT].map((c) => [c.id, c.libelle] as const),
 );
 
 export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = entreesSandbox("commande").map((e) => {
@@ -41,9 +41,25 @@ export function commandeDuClavier(c: Cle): EntreeRegistre | null {
   return REGISTRE_COMMANDES.find((e) => normaliserRaccourci(e.raccourci) === r) ?? null;
 }
 
+/** Commandes en deux temps (« Ctrl+Maj+Espace, R »), dans l'ordre du registre. */
+export const COMMANDES_DEUX_TEMPS: readonly EntreeRegistre[] = REGISTRE_COMMANDES.filter((e) => secondTemps(e.raccourci) !== null);
+
+/** Second temps : commande dont la seconde touche correspond à l'événement, sinon `null`. */
+export function commandeDuSecondTemps(c: Cle): EntreeRegistre | null {
+  // Cas 2, lot 8 : secondes touches en chiffres, lues sur la touche physique (AZERTY donne « & », Maj donne « ! »).
+  const chiffre = c.code && /^(Digit|Numpad)[0-9]$/.test(c.code) ? c.code.slice(-1) : null;
+  // Copie champ par champ : un KeyboardEvent étalé (`...e`) perd ses accesseurs (shiftKey, ctrlKey…).
+  const r = raccourciClavier(chiffre ? { key: chiffre, code: c.code, ctrlKey: c.ctrlKey, shiftKey: c.shiftKey, altKey: c.altKey, ...(c.metaKey !== undefined ? { metaKey: c.metaKey } : {}) } : c);
+  if (!r) return null;
+  return COMMANDES_DEUX_TEMPS.find((e) => secondTemps(e.raccourci) === r) ?? null;
+}
+
+/** L'événement est la touche d'entrée des raccourcis en deux temps. */
+export const estEntreeDeuxTemps = (c: Cle): boolean => raccourciClavier(c) === ENTREE_DEUX_TEMPS;
+
 /**
  * Commandes que le clavier route par le registre : celles qui ont un modificateur ou une touche de fonction. Les touches
  * nues (G Créer un composant) et Échap / Origine (Fermer) gardent leur garde propre dans la Planche (saisie en cours,
  * outil Sélection).
  */
-export const routeeParLeRegistre = (e: EntreeRegistre): boolean => /^(Ctrl\+|Alt\+)?(Maj\+)?F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z0-9]$/.test(e.raccourci);
+export const routeeParLeRegistre = (e: EntreeRegistre): boolean => secondTemps(e.raccourci) !== null || /^(Ctrl\+)?(Alt\+)?(Maj\+)?F\d+$/.test(e.raccourci) || /^(Ctrl\+|Alt\+|Maj\+)+[A-Z0-9]$/.test(e.raccourci);

@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
-import type { Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import type { Modele, Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { DELAI_APPUI_MS, SEUIL_MOUVEMENT_PX, bornerPosition, coteOuverture, ecrirePositionMenu, lirePositionMenu, stockageLocal, type PositionMenu } from "./deplacement-menu";
 import { InformationsPlancheVue, type InformationsPlanche } from "./informations-planche";
@@ -22,12 +22,17 @@ const ACCEPT: Readonly<Record<FormatEchange, string>> = { ifc: ".ifc", obj: ".ob
 
 export interface ActionsMenuPlanche {
   ouvrir(id: string): Promise<void>;
-  creer(nom: string, altitude: number | null): Promise<void>;
+  /** Cas 2, lot 4 : `modele` = Planche créée depuis un gabarit d'agence ; absent, Planche vide. */
+  creer(nom: string, altitude: number | null, modele?: Modele): Promise<void>;
   enregistrer(): Promise<void>;
   enregistrerSous(nom: string): Promise<void>;
   renommer(nom: string, altitude: number | null): Promise<void>;
   supprimer(): Promise<void>;
   partager(): Promise<void>;
+  /** Liens de consultation (cas 4, étape 7d) : ouvre le panneau « Liens de consultation ». */
+  liensConsultation(): Promise<void>;
+  /** Fonds calés (cas 4, lot C4, étape 1) : ouvre le panneau « Fonds calés » et le choix d'une image. */
+  importerFond(): Promise<void>;
   exporter(format: FormatEchange): Promise<void>;
   importer(format: FormatEchange, fichier: File, unite: UniteFichier): Promise<void>;
   telechargerPng(): Promise<void>;
@@ -388,6 +393,7 @@ export function MenuPlanche({ planches, courante, etat, actions, extensions, dep
 
             <li role="none" className="avec-separateur" aria-hidden="true" />
             {item("partager", "menuPartager", t("planche.sb.partager"), () => void executer(() => actions.partager()))}
+            {item("partager-lien", "menuLienConsultation", t("planche.sb.partager-lien"), () => void executer(() => actions.liensConsultation()))}
             {item("exporter", "menuExporter", t("planche.sb.exporter"), () => basculer("exporter"), { etendu: section === "exporter" })}
             {section === "exporter" && (
               <li role="none" className="planche-menu-sous-liste">
@@ -418,6 +424,7 @@ export function MenuPlanche({ planches, courante, etat, actions, extensions, dep
                 </ul>
               </li>
             )}
+            {item("importer-fond", "menuImporterFond", t("planche.sb.importer-fond"), () => void executer(() => actions.importerFond()))}
 
             <li role="none" className="avec-separateur" aria-hidden="true" />
             {item("informations", "menuInformations", t("planche.sb.informations"), ouvrirInformations)}

@@ -46,6 +46,31 @@ import {
   etendreSelection,
   exporterObj,
   exporterStl,
+  aretesCollees,
+  donneesIfcDe,
+  empreinteCourte,
+  enveloppeNatif,
+  importerIfc,
+  inverserMatrice,
+  lireEchelleColle,
+  lireIfcComplet,
+  lireTraceColle,
+  METRES_PAR_UNITE_COLLE,
+  REPERE_DU_MODELE,
+  objetsNonAffiches,
+  ouvrirEnveloppeNatif,
+  poserTraces,
+  preparerExport,
+  rapportExport,
+  rapportImportMaillages,
+  sommetsColles,
+  texteCoordonnee,
+  texteRapport,
+  EXTENSION_NATIF,
+  type BrancheEtage,
+  type LectureColle,
+  type RapportEchange,
+  type UniteColle,
   genreAnnotation,
   grouper,
   grouperVide,
@@ -69,6 +94,39 @@ import {
   basculerExtension,
   BORNES_EXTENSION,
   normaliserRaccourci,
+  ErreurL8,
+  ErreurComposant,
+  lireExtrusion,
+  changerHauteurExtrusion,
+  lireEpaisseurs,
+  lireCouches,
+  epaisseurTotale,
+  creerCouches,
+  prolongerArete,
+  soustraireEnGardant,
+  ecreterParEnveloppe,
+  objetsEntreAltitudes,
+  lireAltitudes,
+  empreintesEnPlan,
+  aireProjetee,
+  longueurCourbes,
+  modeleEclate,
+  lireFichierComposant,
+  poserComposant,
+  composantDe,
+  regenererComposant,
+  remplacerOccurrences,
+  definitionDepuisFichier,
+  suivreOuvertures,
+  ID_CALER,
+  ID_BOITE,
+  ID_MIROIR,
+  ID_POSER_BAIE,
+  ID_POSER_GARDE_CORPS,
+  IDS_POINTAGE_L8,
+  genreBaie,
+  type Pose,
+  type ParEclatement,
   choixEffectif,
   cleCommandeExtension,
   clesMasquees,
@@ -103,6 +161,7 @@ import {
   entreeOutil,
   entreePanneau,
   entreesSandbox,
+  entreeSandbox,
   type Pictogramme as DescriptionPictogramme,
   peindreFacesCote,
   peindreOccurrences,
@@ -150,6 +209,21 @@ import {
   redessinerDynamique,
   type ChoixNettoyage,
   controlerModele,
+  releverDefauts,
+  compterDefauts,
+  corrigerDefaut,
+  indiceDefaut,
+  reglagesControle,
+  changerReglagesControle,
+  preparerFondDao,
+  fusionnerVolumes,
+  lireReglesPieces,
+  poserReglesPieces,
+  evaluerPieces,
+  controlerSite,
+  type OptionsFondDao,
+  type ReglagesControle,
+  type EtatSite,
   nettoyerModele,
   objetsNonSolides,
   rienANettoyer,
@@ -168,6 +242,18 @@ import {
   MAX_NOM_REGROUPEMENT,
   MAX_REGROUPEMENTS,
   idRegroupement,
+  changerLongueurArete,
+  changerUnite,
+  exclureDeLAccrochage,
+  formaterLongueurUnite,
+  placerSommet,
+  poserParametre,
+  remettreAEchelleImport,
+  repartir,
+  repeterGuide,
+  supprimerParametre,
+  type GenreAccrochage,
+  type UniteSaisie,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { FilArianePlanche } from "../fil-ariane-planche";
@@ -196,6 +282,38 @@ import {
   supprimerMotif,
   svgPlan,
   type ResultatMotif,
+  ajouterFenetre,
+  composerFeuille,
+  creerFeuille,
+  modifierFenetre,
+  modifierFeuille,
+  nomFichierFeuille,
+  numeroFeuilleSuivant,
+  pdfFeuilles,
+  dxfFeuille,
+  dxfVue,
+  relireDxf,
+  lireIfcStructure,
+  importerIfcStructure,
+  exporterIfcStructure,
+  ifczip,
+  relireIfcStructure,
+  controlerAvantEmissionIfc,
+  classesAExporter,
+  type ConstatIfc,
+  type LectureIfcStructure,
+  type SchemaIfc,
+  compterStatuts,
+  statuerOccurrences,
+  type StatutTravaux,
+  hachuresTropDenses,
+  relirePdf,
+  supprimerFenetre,
+  supprimerFeuille,
+  type Feuille,
+  type FenetreVue,
+  type LibellesFeuille,
+  type ResultatFeuille,
   poserMurs,
   chainesDAretes,
   lireNombreSaisi,
@@ -225,6 +343,104 @@ import {
   pousserContexte,
   repereDepuisFace,
   repereDuContexte,
+  ID_RESERVE,
+  ID_CALAGE,
+  calerFond,
+  choisirMethode,
+  fondsDe,
+  importerFond,
+  appliquerFiche,
+  ENTREE_DEUX_TEMPS,
+  afficherReference,
+  echelleDeLaBarre,
+  echellesDuTexte,
+  estEchellePdf,
+  insererPagePdf,
+  lirePdfRecu,
+  poseImagePdf,
+  type PointPdf,
+  ajouterReference,
+  controlerRecolement,
+  deplacerReference,
+  lireMaillages,
+  maillagesReference,
+  formatDuFichier,
+  estFormatRefuse,
+  lireScene,
+  resumerScene,
+  maillagesDeScene,
+  poserScene,
+  type AxeHaut,
+  type FormatFabricant,
+  lireKml,
+  homographie,
+  rectangleReference,
+  residusRedressement,
+  cadreRedresse,
+  redresserPixels,
+  type VerticalFond,
+  type PixelFond,
+  IMAGE_FOND_MAX,
+  lireKmz,
+  pointsKml,
+  poserKml,
+  type LectureKml,
+  type LectureScene,
+  positionsReference,
+  rechargerReference,
+  referencesDe,
+  reglerOpaciteReference,
+  reglerTolerance,
+  sommetsDuDessin,
+  supprimerReference,
+  trianglesAuProjet,
+  verrouillerReference,
+  ErreurImport,
+  type ResultatRecolement,
+  type ResultatReference,
+  secondTemps,
+  calageImageDuFond,
+  comparerFiche,
+  ecrireCalageImage,
+  ecrireFicheCalage,
+  ficheDuProjet,
+  lireCalageImage,
+  lireFicheCalage,
+  normaliserSysteme,
+  poseDepuisCalageImage,
+  systemeDuPrj,
+  EXTENSIONS_CALAGE_IMAGE,
+  FICHE_MAX,
+  type CalageImage,
+  type FicheCalage,
+  type GeoFond,
+  type PoseFond,
+  reglerOpacite,
+  saisirCible,
+  saisirLongueur,
+  supprimerFond,
+  supprimerPointCalage,
+  verrouillerFond,
+  type ResultatFond,
+  type OriginalFond,
+  filtrerReserves,
+  leverReserve,
+  lotsDesReserves,
+  modifierReserve,
+  reservesDe,
+  supprimerReserve,
+  type ResultatReserve,
+  type StatutReserve,
+  ajouterRegleHauteur,
+  REGLES_HAUTEUR_MAX,
+  basculerControle,
+  definirEnveloppe,
+  enveloppeDe,
+  modifierRegleHauteur,
+  supprimerRegleHauteur,
+  type LigneControle,
+  type ResultatControleEnveloppe,
+  type ResultatReglages,
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
@@ -244,16 +460,17 @@ import {
   supprimerRepere,
 } from "@parcours/sandbox-planche-model";
 import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
-import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
+import { compter as compterContexte, exporterIfc, maillagesPlanche, nonEtanchesDe, omisExport, poserImport } from "@parcours/sandbox-planche-model";
+import { type EtatImport, lancerImport, noterPose } from "./import-hors-fil";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
-import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
+import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enVariante, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, variantesDe, type IndexPlanches, type InfoPlanche } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, LANGUE_INTERFACE, type CleMessage, t } from "../messages";
 import { AvisExtensions, CadrePanneauExtension, DialogueFichierExtension, DialogueSaisieExtension, IconeExtension, ajouterAvis, clePanneauExtension, retirerFichier, retirerSaisie, texteFiche, useExtensionsInstallees, type AvisAffiche, type FichierDemande, type ReponseActionPanneau, type SaisieOuverte } from "./extensions-installees";
 import { creerHoteExtension, type HoteExtension, type IssueAppelExtension } from "./hote-extensions";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
-import { chargerBrouillon, enregistrerBrouillon, serialiserBrouillon } from "./brouillon";
+import { chargerBrouillon, enregistrerBrouillon, lireBrouillon, serialiserBrouillon } from "./brouillon";
 import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brouillon";
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
@@ -263,35 +480,106 @@ import { ActionsBandeau, BoutonBandeau } from "../panneaux/ActionsBandeau";
 import { MenusBandeau, type EntreeMenuBandeau, type MenuBandeau } from "../panneaux/MenusBandeau";
 import { tailleFenetreDetachee } from "./taille-fenetre-detachee";
 import { largeurVueEcranLarge } from "./ecran-large";
-import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
+import { COMMANDES_DEUX_TEMPS, commandeDuClavier, commandeDuSecondTemps, estEntreeDeuxTemps, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_CONSULTATION, disponibiliteConsultation, type IdCommandeConsultation, COMMANDES_FONDS, disponibiliteFond, type IdCommandeFond, COMMANDES_REFERENCES, disponibiliteReference, type IdCommandeReference, COMMANDES_PDF, disponibilitePdf, type IdCommandePdf, COMMANDES_DXF, disponibiliteDxf, type IdCommandeDxf, COMMANDES_TRAVAUX, disponibiliteTravaux, type IdCommandeTravaux, COMMANDES_IFC, disponibiliteIfc, type IdCommandeIfc, COMMANDES_FABRICANT, disponibiliteFabricant, type IdCommandeFabricant, COMMANDES_KML, disponibiliteKml, type IdCommandeKml, COMMANDES_REDRESSEMENT, disponibiliteRedressement, type IdCommandeRedressement, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
-import { PanneauControle } from "./panneau-controle";
+import { PanneauControle, type VueControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
+import { PanneauFeuilles } from "./panneau-feuilles";
+import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
+import { PanneauEnveloppe } from "./panneau-enveloppe";
+import { PanneauConsultations } from "./panneau-consultations";
+import { PanneauFonds, reduireFond } from "./panneau-fonds";
+import { ECHELLES_UNITE, PanneauReferences, type UniteReference } from "./panneau-references";
+import { PanneauFeuillesDxf, PanneauStatutTravaux, type ContenuDxf } from "./panneau-dxf";
+import { PanneauIfcStructure, PanneauImportIfc, type FormatFichierIfc } from "./panneau-ifc";
+import { PanneauFabricant, type ResumeFabricant } from "./panneau-fabricant";
+import { PanneauKml, type ResumeKml } from "./panneau-kml";
+import { PanneauRedressement, type ResumeResidus, type SaisieRedressement } from "./panneau-redressement";
+import { ErreurProjection, projeterVersSysteme } from "./projections-client";
+import { PanneauPdfRecu, fichierImagePdf, type EtatPdf } from "./panneau-pdf-recu";
+import { ErreurFichierReference, archiverFichierReference, lireFichierReference } from "./references-client";
+import { ErreurArchiveFond, archiverOriginalFond, archiverPieceCalage } from "./fonds-client";
+import { ErreurConsultation, adresseLien, creerLien, lienActif, listerLiens, revoquerLien, type LienConsultation } from "./consultations-client";
+import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
 import { emplacementDepuisSite, ORDRE_ARTICLES, useSitesProjet, type ArticleSites } from "../../../lib/sites/menu-sites";
 import { ErreurEmplacementsGeoData, lireEmplacementGeoDataParId, listerEmplacementsGeoData, PARAMETRE_EMPLACEMENT_GEODATA, type EmplacementGeoDataLu } from "./emplacements-geodata";
 import { PanneauNumerotation, REGLAGES_NUMEROTATION_DEFAUT, type ReglagesNumerotation } from "./panneau-numerotation";
+import { PanneauAccrochage, PanneauMetreMesure, REGLAGES_METRE_DEFAUT, type ReglagesMetre, SectionParametres, SectionRemiseEchelle, SectionUnites, lireNombre, resultatRepartition } from "./panneau-accrochage";
 import { PanneauScripts, scriptExemple, SCRIPT_NOUVEAU, type IssueAffichee, type ScriptEdite } from "./panneau-scripts";
 import { lancerScript, type ExecutionScript } from "./scripts-execution";
 import { LOCALE } from "../../../lib/i18n";
 import { sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils, titreOperation, type CommandeListe, type FamilleExtension, type LigneBarre } from "./BoutonOutils";
-import { archiverFichierExtension } from "../preferences/client";
+import { archiverFichierExtension, listerFichiersArchives, lireFichierArchive } from "../preferences/client";
+import {
+  EXTENSION_GABARIT,
+  NOMS_PHASES,
+  VUES_ETAT,
+  ajouterScenes,
+  appliquerEtatScene,
+  appliquerVueEtat,
+  baliserNouveautes,
+  capturerEtatScene,
+  classerSelection,
+  compterSelection,
+  creerBalisesPhase,
+  decalerPlan,
+  gabaritDeLaPlanche,
+  limiterProfondeur,
+  lireGabarit,
+  modeleDepuisGabarit,
+  modifierBalise,
+  modifierScene,
+  placerPlan,
+  sceneFaceCoupe,
+  scenesTypes,
+  vueEtatCourante,
+  type ChangementBalise,
+} from "@parcours/sandbox-planche-model";
+import { COMMANDES_MODELISATION, disponibiliteModelisation, type IdCommandeModelisation } from "./commandes-objets";
+import { PanneauComposantsAgence, PanneauExtrusion, PanneauSoustraire, PanneauVuesMesures, RACCOURCI_PANNEAU_L8, useSaisiesL8, type FichierAgence } from "./panneaux-l8";
+import { COMMANDES_BALISE, COMMANDES_ECHANGE, COMMANDES_GABARIT, COMMANDES_SCENE, COMMANDES_VERSION, disponibiliteBalise, disponibiliteEchange, disponibiliteGabarit, disponibiliteScene, disponibiliteVersion, type IdCommandeBalise, type IdCommandeEchange, type IdCommandeGabarit, type IdCommandeScene, type IdCommandeVersion } from "./commandes-objets";
+import {
+  comparerModeles,
+  declarerDestinataire,
+  empreinteModele,
+  ficheDe,
+  lignesFiche,
+  noterEmission,
+  poserFiche,
+  poserJalon,
+  poserRevision,
+  registreVide,
+  revisionDe,
+  segmentsDifferences,
+  statutsProposes,
+  texteRevision,
+  type Comparaison,
+  type FicheProjet,
+  type Jalon,
+  type RegistreVersions,
+  type Revision,
+} from "@parcours/sandbox-planche-model";
+import { PanneauBrouillon, PanneauComparer, PanneauFicheProjet, PanneauVersions, RACCOURCI_PANNEAU_L7, type ChoixComparaison, type VarianteAffichee } from "./panneaux-l7";
+import { chargerJalon, chargerRegistre, enregistrerContenuJalon, enregistrerRegistre, supprimerVersions } from "./versions-stockage";
+import { PanneauBalises, PanneauGabarit, SectionPlanCoupe, SectionScenesL4, type GabaritDisponible } from "./panneaux-l4";
+import { PanneauCollerTrace, PanneauExportEchange, PanneauImportEchange, PanneauNatifImage, type EcritExport, type PoserSur } from "./panneaux-l6";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
@@ -311,6 +599,8 @@ interface CrochetRecette {
       /** Lots 4 à 6 : matière et balise courantes, hauteur d'œil, moteur booléen chargé, emprise et caméra. */
       materiau: () => string | null;
       balise: () => string | null;
+      echelleRendue: () => number | null;
+      plansRognage: () => number;
       hauteurOeil: () => number;
       booleens: () => "absent" | "chargement" | "ok" | "echec";
       emprise: () => { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null;
@@ -322,9 +612,17 @@ interface CrochetRecette {
       menu: () => readonly string[] | null;
       /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
       facesRendues: () => number;
+      /** Cas 4, lot C4, étape 5 : arêtes rendues par statut des travaux. */
+      aretesParStatut: () => Readonly<Record<string, number>>;
       pressePapiers: () => number;
       /** Chantier Axes (AX-1) : contexte de travail courant (repère, plan, verrou) et nombre de contextes précédents. */
       contexteTravail: () => { contexte: ContexteTravail; precedents: number };
+      differences: () => { readonly ajoutes: number; readonly modifies: number; readonly supprimes: number } | null;
+      consultation: () => string | null;
+      /** Cas 2, lot 8 : choisir des entités (recette), projection rendue (caméra) et modèle affiché par la vue. */
+      choisir: (ids: readonly string[]) => void;
+      projectionRendue: () => string | null;
+      modeleAffiche: () => Modele | null;
 }
 const fenetreRecette = (): { fadiPlanche?: CrochetRecette } => window as unknown as { fadiPlanche?: CrochetRecette };
 
@@ -335,9 +633,28 @@ export interface PropsPlanche {
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+/** Date du jour « AAAA-MM-JJ », heure locale de l'appareil (réserves de chantier). */
+const dateDuJour = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 /** Pictogramme de repli d'une commande d'extension installée (son icône est une image du paquet). */
 const PICTO_EXTENSION_INSTALLEE: DescriptionPictogramme = { source: "tabler", nom: "puzzle", teinte: "objets" };
 /** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
+/** Cas 2, lot 6 : date et heure locales du rapport d'échange (« 27.11.2026 19:40 »). */
+function horodatage(d = new Date()): string {
+  const n = (x: number) => String(x).padStart(2, "0");
+  return `${n(d.getDate())}.${n(d.getMonth() + 1)}.${d.getFullYear()} ${n(d.getHours())}:${n(d.getMinutes())}`;
+}
+
+/** Cas 2, lot 7 (n° 109) : fiche du projet et révision reprises dans le rapport d'une pièce émise (document produit, non traduit). */
+function pieceEmise(m: Modele): { readonly projet: readonly (readonly [string, string])[]; readonly revision: string | null } {
+  return { projet: lignesFiche(ficheDe(m)), revision: texteRevision(revisionDe(m)) };
+}
+
+/** (Cas 4, C4 étape 5) État des travaux affiché, pour le contexte d'outil ; « tout » n'en pose aucun. */
+export const etatTravauxOutil = (e: "tout" | "existant" | "projete" | undefined): { etatTravaux?: "existant" | "projete" } => (e && e !== "tout" ? { etatTravaux: e } : {});
+
 function telechargerFichier(blob: Blob, nom: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -348,12 +665,12 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "consultations" | "fonds" | "references" | "pdf-recu" | "accrochage" | "metre-mesure" | "feuilles-dxf" | "statut-travaux" | "gabarit" | "echange-import" | "echange-export" | "natif-image" | "coller-trace" | "versions-jalons" | "comparer" | "brouillon" | "fiche-projet" | "extrusion" | "composants-agence" | "soustraire" | "vues-mesures" | "ifc-structure" | "import-ifc" | "import-fabricant" | "import-kml" | "redressement";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
  */
-const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").map((e) => ({
+const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").filter((e) => e.emplacement === "colonne" || e.emplacement === "colonne-bas").map((e) => ({
   id: e.id as Panneau,
   picto: e.pictogramme,
   bas: e.emplacement === "colonne-bas",
@@ -361,8 +678,17 @@ const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPicto
 /** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
-const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure", "gabarit", "echange-import", "echange-export", "natif-image", "coller-trace", "versions-jalons", "comparer", "brouillon", "fiche-projet", "extrusion", "composants-agence", "soustraire", "vues-mesures"]);
+/** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe", "consultations", "fonds", "references", "pdf-recu", "feuilles-dxf", "statut-travaux", "ifc-structure", "import-ifc", "import-fabricant", "import-kml", "redressement"]);
+/** Commande qui ouvre un panneau quand elle ne porte pas son nom (Fichier ▸ Partager un lien → Liens de consultation). */
+const COMMANDE_DU_PANNEAU: Readonly<Record<string, string>> = { consultations: "partager-lien" };
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
+/** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
+export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
+  if (!unite || unite === "m") return texte;
+  return texte.replace(/(-?\d+(?:[.,]\d+)?) m(?![²³\w])/g, (_, n: string) => formaterLongueurUnite(Number(n.replace(",", ".")), unite, sep, 3));
+}
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
   try {
@@ -394,7 +720,15 @@ function commeElement(x: EventTarget | null): Element | null {
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
-export function Planche({ readOnly = false }: PropsPlanche) {
+export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
+  // Cas 2, lot 7 (n° 86) : consultation seule — la Planche courante, ou un jalon figé dont le modèle remplace un moment
+  // l'historique (`retour` le rend à la sortie). Lecture seule : aucun outil de modification, aucun enregistrement.
+  const [consultation, setConsultation] = useState<{ readonly jalon: Jalon | null; readonly retour: Historique | null } | null>(null);
+  const consultationRef = useRef(consultation);
+  consultationRef.current = consultation;
+  // Cas 2, lot 8 (n° 19) : axonométrie éclatée — un modèle d'affichage dérivé (le modèle ne bouge pas) ; lecture seule.
+  const [eclatement, setEclatement] = useState<{ readonly par: ParEclatement; readonly ecart: number } | null>(null);
+  const readOnly = lectureProp || consultation !== null || eclatement !== null;
   const ui = useEtatUi();
   const navigationRef = useRef(ui.navigation);
   navigationRef.current = ui.navigation;
@@ -436,7 +770,33 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [vue, setVue] = useState<VueOutil>(() => vueParDefaut(outilRef.current, 35, HAUTEUR_OEIL_DEFAUT));
   const texteRef = useRef<TexteMesures>(null);
   const [texte, setTexteEtat] = useState<TexteMesures>(null);
+  // Cas 2, lot 7 (n° 38) : « Poser un jalon » attend son nom dans Mesures (réglage interactif, pas de champ ajouté).
+  const [attenteNomJalon, setAttenteNomJalonEtat] = useState(false);
+  const attenteNomJalonRef = useRef(false);
+  const setAttenteNomJalon = useCallback((v: boolean) => {
+    attenteNomJalonRef.current = v;
+    setAttenteNomJalonEtat(v);
+  }, []);
+  const poserUnJalonRef = useRef<(nom: string) => void>(() => undefined);
   const [message, setMessage] = useState<string | null>(null);
+  // Cas 4, étape 7a : import hors du fil principal (progression, Annuler / Échap).
+  const [importCours, setImportCours] = useState<(EtatImport & { readonly fichier: string; readonly octets: number }) | null>(null);
+  const annulerImportRef = useRef<(() => void) | null>(null);
+  const surReservePoseeRef = useRef<(id: string) => void>(() => {});
+  const surPointCalagePoseRef = useRef<(fond: string, point: string) => void>(() => {});
+  const importActif = importCours !== null;
+  useEffect(() => {
+    if (!importActif) return;
+    // Échap annule l'import où que soit le focus (menu, champ, vue).
+    const surTouche = (e: KeyboardEvent): void => {
+      if (e.key !== "Escape" || !annulerImportRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      annulerImportRef.current();
+    };
+    window.addEventListener("keydown", surTouche, true);
+    return () => window.removeEventListener("keydown", surTouche, true);
+  }, [importActif]);
   const [grille, setGrille] = useState(false);
   const grilleRef = useRef(false);
   grilleRef.current = grille;
@@ -496,15 +856,47 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const precisionRef = useRef(precision);
   precisionRef.current = precision;
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
+  // Cas 2, lot 4 : scène rappelée, pas et échelle de la coupe, gabarits d'agence du compte (lus en base à l'ouverture du
+  // panneau « Nouvelle Planche »), gabarit choisi. État d'interface.
+  const [sceneActive, setSceneActive] = useState<string | null>(null);
+  const [pasCoupe, setPasCoupe] = useState(0.1);
+  const [echelleCoupe, setEchelleCoupe] = useState<number | null>(null);
+  const [gabarits, setGabarits] = useState<readonly GabaritDisponible[]>([]);
+  const [gabaritChoisi, setGabaritChoisi] = useState("");
+  const [noteGabarit, setNoteGabarit] = useState<string | null>(null);
+  const fichierGabaritRef = useRef<HTMLInputElement | null>(null);
+  // Cas 2, lot 6 : échanges (rapport du dernier import, export préparé, fichier natif et image, collage d'un tracé).
+  const [rapportImport, setRapportImport] = useState<{ readonly rapport: RapportEchange; readonly arbre: readonly BrancheEtage[] } | null>(null);
+  const [archiveImport, setArchiveImport] = useState<string | null>(null);
+  const [formatExport, setFormatExport] = useState<FormatEchange>("ifc");
+  const [inclureMasques, setInclureMasques] = useState(false);
+  const [balisesIncluses, setBalisesIncluses] = useState<ReadonlySet<string>>(new Set());
+  const [dernierNatif, setDernierNatif] = useState<{ readonly date: string; readonly empreinte: string } | null>(null);
+  const [reimportNatif, setReimportNatif] = useState<"conforme" | "refuse" | null>(null);
+  const [noteNatif, setNoteNatif] = useState<string | null>(null);
+  const [tailleImage, setTailleImage] = useState({ largeur: 3840, hauteur: 2160 });
+  const [imageTransparente, setImageTransparente] = useState(true);
+  const fichierNatifRef = useRef<HTMLInputElement | null>(null);
+  const [colle, setColle] = useState<LectureColle | null>(null);
+  const [uniteColle, setUniteColle] = useState<UniteColle | "">("");
+  const [echelleColle, setEchelleColle] = useState("1:1");
+  const [poserColle, setPoserColle] = useState<PoserSur>("travail");
+  const attenteCollerRef = useRef(0);
+  const ouvrirCollageRef = useRef<(l: LectureColle) => void>(() => {});
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
   const baliseRef = useRef<string | null>(null);
+  const fondCourantRef = useRef<string | null>(null);
   const [balise, setBaliseEtat] = useState<string | null>(null);
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
   // Cas 4, étape 4 : épaisseur et hauteur de l'outil Mur (barre d'options), relues par la machine dans son contexte.
   const murRef = useRef<{ epaisseur: number; hauteur: number } | null>({ epaisseur: 0.2, hauteur: 2.5 });
+  // Cas 2, lot 8 (n° 100) : altitudes saisies qui bornent la boîte 3D de sélection.
+  const altitudesBoiteRef = useRef<{ zmin: number; zmax: number } | null>(null);
+  /** Pose en cours d'un composant d'agence, lue par les outils de pointage (baie dans un mur plein, garde-corps). */
+  const poseComposantRef = useRef<{ readonly pose: Pose; readonly face?: string } | null>(null);
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "saisie", dimensions: { forme: "rectangle", largeur: "", hauteur: "", epaisseur: "", epaisseurAile: "", segments: "" } });
   const [angleRotation, setAngleRotation] = useState("90");
   const [erreurFace, setErreurFace] = useState<string | null>(null);
@@ -514,6 +906,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Extension « Contrôle et nettoyage » : ce que le nettoyage retire (choix de la séance) et le dernier résultat.
   const [choixNettoyage, setChoixNettoyage] = useState<ChoixNettoyage>(CHOIX_NETTOYAGE_DEFAUT);
   const [noteControle, setNoteControle] = useState<string | null>(null);
+  // Cas 2, lot 3 : vue du panneau Contrôle, défaut courant, options du fond DAO.
+  const [vueControle, setVueControle] = useState<VueControle>("releve");
+  const [indiceControle, setIndiceControle] = useState(-1);
+  const [optionsFondDao, setOptionsFondDao] = useState<OptionsFondDao>({ aplatir: true, souder: 0.005, faces: true });
+  // Le panneau rouvert (colonne) montre le relevé ; la vue choisie par une commande ne survit pas à sa fermeture.
+  useEffect(() => {
+    if (panneau !== "controle") setVueControle("releve");
+  }, [panneau]);
   // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
   const booleensRef = useRef<AdaptateurBooleens | null>(null);
   const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
@@ -608,6 +1008,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const indexRef = useRef<IndexPlanches>(indexPlanches);
   /** Le prochain chargement remplace le dessin et l'historique (changement de Planche), au lieu de reprendre le brouillon. */
   const remplacerRef = useRef(false);
+  /** Cas 2, lot 7 : modèle du brouillon à appliquer à l'original dès qu'il est rechargé. */
+  const appliquerApresRef = useRef<Modele | null>(null);
+  /** Cas 2, lot 7 (n° 62) : note chaque fichier émis ou partagé au registre de la Planche (posé plus bas). */
+  const noterEmissionRef = useRef<(format: string, fichier: string, genre: "emission" | "partage") => void>(() => undefined);
   /** Journal des modifications de la Planche courante (page Informations) ; écrit avec le dessin. */
   const journalRef = useRef<EntreeJournal[]>([]);
   const [chargeId, setChargeId] = useState(0);
@@ -676,9 +1080,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (vueRef.current) vueRef.current.hauteurOeil = h;
   }, []);
 
+  // Cas 2, lot 2 : accrochage — genre forcé pour le prochain point (Alt + 1 à 6, effacé après le clic) et seuil du
+  // « presque accroché » (mm), réglages de l'interface ; le pas de longueur vient de l'Info modèle.
+  const [forceAccrochage, setForceAccrochageEtat] = useState<GenreAccrochage | null>(null);
+  const forceAccrochageRef = useRef<GenreAccrochage | null>(null);
+  const setForceAccrochage = useCallback((g: GenreAccrochage | null) => {
+    forceAccrochageRef.current = g;
+    setForceAccrochageEtat(g);
+  }, []);
+  const [presqueMm, setPresqueMmEtat] = useState(10);
+  const presqueMmRef = useRef(10);
+  const setPresqueMm = useCallback((v: number) => {
+    presqueMmRef.current = v;
+    setPresqueMmEtat(v);
+  }, []);
+
   const contexte = useCallback(
     (): ContexteOutil => ({
       modele: histRef.current.present.modele,
+      // (Cas 4, C4 étape 5) Ce que l'état des travaux masque dans la vue n'est ni visé, ni sélectionné, ni accroché.
+      ...etatTravauxOutil(vueRef.current?.lireOptions().etatTravaux),
       selection: selectionRef.current,
       separateurDecimal: SEPARATEUR_DECIMAL,
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
@@ -686,13 +1107,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(dansRef.current !== undefined ? { dans: dansRef.current, chemin: cheminRef.current } : {}),
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
+      ...(fondCourantRef.current ? { fondCourant: fondCourantRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(murRef.current ? { parametresMur: murRef.current } : {}),
+      altitudesBoite: altitudesBoiteRef.current,
+      poseComposant: poseComposantRef.current,
+      aujourdhui: dateDuJour(),
       ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
       planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
       lecture: readOnly,
+      accrochage: {
+        ...(forceAccrochageRef.current ? { force: forceAccrochageRef.current } : {}),
+        presque: presqueMmRef.current / 1000,
+        pasLongueur: histRef.current.present.modele.annotations?.reglages?.accrochageLongueur ?? null,
+      },
     }),
     [readOnly],
   );
@@ -734,6 +1164,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const rattache = rattacherNouveauxObjets(avantHist.present.modele, h0.present.modele, niveau);
       if (rattache !== h0.present.modele) h = { ...h0, present: { ...h0.present, modele: rattache } };
     }
+    // Cas 2, lot 4 (n° 74, n° 63) : la balise courante et les balises réservées sont posées sur ce que l'opération crée.
+    if (h.present.operation !== null && h.futur.length === 0 && h.present !== avantHist.futur[0] && h.present.modele !== avantHist.present.modele) {
+      const balise = baliserNouveautes(avantHist.present.modele, h.present.modele, baliseRef.current, dansRef.current);
+      if (balise !== h.present.modele) h = { ...h, present: { ...h.present, modele: balise } };
+    }
+    // Cas 2, lot 8 (n° 25) : une ouverture découpée suit son composant (déplacé, remplacé, régénéré, copié ou effacé),
+    // dans le même pas d'historique.
+    if (h.present.operation !== null && h.futur.length === 0 && h.present !== avantHist.futur[0] && h.present.modele !== avantHist.present.modele) {
+      try {
+        const suivi = suivreOuvertures(avantHist.present.modele, h.present.modele);
+        if (suivi !== h.present.modele) h = { ...h, present: { ...h.present, modele: suivi } };
+      } catch {
+        // Une ouverture qui ne peut pas suivre reste telle quelle : jamais de perte de l'opération.
+      }
+    }
     const changeModele = h.present.modele !== avantHist.present.modele;
     histRef.current = h;
     setHist(h);
@@ -763,6 +1208,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         return false;
       }
       etatMachineRef.current = tr.etat;
+      // Cas 2, lot 2 (n° 111) : le genre forcé ne vaut que pour le prochain point.
+      if (ev.genre === "clic" && forceAccrochageRef.current) setForceAccrochage(null);
       if (m === MACHINE_OUTIL_EXTENSION) {
         // L'événement préparé par la machine part vers l'extension ; sa description reviendra plus tard.
         const emis = (tr.etat as EtatOutilExtension).emis;
@@ -777,6 +1224,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setSelection(tr.selection);
         change = true;
       }
+      // Cas 4, étape 7b : la réserve épinglée s'ouvre dans le panneau Réserves.
+      const posee = (tr.etat as { posee?: string | null } | null)?.posee;
+      if (outilRef.current === ID_RESERVE && posee && posee !== (avant as { posee?: string | null } | null)?.posee) surReservePoseeRef.current(posee);
+      // Cas 4, lot C4, étape 1 : le point de calage posé ouvre le panneau Fonds calés sur son fond.
+      const pose = (tr.etat as { pose?: { fond: string; point: string } | null } | null)?.pose;
+      if (outilRef.current === ID_CALAGE && pose && pose !== (avant as { pose?: unknown } | null)?.pose) surPointCalagePoseRef.current(pose.fond, pose.point);
       if (tr.dans !== undefined) {
         poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
@@ -812,7 +1265,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }
       return change;
     },
-    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte],
+    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte, setForceAccrochage],
   );
 
   /**
@@ -881,6 +1334,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const choisirOutil = useCallback(
     (id: string, options: { garderPrecedent?: boolean } = {}) => {
       frappeRef.current = consommerFrappe(frappeRef.current);
+      setAttenteNomJalon(false);
       // Outil d'une extension installée (lot 6) : il n'est pas au catalogue, sa machine fait le lien avec l'extension.
       if (lireCleOutilExtension(id)) {
         if (!outilExtensionDeclareRef.current(id)) return;
@@ -897,6 +1351,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setTexte(null);
         setMessage(null);
         passerOutilExtensionRef.current(avant, id);
+        rafraichir();
+        return;
+      }
+      // Cas 2, lot 8 : outils de pointage (Caler par deux points, Boîte 3D), lancés par leur commande, hors catalogue.
+      if (IDS_POINTAGE_L8.includes(id)) {
+        if (readOnly && id !== ID_BOITE) return;
+        setGrille(false);
+        setEdition(null);
+        if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
+        outilRef.current = id;
+        etatMachineRef.current = machineParId(id)?.initial() ?? null;
+        setOutilId(id);
+        setTexte(null);
+        setMessage(null);
         rafraichir();
         return;
       }
@@ -976,6 +1444,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   retourOutilRef.current = retourOutil;
 
   const annulerPas = useCallback(() => {
+    if (consultationRef.current) return setMessage(t("planche.lecture.message"));
     const op = operationAAnnuler(histRef.current);
     const h = annuler(histRef.current);
     if (!h) {
@@ -991,6 +1460,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, [poserDans, poserHistorique, rafraichir, setSelection]);
 
   const retablirPas = useCallback(() => {
+    if (consultationRef.current) return setMessage(t("planche.lecture.message"));
     const op = operationARetablir(histRef.current);
     const h = retablir(histRef.current);
     if (!h) {
@@ -1621,6 +2091,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const c = histContexteRef.current.courant;
     return { repere: captureDuContexte(c, repereDuContexte(c)) };
   };
+  /**
+   * Cas 2, lot 4 (n° 11, n° 108) : état de la vue mémorisé avec la scène (balises visibles, plans actifs, objets masqués,
+   * style des faces) et date et heure du soleil de la vue.
+   */
+  const captureEtatL4 = (m: Modele): Pick<Scene, "etat" | "soleil"> => {
+    const o = vueRef.current?.lireOptions();
+    return { etat: capturerEtatScene(m, o?.modeFace), ...(o ? { soleil: { jour: o.jour, heure: o.heure } } : {}) };
+  };
   /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
   const ajouterScene = useCallback(
     () =>
@@ -1630,7 +2108,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         const r = modifierAnnotations(m, (a, id) => {
           const i = id("v");
-          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene() };
+          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene(), ...captureEtatL4(m) };
           return i;
         });
         return { modele: r.modele, selection: [r.extra] };
@@ -1646,7 +2124,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         // Chantier Axes (AX-3) : la capture de repère suit l'option ; décochée, la scène ne rappelle plus que la caméra.
         const { repere: _ancien, ...sansRepere } = s;
-        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene() })).modele };
+        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene(), ...captureEtatL4(m) })).modele };
       }),
     [operer],
   );
@@ -1656,7 +2134,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       const v = vueRef.current;
       if (!v) return;
       v.appliquerScene(s);
-      if (s.ombres !== undefined) majOptions({ ombres: s.ombres });
+      // Cas 2, lot 4 : échelle nominale (n° 43) en projection parallèle, soleil (n° 108), état mémorisé (n° 11).
+      if (s.projection === "parallele" && s.echelle) v.poserEchelleNominale(s.echelle);
+      const style = s.etat?.style as OptionsAffichage["modeFace"] | undefined;
+      majOptions({ ...(s.ombres !== undefined ? { ombres: s.ombres } : {}), ...(s.soleil ? { jour: s.soleil.jour, heure: s.soleil.heure } : {}), ...(style ? { modeFace: style } : {}) });
+      setSceneActive(s.id);
+      if (s.etat) {
+        const m0 = histRef.current.present.modele;
+        const cle = (e: { balisesVisibles: readonly string[]; plansActifs: readonly string[]; masques: readonly string[] }) => JSON.stringify([[...e.balisesVisibles].sort(), [...e.plansActifs].sort(), [...e.masques].sort()]);
+        const m1 = cle(capturerEtatScene(m0)) === cle(s.etat) ? m0 : appliquerEtatScene(m0, s.etat);
+        if (m1 !== m0 && !readOnly) poserHistorique(enregistrer(histRef.current, m1, t("planche.scene.rappel", { nom: s.nom })));
+      }
       // Chantier Axes (AX-3, AX14) : une scène qui capture un repère le rappelle ; sinon le contexte reste tel quel.
       if (s.repere) {
         const r = contexteDeScene(histContexteRef.current.courant, s.repere, histRef.current.present.modele);
@@ -1670,7 +2158,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setSelection([s.id]);
       rafraichir();
     },
-    [majOptions, rafraichir, setSelection, changerContexte],
+    [majOptions, rafraichir, setSelection, changerContexte, readOnly, poserHistorique],
   );
   const vueStandard = useCallback((nom: VueStandard) => {
     vueRef.current?.vueStandard(nom);
@@ -1747,6 +2235,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           }).modele,
         })),
       piloterCote: (id: string, valeur: number) => operer(t("planche.cote.pilote"), (m) => ({ modele: piloterCote(m, id, valeur).modele })),
+      // Cas 2, lot 2 : longueur d'une arête, coordonnées d'un sommet (racine), objet ou balise exclu de l'accrochage.
+      longueurArete: (id: string, longueur: number) => operer(t("planche.info.longueur"), (m) => ({ modele: changerLongueurArete(m, id, longueur).modele })),
+      placerSommet: (id: string, position: Vec3) => operer(t("planche.arete.sommets"), (m) => ({ modele: placerSommet(m, id, position).modele })),
+      exclureAccrochage: (id: string, exclu: boolean) => operer(t("planche.accrochage.titre"), (m) => ({ modele: exclureDeLAccrochage(m, [id], exclu, o()).modele })),
+      exclureBalise: (id: string, exclue: boolean) =>
+        operer(t("planche.accrochage.titre"), (m) => ({
+          modele: modifierAnnotations(m, (a) => {
+            const b = a.balises[id];
+            if (!b) return;
+            const { horsAccrochage: _h, ...reste } = b;
+            a.balises[id] = exclue ? { ...reste, horsAccrochage: true } : reste;
+          }).modele,
+        })),
       selectionnerCotes: (ids: readonly string[]) => setSelection(ids),
     }),
     [contexte, o, operer, setSelection],
@@ -1828,6 +2329,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const valider = useCallback(() => {
     // Une saisie déjà validée n'est pas renvoyée : Entrée seule va à l'outil (confirmation du Mètre, fin de chaîne).
     const saisie = texteRef.current?.statut === "frappe" ? texteRef.current.texte.trim() : "";
+    if (attenteNomJalonRef.current) {
+      if (!saisie) return setMessage(t("planche.version.jalon-taper-nom"));
+      setAttenteNomJalon(false);
+      setTexte(null);
+      poserUnJalonRef.current(saisie);
+      return;
+    }
     if (!saisie) {
       envoyerTouche("Entree", "enfoncee");
       envoyerTouche("Entree", "relachee");
@@ -1860,7 +2368,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     envoyer({ genre: "saisie", texte: saisie });
     setTexte({ texte: saisie, statut: "valide" });
-  }, [envoyer, envoyerTouche, rafraichir, setHauteurOeil, setTexte, vue.mesures]);
+  }, [envoyer, envoyerTouche, rafraichir, setHauteurOeil, setTexte, setAttenteNomJalon, vue.mesures]);
   const validerRef = useRef(valider);
   validerRef.current = valider;
 
@@ -1952,6 +2460,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       versEcran: (p) => vueRef.current?.versEcran(p) ?? null,
       materiau: () => materiauRef.current,
       balise: () => baliseRef.current,
+      // Cas 2, lot 4 : échelle nominale rendue et plans de rognage de la vue (recette).
+      echelleRendue: () => vueRef.current?.echelleRendue() ?? null,
+      plansRognage: () => vueRef.current?.plansRognage() ?? 0,
       hauteurOeil: () => hauteurOeilRef.current,
       booleens: () => (booleensRef.current ? "ok" : booleensEtatRef.current),
       emprise: () => vueRef.current?.emprise() ?? null,
@@ -1962,7 +2473,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
       facesRendues: () => vueRef.current?.facesRendues() ?? 0,
+      aretesParStatut: () => vueRef.current?.aretesParStatut() ?? {},
       contexteTravail: () => ({ contexte: histContexteRef.current.courant, precedents: histContexteRef.current.precedents.length }),
+      // Cas 2, lot 7 : traits de différence surlignés et consultation en cours (recette).
+      differences: () => vueRef.current?.differencesAffichees() ?? null,
+      consultation: () => (consultationRef.current ? (consultationRef.current.jalon?.id ?? "courante") : null),
+      choisir: (ids) => {
+        setSelection(ids);
+        rafraichir();
+      },
+      projectionRendue: () => vueRef.current?.cameraRendueType() ?? null,
+      modeleAffiche: () => vueRef.current?.modeleAffiche() ?? null,
     };
     return () => {
       v.detruire();
@@ -1996,8 +2517,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           remplacerRef.current = false;
           poserDans(undefined);
           setSelection([]);
+          consultationRef.current = null;
+          setConsultation(null);
           poserHistorique(historiqueInitial(m ?? modeleVide()), { envoyer: false });
-        } else if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
+          // Cas 2, lot 7 (n° 73) : brouillon appliqué à l'original, en un seul pas d'historique (annulable).
+          const applique = appliquerApresRef.current;
+          appliquerApresRef.current = null;
+          if (applique) poserHistorique(enregistrer(histRef.current, applique, t("planche.brouillon.operation"), false));
+        } else if (m && !consultationRef.current && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
         // Contexte de travail de cette Planche : celui de ce navigateur, sinon l'ancien repère du document (AX-D4).
         poserContextes(historiqueContextes(contexteMemorise(idx.courante) ?? contexteDepuisDocument(histRef.current.present.modele.annotations?.repere)));
         setBrouillonCharge(true);
@@ -2033,11 +2560,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const motif = (e: unknown) => (e instanceof Error ? e.message : String(e));
     const echec = (e: unknown) => setMessage(t("planche.sb.echec", { motif: motif(e) }));
     const nomFichier = () => (nomAffiche(courante()).replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche");
+    /** Cas 2, lot 6 : le fichier importé et son rapport sont archivés tels quels en base (D-GD-29). */
+    /** Fichier importé rangé tel quel en base (octets d'origine pour un STL, binaire ou ASCII), puis son rapport. */
+    const archiverEchange = async (nom: string, contenu: string | Uint8Array, rapport: RapportEchange) => {
+      const a = typeof contenu === "string" ? await archiverFichierExtension("planche-echange", { nom, texte: contenu }) : await archiverFichierExtension("planche-echange", { nom, texte: "" }, contenu);
+      const b = a.ok ? await archiverFichierExtension("planche-echange", { nom: `${nom}.rapport.txt`, texte: texteRapport(rapport) }) : a;
+      if (a.ok && b.ok) setArchiveImport(t("planche.echange.archive.ok", { empreinte: empreinteCourte(a.archive.empreinte) }));
+      else setArchiveImport(t("planche.echange.archive.refus", { motif: t(`planche.pieces.motif.${(!a.ok ? a : b as { motif: string }).motif}` as "planche.pieces.motif.reseau") }));
+    };
     /** Écrit la Planche courante sans attendre l'enregistrement automatique. */
     const ecrireCourante = async () => {
       sauvegarde.invalider();
       const id = indexRef.current.courante;
-      await enregistrerBrouillon(histRef.current.present.modele, id);
+      // Consultation d'un jalon : c'est l'état courant mis de côté qui est écrit, jamais le jalon affiché.
+      await enregistrerBrouillon(consultationRef.current?.retour?.present.modele ?? histRef.current.present.modele, id);
       await enregistrerJournal(id, journalRef.current).catch(() => undefined);
       await poserIndex(avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() }));
     };
@@ -2051,32 +2587,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       await poserIndex(idx);
       setChargeId((n) => n + 1);
     };
-    const exporter = (format: FormatEchange) => {
-      // Chantier Axes (AX-5, AX-D10) : coordonnées choisies explicitement ; un choix non pris en charge est refusé.
-      const choix = etatUi.get().coordonneesExport;
-      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere, courante().altitudeRef);
-      if (!c.ok) {
-        setMessage(c.motif);
-        return;
-      }
-      const modele = c.modele;
-      const o = c.repere?.origine;
-      const coordonnees =
-        choix === "travail" && o
-          ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
-          : choix === "source"
-            ? t("planche.export.coordonnees.source", { unite: c.unite })
-            : choix === "projete"
-              ? t("planche.export.coordonnees.projete", { systeme: [histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme, histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systemeVertical].filter(Boolean).join(" / ") })
-            : t("planche.export.coordonnees.modele");
-      const nom = nomFichier();
-      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(modele, nom);
-      telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`);
-      const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
-      // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
-      const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
-      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts + ` ${t("planche.export.coordonnees", { format: format.toUpperCase(), coordonnees })}`);
-    };
     return {
       ouvrir: async (id) => {
         try {
@@ -2089,12 +2599,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           echec(e);
         }
       },
-      creer: async (nom, altitude) => {
+      creer: async (nom, altitude, modele) => {
         try {
           await ecrireCourante();
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: altitude, creeA: maintenant, modifieA: maintenant });
-          await enregistrerBrouillon(modeleVide(), idx.courante);
+          await enregistrerBrouillon(modele ?? modeleVide(), idx.courante);
           await enregistrerJournal(idx.courante, ajouterEntree([], { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.creee") })).catch(() => undefined);
           await basculerVers(idx);
           setMessage(t("planche.sb.creee", { nom }));
@@ -2151,6 +2661,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           sauvegarde.invalider();
           await supprimerDocument(id);
           await supprimerJournal(id).catch(() => undefined);
+          await supprimerVersions(id);
           await basculerVers(sansPlanche(indexRef.current, id));
           setMessage(t("planche.sb.supprimee", { nom }));
         } catch (e) {
@@ -2165,36 +2676,99 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           if (typeof navigator.canShare === "function" && navigator.canShare({ files: [fichier] })) {
             try {
               await navigator.share({ files: [fichier], title: nomAffiche(courante()) });
+              noterEmissionRef.current("IFC", fichier.name, "partage");
               setMessage(t("planche.sb.partage.ok"));
             } catch (e) {
               if (!(e instanceof DOMException && e.name === "AbortError")) throw e;
             }
           } else {
             telechargerFichier(fichier, fichier.name);
+            noterEmissionRef.current("IFC", fichier.name, "emission");
             setMessage(t("planche.sb.partage.fichier"));
           }
         } catch (e) {
           echec(e);
         }
       },
-      exporter: async (format) => exporter(format),
+      // Cas 2, lot 6 (n° 90, 95, 6) : Fichier > Exporter ouvre le panneau « Exporter » (ce qui sera écrit, objets non
+      // affichés, rapport prévu) ; le téléchargement part de son bouton, avec le rapport joint.
+      exporter: async (format) => {
+        setFormatExport(format);
+        setPanneau("echange-export");
+        setMessage(t("planche.echange.export.consigne", { format: format.toUpperCase() }));
+      },
+      liensConsultation: async () => setPanneau("consultations"),
+      importerFond: async () => {
+        setPanneau("fonds");
+        importFondRef.current?.click();
+      },
       importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
+        if (annulerImportRef.current) return;
         try {
+          const date = horodatage();
+          if (format === "ifc") {
+            // Cas 2, lot 6 (n° 2, 22, 91) : lecture complète, objets posés à leur place, rangés par étage et par classe.
+            const texte = await fichier.text();
+            const lu = lireIfcComplet(texte);
+            if (lu.objets.length === 0) throw new ErreurImport("vide", "Aucun objet avec une représentation dans ce fichier IFC.");
+            const r = importerIfc(histRef.current.present.modele, lu, fichier.name, date);
+            if (r.occurrence !== null) {
+              poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: "IFC" }), false));
+              rafraichir();
+            }
+            const total = r.rapport.lignes[0]!;
+            setRapportImport({ rapport: r.rapport, arbre: r.arbre });
+            setArchiveImport(null);
+            setPanneau("echange-import");
+            setMessage(t("planche.echange.import.ok", { format: "IFC", objets: String((total.ecrits ?? 0) + (total.approches ?? 0)) }));
+            void archiverEchange(fichier.name, texte, r.rapport);
+            return;
+          }
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
-          const lu = lireMaillages(format, donnees);
-          const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
-          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""), { format, fichier: fichier.name });
+          const enCours = lancerImport({ format, donnees, echelle: ECHELLE_UNITE[unite], nom: fichier.name.replace(/\.[^.]+$/, "") }, (e) => setImportCours({ ...e, fichier: fichier.name, octets: fichier.size }));
+          annulerImportRef.current = enCours.annuler;
+          const issue = await enCours.issue;
+          annulerImportRef.current = null;
+          setImportCours(null);
+          if (issue.genre === "annule") {
+            setMessage(t("planche.import.annule"));
+            return;
+          }
+          if (issue.genre === "trop-gros") {
+            setMessage(t("planche.import.tropGros", { triangles: issue.triangles.toLocaleString(LOCALE), borne: issue.borne.toLocaleString(LOCALE) }));
+            return;
+          }
+          if (issue.genre === "erreur") {
+            setMessage(t("planche.sb.import.erreur", { motif: issue.message }));
+            return;
+          }
+          if (issue.genre === "fini-scene") return;
+          const t0 = performance.now();
+          const r = poserImport(histRef.current.present.modele, issue.contenus, issue.ignores, issue.echelle, { format, fichier: fichier.name });
+          noterPose(performance.now() - t0);
           poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
           rafraichir();
+          const echelle = issue.echelle;
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
           setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
+          // Cas 2, lot 6 (n° 6) : rapport chiffré de l'import OBJ / STL aussi, archivé avec le fichier tel quel.
+          const rapport = rapportImportMaillages(format, fichier.name, r, date);
+          setRapportImport({ rapport, arbre: [] });
+          setArchiveImport(null);
+          setPanneau("echange-import");
+          void archiverEchange(fichier.name, donnees, rapport);
         } catch (e) {
-          setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
+          annulerImportRef.current = null;
+          setImportCours(null);
+          setMessage(t("planche.sb.import.erreur", { motif: e instanceof Error ? e.message : String(e) }));
         }
       },
       telechargerPng: async () => {
         const blob = await vueRef.current?.capture();
-        if (blob) telechargerFichier(blob, `${nomFichier()}.png`);
+        if (blob) {
+          telechargerFichier(blob, `${nomFichier()}.png`);
+          noterEmissionRef.current("PNG", `${nomFichier()}.png`, "emission");
+        }
       },
       informations: () => {
         const m = histRef.current.present.modele;
@@ -2216,6 +2790,26 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       },
     };
   }, [poserHistorique, rafraichir, sauvegarde]);
+
+  // Raccourcis en deux temps : encadré ouvert après la touche d'entrée, refermé à la touche suivante ou après 5 s.
+  const [deuxTemps, setDeuxTemps] = useState(false);
+  const deuxTempsRef = useRef(false);
+  const minuteurDeuxTemps = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finirDeuxTempsRef = useRef(() => {});
+  const ouvrirDeuxTempsRef = useRef(() => {});
+  finirDeuxTempsRef.current = () => {
+    deuxTempsRef.current = false;
+    if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
+    minuteurDeuxTemps.current = null;
+    setDeuxTemps(false);
+  };
+  ouvrirDeuxTempsRef.current = () => {
+    deuxTempsRef.current = true;
+    if (minuteurDeuxTemps.current) clearTimeout(minuteurDeuxTemps.current);
+    minuteurDeuxTemps.current = setTimeout(() => finirDeuxTempsRef.current(), 5000);
+    setDeuxTemps(true);
+  };
+  useEffect(() => () => void (minuteurDeuxTemps.current && clearTimeout(minuteurDeuxTemps.current)), []);
 
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
   useEffect(() => {
@@ -2243,6 +2837,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       // Lot 9 (EX-CMD-01) : registre unique — Ctrl + G (Grouper), Ctrl + Maj + G (Éclater), Alt + Maj + lettre (objets,
       // Navigateur, vue, lien) et F2, une seule résolution (touche physique sous Alt pour macOS), la disponibilité de la
       // famille fait foi (un objet verrouillé n'est pas éclaté).
+      // Raccourcis en deux temps (décision du 27 novembre 2026) : la touche d'entrée ouvre l'encadré des secondes
+      // touches ; la touche suivante exécute la commande (Échap, ou une touche sans commande, annule).
+      if (deuxTempsRef.current && !dansMesures) {
+        if (modif === "Maj" || modif === "Ctrl" || modif === "Alt" || e.key === "Meta") return;
+        e.preventDefault();
+        finirDeuxTempsRef.current();
+        if (e.key === "Escape") return;
+        const seconde = commandeDuSecondTemps(e) ?? commandeDuSecondTemps({ key: e.key, code: e.code, ctrlKey: false, metaKey: false, altKey: false, shiftKey: e.shiftKey });
+        if (seconde) executerCommandeRef.current(seconde);
+        return;
+      }
+      if (estEntreeDeuxTemps(e) && !dansMesures) {
+        e.preventDefault();
+        ouvrirDeuxTempsRef.current();
+        return;
+      }
       const commande = commandeDuClavier(e);
       if (commande && routeeParLeRegistre(commande) && !dansMesures) {
         e.preventDefault();
@@ -2278,9 +2888,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         return;
       }
       if (mod && !e.altKey && !e.shiftKey && !dansMesures && (cle === "c" || cle === "x" || cle === "v")) {
+        if (cle === "v") {
+          // Cas 2, lot 6 (n° 112) : l'événement « paste » qui suit lit le presse-papiers du système (tracé SVG, DXF ou
+          // sommets) ; s'il n'en apporte pas, la copie interne est collée comme avant.
+          window.clearTimeout(attenteCollerRef.current);
+          attenteCollerRef.current = window.setTimeout(() => {
+            attenteCollerRef.current = 0;
+            collerSelection();
+          }, 120);
+          return;
+        }
         e.preventDefault();
-        if (cle === "v") collerSelection();
-        else copierSelection(cle === "x");
+        copierSelection(cle === "x");
         return;
       }
       const etat = toucheEtat(e.key);
@@ -2310,6 +2929,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (e.key === "Home" && e.shiftKey && !mod && dansRef.current !== undefined && !dansMesures) {
         e.preventDefault();
         fermerContexte("fermer-tout");
+        return;
+      }
+      if (e.key === "Escape" && annulerImportRef.current) {
+        e.preventDefault();
+        annulerImportRef.current();
         return;
       }
       if (e.key === "Escape") {
@@ -2373,8 +2997,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       frappeRef.current = consommerFrappe(frappeRef.current);
     };
     clavierRef.current = { touche: surTouche, relache: surRelache, perte: surPerte, pointeur: surPointeur };
+    /** Cas 2, lot 6 (n° 112) : un tracé collé depuis une autre application ouvre « Coller un tracé ». */
+    const surColler = (e: ClipboardEvent) => {
+      if (champSaisie(e.target) || rechercheRef.current) return;
+      const donnees = e.clipboardData;
+      const texte = donnees ? donnees.getData("text/plain") || donnees.getData("image/svg+xml") : "";
+      const l = texte ? lireTraceColle(texte) : null;
+      if (!l) return;
+      e.preventDefault();
+      window.clearTimeout(attenteCollerRef.current);
+      attenteCollerRef.current = 0;
+      ouvrirCollageRef.current(l);
+    };
     const fenetres = [window, ...(fenetreRef.current ? [fenetreRef.current] : [])];
     for (const w of fenetres) {
+      w.addEventListener("paste", surColler);
       w.addEventListener("keydown", surTouche);
       w.addEventListener("keyup", surRelache);
       w.addEventListener("blur", surPerte);
@@ -2382,6 +3019,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     return () => {
       for (const w of fenetres) {
+        w.removeEventListener("paste", surColler);
         w.removeEventListener("keydown", surTouche);
         w.removeEventListener("keyup", surRelache);
         w.removeEventListener("blur", surPerte);
@@ -2688,13 +3326,113 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Panneau fermé : le relevé n'est calculé que si l'extension est active, et une fois par modèle (pas à chaque rendu).
   const controleOffert = !masquees.has("commande:nettoyer");
   const rapportNettoyage = useMemo(() => rapportControle ?? (controleOffert ? controlerModele(hist.present.modele) : null), [rapportControle, controleOffert, hist.present.modele]);
+  // Cas 2, lot 3 : défauts de la racine, relevés panneau ouvert (ou à la demande d'un parcours).
+  const defautsControle = useMemo(() => (panneau === "controle" ? releverDefauts(hist.present.modele) : []), [panneau, hist.present.modele]);
+  const compteControle = useMemo(() => compterDefauts(defautsControle), [defautsControle]);
+  const defautCourant = indiceControle >= 0 ? defautsControle[indiceControle] : undefined;
+  const objetsSelectionnes = dans === undefined ? (vue.selection ?? []).filter((id) => hist.present.modele.racine.occurrences[id]) : [];
+  const cibleFondDao: string | undefined = dans ?? (objetsSelectionnes.length === 1 ? objetsSelectionnes[0] : undefined);
+  const apercuFondDao = useMemo(() => {
+    if (panneau !== "controle" || vueControle !== "fond-dao" || cibleFondDao === undefined) return null;
+    try {
+      return preparerFondDao(hist.present.modele, optionsFondDao, cibleFondDao).bilan;
+    } catch {
+      return null;
+    }
+  }, [panneau, vueControle, cibleFondDao, optionsFondDao, hist.present.modele]);
+  const apercuVolumes = useMemo(() => {
+    if (panneau !== "controle" || vueControle !== "fond-dao") return null;
+    if (objetsSelectionnes.length < 2) return { selectionnes: objetsSelectionnes.length, interieures: 0, cloisons: 0 };
+    try {
+      const r = fusionnerVolumes(hist.present.modele, objetsSelectionnes);
+      return { selectionnes: objetsSelectionnes.length, interieures: r.faces, cloisons: r.aretes };
+    } catch {
+      return { selectionnes: objetsSelectionnes.length, interieures: 0, cloisons: 0 };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, vueControle, objetsSelectionnes.join("|"), hist.present.modele]);
   const disponibiliteCommandeControle = (id: IdCommandeControle) =>
-    disponibiliteControle(id, { aNettoyer: id === "nettoyer" && rapportNettoyage !== null && !rienANettoyer(rapportNettoyage, choixNettoyage), dansObjet: dans !== undefined, lecture: readOnly });
+    disponibiliteControle(id, {
+      aNettoyer: id === "nettoyer" && rapportNettoyage !== null && !rienANettoyer(rapportNettoyage, choixNettoyage),
+      dansObjet: dans !== undefined,
+      lecture: readOnly,
+      // Panneau fermé : le relevé est fait à la demande du parcours.
+      defauts: panneau === "controle" ? defautsControle.length : 1,
+      corrigeable: dans === undefined && defautCourant?.correction !== undefined,
+      objetsSelectionnes: objetsSelectionnes.length,
+    });
+  /** Cadre la vue sur un défaut et sélectionne ce qui le porte. */
+  const montrerDefaut = (i: number, liste = defautsControle) => {
+    const d = liste[i];
+    setIndiceControle(i);
+    if (!d) return;
+    setSelection([...d.ids]);
+    const r = 0.6;
+    vueRef.current?.cadrer({ min: { x: d.position.x - r, y: d.position.y - r, z: d.position.z - r }, max: { x: d.position.x + r, y: d.position.y + r, z: d.position.z + r } }, margesVue(racineRef.current));
+    setNoteControle(null);
+    rafraichir();
+  };
+  const changerSeuilsControle = (r: Partial<ReglagesControle>) => operer(t("planche.controle.seuils"), (m) => ({ modele: changerReglagesControle(m, r).modele }));
   const executerControle = (id: IdCommandeControle) => {
     if (!disponibiliteCommandeControle(id).disponible) return;
     if (id === "controler") {
       setNoteControle(null);
+      setVueControle("releve");
       setPanneau("controle");
+      return;
+    }
+    if (id === "defaut-suivant" || id === "defaut-precedent") {
+      setVueControle("releve");
+      setPanneau("controle");
+      const liste = panneau === "controle" ? defautsControle : releverDefauts(histRef.current.present.modele);
+      const i = indiceDefaut(liste.length, indiceControle, id === "defaut-suivant" ? 1 : -1);
+      if (i < 0) setNoteControle(t("planche.controle.aucun-defaut"));
+      montrerDefaut(i, liste);
+      return;
+    }
+    if (id === "corriger-defaut") {
+      const d = defautCourant;
+      if (!d) return;
+      operer(t("planche.controle.corriger-defaut"), (m) => {
+        const r = corrigerDefaut(m, d);
+        const message = t("planche.controle.note.corrige");
+        setNoteControle(message);
+        return { modele: r.modele, selection: [], message };
+      });
+      // Le relevé change : le défaut suivant prend la même place dans la liste.
+      setIndiceControle((i) => Math.min(i, Math.max(-1, defautsControle.length - 2)));
+      return;
+    }
+    if (id === "pieces-permis") {
+      setNoteControle(null);
+      setVueControle("pieces");
+      setPanneau("controle");
+      return;
+    }
+    if (id === "preparer-fond-dao" || id === "fusionner-volumes") {
+      if (panneau !== "controle" || vueControle !== "fond-dao") {
+        setNoteControle(null);
+        setVueControle("fond-dao");
+        setPanneau("controle");
+        return;
+      }
+      if (id === "preparer-fond-dao") {
+        const cible = cibleFondDao;
+        operer(t("planche.controle.preparer-fond-dao"), (m) => {
+          const r = preparerFondDao(m, optionsFondDao, cible);
+          const message = t("planche.fond-dao.note", { aplatis: String(r.bilan.aplatis), soudures: String(r.bilan.soudures), faces: String(r.bilan.faces) });
+          setNoteControle(message);
+          return { modele: r.modele, message };
+        });
+        return;
+      }
+      const objets = objetsSelectionnes;
+      operer(t("planche.controle.fusionner-volumes"), (m) => {
+        const r = fusionnerVolumes(m, objets);
+        const message = t("planche.volumes.note", { faces: String(r.faces) });
+        setNoteControle(message);
+        return { modele: r.modele, selection: [r.occurrence], message };
+      });
       return;
     }
     operer(t("planche.controle.nettoyer"), (m) => {
@@ -2784,6 +3522,47 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     },
   });
   sitesProjetRef.current = sitesProjet;
+  // Cas 2, lot 3 : pièces du permis et site avant émission (le site rattaché est lu dans la base dédiée par le menu Sites).
+  const siteRattache = sitesProjet.site;
+  const etatSite: EtatSite | null = useMemo(
+    () => (siteRattache ? { rattache: true, parcelle: siteRattache.parcelle !== null, nord: siteRattache.observations.nord !== undefined, altitude: siteRattache.observations.altitudeReference !== undefined } : null),
+    [siteRattache],
+  );
+  const reglesPieces = annotationsDe(hist.present.modele.annotations).reglages?.reglesPieces ?? null;
+  const bilanPieces = useMemo(() => (panneau === "controle" && vueControle === "pieces" ? evaluerPieces(hist.present.modele, etatSite) : null), [panneau, vueControle, hist.present.modele, etatSite]);
+  const lignesSite = useMemo(() => (panneau === "controle" && vueControle === "pieces" ? controlerSite(hist.present.modele, etatSite) : []), [panneau, vueControle, hist.present.modele, etatSite]);
+  const chargerReglesPieces = (f: File) => {
+    void f.text().then((texte) => {
+      const lu = lireReglesPieces(texte, f.name);
+      if ("erreur" in lu) {
+        setNoteControle(lu.erreur);
+        return;
+      }
+      // Interface ≠ base de données (D-GD-29) : le fichier est archivé tel quel en base (extension « Contrôle et nettoyage »)
+      // avant d'être posé avec le modèle ; un refus d'archivage est montré, le fichier reste lisible.
+      void archiverFichierExtension("controle", { nom: f.name, texte }).then((issue) => {
+        const regles = issue.ok ? { ...lu.regles, archive: issue.archive } : { ...lu.regles, refusArchive: issue.motif };
+        operer(t("planche.pieces.charger"), (m) => {
+          const message = issue.ok ? t("planche.pieces.note.charge", { nom: f.name }) : t("planche.pieces.note.charge-sans-base", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") });
+          setNoteControle(message);
+          return { modele: poserReglesPieces(m, regles).modele, message };
+        });
+      });
+    });
+  };
+  const localiserManqueSite = () => {
+    const manque = lignesSite.find((l) => l.etat !== "present");
+    if (!manque) {
+      setNoteControle(t("planche.pieces.note.complet"));
+      return;
+    }
+    if (manque.ligne === "nord" || manque.ligne === "altitude") {
+      if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+      setPanneau("emplacement");
+      return;
+    }
+    setNoteControle(t(`planche.pieces.note.manque.${manque.ligne}` as "planche.pieces.note.manque.rattache"));
+  };
   useEffect(() => {
     if (sitesProjet.note) setMessage(sitesProjet.note.texte);
   }, [sitesProjet.note]);
@@ -3064,6 +3843,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (a.vide) return;
       const fichier = `${nomCourant.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche"}-1-${optionsPlan.echelle}.svg`;
       telechargerFichier(new Blob([a.svg], { type: "image/svg+xml;charset=utf-8" }), fichier);
+      noterEmissionRef.current("SVG", fichier, "emission");
       setNotePlan(t("planche.plan.note.exporte", { fichier }));
       return;
     }
@@ -3095,6 +3875,795 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     operationMotif(modifierMotif(hist.present.modele, id, { nom: v.nom, angle, pas }), t("planche.plan.motifs-hachure"), null);
   };
   const associerUnMotif = (materiau: string, motif: string | null) => operationMotif(associerMotif(hist.present.modele, materiau, motif), t("planche.plan.motifs-hachure"), null);
+  /**
+   * Feuilles (cas 4 du catalogue, étape 6) : feuilles ISO, fenêtres de vue (plan vectoriel d'une scène à une échelle de la
+   * série), PDF vectoriel à l'échelle relu avant téléchargement. Cochage du jeu et motif des noms : préférences de la
+   * session, pas des données du projet.
+   */
+  const feuillesListe = Object.values(hist.present.modele.annotations?.feuilles ?? {}).sort((a, b) => a.numero.localeCompare(b.numero, "fr", { numeric: true }));
+  const [feuilleChoisieEtat, setFeuilleChoisie] = useState<string | null>(null);
+  const feuilleChoisie = feuillesListe.find((f) => f.id === feuilleChoisieEtat) ?? feuillesListe[0] ?? null;
+  const [fenetreChoisieEtat, setFenetreChoisie] = useState<string | null>(null);
+  const fenetreChoisie = feuilleChoisie?.fenetres.some((w) => w.id === fenetreChoisieEtat) ? fenetreChoisieEtat : null;
+  const [decochees, setDecochees] = useState<ReadonlySet<string>>(new Set());
+  const cocheesFeuilles = new Set(feuillesListe.filter((f) => !decochees.has(f.id)).map((f) => f.id));
+  const [motifNomsFeuilles, setMotifNomsFeuilles] = useState("{numero}-{nom}-{indice}");
+  const [erreurFeuille, setErreurFeuille] = useState<string | null>(null);
+  const [noteFeuille, setNoteFeuille] = useState<string | null>(null);
+  const libellesFeuille = (): LibellesFeuille => ({ projet: t("planche.feuilles.cartouche.projet"), phase: t("planche.feuilles.cartouche.phase"), titre: t("planche.feuilles.cartouche.titre"), date: t("planche.feuilles.cartouche.date"), numero: t("planche.feuilles.cartouche.numero"), indice: t("planche.feuilles.cartouche.indice"), echelles: t("planche.feuilles.cartouche.echelles"), vueDessus: t("planche.feuilles.scene.dessus"), separateur: LANGUE_INTERFACE === "en" ? "." : "," });
+  const compositionFeuille = useMemo(
+    () => (panneau === "feuilles" && feuilleChoisie ? composerFeuille(hist.present.modele, feuilleChoisie, libellesFeuille()) : null),
+    [panneau, feuilleChoisie, hist.present.modele], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const disponibiliteCommandeFeuille = (id: IdCommandeFeuille) => disponibiliteFeuille(id, { feuille: feuilleChoisie !== null, fenetre: fenetreChoisie !== null, cochees: cocheesFeuilles.size, lecture: readOnly });
+  const operationFeuille = (r: ResultatFeuille, libelle: string, message: string | null): ResultatFeuille | null => {
+    if (!r.ok) {
+      setErreurFeuille(t(`planche.feuilles.erreur.${r.erreur}`));
+      return null;
+    }
+    setErreurFeuille(null);
+    setNoteFeuille(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return r;
+  };
+  const emettrePdf = (feuilles: readonly Feuille[], fichier: string) => {
+    const pages = feuilles.map((f) => composerFeuille(hist.present.modele, f, libellesFeuille()));
+    // Une hachure trop dense n'est jamais omise du PDF : l'export est refusé.
+    const denses = hachuresTropDenses(pages);
+    if (denses) return setErreurFeuille(t("planche.feuilles.erreur.densite", { familles: String(denses) }));
+    const octets = pdfFeuilles(pages, fichier.replace(/\.pdf$/, ""));
+    // Contrôle de l'échelle exacte : le fichier émis est relu, ses formats comparés aux feuilles.
+    const relu = relirePdf(octets);
+    if (!relu || relu.pages.length !== pages.length || relu.pages.some((p, i) => Math.abs(p.largeur - pages[i]!.largeur) > 0.05 || Math.abs(p.hauteur - pages[i]!.hauteur) > 0.05)) return setErreurFeuille(t("planche.feuilles.erreur.pdf"));
+    setErreurFeuille(null);
+    telechargerFichier(new Blob([octets as BlobPart], { type: "application/pdf" }), fichier);
+    setNoteFeuille(t("planche.feuilles.note.pdf", { pages: String(relu.pages.length), formats: [...new Set(relu.pages.map((p) => `${p.largeur} × ${p.hauteur} mm`))].join(", ") }));
+  };
+  /**
+   * Feuilles en DXF (cas 4, lot C4, étape 5) : un fichier DXF R2000 par feuille cochée (feuille entière en millimètres
+   * papier) ou par vue (en mètres, à l'échelle réelle) ; chaque fichier émis est relu avant d'être téléchargé.
+   */
+  const [decocheesDxf, setDecocheesDxf] = useState<ReadonlySet<string>>(new Set());
+  const cocheesDxf = new Set(feuillesListe.filter((f) => !decocheesDxf.has(f.id)).map((f) => f.id));
+  const [contenuDxf, setContenuDxf] = useState<ContenuDxf>("feuille");
+  const [erreurDxf, setErreurDxf] = useState<string | null>(null);
+  const [noteDxf, setNoteDxf] = useState<string | null>(null);
+  const disponibiliteCommandeDxf = (id: IdCommandeDxf) => disponibiliteDxf(id, { cochees: cocheesDxf.size });
+  const executerDxf = (id: IdCommandeDxf) => {
+    setPanneau("feuilles-dxf");
+    if (id === "feuilles-dxf" || !disponibiliteCommandeDxf(id).disponible) return;
+    const m = hist.present.modele;
+    const fichiers: { nom: string; texte: string }[] = [];
+    let vides = 0;
+    for (const f of feuillesListe.filter((x) => cocheesDxf.has(x.id))) {
+      const base = nomFichierFeuille(motifNomsFeuilles, f, "dxf").replace(/\.dxf$/, "");
+      if (contenuDxf === "feuille") fichiers.push({ nom: `${base}.dxf`, texte: dxfFeuille(composerFeuille(m, f, libellesFeuille())) });
+      else
+        f.fenetres.forEach((w, i) => {
+          const texte = dxfVue(m, f, w.id, { separateur: LANGUE_INTERFACE === "en" ? "." : "," });
+          if (texte === null) vides++;
+          else fichiers.push({ nom: `${base}-v${i + 1}.dxf`, texte });
+        });
+    }
+    if (fichiers.length === 0) return setErreurDxf(t("planche.dxf.erreur.vide"));
+    // Contrôle : chaque fichier est relu (version R2000, calques déclarés) avant d'être téléchargé.
+    if (fichiers.some((x) => relireDxf(x.texte)?.version !== "AC1015")) return setErreurDxf(t("planche.dxf.erreur.relecture"));
+    setErreurDxf(null);
+    for (const x of fichiers) telechargerFichier(new Blob([x.texte], { type: "application/dxf" }), x.nom);
+    setNoteDxf(t(vides ? "planche.dxf.note.vides" : "planche.dxf.note.ecrits", { nombre: String(fichiers.length), noms: fichiers.map((x) => x.nom).join(", "), vides: String(vides) }));
+  };
+  /**
+   * Réserves de chantier (cas 4 du catalogue, étape 7b) : panneau hors colonne, outil Réserve, fiche saisie, levée datée.
+   */
+  /**
+   * Fonds calés (cas 4 du catalogue, lot C4, étape 1) : panneau hors colonne, outil Calage, import d'une image, calage
+   * sur deux points de longueur connue ou sur des paires de points, verrouillage.
+   */
+  const fondsListe = fondsDe(hist.present.modele);
+  const [fondChoisiEtat, setFondChoisi] = useState<string | null>(null);
+  const fondChoisi = fondsListe.find((f) => f.id === fondChoisiEtat) ?? fondsListe[0] ?? null;
+  fondCourantRef.current = fondChoisi?.id ?? null;
+  const [pointChoisiEtat, setPointChoisi] = useState<string | null>(null);
+  const pointChoisi = fondChoisi?.points.some((p) => p.id === pointChoisiEtat) ? pointChoisiEtat : null;
+  const [erreurFond, setErreurFond] = useState<string | null>(null);
+  const [noteFond, setNoteFond] = useState<string | null>(null);
+  const importFondRef = useRef<HTMLInputElement | null>(null);
+  surPointCalagePoseRef.current = (fond, point) => {
+    setFondChoisi(fond);
+    setPointChoisi(point);
+    setErreurFond(null);
+    setNoteFond(null);
+    setPanneau("fonds");
+  };
+  const disponibiliteCommandeFond = (id: IdCommandeFond) => disponibiliteFond(id, { fond: fondChoisi !== null, verrouille: fondChoisi?.verrouille ?? false, point: pointChoisi !== null, lecture: readOnly, cale: fondChoisi?.cale ?? false, pointDeBase: (hist.present.modele.annotations?.reglages?.pointDeBase ?? null) !== null, fiche: ficheRecue !== null, orthophoto: orthoAttente !== null });
+  const operationFond = (r: ResultatFond, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+    setErreurFond(null);
+    setNoteFond(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  /** `calage` : orthophoto posée d'après son fichier de calage d'image, dans le système déclaré (déjà comparé au projet). */
+  const importerUnFond = async (f: File, calage?: { readonly k: CalageImage; readonly fichier: string; readonly systeme: string; readonly pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] }, pdf?: { readonly pose: (largeurPx: number, hauteurPx: number) => PoseFond | null; readonly message: string; readonly altitude: number }) => {
+    // La Planche visée est retenue avant le décodage ; le fond se pose ensuite sur le modèle courant.
+    const planche = indexRef.current.courante;
+    let image: Awaited<ReturnType<typeof reduireFond>>;
+    try {
+      image = await reduireFond(f);
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.image"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    // Orthophoto : pose calculée avant l'archivage (un fichier de calage refusé n'archive rien).
+    let pose: { pose: PoseFond; geo: GeoFond } | undefined;
+    if (calage) {
+      const r = poseDepuisCalageImage(calage.k, histRef.current.present.modele.annotations?.reglages?.pointDeBase ?? null, image.largeur / image.largeurOriginal);
+      if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.calage-${r.erreur}`));
+      pose = { pose: r.pose, geo: { fichier: calage.fichier.slice(0, 200), systeme: calage.systeme, coefficients: [calage.k.a, calage.k.d, calage.k.b, calage.k.e, calage.k.c, calage.k.f] } };
+    }
+    // Page scannée d'un PDF reçu (lot C4, étape 4) : posée à l'échelle de la page, calée (non verrouillée).
+    const posePdf = pdf ? pdf.pose(image.largeur, image.hauteur) : null;
+    if (pdf && !posePdf) return setErreurFond(t("planche.pdf.erreur.cisaillement"));
+    // L'original est archivé tel quel en base avant la pose (décision du 27 novembre 2026) : sans archive, pas de fond.
+    setNoteFond(t("planche.fonds.note.archivage"));
+    let original: OriginalFond;
+    try {
+      original = { ...(await archiverOriginalFond(f)), largeurPx: image.largeurOriginal, hauteurPx: image.hauteurOriginal };
+      // Fichiers de calage (world file, .prj) archivés tels quels eux aussi (D-GD-29) : leurs références vont au fond.
+      if (pose && calage && calage.pieces.length) {
+        const archives = [];
+        for (const p of calage.pieces) archives.push(await archiverPieceCalage(p.fichier, p.role));
+        pose = { ...pose, geo: { ...pose.geo, archives } };
+      }
+    } catch (e) {
+      setNoteFond(null);
+      return setErreurFond(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    const n = niveauxTries(hist.present.modele).find((x) => x.id === niveauChoisi);
+    let pose2: string | null = null;
+    let erreur: string | null = null;
+    const message = pdf ? pdf.message : calage ? t("planche.fonds.note.ortho-posee", { nom: f.name, calage: calage.fichier, systeme: calage.systeme }) : t("planche.fonds.note.importe", { nom: f.name });
+    operer(t(pdf ? "planche.pdf.poser-fond-pdf" : calage ? "planche.fonds.importer-orthophoto" : "planche.fonds.importer-fond"), (m) => {
+      const r = importerFond(m, { nom: f.name, image: image.image, largeurPx: image.largeur, hauteurPx: image.hauteur, altitude: pdf ? pdf.altitude : (n?.altitude ?? 0), original, ...(pose ?? {}), ...(posePdf ? { pose: posePdf } : {}) });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      pose2 = r.id;
+      return { modele: r.modele, message };
+    });
+    if (erreur) return setErreurFond(t(`planche.fonds.erreur.${erreur}`));
+    setErreurFond(null);
+    setNoteFond(message);
+    if (pose2) {
+      setFondChoisi(pose2);
+      setPointChoisi(null);
+    }
+    setPanneau("fonds");
+  };
+  // Fiche de calage (lot C4, étape 2) : fiche du projet, fiche reçue comparée, orthophoto en attente de son système.
+  const [auteurFiche, setAuteurFiche] = useState("");
+  const [dateFiche, setDateFiche] = useState(dateDuJour);
+  const [ficheRecue, setFicheRecue] = useState<{ nom: string; fiche: FicheCalage } | null>(null);
+  const [orthoAttente, setOrthoAttente] = useState<{ fichier: File; k: CalageImage; calage: string; nomPrj: string | null; pieces: readonly { readonly role: "calage" | "prj"; readonly fichier: File }[] } | null>(null);
+  const [systemeOrtho, setSystemeOrtho] = useState("");
+  const importFicheRef = useRef<HTMLInputElement | null>(null);
+  const importOrthoRef = useRef<HTMLInputElement | null>(null);
+  const ficheProjet = ficheDuProjet(hist.present.modele, referenceNiveaux, auteurFiche, /^\d{4}-\d{2}-\d{2}$/.test(dateFiche) ? dateFiche : dateDuJour());
+  const nomFichierSur = (s: string): string => s.normalize("NFC").replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "planche";
+  const lireFiche = async (f: File) => {
+    setNoteFond(null);
+    if (f.size > FICHE_MAX * 4) return setErreurFond(t("planche.fonds.erreur.fiche-taille"));
+    let texte: string;
+    try {
+      texte = await f.text();
+    } catch {
+      return setErreurFond(t("planche.fonds.erreur.fiche-lecture"));
+    }
+    const r = lireFicheCalage(texte);
+    if ("erreur" in r) return setErreurFond(t(`planche.fonds.erreur.fiche-${r.erreur}`, { ligne: String(r.ligne) }));
+    setErreurFond(null);
+    setFicheRecue({ nom: f.name, fiche: r.fiche });
+    setNoteFond(t("planche.fonds.note.fiche-recue", { nom: f.name }));
+    setPanneau("fonds");
+  };
+  const lireOrthophoto = async (fichiers: readonly File[]) => {
+    setNoteFond(null);
+    setOrthoAttente(null);
+    const extension = (f: File) => f.name.toLowerCase().split(".").pop() ?? "";
+    const image = fichiers.find((f) => f.type === "image/png" || f.type === "image/jpeg");
+    const monde = fichiers.find((f) => (EXTENSIONS_CALAGE_IMAGE as readonly string[]).includes(extension(f)));
+    const prj = fichiers.find((f) => extension(f) === "prj");
+    if (!image) return setErreurFond(t("planche.fonds.erreur.ortho-image"));
+    if (!monde) return setErreurFond(t("planche.fonds.erreur.ortho-calage"));
+    let k: CalageImage | null = null;
+    let wkt: string | null = null;
+    try {
+      k = monde.size <= 4096 ? lireCalageImage(await monde.text()) : null;
+      wkt = prj && prj.size <= 65536 ? await prj.text() : null;
+    } catch {
+      k = null;
+    }
+    if (!k) return setErreurFond(t("planche.fonds.erreur.ortho-calage-illisible"));
+    const systeme = wkt ? systemeDuPrj(wkt) : null;
+    const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? null;
+    if (!projet) return setErreurFond(t("planche.fonds.erreur.calage-point-de-base"));
+    if (systeme?.code) {
+      if (normaliserSysteme(systeme.code) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: systeme.code, projet }));
+      return importerUnFond(image, { k, fichier: monde.name, systeme: systeme.code, pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
+    }
+    // Sans .prj lisible : le système est demandé, jamais supposé.
+    setErreurFond(null);
+    setSystemeOrtho("");
+    setOrthoAttente({ fichier: image, k, calage: monde.name, nomPrj: systeme?.nom ?? (prj ? prj.name : null), pieces: [{ role: "calage", fichier: monde }, ...(prj ? [{ role: "prj" as const, fichier: prj }] : [])] });
+    setPanneau("fonds");
+  };
+  const executerFond = (id: IdCommandeFond) => {
+    if (id === "fonds") return setPanneau("fonds");
+    if (!disponibiliteCommandeFond(id).disponible) return;
+    setPanneau("fonds");
+    if (id === "importer-fond") return importFondRef.current?.click();
+    if (id === "importer-fiche") return importFicheRef.current?.click();
+    if (id === "importer-orthophoto") return importOrthoRef.current?.click();
+    if (id === "exporter-fiche") {
+      const fichier = `fiche-calage-${nomFichierSur(plancheDe(indexRef.current).nom)}.txt`;
+      telechargerFichier(new Blob([ecrireFicheCalage(ficheProjet)], { type: "text/plain;charset=utf-8" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-exportee", { fichier }));
+    }
+    if (id === "ignorer-fiche") {
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.fiche-ignoree"));
+    }
+    if (id === "appliquer-fiche" && ficheRecue) {
+      const r = appliquerFiche(hist.present.modele, ficheRecue.fiche);
+      if (!r.ok) return setErreurFond(t(`planche.fonds.erreur.${r.erreur}`));
+      const message = t("planche.fonds.note.fiche-appliquee", { pdb: t(r.pointDeBase ? "planche.fonds.note.pdb-repris" : "planche.fonds.note.pdb-inchange"), niveaux: String(r.niveauxAjoutes) });
+      operer(t("planche.fonds.appliquer-fiche"), () => ({ modele: r.modele, message }));
+      setFicheRecue(null);
+      setErreurFond(null);
+      return setNoteFond(message);
+    }
+    if (id === "poser-orthophoto" && orthoAttente) {
+      const saisi = systemeOrtho.trim();
+      if (saisi === "") return setErreurFond(t("planche.fonds.erreur.ortho-systeme-vide"));
+      const projet = hist.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
+      if (normaliserSysteme(saisi) !== normaliserSysteme(projet)) return setErreurFond(t("planche.fonds.erreur.ortho-systeme", { fichier: saisi, projet }));
+      const o = orthoAttente;
+      setOrthoAttente(null);
+      // Système retenu sous l'écriture du projet (comparaison sans casse ni espaces).
+      return void importerUnFond(o.fichier, { k: o.k, fichier: o.calage, systeme: projet, pieces: o.pieces });
+    }
+    if (id === "exporter-calage-fond" && fondChoisi) {
+      const k = calageImageDuFond(fondChoisi, hist.present.modele.annotations?.reglages?.pointDeBase ?? null, fondChoisi.original?.largeurPx);
+      if (!k) return setErreurFond(t("planche.fonds.erreur.calage-export"));
+      const base = (fondChoisi.nom || "fond").replace(/\.[^.]*$/, "");
+      const fichier = `${nomFichierSur(base)}.${fondChoisi.original?.type === "image/png" ? "pgw" : "jgw"}`;
+      telechargerFichier(new Blob([ecrireCalageImage(k)], { type: "text/plain" }), fichier);
+      setErreurFond(null);
+      return setNoteFond(t("planche.fonds.note.calage-exporte", { fichier }));
+    }
+    if (!fondChoisi) return;
+    const m = hist.present.modele;
+    if (id === "caler-fond") return operationFond(calerFond(m, fondChoisi.id), t("planche.fonds.caler-fond"), t("planche.fonds.note.cale", { nom: fondChoisi.nom }));
+    if (id === "verrouiller-fond") return operationFond(verrouillerFond(m, fondChoisi.id, !fondChoisi.verrouille), t(fondChoisi.verrouille ? "planche.fonds.deverrouiller" : "planche.fonds.verrouiller-fond"), t(fondChoisi.verrouille ? "planche.fonds.note.deverrouille" : "planche.fonds.note.verrouille"));
+    if (id === "supprimer-point-calage" && pointChoisi) {
+      operationFond(supprimerPointCalage(m, fondChoisi.id, pointChoisi), t("planche.fonds.supprimer-point-calage"), t("planche.fonds.note.point-supprime", { point: pointChoisi }));
+      return setPointChoisi(null);
+    }
+    if (id === "supprimer-fond") {
+      operationFond(supprimerFond(m, fondChoisi.id), t("planche.fonds.supprimer-fond"), t("planche.fonds.note.supprime", { nom: fondChoisi.nom }));
+      setFondChoisi(null);
+    }
+  };
+  // Références verrouillées (lot C4, étape 3) : fiche dans le dessin, fichier archivé en base et relu à l'ouverture.
+  const referencesListe = referencesDe(hist.present.modele);
+  const [referenceChoisieEtat, setReferenceChoisie] = useState<string | null>(null);
+  const referenceChoisie = referencesListe.find((r) => r.id === referenceChoisieEtat) ?? referencesListe[0] ?? null;
+  const [erreurReference, setErreurReference] = useState<string | null>(null);
+  const [noteReference, setNoteReference] = useState<string | null>(null);
+  const [uniteReference, setUniteReference] = useState<UniteReference>("m");
+  /** Triangles relus de chaque fichier (unité du fichier), par empreinte ; « lecture » / « introuvable » sinon. */
+  // Clé du cache : empreinte et axe vertical choisi, les positions relues portant déjà la conversion d'axe (un même
+  // fichier posé deux fois avec deux axes garde ses deux orientations).
+  const cleFichierReference = (r: { readonly fichier: { readonly empreinte: string }; readonly axe?: string | undefined }) => `${r.fichier.empreinte}|${r.axe ?? "z"}`;
+  const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
+  const [recolementBrut, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[]; modele: unknown } | null>(null);
+  // Le résultat ne vaut que pour le modèle contrôlé : placement, tolérance, version ou dessin modifiés le rendent périmé.
+  const recolement = recolementBrut && recolementBrut.modele === hist.present.modele ? recolementBrut : null;
+  const importReferenceRef = useRef<HTMLInputElement | null>(null);
+  const modeImportReference = useRef<"charger" | "recharger">("charger");
+  const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
+    const f = fichiersReferences[cleFichierReference(r)];
+    return [r.id, f === undefined || f === "lecture" ? "lecture" : f === "introuvable" ? "introuvable" : "chargee"] as const;
+  }));
+  const disponibiliteCommandeReference = (id: IdCommandeReference) => disponibiliteReference(id, { reference: referenceChoisie !== null, chargee: referenceChoisie !== null && etatsReferences[referenceChoisie.id] === "chargee", lecture: readOnly });
+  const operationReference = (r: ResultatReference, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReference(t(`planche.references.erreur.${r.erreur}`));
+    setErreurReference(null);
+    setNoteReference(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  // Relecture des fichiers absents (ouverture d'un dessin, annulation d'une suppression) : une fois par empreinte.
+  const enLecture = useRef(new Set<string>());
+  useEffect(() => {
+    for (const r of referencesListe) {
+      const cle = cleFichierReference(r);
+      if (fichiersReferences[cle] !== undefined || enLecture.current.has(cle)) continue;
+      enLecture.current.add(cle);
+      void (async () => {
+        let etat: { positions: Float32Array } | "introuvable";
+        try {
+          const octets = new Uint8Array(await lireFichierReference(r.fichier.id));
+          etat = { positions: positionsReference(maillagesReference(r.format, octets, r.axe ?? "z").maillages).positions };
+        } catch {
+          etat = "introuvable";
+        }
+        enLecture.current.delete(cle);
+        setFichiersReferences((a) => ({ ...a, [cle]: etat }));
+      })();
+    }
+  });
+  // Vue mise à jour seulement quand les références, leurs fichiers relus, le récolement ou la vue elle-même changent.
+  const dernierePoseReferences = useRef<{ vue: unknown; refs: unknown; fichiers: unknown; recolement: unknown; cle: string } | null>(null);
+  useEffect(() => {
+    const v = vueRef.current;
+    if (!v) return;
+    const cle = JSON.stringify(referencesListe.map((r) => [r.id, cleFichierReference(r), r.echelle, r.placement, r.visible, r.opacite]));
+    const d = dernierePoseReferences.current;
+    if (d && d.vue === v && d.cle === cle && d.fichiers === fichiersReferences && d.recolement === recolement) return;
+    dernierePoseReferences.current = { vue: v, refs: null, fichiers: fichiersReferences, recolement, cle };
+    const liste = referencesListe.flatMap((r) => {
+      const f = fichiersReferences[cleFichierReference(r)];
+      return f && typeof f === "object" ? [{ id: r.id, cle: cleFichierReference(r), positions: f.positions, echelle: r.echelle, placement: r.placement, visible: r.visible, opacite: r.opacite }] : [];
+    });
+    v.poserReferences(liste, recolement?.points ?? []);
+  });
+  const formatDuNom = (nom: string): "obj" | "stl" | "ifc" | null => {
+    const e = nom.toLowerCase().split(".").pop();
+    return e === "obj" || e === "stl" || e === "ifc" ? e : null;
+  };
+  const chargerFichierReference = async (f: File) => {
+    const mode = modeImportReference.current;
+    setNoteReference(null);
+    const format = formatDuNom(f.name);
+    if (!format) return setErreurReference(t("planche.references.erreur.format"));
+    const planche = indexRef.current.courante;
+    let octets: Uint8Array;
+    let lu: ReturnType<typeof lireMaillages>;
+    try {
+      octets = new Uint8Array(await f.arrayBuffer());
+      lu = lireMaillages(format, octets);
+    } catch (e) {
+      return setErreurReference(t(e instanceof ErreurImport && e.code === "unite" ? "planche.references.erreur.unite" : "planche.references.erreur.lecture"));
+    }
+    const { positions, triangles } = positionsReference(lu.maillages);
+    if (triangles === 0) return setErreurReference(t("planche.references.erreur.lecture"));
+    const echelle = lu.echelleFichier ?? ECHELLES_UNITE[uniteReference];
+    setNoteReference(t("planche.references.note.archivage"));
+    let fichier: Awaited<ReturnType<typeof archiverFichierReference>>;
+    try {
+      fichier = await archiverFichierReference(f, format);
+    } catch (e) {
+      setNoteReference(null);
+      return setErreurReference(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    setFichiersReferences((a) => ({ ...a, [cleFichierReference({ fichier })]: { positions } }));
+    const m = histRef.current.present.modele;
+    if (mode === "recharger" && referenceChoisie) {
+      const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
+      setRecolement(null);
+      return operationReference(r, t("planche.references.recharger-reference"), r.ok ? t("planche.references.note.rechargee", { version: String(referenceChoisie.version + 1), triangles: triangles.toLocaleString(LOCALE) }) : null);
+    }
+    const r = ajouterReference(m, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
+    operationReference(r, t("planche.references.charger-reference"), t("planche.references.note.chargee", { nom: f.name, triangles: triangles.toLocaleString(LOCALE) }));
+    if (r.ok) setReferenceChoisie(r.id);
+    setPanneau("references");
+  };
+  const executerReference = (id: IdCommandeReference) => {
+    if (id === "references") return setPanneau("references");
+    if (!disponibiliteCommandeReference(id).disponible) return;
+    setPanneau("references");
+    if (id === "charger-reference" || id === "recharger-reference") {
+      modeImportReference.current = id === "charger-reference" ? "charger" : "recharger";
+      return importReferenceRef.current?.click();
+    }
+    if (!referenceChoisie) return;
+    const m = hist.present.modele;
+    if (id === "verrouiller-reference") return operationReference(verrouillerReference(m, referenceChoisie.id, !referenceChoisie.verrouille), t(referenceChoisie.verrouille ? "planche.references.deverrouiller" : "planche.references.verrouiller-reference"), t(referenceChoisie.verrouille ? "planche.references.note.deverrouillee" : "planche.references.note.verrouillee"));
+    if (id === "afficher-reference") return operationReference(afficherReference(m, referenceChoisie.id, !referenceChoisie.visible), t(referenceChoisie.visible ? "planche.references.afficher-reference" : "planche.references.montrer"), t(referenceChoisie.visible ? "planche.references.note.masquee" : "planche.references.note.affichee"));
+    if (id === "supprimer-reference") {
+      operationReference(supprimerReference(m, referenceChoisie.id), t("planche.references.supprimer-reference"), t("planche.references.note.supprimee", { nom: referenceChoisie.nom }));
+      setRecolement(null);
+      return setReferenceChoisie(null);
+    }
+    if (id === "controler-recolement") {
+      const f = fichiersReferences[cleFichierReference(referenceChoisie)];
+      if (!f || typeof f !== "object") return;
+      const points = sommetsDuDessin(m);
+      const resultat = controlerRecolement(points, trianglesAuProjet(referenceChoisie, f.positions), referenceChoisie.tolerance);
+      setErreurReference(null);
+      setNoteReference(null);
+      setRecolement({ reference: referenceChoisie.id, tolerance: referenceChoisie.tolerance, resultat, modele: m, points: (resultat.horsTolerance ?? []).map((x) => ({ x: points[x.point]![0], y: points[x.point]![1], z: points[x.point]![2] })) });
+    }
+  };
+  // PDF reçu (lot C4, étape 4) : PDF lu dans le navigateur, original archivé en base, échelle confirmée avant insertion.
+  const [pdfRecu, setPdfRecu] = useState<EtatPdf | null>(null);
+  const [pagePdf, setPagePdf] = useState(0);
+  const [modePdf, setModePdf] = useState<"mesure" | "barre" | null>(null);
+  const [pointsPdf, setPointsPdf] = useState<readonly PointPdf[]>([]);
+  const [longueurBarrePdf, setLongueurBarrePdf] = useState("");
+  const [echellePdf, setEchellePdf] = useState("");
+  const [echelleConfirmee, setEchelleConfirmee] = useState<number | null>(null);
+  const [niveauPdfEtat, setNiveauPdf] = useState<string | null>(null);
+  const niveauPdf = niveaux.some((n) => n.id === niveauPdfEtat) ? niveauPdfEtat : niveauChoisi;
+  const [originePdf, setOriginePdf] = useState({ x: "0", y: "0" });
+  const [erreurPdf, setErreurPdf] = useState<string | null>(null);
+  const [notePdf, setNotePdf] = useState<string | null>(null);
+  const importPdfRef = useRef<HTMLInputElement | null>(null);
+  const pageCourantePdf = pdfRecu?.pages[pagePdf] ?? null;
+  const propositionPdf = pageCourantePdf ? (echellesDuTexte(pageCourantePdf.textes)[0] ?? null) : null;
+  const papierBarre = modePdf === "barre" && pointsPdf.length === 2 ? Math.hypot(pointsPdf[1]!.x - pointsPdf[0]!.x, pointsPdf[1]!.y - pointsPdf[0]!.y) : null;
+  const echelleBarrePdf = papierBarre !== null ? echelleDeLaBarre(papierBarre, Number(longueurBarrePdf.trim().replace(",", "."))) : null;
+  const echelleSaisiePdf = (() => {
+    const v = echellePdf.trim().replace(",", ".");
+    return v === "" ? null : Number(v);
+  })();
+  const disponibiliteCommandePdf = (id: IdCommandePdf) =>
+    disponibilitePdf(id, {
+      page: pageCourantePdf !== null,
+      vectorielle: pageCourantePdf !== null && pageCourantePdf.traits.length + pageCourantePdf.arcs.length > 0,
+      image: pageCourantePdf !== null && pageCourantePdf.images.length > 0,
+      proposee: echelleSaisiePdf !== null || echelleBarrePdf !== null || propositionPdf !== null,
+      confirmee: echelleConfirmee !== null,
+      lecture: readOnly,
+    });
+  const changerPagePdf = (i: number) => {
+    setPagePdf(i);
+    setPointsPdf([]);
+    setModePdf(null);
+    setEchelleConfirmee(null);
+    setEchellePdf("");
+    setErreurPdf(null);
+  };
+  const lireFichierPdf = async (f: File) => {
+    setErreurPdf(null);
+    setNotePdf(null);
+    const octets = new Uint8Array(await f.arrayBuffer());
+    const lu = lirePdfRecu(octets);
+    if (!lu.ok) return setErreurPdf(t(`planche.pdf.erreur.${lu.erreur}`));
+    setPdfRecu({ nom: f.name, fichier: null, pages: lu.pages });
+    changerPagePdf(0);
+    setPanneau("pdf-recu");
+    // L'original est archivé tel quel en base ; sans archive, la page reste consultable mais n'est pas insérée.
+    setNotePdf(t("planche.pdf.note.archivage"));
+    try {
+      const fichier = await archiverFichierReference(f, "pdf");
+      setPdfRecu((a) => (a && a.nom === f.name ? { ...a, fichier: { id: fichier.id, empreinte: fichier.empreinte } } : a));
+      setNotePdf(t("planche.pdf.note.lu", { nom: f.name, pages: String(lu.pages.length) }));
+    } catch (e) {
+      setNotePdf(null);
+      setErreurPdf(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+  };
+  const executerPdf = (id: IdCommandePdf) => {
+    if (id === "pdf-recu") return setPanneau("pdf-recu");
+    if (!disponibiliteCommandePdf(id).disponible) return;
+    setPanneau("pdf-recu");
+    if (id === "ouvrir-pdf") return importPdfRef.current?.click();
+    if (id === "mesurer-pdf" || id === "barre-echelle-pdf") {
+      const m = id === "mesurer-pdf" ? "mesure" : "barre";
+      setPointsPdf([]);
+      return setModePdf(modePdf === m ? null : m);
+    }
+    const page = pageCourantePdf;
+    if (!page) return;
+    if (id === "confirmer-echelle-pdf") {
+      // Priorité : l'échelle tapée, puis la barre pointée, puis l'échelle écrite dans la page.
+      const e = echelleSaisiePdf ?? echelleBarrePdf ?? propositionPdf?.echelle ?? null;
+      if (!estEchellePdf(e)) return setErreurPdf(t("planche.pdf.erreur.echelle"));
+      setErreurPdf(null);
+      setEchelleConfirmee(e);
+      setEchellePdf(String(Math.round(e * 1000) / 1000));
+      return setNotePdf(t("planche.pdf.echelle.confirmee", { echelle: String(Math.round(e * 1000) / 1000) }));
+    }
+    if (echelleConfirmee === null) return;
+    const x = Number(originePdf.x.trim().replace(",", "."));
+    const y = Number(originePdf.y.trim().replace(",", "."));
+    if (!Number.isFinite(x) || !Number.isFinite(y) || originePdf.x.trim() === "" || originePdf.y.trim() === "") return setErreurPdf(t("planche.pdf.erreur.position"));
+    const altitude = niveaux.find((n) => n.id === niveauPdf)?.altitude ?? 0;
+    const echelleTexte = String(Math.round(echelleConfirmee * 1000) / 1000);
+    // Le PDF d'origine doit être archivé tel quel avant toute pose, tracé inséré comme page posée en fond.
+    if (!pdfRecu?.fichier) return setErreurPdf(t("planche.references.erreur.archive-serveur"));
+    if (id === "inserer-pdf") {
+      const nom = t("planche.pdf.groupe", { nom: pdfRecu.nom, numero: String(page.numero) });
+      const description = t("planche.pdf.description", { nom: pdfRecu.nom, numero: String(page.numero), echelle: echelleTexte, id: pdfRecu.fichier.id, empreinte: pdfRecu.fichier.empreinte });
+      let erreur: string | null = null;
+      let compte = { traits: 0, arcs: 0 };
+      const message = t("planche.pdf.note.inseree", { numero: String(page.numero), echelle: echelleTexte, traits: page.traits.length.toLocaleString(LOCALE), arcs: page.arcs.length.toLocaleString(LOCALE), nom });
+      operer(t("planche.pdf.inserer-pdf"), (m) => {
+        const r = insererPagePdf(m, page, { echelle: echelleConfirmee, x, y, altitude, nom, description });
+        if (!r.ok) {
+          erreur = r.erreur;
+          return null;
+        }
+        compte = { traits: r.traits, arcs: r.arcs };
+        return { modele: r.modele, message };
+      });
+      if (erreur) return setErreurPdf(t(`planche.pdf.erreur.${erreur}`));
+      setErreurPdf(null);
+      return setNotePdf(compte.traits + compte.arcs > 0 ? message : null);
+    }
+    // Poser en fond : la plus grande image de la page, posée à l'échelle de la page.
+    const img = [...page.images].sort((a, b) => b.largeurPx * b.hauteurPx - a.largeurPx * a.hauteurPx)[0];
+    if (!img) return;
+    const essai = poseImagePdf(img, echelleConfirmee, x, y);
+    if ("erreur" in essai) return setErreurPdf(t(`planche.pdf.erreur.${essai.erreur}`));
+    void (async () => {
+      let fichier: File;
+      try {
+        fichier = await fichierImagePdf(img, `${(pdfRecu?.nom ?? "plan.pdf").replace(/\.pdf$/i, "")}-p${page.numero}`);
+      } catch {
+        return setErreurPdf(t("planche.pdf.erreur.image"));
+      }
+      setErreurPdf(null);
+      await importerUnFond(fichier, undefined, {
+        pose: (l, h) => {
+          const r = poseImagePdf({ ...img, largeurPx: l, hauteurPx: h }, echelleConfirmee, x, y);
+          return "pose" in r ? r.pose : null;
+        },
+        message: t("planche.pdf.note.fond", { numero: String(page.numero), echelle: echelleTexte }),
+        altitude,
+      });
+    })();
+  };
+  const reservesListe = reservesDe(hist.present.modele);
+  const [reserveChoisieEtat, setReserveChoisie] = useState<string | null>(null);
+  const reserveChoisie = reservesListe.find((r) => r.id === reserveChoisieEtat) ?? null;
+  const [filtreReserves, setFiltreReserves] = useState<{ lot: string | null; statut: StatutReserve | null }>({ lot: null, statut: null });
+  const [erreurReserve, setErreurReserve] = useState<string | null>(null);
+  const [noteReserve, setNoteReserve] = useState<string | null>(null);
+  surReservePoseeRef.current = (id) => {
+    setReserveChoisie(id);
+    setErreurReserve(null);
+    setNoteReserve(null);
+    setPanneau("reserves");
+  };
+  const disponibiliteCommandeReserve = (id: IdCommandeReserve) => disponibiliteReserve(id, { reserve: reserveChoisie !== null, lecture: readOnly });
+  const operationReserve = (r: ResultatReserve, libelle: string, message: string | null): void => {
+    if (!r.ok) return setErreurReserve(t(`planche.reserves.erreur.${r.erreur}`));
+    setErreurReserve(null);
+    setNoteReserve(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+  };
+  const executerReserve = (id: IdCommandeReserve) => {
+    if (id === "reserves") return setPanneau("reserves");
+    if (!disponibiliteCommandeReserve(id).disponible || !reserveChoisie) return;
+    setPanneau("reserves");
+    const m = hist.present.modele;
+    if (id === "lever-reserve") {
+      const levee = reserveChoisie.statut === "ouverte";
+      return operationReserve(leverReserve(m, reserveChoisie.id, dateDuJour()), t(levee ? "planche.reserves.lever-reserve" : "planche.reserves.rouvrir"), t(levee ? "planche.reserves.note.levee" : "planche.reserves.note.rouverte", { numero: String(reserveChoisie.numero) }));
+    }
+    if (id === "supprimer-reserve") {
+      operationReserve(supprimerReserve(m, reserveChoisie.id), t("planche.reserves.supprimer-reserve"), t("planche.reserves.note.supprimee", { numero: String(reserveChoisie.numero) }));
+      setReserveChoisie(null);
+    }
+  };
+  const modifierUneReserve = (v: Parameters<typeof modifierReserve>[2]) => reserveChoisie && operationReserve(modifierReserve(hist.present.modele, reserveChoisie.id, v), t("planche.reserves.fiche"), null);
+  const joindrePhoto = async (f: File) => {
+    // La réserve et la Planche visées sont retenues avant le décodage ; la photo s'applique ensuite au modèle courant
+    // (dans `operer`), jamais à un instantané : une modification faite pendant le décodage n'est pas perdue.
+    const cible = reserveChoisie?.id;
+    const planche = indexRef.current.courante;
+    if (!cible) return;
+    let photo: Awaited<ReturnType<typeof reduirePhoto>>;
+    try {
+      photo = await reduirePhoto(f);
+    } catch {
+      return setErreurReserve(t("planche.reserves.erreur.photo"));
+    }
+    if (indexRef.current.courante !== planche) return;
+    let erreur: string | null = null;
+    operer(t("planche.reserves.fiche"), (m) => {
+      const r = modifierReserve(m, cible, { photo });
+      if (!r.ok) {
+        erreur = r.erreur;
+        return null;
+      }
+      return { modele: r.modele };
+    });
+    setErreurReserve(erreur ? t(`planche.reserves.erreur.${erreur}`) : null);
+  };
+  /**
+   * Contrôle de l'enveloppe (cas 4 du catalogue, étape 7c) : panneau hors colonne ; le calcul tourne dans un travailleur,
+   * relancé à la fin de chaque opération (après un court délai) tant que le contrôle est actif ; rien n'est modifié.
+   */
+  const enveloppe = enveloppeDe(hist.present.modele);
+  const [regleChoisieEtat, setRegleChoisie] = useState<string | null>(null);
+  const regleChoisie = enveloppe.regles.find((r) => r.id === regleChoisieEtat) ?? null;
+  const [controleEnveloppe, setControleEnveloppe] = useState<{ resultat: ResultatControleEnveloppe | null; calcul: boolean }>({ resultat: null, calcul: false });
+  const [erreurEnveloppe, setErreurEnveloppe] = useState<string | null>(null);
+  const [noteEnveloppe, setNoteEnveloppe] = useState<string | null>(null);
+  const controleurEnveloppeRef = useRef<ControleurEnveloppe | null>(null);
+  useEffect(() => {
+    if (!enveloppe.controle) {
+      controleurEnveloppeRef.current?.arreter();
+      setControleEnveloppe({ resultat: null, calcul: false });
+      return;
+    }
+    const c = (controleurEnveloppeRef.current ??= creerControleurEnveloppe((resultat, err) => {
+      setControleEnveloppe({ resultat, calcul: false });
+      if (err) setErreurEnveloppe(err);
+    }));
+    setControleEnveloppe((x) => ({ ...x, calcul: true }));
+    const m = hist.present.modele;
+    const minuterie = window.setTimeout(() => c.demander(m), 150);
+    return () => window.clearTimeout(minuterie);
+  }, [hist.present.modele, enveloppe.controle]);
+  useEffect(() => () => controleurEnveloppeRef.current?.arreter(), []);
+  useEffect(() => {
+    const r = controleEnveloppe.resultat;
+    const v = vueRef.current;
+    if (!v) return;
+    if (!r || !enveloppe.controle) return v.poserControleEnveloppe(null);
+    const contenu = r.lignes.find((l) => l.genre === "contenu");
+    const m = hist.present.modele;
+    const env = enveloppe.objet ? m.racine.occurrences[enveloppe.objet] : undefined;
+    v.poserControleEnveloppe({
+      hors: r.hors,
+      point: contenu?.etat === "ecart" ? contenu.point : null,
+      texte: contenu?.valeur ? t("planche.enveloppe.hors", { valeur: `${contenu.valeur.toLocaleString(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} m` }) : "",
+      seuils: enveloppe.regles.filter((x) => x.seuil !== null).map((x) => ({ z: x.seuil as number, texte: t("planche.enveloppe.seuil-vue", { libelle: x.libelle }) })),
+      emprise: (env ? boiteOccurrence(m, env.id) : null) ?? v.emprise(),
+    });
+  }, [controleEnveloppe.resultat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const objetEnveloppe = (): string | null => {
+    const s = selectionRef.current;
+    return s.length === 1 && hist.present.modele.racine.occurrences[s[0]!] ? s[0]! : null;
+  };
+  const nomObjetEnveloppe = (id: string | null): string | null => {
+    const o = id ? hist.present.modele.racine.occurrences[id] : undefined;
+    return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null;
+  };
+  const disponibiliteCommandeEnveloppe = (id: IdCommandeEnveloppe) => disponibiliteEnveloppe(id, { objet: objetEnveloppe() !== null, regle: regleChoisie !== null, lecture: readOnly, plein: enveloppeDe(hist.present.modele).regles.length >= REGLES_HAUTEUR_MAX });
+  const operationEnveloppe = (r: ResultatReglages, libelle: string, message: string | null): boolean => {
+    if (!r.ok) {
+      setErreurEnveloppe(t(`planche.enveloppe.erreur.${r.erreur}`));
+      return false;
+    }
+    setErreurEnveloppe(null);
+    setNoteEnveloppe(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return true;
+  };
+  const executerEnveloppe = (id: IdCommandeEnveloppe) => {
+    if (id === "enveloppe") return setPanneau("enveloppe");
+    if (!disponibiliteCommandeEnveloppe(id).disponible) return;
+    setPanneau("enveloppe");
+    const m = hist.present.modele;
+    if (id === "definir-enveloppe") {
+      const objet = objetEnveloppe();
+      operationEnveloppe(definirEnveloppe(m, objet), t("planche.enveloppe.definir-enveloppe"), t("planche.enveloppe.note.definie", { nom: nomObjetEnveloppe(objet) ?? "" }));
+    } else if (id === "controler-enveloppe") {
+      operationEnveloppe(basculerControle(m), t("planche.enveloppe.controler-enveloppe"), t(enveloppe.controle ? "planche.enveloppe.note.inactif" : "planche.enveloppe.note.actif"));
+    } else if (id === "ajouter-regle-hauteur") {
+      const r = ajouterRegleHauteur(m, t("planche.enveloppe.regle-nouvelle"));
+      if (operationEnveloppe(r, t("planche.enveloppe.ajouter-regle-hauteur"), null) && r.id) setRegleChoisie(r.id);
+    } else if (id === "supprimer-regle-hauteur" && regleChoisie) {
+      operationEnveloppe(supprimerRegleHauteur(m, regleChoisie.id), t("planche.enveloppe.supprimer-regle-hauteur"), t("planche.enveloppe.note.supprimee", { libelle: regleChoisie.libelle }));
+      setRegleChoisie(null);
+    }
+  };
+  const cadrerLigneEnveloppe = (l: LigneControle) => {
+    const p = l.point;
+    if (!p) return;
+    const d = 1.5;
+    vueRef.current?.cadrer({ min: { x: p.x - d, y: p.y - d, z: p.z - d }, max: { x: p.x + d, y: p.y + d, z: p.z + d } }, margesVue(racineRef.current));
+  };
+  /**
+   * Liens de consultation (cas 4 du catalogue, étape 7d) : copie figée de la Planche, lue sans compte par son lien ;
+   * le dessin n'est jamais modifié par le lien. Liste relue à l'ouverture du panneau.
+   */
+  const [liensConsultation, setLiensConsultation] = useState<readonly LienConsultation[]>([]);
+  const [liensCharges, setLiensCharges] = useState(false);
+  const [lienChoisiEtat, setLienChoisi] = useState<string | null>(null);
+  const lienChoisi = liensConsultation.find((l) => l.jeton === lienChoisiEtat) ?? null;
+  const [echeanceLien, setEcheanceLien] = useState("");
+  const [mesureLien, setMesureLien] = useState(true);
+  const [envoiLien, setEnvoiLien] = useState(false);
+  const [erreurLien, setErreurLien] = useState<string | null>(null);
+  const [noteLien, setNoteLien] = useState<string | null>(null);
+  const messageErreurLien = (e: unknown): string => {
+    const code = e instanceof ErreurConsultation ? e.code : "";
+    return t(code === "unauthorized" || (e instanceof ErreurConsultation && e.statut === 401) ? "planche.consultation.erreur.compte" : code === "reseau" ? "planche.consultation.erreur.reseau" : e instanceof ErreurConsultation && e.statut === 413 ? "planche.consultation.erreur.taille" : code === "limite" ? "planche.consultation.erreur.limite" : "planche.consultation.erreur.serveur");
+  };
+  useEffect(() => {
+    if (panneau !== "consultations") return;
+    let annule = false;
+    listerLiens()
+      .then((l) => { if (!annule) { setLiensConsultation(l); setLiensCharges(true); } })
+      .catch((e) => { if (!annule) { setErreurLien(messageErreurLien(e)); setLiensCharges(true); } });
+    return () => { annule = true; };
+  }, [panneau]); // eslint-disable-line react-hooks/exhaustive-deps
+  const disponibiliteCommandeConsultation = (id: IdCommandeConsultation) => disponibiliteConsultation(id, { lien: lienChoisi !== null, actif: lienChoisi !== null && lienActif(lienChoisi, dateDuJour()), occupe: envoiLien });
+  const executerConsultation = (id: IdCommandeConsultation) => {
+    if (id === "partager-lien") return setPanneau("consultations");
+    if (!disponibiliteCommandeConsultation(id).disponible) return;
+    setPanneau("consultations");
+    if (id === "creer-lien") {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void creerLien({ nom: nomCourant, modele: hist.present.modele, echeance: echeanceLien || null, mesure: mesureLien })
+        .then((l) => {
+          setLiensConsultation((x) => [l, ...x]);
+          setLienChoisi(l.jeton);
+          setNoteLien(t("planche.consultation.note.cree"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    } else if (id === "copier-lien" && lienChoisi) {
+      const adresse = adresseLien(lienChoisi.jeton, window.location.origin);
+      if (!navigator.clipboard) setNoteLien(adresse);
+      else void navigator.clipboard.writeText(adresse).then(
+        () => setNoteLien(t("planche.consultation.note.copie", { adresse })),
+        () => setNoteLien(adresse),
+      );
+    } else if (id === "revoquer-lien" && lienChoisi) {
+      setEnvoiLien(true);
+      setErreurLien(null);
+      void revoquerLien(lienChoisi.jeton)
+        .then((l) => {
+          setLiensConsultation((x) => x.map((y) => (y.jeton === l.jeton ? l : y)));
+          setNoteLien(t("planche.consultation.note.revoque"));
+        })
+        .catch((e) => setErreurLien(messageErreurLien(e)))
+        .finally(() => setEnvoiLien(false));
+    }
+  };
+  const executerFeuille = (id: IdCommandeFeuille) => {
+    if (id === "feuilles") return setPanneau("feuilles");
+    if (!disponibiliteCommandeFeuille(id).disponible) return;
+    setPanneau("feuilles");
+    const m = hist.present.modele;
+    if (id === "nouvelle-feuille") {
+      const numero = numeroFeuilleSuivant(m);
+      const r = operationFeuille(creerFeuille(m, { numero, nom: t("planche.feuilles.nom-defaut", { numero }) }), t("planche.feuilles.nouvelle-feuille"), t("planche.feuilles.note.creee", { numero }));
+      if (r?.ok) {
+        setFeuilleChoisie(r.id);
+        setFenetreChoisie(null);
+      }
+      return;
+    }
+    if (!feuilleChoisie) return;
+    if (id === "supprimer-feuille") return void operationFeuille(supprimerFeuille(m, feuilleChoisie.id), t("planche.feuilles.supprimer-feuille"), t("planche.feuilles.note.supprimee", { numero: feuilleChoisie.numero }));
+    if (id === "ajouter-fenetre") {
+      const n = feuilleChoisie.fenetres.length;
+      const r = operationFeuille(ajouterFenetre(m, feuilleChoisie.id, { scene: null, echelle: 50, coupe: null, x: 30 + 10 * n, y: 20 + 10 * n }), t("planche.feuilles.ajouter-fenetre"), null);
+      if (r?.ok) setFenetreChoisie(r.id);
+      return;
+    }
+    if (id === "supprimer-fenetre") return void (fenetreChoisie && operationFeuille(supprimerFenetre(m, feuilleChoisie.id, fenetreChoisie), t("planche.feuilles.supprimer-fenetre"), null));
+    if (id === "exporter-feuille-pdf") return emettrePdf([feuilleChoisie], nomFichierFeuille(motifNomsFeuilles, feuilleChoisie));
+    if (id === "exporter-jeu-pdf") {
+      const jeu = feuillesListe.filter((f) => cocheesFeuilles.has(f.id));
+      const premier = nomFichierFeuille(motifNomsFeuilles, jeu[0]!).replace(/\.pdf$/, "");
+      emettrePdf(jeu, `${premier}${jeu.length > 1 ? `-${jeu.length}` : ""}.pdf`);
+    }
+  };
+  const modifierUneFeuille = (v: Partial<Omit<Feuille, "id" | "fenetres">>) => feuilleChoisie && operationFeuille(modifierFeuille(hist.present.modele, feuilleChoisie.id, v), t("planche.feuilles.feuilles"), null);
+  const modifierUneFenetre = (v: Partial<Omit<FenetreVue, "id">> | { position: string }) => {
+    if (!feuilleChoisie || !fenetreChoisie) return;
+    let patch: Partial<Omit<FenetreVue, "id">>;
+    if ("position" in v) {
+      const morceaux = v.position.split(";").map((x) => lireNombreSaisi(x));
+      if (morceaux.length !== 2 || morceaux.some((x) => x === null)) return setErreurFeuille(t("planche.feuilles.erreur.position"));
+      patch = { x: morceaux[0]!, y: morceaux[1]! };
+    } else patch = v;
+    operationFeuille(modifierFenetre(hist.present.modele, feuilleChoisie.id, fenetreChoisie, patch), t("planche.feuilles.feuilles"), null);
+  };
   /**
    * Murs à épaisseur (cas 4 du catalogue, étape 4) : épaisseur et hauteur saisies dans la barre d'options de l'outil Mur
    * (valeurs de départ de l'outil, jamais une donnée du projet) ; « Murs depuis les arêtes » pose un mur par chaîne
@@ -3258,6 +4827,1061 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     setNoteNumerotation(t("planche.numeroter.note", { objets: String(ids.length) }));
     operer(t("planche.numeroter.serie"), (m) => ({ modele: numeroterEnSerie(m, ids, optionsNumerotation()).modele, selection: ids }));
+  };
+
+  /**
+   * Cas 2 du catalogue, lot 2 « Accrochage et saisie » : panneaux « Accrochage » et « Mètre · Mesure » (contextuels,
+   * ouverts par leur commande), genre forcé, guide en réseau, répartition, remise à l'échelle d'un import.
+   */
+  const [metreMemo, setMetreMemo] = useState<NonNullable<VueOutil["metre"]>>({ derniere: null, guide: null });
+  useEffect(() => {
+    if (vue.metre && (vue.metre.derniere !== metreMemo.derniere || vue.metre.guide !== metreMemo.guide)) setMetreMemo(vue.metre);
+  }, [vue.metre]);
+  const [reglagesMetre, setReglagesMetre] = useState<ReglagesMetre>(REGLAGES_METRE_DEFAUT);
+  const [noteMetre, setNoteMetre] = useState<string | null>(null);
+  const [echelleMesuree, setEchelleMesuree] = useState("");
+  const [echelleReelle, setEchelleReelle] = useState("");
+  const [noteEchelle, setNoteEchelle] = useState<string | null>(null);
+  const uniteProjet: UniteSaisie | undefined = hist.present.modele.annotations?.reglages?.uniteSaisie;
+  const longueurMesure = metreMemo.derniere ? Math.hypot(metreMemo.derniere.b.x - metreMemo.derniere.a.x, metreMemo.derniere.b.y - metreMemo.derniere.a.y, metreMemo.derniere.b.z - metreMemo.derniere.a.z) : null;
+  /** Objet de la racine choisi seul (remise à l'échelle d'un import). */
+  const objetSeul = (): string | null => {
+    const sel = selectionRef.current;
+    return dans === undefined && sel.length === 1 && hist.present.modele.racine.occurrences[sel[0]!] ? sel[0]! : null;
+  };
+  const distancesEchelle = () => ({ mesuree: lireNombre(echelleMesuree) ?? longueurMesure, reelle: lireNombre(echelleReelle) });
+  const disponibiliteCommandeAccrochage = (id: IdCommandeAccrochage) => {
+    const d = distancesEchelle();
+    return disponibiliteAccrochage(id, {
+      lecture: readOnly,
+      guide: metreMemo.guide !== null && hist.present.modele.annotations?.guides[metreMemo.guide.id] !== undefined,
+      mesure: metreMemo.derniere !== null,
+      selection: selectionRef.current.length,
+      echelle: objetSeul() !== null && d.mesuree !== null && d.mesuree > 0 && d.reelle !== null && d.reelle > 0,
+    });
+  };
+  // Info modèle : unité (contrôle d'écart nul exigé), paramètres du projet — chacun un pas d'historique.
+  const changerUniteProjet = (u: UniteSaisie) =>
+    operer(t("planche.unites.affichage"), (m) => {
+      const r = changerUnite(m, u);
+      return { modele: r.modele, message: t("planche.unites.note", { unite: t(`planche.unites.${u}`), valeurs: r.controle.valeurs.toLocaleString("fr-CH") }) };
+    });
+  const poserParametreProjet = (p: { id?: string; nom: string; valeur: number }) => operer(t("planche.parametres.titre"), (m) => ({ modele: poserParametre(m, p).modele }));
+  const supprimerParametreProjet = (id: string) => operer(t("planche.parametres.supprimer"), (m) => ({ modele: supprimerParametre(m, id).modele }));
+  const executerAccrochage = (id: IdCommandeAccrochage) => {
+    if (!disponibiliteCommandeAccrochage(id).disponible) return;
+    const genre = GENRE_FORCE[id];
+    if (genre) {
+      setForceAccrochage(forceAccrochageRef.current === genre ? null : genre);
+      setMessage(t("planche.accrochage.force", { genre: t(`planche.accrochage.court.${id}` as "planche.accrochage.court.forcer-sommet") }));
+      rafraichir();
+      return;
+    }
+    if (id === "accrochage") return setPanneau("accrochage");
+    if (id === "metre-mesure") return setPanneau("metre-mesure");
+    if (id === "guide-reseau") {
+      const g = metreMemo.guide!;
+      const pas0 = Math.hypot(g.pas.x, g.pas.y, g.pas.z);
+      const entraxe = lireNombre(reglagesMetre.entraxe) ?? pas0;
+      const nombre = Number(reglagesMetre.nombre);
+      if (!(entraxe > 0) || !Number.isInteger(nombre) || nombre < 1 || pas0 <= 0) return setNoteMetre(t("planche.metre.reseau.invalide"));
+      const pas = { x: (g.pas.x / pas0) * entraxe, y: (g.pas.y / pas0) * entraxe, z: (g.pas.z / pas0) * entraxe };
+      setNoteMetre(t("planche.metre.reseau.note", { nombre: String(nombre) }));
+      return operer(t("planche.accrochage.guide-reseau"), (m) => ({ modele: repeterGuide(m, g.id, pas, { copies: nombre }).modele }));
+    }
+    if (id === "repartir") {
+      const b = metreMemo.derniere!;
+      const res = resultatRepartition(b, reglagesMetre);
+      if (typeof res === "string") return setNoteMetre(res);
+      const ids = [...selectionRef.current];
+      setNoteMetre(t("planche.metre.repartir.note", { elements: String(res.elements) }));
+      return operer(t("planche.accrochage.repartir"), (m, d) => ({ modele: repartir(m, ids, b.a, b.b, reglagesMetre.regle, lireNombre(reglagesMetre.valeur)!, 0, d !== undefined ? { dans: d } : {}).modele }));
+    }
+    // Remise à l'échelle d'un seul import : autour du premier point mesuré, sinon de l'origine de l'objet.
+    const occ = objetSeul()!;
+    const d = distancesEchelle();
+    const T = hist.present.modele.racine.occurrences[occ]!.transformation;
+    const origine = metreMemo.derniere?.a ?? { x: T[12] ?? 0, y: T[13] ?? 0, z: T[14] ?? 0 };
+    operer(t("planche.accrochage.remettre-echelle"), (m) => {
+      const r = remettreAEchelleImport(m, occ, d.mesuree!, d.reelle!, origine);
+      setNoteEchelle(t("planche.echelle.note", { facteur: r.facteur.toFixed(5).replace(".", SEPARATEUR_DECIMAL) }));
+      return { modele: r.modele };
+    });
+  };
+
+  // ——— Cas 2, lot 4 : balises, scènes et plans de coupe, gabarit d'agence (maquettes lot4-1 à lot4-4).
+  const planChoisi = (): string | null => {
+    const sel = selectionRef.current;
+    return sel.length === 1 && hist.present.modele.annotations?.plansDeCoupe[sel[0]!] ? sel[0]! : null;
+  };
+  const disponibiliteCommandeBalise = (id: IdCommandeBalise) =>
+    disponibiliteBalise(id, {
+      lecture: readOnly,
+      courante: balise !== null && hist.present.modele.annotations?.balises[balise] !== undefined,
+      selection: selectionRef.current.length,
+      phases: Object.values(hist.present.modele.annotations?.balises ?? {}).some((b) => b.phase !== undefined),
+    });
+  const disponibiliteCommandeScene = (id: IdCommandeScene) => disponibiliteScene(id, { lecture: readOnly, typesGabarit: hist.present.modele.annotations?.reglages?.gabarit?.scenesTypes.length ?? 0, plan: planChoisi() !== null });
+  const disponibiliteCommandeGabarit = (id: IdCommandeGabarit) => disponibiliteGabarit(id, { balises: Object.keys(hist.present.modele.annotations?.balises ?? {}).length, choisi: gabaritChoisi !== "" });
+  const modifierBaliseL4 = (id: string, v: ChangementBalise): boolean => {
+    try {
+      const r = modifierBalise(histRef.current.present.modele, id, v);
+      operer(t("planche.balise.modifier"), () => ({ modele: r.modele }));
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const classerSelectionL4 = (b: string | null) => {
+    const ids = [...selectionRef.current];
+    operer(t("planche.balise.classer-selection"), (m, d) => {
+      const r = classerSelection(m, ids, b, d);
+      const nom = b ? m.annotations?.balises[b]?.nom ?? "" : t("planche.info.sans-balise");
+      return { modele: r.modele, message: t("planche.balise.classee", { nombre: String(r.extra), nom }) };
+    });
+  };
+  const executerBalise = (id: IdCommandeBalise) => {
+    if (!disponibiliteCommandeBalise(id).disponible) return;
+    if (id === "classer-selection") {
+      setPanneau("balises");
+      return classerSelectionL4(baliseRef.current);
+    }
+    if (id === "verrouiller-balise") {
+      const b = histRef.current.present.modele.annotations?.balises[baliseRef.current!];
+      if (!b) return;
+      // Verrouiller retire de la sélection ce que porte la balise (revue de #507) : plus rien ne la vise ni ne la modifie.
+      const garder = (m: Modele, d: string | undefined) => {
+        const c = contexteDe(m, d);
+        const a = m.annotations;
+        return selectionRef.current.filter((id) => ((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id] ?? a?.cotes[id] ?? a?.textes[id] ?? a?.plansDeCoupe[id]) as { balise?: string } | undefined)?.balise !== b.id);
+      };
+      return operer(t(b.verrouillee ? "planche.balise.deverrouiller" : "planche.balise.verrouiller-balise"), (m, d) => ({ modele: modifierBalise(m, b.id, { verrouillee: !b.verrouillee }).modele, ...(b.verrouillee ? {} : { selection: garder(m, d) }), message: t(b.verrouillee ? "planche.balise.note.deverrouillee" : "planche.balise.note.verrouillee", { nom: b.nom }) }));
+    }
+    if (id === "balises-phase") {
+      // Couleurs de départ des balises de phase, modifiables ensuite ; une balise de phase existante garde la sienne.
+      return operer(t("planche.balise.balises-phase"), (m) => ({ modele: creerBalisesPhase(m, { existant: "#333333", demolir: "#8f6a1f", projete: "#b3261e" }).modele, message: t("planche.balise.note.phases", { noms: Object.values(NOMS_PHASES).join(", ") }) }));
+    }
+    // Vue d'état : tout, puis existant, puis projeté (n° 116).
+    const actuelle = vueEtatCourante(histRef.current.present.modele);
+    const suivante = VUES_ETAT[(VUES_ETAT.indexOf(actuelle ?? "projet") + 1) % VUES_ETAT.length]!;
+    operer(t("planche.balise.vue-etat"), (m) => ({ modele: appliquerVueEtat(m, suivante).modele, message: t("planche.balise.note.vue-etat", { vue: t(`planche.balise.vue.${suivante}` as CleMessage) }) }));
+  };
+  const modifierSceneL4 = (id: string, v: { echelle?: number | null; soleil?: { jour: number; heure: number } | null }): boolean => {
+    try {
+      const r = modifierScene(histRef.current.present.modele, id, v);
+      operer(t("planche.scene.modifier"), () => ({ modele: r.modele }));
+      if (v.soleil) majOptions({ jour: v.soleil.jour, heure: v.soleil.heure });
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const creerScenesTypes = (genres: readonly string[] | null) =>
+    operer(t("planche.scene.scenes-types"), (m) => {
+      const types = (m.annotations?.reglages?.gabarit?.scenesTypes ?? []).filter((x) => genres === null || genres.includes(x.genre));
+      const scenes = scenesTypes(m, types);
+      if (!scenes.length) return { modele: m, message: t("planche.scene.note.aucune") };
+      const r = ajouterScenes(m, scenes);
+      return { modele: r.modele, message: t("planche.scene.note.creees", { nombre: String(r.extra.length) }) };
+    });
+  const executerScene = (id: IdCommandeScene) => {
+    if (!disponibiliteCommandeScene(id).disponible) return;
+    if (id === "scenes-types") {
+      setPanneau("scenes");
+      return creerScenesTypes(null);
+    }
+    const plan = planChoisi()!;
+    if (id === "avancer-coupe" || id === "reculer-coupe") return operer(t(`planche.scene.${id}`), (m) => ({ modele: decalerPlan(m, plan, id === "avancer-coupe" ? pasCoupe : -pasCoupe).modele }));
+    operer(t("planche.scene.scene-face-coupe"), (m) => {
+      const r = ajouterScenes(m, [sceneFaceCoupe(m, plan, echelleCoupe, vueRef.current?.lireOptions().modeFace)]);
+      const sc = r.modele.annotations?.scenes?.[r.extra[0]!];
+      if (sc) window.setTimeout(() => appliquerScene(sc), 0);
+      return { modele: r.modele, message: t("planche.scene.note.face-coupe", { nom: sc?.nom ?? "" }) };
+    });
+  };
+  const actionPlan = (fn: (m: Modele) => Modele, libelle: string): boolean => {
+    try {
+      const m1 = fn(histRef.current.present.modele);
+      operer(libelle, () => ({ modele: m1 }));
+      return true;
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+  };
+  const chargerGabarits = useCallback(async () => {
+    const liste = await listerFichiersArchives("planche-gabarit");
+    const lus: GabaritDisponible[] = [];
+    for (const a of liste) {
+      const texte = await lireFichierArchive(a.id);
+      const g = texte !== null ? lireGabarit(texte) : null;
+      if (g?.ok) lus.push({ id: a.id, nomFichier: a.nom, gabarit: g.gabarit, texte: texte!, archive: { id: a.id, empreinte: a.empreinte, ajouteLe: a.ajouteLe } });
+    }
+    setGabarits((avant) => [...lus, ...avant.filter((x) => x.id.startsWith("local:") && !lus.some((l) => l.nomFichier === x.nomFichier))]);
+  }, []);
+  useEffect(() => {
+    if (panneau === "gabarit") void chargerGabarits();
+  }, [panneau, chargerGabarits]);
+  const importerGabarit = (f: File) => {
+    void f.text().then((texte) => {
+      const lu = lireGabarit(texte);
+      if (!lu.ok) return setNoteGabarit(lu.erreur);
+      // Interface ≠ base de données (D-GD-29) : le gabarit est rangé tel quel en base pour le compte avant d'être proposé.
+      void archiverFichierExtension("planche-gabarit", { nom: f.name, texte }).then((issue) => {
+        const id = issue.ok ? issue.archive.id : `local:${f.name}`;
+        const g: GabaritDisponible = { id, nomFichier: f.name, gabarit: lu.gabarit, texte, ...(issue.ok ? { archive: issue.archive } : { refusArchive: issue.motif }) };
+        setGabarits((avant) => [...avant.filter((x) => x.id !== id), g]);
+        setGabaritChoisi(id);
+        setNoteGabarit(issue.ok ? t("planche.gabarit.note.importe", { nom: lu.gabarit.nom }) : t("planche.gabarit.note.importe-sans-base", { nom: lu.gabarit.nom, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+      });
+    });
+  };
+  // ——— Cas 2, lot 6 : échanges (export préparé, fichier natif et image, collage d'un tracé).
+  const nomFichierPlanche = () => nomCourant.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche";
+  const exportPrepare = useMemo(() => {
+    if (panneau !== "echange-export") return null;
+    const m = hist.present.modele;
+    const nonAffiches = objetsNonAffiches(m);
+    const choix = ui.coordonneesExport;
+    const c = modeleAExporter(m, choix, formatExport, histContexte.courant.repere, referenceNiveaux);
+    if (!c.ok) return { nonAffiches, motif: c.motif, ecrit: null, prevu: null, contenu: null, fichier: "" } as const;
+    const p = preparerExport(c.modele, { masques: inclureMasques, balises: [...balisesIncluses] });
+    const nom = nomFichierPlanche();
+    const o = c.repere?.origine;
+    const pb = m.annotations?.reglages?.pointDeBase;
+    const coordonnees =
+      choix === "travail" && o
+        ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
+        : choix === "source"
+          ? t("planche.export.coordonnees.source", { unite: c.unite })
+          : choix === "projete"
+            ? t("planche.export.coordonnees.projete", { systeme: [pb?.systeme, pb?.systemeVertical].filter(Boolean).join(" / ") })
+            : t("planche.export.coordonnees.modele");
+    const r = formatExport === "ifc" ? exporterIfc(p.modele, nomCourant) : formatExport === "obj" ? exporterObj(p.modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(p.modele, nom);
+    const unite = c.unite === "m" || c.unite === "cm" || c.unite === "mm" ? t(`planche.echange.unite.${c.unite}`) : c.unite;
+    const ecrit: EcritExport =
+      choix === "projete" && pb
+        ? { unite, repere: [pb.systeme, pb.systemeVertical].filter(Boolean).join(" / ") || t("planche.echange.repere.non-declare"), origine: `${texteCoordonnee(pb.e)} ; ${texteCoordonnee(pb.n)} ; ${texteCoordonnee(referenceNiveaux ?? 0)}` }
+        : choix === "travail" && o
+          ? { unite, repere: t("planche.echange.repere.travail"), origine: `${texteCoordonnee(o.x)} ; ${texteCoordonnee(o.y)} ; ${texteCoordonnee(o.z)}` }
+          : { unite, repere: t(choix === "source" ? "planche.echange.repere.source" : "planche.echange.repere.modele"), origine: null };
+    const fichier = `${nom}.${formatExport}`;
+    return { nonAffiches, motif: null, ecrit, prevu: rapportExport(formatExport, fichier, r, p.omis, horodatage(), { unite: ecrit.unite, repere: ecrit.origine ? `${ecrit.repere} (origine ${ecrit.origine})` : ecrit.repere }, pieceEmise(m)), contenu: r.contenu, fichier } as const;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, hist.present.modele, formatExport, ui.coordonneesExport, inclureMasques, balisesIncluses, histContexte, referenceNiveaux, nomCourant]);
+  const exporterEchange = () => {
+    const x = exportPrepare;
+    if (!x || !x.contenu || !x.prevu || !x.ecrit) return;
+    const base = x.fichier.replace(/\.[^.]+$/, "");
+    telechargerFichier(new Blob([x.contenu], { type: "text/plain;charset=utf-8" }), x.fichier);
+    telechargerFichier(new Blob([texteRapport(x.prevu)], { type: "text/plain;charset=utf-8" }), `${base}.rapport.txt`);
+    noterEmissionRef.current(formatExport.toUpperCase(), x.fichier, "emission");
+    const l = x.prevu.lignes[0]!;
+    setMessage(t("planche.echange.export.ok", { format: formatExport.toUpperCase(), objets: String(l.ecrits ?? 0), omis: String(l.omis ?? 0), unite: x.ecrit.unite, repere: x.ecrit.origine ? `${x.ecrit.repere} (${x.ecrit.origine})` : x.ecrit.repere, fichier: `${base}.rapport.txt` }));
+  };
+  const exporterNatif = () => {
+    const e = enveloppeNatif(serialiserBrouillon(histRef.current.present.modele), nomCourant, new Date());
+    const fichier = `${nomFichierPlanche()}${EXTENSION_NATIF}`;
+    telechargerFichier(new Blob([e.contenu], { type: "application/json;charset=utf-8" }), fichier);
+    noterEmissionRef.current(EXTENSION_NATIF, fichier, "emission");
+    setDernierNatif({ date: horodatage(), empreinte: e.empreinte });
+    setReimportNatif(null);
+    const note = t("planche.echange.natif.exporte", { fichier, empreinte: empreinteCourte(e.empreinte) });
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const importerNatif = async (f: File) => {
+    const r = ouvrirEnveloppeNatif(await f.text());
+    const m = r.ok ? lireBrouillon(r.texteModele) : null;
+    if (!r.ok || !m) {
+      const note = t(`planche.echange.natif.refus.${r.ok ? "illisible" : r.motif}`);
+      setReimportNatif("refuse");
+      setNoteNatif(note);
+      setMessage(note);
+      return;
+    }
+    // La Planche courante n'est jamais écrasée : le réimport ouvre une nouvelle Planche.
+    await actionsMenu.creer(r.nom || f.name.replace(/\.planche$/i, ""), referenceNiveaux ?? null, m);
+    const note = t("planche.echange.natif.ouverte");
+    setReimportNatif("conforme");
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const exporterImage = async () => {
+    const { largeur, hauteur } = tailleImage;
+    const blob = await vueRef.current?.captureDefinition(largeur, hauteur, imageTransparente);
+    if (!blob) {
+      setNoteNatif(t("planche.echange.image.echec", { largeur: String(largeur), hauteur: String(hauteur) }));
+      return;
+    }
+    telechargerFichier(blob, `${nomFichierPlanche()}-${largeur}x${hauteur}.png`);
+    noterEmissionRef.current("PNG", `${nomFichierPlanche()}-${largeur}x${hauteur}.png`, "emission");
+    const note = t("planche.echange.image.ok", { largeur: String(largeur), hauteur: String(hauteur), fond: imageTransparente ? t("planche.echange.image.fond") : "" });
+    setNoteNatif(note);
+    setMessage(note);
+  };
+  const executerEchange = (id: IdCommandeEchange) => {
+    if (id === "natif-image") setPanneau(panneauRef.current === "natif-image" ? null : "natif-image");
+  };
+  ouvrirCollageRef.current = (l: LectureColle) => {
+    if (readOnly) return;
+    setColle(l);
+    setUniteColle(l.unite ?? "");
+    setEchelleColle("1:1");
+    setPanneau("coller-trace");
+    setMessage(t("planche.echange.coller.consigne"));
+  };
+  /** Édition > Coller : la copie interne d'abord ; sinon le presse-papiers du système, s'il contient un tracé. */
+  const collerDepuisMenu = () => {
+    if (pressePapiers.current) return collerSelection();
+    void (async () => {
+      try {
+        const l = lireTraceColle(await navigator.clipboard.readText());
+        if (l) return ouvrirCollageRef.current(l);
+      } catch {
+        // Lecture refusée par le navigateur : rien n'est collé.
+      }
+      setMessage(t("planche.presse-papiers.vide"));
+    })();
+  };
+  const echelleColleLue = lireEchelleColle(echelleColle);
+  const collerTrace = () => {
+    const l = colle;
+    if (!l || uniteColle === "" || echelleColleLue === null) return;
+    const unite = uniteColle;
+    const sol = poserColle === "sol";
+    operer(t("planche.echange.coller.operation"), (m, d) => {
+      const monde = sol ? REPERE_DU_MODELE : (histContexteRef.current.courant.repere ?? REPERE_DU_MODELE);
+      // Dans un groupe ouvert, le plan (monde) est ramené aux coordonnées du groupe.
+      const M = d !== undefined ? matriceMonde(m, d) : null;
+      const I = M ? inverserMatrice(M) : null;
+      const vers = (p: { x: number; y: number; z: number }, translation: boolean) => {
+        if (!I) return p;
+        const g = (k: number) => I[k] ?? 0;
+        const w = translation ? 1 : 0;
+        return { x: g(0) * p.x + g(1) * p.y + g(2) * p.z + g(3) * w, y: g(4) * p.x + g(5) * p.y + g(6) * p.z + g(7) * w, z: g(8) * p.x + g(9) * p.y + g(10) * p.z + g(11) * w };
+      };
+      const repere = { origine: vers(monde.origine, true), x: vers(monde.x, false), y: vers(monde.y, false), z: vers(monde.z, false) };
+      const r = poserTraces(m, l, { metresParUnite: METRES_PAR_UNITE_COLLE[unite], echelle: echelleColleLue, repere, ...(d !== undefined ? { dans: d } : {}) });
+      return {
+        modele: r.modele,
+        selection: r.rapport.crees,
+        message: t("planche.echange.coller.ok", { traces: String(l.traces.length), type: t(`planche.echange.coller.type.${l.type}`), sommets: String(sommetsColles(l)), aretes: String(aretesCollees(l)), plan: t(sol ? "planche.echange.coller.plan.sol" : "planche.echange.coller.plan.travail") }),
+      };
+    });
+    setPanneau(null);
+    setColle(null);
+  };
+  const objetIfcChoisi = (() => {
+    if (panneau !== "echange-import") return null;
+    const m = hist.present.modele;
+    const c = contexteDe(m, dans);
+    for (const id of selectionRef.current) {
+      const occ = c.occurrences[id];
+      const d = donneesIfcDe(m, occ);
+      if (occ && d) return { nom: occ.nom ?? m.definitions[occ.definition]?.nom ?? id, donnees: d };
+    }
+    return null;
+  })();
+  const cadreImage = panneau === "natif-image" ? (vueRef.current?.cadreImage(tailleImage.largeur, tailleImage.hauteur) ?? null) : null;
+
+  const executerGabarit = (id: IdCommandeGabarit) => {
+    if (!disponibiliteCommandeGabarit(id).disponible) return;
+    if (id === "gabarit") return setPanneau("gabarit");
+    if (id === "importer-gabarit") {
+      setPanneau("gabarit");
+      return fichierGabaritRef.current?.click();
+    }
+    if (id === "enregistrer-gabarit") {
+      try {
+        const nom = nomAffiche(plancheDe(indexRef.current));
+        const g = gabaritDeLaPlanche(histRef.current.present.modele, nom, t("planche.gabarit.source-planche", { nom }));
+        const texte = JSON.stringify(g, null, 2);
+        const fichier = `${nom.replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "gabarit"}${EXTENSION_GABARIT}`;
+        telechargerFichier(new Blob([texte], { type: "application/json;charset=utf-8" }), fichier);
+        void archiverFichierExtension("planche-gabarit", { nom: fichier, texte }).then((issue) => {
+          const ident = issue.ok ? issue.archive.id : `local:${fichier}`;
+          setGabarits((avant) => [...avant.filter((x) => x.id !== ident), { id: ident, nomFichier: fichier, gabarit: g, texte, ...(issue.ok ? { archive: issue.archive } : { refusArchive: issue.motif }) }]);
+          setNoteGabarit(issue.ok ? t("planche.gabarit.note.enregistre", { nom: fichier }) : t("planche.gabarit.note.enregistre-sans-base", { nom: fichier, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+        });
+      } catch (err) {
+        setNoteGabarit(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+    // Créer la Planche : depuis le gabarit choisi, sinon une Planche vide.
+    const g = gabarits.find((x) => x.id === gabaritChoisi);
+    const nom = g ? `${g.gabarit.nom} ${indexRef.current.planches.length + 1}` : `${t("planche.gabarit.vide")} ${indexRef.current.planches.length + 1}`;
+    const modele = g ? modeleDepuisGabarit(g.gabarit, { nom: g.nomFichier, texte: g.texte }, { ...(g.archive ? { archive: g.archive } : {}), ...(g.refusArchive ? { refusArchive: g.refusArchive } : {}) }) : undefined;
+    void actionsMenu.creer(nom, null, modele).then(() => setPanneau(null));
+  };
+
+  // ——— Cas 2, lot 7 : versions et jalons, registre des émissions, consultation seule, comparaison, brouillon, fiche.
+  const plancheCourante = indexPlanches.courante;
+  const infoCourante = plancheDe(indexPlanches);
+  const [registre, setRegistre] = useState<RegistreVersions>(() => registreVide());
+  const registreRef = useRef(registre);
+  registreRef.current = registre;
+  const [jalonChoisi, setJalonChoisi] = useState<string | null>(null);
+  useEffect(() => {
+    let annule = false;
+    const lu = (r: RegistreVersions) => {
+      if (annule) return;
+      registreRef.current = r;
+      setRegistre(r);
+      setJalonChoisi(null);
+    };
+    chargerRegistre(plancheCourante).then(lu, () => lu(registreVide()));
+    return () => {
+      annule = true;
+    };
+  }, [plancheCourante]);
+  /** Registre de la Planche courante : à l'écran et dans ce navigateur. */
+  const poserRegistre = (r: RegistreVersions) => {
+    registreRef.current = r;
+    setRegistre(r);
+    enregistrerRegistre(indexRef.current.courante, r).catch((e: unknown) => setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) })));
+  };
+  const idVersion = (prefixe: string) => `${prefixe}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  // n° 62 : chaque fichier émis ou partagé est noté ; la pièce est le jalon dont l'empreinte est celle du modèle émis,
+  // sinon « état courant » ; le destinataire n'est jamais deviné (déclaré ensuite, sinon « non renseigné »).
+  noterEmissionRef.current = (format, fichier, genre) => {
+    const m = histRef.current.present.modele;
+    const empreinte = empreinteModele(m);
+    const r = registreRef.current;
+    const jalon = r.jalons.find((j) => j.empreinte === empreinte) ?? null;
+    poserRegistre(noterEmission(r, { id: idVersion("e"), date: new Date().toISOString(), jalon: jalon?.nom ?? null, indice: revisionDe(m)?.indice ?? "", format, fichier, genre }));
+  };
+
+  /** Changements de Planche propres au lot 7 (variante, brouillon) : mêmes écritures que le menu Fichier. */
+  const actionsVersions = useMemo(() => {
+    const poserIndex = async (idx: IndexPlanches) => {
+      indexRef.current = idx;
+      setIndexPlanches(idx);
+      await enregistrerIndex(idx);
+    };
+    const basculerVers = async (idx: IndexPlanches) => {
+      sauvegarde.invalider();
+      remplacerRef.current = true;
+      await poserIndex(idx);
+      setChargeId((n) => n + 1);
+    };
+    const ecrire = async () => {
+      sauvegarde.invalider();
+      const id = indexRef.current.courante;
+      await enregistrerBrouillon(consultationRef.current?.retour?.present.modele ?? histRef.current.present.modele, id);
+      await enregistrerJournal(id, journalRef.current).catch(() => undefined);
+      await poserIndex(avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() }));
+    };
+    const nouvelle = async (nom: string, modele: Modele, extra: Partial<Pick<InfoPlanche, "origine" | "brouillonDe">>) => {
+      await ecrire();
+      const maintenant = new Date().toISOString();
+      const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: plancheDe(indexRef.current).altitudeRef, creeA: maintenant, modifieA: maintenant, ...extra });
+      await enregistrerBrouillon(modele, idx.courante);
+      memoriserContexte(idx.courante, histContexteRef.current.courant);
+      await enregistrerJournal(idx.courante, ajouterEntree([], { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.creee") })).catch(() => undefined);
+      await basculerVers(idx);
+    };
+    const retirer = async (id: string) => {
+      await supprimerDocument(id);
+      await supprimerJournal(id).catch(() => undefined);
+      await supprimerVersions(id);
+    };
+    const echec = (e: unknown) => setMessage(e instanceof RangeError ? t("planche.sb.max", { n: "50" }) : t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) }));
+    /** Brouillon ouvert et son original (encore présent), sinon `null`. */
+    const brouillonOuvert = () => {
+      const b = plancheDe(indexRef.current);
+      const orig = b.brouillonDe;
+      return orig && indexRef.current.planches.some((p) => p.id === orig) ? { b, orig, nom: nomAffiche(plancheDe(indexRef.current, orig)) } : null;
+    };
+    return {
+      ecrire,
+      deriver: async (jalon: Jalon) => {
+        try {
+          const planche = indexRef.current.courante;
+          const m = await chargerJalon(planche, jalon);
+          if (!m) return setMessage(t("planche.version.jalon-refuse", { nom: jalon.nom }));
+          const nomPlanche = nomAffiche(plancheDe(indexRef.current));
+          const nom = t("planche.version.variante-nom", { nom: nomPlanche });
+          await nouvelle(nom, m, { origine: { planche, nomPlanche, jalon: jalon.id, nomJalon: jalon.nom } });
+          setMessage(t("planche.version.variante-creee", { nom, jalon: jalon.nom }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      essayer: async () => {
+        try {
+          const info = plancheDe(indexRef.current);
+          const nomPlanche = nomAffiche(info);
+          await nouvelle(t("planche.brouillon.nom", { nom: nomPlanche }), histRef.current.present.modele, { brouillonDe: info.id });
+          setMessage(t("planche.brouillon.ouvert", { nom: nomPlanche }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      appliquer: async () => {
+        const o = brouillonOuvert();
+        if (!o) return;
+        try {
+          sauvegarde.invalider();
+          appliquerApresRef.current = histRef.current.present.modele;
+          await retirer(o.b.id);
+          await basculerVers(avecCourante(sansPlanche(indexRef.current, o.b.id), o.orig));
+          setMessage(t("planche.brouillon.applique", { nom: o.nom }));
+        } catch (e) {
+          appliquerApresRef.current = null;
+          echec(e);
+        }
+      },
+      garder: async () => {
+        const o = brouillonOuvert();
+        if (!o) return;
+        try {
+          const nom = t("planche.version.variante-nom", { nom: o.nom });
+          await ecrire();
+          await poserIndex(enVariante(indexRef.current, o.b.id, nom, { planche: o.orig, nomPlanche: o.nom }));
+          setMessage(t("planche.brouillon.garde", { nom }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      abandonner: async () => {
+        const o = brouillonOuvert();
+        if (!o) return;
+        try {
+          sauvegarde.invalider();
+          await retirer(o.b.id);
+          await basculerVers(avecCourante(sansPlanche(indexRef.current, o.b.id), o.orig));
+          setMessage(t("planche.brouillon.abandonne", { nom: o.nom }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+    };
+  }, [sauvegarde]);
+
+  // n° 86 : consultation seule, de la Planche courante ou d'un jalon (son contenu relu contre son empreinte).
+  const entrerConsultation = async (jalon: Jalon | null) => {
+    if (lectureProp) return;
+    if (!jalon) {
+      if (consultationRef.current) return;
+      // L'état courant est écrit d'abord (revue de #514) : rien de ce qui était en cours n'est perdu en consultation.
+      try {
+        await actionsVersions.ecrire();
+      } catch (e) {
+        setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) }));
+        return;
+      }
+      const c = { jalon: null, retour: null };
+      consultationRef.current = c;
+      setConsultation(c);
+      setMessage(t("planche.lecture.message"));
+      return;
+    }
+    const m = await chargerJalon(indexRef.current.courante, jalon);
+    if (!m) return setMessage(t("planche.version.jalon-refuse", { nom: jalon.nom }));
+    // L'état courant est écrit avant d'être mis de côté : rien de ce qui était en cours n'est perdu.
+    if (!consultationRef.current) {
+      try {
+        await actionsVersions.ecrire();
+      } catch (e) {
+        setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) }));
+        return;
+      }
+    }
+    const c = { jalon, retour: consultationRef.current?.retour ?? histRef.current };
+    consultationRef.current = c;
+    setConsultation(c);
+    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+    poserDans(undefined);
+    setSelection([]);
+    poserHistorique(historiqueInitial(m), { envoyer: false });
+    rafraichir();
+    setMessage(t("planche.lecture.message"));
+  };
+  const quitterConsultation = () => {
+    const c = consultationRef.current;
+    if (!c) return;
+    consultationRef.current = null;
+    setConsultation(null);
+    if (c.retour) {
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      poserDans(undefined);
+      setSelection([]);
+      poserHistorique(c.retour, { envoyer: false });
+      rafraichir();
+    }
+    setMessage(t("planche.lecture.fin"));
+  };
+
+  const poserUnJalon = (nom: string) => {
+    if (readOnly) return setMessage(t("planche.lecture.message"));
+    if (!nom.trim()) return setMessage(t("planche.version.jalon-nom-requis"));
+    const planche = indexRef.current.courante;
+    try {
+      const r = poserJalon(registreRef.current, histRef.current.present.modele, { nom, date: new Date().toISOString(), id: idVersion("j") });
+      enregistrerContenuJalon(planche, r.jalon.id, r.contenu).then(
+        () => {
+          if (indexRef.current.courante !== planche) return;
+          poserRegistre(r.registre);
+          setJalonChoisi(r.jalon.id);
+          setMessage(t("planche.version.jalon-pose", { nom: r.jalon.nom, indice: r.jalon.indice ? t("planche.version.jalon-indice", { indice: r.jalon.indice }) : "", empreinte: empreinteCourte(r.jalon.empreinte) }));
+        },
+        (e: unknown) => setMessage(t("planche.sb.echec", { motif: e instanceof Error ? e.message : String(e) })),
+      );
+    } catch (e) {
+      setMessage(e instanceof RangeError ? t("planche.version.jalon-nom-requis") : String(e));
+    }
+  };
+  poserUnJalonRef.current = poserUnJalon;
+  /** « Poser un jalon » (bouton ou Ctrl+Maj+Espace, Maj+J) : le nom se tape ensuite dans Mesures, Entrée pose le jalon. */
+  const demanderNomJalon = () => {
+    if (readOnly) return setMessage(t("planche.lecture.message"));
+    setPanneau("versions-jalons");
+    setTexte(null);
+    setAttenteNomJalon(true);
+    setMessage(t("planche.version.jalon-taper-nom"));
+    champMesures.current?.focus();
+  };
+  const poserUneRevision = (r: Revision) => operer(t("planche.version.operation-revision"), (m) => ({ modele: poserRevision(m, r).modele }));
+  const poserUneFiche = (f: FicheProjet) => operer(t("planche.fiche.operation"), (m) => ({ modele: poserFiche(m, f).modele }));
+  const gabaritApplique = hist.present.modele.annotations?.reglages?.gabarit;
+  const statutsVersion = useMemo(() => {
+    const lu = gabaritApplique ? lireGabarit(gabaritApplique.texte) : null;
+    return statutsProposes(lu?.ok ? lu.gabarit.statuts : undefined, registre);
+  }, [gabaritApplique, registre]);
+  const varianteAffichee = (p: InfoPlanche): VarianteAffichee => ({ id: p.id, nom: nomAffiche(p), jalon: p.origine?.jalon ?? null, creeA: p.creeA });
+  const originalBrouillon = infoCourante.brouillonDe ? (indexPlanches.planches.find((p) => p.id === infoCourante.brouillonDe) ?? null) : null;
+  const brouillonEnCours = indexPlanches.planches.find((p) => p.brouillonDe === plancheCourante) ?? null;
+  const origineCourante = infoCourante.origine ?? null;
+
+  // n° 73 : changements du brouillon par rapport à l'original (relu dans ce navigateur).
+  const [modeleOriginal, setModeleOriginal] = useState<Modele | null>(null);
+  const idOriginal = originalBrouillon?.id ?? null;
+  useEffect(() => {
+    setModeleOriginal(null);
+    if (!idOriginal) return;
+    let annule = false;
+    chargerBrouillon(idOriginal).then(
+      (m) => !annule && setModeleOriginal(m ?? modeleVide()),
+      () => undefined,
+    );
+    return () => {
+      annule = true;
+    };
+  }, [idOriginal, chargeId]);
+  const changementsBrouillon = useMemo(() => (modeleOriginal && panneau === "brouillon" ? comparerModeles(modeleOriginal, hist.present.modele) : null), [modeleOriginal, panneau, hist.present.modele]);
+
+  // n° 33, 41, 48 : comparaison de deux états, surlignée dans la vue 3D.
+  const [comparerDepuis, setComparerDepuis] = useState("");
+  const [comparerVers, setComparerVers] = useState("courant");
+  const [surlignerDifferences, setSurlignerDifferences] = useState(true);
+  const [comparaison, setComparaison] = useState<{ readonly c: Comparaison; readonly a: Modele; readonly b: Modele } | null>(null);
+  const [refusComparaison, setRefusComparaison] = useState<string | null>(null);
+  const choixComparaison: ChoixComparaison[] = [
+    { id: "courant", libelle: t("planche.comparer.courant") },
+    ...registre.jalons.map((j) => ({ id: `j:${j.id}`, libelle: `${j.nom}${j.indice ? ` (${j.indice})` : ""}` })),
+    ...(originalBrouillon ? [{ id: `p:${originalBrouillon.id}`, libelle: t("planche.comparer.original", { nom: nomAffiche(originalBrouillon) }) }] : []),
+    ...(brouillonEnCours ? [{ id: `p:${brouillonEnCours.id}`, libelle: t("planche.comparer.brouillon") }] : []),
+  ];
+  const defautDepuis = registre.jalons[0] ? `j:${registre.jalons[0].id}` : originalBrouillon ? `p:${originalBrouillon.id}` : "courant";
+  const depuisEffectif = choixComparaison.some((c) => c.id === comparerDepuis) ? comparerDepuis : defautDepuis;
+  const versEffectif = choixComparaison.some((c) => c.id === comparerVers) ? comparerVers : "courant";
+  const libelleChoix = (id: string) => choixComparaison.find((c) => c.id === id)?.libelle ?? id;
+  useEffect(() => {
+    if (panneau !== "comparer") {
+      setComparaison(null);
+      setRefusComparaison(null);
+      return;
+    }
+    let annule = false;
+    const lire = async (id: string): Promise<Modele | string> => {
+      if (id === "courant") return consultationRef.current?.retour?.present.modele ?? histRef.current.present.modele;
+      if (id.startsWith("j:")) {
+        const j = registreRef.current.jalons.find((x) => `j:${x.id}` === id);
+        if (!j) return id;
+        return (await chargerJalon(indexRef.current.courante, j)) ?? t("planche.version.jalon-refuse", { nom: j.nom });
+      }
+      return (await chargerBrouillon(id.slice(2)).catch(() => null)) ?? modeleVide();
+    };
+    const minuterie = window.setTimeout(() => {
+      void (async () => {
+        const a = await lire(depuisEffectif);
+        const b = await lire(versEffectif);
+        if (annule) return;
+        if (typeof a === "string" || typeof b === "string") {
+          setComparaison(null);
+          setRefusComparaison(typeof a === "string" ? a : (b as string));
+          return;
+        }
+        const c = comparerModeles(a, b);
+        setRefusComparaison(null);
+        setComparaison({ c, a, b });
+        setMessage(t("planche.comparer.message", { depuis: libelleChoix(depuisEffectif), vers: libelleChoix(versEffectif), ajoutes: String(c.ajoutes.length), supprimes: String(c.supprimes.length), modifies: String(c.modifies.length) }));
+      })();
+    }, 120);
+    return () => {
+      annule = true;
+      window.clearTimeout(minuterie);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, depuisEffectif, versEffectif, hist.present.modele, registre]);
+  useEffect(() => {
+    const v = vueRef.current;
+    if (!v) return;
+    v.poserDifferences(panneau === "comparer" && comparaison && surlignerDifferences ? segmentsDifferences(comparaison.a, comparaison.b, comparaison.c) : null);
+    rafraichir();
+  }, [panneau, comparaison, surlignerDifferences, rafraichir]);
+
+  const disponibiliteCommandeVersion = (id: IdCommandeVersion) => disponibiliteVersion(id, { lecture: readOnly, brouillon: originalBrouillon !== null });
+  const executerVersion = (id: IdCommandeVersion) => {
+    const d = disponibiliteCommandeVersion(id);
+    if (!d.disponible) return setMessage(t(d.motif ?? "planche.lecture.message"));
+    const basculer = (p: Panneau) => setPanneau(panneauRef.current === p ? null : p);
+    if (id === "versions") return basculer("versions-jalons");
+    if (id === "poser-jalon") return demanderNomJalon();
+    // Consultation : du jalon choisi quand « Versions et jalons » est ouvert, sinon de la Planche courante ; de nouveau : sortie.
+    if (id === "consultation") {
+      if (consultationRef.current) return quitterConsultation();
+      const jalon = panneauRef.current === "versions-jalons" ? (registreRef.current.jalons.find((j) => j.id === jalonChoisi) ?? registreRef.current.jalons[0] ?? null) : null;
+      return void entrerConsultation(jalon);
+    }
+    if (id === "comparer") return basculer("comparer");
+    if (id === "brouillon") return basculer("brouillon");
+    if (id === "appliquer-brouillon") return void actionsVersions.appliquer();
+    if (id === "garder-brouillon") return void actionsVersions.garder();
+    if (id === "abandonner-brouillon") return void actionsVersions.abandonner();
+    basculer("fiche-projet");
+  };
+  const raccourciConsultation = COMMANDES_VERSION.find((c) => c.id === "consultation")!.raccourci;
+
+  /**
+   * Cas 2, lot 8 : outils de modélisation et composants d'agence (maquettes lot8-1 à lot8-4 acceptées le 27 novembre).
+   * Chaque commande ouvre son panneau ; les valeurs sont saisies (aucune valeur par défaut) ; chaque modification est un
+   * pas d'historique ; le moteur booléen est chargé à la demande, comme pour les outils de solides.
+   */
+  const [saisiesL8, poserSaisiesL8] = useSaisiesL8();
+  const [noteL8, setNoteL8] = useState<string | null>(null);
+  const [fichiersAgence, setFichiersAgence] = useState<readonly FichierAgence[]>([]);
+  const [aireL8, setAireL8] = useState<{ readonly union: string; readonly somme: string } | null>(null);
+  const [echelleL8, setEchelleL8] = useState(false);
+  const fichierComposantRef = useRef<HTMLInputElement | null>(null);
+  const nbL8 = (x: number, d = 3) => (Number.isInteger(x) ? String(x) : String(Math.round(x * 10 ** d) / 10 ** d)).replace(".", SEPARATEUR_DECIMAL);
+  // Préréglage « Mur » (n° 35) : les couches saisies donnent l'épaisseur de l'outil Mur du cas 4 (somme des couches) ;
+  // l'axe se trace dans la vue (accroché au tracé existant), le nu de référence se règle à l'outil (Ctrl).
+  useEffect(() => {
+    const e = lireEpaisseurs(saisiesL8.epaisseurs);
+    if (e) setSaisieMur((m) => ({ ...m, epaisseur: nbL8(epaisseurTotale(e)) }));
+  }, [saisiesL8.epaisseurs]); // eslint-disable-line react-hooks/exhaustive-deps
+  const messageL8 = (err: unknown): string =>
+    err instanceof ErreurL8 ? t(`planche.l8.erreur.${err.cle}` as CleMessage, err.args) : err instanceof ErreurComposant ? t(`planche.composant.erreur.${err.cle}` as CleMessage, err.args) : err instanceof Error ? err.message : String(err);
+  const echecL8 = (err: unknown) => {
+    const m = messageL8(err);
+    setNoteL8(m);
+    setMessage(m);
+  };
+  const PANNEAU_L8: Readonly<Record<IdCommandeModelisation, Panneau>> = {
+    "extrusion-hauteur": "extrusion",
+    "creer-couches": "extrusion",
+    "prolonger-arete": "extrusion",
+    "composants-agence": "composants-agence",
+    "ajuster-baie": "composants-agence",
+    "remplacer-occurrences": "composants-agence",
+    "soustraire-garder": "soustraire",
+    "caler-deux-points": "soustraire",
+    "selection-altitudes": "soustraire",
+    "selection-boite": "soustraire",
+    "miroir-lisible": "soustraire",
+    "ecreter-enveloppe": "soustraire",
+    "vue-ortho": "vues-mesures",
+    "eclater-axonometrie": "vues-mesures",
+    "echelle-graphique": "vues-mesures",
+    "aire-projetee": "vues-mesures",
+  };
+  /** Sélection lue au moment de la commande : faces, arêtes et objets du contexte ouvert, dans l'ordre du choix. */
+  const selectionL8 = () => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+    // `tous` garde aussi les annotations choisies (cotes, textes) : le miroir lisible les retourne avec la géométrie.
+    return { m, ids, tous: [...selectionRef.current], faces: ids.filter((id) => c.faces[id]), aretes: ids.filter((id) => c.aretes[id]), objets: ids.filter((id) => c.occurrences[id]) };
+  };
+  const disponibiliteCommandeModelisation = (id: IdCommandeModelisation) => {
+    const s = selectionL8();
+    return disponibiliteModelisation(id, { lecture: readOnly, faces: s.faces.length, aretes: s.aretes.length, objets: s.objets.length, selection: id === "miroir-lisible" ? s.tous.length : s.ids.length, panneau: panneau === PANNEAU_L8[id] });
+  };
+  /** Une modification du lot 8 : calculée d'abord (l'erreur reste dans le panneau), puis posée en un pas. */
+  const faireL8 = (nom: string, fn: (m: Modele) => { readonly modele: Modele; readonly selection?: readonly string[]; readonly note: string }) => {
+    if (readOnly) return setNoteL8(t("planche.lecture.message"));
+    try {
+      const r = fn(histRef.current.present.modele);
+      operer(nom, () => ({ modele: r.modele, ...(r.selection ? { selection: r.selection } : {}), message: r.note }));
+      setNoteL8(r.note);
+    } catch (err) {
+      echecL8(err);
+    }
+  };
+  const avecBooleens = (fn: (b: AdaptateurBooleens) => void) => {
+    if (booleensRef.current) return fn(booleensRef.current);
+    setBooleens("chargement");
+    setNoteL8(t("planche.l8.chargement"));
+    void chargerBooleens().then(
+      (b) => {
+        booleensRef.current = b;
+        setBooleens("ok");
+        fn(b);
+      },
+      (err: unknown) => {
+        setBooleens("echec");
+        setNoteL8(t("planche.solides.echec", { motif: err instanceof Error ? err.message : String(err) }));
+      },
+    );
+  };
+  const longueurL8 = (texte: string, cle: string): number => {
+    const x = lireNombreSaisi(texte);
+    if (x === null || !(x > 0)) throw new ErreurL8(cle as "hauteur-invalide");
+    return x;
+  };
+  /** Valeurs saisies du composant (champs vides ignorés : la baie les donne) ; une valeur illisible est refusée. */
+  const valeursComposantL8 = (): Record<string, number> => {
+    const v: Record<string, number> = {};
+    for (const [k, texte] of Object.entries(saisiesL8.valeurs)) {
+      if (!texte.trim()) continue;
+      const x = lireNombreSaisi(texte);
+      // L'allège peut valoir 0 (baie à ras du sol) ; les autres valeurs sont strictement positives.
+      if (x === null || !(k === "allege" ? x >= 0 : x > 0)) throw new ErreurComposant("valeur", { nom: t(`planche.l8.composant.${k}` as CleMessage) });
+      v[k] = x;
+    }
+    return v;
+  };
+  // Lecture de l'extrusion (n° 39) : la face choisie seule, panneau ouvert.
+  const lectureExtrusionL8 = useMemo(() => {
+    if (panneau !== "extrusion") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const faces = selectionRef.current.filter((id) => c.faces[id]);
+    if (faces.length !== 1) return null;
+    const l = lireExtrusion(hist.present.modele, faces[0]!, dans !== undefined ? { dans } : {});
+    return l.ok ? { hauteur: `${nbL8(l.hauteur)} m` } : { motif: t(`planche.l8.erreur.${l.motif}` as CleMessage) };
+  }, [panneau, hist.present.modele, vue, dans]); // eslint-disable-line react-hooks/exhaustive-deps
+  const appliquerHauteurL8 = () => {
+    if (!saisiesL8.hauteur.trim()) return;
+    const s = selectionL8();
+    if (s.faces.length !== 1) return setNoteL8(t("planche.l8.motif.face"));
+    faireL8(t("planche.modelisation.extrusion-hauteur"), (m) => {
+      const h = longueurL8(saisiesL8.hauteur, "hauteur-invalide");
+      return { modele: changerHauteurExtrusion(m, s.faces[0]!, h, o()).modele, note: t("planche.l8.note.hauteur", { hauteur: nbL8(h) }) };
+    });
+  };
+  // Composant d'agence choisi dans le dessin (n° 32) : ses valeurs remplissent les champs, pour les modifier.
+  const composantChoisiL8 = useMemo(() => {
+    if (panneau !== "composants-agence") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const objets = selectionRef.current.filter((id) => c.occurrences[id]);
+    if (objets.length !== 1) return null;
+    const x = composantDe(hist.present.modele, objets[0]!);
+    const occ = hist.present.modele.racine.occurrences[objets[0]!] ?? c.occurrences[objets[0]!];
+    return x && occ ? { id: objets[0]!, nom: hist.present.modele.definitions[occ.definition]?.nom ?? x.fichier.nom, genre: x.meta.genre, valeurs: x.meta.valeurs } : null;
+  }, [panneau, hist.present.modele, vue, dans]);
+  const idChoisiL8 = composantChoisiL8?.id ?? null;
+  useEffect(() => {
+    if (!composantChoisiL8) return;
+    poserSaisiesL8({ valeurs: Object.fromEntries(Object.entries(composantChoisiL8.valeurs).map(([k, v]) => [k, nbL8(v, 4)])) });
+  }, [idChoisiL8]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Longueur vraie des courbes choisies (n° 114), au panneau « Vue orthographique ».
+  const courbesL8 = useMemo(() => {
+    if (panneau !== "vues-mesures") return null;
+    const c = contexteDe(hist.present.modele, dans);
+    const aretes = selectionRef.current.filter((id) => c.aretes[id]);
+    if (!aretes.length) return null;
+    const l = longueurCourbes(hist.present.modele, aretes, dans !== undefined ? { dans } : {});
+    return l.aretesCourbes > 0 ? { facettes: `${nbL8(l.facettes)} m`, courbe: `${nbL8(l.courbe)} m`, ecart: `${nbL8(l.ecart)} m` } : null;
+  }, [panneau, hist.present.modele, vue, dans]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Fichiers de composants d'agence : archivés en base pour le compte (D-GD-29), lus à l'ouverture du panneau.
+  const chargerComposantsAgence = useCallback(async () => {
+    const liste = await listerFichiersArchives("planche-composant");
+    const lus: FichierAgence[] = [];
+    for (const a of liste) {
+      const texte = await lireFichierArchive(a.id);
+      const l = texte !== null ? lireFichierComposant(texte) : null;
+      if (l?.ok) lus.push({ id: a.id, nom: a.nom, fichier: l.fichier, texte: texte! });
+    }
+    setFichiersAgence(lus);
+    if (lus.length) poserSaisiesL8({ composant: lus[0]!.id });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (panneau === "composants-agence") void chargerComposantsAgence();
+  }, [panneau, chargerComposantsAgence]);
+  const importerComposantAgence = (f: File) => {
+    void f.text().then((texte) => {
+      const l = lireFichierComposant(texte);
+      if (!l.ok) return setNoteL8(t("planche.l8.note.import-refuse", { nom: f.name, motif: t(`planche.composant.erreur.${l.erreur}` as CleMessage, { nom: "" }) }));
+      // D-GD-29 : un fichier n'est proposé qu'une fois archivé tel quel en base ; sans archive, l'import est refusé.
+      void archiverFichierExtension("planche-composant", { nom: f.name, texte }).then((issue) => {
+        if (!issue.ok) return setNoteL8(t("planche.l8.note.import-non-archive", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") }));
+        const id = issue.archive.id;
+        setFichiersAgence((avant) => [...avant.filter((x) => x.id !== id), { id, nom: f.name, fichier: l.fichier, texte }]);
+        poserSaisiesL8({ composant: id, valeurs: {} });
+        setNoteL8(t("planche.l8.note.importe", { nom: f.name, composant: l.fichier.nom }));
+      });
+    });
+  };
+  // Axonométrie éclatée (n° 19) : le modèle d'affichage est dérivé à chaque changement ; le modèle ne bouge pas.
+  const modeleEclateL8 = useMemo(() => (eclatement ? modeleEclate(hist.present.modele, eclatement.par, eclatement.ecart) : null), [eclatement, hist.present.modele]);
+  useEffect(() => {
+    if (modeleEclateL8) vueRef.current?.majModele(modeleEclateL8.modele);
+  }, [modeleEclateL8]);
+  const quitterEclatement = () => {
+    setEclatement(null);
+    vueRef.current?.majModele(histRef.current.present.modele);
+    setNoteL8(t("planche.l8.note.eclatee-fin"));
+  };
+
+  const executerModelisation = (id: IdCommandeModelisation) => {
+    const d = disponibiliteCommandeModelisation(id);
+    const cible = PANNEAU_L8[id];
+    // Les commandes de panneau ouvrent (ou ferment) leur panneau ; les autres l'ouvrent puis s'exécutent.
+    if (id === "extrusion-hauteur" || id === "composants-agence") {
+      setNoteL8(null);
+      return setPanneau(panneauRef.current === cible ? null : cible);
+    }
+    const dejaOuvert = panneauRef.current === cible;
+    if (!dejaOuvert) setPanneau(cible);
+    if (id === "soustraire-garder" && !dejaOuvert) return setNoteL8(t("planche.l8.note.soustraire-consigne"));
+    if (!d.disponible) return setNoteL8(t(d.motif ?? "planche.lecture.message"));
+    const s = selectionL8();
+    const sep = SEPARATEUR_DECIMAL;
+    void sep;
+    switch (id) {
+      case "creer-couches":
+        return faireL8(t("planche.modelisation.creer-couches"), (m) => {
+          // Couches saisies en une ligne, nom facultatif devant chaque épaisseur (« enduit 0,015 ; maçonnerie 0,175 »).
+          const couches = lireCouches(saisiesL8.epaisseurs);
+          if (!couches) throw new ErreurL8("epaisseurs-invalides");
+          const r = creerCouches(m, s.faces[0]!, couches, saisiesL8.sens, o());
+          return { modele: r.modele, selection: r.occurrences, note: t("planche.l8.note.couches", { nombre: String(r.occurrences.length), total: nbL8(epaisseurTotale(couches.map((c) => c.epaisseur))) }) };
+        });
+      case "prolonger-arete":
+        return faireL8(t("planche.modelisation.prolonger-arete"), (m) => {
+          const [a, limite] = [s.ids[0]!, s.ids[1]!];
+          if (!s.aretes.includes(a)) throw new ErreurL8("arete-inconnue");
+          const l = s.faces.includes(limite) ? { face: limite } : s.aretes.includes(limite) ? { arete: limite } : null;
+          if (!l) throw new ErreurL8("limite-inconnue");
+          return { modele: prolongerArete(m, a, l, o()).modele, selection: [a], note: t("planche.l8.note.prolongee") };
+        });
+      case "ajuster-baie": {
+        // Réglage par interaction : une baie dans un mur plein se place d'un clic sur le mur, un garde-corps sans arête
+        // choisie se pointe par ses deux extrémités ; le panneau garde les valeurs saisies.
+        const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+        const posee = s.objets.length === 1 && composantDe(s.m, s.objets[0]!);
+        if (f && !posee) {
+          let valeurs: Record<string, number>;
+          try {
+            valeurs = valeursComposantL8();
+          } catch (err) {
+            return echecL8(err);
+          }
+          const pose = { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs, decouper: saisiesL8.decouper };
+          if (f.fichier.genre === "garde-corps" && s.aretes.length === 0) {
+            poseComposantRef.current = { pose };
+            setNoteL8(t("planche.l8.note.garde-corps-pointer"));
+            return choisirOutil(ID_POSER_GARDE_CORPS);
+          }
+          if (f.fichier.genre !== "garde-corps" && s.faces[0] && genreBaie(s.m, s.faces[0], dansRef.current) === "saisie") {
+            poseComposantRef.current = { pose, face: s.faces[0] };
+            setNoteL8(t("planche.l8.note.baie-pointer"));
+            return choisirOutil(ID_POSER_BAIE);
+          }
+        }
+        return faireL8(t("planche.modelisation.ajuster-baie"), (m) => {
+          const valeurs = valeursComposantL8();
+          if (s.objets.length === 1 && composantDe(m, s.objets[0]!)) {
+            return { modele: regenererComposant(m, s.objets[0]!, valeurs), selection: [s.objets[0]!], note: t("planche.l8.note.ajuste") };
+          }
+          const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+          if (!f) throw new Error(t("planche.l8.composant.choisir"));
+          const r = poserComposant(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs, decouper: saisiesL8.decouper }, { ...(s.faces[0] ? { face: s.faces[0] } : { arete: s.aretes[0]! }), ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
+          return { modele: r.modele, selection: [r.occurrence], note: t("planche.l8.note.pose", { nom: f.fichier.nom, baie: t(`planche.l8.baie.${r.baie}` as CleMessage) }) };
+        });
+      }
+      case "remplacer-occurrences":
+        return faireL8(t("planche.modelisation.remplacer-occurrences"), (m) => {
+          const f = fichiersAgence.find((x) => x.id === saisiesL8.composant);
+          if (!f) throw new Error(t("planche.l8.composant.choisir"));
+          const valeurs = { ...(composantDe(m, s.objets[0]!)?.meta.valeurs ?? {}), ...valeursComposantL8() };
+          const dd = definitionDepuisFichier(m, { fichier: f.fichier, texte: f.texte, nomFichier: f.nom, archive: f.id, valeurs });
+          const r = remplacerOccurrences(dd.modele, s.objets, dd.definition);
+          return { modele: r.modele, selection: s.objets, note: t("planche.l8.note.remplaces", { nombre: String(r.remplaces), nom: f.fichier.nom }) };
+        });
+      case "soustraire-garder":
+        return avecBooleens((b) =>
+          faireL8(t("planche.modelisation.soustraire-garder"), (m) => {
+            const r = soustraireEnGardant(b, m, s.objets[0]!, s.objets[1]!, { garder: saisiesL8.garder, nom: saisiesL8.nom, ...(saisiesL8.balise ? { balise: saisiesL8.balise } : {}) });
+            const note = r.garde ? t("planche.l8.note.soustrait-garde", { volume: nbL8(r.volumeRetire), nom: saisiesL8.nom.trim() }) : t("planche.l8.note.soustrait", { volume: nbL8(r.volumeRetire) });
+            return { modele: r.modele, selection: [r.reste, ...(r.garde ? [r.garde] : [])], note };
+          }),
+        );
+      case "caler-deux-points":
+        setNoteL8(t("planche.l8.note.caler"));
+        return choisirOutil(ID_CALER);
+      case "selection-altitudes": {
+        const a = lireAltitudes(saisiesL8.altitudes);
+        if (!a) return echecL8(new ErreurL8("altitudes-invalides"));
+        const ids = objetsEntreAltitudes(histRef.current.present.modele, a.zmin, a.zmax);
+        setSelection(ids);
+        return setNoteL8(t("planche.l8.note.altitudes", { nombre: String(ids.length), min: nbL8(a.zmin), max: nbL8(a.zmax) }));
+      }
+      case "selection-boite":
+        altitudesBoiteRef.current = saisiesL8.altitudes.trim() ? lireAltitudes(saisiesL8.altitudes) : null;
+        if (saisiesL8.altitudes.trim() && !altitudesBoiteRef.current) return echecL8(new ErreurL8("altitudes-invalides"));
+        setNoteL8(t(altitudesBoiteRef.current ? "planche.l8.note.boite-altitudes" : "planche.l8.note.boite"));
+        return choisirOutil(ID_BOITE);
+      case "miroir-lisible":
+        // L'axe du miroir se pointe dans la vue (deux points), au lieu d'une liste d'axes.
+        setNoteL8(t("planche.l8.note.miroir"));
+        return choisirOutil(ID_MIROIR);
+      case "ecreter-enveloppe":
+        return avecBooleens((b) =>
+          faireL8(t("planche.modelisation.ecreter-enveloppe"), (m) => {
+            const enveloppe = s.objets[s.objets.length - 1]!;
+            const r = ecreterParEnveloppe(b, m, s.objets.slice(0, -1), enveloppe);
+            return { modele: r.modele, selection: r.crees, note: t("planche.l8.note.ecrete", { total: nbL8(r.retireTotal), detail: r.parts.map((p) => `${p.nom} : ${nbL8(p.retire)} m³`).join(" ; ") }) };
+          }),
+        );
+      case "vue-ortho": {
+        const p = camera.projection === "parallele" ? "perspective" : "parallele";
+        poserProjection(p);
+        return setNoteL8(t(p === "parallele" ? "planche.l8.note.ortho" : "planche.l8.note.perspective"));
+      }
+      case "eclater-axonometrie": {
+        if (eclatement) return quitterEclatement();
+        const e = lireNombreSaisi(saisiesL8.ecart);
+        if (e === null || !(e > 0)) return echecL8(new ErreurL8("ecart-invalide"));
+        const r = modeleEclate(histRef.current.present.modele, saisiesL8.par, e);
+        vueStandard("iso");
+        poserProjection("parallele");
+        setEclatement({ par: saisiesL8.par, ecart: e });
+        return setNoteL8(t("planche.l8.note.eclatee", { groupes: String(r.groupes.length), ecart: nbL8(e) }));
+      }
+      case "echelle-graphique": {
+        const active = !echelleL8;
+        setEchelleL8(active);
+        vueRef.current?.poserEchelleGraphique(active);
+        if (active && camera.projection !== "parallele") poserProjection("parallele");
+        return setNoteL8(active ? t("planche.l8.note.echelle") : null);
+      }
+      case "aire-projetee":
+        return avecBooleens((b) => {
+          try {
+            const r = aireProjetee(b.aireUnion!, empreintesEnPlan(histRef.current.present.modele, s.ids));
+            setAireL8({ union: `${nbL8(r.union, 2)} m²`, somme: `${nbL8(r.somme, 2)} m²` });
+            setNoteL8(t("planche.l8.note.aire", { elements: String(r.elements) }));
+          } catch (err) {
+            echecL8(err);
+          }
+        });
+    }
   };
 
   /**
@@ -3738,8 +6362,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
   const sections = useMemo(() => sectionsGrille(outilsOfferts, undefined, idsBarre), [outilsOfferts, idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
-  const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
-  const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
+  const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? vue.note ?? message;
+  // Cas 2, lot 2 (n° 21) : les longueurs proposées par l'outil (« 2.40 m ») s'affichent dans l'unité du projet ; une
+  // saisie tapée reste telle quelle. Les valeurs stockées ne changent jamais (mètres).
+  const valeurMesures = texte?.texte ?? (vue.mesures?.valeur !== undefined ? convertirLongueursAffichees(vue.mesures.valeur, uniteProjet, SEPARATEUR_DECIMAL) : "");
 
   const boutonOutil = (o: Outil, dansGrille = false) => {
     const raison = raisonDe(o);
@@ -3881,6 +6507,431 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const c = contexteDe(hist.present.modele, dans);
     return selectionRef.current.filter((id) => c.occurrences[id] !== undefined);
   };
+  /**
+   * Statut des travaux (cas 4, lot C4, étape 5) : Existant, À démolir, Projeté posés sur les objets choisis (un second clic
+   * sur le statut commun le retire) ; filtre d'affichage et couleurs de la vue (options d'affichage, hors document).
+   */
+  const [noteTravaux, setNoteTravaux] = useState<string | null>(null);
+  const statutsSelection = () => {
+    const c = contexteDe(hist.present.modele, dans);
+    return occurrencesSelectionnees().map((id) => c.occurrences[id]?.statut ?? null);
+  };
+  const statutCommunSelection = (): StatutTravaux | null => {
+    const l = statutsSelection();
+    return l.length > 0 && l.every((x) => x === l[0]) ? (l[0] ?? null) : null;
+  };
+  const disponibiliteCommandeTravaux = (id: IdCommandeTravaux) => disponibiliteTravaux(id, { objets: occurrencesSelectionnees().length, lecture: readOnly });
+  // IFC structuré (cas 4, lot C4, étape 6) : export par classes, géoréférencé, contrôlé, relu ; import des étages et de la trame.
+  const [schemaIfc, setSchemaIfc] = useState<SchemaIfc>("IFC4");
+  const [formatIfc, setFormatIfc] = useState<FormatFichierIfc>("ifc");
+  const [georefIfc, setGeorefIfc] = useState(true);
+  const [constatsIfc, setConstatsIfc] = useState<readonly ConstatIfc[] | null>(null);
+  const [erreurIfc, setErreurIfc] = useState<string | null>(null);
+  const [noteIfc, setNoteIfc] = useState<string | null>(null);
+  const [luIfc, setLuIfc] = useState<{ readonly nom: string; readonly lecture: LectureIfcStructure; readonly fichier: File } | null>(null);
+  const [choixImportIfc, setChoixImportIfc] = useState({ niveaux: true, trame: true, georef: false });
+  const [erreurImportIfc, setErreurImportIfc] = useState<string | null>(null);
+  const [noteImportIfc, setNoteImportIfc] = useState<string | null>(null);
+  const importIfcRef = useRef<HTMLInputElement | null>(null);
+  const referenceIfc = plancheDe(indexPlanches).altitudeRef;
+  const pointDeBaseIfc = hist.present.modele.annotations?.reglages?.pointDeBase ?? null;
+  const georefIfcTexte = !pointDeBaseIfc
+    ? { possible: false, texte: t("planche.ifc.georef.sans-point") }
+    : referenceIfc === null
+      ? { possible: false, texte: t("planche.ifc.georef.sans-reference") }
+      : { possible: true, texte: t("planche.ifc.georef.valeurs", { systeme: pointDeBaseIfc.systeme, e: texteCoordonnee(pointDeBaseIfc.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(pointDeBaseIfc.n, SEPARATEUR_DECIMAL), h: texteCoordonnee(referenceIfc, SEPARATEUR_DECIMAL), rotation: String(pointDeBaseIfc.rotation).replace(".", SEPARATEUR_DECIMAL) }) };
+  const controlerIfc = () => controlerAvantEmissionIfc(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, reference: referenceIfc });
+  const disponibiliteCommandeIfc = (id: IdCommandeIfc) => disponibiliteIfc(id, { bloquant: id === "exporter-ifc" && controlerIfc().some((c) => c.niveau === "bloquant"), lu: luIfc !== null, lecture: readOnly });
+  const executerIfc = (id: IdCommandeIfc) => {
+    if (id === "import-ifc") return setPanneau("import-ifc");
+    if (id === "importer-ifc") {
+      setPanneau("import-ifc");
+      if (!luIfc) return importIfcRef.current?.click();
+      if (!disponibiliteCommandeIfc(id).disponible) return;
+      void lancerImportIfc();
+      return;
+    }
+    setPanneau("ifc-structure");
+    if (id === "ifc-structure") return;
+    const constats = controlerIfc();
+    setConstatsIfc(constats);
+    if (id === "controler-ifc" || constats.some((c) => c.niveau === "bloquant")) return;
+    const maintenant = new Date();
+    const x = exporterIfcStructure(histRef.current.present.modele, { schema: schemaIfc, georef: georefIfc && georefIfcTexte.possible, nom: nomAffiche(plancheDe(indexPlanches)) || "planche", maintenant, reference: referenceIfc });
+    const donnees = formatIfc === "ifczip" ? ifczip(x, maintenant) : x.contenu;
+    // Relu avant tout téléchargement : étages, objets, triangles, GlobalId et géoréférencement comparés.
+    const r = relireIfcStructure(x, schemaIfc, donnees);
+    if (!r.identique) {
+      setNoteIfc(null);
+      return setErreurIfc(t("planche.ifc.erreur.relecture", { ecarts: r.ecarts.map((e) => `${e.cle} ${e.attendu} / ${e.lu}`).join(", ") }));
+    }
+    setErreurIfc(null);
+    const nom = formatIfc === "ifczip" ? x.nomFichier.replace(/\.ifc$/, ".ifczip") : x.nomFichier;
+    telechargerFichier(new Blob([typeof donnees === "string" ? donnees : new Uint8Array(donnees)], { type: formatIfc === "ifczip" ? "application/zip" : "application/x-step" }), nom);
+    setNoteIfc(`${t("planche.ifc.relu", { etages: String(r.etages), objets: String(r.objets), triangles: r.triangles.toLocaleString(LOCALE), globalIds: String(x.objets), georef: x.georef ? t("planche.ifc.relu.georef") : "" })} ${t("planche.ifc.note.ecrit", { nom })}`);
+  };
+  const lireFichierIfc = async (f: File) => {
+    setErreurImportIfc(null);
+    setNoteImportIfc(null);
+    setPanneau("import-ifc");
+    try {
+      const lecture = lireIfcStructure(new Uint8Array(await f.arrayBuffer()));
+      if (lecture.objets.length === 0) {
+        setLuIfc(null);
+        return setErreurImportIfc(t("planche.ifc.import.vide"));
+      }
+      setLuIfc({ nom: f.name, lecture, fichier: f });
+      setChoixImportIfc({ niveaux: lecture.etages.length > 0, trame: lecture.axes.length > 0, georef: false });
+    } catch (e) {
+      setLuIfc(null);
+      setErreurImportIfc(t("planche.ifc.import.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  const lancerImportIfc = async () => {
+    if (!luIfc || readOnly) return;
+    // Le fichier reçu est archivé tel quel en base avant toute pose (D-GD-29).
+    const zip = /\.ifczip$/i.test(luIfc.nom);
+    try {
+      await archiverFichierReference(luIfc.fichier, zip ? "ifczip" : "ifc");
+    } catch (e) {
+      return setErreurImportIfc(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    const l = luIfc.lecture;
+    const choix = { ...choixImportIfc, georef: choixImportIfc.georef && !histRef.current.present.modele.annotations?.reglages?.pointDeBase };
+    let resultat: ReturnType<typeof importerIfcStructure> | null = null;
+    operer(t("planche.ifc.import.nom"), (m) => {
+      resultat = importerIfcStructure(m, l, choix, luIfc.nom);
+      const message = t("planche.ifc.import.note", { objets: String(resultat.objets), niveaux: String(resultat.niveaux), axes: String(resultat.axes), georef: resultat.pointDeBase ? t("planche.ifc.import.note-georef") : "" });
+      return { modele: resultat.modele, message };
+    });
+    const r = resultat as ReturnType<typeof importerIfcStructure> | null;
+    if (r) setNoteImportIfc(t("planche.ifc.import.note", { objets: String(r.objets), niveaux: String(r.niveaux), axes: String(r.axes), georef: r.pointDeBase ? t("planche.ifc.import.note-georef") : "" }));
+    setErreurImportIfc(null);
+  };
+  const resumeImportIfc = luIfc
+    ? {
+        nom: luIfc.nom,
+        schema: luIfc.lecture.schema ?? "",
+        objets: luIfc.lecture.objets.length,
+        etages: luIfc.lecture.etages.map((e) => ({ nom: e.nom, altitude: texteAltitude(e.altitude, SEPARATEUR_DECIMAL) })),
+        axes: luIfc.lecture.axes.map((a) => a.etiquette).filter(Boolean),
+        georef: luIfc.lecture.georef ? t("planche.ifc.import.georef-detail", { systeme: luIfc.lecture.georef.systeme, e: texteCoordonnee(luIfc.lecture.georef.e, SEPARATEUR_DECIMAL), n: texteCoordonnee(luIfc.lecture.georef.n, SEPARATEUR_DECIMAL) }) : null,
+        nonLus: Object.keys(luIfc.lecture.nonLus).length > 0 ? t("planche.ifc.import.non-lus", { nombre: String(Object.values(luIfc.lecture.nonLus).reduce((a, b) => a + b, 0)), classes: Object.keys(luIfc.lecture.nonLus).join(", ") }) : null,
+        partiels: Object.keys(luIfc.lecture.partiels).length > 0 ? t("planche.ifc.import.partiels", { nombre: String(Object.values(luIfc.lecture.partiels).reduce((a, b) => a + b, 0)), classes: Object.keys(luIfc.lecture.partiels).join(", ") }) : null,
+        classes: luIfc.lecture.objets.reduce<Record<string, number>>((acc, o) => ({ ...acc, [o.classe]: (acc[o.classe] ?? 0) + 1 }), {}),
+      }
+    : null;
+  // Formats des fabricants et relevé au capteur (cas 4, lot C4, étape 7a) : glTF, GLB, 3MF, COLLADA, 3DS, PLY lus sans
+  // bibliothèque ; unité et axe vertical confirmés ; pose en objets (hors fil) ou en référence contrôlée.
+  const [luFabricant, setLuFabricant] = useState<{ readonly nom: string; readonly format: FormatFabricant; readonly lecture: LectureScene; readonly fichier: File; readonly octets: Uint8Array } | null>(null);
+  const [uniteFabricant, setUniteFabricant] = useState(1);
+  const [axeFabricant, setAxeFabricant] = useState<AxeHaut>("z");
+  const [erreurFabricant, setErreurFabricant] = useState<string | null>(null);
+  const [noteFabricant, setNoteFabricant] = useState<string | null>(null);
+  const [progressionFabricant, setProgressionFabricant] = useState<string | null>(null);
+  const importFabricantRef = useRef<HTMLInputElement | null>(null);
+  const disponibiliteCommandeFabricant = (id: IdCommandeFabricant) => disponibiliteFabricant(id, { lu: luFabricant !== null, lecture: readOnly });
+  const lireFichierFabricant = async (f: File) => {
+    setErreurFabricant(null);
+    setNoteFabricant(null);
+    setPanneau("import-fabricant");
+    const octets = new Uint8Array(await f.arrayBuffer());
+    const format = formatDuFichier(f.name, octets);
+    if (format === null || estFormatRefuse(format)) {
+      setLuFabricant(null);
+      return setErreurFabricant(t(`planche.fabricant.refus.${format ?? "inconnu"}` as CleMessage));
+    }
+    try {
+      const lecture = lireScene(format, octets);
+      setLuFabricant({ nom: f.name, format, lecture, fichier: f, octets });
+      setUniteFabricant(lecture.uniteFichier ?? 1);
+      setAxeFabricant(lecture.axeFichier ?? "z");
+    } catch (e) {
+      setLuFabricant(null);
+      setErreurFabricant(t("planche.fabricant.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  /** Le fichier reçu est archivé tel quel en base avant toute pose (D-GD-29). */
+  const archiverFabricant = async (): Promise<Awaited<ReturnType<typeof archiverFichierReference>> | null> => {
+    if (!luFabricant) return null;
+    try {
+      return await archiverFichierReference(luFabricant.fichier, luFabricant.format);
+    } catch (e) {
+      setErreurFabricant(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+      return null;
+    }
+  };
+  const importerFabricant = async () => {
+    const lu = luFabricant;
+    if (!lu || readOnly || annulerImportRef.current) return;
+    if (!(await archiverFabricant())) return;
+    const echelle = uniteFabricant;
+    const enCours = lancerImport({ genre: "scene", format: lu.format, donnees: lu.octets, echelle, axe: axeFabricant }, (e) => setProgressionFabricant(e.phase === "insertion" && e.total > 0 ? t("planche.fabricant.progression", { fait: e.fait.toLocaleString(LOCALE), total: e.total.toLocaleString(LOCALE) }) : null));
+    annulerImportRef.current = enCours.annuler;
+    const issue = await enCours.issue;
+    annulerImportRef.current = null;
+    setProgressionFabricant(null);
+    if (issue.genre === "annule") return setNoteFabricant(t("planche.fabricant.annule"));
+    if (issue.genre === "trop-gros") return setErreurFabricant(t("planche.fabricant.trop-gros", { triangles: issue.triangles.toLocaleString(LOCALE), borne: issue.borne.toLocaleString(LOCALE) }));
+    if (issue.genre === "erreur") return setErreurFabricant(t("planche.fabricant.erreur", { motif: issue.message }));
+    if (issue.genre !== "fini-scene") return;
+    const t0 = performance.now();
+    const r = poserScene(histRef.current.present.modele, issue.scene, echelle, { format: lu.format, fichier: lu.nom });
+    noterPose(performance.now() - t0);
+    poserHistorique(enregistrer(histRef.current, r.modele, t("planche.fabricant.import.nom", { format: lu.format.toUpperCase() }), false));
+    rafraichir();
+    setErreurFabricant(null);
+    const note = t("planche.fabricant.note.importe", { objets: String(r.occurrences.length), triangles: r.triangles.toLocaleString(LOCALE), composants: String(r.composants), matieres: String(r.matieresCreees) });
+    setNoteFabricant(note);
+    setMessage(note);
+  };
+  const poserReleve = async () => {
+    const lu = luFabricant;
+    if (!lu || readOnly) return;
+    const planche = indexRef.current.courante;
+    const { positions, triangles } = positionsReference(maillagesDeScene(lu.lecture, axeFabricant));
+    if (triangles === 0) return setErreurFabricant(t("planche.references.erreur.lecture"));
+    const fichier = await archiverFabricant();
+    if (!fichier || indexRef.current.courante !== planche) return;
+    setFichiersReferences((a) => ({ ...a, [cleFichierReference({ fichier, axe: axeFabricant })]: { positions } }));
+    const r = ajouterReference(histRef.current.present.modele, { nom: lu.nom, format: lu.format, fichier, echelle: uniteFabricant, triangles, date: dateDuJour(), axe: axeFabricant });
+    const note = t("planche.fabricant.note.reference", { nom: lu.nom, triangles: triangles.toLocaleString(LOCALE) });
+    operationReference(r, t("planche.fabricant.poser-releve"), r.ok ? note : null);
+    if (r.ok) {
+      setReferenceChoisie(r.id);
+      setErreurFabricant(null);
+      setNoteFabricant(note);
+    }
+  };
+  const executerFabricant = (id: IdCommandeFabricant) => {
+    setPanneau("import-fabricant");
+    if (id === "import-fabricant" || id === "releve-capteur") return luFabricant ? undefined : importFabricantRef.current?.click();
+    if (!luFabricant) return importFabricantRef.current?.click();
+    if (!disponibiliteCommandeFabricant(id).disponible) return;
+    void (id === "importer-fabricant" ? importerFabricant() : poserReleve());
+  };
+  const resumeFabricant = useMemo((): ResumeFabricant | null => {
+    if (!luFabricant) return null;
+    const r = resumerScene(luFabricant.lecture, uniteFabricant, axeFabricant);
+    const n = (x: number) => x.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
+    return { nom: luFabricant.nom, format: luFabricant.format.toUpperCase(), objets: r.objets, triangles: r.triangles, matieres: r.matieres, repetes: r.repetes, dimensions: `${n(r.dimensions[0])} × ${n(r.dimensions[1])} × ${n(r.dimensions[2])} m`, uniteLue: luFabricant.lecture.uniteFichier !== null, axeLu: luFabricant.lecture.axeFichier !== null, omis: r.omis.map((o) => t(`planche.fabricant.omis.${o}` as CleMessage)) };
+  }, [luFabricant, uniteFabricant, axeFabricant]);
+  // KML / KMZ (cas 4, lot C4, étape 7b) : lu sans bibliothèque, projeté par l'API dans le système du point de base
+  // (définition connue de Fadi ou .prj fourni), posé à plat en un seul pas.
+  const [luKml, setLuKml] = useState<{ readonly nom: string; readonly format: "kml" | "kmz"; readonly lecture: LectureKml; readonly fichier: File } | null>(null);
+  const [prjKml, setPrjKml] = useState<{ readonly nom: string; readonly wkt: string; readonly fichier: File; readonly systeme: string } | null>(null);
+  const [erreurKml, setErreurKml] = useState<string | null>(null);
+  const [noteKml, setNoteKml] = useState<string | null>(null);
+  const importKmlRef = useRef<HTMLInputElement | null>(null);
+  const importPrjKmlRef = useRef<HTMLInputElement | null>(null);
+  const systemeKml = hist.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? null;
+  const disponibiliteCommandeKml = (id: IdCommandeKml) => disponibiliteKml(id, { lu: luKml !== null, pointDeBase: systemeKml !== null, lecture: readOnly });
+  const lireFichierKml = async (f: File) => {
+    setErreurKml(null);
+    setNoteKml(null);
+    setPanneau("import-kml");
+    const kmz = f.name.toLowerCase().endsWith(".kmz");
+    try {
+      const lecture = kmz ? lireKmz(new Uint8Array(await f.arrayBuffer())) : lireKml(await f.text());
+      setLuKml({ nom: f.name, format: kmz ? "kmz" : "kml", lecture, fichier: f });
+    } catch (e) {
+      setLuKml(null);
+      setErreurKml(t("planche.kml.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+  };
+  const lirePrjKml = async (f: File) => {
+    setPanneau("import-kml");
+    setNoteKml(null);
+    const wkt = f.size <= 65536 ? await f.text().catch(() => "") : "";
+    const s = wkt ? systemeDuPrj(wkt) : null;
+    if (!s) return setErreurKml(t("planche.kml.erreur.prj"));
+    const projet = histRef.current.present.modele.annotations?.reglages?.pointDeBase?.systeme ?? "";
+    // Un .prj qui porte un code d'autorité doit décrire le système du point de base ; sans code (ESRI), son nom est affiché.
+    if (s.code && normaliserSysteme(s.code) !== normaliserSysteme(projet)) return setErreurKml(t("planche.kml.erreur.prj-different", { lu: s.code, systeme: projet }));
+    setPrjKml({ nom: f.name, wkt, fichier: f, systeme: projet });
+    setErreurKml(null);
+    setNoteKml(t("planche.kml.note.prj", { nom: f.name, systeme: s.code ?? s.nom ?? "" }));
+  };
+  const importerKml = async () => {
+    const lu = luKml;
+    const pdb = histRef.current.present.modele.annotations?.reglages?.pointDeBase ?? null;
+    if (!lu || !pdb || readOnly) return;
+    const points = pointsKml(lu.lecture);
+    if (points.length === 0) return setErreurKml(t("planche.kml.erreur.demande"));
+    // La définition fournie n'a été contrôlée que pour le système du point de base au moment de sa lecture : si ce système a
+    // changé depuis, elle est écartée plutôt que d'interpréter les coordonnées dans un autre repère.
+    if (prjKml && normaliserSysteme(prjKml.systeme) !== normaliserSysteme(pdb.systeme)) {
+      setPrjKml(null);
+      return setErreurKml(t("planche.kml.erreur.prj-perime", { nom: prjKml.nom }));
+    }
+    try {
+      await archiverFichierReference(lu.fichier, lu.format);
+      if (prjKml) await archiverFichierReference(prjKml.fichier, "prj");
+    } catch (e) {
+      return setErreurKml(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
+    }
+    let projetes: Awaited<ReturnType<typeof projeterVersSysteme>>;
+    try {
+      projetes = await projeterVersSysteme(pdb.systeme, prjKml?.wkt ?? null, points);
+    } catch (e) {
+      return setErreurKml(t(`planche.kml.erreur.${e instanceof ErreurProjection ? e.code : "serveur"}` as CleMessage, { systeme: pdb.systeme }));
+    }
+    let r: ReturnType<typeof poserKml> | null = null;
+    try {
+      r = poserKml(histRef.current.present.modele, lu.lecture, projetes.points, pdb);
+    } catch (e) {
+      return setErreurKml(t("planche.kml.erreur", { motif: e instanceof Error ? e.message : String(e) }));
+    }
+    const fait = r;
+    const note = t("planche.kml.note.importe", { polygones: String(fait.polygones), lignes: String(fait.lignes), points: String(fait.points), source: t(`planche.kml.source.${projetes.source}`), ignores: fait.ignores > 0 ? t("planche.kml.note.ignores", { nombre: String(fait.ignores) }) : "" });
+    operer(t("planche.kml.nom"), () => ({ modele: fait.modele, selection: fait.groupes, message: note }));
+    setErreurKml(null);
+    setNoteKml(note);
+  };
+  const executerKml = (id: IdCommandeKml) => {
+    setPanneau("import-kml");
+    if (id === "import-kml") return luKml ? undefined : importKmlRef.current?.click();
+    if (!disponibiliteCommandeKml(id).disponible) return;
+    if (id === "definition-systeme") return importPrjKmlRef.current?.click();
+    void importerKml();
+  };
+  const resumeKml = useMemo((): ResumeKml | null => {
+    if (!luKml) return null;
+    const compte = (g: string) => luKml.lecture.elements.filter((e) => e.genre === g).length;
+    return { nom: luKml.nom, polygones: compte("polygone"), lignes: compte("ligne"), points: compte("point"), omis: luKml.lecture.omis.map((o) => t(`planche.kml.omis.${o}` as CleMessage)) };
+  }, [luKml]);
+  // Redressement d'une photo sur quatre points (cas 4, lot C4, étape 7c) : coins pointés dans le panneau, homographie
+  // vers le rectangle saisi, photo rééchantillonnée et posée en fond dans un plan vertical, en un pas.
+  const [photoRedr, setPhotoRedr] = useState<{ readonly nom: string; readonly image: string; readonly largeur: number; readonly hauteur: number; readonly largeurOriginal: number; readonly hauteurOriginal: number; readonly fichier: File } | null>(null);
+  const [pointsRedr, setPointsRedr] = useState<readonly PixelFond[]>([]);
+  const [saisieRedr, setSaisieRedr] = useState<SaisieRedressement>({ largeur: "", hauteur: "", x: "0", y: "0", altitude: "0", azimut: "0", controles: [] });
+  const [erreurRedr, setErreurRedr] = useState<string | null>(null);
+  const [noteRedr, setNoteRedr] = useState<string | null>(null);
+  const importRedrRef = useRef<HTMLInputElement | null>(null);
+  const dimensionsRedr = (() => {
+    const l = lireNombreSaisi(saisieRedr.largeur);
+    const h = lireNombreSaisi(saisieRedr.hauteur);
+    return l !== null && h !== null && l > 0 && h > 0 ? { largeur: l, hauteur: h } : null;
+  })();
+  const disponibiliteCommandeRedr = (id: IdCommandeRedressement) => disponibiliteRedressement(id, { photo: photoRedr !== null, points: pointsRedr.length, dimensions: dimensionsRedr !== null, lecture: readOnly });
+  const homographieRedr = useMemo(() => (dimensionsRedr && pointsRedr.length >= 4 ? homographie(pointsRedr.slice(0, 4), rectangleReference(dimensionsRedr.largeur, dimensionsRedr.hauteur)) : null), [pointsRedr, dimensionsRedr?.largeur, dimensionsRedr?.hauteur]);
+  const controlesRedr = pointsRedr.slice(4).flatMap((pixel, i) => {
+    const c = saisieRedr.controles[i];
+    const s = c ? lireNombreSaisi(c.s) : null;
+    const tt = c ? lireNombreSaisi(c.t) : null;
+    return s !== null && tt !== null ? [{ id: "EFGHIJKL"[i]!, pixel, cible: { x: s, y: tt } }] : [];
+  });
+  const residusRedr = homographieRedr && dimensionsRedr ? residusRedressement(homographieRedr, controlesRedr, dimensionsRedr.largeur, dimensionsRedr.hauteur) : null;
+  const metres = (v: number) => v.toLocaleString(LOCALE, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  const resumeResidusRedr: ResumeResidus | null = residusRedr
+    ? {
+        moyen: residusRedr.moyen === null ? null : t("planche.redressement.residus.moyen", { moyen: metres(residusRedr.moyen), seuil: metres(residusRedr.seuil) }),
+        points: residusRedr.points.map((d, i) => (d === null ? t("planche.redressement.residus.fuite", { id: controlesRedr[i]!.id }) : t("planche.redressement.residus.point", { id: controlesRedr[i]!.id, ecart: metres(d) }))),
+        nonPlane: residusRedr.nonPlane,
+      }
+    : null;
+  const lirePhotoRedr = async (f: File) => {
+    setPanneau("redressement");
+    setErreurRedr(null);
+    setNoteRedr(null);
+    try {
+      const r = await reduireFond(f, 2048);
+      setPhotoRedr({ nom: f.name, ...r, fichier: f });
+      setPointsRedr([]);
+      setSaisieRedr((s) => ({ ...s, controles: [] }));
+    } catch {
+      setPhotoRedr(null);
+      setErreurRedr(t("planche.redressement.erreur.image"));
+    }
+  };
+  const poserRedressee = async () => {
+    const photo = photoRedr;
+    const dims = dimensionsRedr;
+    if (!photo || !dims || readOnly) return;
+    const h = homographieRedr;
+    if (!h) return setErreurRedr(t("planche.redressement.erreur.degenere"));
+    const x = lireNombreSaisi(saisieRedr.x), y = lireNombreSaisi(saisieRedr.y), z = lireNombreSaisi(saisieRedr.altitude), az = lireNombreSaisi(saisieRedr.azimut);
+    if (x === null || y === null || z === null || az === null) return setErreurRedr(t("planche.redressement.erreur.saisie"));
+    // La pose vise la Planche ouverte au départ : si une autre est ouverte pendant le décodage ou l'archivage, rien n'est posé.
+    const planche = indexRef.current.courante;
+    // Rééchantillonnage dans le navigateur (canvas), le calcul restant dans le modèle.
+    let image: string;
+    let cadre: ReturnType<typeof cadreRedresse>;
+    try {
+      const el = new Image();
+      await new Promise<void>((ok, ko) => {
+        el.onload = () => ok();
+        el.onerror = () => ko(new Error("image"));
+        el.src = photo.image;
+      });
+      const c = document.createElement("canvas");
+      c.width = photo.largeur;
+      c.height = photo.hauteur;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(el, 0, 0);
+      const src = ctx.getImageData(0, 0, photo.largeur, photo.hauteur).data;
+      cadre = cadreRedresse(h, photo.largeur, photo.hauteur, dims.largeur, dims.hauteur, 2048);
+      const px = redresserPixels(src, photo.largeur, photo.hauteur, h, cadre);
+      if (!px) return setErreurRedr(t("planche.redressement.erreur.degenere"));
+      const sortie = document.createElement("canvas");
+      sortie.width = cadre.largeurPx;
+      sortie.height = cadre.hauteurPx;
+      sortie.getContext("2d")!.putImageData(new ImageData(px as Uint8ClampedArray<ArrayBuffer>, cadre.largeurPx, cadre.hauteurPx), 0, 0);
+      image = sortie.toDataURL("image/png");
+      if (image.length > IMAGE_FOND_MAX) image = sortie.toDataURL("image/jpeg", 0.85);
+    } catch {
+      return setErreurRedr(t("planche.redressement.erreur.image"));
+    }
+    // La photo d'origine est archivée telle quelle en base avant la pose (D-GD-29).
+    let original: OriginalFond;
+    try {
+      original = { ...(await archiverOriginalFond(photo.fichier)), largeurPx: photo.largeurOriginal, hauteurPx: photo.hauteurOriginal };
+    } catch (e) {
+      return setErreurRedr(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
+    }
+    if (indexRef.current.courante !== planche) return;
+    const f = photo.largeurOriginal / photo.largeur;
+    const vertical: VerticalFond = {
+      x,
+      y,
+      azimut: (az * Math.PI) / 180,
+      redressement: { points: pointsRedr.slice(0, 4).map((p) => ({ u: p.u * f, v: p.v * f })), largeur: dims.largeur, hauteur: dims.hauteur, controles: controlesRedr.length, residu: residusRedr?.moyen ?? null },
+    };
+    const note = t("planche.redressement.note", { largeur: dims.largeur.toLocaleString(LOCALE), hauteur: dims.hauteur.toLocaleString(LOCALE), px: String(cadre.largeurPx) });
+    let refus: string | null = null;
+    operer(t("planche.redressement.nom"), (m) => {
+      const r = importerFond(m, { nom: photo.nom, image, largeurPx: cadre.largeurPx, hauteurPx: cadre.hauteurPx, altitude: z, original, pose: { echelle: cadre.echelle, rotation: 0, x: cadre.sMin, y: cadre.tMax }, vertical });
+      if (!r.ok) {
+        refus = r.erreur;
+        return null;
+      }
+      return { modele: r.modele, message: note };
+    });
+    if (refus) return setErreurRedr(t(`planche.fonds.erreur.${refus}` as CleMessage));
+    setErreurRedr(null);
+    setNoteRedr(note);
+  };
+  const executerRedr = (id: IdCommandeRedressement) => {
+    setPanneau("redressement");
+    if (id === "redresser-photo") return photoRedr ? undefined : importRedrRef.current?.click();
+    if (!disponibiliteCommandeRedr(id).disponible) return;
+    if (id === "effacer-points-redressement") {
+      setPointsRedr([]);
+      return setSaisieRedr((s) => ({ ...s, controles: [] }));
+    }
+    void poserRedressee();
+  };
+  const executerTravaux = (id: IdCommandeTravaux) => {
+    setPanneau("statut-travaux");
+    if (id === "statut-travaux" || !disponibiliteCommandeTravaux(id).disponible) return;
+    const statut: StatutTravaux = id === "statut-existant" ? "existant" : id === "statut-a-demolir" ? "a-demolir" : "projete";
+    const ids = occurrencesSelectionnees();
+    const retirer = statutCommunSelection() === statut;
+    const libelle = t(`planche.travaux.${id}`);
+    const message = t(retirer ? "planche.travaux.note.retire" : "planche.travaux.note.pose", { nombre: String(ids.length), statut: t(`planche.travaux.court.${id}`) });
+    setNoteTravaux(message);
+    operer(libelle, (m) => ({ modele: statuerOccurrences(m, ids, retirer ? null : statut, o()).modele, message }));
+  };
   const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
   const [origineOuverte, setOrigineOuverte] = useState(false);
   /** Revue Codex de #303 : chemin complet de chaque objet sélectionné (l'instance ouverte, pas la première rencontrée). */
@@ -4020,7 +7071,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "niveau") executerNiveau(c.id as IdCommandeNiveau);
     else if (c.famille === "local") executerLocal(c.id as IdCommandeLocal);
     else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
+    else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
+    else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
+    else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
+    else if (c.famille === "consultation") executerConsultation(c.id as IdCommandeConsultation);
+    else if (c.famille === "fond") executerFond(c.id as IdCommandeFond);
+    else if (c.famille === "reference") executerReference(c.id as IdCommandeReference);
+    else if (c.famille === "pdf") executerPdf(c.id as IdCommandePdf);
+    else if (c.famille === "dxf") executerDxf(c.id as IdCommandeDxf);
+    else if (c.famille === "travaux") executerTravaux(c.id as IdCommandeTravaux);
+    else if (c.famille === "ifc") executerIfc(c.id as IdCommandeIfc);
+    else if (c.famille === "fabricant") executerFabricant(c.id as IdCommandeFabricant);
+    else if (c.famille === "kml") executerKml(c.id as IdCommandeKml);
+    else if (c.famille === "redressement") executerRedr(c.id as IdCommandeRedressement);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
+    else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
+    else if (c.famille === "balise") executerBalise(c.id as IdCommandeBalise);
+    else if (c.famille === "scene") executerScene(c.id as IdCommandeScene);
+    else if (c.famille === "gabarit") executerGabarit(c.id as IdCommandeGabarit);
+    else if (c.famille === "echange") executerEchange(c.id as IdCommandeEchange);
+    else if (c.famille === "version") executerVersion(c.id as IdCommandeVersion);
+    else if (c.famille === "modelisation") executerModelisation(c.id as IdCommandeModelisation);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -4082,6 +7153,58 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteCommandeNiveau(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.niveaux.motif.choisi"), executer: () => executerNiveau(c.id) };
         }),
+        ...COMMANDES_FEUILLES.map((c) => {
+          const d = disponibiliteCommandeFeuille(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.feuilles.motif.feuille"), executer: () => executerFeuille(c.id) };
+        }),
+        ...COMMANDES_RESERVES.map((c) => {
+          const d = disponibiliteCommandeReserve(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
+        }),
+        ...COMMANDES_FONDS.map((c) => {
+          const d = disponibiliteCommandeFond(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fonds.motif.fond"), executer: () => executerFond(c.id) };
+        }),
+        ...COMMANDES_REFERENCES.map((c) => {
+          const d = disponibiliteCommandeReference(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.references.motif.reference"), executer: () => executerReference(c.id) };
+        }),
+        ...COMMANDES_PDF.map((c) => {
+          const d = disponibiliteCommandePdf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.pdf.motif.page"), executer: () => executerPdf(c.id) };
+        }),
+        ...COMMANDES_DXF.map((c) => {
+          const d = disponibiliteCommandeDxf(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.dxf.motif.cochees"), executer: () => executerDxf(c.id) };
+        }),
+        ...COMMANDES_TRAVAUX.map((c) => {
+          const d = disponibiliteCommandeTravaux(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.travaux.motif.objets"), executer: () => executerTravaux(c.id) };
+        }),
+        ...COMMANDES_IFC.map((c) => {
+          const d = disponibiliteCommandeIfc(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.ifc.motif.fichier"), executer: () => executerIfc(c.id) };
+        }),
+        ...COMMANDES_FABRICANT.map((c) => {
+          const d = disponibiliteCommandeFabricant(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.fabricant.motif.fichier"), executer: () => executerFabricant(c.id) };
+        }),
+        ...COMMANDES_KML.map((c) => {
+          const d = disponibiliteCommandeKml(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.kml.motif.fichier"), executer: () => executerKml(c.id) };
+        }),
+        ...COMMANDES_REDRESSEMENT.map((c) => {
+          const d = disponibiliteCommandeRedr(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.redressement.motif.photo"), executer: () => executerRedr(c.id) };
+        }),
+        ...COMMANDES_CONSULTATION.map((c) => {
+          const d = disponibiliteCommandeConsultation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.consultation.motif.lien"), executer: () => executerConsultation(c.id) };
+        }),
+        ...COMMANDES_ENVELOPPE.map((c) => {
+          const d = disponibiliteCommandeEnveloppe(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.enveloppe.motif.objet"), executer: () => executerEnveloppe(c.id) };
+        }),
         ...COMMANDES_PLAN.map((c) => {
           const d = disponibiliteCommandePlan(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.plan.motif.vide"), executer: () => executerPlan(c.id) };
@@ -4093,6 +7216,36 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_MUR.map((c) => {
           const d = disponibiliteCommandeMur(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.mur.motif.aretes"), executer: () => executerMur(c.id) };
+        }),
+        // Cas 2, lot 2 : accrochage et saisie, mêmes disponibilités et exécution que les barres de leurs panneaux.
+        ...COMMANDES_ACCROCHAGE.map((c) => {
+          const d = disponibiliteCommandeAccrochage(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.accrochage.motif.mesure"), executer: () => executerAccrochage(c.id) };
+        }),
+        // Cas 2, lot 4 : balises, scènes et plans de coupe, gabarit d'agence.
+        ...COMMANDES_BALISE.map((c) => {
+          const d = disponibiliteCommandeBalise(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.balise.motif.courante"), executer: () => executerBalise(c.id) };
+        }),
+        ...COMMANDES_SCENE.map((c) => {
+          const d = disponibiliteCommandeScene(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.scene.motif.plan"), executer: () => executerScene(c.id) };
+        }),
+        ...COMMANDES_GABARIT.map((c) => {
+          const d = disponibiliteCommandeGabarit(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.gabarit.motif.choix"), executer: () => executerGabarit(c.id) };
+        }),
+        // Cas 2, lot 6 : panneau « Fichier natif et image ».
+        ...COMMANDES_ECHANGE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: null, executer: () => executerEchange(c.id) })),
+        // Cas 2, lot 7 : versions, jalons, comparaison, brouillon, fiche du projet.
+        ...COMMANDES_VERSION.map((c) => {
+          const d = disponibiliteCommandeVersion(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.lecture"), executer: () => executerVersion(c.id) };
+        }),
+        // Cas 2, lot 8 : outils de modélisation et composants d'agence.
+        ...COMMANDES_MODELISATION.map((c) => {
+          const d = disponibiliteCommandeModelisation(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.lecture"), executer: () => executerModelisation(c.id) };
         }),
         // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
         ...COMMANDES_REPERES.map((c) => {
@@ -4342,7 +7495,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         { genre: "separateur" },
         cmd("couper", t("planche.menus.couper"), () => copierSelection(true), { raccourci: afficherRaccourci("Ctrl+X"), disabled: readOnly || nbSelection === 0 }),
         cmd("copier", t("planche.menus.copier"), () => copierSelection(false), { raccourci: afficherRaccourci("Ctrl+C"), disabled: nbSelection === 0 }),
-        cmd("coller", t("planche.menu.coller"), collerSelection, { raccourci: afficherRaccourci("Ctrl+V"), disabled: readOnly }),
+        cmd("coller", t("planche.menu.coller"), collerDepuisMenu, { raccourci: afficherRaccourci("Ctrl+V"), disabled: readOnly }),
         { genre: "separateur" },
         cmd("tout-selectionner", t("planche.menus.tout-selectionner"), () => etendre("tout"), { raccourci: afficherRaccourci("Ctrl+A") }),
         cmd("inverser-selection", t("planche.menu.sel.inverser"), () => etendre("inverser"), { raccourci: afficherRaccourci("Ctrl+Maj+I") }),
@@ -4491,13 +7644,43 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
           // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
-          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
+          style={{ cursor: outilExtensionActif ? outilExtensionActif.curseur : lireCleOutilExtension(outilId) || IDS_POINTAGE_L8.includes(outilId) ? "crosshair" : curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
           data-planche-curseur={outilId}
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
+          {cadreImage && (
+            <div className="planche-cadre-image" style={{ left: cadreImage.x, top: cadreImage.y, width: cadreImage.l, height: cadreImage.h }} aria-hidden="true" data-planche-cadre-image>
+              <span>{t("planche.echange.image.cadre", { largeur: String(tailleImage.largeur), hauteur: String(tailleImage.hauteur) })}{imageTransparente ? t("planche.echange.image.fond") : ""}</span>
+            </div>
+          )}
         </div>
         <AvisExtensions avis={avisExtensions} onFermer={(cle) => setAvisExtensions((liste) => liste.filter((a) => a.cle !== cle))} />
+        {consultation ? (
+          <div className="planche-bandeau-version planche-bandeau-consultation" role="status" data-planche-consultation={consultation.jalon?.id ?? "courante"}>
+            {t("planche.lecture.bandeau", { quoi: consultation.jalon ? t("planche.lecture.jalon", { nom: consultation.jalon.nom, indice: consultation.jalon.indice ? ` (${consultation.jalon.indice})` : "" }) : `« ${nomCourant} »` })} · {afficherRaccourci(raccourciConsultation)}
+          </div>
+        ) : (
+          originalBrouillon && (
+            <div className="planche-bandeau-version planche-bandeau-brouillon" role="status" data-planche-brouillon-bandeau>
+              {t("planche.brouillon.bandeau", { nom: nomAffiche(originalBrouillon) })}
+            </div>
+          )
+        )}
+        {deuxTemps && (
+          <div className="planche-deux-temps" role="status" aria-live="polite" data-planche-deux-temps>
+            <p>
+              <b>{afficherRaccourci(ENTREE_DEUX_TEMPS)}…</b> {t("planche.deux-temps.puis")}
+            </p>
+            <ul>
+              {COMMANDES_DEUX_TEMPS.map((c) => (
+                <li key={c.id} data-planche-deux-temps-commande={c.id}>
+                  <kbd>{afficherRaccourci(secondTemps(c.raccourci) ?? "")}</kbd> {t(c.libelle)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Bandeau d'en-tête (24 novembre 2026, à la manière de l'UI Shell de Carbon, sans logo ni marque) : 48 px sombres en
@@ -4721,6 +7904,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               modele={hist.present.modele}
               courante={balise}
               lecture={readOnly}
+              separateur={SEPARATEUR_DECIMAL}
+              compte={compterSelection(hist.present.modele, vue.selection ?? selectionRef.current, dans)}
+              onCourante={(id) => {
+                setBalise(id);
+                const b = id ? histRef.current.present.modele.annotations?.balises[id] : undefined;
+                setMessage(b ? t("planche.balise.note.courante", { nom: b.nom }) : t("planche.balise.note.sans-courante"));
+              }}
+              onModifier={modifierBaliseL4}
+              onClasser={classerSelectionL4}
+              executer={executerBalise}
+              disponibilite={disponibiliteCommandeBalise}
               onChoisir={(id) => {
                 setBalise(id);
                 if (!readOnly) choisirOutil("balise");
@@ -4766,6 +7960,135 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
+      {/* Image d'un fond : montée hors du panneau pour que « Importer un fond » (Fichier, Ctrl+Alt+Maj+F3) l'ouvre partout. */}
+      <input
+        ref={importFondRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerUnFond(f);
+        }}
+        data-planche-fond-fichier
+      />
+      {/* Fiche de calage reçue (Ctrl+Alt+Maj+F9) et orthophoto avec son fichier de calage (Ctrl+Alt+Maj+F10) : montés hors du panneau. */}
+      <input
+        ref={importFicheRef}
+        type="file"
+        accept=".txt,text/plain"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFiche(f);
+        }}
+        data-planche-fiche-fichier
+      />
+      <input
+        ref={importOrthoRef}
+        type="file"
+        multiple
+        accept={["image/png", "image/jpeg", ...EXTENSIONS_CALAGE_IMAGE.map((x) => `.${x}`), ".prj"].join(",")}
+        hidden
+        onChange={(e) => {
+          const f = [...(e.target.files ?? [])];
+          e.target.value = "";
+          if (f.length > 0) void lireOrthophoto(f);
+        }}
+        data-planche-orthophoto-fichier
+      />
+      {/* Fichier d'une référence (Ctrl+Maj+Espace, C ou Maj+C) : monté hors du panneau. */}
+      <input
+        ref={importReferenceRef}
+        type="file"
+        accept=".obj,.stl,.ifc"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void chargerFichierReference(f);
+        }}
+        data-planche-reference-fichier
+      />
+      {/* Import IFC structuré (Ctrl+Maj+Espace, O) : monté hors du panneau. */}
+      <input
+        ref={importIfcRef}
+        type="file"
+        accept=".ifc,.ifczip"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierIfc(f);
+        }}
+        data-planche-import-ifc-entree
+      />
+      {/* Formats des fabricants (Ctrl+Maj+Espace, N ou U) : monté hors du panneau. */}
+      <input
+        ref={importFabricantRef}
+        type="file"
+        accept=".glb,.gltf,.3mf,.dae,.3ds,.ply,.fbx,.3dm,.usd,.usda,.usdc,.usdz"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierFabricant(f);
+        }}
+        data-planche-import-fabricant-entree
+      />
+      {/* KML / KMZ (Ctrl+Maj+Espace, W) et définition du système (Y) : montés hors du panneau. */}
+      <input
+        ref={importKmlRef}
+        type="file"
+        accept=".kml,.kmz"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierKml(f);
+        }}
+        data-planche-import-kml-entree
+      />
+      <input
+        ref={importPrjKmlRef}
+        type="file"
+        accept=".prj"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lirePrjKml(f);
+        }}
+        data-planche-import-kml-prj-entree
+      />
+      {/* Redressement d'une photo (Ctrl+Maj+Espace, Z) : monté hors du panneau. */}
+      <input
+        ref={importRedrRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lirePhotoRedr(f);
+        }}
+        data-planche-redressement-entree
+      />
+      {/* PDF reçu (Ctrl+Maj+Espace, Maj+P) : monté hors du panneau. */}
+      <input
+        ref={importPdfRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void lireFichierPdf(f);
+        }}
+        data-planche-pdf-fichier-entree
+      />
       {/* Fichier .pat : monté hors du panneau pour que « Importer » (Ctrl+F11, menu Outils) ouvre le sélecteur même panneau fermé. */}
       <input
         ref={importMotifRef}
@@ -4779,10 +8102,54 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }}
         data-planche-motif-fichier
       />
+      <input
+        ref={fichierComposantRef}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) importerComposantAgence(f);
+        }}
+        data-planche-composant-fichier
+      />
+      <input
+        ref={fichierGabaritRef}
+        type="file"
+        accept={`${EXTENSION_GABARIT},.json,application/json`}
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) importerGabarit(f);
+        }}
+        data-planche-gabarit-fichier
+      />
+      <input
+        ref={fichierNatifRef}
+        type="file"
+        accept={`${EXTENSION_NATIF},application/json`}
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importerNatif(f);
+        }}
+        data-planche-natif-fichier
+      />
       {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
-            <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
+            <h3>
+              {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
+              {panneau === "echange-import" && rapportImport ? t("planche.echange.titre-import", { format: rapportImport.rapport.format.toUpperCase() }) : t(`panneau.${panneau}` as "panneau.info-entite")}
+              {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
+              {panneau === "info-entite" && planChoisi() ? ` · ${t("planche.info.plan")}` : ""}
+              {RACCOURCI_PANNEAU_L7[panneau] && <small className="planche-versions-raccourci"> {afficherRaccourci(RACCOURCI_PANNEAU_L7[panneau]!)}</small>}
+              {RACCOURCI_PANNEAU_L8[panneau] && <small className="planche-versions-raccourci"> {afficherRaccourci(RACCOURCI_PANNEAU_L8[panneau]!)}</small>}
+            </h3>
+            {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
@@ -4812,6 +8179,263 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 note={noteNiveau}
               />
             )}
+            {panneau === "feuilles-dxf" && (
+              <PanneauFeuillesDxf
+                feuilles={feuillesListe}
+                cochees={cocheesDxf}
+                onCocher={(id, coche) => setDecocheesDxf((a) => { const n = new Set(a); if (coche) n.delete(id); else n.add(id); return n; })}
+                contenu={contenuDxf}
+                onContenu={setContenuDxf}
+                executer={executerDxf}
+                disponibilite={disponibiliteCommandeDxf}
+                erreur={erreurDxf}
+                note={noteDxf}
+              />
+            )}
+            {panneau === "ifc-structure" && (
+              <PanneauIfcStructure
+                schema={schemaIfc}
+                onSchema={(x) => {
+                  setSchemaIfc(x);
+                  setConstatsIfc(null);
+                }}
+                format={formatIfc}
+                onFormat={setFormatIfc}
+                georef={georefIfc}
+                onGeoref={(g) => {
+                  setGeorefIfc(g);
+                  setConstatsIfc(null);
+                }}
+                georefTexte={georefIfcTexte}
+                classes={classesAExporter(hist.present.modele)}
+                constats={constatsIfc}
+                executer={executerIfc}
+                disponibilite={disponibiliteCommandeIfc}
+                erreur={erreurIfc}
+                note={noteIfc}
+              />
+            )}
+            {panneau === "import-ifc" && (
+              <PanneauImportIfc
+                lu={resumeImportIfc}
+                choix={choixImportIfc}
+                onChoix={setChoixImportIfc}
+                pointDeBaseExistant={pointDeBaseIfc !== null}
+                executer={executerIfc}
+                disponibilite={disponibiliteCommandeIfc}
+                onChoisirFichier={() => importIfcRef.current?.click()}
+                erreur={erreurImportIfc}
+                note={noteImportIfc}
+              />
+            )}
+            {panneau === "import-fabricant" && (
+              <PanneauFabricant
+                lu={resumeFabricant}
+                unite={uniteFabricant}
+                onUnite={setUniteFabricant}
+                axe={axeFabricant}
+                onAxe={setAxeFabricant}
+                executer={executerFabricant}
+                disponibilite={disponibiliteCommandeFabricant}
+                onChoisirFichier={() => importFabricantRef.current?.click()}
+                erreur={erreurFabricant}
+                note={noteFabricant}
+                progression={progressionFabricant}
+              />
+            )}
+            {panneau === "import-kml" && (
+              <PanneauKml
+                lu={resumeKml}
+                systeme={systemeKml}
+                prj={prjKml?.nom ?? null}
+                executer={executerKml}
+                disponibilite={disponibiliteCommandeKml}
+                onChoisirFichier={() => importKmlRef.current?.click()}
+                erreur={erreurKml}
+                note={noteKml}
+              />
+            )}
+            {panneau === "redressement" && (
+              <PanneauRedressement
+                photo={photoRedr}
+                points={pointsRedr}
+                onPointer={(p) => setPointsRedr((l) => [...l, p])}
+                saisie={saisieRedr}
+                onSaisie={setSaisieRedr}
+                residus={resumeResidusRedr}
+                executer={executerRedr}
+                disponibilite={disponibiliteCommandeRedr}
+                onChoisirFichier={() => importRedrRef.current?.click()}
+                erreur={erreurRedr}
+                note={noteRedr}
+                lecture={readOnly}
+              />
+            )}
+            {panneau === "statut-travaux" && (
+              <PanneauStatutTravaux
+                objets={occurrencesSelectionnees().length}
+                statutCommun={statutCommunSelection()}
+                compte={compterStatuts(hist.present.modele)}
+                etat={options.etatTravaux}
+                onEtat={(etatTravaux) => majOptions({ etatTravaux })}
+                couleurs={options.couleursStatut}
+                onCouleur={(st, couleur) => majOptions({ couleursStatut: { ...options.couleursStatut, [st]: couleur } })}
+                executer={executerTravaux}
+                disponibilite={disponibiliteCommandeTravaux}
+                note={noteTravaux}
+              />
+            )}
+            {panneau === "pdf-recu" && (
+              <PanneauPdfRecu
+                pdf={pdfRecu}
+                choisie={pagePdf}
+                onChoisir={changerPagePdf}
+                mode={modePdf}
+                points={pointsPdf}
+                onPoint={(p) => setPointsPdf((a) => (a.length >= 2 ? [p] : [...a, p]))}
+                proposition={propositionPdf}
+                echelleBarre={echelleBarrePdf}
+                longueurBarre={longueurBarrePdf}
+                onLongueurBarre={setLongueurBarrePdf}
+                echelle={echellePdf}
+                onEchelle={(v) => { setEchellePdf(v); setEchelleConfirmee(null); }}
+                confirmee={echelleConfirmee}
+                niveaux={niveaux}
+                niveau={niveauPdf}
+                onNiveau={setNiveauPdf}
+                origine={originePdf}
+                onOrigine={setOriginePdf}
+                lecture={readOnly}
+                executer={executerPdf}
+                disponibilite={disponibiliteCommandePdf}
+                erreur={erreurPdf}
+                note={notePdf}
+              />
+            )}
+            {panneau === "references" && (
+              <PanneauReferences
+                references={referencesListe}
+                choisie={referenceChoisie}
+                etats={etatsReferences}
+                lecture={readOnly}
+                unite={uniteReference}
+                recolement={recolement}
+                onChoisir={(id) => { setReferenceChoisie(id); setErreurReference(null); setNoteReference(null); }}
+                onUnite={setUniteReference}
+                onPlacement={(p) => referenceChoisie && operationReference(deplacerReference(hist.present.modele, referenceChoisie.id, p), t("planche.references.placement"), null)}
+                onOpacite={(v) => referenceChoisie && operationReference(reglerOpaciteReference(hist.present.modele, referenceChoisie.id, v), t("planche.references.opacite"), null)}
+                onTolerance={(v) => referenceChoisie && operationReference(reglerTolerance(hist.present.modele, referenceChoisie.id, v), t("planche.references.tolerance"), null)}
+                executer={executerReference}
+                disponibilite={disponibiliteCommandeReference}
+                erreur={erreurReference}
+                note={noteReference}
+              />
+            )}
+            {panneau === "fonds" && (
+              <PanneauFonds
+                fonds={fondsListe}
+                choisi={fondChoisi}
+                point={pointChoisi}
+                lecture={readOnly}
+                onChoisir={(id) => { setFondChoisi(id); setPointChoisi(null); setErreurFond(null); setNoteFond(null); }}
+                onChoisirPoint={setPointChoisi}
+                onMethode={(v) => fondChoisi && operationFond(choisirMethode(hist.present.modele, fondChoisi.id, v), t("planche.fonds.methode"), null)}
+                onLongueur={(v) => fondChoisi && operationFond(saisirLongueur(hist.present.modele, fondChoisi.id, v), t("planche.fonds.longueur"), null)}
+                onCible={(p, v) => fondChoisi && operationFond(saisirCible(hist.present.modele, fondChoisi.id, p, v), t("planche.fonds.position-de", { point: p }), null)}
+                onOpacite={(v) => fondChoisi && operationFond(reglerOpacite(hist.present.modele, fondChoisi.id, v), t("planche.fonds.opacite"), null)}
+                executer={executerFond}
+                disponibilite={disponibiliteCommandeFond}
+                erreur={erreurFond}
+                note={noteFond}
+                fiche={ficheProjet}
+                auteur={auteurFiche}
+                date={dateFiche}
+                onAuteur={setAuteurFiche}
+                onDate={setDateFiche}
+                recue={ficheRecue ? { ...ficheRecue, comparaison: comparerFiche(hist.present.modele, referenceNiveaux, ficheRecue.fiche) } : null}
+                orthophoto={orthoAttente ? { image: orthoAttente.fichier.name, calage: orthoAttente.calage, nomPrj: orthoAttente.nomPrj } : null}
+                systemeOrthophoto={systemeOrtho}
+                onSystemeOrthophoto={setSystemeOrtho}
+              />
+            )}
+            {panneau === "consultations" && (
+              <PanneauConsultations
+                liens={liensConsultation}
+                charge={liensCharges}
+                choisi={lienChoisi}
+                echeance={echeanceLien}
+                mesure={mesureLien}
+                aujourdhui={dateDuJour()}
+                origine={window.location.origin}
+                onEcheance={setEcheanceLien}
+                onMesure={setMesureLien}
+                onChoisir={(j) => { setLienChoisi(j); setErreurLien(null); setNoteLien(null); }}
+                executer={executerConsultation}
+                disponibilite={disponibiliteCommandeConsultation}
+                erreur={erreurLien}
+                note={noteLien}
+              />
+            )}
+            {panneau === "enveloppe" && (
+              <PanneauEnveloppe
+                reglages={enveloppe}
+                resultat={controleEnveloppe.resultat}
+                calcul={controleEnveloppe.calcul}
+                nomEnveloppe={nomObjetEnveloppe(enveloppe.objet)}
+                choisie={regleChoisie}
+                lecture={readOnly}
+                onChoisir={(id) => { setRegleChoisie(id); setErreurEnveloppe(null); setNoteEnveloppe(null); }}
+                onCadrer={cadrerLigneEnveloppe}
+                onModifier={(v) => regleChoisie && operationEnveloppe(modifierRegleHauteur(hist.present.modele, regleChoisie.id, v), t("planche.enveloppe.fiche"), null)}
+                executer={executerEnveloppe}
+                disponibilite={disponibiliteCommandeEnveloppe}
+                erreur={erreurEnveloppe}
+                note={noteEnveloppe}
+              />
+            )}
+            {panneau === "reserves" && (
+              <PanneauReserves
+                reserves={filtrerReserves(reservesListe, filtreReserves)}
+                total={reservesListe.length}
+                lots={lotsDesReserves(hist.present.modele)}
+                filtre={filtreReserves}
+                choisie={reserveChoisie}
+                aujourdhui={dateDuJour()}
+                nomObjet={(id) => { const o = hist.present.modele.racine.occurrences[id]; return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null; }}
+                lecture={readOnly}
+                onFiltre={setFiltreReserves}
+                onChoisir={(id) => { setReserveChoisie(id); setErreurReserve(null); setNoteReserve(null); }}
+                onModifier={modifierUneReserve}
+                onPhoto={(f) => void joindrePhoto(f)}
+                executer={executerReserve}
+                disponibilite={disponibiliteCommandeReserve}
+                erreur={erreurReserve}
+                note={noteReserve}
+              />
+            )}
+            {panneau === "feuilles" && (
+              <PanneauFeuilles
+                feuilles={feuillesListe}
+                choisie={feuilleChoisie}
+                composition={compositionFeuille}
+                fenetre={fenetreChoisie}
+                cochees={cocheesFeuilles}
+                scenes={Object.values(hist.present.modele.annotations?.scenes ?? {})}
+                plans={Object.values(hist.present.modele.annotations?.plansDeCoupe ?? {})}
+                motifNoms={motifNomsFeuilles}
+                lecture={readOnly}
+                onChoisir={(id) => { setFeuilleChoisie(id); setFenetreChoisie(null); setErreurFeuille(null); }}
+                onCocher={(id, coche) => setDecochees((d) => { const n = new Set(d); if (coche) n.delete(id); else n.add(id); return n; })}
+                onChoisirFenetre={setFenetreChoisie}
+                onModifierFeuille={modifierUneFeuille}
+                onModifierFenetre={modifierUneFenetre}
+                onMotifNoms={setMotifNomsFeuilles}
+                executer={executerFeuille}
+                disponibilite={disponibiliteCommandeFeuille}
+                erreur={erreurFeuille}
+                note={noteFeuille}
+              />
+            )}
             {panneau === "plan-vectoriel" && (
               <>
                 <PanneauPlanVectoriel
@@ -4831,6 +8455,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                   refMotifs={titreMotifsRef}
                   erreur={erreurPlan}
                   note={notePlan}
+                  suite={(() => {
+                    const c = COMMANDES_FEUILLES[0]!;
+                    return (
+                      <button type="button" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => executerFeuille("feuilles")} data-planche-commande="feuilles">
+                        <Pictogramme picto={c.picto} /> {t(c.court)}
+                      </button>
+                    );
+                  })()}
                 />
               </>
             )}
@@ -4866,13 +8498,190 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {panneau === "dynamique" && (
               <PanneauDynamique modele={hist.present.modele} definition={definitionDynamique} erreurs={erreursDynamique} lecture={readOnly} onDefinir={definirComposantDynamique} onOption={choisirOptionDynamique} executer={executerDynamique} disponibilite={disponibiliteCommandeDynamique} />
             )}
+            {panneau === "echange-import" && <PanneauImportEchange rapport={rapportImport?.rapport ?? null} arbre={rapportImport?.arbre ?? []} objet={objetIfcChoisi} separateur={SEPARATEUR_DECIMAL} archive={archiveImport} />}
+            {panneau === "echange-export" && exportPrepare && (
+              <PanneauExportEchange
+                modele={hist.present.modele}
+                format={formatExport}
+                onFormat={setFormatExport}
+                coordonnees={ui.coordonneesExport}
+                onCoordonnees={(c) => etatUi.set({ coordonneesExport: c })}
+                reference={referenceNiveaux ?? null}
+                ecrit={exportPrepare.ecrit}
+                motif={exportPrepare.motif}
+                nonAffiches={exportPrepare.nonAffiches}
+                inclureMasques={inclureMasques}
+                onInclureMasques={setInclureMasques}
+                balisesIncluses={balisesIncluses}
+                onBaliseIncluse={(id, v) => setBalisesIncluses((avant) => (v ? new Set([...avant, id]) : new Set([...avant].filter((x) => x !== id))))}
+                prevu={exportPrepare.prevu}
+                onExporter={exporterEchange}
+                onAnnuler={() => setPanneau(null)}
+              />
+            )}
+            {panneau === "natif-image" && (
+              <PanneauNatifImage
+                dernierExport={dernierNatif}
+                reimport={reimportNatif}
+                onExporterNatif={exporterNatif}
+                onImporterNatif={() => fichierNatifRef.current?.click()}
+                largeur={tailleImage.largeur}
+                hauteur={tailleImage.hauteur}
+                onTaille={(largeur, hauteur) => setTailleImage({ largeur, hauteur })}
+                transparent={imageTransparente}
+                onTransparent={setImageTransparente}
+                onExporterImage={() => void exporterImage()}
+                note={noteNatif}
+                disponibilite={disponibiliteEchange}
+              />
+            )}
+            {panneau === "coller-trace" && (
+              <PanneauCollerTrace
+                lecture={colle}
+                unite={uniteColle}
+                onUnite={setUniteColle}
+                echelle={echelleColle}
+                onEchelle={setEchelleColle}
+                poserSur={poserColle}
+                onPoserSur={setPoserColle}
+                onColler={collerTrace}
+                onAnnuler={() => { setPanneau(null); setColle(null); }}
+                echelleValide={echelleColleLue !== null}
+              />
+            )}
+            {panneau === "gabarit" && <PanneauGabarit gabarits={gabarits} choisi={gabaritChoisi} onChoisir={setGabaritChoisi} separateur={SEPARATEUR_DECIMAL} note={noteGabarit} executer={executerGabarit} disponibilite={disponibiliteCommandeGabarit} />}
+            {panneau === "extrusion" && <PanneauExtrusion s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} extrusion={lectureExtrusionL8} onHauteur={appliquerHauteurL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "composants-agence" && <PanneauComposantsAgence s={saisiesL8} poser={poserSaisiesL8} lecture={readOnly} fichiers={fichiersAgence} choisi={composantChoisiL8} onValeurs={() => executerModelisation("ajuster-baie")} onImporter={() => fichierComposantRef.current?.click()} onDeposer={importerComposantAgence} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "soustraire" && <PanneauSoustraire s={saisiesL8} poser={poserSaisiesL8} balises={Object.entries(hist.present.modele.annotations?.balises ?? {}).map(([id, b]) => ({ id, nom: b.nom }))} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "vues-mesures" && <PanneauVuesMesures s={saisiesL8} poser={poserSaisiesL8} exacte={camera.projection === "parallele"} onProjection={(x) => poserProjection(x ? "parallele" : "perspective")} eclatee={eclatement !== null} echelle={echelleL8} aire={aireL8} courbes={courbesL8} executer={executerModelisation} disponibilite={disponibiliteCommandeModelisation} note={noteL8} />}
+            {panneau === "versions-jalons" && (
+              <PanneauVersions
+                revision={revisionDe(hist.present.modele)}
+                statuts={statutsVersion}
+                onRevision={poserUneRevision}
+                lecture={readOnly}
+                jalons={registre.jalons}
+                choisi={jalonChoisi}
+                onChoisir={setJalonChoisi}
+                onPoserJalon={demanderNomJalon}
+                onDeriver={(j) => void actionsVersions.deriver(j)}
+                variantes={variantesDe(indexPlanches, plancheCourante).map(varianteAffichee)}
+                emissions={registre.emissions}
+                onDestinataire={(id, d) => poserRegistre(declarerDestinataire(registreRef.current, id, d))}
+                origine={origineCourante ? (origineCourante.nomJalon ? t("planche.version.origine-jalon", { planche: origineCourante.nomPlanche, jalon: origineCourante.nomJalon }) : t("planche.version.origine", { planche: origineCourante.nomPlanche })) : null}
+                onOuvrirOrigine={origineCourante && indexPlanches.planches.some((p) => p.id === origineCourante.planche) ? () => void actionsMenu.ouvrir(origineCourante.planche) : null}
+                disponibilite={disponibiliteCommandeVersion}
+              />
+            )}
+            {panneau === "comparer" && (
+              <PanneauComparer
+                choix={choixComparaison}
+                depuis={depuisEffectif}
+                vers={versEffectif}
+                onDepuis={setComparerDepuis}
+                onVers={setComparerVers}
+                comparaison={comparaison?.c ?? null}
+                refus={refusComparaison}
+                surligner={surlignerDifferences}
+                onSurligner={setSurlignerDifferences}
+              />
+            )}
+            {panneau === "brouillon" && (
+              <PanneauBrouillon
+                brouillon={
+                  originalBrouillon
+                    ? { original: nomAffiche(originalBrouillon), commence: infoCourante.creeA, ajoutes: changementsBrouillon?.ajoutes.length ?? 0, modifies: changementsBrouillon?.modifies.length ?? 0, supprimes: changementsBrouillon?.supprimes.length ?? 0 }
+                    : null
+                }
+                nomPlanche={nomCourant}
+                lecture={readOnly}
+                onEssayer={() => void actionsVersions.essayer()}
+                onAppliquer={() => void actionsVersions.appliquer()}
+                onGarder={() => void actionsVersions.garder()}
+                onAbandonner={() => void actionsVersions.abandonner()}
+                variantes={variantesDe(indexPlanches, originalBrouillon?.id ?? plancheCourante).map(varianteAffichee)}
+                nomJalon={(id) => registre.jalons.find((j) => j.id === id)?.nom ?? id}
+                onOuvrir={(id) => void actionsMenu.ouvrir(id)}
+                disponibilite={disponibiliteCommandeVersion}
+              />
+            )}
+            {panneau === "fiche-projet" && <PanneauFicheProjet fiche={ficheDe(hist.present.modele)} lecture={readOnly} onFiche={poserUneFiche} />}
+            {panneau === "accrochage" && <PanneauAccrochage force={forceAccrochage} presqueMm={presqueMm} onPresque={setPresqueMm} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} />}
+            {panneau === "metre-mesure" && (
+              <PanneauMetreMesure
+                derniere={metreMemo.derniere}
+                zeroNgf={referenceNiveaux}
+                unite={uniteProjet}
+                separateur={SEPARATEUR_DECIMAL}
+                guidePas={metreMemo.guide ? Math.hypot(metreMemo.guide.pas.x, metreMemo.guide.pas.y, metreMemo.guide.pas.z) : null}
+                reglages={reglagesMetre}
+                onReglages={setReglagesMetre}
+                executer={executerAccrochage}
+                disponibilite={disponibiliteCommandeAccrochage}
+                note={noteMetre}
+              />
+            )}
             {panneau === "numerotation" && (
               <PanneauNumerotation familles={famillesNumerotees} niveaux={niveauxNumerotation} apercu={apercuNumerotation} reglages={reglagesNumerotation} onReglages={setReglagesNumerotation} executer={executerNumerotation} disponibilite={disponibiliteCommandeNumerotation} lecture={readOnly} note={noteNumerotation} />
             )}
             {panneau === "controle" && rapportControle && (
-              <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
+              <PanneauControle
+                rapport={rapportControle}
+                choix={choixNettoyage}
+                onChoix={setChoixNettoyage}
+                executer={executerControle}
+                disponibilite={disponibiliteCommandeControle}
+                onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null}
+                lecture={readOnly}
+                note={noteControle}
+                vue={vueControle}
+                separateur={SEPARATEUR_DECIMAL}
+                defauts={defautsControle}
+                compte={compteControle}
+                reglages={reglagesControle(hist.present.modele)}
+                onReglages={changerSeuilsControle}
+                indice={indiceControle}
+                nomObjet={(id) => hist.present.modele.racine.occurrences[id]?.nom ?? t("planche.controle.objet")}
+                onIgnorer={() => montrerDefaut(indiceDefaut(defautsControle.length, indiceControle, 1))}
+                onSelectionnerDefaut={defautCourant ? () => montrerDefaut(indiceControle) : undefined}
+                optionsFondDao={optionsFondDao}
+                onOptionsFondDao={setOptionsFondDao}
+                apercuFondDao={apercuFondDao}
+                volumes={apercuVolumes}
+                regles={reglesPieces}
+                pieces={bilanPieces}
+                site={lignesSite}
+                onChargerRegles={chargerReglesPieces}
+                onRetirerRegles={() => operer(t("planche.pieces.retirer"), (m) => ({ modele: poserReglesPieces(m, null).modele }))}
+                onOuvrirEmplacement={() => {
+                  if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+                  setPanneau("emplacement");
+                }}
+                onLocaliserManque={localiserManqueSite}
+              />
             )}
-            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef} />}
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef}
+              coupe={(planId) => {
+                const plan = hist.present.modele.annotations?.plansDeCoupe[planId];
+                return plan ? (
+                  <SectionPlanCoupe
+                    modele={hist.present.modele}
+                    plan={plan}
+                    lecture={readOnly}
+                    separateur={SEPARATEUR_DECIMAL}
+                    pas={pasCoupe}
+                    onPas={setPasCoupe}
+                    echelle={echelleCoupe}
+                    onEchelle={setEchelleCoupe}
+                    onPlacer={(d) => actionPlan((m) => placerPlan(m, planId, d).modele, t("planche.coupe.distance"))}
+                    onDecaler={(d) => actionPlan((m) => decalerPlan(m, planId, d).modele, t("planche.coupe.deplacer"))}
+                    onProfondeur={(x) => actionPlan((m) => limiterProfondeur(m, planId, x).modele, t("planche.coupe.profondeur"))}
+                    executer={executerScene}
+                    disponibilite={disponibiliteCommandeScene}
+                  />
+                ) : null;
+              }}
+              echelle={<SectionRemiseEchelle mesureeDefaut={longueurMesure} separateur={SEPARATEUR_DECIMAL} mesuree={echelleMesuree} reelle={echelleReelle} onMesuree={setEchelleMesuree} onReelle={setEchelleReelle} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} note={noteEchelle} />} />}
             {panneau === "composants" && (
               <PanneauComposants
                 modele={hist.present.modele}
@@ -4895,6 +8704,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onReafficher={reafficher}
                 onSupprimerGuides={() => operer(t("planche.affichage.supprimer-guides"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.guides = {})).modele, selection: selectionRef.current.filter((id) => genreAnnotation(id) !== "guide") }))}
                 lecture={readOnly}
+              />
+            )}
+            {panneau === "scenes" && (
+              <SectionScenesL4
+                modele={hist.present.modele}
+                active={sceneActive}
+                lecture={readOnly}
+                onAppliquer={appliquerScene}
+                onMettreAJour={mettreAJourScene}
+                onModifier={modifierSceneL4}
+                onScenesTypes={(genres) => creerScenesTypes(genres)}
+                executer={executerScene}
+                disponibilite={disponibiliteCommandeScene}
               />
             )}
             {panneau === "scenes" && (
@@ -4940,7 +8762,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
-            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} onAppliquerStyle={appliquerStyleCotes} />}
+            {panneau === "info-modele" && (
+              <PanneauInfoModele
+                modele={hist.present.modele}
+                lecture={readOnly}
+                precision={precision}
+                onPrecision={poserPrecision}
+                onReglages={poserReglages}
+                onAppliquerStyle={appliquerStyleCotes}
+                unites={<SectionUnites modele={hist.present.modele} lecture={readOnly} onUnite={changerUniteProjet} />}
+                parametres={<SectionParametres modele={hist.present.modele} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} onParametre={poserParametreProjet} onSupprimerParametre={supprimerParametreProjet} />}
+              />
+            )}
             {panneau === "navigateur" && (
               <NavigateurPlanche
                 modele={hist.present.modele}
@@ -5119,6 +8952,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             {outilExtensionActif && vue.consigne ? " — " : ""}
             {vue.consigne}
           </span>
+          {panneau === "feuilles" && feuilleChoisie && <span className="planche-plan-etat" data-planche-feuilles-etat>{vue.consigne ? " | " : ""}{t("planche.feuilles.etat", { numero: feuilleChoisie.numero, format: `A${feuilleChoisie.format}`, sens: t(`planche.feuilles.sens.${feuilleChoisie.sens}`), nombre: String(feuilleChoisie.fenetres.length), echelles: compositionFeuille?.echelles.length ? ` (${compositionFeuille.echelles.map((e) => `1:${e}`).join(", ")})` : "" })}</span>}
           {panneau === "plan-vectoriel" && apercuPlan && <span className="planche-plan-etat" data-planche-plan-etat>{vue.consigne ? " | " : ""}{t("planche.plan.etat", { echelle: String(optionsPlan.echelle), traits: String(apercuPlan.classes), motifs: String(apercuPlan.motifs) })}</span>}
           {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable> | {verrouInapplicable}</span>}
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
@@ -5306,17 +9140,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             valider();
           }}
         >
-          <label htmlFor="planche-mesures">{vue.mesures?.libelle ?? t("planche.mesures")}</label>
+          <label htmlFor="planche-mesures">{attenteNomJalon ? t("planche.version.nom-jalon") : (vue.mesures?.libelle ?? t("planche.mesures"))}</label>
           <input
             id="planche-mesures"
             ref={champMesures}
-            inputMode="decimal"
+            inputMode={attenteNomJalon ? "text" : "decimal"}
             autoComplete="off"
             spellCheck={false}
             value={valeurMesures}
             title={t("planche.mesures.aide")}
             aria-describedby="planche-mesures-aide"
             data-planche-mesures
+            data-planche-mesures-jalon={attenteNomJalon || undefined}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && attenteNomJalonRef.current) {
+                setAttenteNomJalon(false);
+                setTexte(null);
+                setMessage(t("planche.version.jalon-abandon"));
+              }
+            }}
             onChange={(e) => setTexte(e.target.value ? { texte: e.target.value, statut: "frappe" } : null)}
           />
           <span id="planche-mesures-aide" className="sr-only">{t("planche.mesures.aide")}</span>
@@ -5326,6 +9168,33 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
       </div>
 
+      {importCours && (
+        <div className="planche-import-cours" role="dialog" aria-modal="false" aria-label={t("planche.import.titre")} data-planche-import-cours data-phase={importCours.phase}>
+          <h3>
+            <IconeSandbox nom="menuImporter" />
+            {t("planche.import.titre")}
+            <small>{t("planche.import.echap")}</small>
+          </h3>
+          <p className="planche-import-aide">{t("planche.import.aide", { fichier: importCours.fichier })}</p>
+          <div>{importCours.phase === "etalonnage" ? t("planche.import.etalonnage") : t("planche.import.lecture", { mo: (importCours.octets / 1e6).toLocaleString(LOCALE, { maximumFractionDigits: 1 }), etat: importCours.phase === "lecture" ? t("planche.import.enCours") : t("planche.import.terminee") })}</div>
+          <div className="planche-import-barre"><i style={{ width: importCours.phase === "lecture" || importCours.phase === "etalonnage" ? "30%" : "100%" }} className={importCours.phase === "insertion" ? undefined : "planche-import-indetermine"} /></div>
+          {importCours.phase === "insertion" && (
+            <>
+              <div data-planche-import-insertion>{t("planche.import.insertion", { fait: importCours.fait.toLocaleString(LOCALE), total: importCours.total.toLocaleString(LOCALE), pc: String(importCours.total > 0 ? Math.floor((importCours.fait / importCours.total) * 100) : 0) })}</div>
+              <div className="planche-import-barre"><i style={{ width: `${importCours.total > 0 ? (importCours.fait / importCours.total) * 100 : 0}%` }} /></div>
+            </>
+          )}
+          <button type="button" className="planche-import-annuler" data-planche-import-annuler onClick={() => annulerImportRef.current?.()}>
+            <IconeSandbox nom="fermer" />
+            {t("planche.import.annuler")}
+          </button>
+          {importCours.borne !== null && importCours.debit && (
+            <p className="planche-import-note" data-planche-import-borne={importCours.borne}>
+              {t("planche.import.borne", { borne: importCours.borne.toLocaleString(LOCALE), debit: importCours.debit.trianglesParSeconde.toLocaleString(LOCALE), date: new Date(importCours.debit.mesure).toLocaleDateString(LOCALE), budget: "20" })}
+            </p>
+          )}
+        </div>
+      )}
       {recherche && (
         <RechercheOutil
           lecture={readOnly}
@@ -5569,52 +9438,6 @@ function PanneauMateriaux({ modele, courant, lecture, onChoisir, onCreer }: { mo
             <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-materiau-couleur />
           </label>
           <button type="submit" data-planche-materiau-creer>{t("planche.materiau.creer")}</button>
-        </form>
-      )}
-    </div>
-  );
-}
-
-/** Panneau Balises (lot 5, P-9 : une balise = un calque) : visibilité, balise courante pour l'outil Balise. */
-function PanneauBalises({ modele, courante, lecture, onChoisir, onVisible, onCreer }: { modele: Modele; courante: string | null; lecture: boolean; onChoisir: (id: string) => void; onVisible: (id: string, visible: boolean) => void; onCreer: (nom: string, couleur: string) => void }) {
-  const balises = Object.values(modele.annotations?.balises ?? {});
-  const [nom, setNom] = useState("");
-  const [couleur, setCouleur] = useState("#2f7bd6");
-  return (
-    <div className="planche-liste-panneau" data-planche-balises>
-      <ul role="listbox" aria-label={t("panneau.balises")}>
-        {balises.map((b) => (
-          <li key={b.id} role="option" aria-selected={courante === b.id} className={courante === b.id ? "est-actif" : undefined} data-planche-balise={b.id}>
-            <input type="checkbox" checked={b.visible} disabled={lecture} aria-label={`${t("planche.balise.visible")} — ${b.nom}`} onChange={(e) => onVisible(b.id, e.target.checked)} data-planche-balise-visible />
-            <button type="button" className="planche-ligne-choix" onClick={() => onChoisir(b.id)}>
-              <span className="planche-pastille" style={{ background: b.couleur }} aria-hidden="true" />
-              {b.nom}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {balises.length === 0 && <p className="inspecteur-aide">{t("planche.balise.aucune")}</p>}
-      {!lecture && (
-        <form
-          className="planche-creation"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const n = nom.trim() || `${t("planche.balise.nouvelle")} ${balises.length + 1}`;
-            onCreer(n, couleur);
-            setNom("");
-          }}
-          data-planche-balise-creation
-        >
-          <h4>{t("planche.balise.nouvelle")}</h4>
-          <label>
-            {t("planche.materiau.nom")}
-            <input value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="off" data-planche-balise-nom />
-          </label>
-          <label>
-            {t("planche.materiau.couleur")}
-            <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-balise-couleur />
-          </label>
-          <button type="submit" data-planche-balise-creer>{t("planche.balise.creer")}</button>
         </form>
       )}
     </div>

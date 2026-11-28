@@ -20,6 +20,7 @@ import {
   type Id,
   type Matrice4,
   type Modele,
+  type StatutTravaux,
   IDENTITE,
   appliquer,
   aretesDeFace,
@@ -35,7 +36,7 @@ import {
   matriceChemin,
   transformerNormale,
 } from "../geometrie-libre.js";
-import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, etatOutil, geometrieVisible, inferer, montreDansEtat } from "../inference.js";
 import type { ContexteSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, dist, dot, normalize, scale, sub } from "../vecteur.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
@@ -87,40 +88,53 @@ export type ElementScene =
       readonly normale: Vec3;
     };
 
-const caches = new WeakMap<Modele, readonly ElementScene[]>();
+const caches = new WeakMap<Modele, Map<string, readonly ElementScene[]>>();
 
-/** Toutes les arêtes (masquées comprises) et faces du modèle, en coordonnées monde, avec leur chemin d'occurrences. */
-export function scene(m: Modele): readonly ElementScene[] {
-  const c0 = caches.get(m);
+/**
+ * Toutes les arêtes (masquées comprises) et faces du modèle, en coordonnées monde, avec leur chemin d'occurrences.
+ * (Cas 4, C4 étape 5) Avec un état des travaux, la géométrie des contextes que cet état masque est écartée (leurs
+ * enfants au statut explicite différent restent jugés à leur tour).
+ */
+export function scene(m: Modele, etat?: "existant" | "projete"): readonly ElementScene[] {
+  const cle = etat ?? "";
+  const parEtat = caches.get(m) ?? new Map<string, readonly ElementScene[]>();
+  caches.set(m, parEtat);
+  const c0 = parEtat.get(cle);
   if (c0) return c0;
   const r: ElementScene[] = [];
-  const parcourir = (c: Contexte, M: Matrice4, chemin: readonly Id[]): void => {
+  // (Cas 2, lot 4) Ce que porte une balise masquée ou verrouillée n'est pas visé : ni sélection, ni modification.
+  const balises = m.annotations?.balises;
+  const horsVisee = (b: Id | undefined) => !!b && (balises?.[b]?.visible === false || balises?.[b]?.verrouillee === true);
+  const parcourir = (c: Contexte, M: Matrice4, chemin: readonly Id[], statut?: StatutTravaux): void => {
     if (chemin.length > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
-    for (const a of Object.values(c.aretes)) {
-      r.push({ genre: "arete", id: a.id, chemin, a: p(a.a), b: p(a.b), masquee: a.masquee === true, adoucie: a.adoucie === true });
-    }
-    for (const f of Object.values(c.faces)) {
-      if (f.masquee) continue;
-      r.push({
-        genre: "face",
-        id: f.id,
-        chemin,
-        exterieur: f.exterieur.map(p),
-        trous: f.trous.map((b) => b.map(p)),
-        normale: normalize(transformerNormale(M, f.normale)),
-      });
+    const montre = montreDansEtat(statut, etat);
+    if (montre) {
+      for (const a of Object.values(c.aretes)) {
+        if (horsVisee(a.balise)) continue;
+        r.push({ genre: "arete", id: a.id, chemin, a: p(a.a), b: p(a.b), masquee: a.masquee === true, adoucie: a.adoucie === true });
+      }
+      for (const f of Object.values(c.faces)) {
+        if (f.masquee || horsVisee(f.balise)) continue;
+        r.push({
+          genre: "face",
+          id: f.id,
+          chemin,
+          exterieur: f.exterieur.map(p),
+          trous: f.trous.map((b) => b.map(p)),
+          normale: normalize(transformerNormale(M, f.normale)),
+        });
+      }
     }
     for (const o of Object.values(c.occurrences)) {
       if (o.masquee) continue;
-      const bal = o.balise ? m.annotations?.balises[o.balise] : undefined;
-      if (bal && !bal.visible) continue;
+      if (horsVisee(o.balise)) continue;
       const d = m.definitions[o.definition];
-      if (d) parcourir(d.contenu, composer(M, o.transformation), [...chemin, o.id]);
+      if (d) parcourir(d.contenu, composer(M, o.transformation), [...chemin, o.id], o.statut ?? statut);
     }
   };
   parcourir(m.racine, IDENTITE, []);
-  caches.set(m, r);
+  parEtat.set(cle, r);
   return r;
 }
 
@@ -143,7 +157,10 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const retenir = (id: Id, t: number): void => {
     if (t > 0 && (!meilleur || t < meilleur.t)) meilleur = { id, t };
   };
+  // (Cas 2, lot 4) Annotation portée par une balise masquée ou verrouillée : jamais visée.
+  const libre = (b: Id | undefined) => !b || (a.balises[b]?.visible !== false && a.balises[b]?.verrouillee !== true);
   for (const p of Object.values(a.plansDeCoupe)) {
+    if (!libre(p.balise)) continue;
     const den = dot(p.normale, V);
     if (Math.abs(den) < 1e-9) continue;
     const t = dot(p.normale, sub(p.origine, r.origine)) / den;
@@ -154,8 +171,9 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: 
   const pres = (id: Id, P: Vec3, tol: number): void => {
     if (ecartRayonPointLibre(r, P) <= tol) retenir(id, Math.max(0, dot(sub(P, r.origine), V)));
   };
-  for (const c of Object.values(a.cotes)) pres(c.id, c.position, tolerance * 3);
+  for (const c of Object.values(a.cotes)) if (libre(c.balise)) pres(c.id, c.position, tolerance * 3);
   for (const t of Object.values(a.textes)) {
+    if (!libre(t.balise)) continue;
     if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
     // Texte écran : étiquette posée en pixels depuis son coin haut gauche ; le clic la vise dans une boîte de 160 × 28 px.
     else if (ecran && ecran.x >= t.ecran.x - 4 && ecran.x <= t.ecran.x + 160 && ecran.y >= t.ecran.y - 4 && ecran.y <= t.ecran.y + 28) retenir(t.id, 1e-6);
@@ -229,10 +247,11 @@ export function viser(
   r: Rayon,
   tolerance: number,
   filtreArete: (a: Extract<ElementScene, { genre: "arete" }>) => boolean = (a) => !a.masquee && !a.adoucie,
+  etat?: "existant" | "projete",
 ): ElementScene | null {
   let arete: { el: ElementScene; d: number; t: number } | null = null;
   let face: { el: ElementScene; t: number } | null = null;
-  for (const el of scene(m)) {
+  for (const el of scene(m, etat)) {
     if (el.genre === "arete") {
       if (!filtreArete(el)) continue;
       const x = ecartRayonSegment(r, el.a, el.b);
@@ -486,7 +505,7 @@ function sortieContexte(ctx: ContexteOutil): { dans: Id | null; chemin?: Id[] } 
 /** Clic de sélection (partagé avec le Lasso) : transition de sélection / contexte. */
 export function clicSelection<E>(etat: E, ev: Extract<EvenementOutil, { genre: "clic" }>, ctx: ContexteOutil, mod: Modificateurs): Transition<E> {
   const nombre: 1 | 2 | 3 = ev.triple ? 3 : ev.double ? 2 : 1;
-  const el = viser(ctx.modele, ev.rayon, ev.tolerance);
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, undefined, ctx.etatTravaux);
   const c = el ? cibleDans(el, ctx.dans, ctx.chemin) : null;
   if (!c) {
     // Annotation (plan de coupe, cote, texte, guide) : sélectionnée comme une entité (Suppr l'efface).
@@ -535,7 +554,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
       case "glisser": {
         if (!etat.appui) return { etat };
         if (etat.poignee) {
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre, ...axesDeSaisie(ctx) });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)), depart: etat.poignee.ancre, ...axesDeSaisie(ctx) });
           return { etat: { ...etat, poignee: { ...etat.poignee, courant: i.point, inference: i } } };
         }
         if (!etat.cadre && distance2(etat.appui, ev.ecran) <= SEUIL_GLISSER) return { etat };
@@ -607,7 +626,10 @@ export type ModeSelectionEtendue = "aretes-bordantes" | "faces-connectees" | "to
 /** Sous-menu « Sélectionner ▸ » du menu contextuel (§5.8) : nouvelle sélection à partir de la sélection courante. */
 export function etendreSelection(m: Modele, selection: readonly Id[], mode: ModeSelectionEtendue, dans?: Id): Id[] {
   const c = contexte(m, dans);
-  const visibles = (ids: Iterable<Id>): Id[] => [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee));
+  // Cas 2, lot 4 (n° 82) : ni les entités masquées, ni celles d'une balise masquée ou verrouillée.
+  const horsBalise = (b: Id | undefined) => b !== undefined && (m.annotations?.balises[b]?.visible === false || m.annotations?.balises[b]?.verrouillee === true);
+  const visibles = (ids: Iterable<Id>): Id[] =>
+    [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee) && !horsBalise((c.faces[id] ?? c.aretes[id] ?? c.occurrences[id])?.balise));
   const tout = visibles([...Object.keys(c.faces), ...Object.keys(c.aretes), ...Object.keys(c.occurrences)]);
   const sel = new Set(selection.filter((id) => c.faces[id] || c.aretes[id] || c.occurrences[id]));
   switch (mode) {

@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { MAX_COUCHES, calculerSeuils, classer, couleurCategorie, couleurPixel, couleursPalette, formatNombre, legende, COULEUR_ABSENTE, type ValeurIndicateur, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
+import { MAX_COUCHES, calculerSeuils, classer, couleurCategorie, couleurPixel, couleursPalette, formatNombre, legende, COULEUR_ABSENTE, type ValeurIndicateur, type DescriptionRaster, memeComposition, type CoucheComposee, type EntreeLegende, type ClassificationLue, type Composition, type FiltreCouche, type StyleCouche } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -179,16 +179,25 @@ export function basculerTheme(c: Composition, couches: readonly CoucheDeTheme[])
  * palette séquentielle jaune → rouge, couleur grise pour une valeur absente (jamais zéro). Renvoie la couleur de chaque
  * code et les entrées de légende (bornes, effectifs) ; null si moins de deux valeurs présentes.
  */
-export function colorationIndicateur(vs: ReadonlyMap<string, ValeurIndicateur>, unite: string | null): { couleurs: Map<string, string>; entrees: EntreeLegende[] } | null {
+export function colorationIndicateur(vs: ReadonlyMap<string, ValeurIndicateur>, unite: string | null): {
+  couleurs: Map<string, string>; entrees: EntreeLegende[];
+  /** P9 (champs additifs) : classification nommée (méthode, nombre effectif, palette) et classe de chaque code (L5). */
+  classification: ClassificationLue; classeDe: Map<string, number | "absente">;
+} | null {
   const liste = [...vs.values()];
   const seuils = calculerSeuils(liste, "quantiles", 5);
   if (!seuils.length) return null;
   const couleurs = couleursPalette("jaune-rouge", seuils.length + 1);
   const m = new Map<string, string>();
+  const classeDe = new Map<string, number | "absente">();
   for (const [code, v] of vs) {
     const k = classer(v, seuils);
+    classeDe.set(code, k);
     m.set(code, k === "absente" ? COULEUR_ABSENTE : couleurs[k]!);
   }
   const format = (x: number) => `${formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)}${unite ? ` ${unite}` : ""}`;
-  return { couleurs: m, entrees: legende(liste, seuils, couleurs, format).filter((e) => e.classe !== "absente" || e.effectif > 0) };
+  return {
+    couleurs: m, entrees: legende(liste, seuils, couleurs, format).filter((e) => e.classe !== "absente" || e.effectif > 0),
+    classification: { methode: "quantiles", classes: seuils.length + 1, palette: "jaune-rouge", decision: "D-GD-55" }, classeDe,
+  };
 }

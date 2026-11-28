@@ -5,6 +5,7 @@
  * historique `CLE_BROUILLON` : aucun dessin déjà conservé n'est perdu ni migré. Partie pure (index) séparée des
  * écritures. Lecture tolérante : un index illisible est ignoré (jamais une erreur bloquante) et recomposé.
  */
+import type { OrigineVariante } from "@parcours/sandbox-planche-model";
 import { localStore } from "../../../lib/local-store";
 import { cleDe } from "./brouillon";
 
@@ -23,6 +24,10 @@ export interface InfoPlanche {
   readonly altitudeRef: number | null;
   readonly creeA: string;
   readonly modifieA: string;
+  /** (Cas 2, lot 7, n° 76) Variante : Planche et jalon d'origine ; absent = Planche d'origine. */
+  readonly origine?: OrigineVariante;
+  /** (Cas 2, lot 7, n° 73) Brouillon d'essai : identifiant de l'original, que le brouillon ne touche pas. */
+  readonly brouillonDe?: string;
 }
 
 export interface IndexPlanches {
@@ -49,7 +54,13 @@ export function lireIndex(texte: string | null): IndexPlanches | null {
       const alt = p["altitudeRef"];
       if (alt !== null && !(typeof alt === "number" && Number.isFinite(alt))) return null;
       if (planches.some((x) => x.id === p["id"])) return null;
-      planches.push({ id: p["id"], nom: p["nom"], altitudeRef: alt, creeA: p["creeA"], modifieA: p["modifieA"] });
+      const o = p["origine"];
+      const origine =
+        estObjet(o) && typeof o["planche"] === "string" && typeof o["nomPlanche"] === "string" && (o["jalon"] === undefined || typeof o["jalon"] === "string") && (o["nomJalon"] === undefined || typeof o["nomJalon"] === "string")
+          ? ({ planche: o["planche"], nomPlanche: o["nomPlanche"], ...(typeof o["jalon"] === "string" ? { jalon: o["jalon"] } : {}), ...(typeof o["nomJalon"] === "string" ? { nomJalon: o["nomJalon"] } : {}) } satisfies OrigineVariante)
+          : undefined;
+      const brouillonDe = typeof p["brouillonDe"] === "string" ? p["brouillonDe"] : undefined;
+      planches.push({ id: p["id"], nom: p["nom"], altitudeRef: alt, creeA: p["creeA"], modifieA: p["modifieA"], ...(origine ? { origine } : {}), ...(brouillonDe ? { brouillonDe } : {}) });
     }
     if (planches.length === 0) return null;
     const courante = planches.some((p) => p.id === brut["courante"]) ? (brut["courante"] as string) : (planches[0] as InfoPlanche).id;
@@ -93,6 +104,21 @@ export function avecNouvelle(idx: IndexPlanches, info: InfoPlanche): IndexPlanch
 export function avecInfo(idx: IndexPlanches, id: string, changes: Partial<Pick<InfoPlanche, "nom" | "altitudeRef" | "modifieA">>): IndexPlanches {
   return { ...idx, planches: idx.planches.map((p) => (p.id === id ? { ...p, ...changes } : p)) };
 }
+
+/** (Cas 2, lot 7) Le brouillon `id` devient une variante : il n'est plus un brouillon et garde le lien vers son origine. */
+export function enVariante(idx: IndexPlanches, id: string, nom: string, origine: OrigineVariante): IndexPlanches {
+  return {
+    ...idx,
+    planches: idx.planches.map((p) => {
+      if (p.id !== id) return p;
+      const { brouillonDe: _b, ...reste } = p;
+      return { ...reste, nom, origine };
+    }),
+  };
+}
+
+/** Variantes d'une Planche (n° 76), dans l'ordre de création. */
+export const variantesDe = (idx: IndexPlanches, id: string): readonly InfoPlanche[] => idx.planches.filter((p) => p.origine?.planche === id && !p.brouillonDe);
 
 export function avecCourante(idx: IndexPlanches, id: string): IndexPlanches {
   return idx.planches.some((p) => p.id === id) ? { ...idx, courante: id } : idx;

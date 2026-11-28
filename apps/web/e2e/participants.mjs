@@ -208,7 +208,7 @@ try {
   await ligneLecteur.locator('[data-commande-collaboration="suspendre-participation"]').focus();
   await page.keyboard.press("Control+Alt+Shift+Digit9");
   await page.waitForSelector('[data-impact="suspendre"]', { timeout: 10000 });
-  check("raccourci Ctrl+Alt+Maj+9 : aperçu d'impact de la suspension affiché", (await page.locator('[data-impact="suspendre"] li').count()) >= 3);
+  check("raccourci Ctrl+Maj+V : aperçu d'impact de la suspension affiché", (await page.locator('[data-impact="suspendre"] li').count()) >= 3);
   await axe(page, "Équipe et participants — aperçu d'impact (bureau)");
   await page.locator("[data-confirm]").click();
   await page.waitForFunction((email) => document.querySelector(`tr[data-participant="${email}"] [data-etat-participation]`)?.getAttribute("data-etat-participation") === "suspendue", cReader.email, { timeout: 10000 });

@@ -8,7 +8,7 @@ import { AttributionControl, Map as CarteMapLibre, Popup, ScaleControl, setWorke
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { compterClic, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, zoomSurGrappe, type Composition, type SerieClics } from "@parcours/geodata-model";
+import { compterClic, COULEUR_ABSENTE, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, zoomSurGrappe, type Composition, type SerieClics } from "@parcours/geodata-model";
 import { adresseCourbes, adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, adresseTuilesTerrain, type Fond } from "../client";
 import type { AffichageTerrain, DonneesAffichage, EtatCouche, EvenementsMoteur, MoteurCarte, ObjetDesigne, OutilCarte } from "./moteur";
 
@@ -19,6 +19,17 @@ const FOND_NEUTRE = "#eef2f0";
 /** Carte d'arrivée (P1) : source et calques hors composition (jamais enregistrés, jamais exportés). */
 const SOURCE_ACCUEIL = "gd-accueil";
 const CALQUES_ACCUEIL = ["gd-accueil-remplissage", "gd-accueil-contour"] as const;
+/** Signes de l'analyse de site (P13) : calques hors composition. */
+const CALQUES_SITE = ["gd-site-cercle", "gd-site-point"] as const;
+
+/** Cercle géodésique approché (64 sommets) d'un rayon en mètres autour d'un point WGS 84 (signe seulement, aucune mesure). */
+function cercleSite(lon: number, lat: number, rayonM: number): number[][] {
+  const dLat = rayonM / 111_320;
+  const dLon = rayonM / (111_320 * Math.max(Math.cos((lat * Math.PI) / 180), 1e-6));
+  return Array.from({ length: 65 }, (_, i) => { const a = (2 * Math.PI * (i % 64)) / 64; return [lon + dLon * Math.cos(a), lat + dLat * Math.sin(a)]; });
+}
+/** Image du motif de la valeur absente (P10). */
+const IMAGE_HACHURES = "gd-hachures-absente";
 
 export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev: EvenementsMoteur): MoteurCarte {
   const carte = new CarteMapLibre({
@@ -121,6 +132,21 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     ev.surDeplacement({ lon: Number(c.lng.toFixed(6)), lat: Number(c.lat.toFixed(6)), zoom: Number(carte.getZoom().toFixed(2)), cap: Number(carte.getBearing().toFixed(1)) });
   });
 
+  /** Motif de hachures de la valeur absente (P10) : traits #464646 sur fond transparent, ajouté une fois au style. */
+  const ajouterHachures = () => {
+    if (carte.hasImage(IMAGE_HACHURES)) return;
+    const n = 8;
+    const c = document.createElement("canvas");
+    c.width = n; c.height = n;
+    const g = c.getContext("2d");
+    if (!g) return;
+    g.strokeStyle = "#464646";
+    g.lineWidth = 1.5;
+    // Diagonales raccordées d'une tuile à l'autre (deux segments débordants).
+    for (const d of [-n, 0, n]) { g.beginPath(); g.moveTo(d, n); g.lineTo(d + n, 0); g.stroke(); }
+    carte.addImage(IMAGE_HACHURES, g.getImageData(0, 0, n, n), { pixelRatio: 1 });
+  };
+
   const dessinerTrace = () => {
     const src = carte.getSource("gd-trace") as GeoJSONSource | undefined;
     if (!src) return;
@@ -179,7 +205,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
 
   /** Rendus et sources d'une couche vectorielle retirés (la source des étiquettes est gardée : elle ne dépend pas du regroupement). */
   function retirerRendus(id: string) {
-    for (const suffixe of ["-remplissage", "-contour", "-selection", "-lignes", "-points", "-nombres", "-raster", "-etiquettes", "-valeurs"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+    for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-nombres", "-raster", "-etiquettes", "-valeurs"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
     if (carte.getSource(id)) carte.removeSource(id);
     sourcesRegroupees.delete(id);
   }
@@ -227,6 +253,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         sourcesRegroupees.set(id, regrouper);
         carte.addSource(id, { type: "vector", tiles: [adresseTuiles(k.coucheId, regrouper)], minzoom: 0, maxzoom: 14, promoteId: "code" });
         carte.addLayer({ id: `${id}-remplissage`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#2b8cbe", "fill-opacity": 0.8 } });
+        // Valeur absente (P10, carto C2) : hachures par-dessus le gris, jamais la couleur seule (WCAG 1.4.1), comme l'export.
+        ajouterHachures();
+        carte.addLayer({ id: `${id}-absentes`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], layout: { visibility: "none" }, paint: { "fill-pattern": IMAGE_HACHURES } });
         carte.addLayer({ id: `${id}-contour`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#29434a", "line-width": 0.8 } });
         carte.addLayer({ id: `${id}-lignes`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#2b8cbe", "line-width": 2 } });
         // Rayon selon le nombre de points de la grappe (1 = point seul, propriété absente hors regroupement).
@@ -243,6 +272,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       // Ordre : la première couche est dessous ; les remplissages ici, les contours et objets linéaires ensuite, au-dessus
       // de tous les remplissages (une bordure n'est jamais masquée par le remplissage d'une autre couche).
       carte.moveLayer(`${id}-remplissage`, "gd-zones-remplissage");
+      carte.moveLayer(`${id}-absentes`, "gd-zones-remplissage");
       const visible = k.visible ? "visible" : "none";
       for (const suffixe of ["-remplissage", "-contour", "-lignes", "-points", "-nombres", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
       const codes = d.filtres.get(k.coucheId);
@@ -263,7 +293,16 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       // Coloration selon l'indicateur actif (D-GD-55) : classes de valeurs lues en base ; contours blancs pour lire les classes.
       const parIndicateur = d.couleursIndicateur?.get(k.coucheId);
       const contour: string | ExpressionSpecification = parIndicateur ? "#ffffff" : couleur;
-      if (parIndicateur?.size) couleur = ["match", ["get", "code"], ...[...parIndicateur].flat(), "#9e9e9e"] as unknown as ExpressionSpecification;
+      if (parIndicateur?.size) couleur = ["match", ["get", "code"], ...[...parIndicateur].flat(), COULEUR_ABSENTE] as unknown as ExpressionSpecification;
+      // Hachures (P10) : codes colorés en gris de l'absence, et codes sans valeur reçue (même repli que la couleur).
+      const presents = parIndicateur ? [...parIndicateur].filter(([, c]) => c !== COULEUR_ABSENTE).map(([code]) => code) : [];
+      const hachures = !!parIndicateur?.size && k.visible;
+      carte.setLayoutProperty(`${id}-absentes`, "visibility", hachures ? "visible" : "none");
+      if (hachures) {
+        const absente: ExpressionSpecification = presents.length ? ["!", ["in", ["get", "code"], ["literal", presents]]] : ["boolean", true];
+        carte.setFilter(`${id}-absentes`, filtreCode ? ["all", ["==", ["geometry-type"], "Polygon"], filtreCode, absente] : ["all", ["==", ["geometry-type"], "Polygon"], absente]);
+        carte.setPaintProperty(`${id}-absentes`, "fill-opacity", k.opacite);
+      }
       carte.setPaintProperty(`${id}-remplissage`, "fill-color", couleur);
       carte.setPaintProperty(`${id}-remplissage`, "fill-opacity", k.opacite);
       // Contour de la couleur de l'entité, opaque même à 0 % de remplissage ; épaisseur selon le rang administratif.
@@ -287,6 +326,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     // Libellés et valeurs au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
     for (const k of ordre) for (const suffixe of ["-etiquettes", "-valeurs"]) if (carte.getLayer(`${PREFIXE}${k.coucheId}${suffixe}`)) carte.moveLayer(`${PREFIXE}${k.coucheId}${suffixe}`, "gd-trace-ligne");
     couchesAffichees = voulues;
+    // Couches dont la valeur absente est hachurée sur la carte (P10) : attribut lisible par la recette, aucun rendu.
+    conteneur.setAttribute("data-gd-hachures", voulues.filter((id) => carte.getLayer(`${id}-absentes`) && carte.getLayoutProperty(`${id}-absentes`, "visibility") === "visible").map((id) => id.slice(PREFIXE.length)).join(" "));
     (carte.getSource("gd-zones") as GeoJSONSource).setData(d.zones as FeatureCollection);
     attribution.options.customAttribution = [...d.attributions, ...(fond.attribution ? [fond.attribution] : [])];
     (attribution as unknown as { _updateAttributions(): void })._updateAttributions();
@@ -564,6 +605,21 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       mini = { carte: m, conteneur: conteneurMini, coucheId };
       m.on("load", synchroniserMini);
     },
+    afficherSite(site) {
+      const f = () => {
+        if (!carte.getSource("gd-site")) {
+          carte.addSource("gd-site", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+          carte.addLayer({ id: CALQUES_SITE[0], type: "line", source: "gd-site", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#c77b35", "line-width": 2, "line-dasharray": [2, 2] } });
+          carte.addLayer({ id: CALQUES_SITE[1], type: "circle", source: "gd-site", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#c77b35", "circle-radius": 7, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+        }
+        (carte.getSource("gd-site") as GeoJSONSource).setData(site ? { type: "FeatureCollection", features: [
+          { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [cercleSite(site.lon, site.lat, site.rayonM)] } },
+          { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [site.lon, site.lat] } },
+        ] } : { type: "FeatureCollection", features: [] });
+        conteneur.setAttribute("data-gd-site-signes", site ? "1" : "");
+      };
+      if (pret) f(); else carte.once("load", f);
+    },
     afficherAccueil(coucheId) {
       accueilVoulu = coucheId;
       if (pret) { posees(); appliquerAccueil(); } else carte.once("load", () => { posees(); appliquerAccueil(); });
@@ -590,7 +646,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (!pret) return;
       // Le terrain (TER-05) n'appartient pas à la carte enregistrée : ses droits d'export ne sont pas jugés par l'export
       // de la carte, il n'entre donc jamais dans l'image (export PNG, impression).
-      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_ACCUEIL, ...CALQUES_TERRAIN]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait", ...CALQUES_ACCUEIL, ...CALQUES_TERRAIN, ...CALQUES_SITE]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
       await new Promise<void>((resoudre) => {
         const fin = setTimeout(resoudre, 2000);
         carte.once("idle", () => { clearTimeout(fin); resoudre(); });

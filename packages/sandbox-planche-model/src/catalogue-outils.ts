@@ -779,6 +779,36 @@ export const OUTILS: readonly Outil[] = [
     statutReleve: "fadi",
   },
   {
+    id: "reserve",
+    libelle: "Réserve",
+    libelleSketchUp: "—",
+    famille: "annotation",
+    raccourci: null,
+    emplacement: "grille",
+    etapes: [e("Click the object or point where the snag is pinned; its record is filled in the Snags panel.", "Cliquez l'objet ou le point où épingler la réserve ; la fiche se remplit dans le panneau Réserves.", null, null, null)],
+    modificateurs: [],
+    inferences: ["extremite", "milieu", "sur-arete", "sur-face"],
+    apresFin: "La réserve (ouverte, datée du jour) est épinglée en un pas ; le panneau Réserves s'ouvre sur sa fiche ; l'outil reste actif.",
+    offre: "gratuite",
+    sourceReference: "ecarts-fadi-reserves.md § 1",
+    statutReleve: "fadi",
+  },
+  {
+    id: "calage",
+    libelle: "Calage",
+    libelleSketchUp: "—",
+    famille: "annotation",
+    raccourci: null,
+    emplacement: "grille",
+    etapes: [e("Click the backdrop to place the next registration point; its position is entered in the Registered backdrops panel.", "Cliquez le fond pour poser le point de calage suivant ; la position se saisit dans le panneau Fonds calés.", null, null, null)],
+    modificateurs: [],
+    inferences: [],
+    apresFin: "Le point (A, B, C…) est posé au pixel visé en un pas ; le panneau Fonds calés s'ouvre sur son fond ; l'outil reste actif.",
+    offre: "gratuite",
+    sourceReference: "ecarts-fadi-fonds.md § 1",
+    statutReleve: "fadi",
+  },
+  {
     id: "profiles-aretes",
     libelle: "Profilés depuis arêtes",
     libelleSketchUp: "Profiles from Edges",
@@ -2399,8 +2429,22 @@ const SYNONYMES: Readonly<Record<string, string>> = {
 };
 const AFFICHAGE: Readonly<Record<string, string>> = { ctrl: "Ctrl", alt: "Alt", maj: "Maj", espace: "Espace" };
 
-/** Forme canonique d'un raccourci : modificateurs dans l'ordre Ctrl, Alt, Maj, puis la touche (`Ctrl+Maj+E`). */
+/**
+ * Raccourcis en deux temps (décision du maître d'ouvrage, 27 novembre 2026) : les touches libres étant épuisées, une
+ * commande peut se taper en deux temps, la touche d'entrée puis une touche (« Ctrl+Maj+Espace, R »).
+ */
+export const ENTREE_DEUX_TEMPS = "Ctrl+Maj+Espace";
+/** Seconde touche d'un raccourci en deux temps (« R », « Maj+R »), sinon null. */
+export function secondTemps(r: string): string | null {
+  const [a, b, ...reste] = r.split(",");
+  if (b === undefined || reste.length > 0) return null;
+  return normaliserRaccourci(a!) === ENTREE_DEUX_TEMPS ? normaliserRaccourci(b) : null;
+}
+
+/** Forme canonique d'un raccourci : modificateurs dans l'ordre Ctrl, Alt, Maj, puis la touche (`Ctrl+Maj+E`) ; en deux
+ * temps, chaque temps sous cette forme, séparés par « , » (`Ctrl+Maj+Espace, R`). */
 export function normaliserRaccourci(r: string): string {
+  if (r.includes(",")) return r.split(",").map((x) => normaliserRaccourci(x)).join(", ");
   const morceaux = r
     .split("+")
     .map((x) => x.trim())

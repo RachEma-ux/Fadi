@@ -11,8 +11,9 @@
  * l'inférence courante, Échap annule. Un lecteur (`ctx.lecture`) mesure sans rien créer (CA-MET-4).
  */
 import { type Id, type Modele, modifierAnnotations as modifierGuides, redimensionner } from "../geometrie-libre.js";
-import { type Inference, type Verrou, geometrieVisible, inferer } from "../inference.js";
+import { type Inference, type Verrou, etatOutil, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
+import { repeterGuide } from "../saisie-projet.js";
 import { type Vec3, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, prefixe, axesDeSaisie } from "./commun-formes.js";
 import { type VerrouFleche, axeDeToucheFleche, consigneDe, libelleMesuresDe, reference, vueModif } from "./commun-modif.js";
@@ -43,6 +44,10 @@ export interface EtatMetre {
   readonly confirmation: { readonly facteur: number; readonly de: number; readonly a: number } | null;
   readonly texte: string | null;
   readonly erreur: string | null;
+  /** (Cas 2, lot 2, n° 87) Dernier guide créé et son pas depuis le départ : « x5 » le répète, « /5 » divise le pas. */
+  readonly dernierGuide?: { readonly id: Id; readonly pas: Vec3 } | null;
+  /** (Cas 2, lot 2, n° 27) Dernière mesure faite (guide créé ou mesure seule), décomposée par le panneau Mètre · Mesure. */
+  readonly derniere?: { readonly a: Vec3; readonly b: Vec3 } | null;
 }
 
 const initial = (): EtatMetre => ({
@@ -72,7 +77,7 @@ function inferer2(e: EtatMetre, ctx: ContexteOutil, rayon: Rayon, tolerance: num
   return inferer({
     rayon,
     tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: geometrieVisible(ctx.modele, etatOutil(ctx)),
     ...(e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
@@ -96,7 +101,7 @@ function aireFace(m: Modele, id: Id): number | null {
 /** Direction de l'arête visée par une inférence « sur l'arête » ou « milieu ». */
 function directionAreteDe(i: Inference, ctx: ContexteOutil): Vec3 | null {
   if (i.entite === undefined || (i.type !== "sur-arete" && i.type !== "milieu")) return null;
-  const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
+  const a = geometrieVisible(ctx.modele, etatOutil(ctx)).aretes.find((x) => x.id === i.entite);
   return a ? normalize(sub(a.b, a.a)) : null;
 }
 
@@ -108,7 +113,7 @@ export function formaterAire(v: number, sep: "." | ","): string {
 function creer(e: EtatMetre, ctx: ContexteOutil, arrivee: Vec3, accroche: boolean): Transition<EtatMetre> {
   const depart = e.depart as Vec3;
   if (ctx.lecture || e.mode === "mesure" || dist(arrivee, depart) < 1e-9) {
-    return { etat: { ...e, etape: 3, mesure: { a: depart, b: arrivee }, texte: null, erreur: null, confirmation: null } };
+    return { etat: { ...e, etape: 3, mesure: { a: depart, b: arrivee }, derniere: { a: depart, b: arrivee }, texte: null, erreur: null, confirmation: null } };
   }
   const direction = e.directionArete;
   const m = ctx.modele;
@@ -135,8 +140,10 @@ function creer(e: EtatMetre, ctx: ContexteOutil, arrivee: Vec3, accroche: boolea
         return g;
       });
     })();
-    if (!resultat) return { etat: { ...e, etape: 3, mesure: { a: depart, b: arrivee }, texte: null, erreur: null, confirmation: null } };
-    return { etat: { ...repos(e), texte: e.texte, erreur: null }, modele: resultat.modele, selection: ctx.selection, operation: e.mode === "points" ? "Point de guide" : "Ligne de guide" };
+    if (!resultat) return { etat: { ...e, etape: 3, mesure: { a: depart, b: arrivee }, derniere: { a: depart, b: arrivee }, texte: null, erreur: null, confirmation: null } };
+    const guide = (resultat as { extra?: unknown }).extra;
+    const dernierGuide = typeof guide === "string" ? { id: guide, pas: sub(arrivee, depart) } : null;
+    return { etat: { ...repos(e), texte: e.texte, erreur: null, dernierGuide, derniere: { a: depart, b: arrivee } }, modele: resultat.modele, selection: ctx.selection, operation: e.mode === "points" ? "Point de guide" : "Ligne de guide" };
   } catch (err) {
     return { etat: { ...repos(e), erreur: messageErreur(err) } };
   }
@@ -193,6 +200,19 @@ export const machineMetre: MachineOutil<EtatMetre> = {
             return { etat: { ...repos(etat), texte: null, erreur: null }, modele: r.modele, selection: [], operation: "Redimensionner la Planche" };
           } catch (err) {
             return { etat: { ...repos(etat), erreur: messageErreur(err) } };
+          }
+        }
+        // (Cas 2, lot 2, n° 87) Après un guide : « x5 » / « 5x » le répète cinq fois au même pas, « /5 » divise le pas.
+        if (etat.etape !== 2 && etat.dernierGuide && !ctx.lecture) {
+          const r = analyserSaisie(ev.texte, contexteSaisie("distance-reseau", ctx));
+          if (r.genre === "reseau") {
+            try {
+              const g = etat.dernierGuide;
+              const res = repeterGuide(ctx.modele, g.id, g.pas, r.mode === "copies" ? { copies: r.nombre } : { divisions: r.nombre });
+              return { etat: { ...etat, texte: null, erreur: null, dernierGuide: null }, modele: res.modele, selection: ctx.selection, operation: "Guide en réseau" };
+            } catch (err) {
+              return { etat: { ...etat, texte: ev.texte, erreur: messageErreur(err) } };
+            }
           }
         }
         const res = analyserSaisie(ev.texte, contexteSaisie("longueur", ctx));
@@ -255,7 +275,7 @@ export const machineMetre: MachineOutil<EtatMetre> = {
       consigne = `Redimensionner la Planche : ${formaterLongueur(etat.confirmation.de, sep)} → ${formaterLongueur(etat.confirmation.a, sep)} (× ${formaterNombre(etat.confirmation.facteur, 3, sep)}). Entrée = confirmer, Échap = annuler.`;
       m = mesures(libelleMesuresDe(ID_METRE, 4), etat.texte ?? "", contexteSaisie("longueur", ctx));
     } else if (etat.etape === 1) {
-      consigne = consigneDe(ID_METRE, indiceRepos);
+      consigne = consigneDe(ID_METRE, indiceRepos) + (etat.dernierGuide && !ctx.lecture ? " Tapez « 5x » pour répéter le guide, « /5 » pour diviser." : "");
       m = etat.aire !== null ? mesures("Aire", formaterAire(etat.aire, sep), contexteSaisie("aucune", ctx)) : mesures("Mesures", etat.texte ?? "", contexteSaisie("aucune", ctx));
     } else if (etat.etape === 2) {
       consigne = consigneDe(ID_METRE, 3);
@@ -280,7 +300,8 @@ export const machineMetre: MachineOutil<EtatMetre> = {
       lignes.push([etat.mesure.a, etat.mesure.b]);
       etiquettes.push({ point: etat.mesure.b, texte: formaterLongueur(dist(etat.mesure.a, etat.mesure.b), sep) });
     }
-    return vueModif({ consigne, mesures: m, inference: etat.inference, apercu: { lignes, faces: [], etiquettes } as VueOutil["apercu"], ctx, erreur: etat.erreur });
+    const metre = { derniere: etat.mesure ?? etat.derniere ?? null, guide: etat.dernierGuide ?? null };
+    return { ...vueModif({ consigne, mesures: m, inference: etat.inference, apercu: { lignes, faces: [], etiquettes } as VueOutil["apercu"], ctx, erreur: etat.erreur }), metre };
   },
 };
 

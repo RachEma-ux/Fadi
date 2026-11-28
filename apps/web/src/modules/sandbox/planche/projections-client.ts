@@ -1,0 +1,26 @@
+/**
+ * Client de la projection WGS84 → système du projet (cas 4, lot C4, étape 7b), seul appelant de `/sandbox/projections`.
+ * La définition vient d'un .prj fourni (`wkt`) ou des systèmes connus de Fadi ; un système inconnu sans .prj est refusé.
+ */
+export const ADRESSE_PROJECTIONS = "/sandbox/projections";
+
+export class ErreurProjection extends Error {
+  constructor(readonly code: "systeme_inconnu" | "projection" | "demande" | "compte" | "reseau" | "serveur") {
+    super(code);
+  }
+}
+
+export async function projeterVersSysteme(systeme: string, wkt: string | null, points: readonly (readonly [number, number])[]): Promise<{ readonly points: [number, number][]; readonly source: "fadi" | "prj" }> {
+  let r: Response;
+  try {
+    r = await fetch(ADRESSE_PROJECTIONS, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systeme, ...(wkt ? { wkt } : {}), points }) });
+  } catch {
+    throw new ErreurProjection("reseau");
+  }
+  if (r.status === 401) throw new ErreurProjection("compte");
+  if (!r.ok) {
+    const code = ((await r.json().catch(() => ({}))) as { error?: string }).error;
+    throw new ErreurProjection(code === "systeme_inconnu" || code === "projection" ? code : r.status === 400 ? "demande" : "serveur");
+  }
+  return (await r.json()) as { points: [number, number][]; source: "fadi" | "prj" };
+}

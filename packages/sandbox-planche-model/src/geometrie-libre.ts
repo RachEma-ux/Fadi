@@ -88,6 +88,8 @@ export interface Arete {
   readonly masquee?: boolean;
   /** Courbe d'appartenance (cercle, polygone, arc) : la gomme efface la courbe entière. */
   readonly courbe?: Id;
+  /** (Cas 2, lot 4) Balise de l'arête nue (balise courante à la création ou classement). */
+  readonly balise?: Id;
 }
 
 export interface Face {
@@ -99,6 +101,8 @@ export interface Face {
   readonly materiauVerso?: string;
   /** Masquée (menu contextuel « Masquer », lot 5) : ni affichée, ni accrochée, ni sélectionnable. */
   readonly masquee?: boolean;
+  /** (Cas 2, lot 4) Balise de la face nue. */
+  readonly balise?: Id;
 }
 
 export type GenreCourbe = "cercle" | "polygone" | "arc";
@@ -135,7 +139,36 @@ export interface Occurrence {
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
   readonly niveau?: Id;
+  /** (Cas 4, lot C4, étape 5) Statut des travaux ; hérité par le contenu ; absent = sans statut. */
+  readonly statut?: StatutTravaux;
+  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
+  readonly horsAccrochage?: boolean;
+  /**
+   * (Cas 4, lot C4, étape 6) Identité IFC d'un objet importé d'un IFC structuré : classe (« IfcWall ») et GlobalId,
+   * gardés pour le réexport. Absente = objet de la Planche.
+   */
+  readonly ifc?: IdentiteIfc;
+  /**
+   * (Cas 2, lot 8, n° 25) Ouverture découpée par ce composant dans sa face d'appui : contexte de la face (`dans`, absent =
+   * racine) et contour du trou dans ce contexte. Le trou suit l'occurrence (déplacée, remplacée, effacée).
+   */
+  readonly ouverture?: { readonly dans?: Id; readonly contour: readonly Vec3[] };
 }
+
+/** Identité IFC d'un objet : classe IFC en casse d'origine et GlobalId (22 caractères). */
+export interface IdentiteIfc {
+  readonly classe: string;
+  readonly globalId: string;
+}
+
+/** Identité IFC reçue (document, delta) : jamais crue sur parole. */
+export const estIdentiteIfc = (v: unknown): v is IdentiteIfc =>
+  typeof v === "object" && v !== null && !Array.isArray(v) && typeof (v as Record<string, unknown>)["classe"] === "string" && /^Ifc[A-Za-z0-9]{1,60}$/.test((v as Record<string, string>)["classe"]!) && typeof (v as Record<string, unknown>)["globalId"] === "string" && /^[0-9A-Za-z_$]{22}$/.test((v as Record<string, string>)["globalId"]!);
+
+/** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
+export type StatutTravaux = "existant" | "a-demolir" | "projete";
+export const STATUTS_TRAVAUX: readonly StatutTravaux[] = ["existant", "a-demolir", "projete"];
+export const estStatutTravaux = (v: unknown): v is StatutTravaux => v === "existant" || v === "a-demolir" || v === "projete";
 
 export interface Contexte {
   readonly sommets: Readonly<Record<Id, Sommet>>;
@@ -166,6 +199,22 @@ export interface MetadonneesDefinition {
   readonly piece?: MetadonneesPiece;
   /** (Extension « Composants dynamiques ») Paramètres, options et règles du composant ; absent = composant ordinaire. */
   readonly dynamique?: ComposantDynamique;
+  /** (Cas 2, lot 8) Composant d'agence (fichier `fadi-composant/1` archivé en base) : de quoi le régénérer à la demande. */
+  readonly composantAgence?: ComposantAgenceDefinition;
+}
+
+/** (Cas 2, lot 8) Fenêtre, porte, baie ou garde-corps lu d'un fichier d'agence, avec les valeurs de l'occurrence posée. */
+export interface ComposantAgenceDefinition {
+  readonly fichier: string;
+  /** Identifiant de l'archive du fichier en base (absent si l'archivage a échoué ou n'est pas encore fait). */
+  readonly archive?: string;
+  readonly genre: "fenetre" | "porte" | "baie" | "garde-corps";
+  /** Main déclarée par le fichier (porte, équipement) : le miroir lisible la garde. */
+  readonly main?: "gauche" | "droite";
+  /** Valeurs en mètres (largeur, hauteur, allège, vantaux, longueur, vide maximal…), saisies ou reprises de la baie. */
+  readonly valeurs: Readonly<Record<string, number>>;
+  /** Texte du fichier tel qu'il a été lu (pour régénérer sans relire la base). */
+  readonly texte: string;
 }
 
 /** Option montrée à l'utilisateur pour un paramètre : zone de texte, ou liste quand `choix` est donné. */
@@ -682,7 +731,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, reperes: { ...(a.reperes ?? {}) }, correspondances: { ...(a.correspondances ?? {}) }, niveaux: { ...(a.niveaux ?? {}) }, locaux: { ...(a.locaux ?? {}) }, murs: { ...(a.murs ?? {}) }, motifs: { ...(a.motifs ?? {}) }, feuilles: { ...(a.feuilles ?? {}) }, reserves: { ...(a.reserves ?? {}) }, fonds: { ...(a.fonds ?? {}) }, references: { ...(a.references ?? {}) }, ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}), ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -794,6 +843,11 @@ class Travail {
       ...(Object.keys(a.locaux).length ? { locaux: Object.freeze({ ...a.locaux }) } : {}),
       ...(Object.keys(a.murs).length ? { murs: Object.freeze({ ...a.murs }) } : {}),
       ...(Object.keys(a.motifs).length ? { motifs: Object.freeze({ ...a.motifs }) } : {}),
+      ...(Object.keys(a.feuilles).length ? { feuilles: Object.freeze({ ...a.feuilles }) } : {}),
+      ...(Object.keys(a.reserves).length ? { reserves: Object.freeze({ ...a.reserves }) } : {}),
+      ...(Object.keys(a.fonds).length ? { fonds: Object.freeze({ ...a.fonds }) } : {}),
+      ...(Object.keys(a.references).length ? { references: Object.freeze({ ...a.references }) } : {}),
+      ...(a.enveloppe ? { enveloppe: a.enveloppe } : {}),
     });
     return suivreAnnotations(this.modele, Object.freeze({ ...base, annotations }));
   }
@@ -859,11 +913,12 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}, a.reperes ?? {}, a.correspondances ?? {}, a.niveaux ?? {}, a.locaux ?? {}, a.murs ?? {}, a.motifs ?? {}, a.feuilles ?? {}, a.reserves ?? {}, a.fonds ?? {}, a.references ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
     if (a.reglages) r.set("reglages", JSON.stringify(a.reglages));
+    if (a.enveloppe) r.set("enveloppe", JSON.stringify(a.enveloppe));
   }
   return r;
 }
@@ -1505,6 +1560,360 @@ export function ajouterTriangles(m: Modele, triangles: readonly (readonly [Vec3,
     });
     if (internes.length > 0) effacerAretesInterne(t, c, internes.map((a) => a.id));
   });
+}
+
+/** Contenu d'un maillage importé, construit hors du modèle (travailleur d'import) : identifiants locaux, renumérotés à la pose. */
+export interface ContenuImporte {
+  readonly nom: string;
+  readonly contenu: Contexte;
+  /** Triangles insérés (aire non nulle). */
+  readonly triangles: number;
+}
+
+/**
+ * (Cas 4, étape 7a, D10-F14-027) Construction d'un maillage importé en temps quasi linéaire, sans toucher au modèle :
+ * sommets fusionnés à TOL par une grille de hachage, arêtes par table de paires, puis fusion des triangles coplanaires de
+ * même sens (même règle que `ajouterTriangles` : arête entre deux triangles de normales égales à 1e-9 près) par
+ * union-find ; le bord de chaque région devient la boucle extérieure (sens direct autour de la normale) et ses trous.
+ * Une région dont le bord n'est pas une suite simple de boucles (sommet singulier) garde ses triangles séparés.
+ * Les sommets de degré 2 alignés sont retirés (comme `cicatriser`). `progression(fait, total)` est appelée par paquets.
+ */
+export function construireMaillageImporte(nom: string, triangles: readonly (readonly [Vec3, Vec3, Vec3])[], progression?: (fait: number, total: number) => void): ContenuImporte {
+  let compteur = 1;
+  const nouvelId = (p: string): Id => `${p}${compteur++}`;
+  const sommets = new Map<Id, Sommet>();
+  const grille = new Map<string, Id[]>();
+  const pas = TOL * 4;
+  const sommetEnGrille = (p: Vec3): Id => {
+    const ix = Math.floor(p.x / pas);
+    const iy = Math.floor(p.y / pas);
+    const iz = Math.floor(p.z / pas);
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dz = -1; dz <= 1; dz++) {
+          const l = grille.get(`${ix + dx},${iy + dy},${iz + dz}`);
+          if (l) for (const id of l) if (egal((sommets.get(id) as Sommet).position, p)) return id;
+        }
+    const id = nouvelId("s");
+    sommets.set(id, { id, position: p });
+    const k = `${ix},${iy},${iz}`;
+    const l = grille.get(k);
+    if (l) l.push(id);
+    else grille.set(k, [id]);
+    return id;
+  };
+  // Triangles indexés (sommets fusionnés) ; un triangle dégénéré après fusion est ignoré.
+  const tris: { s: [Id, Id, Id]; n: Vec3 }[] = [];
+  const total = triangles.length;
+  for (let i = 0; i < total; i++) {
+    const [p, q, r] = triangles[i] as readonly [Vec3, Vec3, Vec3];
+    const n = cross(sub(q, p), sub(r, p));
+    if (len(n) < 1e-12) continue;
+    const s: [Id, Id, Id] = [sommetEnGrille(p), sommetEnGrille(q), sommetEnGrille(r)];
+    if (s[0] === s[1] || s[1] === s[2] || s[0] === s[2]) continue;
+    tris.push({ s, n: normalize(n) });
+    if (progression && (i + 1) % 2000 === 0) progression(i + 1, total);
+  }
+  // Jonctions en T : une arête bordée d'un seul triangle sur laquelle tombent des sommets d'autres arêtes libres est
+  // découpée (éventail depuis le sommet opposé), comme le faisait l'insertion arête par arête de `ajouterTriangles`.
+  scinderJonctionsT(tris, position0(sommets));
+  // Arêtes (paires de sommets) et triangles qui les bordent.
+  const parArete = new Map<string, number[]>();
+  tris.forEach((tr, i) => {
+    for (let k = 0; k < 3; k++) {
+      const cleA = cle(tr.s[k] as Id, tr.s[(k + 1) % 3] as Id);
+      const l = parArete.get(cleA);
+      if (l) l.push(i);
+      else parArete.set(cleA, [i]);
+    }
+  });
+  // Union-find des triangles coplanaires de même sens reliés par une arête partagée par exactement deux triangles.
+  const parent = tris.map((_, i) => i);
+  const racineDe = (i: number): number => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i] as number] as number;
+      i = parent[i] as number;
+    }
+    return i;
+  };
+  for (const l of parArete.values()) {
+    if (l.length !== 2) continue;
+    const [i, j] = l as [number, number];
+    if (dot((tris[i] as (typeof tris)[number]).n, (tris[j] as (typeof tris)[number]).n) > 1 - 1e-9) {
+      const a = racineDe(i);
+      const b = racineDe(j);
+      if (a !== b) parent[a] = b;
+    }
+  }
+  const regions = new Map<number, number[]>();
+  tris.forEach((_, i) => {
+    const r = racineDe(i);
+    const l = regions.get(r);
+    if (l) l.push(i);
+    else regions.set(r, [i]);
+  });
+  const aretes = new Map<string, Arete>();
+  const faces = new Map<Id, Face>();
+  const areteDe = (u: Id, w: Id): void => {
+    const k = cle(u, w);
+    if (!aretes.has(k)) {
+      const id = nouvelId("a");
+      aretes.set(k, { id, a: u, b: w });
+    }
+  };
+  const poserFace = (exterieur: Id[], trous: Id[][], n: Vec3): void => {
+    const id = nouvelId("f");
+    faces.set(id, { id, exterieur, trous, normale: n });
+    for (const b of [exterieur, ...trous]) for (let k = 0; k < b.length; k++) areteDe(b[k] as Id, b[(k + 1) % b.length] as Id);
+  };
+  const position = (s: Id): Vec3 => (sommets.get(s) as Sommet).position;
+  for (const membres of regions.values()) {
+    const n = (tris[membres[0] as number] as (typeof tris)[number]).n;
+    const separes = (): void => {
+      for (const i of membres) poserFace([...(tris[i] as (typeof tris)[number]).s], [], (tris[i] as (typeof tris)[number]).n);
+    };
+    if (membres.length === 1) {
+      separes();
+      continue;
+    }
+    // Bord orienté : arêtes dirigées d'un triangle dont l'opposée n'est pas dans la région.
+    const dirigees = new Set<string>();
+    for (const i of membres) {
+      const s = (tris[i] as (typeof tris)[number]).s;
+      for (let k = 0; k < 3; k++) dirigees.add(`${s[k]}>${s[(k + 1) % 3]}`);
+    }
+    const suivant = new Map<Id, Id>();
+    let singulier = false;
+    for (const d of dirigees) {
+      const [u, w] = d.split(">") as [Id, Id];
+      if (dirigees.has(`${w}>${u}`)) continue;
+      if (suivant.has(u)) singulier = true;
+      suivant.set(u, w);
+    }
+    if (singulier || suivant.size === 0) {
+      separes();
+      continue;
+    }
+    const boucles: Id[][] = [];
+    const vus = new Set<Id>();
+    for (const depart of suivant.keys()) {
+      if (vus.has(depart)) continue;
+      const b: Id[] = [];
+      let x: Id | undefined = depart;
+      while (x !== undefined && !vus.has(x)) {
+        vus.add(x);
+        b.push(x);
+        x = suivant.get(x);
+      }
+      if (x !== depart) {
+        singulier = true;
+        break;
+      }
+      boucles.push(b);
+    }
+    if (singulier) {
+      separes();
+      continue;
+    }
+    // Aire signée autour de la normale : positive = extérieur, négative = trou.
+    const aire = (b: readonly Id[]): number => {
+      let v = v3(0, 0, 0);
+      for (let k = 0; k < b.length; k++) v = add(v, cross(position(b[k] as Id), position(b[(k + 1) % b.length] as Id)));
+      return dot(v, n) / 2;
+    };
+    const positives = boucles.filter((b) => aire(b) > 0);
+    if (positives.length !== 1) {
+      separes();
+      continue;
+    }
+    poserFace(positives[0] as Id[], boucles.filter((b) => aire(b) <= 0), n);
+  }
+  // Cicatrisation : sommet de degré 2 dont les deux arêtes sont alignées et opposées.
+  const degre = new Map<Id, Arete[]>();
+  for (const a of aretes.values()) for (const s of [a.a, a.b]) (degre.get(s) ?? degre.set(s, []).get(s) as Arete[]).push(a);
+  const retires = new Set<Id>();
+  for (const [s, ar] of degre) {
+    if (ar.length !== 2) continue;
+    const [e1, e2] = ar as [Arete, Arete];
+    const o1 = e1.a === s ? e1.b : e1.a;
+    const o2 = e2.a === s ? e2.b : e2.a;
+    if (retires.has(o1) || retires.has(o2)) continue;
+    const S = position(s);
+    const d1 = sub(position(o1), S);
+    const d2 = sub(position(o2), S);
+    if (!colineaires(d1, d2, 1e-9) || dot(d1, d2) > 0 || aretes.has(cle(o1, o2))) continue;
+    retires.add(s);
+    aretes.delete(cle(s, o1));
+    aretes.delete(cle(s, o2));
+    const id = e1.id;
+    aretes.set(cle(o1, o2), { id, a: o1, b: o2 });
+    for (const x of [degre.get(o1), degre.get(o2)]) if (x) for (let k = 0; k < x.length; k++) if (x[k] === e1 || x[k] === e2) x[k] = aretes.get(cle(o1, o2)) as Arete;
+  }
+  if (retires.size > 0) {
+    for (const [id, f] of faces) {
+      if (!f.exterieur.some((x) => retires.has(x)) && !f.trous.some((b) => b.some((x) => retires.has(x)))) continue;
+      faces.set(id, { ...f, exterieur: f.exterieur.filter((x) => !retires.has(x)), trous: f.trous.map((b) => b.filter((x) => !retires.has(x))) });
+    }
+    for (const s of retires) sommets.delete(s);
+  }
+  progression?.(total, total);
+  const ctx: Ctx = { sommets, aretes: new Map([...aretes.values()].map((a) => [a.id, a])), faces, courbes: new Map(), occurrences: new Map() };
+  return { nom, contenu: versContexte(ctx), triangles: tris.length };
+}
+
+const position0 =
+  (sommets: ReadonlyMap<Id, Sommet>) =>
+  (s: Id): Vec3 =>
+    (sommets.get(s) as Sommet).position;
+
+/**
+ * Découpe en place les triangles dont une arête libre (bordée d'un seul triangle) porte en son intérieur des sommets
+ * d'autres arêtes libres (jonction en T). Candidats rangés dans une grille de pas égal à la longueur moyenne des arêtes
+ * libres ; une arête dont la boîte couvre plus de cases qu'il n'y a de candidats les parcourt directement.
+ */
+function scinderJonctionsT(tris: { s: [Id, Id, Id]; n: Vec3 }[], position: (s: Id) => Vec3): void {
+  const compte = new Map<string, number>();
+  for (const tr of tris) for (let k = 0; k < 3; k++) {
+    const c = cle(tr.s[k] as Id, tr.s[(k + 1) % 3] as Id);
+    compte.set(c, (compte.get(c) ?? 0) + 1);
+  }
+  const libres: [Id, Id][] = [];
+  const candidats = new Set<Id>();
+  for (const tr of tris) for (let k = 0; k < 3; k++) {
+    const u = tr.s[k] as Id;
+    const w = tr.s[(k + 1) % 3] as Id;
+    if (compte.get(cle(u, w)) !== 1) continue;
+    libres.push([u, w]);
+    candidats.add(u);
+    candidats.add(w);
+  }
+  if (libres.length < 3) return;
+  let somme = 0;
+  for (const [u, w] of libres) somme += len(sub(position(w), position(u)));
+  const pas = Math.max(somme / libres.length, TOL * 4);
+  const grille = new Map<string, Id[]>();
+  const cellule = (p: Vec3) => [Math.floor(p.x / pas), Math.floor(p.y / pas), Math.floor(p.z / pas)] as const;
+  for (const c of candidats) {
+    const [x, y, z] = cellule(position(c));
+    const k = `${x},${y},${z}`;
+    (grille.get(k) ?? grille.set(k, []).get(k) as Id[]).push(c);
+  }
+  const toutes = [...candidats];
+  const interieurs = new Map<string, Id[]>();
+  for (const [u, w] of libres) {
+    const U = position(u);
+    const d = sub(position(w), U);
+    const l2 = dot(d, d);
+    const a = cellule({ x: Math.min(U.x, U.x + d.x) - TOL, y: Math.min(U.y, U.y + d.y) - TOL, z: Math.min(U.z, U.z + d.z) - TOL });
+    const b = cellule({ x: Math.max(U.x, U.x + d.x) + TOL, y: Math.max(U.y, U.y + d.y) + TOL, z: Math.max(U.z, U.z + d.z) + TOL });
+    const cases = (b[0] - a[0] + 1) * (b[1] - a[1] + 1) * (b[2] - a[2] + 1);
+    const pres: Id[] = [];
+    if (cases > toutes.length) pres.push(...toutes);
+    else
+      for (let x = a[0]; x <= b[0]; x++)
+        for (let y = a[1]; y <= b[1]; y++)
+          for (let z = a[2]; z <= b[2]; z++) {
+            const l = grille.get(`${x},${y},${z}`);
+            if (l) pres.push(...l);
+          }
+    const sur: { id: Id; t: number }[] = [];
+    for (const c of pres) {
+      if (c === u || c === w) continue;
+      const v = sub(position(c), U);
+      const t = dot(v, d) / l2;
+      if (t * Math.sqrt(l2) <= TOL || (1 - t) * Math.sqrt(l2) <= TOL) continue;
+      if (len(sub(v, scale(d, t))) > TOL) continue;
+      sur.push({ id: c, t });
+    }
+    if (sur.length) interieurs.set(`${u}>${w}`, sur.sort((p, q) => p.t - q.t).map((x) => x.id));
+  }
+  if (!interieurs.size) return;
+  const resultat: { s: [Id, Id, Id]; n: Vec3 }[] = [];
+  const decouper = (tr: { s: [Id, Id, Id]; n: Vec3 }, profondeur: number): void => {
+    for (let k = 0; k < 3 && profondeur < 3; k++) {
+      const u = tr.s[k] as Id;
+      const w = tr.s[(k + 1) % 3] as Id;
+      const c = tr.s[(k + 2) % 3] as Id;
+      const pts = interieurs.get(`${u}>${w}`);
+      if (!pts) continue;
+      const chaine = [u, ...pts, w];
+      for (let i = 0; i + 1 < chaine.length; i++) decouper({ s: [chaine[i] as Id, chaine[i + 1] as Id, c], n: tr.n }, profondeur + 1);
+      return;
+    }
+    resultat.push(tr);
+  };
+  for (const tr of tris) decouper(tr, 0);
+  tris.length = 0;
+  tris.push(...resultat);
+}
+
+/** Pose des maillages construits hors du modèle : un groupe chacun (origine du contexte), identifiants renumérotés, une seule opération. */
+export function poserMaillagesImportes(m: Modele, contenus: readonly ContenuImporte[]): Resultat & { readonly occurrences: readonly Id[] } {
+  const r = operer(m, undefined, (t, c) => {
+    const occs: Id[] = [];
+    for (const x of contenus) {
+      if (Object.keys(x.contenu.faces).length === 0) continue;
+      const g = cloner(t, versCtx(x.contenu));
+      const def = t.id("d");
+      t.definitions.set(def, { id: def, nom: x.nom, genre: "groupe", contenu: g });
+      const occ = t.id("o");
+      c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
+      occs.push(occ);
+    }
+    return occs;
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrences: r.extra };
+}
+
+/** (Cas 4, lot C4, étape 7) Objet importé prêt à poser : un contenu, une ou plusieurs poses, une matière éventuelle. */
+export interface ObjetImportePose {
+  readonly contenu: ContenuImporte;
+  /** « composant » quand le maillage est posé plusieurs fois (une définition, plusieurs occurrences). */
+  readonly genre: "groupe" | "composant";
+  /** Une transformation par occurrence (mètres, repère du projet). */
+  readonly poses: readonly Matrice4[];
+  /** Clé dans `matieres` (même appel) ; absente = sans matière. */
+  readonly matiere?: string;
+}
+
+/**
+ * (Cas 4, lot C4, étape 7) Pose des objets importés d'une scène (glTF, COLLADA, 3MF, 3DS, PLY) en un seul pas : les
+ * matières lues (nom, couleur) sont ajoutées aux matières du modèle (une matière de même nom et de même couleur déjà
+ * présente est reprise), puis chaque objet devient une définition et ses occurrences, matière posée sur l'objet.
+ */
+export function poserObjetsImportes(m: Modele, objets: readonly ObjetImportePose[], matieres: Readonly<Record<string, { readonly nom: string; readonly couleur: string }>>): Resultat & { readonly occurrences: readonly Id[]; readonly matieresCreees: number } {
+  const r = operer(m, undefined, (t, c) => {
+    const ids = new Map<string, Id>();
+    let creees = 0;
+    for (const [cle, mat] of Object.entries(matieres)) {
+      if (!objets.some((o) => o.matiere === cle)) continue;
+      const existante = Object.values(t.annotations.materiaux).find((x) => x.nom === mat.nom && x.couleur.toLowerCase() === mat.couleur.toLowerCase());
+      if (existante) {
+        ids.set(cle, existante.id);
+        continue;
+      }
+      const id = t.id("m");
+      t.annotations.materiaux[id] = { id, nom: mat.nom, couleur: mat.couleur };
+      t.annotationsSales = true;
+      ids.set(cle, id);
+      creees++;
+    }
+    const occs: Id[] = [];
+    for (const x of objets) {
+      if (Object.keys(x.contenu.contenu.faces).length === 0 || x.poses.length === 0) continue;
+      const g = cloner(t, versCtx(x.contenu.contenu));
+      const def = t.id("d");
+      t.definitions.set(def, { id: def, nom: x.contenu.nom, genre: x.genre, contenu: g });
+      const materiau = x.matiere !== undefined ? ids.get(x.matiere) : undefined;
+      for (const pose of x.poses) {
+        const occ = t.id("o");
+        c.occurrences.set(occ, { id: occ, definition: def, transformation: pose, ...(materiau ? { materiau } : {}) });
+        occs.push(occ);
+      }
+    }
+    return { occs, creees };
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrences: r.extra.occs, matieresCreees: r.extra.creees };
 }
 
 export interface OptionsPolygone extends OptionsContexte {
@@ -2607,15 +3016,19 @@ function fusionnerSommets(c: Ctx, deplaces: ReadonlySet<Id>): void {
 }
 
 /** Un objet verrouillé (§5.6, lot 5) ne se transforme pas, ne se copie pas et ne s'efface pas. */
-function refuserVerrouilles(c: Ctx, entites: readonly Id[]): void {
+function refuserVerrouilles(c: Ctx, entites: readonly Id[], t?: Travail): void {
   for (const id of entites) {
     const occ = c.occurrences.get(id);
     if (occ?.verrouille) throw new Error(`L'objet ${occ.nom ? `« ${occ.nom} » ` : ""}est verrouillé : déverrouillez-le (Info entité ou menu contextuel) pour le modifier.`);
+    // Cas 2, lot 4 (n° 82) : une entité d'une balise verrouillée n'est ni modifiée ni effacée.
+    const b = t ? (occ ?? c.faces.get(id) ?? c.aretes.get(id))?.balise : undefined;
+    const balise = b ? t!.annotations.balises[b] : undefined;
+    if (balise?.verrouillee) throw new Error(`La balise « ${balise.nom} » est verrouillée : déverrouillez-la (panneau Balises) pour modifier ce qu'elle porte.`);
   }
 }
 
 function transformerSurPlace(t: Travail, c: Ctx, entites: readonly Id[], M: Matrice4): void {
-  refuserVerrouilles(c, entites);
+  refuserVerrouilles(c, entites, t);
   const S = sommetsDe(c, entites);
   for (const s of S) c.sommets.set(s, { id: s, position: appliquer(M, pos(c, s)) });
   const det = determinant3(M);
@@ -2790,6 +3203,39 @@ export function mettreAEchelle(
   });
 }
 
+/**
+ * (Cas 2 du catalogue, lot 8, n° 50) Transformation affine quelconque des entités, sur place, en un pas : calage par deux
+ * points (translation, rotation et échelle uniforme calculées). Les verrous sont respectés comme pour Déplacer.
+ */
+export function transformer(m: Modele, entites: readonly Id[], M: Matrice4, o: OptionsContexte = {}): Resultat {
+  if (Math.abs(determinant3(M)) < EPS) throw new RangeError("Transformation singulière : rien n'a été modifié.");
+  return operer(m, o.dans, (t, c) => transformerSurPlace(t, c, entites, M));
+}
+
+/**
+ * (Cas 2, lot 8, n° 25) Bouche le trou de `face` dont le contour passe par `contour` (positions, à la tolérance) : le trou
+ * disparaît de la face ; ses arêtes et sommets, s'ils ne bordent plus rien, sont effacés. `false` si aucun trou ne
+ * correspond (déjà bouché ou face disparue).
+ */
+export function boucherTrou(m: Modele, contour: readonly Vec3[], o: OptionsContexte = {}): Resultat & { extra: boolean } {
+  return operer(m, o.dans, (_t, c) => {
+    const proche = (s: Id): boolean => contour.some((p) => dist(pos(c, s), p) <= 1e-5);
+    for (const f of [...c.faces.values()]) {
+      const i = f.trous.findIndex((b) => b.length === contour.length && b.every(proche));
+      if (i < 0) continue;
+      const trou = f.trous[i] as readonly Id[];
+      c.faces.set(f.id, { ...f, trous: f.trous.filter((_, j) => j !== i) });
+      for (let k = 0; k < trou.length; k++) {
+        const a = areteEntre(c, trou[k] as Id, trou[(k + 1) % trou.length] as Id);
+        if (a && facesDeArete(c, a).length === 0) c.aretes.delete(a.id);
+      }
+      for (const s of trou) if (aretesDuSommet(c, s).length === 0) c.sommets.delete(s);
+      return true;
+    }
+    return false;
+  });
+}
+
 /** Retourner (Flip) par rapport au plan (origine, normale) ; `copie` = Ctrl. */
 export function retourner(
   m: Modele,
@@ -2955,7 +3401,7 @@ export function eclater(m: Modele, occurrence: Id, o: OptionsContexte = {}): Res
   return operer(m, dans, (t, c) => {
     const occ = c.occurrences.get(occurrence);
     if (!occ) throw new Error(`Occurrence inconnue : ${occurrence}`);
-    refuserVerrouilles(c, [occurrence]);
+    refuserVerrouilles(c, [occurrence], t);
     const def = t.definitions.get(occ.definition);
     if (!def) throw new Error(`Définition inconnue : ${occ.definition}`);
     c.occurrences.delete(occurrence);
@@ -3165,7 +3611,7 @@ export function effacerAretes(m: Modele, aretes: readonly Id[], o: OptionsContex
  */
 export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
-    refuserVerrouilles(c, ids);
+    refuserVerrouilles(c, ids, t);
     for (const id of ids) {
       c.faces.delete(id);
       c.occurrences.delete(id);
@@ -3193,6 +3639,27 @@ export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | nul
       if (!f) continue;
       const { materiauRecto: _ancien, ...reste } = f;
       c.faces.set(id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+    }
+  });
+}
+
+/** Attributs d'une face ou d'une arête reportés après un redessin (préparation d'un fond DAO, cas 2 lot 3). */
+export type AttributsReportFace = Pick<Face, "materiauRecto" | "materiauVerso" | "masquee">;
+export type AttributsReportArete = Pick<Arete, "adoucie" | "masquee" | "courbe">;
+
+/** Reporte des attributs sur des faces et des arêtes existantes du contexte (les champs absents restent absents). */
+export function reporterAttributs(m: Modele, faces: ReadonlyMap<Id, AttributsReportFace>, aretes: ReadonlyMap<Id, AttributsReportArete>, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const [id, x] of faces) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, { ...f, ...x });
+    }
+    for (const [id, x] of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      // Une courbe disparue entre-temps n'est pas rattachée : l'arête reste libre.
+      const { courbe, ...reste } = x;
+      c.aretes.set(id, { ...a, ...reste, ...(courbe !== undefined && c.courbes.has(courbe) ? { courbe } : {}) });
     }
   });
 }
@@ -3270,6 +3737,38 @@ export function rattacherOccurrencesNiveau(m: Modele, occurrences: readonly Id[]
   });
 }
 
+/** (Cas 4, lot C4, étape 5) Statut des travaux : pose (ou retire, `null`) le statut des occurrences données du contexte. */
+export function statuerOccurrences(m: Modele, occurrences: readonly Id[], statut: StatutTravaux | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { statut: _ancien, ...reste } = occ;
+      c.occurrences.set(id, statut ? { ...reste, statut } : reste);
+    }
+  });
+}
+
+/** (Cas 4, lot C4, étape 6) Pose l'identité IFC des occurrences de la racine données (import d'un IFC structuré). */
+export function identifierOccurrencesIfc(m: Modele, identites: Readonly<Record<Id, IdentiteIfc>>): Resultat {
+  return operer(m, undefined, (_t, c) => {
+    for (const [id, ifc] of Object.entries(identites)) {
+      const occ = c.occurrences.get(id);
+      if (occ && estIdentiteIfc(ifc)) c.occurrences.set(id, { ...occ, ifc: { classe: ifc.classe, globalId: ifc.globalId } });
+    }
+  });
+}
+
+/**
+ * (Cas 4, lot C4, étape 5) Compte des occurrences par statut des travaux, dans la racine et dans chaque définition
+ * (chaque occurrence écrite est comptée une fois) ; `sans` = occurrences sans statut.
+ */
+export function compterStatuts(m: Modele): Readonly<Record<StatutTravaux | "sans", number>> {
+  const n = { existant: 0, "a-demolir": 0, projete: 0, sans: 0 };
+  for (const c of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) for (const o of Object.values(c.occurrences)) n[o.statut ?? "sans"]++;
+  return n;
+}
+
 /** Balise : pose (ou retire, `null`) la balise des occurrences données du contexte. */
 export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (_t, c) => {
@@ -3279,6 +3778,30 @@ export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise
       const { balise: _ancienne, ...reste } = occ;
       c.occurrences.set(id, balise ? { ...reste, balise } : reste);
     }
+  });
+}
+
+/**
+ * (Cas 2, lot 4) Balise posée (ou retirée, `null`) sur des entités du contexte : arêtes et faces nues comme objets. Rend le
+ * nombre d'entités touchées.
+ */
+export function baliserEntites(m: Modele, ids: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    let n = 0;
+    const poser = <T extends { readonly balise?: Id }>(x: T): T => {
+      n++;
+      const { balise: _ancienne, ...reste } = x;
+      return (balise ? { ...reste, balise } : reste) as T;
+    };
+    for (const id of ids) {
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, poser(a));
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, poser(f));
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, poser(occ));
+    }
+    return n;
   });
 }
 
@@ -3481,12 +4004,12 @@ export function entitesConnectees(m: Modele, id: Id, o: OptionsContexte = {}): I
  * l'origine du contexte `o.dans`. Elle n'est jamais purgée tant qu'elle a une occurrence (seules les définitions sans
  * occurrence le sont, `Travail.fermer`).
  */
-export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string } = {}): ResultatGroupe {
+export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string; readonly description?: string } = {}): ResultatGroupe {
   const r = operer(m, o.dans, (t, c) => {
     const genre = o.genre ?? "groupe";
     const def = t.id("d");
     const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
-    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu });
+    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu, ...(o.description ? { description: o.description } : {}) });
     const occ = t.id("o");
     c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
     return { occ, def };
@@ -3535,7 +4058,7 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   // un rangement (l'objet bougerait dans toutes) : refus.
   if (t.ouvrir(cible) === src) throw new RangeError(ERREUR_DEPLACER_MEME_CONTENU);
   for (const id of ids) if (!src.occurrences.has(id)) throw new RangeError(`L'objet ${id} n'est pas dans le contexte ouvert : seuls les groupes et composants se déplacent vers un groupe.`);
-  refuserVerrouilles(src, ids);
+  refuserVerrouilles(src, ids, t);
   const occs = ids.map((id) => src.occurrences.get(id) as Occurrence);
   let composantPartage = 0;
   if (cible !== undefined) {
@@ -4193,6 +4716,16 @@ export function verrouillerOccurrences(m: Modele, ids: readonly Id[], verrou: bo
     for (const id of ids) {
       const occ = c.occurrences.get(id);
       if (occ) c.occurrences.set(id, sansFaux(occ, "verrouille", verrou));
+    }
+  });
+}
+
+/** (Cas 2, lot 2) Exclure des objets de l'accrochage sans les masquer (ou les y rendre). */
+export function exclureDeLAccrochage(m: Modele, ids: readonly Id[], exclu: boolean, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of ids) {
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "horsAccrochage", exclu));
     }
   });
 }

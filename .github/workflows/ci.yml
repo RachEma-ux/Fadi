@@ -93,6 +93,9 @@ jobs:
       - name: Installer le Chromium attendu par Playwright
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: |
+          # Seules les sources Ubuntu servent aux dépendances de Chromium : les dépôts tiers de l'image du runner
+          # (packages.microsoft.com, refusé en 403 le 27.11.2026) font échouer `apt-get update`, donc l'installation.
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
@@ -309,7 +312,10 @@ jobs:
       # Terrain TER-03 (TER-D6) : les tests du travailleur exigent GDAL ; installé ici (Ubuntu 24.04 : GDAL 3.8.4), le
       # travailleur de préproduction épingle Debian bookworm 3.6.2 (essai dans le job image).
       - name: GDAL pour les tests du travailleur terrain
-        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gdal-bin && gdalinfo --version
+        run: |
+          # Sources Ubuntu seules (dépôts tiers du runner refusés en 403 le 27.11.2026, voir l'installation de Chromium).
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends gdal-bin && gdalinfo --version
       - name: Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées
         env:
           FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
@@ -447,6 +453,9 @@ jobs:
       # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
       - name: Installer le Chromium attendu par Playwright
         run: |
+          # Seules les sources Ubuntu servent aux dépendances de Chromium : les dépôts tiers de l'image du runner
+          # (packages.microsoft.com, refusé en 403 le 27.11.2026) font échouer `apt-get update`, donc l'installation.
+          sudo find /etc/apt/sources.list.d -type f ! -name 'ubuntu.sources' -exec mv -t /tmp {} +
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
@@ -1105,6 +1114,106 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-plan-vectoriel node apps/web/e2e/planche-plan-vectoriel.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des feuilles (cas 4, étape 6) — formats ISO, fenêtres à l'échelle, cartouche, export PDF vectoriel relu (apps/web/e2e/planche-feuilles.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-feuilles node apps/web/e2e/planche-feuilles.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'import hors du fil principal (cas 4, étape 7a) — étalonnage, 45 000 triangles, Échap, borne (apps/web/e2e/planche-import.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-import node apps/web/e2e/planche-import.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des réserves de chantier (cas 4, étape 7b) — outil Réserve, fiche, photo, levée datée, filtres (apps/web/e2e/planche-reserves.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-reserves node apps/web/e2e/planche-reserves.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du contrôle de l'enveloppe (cas 4, étape 7c) — enveloppe désignée, écart au point le plus défavorable, seuils saisis (apps/web/e2e/planche-enveloppe.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-enveloppe node apps/web/e2e/planche-enveloppe.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des liens de consultation (cas 4, étape 7d) — copie figée, page sans compte sur téléphone, mesure, révocation (apps/web/e2e/planche-consultation.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-consultation node apps/web/e2e/planche-consultation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des fonds calés (cas 4, lot C4, étape 1) — import d'une image, outil Calage, longueur, paires et résidus, verrou (apps/web/e2e/planche-fonds.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-fonds node apps/web/e2e/planche-fonds.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la fiche de calage (cas 4, lot C4, étape 2) — fiche reçue comparée et appliquée, fiche exportée, orthophoto et fichier de calage d'image (apps/web/e2e/planche-fiche-calage.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-fiche-calage node apps/web/e2e/planche-fiche-calage.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des références verrouillées (cas 4, lot C4, étape 3) — raccourcis en deux temps, maquette reçue archivée, verrou, récolement, rechargement (apps/web/e2e/planche-references.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-references node apps/web/e2e/planche-references.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du PDF reçu (cas 4, lot C4, étape 4) — page vectorielle en arêtes et arcs, échelle proposée puis confirmée, barre d'échelle, mesure, page scannée en fond (apps/web/e2e/planche-pdf-recu.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pdf-recu node apps/web/e2e/planche-pdf-recu.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des feuilles en DXF et du statut des travaux (cas 4, lot C4, étape 5) — statut existant / à démolir / projeté, filtre d'état, couleurs, un DXF R2000 par feuille ou par vue (apps/web/e2e/planche-dxf.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-dxf node apps/web/e2e/planche-dxf.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'IFC structuré (cas 4, lot C4, étape 6) — import des étages, de la trame et du géoréférencement, export par classes relu à l'identique, .ifczip, IFC2X3 (apps/web/e2e/planche-ifc.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-ifc node apps/web/e2e/planche-ifc.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des formats des fabricants (cas 4, lot C4, étape 7a) — glTF en objets (composant répété, matière posée, archivé), FBX refusé, relevé PLY en référence verrouillée (apps/web/e2e/planche-fabricants.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-fabricants node apps/web/e2e/planche-fabricants.mjs 2>&1 | tee -a e2e.log
+      - name: Recette KML / KMZ (cas 4, lot C4, étape 7b) — projection par l'API (EPSG:2154 connu, LV95 par .prj), polygone troué en groupe, lignes et points en guides étiquetés, archivé (apps/web/e2e/planche-kml.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-kml node apps/web/e2e/planche-kml.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du redressement d'une photo (cas 4, lot C4, étape 7c) — quatre coins pointés, résidus et alerte de façade non plane, pose dans un plan vertical en un pas, original archivé (apps/web/e2e/planche-redressement.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-redressement node apps/web/e2e/planche-redressement.mjs 2>&1 | tee -a e2e.log
+      - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-accrochage node apps/web/e2e/planche-accrochage-saisie.mjs 2>&1 | tee -a e2e.log
+      - name: Recette contrôle du modèle (cas 2, lot 3) — relevé et parcours des défauts, correction, fond DAO, pièces du permis (apps/web/e2e/planche-controle-modele.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-controle node apps/web/e2e/planche-controle-modele.mjs 2>&1 | tee -a e2e.log
+      - name: Recette balises, scènes et gabarit (cas 2, lot 4) — balise courante, verrou, phases, plan de coupe, scènes, gabarit d'agence (apps/web/e2e/planche-balises-scenes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-balises node apps/web/e2e/planche-balises-scenes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des échanges (cas 2, lot 6) — import IFC et rapport, export choisi, fichier natif, image, collage de tracé (apps/web/e2e/planche-echanges.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-echanges node apps/web/e2e/planche-echanges.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des versions (cas 2, lot 7) — jalons, comparaison surlignée, consultation seule, brouillon, variantes, fiche du projet (apps/web/e2e/planche-versions.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-versions node apps/web/e2e/planche-versions.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la modélisation (cas 2, lot 8) — extrusion, couches, composants d'agence, soustraire et garder, sélection, vue orthographique exacte, échelle, aire projetée (apps/web/e2e/planche-modelisation.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-modelisation node apps/web/e2e/planche-modelisation.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |
