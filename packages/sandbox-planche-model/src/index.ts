@@ -54,3 +54,4 @@ export * from "./fonds.js";
 export * from "./fiche-calage.js";
 export * from "./references.js";
 export * from "./enveloppe.js";
+export * from "./controle-l3.js";

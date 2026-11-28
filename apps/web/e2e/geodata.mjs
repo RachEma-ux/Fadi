@@ -170,7 +170,7 @@ check("ARRIVÉE · « Ouvrir le catalogue » ouvre le catalogue et écarte la co
 
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
-// P5 : la colonne garde ses 16 outils, dont 14 rangés dans deux groupes nommés (« Mesurer et tracer », « Affichage »).
+// P5 : la colonne garde ses 17 outils (dont « Site », P13), la plupart rangés dans deux groupes nommés (« Mesurer et tracer », « Affichage »).
 const outils = await page.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
 const colonne = await barreOutils.locator("button[data-gd-barre-outil], button[data-gd-groupe]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-barre-outil") ?? `groupe:${b.getAttribute("data-gd-groupe")}`));
 check("P5 · colonne : zoom avant, zoom arrière, puis deux groupes à divulgation (Alt+N, Alt+A)", colonne.join(",") === "zoom-plus,zoom-moins,groupe:mesurer,groupe:affichage" && (await barreOutils.locator("[data-gd-groupe='mesurer']").getAttribute("aria-keyshortcuts")) === "Alt+N", colonne.join(","));
@@ -188,11 +188,11 @@ await page.locator("[data-gd-aide-raccourcis]").waitFor({ timeout: 3000 }).catch
 const lignesAide = await page.locator("[data-gd-aide-ligne]").count();
 await page.screenshot({ path: join(OUT, "p5-aide-raccourcis-1440.png") });
 await page.keyboard.press("Escape");
-check("P5 · « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique (23 lignes), Échap la ferme", lignesAide === 23 && (await page.locator("[data-gd-aide-raccourcis]").count()) === 0, `${lignesAide} lignes`);
+check("P5 · « ? » ouvre l'aide « Raccourcis clavier », lue dans la table unique (24 lignes), Échap la ferme", lignesAide === 24 && (await page.locator("[data-gd-aide-raccourcis]").count()) === 0, `${lignesAide} lignes`);
 await page.locator("[data-gd-groupe='affichage']").click();
 await page.screenshot({ path: join(OUT, "p5-groupe-affichage-1440.png") });
 await page.locator("[data-gd-groupe='affichage']").click();
-check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression, synthèse de la vue, regroupement, adresse de la vue), chaque bouton nommé", outils.length === 16 && outils.every(Boolean), outils.join(" | "));
+check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression, synthèse de la vue, regroupement, adresse de la vue, site), chaque bouton nommé", outils.length === 17 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
 check("carte : barre d'outils flottante, verticale, à droite par défaut", !!boiteBarre && !!boiteCarte && boiteCarte.x + boiteCarte.width - (boiteBarre.x + boiteBarre.width) < 30 && boiteBarre.height > boiteBarre.width * 3);
@@ -235,7 +235,7 @@ const basBarre = groupes[groupes.length - 1].bottom;
 const dessous = Math.abs(boiteLoupe.y - basBarre - ecartGroupes) <= 1.5 && Math.abs(boiteLoupe.x + boiteLoupe.width - (retour.x + retour.width)) <= 1.5;
 // À côté : bas alignés, ou remontée au-dessus de la ligne des sources quand elle est haute (contour d'arrivée, P1).
 const aCote = Math.abs(retour.x - ecartGroupes - (boiteLoupe.x + boiteLoupe.width)) <= 1.5 && boiteLoupe.y + boiteLoupe.height <= basBarre + 1.5;
-check("mini-barre : séparée de la barre d'outils (qui garde ses 16 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, Plan / Satellite, Emplacements Projets, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
+check("mini-barre : séparée de la barre d'outils (qui garde ses 17 outils), de haut en bas Loupe, Enregistrer, ≡ Navigation administrative, Fond, Plan / Satellite, Emplacements Projets, sous elle (ou à côté de son bas si la carte est trop basse), à l'écart de ses groupes",
   (await barreOutils.locator("[data-gd-loupe]").count()) === 0 && (await miniBarre.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")).join("|"))) === "Rechercher|Enregistrer|Navigation administrative|Fond de carte|Vue satellite indisponible : réglez la clé MapTiler dans Paramètres|Emplacements Projets" && (dessous || aCote),
   `écart groupes ${ecartGroupes}, mini ${JSON.stringify(boiteLoupe)} bas barre=${basBarre} barre x=${retour.x}`);
 const styles = await page.evaluate(() => { const s = (q) => { const c = getComputedStyle(document.querySelector(q)); return [c.backgroundColor, c.borderRadius, c.boxShadow].join(" | "); }; return [s("[data-gd-barre-outils] .gd-groupe-outils"), s("[data-gd-barre-recherche] .gd-groupe-outils")]; });
@@ -536,6 +536,40 @@ await page.waitForTimeout(300);
 check("P10 · sans coloration, aucune hachure", ((await page.locator("[data-gd-moteur]").getAttribute("data-gd-hachures")) ?? "").trim() === "");
 await caseCouleur.check();
 await page.waitForTimeout(300);
+// P13 (UX-6) : « Que sait-on d'ici ? » (Alt+Q) — rubriques lues en base, valeur avec provenance ou « non évaluée » motivée.
+// Le focus est sur une case à cocher du panneau (champ de saisie : raccourcis coupés) : il est rendu au corps de la page.
+await page.evaluate(() => document.activeElement?.blur());
+await page.locator("body").press("Alt+q");
+await page.locator("[data-gd-site='ok']").waitFor({ timeout: 20_000 }).catch(() => undefined);
+{
+  const rubriques = await page.locator("[data-gd-site-rubrique]").evaluateAll((rs) => rs.map((r) => `${r.getAttribute("data-gd-site-rubrique")}:${r.getAttribute("data-gd-site-etat")}`));
+  check("P13 · Alt+Q ouvre le volet « Site » et lit sept rubriques, chacune évaluée ou non évaluée", (await page.locator("[data-gd-volet-ouvert='site']").count()) === 1 && rubriques.length === 7 && rubriques.every((r) => /:(evaluee|non-evaluee)$/.test(r)), rubriques.join(" "));
+  check("P13 · parcelle et urbanisme : « Non évalué, source à qualifier », jamais une valeur", (await page.locator("[data-gd-site-rubrique='parcelle'] [data-gd-site-motif='source-a-qualifier']").count()) === 1);
+  const nonEvaluees = await page.locator("[data-gd-site-etat='non-evaluee'] [data-gd-site-motif]").allTextContents();
+  check("P13 · une rubrique non évaluée dit son motif (aucun « 0 », aucun « — » seul)", nonEvaluees.length > 0 && nonEvaluees.every((t) => t.trim().length > 3 && t.trim() !== "0"), nonEvaluees.join(" | ").slice(0, 200));
+  check("P13 · signes du lieu sur la carte (repère et cercle), hors composition", (await page.locator("[data-gd-moteur]").getAttribute("data-gd-site-signes")) === "1");
+  await page.addScriptTag({ path: AXE });
+  const axeSite = await page.evaluate(async () => (await window.axe.run(document.querySelector("[data-gd-site]"), { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((v) => `${v.id}:${v.impact}`));
+  check("P13 · axe-core sur le volet « Site » : aucune violation, même « moderate » (D2)", axeSite.length === 0, axeSite.join(" ; "));
+  // Lieu saisi dans le territoire synthétique : les unités qui le contiennent sont lues en base, avec leurs indicateurs.
+  // Province synthétique 1001 (de -8 à -7,8 ; de 31,2 à 31,6), dans la région 1.
+  await page.locator("[data-gd-site-lon]").fill("-7.9");
+  await page.locator("[data-gd-site-lat]").fill("31.4");
+  await page.locator("[data-gd-site-coordonnees] button[type='submit']").click();
+  await page.waitForFunction(() => document.querySelector("[data-gd-site]")?.getAttribute("data-gd-site") === "ok" && document.querySelector("[data-gd-site-lieu]")?.textContent?.includes("31.4"), null, { timeout: 20_000 }).catch(() => undefined);
+  const etatUnites = await page.locator("[data-gd-site-rubrique='unites']").getAttribute("data-gd-site-etat");
+  check("P13 · lieu saisi dans le territoire : unités lues en base (évaluées), chaque rubrique dite", etatUnites === "evaluee" && (await page.locator("[data-gd-site-rubrique]").count()) === 7, `unités : ${etatUnites}`);
+  await page.screenshot({ path: join(OUT, "p13-site.png") });
+  // P14 : référence du site — renvoi aux versions lues (empreinte), aucune valeur, aucun champ d'un autre module.
+  await page.locator("[data-gd-site-copier-reference]").click();
+  await page.locator("[data-gd-site-copie]").waitFor({ timeout: 5000 }).catch(() => undefined);
+  const ref = await page.evaluate(() => window.__referenceSite ?? null);
+  const texteRef = JSON.stringify(ref ?? {});
+  check("P14 · référence du site : format, empreinte SHA-256, versions avec leur empreinte, exclusions motivées", ref?.format === "geodata.reference-site/1" && /^[0-9a-f]{64}$/.test(ref?.empreinte ?? "") && ref.lectures.every((l) => /^[0-9a-f]{64}$/.test(l.empreinteVersion)) && ref.exclusions.every((x) => x.motif.length > 0), texteRef.slice(0, 200));
+  check("P14 · la référence ne contient aucune valeur ni le mot « projet »", !/"(nombre|altitude|valeur)"/.test(texteRef) && !/proj/i.test(texteRef));
+  await page.locator("body").press("Alt+q");
+  check("P13 · Alt+Q referme le volet ; les signes du lieu disparaissent", (await page.locator("[data-gd-volet-ouvert='site']").count()) === 0 && !(await page.locator("[data-gd-moteur]").getAttribute("data-gd-site-signes")));
+}
 await onglet(page, "couches");
 // Les quatre combinaisons nom / valeur : deux cases sans aucun lien entre elles.
 check("nom / valeur : état de départ — noms masqués, valeurs affichées", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()));
@@ -952,6 +986,28 @@ check("P8 · valeur au point : version publiée jointe (empreinte SHA-256)", /^[
   const prox = unites ? await (await page.request.get(`${BASE}/geodata/api/couches/${unites.id}/objets/001/proximite?rayon=500&couches=${unites.id}`)).json() : null;
   const c0 = prox?.couches?.[0];
   check("P8 · proximité : version comptée et couverture du rayon « non évaluée », jamais déduite", /^[0-9a-f]{64}$/.test(c0?.version?.empreinte ?? "") && c0?.couverture?.etat === "non-evaluee" && "declaree" in (c0?.couverture ?? {}), JSON.stringify(c0?.couverture ?? prox));
+}
+// Grille affichée dans « Que sait-on d'ici ? » (I3 / I6) : valeur de la cellule avec sa version ; cellule sans donnée
+// « non évaluée », jamais 0.
+{
+  const lireSiteA = async (lon, lat) => {
+    await page.locator("[data-gd-site-lon]").fill(String(lon));
+    await page.locator("[data-gd-site-lat]").fill(String(lat));
+    await page.locator("[data-gd-site-coordonnees] button[type='submit']").click();
+    await page.waitForFunction((y) => document.querySelector("[data-gd-site]")?.getAttribute("data-gd-site") === "ok" && document.querySelector("[data-gd-site-lieu]")?.textContent?.includes(y), String(lat), { timeout: 20_000 }).catch(() => undefined);
+  };
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator("body").press("Alt+q");
+  await page.locator("[data-gd-site-lon]").waitFor({ timeout: 5000 }).catch(() => undefined);
+  await lireSiteA(-8.79, 30.15);
+  const grille = page.locator("[data-gd-site-rubrique='grilles']");
+  const texteGrille = ((await grille.textContent()) ?? "").replace(/\s+/g, " ");
+  check("site · grille affichée : valeur de la cellule lue (225) avec sa source", (await grille.getAttribute("data-gd-site-etat")) === "evaluee" && texteGrille.includes("225") && (await grille.locator("[data-gd-site-provenance]").count()) === 1, texteGrille.slice(0, 200));
+  await page.screenshot({ path: join(OUT, "site-grille.png") });
+  await lireSiteA(-8.995, 30.295);
+  check("site · cellule sans donnée : grille « non évaluée » (hors emprise), jamais 0", (await grille.getAttribute("data-gd-site-etat")) === "non-evaluee" && (await grille.locator("[data-gd-site-motif='hors-emprise']").count()) === 1, ((await grille.textContent()) ?? "").slice(0, 200));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator("body").press("Alt+q");
 }
 await onglet(page, "couches");
 await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
@@ -1560,6 +1616,15 @@ await p2.keyboard.press("Enter");
 await p2.locator("[data-gd-terrain-point]").waitFor({ timeout: 10_000 }).catch(() => undefined);
 check("P7 · sans WebGL : l'altitude par coordonnées répond (valeur ou motif, jamais estimée)", (await p2.locator("[data-gd-terrain-point]").count()) === 1);
 await p2.screenshot({ path: join(OUT, "p7-sans-webgl-altitude.png") });
+// P13 sans WebGL : l'analyse de site se fait par la fiche ou par coordonnées saisies.
+await p2.evaluate(() => document.activeElement?.blur());
+await p2.locator("body").press("Alt+q");
+await p2.locator("[data-gd-site-lon]").waitFor({ timeout: 5000 }).catch(() => undefined);
+await p2.locator("[data-gd-site-lon]").fill("-8.9");
+await p2.locator("[data-gd-site-lat]").fill("30.1");
+await p2.locator("[data-gd-site-coordonnees] button[type='submit']").click();
+await p2.locator("[data-gd-site='ok']").waitFor({ timeout: 20_000 }).catch(() => undefined);
+check("P13 · sans WebGL : lecture de site par coordonnées saisies (sept rubriques)", (await p2.locator("[data-gd-site-rubrique]").count()) === 7);
 await sansGl.close();
 
 // --- Prix immobiliers (lot P7, Concept Prix v1.1 §4–§6) : panneau du catalogue et section de la fiche ---

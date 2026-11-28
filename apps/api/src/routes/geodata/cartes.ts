@@ -16,26 +16,51 @@ export const cartesRouter = Router();
 const espaceDe = async (req: Request) => (await espacePersonnel(req.user!.id)).id;
 const nomValide = (x: unknown): x is string => typeof x === "string" && x.trim().length >= 1 && x.trim().length <= 120;
 
-/** Disponibilité de chaque couche d'une composition pour l'espace (concept § 6.2). */
-export async function disponibilites(espaceId: string, composition: Composition) {
-  const ids = composition.couches.map((c) => c.versionId);
-  if (!ids.length) return {};
+/**
+ * État de versions pour l'espace (P12, réemploi du calcul de `disponibilites`) : publiée (avec la version plus récente de
+ * la même source, proposée, jamais substituée), retirée (motif, si le retrait est visible de l'espace) ou inconnue — une
+ * version privée d'un autre espace reçoit la même réponse qu'une version absente.
+ */
+export async function etatsDeVersions(espaceId: string, ids: readonly string[]) {
+  const etats = new Map<string, { etat: "publiee"; versionPlusRecente: string | null } | { etat: "retiree"; motifRetrait: string } | { etat: "inconnue" }>();
+  if (!ids.length) return etats;
   const lignes = await requete(
     `SELECT v.id, v.etat, v.motif_retrait, v.source_id, ${VERSION_CONSULTABLE("v", "$1")} AS consultable,
             (v.etat = 'retiree' AND (v.espace_id IS NULL OR v.espace_id = $1)) AS retrait_visible,
             (SELECT v2.id FROM geodata_versions v2 WHERE v2.source_id = v.source_id AND v2.id <> v.id AND ${VERSION_CONSULTABLE("v2", "$1")}
               AND v2.publiee_le > coalesce(v.publiee_le, v.preparee_le) ORDER BY v2.publiee_le DESC LIMIT 1) AS plus_recente
        FROM geodata_versions v WHERE v.id = ANY($2)`,
-    [espaceId, ids],
+    [espaceId, [...ids]],
   );
   const parId = new Map(lignes.map((l) => [l["id"] as string, l]));
+  for (const id of ids) {
+    const l = parId.get(id);
+    if (!l || (!l["consultable"] && !l["retrait_visible"])) etats.set(id, { etat: "inconnue" });
+    else if (l["retrait_visible"]) etats.set(id, { etat: "retiree", motifRetrait: String(l["motif_retrait"] ?? "") });
+    else etats.set(id, { etat: "publiee", versionPlusRecente: (l["plus_recente"] as string | null) ?? null });
+  }
+  return etats;
+}
+
+/** Disponibilité de chaque couche d'une composition pour l'espace (concept § 6.2). */
+export async function disponibilites(espaceId: string, composition: Composition) {
+  if (!composition.couches.length) return {};
+  const etats = await etatsDeVersions(espaceId, [...new Set(composition.couches.map((c) => c.versionId))]);
   return Object.fromEntries(composition.couches.map((c) => {
-    const l = parId.get(c.versionId);
-    if (!l || (!l["consultable"] && !l["retrait_visible"])) return [c.coucheId, { etat: "inaccessible", motif: "Couche absente ou non accessible à ce compte ; sa référence est conservée." }];
-    if (l["retrait_visible"]) return [c.coucheId, { etat: "retiree", motif: `Version retirée : ${l["motif_retrait"]}` }];
-    return [c.coucheId, { etat: "disponible", versionPlusRecente: l["plus_recente"] ?? null }];
+    const e = etats.get(c.versionId) ?? { etat: "inconnue" as const };
+    if (e.etat === "inconnue") return [c.coucheId, { etat: "inaccessible", motif: "Couche absente ou non accessible à ce compte ; sa référence est conservée." }];
+    if (e.etat === "retiree") return [c.coucheId, { etat: "retiree", motif: `Version retirée : ${e.motifRetrait}` }];
+    return [c.coucheId, { etat: "disponible", versionPlusRecente: e.versionPlusRecente }];
   }));
 }
+
+/** États de versions (P12) : 1 à 20 identifiants ; jamais de détail sur une version d'un autre espace. */
+cartesRouter.get("/versions/etats", async (req, res) => {
+  const ids = [...new Set(String(req.query["ids"] ?? "").split(",").map((x) => x.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > 20 || !ids.every((x) => /^[A-Za-z0-9_-]{1,64}$/.test(x))) return erreur(res, 400, "invalid_input", "Versions attendues : 1 à 20 identifiants.", { champs: ["ids"] });
+  const etats = await etatsDeVersions(await espaceDe(req), ids);
+  res.json({ versions: ids.map((id) => ({ id, ...(etats.get(id) ?? { etat: "inconnue" }) })) });
+});
 
 /**
  * Chaque couche AJOUTÉE à une composition doit être consultable et appartenir à la version indiquée ; une couche déjà
