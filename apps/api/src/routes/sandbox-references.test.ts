@@ -72,6 +72,9 @@ describe("Fichiers des références — /sandbox/references", () => {
     expect(contenuConforme("ifczip", IFC)).toBe(false);
     expect(contenuConforme("glb", Buffer.from("glTF\x02\0\0\0\0\0\0\0", "latin1"))).toBe(true);
     expect(contenuConforme("gltf", Buffer.from('{"asset":{"version":"2.0"}}'))).toBe(true);
+    // « asset » après un gros tampon intégré (au-delà des 64 premiers Kio) : accepté ; JSON sans « asset » : refusé.
+    expect(contenuConforme("gltf", Buffer.from(`{"buffers":[{"uri":"data:application/octet-stream;base64,${"A".repeat(100_000)}"}],"asset":{"version":"2.0"}}`))).toBe(true);
+    expect(contenuConforme("gltf", Buffer.from('{"buffers":[]}'))).toBe(false);
     expect(contenuConforme("ply", Buffer.from("ply\nformat ascii 1.0\n"))).toBe(true);
     expect(contenuConforme("3mf", Buffer.from([0x50, 0x4b, 0x03, 0x04, 0]))).toBe(true);
     expect(contenuConforme("dae", Buffer.from('<?xml version="1.0"?><COLLADA version="1.4.1">'))).toBe(true);

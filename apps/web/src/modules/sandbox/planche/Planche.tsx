@@ -3679,6 +3679,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [noteReference, setNoteReference] = useState<string | null>(null);
   const [uniteReference, setUniteReference] = useState<UniteReference>("m");
   /** Triangles relus de chaque fichier (unité du fichier), par empreinte ; « lecture » / « introuvable » sinon. */
+  // Clé du cache : empreinte et axe vertical choisi, les positions relues portant déjà la conversion d'axe (un même
+  // fichier posé deux fois avec deux axes garde ses deux orientations).
+  const cleFichierReference = (r: { readonly fichier: { readonly empreinte: string }; readonly axe?: string | undefined }) => `${r.fichier.empreinte}|${r.axe ?? "z"}`;
   const [fichiersReferences, setFichiersReferences] = useState<Readonly<Record<string, { readonly positions: Float32Array } | "lecture" | "introuvable">>>({});
   const [recolementBrut, setRecolement] = useState<{ reference: string; tolerance: number | null; resultat: ResultatRecolement; points: Vec3[]; modele: unknown } | null>(null);
   // Le résultat ne vaut que pour le modèle contrôlé : placement, tolérance, version ou dessin modifiés le rendent périmé.
@@ -3686,7 +3689,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const importReferenceRef = useRef<HTMLInputElement | null>(null);
   const modeImportReference = useRef<"charger" | "recharger">("charger");
   const etatsReferences = Object.fromEntries(referencesListe.map((r) => {
-    const f = fichiersReferences[r.fichier.empreinte];
+    const f = fichiersReferences[cleFichierReference(r)];
     return [r.id, f === undefined || f === "lecture" ? "lecture" : f === "introuvable" ? "introuvable" : "chargee"] as const;
   }));
   const disponibiliteCommandeReference = (id: IdCommandeReference) => disponibiliteReference(id, { reference: referenceChoisie !== null, chargee: referenceChoisie !== null && etatsReferences[referenceChoisie.id] === "chargee", lecture: readOnly });
@@ -3700,7 +3703,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const enLecture = useRef(new Set<string>());
   useEffect(() => {
     for (const r of referencesListe) {
-      const cle = r.fichier.empreinte;
+      const cle = cleFichierReference(r);
       if (fichiersReferences[cle] !== undefined || enLecture.current.has(cle)) continue;
       enLecture.current.add(cle);
       void (async () => {
@@ -3721,13 +3724,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   useEffect(() => {
     const v = vueRef.current;
     if (!v) return;
-    const cle = JSON.stringify(referencesListe.map((r) => [r.id, r.fichier.empreinte, r.echelle, r.placement, r.visible, r.opacite]));
+    const cle = JSON.stringify(referencesListe.map((r) => [r.id, cleFichierReference(r), r.echelle, r.placement, r.visible, r.opacite]));
     const d = dernierePoseReferences.current;
     if (d && d.vue === v && d.cle === cle && d.fichiers === fichiersReferences && d.recolement === recolement) return;
     dernierePoseReferences.current = { vue: v, refs: null, fichiers: fichiersReferences, recolement, cle };
     const liste = referencesListe.flatMap((r) => {
-      const f = fichiersReferences[r.fichier.empreinte];
-      return f && typeof f === "object" ? [{ id: r.id, cle: r.fichier.empreinte, positions: f.positions, echelle: r.echelle, placement: r.placement, visible: r.visible, opacite: r.opacite }] : [];
+      const f = fichiersReferences[cleFichierReference(r)];
+      return f && typeof f === "object" ? [{ id: r.id, cle: cleFichierReference(r), positions: f.positions, echelle: r.echelle, placement: r.placement, visible: r.visible, opacite: r.opacite }] : [];
     });
     v.poserReferences(liste, recolement?.points ?? []);
   });
@@ -3761,7 +3764,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return setErreurReference(t(`planche.references.erreur.archive-${e instanceof ErreurFichierReference ? e.code : "serveur"}`));
     }
     if (indexRef.current.courante !== planche) return;
-    setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
+    setFichiersReferences((a) => ({ ...a, [cleFichierReference({ fichier })]: { positions } }));
     const m = histRef.current.present.modele;
     if (mode === "recharger" && referenceChoisie) {
       const r = rechargerReference(m, referenceChoisie.id, { nom: f.name, format, fichier, echelle, triangles, date: dateDuJour() });
@@ -3791,7 +3794,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return setReferenceChoisie(null);
     }
     if (id === "controler-recolement") {
-      const f = fichiersReferences[referenceChoisie.fichier.empreinte];
+      const f = fichiersReferences[cleFichierReference(referenceChoisie)];
       if (!f || typeof f !== "object") return;
       const points = sommetsDuDessin(m);
       const resultat = controlerRecolement(points, trianglesAuProjet(referenceChoisie, f.positions), referenceChoisie.tolerance);
@@ -5217,7 +5220,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (triangles === 0) return setErreurFabricant(t("planche.references.erreur.lecture"));
     const fichier = await archiverFabricant();
     if (!fichier || indexRef.current.courante !== planche) return;
-    setFichiersReferences((a) => ({ ...a, [fichier.empreinte]: { positions } }));
+    setFichiersReferences((a) => ({ ...a, [cleFichierReference({ fichier, axe: axeFabricant })]: { positions } }));
     const r = ajouterReference(histRef.current.present.modele, { nom: lu.nom, format: lu.format, fichier, echelle: uniteFabricant, triangles, date: dateDuJour(), axe: axeFabricant });
     const note = t("planche.fabricant.note.reference", { nom: lu.nom, triangles: triangles.toLocaleString(LOCALE) });
     operationReference(r, t("planche.fabricant.poser-releve"), r.ok ? note : null);
