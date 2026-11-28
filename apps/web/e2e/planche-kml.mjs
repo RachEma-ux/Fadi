@@ -196,6 +196,21 @@ const pointZ = Object.values(m.annotations?.guides ?? {}).find((g) => g.genre ==
 check("KMZ posé par le .prj LV95, autour de 300 m et 1 000 m du point de base", (await pas()) === pas1 + 1 && !!pointZ && pointZ.origine.x > 330 && pointZ.origine.x < 400 && pointZ.origine.y > 970 && pointZ.origine.y < 1050, JSON.stringify(pointZ?.origine));
 check("le KMZ et le .prj sont archivés en base", archives.includes("kmz") && archives.includes("prj"), archives.join(","));
 await page.screenshot({ path: `${OUT}/03-prj.png` });
+// Le .prj n'a été contrôlé que pour LV95 : si le point de base change de système, il est écarté, rien n'est posé.
+await declarerPointDeBase("700 000", "6 600 000", "EPSG:2154");
+const pas2 = await pas();
+await deuxTemps("w");
+await pan.waitFor();
+await deuxTemps("Shift+W");
+await page.waitForFunction(() => (document.querySelector("[data-planche-kml-erreur]")?.textContent ?? "").includes("a changé"));
+check("point de base passé en Lambert 93 : le .prj LV95 est écarté, rien posé", (await pas()) === pas2 && !((await pan.locator("[data-planche-kml-definition]").textContent()) ?? "").includes("lv95.prj"));
+// Une demande de plus de 256 Kio (30 000 points) passe la limite générale du corps JSON : la route a la sienne (12 Mo).
+const gros = await page.evaluate(async () => {
+  const points = Array.from({ length: 30000 }, (_, i) => [2.99 + (i % 100) * 1e-5, 46.49 + Math.floor(i / 100) * 1e-5]);
+  const r = await fetch("/sandbox/projections", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systeme: "EPSG:2154", points }) });
+  return { statut: r.status, n: r.ok ? (await r.json()).points.length : 0 };
+});
+check("30 000 points (plus de 256 Kio) projetés sans refus de taille", gros.statut === 200 && gros.n === 30000, JSON.stringify(gros));
 
 // --- Règle d'or ----------------------------------------------------------------------------------------------------------------
 let regle = true;
