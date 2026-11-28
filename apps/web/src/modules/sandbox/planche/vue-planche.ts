@@ -899,6 +899,8 @@ export class VuePlanche {
       this.etiquettesFixes.push({ el, point });
     };
     const cs = (id: string, defaut: string): string => (sel.has(id) ? COULEUR_SELECTION : defaut);
+    // (Protocole 1.3) Une annotation balisée suit la visibilité de sa balise.
+    const cachee = (x: { readonly balise?: string }): boolean => !!x.balise && a.balises[x.balise]?.visible === false;
     for (const g of Object.values(a.guides)) {
       if (!this.options.guides) break;
       const c = cs(g.id, "#222222");
@@ -919,6 +921,7 @@ export class VuePlanche {
     const controle = Object.keys(a.cotes).length ? controlerCotes(modele, this.precisionCotes) : null;
     const alertes = new Set(controle?.chaines.map((x) => x.total) ?? []);
     for (const c of Object.values(a.cotes)) {
+      if (cachee(c)) continue;
       const d = dessinerCote(modele, c, pas, this.precisionCotes, this.separateurCotes);
       if (!d) continue;
       const couleur = cs(c.id, d.orpheline ? "#b3261e" : "#333333");
@@ -932,6 +935,7 @@ export class VuePlanche {
       }
     }
     for (const t of Object.values(a.textes)) {
+      if (t.genre === "repere" && cachee(t)) continue;
       if (t.genre === "repere") {
         this.groupeAnnotations.add(plein(cs(t.id, "#333333"), [t.ancre, t.position]));
         etiquette(t.texte, t.position, `planche-etiquette-texte${sel.has(t.id) ? " est-selectionne" : ""}`);
