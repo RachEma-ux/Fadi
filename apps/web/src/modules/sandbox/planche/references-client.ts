@@ -17,7 +17,7 @@ export class ErreurFichierReference extends Error {
 const erreurDe = (s: number): ErreurFichierReference => new ErreurFichierReference(s === 401 ? "compte" : s === 415 ? "format" : s === 413 ? "taille" : s === 404 ? "absent" : "serveur");
 
 /** Range le fichier tel quel ; rend sa référence (le même fichier déjà rangé rend la référence existante). */
-export async function archiverFichierReference(f: File, format: FormatReference | "pdf"): Promise<FichierReference> {
+export async function archiverFichierReference(f: File, format: FormatReference | "pdf" | "ifczip"): Promise<FichierReference> {
   let r: Response;
   try {
     r = await fetch(ADRESSE_REFERENCES, { method: "POST", credentials: "include", headers: { "Content-Type": "application/octet-stream", "X-Fadi-Nom": encodeURIComponent(f.name), "X-Fadi-Format": format }, body: f });

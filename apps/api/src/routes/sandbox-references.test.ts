@@ -68,6 +68,8 @@ describe("Fichiers des références — /sandbox/references", () => {
     expect(contenuConforme("obj", Buffer.from("o a\nv 1 2 3\n"))).toBe(true);
     expect(contenuConforme("obj", Buffer.from([0, 1, 2]))).toBe(false);
     expect(contenuConforme("stl", Buffer.alloc(100))).toBe(false);
+    expect(contenuConforme("ifczip", Buffer.from([0x50, 0x4b, 0x03, 0x04, 0]))).toBe(true);
+    expect(contenuConforme("ifczip", IFC)).toBe(false);
     // PDF reçu (lot C4, étape 4).
     expect(contenuConforme("pdf", Buffer.from("%PDF-1.7\n%\xe2\xe3\n1 0 obj"))).toBe(true);
     expect(contenuConforme("pdf", Buffer.from("PDF ou pas"))).toBe(false);

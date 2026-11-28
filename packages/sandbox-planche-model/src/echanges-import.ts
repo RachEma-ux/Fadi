@@ -4,7 +4,7 @@
  * `construireImport` (construction quasi linéaire, hors du modèle, faite dans un travailleur par la Planche) puis `poserImport`. Limites déclarées, jamais silencieuses : triangles d'aire nulle ignorés, unité du fichier choisie (OBJ, STL) ou lue (IFC : longueur en mètre, centimètre ou
  * millimètre ; une autre unité est refusée), IFC lu seulement s'il contient des `IfcTriangulatedFaceSet`.
  */
-import { type ContenuImporte, type Modele, construireMaillageImporte, modifierAnnotations, poserMaillagesImportes } from "./geometrie-libre.js";
+import { type ContenuImporte, type Id, type Modele, construireMaillageImporte, modifierAnnotations, poserMaillagesImportes } from "./geometrie-libre.js";
 import { cross, len, scale, sub, v3, type Vec3 } from "./vecteur.js";
 
 export type FormatImport = "obj" | "stl" | "ifc";
@@ -158,6 +158,8 @@ export interface ResultatImport {
   readonly triangles: number;
   /** Triangles d'aire nulle laissés de côté. */
   readonly ignores: number;
+  /** (Cas 4, C4 étape 6) Occurrences posées, dans l'ordre des contenus non vides. */
+  readonly occurrences: readonly Id[];
 }
 
 /** Triangles d'un maillage lu, à l'échelle (mètres), sans les triangles d'aire nulle (comptés). */
@@ -204,7 +206,7 @@ export function poserImport(m: Modele, contenus: readonly ContenuImporte[], igno
       a.correspondances[k] = { id: k, format: consigner.format, fichier: consigner.fichier, metresParUnite: echelle };
     }).modele;
   }
-  return { modele: courant, objets, triangles: contenus.reduce((n, x) => n + x.triangles, 0), ignores };
+  return { modele: courant, objets, triangles: contenus.reduce((n, x) => n + x.triangles, 0), ignores, occurrences: r.occurrences };
 }
 
 /**

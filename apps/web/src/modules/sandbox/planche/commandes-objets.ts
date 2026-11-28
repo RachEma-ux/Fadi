@@ -913,3 +913,28 @@ export function disponibiliteGabarit(id: IdCommandeGabarit, s: { readonly balise
   // Créer la Planche : depuis le gabarit choisi, ou vide sans gabarit (« Planche vide »).
   return { disponible: true, motif: null };
 }
+
+/**
+ * IFC structuré (cas 4, lot C4, étape 6) : panneau d'export (contrôler, exporter) et panneau d'import (choisir un fichier,
+ * importer) ; règle d'or : icône, barre, raccourci en deux temps.
+ */
+export type IdCommandeIfc = "ifc-structure" | "exporter-ifc" | "controler-ifc" | "import-ifc" | "importer-ifc";
+export interface CommandeIfc {
+  readonly id: IdCommandeIfc;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_IFC: readonly CommandeIfc[] = (["ifc-structure", "exporter-ifc", "controler-ifc", "import-ifc", "importer-ifc"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.ifc.${id}` as CleMessage, court: `planche.ifc.court.${id}` as CleMessage }));
+
+/**
+ * Disponibilité : ouvrir et contrôler toujours ; exporter sauf constat bloquant (modèle vide ; l'export ne modifie rien,
+ * permis en lecture) ; importer un fichier lu, hors lecture.
+ */
+export function disponibiliteIfc(id: IdCommandeIfc, s: { readonly bloquant: boolean; readonly lu: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "ifc-structure" || id === "import-ifc" || id === "controler-ifc") return { disponible: true, motif: null };
+  if (id === "exporter-ifc") return s.bloquant ? { disponible: false, motif: "planche.ifc.motif.vide" } : { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  return s.lu ? { disponible: true, motif: null } : { disponible: false, motif: "planche.ifc.motif.fichier" };
+}
