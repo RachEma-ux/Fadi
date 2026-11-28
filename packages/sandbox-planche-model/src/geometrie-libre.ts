@@ -134,7 +134,8 @@ export interface Occurrence {
   /** (Lot L14) Repère de pièce (liste de débit) : posé par la renumérotation, gardé par une copie. */
   readonly repere?: string;
   /** (Cas 4, niveaux d'étage) Niveau d'étage de l'objet (`annotations.niveaux`) : l'objet suit son altitude. */
-  readonly niveau?: Id;  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
+  readonly niveau?: Id;
+  /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
 }
 
@@ -3502,6 +3503,27 @@ export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | nul
       if (!f) continue;
       const { materiauRecto: _ancien, ...reste } = f;
       c.faces.set(id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+    }
+  });
+}
+
+/** Attributs d'une face ou d'une arête reportés après un redessin (préparation d'un fond DAO, cas 2 lot 3). */
+export type AttributsReportFace = Pick<Face, "materiauRecto" | "materiauVerso" | "masquee">;
+export type AttributsReportArete = Pick<Arete, "adoucie" | "masquee" | "courbe">;
+
+/** Reporte des attributs sur des faces et des arêtes existantes du contexte (les champs absents restent absents). */
+export function reporterAttributs(m: Modele, faces: ReadonlyMap<Id, AttributsReportFace>, aretes: ReadonlyMap<Id, AttributsReportArete>, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const [id, x] of faces) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, { ...f, ...x });
+    }
+    for (const [id, x] of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      // Une courbe disparue entre-temps n'est pas rattachée : l'arête reste libre.
+      const { courbe, ...reste } = x;
+      c.aretes.set(id, { ...a, ...reste, ...(courbe !== undefined && c.courbes.has(courbe) ? { courbe } : {}) });
     }
   });
 }

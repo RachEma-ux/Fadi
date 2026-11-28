@@ -126,7 +126,7 @@ await page.waitForTimeout(1500);
 const boutonTerrain = await page.locator("[data-gd-terrain-bouton]").evaluate((b) => ({ touche: b.getAttribute("aria-keyshortcuts"), icone: b.querySelector("path")?.getAttribute("d") }));
 const iconesBarre = await page.locator("[data-gd-barre-outil] path, [data-gd-donnees] path").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")));
 const outilsBarre = await page.locator("[data-gd-barre-outil]").count();
-check("règle d'or : bouton « Terrain » de la carte (à côté de « Données »), icône propre, raccourci Alt+H ; la barre d'outils garde ses 16 outils", boutonTerrain.touche === "Alt+H" && !iconesBarre.includes(boutonTerrain.icone) && outilsBarre === 16, `${outilsBarre} outils`);
+check("règle d'or : bouton « Terrain » de la carte (à côté de « Données »), icône propre, raccourci Alt+H ; la barre d'outils garde ses 17 outils (dont « Que sait-on d'ici ? », P13)", boutonTerrain.touche === "Alt+H" && !iconesBarre.includes(boutonTerrain.icone) && outilsBarre === 17, `${outilsBarre} outils`);
 const boiteTerrain = await page.locator("[data-gd-terrain-bouton]").boundingBox(), boiteDonnees = await page.locator("[data-gd-donnees]").boundingBox();
 check("bouton « Terrain » : à droite de « Données », même ligne, sans chevauchement", boiteTerrain.x >= boiteDonnees.x + boiteDonnees.width && Math.abs(boiteTerrain.y - boiteDonnees.y) <= 2, JSON.stringify({ boiteDonnees, boiteTerrain }));
 

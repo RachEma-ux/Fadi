@@ -321,6 +321,14 @@ const commandes: EntreeSandbox[] = [
   // Extension « Contrôle et nettoyage » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("controler", "controle", "stethoscope", "Maj+F8", "panneau-controle", true),
   c("nettoyer", "controle", "sparkles", "Maj+F2", "panneau-controle", true),
+  // Cas 2 du catalogue, lot 3 (27 novembre 2026) : parcours et correction des défauts, fond DAO, volumes, pièces du permis.
+  // Ctrl+Maj+F2 à F6 et F12 étaient libres (F7 à F11 sont pris par les paquets d'essai d'extensions).
+  c("defaut-precedent", "controle", "player-track-prev", "Ctrl+Maj+F2", "panneau-controle", true),
+  c("defaut-suivant", "controle", "player-track-next", "Ctrl+Maj+F3", "panneau-controle", true),
+  c("corriger-defaut", "controle", "tool", "Ctrl+Maj+F4", "panneau-controle", true),
+  c("preparer-fond-dao", "controle", "vector-triangle", "Ctrl+Maj+F5", "panneau-controle", true),
+  c("fusionner-volumes", "controle", "box-multiple", "Ctrl+Maj+F6", "panneau-controle", true),
+  c("pieces-permis", "controle", "file-certificate", "Ctrl+Maj+F12", "panneau-controle", true),
   // Extension « Composants dynamiques » (25 novembre 2026) : barre de son panneau, hors des 86 entrées du catalogue.
   c("composant-dynamique", "dynamique", "math-function", "Maj+F7", "panneau-dynamique", true),
   c("redessiner-composant", "dynamique", "refresh", "Maj+F11", "panneau-dynamique", true),

@@ -151,6 +151,21 @@ import {
   redessinerDynamique,
   type ChoixNettoyage,
   controlerModele,
+  releverDefauts,
+  compterDefauts,
+  corrigerDefaut,
+  indiceDefaut,
+  reglagesControle,
+  changerReglagesControle,
+  preparerFondDao,
+  fusionnerVolumes,
+  lireReglesPieces,
+  poserReglesPieces,
+  evaluerPieces,
+  controlerSite,
+  type OptionsFondDao,
+  type ReglagesControle,
+  type EtatSite,
   nettoyerModele,
   objetsNonSolides,
   rienANettoyer,
@@ -337,7 +352,7 @@ import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionD
 import { SECTIONS } from "./barres-outils";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
-import { PanneauControle } from "./panneau-controle";
+import { PanneauControle, type VueControle } from "./panneau-controle";
 import { PanneauDynamique } from "./panneau-dynamique";
 import { PanneauEmplacement } from "./panneau-emplacement";
 import { SectionPointDeBase } from "./panneau-point-de-base";
@@ -451,7 +466,9 @@ export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | 
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
   try {
-    const v = Number(window.localStorage.getItem(CLE_PRECISION));
+    // Aucune préférence enregistrée : 2 décimales (Number(null) vaudrait 0 et effacerait les centimètres).
+    const brut = window.localStorage.getItem(CLE_PRECISION);
+    const v = brut === null || brut.trim() === "" ? Number.NaN : Number(brut);
     return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 2;
   } catch {
     return 2;
@@ -593,6 +610,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
+  /** (Protocole 1.3) Précision lue par les extensions à chaque appel (`unites.lire`). */
+  const precisionRef = useRef(precision);
+  precisionRef.current = precision;
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
@@ -613,6 +633,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Extension « Contrôle et nettoyage » : ce que le nettoyage retire (choix de la séance) et le dernier résultat.
   const [choixNettoyage, setChoixNettoyage] = useState<ChoixNettoyage>(CHOIX_NETTOYAGE_DEFAUT);
   const [noteControle, setNoteControle] = useState<string | null>(null);
+  // Cas 2, lot 3 : vue du panneau Contrôle, défaut courant, options du fond DAO.
+  const [vueControle, setVueControle] = useState<VueControle>("releve");
+  const [indiceControle, setIndiceControle] = useState(-1);
+  const [optionsFondDao, setOptionsFondDao] = useState<OptionsFondDao>({ aplatir: true, souder: 0.005, faces: true });
+  // Le panneau rouvert (colonne) montre le relevé ; la vue choisie par une commande ne survit pas à sa fermeture.
+  useEffect(() => {
+    if (panneau !== "controle") setVueControle("releve");
+  }, [panneau]);
   // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
   const booleensRef = useRef<AdaptateurBooleens | null>(null);
   const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
@@ -2861,13 +2889,113 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Panneau fermé : le relevé n'est calculé que si l'extension est active, et une fois par modèle (pas à chaque rendu).
   const controleOffert = !masquees.has("commande:nettoyer");
   const rapportNettoyage = useMemo(() => rapportControle ?? (controleOffert ? controlerModele(hist.present.modele) : null), [rapportControle, controleOffert, hist.present.modele]);
+  // Cas 2, lot 3 : défauts de la racine, relevés panneau ouvert (ou à la demande d'un parcours).
+  const defautsControle = useMemo(() => (panneau === "controle" ? releverDefauts(hist.present.modele) : []), [panneau, hist.present.modele]);
+  const compteControle = useMemo(() => compterDefauts(defautsControle), [defautsControle]);
+  const defautCourant = indiceControle >= 0 ? defautsControle[indiceControle] : undefined;
+  const objetsSelectionnes = dans === undefined ? (vue.selection ?? []).filter((id) => hist.present.modele.racine.occurrences[id]) : [];
+  const cibleFondDao: string | undefined = dans ?? (objetsSelectionnes.length === 1 ? objetsSelectionnes[0] : undefined);
+  const apercuFondDao = useMemo(() => {
+    if (panneau !== "controle" || vueControle !== "fond-dao" || cibleFondDao === undefined) return null;
+    try {
+      return preparerFondDao(hist.present.modele, optionsFondDao, cibleFondDao).bilan;
+    } catch {
+      return null;
+    }
+  }, [panneau, vueControle, cibleFondDao, optionsFondDao, hist.present.modele]);
+  const apercuVolumes = useMemo(() => {
+    if (panneau !== "controle" || vueControle !== "fond-dao") return null;
+    if (objetsSelectionnes.length < 2) return { selectionnes: objetsSelectionnes.length, interieures: 0, cloisons: 0 };
+    try {
+      const r = fusionnerVolumes(hist.present.modele, objetsSelectionnes);
+      return { selectionnes: objetsSelectionnes.length, interieures: r.faces, cloisons: r.aretes };
+    } catch {
+      return { selectionnes: objetsSelectionnes.length, interieures: 0, cloisons: 0 };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panneau, vueControle, objetsSelectionnes.join("|"), hist.present.modele]);
   const disponibiliteCommandeControle = (id: IdCommandeControle) =>
-    disponibiliteControle(id, { aNettoyer: id === "nettoyer" && rapportNettoyage !== null && !rienANettoyer(rapportNettoyage, choixNettoyage), dansObjet: dans !== undefined, lecture: readOnly });
+    disponibiliteControle(id, {
+      aNettoyer: id === "nettoyer" && rapportNettoyage !== null && !rienANettoyer(rapportNettoyage, choixNettoyage),
+      dansObjet: dans !== undefined,
+      lecture: readOnly,
+      // Panneau fermé : le relevé est fait à la demande du parcours.
+      defauts: panneau === "controle" ? defautsControle.length : 1,
+      corrigeable: dans === undefined && defautCourant?.correction !== undefined,
+      objetsSelectionnes: objetsSelectionnes.length,
+    });
+  /** Cadre la vue sur un défaut et sélectionne ce qui le porte. */
+  const montrerDefaut = (i: number, liste = defautsControle) => {
+    const d = liste[i];
+    setIndiceControle(i);
+    if (!d) return;
+    setSelection([...d.ids]);
+    const r = 0.6;
+    vueRef.current?.cadrer({ min: { x: d.position.x - r, y: d.position.y - r, z: d.position.z - r }, max: { x: d.position.x + r, y: d.position.y + r, z: d.position.z + r } }, margesVue(racineRef.current));
+    setNoteControle(null);
+    rafraichir();
+  };
+  const changerSeuilsControle = (r: Partial<ReglagesControle>) => operer(t("planche.controle.seuils"), (m) => ({ modele: changerReglagesControle(m, r).modele }));
   const executerControle = (id: IdCommandeControle) => {
     if (!disponibiliteCommandeControle(id).disponible) return;
     if (id === "controler") {
       setNoteControle(null);
+      setVueControle("releve");
       setPanneau("controle");
+      return;
+    }
+    if (id === "defaut-suivant" || id === "defaut-precedent") {
+      setVueControle("releve");
+      setPanneau("controle");
+      const liste = panneau === "controle" ? defautsControle : releverDefauts(histRef.current.present.modele);
+      const i = indiceDefaut(liste.length, indiceControle, id === "defaut-suivant" ? 1 : -1);
+      if (i < 0) setNoteControle(t("planche.controle.aucun-defaut"));
+      montrerDefaut(i, liste);
+      return;
+    }
+    if (id === "corriger-defaut") {
+      const d = defautCourant;
+      if (!d) return;
+      operer(t("planche.controle.corriger-defaut"), (m) => {
+        const r = corrigerDefaut(m, d);
+        const message = t("planche.controle.note.corrige");
+        setNoteControle(message);
+        return { modele: r.modele, selection: [], message };
+      });
+      // Le relevé change : le défaut suivant prend la même place dans la liste.
+      setIndiceControle((i) => Math.min(i, Math.max(-1, defautsControle.length - 2)));
+      return;
+    }
+    if (id === "pieces-permis") {
+      setNoteControle(null);
+      setVueControle("pieces");
+      setPanneau("controle");
+      return;
+    }
+    if (id === "preparer-fond-dao" || id === "fusionner-volumes") {
+      if (panneau !== "controle" || vueControle !== "fond-dao") {
+        setNoteControle(null);
+        setVueControle("fond-dao");
+        setPanneau("controle");
+        return;
+      }
+      if (id === "preparer-fond-dao") {
+        const cible = cibleFondDao;
+        operer(t("planche.controle.preparer-fond-dao"), (m) => {
+          const r = preparerFondDao(m, optionsFondDao, cible);
+          const message = t("planche.fond-dao.note", { aplatis: String(r.bilan.aplatis), soudures: String(r.bilan.soudures), faces: String(r.bilan.faces) });
+          setNoteControle(message);
+          return { modele: r.modele, message };
+        });
+        return;
+      }
+      const objets = objetsSelectionnes;
+      operer(t("planche.controle.fusionner-volumes"), (m) => {
+        const r = fusionnerVolumes(m, objets);
+        const message = t("planche.volumes.note", { faces: String(r.faces) });
+        setNoteControle(message);
+        return { modele: r.modele, selection: [r.occurrence], message };
+      });
       return;
     }
     operer(t("planche.controle.nettoyer"), (m) => {
@@ -2957,6 +3085,47 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     },
   });
   sitesProjetRef.current = sitesProjet;
+  // Cas 2, lot 3 : pièces du permis et site avant émission (le site rattaché est lu dans la base dédiée par le menu Sites).
+  const siteRattache = sitesProjet.site;
+  const etatSite: EtatSite | null = useMemo(
+    () => (siteRattache ? { rattache: true, parcelle: siteRattache.parcelle !== null, nord: siteRattache.observations.nord !== undefined, altitude: siteRattache.observations.altitudeReference !== undefined } : null),
+    [siteRattache],
+  );
+  const reglesPieces = annotationsDe(hist.present.modele.annotations).reglages?.reglesPieces ?? null;
+  const bilanPieces = useMemo(() => (panneau === "controle" && vueControle === "pieces" ? evaluerPieces(hist.present.modele, etatSite) : null), [panneau, vueControle, hist.present.modele, etatSite]);
+  const lignesSite = useMemo(() => (panneau === "controle" && vueControle === "pieces" ? controlerSite(hist.present.modele, etatSite) : []), [panneau, vueControle, hist.present.modele, etatSite]);
+  const chargerReglesPieces = (f: File) => {
+    void f.text().then((texte) => {
+      const lu = lireReglesPieces(texte, f.name);
+      if ("erreur" in lu) {
+        setNoteControle(lu.erreur);
+        return;
+      }
+      // Interface ≠ base de données (D-GD-29) : le fichier est archivé tel quel en base (extension « Contrôle et nettoyage »)
+      // avant d'être posé avec le modèle ; un refus d'archivage est montré, le fichier reste lisible.
+      void archiverFichierExtension("controle", { nom: f.name, texte }).then((issue) => {
+        const regles = issue.ok ? { ...lu.regles, archive: issue.archive } : { ...lu.regles, refusArchive: issue.motif };
+        operer(t("planche.pieces.charger"), (m) => {
+          const message = issue.ok ? t("planche.pieces.note.charge", { nom: f.name }) : t("planche.pieces.note.charge-sans-base", { nom: f.name, motif: t(`planche.pieces.motif.${issue.motif}` as "planche.pieces.motif.impossible") });
+          setNoteControle(message);
+          return { modele: poserReglesPieces(m, regles).modele, message };
+        });
+      });
+    });
+  };
+  const localiserManqueSite = () => {
+    const manque = lignesSite.find((l) => l.etat !== "present");
+    if (!manque) {
+      setNoteControle(t("planche.pieces.note.complet"));
+      return;
+    }
+    if (manque.ligne === "nord" || manque.ligne === "altitude") {
+      if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+      setPanneau("emplacement");
+      return;
+    }
+    setNoteControle(t(`planche.pieces.note.manque.${manque.ligne}` as "planche.pieces.note.manque.rattache"));
+  };
   useEffect(() => {
     if (sitesProjet.note) setMessage(sitesProjet.note.texte);
   }, [sitesProjet.note]);
@@ -3967,6 +4136,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     selection: () => selectionRef.current,
     dans: () => dansRef.current,
     separateur: () => (LANGUE_INTERFACE === "en" ? "." : ","),
+    decimales: () => precisionRef.current,
     appliquer: (travail, nom, _crees, contexteAppel) => {
       if (readOnly) return false;
       const marque = contexteAppel?.marque as { rebond?: unknown; fige?: unknown } | undefined;
@@ -4021,7 +4191,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const nom = texteFiche(p.fiche.nom);
     const acces = (): AccesPlanche => accesExtensionRef.current(id);
     const hote = creerHoteExtension(p, {
-      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? "," },
+      acces: { modele: () => acces().modele(), selection: () => acces().selection(), dans: () => acces().dans(), appliquer: (...a) => acces().appliquer(...a), selectionner: (...a) => acces().selectionner(...a), separateur: () => acces().separateur?.() ?? ",", decimales: () => acces().decimales?.() ?? 2 },
       surEcheance: (i) => plancheMontee.current && signalerArretReaction(nom, i),
       libelleEcheance: t("extensions.installee.reaction", { extension: nom }),
       surAvis: (a) => plancheMontee.current && poserAvisExtension(nom, a.texte, a.genre),
@@ -5451,6 +5621,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             <h3>
               {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && <Pictogramme picto={pictoPanneau(panneau)} />}
               {t(`panneau.${panneau}` as "panneau.info-entite")}
+              {panneau === "controle" && vueControle !== "releve" ? ` · ${t(`planche.controle.vue.${vueControle}`)}` : ""}
             </h3>
             {PANNEAUX_EN_TETE_COMPLETE.has(panneau) && entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)?.raccourci && <span className="planche-panneau-raccourci" data-planche-panneau-raccourci>{afficherRaccourci(entreeSandbox("commande", COMMANDE_DU_PANNEAU[panneau] ?? panneau)!.raccourci!)}</span>}
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
@@ -5659,7 +5830,40 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               <PanneauNumerotation familles={famillesNumerotees} niveaux={niveauxNumerotation} apercu={apercuNumerotation} reglages={reglagesNumerotation} onReglages={setReglagesNumerotation} executer={executerNumerotation} disponibilite={disponibiliteCommandeNumerotation} lecture={readOnly} note={noteNumerotation} />
             )}
             {panneau === "controle" && rapportControle && (
-              <PanneauControle rapport={rapportControle} choix={choixNettoyage} onChoix={setChoixNettoyage} executer={executerControle} disponibilite={disponibiliteCommandeControle} onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null} lecture={readOnly} note={noteControle} />
+              <PanneauControle
+                rapport={rapportControle}
+                choix={choixNettoyage}
+                onChoix={setChoixNettoyage}
+                executer={executerControle}
+                disponibilite={disponibiliteCommandeControle}
+                onSelectionnerOuverts={dans === undefined ? selectionnerNonSolides : null}
+                lecture={readOnly}
+                note={noteControle}
+                vue={vueControle}
+                separateur={SEPARATEUR_DECIMAL}
+                defauts={defautsControle}
+                compte={compteControle}
+                reglages={reglagesControle(hist.present.modele)}
+                onReglages={changerSeuilsControle}
+                indice={indiceControle}
+                nomObjet={(id) => hist.present.modele.racine.occurrences[id]?.nom ?? t("planche.controle.objet")}
+                onIgnorer={() => montrerDefaut(indiceDefaut(defautsControle.length, indiceControle, 1))}
+                onSelectionnerDefaut={defautCourant ? () => montrerDefaut(indiceControle) : undefined}
+                optionsFondDao={optionsFondDao}
+                onOptionsFondDao={setOptionsFondDao}
+                apercuFondDao={apercuFondDao}
+                volumes={apercuVolumes}
+                regles={reglesPieces}
+                pieces={bilanPieces}
+                site={lignesSite}
+                onChargerRegles={chargerReglesPieces}
+                onRetirerRegles={() => operer(t("planche.pieces.retirer"), (m) => ({ modele: poserReglesPieces(m, null).modele }))}
+                onOuvrirEmplacement={() => {
+                  if (masquees.has("panneau:emplacement")) prefsSandbox.modifier({ ...prefsSandbox.preferences, extensions: basculerExtension(prefsSandbox.preferences.extensions, "emplacement", true) });
+                  setPanneau("emplacement");
+                }}
+                onLocaliserManque={localiserManqueSite}
+              />
             )}
             {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} precision={precision} actions={actionsInfo} referenceNiveaux={plancheDe(indexPlanches).altitudeRef}
               echelle={<SectionRemiseEchelle mesureeDefaut={longueurMesure} separateur={SEPARATEUR_DECIMAL} mesuree={echelleMesuree} reelle={echelleReelle} onMesuree={setEchelleMesuree} onReelle={setEchelleReelle} executer={executerAccrochage} disponibilite={disponibiliteCommandeAccrochage} note={noteEchelle} />} />}
