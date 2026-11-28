@@ -194,6 +194,7 @@ export function creerExecutantExtension(
     }),
     objets: Object.freeze({
       verrouiller: (ids: unknown, verrou: unknown = true) => demander("objets.verrouiller", { ids: typeof ids === "string" ? [ids] : ids, verrou }),
+      lire: () => demander("objets.lire"),
     }),
     niveaux: Object.freeze({
       lire: () => demander("niveaux.lire"),
@@ -202,6 +203,7 @@ export function creerExecutantExtension(
       lire: () => demander("site.lire"),
     }),
     geometrie: Object.freeze({
+      intersection: (objets: unknown, contre?: unknown) => demander("geometrie.intersection", { objets: typeof objets === "string" ? [objets] : objets, ...(contre === undefined || contre === null ? {} : { contre: typeof contre === "string" ? [contre] : contre }) }),
       rayon: (rayons: unknown, options?: unknown) => demander("geometrie.rayon", { rayons: Array.isArray(rayons) ? rayons : [rayons], ...(estObjetSimple(options) ? options : {}) }),
       coupe: (hauteur: unknown, objets?: unknown, sansBalises?: unknown) => demander("geometrie.coupe", { hauteur, ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),
       projection: (objets?: unknown, sansBalises?: unknown) => demander("geometrie.projection", { ...(objets === undefined || objets === null ? {} : { objets: typeof objets === "string" ? [objets] : objets }), ...(sansBalises === undefined ? {} : { sansBalises }) }),

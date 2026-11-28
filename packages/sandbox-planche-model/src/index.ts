@@ -42,6 +42,7 @@ export * from "./catalogue-extensions.js";
 export * from "./protocole-extensions.js";
 export * from "./executant-extension.js";
 export * from "./services-extensions.js";
+export * from "./intersections-extensions.js";
 export * from "./extensions-installees.js";
 export * from "./administration-extensions.js";
 export * from "./saisies-extensions.js";

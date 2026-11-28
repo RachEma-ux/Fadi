@@ -20,7 +20,7 @@ import { MOTIF_ID_EXTENSION, MOTIF_VERSION_EXTENSION } from "./extensions-sandbo
 
 export const FORMAT_PAQUET_EXTENSION = "fadi-addon/1";
 /** Version du protocole que parle cette Planche : `majeur.mineur`. Le mineur augmente quand on ajoute, le majeur quand on retire. */
-export const VERSION_PROTOCOLE = "1.6";
+export const VERSION_PROTOCOLE = "1.7";
 
 /** Bornes arrêtées le 25 novembre 2026 : caractères de code, caractères du paquet entier, durées par commande et par événement. */
 export const BORNES_EXTENSION = {
@@ -366,6 +366,9 @@ export function lireMessageProtocole(v: unknown): MessageProtocole | null {
  * Protocole 1.6 (cas 3, lot 4, site) : `site.lire` (Emplacement saisi : latitude, longitude, altitude, lieu, et nord vrai ;
  * `null` s'il n'est pas renseigné), `geometrie.rayon` (lancer de rayons contre les faces visibles du modèle) et la fonction
  * de dessin `triangles` (faces explicites, coplanaires fusionnées, en une opération).
+ * Protocole 1.7 (cas 3, lot 5, géométrie placée et contrôles) : `objets.lire` (groupes et composants à tous les niveaux,
+ * avec leur transformation dans le modèle et leur contenu), `geometrie.intersection` (traversées face contre face entre
+ * objets) ; `modele.lire { details: true }` rend aussi la normale et le contour des trous de chaque face.
  */
 export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | null>> = {
   "journal.afficher": null,
@@ -402,6 +405,8 @@ export const DEMANDES_EXTENSION: Readonly<Record<string, PermissionExtension | n
   "niveaux.lire": "modele.lire",
   "site.lire": "modele.lire",
   "geometrie.rayon": "modele.lire",
+  "objets.lire": "modele.lire",
+  "geometrie.intersection": "modele.lire",
   "minuterie.armer": "evenements",
   "minuterie.annuler": "evenements",
   "fichiers.ouvrir": "fichiers",

@@ -85,16 +85,17 @@ describe("paquet d'extension fadi-addon/1", () => {
   });
 
   it("versions : la version courante est acceptée, une plus récente ou une trop ancienne est refusée avec son motif", () => {
-    expect(VERSION_PROTOCOLE).toBe("1.6");
+    expect(VERSION_PROTOCOLE).toBe("1.7");
+    expect(jugerVersionProtocole("1.7")).toBe("acceptee");
     expect(jugerVersionProtocole("1.4")).toBe("acceptee");
     expect(jugerVersionProtocole("1.5")).toBe("acceptee");
     expect(jugerVersionProtocole("1.6")).toBe("acceptee");
-    // 1.1 à 1.6 ne font qu'ajouter : une extension écrite pour 1.0 à 1.5 reste acceptée.
+    // 1.1 à 1.7 ne font qu'ajouter : une extension écrite pour 1.0 à 1.6 reste acceptée.
     expect(jugerVersionProtocole("1.3")).toBe("acceptee");
     expect(jugerVersionProtocole("1.2")).toBe("acceptee");
     expect(jugerVersionProtocole("1.1")).toBe("acceptee");
     expect(jugerVersionProtocole("1.0")).toBe("acceptee");
-    expect(jugerVersionProtocole("1.7")).toBe("trop_recente");
+    expect(jugerVersionProtocole("1.8")).toBe("trop_recente");
     expect(jugerVersionProtocole("2.0")).toBe("trop_recente");
     expect(jugerVersionProtocole("0.9")).toBe("trop_ancienne");
     expect(jugerVersionProtocole("un")).toBe("mal_formee");
@@ -102,7 +103,8 @@ describe("paquet d'extension fadi-addon/1", () => {
     expect(jugerVersionProtocole("2.3", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("3.0", "3.1")).toBe("acceptee");
     expect(jugerVersionProtocole("1.9", "3.1")).toBe("trop_ancienne");
-    expect(refuse(paquet({}, { protocole: "1.7" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.7/);
+    expect(refuse(paquet({}, { protocole: "1.8" }))).toMatch(/^version_non_prise_en_charge — fiche : protocole 1\.8/);
+    expect(refuse(paquet({}, { protocole: "1.7" }))).toBe("accepté");
     expect(refuse(paquet({}, { protocole: "1.6" }))).toBe("accepté");
     expect(refuse(paquet({}, { protocole: "1.5" }))).toBe("accepté");
     expect(refuse(paquet({}, { protocole: "1.4" }))).toBe("accepté");
@@ -148,7 +150,7 @@ describe("espace d'exécution d'une extension", () => {
     expect(x.demarrer()).toBeNull();
     x.recevoir(demandeProtocole(10, "commande.compter"));
     x.recevoir(demandeProtocole(11, "commande.compter"));
-    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.6" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
+    expect(recus).toEqual([demandeProtocole(1, "journal.afficher", { ligne: "prête essai-socle 1.7" }), reponseProtocole(10, 1), reponseProtocole(11, 2)]);
   });
 
   it("demande sans traitement → erreur nommée ; événement sans traitement → simple accusé", () => {
