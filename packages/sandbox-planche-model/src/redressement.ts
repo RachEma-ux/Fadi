@@ -13,7 +13,10 @@
  */
 import type { PixelFond, PositionPlan } from "./fonds.js";
 
-/** Homographie 3 × 3 rangée par lignes, h[8] = 1. */
+/**
+ * Homographie 3 × 3 rangée par lignes. Son échelle est choisie pour que le dénominateur soit positif sur le quadrilatère
+ * pointé (et donc du côté de la ligne de fuite où se trouve la façade) : h[8] n'est pas forcément 1.
+ */
 export type Homographie = readonly [number, number, number, number, number, number, number, number, number];
 
 const fini = (v: number) => Number.isFinite(v);
@@ -43,19 +46,31 @@ function resoudre(a: number[][], b: number[]): number[] | null {
 export function homographie(src: readonly PixelFond[], dst: readonly PositionPlan[]): Homographie | null {
   if (src.length !== 4 || dst.length !== 4) return null;
   if (!convexe(src.map((p) => [p.u, p.v])) || !convexe(dst.map((p) => [p.x, p.y]))) return null;
+  // Les pixels sont recentrés sur leur centre de gravité : le dénominateur y vaut 1, du bon côté de la ligne de fuite
+  // quelle que soit la position de l'origine de la photo (qui peut se trouver au-delà).
+  const cu = src.reduce((s, p) => s + p.u, 0) / 4;
+  const cv = src.reduce((s, p) => s + p.v, 0) / 4;
   const a: number[][] = [];
   const b: number[] = [];
   for (let i = 0; i < 4; i++) {
-    const { u, v } = src[i]!;
+    const u = src[i]!.u - cu, v = src[i]!.v - cv;
     const { x, y } = dst[i]!;
     a.push([u, v, 1, 0, 0, 0, -u * x, -v * x]);
     b.push(x);
     a.push([0, 0, 0, u, v, 1, -u * y, -v * y]);
     b.push(y);
   }
-  const h = resoudre(a, b);
-  if (!h || !h.every(fini)) return null;
-  return [h[0]!, h[1]!, h[2]!, h[3]!, h[4]!, h[5]!, h[6]!, h[7]!, 1];
+  const k = resoudre(a, b);
+  if (!k || !k.every(fini)) return null;
+  // H = K · T, T translatant de (−cu, −cv).
+  const ligne = (p: number, q: number, r: number) => [p, q, r - p * cu - q * cv] as const;
+  const [h0, h1, h2] = ligne(k[0]!, k[1]!, k[2]!);
+  const [h3, h4, h5] = ligne(k[3]!, k[4]!, k[5]!);
+  const [h6, h7, h8] = ligne(k[6]!, k[7]!, 1);
+  const h: Homographie = [h0, h1, h2, h3, h4, h5, h6, h7, h8];
+  // Les quatre coins doivent être du même côté de la ligne de fuite que leur centre.
+  if (!src.every((p) => h6 * p.u + h7 * p.v + h8 > 0)) return null;
+  return h;
 }
 
 /** Quadrilatère convexe non dégénéré (les quatre produits vectoriels de même signe). */
@@ -81,16 +96,17 @@ export function appliquerHomographie(h: Homographie, u: number, v: number): Posi
   return { x: (h[0] * u + h[1] * v + h[2]) / w, y: (h[3] * u + h[4] * v + h[5]) / w };
 }
 
-/** Inverse d'une homographie (normalisée à h[8] = 1) ; null si singulière. */
+/**
+ * Inverse d'une homographie : adjointe divisée par le déterminant, sans autre renormalisation, de sorte que l'image d'un
+ * point de dénominateur positif revienne avec un dénominateur positif ; null si singulière.
+ */
 export function inverserHomographie(h: Homographie): Homographie | null {
   const [a, b, c, d, e, f, g, k, l] = h;
   const A = e * l - f * k, B = -(d * l - f * g), C = d * k - e * g;
   const det = a * A + b * B + c * C;
   if (Math.abs(det) < 1e-18) return null;
   const r = [A, -(b * l - c * k), b * f - c * e, B, a * l - c * g, -(a * f - c * d), C, -(a * k - b * g), a * e - b * d].map((x) => x / det);
-  const n = r[8]!;
-  if (Math.abs(n) < 1e-18) return null;
-  return r.map((x) => x / n) as unknown as Homographie;
+  return r.every(fini) ? (r as unknown as Homographie) : null;
 }
 
 /** Rectangle de référence : bas gauche (0, 0), bas droit (L, 0), haut droit (L, H), haut gauche (0, H). */

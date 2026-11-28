@@ -5386,6 +5386,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     if (!h) return setErreurRedr(t("planche.redressement.erreur.degenere"));
     const x = lireNombreSaisi(saisieRedr.x), y = lireNombreSaisi(saisieRedr.y), z = lireNombreSaisi(saisieRedr.altitude), az = lireNombreSaisi(saisieRedr.azimut);
     if (x === null || y === null || z === null || az === null) return setErreurRedr(t("planche.redressement.erreur.saisie"));
+    // La pose vise la Planche ouverte au départ : si une autre est ouverte pendant le décodage ou l'archivage, rien n'est posé.
+    const planche = indexRef.current.courante;
     // Rééchantillonnage dans le navigateur (canvas), le calcul restant dans le modèle.
     let image: string;
     let cadre: ReturnType<typeof cadreRedresse>;
@@ -5421,6 +5423,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     } catch (e) {
       return setErreurRedr(t(`planche.fonds.erreur.archive-${e instanceof ErreurArchiveFond ? e.code : "serveur"}`));
     }
+    if (indexRef.current.courante !== planche) return;
     const f = photo.largeurOriginal / photo.largeur;
     const vertical: VerticalFond = {
       x,

@@ -26,6 +26,26 @@ describe("Redressement sur quatre points (étape 7c)", () => {
     expect(r.y).toBeCloseTo(2.1, 6);
   });
 
+  it("accepte une façade dont la ligne de fuite sépare l'origine de la photo du rectangle pointé", () => {
+    // Trapèze qui se resserre vers le haut : la ligne de fuite passe entre le rectangle et le pixel (0, 0).
+    const coins = [{ u: 100, v: 500 }, { u: 700, v: 500 }, { u: 500, v: 300 }, { u: 300, v: 300 }];
+    const h = homographie(coins, rectangleReference(4, 3))!;
+    expect(h).not.toBeNull();
+    for (const [i, q] of rectangleReference(4, 3).entries()) {
+      const r = appliquerHomographie(h, coins[i]!.u, coins[i]!.v)!;
+      expect(r.x).toBeCloseTo(q.x, 6);
+      expect(r.y).toBeCloseTo(q.y, 6);
+    }
+    // Le croisement des diagonales (400, 350) est le centre du rectangle : résidu nul, pas d'alerte.
+    const res = residusRedressement(h, [{ pixel: { u: 400, v: 350 }, cible: { x: 2, y: 1.5 } }], 4, 3);
+    expect(res.points[0]!).toBeLessThan(1e-6);
+    expect(res.nonPlane).toBe(false);
+    // L'inverse ramène le rectangle sur la photo.
+    const p = appliquerHomographie(inverserHomographie(h)!, 2, 1.5)!;
+    expect(p.x).toBeCloseTo(400, 6);
+    expect(p.y).toBeCloseTo(350, 6);
+  });
+
   it("refuse trois points alignés et un quadrilatère croisé", () => {
     expect(homographie([{ u: 0, v: 0 }, { u: 10, v: 0 }, { u: 20, v: 0 }, { u: 0, v: 10 }], rectangleReference(4, 3))).toBeNull();
     expect(homographie([COINS[0]!, COINS[2]!, COINS[1]!, COINS[3]!], rectangleReference(4, 3))).toBeNull();
