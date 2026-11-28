@@ -278,6 +278,16 @@ import {
   supprimerReserve,
   type ResultatReserve,
   type StatutReserve,
+  ajouterRegleHauteur,
+  REGLES_HAUTEUR_MAX,
+  basculerControle,
+  definirEnveloppe,
+  enveloppeDe,
+  modifierRegleHauteur,
+  supprimerRegleHauteur,
+  type LigneControle,
+  type ResultatControleEnveloppe,
+  type ResultatReglages,
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
@@ -323,7 +333,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTROLE, disponibiliteControle, type IdCommandeControle, COMMANDES_RESERVES, disponibiliteReserve, type IdCommandeReserve, COMMANDES_ENVELOPPE, disponibiliteEnveloppe, type IdCommandeEnveloppe, COMMANDES_DYNAMIQUE, disponibiliteDynamique, type IdCommandeDynamique, COMMANDES_EMPLACEMENT, disponibiliteEmplacement, type IdCommandeEmplacement, COMMANDES_SCRIPTS, disponibiliteScripts, type IdCommandeScripts, COMMANDES_NUMEROTATION, disponibiliteNumerotation, type IdCommandeNumerotation, COMMANDES_NIVEAUX, disponibiliteNiveau, type IdCommandeNiveau, COMMANDES_LOCAUX, disponibiliteLocal, type IdCommandeLocal, COMMANDES_MUR, disponibiliteMur, type IdCommandeMur, COMMANDES_PLAN, disponibilitePlan, type IdCommandePlan, COMMANDES_FEUILLES, disponibiliteFeuille, type IdCommandeFeuille, COMMANDES_ACCROCHAGE, GENRE_FORCE, disponibiliteAccrochage, type IdCommandeAccrochage, disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante, type BoutonBarre } from "./BarreOutilsFlottante";
 import { barreDeLOutil, barresLivrees, barresPersonnelles, entreesDe, extensionDeLaCommande, groupeDeCommande, idBarreGroupe, nomDeCopie, normaliserBarres, type BarreNommee } from "./barres-nommees";
 import { SECTIONS } from "./barres-outils";
@@ -336,6 +346,8 @@ import { SectionPointDeBase } from "./panneau-point-de-base";
 import { PanneauLocaux } from "./panneau-locaux";
 import { PanneauFeuilles } from "./panneau-feuilles";
 import { PanneauReserves, reduirePhoto } from "./panneau-reserves";
+import { PanneauEnveloppe } from "./panneau-enveloppe";
+import { type ControleurEnveloppe, creerControleurEnveloppe } from "./controle-enveloppe";
 import { type ApercuPlan, type OptionsPlan, PanneauPlanVectoriel, type SaisieMotif, type SourcePlan, TRAITS_PLAN } from "./panneau-plan-vectoriel";
 import { BarreMur } from "./barre-mur";
 import { PanneauNiveaux, type SaisieNiveau } from "./panneau-niveaux";
@@ -410,7 +422,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "accrochage" | "metre-mesure";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes" | "controle" | "dynamique" | "emplacement" | "scripts" | "niveaux" | "locaux" | "numerotation" | "plan-vectoriel" | "feuilles" | "reserves" | "enveloppe" | "accrochage" | "metre-mesure";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -425,7 +437,7 @@ const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).
 /** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
 const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set([...entreesSandbox("panneau").map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"), "accrochage", "metre-mesure"]);
 /** Panneaux du cas 4 du catalogue : leur en-tête montre leur icône et le raccourci qui les ouvre (maquettes des étapes). */
-const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves"]);
+const PANNEAUX_EN_TETE_COMPLETE: ReadonlySet<string> = new Set(["niveaux", "locaux", "plan-vectoriel", "feuilles", "reserves", "enveloppe"]);
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 /** Longueurs en mètres d'un texte d'outil (« 2.40 m », « ~ 1,5 m ») réécrites dans l'unité du projet ; mètres : inchangé. */
 export function convertirLongueursAffichees(texte: string, unite: UniteSaisie | undefined, sep: "." | ","): string {
@@ -3500,6 +3512,92 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
     setErreurReserve(erreur ? t(`planche.reserves.erreur.${erreur}`) : null);
   };
+  /**
+   * Contrôle de l'enveloppe (cas 4 du catalogue, étape 7c) : panneau hors colonne ; le calcul tourne dans un travailleur,
+   * relancé à la fin de chaque opération (après un court délai) tant que le contrôle est actif ; rien n'est modifié.
+   */
+  const enveloppe = enveloppeDe(hist.present.modele);
+  const [regleChoisieEtat, setRegleChoisie] = useState<string | null>(null);
+  const regleChoisie = enveloppe.regles.find((r) => r.id === regleChoisieEtat) ?? null;
+  const [controleEnveloppe, setControleEnveloppe] = useState<{ resultat: ResultatControleEnveloppe | null; calcul: boolean }>({ resultat: null, calcul: false });
+  const [erreurEnveloppe, setErreurEnveloppe] = useState<string | null>(null);
+  const [noteEnveloppe, setNoteEnveloppe] = useState<string | null>(null);
+  const controleurEnveloppeRef = useRef<ControleurEnveloppe | null>(null);
+  useEffect(() => {
+    if (!enveloppe.controle) {
+      controleurEnveloppeRef.current?.arreter();
+      setControleEnveloppe({ resultat: null, calcul: false });
+      return;
+    }
+    const c = (controleurEnveloppeRef.current ??= creerControleurEnveloppe((resultat, err) => {
+      setControleEnveloppe({ resultat, calcul: false });
+      if (err) setErreurEnveloppe(err);
+    }));
+    setControleEnveloppe((x) => ({ ...x, calcul: true }));
+    const m = hist.present.modele;
+    const minuterie = window.setTimeout(() => c.demander(m), 150);
+    return () => window.clearTimeout(minuterie);
+  }, [hist.present.modele, enveloppe.controle]);
+  useEffect(() => () => controleurEnveloppeRef.current?.arreter(), []);
+  useEffect(() => {
+    const r = controleEnveloppe.resultat;
+    const v = vueRef.current;
+    if (!v) return;
+    if (!r || !enveloppe.controle) return v.poserControleEnveloppe(null);
+    const contenu = r.lignes.find((l) => l.genre === "contenu");
+    const m = hist.present.modele;
+    const env = enveloppe.objet ? m.racine.occurrences[enveloppe.objet] : undefined;
+    v.poserControleEnveloppe({
+      hors: r.hors,
+      point: contenu?.etat === "ecart" ? contenu.point : null,
+      texte: contenu?.valeur ? t("planche.enveloppe.hors", { valeur: `${contenu.valeur.toLocaleString(LOCALE, { maximumFractionDigits: 2, minimumFractionDigits: 2 })} m` }) : "",
+      seuils: enveloppe.regles.filter((x) => x.seuil !== null).map((x) => ({ z: x.seuil as number, texte: t("planche.enveloppe.seuil-vue", { libelle: x.libelle }) })),
+      emprise: (env ? boiteOccurrence(m, env.id) : null) ?? v.emprise(),
+    });
+  }, [controleEnveloppe.resultat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const objetEnveloppe = (): string | null => {
+    const s = selectionRef.current;
+    return s.length === 1 && hist.present.modele.racine.occurrences[s[0]!] ? s[0]! : null;
+  };
+  const nomObjetEnveloppe = (id: string | null): string | null => {
+    const o = id ? hist.present.modele.racine.occurrences[id] : undefined;
+    return o ? (o.nom ?? hist.present.modele.definitions[o.definition]?.nom ?? id) : null;
+  };
+  const disponibiliteCommandeEnveloppe = (id: IdCommandeEnveloppe) => disponibiliteEnveloppe(id, { objet: objetEnveloppe() !== null, regle: regleChoisie !== null, lecture: readOnly, plein: enveloppeDe(hist.present.modele).regles.length >= REGLES_HAUTEUR_MAX });
+  const operationEnveloppe = (r: ResultatReglages, libelle: string, message: string | null): boolean => {
+    if (!r.ok) {
+      setErreurEnveloppe(t(`planche.enveloppe.erreur.${r.erreur}`));
+      return false;
+    }
+    setErreurEnveloppe(null);
+    setNoteEnveloppe(message);
+    operer(libelle, () => ({ modele: r.modele, ...(message ? { message } : {}) }));
+    return true;
+  };
+  const executerEnveloppe = (id: IdCommandeEnveloppe) => {
+    if (id === "enveloppe") return setPanneau("enveloppe");
+    if (!disponibiliteCommandeEnveloppe(id).disponible) return;
+    setPanneau("enveloppe");
+    const m = hist.present.modele;
+    if (id === "definir-enveloppe") {
+      const objet = objetEnveloppe();
+      operationEnveloppe(definirEnveloppe(m, objet), t("planche.enveloppe.definir-enveloppe"), t("planche.enveloppe.note.definie", { nom: nomObjetEnveloppe(objet) ?? "" }));
+    } else if (id === "controler-enveloppe") {
+      operationEnveloppe(basculerControle(m), t("planche.enveloppe.controler-enveloppe"), t(enveloppe.controle ? "planche.enveloppe.note.inactif" : "planche.enveloppe.note.actif"));
+    } else if (id === "ajouter-regle-hauteur") {
+      const r = ajouterRegleHauteur(m, t("planche.enveloppe.regle-nouvelle"));
+      if (operationEnveloppe(r, t("planche.enveloppe.ajouter-regle-hauteur"), null) && r.id) setRegleChoisie(r.id);
+    } else if (id === "supprimer-regle-hauteur" && regleChoisie) {
+      operationEnveloppe(supprimerRegleHauteur(m, regleChoisie.id), t("planche.enveloppe.supprimer-regle-hauteur"), t("planche.enveloppe.note.supprimee", { libelle: regleChoisie.libelle }));
+      setRegleChoisie(null);
+    }
+  };
+  const cadrerLigneEnveloppe = (l: LigneControle) => {
+    const p = l.point;
+    if (!p) return;
+    const d = 1.5;
+    vueRef.current?.cadrer({ min: { x: p.x - d, y: p.y - d, z: p.z - d }, max: { x: p.x + d, y: p.y + d, z: p.z + d } }, margesVue(racineRef.current));
+  };
   const executerFeuille = (id: IdCommandeFeuille) => {
     if (id === "feuilles") return setPanneau("feuilles");
     if (!disponibiliteCommandeFeuille(id).disponible) return;
@@ -4540,6 +4638,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (c.famille === "plan") executerPlan(c.id as IdCommandePlan);
     else if (c.famille === "feuille") executerFeuille(c.id as IdCommandeFeuille);
     else if (c.famille === "reserve") executerReserve(c.id as IdCommandeReserve);
+    else if (c.famille === "enveloppe") executerEnveloppe(c.id as IdCommandeEnveloppe);
     else if (c.famille === "mur") executerMur(c.id as IdCommandeMur);
     else if (c.famille === "accrochage") executerAccrochage(c.id as IdCommandeAccrochage);
     else if (c.famille === "lien") detacherLienSelection();
@@ -4610,6 +4709,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_RESERVES.map((c) => {
           const d = disponibiliteCommandeReserve(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reserves.motif.reserve"), executer: () => executerReserve(c.id) };
+        }),
+        ...COMMANDES_ENVELOPPE.map((c) => {
+          const d = disponibiliteCommandeEnveloppe(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.enveloppe.motif.objet"), executer: () => executerEnveloppe(c.id) };
         }),
         ...COMMANDES_PLAN.map((c) => {
           const d = disponibiliteCommandePlan(c.id);
@@ -5349,6 +5452,23 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 disponibilite={disponibiliteCommandeNiveau}
                 erreur={erreurNiveau}
                 note={noteNiveau}
+              />
+            )}
+            {panneau === "enveloppe" && (
+              <PanneauEnveloppe
+                reglages={enveloppe}
+                resultat={controleEnveloppe.resultat}
+                calcul={controleEnveloppe.calcul}
+                nomEnveloppe={nomObjetEnveloppe(enveloppe.objet)}
+                choisie={regleChoisie}
+                lecture={readOnly}
+                onChoisir={(id) => { setRegleChoisie(id); setErreurEnveloppe(null); setNoteEnveloppe(null); }}
+                onCadrer={cadrerLigneEnveloppe}
+                onModifier={(v) => regleChoisie && operationEnveloppe(modifierRegleHauteur(hist.present.modele, regleChoisie.id, v), t("planche.enveloppe.fiche"), null)}
+                executer={executerEnveloppe}
+                disponibilite={disponibiliteCommandeEnveloppe}
+                erreur={erreurEnveloppe}
+                note={noteEnveloppe}
               />
             )}
             {panneau === "reserves" && (

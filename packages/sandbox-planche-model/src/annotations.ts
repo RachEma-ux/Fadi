@@ -9,6 +9,7 @@
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
 import type { Reserve } from "./reserves.js";
+import type { ReglagesEnveloppe } from "./enveloppe.js";
 import type { Emplacement } from "./emplacement.js";
 import type { PointDeBase } from "./point-de-base.js";
 import type { RepereEnregistre } from "./reperes.js";
@@ -426,6 +427,8 @@ export interface Annotations {
   readonly feuilles?: Readonly<Record<Id, Feuille>>;
   /** (Cas 4, étape 7b) Réserves de chantier épinglées ; absent = aucune. */
   readonly reserves?: Readonly<Record<Id, Reserve>>;
+  /** (Cas 4, étape 7c) Enveloppe désignée, contrôle actif, règles de hauteur saisies ; absent = aucune. */
+  readonly enveloppe?: ReglagesEnveloppe;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -458,6 +461,7 @@ export interface AnnotationsMutables {
   motifs: Record<Id, MotifHachure>;
   feuilles: Record<Id, Feuille>;
   reserves: Record<Id, Reserve>;
+  enveloppe?: ReglagesEnveloppe;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;

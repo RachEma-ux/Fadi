@@ -141,7 +141,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_CONTROLE, ...COMMANDES_DYNAMIQUE, ...COMMANDES_EMPLACEMENT, ...COMMANDES_SCRIPTS, ...COMMANDES_NIVEAUX, ...COMMANDES_LOCAUX, ...COMMANDES_NUMEROTATION, ...COMMANDES_MUR, ...COMMANDES_PLAN, ...COMMANDES_FEUILLES, ...COMMANDES_ACCROCHAGE, ...COMMANDES_RESERVES, ...COMMANDES_ENVELOPPE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -534,6 +534,30 @@ export function disponibiliteReserve(id: IdCommandeReserve, s: { readonly reserv
   if (id === "reserves") return { disponible: true, motif: null };
   if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
   if (!s.reserve) return { disponible: false, motif: "planche.reserves.motif.reserve" };
+  return { disponible: true, motif: null };
+}
+
+/**
+ * Contrôle de l'enveloppe (cas 4 du catalogue, étape 7c) : ouvrir le panneau, désigner l'enveloppe (l'objet choisi),
+ * basculer le contrôle, ajouter / supprimer une règle de hauteur (règle d'or : icône, barre, raccourci).
+ */
+export type IdCommandeEnveloppe = "enveloppe" | "definir-enveloppe" | "controler-enveloppe" | "ajouter-regle-hauteur" | "supprimer-regle-hauteur";
+export interface CommandeEnveloppe {
+  readonly id: IdCommandeEnveloppe;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_ENVELOPPE: readonly CommandeEnveloppe[] = (["enveloppe", "definir-enveloppe", "controler-enveloppe", "ajouter-regle-hauteur", "supprimer-regle-hauteur"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.enveloppe.${id}` as CleMessage, court: `planche.enveloppe.court.${id}` as CleMessage }));
+
+/** Disponibilité : ouvrir toujours ; définir avec un seul objet choisi ; supprimer une règle avec une règle choisie ; ajouter sous 32 règles ; hors lecture. */
+export function disponibiliteEnveloppe(id: IdCommandeEnveloppe, s: { readonly objet: boolean; readonly regle: boolean; readonly lecture: boolean; readonly plein?: boolean }): Disponibilite {
+  if (id === "enveloppe") return { disponible: true, motif: null };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "definir-enveloppe" && !s.objet) return { disponible: false, motif: "planche.enveloppe.motif.objet" };
+  if (id === "supprimer-regle-hauteur" && !s.regle) return { disponible: false, motif: "planche.enveloppe.motif.regle" };
+  if (id === "ajouter-regle-hauteur" && s.plein) return { disponible: false, motif: "planche.enveloppe.motif.plein" };
   return { disponible: true, motif: null };
 }
 
