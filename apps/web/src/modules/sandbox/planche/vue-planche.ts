@@ -7,7 +7,7 @@
  * trackpad, bouton du milieu = orbite (Maj = panoramique), deux doigts = pincement + orbite ou panoramique, et les
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
-import { coinsFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
+import { coinsFond,  baliseMasquee, controlerCotes, dessinerCote, versPlan, directionNord, echelleGraphique, empriseNiveaux, niveauxTries, sectionsDeCoupe, soleil, tableauLocaux, texteAltitude } from "@parcours/sandbox-planche-model";
 import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, STATUTS_TRAVAUX, type StatutTravaux, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Presque, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
@@ -253,6 +253,9 @@ export class VuePlanche {
   private readonly canvas: HTMLCanvasElement;
   private readonly surcouche: HTMLDivElement;
   private readonly marqueur: HTMLDivElement;
+  /** Cas 2, lot 8 (n° 29) : échelle graphique de la vue orthographique exacte, recalculée à chaque image. */
+  private readonly echelleDom: HTMLDivElement;
+  private echelleActive = false;
   /** (Cas 2, lot 1) Loupe d'accrochage au doigt : agrandit la zone sous le doigt, au-dessus de lui. */
   private readonly loupeCanvas: HTMLCanvasElement;
   private loupeEn: Point2 | null = null;
@@ -264,6 +267,13 @@ export class VuePlanche {
   private readonly moteur: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(CHAMP_DE_VISION_INITIAL, 1, 0.02, 20000);
+  /**
+   * Cas 2, lot 8 (n° 12) : projection parallèle exacte. La caméra perspective reste le pilote (orbite, zoom, scènes,
+   * échelle nominale) ; en projection parallèle, l'image, la visée et la projection à l'écran passent par cette caméra
+   * orthographique, recalée à chaque usage sur la perspective (même position, même orientation, même demi-hauteur au plan
+   * de la cible) : les parallèles restent parallèles, sans approximation.
+   */
+  private readonly cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.02, 20000);
   private readonly cible = new THREE.Vector3(0, 0, 0);
   private readonly groupeModele = new THREE.Group();
   private readonly groupeSelection = new THREE.Group();
@@ -328,6 +338,10 @@ export class VuePlanche {
     this.surcouche.setAttribute("aria-hidden", "true");
     this.marqueur = document.createElement("div");
     this.marqueur.className = "planche-marqueur";
+    this.echelleDom = document.createElement("div");
+    this.echelleDom.className = "planche-l8-echelle";
+    this.echelleDom.setAttribute("data-planche-echelle-graphique", "");
+    this.echelleDom.style.display = "none";
     this.infobulle = document.createElement("div");
     this.infobulle.className = "planche-infobulle";
     this.cadre = document.createElement("div");
@@ -356,7 +370,7 @@ export class VuePlanche {
     this.loupeCanvas.height = TAILLE_LOUPE;
     this.loupeCanvas.setAttribute("data-planche-loupe", "");
     // Posée dans la surcouche seulement pendant qu'elle sert (un seul canevas dans la vue le reste du temps).
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg);
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg, this.echelleDom);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -413,7 +427,7 @@ export class VuePlanche {
       return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
     }
     this.camera.updateMatrixWorld();
-    this.moteur.render(this.scene, this.camera);
+    this.moteur.render(this.scene, this.cameraRendue());
     const c = document.createElement("canvas");
     c.width = this.canvas.width;
     c.height = this.canvas.height;
@@ -483,7 +497,7 @@ export class VuePlanche {
       this.moteur.setRenderTarget(cible);
       this.moteur.setClearColor(0x000000, 0);
       this.moteur.clear();
-      this.moteur.render(this.scene, this.camera);
+      this.moteur.render(this.scene, this.cameraRendue());
       this.moteur.readRenderTargetPixels(cible, 0, 0, largeur, hauteur, px);
     } catch {
       return null;
@@ -1391,13 +1405,59 @@ export class VuePlanche {
       this.camera.updateMatrixWorld();
       this.ajusterAxes();
       this.eclairerDepuisCamera();
-      this.moteur.render(this.scene, this.camera);
+      this.moteur.render(this.scene, this.cameraRendue());
       this.dessinerLoupe();
       this.placerMarqueur();
       this.placerEtiquettes();
       this.majTriade();
       this.recalerCotes();
+      this.placerEchelle();
     });
+  }
+
+  /** Affiche ou masque l'échelle graphique (n° 29) ; elle n'a de sens qu'en projection parallèle exacte. */
+  poserEchelleGraphique(active: boolean): void {
+    this.echelleActive = active;
+    this.rendre();
+  }
+
+  get echelleGraphiqueActive(): boolean {
+    return this.echelleActive;
+  }
+
+  private placerEchelle(): void {
+    const ppm = this.pixelsParMetre();
+    const e = this.echelleActive && ppm !== null ? echelleGraphique(ppm) : null;
+    if (!e) {
+      this.echelleDom.style.display = "none";
+      return;
+    }
+    const sep = (x: number) => String(Math.round(x * 1000) / 1000).replace(".", ",");
+    this.echelleDom.style.display = "block";
+    this.echelleDom.dataset["longueur"] = String(e.longueur);
+    this.echelleDom.dataset["denominateur"] = String(Math.round(e.denominateur));
+    const barre = document.createElement("div");
+    barre.className = "planche-l8-echelle-barre";
+    barre.style.width = `${e.pixels}px`;
+    // Graduations 0, L/4, L/2, L : trois cases alternées, la dernière deux fois plus longue.
+    [25, 25, 50].forEach((part, i) => {
+      const s = document.createElement("span");
+      s.className = i % 2 === 0 ? "planche-l8-echelle-plein" : "planche-l8-echelle-vide";
+      s.style.width = `${part}%`;
+      barre.append(s);
+    });
+    const graduations = document.createElement("div");
+    graduations.className = "planche-l8-echelle-graduations";
+    graduations.style.width = `${e.pixels}px`;
+    for (const g of e.graduations) {
+      const s = document.createElement("span");
+      s.style.left = `${(g / e.longueur) * 100}%`;
+      s.textContent = g === e.longueur ? `${sep(g)} m` : sep(g);
+      graduations.append(s);
+    }
+    const nominale = document.createElement("small");
+    nominale.textContent = t("planche.l8.echelle.nominale", { n: String(Math.round(e.denominateur)) });
+    this.echelleDom.replaceChildren(barre, graduations, nominale);
   }
 
   /**
@@ -1572,14 +1632,14 @@ export class VuePlanche {
 
   /** Position écran (px, relative au canevas) d'un point, ou `null` s'il est derrière la caméra. */
   versEcran(p: Vec3): Point2 | null {
-    const v = v3(p).project(this.camera);
+    const v = v3(p).project(this.cameraRendue());
     if (v.z < -1 || v.z > 1) return null;
     return { x: ((v.x + 1) / 2) * this.largeur, y: ((1 - v.y) / 2) * this.hauteur };
   }
 
   /** Rayon caméra → curseur (repère local du projet, mètres). */
   rayon(ecran: Point2): Rayon {
-    this.lanceur.setFromCamera(new THREE.Vector2((ecran.x / this.largeur) * 2 - 1, -(ecran.y / this.hauteur) * 2 + 1), this.camera);
+    this.lanceur.setFromCamera(new THREE.Vector2((ecran.x / this.largeur) * 2 - 1, -(ecran.y / this.hauteur) * 2 + 1), this.cameraRendue());
     return { origine: versVec3(this.lanceur.ray.origin), direction: versVec3(this.lanceur.ray.direction.clone().normalize()) };
   }
 
@@ -1596,7 +1656,55 @@ export class VuePlanche {
     return this.cible.clone();
   }
 
+  /** Demi-hauteur (m) de la vue au plan de la cible : la mesure commune à la perspective très fermée et à l'orthographique. */
+  private demiHauteurParallele(): number {
+    const avant = this.camera.getWorldDirection(new THREE.Vector3());
+    const d = Math.max(0.01, this.cible.clone().sub(this.camera.position).dot(avant));
+    return d * Math.tan((this.camera.fov * Math.PI) / 360);
+  }
+
+  /** Caméra du rendu et de la visée : la perspective, ou en projection parallèle l'orthographique recalée sur elle. */
+  private cameraRendue(): THREE.Camera {
+    if (!this.projectionParallele) return this.camera;
+    const c = this.camera;
+    const o = this.cameraOrtho;
+    const demi = this.demiHauteurParallele();
+    o.top = demi;
+    o.bottom = -demi;
+    o.left = -demi * c.aspect;
+    o.right = demi * c.aspect;
+    o.near = c.near;
+    o.far = c.far;
+    c.updateMatrixWorld();
+    o.position.copy(c.position);
+    o.quaternion.copy(c.quaternion);
+    o.up.copy(c.up);
+    const vue = c.view;
+    if (vue?.enabled) o.setViewOffset(vue.fullWidth, vue.fullHeight, vue.offsetX, vue.offsetY, vue.width, vue.height);
+    else o.clearViewOffset();
+    o.updateProjectionMatrix();
+    o.updateMatrixWorld();
+    return o;
+  }
+
+  /** Recette : genre de la caméra qui rend l'image (« OrthographicCamera » en projection parallèle exacte). */
+  cameraRendueType(): string {
+    return this.cameraRendue().type;
+  }
+
+  /** Recette : modèle affiché (le modèle d'affichage dérivé pendant une axonométrie éclatée). */
+  modeleAffiche(): Modele | null {
+    return this.modele ?? null;
+  }
+
+  /** Pixels par mètre à l'écran en projection parallèle (échelle graphique, n° 29) ; `null` en perspective. */
+  pixelsParMetre(): number | null {
+    return this.projectionParallele ? this.hauteur / (2 * this.demiHauteurParallele()) : null;
+  }
+
   private metresParPixel(p: Vec3 | THREE.Vector3): number {
+    // Projection parallèle exacte : la même valeur partout, quelle que soit la profondeur du point.
+    if (this.projectionParallele) return (2 * this.demiHauteurParallele()) / this.hauteur;
     const d = Math.max(0.01, this.camera.position.distanceTo(new THREE.Vector3(p.x, p.y, p.z)));
     return (2 * d * Math.tan((this.camera.fov * Math.PI) / 360)) / this.hauteur;
   }
@@ -1857,7 +1965,7 @@ export class VuePlanche {
     });
   }
 
-  /** Projection : la projection parallèle est rendue par une perspective très fermée (1°) depuis loin — approximation déclarée. */
+  /** Projection : la perspective très fermée (1°) pilote la vue parallèle ; elle est rendue exacte par `cameraRendue` (lot 8). */
   get projection(): "perspective" | "parallele" {
     return this.projectionParallele ? "parallele" : "perspective";
   }

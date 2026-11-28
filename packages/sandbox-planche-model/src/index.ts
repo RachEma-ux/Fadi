@@ -63,3 +63,5 @@ export * from "./enveloppe.js";
 export * from "./controle-l3.js";
 export * from "./balises-l4.js";
 export * from "./versions-l7.js";
+export * from "./modelisation-l8.js";
+export * from "./composants-l8.js";

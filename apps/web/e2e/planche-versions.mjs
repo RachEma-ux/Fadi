@@ -216,6 +216,9 @@ if ((await panneau("brouillon").count()) === 0) await deuxTemps("Shift+V");
 await racine.locator("[data-planche-brouillon-appliquer]").click();
 await page.waitForFunction(() => !document.querySelector("[data-planche-brouillon-bandeau]"), null, { timeout: 10000 });
 await page.waitForFunction((e) => JSON.stringify(window.fadiPlanche.modele().racine.occurrences) === e, essai, { timeout: 10000 }).catch(() => undefined);
+// Le bandeau disparaît dès que l'index désigne l'original, avant que son dessin et son historique soient rechargés :
+// le brouillon a le même contenu, donc on attend aussi l'historique rechargé (un seul pas) avant de le lire.
+await page.waitForFunction(() => window.fadiPlanche.pas() === 1, null, { timeout: 10000 }).catch(() => undefined);
 check("Appliquer : l'original reçoit le brouillon", JSON.stringify((await modele()).racine.occurrences) === essai);
 check("Appliquer : un seul pas d'historique", (await page.evaluate(() => window.fadiPlanche.pas())) === 1, String(await page.evaluate(() => window.fadiPlanche.pas())));
 await vue.focus();
@@ -233,6 +236,8 @@ await page.waitForTimeout(400);
 if ((await panneau("brouillon").count()) === 0) await deuxTemps("Shift+V");
 await racine.locator("[data-planche-brouillon-garder]").click();
 await page.waitForFunction(() => !document.querySelector("[data-planche-brouillon-bandeau]"), null, { timeout: 10000 });
+// Le message est posé après le changement de Planche (le bandeau disparaît avant) : on l'attend.
+await page.waitForFunction(() => /gardé comme variante/.test(document.querySelector("[data-planche-message], .planche-message")?.textContent ?? ""), null, { timeout: 10000 }).catch(() => undefined);
 check("Garder : le brouillon devient une variante", /gardé comme variante/.test(await message()), await message());
 await deuxTemps("v");
 await panneau("versions-jalons").waitFor();

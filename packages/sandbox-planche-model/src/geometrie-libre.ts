@@ -143,6 +143,11 @@ export interface Occurrence {
   readonly statut?: StatutTravaux;
   /** (Cas 2, lot 2) Exclu de l'accrochage : affiché et sélectionnable, mais aucun point ne s'y accroche. */
   readonly horsAccrochage?: boolean;
+  /**
+   * (Cas 2, lot 8, n° 25) Ouverture découpée par ce composant dans sa face d'appui : contexte de la face (`dans`, absent =
+   * racine) et contour du trou dans ce contexte. Le trou suit l'occurrence (déplacée, remplacée, effacée).
+   */
+  readonly ouverture?: { readonly dans?: Id; readonly contour: readonly Vec3[] };
 }
 
 /** Statut des travaux d'un objet (D10-F14-123) : existant, à démolir, projeté. */
@@ -179,6 +184,22 @@ export interface MetadonneesDefinition {
   readonly piece?: MetadonneesPiece;
   /** (Extension « Composants dynamiques ») Paramètres, options et règles du composant ; absent = composant ordinaire. */
   readonly dynamique?: ComposantDynamique;
+  /** (Cas 2, lot 8) Composant d'agence (fichier `fadi-composant/1` archivé en base) : de quoi le régénérer à la demande. */
+  readonly composantAgence?: ComposantAgenceDefinition;
+}
+
+/** (Cas 2, lot 8) Fenêtre, porte, baie ou garde-corps lu d'un fichier d'agence, avec les valeurs de l'occurrence posée. */
+export interface ComposantAgenceDefinition {
+  readonly fichier: string;
+  /** Identifiant de l'archive du fichier en base (absent si l'archivage a échoué ou n'est pas encore fait). */
+  readonly archive?: string;
+  readonly genre: "fenetre" | "porte" | "baie" | "garde-corps";
+  /** Main déclarée par le fichier (porte, équipement) : le miroir lisible la garde. */
+  readonly main?: "gauche" | "droite";
+  /** Valeurs en mètres (largeur, hauteur, allège, vantaux, longueur, vide maximal…), saisies ou reprises de la baie. */
+  readonly valeurs: Readonly<Record<string, number>>;
+  /** Texte du fichier tel qu'il a été lu (pour régénérer sans relire la base). */
+  readonly texte: string;
 }
 
 /** Option montrée à l'utilisateur pour un paramètre : zone de texte, ou liste quand `choix` est donné. */
@@ -3113,6 +3134,39 @@ export function mettreAEchelle(
     const autres = entites.filter((id) => !pieces.includes(id));
     if (autres.length) transformerSurPlace(t, c, autres, echelle(origine, f));
     for (const id of pieces) echellePieceAxe(t, c, id, origine, f);
+  });
+}
+
+/**
+ * (Cas 2 du catalogue, lot 8, n° 50) Transformation affine quelconque des entités, sur place, en un pas : calage par deux
+ * points (translation, rotation et échelle uniforme calculées). Les verrous sont respectés comme pour Déplacer.
+ */
+export function transformer(m: Modele, entites: readonly Id[], M: Matrice4, o: OptionsContexte = {}): Resultat {
+  if (Math.abs(determinant3(M)) < EPS) throw new RangeError("Transformation singulière : rien n'a été modifié.");
+  return operer(m, o.dans, (t, c) => transformerSurPlace(t, c, entites, M));
+}
+
+/**
+ * (Cas 2, lot 8, n° 25) Bouche le trou de `face` dont le contour passe par `contour` (positions, à la tolérance) : le trou
+ * disparaît de la face ; ses arêtes et sommets, s'ils ne bordent plus rien, sont effacés. `false` si aucun trou ne
+ * correspond (déjà bouché ou face disparue).
+ */
+export function boucherTrou(m: Modele, contour: readonly Vec3[], o: OptionsContexte = {}): Resultat & { extra: boolean } {
+  return operer(m, o.dans, (_t, c) => {
+    const proche = (s: Id): boolean => contour.some((p) => dist(pos(c, s), p) <= 1e-5);
+    for (const f of [...c.faces.values()]) {
+      const i = f.trous.findIndex((b) => b.length === contour.length && b.every(proche));
+      if (i < 0) continue;
+      const trou = f.trous[i] as readonly Id[];
+      c.faces.set(f.id, { ...f, trous: f.trous.filter((_, j) => j !== i) });
+      for (let k = 0; k < trou.length; k++) {
+        const a = areteEntre(c, trou[k] as Id, trou[(k + 1) % trou.length] as Id);
+        if (a && facesDeArete(c, a).length === 0) c.aretes.delete(a.id);
+      }
+      for (const s of trou) if (aretesDuSommet(c, s).length === 0) c.sommets.delete(s);
+      return true;
+    }
+    return false;
   });
 }
 

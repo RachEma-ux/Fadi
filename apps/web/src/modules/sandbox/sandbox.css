@@ -6054,3 +6054,77 @@
   text-decoration: underline;
   cursor: pointer;
 }
+/* Cas 2, lot 8 : outils de modélisation et composants d'agence (couleurs reprises de la feuille). */
+.sandbox-planche .planche-l8-texte {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-l8-note {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #eef4f0;
+  font-size: 12.5px;
+}
+.sandbox-planche .planche-l8-case {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.sandbox-planche .planche-l8-case input {
+  width: auto;
+}
+.sandbox-planche .planche-l8-mesures {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  margin: 0 0 8px;
+}
+.sandbox-planche .planche-l8-mesures dt {
+  color: #6b7672;
+}
+.sandbox-planche .planche-l8-mesures dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+.sandbox-planche .planche-l8-echelle {
+  position: absolute;
+  /* À droite de la colonne d'outils, au pied du dessin (maquette lot8-4). */
+  left: 76px;
+  bottom: 12px;
+  padding: 6px 8px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #ffffff 85%, transparent);
+  color: #161616;
+  font-size: 11px;
+  pointer-events: none;
+}
+.sandbox-planche .planche-l8-echelle-barre {
+  display: flex;
+  height: 8px;
+  border: 1px solid #161616;
+}
+.sandbox-planche .planche-l8-echelle-plein {
+  background: #161616;
+}
+.sandbox-planche .planche-l8-echelle-vide {
+  background: #ffffff;
+}
+.sandbox-planche .planche-l8-echelle-graduations {
+  position: relative;
+  height: 14px;
+}
+.sandbox-planche .planche-l8-echelle-graduations span {
+  position: absolute;
+  top: 1px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.sandbox-planche .planche-l8-echelle-graduations span:first-child {
+  transform: none;
+}
+.sandbox-planche .planche-l8-echelle small {
+  display: block;
+  margin-top: 2px;
+  color: #6b7672;
+}

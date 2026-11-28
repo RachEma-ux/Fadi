@@ -54,12 +54,36 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
     expect(estEntreeDeuxTemps({ key: " ", ctrlKey: true, shiftKey: false, altKey: false })).toBe(false);
     expect(COMMANDES_DEUX_TEMPS.length).toBeGreaterThanOrEqual(7);
     expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(expect.arrayContaining(["versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon"]));
+    expect(COMMANDES_DEUX_TEMPS.map((c) => c.id)).toEqual(expect.arrayContaining([
+      "versions", "poser-jalon", "consultation", "comparer", "brouillon", "fiche-projet", "appliquer-brouillon", "garder-brouillon", "abandonner-brouillon",
+      "extrusion-hauteur", "creer-couches", "prolonger-arete", "composants-agence", "ajuster-baie", "remplacer-occurrences",
+      "soustraire-garder", "caler-deux-points", "selection-altitudes", "selection-boite", "miroir-lisible", "ecreter-enveloppe", "vue-ortho", "eclater-axonometrie", "echelle-graphique", "aire-projetee",
+    ]));
+    // Lot 8 : un chiffre est lu sur la touche physique (AZERTY : « & » sans Maj, « 1 » avec ; QWERTY : « ! » avec Maj).
+    const AZERTY: Readonly<Record<string, string>> = { "1": "&", "2": "é", "3": '"', "4": "'", "5": "(", "6": "-", "7": "è", "8": "_", "9": "ç", "0": "à" };
+    const QWERTY_MAJ: Readonly<Record<string, string>> = { "1": "!", "2": "@", "3": "#", "4": "$", "5": "%", "6": "^", "7": "&", "8": "*", "9": "(", "0": ")" };
     for (const c of COMMANDES_DEUX_TEMPS) {
       const s = secondTemps(c.raccourci)!;
       const maj = s.startsWith("Maj+");
-      const lettre = s.slice(maj ? 4 : 0);
-      expect(commandeDuSecondTemps({ key: maj ? lettre : lettre.toLowerCase(), code: `Key${lettre}`, ctrlKey: false, shiftKey: maj, altKey: false })?.id, c.raccourci).toBe(c.id);
+      const touche = s.slice(maj ? 4 : 0);
+      if (/^[0-9]$/.test(touche)) {
+        const code = `Digit${touche}`;
+        expect(commandeDuSecondTemps({ key: maj ? touche : AZERTY[touche]!, code, ctrlKey: false, shiftKey: maj, altKey: false })?.id, `${c.raccourci} (AZERTY)`).toBe(c.id);
+        expect(commandeDuSecondTemps({ key: maj ? QWERTY_MAJ[touche]! : touche, code, ctrlKey: false, shiftKey: maj, altKey: false })?.id, `${c.raccourci} (QWERTY)`).toBe(c.id);
+        continue;
+      }
+      expect(commandeDuSecondTemps({ key: maj ? touche : touche.toLowerCase(), code: `Key${touche}`, ctrlKey: false, shiftKey: maj, altKey: false })?.id, c.raccourci).toBe(c.id);
     }
+    // Un vrai KeyboardEvent : ses modificateurs sont des accesseurs du prototype, perdus par un étalement.
+    class Evenement {
+      get key() { return "!"; }
+      get code() { return "Digit1"; }
+      get shiftKey() { return true; }
+      get ctrlKey() { return false; }
+      get altKey() { return false; }
+      get metaKey() { return false; }
+    }
+    expect(commandeDuSecondTemps(new Evenement())?.id, "Maj+1 lu sur un événement à accesseurs").toBe("vue-ortho");
     expect(commandeDuClavier({ key: " ", ctrlKey: true, shiftKey: true, altKey: false }), "l'entrée seule n'exécute rien").toBeNull();
     expect(commandeDuSecondTemps({ key: "c", code: "KeyC", ctrlKey: false, shiftKey: false, altKey: false })?.id).toBe("charger-reference");
     expect(commandeDuSecondTemps({ key: "C", code: "KeyC", ctrlKey: false, shiftKey: true, altKey: false })?.id).toBe("recharger-reference");

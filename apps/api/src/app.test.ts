@@ -3314,6 +3314,16 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
       });
 
+      it("fichier de composant d'agence (cas 2, lot 8) : rangé tel quel sous « planche-composant »", async () => {
+        const user = await account("fichiers-composant");
+        const texte = JSON.stringify({ format: "fadi-composant/1", source: "Agence (essai)", nom: "Fenêtre bois", genre: "fenetre", cadre: { largeur: 0.06, profondeur: 0.07 } });
+        const r = await user.a.post("/sandbox/preferences/fichiers").send({ extension: "planche-composant", nom: "fenetre.json", contenu: Buffer.from(texte, "utf8").toString("base64") });
+        expect(r.status).toBe(201);
+        const liste = await user.a.get("/sandbox/preferences/fichiers?extension=planche-composant");
+        expect(liste.body.archives.map((a: { nom: string; version: string }) => [a.nom, a.version])).toEqual([["fenetre.json", "fadi-composant/1"]]);
+        expect((await user.a.get(`/sandbox/preferences/fichiers/${r.body.archive.id}`)).body.texte).toBe(texte);
+      });
+
       it("un paquet de la taille maximale du protocole passe la lecture du corps ; au-delà, 413", async () => {
         const boss = await admin();
         const gros = paquet();
